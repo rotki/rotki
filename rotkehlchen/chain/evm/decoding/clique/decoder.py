@@ -1,12 +1,15 @@
 from abc import ABC
+from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import CLAIMED_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import DecoderContext
-from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.structures import DecoderContext
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 class CliqueAirdropDecoderInterface(EvmDecoderInterface, ABC):

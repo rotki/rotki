@@ -2,8 +2,6 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
 
-from eth_typing import ChecksumAddress
-
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
@@ -25,7 +23,6 @@ from rotkehlchen.db.calendar import (
     DBCalendar,
     ReminderEntry,
 )
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
@@ -41,7 +38,6 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_now_in_ms
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -54,8 +50,12 @@ AIRDROP_CALENDAR_COLOR: Final = deserialize_hex_color_code('ffd966')
 BRIDGE_CALENDAR_COLOR: Final = deserialize_hex_color_code('fcceee')
 
 if TYPE_CHECKING:
+    from eth_typing import ChecksumAddress
+
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import HexColorCode
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
@@ -125,7 +125,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
         with self.database.conn.read_ctx() as cursor:
             self.blockchain_accounts = self.database.get_blockchain_accounts(cursor=cursor)
 
-    def get_history_events(self, event_types: list[tuple[HistoryEventType, HistoryEventSubType]], counterparties: list[str]) -> list['EvmEvent']:  # noqa: E501
+    def get_history_events(self, event_types: list[tuple[HistoryEventType, HistoryEventSubType]], counterparties: list[str]) -> list[EvmEvent]:  # noqa: E501
         """Get history events by event_type, event_subtype, and counterparty"""
         with self.database.conn.read_ctx() as cursor:
             return DBHistoryEvents(database=self.database).get_history_events_internal(
@@ -172,7 +172,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
             counterparty: str,
             address: ChecksumAddress,
             blockchain: SupportedBlockchain,
-            color: 'HexColorCode',
+            color: HexColorCode,
     ) -> int | None:
         """Create calendar entry if it doesn't exist.
         If it does exist, update it if the timestamp is different.
@@ -217,11 +217,11 @@ class CalendarReminderCreator(CustomizableDateMixin):
 
     def create_or_update_calendar_entry_from_event(
             self,
-            event: 'EvmEvent',
+            event: EvmEvent,
             name: str,
             description: str,
             timestamp: Timestamp,
-            color: 'HexColorCode',
+            color: HexColorCode,
             counterparty: str,
     ) -> int | None:
         """Create calendar entry from an event.

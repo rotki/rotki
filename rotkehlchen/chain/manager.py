@@ -1,16 +1,19 @@
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.mixins.rpc_nodes import RPCManagerMixin
-from rotkehlchen.types import ChecksumEvmAddress, Timestamp
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+    from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 T_Address = TypeVar('T_Address')
 T_NodeInquirer = TypeVar('T_NodeInquirer', bound=RPCManagerMixin)
 
 
-class ChainManager(ABC, Generic[T_Address]):
+class ChainManager[T_Address](ABC):
 
     @abstractmethod
     def query_balances(
@@ -36,7 +39,7 @@ class ChainManagerWithTransactions(ChainManager[T_Address]):
         """
 
 
-class ChainManagerWithNodesMixin(ABC, Generic[T_NodeInquirer]):
+class ChainManagerWithNodesMixin[T_NodeInquirer: RPCManagerMixin]:  # noqa: B903
     """Mixin for chain managers that use a node inquirer that inherits from RPCManagerMixin."""
 
     def __init__(self, node_inquirer: T_NodeInquirer) -> None:

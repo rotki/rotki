@@ -31,7 +31,7 @@ _FALSE_POSITIVE_CACHE: LRUCacheWithRemove[str, bool] = LRUCacheWithRemove(maxsiz
 
 
 def _save_or_update_spam_assets(
-        db: 'DBHandler',
+        db: DBHandler,
         assets_info: list[dict[str, Any]],
 ) -> set[Asset]:
     """
@@ -78,7 +78,7 @@ def _save_or_update_spam_assets(
     return tokens_to_ignore
 
 
-def update_spam_assets(db: 'DBHandler', assets_info: list[dict[str, Any]]) -> int:
+def update_spam_assets(db: DBHandler, assets_info: list[dict[str, Any]]) -> int:
     """
     Update the list of ignored assets using query_token_spam_list and avoiding
     the addition of duplicates. It returns the amount of assets that were added
@@ -100,7 +100,7 @@ def update_spam_assets(db: 'DBHandler', assets_info: list[dict[str, Any]]) -> in
 
 
 def _get_dangerous_token_collection_members(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         collection_id: int,
 ) -> set[str]:
     """
@@ -120,9 +120,9 @@ def _get_dangerous_token_collection_members(
 
 
 def check_token_impersonates_dangerous_tokens(
-        database: 'DBHandler',
-        token: 'EvmToken',
-        native_token: 'CryptoAsset',
+        database: DBHandler,
+        token: EvmToken,
+        native_token: CryptoAsset,
 ) -> None:
     """
     Mark a token as spam when it appears to impersonate well-known tokens like the native currency

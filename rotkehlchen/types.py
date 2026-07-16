@@ -1,5 +1,4 @@
 import typing
-from collections.abc import Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum, StrEnum, auto
@@ -7,18 +6,15 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Final,
-    Generic,
     Literal,
     NamedTuple,
     NewType,
-    TypeAlias,
     TypeVar,
     get_args,
 )
 
 from eth_typing import ChecksumAddress
 from eth_utils.address import to_checksum_address
-from hexbytes import HexBytes as Web3HexBytes
 
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
 from rotkehlchen.constants import ZERO
@@ -41,6 +37,10 @@ from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_addre
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from hexbytes import HexBytes as Web3HexBytes
+
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
@@ -188,7 +188,7 @@ Price = NewType('Price', T_Price)
 
 
 class AssetAmount(NamedTuple):
-    asset: 'Asset'
+    asset: Asset
     amount: FVal
 
 
@@ -225,7 +225,7 @@ class ChainID(Enum):
     MEGAETH = 4326
 
     @classmethod
-    def deserialize_from_db(cls, value: int) -> 'ChainID':
+    def deserialize_from_db(cls, value: int) -> ChainID:
         try:
             return cls(value)
         except ValueError as e:
@@ -238,7 +238,7 @@ class ChainID(Enum):
         return self.value
 
     @classmethod
-    def deserialize(cls, value: int) -> 'ChainID':
+    def deserialize(cls, value: int) -> ChainID:
         return cls.deserialize_from_db(value)
 
     def to_name(self) -> str:
@@ -281,7 +281,7 @@ class ChainID(Enum):
         return self.to_name()
 
     @classmethod
-    def deserialize_from_name(cls, value: str) -> 'ChainID':
+    def deserialize_from_name(cls, value: str) -> ChainID:
         """May raise DeserializationError if the given value can't be deserialized"""
         if not isinstance(value, str):
             raise DeserializationError(
@@ -294,7 +294,7 @@ class ChainID(Enum):
         except AttributeError as e:
             raise DeserializationError(f'Failed to deserialize evm chain value {value}') from e
 
-    def to_blockchain(self) -> 'SupportedBlockchain':
+    def to_blockchain(self) -> SupportedBlockchain:
         return CHAINID_TO_SUPPORTED_BLOCKCHAIN[self]
 
 
@@ -367,7 +367,7 @@ class EvmTransaction:
 
         return self.identifier == other.identifier
 
-    def get_or_query_db_id(self, cursor: 'DBCursor') -> int:
+    def get_or_query_db_id(self, cursor: DBCursor) -> int:
         """Returns the DB identifier for the transaction. Assumes it exists in the DB"""
         if self.db_id == -1:
             db_id = cursor.execute(
@@ -420,7 +420,7 @@ class ChainType(SerializableEnumNameMixin):
     ETH2 = auto()
     SOLANA = auto()
 
-    def type_to_blockchains(self) -> Sequence['SupportedBlockchain']:
+    def type_to_blockchains(self) -> Sequence[SupportedBlockchain]:
         """Return the set of valid blockchains for the chain type"""
         if self in (ChainType.EVM, ChainType.EVMLIKE):
             return SUPPORTED_EVM_CHAINS + SUPPORTED_EVMLIKE_CHAINS
@@ -566,7 +566,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
     @classmethod
-    def from_location(cls, location: 'BLOCKCHAIN_LOCATIONS_TYPE') -> 'SupportedBlockchain':
+    def from_location(cls, location: BLOCKCHAIN_LOCATIONS_TYPE) -> SupportedBlockchain:
         """
         Turns a location to a supported chain.
         Caller has to make sure Location is a blockchain, otherwise AttributeError is raised.
@@ -810,7 +810,7 @@ class Location(DBCharEnumMixIn):
     COINEX = 61
 
     @staticmethod
-    def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'EVM_LOCATIONS_TYPE':
+    def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> EVM_LOCATIONS_TYPE:
         if chain_id == ChainID.ETHEREUM:
             return Location.ETHEREUM
 
@@ -869,7 +869,7 @@ class Location(DBCharEnumMixIn):
         return ChainID.POLYGON_POS.value
 
     @staticmethod
-    def from_chain(chain: CHAINS_WITH_TRANSACTIONS_TYPE) -> 'BLOCKCHAIN_LOCATIONS_TYPE':
+    def from_chain(chain: CHAINS_WITH_TRANSACTIONS_TYPE) -> BLOCKCHAIN_LOCATIONS_TYPE:
         assert chain in CHAINS_WITH_TRANSACTIONS
         match chain:
             case SupportedBlockchain.ETHEREUM:
@@ -924,7 +924,7 @@ EVM_EVMLIKE_LOCATIONS_TYPE = EVM_LOCATIONS_TYPE | EVMLIKE_LOCATIONS_TYPE
 EVM_EVMLIKE_LOCATIONS: tuple[EVM_EVMLIKE_LOCATIONS_TYPE, ...] = EVM_LOCATIONS + EVMLIKE_LOCATIONS
 BITCOIN_LOCATIONS_TYPE = Literal[Location.BITCOIN, Location.BITCOIN_CASH]
 BITCOIN_LOCATIONS: tuple[BITCOIN_LOCATIONS_TYPE, ...] = typing.get_args(BITCOIN_LOCATIONS_TYPE)
-BLOCKCHAIN_LOCATIONS_TYPE: TypeAlias = EVM_EVMLIKE_LOCATIONS_TYPE | BITCOIN_LOCATIONS_TYPE | Literal[Location.SOLANA]  # noqa: E501
+type BLOCKCHAIN_LOCATIONS_TYPE = EVM_EVMLIKE_LOCATIONS_TYPE | BITCOIN_LOCATIONS_TYPE | Literal[Location.SOLANA]  # noqa: E501
 BLOCKCHAIN_LOCATIONS: tuple[BLOCKCHAIN_LOCATIONS_TYPE, ...] = EVM_EVMLIKE_LOCATIONS + BITCOIN_LOCATIONS + (Location.SOLANA,)  # noqa: E501
 
 
@@ -971,9 +971,9 @@ class ExchangeLocationID(NamedTuple):
 
     @classmethod
     def deserialize(
-            cls: type['ExchangeLocationID'],
-            data: dict['str', Any],
-    ) -> 'ExchangeLocationID':
+            cls: type[ExchangeLocationID],
+            data: dict[str, Any],
+    ) -> ExchangeLocationID:
         """May raise DeserializationError"""
         try:
             return cls(
@@ -1001,7 +1001,7 @@ ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX: Final = 'TYPE_'  # prefix used along the ad
 
 
 class AddressbookEntry(NamedTuple):
-    address: 'BlockchainAddress'
+    address: BlockchainAddress
     name: str
     blockchain: SupportedBlockchain | None
 
@@ -1013,7 +1013,7 @@ class AddressbookEntry(NamedTuple):
         }
 
     @staticmethod
-    def check_chain_ecosystem(address: 'BlockchainAddress') -> Literal[
+    def check_chain_ecosystem(address: BlockchainAddress) -> Literal[
         ChainType.BITCOIN,
         ChainType.EVMLIKE,
         ChainType.SUBSTRATE,
@@ -1042,7 +1042,7 @@ class AddressbookEntry(NamedTuple):
         raise AddressNotSupported(f'Unsupported address {address}')
 
     @staticmethod
-    def get_ecosystem_key_by_address(address: 'BlockchainAddress') -> str:
+    def get_ecosystem_key_by_address(address: BlockchainAddress) -> str:
         """May raise:
             - AddressNotSupported
         """
@@ -1063,7 +1063,7 @@ class AddressbookEntry(NamedTuple):
         )
 
     @classmethod
-    def deserialize(cls: type['AddressbookEntry'], data: dict[str, Any]) -> 'AddressbookEntry':
+    def deserialize(cls: type[AddressbookEntry], data: dict[str, Any]) -> AddressbookEntry:
         """May raise:
         -KeyError if required keys are missing
         """
@@ -1079,7 +1079,7 @@ class AddressbookEntryWithSource(NamedTuple):
     address: BlockchainAddress
     name: str
     blockchain: SupportedBlockchain | None
-    source: 'AddressNameSource'
+    source: AddressNameSource
 
     def serialize(self) -> dict[str, str | None]:
         return {
@@ -1102,9 +1102,9 @@ class AddressbookEntryWithSource(NamedTuple):
 
     @classmethod
     def deserialize(
-            cls: type['AddressbookEntryWithSource'],
+            cls: type[AddressbookEntryWithSource],
             data: dict[str, Any],
-    ) -> 'AddressbookEntryWithSource':
+    ) -> AddressbookEntryWithSource:
         """May raise:
         -KeyError if required keys are missing
         """
@@ -1121,11 +1121,11 @@ class AddressbookEntryWithSource(NamedTuple):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class LocationAssetMappingDeleteEntry:
-    location: 'Location | None'
+    location: Location | None
     location_symbol: str
 
     @classmethod
-    def deserialize(cls: type['LocationAssetMappingDeleteEntry'], data: dict[str, Any]) -> 'LocationAssetMappingDeleteEntry':  # noqa: E501
+    def deserialize(cls: type[LocationAssetMappingDeleteEntry], data: dict[str, Any]) -> LocationAssetMappingDeleteEntry:  # noqa: E501
         """May raise:
         -DeserializationError if required keys are missing
         """
@@ -1146,10 +1146,10 @@ class LocationAssetMappingDeleteEntry:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class LocationAssetMappingUpdateEntry(LocationAssetMappingDeleteEntry):
-    asset: 'Asset'
+    asset: Asset
 
     @classmethod
-    def deserialize(cls: type['LocationAssetMappingUpdateEntry'], data: dict[str, Any]) -> 'LocationAssetMappingUpdateEntry':  # noqa: E501
+    def deserialize(cls: type[LocationAssetMappingUpdateEntry], data: dict[str, Any]) -> LocationAssetMappingUpdateEntry:  # noqa: E501
         """May raise:
         -DeserializationError if required keys are missing
         """
@@ -1173,7 +1173,7 @@ class CounterpartyAssetMappingDeleteEntry:
     counterparty_symbol: str
 
     @classmethod
-    def deserialize(cls: type['CounterpartyAssetMappingDeleteEntry'], data: dict[str, Any]) -> 'CounterpartyAssetMappingDeleteEntry':  # noqa: E501
+    def deserialize(cls: type[CounterpartyAssetMappingDeleteEntry], data: dict[str, Any]) -> CounterpartyAssetMappingDeleteEntry:  # noqa: E501
         try:
             return cls(
                 counterparty=data['counterparty'],
@@ -1192,10 +1192,10 @@ class CounterpartyAssetMappingDeleteEntry:
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class CounterpartyAssetMappingUpdateEntry(CounterpartyAssetMappingDeleteEntry):
     """A counterparty asset mapping update entry"""
-    asset: 'Asset'
+    asset: Asset
 
     @classmethod
-    def deserialize(cls: type['CounterpartyAssetMappingUpdateEntry'], data: dict[str, Any]) -> 'CounterpartyAssetMappingUpdateEntry':  # noqa: E501
+    def deserialize(cls: type[CounterpartyAssetMappingUpdateEntry], data: dict[str, Any]) -> CounterpartyAssetMappingUpdateEntry:  # noqa: E501
         try:
             return cls(
                 asset=data['asset'],
@@ -1212,7 +1212,7 @@ class CounterpartyAssetMappingUpdateEntry(CounterpartyAssetMappingDeleteEntry):
 T = TypeVar('T')
 
 
-class GenericOptionalChainAddress(NamedTuple, Generic[T]):
+class GenericOptionalChainAddress[T](NamedTuple):
     address: T
     blockchain: SupportedBlockchain | None
 
@@ -1254,7 +1254,7 @@ class UserNote(NamedTuple):
         }
 
     @classmethod
-    def deserialize(cls, entry: dict[str, Any]) -> 'UserNote':
+    def deserialize(cls, entry: dict[str, Any]) -> UserNote:
         """Turns a dict into a `UserNote` object.
         May raise:
         - DeserializationError if required keys are missing.
@@ -1272,7 +1272,7 @@ class UserNote(NamedTuple):
             raise DeserializationError(f'Failed to deserialize dict due to missing key: {e!s}') from e  # noqa: E501
 
     @classmethod
-    def deserialize_from_db(cls, entry: tuple[int, str, str, str, int, int]) -> 'UserNote':
+    def deserialize_from_db(cls, entry: tuple[int, str, str, str, int, int]) -> UserNote:
         """Turns a `user_note` db entry into a `UserNote` object."""
         return cls(
             identifier=entry[0],
@@ -1301,7 +1301,7 @@ class TokenKind(DBCharEnumMixIn):
     SPL_NFT = auto()  # nfts on solana - https://developers.metaplex.com/token-metadata
 
     @classmethod
-    def deserialize_evm_from_db(cls, value: Any) -> 'EVM_TOKEN_KINDS_TYPE':
+    def deserialize_evm_from_db(cls, value: Any) -> EVM_TOKEN_KINDS_TYPE:
         """Deserialize specifically for EVM token kinds"""
         if (result := cls.deserialize_from_db(value)) not in (TokenKind.ERC20, TokenKind.ERC721):
             raise DeserializationError(f'Expected EVM token kind, got {result}')
@@ -1309,7 +1309,7 @@ class TokenKind(DBCharEnumMixIn):
         return result
 
     @classmethod
-    def deserialize_solana_from_db(cls, value: Any) -> 'SOLANA_TOKEN_KINDS_TYPE':
+    def deserialize_solana_from_db(cls, value: Any) -> SOLANA_TOKEN_KINDS_TYPE:
         """Deserialize specifically for Solana token kinds"""
         if (result := cls.deserialize_from_db(value)) not in (TokenKind.SPL_TOKEN, TokenKind.SPL_NFT):  # noqa: E501
             raise DeserializationError(f'Expected solana token kind, got {result}')

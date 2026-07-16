@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import token_normalized_value, token_normalized_value_decimals
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import (
     ADD_LIQUIDITY_DYNAMIC_ASSETS,
@@ -13,7 +12,6 @@ from rotkehlchen.chain.evm.constants import (
 )
 from rotkehlchen.chain.evm.decoding.constants import STAKED, WITHDRAWN
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP, HOP_CPT_DETAILS
-from rotkehlchen.chain.evm.decoding.hop.structures import HopBridgeEventData
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -26,13 +24,11 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
     globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
@@ -50,8 +46,12 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
+    from rotkehlchen.chain.evm.decoding.hop.structures import HopBridgeEventData
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -61,9 +61,9 @@ log = RotkehlchenLogsAdapter(logger)
 class HopCommonDecoder(EvmDecoderInterface):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             bridges: dict[ChecksumEvmAddress, HopBridgeEventData],
             reward_contracts: set[ChecksumEvmAddress],
     ) -> None:
@@ -411,7 +411,7 @@ class HopCommonDecoder(EvmDecoderInterface):
             token_amounts=token_amounts,
         )
 
-    def _decode_common_liquidity(self, context: DecoderContext, first_token_raw: bytes, second_token_raw: bytes) -> tuple['ChecksumEvmAddress', set[FVal]] | None:  # noqa: E501
+    def _decode_common_liquidity(self, context: DecoderContext, first_token_raw: bytes, second_token_raw: bytes) -> tuple[ChecksumEvmAddress, set[FVal]] | None:  # noqa: E501
         """This function is used to decode the common resources of RemoveLiquidity and
         RemoveLiquidityOne events."""
         if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):

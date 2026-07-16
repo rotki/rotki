@@ -18,7 +18,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class WethDecoder(EthBaseWethDecoder):
-    def _decode_deposit_event(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
+    def _decode_deposit_event(self, context: DecoderContext) -> EvmDecodingOutput:
         depositor = bytes_to_address(context.tx_log.topics[1])
         deposited_amount_raw = int.from_bytes(context.tx_log.data[:32])
         deposited_amount = asset_normalized_value(
@@ -51,7 +51,7 @@ class WethDecoder(EthBaseWethDecoder):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_withdrawal_event(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
+    def _decode_withdrawal_event(self, context: DecoderContext) -> EvmDecodingOutput:
         if not self.base.is_tracked(withdrawer := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_EVM_DECODING_OUTPUT
 

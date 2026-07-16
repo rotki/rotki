@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     ('GBP', 'USD'): (FVal('1.367'), CurrentPriceOracle.FIAT),
 }])
 @pytest.mark.parametrize('ignore_mocked_prices_for', [['USD']])
-def test_get_current_assets_price_in_usd(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_current_assets_price_in_usd(rotkehlchen_api_server: APIServer) -> None:
     async_query = random.choice([False, True])
     response = requests.post(
         api_url_for(
@@ -65,7 +65,7 @@ def test_get_current_assets_price_in_usd(rotkehlchen_api_server: 'APIServer') ->
     ('GBP', 'BTC'): (FVal('0.00004119457641910343485018976024'), CurrentPriceOracle.COINGECKO),
 }])
 @pytest.mark.parametrize('ignore_mocked_prices_for', [['BTC']])
-def test_get_current_assets_price_in_btc(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_current_assets_price_in_btc(rotkehlchen_api_server: APIServer) -> None:
 
     async_query = random.choice([False, True])
     response = requests.post(
@@ -107,7 +107,7 @@ def test_get_current_assets_price_in_btc(rotkehlchen_api_server: 'APIServer') ->
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_get_current_assets_price_with_replacements(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_current_assets_price_with_replacements(rotkehlchen_api_server: APIServer) -> None:
     """Regression test for a problem where the logic for replacing collection assets with the
     main asset was failing with a KeyError when the main asset was not included in the query.
     """
@@ -135,7 +135,7 @@ def test_get_current_assets_price_with_replacements(rotkehlchen_api_server: 'API
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_add_manual_latest_price(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_manual_latest_price(rotkehlchen_api_server: APIServer) -> None:
     """Check that addition of manual current prices work fine."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     get_or_create_evm_token(  # create a specific token in base
@@ -239,7 +239,7 @@ def test_add_manual_latest_price(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_edit_manual_current_price(rotkehlchen_api_server: 'APIServer') -> None:
+def test_edit_manual_current_price(rotkehlchen_api_server: APIServer) -> None:
     GlobalDBHandler.add_manual_latest_price(
         from_asset=A_ETH,
         to_asset=A_EUR,
@@ -313,7 +313,7 @@ def test_edit_manual_current_price(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_remove_manual_current_price(rotkehlchen_api_server: 'APIServer') -> None:
+def test_remove_manual_current_price(rotkehlchen_api_server: APIServer) -> None:
     GlobalDBHandler.add_manual_latest_price(
         from_asset=A_ETH,
         to_asset=A_EUR,
@@ -368,7 +368,7 @@ def test_remove_manual_current_price(rotkehlchen_api_server: 'APIServer') -> Non
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_manual_current_prices_loop(inquirer: 'Inquirer') -> None:
+def test_manual_current_prices_loop(inquirer: Inquirer) -> None:
     """Check that if we got a loop of manual current prices
     (e.g. 1 ETH costs 2 BTC and 1 BTC costs 5 ETH), it is handled properly.
 
@@ -399,7 +399,7 @@ def test_manual_current_prices_loop(inquirer: 'Inquirer') -> None:
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ignore_mocked_prices_for', ['ETH'])
-def test_inquirer_oracles_does_not_affect_manual_price(inquirer: 'Inquirer') -> None:
+def test_inquirer_oracles_does_not_affect_manual_price(inquirer: Inquirer) -> None:
     """Checks that change of oracles order does not affect manual current price usage.
 
     This test is mocked because we were seeing cases of tests failing due to
@@ -420,7 +420,7 @@ def test_inquirer_oracles_does_not_affect_manual_price(inquirer: 'Inquirer') -> 
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_get_all_current_prices(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_all_current_prices(rotkehlchen_api_server: APIServer) -> None:
     """Test that the endpoint to fetch all manual input returns the correct prices results"""
     # Check that when there are no entries in the database the result is empty
     response = requests.post(
@@ -517,7 +517,7 @@ def test_get_all_current_prices(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_prices_cache_invalidation_for_manual_prices(rotkehlchen_api_server: 'APIServer') -> None:
+def test_prices_cache_invalidation_for_manual_prices(rotkehlchen_api_server: APIServer) -> None:
     """
     Check that the prices cache are properly invalidated upon addition
     and deletion of manual prices.
@@ -632,7 +632,7 @@ def test_prices_cache_invalidation_for_manual_prices(rotkehlchen_api_server: 'AP
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
 def test_get_manual_prices_with_nfts(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that the endpoint to fetch all manual input returns the correct prices results

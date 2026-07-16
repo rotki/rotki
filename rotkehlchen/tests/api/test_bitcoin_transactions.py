@@ -13,19 +13,19 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.fixtures import WebsocketReader
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.types import Location, SupportedBlockchain, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.tests.fixtures import WebsocketReader
     from rotkehlchen.types import BTCAddress
 
 
 def do_tx_query_and_get_events(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         websocket_connection: WebsocketReader,
-        accounts: list['BTCAddress'],
+        accounts: list[BTCAddress],
         async_query: bool,
         json: dict,
         expected_len: int,
@@ -68,8 +68,8 @@ def do_tx_query_and_get_events(
 @pytest.mark.parametrize('use_blockcypher', [True, False])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_query_btc_transactions(
-        rotkehlchen_api_server: 'APIServer',
-        btc_accounts: list['BTCAddress'],
+        rotkehlchen_api_server: APIServer,
+        btc_accounts: list[BTCAddress],
         use_blockcypher: bool,
         websocket_connection: WebsocketReader,
 ) -> None:
@@ -164,8 +164,8 @@ def test_query_btc_transactions(
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.parametrize('bch_api', ['haskoin', 'blockchain.info haskoin-store'])
 def test_query_bch_transactions(
-        rotkehlchen_api_server: 'APIServer',
-        bch_accounts: list['BTCAddress'],
+        rotkehlchen_api_server: APIServer,
+        bch_accounts: list[BTCAddress],
         websocket_connection: WebsocketReader,
         bch_api: str,
 ) -> None:

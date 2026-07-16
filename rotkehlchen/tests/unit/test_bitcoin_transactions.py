@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     ['1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp'],
     ['bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4', '1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp'],
 ])
-def test_1input_1output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BTCAddress]) -> None:
+def test_1input_1output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCAddress]) -> None:
     tx_id, address1, address2 = (
         'e47f43692083b6b4bb3d4d6150acd3c016b09fb841e4055e1f5bb8ad44858bc6',
         string_to_btc_address('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'),
@@ -95,7 +95,7 @@ def test_1input_1output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BT
     ['17AkKFFZmMJgvvuwT2tJbSv149us1ya1cy'],
     ['17GZv9cYySVCW1TgvQ77CZUnMrfUFEukDf', '17AkKFFZmMJgvvuwT2tJbSv149us1ya1cy'],
 ])
-def test_1input_2output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BTCAddress]) -> None:
+def test_1input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCAddress]) -> None:
     tx_id, address1, address2, address3 = (
         '450c309b70fb3f71b63b10ce60af17499bd21b1db39aa47b19bf22166ee67144',
         string_to_btc_address('17GZv9cYySVCW1TgvQ77CZUnMrfUFEukDf'),
@@ -157,7 +157,7 @@ def test_1input_2output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BT
 @pytest.mark.parametrize('btc_accounts', [['bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4']])
 @pytest.mark.parametrize('use_blockcypher', [True, False])
 def test_op_return(
-        bitcoin_manager: 'BitcoinManager',
+        bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
         use_blockcypher: bool,
 ) -> None:
@@ -192,7 +192,7 @@ def test_op_return(
 @pytest.mark.vcr
 @pytest.mark.parametrize('btc_accounts', [['17rQ1edty4CxuLHCgtvQ9kxwwpwhGrg4d9']])
 def test_op_return_multiple_pushbytes(
-        bitcoin_manager: 'BitcoinManager',
+        bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
 ) -> None:
     """Test OP_RETURN with multiple OP_PUSHBYTES_1 operations."""
@@ -237,7 +237,7 @@ def test_op_return_multiple_pushbytes(
 @pytest.mark.vcr
 @pytest.mark.parametrize('btc_accounts', [['17rQ1edty4CxuLHCgtvQ9kxwwpwhGrg4d9']])
 def test_op_return_pushdata1(
-        bitcoin_manager: 'BitcoinManager',
+        bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
 ) -> None:
     """Test OP_RETURN with OP_PUSHDATA1 (0x4c)."""
@@ -291,7 +291,7 @@ def test_op_return_pushdata1(
     ],
 ])
 def test_2input_1output(
-        bitcoin_manager: 'BitcoinManager',
+        bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
 ) -> None:
     """This tx actually has 4 inputs and 2 outputs, but 3 inputs are from the same address,
@@ -421,7 +421,7 @@ def test_2input_1output(
     'bc1qxdw4t0uvnztl6jxuxvvpnsmx9fg4w7qxv5tgm4',
     '1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN',
 ]])
-def test_3input_2output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BTCAddress]) -> None:
+def test_3input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCAddress]) -> None:
     """This tx actually has 4 inputs, but 1 input is also an output, with its output value being
     more than its input value, canceling it out as an input, and resulting in only 3 actual inputs.
     """
@@ -523,7 +523,7 @@ def test_3input_2output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BT
 @pytest.mark.parametrize('btc_accounts', [['1PJJygLB42VsaTgo2twFPgRT8CNz1bpGNE']])
 @pytest.mark.parametrize('use_blockcypher', [True, False])
 def test_p2pk(
-        bitcoin_manager: 'BitcoinManager',
+        bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
         use_blockcypher: bool,
 ) -> None:
@@ -550,7 +550,7 @@ def test_p2pk(
 
 @pytest.mark.parametrize('btc_accounts', [['bc1pdju7vpgsk7rz5s8kc9hukqr3z5nfe6457q2ysdx9jgpgjhhcmx8qjte9tm']])  # noqa: E501
 def test_skip_unconfirmed_blockchain_info_txs(
-        bitcoin_manager: 'BitcoinManager',
+        bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
 ) -> None:
     """Test that unconfirmed txs are skipped without affecting the processing of confirmed txs.

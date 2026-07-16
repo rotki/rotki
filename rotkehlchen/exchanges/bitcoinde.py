@@ -2,14 +2,12 @@ import json
 import logging
 import time
 from collections import defaultdict
-from collections.abc import Sequence
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
 import requests
 
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bitcoinde
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.errors.asset import UnknownAsset
@@ -28,12 +26,15 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, ExchangeAuthCredentials, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -60,7 +61,7 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
@@ -247,7 +248,7 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
 
         page = 1
         resp_trades = []

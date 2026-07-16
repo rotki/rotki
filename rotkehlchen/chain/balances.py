@@ -1,10 +1,8 @@
 from collections import defaultdict
-from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, get_args, overload
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_BCH, A_BTC
@@ -21,6 +19,9 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -35,7 +36,7 @@ ALL_BALANCE_TYPES = (
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BlockchainBalances:
-    db: 'DBHandler'  # Need this to serialize BTC accounts with xpub mappings
+    db: DBHandler  # Need this to serialize BTC accounts with xpub mappings
     eth: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     optimism: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     polygon_pos: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
@@ -139,7 +140,7 @@ class BlockchainBalances:
             chain_key = supported_chain.get_key()
             yield (supported_chain, getattr(self, chain_key))
 
-    def copy(self) -> 'BlockchainBalances':
+    def copy(self) -> BlockchainBalances:
         """Return a structural copy of the balances.
 
         New dicts are created at every level so that adding/removing accounts or rebinding

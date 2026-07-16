@@ -1,13 +1,17 @@
+from typing import TYPE_CHECKING
+
 import pytest
 import requests
 
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.substrate.types import KusamaNodeName
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_RPC_ENDPOINT
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

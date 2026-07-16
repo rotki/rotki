@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_gnosis_pay_safe_migration(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     migration_data = {
         'migration_id': GNOSIS_PAY_SAFE_MIGRATION_ID,
@@ -58,7 +58,7 @@ def test_gnosis_pay_safe_migration(
 ])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_gnosis_pay_safe_migration_error(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         gnosis_pay: MagicMock | None,
         message: str,
 ) -> None:

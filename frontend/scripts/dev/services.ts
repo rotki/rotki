@@ -92,10 +92,12 @@ export interface BackendSpawnOptions {
 async function startPythonBackend(opts: BackendSpawnOptions): Promise<number> {
   const chosenPort = opts.strictPort ? opts.webPort : await selectPort(opts.webPort);
   logger.info(`Starting python backend on port ${formatPort(chosenPort)}`);
+  const pythonInterpreterArgs = process.env.ROTKI_GIL === 'false' ? ['-X', 'gil=0'] : [];
 
   const args = [
-    ...(opts.profilingArgs ? opts.profilingArgs.split(' ') : []),
-    ...(opts.profilingCmd ? ['python'] : []),
+    ...(opts.profilingCmd
+      ? [...(opts.profilingArgs?.split(' ') ?? []), 'python', ...pythonInterpreterArgs]
+      : [...pythonInterpreterArgs, ...(opts.profilingArgs?.split(' ') ?? [])]),
     '-m',
     'rotkehlchen',
     '--rest-api-port',

@@ -1,5 +1,4 @@
 from collections import defaultdict
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
@@ -10,14 +9,16 @@ from rotkehlchen.constants.assets import A_PICKLE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.utils.interfaces import EthereumModule
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress, Timestamp
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -38,10 +39,10 @@ class PickleFinance(EthereumModule):
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            database: 'DBHandler',
+            ethereum_inquirer: EthereumInquirer,
+            database: DBHandler,
             premium: Premium | None,
-            msg_aggregator: 'MessagesAggregator',
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         self.ethereum = ethereum_inquirer
         self.database = database
@@ -130,7 +131,7 @@ class PickleFinance(EthereumModule):
     def balances_in_protocol(
             self,
             addresses: Sequence[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, list['AssetBalance']]:
+    ) -> dict[ChecksumEvmAddress, list[AssetBalance]]:
         """Queries all the pickles deposited and available to claim in the protocol"""
         dill_balances = self.get_dill_balances(addresses)
         balances_per_address: dict[ChecksumEvmAddress, list[AssetBalance]] = defaultdict(list)

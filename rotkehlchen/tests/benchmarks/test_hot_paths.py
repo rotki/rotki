@@ -124,7 +124,7 @@ def _make_events() -> list[EvmEvent]:
 
 
 @pytest.mark.benchmark
-def test_history_event_db_serialization(benchmark: 'Callable') -> None:
+def test_history_event_db_serialization(benchmark: Callable) -> None:
     """Write-path serialization of history events, exercised on every
     transaction decode and event edit"""
     events = _make_events()
@@ -132,14 +132,14 @@ def test_history_event_db_serialization(benchmark: 'Callable') -> None:
 
 
 @pytest.mark.benchmark
-def test_history_event_api_serialization(benchmark: 'Callable') -> None:
+def test_history_event_api_serialization(benchmark: Callable) -> None:
     """API serialization of history events, exercised on every events page"""
     events = _make_events()
     benchmark(lambda: [event.serialize() for event in events])
 
 
 @pytest.mark.benchmark
-def test_fval_arithmetic(benchmark: 'Callable') -> None:
+def test_fval_arithmetic(benchmark: Callable) -> None:
     """FVal math as done in balance aggregation loops"""
     values = [FVal(f'{idx}.{idx % 1000:03d}') for idx in range(1, N_EVENTS + 1)]
     price = FVal('1234.5678')
@@ -154,7 +154,7 @@ def test_fval_arithmetic(benchmark: 'Callable') -> None:
 
 
 @pytest.mark.benchmark
-def test_redecode_delete_customized_lookup(benchmark: 'Callable', database: 'DBHandler') -> None:
+def test_redecode_delete_customized_lookup(benchmark: Callable, database: DBHandler) -> None:
     """Per-transaction redecode delete path.
 
     When redecoding, rotki calls `delete_events_by_tx_ref` once per transaction (see
@@ -204,10 +204,10 @@ def test_redecode_delete_customized_lookup(benchmark: 'Callable', database: 'DBH
     '0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC',
 ]])
 def test_transaction_decoding(
-        benchmark: 'Callable',
-        database: 'DBHandler',
+        benchmark: Callable,
+        database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
-        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
 ) -> None:
     """Generic transaction-decoding hot path.
 
@@ -243,7 +243,7 @@ def test_transaction_decoding(
 
 
 @pytest.mark.benchmark
-def test_events_filter_query_construction(benchmark: 'Callable') -> None:
+def test_events_filter_query_construction(benchmark: Callable) -> None:
     """Filter-query construction + SQL preparation, done per events API call"""
     def build() -> tuple:
         filter_query = EvmEventFilterQuery.make(

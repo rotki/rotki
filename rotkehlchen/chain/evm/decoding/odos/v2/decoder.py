@@ -12,12 +12,12 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -27,9 +27,9 @@ log = RotkehlchenLogsAdapter(logger)
 class Odosv2DecoderBase(OdosCommonDecoderBase):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             router_address: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
@@ -39,7 +39,7 @@ class Odosv2DecoderBase(OdosCommonDecoderBase):
             router_address=router_address,
         )
 
-    def _decode_v2_swap(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
+    def _decode_v2_swap(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes swaps done using an Odos v2 router"""
         if context.tx_log.topics[0] == b'\x82>\xaf\x01\x00-sS\xfb\xca\xdb.\xa30\\\xc4o\xa3]y\x9c\xb0\x91HF\xd1\x85\xac\x06\xf8\xad\x05':  # swapCompact()  # noqa: E501
             # decode the single swap event structure

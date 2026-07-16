@@ -1,12 +1,14 @@
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Price
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.balance import Balance
+    from rotkehlchen.assets.asset import EvmToken
+    from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

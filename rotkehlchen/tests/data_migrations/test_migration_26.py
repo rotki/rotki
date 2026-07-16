@@ -1,4 +1,6 @@
 """Test for data migration 26 - cleanup of orphaned manual balance tag mappings."""
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -7,7 +9,6 @@ from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import (
     GNOSIS_PAY_SPENDING_COLLECTOR,
 )
 from rotkehlchen.constants.assets import Asset
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -15,6 +16,9 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.data_migrations import run_single_migration
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Location, TimestampMS
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 A_EURE = Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430')
 # An unrelated EURe recipient used to check that only transfers to the spending collector match.

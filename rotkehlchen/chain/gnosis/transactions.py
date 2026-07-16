@@ -1,10 +1,7 @@
 import logging
-from collections.abc import Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
-
-from eth_typing.abi import ABI
 
 from rotkehlchen.accounting.accountant import RemoteError
 from rotkehlchen.assets.asset import DeserializationError, RotkehlchenLogsAdapter
@@ -17,6 +14,10 @@ from .constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from .modules.xdai_bridge.constants import BLOCKREWARDS_ADDRESS
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from eth_typing.abi import ABI
+
     from rotkehlchen.db.dbhandler import DBHandler
 
     from .node_inquirer import GnosisInquirer
@@ -34,7 +35,7 @@ log = RotkehlchenLogsAdapter(logger)
 class GnosisWithdrawalsQueryParameters:
     last_block_processed: int
     expected_topics: set[str]
-    gnosis_transactions: 'GnosisTransactions'
+    gnosis_transactions: GnosisTransactions
     addresses: list[ChecksumEvmAddress]
     from_ts: Timestamp
 
@@ -43,7 +44,7 @@ def _process_withdrawals_events_cb(
         last_block_queried: int,
         filters: dict[str, Any],  # pylint: disable=unused-argument
         new_events: list[dict[str, Any]],
-        cb_arguments: 'GnosisWithdrawalsQueryParameters',
+        cb_arguments: GnosisWithdrawalsQueryParameters,
 ) -> None:
     """Callback that processes new events.
     This function also keeps track of the last block number processed using
@@ -86,8 +87,8 @@ class GnosisTransactions(EvmTransactions):
 
     def __init__(
             self,
-            gnosis_inquirer: 'GnosisInquirer',
-            database: 'DBHandler',
+            gnosis_inquirer: GnosisInquirer,
+            database: DBHandler,
     ) -> None:
         super().__init__(evm_inquirer=gnosis_inquirer, database=database)
 

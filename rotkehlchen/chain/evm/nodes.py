@@ -5,8 +5,8 @@ if TYPE_CHECKING:
 
 
 def populate_rpc_nodes_in_database(
-        db_write_cursor: 'DBCursor',
-        globaldb_cursor: 'DBCursor',
+        db_write_cursor: DBCursor,
+        globaldb_cursor: DBCursor,
 ) -> None:
     """Populates the rpc nodes in the user database from the global DB.
 

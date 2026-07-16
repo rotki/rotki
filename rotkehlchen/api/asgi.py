@@ -124,9 +124,9 @@ class AsgiWebsocketSubscriber:
 
 
 async def _serve_websocket(
-        notifier: 'RotkiNotifier',
-        receive: 'Receive',
-        send: 'Send',
+        notifier: RotkiNotifier,
+        receive: Receive,
+        send: Send,
 ) -> None:
     """Serve one websocket connection: subscribe it to the notifier, drain its
     queue into the socket and echo back any client messages (parity with the
@@ -176,7 +176,7 @@ async def _serve_websocket(
         notifier.requeue_undelivered(subscriber.drain_pending())
 
 
-async def _handle_lifespan(receive: 'Receive', send: 'Send') -> None:
+async def _handle_lifespan(receive: Receive, send: Send) -> None:
     while True:
         message = await receive()
         if message['type'] == 'lifespan.startup':
@@ -186,7 +186,7 @@ async def _handle_lifespan(receive: 'Receive', send: 'Send') -> None:
             return
 
 
-def _ws_session_allowed(rest_api: 'RestAPI', scope: 'Scope') -> bool:
+def _ws_session_allowed(rest_api: RestAPI, scope: Scope) -> bool:
     """Docker session-cookie gate for the /ws handshake (the ASGI equivalent of the
     Flask before_request gate, which does not see websocket upgrades). Inert without a
     key; otherwise the same-origin `rotki_session` cookie rides the handshake and must
@@ -210,10 +210,10 @@ def _ws_session_allowed(rest_api: 'RestAPI', scope: 'Scope') -> bool:
 
 
 def create_asgi_app(
-        flask_app: 'Flask',
-        rotki_notifier: 'RotkiNotifier',
-        rest_api: 'RestAPI',
-) -> 'ASGIApp':
+        flask_app: Flask,
+        rotki_notifier: RotkiNotifier,
+        rest_api: RestAPI,
+) -> ASGIApp:
     """Compose the rotki ASGI app: /ws and /ws/ go to the native websocket handler,
     everything else to the Flask REST app through the WSGI bridge"""
     wsgi_app = WSGIMiddleware(
@@ -222,9 +222,9 @@ def create_asgi_app(
     )
 
     async def rotki_asgi_app(
-            scope: 'Scope',
-            receive: 'Receive',
-            send: 'Send',
+            scope: Scope,
+            receive: Receive,
+            send: Send,
     ) -> None:
         if scope['type'] == 'lifespan':
             await _handle_lifespan(receive=receive, send=send)

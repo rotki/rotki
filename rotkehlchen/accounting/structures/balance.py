@@ -1,6 +1,5 @@
 import operator
 from collections import defaultdict
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Self
 
@@ -11,6 +10,8 @@ from rotkehlchen.utils.misc import combine_nested_dicts_inplace
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.assets.asset import Asset
 
 
@@ -33,14 +34,14 @@ class Balance:
     def to_dict(self) -> dict[str, FVal]:
         return {'amount': self.amount, 'value': self.value}
 
-    def __add__(self, other: Any) -> 'Balance':
+    def __add__(self, other: Any) -> Balance:
         other = _evaluate_balance_input(other, 'addition')
         return Balance(
             amount=self.amount + other.amount,
             value=self.value + other.value,
         )
 
-    def __radd__(self, other: Any) -> 'Balance':
+    def __radd__(self, other: Any) -> Balance:
         if other == 0:
             return self
 
@@ -50,14 +51,14 @@ class Balance:
             value=self.value + other.value,
         )
 
-    def __sub__(self, other: Any) -> 'Balance':
+    def __sub__(self, other: Any) -> Balance:
         other = _evaluate_balance_input(other, 'subtraction')
         return Balance(
             amount=self.amount - other.amount,
             value=self.value - other.value,
         )
 
-    def __mul__(self, other: Any) -> 'Balance':
+    def __mul__(self, other: Any) -> Balance:
         if not isinstance(other, (int | FVal)):
             raise InputError(f'Tried to multiply balance with {type(other)}')
 
@@ -66,10 +67,10 @@ class Balance:
             value=self.value * other,
         )
 
-    def __neg__(self) -> 'Balance':
+    def __neg__(self) -> Balance:
         return Balance(amount=-self.amount, value=-self.value)
 
-    def __abs__(self) -> 'Balance':
+    def __abs__(self) -> Balance:
         return Balance(amount=abs(self.amount), value=abs(self.value))
 
 
@@ -95,7 +96,7 @@ def _evaluate_balance_input(other: Any, operation: str) -> Balance:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class AssetBalance:
-    asset: 'Asset'
+    asset: Asset
     balance: Balance
 
     @property
@@ -126,17 +127,17 @@ class AssetBalance:
                 f'{other.asset.identifier} balance',
             )
 
-    def __add__(self, other: Any) -> 'AssetBalance':
+    def __add__(self, other: Any) -> AssetBalance:
         self._evaluate_other_input(other)
         new_balance = self.balance + other.balance
         return AssetBalance(asset=self.asset, balance=new_balance)
 
-    def __sub__(self, other: Any) -> 'AssetBalance':
+    def __sub__(self, other: Any) -> AssetBalance:
         self._evaluate_other_input(other)
         new_balance = self.balance - other.balance
         return AssetBalance(asset=self.asset, balance=new_balance)
 
-    def __neg__(self) -> 'AssetBalance':
+    def __neg__(self) -> AssetBalance:
         return AssetBalance(asset=self.asset, balance=-self.balance)
 
     def serialize_for_db(self) -> tuple[str, str, str]:
@@ -145,10 +146,10 @@ class AssetBalance:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BalanceSheet:
-    assets: defaultdict['Asset', defaultdict[str, Balance]] = field(default_factory=lambda: defaultdict(lambda: defaultdict(Balance)))  # noqa: E501
-    liabilities: defaultdict['Asset', defaultdict[str, Balance]] = field(default_factory=lambda: defaultdict(lambda: defaultdict(Balance)))  # noqa: E501
+    assets: defaultdict[Asset, defaultdict[str, Balance]] = field(default_factory=lambda: defaultdict(lambda: defaultdict(Balance)))  # noqa: E501
+    liabilities: defaultdict[Asset, defaultdict[str, Balance]] = field(default_factory=lambda: defaultdict(lambda: defaultdict(Balance)))  # noqa: E501
 
-    def copy(self) -> 'BalanceSheet':
+    def copy(self) -> BalanceSheet:
         return BalanceSheet(
             assets=defaultdict(lambda: defaultdict(Balance), {
                 asset: defaultdict(Balance, balances.copy())
@@ -184,7 +185,7 @@ class BalanceSheet:
             },
         }
 
-    def _merged_with(self, other: 'BalanceSheet', op: Callable) -> 'BalanceSheet':
+    def _merged_with(self, other: BalanceSheet, op: Callable) -> BalanceSheet:
         """Return a new BalanceSheet combining self and other, without mutating either.
 
         Used by the non-augmented operators (+, -, sum) so that `a + b` does not alter `a`.
@@ -194,7 +195,7 @@ class BalanceSheet:
         combine_nested_dicts_inplace(a=result.liabilities, b=other.liabilities, op=op)
         return result
 
-    def _merge_inplace(self, other: 'BalanceSheet', op: Callable) -> Self:
+    def _merge_inplace(self, other: BalanceSheet, op: Callable) -> Self:
         """Merge other into self in place and return self.
 
         Used by the augmented operators (+=, -=); this is the fast path relied upon by the
@@ -204,16 +205,16 @@ class BalanceSheet:
         combine_nested_dicts_inplace(a=self.liabilities, b=other.liabilities, op=op)
         return self
 
-    def __add__(self, other: Any) -> 'BalanceSheet':
+    def __add__(self, other: Any) -> BalanceSheet:
         return self._merged_with(_evaluate_balance_sheet_input(other, 'addition'), operator.add)
 
-    def __radd__(self, other: Any) -> 'BalanceSheet':
+    def __radd__(self, other: Any) -> BalanceSheet:
         if other == 0:  # identity element used by sum(); return a copy so the first
             return self.copy()  # element of the summed iterable is never mutated
 
         return self._merged_with(_evaluate_balance_sheet_input(other, 'addition'), operator.add)
 
-    def __sub__(self, other: Any) -> 'BalanceSheet':
+    def __sub__(self, other: Any) -> BalanceSheet:
         return self._merged_with(_evaluate_balance_sheet_input(other, 'subtraction'), operator.sub)
 
     def __iadd__(self, other: Any) -> Self:

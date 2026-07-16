@@ -1,8 +1,6 @@
 import logging
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import (
     asset_normalized_value,
     get_evm_token,
@@ -15,7 +13,6 @@ from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -30,10 +27,13 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import bytes_to_address, ts_sec_to_ms
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset
+    from collections.abc import Callable
+
+    from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
     from rotkehlchen.assets.utils import TokenEncounterInfo
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithProxies
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -44,11 +44,11 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
 
     def __init__(
             self,
-            database: 'DBHandler',
-            evm_inquirer: 'EvmNodeInquirer',
+            database: DBHandler,
+            evm_inquirer: EvmNodeInquirer,
             is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], str | None],
-            exceptions_mappings: dict[str, 'Asset'] | None = None,
+            exceptions_mappings: dict[str, Asset] | None = None,
     ) -> None:
         """
         `exceptions_mappings` is introduced to handle the monerium exceptions. It maps the v1
@@ -101,7 +101,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             token: EvmToken,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-    ) -> Optional['EvmEvent']:
+    ) -> EvmEvent | None:
         """
         Caller should know this is a transfer of either an ERC20 or an ERC721 token.
         Call this method to decode it.
@@ -163,14 +163,14 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             timestamp: Timestamp,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            asset: 'Asset',
+            asset: Asset,
             amount: FVal,
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
             address: ChecksumEvmAddress | None = None,
             extra_data: dict[str, Any] | None = None,
-    ) -> 'EvmEvent':
+    ) -> EvmEvent:
         """A convenience function to create an EvmEvent depending on the
         decoder's chain id"""
         return EvmEvent(
@@ -195,14 +195,14 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             tx_log: EvmTxReceiptLog,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            asset: 'Asset',
+            asset: Asset,
             amount: FVal,
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
             address: ChecksumEvmAddress | None = None,
             extra_data: dict[str, Any] | None = None,
-    ) -> 'EvmEvent':
+    ) -> EvmEvent:
         """Convenience function on top of make_event to use the transaction and a given log.
         Must only be used once for a specific tx_log to prevent duplicate sequence indexes.
         """
@@ -227,14 +227,14 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             timestamp: Timestamp,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            asset: 'Asset',
+            asset: Asset,
             amount: FVal,
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
             address: ChecksumEvmAddress | None = None,
             extra_data: dict[str, Any] | None = None,
-    ) -> 'EvmEvent':
+    ) -> EvmEvent:
         """Convenience function on top of make_event to use next sequence index."""
         return self.make_event(
             tx_ref=tx_ref,
@@ -259,7 +259,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             self,
             address: ChecksumEvmAddress,
             protocol: str | None = None,
-            encounter: 'TokenEncounterInfo | None' = None,
+            encounter: TokenEncounterInfo | None = None,
     ) -> EvmToken:
         """A version of get_create_evm_token to be called from the decoders"""
         return get_or_create_evm_token(
@@ -283,7 +283,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
 
     def resolve_tokens_data(
             self,
-            token_addresses: list['ChecksumEvmAddress'],
+            token_addresses: list[ChecksumEvmAddress],
             token_amounts: list[int],
     ) -> dict[str, FVal]:
         """Returns the resolved evm tokens or native currency and their amounts"""
@@ -307,7 +307,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
     def get_token_or_native(
             self,
             address: ChecksumEvmAddress,
-            encounter: 'TokenEncounterInfo | None' = None,
+            encounter: TokenEncounterInfo | None = None,
     ) -> CryptoAsset | EvmToken:
         """Return the native token if the address is special or zero; otherwise return the EVM token."""  # noqa: E501
         if address in (ZERO_ADDRESS, ETH_SPECIAL_ADDRESS):
@@ -324,11 +324,11 @@ class BaseEvmDecoderToolsWithProxy(BaseEvmDecoderTools):
 
     def __init__(
             self,
-            database: 'DBHandler',
-            evm_inquirer: 'EvmNodeInquirerWithProxies',
+            database: DBHandler,
+            evm_inquirer: EvmNodeInquirerWithProxies,
             is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], str | None],
-            exceptions_mappings: dict[str, 'Asset'] | None = None,
+            exceptions_mappings: dict[str, Asset] | None = None,
     ) -> None:
         super().__init__(
             database=database,

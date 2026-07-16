@@ -7,7 +7,6 @@ from rotkehlchen.chain.polygon_pos.modules.monerium.constants import V1_TO_V2_MO
 from rotkehlchen.chain.polygon_pos.tokens import POLYGON_MONERIUM_LEGACY_ADDRESSES
 from rotkehlchen.constants.assets import A_POL
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
@@ -15,6 +14,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -26,11 +26,11 @@ class PolygonPOSTransactionDecoder(EVMTransactionDecoder):
 
     def __init__(
             self,
-            database: 'DBHandler',
-            polygon_pos_inquirer: 'PolygonPOSInquirer',
-            transactions: 'PolygonPOSTransactions',
-            premium: 'Premium | None' = None,
-            monerium: 'Monerium | None' = None,
+            database: DBHandler,
+            polygon_pos_inquirer: PolygonPOSInquirer,
+            transactions: PolygonPOSTransactions,
+            premium: Premium | None = None,
+            monerium: Monerium | None = None,
     ):
         super().__init__(
             database=database,

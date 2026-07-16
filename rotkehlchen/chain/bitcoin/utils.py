@@ -1,7 +1,6 @@
 import hashlib
 import logging
 import platform
-from collections.abc import Sequence
 from enum import Enum, auto
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
@@ -17,7 +16,6 @@ from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import EncodingError
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import ensure_type
 from rotkehlchen.types import BTCAddress
@@ -26,6 +24,9 @@ from rotkehlchen.utils.misc import satoshis_to_btc
 from rotkehlchen.utils.network import request_get_dict, retry_calls
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.fval import FVal
     from rotkehlchen.types import SupportedBlockchain
 
 logger = logging.getLogger(__name__)
@@ -318,7 +319,7 @@ def query_blockstream_like_has_transactions(
     return have_transactions
 
 
-def is_valid_bitcoin_address(chain: 'SupportedBlockchain', value: str) -> bool:
+def is_valid_bitcoin_address(chain: SupportedBlockchain, value: str) -> bool:
     """
     Returns False only if `chain` is a Bitcoin chain and `value` is an
     invalid address; otherwise returns True.

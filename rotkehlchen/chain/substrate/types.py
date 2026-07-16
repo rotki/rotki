@@ -1,7 +1,8 @@
 from enum import Enum
-from typing import NamedTuple, NewType
+from typing import TYPE_CHECKING, NamedTuple, NewType
 
-from substrateinterface import SubstrateInterface
+if TYPE_CHECKING:
+    from substrateinterface import SubstrateInterface
 
 SubstrateAddress = NewType('SubstrateAddress', str)
 SubstratePublicKey = NewType('SubstratePublicKey', str)

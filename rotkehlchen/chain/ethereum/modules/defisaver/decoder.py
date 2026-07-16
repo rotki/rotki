@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
@@ -12,10 +12,12 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_DEFISAVER, DEACTIVATE_SUB, SUB_STORAGE, SUBSCRIBE
+
+if TYPE_CHECKING:
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

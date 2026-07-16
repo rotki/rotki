@@ -33,8 +33,8 @@ log = RotkehlchenLogsAdapter(logger)
 class GmxBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'ArbitrumOneInquirer',
-            tx_decoder: 'ArbitrumOneTransactionDecoder',
+            evm_inquirer: ArbitrumOneInquirer,
+            tx_decoder: ArbitrumOneTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -44,7 +44,7 @@ class GmxBalances(ProtocolWithBalance):
         )
         self.gmx = A_GMX.resolve_to_evm_token()
 
-    def _extract_unique_deposits(self) -> dict['ChecksumEvmAddress', set[tuple[str, str, bool]]]:
+    def _extract_unique_deposits(self) -> dict[ChecksumEvmAddress, set[tuple[str, str, bool]]]:
         """
         fetch deposit events and remove duplicate positions. Since a user can modify the same
         position increasing or decreasing the collateral we want to remove duplicates to make
@@ -73,7 +73,7 @@ class GmxBalances(ProtocolWithBalance):
             unique_deposits[address] = positions
         return unique_deposits
 
-    def query_position_balances(self) -> 'BalancesSheetType':
+    def query_position_balances(self) -> BalancesSheetType:
         """
         Query balances for GMX open positions and returns it.
 
@@ -168,7 +168,7 @@ class GmxBalances(ProtocolWithBalance):
 
         return balances
 
-    def query_staking_balances(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':
+    def query_staking_balances(self, balances: BalancesSheetType) -> BalancesSheetType:
         """
         Query staked balances for GMX. It modifies the `balances` argument to include
         the staking balances and returns it.
@@ -203,7 +203,7 @@ class GmxBalances(ProtocolWithBalance):
 
         return balances
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Query balances for GMX open positions"""
         balances = self.query_position_balances()
         return self.query_staking_balances(balances)

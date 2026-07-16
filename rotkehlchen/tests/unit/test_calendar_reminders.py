@@ -1,5 +1,3 @@
-from collections.abc import Callable
-from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -38,6 +36,9 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
+
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
@@ -89,7 +90,7 @@ MOCK_MYSO_ZK_AIRDROP_INDEX = {
 }
 
 
-def get_airdrop_request_mock(user_address: 'ChecksumEvmAddress') -> Callable:
+def get_airdrop_request_mock(user_address: ChecksumEvmAddress) -> Callable:
     """Get airdrop request mocking function for the specified address."""
     def mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
         """Mock airdrop data retrieval to avoid huge VCRs"""
@@ -132,10 +133,10 @@ def get_airdrop_request_mock(user_address: 'ChecksumEvmAddress') -> Callable:
     CPT_BASENAMES,
 )])
 def test_ens_expiry_calendar_reminders(
-        database: 'DBHandler',
-        base_inquirer: 'BaseInquirer',
-        ethereum_inquirer: 'EthereumInquirer',
-        ens_data: tuple[list['EVMTxHash'], dict[str, Timestamp], str],
+        database: DBHandler,
+        base_inquirer: BaseInquirer,
+        ethereum_inquirer: EthereumInquirer,
+        ens_data: tuple[list[EVMTxHash], dict[str, Timestamp], str],
         add_subgraph_api_key,  # pylint: disable=unused-argument
 ) -> None:
     """Test that ENS reminders are created at the expiry time of ENS registrations and renewals."""
@@ -203,9 +204,9 @@ def test_ens_expiry_calendar_reminders(
     '0x9398084E888CB5B5c126240439054b57C10138E7',  # renewed aiiiden.gwei
 ]])
 def test_gns_expiry_calendar_reminders(
-        database: 'DBHandler',
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that reminders are created at the expiry time of gwei name
     registrations and renewals."""
@@ -259,9 +260,9 @@ def test_gns_expiry_calendar_reminders(
     deserialize_evm_tx_hash('0x15bdc063daef0b1d8d61e9d3f4af5abf50d1ec28421cfc6be1b91b8acbd037e7'),
 ]])
 def test_locked_crv_calendar_reminders(
-        database: 'DBHandler',
-        ethereum_inquirer: 'EthereumInquirer',
-        crv_tx_hashes: list['EVMTxHash'],
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+        crv_tx_hashes: list[EVMTxHash],
 ) -> None:
     """Test that reminders are created at lock period end of CRV in vote escrow."""
     calendar_db = DBCalendar(database)
@@ -310,10 +311,10 @@ def test_locked_crv_calendar_reminders(
     '0x510B0068C0756bBEFCBaffB6567e467d661291FE',
 ]])
 def test_airdrop_claim_calendar_reminders(
-        database: 'DBHandler',
+        database: DBHandler,
         data_dir: Path,
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
 ) -> None:
     """Test that reminders are created for airdrop claim deadlines.
     The zksync era airdrop should be skipped currently since it is not in SupportedBlockchain
@@ -367,8 +368,8 @@ def test_airdrop_claim_calendar_reminders(
     '0x510B0068C0756bBEFCBaffB6567e467d661291FE',
 ]])
 def test_airdrop_claim_calendar_reminders_wrong_chain(
-        database: 'DBHandler',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        database: DBHandler,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that no calendar entries are created if the airdrop is for a chain
     that the given address is not configured to track.
@@ -450,9 +451,9 @@ def test_l2_bridge_claim_reminders(arbitrum_one_accounts, arbitrum_one_inquirer,
 @pytest.mark.freeze_time('2025-03-05 00:00:00 GMT')
 @pytest.mark.parametrize('optimism_accounts', [['0xD4dd9a1FAc6D7bBe327c2b4A5Dc3197D0B10874b']])
 def test_locked_velo_calendar_reminders(
-        database: 'DBHandler',
-        optimism_accounts: list['ChecksumEvmAddress'],
-        optimism_inquirer: 'OptimismInquirer',
+        database: DBHandler,
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_inquirer: OptimismInquirer,
 ) -> None:
     """Test that reminders are created at lock period end of VELO in vote escrow."""
     calendar_db = DBCalendar(database)

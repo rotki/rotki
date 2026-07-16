@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from rotkehlchen.logging import RotkehlchenLogger
 
 
-logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
+logger: RotkehlchenLogger = logging.getLogger(__name__)  # type: ignore
 
 DEFAULT_SANITY_CHECK_MESSAGE = (
     'If you have manually edited the db please undo it. Otherwise open an issue in our '
@@ -42,7 +42,7 @@ def db_script_normalizer(text: str) -> str:
 
 
 def sanity_check_impl(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         db_name: str,
         minimized_schema: dict[str, str],
         minimized_indexes: dict[str, str],

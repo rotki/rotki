@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import token_normalized_value
@@ -22,6 +21,8 @@ from rotkehlchen.utils.misc import bytes_to_address
 from .constants import CPT_HEDGEY, VOTING_TOKEN_LOCKUPS, VOTING_TOKEN_LOCKUPS_ABI
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
@@ -33,9 +34,9 @@ class HedgeyDecoder(EvmDecoderInterface):
 
     def _decode_delegate_changed(
             self,
-            tx_log: 'EvmTxReceiptLog',
-            transaction: 'EvmTransaction',
-            owner_address: 'ChecksumEvmAddress',
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,
+            owner_address: ChecksumEvmAddress,
             plan_name: str,
     ) -> EvmDecodingOutput:
         token = self.base.get_or_create_evm_token(tx_log.address)
@@ -146,7 +147,7 @@ class HedgeyDecoder(EvmDecoderInterface):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {VOTING_TOKEN_LOCKUPS: (self._decode_lockup_events,)}
 
     def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:

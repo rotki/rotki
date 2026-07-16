@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.secp256k1 import PublicKey
 from rotkehlchen.chain.bitcoin.utils import (
@@ -32,6 +31,7 @@ from rotkehlchen.types import BTCAddress
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.balance import Balance
     from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
     from rotkehlchen.chain.bitcoin.types import BtcApiCallback
 
@@ -508,7 +508,7 @@ BLOCKCHAIN_INFO_RESULT = {
 
 def test_bitcoin_balance_api_resolver(
         network_mocking: bool,
-        bitcoin_manager: 'BitcoinManager',
+        bitcoin_manager: BitcoinManager,
 ) -> None:
     """Test that bitcoin balances are queried and that if one source fails we use the next"""
     addresses = [
@@ -577,7 +577,7 @@ def test_bitcoin_balance_api_resolver(
 
 def test_local_bitcoin_mempool_api(
         network_mocking: bool,
-        bitcoin_manager: 'BitcoinManager',
+        bitcoin_manager: BitcoinManager,
 ) -> None:
     """Test that setting a custom BTC Mempool API works"""
     addresses = [

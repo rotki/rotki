@@ -19,13 +19,15 @@ import json
 import shutil
 import subprocess  # noqa: S404
 import time
-from pathlib import Path
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from tools.bench.operations import OPERATIONS
 from tools.bench.runner import BackendRunner, BenchError
 from tools.scenarios.base import USER_PASSWORD
 from tools.scenarios.cache import cached_profile_path, compute_cache_key, materialize
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 OP_INNER_PASSES: Final = 3
 

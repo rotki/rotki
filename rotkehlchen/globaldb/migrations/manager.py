@@ -1,7 +1,6 @@
 import logging
 import sqlite3
 import traceback
-from collections.abc import Callable
 from typing import TYPE_CHECKING, NamedTuple
 
 from rotkehlchen.concurrency import TaskCancelledError
@@ -16,12 +15,14 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.db.drivers.sqlite import DBConnection
 
 
 class MigrationRecord(NamedTuple):
     version: int
-    function: Callable[['DBConnection'], None]
+    function: Callable[[DBConnection], None]
 
 
 MIGRATIONS_LIST = [
@@ -32,7 +33,7 @@ MIGRATIONS_LIST = [
 LAST_GLOBALDB_DATA_MIGRATION = len(MIGRATIONS_LIST)
 
 
-def maybe_apply_globaldb_migrations(connection: 'DBConnection') -> None:
+def maybe_apply_globaldb_migrations(connection: DBConnection) -> None:
     """Maybe apply global DB data migrations"""
     try:
         with connection.read_ctx() as cursor:

@@ -1,10 +1,7 @@
-import builtins
 import json
-import re
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from rotkehlchen.accounting.cost_basis import CostBasisInfo
 from rotkehlchen.accounting.mixins.event import AccountingEventType
@@ -14,10 +11,8 @@ from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.serialization.deserialize import deserialize_fval
@@ -31,6 +26,14 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.utils.serialization import rlk_jsondumps
+
+if TYPE_CHECKING:
+    import builtins
+    import re
+    from collections.abc import Callable
+
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
 
 T = TypeVar('T', bound='ProcessedAccountingEvent')
 

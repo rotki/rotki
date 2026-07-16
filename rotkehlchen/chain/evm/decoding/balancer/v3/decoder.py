@@ -1,6 +1,5 @@
 import logging
 from collections import defaultdict
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from eth_abi import decode as decode_abi
@@ -41,6 +40,8 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -57,9 +58,9 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -213,10 +214,10 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
 
     @staticmethod
     def _order_lp_events(
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Order liquidity provision events for proper display."""
         deposit_events, receive_events, return_events, withdrawal_events = [], [], [], []
         for event in decoded_events:
@@ -242,10 +243,10 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
 
     def _process_swap_events(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Process Balancer v3 swap events into consolidated trade events."""
         in_assets, out_assets = set(), set()
         for tx_log in all_logs:

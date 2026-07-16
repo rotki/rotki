@@ -52,7 +52,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(name='beefy_cache')
-def _beefy_cache(database: 'DBHandler') -> None:
+def _beefy_cache(database: DBHandler) -> None:
     """Fixture that preloads beefy finance's vaults."""
     cache_entries = [
         ','.join((
@@ -336,8 +336,8 @@ def test_withdrawal_from_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xf5632CFcD668C10949bA06618D50928ce5841aE3']])
 def test_deposit_to_beefy_morpho_vault(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test a deposit into a Beefy vault that uses a Morpho vault under the hood.
     Regression test for a problem where the deposit event was decoded as a Morpho deposit instead
@@ -431,8 +431,8 @@ def test_deposit_to_beefy_morpho_vault(
 )])
 @pytest.mark.parametrize('base_accounts', [['0x4d2A353Dcd9B25A241382241C9b9a27B7cD08f20']])
 def test_beefy_base_deposit_no_rogue_aerodrome_receive(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
         allow_base_routescan: None,
 ) -> None:
     _set_beefy_cache(
@@ -517,8 +517,8 @@ def test_beefy_base_deposit_no_rogue_aerodrome_receive(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x2006cA9b17cc173B3b76009B8A43f144D7a26C1B']])
 def test_withdrawal_from_beefy_clm_vault(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     cow_token = get_or_create_evm_token(
         userdb=arbitrum_one_inquirer.database,
@@ -622,8 +622,8 @@ def test_withdrawal_from_beefy_clm_vault(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xd67eCd5C445519BDEaE60Fd53541100f5D9f5fB1']])
 def test_deposit_eth_to_beefy_vault_with_harvest_call_reward(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
@@ -686,8 +686,8 @@ def test_deposit_eth_to_beefy_vault_with_harvest_call_reward(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x6f04Ee70b9eF46986d12B2f6c544C1Af8B07D433']])
 def test_deposit_usdc_to_beefy_vault_with_harvest_call_reward(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """This test differs from the deposit-eth one above in that the charged_fees tx log event
     has the values in the data instead of as log topics.
@@ -766,8 +766,8 @@ def test_deposit_usdc_to_beefy_vault_with_harvest_call_reward(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xB012F9199Ea0BbF86F99C2e1A572747fB7B5a953']])
 def test_withdrawal_from_beefy_receiving_eth(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that withdrawing ETH from a Beefy vault is decoded correctly. The ETH receive event
     comes before the spend event during decoding and was being decoded incorrectly.
@@ -846,8 +846,8 @@ def test_withdrawal_from_beefy_receiving_eth(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0x02DF3cBA3fE1cFBb297a2A91d8AA8CEC62848696']])
 def test_stake_beefy_vault_token_in_reward_pool(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
     moo_token = get_or_create_evm_token(
         userdb=optimism_inquirer.database,
@@ -948,8 +948,8 @@ def test_stake_beefy_vault_token_in_reward_pool(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0x4C3fa36a3C10FD7a8Cd3530a4a9aC6cb7AA341cC']])
 def test_claim_beefy_reward_pool_reward(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
     moo_token = get_or_create_evm_token(
         userdb=optimism_inquirer.database,
@@ -1025,8 +1025,8 @@ def test_claim_beefy_reward_pool_reward(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xCA6Ff42933C0c76e9Ae059b495476fad3E366494']])
 def test_unstake_beefy_reward_pool(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     rmoo_token = get_or_create_evm_token(
         userdb=arbitrum_one_inquirer.database,
@@ -1125,8 +1125,8 @@ def test_unstake_beefy_reward_pool(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x65ACBB194E56De9796900863E5730348a4598039']])
 def test_unstake_beefy_reward_pool_with_reward(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     moo_token = get_or_create_evm_token(
         userdb=arbitrum_one_inquirer.database,

@@ -1,11 +1,9 @@
 import logging
 import urllib
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
-from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any, Final, Generic, Literal, NotRequired, TypedDict
+from typing import TYPE_CHECKING, Any, Final, Literal, NotRequired, TypedDict
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import webargs
@@ -34,7 +32,6 @@ from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
-from rotkehlchen.db.dbtx import T_TxHash
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import XPUBError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -67,13 +64,18 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.mixins.enums import (
-    DBCharEnumMixIn,
-    DBIntEnumMixIn,
-    SerializableEnumIntValueMixin,
-    SerializableEnumMixin,
-    SerializableEnumNameMixin,
-)
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping, Sequence
+    from enum import Enum, StrEnum
+
+    from rotkehlchen.utils.mixins.enums import (
+        DBCharEnumMixIn,
+        DBIntEnumMixIn,
+        SerializableEnumIntValueMixin,
+        SerializableEnumMixin,
+        SerializableEnumNameMixin,
+    )
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -96,7 +98,7 @@ class IncludeExcludeListField(fields.Field[IncludeExcludeFilterData]):
     """
     def __init__(
             self,
-            values_field: 'SerializableEnumField',
+            values_field: SerializableEnumField,
             *args: Any,
             **kwargs: Any,
     ) -> None:
@@ -785,7 +787,7 @@ class SolanaAddressField(fields.Field):
         return SolanaAddress(value)
 
 
-class BaseTransactionHashField(fields.Field, ABC, Generic[T_TxHash]):
+class BaseTransactionHashField[T_TxHash: EVMTxHash | Signature](fields.Field, ABC):
 
     @staticmethod
     @abstractmethod

@@ -1,8 +1,9 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.constants import BRIDGE_ADDRESS
-from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.hyperliquid.constants import CPT_HYPER
 from rotkehlchen.constants.assets import A_ETH
@@ -11,6 +12,9 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

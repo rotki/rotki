@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+def _reset_decoded_events(write_cursor: DBCursor) -> None:
     """
     Reset all decoded events except the customized ones.
     """
@@ -52,13 +52,13 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log(name='UserDB v36->v37 upgrade')
-def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v36_to_v37(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v36 to v37. This was in v1.28.0 release.
 
         - Replace null history event subtype
     """
     @progress_step(description='Moving event locations.')
-    def _move_event_locations(write_cursor: 'DBCursor') -> None:
+    def _move_event_locations(write_cursor: DBCursor) -> None:
         """
         Create location ethereum and optimism and move the blockchain events to those locations
 
@@ -92,7 +92,7 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute("DELETE FROM history_events_mappings WHERE name='chain_id'")
 
     @progress_step(description='Creating new tables.')
-    def _create_new_tables(write_cursor: 'DBCursor') -> None:
+    def _create_new_tables(write_cursor: DBCursor) -> None:
         """Create new tables
 
         Data is not migrated to the evm_events_info as it will be done when redecoding.
@@ -120,7 +120,7 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """)  # noqa: E501
 
     @progress_step(description='Updating history events schema.')
-    def _update_history_events_schema(write_cursor: 'DBCursor') -> None:
+    def _update_history_events_schema(write_cursor: DBCursor) -> None:
         """
         1. Reset all decoded events
         2. Rewrite the DB schema of the history events to have subtype as non Optional
@@ -193,7 +193,7 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.switch_foreign_keys('ON')
 
     @progress_step(description='Updating ens mappings schema.')
-    def _update_ens_mappings_schema(write_cursor: 'DBCursor') -> None:
+    def _update_ens_mappings_schema(write_cursor: DBCursor) -> None:
         update_table_schema(
             write_cursor=write_cursor,
             table_name='ens_mappings',
@@ -206,7 +206,7 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Deleting old tables.')
-    def _delete_old_tables(write_cursor: 'DBCursor') -> None:
+    def _delete_old_tables(write_cursor: DBCursor) -> None:
         """Deletes old tables that are now unused along with related data
         """
         write_cursor.execute('DROP TABLE IF EXISTS eth2_deposits')
@@ -216,7 +216,7 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Fixing Kraken events.')
-    def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
+    def _fix_kraken_events(write_cursor: DBCursor) -> None:
         """
         Fix kraken events with negative amounts related to:
         - staking ETH after the merge
@@ -337,7 +337,7 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             )
 
     @progress_step(description='Trimming daily stats.')
-    def _trim_daily_stats(write_cursor: 'DBCursor') -> None:
+    def _trim_daily_stats(write_cursor: DBCursor) -> None:
         """Decreases the amount of data in the daily stats table"""
         update_table_schema(
             write_cursor=write_cursor,
@@ -352,7 +352,7 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Removing FTX data.')
-    def _remove_ftx_data(write_cursor: 'DBCursor') -> None:
+    def _remove_ftx_data(write_cursor: DBCursor) -> None:
         """Removes FTX-related settings from the DB"""
         write_cursor.execute(
             'DELETE FROM user_credentials WHERE location IN (?, ?)',
@@ -382,7 +382,7 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             )
 
     @progress_step(description='Adjusting user settings.')
-    def _adjust_user_settings(write_cursor: 'DBCursor') -> None:
+    def _adjust_user_settings(write_cursor: DBCursor) -> None:
         """Adjust user settings, renaming a key that misbehaves in frontend transformation"""
         write_cursor.execute(
             "UPDATE settings SET name='ssf_graph_multiplier' WHERE name='ssf_0graph_multiplier'")

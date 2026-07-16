@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def upgrade_v33_to_v34(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v33_to_v34(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v33 to v34
 
     - Recreates the combined_trades_view to fix a bug with the tx_hash after its

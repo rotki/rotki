@@ -79,7 +79,7 @@ Before installing rotki, ensure you have the following dependencies:
 📌 **Required Software**:
 - `Node.js`
 - `npm` (Node Package Manager)
-- `Python 3.11`
+- `Python 3.14`
 - `uv` (Python Package Manager)
 - `Docker`
 
@@ -192,4 +192,3 @@ If your intended use of rotki (or parts of it) would trigger AGPL obligations (f
 For inquiries contact us: info@rotki.com
 
 <p align="right">(<a href="#top">🔼 Back to top</a>)</p>
-

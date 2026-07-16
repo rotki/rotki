@@ -1,23 +1,23 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPool
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import decode_result
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.constants import ONE
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPool
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 def uniswap_lp_token_balances(
-        userdb: 'DBHandler',
+        userdb: DBHandler,
         address: ChecksumEvmAddress,
-        ethereum: 'EthereumInquirer',
+        ethereum: EthereumInquirer,
         lp_addresses: list[ChecksumEvmAddress],
 ) -> list[LiquidityPool]:
     """Query uniswap token balances from ethereum chain

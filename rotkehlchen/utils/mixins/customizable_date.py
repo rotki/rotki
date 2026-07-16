@@ -1,21 +1,21 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.types import Timestamp
 
 
 class CustomizableDateMixin:
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         self.database = database
         with database.conn.read_ctx() as cursor:
             self.reload_settings(cursor)
 
-    def reload_settings(self, cursor: 'DBCursor') -> None:
+    def reload_settings(self, cursor: DBCursor) -> None:
         """Reload the settings from the DB"""
         self.settings = self.database.get_settings(cursor)
 

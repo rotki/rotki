@@ -1,6 +1,5 @@
 import csv
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING
@@ -11,7 +10,6 @@ from rotkehlchen.data_import.utils import (
     UnsupportedCSVEntry,
     maybe_set_transaction_extra_data,
 )
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -27,7 +25,10 @@ from rotkehlchen.types import DEFAULT_TIMEZONE, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 logger = logging.getLogger(__name__)
@@ -87,7 +88,7 @@ def platform_row_to_location(entry: str) -> Location:
 class CoinledgerImporter(BaseExchangeImporter):
     """CoinLedger CSV importer."""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='CoinLedger')
         self._group_sequence_index: dict[str, int] = {}
 

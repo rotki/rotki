@@ -66,7 +66,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_query_statistics_netvalue(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
 ) -> None:
@@ -108,7 +108,7 @@ def test_query_statistics_netvalue(
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 def test_query_statistics_asset_balance(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
         start_with_valid_premium: bool,
@@ -197,7 +197,7 @@ def test_query_statistics_asset_balance(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_query_statistics_asset_balance_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_statistics_asset_balance_errors(rotkehlchen_api_server: APIServer) -> None:
     """Test that errors at the statistics asset balance over time endpoint are handled properly"""
     start_time = ts_now()
 
@@ -261,7 +261,7 @@ def test_query_statistics_asset_balance_errors(rotkehlchen_api_server: 'APIServe
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 @pytest.mark.parametrize('db_settings', [{'treat_eth2_as_eth': True}, {'treat_eth2_as_eth': False}])  # noqa: E501
 def test_query_statistics_value_distribution(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
         start_with_valid_premium: bool,
@@ -400,7 +400,7 @@ def test_query_statistics_value_distribution(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_query_statistics_value_distribution_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_statistics_value_distribution_errors(rotkehlchen_api_server: APIServer) -> None:
     """Test that the statistics value distribution endpoint handles errors properly"""
     # Test omitting the distribution_by argument
     response = requests.get(
@@ -431,7 +431,7 @@ def test_query_statistics_value_distribution_errors(rotkehlchen_api_server: 'API
 
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 def test_query_statistics_renderer(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         start_with_valid_premium: bool,
     ) -> None:
     """Test that the statistics renderer endpoint works when properly queried"""
@@ -473,7 +473,7 @@ def test_query_statistics_renderer(
 @pytest.mark.parametrize('ethereum_accounts', [['0x01471dB828Cfb96Dcf215c57a7a6493702031EC1']])
 @pytest.mark.parametrize('base_accounts', [['0x01471dB828Cfb96Dcf215c57a7a6493702031EC1']])
 def test_query_events_analysis(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that information returned by the yearly event analysis endpoint is correct.
@@ -732,7 +732,7 @@ def test_query_events_analysis(
 
 
 def test_wrap_stats_counts_non_evm_chains(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Ensure wrap stats include Solana and Bitcoin transaction counts."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

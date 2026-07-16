@@ -153,8 +153,8 @@ def test_lqty_v2_staking_withdraw_with_rewards(ethereum_inquirer, ethereum_accou
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf3c672522Ce50e704A342ECa4a9b78321dcb20A9']])
 def test_lqty_v2_deploy_proxy(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test Liquity V2 proxy deployment decoding and proxy detection logic."""
     tx_hash = deserialize_evm_tx_hash('0x9dd36606541403f5c3da6445d2caacec92b3f9d74e82c7add837f5f5ad5a7381')  # noqa: E501

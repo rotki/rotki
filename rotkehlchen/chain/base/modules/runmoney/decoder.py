@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
@@ -14,7 +14,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.constants.resolver import tokenid_belongs_to_collection, tokenid_to_collectible_id
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -25,6 +24,9 @@ from .constants import (
     RUNMONEY_MEMBERSHIP_NFT_COLLECTION_IDENTIFIER,
     UNSTAKE_TOPIC,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -146,7 +148,7 @@ class RunmoneyDecoder(EvmDecoderInterface):
         return {RUNMONEY_CONTRACT_ADDRESS: (self._decode_runmoney_events,)}
 
     @staticmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_RUNMONEY,
             label='Runmoney',

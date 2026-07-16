@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Final
 
 import requests
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.evm.decoding.ens.decoder import EnsCommonDecoder
@@ -40,6 +39,7 @@ from .constants import (
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -56,9 +56,9 @@ class BasenamesDecoder(EnsCommonDecoder):
 
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            base_inquirer: 'BaseInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
+            base_inquirer: BaseInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,  # pylint: disable=unused-argument
     ) -> None:
         super().__init__(
             evm_inquirer=base_inquirer,

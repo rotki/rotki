@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 import rsqlite
@@ -9,10 +8,13 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import BinancePair
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from rotkehlchen.types import Location
+
     from .handler import GlobalDBHandler
 
 logger = logging.getLogger(__name__)
@@ -21,7 +23,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class GlobalDBBinance:
 
-    def __init__(self, globaldb: 'GlobalDBHandler') -> None:
+    def __init__(self, globaldb: GlobalDBHandler) -> None:
         self.db = globaldb
 
     def save_all_binance_pairs(

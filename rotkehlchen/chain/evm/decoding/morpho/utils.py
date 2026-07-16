@@ -45,7 +45,7 @@ VAULT_QUERY_FIELDS: Final = ('vaults', 'vaultV2s')
 
 def _query_morpho_vaults_api(
         chain_id: ChainID,
-        msg_aggregator: 'MessagesAggregator',
+        msg_aggregator: MessagesAggregator,
 ) -> list[dict[str, Any]] | None:
     """Query morpho vaults from the morpho blue api.
     Returns vault list or None if there was an error."""
@@ -81,7 +81,7 @@ def _query_morpho_vaults_api(
     return all_vaults
 
 
-def query_morpho_vaults(chain_id: ChainID, msg_aggregator: 'MessagesAggregator') -> None:
+def query_morpho_vaults(chain_id: ChainID, msg_aggregator: MessagesAggregator) -> None:
     """Query list of Morpho vaults and add the vault tokens to the global database."""
     if (vault_list := _query_morpho_vaults_api(
             chain_id=chain_id,
@@ -155,9 +155,9 @@ def query_morpho_reward_distributors(chain_id: ChainID) -> None:
 
 
 def get_morpho_vault_token_price(
-        inquirer: 'Inquirer',
-        vault_token: 'EvmToken',
-        evm_inquirer: 'EvmNodeInquirer',
+        inquirer: Inquirer,
+        vault_token: EvmToken,
+        evm_inquirer: EvmNodeInquirer,
 ) -> Price:
     """Gets the token price for a Morpho vault."""
     return get_vault_price(

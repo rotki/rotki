@@ -16,7 +16,7 @@ class BaseTransactions(L2WithL1FeesTransactions):
 
     def __init__(
             self,
-            base_inquirer: 'BaseInquirer',
-            database: 'DBHandler',
+            base_inquirer: BaseInquirer,
+            database: DBHandler,
     ) -> None:
         super().__init__(node_inquirer=base_inquirer, database=database)

@@ -1,12 +1,14 @@
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import MerkleClaimDecoderInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 
 from .constants import CPT_HARVEST_FINANCE, GRAIN_TOKEN_ID, HARVEST_GRAIN_CLAIM
+
+if TYPE_CHECKING:
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

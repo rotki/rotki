@@ -506,8 +506,8 @@ def test_thegraph_delegated_withdrawn_arbitrum_one(arbitrum_one_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x01A0370bc11CA10D1D7AbFB892E85127C4eE921C']])
 def test_delegate_horizon(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """This checks that delegation post-horizon works correctly"""
     events, _ = get_decoded_events_of_transaction(
@@ -561,8 +561,8 @@ def test_delegate_horizon(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x40792210D62f471612E2891877d8612E02cB7Db6']])
 def test_undelegate_horizon(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """This checks that un-delegation post-horizon works correctly"""
     tx_hash, lock_expiration = deserialize_evm_tx_hash('0x57f89011a6a489c1d901bb0e30a54c8089d4e5faf60ac26881ef4fd02ec89988'), Timestamp(1765815857)  # noqa: E501
@@ -601,8 +601,8 @@ def test_undelegate_horizon(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x1C15b0374FC43d594A3Dc4147E45741FBA6c70f3']])
 def test_thegraph_delegated_withdrawn_horizon(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """This checks that delegation withdrawal post-horizon works correctly"""
     events, _ = get_decoded_events_of_transaction(

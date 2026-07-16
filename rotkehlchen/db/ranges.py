@@ -16,12 +16,12 @@ log = RotkehlchenLogsAdapter(logger)
 
 class DBQueryRanges:
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         self.db = database
 
     def get_location_query_ranges(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             location_string: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
@@ -48,7 +48,7 @@ class DBQueryRanges:
 
     def update_used_query_range(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             location_string: str,
             queried_ranges: list[tuple[Timestamp, Timestamp]],
     ) -> None:

@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
 from urllib.parse import urlencode
 
 import requests
-from requests.adapters import Response
 
 from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_from_bitfinex
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
@@ -22,7 +21,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
@@ -55,16 +53,19 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
+    from requests.adapters import Response
+
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -123,7 +124,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
@@ -223,7 +224,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             self,
             options: dict[str, Any],
             case: Literal['trades', 'asset_movements'],
-    ) -> tuple[list['HistoryBaseEntry'], bool]:
+    ) -> tuple[list[HistoryBaseEntry], bool]:
         """Request a Bitfinex API v2 endpoint paginating via an options
         attribute.
 
@@ -341,7 +342,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             options: dict[str, Any],
             raw_results: list[list[Any]],
             processed_result_ids: set[str],
-    ) -> list['HistoryBaseEntry']:
+    ) -> list[HistoryBaseEntry]:
         deserialization_method: DeserializationMethod
         if case == 'trades':
             deserialization_method = self._deserialize_trade
@@ -709,7 +710,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             self,
             response: Response,
             case: Literal['trades', 'asset_movements'],
-    ) -> tuple[list['HistoryBaseEntry'], bool]:
+    ) -> tuple[list[HistoryBaseEntry], bool]:
         ...
 
     def _process_unsuccessful_response(
@@ -889,7 +890,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Return the Bitfinex asset movements and swap events.
 
         Endpoint documentation:

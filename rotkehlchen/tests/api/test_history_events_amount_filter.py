@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-def test_history_events_filter_by_amount(rotkehlchen_api_server: 'APIServer') -> None:
+def test_history_events_filter_by_amount(rotkehlchen_api_server: APIServer) -> None:
     """Test filtering history events by min_amount/max_amount with and without an asset"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     events = [
@@ -82,7 +82,7 @@ def test_history_events_filter_by_amount(rotkehlchen_api_server: 'APIServer') ->
         assert {entry['entry']['group_identifier'] for entry in result['entries']} == expected_groups  # noqa: E501
 
 
-def test_history_events_invalid_amount_range(rotkehlchen_api_server: 'APIServer') -> None:
+def test_history_events_invalid_amount_range(rotkehlchen_api_server: APIServer) -> None:
     """Test that a min_amount greater than max_amount is rejected"""
     assert_error_response(
         response=requests.post(

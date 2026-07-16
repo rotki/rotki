@@ -82,9 +82,9 @@ mocked_prices = {
 @pytest.mark.parametrize('file_upload', [True, False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_data_import_cointracking(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         file_upload: bool,
-        websocket_connection: 'WebsocketReader',
+        websocket_connection: WebsocketReader,
 ) -> None:
     """Test that the data import endpoint works successfully for cointracking
 
@@ -136,10 +136,10 @@ def test_data_import_cointracking(
     ('coinbasepro', 'coinbasepro.csv', assert_coinbasepro_import_results),
 ])
 def test_data_import_simple(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         source: str,
         filename: str,
-        assert_fn: 'Callable[[Rotkehlchen], None]',
+        assert_fn: Callable[[Rotkehlchen], None],
 ) -> None:
     """Test that the data import endpoint works for simple single-file sources."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -155,7 +155,7 @@ def test_data_import_simple(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
-def test_data_import_cryptocom_with_timezone(rotkehlchen_api_server: 'APIServer') -> None:
+def test_data_import_cryptocom_with_timezone(rotkehlchen_api_server: APIServer) -> None:
     """Test that the cryptocom importer respects the provided timezone."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     filepath = Path(__file__).resolve().parent.parent / 'data' / 'cryptocom_trades_list.csv'
@@ -188,7 +188,7 @@ def test_data_import_cryptocom_with_timezone(rotkehlchen_api_server: 'APIServer'
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_data_import_cryptocom_dpos_interest(rotkehlchen_api_server: 'APIServer') -> None:
+def test_data_import_cryptocom_dpos_interest(rotkehlchen_api_server: APIServer) -> None:
     """Test that Crypto.com DPoS interest rows are imported and related locks are skipped."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with TemporaryDirectory() as tempdir:
@@ -237,7 +237,7 @@ def test_data_import_cryptocom_dpos_interest(rotkehlchen_api_server: 'APIServer'
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_data_import_bitmex_wallet_history(rotkehlchen_api_server: 'APIServer') -> None:
+def test_data_import_bitmex_wallet_history(rotkehlchen_api_server: APIServer) -> None:
     """Test that the data import endpoint works successfully for BitMEX wallet history"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dir_path = Path(__file__).resolve().parent.parent
@@ -260,8 +260,8 @@ def test_data_import_bitmex_wallet_history(rotkehlchen_api_server: 'APIServer') 
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_data_import_nexo(
-        rotkehlchen_api_server: 'APIServer',
-        websocket_connection: 'WebsocketReader',
+        rotkehlchen_api_server: APIServer,
+        websocket_connection: WebsocketReader,
 ) -> None:
     """Test that the data import endpoint works successfully for nexo"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -286,7 +286,7 @@ def test_data_import_nexo(
 @pytest.mark.parametrize('file_upload', [True, False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_data_import_wrong_extension(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         file_upload: bool,
 ) -> None:
     """Test that uploading a file without the proper extension fails"""
@@ -326,8 +326,8 @@ def test_data_import_wrong_extension(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_data_import_errors(
-        rotkehlchen_api_server: 'APIServer',
-        tmpdir_factory: 'pytest.TempdirFactory',
+        rotkehlchen_api_server: APIServer,
+        tmpdir_factory: pytest.TempdirFactory,
 ) -> None:
     """Test that errors in the data import endpoint are handled correctly"""
     dir_path = Path(__file__).resolve().parent.parent
@@ -457,7 +457,7 @@ def test_data_import_errors(
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('file_upload', [True, False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_data_import_custom_format(rotkehlchen_api_server: 'APIServer', file_upload: bool) -> None:
+def test_data_import_custom_format(rotkehlchen_api_server: APIServer, file_upload: bool) -> None:
     """Test that the data import endpoint works successfully for cointracking
     when using custom date formats at the moment of making the import
 
@@ -502,8 +502,8 @@ def test_data_import_custom_format(rotkehlchen_api_server: 'APIServer', file_upl
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
 def test_data_import_binance_history(
-        rotkehlchen_api_server: 'APIServer',
-        websocket_connection: 'WebsocketReader',
+        rotkehlchen_api_server: APIServer,
+        websocket_connection: WebsocketReader,
 ) -> None:
     """Test that the data import endpoint works successfully for binance data"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -525,8 +525,8 @@ def test_data_import_binance_history(
 
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_data_import_rotki_generic_trades(
-        rotkehlchen_api_server: 'APIServer',
-        websocket_connection: 'WebsocketReader',
+        rotkehlchen_api_server: APIServer,
+        websocket_connection: WebsocketReader,
 ) -> None:
     """Test that data import works for rotki generic trades import csv file."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -567,8 +567,8 @@ def test_data_import_rotki_generic_trades(
 
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_data_import_rotki_generic_events(
-        rotkehlchen_api_server: 'APIServer',
-        websocket_connection: 'WebsocketReader',
+        rotkehlchen_api_server: APIServer,
+        websocket_connection: WebsocketReader,
 ) -> None:
     """Test that data import works for rotki generic events import csv file."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -589,8 +589,8 @@ def test_data_import_rotki_generic_events(
 
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_docker_async_import(
-        rotkehlchen_api_server: 'APIServer',
-        websocket_connection: 'WebsocketReader',
+        rotkehlchen_api_server: APIServer,
+        websocket_connection: WebsocketReader,
 ) -> None:
     """Test that docker async csv import using POST on /import is initialized properly
         The test doesn't wait for import completion, it only tests successful import initialization
@@ -618,7 +618,7 @@ def test_docker_async_import(
     assert_all_events_have_csv_marker(rotki)
 
 
-def test_bitcoin_tax_import(rotkehlchen_api_server: 'APIServer') -> None:
+def test_bitcoin_tax_import(rotkehlchen_api_server: APIServer) -> None:
     """Test that data import works for Bitcoin_Tax csv files of types trades and spending."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dir_path = Path(__file__).resolve().parent.parent / 'data'
@@ -658,7 +658,7 @@ def test_bitcoin_tax_import(rotkehlchen_api_server: 'APIServer') -> None:
     assert_all_events_have_csv_marker(rotki)
 
 
-def test_bittrex_history_import(rotkehlchen_api_server: 'APIServer') -> None:
+def test_bittrex_history_import(rotkehlchen_api_server: APIServer) -> None:
     """Test that data import works both for bittrex csv files"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dir_path = Path(__file__).resolve().parent.parent
@@ -686,7 +686,7 @@ def test_bittrex_history_import(rotkehlchen_api_server: 'APIServer') -> None:
     assert_all_events_have_csv_marker(rotki)
 
 
-def test_kucoin_history_import(rotkehlchen_api_server: 'APIServer') -> None:
+def test_kucoin_history_import(rotkehlchen_api_server: APIServer) -> None:
     """Test that data import works for both kucoin csv files"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dir_path = Path(__file__).resolve().parent.parent

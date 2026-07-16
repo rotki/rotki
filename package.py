@@ -9,13 +9,15 @@ import stat
 import subprocess  # noqa: S404
 import sys
 import urllib.request
-from collections.abc import Callable, Generator
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from packaging import version
 from setuptools_scm import get_version
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
 
 rotki_version = get_version()
 
@@ -472,7 +474,7 @@ class MacPackaging:
         os.environ.pop('CSC_LINK', None)
 
     @log_group('signing')
-    def sign(self, paths: Generator[Path, None, None]) -> None:
+    def sign(self, paths: Generator[Path]) -> None:
         """
         Signs all the contents of the directory created by PyInstaller
         with the provided signing key/identity.

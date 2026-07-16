@@ -57,7 +57,7 @@ executable_name = 'rotki-core-{}-{}'.format(
     platform_name,
 )
 
-hiddenimports = ['cytoolz.utils', 'cytoolz._signatures']
+hiddenimports = []
 # Since the exchanges are loaded dynamically and some of them may not be detected
 # by pyinstaller (https://github.com/rotki/rotki/issues/602) make sure they are
 # all included as imports in the created executable

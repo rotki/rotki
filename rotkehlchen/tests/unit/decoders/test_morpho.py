@@ -44,9 +44,9 @@ def _add_morpho_reward_distributor(chain_id: ChainID, address: str):
 
 
 def _add_morpho_vault(
-        chain_id: 'ChainID',
-        vault: 'ChecksumEvmAddress',
-        underlying: 'ChecksumEvmAddress',
+        chain_id: ChainID,
+        vault: ChecksumEvmAddress,
+        underlying: ChecksumEvmAddress,
 ):
     """Add Morpho vault address and underlying token address to the cache for proper decoding."""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -61,8 +61,8 @@ def _add_morpho_vault(
 @pytest.mark.parametrize('base_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_deposit_base(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf1bfb66819293de78d82ccf1d076ef4987114d01716ddc1d846f4c806df200c0')  # noqa: E501
     _add_morpho_vault(
@@ -140,8 +140,8 @@ def test_morpho_deposit_base(
 @pytest.mark.parametrize('base_accounts', [['0xCa17262d6b9B1F5e1995dAdB35d63f9f53896387']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_deposit_base_bundler(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that using the bundler to move funds between vaults is decoded correctly."""
     tx_hash = deserialize_evm_tx_hash('0x7da62153ad02205b019c8af287a9e3232e672dcb5a9ec7217f8f17de3011b168')  # noqa: E501
@@ -257,8 +257,8 @@ def test_morpho_deposit_base_bundler(
 @pytest.mark.parametrize('base_accounts', [['0x315178907fE88C7B8CC09D51F03ffb60A55e11e5']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_withdraw_base(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x72782434a36d0bd5c26751b344dcf301b1510b63cac7d67596b34642bf068a51')  # noqa: E501
     _add_morpho_vault(
@@ -314,8 +314,8 @@ def test_morpho_withdraw_base(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x7f2A099EEdE569438584790d2126202B39036831']])
 def test_morpho_claim_reward_base(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf1c08fcee3717217b30cbd5e120a4079837e319064d8c01a28d9fb7f44fcb88b')  # noqa: E501
     _add_morpho_reward_distributor(chain_id=ChainID.BASE, address='0x5400dBb270c956E8985184335A1C62AcA6Ce1333')  # noqa: E501
@@ -355,8 +355,8 @@ def test_morpho_claim_reward_base(
 @pytest.mark.parametrize('ethereum_accounts', [['0xECdb72619533A9dC55D6E170F0D905744DcdDa6E']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_deposit_ethereum(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x3dabc0f6b3b795249b9b1d2b5398e09487f1321aacfc80242e9d6171051a99a8')  # noqa: E501
     _add_morpho_vault(
@@ -426,8 +426,8 @@ def test_morpho_deposit_ethereum(
 @pytest.mark.parametrize('ethereum_accounts', [['0x7E4E766d0aE5ea9cDED0c694669194Db92800107']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_withdraw_ethereum(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8d3a5be47ff121846a85c84e9f1f487c43f66eadd5a3607f6c767ffc6704b50f')  # noqa: E501
     _add_morpho_vault(
@@ -495,8 +495,8 @@ def test_morpho_withdraw_ethereum(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xFa3542E4047cA13E66f650740a587736d06d1100']])
 def test_morpho_claim_reward_ethereum(
-        ethereum_inquirer: 'BaseInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: BaseInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1a6775590dfffdc2da036ec280627a65c57140b921d5afd11cabe913c78edcba')  # noqa: E501
     _add_morpho_reward_distributor(chain_id=ChainID.ETHEREUM, address='0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb')  # noqa: E501
@@ -524,8 +524,8 @@ def test_morpho_claim_reward_ethereum(
 @pytest.mark.parametrize('base_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_deposit_eth_and_weth_base(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x70df73acae65e1bb2568799d4d2cae0a0a56158383598475317832fb9066d930')  # noqa: E501
     _add_morpho_vault(
@@ -595,8 +595,8 @@ def test_morpho_deposit_eth_and_weth_base(
 @pytest.mark.parametrize('base_accounts', [['0x38e1BE3F203eCbB3F811AF1845F9F6e46a12dd0C']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_bundle_deposit_split_across_vaults_base(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
 
     _add_morpho_vault(
@@ -668,8 +668,8 @@ def test_morpho_bundle_deposit_split_across_vaults_base(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x21f2a9b5F420245d86E8Faa753022dA01946B13F']])
 def test_vault_withdrawal_deposit_with_wallet_tokens(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
         allow_base_routescan: None,
 ) -> None:
     """Regression test for morpho transaction where a user withdraws from one vault and
@@ -782,8 +782,8 @@ def test_vault_withdrawal_deposit_with_wallet_tokens(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x77DFFc4dd4C9fADccD5FcC1C44a7C641c9aC652a']])
 def test_morpho_deposit_arbitrum(
-        arbitrum_one_inquirer: 'EthereumInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: EthereumInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x5233ed02fc0693a83c54d973201475a183b262e8d5a4498e45f5e3cd015b4d13')  # noqa: E501
     _add_morpho_vault(
@@ -849,8 +849,8 @@ def test_morpho_deposit_arbitrum(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xc1bA166cC2C249816Db1E9D543368d80095ea33F']])
 def test_morpho_deposit_native_polygon(
-        polygon_pos_inquirer: 'EthereumInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: EthereumInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6fd0d431c6c1b3dcbd3da59055720a975a45a4099339e2187032d04b66c2cf9f')  # noqa: E501
     _add_morpho_vault(

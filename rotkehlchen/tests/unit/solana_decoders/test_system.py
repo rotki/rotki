@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     ['4DrfzUpTdNtfr7D1RBVw2WhPshasifw97mH3aj27Skp9', '3AmPaYAe6xWFxci4iCe8m2TkrQFZJPaj5AeBPTDoeFkR'],  # noqa: E501
 ])
 def test_native_transfer(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     """Check that native transfers are decoded correctly.

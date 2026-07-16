@@ -2,11 +2,9 @@ import json
 import logging
 import re
 from collections import defaultdict
-from collections.abc import Sequence
 from threading import Lock
 from typing import TYPE_CHECKING, Any, Final, Literal
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconInquirer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE, ZERO
@@ -37,7 +35,6 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import from_wei, ts_now, ts_sec_to_ms
@@ -58,9 +55,13 @@ from .structures import (
 from .utils import create_profit_filter_queries, timestamp_to_slot
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.accounting.structures.balance import Balance
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -71,11 +72,11 @@ class Eth2(EthereumModule):
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            database: 'DBHandler',
+            ethereum_inquirer: EthereumInquirer,
+            database: DBHandler,
             premium: Premium | None,
             msg_aggregator: MessagesAggregator,
-            beaconchain: 'BeaconChain',
+            beaconchain: BeaconChain,
             beacon_rpc_endpoint: str | None,
     ) -> None:
         self.database = database

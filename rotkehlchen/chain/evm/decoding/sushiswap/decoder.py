@@ -1,8 +1,6 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.assets.asset import CryptoAsset, EvmToken, FVal
 from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
@@ -30,6 +28,9 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.assets.asset import CryptoAsset, EvmToken, FVal
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.chain.evm.types import ChecksumEvmAddress
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -48,7 +49,7 @@ class SushiswapCommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            extra_route_processors: tuple['ChecksumEvmAddress', ...] = (),
+            extra_route_processors: tuple[ChecksumEvmAddress, ...] = (),
             **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -63,10 +64,10 @@ class SushiswapCommonDecoder(EvmDecoderInterface):
 
     def _handle_post_decoding(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Process swap events to create proper trade events and fees."""
         tx_log = None
         for i_tx_log in all_logs:
@@ -92,11 +93,11 @@ class SushiswapCommonDecoder(EvmDecoderInterface):
 
     def _handle_redsnwap_post_decoding(
             self,
-            tx_log: 'EvmTxReceiptLog',
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Process RedSnwap (RP5/RP6) swap events."""
         amount_out = asset_normalized_value(
             amount=int.from_bytes(tx_log.data[64:96]),
@@ -155,10 +156,10 @@ class SushiswapCommonDecoder(EvmDecoderInterface):
 
     def _handle_route_post_decoding(
             self,
-            tx_log: 'EvmTxReceiptLog',
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-    ) -> list['EvmEvent']:
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+    ) -> list[EvmEvent]:
         """Process older Route Processor (RP3/RP3.2/RP4) swap events.
 
         Route event format:
@@ -216,12 +217,12 @@ class SushiswapCommonDecoder(EvmDecoderInterface):
 
     def _retrieve_redsnwap_fee(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-            asset: 'CryptoAsset | EvmToken',
-            asset_address: 'ChecksumEvmAddress',
-    ) -> tuple[FVal, 'EvmEvent | None']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+            asset: CryptoAsset | EvmToken,
+            asset_address: ChecksumEvmAddress,
+    ) -> tuple[FVal, EvmEvent | None]:
         """Retrieve and create the fee event for Sushiswap RedSnwap swaps."""
         fee, fee_event = ZERO, None
         if asset_address == ETH_SPECIAL_ADDRESS:
@@ -273,7 +274,7 @@ class SushiswapCommonDecoder(EvmDecoderInterface):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return dict.fromkeys(self.route_processors, (self._decode_swap_event,))
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:

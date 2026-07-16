@@ -33,7 +33,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
                 HistoryEventSubType.FEE,
             ],
             asset: Asset,
-            amount: 'FVal',
+            amount: FVal,
             event_type: Literal[
                 HistoryEventType.TRADE,
                 HistoryEventType.MULTI_TRADE,
@@ -42,7 +42,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             notes: str | None = None,
             identifier: int | None = None,
             counterparty: str | None = None,
-            address: 'ChecksumEvmAddress | None' = None,
+            address: ChecksumEvmAddress | None = None,
             extra_data: dict[str, Any] | None = None,
             group_identifier: str | None = None,
     ):
@@ -73,7 +73,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
         return HistoryBaseEntryType.EVM_SWAP_EVENT
 
     @classmethod
-    def deserialize_from_db(cls: type['EvmSwapEvent'], entry: tuple) -> 'EvmSwapEvent':
+    def deserialize_from_db(cls: type[EvmSwapEvent], entry: tuple) -> EvmSwapEvent:
         """Deserialize a EvmSwapEvent DB tuple.
         May raise:
         - DeserializationError
@@ -106,7 +106,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
         return EvmEvent.serialize(self)
 
     @classmethod
-    def deserialize(cls: type['EvmSwapEvent'], data: dict[str, Any]) -> 'EvmSwapEvent':
+    def deserialize(cls: type[EvmSwapEvent], data: dict[str, Any]) -> EvmSwapEvent:
         try:
             return cls(
                 **cls._deserialize_swap_data(

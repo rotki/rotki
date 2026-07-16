@@ -384,8 +384,8 @@ def test_coinbase_query_trade_history_paginated(function_scope_coinbase):
 
 
 def test_coinbase_staking_events(
-        database: 'DBHandler',
-        function_scope_coinbase: 'Coinbase',
+        database: DBHandler,
+        function_scope_coinbase: Coinbase,
 ) -> None:
     """Regression test for a problem where staking events were shown twice."""
     coinbase = function_scope_coinbase
@@ -431,8 +431,8 @@ def test_coinbase_staking_events(
 
 
 def test_account_failure_does_not_advance_cursors(
-        database: 'DBHandler',
-        function_scope_coinbase: 'Coinbase',
+        database: DBHandler,
+        function_scope_coinbase: Coinbase,
 ) -> None:
     """Test that a failing account query persists no per-account cursors at all.
 

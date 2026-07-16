@@ -50,7 +50,6 @@ from rotkehlchen.tasks.utils import (
     prefetch_scheduler_task_timestamps,
     should_run_periodic_task,
 )
-from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.api import api_url_for, assert_ok_async_response
 from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR1,
@@ -89,6 +88,7 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.exchange import ExchangeInterface
     from rotkehlchen.exchanges.manager import ExchangeManager
     from rotkehlchen.rotkehlchen import Rotkehlchen
+    from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
 @pytest.mark.parametrize('enable_priority_tasks', [True])
@@ -235,9 +235,9 @@ def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex)
 
 
 def test_maybe_schedule_exchange_query_ignore_exchanges(
-        task_manager: 'TaskManager',
-        exchange_manager: 'ExchangeManager',
-        poloniex: 'ExchangeInterface',
+        task_manager: TaskManager,
+        exchange_manager: ExchangeManager,
+        poloniex: ExchangeInterface,
 ) -> None:
     """Verify that task manager respects the ignored exchanges when querying trades"""
     exchange_manager.connected_exchanges[Location.POLONIEX] = [poloniex]
@@ -476,7 +476,7 @@ def test_premium_device_limit_error(
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
+def test_update_snapshot_balances(rotkehlchen_instance: Rotkehlchen):
     database = rotkehlchen_instance.data.db
     db_history_events = DBHistoryEvents(database)
     with db_history_events.db.user_write() as write_cursor:
@@ -647,7 +647,7 @@ def test_try_start_same_task(rotkehlchen_api_server):
         }
 
 
-def test_should_run_periodic_task(database: 'DBHandler') -> None:
+def test_should_run_periodic_task(database: DBHandler) -> None:
     """
     Check that should_run_periodic_task correctly reads the key_value_cache when they have been
     set and where the database doesn't have them yet.
@@ -684,7 +684,7 @@ def test_should_run_periodic_task(database: 'DBHandler') -> None:
     ) is True
 
 
-def test_should_run_periodic_task_cached_timestamps(database: 'DBHandler') -> None:
+def test_should_run_periodic_task_cached_timestamps(database: DBHandler) -> None:
     """When the key is present in the prefetched timestamps map its value is used (over the DB);
     when it is missing we fall back to a single DB read."""
     old_ts = str(ts_now() - DATA_UPDATES_REFRESH * 2)  # value stored in the DB -> would say "run"
@@ -901,7 +901,7 @@ def test_maybe_query_produced_blocks(task_manager, ethereum_accounts):
 @pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_detect_new_spam_tokens(
         task_manager: TaskManager,
-        database: 'DBHandler',
+        database: DBHandler,
         globaldb: GlobalDBHandler,
 ) -> None:
     """Test that the task updating the list of known spam assets works correctly"""
@@ -1104,7 +1104,7 @@ def test_update_lending_protocol_underlying_assets_task(
 @pytest.mark.freeze_time('2023-04-16 22:31:11 GMT')
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_send_ws_calendar_reminder(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         websocket_connection: WebsocketReader,
         legacy_messages_via_websockets: bool,  # pylint: disable=unused-argument
         freezer,
@@ -1230,7 +1230,7 @@ def test_send_ws_calendar_reminder(
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('use_function_scope_msg_aggregator', [True])
 def test_priority_queue_runs_calendar_reminders_when_task_slots_full(
-        task_manager: 'TaskManager',
+        task_manager: TaskManager,
 ) -> None:
     """Test that the calendar reminder check runs once from the priority queue even when
     the regular scheduler has no free task slots."""
@@ -1266,7 +1266,7 @@ def test_priority_queue_runs_calendar_reminders_when_task_slots_full(
 
 
 @pytest.mark.parametrize('enable_priority_tasks', [True])
-def test_priority_queue_respects_disabled_scheduling(task_manager: 'TaskManager') -> None:
+def test_priority_queue_respects_disabled_scheduling(task_manager: TaskManager) -> None:
     task_manager.should_schedule = False
     task_manager.schedule()
 
@@ -1277,7 +1277,7 @@ def test_priority_queue_respects_disabled_scheduling(task_manager: 'TaskManager'
 
 
 @pytest.mark.parametrize('max_tasks_num', [1])
-def test_scheduler_runs_when_priority_queue_is_empty(task_manager: 'TaskManager') -> None:
+def test_scheduler_runs_when_priority_queue_is_empty(task_manager: TaskManager) -> None:
     regular_task = MagicMock(return_value=None)
     task_manager.priority_tasks_queue.clear()
     task_manager.potential_tasks = [regular_task]
@@ -1292,7 +1292,7 @@ def test_scheduler_runs_when_priority_queue_is_empty(task_manager: 'TaskManager'
 @pytest.mark.freeze_time('2023-04-16 22:31:11 GMT')
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_acknowledged_calendar_reminder_does_not_retrigger(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         websocket_connection: WebsocketReader,
         legacy_messages_via_websockets: bool,  # pylint: disable=unused-argument
         freezer,
@@ -1457,9 +1457,9 @@ def test_calendar_entries_get_deleted(
 ]])
 def test_maybe_create_calendar_reminders(
         task_manager: TaskManager,
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         db_settings: dict[str, Any],
-        tx_hashes: list['EVMTxHash'],
+        tx_hashes: list[EVMTxHash],
         add_subgraph_api_key,  # pylint: disable=unused-argument
 ) -> None:
     """Test that creating calendar entries and reminders via a task works correctly."""
@@ -1498,7 +1498,7 @@ def test_maybe_create_calendar_reminders(
 
 
 def test_deadlock_logout(
-        rotkehlchen_instance: 'Rotkehlchen',
+        rotkehlchen_instance: Rotkehlchen,
         globaldb: GlobalDBHandler,  # pylint: disable=unused-argument
 ):
     """Test that a task cancelled at logout while holding packaged_db_lock through
@@ -1547,7 +1547,7 @@ def test_deadlock_logout(
 @pytest.mark.vcr
 @pytest.mark.parametrize('max_tasks_num', [5])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> None:
+def test_snapshots_dont_happen_always(rotkehlchen_api_server: APIServer) -> None:
     """Regression test for an issue we had where the task for snapshots was
     creating a snapshot for each run of the background task.
     """
@@ -1584,7 +1584,7 @@ def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> No
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_failed_snapshot_waits_to_retry(rotkehlchen_api_server: 'APIServer') -> None:
+def test_failed_snapshot_waits_to_retry(rotkehlchen_api_server: APIServer) -> None:
     """Regression test for an issue where if the balance query failed,
     it would keep retrying over and over with no wait time.
     """
@@ -1628,8 +1628,8 @@ def test_failed_snapshot_waits_to_retry(rotkehlchen_api_server: 'APIServer') -> 
     '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # did not delegate
 ]])
 def test_graph_query_query_delegations(
-        eth_transactions: 'EthereumTransactions',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        eth_transactions: EthereumTransactions,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ):
     """Check that log events for graph delegations are queried in chunks
     and we save the range queried correctly. Also ensures that only addresses
@@ -1806,7 +1806,7 @@ def test_maybe_decode_transactions_skips_recently_clean_chain(task_manager: Task
         assert count.call_count == 2
 
 
-def test_pending_txs_tracker_invalidated_on_db_writes(database: 'DBHandler') -> None:
+def test_pending_txs_tracker_invalidated_on_db_writes(database: DBHandler) -> None:
     """The DB write paths that create pending work must invalidate the tracker, so the
     scheduler picks the work up on the next tick rather than only after the safety-net TTL.
     """

@@ -616,7 +616,7 @@ def test_fetch_airdrops_metadata(database, remote_etag, database_etag):
 
 
 @pytest.mark.vcr
-def test_check_linea_airdrop(database: 'DBHandler') -> None:
+def test_check_linea_airdrop(database: DBHandler) -> None:
     """Test that the Linea airdrop is correctly detected."""
     assert check_linea_airdrop(
         addresses=[

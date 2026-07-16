@@ -41,12 +41,12 @@ def _get_gauge_cache_type(version: Literal[1, 2, 3]) -> Literal[CacheType.BALANC
 
 def query_balancer_data(
         version: Literal[1, 2, 3],
-        inquirer: 'EvmNodeInquirer',
-        msg_aggregator: 'MessagesAggregator',
+        inquirer: EvmNodeInquirer,
+        msg_aggregator: MessagesAggregator,
         protocol: Literal['balancer-v1', 'balancer-v2', 'balancer-v3'],
         cache_type: Literal[CacheType.BALANCER_V1_POOLS, CacheType.BALANCER_V2_POOLS, CacheType.BALANCER_V3_POOLS],  # noqa: E501
         reload_all: bool,
-) -> tuple[set['ChecksumEvmAddress'], set['ChecksumEvmAddress']]:
+) -> tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]:
     """Query and store balancer pools with their gauges.
 
     May raise:

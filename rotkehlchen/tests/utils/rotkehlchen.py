@@ -1,13 +1,10 @@
-from contextlib import ExitStack
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 from unittest.mock import _patch, patch
 
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
-from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
@@ -32,6 +29,12 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
 )
+
+if TYPE_CHECKING:
+    from contextlib import ExitStack
+
+    from rotkehlchen.balances.manual import ManuallyTrackedBalance
+    from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 
 
 class BalancesTestSetup(NamedTuple):

@@ -2,7 +2,6 @@ import logging
 import operator
 import tempfile
 import typing
-from collections.abc import Callable, Mapping, Sequence
 from contextvars import ContextVar
 from itertools import zip_longest
 from pathlib import Path
@@ -43,7 +42,6 @@ from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
-from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.ens.utils import is_valid_ens_name
 from rotkehlchen.chain.evm.types import EvmIndexer, SerializableChainIndexerOrder
@@ -130,7 +128,6 @@ from rotkehlchen.history.events.utils import (
 )
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
-from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import SETTABLE_CURRENT_PRICE_ORACLES
 from rotkehlchen.serialization.deserialize import (
@@ -226,8 +223,12 @@ from .fields import (
 from .types import IncludeExcludeFilterData, ModuleWithBalances, ModuleWithStats, TaskName
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping, Sequence
+
     from rotkehlchen.chain.aggregator import ChainsAggregator
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.inquirer import CurrentPriceOracle
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -414,7 +415,7 @@ class TransactionQuerySchema(
         validate=webargs.validate.Length(min=1),
     )
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         super().__init__()
         self.database = database
 
@@ -502,7 +503,7 @@ class BaseStakingQuerySchema(
     def _get_assets_list(
             self,
             data: dict[str, Any],
-    ) -> tuple['AssetWithOracles', ...] | None:
+    ) -> tuple[AssetWithOracles, ...] | None:
         return (data['asset'],) if data['asset'] is not None else None
 
     def _make_query(
@@ -579,7 +580,7 @@ class StakingQuerySchema(BaseStakingQuerySchema):
     def _get_assets_list(
             self,
             data: dict[str, Any],
-    ) -> tuple['AssetWithOracles', ...] | None:
+    ) -> tuple[AssetWithOracles, ...] | None:
         asset_list = super()._get_assets_list(data)
         if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:
             asset_list = (
@@ -907,7 +908,7 @@ class CreateHistoryEventSchema(Schema):
     entry_type = SerializableEnumField(enum_class=HistoryBaseEntryType, required=True)
     history_event_context: ContextVar = ContextVar('history_event_context')
 
-    def __init__(self, dbhandler: 'DBHandler') -> None:
+    def __init__(self, dbhandler: DBHandler) -> None:
         super().__init__()
         self.database = dbhandler
 
@@ -2598,7 +2599,7 @@ def _transform_substrate_address(
         return address
 
 
-def _transform_evm_addresses(data: dict[str, Any], ethereum_inquirer: 'EthereumInquirer') -> None:
+def _transform_evm_addresses(data: dict[str, Any], ethereum_inquirer: EthereumInquirer) -> None:
     for idx, account in enumerate(data['accounts']):
         data['accounts'][idx]['address'] = _transform_evm_address(
             ethereum_inquirer=ethereum_inquirer,
@@ -2762,7 +2763,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
         load_default=None,
     )
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__()
         self.db = db
 
@@ -2836,7 +2837,7 @@ class AssetsSearchLevenshteinSchema(Schema):
     search_nfts = fields.Boolean(load_default=False)
     asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__()
         self.db = db
 
@@ -2888,7 +2889,7 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
     evm_chain = EvmChainNameField(load_default=None)
     return_exact_matches = fields.Boolean(load_default=False)
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__()
         self.db = db
 
@@ -3055,7 +3056,7 @@ class LocationAssetMappingsDeleteSchema(Schema):
 class CounterpartyAssetMappingsBaseSchema(Schema):
     counterparty = EvmCounterpartyField(required=True)
 
-    def __init__(self, chain_aggregator: 'ChainsAggregator') -> None:
+    def __init__(self, chain_aggregator: ChainsAggregator) -> None:
         super().__init__()
         self.declared_fields['counterparty'].set_counterparties(  # type: ignore
             counterparties={x.identifier for x in chain_aggregator.get_all_counterparties()},
@@ -3114,7 +3115,7 @@ class CounterpartyAssetMappingDeleteEntrySchema(CounterpartyAssetMappingsBaseSch
 
 def create_counterparty_asset_mappings_schema(
         entry_schema_class: type[CounterpartyAssetMappingDeleteEntrySchema | CounterpartyAssetMappingUpdateEntrySchema],  # noqa: E501
-        chain_aggregator: 'ChainsAggregator',
+        chain_aggregator: ChainsAggregator,
 ) -> Any:
     class DynamicCounterpartyAssetMappingsSchema(Schema):
         entries = NonEmptyList(
@@ -3134,7 +3135,7 @@ class EthStakingCommonFilterSchema(Schema):
         load_default=PerformanceStatusFilter.ALL,
     )
 
-    def __init__(self, dbhandler: 'DBHandler') -> None:
+    def __init__(self, dbhandler: DBHandler) -> None:
         super().__init__()
         self.database = dbhandler
 
@@ -3473,7 +3474,7 @@ class Eth2ValidatorsGetSchema(EthStakingCommonFilterSchema, AsyncIgnoreCacheQuer
 
 class Eth2StakingEventsDecodingSchema(AsyncQueryArgumentSchema):
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         super().__init__()
         self.database = database
 
@@ -3855,7 +3856,7 @@ class RpcAddNodeSchema(Schema):
 
 
 class RpcNodeEditSchema(RpcAddNodeSchema):
-    def __init__(self, dbhandler: 'DBHandler') -> None:
+    def __init__(self, dbhandler: DBHandler) -> None:
         super().__init__()
         self.dbhandler = dbhandler
 
@@ -3873,7 +3874,7 @@ class RpcNodeListDeleteSchema(Schema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     identifier = fields.Integer(required=True)
 
-    def __init__(self, dbhandler: 'DBHandler') -> None:
+    def __init__(self, dbhandler: DBHandler) -> None:
         super().__init__()
         self.dbhandler = dbhandler
 
@@ -3973,7 +3974,7 @@ class NFTFilterQuerySchema(
     collection_name = EmptyAsNoneStringField(load_default=None)
     ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
 
-    def __init__(self, chains_aggregator: 'ChainsAggregator') -> None:
+    def __init__(self, chains_aggregator: ChainsAggregator) -> None:
         super().__init__()
         self.chains_aggregator = chains_aggregator
         self.db = chains_aggregator.database
@@ -4018,7 +4019,7 @@ class EvmTransactionLookupSchema(AsyncQueryArgumentSchema):
     evm_chain = EvmChainNameField(required=True, limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS))
     related_address = EvmAddressField(required=True)
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__()
         self.db = db
 
@@ -4052,7 +4053,7 @@ class TransactionReferenceAdditionSchema(AsyncQueryArgumentSchema):
     tx_ref = NonEmptyStringField(required=True)
     associated_address = NonEmptyStringField(required=True)
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__()
         self.db = db
 
@@ -4226,7 +4227,7 @@ class AccountingRuleIdSchema(Schema):
         validate=webargs.validate.Range(min=0),
     ), load_default=None)
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         super().__init__()
         self.database = database
 
@@ -4539,7 +4540,7 @@ class CalendarCommonEntrySchema(AnyBlockchainAddress):
     color = ColorField(load_default=None)
     auto_delete = fields.Boolean(required=True)
 
-    def __init__(self, chain_aggregator: 'ChainsAggregator') -> None:
+    def __init__(self, chain_aggregator: ChainsAggregator) -> None:
         super().__init__()
         self.declared_fields['counterparty'].set_counterparties(  # type: ignore
             counterparties={x.identifier for x in chain_aggregator.get_all_counterparties()},
@@ -4585,7 +4586,7 @@ class QueryCalendarSchema(
     identifiers = fields.List(fields.Integer, load_default=None)
     to_timestamp = TimestampField(load_default=None)
 
-    def __init__(self, chain_aggregator: 'ChainsAggregator') -> None:
+    def __init__(self, chain_aggregator: ChainsAggregator) -> None:
         super().__init__()
         self.declared_fields['counterparty'].set_counterparties(  # type: ignore
             counterparties={x.identifier for x in chain_aggregator.get_all_counterparties()},
@@ -4729,7 +4730,7 @@ class HistoricalPerAssetBalanceSchema(SnapshotTimestampQuerySchema, AsyncQueryAr
     protocol = EmptyAsNoneStringField(load_default=None)
     group_by_account = fields.Boolean(load_default=False)
 
-    def __init__(self, db: 'DBHandler', known_counterparties: set[str]) -> None:
+    def __init__(self, db: DBHandler, known_counterparties: set[str]) -> None:
         super().__init__()
         self.db = db
         self.known_counterparties = known_counterparties
@@ -4786,7 +4787,7 @@ class CurrentHistoricalBalanceSchema(AsyncQueryArgumentSchema):
     location_label = EmptyAsNoneStringField(load_default=None)
     protocol = EmptyAsNoneStringField(load_default=None)
 
-    def __init__(self, db: 'DBHandler', known_counterparties: set[str]) -> None:
+    def __init__(self, db: DBHandler, known_counterparties: set[str]) -> None:
         super().__init__()
         self.db = db
         self.known_counterparties = known_counterparties
@@ -4843,7 +4844,7 @@ class HistoricalBalanceSeriesSchema(TimestampRangeSchema, AsyncQueryArgumentSche
     location = LocationField(load_default=None)
     protocol = EmptyAsNoneStringField(load_default=None)
 
-    def __init__(self, db: 'DBHandler', known_counterparties: set[str]) -> None:
+    def __init__(self, db: DBHandler, known_counterparties: set[str]) -> None:
         super().__init__()
         self.db = db
         self.known_counterparties = known_counterparties
@@ -5030,7 +5031,7 @@ class RefetchTransactionsSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
         allow_only=CHAINS_WITH_TRANSACTION_DECODERS,
     )
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__()
         self.db = db
 
@@ -5166,7 +5167,7 @@ class RefetchStakingEventsSchema(AsyncQueryArgumentSchema, TimestampRangeSchema)
     )
     addresses = fields.List(EvmAddressField(), load_default=None)
 
-    def __init__(self, database: 'DBHandler', **kwargs: Any) -> None:
+    def __init__(self, database: DBHandler, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.db = database
 
@@ -5293,7 +5294,7 @@ class CustomizedEventDuplicatesIgnoreSchema(AsyncQueryArgumentSchema):
         validate=validate.Length(min=1),
     )
 
-    def __init__(self, db: 'DBHandler', action: Literal['ignore', 'unignore']) -> None:
+    def __init__(self, db: DBHandler, action: Literal['ignore', 'unignore']) -> None:
         super().__init__()
         self.db = db
         self.action = action

@@ -29,7 +29,6 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.errors.misc import ModuleLoadingError, NotSPLConformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -64,6 +63,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.solana.transactions import SolanaTransactions
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.fval import FVal
     from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
@@ -74,9 +74,9 @@ log = RotkehlchenLogsAdapter(logger)
 class SolanaDecodingRules(DecodingRulesBase):
     program_id_mappings: dict[SolanaAddress, tuple[Any, ...]]
     transfer_address_mappings: dict[SolanaAddress, tuple[Any, ...]]
-    all_counterparties: set['CounterpartyDetails']
+    all_counterparties: set[CounterpartyDetails]
 
-    def __add__(self, other: 'SolanaDecodingRules') -> 'SolanaDecodingRules':
+    def __add__(self, other: SolanaDecodingRules) -> SolanaDecodingRules:
         if not isinstance(other, SolanaDecodingRules):
             raise TypeError(
                 f'Can only add SolanaDecodingRules to SolanaDecodingRules. Got {type(other)}',
@@ -93,11 +93,11 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
 
     def __init__(
             self,
-            database: 'DBHandler',
-            node_inquirer: 'SolanaInquirer',
-            transactions: 'SolanaTransactions',
-            base_tools: 'SolanaDecoderTools',
-            premium: 'Premium | None' = None,
+            database: DBHandler,
+            node_inquirer: SolanaInquirer,
+            transactions: SolanaTransactions,
+            base_tools: SolanaDecoderTools,
+            premium: Premium | None = None,
     ):
         self.node_inquirer = node_inquirer
         self.transactions = transactions
@@ -176,7 +176,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
 
     def _load_transaction_context(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             tx_hash: Signature,
     ) -> SolanaTransaction:
         return self.transactions.get_or_create_transaction(signature=tx_hash)
@@ -462,9 +462,9 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
     def _compose_transfer_event(
             self,
             amount: FVal,
-            asset: 'Asset',
-            from_address: 'SolanaAddress | None',
-            to_address: 'SolanaAddress | None',
+            asset: Asset,
+            from_address: SolanaAddress | None,
+            to_address: SolanaAddress | None,
             transaction: SolanaTransaction,
             instruction: SolanaInstruction,
     ) -> SolanaEvent | None:

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-def _populate_ignored_actions(rotkehlchen_api_server: 'APIServer') -> set[str]:
+def _populate_ignored_actions(rotkehlchen_api_server: APIServer) -> set[str]:
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -49,7 +49,7 @@ def _populate_ignored_actions(rotkehlchen_api_server: 'APIServer') -> set[str]:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_ignored_actions(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_ignored_actions(rotkehlchen_api_server: APIServer) -> None:
     data = _populate_ignored_actions(rotkehlchen_api_server)
 
     # try to add at least one already existing id
@@ -79,7 +79,7 @@ def test_add_ignored_actions(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_remove_ignored_actions(rotkehlchen_api_server: 'APIServer') -> None:
+def test_remove_ignored_actions(rotkehlchen_api_server: APIServer) -> None:
     _populate_ignored_actions(rotkehlchen_api_server)
     # remove a few entries of one type
     response = requests.delete(
@@ -135,7 +135,7 @@ def test_remove_ignored_actions(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_ignore_history_events_in_accountant(rotkehlchen_api_server: 'APIServer') -> None:
+def test_ignore_history_events_in_accountant(rotkehlchen_api_server: APIServer) -> None:
     """Test that ignored history events are correctly ignored by the accountant"""
     accountant = rotkehlchen_api_server.rest_api.rotkehlchen.accountant
     events_list = [

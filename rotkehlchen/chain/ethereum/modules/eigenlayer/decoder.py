@@ -1,10 +1,7 @@
 import logging
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.utils import TokenEncounterInfo, token_normalized_value
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     BEACON_ETH_STRATEGY,
@@ -51,7 +48,6 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Location
@@ -63,8 +59,13 @@ from rotkehlchen.utils.misc import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from rotkehlchen.assets.asset import AssetWithSymbol
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
+    from rotkehlchen.fval import FVal
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -91,9 +92,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
 
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

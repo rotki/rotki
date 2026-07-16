@@ -1,7 +1,10 @@
 import hashlib
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from rotkehlchen.errors.misc import SystemPermissionError
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def file_md5(filepath: Path) -> str:

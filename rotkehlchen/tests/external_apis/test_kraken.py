@@ -89,7 +89,7 @@ def test_kraken_unsupported_asset_returns_zero_price():
 @pytest.mark.vcr
 @pytest.mark.freeze_time('2026-06-24 12:00:00 GMT')
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_kraken_eur_price_close_to_defillama(inquirer, session_defillama: 'Defillama'):
+def test_kraken_eur_price_close_to_defillama(inquirer, session_defillama: Defillama):
     """Kraken EUR prices for BTC and ETH stay within 0.5% of Defillama's.
 
     Both oracles are queried for BTC -> EUR and ETH -> EUR. Defillama only
@@ -124,7 +124,7 @@ def test_kraken_eur_price_close_to_defillama(inquirer, session_defillama: 'Defil
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_kraken_price_close_to_coingecko(session_coingecko: 'Coingecko'):
+def test_kraken_price_close_to_coingecko(session_coingecko: Coingecko):
     """The Kraken BTC/USD price should be in the same ballpark as CoinGecko's.
 
     Both oracles are queried for BTC -> USD and the results are compared with a

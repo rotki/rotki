@@ -1,7 +1,6 @@
 import logging
 import urllib
 from collections import defaultdict
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.chain.bitcoin.btc.constants import (
@@ -26,7 +25,6 @@ from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_int,
@@ -39,7 +37,10 @@ from rotkehlchen.utils.misc import get_chunks, satoshis_to_btc
 from rotkehlchen.utils.network import request_get, request_get_dict
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -47,7 +48,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class BitcoinManager(BitcoinCommonManager):
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         if custom_btc_mempool_api := CachedSettings().get_entry('btc_mempool_api'):
             api_callbacks = [self.get_custom_mempool_api_callback(custom_btc_mempool_api)]  # type: ignore
 
@@ -231,7 +232,7 @@ class BitcoinManager(BitcoinCommonManager):
             processing_fn=self._process_raw_tx_from_blockcypher,
         )
 
-    def deserialize_tx_from_blockcypher(self, data: dict[str, Any]) -> 'BitcoinTx':
+    def deserialize_tx_from_blockcypher(self, data: dict[str, Any]) -> BitcoinTx:
         """Deserialize a transaction from a blockcypher.
         May raise DeserializationError, KeyError, ValueError.
         """
@@ -334,7 +335,7 @@ class BitcoinManager(BitcoinCommonManager):
     def deserialize_tx_io_from_blockcypher(
             data: dict[str, Any],
             direction: BtcTxIODirection,
-    ) -> 'BtcTxIO':
+    ) -> BtcTxIO:
         """Deserialize a TxIO from blockcypher.
         May raise DeserializationError, KeyError, ValueError.
         """
@@ -352,7 +353,7 @@ class BitcoinManager(BitcoinCommonManager):
     def deserialize_tx_io_from_blockchain_info(
             data: dict[str, Any],
             direction: BtcTxIODirection,
-    ) -> 'BtcTxIO':
+    ) -> BtcTxIO:
         """Deserialize a TxIO from blockchain.info.
         May raise DeserializationError, KeyError, ValueError.
         """

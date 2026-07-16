@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.parametrize('should_mock_settings', [False])
 def test_cached_settings(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
         db_password: str,
     ) -> None:
@@ -137,7 +137,7 @@ def test_cached_settings(
     assert json_data['result']['submit_usage_analytics'] is True
 
 
-def test_querying_settings(rotkehlchen_api_server: 'APIServer', username: str) -> None:
+def test_querying_settings(rotkehlchen_api_server: APIServer, username: str) -> None:
     """Make sure that querying settings works for logged in user"""
     response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
     assert_proper_response(response)
@@ -166,7 +166,7 @@ def test_querying_settings(rotkehlchen_api_server: 'APIServer', username: str) -
     )
 
 
-def test_set_settings(rotkehlchen_api_server: 'APIServer') -> None:
+def test_set_settings(rotkehlchen_api_server: APIServer) -> None:
     """Happy case settings modification test"""
     # Get the starting settings
     response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
@@ -289,7 +289,7 @@ def test_set_settings(rotkehlchen_api_server: 'APIServer') -> None:
     ),
 ])
 def test_set_rpc_endpoint_fail_not_set_others(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         rpc_setting: tuple[str, str],
         error_msg: str,
 ) -> None:
@@ -318,7 +318,7 @@ def test_set_rpc_endpoint_fail_not_set_others(
     assert result[rpc_setting] != rpc_endpoint
 
 
-def test_default_evm_indexers_orders(rotkehlchen_api_server: 'APIServer') -> None:
+def test_default_evm_indexers_orders(rotkehlchen_api_server: APIServer) -> None:
     settings = assert_proper_response_with_result(
         response=requests.get(settings_url := api_url_for(rotkehlchen_api_server, 'settingsresource')),  # noqa: E501
         rotkehlchen_api_server=rotkehlchen_api_server,
@@ -345,7 +345,7 @@ def test_default_evm_indexers_orders(rotkehlchen_api_server: 'APIServer') -> Non
     ('btc_mempool_api', 'http://localhost:4080'),
 ])
 def test_unset_rpc_endpoint(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         rpc_setting: str,
         initial_value: str,
 ) -> None:
@@ -405,7 +405,7 @@ def test_unset_rpc_endpoint(
     'btc_mempool_api',
 ])
 def test_empty_rpc_endpoint_in_db_treated_as_default(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         rpc_setting: str,
 ) -> None:
     """An empty string already present in the DB (legacy state) must be
@@ -426,7 +426,7 @@ def test_empty_rpc_endpoint_in_db_treated_as_default(
     assert getattr(settings, rpc_setting) == default_value
 
 
-def test_disable_taxfree_after_period(rotkehlchen_api_server: 'APIServer') -> None:
+def test_disable_taxfree_after_period(rotkehlchen_api_server: APIServer) -> None:
     """Test that providing -1 for the taxfree_after_period setting disables it """
     data = {
         'settings': {'taxfree_after_period': -1},
@@ -458,7 +458,7 @@ def test_disable_taxfree_after_period(rotkehlchen_api_server: 'APIServer') -> No
     )
 
 
-def test_set_unknown_settings(rotkehlchen_api_server: 'APIServer') -> None:
+def test_set_unknown_settings(rotkehlchen_api_server: APIServer) -> None:
     """Test that setting an unknown setting results in an error
 
     This is the only test for unknown arguments in marshmallow schemas after
@@ -475,7 +475,7 @@ def test_set_unknown_settings(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
-def test_set_settings_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_set_settings_errors(rotkehlchen_api_server: APIServer) -> None:
     """set settings errors and edge cases test"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # set timeout to 1 second to timeout faster
@@ -689,7 +689,7 @@ def test_set_settings_errors(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
-def test_set_evm_indexers_order(rotkehlchen_api_server: 'APIServer') -> None:
+def test_set_evm_indexers_order(rotkehlchen_api_server: APIServer) -> None:
     settings_url = api_url_for(rotkehlchen_api_server, 'settingsresource')
     settings = assert_proper_response_with_result(
         response=requests.get(settings_url),
@@ -739,7 +739,7 @@ def assert_queried_addresses_match(
         assert set(value) == set(result[key])
 
 
-def test_queried_addresses_per_protocol(rotkehlchen_api_server: 'APIServer') -> None:
+def test_queried_addresses_per_protocol(rotkehlchen_api_server: APIServer) -> None:
     # First add some queried addresses per protocol
     address1 = make_evm_address()
     data = {'module': 'eth2', 'address': address1}
@@ -824,7 +824,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server: 'APIServer') -> 
     })
 
 
-def test_excluded_exchanges_settings(rotkehlchen_api_server: 'APIServer') -> None:
+def test_excluded_exchanges_settings(rotkehlchen_api_server: APIServer) -> None:
     exchanges_input = {
         'settings': {
             'non_syncing_exchanges': [
@@ -861,7 +861,7 @@ def test_excluded_exchanges_settings(rotkehlchen_api_server: 'APIServer') -> Non
     assert response.status_code == 400
 
 
-def test_update_oracles_order_settings(rotkehlchen_api_server: 'APIServer') -> None:
+def test_update_oracles_order_settings(rotkehlchen_api_server: APIServer) -> None:
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'settingsresource'),
         json={'settings': {'historical_price_oracles': ['alchemy']}},
@@ -897,7 +897,7 @@ def test_update_oracles_order_settings(rotkehlchen_api_server: 'APIServer') -> N
 
 
 def test_suppress_missing_key_msg_services_not_overwritten(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test that suppress_missing_key_msg_services is not
     overwritten when updating other settings."""

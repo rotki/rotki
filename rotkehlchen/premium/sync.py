@@ -2,12 +2,10 @@ import logging
 import shutil
 import tempfile
 from enum import Enum
-from typing import Any, Literal, NamedTuple
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.misc import USERSDIR_NAME
-from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.misc import plaintext_db_integrity_check
 from rotkehlchen.errors.api import (
@@ -26,6 +24,10 @@ from rotkehlchen.premium.premium import (
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
+
+if TYPE_CHECKING:
+    from rotkehlchen.data_handler import DataHandler
+    from rotkehlchen.data_migrations.manager import DataMigrationManager
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

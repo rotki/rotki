@@ -1,7 +1,6 @@
 import logging
 import shutil
 import traceback
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import rsqlite
@@ -39,6 +38,8 @@ from .v15_v16 import migrate_to_v16
 from .v16_v17 import migrate_to_v17
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.db.drivers.sqlite import DBConnection
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.user_messages import MessagesAggregator
@@ -68,11 +69,11 @@ UPGRADES_LIST = [
 
 
 def maybe_upgrade_globaldb(
-        connection: 'DBConnection',
+        connection: DBConnection,
         global_dir: Path,
         db_filename: str,
-        msg_aggregator: 'MessagesAggregator',
-        globaldb: 'GlobalDBHandler | None' = None,
+        msg_aggregator: MessagesAggregator,
+        globaldb: GlobalDBHandler | None = None,
 ) -> bool:
     """Maybe upgrade the global DB and ensure that the foreign keys
     are on along the journal mode.
@@ -152,7 +153,7 @@ def maybe_upgrade_globaldb(
 
 def _perform_single_upgrade(
         upgrade: UpgradeRecord,
-        connection: 'DBConnection',
+        connection: DBConnection,
         global_dir: Path,
         db_filename: str,
         progress_handler: DBUpgradeProgressHandler,
@@ -207,9 +208,9 @@ def _perform_single_upgrade(
 def configure_globaldb(
         global_dir: Path,
         db_filename: str,
-        connection: 'DBConnection',
-        msg_aggregator: 'MessagesAggregator',
-        globaldb: 'GlobalDBHandler | None' = None,
+        connection: DBConnection,
+        msg_aggregator: MessagesAggregator,
+        globaldb: GlobalDBHandler | None = None,
 ) -> None:
     """Configure the global database and handle schema upgrades.
 

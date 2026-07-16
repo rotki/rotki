@@ -1,10 +1,8 @@
 import logging
 import threading
 from collections import defaultdict
-from collections.abc import Iterator
 from importlib import import_module
-from types import ModuleType
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.db.constants import (
@@ -29,15 +27,18 @@ from rotkehlchen.types import (
     Location,
     Timestamp,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 
 from .constants import EXCHANGES_WITHOUT_API_SECRET, SUPPORTED_EXCHANGES
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from types import ModuleType
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -102,12 +103,12 @@ class ExchangeManager:
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
             passphrase: str | None,
-            kraken_account_type: Optional['KrakenAccountType'],
+            kraken_account_type: KrakenAccountType | None,
             kraken_futures_api_key: ApiKey | None,
             kraken_futures_api_secret: ApiSecret | None,
             binance_selected_trade_pairs: list[str] | None,
-            okx_location: Optional['OkxLocation'],
-            gate_location: Optional['GateLocation'] = None,
+            okx_location: OkxLocation | None,
+            gate_location: GateLocation | None = None,
     ) -> tuple[bool, str]:
         """Edits both the exchange object and the database entry
 
@@ -246,9 +247,9 @@ class ExchangeManager:
             location: Location,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
-            database: 'DBHandler',
+            database: DBHandler,
             passphrase: str | None = None,
-            kraken_account_type: Optional['KrakenAccountType'] = None,
+            kraken_account_type: KrakenAccountType | None = None,
             **kwargs: Any,
     ) -> tuple[bool, str]:
         """
@@ -319,7 +320,7 @@ class ExchangeManager:
             self,
             module: ModuleType,
             credentials: ExchangeApiCredentials,
-            database: 'DBHandler',
+            database: DBHandler,
             **kwargs: Any,
     ) -> ExchangeInterface:
         maybe_exchange = self.get_exchange(name=credentials.name, location=credentials.location)
@@ -351,7 +352,7 @@ class ExchangeManager:
     def initialize_exchanges(
             self,
             exchange_credentials: dict[Location, list[ExchangeApiCredentials]],
-            database: 'DBHandler',
+            database: DBHandler,
     ) -> None:
         log.debug('Initializing exchanges')
         self.database = database

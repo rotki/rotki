@@ -3,10 +3,12 @@ import platform
 import subprocess  # noqa: S404
 import sys
 from datetime import UTC, datetime
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def _git(repo_root: Path, *args: str) -> str:

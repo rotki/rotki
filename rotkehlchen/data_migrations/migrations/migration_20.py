@@ -38,7 +38,7 @@ class SwapEventData(NamedTuple):
 
 
 @enter_exit_debug_log()
-def data_migration_20(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
+def data_migration_20(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:
     """
     Introduced at v1.39.1
 
@@ -47,7 +47,7 @@ def data_migration_20(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     and location_label, then ensures they all share the same event_identifier.
     """
     @progress_step(description='Fixing SwapEvent identifiers')
-    def _fix_swap_event_identifiers(rotki: 'Rotkehlchen') -> None:
+    def _fix_swap_event_identifiers(rotki: Rotkehlchen) -> None:
         """
         Fix SwapEvent identifiers by grouping related spend/receive/fee events.
 
@@ -168,7 +168,7 @@ def data_migration_20(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
                         log.error(f'During _fix_swap_event_identifiers found a conflict while applying update {update}. error: {e}. Skipping')  # noqa: E501
 
     @progress_step(description='Recovering lost trades from v1.39.0 upgrade')
-    def _recover_lost_trades_from_v139_upgrade(rotki: 'Rotkehlchen') -> None:
+    def _recover_lost_trades_from_v139_upgrade(rotki: Rotkehlchen) -> None:
         """Recover trades that were lost during the v1.38.4 to v1.39.0 database upgrade.
 
         During the upgrade, trades with the same location and empty link field had ID conflicts.

@@ -1,5 +1,4 @@
 import warnings as test_warnings
-from collections.abc import Generator
 from contextlib import ExitStack
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
@@ -27,6 +26,8 @@ from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from rotkehlchen.inquirer import Inquirer
 
 
@@ -406,7 +407,7 @@ def test_deserialize_v1_trade(mock_kucoin):
     )]
 
 
-def test_deserialize_asset_movement_deposit(mock_kucoin: 'Kucoin') -> None:
+def test_deserialize_asset_movement_deposit(mock_kucoin: Kucoin) -> None:
     raw_result = {
         'address': '0x5bedb060b8eb8d823e2414d82acce78d38be7fe9',
         'memo': '',
@@ -448,7 +449,7 @@ def test_deserialize_asset_movement_deposit(mock_kucoin: 'Kucoin') -> None:
     assert asset_movement == expected_asset_movement
 
 
-def test_deserialize_asset_movement_withdrawal(mock_kucoin: 'Kucoin') -> None:
+def test_deserialize_asset_movement_withdrawal(mock_kucoin: Kucoin) -> None:
     raw_result = {
         'id': '5c2dc64e03aa675aa263f1ac',
         'address': '0x5bedb060b8eb8d823e2414d82acce78d38be7fe9',
@@ -666,7 +667,7 @@ def test_query_trades(mock_kucoin: Kucoin):
         }
     }"""
 
-    def get_endpoints_response() -> Generator[str, None, None]:
+    def get_endpoints_response() -> Generator[str]:
         yield from [
             f'{trades_response_1}',
             f'{trades_response_2}',
@@ -834,8 +835,8 @@ def test_query_trades(mock_kucoin: Kucoin):
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_asset_movements(
-        mock_kucoin: 'Kucoin',
-        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+        mock_kucoin: Kucoin,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
 ) -> None:
     """Test that querying kucoin deposits and withdrawals works properly.
 
@@ -1071,7 +1072,7 @@ def test_query_asset_movements(
         unique_id='5c2dc64e03aa675aa263f1a4',
     )]
 
-    def get_endpoints_response() -> Generator[str, None, None]:
+    def get_endpoints_response() -> Generator[str]:
         yield from [
             f'{deposits_response_1}',
             f'{deposits_response_2}',

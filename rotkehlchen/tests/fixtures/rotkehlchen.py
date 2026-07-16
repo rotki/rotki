@@ -1,6 +1,5 @@
 import base64
 import json
-from collections.abc import Generator
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
@@ -8,7 +7,6 @@ from unittest.mock import patch
 import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.node_inquirer import _connect_task_prefix
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.constants import LAST_USERDB_DATA_MIGRATION
@@ -65,6 +63,9 @@ from rotkehlchen.types import (
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from rotkehlchen.api.server import APIServer
     from rotkehlchen.exchanges.exchange import ExchangeInterface
 
 
@@ -560,7 +561,7 @@ def initialize_mock_rotkehlchen_instance(
 
 
 @pytest.fixture(name='uninitialized_rotkehlchen')
-def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, globaldb) -> Generator[Rotkehlchen, None, None]:  # noqa: E501  # pylint: disable=unused-argument
+def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, globaldb) -> Generator[Rotkehlchen]:  # noqa: E501  # pylint: disable=unused-argument
     """A rotkehlchen instance that has only had __init__ run but is not unlocked
 
     Adding the inquirer fixture as a requirement to make sure that any mocking that

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 @enter_exit_debug_log(name='globaldb v11->v12 upgrade')
-def migrate_to_v12(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+def migrate_to_v12(connection: DBConnection, progress_handler: DBUpgradeProgressHandler) -> None:
     """This globalDB upgrade does the following:
     - Add new table for counterparty mappings
 
@@ -25,7 +25,7 @@ def migrate_to_v12(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
 
     This upgrade takes place in v1.39.0"""
     @progress_step('Adding new tables.')
-    def _create_new_tables(write_cursor: 'DBCursor') -> None:
+    def _create_new_tables(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS counterparty_asset_mappings (
@@ -38,7 +38,7 @@ def migrate_to_v12(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         )
 
     @progress_step('Reset caches')
-    def _reset_caches(write_cursor: 'DBCursor') -> None:
+    def _reset_caches(write_cursor: DBCursor) -> None:
         packaged_db_path = Path(__file__).resolve().parent.parent.parent / 'data' / 'global.db'
         write_cursor.execute(
             'DELETE FROM general_cache WHERE key IN (?, ?, ?, ?)',
@@ -80,7 +80,7 @@ def migrate_to_v12(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         ])
 
     @progress_step(description='Deleting etherscan nodes')
-    def _delete_etherscan_nodes(write_cursor: 'DBCursor') -> None:
+    def _delete_etherscan_nodes(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'DELETE FROM default_rpc_nodes WHERE name IN (?, ?, ?, ?, ?, ?, ?, ?)',
             (

@@ -1,7 +1,6 @@
 import logging
-from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from eth_utils import to_checksum_address
@@ -41,6 +40,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import convert_to_int, iso8601ts_to_timestamp
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 
@@ -525,11 +526,7 @@ def deserialize_str(value: Any) -> str:
     return value
 
 
-X = TypeVar('X')
-Y = TypeVar('Y')
-
-
-def deserialize_optional(input_val: X | None, fn: Callable[[X], Y]) -> Y | None:
+def deserialize_optional[X, Y](input_val: X | None, fn: Callable[[X], Y]) -> Y | None:
     """An optional deserialization wrapper for any deserialize function"""
     if input_val is None:
         return None
@@ -541,7 +538,7 @@ def _get_transaction_receipt(
         tx_hash: EVMTxHash,
         chain_id: ChainID,
         timestamp: Timestamp,
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
 ) -> dict[str, Any]:
     """Get the transaction receipt for a tx during deserialization.
     Handles a special case for Optimism transactions before the bedrock upgrade where some nodes
@@ -565,9 +562,9 @@ def deserialize_evm_transaction(
         data: dict[str, Any],
         internal: Literal[True],
         chain_id: ChainID,
-        evm_inquirer: 'EvmNodeInquirer | None' = None,
-        parent_tx_hash: 'EVMTxHash | None' = None,
-        indexer: 'EtherscanLikeApi | None' = None,
+        evm_inquirer: EvmNodeInquirer | None = None,
+        parent_tx_hash: EVMTxHash | None = None,
+        indexer: EtherscanLikeApi | None = None,
 ) -> tuple[EvmInternalTransaction, None]:
     ...
 
@@ -578,8 +575,8 @@ def deserialize_evm_transaction(
         internal: Literal[False],
         chain_id: ChainID,
         evm_inquirer: None,
-        parent_tx_hash: 'EVMTxHash | None' = None,
-        indexer: 'EtherscanLikeApi | None' = None,
+        parent_tx_hash: EVMTxHash | None = None,
+        indexer: EtherscanLikeApi | None = None,
 ) -> tuple[EvmTransaction, None]:
     ...
 
@@ -589,9 +586,9 @@ def deserialize_evm_transaction(
         data: dict[str, Any],
         internal: Literal[False],
         chain_id: L2ChainIdsWithL1FeesType,
-        evm_inquirer: 'EvmNodeInquirer',
-        parent_tx_hash: 'EVMTxHash | None' = None,
-        indexer: 'EtherscanLikeApi | None' = None,
+        evm_inquirer: EvmNodeInquirer,
+        parent_tx_hash: EVMTxHash | None = None,
+        indexer: EtherscanLikeApi | None = None,
 ) -> tuple[L2WithL1FeesTransaction, dict[str, Any]]:
     ...
 
@@ -601,9 +598,9 @@ def deserialize_evm_transaction(
         data: dict[str, Any],
         internal: Literal[False],
         chain_id: ChainID,
-        evm_inquirer: 'EvmNodeInquirer',
-        parent_tx_hash: 'EVMTxHash | None' = None,
-        indexer: 'EtherscanLikeApi | None' = None,
+        evm_inquirer: EvmNodeInquirer,
+        parent_tx_hash: EVMTxHash | None = None,
+        indexer: EtherscanLikeApi | None = None,
 ) -> tuple[EvmTransaction, dict[str, Any]]:
     ...
 
@@ -612,9 +609,9 @@ def deserialize_evm_transaction(
         data: dict[str, Any],
         internal: bool,
         chain_id: ChainID,
-        evm_inquirer: 'EvmNodeInquirer | None' = None,
-        parent_tx_hash: 'EVMTxHash | None' = None,
-        indexer: 'EtherscanLikeApi | None' = None,
+        evm_inquirer: EvmNodeInquirer | None = None,
+        parent_tx_hash: EVMTxHash | None = None,
+        indexer: EtherscanLikeApi | None = None,
 ) -> tuple[EvmTransaction | EvmInternalTransaction, dict[str, Any] | None]:
     """Reads dict data of a transaction and deserializes it.
     If the transaction is not from etherscan then it's missing some data
@@ -814,10 +811,7 @@ def deserialize_evm_transaction(
         ), raw_receipt_data
 
 
-R = TypeVar('R')
-
-
-def ensure_type(symbol: Any, expected_type: type[R], location: str) -> R:
+def ensure_type[R](symbol: Any, expected_type: type[R], location: str) -> R:
     if isinstance(symbol, expected_type) is True:
         return symbol
     raise DeserializationError(

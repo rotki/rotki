@@ -57,7 +57,7 @@ class VelodromePoolData(NamedTuple):
 
 
 def save_velodrome_pool_to_cache(
-        database: 'DBHandler',
+        database: DBHandler,
         pool: VelodromePoolData,
 ) -> None:
     """
@@ -155,9 +155,9 @@ def read_aerodrome_pools_and_gauges_from_cache() -> tuple[set[ChecksumEvmAddress
 
 
 def query_velodrome_data_from_chain(
-        inquirer: 'OptimismInquirer | BaseInquirer',
+        inquirer: OptimismInquirer | BaseInquirer,
         existing_pools: set[str],
-        msg_aggregator: 'MessagesAggregator',
+        msg_aggregator: MessagesAggregator,
         reload_all: bool,
 ) -> list[VelodromePoolData]:
     """
@@ -261,9 +261,9 @@ def query_velodrome_data_from_chain(
 
 
 def query_velodrome_like_data(
-        inquirer: 'OptimismInquirer | BaseInquirer',
+        inquirer: OptimismInquirer | BaseInquirer,
         cache_type: Literal[CacheType.VELODROME_POOL_ADDRESS, CacheType.AERODROME_POOL_ADDRESS],
-        msg_aggregator: 'MessagesAggregator',
+        msg_aggregator: MessagesAggregator,
         reload_all: bool,
 ) -> list[VelodromePoolData] | None:
     """Queries velodrome pools and tokens."""

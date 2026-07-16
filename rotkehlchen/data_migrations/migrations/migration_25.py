@@ -18,12 +18,12 @@ ORACLE_SETTINGS_DEFAULTS = {
 
 
 @enter_exit_debug_log()
-def data_migration_25(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
+def data_migration_25(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:
     """Introduced at v1.43.1
     - Remove cryptocompare from configured price oracles if no API key is set.
     """
     @progress_step(description='Removing cryptocompare oracle without API key')
-    def _remove_cryptocompare_without_api_key(rotki: 'Rotkehlchen') -> None:
+    def _remove_cryptocompare_without_api_key(rotki: Rotkehlchen) -> None:
         with rotki.data.db.conn.write_ctx() as write_cursor:
             if write_cursor.execute(
                 'SELECT COUNT(*) FROM external_service_credentials WHERE name=?',

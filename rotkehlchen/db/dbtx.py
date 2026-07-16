@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
@@ -23,15 +23,15 @@ T_TxNotDecodedFilterQuery = TypeVar(
 )
 
 
-class DBCommonTx(ABC, Generic[T_Address, T_Transaction, T_TxHash, T_TxFilterQuery, T_TxNotDecodedFilterQuery]):  # noqa: E501
+class DBCommonTx[T_Address, T_Transaction: 'SolanaTransaction | EvmTransaction', T_TxHash: 'EVMTxHash | Signature', T_TxFilterQuery, T_TxNotDecodedFilterQuery: EvmTransactionsNotDecodedFilterQuery | SolanaTransactionsNotDecodedFilterQuery](ABC):  # noqa: E501
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         self.db = database
 
     @abstractmethod
     def add_transactions(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             solana_transactions: list[T_Transaction],
             relevant_address: T_Address | None,
     ) -> list[T_TxHash]:
@@ -40,7 +40,7 @@ class DBCommonTx(ABC, Generic[T_Address, T_Transaction, T_TxHash, T_TxFilterQuer
     @abstractmethod
     def get_transactions(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_: T_TxFilterQuery,
     ) -> list[T_Transaction]:
         """Get transactions from the database using the given filter."""

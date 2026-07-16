@@ -1,8 +1,5 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Literal
-
-from eth_typing.abi import ABI
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
@@ -30,13 +27,17 @@ from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import (
 )
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from eth_typing.abi import ABI
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -48,10 +49,10 @@ class Quickswapv3LikeLPDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            nft_manager: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            nft_manager: ChecksumEvmAddress,
             nft_manager_abi: ABI,
             counterparty: Literal['quickswap-v3', 'quickswap-v4'],
             version_string: Literal['V3', 'V4'],
@@ -112,10 +113,10 @@ class Quickswapv3LikeLPDecoder(EvmDecoderInterface):
 
     def _lp_post_decoding(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],  # pylint: disable=unused-argument
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> list[EvmEvent]:
         """Update the lp position creation event and position token.
         Note that Quickswap v3/v4 use Algebra dynamic fees (https://docs.algebra.finance/algebra-integral-documentation)
         and the original token name and symbol are `Algebra Positions NFT-V1 (ALGB-POS)`.
@@ -141,11 +142,11 @@ class Quickswapv3CommonDecoder(Quickswapv3LikeLPDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            router_address: 'ChecksumEvmAddress',
-            nft_manager: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            router_address: ChecksumEvmAddress,
+            nft_manager: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -160,10 +161,10 @@ class Quickswapv3CommonDecoder(Quickswapv3LikeLPDecoder):
 
     def _v3_router_post_decoding(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         for tx_log in all_logs:
             if tx_log.topics[0] == UNISWAP_V3_SWAP_SIGNATURE:
                 return decode_quickswap_swap(tx_log=tx_log, decoded_events=decoded_events)

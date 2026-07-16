@@ -1,14 +1,12 @@
 import logging
 import urllib
 from collections import defaultdict
-from collections.abc import Callable, Sequence
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
 
 import requests
 
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_woo
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -16,7 +14,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
@@ -47,14 +44,18 @@ from rotkehlchen.types import (
     Location,
     Timestamp,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -83,7 +84,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
@@ -196,7 +197,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Return deposits/withdrawals history on Woo in a range of time."""
         events: list[AssetMovement | SwapEvent] = []
         events.extend(self._api_query_paginated(

@@ -11,27 +11,27 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.errors.asset import WrongAssetType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 def decode_uniswap_v4_like_swaps(
-        transaction: 'EvmTransaction',
-        decoded_events: list['EvmEvent'],
-        all_logs: list['EvmTxReceiptLog'],
-        base_tools: 'BaseEvmDecoderTools',
+        transaction: EvmTransaction,
+        decoded_events: list[EvmEvent],
+        all_logs: list[EvmTxReceiptLog],
+        base_tools: BaseEvmDecoderTools,
         swap_topics: tuple[bytes, ...],
         counterparty: str,
         router_address: ChecksumEvmAddress,
-) -> list['EvmEvent']:
+) -> list[EvmEvent]:
     """Decode Uniswap V4 like swaps."""
     amounts_received, amounts_sent, pools_used, possible_fees = set(), set(), set(), defaultdict(set)  # noqa: E501
     # Since tokens may be swapped multiple times before reaching the desired token, we must

@@ -1,6 +1,5 @@
 import logging
-from collections.abc import Callable
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_32_BYTES_HEX_NO_PREFIX
@@ -14,10 +13,14 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_SAFE_MULTISIG
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

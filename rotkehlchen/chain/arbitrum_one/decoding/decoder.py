@@ -1,6 +1,5 @@
 import logging
 from collections import defaultdict
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
@@ -8,11 +7,12 @@ from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.arbitrum_one_tx import DBArbitrumOneTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 
 from .interfaces import ArbitrumDecoderInterface
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.arbitrum_one.transactions import ArbitrumOneTransactions
     from rotkehlchen.chain.arbitrum_one.types import ArbitrumOneTransaction
@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -29,11 +30,11 @@ class ArbitrumOneTransactionDecoder(EVMTransactionDecoder):
 
     def __init__(
             self,
-            database: 'DBHandler',
-            arbitrum_inquirer: 'ArbitrumOneInquirer',
-            transactions: 'ArbitrumOneTransactions',
-            premium: 'Premium | None' = None,
-            monerium: 'Monerium | None' = None,
+            database: DBHandler,
+            arbitrum_inquirer: ArbitrumOneInquirer,
+            transactions: ArbitrumOneTransactions,
+            premium: Premium | None = None,
+            monerium: Monerium | None = None,
     ):
         self.transaction_type_mappings: dict[int, list[tuple[int, Callable]]] = defaultdict(list)
         super().__init__(
@@ -56,13 +57,13 @@ class ArbitrumOneTransactionDecoder(EVMTransactionDecoder):
 
     def _chain_specific_post_decoding_rules(
             self,
-            transaction: 'ArbitrumOneTransaction',  # type: ignore[override]
+            transaction: ArbitrumOneTransaction,  # type: ignore[override]
     ) -> list[tuple[int, Callable]]:
         return self.transaction_type_mappings.get(transaction.tx_type, [])
 
     def _chain_specific_decoder_initialization(
             self,
-            decoder: 'EvmDecoderInterface',
+            decoder: EvmDecoderInterface,
     ) -> None:
         """Initialize the transaction type mappings"""
         if not isinstance(decoder, ArbitrumDecoderInterface):

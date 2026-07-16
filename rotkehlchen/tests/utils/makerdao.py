@@ -2,18 +2,18 @@ import types
 from typing import TYPE_CHECKING, NamedTuple
 from unittest.mock import patch
 
-from web3 import Web3
-
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import WAD
-from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import ZERO_ETH_ADDRESS
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
+    from web3 import Web3
+
+    from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 class VaultTestData(NamedTuple):
@@ -117,7 +117,7 @@ def mock_jug_ilks(_, ilk) -> tuple[int, int]:
     return duty, whatever
 
 
-def create_web3_mock(web3: Web3, ethereum: 'EthereumInquirer', test_data: VaultTestData):
+def create_web3_mock(web3: Web3, ethereum: EthereumInquirer, test_data: VaultTestData):
     def mock_contract(address, abi):  # pylint: disable=unused-argument
         mock_proxy_registry = (
             address == ethereum.contracts.contract('DS_PROXY_REGISTRY').address and

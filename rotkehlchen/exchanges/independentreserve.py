@@ -2,13 +2,11 @@ import json
 import logging
 import time
 from collections import OrderedDict, defaultdict
-from collections.abc import Sequence
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 
 import requests
 
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
@@ -44,12 +42,15 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -128,7 +129,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
@@ -372,7 +373,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
-    ) -> list['AssetMovement']:
+    ) -> list[AssetMovement]:
         if self.account_guids is None:
             self.query_balances()  # do a balance query to populate the account guids
         movements = []
@@ -432,7 +433,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         events: list[AssetMovement | SwapEvent] = []
         for query_func in (self._query_asset_movements, self._query_trades):
             events.extend(query_func(start_ts=start_ts, end_ts=end_ts))

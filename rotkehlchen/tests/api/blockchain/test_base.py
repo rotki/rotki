@@ -74,7 +74,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_query_empty_blockchain_balances(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_empty_blockchain_balances(rotkehlchen_api_server: APIServer) -> None:
     """Make sure that querying balances for all blockchains works when no accounts are tracked
 
     Regression test for https://github.com/rotki/rotki/issues/848
@@ -116,10 +116,10 @@ def test_query_empty_blockchain_balances(rotkehlchen_api_server: 'APIServer') ->
     'bc1qhkje0xfvhmgk6mvanxwy09n45df03tj3h3jtnf',
 ]])
 def test_query_bitcoin_blockchain_bech32_balances(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        btc_accounts: list['BTCAddress'],
-        caplog: 'pytest.LogCaptureFixture',
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
+        caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Test that querying Bech32 bitcoin addresses works fine"""
     caplog.set_level(logging.DEBUG)
@@ -159,9 +159,9 @@ def test_query_bitcoin_blockchain_bech32_balances(
     'BTC': FVal('8849.04'),
 }])
 def test_query_blockchain_balances(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        btc_accounts: list['BTCAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
 ) -> None:
     """Test that the query blockchain balances endpoint works when queried asynchronously
     """
@@ -248,9 +248,9 @@ def test_query_blockchain_balances(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 def test_query_blockchain_balances_ignore_cache(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        btc_accounts: list['BTCAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
 ) -> None:
     """Test that GET uses cache and POST refreshes balances."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -330,9 +330,9 @@ def test_query_blockchain_balances_ignore_cache(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 def test_refresh_blockchain_balances_via_post(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        btc_accounts: list['BTCAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
 ) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
@@ -393,12 +393,12 @@ def test_refresh_blockchain_balances_via_post(
 
 
 def _add_blockchain_accounts_test_start(
-        api_server: 'APIServer',
+        api_server: APIServer,
         query_balances_before_first_modification: bool,
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        btc_accounts: list['BTCAddress'],
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
         async_query: bool,
-) -> tuple[list['ChecksumEvmAddress'], list[str], dict[Any, list[str]]]:
+) -> tuple[list[ChecksumEvmAddress], list[str], dict[Any, list[str]]]:
     # Disable caching of query results
     rotki = api_server.rest_api.rotkehlchen
     rotki.chains_aggregator.cache_ttl_secs = 0
@@ -513,7 +513,7 @@ def _add_blockchain_accounts_test_start(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_add_solana_blockchain_account_rejects_invalid_address(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test that adding an invalid Solana account raises validation error."""
     invalid_address = 'invalid_solana_address'
@@ -540,9 +540,9 @@ def test_add_solana_blockchain_account_rejects_invalid_address(
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
 @pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_add_blockchain_accounts(  # hard to VCR, the order of requests is not always the same
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        btc_accounts: list['BTCAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
         query_balances_before_first_modification: bool,
 ) -> None:
     """Test that the endpoint adding blockchain accounts works properly"""
@@ -712,7 +712,7 @@ def test_add_blockchain_accounts(  # hard to VCR, the order of requests is not a
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('btc_accounts', [[]])
-def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server: APIServer) -> None:
     """Test that if we add blockchain accounts concurrently we won't get any duplicates"""
     ethereum_accounts = [  # Hardcode the addresses to keep it deterministic for the vcr
         '0x419Ec7D064B2746B2A34A8Aed2c6F523D2f32cdd',
@@ -779,8 +779,8 @@ def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server: 'APIServer')
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_no_etherscan_is_detected(
-        rotkehlchen_api_server: 'APIServer',
-        websocket_connection: 'WebsocketReader',
+        rotkehlchen_api_server: APIServer,
+        websocket_connection: WebsocketReader,
 ) -> None:
     """Check that the etherscan missing key message is properly sent or not depending on the
     suppress_missing_key_msg_services setting when interacting with etherscan with no key.
@@ -828,10 +828,10 @@ def test_no_etherscan_is_detected(
 
 @pytest.mark.parametrize('method', ['PUT', 'DELETE'])
 def test_blockchain_accounts_endpoint_errors(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         rest_api_port: int,
         method: str,
-        test_session: 'ConfigurableSession',
+        test_session: ConfigurableSession,
 ) -> None:
     """
     Test /api/(version)/blockchains/(name) for edge cases and errors.
@@ -1002,7 +1002,7 @@ def test_blockchain_accounts_endpoint_errors(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
+def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlchen_api_server: APIServer) -> None:  # noqa: E501
     """Test that adding account with labels and tags works correctly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -1098,7 +1098,7 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlch
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_blockchain_account_tags_no_duplicates_with_group_label(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Ensure tags are not duplicated when both chain and group labels exist."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -1171,8 +1171,8 @@ def test_blockchain_account_tags_no_duplicates_with_group_label(
     UNIT_BTC_ADDRESS2,
 ]])
 def test_edit_blockchain_accounts(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that the endpoint editing blockchain accounts works properly"""
     # Add 3 tags
@@ -1304,8 +1304,8 @@ def test_edit_blockchain_accounts(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 def test_edit_blockchain_account_errors(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that errors are handled properly in the edit accounts endpoint"""
     # Add two tags
@@ -1526,12 +1526,12 @@ def test_edit_blockchain_account_errors(
 
 
 def _remove_blockchain_accounts_test_start(
-        api_server: 'APIServer',
+        api_server: APIServer,
         query_balances_before_first_modification: bool,
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        btc_accounts: list['BTCAddress'],
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
         async_query: bool,
-) -> tuple[list['ChecksumEvmAddress'], list[str], dict['EvmToken', list[str]]]:
+) -> tuple[list[ChecksumEvmAddress], list[str], dict[EvmToken, list[str]]]:
     # Disable caching of query results
     rotki = api_server.rest_api.rotkehlchen
     rotki.chains_aggregator.cache_ttl_secs = 0
@@ -1644,10 +1644,10 @@ def _remove_blockchain_accounts_test_start(
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_remove_blockchain_accounts(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        gnosis_accounts: list['ChecksumEvmAddress'],
-        btc_accounts: list['BTCAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        gnosis_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
         query_balances_before_first_modification: bool,
 ) -> None:
     """Test that the endpoint removing blockchain accounts works properly"""
@@ -1749,8 +1749,8 @@ def test_remove_blockchain_accounts(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 def test_remove_nonexisting_blockchain_account_along_with_existing(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that if an existing and a non-existing account are given to remove, nothing is"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -1818,7 +1818,7 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
+def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_server: APIServer) -> None:  # noqa: E501
     """Test that removing an account with tags remove the mappings"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -1910,7 +1910,7 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
 @pytest.mark.parametrize('gnosis_accounts', [[ADDRESS_MULTICHAIN]])
 @pytest.mark.parametrize('bch_accounts', [[UNIT_BTC_ADDRESS1]])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-def test_remove_chain_agnostic_accounts(rotkehlchen_api_server: 'APIServer') -> None:
+def test_remove_chain_agnostic_accounts(rotkehlchen_api_server: APIServer) -> None:
     """Test the removal of accounts for all the chains where they are tracked"""
     response = requests.delete(
         api_url_for(
@@ -1981,8 +1981,8 @@ def test_remove_chain_agnostic_accounts(rotkehlchen_api_server: 'APIServer') -> 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 def test_edit_blockchain_account_blank_label(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that setting a blank label on a blockchain account deletes the addressbook entry.
     Regression test for https://github.com/rotki/rotki/pull/8863
@@ -2021,7 +2021,7 @@ def test_edit_blockchain_account_blank_label(
         )[0]) == 0  # addressbook entry has been deleted
 
 
-def test_remove_solana_address_with_transactions(rotkehlchen_api_server: 'APIServer') -> None:
+def test_remove_solana_address_with_transactions(rotkehlchen_api_server: APIServer) -> None:
     """Test that removing a Solana address properly deletes transactions and history events"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     solana_tx_db = DBSolanaTx(rotki.data.db)

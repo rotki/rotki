@@ -5,9 +5,7 @@ from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_solana_to
 from rotkehlchen.chain.decoding.tools import BaseDecoderTools
 from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     SolanaAddress,
@@ -19,6 +17,8 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, SolanaToken
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -27,8 +27,8 @@ log = RotkehlchenLogsAdapter(logger)
 class SolanaDecoderTools(BaseDecoderTools[SolanaTransaction, SolanaAddress, Signature, SolanaEvent]):  # noqa: E501
     def __init__(
             self,
-            database: 'DBHandler',
-            node_inquirer: 'SolanaInquirer',
+            database: DBHandler,
+            node_inquirer: SolanaInquirer,
     ) -> None:
         super().__init__(
             database=database,
@@ -47,14 +47,14 @@ class SolanaDecoderTools(BaseDecoderTools[SolanaTransaction, SolanaAddress, Sign
             timestamp: Timestamp,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            asset: 'Asset',
+            asset: Asset,
             amount: FVal,
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
             address: SolanaAddress | None = None,
             extra_data: dict[str, Any] | None = None,
-    ) -> 'SolanaEvent':
+    ) -> SolanaEvent:
         """A convenience function to create a SolanaEvent"""
         return SolanaEvent(
             tx_ref=tx_ref,
@@ -78,14 +78,14 @@ class SolanaDecoderTools(BaseDecoderTools[SolanaTransaction, SolanaAddress, Sign
             timestamp: Timestamp,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            asset: 'Asset',
+            asset: Asset,
             amount: FVal,
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
             address: SolanaAddress | None = None,
             extra_data: dict[str, Any] | None = None,
-    ) -> 'SolanaEvent':
+    ) -> SolanaEvent:
         """A convenience function to create a SolanaEvent that is associated with a
         specific instruction."""
         self.event_instructions[event := self.make_event_next_index(
@@ -107,8 +107,8 @@ class SolanaDecoderTools(BaseDecoderTools[SolanaTransaction, SolanaAddress, Sign
             self,
             address: SolanaAddress,
             protocol: str | None = None,
-            encounter: 'TokenEncounterInfo | None' = None,
-    ) -> 'SolanaToken':
+            encounter: TokenEncounterInfo | None = None,
+    ) -> SolanaToken:
         """A version of get_or_create_solana_token to be called from the decoders"""
         return get_or_create_solana_token(
             userdb=self.database,

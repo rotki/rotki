@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_optimism_balances(
-        rotkehlchen_instance: 'Rotkehlchen',
+        rotkehlchen_instance: Rotkehlchen,
         optimism_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):

@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.kyber.constants import CPT_KYBER, KYBER_CPT_DETAILS
@@ -13,16 +12,17 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_KYBER_LEGACY
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 KYBER_TRADE_LEGACY = b'\xf7$\xb4\xdff\x17G6\x12\xb5=\x7f\x88\xec\xc6\xea\x980t\xb3\t`\xa0I\xfc\xd0e\x7f\xfe\x80\x80\x83'  # noqa: E501
@@ -36,9 +36,9 @@ class KyberDecoder(KyberCommonDecoder):
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            ethereum_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=ethereum_inquirer,

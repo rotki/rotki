@@ -53,7 +53,7 @@ def _query_curve_lending_vaults_api() -> list[dict[str, Any]] | None:
     return vault_list
 
 
-def _process_curve_lending_vault(database: 'DBHandler', vault: dict[str, Any]) -> None:
+def _process_curve_lending_vault(database: DBHandler, vault: dict[str, Any]) -> None:
     """Process Curve lending vault data from the api and add its tokens to the database.
     May raise NotERC20Conformant, NotERC721Conformant, DeserializationError, and KeyError."""
     if vault['blockchainId'] == 'fraxtal':
@@ -120,7 +120,7 @@ def _process_curve_lending_vault(database: 'DBHandler', vault: dict[str, Any]) -
             )
 
 
-def query_curve_lending_vaults(database: 'DBHandler', chain_id: ChainID) -> None:
+def query_curve_lending_vaults(database: DBHandler, chain_id: ChainID) -> None:
     """Query list of Curve lending vaults and add the vault tokens to the global database."""
     update_cached_vaults(
         database=database,
@@ -134,9 +134,9 @@ def query_curve_lending_vaults(database: 'DBHandler', chain_id: ChainID) -> None
 
 
 def get_curve_vault_token_price(
-        inquirer: 'Inquirer',
-        vault_token: 'EvmToken',
-        evm_inquirer: 'EvmNodeInquirer',
+        inquirer: Inquirer,
+        vault_token: EvmToken,
+        evm_inquirer: EvmNodeInquirer,
 ) -> Price:
     """Gets the token price for a Curve vault."""
     return get_vault_price(

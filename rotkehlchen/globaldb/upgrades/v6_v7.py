@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def upgrade_from_sql(cursor: 'DBCursor', filename: str) -> None:
+def upgrade_from_sql(cursor: DBCursor, filename: str) -> None:
     """Executes SQL from the given file in the globalDB upgrade"""
     if (  # check if the SQL file exists
         sql_file := Path(__file__).resolve().parent.parent.parent / 'data' / f'{filename}.sql'
@@ -21,14 +21,14 @@ def upgrade_from_sql(cursor: 'DBCursor', filename: str) -> None:
 
 
 @enter_exit_debug_log(name='globaldb v6->v7 upgrade')
-def migrate_to_v7(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+def migrate_to_v7(connection: DBConnection, progress_handler: DBUpgradeProgressHandler) -> None:
     """This globalDB upgrade does the following:
     - Adds and populates the `location_asset_mappings` table.
     - Adds and populates the `location_unsupported_assets` table.
 
     This upgrade takes place in v1.33.0"""
     @progress_step('Adding location_asset_mappings table.')
-    def _create_and_populate_location_asset_mappings_table(cursor: 'DBCursor') -> None:
+    def _create_and_populate_location_asset_mappings_table(cursor: DBCursor) -> None:
         """Adds and populates the `location_asset_mappings` table. These mappings are added using
         `rotkehlchen/data/populate_location_asset_mappings.sql`, which were all hardcoded till v1.32.XX.
         """  # noqa: E501
@@ -41,7 +41,7 @@ def migrate_to_v7(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         upgrade_from_sql(cursor=cursor, filename='populate_location_asset_mappings')
 
     @progress_step('Adding location_unsupported_assets table.')
-    def _create_and_populate_location_unsupported_assets_table(cursor: 'DBCursor') -> None:
+    def _create_and_populate_location_unsupported_assets_table(cursor: DBCursor) -> None:
         """Adds and populates the `location_unsupported_assets` table. These assets are added using
         `rotkehlchen/data/populate_location_unsupported_assets.sql`, which were all hardcoded till v1.32.XX.
         """  # noqa: E501

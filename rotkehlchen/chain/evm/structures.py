@@ -1,10 +1,12 @@
 import dataclasses
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash
 
 
 @dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

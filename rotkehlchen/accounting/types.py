@@ -1,10 +1,12 @@
 from enum import auto
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.fval import FVal
-from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn, SerializableEnumNameMixin
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.types import Timestamp
 
 
 class SchemaEventType(DBCharEnumMixIn):

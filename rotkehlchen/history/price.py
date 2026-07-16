@@ -1,10 +1,8 @@
 import logging
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
 from contextlib import suppress
 from http import HTTPStatus
-from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -33,6 +31,9 @@ from rotkehlchen.types import Price, Timestamp
 from .types import HistoricalPrice, HistoricalPriceOracle, HistoricalPriceOracleInstance
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+    from pathlib import Path
+
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
     from rotkehlchen.externalapis.alchemy import Alchemy
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -81,27 +82,27 @@ class HistoricalOracleState(NamedTuple):
 
 
 class PriceHistorian:
-    __instance: Optional['PriceHistorian'] = None
-    _cryptocompare: 'Cryptocompare'
-    _coingecko: 'Coingecko'
-    _defillama: 'Defillama'
-    _alchemy: 'Alchemy'
-    _moralis: 'Moralis'
-    _uniswapv2: 'UniswapV2Oracle'
-    _uniswapv3: 'UniswapV3Oracle'
+    __instance: PriceHistorian | None = None
+    _cryptocompare: Cryptocompare
+    _coingecko: Coingecko
+    _defillama: Defillama
+    _alchemy: Alchemy
+    _moralis: Moralis
+    _uniswapv2: UniswapV2Oracle
+    _uniswapv3: UniswapV3Oracle
     _oracle_state: HistoricalOracleState | None = None
 
     def __new__(   # noqa: PYI034  # singleton is an exception
             cls,
             data_directory: Path | None = None,
-            cryptocompare: Optional['Cryptocompare'] = None,
-            coingecko: Optional['Coingecko'] = None,
-            defillama: Optional['Defillama'] = None,
-            alchemy: Optional['Alchemy'] = None,
-            moralis: Optional['Moralis'] = None,
-            uniswapv2: Optional['UniswapV2Oracle'] = None,
-            uniswapv3: Optional['UniswapV3Oracle'] = None,
-    ) -> 'PriceHistorian':
+            cryptocompare: Cryptocompare | None = None,
+            coingecko: Coingecko | None = None,
+            defillama: Defillama | None = None,
+            alchemy: Alchemy | None = None,
+            moralis: Moralis | None = None,
+            uniswapv2: UniswapV2Oracle | None = None,
+            uniswapv3: UniswapV3Oracle | None = None,
+    ) -> PriceHistorian:
         if PriceHistorian.__instance is not None:
             return PriceHistorian.__instance
 
@@ -415,7 +416,7 @@ class PriceHistorian:
     def query_multiple_prices(
             assets_timestamp: list[tuple[Asset, Timestamp]],
             target_asset: Asset,
-            msg_aggregator: 'MessagesAggregator',
+            msg_aggregator: MessagesAggregator,
     ) -> Mapping[Asset, Mapping[Timestamp, Price]]:
         """Return the price of the assets at the given timestamps in the target
         asset currency.

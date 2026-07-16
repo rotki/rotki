@@ -1,12 +1,11 @@
 import logging
 import time
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import requests
 from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import SubstrateRequestException
 
-from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.types import (
     BlockNumber,
     DictNodeNameNodeAttributes,
@@ -17,6 +16,11 @@ from rotkehlchen.chain.substrate.types import (
 from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SupportedBlockchain
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.chain.substrate.manager import SubstrateManager
 
 NODE_CONNECTION_TIMEOUT = 15
 

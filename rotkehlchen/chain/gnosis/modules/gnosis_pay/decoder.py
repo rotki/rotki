@@ -1,9 +1,7 @@
 import logging
-from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import token_normalized_value
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -23,13 +21,16 @@ from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import (
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -40,9 +41,9 @@ class GnosisPayDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -143,7 +144,7 @@ class GnosisPayDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def _handle_post_processing(
             self,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             has_premium: bool,
     ) -> None:
         if self.gnosispay_api is None or not has_premium:

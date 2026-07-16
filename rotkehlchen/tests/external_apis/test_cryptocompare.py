@@ -319,7 +319,7 @@ def test_cryptocompare_query_with_api_key(cryptocompare):
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_starknet_historical_price_after_ticker_change(cryptocompare: 'Cryptocompare') -> None:
+def test_starknet_historical_price_after_ticker_change(cryptocompare: Cryptocompare) -> None:
     """Check that Starknet token price query after Cryptocompare ticker change is accurate.
 
     It checks that price queries work properly after the May 9, 2024, switch
@@ -334,7 +334,7 @@ def test_starknet_historical_price_after_ticker_change(cryptocompare: 'Cryptocom
 
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
-def test_special_cases(cryptocompare: 'Cryptocompare') -> None:
+def test_special_cases(cryptocompare: Cryptocompare) -> None:
     a_eur, a_dpi = A_EUR.resolve_to_asset_with_oracles(), A_DPI.resolve_to_asset_with_oracles()
     current_price = cryptocompare._special_case_handling(
         method_name='query_current_price',
@@ -361,7 +361,7 @@ def test_special_cases(cryptocompare: 'Cryptocompare') -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
-def test_query_multiple_current_prices(cryptocompare: 'Cryptocompare'):
+def test_query_multiple_current_prices(cryptocompare: Cryptocompare):
     assert cryptocompare.query_multiple_current_prices(
         from_assets=[
             A_BTC.resolve_to_asset_with_oracles(),
@@ -373,7 +373,7 @@ def test_query_multiple_current_prices(cryptocompare: 'Cryptocompare'):
 
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
-def test_query_multiple_current_prices_handles_exceptions(cryptocompare: 'Cryptocompare'):
+def test_query_multiple_current_prices_handles_exceptions(cryptocompare: Cryptocompare):
     """
     Regression test for query_multiple_current_prices to ensure it properly handles
     exceptions without failing the entire batch. This prevents the issue where
@@ -410,7 +410,7 @@ def test_query_multiple_current_prices_handles_exceptions(cryptocompare: 'Crypto
 
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
-def test_query_multiple_current_prices_handles_special_case_exceptions(cryptocompare: 'Cryptocompare'):  # noqa: E501
+def test_query_multiple_current_prices_handles_special_case_exceptions(cryptocompare: Cryptocompare):  # noqa: E501
     """Regression test for special case handling in query_multiple_current_prices."""
     # Include a special case asset that might fail
     from_assets = [

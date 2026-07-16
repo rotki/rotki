@@ -1,10 +1,11 @@
-from typing import Final
-
-from eth_typing.abi import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V4
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChainID
+
+if TYPE_CHECKING:
+    from eth_typing.abi import ABI
 
 V4_SWAP_TOPIC: Final = b'@\xe9\xce\xcb\x9f_\x1f\x1c[\x9c\x97\xde\xc2\x91{~\xe9.W\xbaUcp\x8d\xac\xa9M\xd8J\xd7\x11/'  # noqa: E501
 MODIFY_LIQUIDITY: Final = b"\xf2\x08\xf4\x91'\x82\xfd%\xc7\xf1\x14\xca7#\xa2\xd5\xddo;\xcc:\xc8\xdbZ\xf6;\xaa\x85\xf7\x11\xd5\xec"  # noqa: E501

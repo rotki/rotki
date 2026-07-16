@@ -1,5 +1,6 @@
 import random
 from contextlib import ExitStack
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import requests
@@ -10,7 +11,9 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test
-from rotkehlchen.types import Timestamp
+
+if TYPE_CHECKING:
+    from rotkehlchen.types import Timestamp
 
 
 def query_api_create_and_get_report(

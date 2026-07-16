@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.utils import (
@@ -56,6 +55,8 @@ from rotkehlchen.types import CacheType, ChecksumEvmAddress, GeneralCacheType, T
 from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -72,9 +73,9 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
 
     def __init__(
             self,
-            evm_inquirer: 'OptimismInquirer | BaseInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: OptimismInquirer | BaseInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             counterparty: Literal['velodrome', 'aerodrome'],
             voting_escrow_address: ChecksumEvmAddress,
             voter_address: ChecksumEvmAddress,
@@ -117,8 +118,8 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
 
     def _decode_add_liquidity_events(
             self,
-            tx_log: 'EvmTxReceiptLog',
-            decoded_events: list['EvmEvent'],
+            tx_log: EvmTxReceiptLog,
+            decoded_events: list[EvmEvent],
     ) -> EvmDecodingOutput:
         """
         Decodes events that add liquidity to a (velo/aero)drome v1 or v2 pool.
@@ -162,8 +163,8 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
 
     def _decode_remove_liquidity_events(
             self,
-            tx_log: 'EvmTxReceiptLog',
-            decoded_events: list['EvmEvent'],
+            tx_log: EvmTxReceiptLog,
+            decoded_events: list[EvmEvent],
     ) -> EvmDecodingOutput:
         """Decodes events that remove liquidity from a (velo/aero)drome v1 or v2 pool"""
         out_events, in_events = [], []

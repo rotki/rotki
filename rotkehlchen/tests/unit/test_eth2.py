@@ -142,7 +142,7 @@ ADDR2: Final = string_to_evm_address('0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19
         },
     ],
 }])
-def test_ownership_proportion(eth2: 'Eth2', database):
+def test_ownership_proportion(eth2: Eth2, database):
     """
     Test that the ownership proportion is correct when querying validators. If proportion is
     customized then the custom value should be used. Otherwise the proportion should be ONE.
@@ -187,7 +187,7 @@ def test_ownership_proportion(eth2: 'Eth2', database):
     assert [x.validator_index for x in result] == [9, 1757]
 
 
-def test_deposits_pubkey_re(eth2: 'Eth2', database):
+def test_deposits_pubkey_re(eth2: Eth2, database):
     dbevents = DBHistoryEvents(database)
     pubkey1 = Eth2PubKey('0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda')  # noqa: E501
     pubkey2 = Eth2PubKey('0x96dab7564980306b3052649e523747fb613ebf91308a788350bbd16435f55f8d3a7090a2ec73fe636eed66ada6e52ad5')  # noqa: E501
@@ -427,9 +427,9 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('premium_limits_override', [{'eth_staked_limit': 8096}])
 def test_eth_accumulating_validators_performance(
-        eth2: 'Eth2',
-        database: 'DBHandler',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        eth2: Eth2,
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that the performance of accumulating validators is handled correctly.
 
@@ -585,10 +585,10 @@ def test_eth_accumulating_validators_performance(
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d']])  # noqa: E501
 @pytest.mark.freeze_time('2025-10-22 00:00:00 GMT')
 def test_eth_validators_performance_recent(
-        eth2: 'Eth2',
-        database: 'DBHandler',
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        rotki_premium_object: 'Premium',
+        eth2: Eth2,
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        rotki_premium_object: Premium,
 ) -> None:
     """Test that performance to recent time also takes into account outstanding consensus pnl"""
     eth2.premium = rotki_premium_object
@@ -1040,8 +1040,8 @@ def test_get_active_validator_indices(database):
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
 def test_clean_cache_on_account_removal(
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        database: 'DBHandler',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        database: DBHandler,
 ) -> None:
     """Test that last withdrawal query timestamps are removed from the cache when """
     with database.conn.write_ctx() as write_cursor:
@@ -1117,9 +1117,9 @@ def test_staking_performance_division_by_zero_protection(eth2) -> None:
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
 def test_accumulating_validator_exit_pnl_with_multiple_deposits(
-        eth2: 'Eth2',
-        database: 'DBHandler',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        eth2: Eth2,
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that exit PnL calculation for accumulating validators with multiple deposits is correct.
     Regression test for https://github.com/rotki/rotki/issues/11146
@@ -1209,9 +1209,9 @@ def test_accumulating_validator_exit_pnl_with_multiple_deposits(
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0xa966b01E2136953DF4F4914CfA9D37724E99a187']])
 def test_validator_details_update(
-        eth2: 'Eth2',
-        database: 'DBHandler',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        eth2: Eth2,
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ):
     """Test that validator details are properly updated."""
     dbeth2 = DBEth2(database)
@@ -1237,9 +1237,9 @@ def test_validator_details_update(
 
 
 def test_consolidated_validator_pending_withdrawal_outstanding_rewards(
-        eth2: 'Eth2',
-        database: 'DBHandler',
-        rotki_premium_object: 'Premium',
+        eth2: Eth2,
+        database: DBHandler,
+        rotki_premium_object: Premium,
 ) -> None:
     """Test that consolidated validators with pending withdrawals don't show negative outstanding rewards"""  # noqa: E501
     eth2.premium = rotki_premium_object
@@ -1265,7 +1265,7 @@ def test_consolidated_validator_pending_withdrawal_outstanding_rewards(
         assert result['sums']['outstanding_consensus_pnl'] == small_balance
 
 
-def test_detect_and_refresh_validators_only_processes_addresses_with_deposits(eth2: 'Eth2'):
+def test_detect_and_refresh_validators_only_processes_addresses_with_deposits(eth2: Eth2):
     """Test that detect_and_refresh_validators only processes addresses that have deposit events"""
     with eth2.database.user_write() as cursor:
         DBHistoryEvents(eth2.database).add_history_event(
@@ -1291,7 +1291,7 @@ def test_detect_and_refresh_validators_only_processes_addresses_with_deposits(et
     assert addresses_queried == []
 
 
-def test_detect_and_refresh_validators_skips_exited_validators(eth2: 'Eth2') -> None:
+def test_detect_and_refresh_validators_skips_exited_validators(eth2: Eth2) -> None:
     """Test that detect_and_refresh_validators doesn't refresh validators marked exited."""
     with eth2.database.user_write() as write_cursor:
         DBEth2(eth2.database).add_or_update_validators(write_cursor, [

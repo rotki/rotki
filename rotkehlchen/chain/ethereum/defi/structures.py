@@ -1,7 +1,8 @@
-from typing import Literal, NamedTuple
+from typing import TYPE_CHECKING, Literal, NamedTuple
 
-from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.types import ChecksumEvmAddress
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.balance import Balance
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 class DefiProtocol(NamedTuple):

@@ -1,21 +1,22 @@
 import abc
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.llamazip.constants import CPT_LLAMAZIP, LLAMAZIP_CPT_DETAILS
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -26,10 +27,10 @@ class LlamazipCommonDecoder(EvmDecoderInterface, abc.ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            router_addresses: tuple['ChecksumEvmAddress', ...],
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            router_addresses: tuple[ChecksumEvmAddress, ...],
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -41,9 +42,9 @@ class LlamazipCommonDecoder(EvmDecoderInterface, abc.ABC):
     def _decode_swap(
             self,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],  # pylint: disable=unused-argument
-    ) -> list['EvmEvent']:
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> list[EvmEvent]:
         spend_event = receive_event = None
         for event in decoded_events:
             if (

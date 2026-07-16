@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
 from ens.abis import PUBLIC_RESOLVER_2 as ENS_RESOLVER_ABI, UNIVERSAL_RESOLVER
@@ -26,10 +25,8 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import BlockchainQueryError, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
@@ -41,10 +38,14 @@ from rotkehlchen.utils.misc import get_chunks
 from .constants import ETH2_DEPOSIT_ADDRESS, WeightedNode
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.routescan import Routescan
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.tasks.supervisor import TaskSupervisor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -57,10 +58,10 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
     def __init__(
             self,
             task_supervisor: TaskSupervisor,
-            database: 'DBHandler',
-            etherscan: 'Etherscan',
-            blockscout: 'Blockscout',
-            routescan: 'Routescan',
+            database: DBHandler,
+            etherscan: Etherscan,
+            blockscout: Blockscout,
+            routescan: Routescan,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.ETHEREUM]](chain_id=ChainID.ETHEREUM)

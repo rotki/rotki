@@ -15,10 +15,10 @@ class MoneriumDecoder(MoneriumCommonDecoder):
 
     def __init__(
             self,
-            scroll_inquirer: 'ScrollInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            monerium_api: 'Monerium | None',
+            scroll_inquirer: ScrollInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            monerium_api: Monerium | None,
     ) -> None:
         super().__init__(
             evm_inquirer=scroll_inquirer,

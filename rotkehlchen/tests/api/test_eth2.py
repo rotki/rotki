@@ -1,5 +1,4 @@
 import random
-from collections.abc import Sequence
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Final, Literal
@@ -65,6 +64,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.premium.premium import Premium
     from rotkehlchen.types import ChecksumEvmAddress
@@ -79,7 +80,7 @@ CLEAN_HISTORY_WITHDRAWAL2: Final = '0xfAD07927C990a52e434909c9Bb1f0EC785a68F00'
 CLEAN_HISTORY_WITHDRAWAL3: Final = '0xF368A42D316070Cd53515fBF67Ac219aa29D5FE0'
 
 
-def _prepare_clean_validators(rotkehlchen_api_server: 'APIServer') -> None:
+def _prepare_clean_validators(rotkehlchen_api_server: APIServer) -> None:
     """Populate history with clean validator data and ask for events"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     for index in (CLEAN_HISTORY_VALIDATOR1, CLEAN_HISTORY_VALIDATOR2, CLEAN_HISTORY_VALIDATOR3):
@@ -121,8 +122,8 @@ def _prepare_clean_validators(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_staking_performance(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     # Create deposit event to link depositor address with validator
     with (db := rotkehlchen_api_server.rest_api.rotkehlchen.data.db).conn.write_ctx() as write_cursor:  # noqa: E501
@@ -236,8 +237,8 @@ def test_staking_performance(
     reason='Requires beaconcha.in deposit_address selector, which is subscription gated',
 )
 def test_staking_performance_filtering_pagination(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     # Add ETH1 account and detect validators it deposited
     addresses = [
@@ -391,8 +392,8 @@ def test_staking_performance_filtering_pagination(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_eth2_inactive(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that querying eth2 module while it's not active properly errors"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -428,7 +429,7 @@ def test_query_eth2_inactive(
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 @pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_add_get_edit_delete_eth2_validators(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         start_with_valid_premium: bool,
 ) -> None:
     response = requests.get(
@@ -664,7 +665,7 @@ def test_add_get_edit_delete_eth2_validators(
 @pytest.mark.parametrize('method', ['PUT', 'DELETE'])
 @pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_add_delete_validator_errors(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         method: Literal['PUT', 'DELETE'],
 ) -> None:
     """Tests the error cases of adding/deleting a validator"""
@@ -815,7 +816,7 @@ def test_add_delete_validator_errors(
 @pytest.mark.parametrize('query_all_balances', [False, True])
 @pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_query_eth2_balances(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         query_all_balances: bool,
 ) -> None:
     """Validator 5234 has exited in live beaconcha.in data.
@@ -939,7 +940,7 @@ def test_query_eth2_balances(
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_query_online_block_productions_missing_api_key(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test missing beaconcha.in API key uses the produced blocks indexer fallback."""
     eth2 = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_module('eth2')
@@ -967,7 +968,7 @@ def test_query_online_block_productions_missing_api_key(
     RemoteError('Beaconcha.in query failed'),
 ])
 def test_query_online_block_productions_beaconchain_error_falls_back_to_indexers(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         beaconchain_error: APIKeyNotAvailable | RemoteError,
 ) -> None:
     """Test beaconcha.in query errors use the produced blocks indexer fallback."""
@@ -1000,7 +1001,7 @@ def test_query_online_block_productions_beaconchain_error_falls_back_to_indexers
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_add_validator_rpc_fails_missing_beaconchain_key(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test validator addition handles having neither beacon RPC nor beaconcha.in available."""
     eth2 = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_module('eth2')
@@ -1033,7 +1034,7 @@ def test_add_validator_rpc_fails_missing_beaconchain_key(
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
 @pytest.mark.freeze_time('2025-07-25 16:00:00 GMT')
 @pytest.mark.usefixtures('force_beacon_rpc_fallback')
-def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
+def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_server: APIServer) -> None:  # noqa: E501
     """Tests that combining mev rewards with block production events is seen by the API"""
     vindex1, vindex2 = 45555, 54333
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -1212,8 +1213,8 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
 ]])
 @pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_get_validators(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: Sequence['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: Sequence[ChecksumEvmAddress],
 ) -> None:
     """Test getting validators works for all filters"""
     _prepare_clean_validators(rotkehlchen_api_server)
@@ -1303,8 +1304,8 @@ def test_get_validators(
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_balances_get_deleted_when_removing_validator(
-        rotkehlchen_api_server: 'APIServer',
-        rotki_premium_object: 'Premium',
+        rotkehlchen_api_server: APIServer,
+        rotki_premium_object: Premium,
 ) -> None:
     """Test that removing a validator correctly resets the balance caches"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -1351,7 +1352,7 @@ def test_balances_get_deleted_when_removing_validator(
 @pytest.mark.parametrize('include_beaconchain_key', [False])
 @pytest.mark.parametrize('db_settings', [{'beacon_rpc_endpoint': 'https://ethereum-beacon-api.publicnode.com'}])
 def test_add_validator_with_rpc(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         db_settings: dict[str, str],
         include_beaconchain_key: bool,
 ) -> None:
@@ -1394,7 +1395,7 @@ def test_add_validator_with_rpc(
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.usefixtures('force_beacon_rpc_fallback')
-def test_balances_of_exited_validators_are_not_queried(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
+def test_balances_of_exited_validators_are_not_queried(rotkehlchen_api_server: APIServer) -> None:
     """Test that the balances of exited validators are not queried at all."""
     response = requests.put(  # add an exited validator
         api_url_for(
@@ -1420,7 +1421,7 @@ def test_balances_of_exited_validators_are_not_queried(rotkehlchen_api_server: '
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('ethereum_accounts', [['0xa966b01E2136953DF4F4914CfA9D37724E99a187']])
 @pytest.mark.usefixtures('force_beacon_rpc_fallback')
-def test_consolidated_validators_status(rotkehlchen_api_server: 'APIServer') -> None:
+def test_consolidated_validators_status(rotkehlchen_api_server: APIServer) -> None:
     get_decoded_events_of_transaction(
         evm_inquirer=rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
         tx_hash=deserialize_evm_tx_hash('0x6e1dcb3172dbeea0434c3ebebfe231b4919d6cbe559cbe14a19ad25a21c490d9'),
@@ -1442,7 +1443,7 @@ def test_consolidated_validators_status(rotkehlchen_api_server: 'APIServer') -> 
     assert result['entries'][0]['validator_type'] == 'distributing'
 
 
-def test_redecode_block_production_events(rotkehlchen_api_server: 'APIServer') -> None:
+def test_redecode_block_production_events(rotkehlchen_api_server: APIServer) -> None:
     """Test redecoding of block production events.
     Events:
     - Three events to test combining block events with tx events.
@@ -1566,7 +1567,7 @@ def test_redecode_block_production_events(rotkehlchen_api_server: 'APIServer') -
 @pytest.mark.parametrize('include_beaconchain_key', [False])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
-def test_produced_block_fallback_from_eth_receive(rotkehlchen_api_server: 'APIServer') -> None:
+def test_produced_block_fallback_from_eth_receive(rotkehlchen_api_server: APIServer) -> None:
     """Test detecting produced blocks from plain ETH receive transactions without beaconcha.in."""
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     fee_recipient = string_to_evm_address('0x6d2e03b7EfFEae98BD302A9F836D0d6Ab0002766')
@@ -1640,7 +1641,7 @@ def test_produced_block_fallback_from_eth_receive(rotkehlchen_api_server: 'APISe
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
 def test_produced_block_fallback_from_eth_receive_redecode_idempotent(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test re-decoding plain ETH receive txs does not inflate existing MEV rewards."""
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -1683,7 +1684,7 @@ def test_produced_block_fallback_from_eth_receive_redecode_idempotent(
         assert get_mev_reward_amount() == FVal('0.012594557706319702')
 
 
-def test_refetch_staking_events_validation(rotkehlchen_api_server: 'APIServer') -> None:
+def test_refetch_staking_events_validation(rotkehlchen_api_server: APIServer) -> None:
     """Test validation for the refetch staking events endpoint."""
     url = api_url_for(rotkehlchen_api_server, 'refetchstakingeventsresource')
     assert_error_response(  # neither provided and no tracked validators
@@ -1734,7 +1735,7 @@ def test_refetch_staking_events_validation(rotkehlchen_api_server: 'APIServer') 
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-def test_refetch_block_production_events(rotkehlchen_api_server: 'APIServer') -> None:
+def test_refetch_block_production_events(rotkehlchen_api_server: APIServer) -> None:
     """Test refetching block production events re-queries beaconcha.in for the
     specified validators and stores any missing blocks."""
     dbevents = DBHistoryEvents(db := rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
@@ -1803,7 +1804,7 @@ def test_refetch_block_production_events(rotkehlchen_api_server: 'APIServer') ->
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-def test_refetch_withdrawal_events(rotkehlchen_api_server: 'APIServer') -> None:
+def test_refetch_withdrawal_events(rotkehlchen_api_server: APIServer) -> None:
     """Test refetching withdrawal events re-queries etherscan for the specified
     addresses and time range."""
     dbevents = DBHistoryEvents(db := rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
@@ -1836,7 +1837,7 @@ def test_refetch_withdrawal_events(rotkehlchen_api_server: 'APIServer') -> None:
     # a new withdrawal (simulating what etherscan would do) and return an empty set
     assert (eth2 := rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_module('eth2')) is not None  # noqa: E501
 
-    def mock_fetch_withdrawals(address: 'ChecksumEvmAddress', period: TimestampOrBlockRange) -> set[int]:  # noqa: E501
+    def mock_fetch_withdrawals(address: ChecksumEvmAddress, period: TimestampOrBlockRange) -> set[int]:  # noqa: E501
         with db.user_write() as write_cursor:
             dbevents.add_history_events(
                 write_cursor=write_cursor,

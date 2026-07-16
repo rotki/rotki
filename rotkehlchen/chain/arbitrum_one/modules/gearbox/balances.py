@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 class GearboxBalances(GearboxCommonBalances):
     def __init__(
             self,
-            evm_inquirer: 'ArbitrumOneInquirer',
-            tx_decoder: 'ArbitrumOneTransactionDecoder',
+            evm_inquirer: ArbitrumOneInquirer,
+            tx_decoder: ArbitrumOneTransactionDecoder,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

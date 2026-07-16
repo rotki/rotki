@@ -5,7 +5,6 @@ from unittest.mock import _patch, patch
 import pytest
 import requests
 
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
@@ -14,7 +13,6 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response_with_result,
@@ -25,7 +23,9 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS
 
 if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
     from rotkehlchen.externalapis.etherscan import Etherscan
+    from rotkehlchen.inquirer import Inquirer
 
 LQTY_ADDR = string_to_evm_address('0x063c26fF1592688B73d8e2A18BA4C23654e2792E')
 LQTY_PROXY = string_to_evm_address('0x9476832d4687c14b2c1a04E2ee4693162a7340B6')
@@ -287,7 +287,7 @@ def test_stability_pool(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     eth_multicall = rotki.chains_aggregator.ethereum.node_inquirer.contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696'))  # noqa: E501
 
-    def mock_etherscan_transaction_response(etherscan: 'Etherscan') -> _patch:
+    def mock_etherscan_transaction_response(etherscan: Etherscan) -> _patch:
         def mocked_request_dict(url: str, params: dict[str, str], *_args: Any, **_kwargs: Any) -> MockResponse:  # noqa: E501
             # if '0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441' in url:
             if params.get('to') == eth_multicall.address:

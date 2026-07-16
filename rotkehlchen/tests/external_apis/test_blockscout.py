@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 from unittest.mock import ANY, patch
 
 import pytest
@@ -8,7 +9,6 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import EthWithdrawalFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
@@ -20,6 +20,9 @@ from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ApiKey, ChainID, ExternalService, Timestamp, TimestampMS
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.fixture(name='blockscout')

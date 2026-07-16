@@ -58,7 +58,7 @@ def _make_receipt_data(tx_hash: EVMTxHash) -> dict[str, Any]:
 @pytest.mark.parametrize('ethereum_accounts', [[YAB_ADDRESS]])
 @pytest.mark.parametrize('gnosis_accounts', [[YAB_ADDRESS]])
 def test_delete_transactions_by_chain(
-        database: 'DBHandler',
+        database: DBHandler,
         gnosis_accounts,
         ethereum_inquirer,
         gnosis_inquirer,
@@ -104,7 +104,7 @@ def test_delete_transactions_by_chain(
         assert all(event.location == Location.ETHEREUM for event in events)
 
 
-def test_erc20_transfers_range_not_updated_on_remote_error(database: 'DBHandler', ethereum_manager: 'EthereumManager') -> None:  # noqa: E501
+def test_erc20_transfers_range_not_updated_on_remote_error(database: DBHandler, ethereum_manager: EthereumManager) -> None:  # noqa: E501
     address = make_evm_address()
     with database.conn.read_ctx() as cursor:  # verify no range is initially stored
         assert database.get_used_query_range(
@@ -135,8 +135,8 @@ def test_erc20_transfers_range_not_updated_on_remote_error(database: 'DBHandler'
 
 
 def test_query_and_save_transactions_returns_only_new_hashes(
-        database: 'DBHandler',
-        ethereum_manager: 'EthereumManager',
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
 ) -> None:
     dbevmtx = DBEvmTx(database)
     with database.user_write() as write_cursor:
@@ -168,8 +168,8 @@ def test_query_and_save_transactions_returns_only_new_hashes(
 
 
 def test_query_and_save_internal_transactions_returns_only_new_hashes(
-        database: 'DBHandler',
-        ethereum_manager: 'EthereumManager',
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
 ) -> None:
     existing_parent_tx, new_parent_tx = make_ethereum_transaction(), make_ethereum_transaction()
     dbevmtx = DBEvmTx(database)
@@ -230,8 +230,8 @@ def test_query_and_save_internal_transactions_returns_only_new_hashes(
 
 
 def test_query_single_parent_hash_replaces_existing_internal_transactions(
-        database: 'DBHandler',
-        ethereum_manager: 'EthereumManager',
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
 ) -> None:
     """For parent hash queries we should replace old internal tx rows atomically.
 
@@ -300,8 +300,8 @@ def test_query_single_parent_hash_replaces_existing_internal_transactions(
 
 
 def test_empty_repull_blocked_when_db_has_internals(
-        database: 'DBHandler',
-        ethereum_manager: 'EthereumManager',
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
 ) -> None:
     """Case A: empty re-pull + DB has existing internals => raises RemoteError, DB unchanged."""
     dbevmtx = DBEvmTx(database)
@@ -359,8 +359,8 @@ def test_empty_repull_blocked_when_db_has_internals(
 
 
 def test_empty_repull_allowed_when_db_has_no_internals(
-        database: 'DBHandler',
-        ethereum_manager: 'EthereumManager',
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
 ) -> None:
     """Case B: empty re-pull + DB has no internals => no error, normal empty handling."""
     dbevmtx = DBEvmTx(database)
@@ -401,8 +401,8 @@ def test_empty_repull_allowed_when_db_has_no_internals(
 
 
 def test_nonempty_repull_replaces_existing_internals(
-        database: 'DBHandler',
-        ethereum_manager: 'EthereumManager',
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
 ) -> None:
     """Case C: non-empty re-pull + DB has existing internals => replacement succeeds."""
     dbevmtx = DBEvmTx(database)
@@ -470,8 +470,8 @@ def test_nonempty_repull_replaces_existing_internals(
 
 
 def test_query_range_replaces_internal_transactions_for_address(
-        database: 'DBHandler',
-        ethereum_manager: 'EthereumManager',
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
 ) -> None:
     """Range refetch should replace stale internals for the queried address only."""
     dbevmtx = DBEvmTx(database)
@@ -567,8 +567,8 @@ def test_query_range_replaces_internal_transactions_for_address(
 
 
 def test_query_and_save_erc20_transfers_returns_only_new_hashes(
-        database: 'DBHandler',
-        ethereum_manager: 'EthereumManager',
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
 ) -> None:
     address = make_evm_address()
     existing_tx = make_ethereum_transaction()
@@ -634,9 +634,9 @@ def test_query_and_save_erc20_transfers_returns_only_new_hashes(
 @pytest.mark.parametrize('optimism_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 @pytest.mark.parametrize('tested_indexer', ['blockscout', 'routescan'])
 def test_indexers_fall_back_properly(
-        database: 'DBHandler',
-        optimism_manager: 'OptimismManager',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        database: DBHandler,
+        optimism_manager: OptimismManager,
+        optimism_accounts: list[ChecksumEvmAddress],
         tested_indexer: str,
 ) -> None:
     """Test that queries such as txlist, txlistinteral, etc which rely on indexers such as
@@ -734,8 +734,8 @@ def test_indexers_fall_back_properly(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 def test_all_indexers_get_same_tx_results(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that all indexers return the same results for the same tx queries."""
     txlist_results: list[list[EvmTransaction]] = []
@@ -782,7 +782,7 @@ def test_all_indexers_get_same_tx_results(
 
 
 def test_wait_until_no_query_for_releases_locks_on_error(
-        eth_transactions: 'EthereumTransactions',
+        eth_transactions: EthereumTransactions,
 ) -> None:
     """Test that the address tx locks are released when the caller's body raises.
 

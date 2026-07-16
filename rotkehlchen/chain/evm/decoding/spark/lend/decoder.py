@@ -1,4 +1,3 @@
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.aave.v3.decoder import Aavev3LikeCommonDecoder
@@ -9,6 +8,8 @@ from rotkehlchen.chain.evm.decoding.spark.constants import (
 from rotkehlchen.chain.evm.decoding.spark.decoder import SparkCommonDecoder
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.types import ChecksumEvmAddress
@@ -18,13 +19,13 @@ if TYPE_CHECKING:
 class SparklendCommonDecoder(Aavev3LikeCommonDecoder, SparkCommonDecoder):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            pool_addresses: Sequence['ChecksumEvmAddress'],
-            native_gateways: 'tuple[ChecksumEvmAddress, ...]',
-            treasury: 'ChecksumEvmAddress',
-            incentives: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            pool_addresses: Sequence[ChecksumEvmAddress],
+            native_gateways: tuple[ChecksumEvmAddress, ...],
+            treasury: ChecksumEvmAddress,
+            incentives: ChecksumEvmAddress,
     ) -> None:
         Aavev3LikeCommonDecoder.__init__(
             self=self,

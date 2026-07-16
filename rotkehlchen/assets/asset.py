@@ -2,7 +2,7 @@ import abc
 import logging
 from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, NamedTuple
 
 from eth_utils import to_checksum_address
 
@@ -55,7 +55,7 @@ class UnderlyingToken(NamedTuple):
         }
 
     @classmethod
-    def deserialize_from_db(cls, entry: UnderlyingTokenDBTuple) -> 'UnderlyingToken':
+    def deserialize_from_db(cls, entry: UnderlyingTokenDBTuple) -> UnderlyingToken:
         return UnderlyingToken(
             address=entry[0],  # type: ignore
             token_kind=TokenKind.deserialize_evm_from_db(entry[1]),
@@ -138,7 +138,7 @@ class Asset:
 
         return True
 
-    def check_existence(self, query_packaged_db: bool = True) -> 'Asset':
+    def check_existence(self, query_packaged_db: bool = True) -> Asset:
         """
         If this asset exists, returns the instance with normalized identifier set.
         If it doesn't, throws an UnknownAsset error.
@@ -170,7 +170,7 @@ class Asset:
     def is_crypto(self) -> bool:
         return self.get_asset_type() not in NON_CRYPTO_ASSETS
 
-    def resolve(self) -> 'AssetWithNameAndType':
+    def resolve(self) -> AssetWithNameAndType:
         """
         Returns the final representation for the current asset identifier. For example if we do
         dai = Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F').resolve()
@@ -188,49 +188,49 @@ class Asset:
 
         return AssetResolver.resolve_asset(identifier=self.identifier)
 
-    def resolve_to_asset_with_name_and_type(self) -> 'AssetWithNameAndType':
+    def resolve_to_asset_with_name_and_type(self) -> AssetWithNameAndType:
         return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithNameAndType,
         )
 
-    def resolve_to_asset_with_symbol(self) -> 'AssetWithSymbol':
+    def resolve_to_asset_with_symbol(self) -> AssetWithSymbol:
         return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithSymbol,
         )
 
-    def resolve_to_crypto_asset(self) -> 'CryptoAsset':
+    def resolve_to_crypto_asset(self) -> CryptoAsset:
         return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=CryptoAsset,
         )
 
-    def resolve_to_evm_token(self) -> 'EvmToken':
+    def resolve_to_evm_token(self) -> EvmToken:
         return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=EvmToken,
         )
 
-    def resolve_to_solana_token(self) -> 'SolanaToken':
+    def resolve_to_solana_token(self) -> SolanaToken:
         return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=SolanaToken,
         )
 
-    def resolve_to_asset_with_oracles(self) -> 'AssetWithOracles':
+    def resolve_to_asset_with_oracles(self) -> AssetWithOracles:
         return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithOracles,
         )
 
-    def resolve_to_fiat_asset(self) -> 'FiatAsset':
+    def resolve_to_fiat_asset(self) -> FiatAsset:
         return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=FiatAsset,
         )
 
-    def resolve_swapped_for(self) -> 'Asset':
+    def resolve_swapped_for(self) -> Asset:
         """Returns swapped_for asset if set, otherwise returns self."""
         resolved = self.resolve()
         if isinstance(resolved, CryptoAsset) and resolved.swapped_for is not None:
@@ -270,7 +270,7 @@ class Asset:
 
         return False
 
-    def __lt__(self, other: Union['Asset', str]) -> bool:
+    def __lt__(self, other: Asset | str) -> bool:
         if isinstance(other, Asset):
             return self.identifier < other.identifier
         if isinstance(other, str):
@@ -372,13 +372,13 @@ class FiatAsset(AssetWithOracles):
 
     @classmethod
     def initialize(
-            cls: type['FiatAsset'],
+            cls: type[FiatAsset],
             identifier: str,
             name: str | None = None,
             symbol: str | None = None,
             coingecko: str | None = None,
             cryptocompare: str | None = '',
-    ) -> 'FiatAsset':
+    ) -> FiatAsset:
         asset = FiatAsset(identifier=identifier, direct_field_initialization=True)
         asset._set_attributes(
             asset_type=AssetType.FIAT,
@@ -393,8 +393,8 @@ class FiatAsset(AssetWithOracles):
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True, slots=True)  # noqa: E501
 class CryptoAsset(AssetWithOracles):
     started: Timestamp | None = field(init=False)
-    forked: Optional['CryptoAsset'] = field(init=False)
-    swapped_for: Optional['CryptoAsset'] = field(init=False)
+    forked: CryptoAsset | None = field(init=False)
+    swapped_for: CryptoAsset | None = field(init=False)
 
     def __post_init__(self, direct_field_initialization: bool) -> None:
         super(CryptoAsset, self).__post_init__(direct_field_initialization)
@@ -419,7 +419,7 @@ class CryptoAsset(AssetWithOracles):
 
     @classmethod
     def initialize(
-            cls: type['CryptoAsset'],
+            cls: type[CryptoAsset],
             identifier: str,
             asset_type: AssetType,
             name: str | None = None,
@@ -427,9 +427,9 @@ class CryptoAsset(AssetWithOracles):
             coingecko: str | None = None,
             cryptocompare: str | None = '',
             started: Timestamp | None = None,
-            forked: Optional['CryptoAsset'] = None,
-            swapped_for: Optional['CryptoAsset'] = None,
-    ) -> 'CryptoAsset':
+            forked: CryptoAsset | None = None,
+            swapped_for: CryptoAsset | None = None,
+    ) -> CryptoAsset:
         asset = CryptoAsset(identifier=identifier, direct_field_initialization=True)
         asset._set_attributes(
             asset_type=asset_type,
@@ -469,12 +469,12 @@ class CustomAsset(AssetWithNameAndType):
 
     @classmethod
     def initialize(
-            cls: type['CustomAsset'],
+            cls: type[CustomAsset],
             identifier: str,
             name: str,
             custom_asset_type: str,
             notes: str | None = None,
-    ) -> 'CustomAsset':
+    ) -> CustomAsset:
         asset = CustomAsset(identifier=identifier)
         asset._set_attributes(
             asset_type=AssetType.CUSTOM_ASSET,
@@ -486,9 +486,9 @@ class CustomAsset(AssetWithNameAndType):
 
     @classmethod
     def deserialize_from_db(
-            cls: type['CustomAsset'],
+            cls: type[CustomAsset],
             entry: tuple[str, str, str, str | None],
-    ) -> 'CustomAsset':
+    ) -> CustomAsset:
         """
         Takes a `custom_asset` entry from DB and turns it into a `CustomAsset` instance.
         May raise:
@@ -580,7 +580,7 @@ class EvmToken(CryptoAsset):
 
     @classmethod
     def initialize(  # type: ignore  # signature is incompatible with super type
-            cls: type['EvmToken'],
+            cls: type[EvmToken],
             address: ChecksumEvmAddress,
             chain_id: ChainID,
             token_kind: EVM_TOKEN_KINDS_TYPE,
@@ -595,7 +595,7 @@ class EvmToken(CryptoAsset):
             protocol: str | None = None,
             underlying_tokens: list[UnderlyingToken] | None = None,
             collectible_id: str | None = None,
-    ) -> 'EvmToken':
+    ) -> EvmToken:
         identifier = evm_address_to_identifier(
             address=address,
             chain_id=chain_id,
@@ -623,10 +623,10 @@ class EvmToken(CryptoAsset):
 
     @classmethod
     def deserialize_from_db(
-            cls: type['EvmToken'],
+            cls: type[EvmToken],
             entry: EthereumTokenDBTuple,
             underlying_tokens: list[UnderlyingToken] | None = None,
-    ) -> 'EvmToken':
+    ) -> EvmToken:
         """May raise UnknownAsset if the swapped for asset can't be recognized
         That error would be bad because it would mean somehow an unknown id made it into the DB
         """
@@ -711,12 +711,12 @@ class Nft(EvmToken):
 
     @classmethod
     def initialize(  # type: ignore  # signature is incompatible with super type
-            cls: type['EvmToken'],
+            cls: type[EvmToken],
             identifier: str,
             chain_id: ChainID,
             name: str | None = None,
             symbol: str | None = None,
-    ) -> 'Nft':
+    ) -> Nft:
         # TODO: This needs to change once we correctly track NFTs
         asset = Nft(identifier=identifier, direct_field_initialization=True)
         identifier_parts = identifier[len(NFT_DIRECTIVE):].split('_')
@@ -771,7 +771,7 @@ class SolanaToken(CryptoAsset):
 
     @classmethod
     def initialize(  # type: ignore  # signature is incompatible with super type
-            cls: type['SolanaToken'],
+            cls: type[SolanaToken],
             address: SolanaAddress,
             token_kind: SOLANA_TOKEN_KINDS_TYPE,
             name: str | None = None,
@@ -783,7 +783,7 @@ class SolanaToken(CryptoAsset):
             cryptocompare: str | None = '',
             decimals: int | None = None,
             protocol: str | None = None,
-    ) -> 'SolanaToken':
+    ) -> SolanaToken:
         identifier = solana_address_to_identifier(
             address=address,
             token_type=token_kind,
@@ -807,9 +807,9 @@ class SolanaToken(CryptoAsset):
 
     @classmethod
     def deserialize_from_db(
-            cls: type['SolanaToken'],
+            cls: type[SolanaToken],
             entry: SolanaTokenDBTuple,
-    ) -> 'SolanaToken':
+    ) -> SolanaToken:
         """May raise:
         - UnknownAsset if the swapped for asset can't be recognized
 

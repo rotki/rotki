@@ -31,7 +31,7 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
                 HistoryEventSubType.FEE,
             ],
             asset: Asset,
-            amount: 'FVal',
+            amount: FVal,
             event_type: Literal[
                 HistoryEventType.TRADE,
                 HistoryEventType.MULTI_TRADE,
@@ -70,7 +70,7 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
         return HistoryBaseEntryType.SOLANA_SWAP_EVENT
 
     @classmethod
-    def deserialize_from_db(cls: type['SolanaSwapEvent'], entry: tuple) -> 'SolanaSwapEvent':
+    def deserialize_from_db(cls: type[SolanaSwapEvent], entry: tuple) -> SolanaSwapEvent:
         """Deserialize a SolanaSwapEvent DB tuple.
         May raise:
         - DeserializationError
@@ -102,7 +102,7 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
         return SolanaEvent.serialize(self)
 
     @classmethod
-    def deserialize(cls: type['SolanaSwapEvent'], data: dict[str, Any]) -> 'SolanaSwapEvent':
+    def deserialize(cls: type[SolanaSwapEvent], data: dict[str, Any]) -> SolanaSwapEvent:
         swap_data = cls._deserialize_swap_data(cls._deserialize_base_history_data(data))
         swap_data.pop('location')  # type: ignore[misc]  # remove the location key.
         try:

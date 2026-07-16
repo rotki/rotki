@@ -1,9 +1,8 @@
 import logging
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import asset_normalized_value
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN, GITCOIN_CPT_DETAILS
@@ -37,7 +36,6 @@ from rotkehlchen.chain.evm.decoding.utils import get_donation_event_params
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -46,8 +44,10 @@ from rotkehlchen.utils.misc import bytes_to_address, bytes_to_hexstr
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import CryptoAsset
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.fval import FVal
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -75,16 +75,16 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
 
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            project_registry: Optional['ChecksumEvmAddress'],
-            voting_impl_addresses: list['ChecksumEvmAddress'],
-            round_impl_addresses: list['ChecksumEvmAddress'],
-            payout_strategy_addresses: list['ChecksumEvmAddress'],
-            voting_merkle_distributor_addresses: list['ChecksumEvmAddress'] | None = None,
-            retro_funding_strategy_addresses: list['ChecksumEvmAddress'] | None = None,
-            direct_allocation_strategy_addresses: list['ChecksumEvmAddress'] | None = None,
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            project_registry: ChecksumEvmAddress | None,
+            voting_impl_addresses: list[ChecksumEvmAddress],
+            round_impl_addresses: list[ChecksumEvmAddress],
+            payout_strategy_addresses: list[ChecksumEvmAddress],
+            voting_merkle_distributor_addresses: list[ChecksumEvmAddress] | None = None,
+            retro_funding_strategy_addresses: list[ChecksumEvmAddress] | None = None,
+            direct_allocation_strategy_addresses: list[ChecksumEvmAddress] | None = None,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -104,9 +104,9 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
 
     def _get_recipient_address_from_id(
             self,
-            recipient_id: 'ChecksumEvmAddress',
-            contract_address: 'ChecksumEvmAddress',
-    ) -> 'ChecksumEvmAddress | None':
+            recipient_id: ChecksumEvmAddress,
+            contract_address: ChecksumEvmAddress,
+    ) -> ChecksumEvmAddress | None:
         """Query the relevant contract to get the recipient id to address mapping.
 
         Also use a cache to save on contract calls"""
@@ -136,12 +136,12 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
     def _common_donator_logic(
             self,
             context: DecoderContext,
-            sender_address: 'ChecksumEvmAddress',
-            recipient_address: 'ChecksumEvmAddress',
+            sender_address: ChecksumEvmAddress,
+            recipient_address: ChecksumEvmAddress,
             recipient_tracked: bool,
-            asset: 'CryptoAsset',
+            asset: CryptoAsset,
             amount: FVal,
-            payer_address: 'ChecksumEvmAddress',
+            payer_address: ChecksumEvmAddress,
     ) -> EvmDecodingOutput:
         """Common logic across Allocated and Voted events for the donator side
 
@@ -332,7 +332,7 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
     def _decode_voted(
             self,
             context: DecoderContext,
-            donator: 'ChecksumEvmAddress',
+            donator: ChecksumEvmAddress,
             receiver_start_idx: int,
             paying_contract_idx: int,
     ) -> EvmDecodingOutput:
@@ -573,7 +573,7 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         mappings: dict[ChecksumEvmAddress, tuple[Any, ...]] = {PROFILE_REGISTRY: (self._decode_profile_registry,)}  # noqa: E501
         mappings |= dict.fromkeys(self.voting_impl_addresses, (self._decode_vote_action,))
         mappings |= dict.fromkeys(self.round_impl_addresses, (self._decode_round_action,))

@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import asset_normalized_value
@@ -14,7 +13,6 @@ from rotkehlchen.chain.base.modules.echo.constants import (
     FUNDING_CONDUIT,
     POOL_REFUNDED,
 )
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -24,12 +22,15 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -133,10 +134,10 @@ class EchoDecoder(EvmDecoderInterface):
 
     def _process_funding(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Convert transfer event into Echo's deal funding event."""
         deal_address = fund_amount = user_address = None
         for tx_log in all_logs:
@@ -182,7 +183,7 @@ class EchoDecoder(EvmDecoderInterface):
             FUNDER_REGISTRY: (self._transform_refund,),
         }
 
-    def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
+    def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return {FUNDING_CONDUIT: CPT_ECHO}
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:

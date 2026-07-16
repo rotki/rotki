@@ -1,17 +1,14 @@
 import json
 import logging
 import os
-from collections.abc import Collection
 from csv import DictWriter
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import TYPE_CHECKING, Any, Literal
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from rotkehlchen.accounting.pnl import PnlTotals
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.constants import ZERO
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
@@ -25,8 +22,12 @@ from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
+    from collections.abc import Collection
+
+    from rotkehlchen.accounting.pnl import PnlTotals
     from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -83,7 +84,7 @@ class CSVExporter(CustomizableDateMixin):
 
     def __init__(
             self,
-            database: 'DBHandler',
+            database: DBHandler,
     ):
         super().__init__(database=database)
         self.reset(start_ts=Timestamp(0), end_ts=Timestamp(0))
@@ -143,7 +144,7 @@ class CSVExporter(CustomizableDateMixin):
 
     def _add_pnl_type(
             self,
-            event: 'ProcessedAccountingEvent',
+            event: ProcessedAccountingEvent,
             dict_event: dict[str, Any],
             amount_column: str,
             name: Literal['free', 'taxable'],
@@ -275,7 +276,7 @@ class CSVExporter(CustomizableDateMixin):
 
     def create_zip(
             self,
-            events: list['ProcessedAccountingEvent'],
+            events: list[ProcessedAccountingEvent],
             pnls: PnlTotals,
     ) -> tuple[bool, str]:
         dirpath = Path(mkdtemp())
@@ -302,7 +303,7 @@ class CSVExporter(CustomizableDateMixin):
 
         return success, filename
 
-    def to_csv_entry(self, event: 'ProcessedAccountingEvent') -> dict[str, Any]:
+    def to_csv_entry(self, event: ProcessedAccountingEvent) -> dict[str, Any]:
         """Prepare the provided event to have a common format for the accounting
         CSV exported file.
         """
@@ -329,7 +330,7 @@ class CSVExporter(CustomizableDateMixin):
 
     def export(
             self,
-            events: list['ProcessedAccountingEvent'],
+            events: list[ProcessedAccountingEvent],
             pnls: PnlTotals,
             directory: Path,
     ) -> tuple[bool, str]:

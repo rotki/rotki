@@ -18,13 +18,13 @@ if TYPE_CHECKING:
 
 
 @enter_exit_debug_log()
-def data_migration_24(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
+def data_migration_24(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:
     """Introduced at v1.42.1
     - Create and populate internal tx conflict queue
     - Locally fix non-customized fix_redecode conflicts and queue txs for redecoding
     """
     @progress_step(description='Creating internal tx conflict table and indexes')
-    def _create_table(rotki: 'Rotkehlchen') -> None:
+    def _create_table(rotki: Rotkehlchen) -> None:
         with rotki.data.db.conn.write_ctx() as write_cursor:
             write_cursor.execute(DB_CREATE_EVM_INTERNAL_TX_CONFLICTS)
             write_cursor.execute(
@@ -33,12 +33,12 @@ def data_migration_24(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
             )
 
     @progress_step(description='Populating internal tx conflicts')
-    def _populate_conflicts(rotki: 'Rotkehlchen') -> None:
+    def _populate_conflicts(rotki: Rotkehlchen) -> None:
         with rotki.data.db.conn.write_ctx() as write_cursor:
             write_cursor.execute(POPULATE_INTERNAL_TX_CONFLICTS_QUERY)
 
     @progress_step(description='Fixing non-customized internal tx conflicts')
-    def _fix_non_customized(rotki: 'Rotkehlchen') -> None:
+    def _fix_non_customized(rotki: Rotkehlchen) -> None:
         with rotki.data.db.conn.write_ctx() as write_cursor:
             for chain_id, tx_hash, _ in get_internal_tx_conflicts(
                 cursor=write_cursor,

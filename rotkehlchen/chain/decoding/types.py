@@ -6,7 +6,7 @@ class DecodingRulesBase(ABC):
     """Abstract base class for decoding rules that have counterparties and support addition.
     Decoding rules must implement this to allow merging during recursive discovery.
     """
-    all_counterparties: set['CounterpartyDetails']
+    all_counterparties: set[CounterpartyDetails]
 
     @abstractmethod
     def __add__(self, other: Self) -> Self:
@@ -51,7 +51,7 @@ class CounterpartyDetails(NamedTuple):
             image: str | None = None,
             darkmode_image: str | None = None,
             icon: str | None = None,
-    ) -> 'CounterpartyDetails':
+    ) -> CounterpartyDetails:
         """Create a CounterpartyDetails from a counterparty identifier
         ending with '-vX' where X is the version number.
         """

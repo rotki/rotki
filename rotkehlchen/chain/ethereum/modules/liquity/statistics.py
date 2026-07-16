@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType
@@ -9,18 +8,20 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_LQTY, A_LUSD
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.price import query_price_or_use_default
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.user_messages import MessagesAggregator, WSMessageType
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.types import ChecksumEvmAddress
 
 # This queries for events having a specific combination of asset + staking type + reward and
 # being from liquity. This helps to filter if they are from the stability pool or the LQTY
@@ -63,7 +64,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def calculate_pool_metrics(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         query: str,
         bindings: Sequence[Any],
 ) -> tuple[FVal, FVal]:
@@ -108,7 +109,7 @@ def staking_query_progress(
 
 
 def _get_amount_and_value_stats(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         history_events_db: DBHistoryEvents,
         query_staking: str,
         bindings_staking: list[Any],
@@ -176,7 +177,7 @@ def _get_amount_and_value_stats(
     }
 
 
-def get_stats(database: 'DBHandler', addresses: Sequence[ChecksumEvmAddress]) -> dict[str, Any]:
+def get_stats(database: DBHandler, addresses: Sequence[ChecksumEvmAddress]) -> dict[str, Any]:
     """
     Query staking information for the liquity module related to both the LQTY staking
     and the stability pool. It returns a dictionary combining the information from all

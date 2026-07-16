@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('binance_sc_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])  # to connect to nodes  # noqa: E501
 def test_binance_sc_nodes_prune_and_archive_status(
         binance_sc_manager_connect_at_start: list[tuple],
-        binance_sc_inquirer: 'BinanceSCInquirer',
+        binance_sc_inquirer: BinanceSCInquirer,
 ):
     """Checks that connecting to a set of BinanceSC nodes, the capabilities of those nodes are
     known and stored. It tests the nodes one by one to avoid the randomness of the connections
@@ -64,7 +64,7 @@ def test_binance_sc_nodes_prune_and_archive_status(
     active=True,
     weight=ONE,
 ),)])
-def test_get_block_by_number(binance_sc_inquirer: 'BinanceSCInquirer') -> None:
+def test_get_block_by_number(binance_sc_inquirer: BinanceSCInquirer) -> None:
     """Test that the block is queried correctly and no RemoteError is raised.
     Regression test for Binance SC missing the Web3.py POA middleware.
     """

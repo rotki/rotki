@@ -1,7 +1,8 @@
 
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
-from rotkehlchen.types import ChecksumEvmAddress
+if TYPE_CHECKING:
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 class HopBridgeEventData(NamedTuple):

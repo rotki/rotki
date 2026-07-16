@@ -5,7 +5,6 @@ from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
 from rotkehlchen.chain.evm.l2_with_l1_fees.decoding.decoder import L2WithL1FeesTransactionDecoder
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
@@ -13,6 +12,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -22,11 +22,11 @@ class ScrollTransactionDecoder(L2WithL1FeesTransactionDecoder):
 
     def __init__(
             self,
-            database: 'DBHandler',
-            scroll_inquirer: 'ScrollInquirer',
-            transactions: 'ScrollTransactions',
-            premium: 'Premium | None' = None,
-            monerium: 'Monerium | None' = None,
+            database: DBHandler,
+            scroll_inquirer: ScrollInquirer,
+            transactions: ScrollTransactions,
+            premium: Premium | None = None,
+            monerium: Monerium | None = None,
     ):
         super().__init__(
             database=database,

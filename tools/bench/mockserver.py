@@ -74,7 +74,7 @@ class ChainState:
         }
 
     @classmethod
-    def from_profile(cls, data_dir: 'Path') -> 'ChainState':
+    def from_profile(cls, data_dir: Path) -> ChainState:
         state_file = data_dir / 'chain_state.json'
         if not state_file.is_file():
             return cls()

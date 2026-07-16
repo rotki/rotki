@@ -16,11 +16,11 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log(name='globaldb v14->v15 upgrade')
-def migrate_to_v15(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+def migrate_to_v15(connection: DBConnection, progress_handler: DBUpgradeProgressHandler) -> None:
     """This upgrade takes place in v1.42.0"""
 
     @progress_step('Remove old cache keys.')
-    def _remove_old_cache_keys(write_cursor: 'DBCursor') -> None:
+    def _remove_old_cache_keys(write_cursor: DBCursor) -> None:
         """Removes several cache keys that are no longer needed.
         - Aura pools - These pools are now loaded as needed during decoding and do not need to
            have a pool count stored in the cache.
@@ -43,7 +43,7 @@ def migrate_to_v15(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         )
 
     @progress_step('Normalize underlying token weights.')
-    def _normalize_underlying_token_weights(write_cursor: 'DBCursor') -> None:
+    def _normalize_underlying_token_weights(write_cursor: DBCursor) -> None:
         """Normalizes underlying token weights so they sum to exactly 1.
 
         Balancer pools (v2 and v3) have weights that don't sum to exactly 1 due to bad
@@ -79,14 +79,14 @@ def migrate_to_v15(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         )
 
     @progress_step('Create underlying token parent index.')
-    def _create_underlying_token_parent_index(write_cursor: 'DBCursor') -> None:
+    def _create_underlying_token_parent_index(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'CREATE INDEX IF NOT EXISTS idx_underlying_tokens_parent_entry '
             'ON underlying_tokens_list (parent_token_entry);',
         )
 
     @progress_step('Fix broken VELO asset.')
-    def _fix_broken_velo_asset(write_cursor: 'DBCursor') -> None:
+    def _fix_broken_velo_asset(write_cursor: DBCursor) -> None:
         """There are cases where a broken VELO asset is present, with only an entry in the
         common_asset_details table. This removes that entry if present, and adds the correct
         asset if the asset update has already been applied (since in that case this asset failed

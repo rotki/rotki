@@ -11,5 +11,5 @@ if TYPE_CHECKING:
 class SparkCommonDecoder(EvmDecoderInterface):
 
     @staticmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (SPARK_COUNTERPARTY_DETAILS,)

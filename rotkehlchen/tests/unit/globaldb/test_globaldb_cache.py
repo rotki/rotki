@@ -1,7 +1,6 @@
 import datetime
 import json
 import logging
-from collections.abc import Callable
 from contextlib import suppress
 from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, _Call, call, patch
@@ -12,12 +11,10 @@ from freezegun import freeze_time
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
     read_convex_data_from_cache,
 )
-from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
     query_balancer_data,
@@ -76,6 +73,10 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.chain.aggregator import ChainsAggregator
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
 
@@ -306,7 +307,7 @@ def test_velodrome_cache(optimism_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_velodrome_cache_with_no_symbol(
-        optimism_transaction_decoder: 'OptimismTransactionDecoder',
+        optimism_transaction_decoder: OptimismTransactionDecoder,
 ) -> None:
     """Test a case when a queried pool is not a valid ERC20 token,
     in such case the symbol should fallback to the form `CL{tickSpacing}-{token0}/{token1}`."""
@@ -647,7 +648,7 @@ def test_query_balancer_data_protocol_version_gnosis(gnosis_inquirer):
 
 
 @pytest.mark.vcr
-def test_query_beefy_legacy_boosts(ethereum_inquirer: 'EthereumInquirer') -> None:
+def test_query_beefy_legacy_boosts(ethereum_inquirer: EthereumInquirer) -> None:
     """Test that query_beefy_vaults correctly caches legacy boost vaults."""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         write_cursor.execute(

@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.ethereum.modules.curve.constants import VOTING_ESCROW
 from rotkehlchen.chain.ethereum.modules.monerium.constants import (
@@ -7,7 +7,11 @@ from rotkehlchen.chain.ethereum.modules.monerium.constants import (
 from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.tokens import EvmTokensWithProxies
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.types import ChecksumEvmAddress
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.types import ChecksumEvmAddress
 
 ETH_TOKEN_EXCEPTIONS = {
     # Ignore the veCRV balance in token query. It's already detected by

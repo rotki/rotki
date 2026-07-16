@@ -3,14 +3,13 @@ import random
 from http import HTTPStatus
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Literal, get_args
+from typing import TYPE_CHECKING, Any, Literal, get_args
 from unittest.mock import patch
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment
 from rotkehlchen.constants.assets import A_CUSDC, A_USDC
@@ -23,7 +22,6 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.updates import RotkiDataUpdater, UpdateType
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -34,6 +32,10 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history_base_entry import add_entries, store_and_retrieve_events
 from rotkehlchen.types import Location, TimestampMS
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+    from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
 def _update_rules(
@@ -94,7 +96,7 @@ def _setup_conflict_tests(
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
-def test_query_rules(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_rules(rotkehlchen_api_server: APIServer) -> None:
     """Test that querying accounting rules works fine"""
     response = requests.post(
         api_url_for(  # test matching counterparty None
@@ -113,7 +115,7 @@ def test_query_rules(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
-def test_reset_accounting_rules(rotkehlchen_api_server: 'APIServer') -> None:
+def test_reset_accounting_rules(rotkehlchen_api_server: APIServer) -> None:
     """Test that resetting accounting rules wipes user customizations and restores the defaults
     pulled from the data repo."""
     from rotkehlchen.tests.unit.test_data_updates import (  # local import to avoid test cycle
@@ -149,7 +151,7 @@ def test_reset_accounting_rules(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.parametrize('db_settings', [{'include_crypto2crypto': False}])
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
-def test_manage_rules(rotkehlchen_api_server: 'APIServer', db_settings: dict[str, bool]) -> None:
+def test_manage_rules(rotkehlchen_api_server: APIServer, db_settings: dict[str, bool]) -> None:
     """Test basic operations in the endpoint for managing accounting rules"""
     rule_1: dict[str, Any] = {
         'taxable': {'value': True, 'linked_setting': 'include_crypto2crypto'},
@@ -305,7 +307,7 @@ def test_manage_rules(rotkehlchen_api_server: 'APIServer', db_settings: dict[str
     assert result['entries_total'] == 1
 
 
-def test_rules_info(rotkehlchen_api_server: 'APIServer') -> None:
+def test_rules_info(rotkehlchen_api_server: APIServer) -> None:
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -576,7 +578,7 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
-def test_manage_rules_with_event_ids(rotkehlchen_api_server: 'APIServer') -> None:
+def test_manage_rules_with_event_ids(rotkehlchen_api_server: APIServer) -> None:
     """Test operations with accounting rules that have event_ids"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     existing_entries = add_entries(DBHistoryEvents(rotki.data.db))
@@ -651,7 +653,7 @@ def test_manage_rules_with_event_ids(rotkehlchen_api_server: 'APIServer') -> Non
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
-def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> None:
+def test_import_export_accounting_rules(rotkehlchen_api_server: APIServer) -> None:
     """Test that exporting and importing accounting rules works fine."""
     async_query = random.choice([True, False])
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
@@ -793,7 +795,7 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> 
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
-def test_query_accounting_rules_by_identifiers(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_accounting_rules_by_identifiers(rotkehlchen_api_server: APIServer) -> None:
     """Test that querying accounting rules by identifiers works"""
     for rule in (rules := [{  # create three rules
         'taxable': {'value': False},
@@ -867,7 +869,7 @@ def test_query_accounting_rules_by_identifiers(rotkehlchen_api_server: 'APIServe
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
-def test_query_accounting_rules_with_event_ids_filter(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_accounting_rules_with_event_ids_filter(rotkehlchen_api_server: APIServer) -> None:
     """Test filtering accounting rules by event ids & custom_rule_handling parameter"""
     # First create some history events using the existing test helper
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -943,7 +945,7 @@ def test_query_accounting_rules_with_event_ids_filter(rotkehlchen_api_server: 'A
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
-def test_pagination_with_multiple_event_ids(rotkehlchen_api_server: 'APIServer') -> None:
+def test_pagination_with_multiple_event_ids(rotkehlchen_api_server: APIServer) -> None:
     """Test that pagination works correctly with accounting rules that have multiple event IDs"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     existing_entries = add_entries(DBHistoryEvents(rotki.data.db))

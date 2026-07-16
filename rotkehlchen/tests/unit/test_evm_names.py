@@ -1,5 +1,4 @@
 import tempfile
-from collections.abc import Mapping
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -35,6 +34,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -105,7 +106,7 @@ def get_fetchers_with_names(
     return fetchers
 
 
-def test_uses_sources_only_when_needed(evm_address, database: 'DBHandler'):
+def test_uses_sources_only_when_needed(evm_address, database: DBHandler):
     """
     Tests that names sources are not used when they are not supposed to be used. For example
     blockchain labels shouldn't be used when blockchain is not specified.
@@ -126,7 +127,7 @@ def test_uses_sources_only_when_needed(evm_address, database: 'DBHandler'):
     assert names == [], 'No names should have been returned since the blockchain was None'
 
 
-def test_naming_system_names_priority(evm_address, database: 'DBHandler'):
+def test_naming_system_names_priority(evm_address, database: DBHandler):
     """Test that an address can have a cached name per naming system and that
     the priority between them is applied at read time by the prioritizer"""
     dbens = DBEns(database)
@@ -150,7 +151,7 @@ def test_naming_system_names_priority(evm_address, database: 'DBHandler'):
         )]
 
 
-def test_find_ens_mappings_naming_systems(evm_address, database: 'DBHandler', monkeypatch):
+def test_find_ens_mappings_naming_systems(evm_address, database: DBHandler, monkeypatch):
     """Test that additional naming systems are only queried when they are in the
     address_name_priority setting and that the highest priority name wins the merge"""
     queried_systems = []

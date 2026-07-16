@@ -15,13 +15,13 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log()
-def data_migration_22(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
+def data_migration_22(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:
     """Introduced at v1.41.3
     - Removes any Coinbase exchanges with legacy api keys.
     - Purges eth validators cache to recalculate exiting accumulating validators rewards.
     """
     @progress_step(description='Removing legacy Coinbase api keys')
-    def _remove_legacy_coinbase_keys(rotki: 'Rotkehlchen') -> None:
+    def _remove_legacy_coinbase_keys(rotki: Rotkehlchen) -> None:
         with rotki.data.db.conn.read_ctx() as cursor:
             creds = rotki.data.db.get_exchange_credentials(
                 cursor=cursor,
@@ -48,7 +48,7 @@ def data_migration_22(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
             rotki.msg_aggregator.add_error('Failed to remove legacy coinbase credentials. See logs for details.')  # noqa: E501
 
     @progress_step(description='Purging eth validators data cache')
-    def _purge_eth_validators_data_cache(rotki: 'Rotkehlchen') -> None:
+    def _purge_eth_validators_data_cache(rotki: Rotkehlchen) -> None:
         """Purge cached data for accumulating validators to fix double-counted exit rewards.
         See https://github.com/rotki/rotki/issues/11146
         """

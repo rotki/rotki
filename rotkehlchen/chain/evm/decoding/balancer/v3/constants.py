@@ -1,9 +1,10 @@
-from typing import Final
-
-from eth_typing import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChainID
+
+if TYPE_CHECKING:
+    from eth_typing import ABI
 
 # this is only used to match swaps in balancer in the post-decoding step.
 CPT_BALANCER_SWAP_V3: Final = 'balancer-swap-v3'

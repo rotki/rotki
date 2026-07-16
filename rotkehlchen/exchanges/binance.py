@@ -3,7 +3,6 @@ import json
 import logging
 import operator
 from collections import defaultdict
-from collections.abc import Callable, Sequence
 from contextlib import suppress
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal
@@ -14,7 +13,6 @@ import requests
 from rsqlite import IntegrityError
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import DAY_IN_SECONDS, ZERO
@@ -27,7 +25,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import BinancePair, MarginPosition
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
     ExchangeQueryBalances,
@@ -71,14 +68,18 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.exchanges.data_structures import BinancePair, MarginPosition
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -205,7 +206,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
             uri: str = BINANCE_BASE_URL,
             binance_selected_trade_pairs: list[str] | None = None,
@@ -657,7 +658,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
     def query_lending_interests_history(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> bool:
@@ -1250,7 +1251,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """Decorator to handle common deserialization errors for Binance operations."""
         def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-            def wrapper(self: 'Binance', raw_data: dict[str, Any], *args: Any, **kwargs: Any) -> Any:  # noqa: E501
+            def wrapper(self: Binance, raw_data: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
                 try:
                     return func(self, raw_data, *args, **kwargs)
                 except UnknownAsset as e:
@@ -1481,7 +1482,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         events: list[HistoryBaseEntry] = []
         with_errors = False
         for query_func in (

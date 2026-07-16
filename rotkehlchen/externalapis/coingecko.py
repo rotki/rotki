@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
 
 import requests
 
-from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, YEAR_IN_SECONDS
@@ -25,6 +24,7 @@ from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -530,7 +530,7 @@ class Coingecko(
         PenalizablePriceOracleMixin,
 ):
 
-    def __init__(self, database: 'DBHandler | None') -> None:
+    def __init__(self, database: DBHandler | None) -> None:
         ExternalServiceWithApiKeyOptionalDB.__init__(self, database=database, service_name=ExternalService.COINGECKO)  # noqa: E501
         HistoricalPriceOracleWithCoinListInterface.__init__(self, oracle_name='coingecko')
         PenalizablePriceOracleMixin.__init__(self)

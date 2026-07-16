@@ -3,7 +3,6 @@ import logging
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.utils import asset_normalized_value, get_or_create_evm_token
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.decoding.constants import GNOSIS_CPT_DETAILS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
@@ -16,12 +15,13 @@ from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_p
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import ChainID, ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -35,9 +35,9 @@ class OmnibridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             bridge_address: ChecksumEvmAddress,
             source_chain: ChainID,
             target_chain: ChainID,

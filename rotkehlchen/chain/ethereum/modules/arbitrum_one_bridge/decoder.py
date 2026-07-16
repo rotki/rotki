@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_CPT_DETAILS, CPT_ARBITRUM_ONE
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -20,6 +19,7 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -45,9 +45,9 @@ BRIDGE_CALL_TRIGGERED: Final = b'-\x9d\x11^\xf3\xe4\xa6\x06\xd6\x98\x91;\x1e\xae
 class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -108,7 +108,7 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_erc20_deposit_withdraw(self, tx_log: 'EvmTxReceiptLog', decoded_events: list['EvmEvent']) -> EvmDecodingOutput:  # noqa: E501
+    def _decode_erc20_deposit_withdraw(self, tx_log: EvmTxReceiptLog, decoded_events: list[EvmEvent]) -> EvmDecodingOutput:  # noqa: E501
         """Decodes ERC20 deposits and withdrawals. (Bridging ERC20 tokens from and to ethereum)"""
         from_address = bytes_to_address(tx_log.topics[1])
         to_address = bytes_to_address(tx_log.topics[2])

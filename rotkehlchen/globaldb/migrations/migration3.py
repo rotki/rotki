@@ -6,6 +6,6 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.sqlite import DBConnection
 
 
-def globaldb_data_migration_3(conn: 'DBConnection') -> None:
+def globaldb_data_migration_3(conn: DBConnection) -> None:
     """Introduced at 1.40.1: replace 'NONE' with ecosystem-specific key in address_book"""
     migrate_addressbook_none_to_ecosystem_key(connection=conn)

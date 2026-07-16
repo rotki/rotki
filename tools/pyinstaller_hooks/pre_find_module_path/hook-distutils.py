@@ -24,9 +24,9 @@ the latter is intended for use _only_ from within venvs.
 """
 
 
-import distutils
 import os
 
+import distutils
 from PyInstaller.utils.hooks import logger
 
 

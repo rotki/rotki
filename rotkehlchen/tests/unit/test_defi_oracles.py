@@ -129,7 +129,7 @@ def test_uniswap_oracles_historic_price(inquirer_defi, socket_enabled):  # pylin
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('base_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='base mainnet', endpoint='https://mainnet.base.org', owned=False, blockchain=SupportedBlockchain.BASE), active=True, weight=ONE),)])  # noqa: E501
 @pytest.mark.parametrize('polygon_pos_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='polygon', endpoint='https://polygon.drpc.org', owned=True, blockchain=SupportedBlockchain.POLYGON_POS), active=True, weight=ONE),)])  # noqa: E501
-def test_uniswap_oracles_evm(inquirer_defi: 'Inquirer') -> None:
+def test_uniswap_oracles_evm(inquirer_defi: Inquirer) -> None:
     """Test that Uniswap V2 and V3 oracles return correct prices in evm chains"""
     assert inquirer_defi._uniswapv2 is not None
     assert inquirer_defi._uniswapv3 is not None
@@ -169,8 +169,8 @@ def test_uniswap_oracles_evm(inquirer_defi: 'Inquirer') -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_uniswap_oracles_routing_assets(
-        inquirer_defi: 'Inquirer',
-        globaldb: 'GlobalDBHandler',
+        inquirer_defi: Inquirer,
+        globaldb: GlobalDBHandler,
 ) -> None:
     """Test that the Uniswap oracle correctly handles a missing routing asset."""
     assert inquirer_defi._uniswapv3 is not None
@@ -208,7 +208,7 @@ def test_uniswap_oracles_special_cases(inquirer_defi, socket_enabled):  # pylint
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_uniswap_no_decimals(inquirer_defi: 'Inquirer'):
+def test_uniswap_no_decimals(inquirer_defi: Inquirer):
     """Test that if a token has no information about the number of decimals a proper error
     is raised"""
     asset_resolver = AssetResolver()
@@ -253,7 +253,7 @@ def test_uniswap_no_decimals(inquirer_defi: 'Inquirer'):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_pool_with_no_liquidity(inquirer_defi: 'Inquirer'):
+def test_pool_with_no_liquidity(inquirer_defi: Inquirer):
     """
     Test that a pool with no liquidity on range is skipped when using uni-v3 oracle
     """
@@ -278,7 +278,7 @@ def test_pool_with_no_liquidity(inquirer_defi: 'Inquirer'):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_invalid_token_kind_price_query(inquirer_defi: 'Inquirer'):
+def test_invalid_token_kind_price_query(inquirer_defi: Inquirer):
     """
     Test that if we pass something that is not an ERC20 the inquirer raises an error
     """

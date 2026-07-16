@@ -1,12 +1,10 @@
 import abc
 import logging
-from collections.abc import Sequence
 from functools import reduce
 from operator import mul
 from typing import TYPE_CHECKING, NamedTuple
 
 from eth_utils import to_checksum_address
-from web3.types import BlockIdentifier
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token, token_normalized_value
@@ -38,6 +36,10 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from web3.types import BlockIdentifier
+
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
 
@@ -50,7 +52,7 @@ class PoolPrice(NamedTuple):
     token_0: EvmToken
     token_1: EvmToken
 
-    def swap_tokens(self) -> 'PoolPrice':
+    def swap_tokens(self) -> PoolPrice:
         return PoolPrice(
             price=1 / self.price,
             token_0=self.token_1,
@@ -350,7 +352,7 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
             pool_contract: EvmContract,
             methods: list[str],
             block_identifier: BlockIdentifier,
-            evm_inquirer: 'EvmNodeInquirer',
+            evm_inquirer: EvmNodeInquirer,
     ) -> dict:
         """Call methods on the pool contract using multicall if block_identifier
         is since the multicall contract creation, otherwise use individual calls.

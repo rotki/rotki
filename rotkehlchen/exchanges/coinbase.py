@@ -4,7 +4,6 @@ import re
 import secrets
 import time
 from collections import defaultdict
-from collections.abc import Sequence
 from enum import Enum
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
@@ -25,7 +24,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
@@ -58,17 +56,20 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import combine_dicts, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.types import Asset, TimestampMS
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -100,7 +101,7 @@ class CoinbaseKeyType(Enum):
     ED25519 = 'EdDSA'
 
     @classmethod
-    def detect_type(cls, api_key: str) -> 'CoinbaseKeyType | None':
+    def detect_type(cls, api_key: str) -> CoinbaseKeyType | None:
         """Detect the API key type of the given key.
         Returns the detected type or None if the format is invalid.
         """
@@ -141,7 +142,7 @@ class Coinbase(ExchangeInterface):
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
         """
@@ -400,7 +401,7 @@ class Coinbase(ExchangeInterface):
         return dict(self.balances_from_amounts(amounts)), ''
 
     @protect_with_lock()
-    def _query_transactions(self, force_refresh: bool = False) -> list['HistoryBaseEntry']:
+    def _query_transactions(self, force_refresh: bool = False) -> list[HistoryBaseEntry]:
         """Queries transactions for all active accounts of this coinbase instance
 
         If an account has been queried within X seconds it's not queried again.
@@ -1024,7 +1025,7 @@ class Coinbase(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         events = self._query_transactions(force_refresh=force_refresh)
         return events, end_ts
 

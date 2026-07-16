@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import (
@@ -45,6 +44,8 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
@@ -61,12 +62,12 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     """
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            claim_bribe_addresses: set['ChecksumEvmAddress'] | None = None,
-            claim_bribe_protocolfee_addresses: set['ChecksumEvmAddress'] | None = None,
-            claim_bounty_addresses: set['ChecksumEvmAddress'] | None = None,
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            claim_bribe_addresses: set[ChecksumEvmAddress] | None = None,
+            claim_bribe_protocolfee_addresses: set[ChecksumEvmAddress] | None = None,
+            claim_bounty_addresses: set[ChecksumEvmAddress] | None = None,
     ):
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
         self.claim_bribe_addresses = claim_bribe_addresses
@@ -74,7 +75,7 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         self.claim_bounty_addresses = claim_bounty_addresses
         self.gauges: set[ChecksumEvmAddress] = set()
 
-    def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         """Check that cache is up to date and refresh cache from db.
         Returns a fresh addresses to decoders mapping.
         """

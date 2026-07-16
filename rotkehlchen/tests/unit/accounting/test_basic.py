@@ -431,7 +431,7 @@ def test_no_fiat_missing_acquisitions(accountant):
     assert missing_acquisitions == []
 
 
-def test_all_chains_have_explorers(accountant: 'Accountant'):
+def test_all_chains_have_explorers(accountant: Accountant):
     """Test that all chain in the csv exporter have a valid explorer url"""
     for chain in EVM_CHAINS_WITH_TRANSACTIONS:
         assert chain in accountant.csvexporter.transaction_explorers

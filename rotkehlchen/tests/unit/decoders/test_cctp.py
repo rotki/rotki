@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd0Adc5d079Cc486b58F1B9A28B973355C4ec9e6f']])
 def test_deposit_usdc_from_ethereum_to_arbitrum_one(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0xac7bb45701a4311a2c662377a4764ac694a8f6438270c1ee8a4100d4a000a511')  # noqa: E501
@@ -63,7 +63,7 @@ def test_deposit_usdc_from_ethereum_to_arbitrum_one(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xd0Adc5d079Cc486b58F1B9A28B973355C4ec9e6f']])
 def test_receive_usdc_on_arbitrum_one_from_ethereum(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -103,7 +103,7 @@ def test_receive_usdc_on_arbitrum_one_from_ethereum(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x75F3785B330aadbA5DB31535995568583EA8DEA8']])
 def test_deposit_usdc_from_polygon_to_arbitrum_one(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
+        polygon_pos_inquirer: PolygonPOSInquirer,
         polygon_pos_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -143,7 +143,7 @@ def test_deposit_usdc_from_polygon_to_arbitrum_one(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x75F3785B330aadbA5DB31535995568583EA8DEA8']])
 def test_receive_usdc_on_arbitrum_one_from_polygon(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -183,7 +183,7 @@ def test_receive_usdc_on_arbitrum_one_from_polygon(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xFc99f58A8974A4bc36e60E2d490Bb8D72899ee9f']])
 def test_receive_usdc_on_arbitrum_one_from_polygon_2(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(

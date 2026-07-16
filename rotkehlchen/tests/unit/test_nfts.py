@@ -1,14 +1,18 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, TokenKind
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+    from rotkehlchen.chain.aggregator import ChainsAggregator
 
 TEST_ACC1 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth
 TEST_ACC2 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # lefteris.eth

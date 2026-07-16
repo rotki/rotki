@@ -4,14 +4,12 @@ import hashlib
 import logging
 import operator
 from collections import Counter, defaultdict
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
@@ -38,8 +36,11 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -298,7 +299,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                     importer.send_message(
                         row_index=row[INDEX],
                         csv_row=row,
-                        msg=f'Couldn\'t find price of {row["Coin"]} on {timestamp}',
+                        msg=f"Couldn't find price of {row["Coin"]} on {timestamp}",
                         is_error=True,
                     )
                     return []
@@ -693,7 +694,7 @@ MULTIPLE_BINANCE_ENTRIES: list[BinanceMultipleEntry] = [
 class BinanceImporter(BaseExchangeImporter):
     """Binance CSV importer"""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Binance')
 
     def _group_binance_rows(

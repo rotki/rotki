@@ -26,8 +26,8 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x9ba704115F0ed3a431A025ffa0525fDD1D507C3c']])
 def test_swap(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x16b0e096358a955edc51479fc3b32056c2fe5afc4d33ae9b31c36326e4e2426b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -76,8 +76,8 @@ def test_swap(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x6D2e91D1Ca448825909205aC1F60808999CdA5c1']])
 def test_create_lp_position(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd28c90ff2cf141de71eb3dc55505f97b6004c4bc6a2172f25204ccd7141e3f6f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -139,8 +139,8 @@ def test_create_lp_position(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x63aefe505c6F12e4D9EB8F404f4f4d19533dE681']])
 def test_increase_liquidity(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x7a75d3e6fc9eb896b445592c2f532e0ef481e76342c2b94dfac564e4e4a20ffd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -189,8 +189,8 @@ def test_increase_liquidity(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xF60De76791c2F09995df52Aa1c6e2E7DcF1E75d7']])
 def test_decrease_liquidity(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8adf08ff1a8e96ce3415f4bb6db694cd8e035cdafa760c151f7ee5c6b8164db0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)

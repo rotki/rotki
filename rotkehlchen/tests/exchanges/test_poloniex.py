@@ -146,7 +146,7 @@ def test_poloniex_trade_with_asset_needing_conversion():
     assert all(event.location_label == exchange_name for event in events)
 
 
-def test_query_trade_history(poloniex: 'Poloniex'):
+def test_query_trade_history(poloniex: Poloniex):
     """Happy path test for poloniex trade history querying"""
     def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
         if '/trades' in url:
@@ -228,7 +228,7 @@ def test_query_trade_history(poloniex: 'Poloniex'):
         )]
 
 
-def test_query_trade_history_multiple_chunks(poloniex: 'Poloniex') -> None:
+def test_query_trade_history_multiple_chunks(poloniex: Poloniex) -> None:
     """Regression test for trades spanning more than one 180-day chunk.
 
     Poloniex limits the /trades query window to 180 days, so a long history range is
@@ -335,7 +335,7 @@ def test_query_trade_history_unexpected_data(poloniex):
 
 
 @pytest.mark.asset_test
-def test_poloniex_assets_are_known(poloniex: 'Poloniex'):
+def test_poloniex_assets_are_known(poloniex: Poloniex):
     currencies = poloniex.api_query_list('/currencies')
     for asset_data in currencies:
         for poloniex_asset in asset_data:
@@ -374,7 +374,7 @@ def test_poloniex_query_balances_unknown_asset(poloniex):
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> None:
+def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: Poloniex) -> None:
     """Test that if a poloniex asset movement query returns an asset that can't be
     mapped no exception is raised and an unknown asset message is generated"""
 
@@ -463,7 +463,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_poloniex_deposits_withdrawal_null_fee(poloniex: 'Poloniex'):
+def test_poloniex_deposits_withdrawal_null_fee(poloniex: Poloniex):
     """
     Test that if a poloniex asset movement query returns null for fee we don't crash.
     Regression test for issue #76

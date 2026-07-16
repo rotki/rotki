@@ -1,6 +1,5 @@
 import logging
-from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import (
@@ -54,6 +53,8 @@ from rotkehlchen.types import CacheType, ChainID
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -67,10 +68,10 @@ log = RotkehlchenLogsAdapter(logger)
 YEARN_DEPOSIT_4_BYTES: Final = b'\x83@\xf5I'
 YEARN_DEPOSIT_NO_LOGS_4_BYTES: Final = b'\xb6\xb5_%'
 YEARN_V2_INCREASE_DEPOSIT_TOPIC: Final = b"\xdb\x11\x01&'\xbc\xb8W\xec\x91^\x92\xe4\xc5\xa6\\\x80\t\x8e\xa7r\x90\xa7\xb3-Y\xa8\xef+>\xa4\x1b"  # noqa: E501
-YEARN_COUNTERPARTIES: TypeAlias = Literal['yearn-v1', 'yearn-v2', 'yearn-v3']
+type YEARN_COUNTERPARTIES = Literal['yearn-v1', 'yearn-v2', 'yearn-v3']
 
 
-def _get_vault_token_name(vault_address: 'ChecksumEvmAddress') -> str:
+def _get_vault_token_name(vault_address: ChecksumEvmAddress) -> str:
     try:
         vault_token = EvmToken(ethaddress_to_identifier(vault_address))
         vault_token_name = vault_token.name.strip()  # need strip since some names have whitespaces
@@ -83,9 +84,9 @@ def _get_vault_token_name(vault_address: 'ChecksumEvmAddress') -> str:
 class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -99,7 +100,7 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             CPT_YEARN_STAKING: set(),
         }
 
-    def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         """Check that cache is up to date and refresh cache from db
         Returns a fresh addresses to decoders mapping.
         """
@@ -139,9 +140,9 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def _handle_withdraw_events(
             self,
-            events: list['EvmEvent'],
+            events: list[EvmEvent],
             counterparty: YEARN_COUNTERPARTIES,
-    ) -> tuple['EvmEvent | None', 'EvmEvent | None']:
+    ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode events associated with a withdrawal."""
         return_event, withdraw_event = None, None
         for event in events:
@@ -170,9 +171,9 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def _handle_deposit_events(
             self,
-            events: list['EvmEvent'],
+            events: list[EvmEvent],
             counterparty: YEARN_COUNTERPARTIES,
-    ) -> tuple['EvmEvent | None', 'EvmEvent | None']:
+    ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode events associated with a deposit."""
         deposit_event, receive_event = None, None
         for event in events:
@@ -515,10 +516,10 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def _reorder_events(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],  # pylint: disable=unused-argument
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> list[EvmEvent]:
         """Reorder events for v1 and v2 vault transactions decoded by _handle_transfer_events."""
         out_event, in_event = None, None
         for event in decoded_events:
@@ -720,7 +721,7 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return dict.fromkeys(
             (self.vaults[CPT_YEARN_V1] | self.vaults[CPT_YEARN_V2]),
             (self._decode_vault_event,),
@@ -732,7 +733,7 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             (self._decode_staking_events,),
         ) | {YEARN_PARTNER_TRACKER: (self._decode_v2_increase_deposit,)}
 
-    def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
+    def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return (
             dict.fromkeys(self.vaults[CPT_YEARN_V1], CPT_YEARN_V1) |
             dict.fromkeys(self.vaults[CPT_YEARN_V2], CPT_YEARN_V2)

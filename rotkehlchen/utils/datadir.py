@@ -1,6 +1,6 @@
 import logging
-from pathlib import Path
 from shutil import Error, copytree, move, rmtree
+from typing import TYPE_CHECKING
 
 from rotkehlchen.constants.misc import (
     AIRDROPSDIR_NAME,
@@ -18,6 +18,9 @@ from rotkehlchen.constants.misc import (
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

@@ -15,13 +15,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChecksumEvmAddress
 
 from .constants import CPT_DXDAO_MESA
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 DEPOSIT = b'\xc1\x1c\xc3N\x93\xc6z\x938+\x99\xf2I\x8e\x997\x19\x87\x98\xf3\xc1\xc2\x88\x80\x08\xff\xc0\xee\xb8/h\xc4'  # noqa: E501
@@ -33,9 +33,9 @@ class DxdaomesaDecoder(EvmDecoderInterface):
 
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            ethereum_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=ethereum_inquirer,

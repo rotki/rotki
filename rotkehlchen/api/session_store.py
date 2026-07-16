@@ -14,15 +14,17 @@ it is never wired into the user/global DB versioning.
 import secrets
 import sqlite3
 import time
-from pathlib import Path
 from threading import Semaphore
-from typing import Final, NamedTuple
+from typing import TYPE_CHECKING, Final, NamedTuple
 
 from rotkehlchen.api.session_token import (
     SESSION_ABSOLUTE_TTL,
     SESSION_IDLE_TTL,
     mint_session_token,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 SESSION_DB_NAME: Final = 'session.db'
 

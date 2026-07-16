@@ -67,7 +67,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
-def _match_and_check(database: 'DBHandler', expected_matches: list[tuple[int, int]]) -> None:
+def _match_and_check(database: DBHandler, expected_matches: list[tuple[int, int]]) -> None:
     """Helper function for testing that the expected events are properly matched."""
     match_asset_movements(database=database)
     with database.conn.read_ctx() as cursor:
@@ -77,7 +77,7 @@ def _match_and_check(database: 'DBHandler', expected_matches: list[tuple[int, in
         ).fetchall()) == set(expected_matches)
 
 
-def _get_match_for_movement(cursor: 'DBCursor', movement_id: int | None) -> int | None:
+def _get_match_for_movement(cursor: DBCursor, movement_id: int | None) -> int | None:
     """Helper function to check the id of the event matched with a movement."""
     return None if (result := cursor.execute(
         'SELECT right_event_id FROM history_event_links WHERE link_type=? AND left_event_id=?',
@@ -86,7 +86,7 @@ def _get_match_for_movement(cursor: 'DBCursor', movement_id: int | None) -> int 
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-def test_match_asset_movements(database: 'DBHandler') -> None:
+def test_match_asset_movements(database: DBHandler) -> None:
     """Test that the asset movement matching logic works correctly.
 
     Adds some test events to the DB, runs the matching, and checks that events were properly
@@ -410,7 +410,7 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
     (HistoryEventType.RECEIVE, HistoryEventSubType.NONE),
 ])
 def test_withdrawal_fee(
-        database: 'DBHandler',
+        database: DBHandler,
         event_type: HistoryEventType,
         event_subtype: HistoryEventSubType,
 ) -> None:
@@ -479,7 +479,7 @@ def test_withdrawal_fee(
         assert _get_match_for_movement(cursor=cursor, movement_id=withdrawal_id) == receive_id
 
 
-def test_multiple_close_matches_clustered(database: 'DBHandler') -> None:
+def test_multiple_close_matches_clustered(database: DBHandler) -> None:
     """Ensure clustered movements are matched to the closest amounts."""
     events_db = DBHistoryEvents(database)
     with database.user_write() as write_cursor:
@@ -545,7 +545,7 @@ def test_multiple_close_matches_clustered(database: 'DBHandler') -> None:
     assert matched_2 == evm_event_2_id
 
 
-def test_customized_deposit(database: 'DBHandler') -> None:
+def test_customized_deposit(database: DBHandler) -> None:
     """Test matching a customized deposit event with a gas event present.
 
     The issue in this test is the difference being off by 0.3%. We had 0.2% before.
@@ -647,7 +647,7 @@ def test_customized_deposit(database: 'DBHandler') -> None:
         assert _get_match_for_movement(cursor=cursor, movement_id=movement_id) == customized_id
 
 
-def test_gno_kraken_flow(database: 'DBHandler') -> None:
+def test_gno_kraken_flow(database: DBHandler) -> None:
     """Test GNO deposit/withdrawal flow with fees and bridge event."""
     with database.conn.write_ctx() as write_cursor:
         DBHistoryEvents(database).add_history_events(
@@ -735,7 +735,7 @@ def test_gno_kraken_flow(database: 'DBHandler') -> None:
         assert _get_match_for_movement(cursor=cursor, movement_id=withdrawal_id) == withdraw_event_id  # noqa: E501
 
 
-def test_match_asset_movements_settings(database: 'DBHandler') -> None:
+def test_match_asset_movements_settings(database: DBHandler) -> None:
     """Test that the amount tolerance and time range settings works correctly, with the match
     failing when tolerance or time range is too small but succeeding with higher values.
     """
@@ -805,7 +805,7 @@ def test_match_asset_movements_settings(database: 'DBHandler') -> None:
     assert all_events[2].group_identifier == matched_event.group_identifier
 
 
-def test_auto_ignore_by_asset(database: 'DBHandler') -> None:
+def test_auto_ignore_by_asset(database: DBHandler) -> None:
     """Test that movements are auto-ignored if their asset is for an unsupported chain."""
     events_db = DBHistoryEvents(database)
     with database.conn.write_ctx() as write_cursor:
@@ -844,7 +844,7 @@ def test_auto_ignore_by_asset(database: 'DBHandler') -> None:
 
 @pytest.mark.parametrize('number_of_arbitrum_one_accounts', [2])
 def test_ignore_transfers_between_tracked_accounts(
-        database: 'DBHandler',
+        database: DBHandler,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that transfers between tracked accounts are not included as possible matches."""
@@ -892,7 +892,7 @@ def test_ignore_transfers_between_tracked_accounts(
     _match_and_check(database=database, expected_matches=[(movement_id, match_id)])
 
 
-def test_timestamp_tolerance(database: 'DBHandler') -> None:
+def test_timestamp_tolerance(database: DBHandler) -> None:
     """Test that events that are not on the expected side of the asset movement can still be
     auto matched as long as they are within the 1 hour tolerance.
     """
@@ -936,7 +936,7 @@ def test_timestamp_tolerance(database: 'DBHandler') -> None:
     _match_and_check(database=database, expected_matches=[(movement_id, match_id)])
 
 
-def test_exchange_deposit_delayed_credit(database: 'DBHandler') -> None:
+def test_exchange_deposit_delayed_credit(database: DBHandler) -> None:
     """Test matching a delayed exchange deposit credit to the onchain spend."""
     events_db = DBHistoryEvents(database)
     with database.conn.write_ctx() as write_cursor:
@@ -982,7 +982,7 @@ def test_exchange_deposit_delayed_credit(database: 'DBHandler') -> None:
     }}
 
 
-def test_exchange_deposit_sai_to_dai_credit(database: 'DBHandler') -> None:
+def test_exchange_deposit_sai_to_dai_credit(database: DBHandler) -> None:
     """Test matching a SAI onchain deposit with a DAI exchange credit."""
     events_db = DBHistoryEvents(database)
     with database.conn.write_ctx() as write_cursor:
@@ -1056,7 +1056,7 @@ def test_manual_matchable_asset_pairs(
     get_assets_in_same_collection.assert_called_once_with(identifier=movement_asset.identifier)
 
 
-def test_adjustments(database: 'DBHandler') -> None:
+def test_adjustments(database: DBHandler) -> None:
     """Test that we properly create adjustment events during matching if amounts differ."""
     events_db = DBHistoryEvents(database)
 
@@ -1124,7 +1124,7 @@ def test_adjustments(database: 'DBHandler') -> None:
             assert events[0].amount == FVal('0.01')
 
 
-def test_deposit_withdrawal_direction(database: 'DBHandler') -> None:
+def test_deposit_withdrawal_direction(database: DBHandler) -> None:
     """Test that when there are multiple close matches due to the accounting direction being
     neutral that we narrow the match with deposits as OUT events and withdrawals as IN events.
     """
@@ -1172,7 +1172,7 @@ def test_deposit_withdrawal_direction(database: 'DBHandler') -> None:
             write_cursor.execute('DELETE FROM history_events')
 
 
-def test_match_by_transaction_id_without_0x_prefix(database: 'DBHandler') -> None:
+def test_match_by_transaction_id_without_0x_prefix(database: DBHandler) -> None:
     """Match by tx hash when movement transaction_id is missing the 0x prefix."""
     tx_hash = make_evm_tx_hash()
     tx_hash_str = str(tx_hash)
@@ -1222,7 +1222,7 @@ def test_match_by_transaction_id_without_0x_prefix(database: 'DBHandler') -> Non
     _match_and_check(database=database, expected_matches=[(movement_id, match_id)])
 
 
-def test_reprocess_ambiguous_movement_after_candidate_gets_matched(database: 'DBHandler') -> None:
+def test_reprocess_ambiguous_movement_after_candidate_gets_matched(database: DBHandler) -> None:
     """Retry ambiguous movements when one of their candidates gets matched later."""
     tx_ref = make_evm_tx_hash()
     tx_ref_str = str(tx_ref)
@@ -1285,7 +1285,7 @@ def test_reprocess_ambiguous_movement_after_candidate_gets_matched(database: 'DB
     )
 
 
-def test_retry_ambiguous_movement_stays_ambiguous(database: 'DBHandler') -> None:
+def test_retry_ambiguous_movement_stays_ambiguous(database: DBHandler) -> None:
     """Retry path should update candidate mappings when ambiguity remains."""
     with database.conn.write_ctx() as write_cursor:
         DBHistoryEvents(database).add_history_events(
@@ -1365,7 +1365,7 @@ def test_retry_ambiguous_movement_stays_ambiguous(database: 'DBHandler') -> None
     assert [len(call.kwargs['matched_events']) for call in ambiguous_calls] == [3, 2]
 
 
-def test_retry_ambiguous_movement_loses_all_candidates(database: 'DBHandler') -> None:
+def test_retry_ambiguous_movement_loses_all_candidates(database: DBHandler) -> None:
     """Retry path should clear candidate mappings when no candidates remain."""
     with database.conn.write_ctx() as write_cursor:
         DBHistoryEvents(database).add_history_events(
@@ -1448,7 +1448,7 @@ def test_retry_ambiguous_movement_loses_all_candidates(database: 'DBHandler') ->
     assert [len(call.kwargs['matched_events']) for call in ambiguous_calls] == [2, 0]
 
 
-def test_match_coinbasepro_coinbase_transfer(database: 'DBHandler') -> None:
+def test_match_coinbasepro_coinbase_transfer(database: DBHandler) -> None:
     """CoinbasePro transfers and Coinbase transfer-note movements are auto-ignored."""
     with database.conn.write_ctx() as write_cursor:
         DBHistoryEvents(database).add_history_events(
@@ -1502,7 +1502,7 @@ def test_match_coinbasepro_coinbase_transfer(database: 'DBHandler') -> None:
     assert ignored_ids == {1, 2, 3, 4}
 
 
-def test_coinbasepro_transfer_with_onchain_event(database: 'DBHandler') -> None:
+def test_coinbasepro_transfer_with_onchain_event(database: DBHandler) -> None:
     """CoinbasePro and Coinbase transfer-note movements are not matched to onchain events."""
     with database.conn.write_ctx() as write_cursor:
         DBHistoryEvents(database).add_history_events(
@@ -1563,7 +1563,7 @@ def test_coinbasepro_transfer_with_onchain_event(database: 'DBHandler') -> None:
     assert match_id == 1  # Onchain event should not be ignored.
 
 
-def test_auto_ignored_movements_excluded_as_candidates(database: 'DBHandler') -> None:
+def test_auto_ignored_movements_excluded_as_candidates(database: DBHandler) -> None:
     """Auto-ignored movements (e.g. Coinbase Pro) are not considered candidate matches."""
     with database.conn.write_ctx() as write_cursor:
         DBHistoryEvents(database).add_history_events(
@@ -1604,7 +1604,7 @@ def test_auto_ignored_movements_excluded_as_candidates(database: 'DBHandler') ->
     )
 
 
-def test_coinbase_unprefixed_hash(database: 'DBHandler') -> None:
+def test_coinbase_unprefixed_hash(database: DBHandler) -> None:
     """Coinbase withdrawal still matches unprefixed tx hash while transfer movements are
     ignored.
     """
@@ -1679,7 +1679,7 @@ def test_coinbase_unprefixed_hash(database: 'DBHandler') -> None:
     }
 
 
-def test_no_double_link_coinbase_withdrawal(database: 'DBHandler') -> None:
+def test_no_double_link_coinbase_withdrawal(database: DBHandler) -> None:
     """Regression test for double linking a Coinbase withdrawal.
 
     The bug was that after matching Coinbase withdrawal to an onchain receive,
@@ -1774,7 +1774,7 @@ def test_no_double_link_coinbase_withdrawal(database: 'DBHandler') -> None:
     assert (coinbasepro_withdrawal_id, coinbase_deposit_id) not in set(links)
 
 
-def test_deposit_to_anon(database: 'DBHandler') -> None:
+def test_deposit_to_anon(database: DBHandler) -> None:
     """Regression test for wrong pairing when a deposit is followed by a withdrawal.
 
     Scenario: user deposits onchain to Coinbase, then Coinbase withdraws to a different

@@ -1,8 +1,7 @@
 import json
 import warnings as test_warnings
-from collections.abc import Callable
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -29,6 +28,9 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def test_gate_location_urls(gate_exchange: Gate) -> None:

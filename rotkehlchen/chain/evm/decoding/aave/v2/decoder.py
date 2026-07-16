@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import asset_normalized_value, token_normalized_value
@@ -18,6 +17,8 @@ from ..constants import CPT_AAVE_V2
 from .constants import BORROW, DEPOSIT, REPAY
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.decoding.structures import DecoderContext
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -28,14 +29,14 @@ if TYPE_CHECKING:
 class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            pool_addresses: Sequence['ChecksumEvmAddress'],
-            native_gateways: 'tuple[ChecksumEvmAddress, ...]',
-            incentives: 'ChecksumEvmAddress',
-            incentives_reward_token: 'ChecksumEvmAddress',
-            v3_migration_helper: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            pool_addresses: Sequence[ChecksumEvmAddress],
+            native_gateways: tuple[ChecksumEvmAddress, ...],
+            incentives: ChecksumEvmAddress,
+            incentives_reward_token: ChecksumEvmAddress,
+            v3_migration_helper: ChecksumEvmAddress,
     ):
         Commonv2v3LikeDecoder.__init__(
             self,
@@ -54,7 +55,7 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
         self.incentives = incentives
         self.incentives_reward_token = incentives_reward_token
 
-    def decode_liquidation(self, context: 'DecoderContext') -> None:
+    def decode_liquidation(self, context: DecoderContext) -> None:
         """
         Decode AAVE v2 liquidations. When a liquidation happens the user returns the debt token
         and part of the collateral deposited is lost too. Those two events happen as transfers in
@@ -89,7 +90,7 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
                 event.address = context.tx_log.address
                 event.extra_data = {'is_liquidation': True}  # adding this field to the decoded event to differentiate paybacks happening in liquidations.  # noqa: E501
 
-    def _decode_incentives(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _decode_incentives(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != REWARDS_CLAIMED_TOPIC:  # RewardsClaimed
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -101,7 +102,7 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
             amount_raw=context.tx_log.data[0:32],
         )
 
-    def _decode_migration(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _decode_migration(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != b'K\xec\xcb\x90\xf9\x94\xc3\x1a\xce\xd7\xa2;V\x11\x02\x07(\xa2=\x8e\xc5\xcd\xdd\x1a>\x9d\x97\xb9o\xda\x86f':  # TokenTransferred # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -133,13 +134,13 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
             image='aave.svg',
         ),)
 
-    def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
+    def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(
             chain_id=self.node_inquirer.chain_id,
             protocol=CPT_AAVE_V2,
         ), CPT_AAVE_V2) | dict.fromkeys(self.pool_addresses, CPT_AAVE_V2)
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return super().addresses_to_decoders() | {
             self.incentives: (self._decode_incentives,),
         } | dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(

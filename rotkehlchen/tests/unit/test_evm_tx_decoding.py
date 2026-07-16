@@ -60,7 +60,7 @@ if TYPE_CHECKING:
 
 
 def _add_transactions_to_db(
-        db: 'DBHandler',
+        db: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> tuple[EVMTxHash, EVMTxHash, EVMTxHash]:
     """Add to the database transactions in different optimism and ethereum for testing"""
@@ -217,11 +217,11 @@ def test_tx_decode(ethereum_transaction_decoder, database):
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # noqa: E501
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_query_and_decode_transactions_works_with_different_chains(
-        database: 'DBHandler',
-        eth_transactions: 'EthereumTransactions',
-        optimism_transactions: 'OptimismTransactions',
+        database: DBHandler,
+        eth_transactions: EthereumTransactions,
+        optimism_transactions: OptimismTransactions,
         ethereum_accounts: list[ChecksumEvmAddress],
-        optimism_transaction_decoder: 'OptimismTransactionDecoder',
+        optimism_transaction_decoder: OptimismTransactionDecoder,
 ) -> None:
     """
     Test that the different evm transactions modules only query receipts for their chain
@@ -299,8 +299,8 @@ def _make_mock_receipt(tx_hash: EVMTxHash) -> dict[str, Any]:
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # noqa: E501
 def test_get_receipts_missing_them_uses_batching(
-        database: 'DBHandler',
-        eth_transactions: 'EthereumTransactions',
+        database: DBHandler,
+        eth_transactions: EthereumTransactions,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that missing receipts are queried via a batched JSON-RPC request and
@@ -308,7 +308,7 @@ def test_get_receipts_missing_them_uses_batching(
     tx_hash_eth, tx_hash_eth_yabir, tx_hash_opt = _add_transactions_to_db(database, ethereum_accounts)  # noqa: E501
     batch_queries = []
 
-    def mock_batch(tx_hashes: list[EVMTxHash], call_order: 'Any | None' = None) -> list[dict[str, Any]]:  # noqa: E501
+    def mock_batch(tx_hashes: list[EVMTxHash], call_order: Any | None = None) -> list[dict[str, Any]]:  # noqa: E501
         batch_queries.append(list(tx_hashes))
         return [_make_mock_receipt(x) for x in tx_hashes]
 
@@ -327,8 +327,8 @@ def test_get_receipts_missing_them_uses_batching(
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # noqa: E501
 def test_get_receipts_missing_them_falls_back_to_per_tx(
-        database: 'DBHandler',
-        eth_transactions: 'EthereumTransactions',
+        database: DBHandler,
+        eth_transactions: EthereumTransactions,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that when no node can serve a batched receipt query the receipts are
@@ -336,7 +336,7 @@ def test_get_receipts_missing_them_falls_back_to_per_tx(
     tx_hash_eth, tx_hash_eth_yabir, tx_hash_opt = _add_transactions_to_db(database, ethereum_accounts)  # noqa: E501
     per_tx_queries = []
 
-    def mock_single(tx_hash: EVMTxHash, call_order: 'Any | None' = None) -> dict[str, Any]:
+    def mock_single(tx_hash: EVMTxHash, call_order: Any | None = None) -> dict[str, Any]:
         per_tx_queries.append(tx_hash)
         return _make_mock_receipt(tx_hash)
 
@@ -355,7 +355,7 @@ def test_get_receipts_missing_them_falls_back_to_per_tx(
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # noqa: E501
 def test_delete_transactions_removes_internals_queried_mapping(
-        database: 'DBHandler',
+        database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Ensure TX_INTERNALS_QUERIED mapping is removed when deleting txs for an address.
@@ -435,9 +435,9 @@ def test_delete_transactions_removes_internals_queried_mapping(
 ]])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_genesis_remove_address(
-        database: 'DBHandler',
+        database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
-        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
 ):
     """
     Checks that if an address had a genesis transaction:
@@ -491,9 +491,9 @@ def test_genesis_remove_address(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xcBe21204C4b9F1810363D69773b74203376681a2']])
 def test_token_detection_after_decoding(
-        database: 'DBHandler',
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: 'list[ChecksumEvmAddress]',
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that the tokens found in new IN history events are saved as detected tokens."""
     with patch.object(database, 'save_tokens_for_address') as save_tokens_mock:
@@ -637,8 +637,8 @@ def test_contract_deployment(ethereum_transaction_decoder, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
 def test_redecode_skips_customized_event_original_position(
-        ethereum_inquirer: 'EthereumInquirer',
-        database: 'DBHandler',
+        ethereum_inquirer: EthereumInquirer,
+        database: DBHandler,
 ) -> None:
     """Test that redecoding a tx skips events at positions where customized events originated.
 
@@ -695,8 +695,8 @@ def test_redecode_skips_customized_event_original_position(
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
 def test_write_events_relocates_sequence_index_collision(
-        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
-        database: 'DBHandler',
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that events sharing a sequence index are relocated to a free index when

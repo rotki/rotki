@@ -4,25 +4,29 @@ import logging
 import shutil
 import tempfile
 import zlib
-from collections.abc import Sequence
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from sqlcipher3 import dbapi2 as sqlcipher  # pylint: disable=no-name-in-module
 
 from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.db.misc import detect_sqlcipher_version, plaintext_db_integrity_check
-from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import unlock_database
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import DataIntegrityError, SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.db.settings import ModifiableDBSettings
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

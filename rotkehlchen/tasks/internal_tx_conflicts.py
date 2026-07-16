@@ -48,8 +48,8 @@ PARENT_TX_DATA_QUERY_CHUNK_SIZE: Final = 400  # 2 bind vars per entry (tx_hash, 
 
 class _RepullResult(NamedTuple):
     """Outcome for one repull worker run."""
-    chain_id: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE'
-    tx_hash: 'EVMTxHash'
+    chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE
+    tx_hash: EVMTxHash
     needs_decode: bool
     error: str | None
 
@@ -69,9 +69,9 @@ def _error_to_message(error: BaseException) -> str:
 
 
 def _mark_internal_tx_conflict_fixed(
-        database: 'DBHandler',
-        chain_id: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
-        tx_hash: 'EVMTxHash',
+        database: DBHandler,
+        chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+        tx_hash: EVMTxHash,
 ) -> None:
     """Mark a conflict as fixed and emit the INTERNAL_TX_FIXED websocket message."""
     with database.user_write() as write_cursor:
@@ -87,9 +87,9 @@ def _mark_internal_tx_conflict_fixed(
 
 
 def _mark_internal_tx_conflict_error(
-        database: 'DBHandler',
-        chain_id: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
-        tx_hash: 'EVMTxHash',
+        database: DBHandler,
+        chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+        tx_hash: EVMTxHash,
         error_msg: str,
 ) -> None:
     """Persist retry metadata for a failed repull/decode attempt."""
@@ -104,9 +104,9 @@ def _mark_internal_tx_conflict_error(
 
 
 def _query_parent_tx_data_batch(
-        database: 'DBHandler',
-        repull_entries: list[tuple['EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', 'EVMTxHash']],
-) -> dict[tuple['EVMTxHash', int], _ParentTxData]:
+        database: DBHandler,
+        repull_entries: list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash]],
+) -> dict[tuple[EVMTxHash, int], _ParentTxData]:
     """Fetch parent tx metadata for a repull batch in one DB read transaction."""
     if len(repull_entries) == 0:
         return {}
@@ -132,10 +132,10 @@ def _query_parent_tx_data_batch(
 
 
 def _repull_internal_tx_data(
-        database: 'DBHandler',
-        chains_aggregator: 'ChainsAggregator',
-        chain_id: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
-        tx_hash: 'EVMTxHash',
+        database: DBHandler,
+        chains_aggregator: ChainsAggregator,
+        chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+        tx_hash: EVMTxHash,
         tx_data: _ParentTxData | None = None,
 ) -> bool:
     """Repull internals before replacing local rows.
@@ -192,10 +192,10 @@ def _repull_internal_tx_data(
 
 
 def _repull_single_conflict(
-        database: 'DBHandler',
-        chains_aggregator: 'ChainsAggregator',
-        chain_id: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
-        tx_hash: 'EVMTxHash',
+        database: DBHandler,
+        chains_aggregator: ChainsAggregator,
+        chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+        tx_hash: EVMTxHash,
         tx_data: _ParentTxData | None = None,
 ) -> _RepullResult:
     """Repull one conflict and return a structured result for batch orchestration."""
@@ -229,10 +229,10 @@ def _repull_single_conflict(
 
 
 def _process_repull_conflicts(
-        database: 'DBHandler',
-        chains_aggregator: 'ChainsAggregator',
-        repull_entries: list[tuple['EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', 'EVMTxHash']],
-        ) -> dict['EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', list['EVMTxHash']]:
+        database: DBHandler,
+        chains_aggregator: ChainsAggregator,
+        repull_entries: list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash]],
+        ) -> dict[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, list[EVMTxHash]]:
     """Run staggered repull workers and return tx hashes that need decode per chain."""
     to_decode_by_chain: dict[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, list[EVMTxHash]] = defaultdict(list)  # noqa: E501
     tx_data_by_hash_and_chain = _query_parent_tx_data_batch(
@@ -306,9 +306,9 @@ def _process_repull_conflicts(
 
 
 def _decode_conflicts_in_batches(
-        database: 'DBHandler',
-        chains_aggregator: 'ChainsAggregator',
-        to_decode_by_chain: dict['EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', list['EVMTxHash']],
+        database: DBHandler,
+        chains_aggregator: ChainsAggregator,
+        to_decode_by_chain: dict[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, list[EVMTxHash]],
 ) -> None:
     """Decode queued conflict tx hashes per-chain in a single batch call per chain."""
     for chain_id, tx_hashes in to_decode_by_chain.items():
@@ -364,8 +364,8 @@ def _decode_conflicts_in_batches(
 
 
 def repull_internal_tx_conflicts(
-        database: 'DBHandler',
-        chains_aggregator: 'ChainsAggregator',
+        database: DBHandler,
+        chains_aggregator: ChainsAggregator,
         limit: int,
 ) -> None:
     """Process a batch of internal tx conflicts (both repull and fix_redecode)."""

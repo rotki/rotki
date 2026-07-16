@@ -2,18 +2,18 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from rotkehlchen.assets.asset import AssetWithOracles
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EventDecoderFunction, EVMTransactionDecoder
-from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import from_wei
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import AssetWithOracles
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
+    from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.monerium import Monerium
@@ -30,16 +30,16 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
 
     def __init__(
             self,
-            database: 'DBHandler',
-            node_inquirer: 'EvmNodeInquirer',
-            transactions: 'L2WithL1FeesTransactions',
+            database: DBHandler,
+            node_inquirer: EvmNodeInquirer,
+            transactions: L2WithL1FeesTransactions,
             value_asset: AssetWithOracles,
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
             base_tools: BaseEvmDecoderTools,
-            premium: 'Premium | None' = None,
+            premium: Premium | None = None,
             dbevmtx_class: type[DBL2WithL1FeesTx] = DBL2WithL1FeesTx,
-            monerium: 'Monerium | None' = None,
+            monerium: Monerium | None = None,
     ):
         super().__init__(
             database=database,

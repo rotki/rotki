@@ -1,8 +1,9 @@
-from typing import Final
-
-from eth_typing import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+
+if TYPE_CHECKING:
+    from eth_typing import ABI
 
 CRVUSD_MINTER: Final = string_to_evm_address('0xC9332fdCB1C491Dcc683bAe86Fe3cb70360738BC')
 CRVUSD_MINTER_ABI: Final[ABI] = [{'stateMutability': 'view', 'type': 'function', 'name': 'controllers', 'inputs': [{'name': 'arg0', 'type': 'uint256'}], 'outputs': [{'name': '', 'type': 'address'}]}, {'stateMutability': 'view', 'type': 'function', 'name': 'n_collaterals', 'inputs': [], 'outputs': [{'name': '', 'type': 'uint256'}]}]  # noqa: E501

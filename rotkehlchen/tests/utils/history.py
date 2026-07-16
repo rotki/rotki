@@ -1,14 +1,11 @@
 import json
-from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple, cast
 from unittest.mock import _patch, patch
 
-from rotkehlchen.accounting.mixins.event import AccountingEventMixin
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_USDC, A_USDT
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import STRING_KEYS_REMOVE_IF_EMPTY, DBSettings
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -17,7 +14,6 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import (
     A_EUR,
     ETH_ADDRESS1,
@@ -33,8 +29,13 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
+    from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
+    from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.tests.utils.kraken import MockKraken
 
 TEST_END_TS = 1559427707
@@ -735,7 +736,7 @@ def mock_history_processing(
 
 
 def mock_etherscan_like_transaction_response(
-        etherscan_like_api: 'EtherscanLikeApi',
+        etherscan_like_api: EtherscanLikeApi,
         remote_errors: bool,
         session_mock_attribute: str = 'get',
 ) -> _patch:
@@ -886,8 +887,8 @@ def maybe_mock_historical_price_queries(
         should_mock_price_queries: bool,
         mocked_price_queries,
         default_mock_value: FVal | None = None,
-        dont_mock_price_for: list['Asset'] | None = None,
-        force_no_price_found_for: list[tuple['Asset', Timestamp]] | None = None,
+        dont_mock_price_for: list[Asset] | None = None,
+        force_no_price_found_for: list[tuple[Asset, Timestamp]] | None = None,
 ) -> None:
     """If needed will make sure the historian's price queries are mocked"""
     if not should_mock_price_queries:

@@ -47,9 +47,9 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -58,7 +58,7 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
         )
         CustomizableDateMixin.__init__(self, base_tools.database)
 
-    def _decode_airdop_claim(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _decode_airdop_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes wallet connect airdrop claim event."""
         if context.tx_log.topics[0] != TOKENS_CLAIMED:
             return DEFAULT_EVM_DECODING_OUTPUT
@@ -83,7 +83,7 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_staking_deposit(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _decode_staking_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
         user_address = bytes_to_address(context.tx_log.topics[1])
         locktime = Timestamp(int.from_bytes(context.tx_log.data[32:64]))
         transferred_amount = token_normalized_value_decimals(
@@ -128,7 +128,7 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_staking_withdraw(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _decode_staking_withdraw(self, context: DecoderContext) -> EvmDecodingOutput:
         user_address = bytes_to_address(context.tx_log.topics[1])
         transferred_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[32:64]),
@@ -154,7 +154,7 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_rewards_claimed(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _decode_rewards_claimed(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes WalletConnect staking reward claim events via an ActionItem."""
         if context.tx_log.topics[0] != REWARDS_CLAIMED:
             return DEFAULT_EVM_DECODING_OUTPUT
@@ -176,7 +176,7 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
             to_counterparty=CPT_WALLETCONNECT,
         )])
 
-    def _decode_staking(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _decode_staking(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes WalletConnect staking related activity"""
         if context.tx_log.topics[0] == STAKING_DEPOSIT:
             return self._decode_staking_deposit(context)
@@ -187,7 +187,7 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             WALLETCONECT_AIRDROP_CLAIM: (self._decode_airdop_claim,),
             WALLETCONECT_STAKE_WEIGHT: (self._decode_staking,),
@@ -195,5 +195,5 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
         }
 
     @staticmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (WALLETCONNECT_CPT_DETAILS,)

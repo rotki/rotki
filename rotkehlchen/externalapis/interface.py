@@ -19,7 +19,7 @@ class ExternalServiceWithApiKey:
     specifying that the DB is an object that is non optional and exists to satisfy type checkers.
     """
 
-    def __init__(self, database: 'DBHandler', service_name: ExternalService) -> None:
+    def __init__(self, database: DBHandler, service_name: ExternalService) -> None:
         self.db = database
         self.api_key: ApiKey | None = None
         self.service_name = service_name
@@ -49,7 +49,7 @@ class ExternalServiceWithApiKeyOptionalDB(ExternalServiceWithApiKey, DBSetterMix
     That's needed since it needs to be passed down to the Inquirer singleton before
     DB is ready.
     """
-    def __init__(self, database: 'DBHandler|None', service_name: ExternalService) -> None:
+    def __init__(self, database: DBHandler | None, service_name: ExternalService) -> None:
         super().__init__(database=database, service_name=service_name)  # type: ignore  # we are aware of discrepancy
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
 
@@ -61,7 +61,7 @@ class ExternalServiceWithRecommendedApiKey(ExternalServiceWithApiKey):
     """An extension of ExternalServiceWithAPIKey for services where we recommend always
     using an API key and warn the user if it's missing.
     """
-    def __init__(self, database: 'DBHandler', service_name: ExternalService) -> None:
+    def __init__(self, database: DBHandler, service_name: ExternalService) -> None:
         ExternalServiceWithApiKey.__init__(self, database=database, service_name=service_name)
         self.warning_given = False
 

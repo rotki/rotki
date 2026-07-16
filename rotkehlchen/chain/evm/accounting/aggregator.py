@@ -2,19 +2,19 @@ import importlib
 import logging
 import pkgutil
 from contextlib import suppress
-from types import ModuleType
 from typing import TYPE_CHECKING
 
 from rotkehlchen.errors.misc import ModuleLoadingError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.user_messages import MessagesAggregator
-
-from .structures import EventsAccountantCallback
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.user_messages import MessagesAggregator
 
     from .interfaces import ModuleAccountantInterface
+    from .structures import EventsAccountantCallback
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class EVMAccountingAggregator:
     """
     def __init__(
             self,
-            node_inquirer: 'EvmNodeInquirer',
+            node_inquirer: EvmNodeInquirer,
             msg_aggregator: MessagesAggregator,
             modules_path: str,
     ) -> None:

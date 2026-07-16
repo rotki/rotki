@@ -34,8 +34,8 @@ log = RotkehlchenLogsAdapter(logger)
 class UmamiBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'ArbitrumOneInquirer',
-            tx_decoder: 'ArbitrumOneTransactionDecoder',
+            evm_inquirer: ArbitrumOneInquirer,
+            tx_decoder: ArbitrumOneTransactionDecoder,
     ):
         super().__init__(
             tx_decoder=tx_decoder,
@@ -52,7 +52,7 @@ class UmamiBalances(ProtocolWithBalance):
             deployed_block=176053511,
         )
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Query both unstaked and staked balances for Umami vaults.
 
         For each user address with deposits:
@@ -127,9 +127,9 @@ class UmamiBalances(ProtocolWithBalance):
     def _process_vault_balance(
             self,
             balance: int,
-            vault_token: 'EvmToken',
-            balances: 'BalancesSheetType',
-            user_address: 'ChecksumEvmAddress',
+            vault_token: EvmToken,
+            balances: BalancesSheetType,
+            user_address: ChecksumEvmAddress,
     ) -> None:
         """Process vault balance and add to user's balance sheet."""
         if (usd_price := get_umami_vault_token_price(

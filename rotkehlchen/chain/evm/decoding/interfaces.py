@@ -4,7 +4,6 @@ from collections.abc import Callable, Mapping
 from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import (
     asset_normalized_value,
     token_normalized_value_decimals,
@@ -21,18 +20,19 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import VelodromePoolData
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -81,9 +81,9 @@ class EvmDecoderInterface(DecoderInterface['ChecksumEvmAddress', 'EvmNodeInquire
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         """This is the Decoder interface initialization signature"""
         super().__init__(
@@ -149,7 +149,7 @@ class EvmDecoderInterface(DecoderInterface['ChecksumEvmAddress', 'EvmNodeInquire
         """
         return {}
 
-    def notify_user(self, event: 'EvmEvent', counterparty: str) -> None:
+    def notify_user(self, event: EvmEvent, counterparty: str) -> None:
         """
         Notify the user about a problem during the decoding of ethereum transactions. At the
         moment it doesn't take any error type but in the future it could be added if needed.
@@ -265,9 +265,9 @@ class GovernableDecoderInterface(EvmDecoderInterface, ABC):
     """
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,  # pylint: disable=unused-argument
             protocol: str,
             proposals_url: str,
     ) -> None:
@@ -410,7 +410,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
     @overload  # without chain_id
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
+            evm_inquirer: EvmNodeInquirer,
             cache_type_to_check_for_freshness: CacheType,
             query_data_method: CACHE_QUERY_METHOD_TYPE,
             read_data_from_cache_method: Callable[[], tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
@@ -420,7 +420,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
     @overload  # with chain_id
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
+            evm_inquirer: EvmNodeInquirer,
             cache_type_to_check_for_freshness: CacheType,
             query_data_method: CACHE_QUERY_METHOD_TYPE,
             read_data_from_cache_method: Callable[[ChainID], tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
@@ -430,7 +430,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
+            evm_inquirer: EvmNodeInquirer,
             cache_type_to_check_for_freshness: CacheType,
             query_data_method: CACHE_QUERY_METHOD_TYPE,
             read_data_from_cache_method: Callable[..., tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501

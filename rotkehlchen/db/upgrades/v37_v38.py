@@ -26,7 +26,7 @@ DEFAULT_POLYGON_NODES_AT_V38 = [
 
 
 @enter_exit_debug_log(name='UserDB v37->v38 upgrade')
-def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v37_to_v38(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v37 to v38. This was in v1.29.0 release.
         - Reset decoded events
         - Reduce the data stored per internal transaction
@@ -35,11 +35,11 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Remove potential duplicate block mev reward events
     """
     @progress_step(description='Adding Polygon PoS location.')
-    def _add_polygon_pos_location(write_cursor: 'DBCursor') -> None:
+    def _add_polygon_pos_location(write_cursor: DBCursor) -> None:
         write_cursor.execute("INSERT OR IGNORE INTO location(location, seq) VALUES ('h', 40);")
 
     @progress_step(description='Adding Polygon PoS nodes.')
-    def _add_polygon_pos_nodes(write_cursor: 'DBCursor') -> None:
+    def _add_polygon_pos_nodes(write_cursor: DBCursor) -> None:
         write_cursor.executemany(
             'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
             'VALUES (?, ?, ?, ?, ?, ?)',
@@ -47,7 +47,7 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Reducing internal transactions.')
-    def _reduce_internal_txs(write_cursor: 'DBCursor') -> None:
+    def _reduce_internal_txs(write_cursor: DBCursor) -> None:
         """Reduce the size of the evm internal transactions table by removing unused columns"""
         update_table_schema(
             write_cursor=write_cursor,
@@ -64,7 +64,7 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Dropping Aave events.')
-    def _drop_aave_events(write_cursor: 'DBCursor') -> None:
+    def _drop_aave_events(write_cursor: DBCursor) -> None:
         """
         Delete aave events from the database since we don't need them anymore
         """
@@ -75,7 +75,7 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Deleting Uniswap/Sushiswap events.')
-    def _delete_uniswap_sushiswap_events(write_cursor: 'DBCursor') -> None:
+    def _delete_uniswap_sushiswap_events(write_cursor: DBCursor) -> None:
         """
         Delete query ranges and events for uniswap/sushiswap
         """
@@ -90,7 +90,7 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """
         Reset all decoded evm events except the customized ones for ethereum mainnet and optimism.
         """
@@ -119,7 +119,7 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Removing duplicate block mev rewards.')
-    def _remove_duplicate_block_mev_rewards(write_cursor: 'DBCursor') -> None:
+    def _remove_duplicate_block_mev_rewards(write_cursor: DBCursor) -> None:
         """If mev reward is exact same as block production reward then it's a duplicate event.
         In that case it needs to be deleted.
         """

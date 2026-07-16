@@ -15,7 +15,6 @@ from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS, DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.exchanges.binance import BinancePair
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
@@ -25,6 +24,7 @@ from rotkehlchen.exchanges.constants import (
     EXCHANGES_WITHOUT_API_SECRET,
     SUPPORTED_EXCHANGES,
 )
+from rotkehlchen.exchanges.data_structures import BinancePair
 from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, KrakenAccountType
 from rotkehlchen.exchanges.kucoin import API_KEY_ERROR_CODE_ACTION as KUCOIN_API_KEY_ERROR_CODE
 from rotkehlchen.exchanges.okx import OkxLocation
@@ -100,7 +100,7 @@ def mock_validate_api_key_failure(location: Location) -> _patch:
     reason='Dont query all production exchanges when CI runs',
 )
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_setup_exchange(rotkehlchen_api_server: 'APIServer') -> None:
+def test_setup_exchange(rotkehlchen_api_server: APIServer) -> None:
     """Test that setting up an exchange via the api works
 
     Hits all production exchange servers with a query to make sure that the api key
@@ -212,7 +212,7 @@ def test_setup_exchange(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
-def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
+def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     """Test that if rotki gets a malformed response from Kraken it's handled properly
 
     Regression test for the first part of https://github.com/rotki/rotki/issues/943
@@ -260,7 +260,7 @@ def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges: 'APISe
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_setup_exchange_does_not_stay_in_mapping_after_500_error(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test that if 500 error is returned during setup of an exchange and it's stuck
     in the exchange mapping rotki doesn't still think the exchange is registered.
@@ -292,7 +292,7 @@ def test_setup_exchange_does_not_stay_in_mapping_after_500_error(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_setup_exchange_errors(rotkehlchen_api_server: APIServer) -> None:
     """Test errors and edge cases of setup_exchange endpoint"""
 
     # Provide unsupported exchange location
@@ -392,7 +392,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
-def test_binance_api_without_markets_error(rotkehlchen_api_server: 'APIServer') -> None:
+def test_binance_api_without_markets_error(rotkehlchen_api_server: APIServer) -> None:
     """Test that adding Binance API key without markets returns a proper error message"""
     auth_data = {
         'location': 'binance',
@@ -443,7 +443,7 @@ def test_binance_api_without_markets_error(rotkehlchen_api_server: 'APIServer') 
     assert_simple_ok_response(response)
 
 
-def test_kraken_futures_only_one_key(rotkehlchen_api_server: 'APIServer') -> None:
+def test_kraken_futures_only_one_key(rotkehlchen_api_server: APIServer) -> None:
     """
     Test that adding or editing only one of the 2 required
     API keys for Kraken Futures returns error
@@ -498,7 +498,7 @@ def test_kraken_futures_only_one_key(rotkehlchen_api_server: 'APIServer') -> Non
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_remove_exchange(rotkehlchen_api_server: 'APIServer') -> None:
+def test_remove_exchange(rotkehlchen_api_server: APIServer) -> None:
     """Test that removing a setup exchange via the api works"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
@@ -566,7 +566,7 @@ def test_remove_exchange(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_remove_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_remove_exchange_errors(rotkehlchen_api_server: APIServer) -> None:
     """Errors and edge cases when using the remove exchange endpoint"""
     # remove unsupported exchange
     response = requests.delete(
@@ -611,7 +611,7 @@ def test_remove_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
+def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     """Test that using the exchange balances query endpoint works fine"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -655,7 +655,7 @@ def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges: 'APIServ
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_exchange_query_balances_ignore_cache(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
 ) -> None:
     """Test that using the exchange balances query endpoint can ignore cache"""
     server = rotkehlchen_api_server_with_exchanges
@@ -704,7 +704,7 @@ def test_exchange_query_balances_ignore_cache(
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_exchange_query_balances_errors(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
 ) -> None:
     """Test errors and edge cases of the exchange balances query endpoint"""
     server = rotkehlchen_api_server_with_exchanges
@@ -735,7 +735,7 @@ def test_exchange_query_balances_errors(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_delete_external_exchange_data_works(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
 ) -> None:
     server = rotkehlchen_api_server_with_exchanges
     rotki = server.rest_api.rotkehlchen
@@ -772,7 +772,7 @@ def test_delete_external_exchange_data_works(
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.POLONIEX)])
-def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
+def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     db = rotki.data.db
@@ -889,7 +889,7 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
 
 @pytest.mark.parametrize('added_exchanges', [(Location.OKX, Location.KUCOIN)])
 def test_edit_exchange_account_passphrase(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
 ) -> None:
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -927,7 +927,7 @@ def test_edit_exchange_account_passphrase(
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 def test_edit_exchange_kraken_account_type(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
 ) -> None:
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -971,7 +971,7 @@ def test_edit_exchange_kraken_account_type(
 
 
 @pytest.mark.parametrize('added_exchanges', [SUPPORTED_EXCHANGES])
-def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
+def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
 
@@ -1060,7 +1060,7 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
-def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
+def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     """Test that the binance endpoint returns some market pairs"""
     ci_run = 'CI' in os.environ
     server = rotkehlchen_api_server_with_exchanges
@@ -1099,8 +1099,8 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges: 'APIServer')
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
 def test_query_binance_events(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
-        websocket_connection: 'WebsocketReader',
+        rotkehlchen_api_server_with_exchanges: APIServer,
+        websocket_connection: WebsocketReader,
 ) -> None:
     """Test that querying binance events will only query the market pairs set in the db and
     will not try to query all markets if no market pairs are set."""
@@ -1164,8 +1164,8 @@ def test_query_binance_events(
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_exchange_events_range_query(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
-        websocket_connection: 'WebsocketReader',
+        rotkehlchen_api_server_with_exchanges: APIServer,
+        websocket_connection: WebsocketReader,
 ) -> None:
     """Test that we can ask an exchange for a specific range of events and duplicate
     events are ignored. Also verifies that websocket messages are sent.
@@ -1253,7 +1253,7 @@ def test_exchange_events_range_query(
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
 def test_binance_events_repull_after_deletion(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
 ) -> None:
     """Test that re-pulling Binance events after manual deletion restores the deleted events
     by properly bypassing the cache when force_refresh is used.
@@ -1381,7 +1381,7 @@ def test_binance_events_repull_after_deletion(
 
 @pytest.mark.parametrize('added_exchanges', [(Location.COINBASE,)])
 def test_coinbase_events_repull_returns_events(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
 ) -> None:
     """Test that Coinbase's requery_exchange_history_events returns events
     from _query_transactions.
@@ -1430,7 +1430,7 @@ def test_coinbase_events_repull_returns_events(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_setup_bitpanda_exchange(rotkehlchen_api_server: 'APIServer') -> None:
+def test_setup_bitpanda_exchange(rotkehlchen_api_server: APIServer) -> None:
     """Test that setting up Bitpanda exchange works as expected.
 
     This is a regression test that verifies Bitpanda can be added

@@ -38,9 +38,9 @@ class EfpDecoder(EfpCommonDecoder):
 
     def __init__(
             self,
-            base_inquirer: 'BaseInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            base_inquirer: BaseInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=base_inquirer,
@@ -98,7 +98,7 @@ class EfpDecoder(EfpCommonDecoder):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return super().addresses_to_decoders() | {
             string_to_evm_address('0x5289fE5daBC021D02FDDf23d4a4DF96F4E0F17EF'): (self._decode_account_metadata_events,),  # EFPAccountMetadata  # noqa: E501
             EFP_LIST_REGISTRY: (self._decode_list_registry_events,),

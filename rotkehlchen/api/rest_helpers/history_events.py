@@ -10,8 +10,8 @@ if TYPE_CHECKING:
 
 
 def edit_grouped_events_with_optional_fee(
-        events_db: 'DBHistoryEvents',
-        write_cursor: 'DBCursor',
+        events_db: DBHistoryEvents,
+        write_cursor: DBCursor,
         events: list[HistoryBaseEntry],
         events_type: HistoryBaseEntryType,
         identifiers: list[int] | None = None,
@@ -81,8 +81,8 @@ def edit_grouped_events_with_optional_fee(
 
 
 def edit_grouped_swap_events(
-        events_db: 'DBHistoryEvents',
-        write_cursor: 'DBCursor',
+        events_db: DBHistoryEvents,
+        write_cursor: DBCursor,
         events: list[HistoryBaseEntry],
         identifiers: list[int],
         group_identifier: str,

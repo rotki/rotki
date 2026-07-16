@@ -47,7 +47,7 @@ LOCATION_DATA_IMPORT_INVALID_HEADERS = ['timestamp', 'location', 'value']
 NFT_TOKEN_ID = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_11'
 
 
-def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp) -> None:
+def _populate_db_with_balances(write_cursor: DBCursor, db: DBHandler, ts: Timestamp) -> None:
     db.add_multiple_balances(
         write_cursor=write_cursor,
         balances=[
@@ -68,7 +68,7 @@ def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Ti
         ])
 
 
-def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Timestamp) -> None:
+def _populate_db_with_balances_unknown_asset(write_cursor: DBCursor, ts: Timestamp) -> None:
     write_cursor.execute('INSERT INTO assets(identifier) VALUES (?)', ('YABIRXROTKI',))
     serialized_balances = [
         (ts, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
@@ -83,8 +83,8 @@ def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Times
 
 
 def _populate_db_with_location_data(
-        write_cursor: 'DBCursor',
-        db: 'DBHandler',
+        write_cursor: DBCursor,
+        db: DBHandler,
         ts: Timestamp,
     ) -> None:
     db.add_multiple_location_data(
@@ -110,7 +110,7 @@ def _populate_db_with_location_data(
 
 
 def _write_balances_csv_row(
-        writer: 'csv.DictWriter',
+        writer: csv.DictWriter,
         timestamp: Timestamp,
         include_unknown_asset: bool | None = None,
 ) -> None:
@@ -144,7 +144,7 @@ def _write_balances_csv_row(
     )
 
 
-def _write_location_data_csv_row(writer: 'csv.DictWriter', timestamp: Timestamp) -> None:
+def _write_location_data_csv_row(writer: csv.DictWriter, timestamp: Timestamp) -> None:
     writer.writerow(
         {
             'timestamp': timestamp,
@@ -162,7 +162,7 @@ def _write_location_data_csv_row(writer: 'csv.DictWriter', timestamp: Timestamp)
 
 
 def _write_balances_csv_row_with_invalid_headers(
-        writer: 'csv.DictWriter',
+        writer: csv.DictWriter,
         timestamp: Timestamp,
 ) -> None:
     writer.writerow(
@@ -186,7 +186,7 @@ def _write_balances_csv_row_with_invalid_headers(
 
 
 def _write_location_data_csv_row_with_invalid_headers(
-        writer: 'csv.DictWriter',
+        writer: csv.DictWriter,
         timestamp: Timestamp,
 ) -> None:
     writer.writerow(
@@ -425,7 +425,7 @@ def assert_csv_export_response(
 ])
 @freeze_time('2023-05-16 19:00:00', tz_offset=6)  # Set timezone to something different than UTC
 def test_export_snapshot(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         tmpdir_factory: pytest.TempdirFactory,
     ) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -499,7 +499,7 @@ def test_export_snapshot(
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_export_snapshot_unknown_asset(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         tmpdir_factory: pytest.TempdirFactory,
     ) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -533,7 +533,7 @@ def test_export_snapshot_unknown_asset(
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_download_snapshot(rotkehlchen_api_server: 'APIServer') -> None:
+def test_download_snapshot(rotkehlchen_api_server: APIServer) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
     with db.user_write() as cursor:
@@ -567,7 +567,7 @@ def test_download_snapshot(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_import_snapshot(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         tmpdir_factory: pytest.TempdirFactory,
     ) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -702,7 +702,7 @@ def test_import_snapshot(
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_delete_snapshot(rotkehlchen_api_server: 'APIServer') -> None:
+def test_delete_snapshot(rotkehlchen_api_server: APIServer) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
     with db.user_write() as cursor:
@@ -739,7 +739,7 @@ def test_delete_snapshot(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
-def test_delete_snapshot_with_orphan_rows(rotkehlchen_api_server: 'APIServer') -> None:
+def test_delete_snapshot_with_orphan_rows(rotkehlchen_api_server: APIServer) -> None:
     """Regression: if only one of the two snapshot tables has rows for the given
     timestamp (drift from a prior partial failure), delete should still succeed
     and clean up rather than misreport 'No snapshot found'."""
@@ -757,7 +757,7 @@ def test_delete_snapshot_with_orphan_rows(rotkehlchen_api_server: 'APIServer') -
     assert len(cursor.execute('SELECT timestamp FROM timed_balances WHERE timestamp=?', (ts,)).fetchall()) == 0  # noqa: E501
 
 
-def test_get_snapshot_json(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_snapshot_json(rotkehlchen_api_server: APIServer) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
     with db.user_write() as cursor:
@@ -790,7 +790,7 @@ def test_get_snapshot_json(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
-def test_edit_snapshot(rotkehlchen_api_server: 'APIServer') -> None:
+def test_edit_snapshot(rotkehlchen_api_server: APIServer) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
     with db.user_write() as cursor:

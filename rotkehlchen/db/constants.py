@@ -87,7 +87,7 @@ class UpdateType(Enum):
         return f'{self.value}_version'
 
     @classmethod
-    def deserialize(cls: type['UpdateType'], value: str) -> 'UpdateType':
+    def deserialize(cls: type[UpdateType], value: str) -> UpdateType:
         """Deserialize string from api/DB to UpdateType
         May raise:
         - Deserialization error if value is not a valid UpdateType

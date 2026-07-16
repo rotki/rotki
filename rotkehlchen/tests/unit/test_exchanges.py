@@ -2,7 +2,6 @@ import threading
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.exchanges.binance import Binance
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
@@ -10,6 +9,7 @@ from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.types import ApiKey, ApiSecret, ExchangeApiCredentials, Location
 
 if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.manager import ExchangeManager
     from rotkehlchen.user_messages import MessagesAggregator
@@ -65,9 +65,9 @@ def test_exchanges_filtering(database, exchange_manager, function_scope_messages
 
 
 def test_query_exchange_history_events_respects_non_syncing(
-        database: 'DBHandler',
-        exchange_manager: 'ExchangeManager',
-        function_scope_messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        exchange_manager: ExchangeManager,
+        function_scope_messages_aggregator: MessagesAggregator,
 ) -> None:
     kraken1 = MockKraken(
         name='mockkraken_1',
@@ -283,7 +283,7 @@ def test_binance_selected_pairs_persist_after_restart(rotkehlchen_api_server: AP
     assert selected_pairs == expected_trade_pairs
 
 
-def test_bitpanda_credentials_in_db(database: 'DBHandler') -> None:
+def test_bitpanda_credentials_in_db(database: DBHandler) -> None:
     """Regression test for bitpanda credentials should work with NULL api_secret in database.
 
     Bitpanda only requires api_key, not api_secret. This test verifies the application

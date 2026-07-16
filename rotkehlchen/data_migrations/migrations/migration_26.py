@@ -22,7 +22,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log()
-def data_migration_26(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
+def data_migration_26(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:
     """Introduced at v1.43.2
 
     - Clean up manually tracked balance tag mappings that were orphaned by the v51->v52 DB
@@ -39,7 +39,7 @@ def data_migration_26(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     decoded as plain token spends before the decoder learned the new spender address.
     """
     @progress_step(description='Removing orphaned manual balance tag mappings')
-    def _remove_orphaned_manual_balance_tags(rotki: 'Rotkehlchen') -> None:
+    def _remove_orphaned_manual_balance_tags(rotki: Rotkehlchen) -> None:
         with rotki.data.db.conn.write_ctx() as write_cursor:
             write_cursor.execute(
                 'DELETE FROM tag_mappings WHERE '
@@ -48,7 +48,7 @@ def data_migration_26(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
             )
 
     @progress_step(description='Tagging Gnosis Pay payments from the new spender contract')
-    def _retag_gnosis_pay_new_spender_payments(rotki: 'Rotkehlchen') -> None:
+    def _retag_gnosis_pay_new_spender_payments(rotki: Rotkehlchen) -> None:
         """Gnosis Pay payments made through the new post-hack spender contract were decoded as
         plain token spends before the decoder learned the new spender address. They are missing
         the gnosis_pay counterparty, so the Gnosis Pay refresh (which only enriches events that

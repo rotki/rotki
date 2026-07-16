@@ -14,10 +14,10 @@ class MoneriumDecoder(MoneriumCommonDecoder):
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            monerium_api: 'Monerium | None',
+            ethereum_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            monerium_api: Monerium | None,
     ) -> None:
         super().__init__(
             evm_inquirer=ethereum_inquirer,

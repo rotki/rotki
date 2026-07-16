@@ -6,7 +6,6 @@ from threading import Semaphore
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 import requests
-from requests.adapters import Response
 
 from rotkehlchen.assets.converters import asset_from_cryptocom
 from rotkehlchen.constants import MONTH_IN_MILLISECONDS, WEEK_IN_MILLISECONDS, ZERO
@@ -15,7 +14,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
@@ -46,7 +44,6 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -55,9 +52,13 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from requests.adapters import Response
+
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -121,7 +122,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
@@ -297,8 +298,8 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             self,
             new_balance_data: dict[str, Any],
             balance_key: str,
-            existing_balances: defaultdict['AssetWithOracles', FVal],
-    ) -> defaultdict['AssetWithOracles', FVal]:
+            existing_balances: defaultdict[AssetWithOracles, FVal],
+    ) -> defaultdict[AssetWithOracles, FVal]:
         """Deserialize a balance dict using the amount from the specified balance_key.
         Returns the updated existing_balances.
         """
@@ -366,7 +367,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             query_type: Literal['deposit', 'withdrawal'],
             success_status: Literal['1', '5'],
             event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND],
-    ) -> list['HistoryBaseEntry']:
+    ) -> list[HistoryBaseEntry]:
         """Query deposits and withdrawals from the API."""
         return self._query_paginated(
             query_type=query_type,
@@ -391,7 +392,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: TimestampMS,
             end_ts: TimestampMS,
-    ) -> list['HistoryBaseEntry']:
+    ) -> list[HistoryBaseEntry]:
         """Query trade history from the API.
         Note that according to the docs, this can only get the history for the last 6 months.
         https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#introduction-3
@@ -441,8 +442,8 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             page_key: Literal['page', 'end_time'],
             page_size: int,
             result_key: Literal['data', 'deposit_list', 'withdrawal_list'],
-            deserialize_fn: 'Callable[[dict[str, Any]], list[AssetMovement]] | Callable[[dict[str, Any]], list[SwapEvent]]',  # noqa: E501
-    ) -> list['HistoryBaseEntry']:
+            deserialize_fn: Callable[[dict[str, Any]], list[AssetMovement]] | Callable[[dict[str, Any]], list[SwapEvent]],  # noqa: E501
+    ) -> list[HistoryBaseEntry]:
         """Query the paginated deposits, withdrawals, or trades from the API.
         https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-get-deposit-history
         https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-get-withdrawal-history
@@ -489,7 +490,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[list['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[list[HistoryBaseEntry], Timestamp]:
         """Return the Crypto.com asset movements and swap events"""
         self.first_connection()
         events = self._query_deposits_withdrawals(

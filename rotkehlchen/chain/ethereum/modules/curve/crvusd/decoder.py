@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import EvmToken
@@ -30,6 +29,8 @@ from rotkehlchen.types import CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.fval import FVal
@@ -44,9 +45,9 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',  # pylint: disable=unused-argument
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,  # pylint: disable=unused-argument
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -55,7 +56,7 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
         )
         self.crvusd = EvmToken('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E')
 
-    def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         """Check that cache is up to date and refresh cache from db.
         Returns a fresh addresses to decoders mapping."""
         if should_update_protocol_cache(
@@ -79,9 +80,9 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
 
     def _get_controller_event_tokens_and_amounts(
             self,
-            controller_address: 'ChecksumEvmAddress',
+            controller_address: ChecksumEvmAddress,
             context: DecoderContext,
-    ) -> tuple['EvmToken', 'EvmToken', 'FVal', 'FVal'] | None:
+    ) -> tuple[EvmToken, EvmToken, FVal, FVal] | None:
         """Get the collateral token, borrowed token, and the corresponding amounts.
         Returns the tokens and amounts in a tuple or None on error.
         May raise:

@@ -1,6 +1,5 @@
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
 from enum import StrEnum
 from typing import TYPE_CHECKING, overload
 
@@ -20,6 +19,8 @@ from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
 logger = logging.getLogger(__name__)
@@ -37,8 +38,8 @@ class EvmProxiesInquirer:
 
     def __init__(
             self,
-            node_inquirer: 'EvmNodeInquirer',
-            dsproxy_registry: 'EvmContract',
+            node_inquirer: EvmNodeInquirer,
+            dsproxy_registry: EvmContract,
     ) -> None:
         self.node_inquirer = node_inquirer
         self.dsproxy_registry = dsproxy_registry

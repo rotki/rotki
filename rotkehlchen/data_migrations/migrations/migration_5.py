@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _rename_icons(rotki: 'Rotkehlchen') -> None:
+def _rename_icons(rotki: Rotkehlchen) -> None:
     """Change the prefix of icons files from _ceth_ to their CAIPS variant"""
     icon_path = rotki.icon_manager.icons_dir
     old_files = icon_path.glob(r'_ceth_0x*')
@@ -28,7 +28,7 @@ def _rename_icons(rotki: 'Rotkehlchen') -> None:
             log.debug(f'Skipping {old_name} because {new_name} already exists')
 
 
-def data_migration_5(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument
+def data_migration_5(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:  # pylint: disable=unused-argument
     """
     - Rename icons after modifying the identifiers in 1.26
     """

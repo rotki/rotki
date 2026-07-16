@@ -1,6 +1,5 @@
 import csv
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.constants import ZERO
@@ -10,7 +9,6 @@ from rotkehlchen.data_import.utils import (
     UnsupportedCSVEntry,
     maybe_set_transaction_extra_data,
 )
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -30,7 +28,10 @@ from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import satoshis_to_btc, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -39,7 +40,7 @@ log = RotkehlchenLogsAdapter(logger)
 class BitMEXImporter(BaseExchangeImporter):
     """BitMEX CSV importer"""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='BitMEX')
 
     @staticmethod

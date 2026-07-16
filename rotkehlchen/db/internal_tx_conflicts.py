@@ -95,7 +95,7 @@ WHERE tf.has_repull_group = 1 OR tf.has_mixed_bad_group = 1 OR dt.parent_tx IS N
 
 
 def is_tx_customized(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         tx_hash: EVMTxHash,
         chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
 ) -> bool:
@@ -115,7 +115,7 @@ def is_tx_customized(
 
 
 def clean_internal_tx_rows(
-        write_cursor: 'DBCursor',
+        write_cursor: DBCursor,
         tx_hash: EVMTxHash,
         chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
 ) -> None:
@@ -153,7 +153,7 @@ def clean_internal_tx_rows(
 
 
 def clean_internal_tx_conflict(
-        write_cursor: 'DBCursor',
+        write_cursor: DBCursor,
         tx_hash: EVMTxHash,
         chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
 ) -> None:
@@ -185,7 +185,7 @@ def clean_internal_tx_conflict(
 
 
 def get_internal_tx_conflicts(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         fixed: bool,
         action: str | None = None,
         limit: int | None = None,
@@ -219,8 +219,8 @@ def get_internal_tx_conflicts(
 
 
 def get_pending_internal_tx_repull_conflicts(
-        cursor: 'DBCursor',
-        filter_query: 'InternalTxConflictsFilterQuery',
+        cursor: DBCursor,
+        filter_query: InternalTxConflictsFilterQuery,
 ) -> list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, int | None, str, str | None, str | None, int | None, str | None, str | None]]:  # noqa: E501
     """Return internal tx conflicts with action and metadata, including the transaction timestamp."""  # noqa: E501
     base_query = (
@@ -283,8 +283,8 @@ def get_pending_internal_tx_repull_conflicts(
 
 
 def count_pending_internal_tx_repull_conflicts(
-        cursor: 'DBCursor',
-        filter_query: 'InternalTxConflictsFilterQuery',
+        cursor: DBCursor,
+        filter_query: InternalTxConflictsFilterQuery,
 ) -> int:
     """Count internal tx conflicts matching the pending-conflicts filters."""
     filter_str, bindings = filter_query.prepare(
@@ -298,7 +298,7 @@ def count_pending_internal_tx_repull_conflicts(
 
 
 def get_pending_internal_tx_repull_conflicts_count(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
 ) -> tuple[int, int]:
     """Return (pending_count, failed_count) for unresolved conflicts."""
     return cursor.execute(
@@ -310,7 +310,7 @@ def get_pending_internal_tx_repull_conflicts_count(
 
 
 def set_internal_tx_conflict_fixed(
-        write_cursor: 'DBCursor',
+        write_cursor: DBCursor,
         tx_hash: EVMTxHash,
         chain_id: ChainID,
 ) -> None:
@@ -325,7 +325,7 @@ def set_internal_tx_conflict_fixed(
 
 
 def set_internal_tx_conflict_repull_error(
-        write_cursor: 'DBCursor',
+        write_cursor: DBCursor,
         tx_hash: EVMTxHash,
         chain_id: ChainID,
         retry_ts: int,

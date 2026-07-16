@@ -1,7 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, Optional, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
-from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -20,6 +19,7 @@ if TYPE_CHECKING:
         Nft,
         SolanaToken,
     )
+    from rotkehlchen.assets.types import AssetType
     from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 
@@ -29,12 +29,12 @@ T = TypeVar('T', 'FiatAsset', 'CryptoAsset', 'EvmToken', 'Nft', 'SolanaToken', '
 
 
 class AssetResolver:
-    __instance: Optional['AssetResolver'] = None
-    _globaldb: 'GlobalDBHandler'
-    _constant_assets: set['Asset']
+    __instance: AssetResolver | None = None
+    _globaldb: GlobalDBHandler
+    _constant_assets: set[Asset]
     # A cache so that the DB is not hit every time
     # the cache maps identifier -> final representation of the asset
-    assets_cache: LRUCacheLowerKey['AssetWithNameAndType'] = LRUCacheLowerKey(maxsize=512)
+    assets_cache: LRUCacheLowerKey[AssetWithNameAndType] = LRUCacheLowerKey(maxsize=512)
     types_cache: LRUCacheLowerKey[AssetType] = LRUCacheLowerKey(maxsize=512)
     # Maps asset identifier -> collection main_asset identifier (or None if not in a collection).
     # None is a valid cached value so presence must be tested with `identifier.lower() in cache`.
@@ -52,9 +52,9 @@ class AssetResolver:
 
     def __new__(  # noqa: PYI034 # singleton pattern should not get Self
             cls,
-            globaldb: 'GlobalDBHandler | None' = None,
-            constant_assets: set['Asset'] | None = None,
-    ) -> 'AssetResolver':
+            globaldb: GlobalDBHandler | None = None,
+            constant_assets: set[Asset] | None = None,
+    ) -> AssetResolver:
         """Lazily initializes AssetResolver
 
         It always uses the GlobalDB to resolve assets
@@ -123,7 +123,7 @@ class AssetResolver:
         return main_asset
 
     @staticmethod
-    def resolve_asset(identifier: str) -> 'AssetWithNameAndType':
+    def resolve_asset(identifier: str) -> AssetWithNameAndType:
         """
         Get all asset data for a valid asset identifier. May return any valid subclass of the
         Asset class.

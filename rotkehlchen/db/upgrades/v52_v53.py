@@ -11,11 +11,11 @@ if TYPE_CHECKING:
 
 
 @enter_exit_debug_log(name='UserDB v52->v53 upgrade')
-def upgrade_v52_to_v53(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v52_to_v53(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v52 to v53. This happened in 1.44."""
 
     @progress_step(description='Create event metrics table and indexes.')
-    def _create_event_metrics_table(write_cursor: 'DBCursor') -> None:
+    def _create_event_metrics_table(write_cursor: DBCursor) -> None:
         # Hardcoded schema/indexes to prevent future schema changes from affecting this upgrade.
         write_cursor.execute("""
 CREATE TABLE IF NOT EXISTS event_metrics (
@@ -45,7 +45,7 @@ CREATE INDEX IF NOT EXISTS idx_event_metrics_balances_latest ON event_metrics(me
 """)  # noqa: E501
 
     @progress_step(description='Create data issues table and indexes.')
-    def _create_data_issues_table(write_cursor: 'DBCursor') -> None:
+    def _create_data_issues_table(write_cursor: DBCursor) -> None:
         # Hardcoded schema/indexes to prevent future schema changes from affecting this upgrade.
         write_cursor.execute("""
 CREATE TABLE IF NOT EXISTS data_issues (
@@ -78,25 +78,25 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_data_issues_bucket_scope ON data_issues
 """)  # noqa: E501
 
     @progress_step(description='Add Gate location.')
-    def _add_gate_location(write_cursor: 'DBCursor') -> None:
+    def _add_gate_location(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             "INSERT OR IGNORE INTO location(location, seq) VALUES ('{', 59);",
         )
 
     @progress_step(description='Add Bit2me location.')
-    def _add_bit2me_location(write_cursor: 'DBCursor') -> None:
+    def _add_bit2me_location(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             "INSERT OR IGNORE INTO location(location, seq) VALUES ('|', 60);",
         )
 
     @progress_step(description='Add CoinEx location.')
-    def _add_coinex_location(write_cursor: 'DBCursor') -> None:
+    def _add_coinex_location(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             "INSERT OR IGNORE INTO location(location, seq) VALUES ('}', 61);",
         )
 
     @progress_step(description='Normalize exchange history event location labels.')
-    def _normalize_exchange_event_location_labels(write_cursor: 'DBCursor') -> None:
+    def _normalize_exchange_event_location_labels(write_cursor: DBCursor) -> None:
         """Normalize exchange labels used as accounting bucket keys.
 
         If a user has exactly one API key for an exchange and the existing non-NULL event labels
@@ -157,7 +157,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_data_issues_bucket_scope ON data_issues
         write_cursor.execute('DROP TABLE IF EXISTS _exchange_label_fill')
 
     @progress_step(description='Persist indexer source for internal transactions.')
-    def _add_internal_tx_source(write_cursor: 'DBCursor') -> None:
+    def _add_internal_tx_source(write_cursor: DBCursor) -> None:
         # Track which indexer produced each internal tx row. DEFAULT 0 backfills all
         # existing rows as legacy since source tracking only starts from this upgrade.
         if 'source' not in {
@@ -171,7 +171,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_data_issues_bucket_scope ON data_issues
             )
 
     @progress_step(description='Add naming system source to ens mappings.')
-    def _add_source_to_ens_mappings(write_cursor: 'DBCursor') -> None:
+    def _add_source_to_ens_mappings(write_cursor: DBCursor) -> None:
         """Store one name per naming system (ENS, GNS, ...) for an address in the
         ens_mappings cache, so that name priority can be applied at read time.
         Existing rows are backfilled as ENS names since that was the only system."""

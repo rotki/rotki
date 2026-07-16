@@ -11,7 +11,6 @@ from rotkehlchen.accounting.export.csv import FILENAME_SKIPPED_EXTERNAL_EVENTS_C
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ONE
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_sync_response_with_result,
@@ -23,12 +22,13 @@ from rotkehlchen.types import Location, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 def test_skipped_external_events(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
         globaldb: GlobalDBHandler,
         tmpdir_factory: pytest.TempdirFactory,
     ) -> None:

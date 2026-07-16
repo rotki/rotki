@@ -75,7 +75,7 @@ class Pubkey:
         return (x * x - x2) % _ED25519_P == 0
 
     @classmethod
-    def create_program_address(cls, seeds: list[bytes], program_id: 'Pubkey') -> 'Pubkey':
+    def create_program_address(cls, seeds: list[bytes], program_id: Pubkey) -> Pubkey:
         if len(seeds) > 16:
             raise ValueError('too many seeds')
         if any(len(seed) > 32 for seed in seeds):
@@ -90,8 +90,8 @@ class Pubkey:
     def find_program_address(
             cls,
             seeds: list[bytes],
-            program_id: 'Pubkey',
-    ) -> tuple['Pubkey', int]:
+            program_id: Pubkey,
+    ) -> tuple[Pubkey, int]:
         for bump_seed in range(255, -1, -1):
             try:
                 return (
@@ -143,11 +143,11 @@ class Signature:
         return cls(value)
 
     @classmethod
-    def new_unique(cls) -> 'Signature':
+    def new_unique(cls) -> Signature:
         return cls(os.urandom(64))
 
     @classmethod
-    def default(cls) -> 'Signature':
+    def default(cls) -> Signature:
         return cls(bytes(64))
 
     def to_bytes(self) -> bytes:

@@ -1,13 +1,10 @@
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from ens.ens import ChecksumAddress
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.constants import PROXY_BALANCE_PROTOCOL_TEMPLATE
 from rotkehlchen.chain.evm.active_management.manager import ActiveManager
@@ -23,14 +20,19 @@ from rotkehlchen.chain.manager import (
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, Price, Timestamp
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from ens.ens import ChecksumAddress
+
+    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
     from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
+    from rotkehlchen.fval import FVal
 
     from .accounting.aggregator import EVMAccountingAggregator
     from .decoding.decoder import EVMTransactionDecoder
@@ -51,11 +53,11 @@ class EvmManager(
 
     def __init__(
             self,
-            node_inquirer: 'EvmNodeInquirer',
-            transactions: 'EvmTransactions',
-            tokens: 'EvmTokens',
-            transactions_decoder: 'EVMTransactionDecoder',
-            accounting_aggregator: 'EVMAccountingAggregator',
+            node_inquirer: EvmNodeInquirer,
+            transactions: EvmTransactions,
+            tokens: EvmTokens,
+            transactions_decoder: EVMTransactionDecoder,
+            accounting_aggregator: EVMAccountingAggregator,
     ) -> None:
         super().__init__(node_inquirer=node_inquirer)
         self.transactions = transactions
@@ -103,7 +105,7 @@ class EvmManager(
             balance_result: dict[ChecksumEvmAddress, dict[EvmToken, FVal]],
             token_price: dict[EvmToken, Price],
             balances: defaultdict[ChecksumEvmAddress, BalanceSheet],
-            proxies_information: dict[ChecksumAddress, tuple['ProxyType', ChecksumAddress]] | None = None,  # noqa: E501
+            proxies_information: dict[ChecksumAddress, tuple[ProxyType, ChecksumAddress]] | None = None,  # noqa: E501
     ) -> None:
         """
         Update the per account token balance and value using the provided
@@ -229,7 +231,7 @@ class EvmManager(
 
         return balances
 
-    def is_safe_proxy_or_eoa(self, address: 'ChecksumEvmAddress') -> bool:
+    def is_safe_proxy_or_eoa(self, address: ChecksumEvmAddress) -> bool:
         """Check if an address is a SAFE contract or an EoA"""
         return self.node_inquirer.is_safe_proxy_or_eoa(address)
 
@@ -239,8 +241,8 @@ class CurveManagerMixin:
 
     def assure_curve_cache_is_queried_and_decoder_updated(
             self,
-            node_inquirer: 'EvmNodeInquirer',
-            transactions_decoder: 'EVMTransactionDecoder',
+            node_inquirer: EvmNodeInquirer,
+            transactions_decoder: EVMTransactionDecoder,
     ) -> None:
         """
         Make sure that information that needs to be queried is queried and if not query it.

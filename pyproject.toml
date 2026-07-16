@@ -9,7 +9,7 @@ authors = [
 ]
 description = "Accounting, asset management and tax report helper for cryptocurrencies"
 readme = "README.md"
-requires-python = "==3.11.*"
+requires-python = "==3.14.*"
 keywords = ["accounting tax-report", "portfolio asset-management", "cryptocurrencies"]
 classifiers = [
     "Development Status :: 1 - Planning",
@@ -24,17 +24,18 @@ dependencies = [
     "eth-typing==5.2.1",
     "content-hash==2.0.0",
     "sqlcipher3==0.6.2",
-    "rotki-sqlite==2025.8.1",
+    "rotki-sqlite==2026.07.2",
     "requests==2.33.1",
     "bech32==1.2.0",
     "gql[requests]==3.5.2",
     "scalecodec==1.2.11",
-    "py-sr25519-bindings==0.2.2",
-    "py-ed25519-zebra-bindings==1.2.0",
-    "py-bip39-bindings==0.2.0",
+    "py-sr25519-bindings==0.2.4",
+    "py-ed25519-zebra-bindings==1.3.0",
+    "py-bip39-bindings==0.3.0",
     "substrate-interface==1.8.1",
     "beautifulsoup4==4.14.2",
-    "maxminddb==2.6.3",
+    "defusedxml==0.7.1",
+    "maxminddb==3.1.1",
     "pywin32==311; sys_platform == 'win32'",
     "cryptography==48.0.1",
     "py-machineid==0.8.0",
@@ -53,7 +54,7 @@ dependencies = [
     "a2wsgi==1.10.10",
     "websockets==15.0.1",  # uvicorn's websocket protocol backend (also a solana dep)
     # for fuzzy search of assets
-    "polyleven==0.9",
+    "polyleven==0.11",
     # We used to only use this for packaging, but now use it for the version comparison functionality
     "packaging==25.0",
     # For Google Calendar integration
@@ -66,9 +67,11 @@ dependencies = [
     # enfore transitive deps versions
     "aiohttp==3.14.1",  # dependency of web3.py that has security issues before this version
     "urllib3==2.7.0",  # enforced due to dependabot reports
-    "idna==3.15",  # enforced due to dependabot reports
+    "idna==3.18",  # enforced due to dependabot reports
     "cbor2==5.9.0",  # enforced due to dependabot reports
     "protobuf==6.33.6",  # enforced due to dependabot reports
+    "xxhash==3.7.2",  # enforced for free-threaded Python support
+    "bitarray==3.8.2",  # pinned to check free-threaded Python support
     "pandas==3.0.3",
     "pyarrow==24.0.0",  # parquet engine for pandas (airdrop files)
 ]
@@ -147,7 +150,7 @@ packaging = [
 crossbuild = [
     # dependencies that need to be installed manually when creating arm and x86 packages for macos using
     # the x86 as base architecture for both
-    "ckzg==2.1.1",
+    "ckzg==2.1.7",
 ]
 
 profiling = [
@@ -160,7 +163,7 @@ ci = [
 
 [tool.setuptools.packages.find]
 where = ["."]  # list of folders that contain the packages (["."] by default)
-include = ["rotkehlchen*"]
+include = ["rotkehlchen*", "rsqlite", "cytoolz"]
 
 [project.scripts]
 rotkehlchen = "rotkehlchen.__main__:main"
@@ -304,7 +307,7 @@ exclude = [
     "node_modules",
     "venv",
 ]
-target-version = "py311"
+target-version = "py314"
 
 [tool.ruff.lint]
 preview = true  # https://docs.astral.sh/ruff/preview/
@@ -533,7 +536,7 @@ reportAssignmentType = false
 reportUnnecessaryComparison = true
 
 exclude = ["**/tests"]
-pythonVersion = "3.11"
+pythonVersion = "3.14"
 
 
 [tool.pytest.ini_options]
@@ -552,3 +555,4 @@ ignored-classes = "rsqlite"
 
 [tool.uv]
 exclude-newer = "1 week"
+exclude-newer-package = { xxhash = "2026-07-07T00:00:00Z", rotki-sqlite = "2026-07-13T15:54:00Z" }

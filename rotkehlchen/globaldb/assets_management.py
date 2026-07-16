@@ -39,8 +39,8 @@ def _normalize_asset_data_for_export(asset_data: dict[str, Any]) -> dict[str, An
 
 def import_assets_from_file(
         path: Path,
-        msg_aggregator: 'MessagesAggregator',
-        db_handler: 'DBHandler',
+        msg_aggregator: MessagesAggregator,
+        db_handler: DBHandler,
 ) -> None:
     """
     Import assets from the file at the defined path.
@@ -91,7 +91,7 @@ def import_assets_from_file(
 
 def export_assets_from_file(
         dirpath: Path | None,
-        db_handler: 'DBHandler',
+        db_handler: DBHandler,
 ) -> Path:
     """
     Creates a zip file with a json file containing the assets added by the user.

@@ -1,6 +1,5 @@
 import os
 import shutil
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import rsqlite
@@ -11,6 +10,8 @@ from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.types import SPAM_PROTOCOL
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.assets.asset import EvmToken, SolanaToken
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
@@ -34,7 +35,7 @@ GLOBAL_DB_ASSETS_BREAKING_VERSIONS = {
 # The cases I (Lefteris) know is maybe_upgrade_globaldb() and maybe_apply_globaldb_migrations()
 
 
-def globaldb_get_setting_value(cursor: 'DBCursor', name: str, default_value: int) -> int:
+def globaldb_get_setting_value(cursor: DBCursor, name: str, default_value: int) -> int:
     """
     Implementation of the logic of getting a setting from the global DB. Only for ints for now.
     """
@@ -50,8 +51,8 @@ def globaldb_get_setting_value(cursor: 'DBCursor', name: str, default_value: int
 
 
 def set_token_spam_protocol(
-        write_cursor: 'DBCursor',
-        token: 'EvmToken | SolanaToken',
+        write_cursor: DBCursor,
+        token: EvmToken | SolanaToken,
         is_spam: bool,
 ) -> None:
     """

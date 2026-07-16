@@ -17,7 +17,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log(name='GlobalDB v4->v5 upgrade')
-def migrate_to_v5(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+def migrate_to_v5(connection: DBConnection, progress_handler: DBUpgradeProgressHandler) -> None:
     """This globalDB upgrade is introduced at 1.28.0 and does the following:
     - Adds the `default_rpc_nodes` table.
     - Resets curve cache.
@@ -25,7 +25,7 @@ def migrate_to_v5(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
     root_dir = Path(__file__).resolve().parent.parent.parent
 
     @progress_step('Creating default_rpc_nodes table.')
-    def _create_new_tables(cursor: 'DBCursor') -> None:
+    def _create_new_tables(cursor: DBCursor) -> None:
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS default_rpc_nodes (
@@ -41,7 +41,7 @@ def migrate_to_v5(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         )
 
     @progress_step('Populating default_rpc_nodes.')
-    def _populate_rpc_nodes(cursor: 'DBCursor') -> None:
+    def _populate_rpc_nodes(cursor: DBCursor) -> None:
         nodes_info = json.loads((root_dir / 'data' / 'nodes.json').read_text(encoding='utf8'))
         nodes_tuples = [
             (node['name'], node['endpoint'], False, True, str(FVal(node['weight'])), node['blockchain'])  # noqa: E501
@@ -55,12 +55,12 @@ def migrate_to_v5(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         )
 
     @progress_step('Resetting curve cache.')
-    def _reset_curve_cache(write_cursor: 'DBCursor') -> None:
+    def _reset_curve_cache(write_cursor: DBCursor) -> None:
         """Resets curve cache to query gauges and update format of the lp tokens"""
         write_cursor.execute("DELETE FROM general_cache WHERE key LIKE '%CURVE%'")
 
     @progress_step('Removing name column from contract_data table.')
-    def _remove_name_from_contracts(cursor: 'DBCursor') -> None:
+    def _remove_name_from_contracts(cursor: DBCursor) -> None:
         """Removes the name column from contract_data table if it exists"""
         update_table_schema(
             write_cursor=cursor,

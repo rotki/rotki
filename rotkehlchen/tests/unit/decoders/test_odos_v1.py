@@ -289,8 +289,8 @@ def test_swap_matic_to_token_polygon(polygon_pos_inquirer, polygon_pos_accounts)
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0xC5E943D372Da091a7ff9632ea13d7e8d3a6a1494']])
 def test_swap_bnb_to_token_binance_sc(
-        binance_sc_inquirer: 'BinanceSCInquirer',
-        binance_sc_accounts: list['ChecksumEvmAddress'],
+        binance_sc_inquirer: BinanceSCInquirer,
+        binance_sc_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd8a005930d1926b47bee9b440ff62f5af3ab36b77234247146ee3188af901462')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501

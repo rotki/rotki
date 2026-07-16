@@ -82,9 +82,9 @@ def _query_beefy_vaults_api(chain: ChainID) -> list[dict[str, Any]] | None:
 
 
 def _process_beefy_vault(
-        database: 'DBHandler',  # pylint: disable=unused-argument
+        database: DBHandler,  # pylint: disable=unused-argument
         vault: dict[str, Any],
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
 ) -> str | None:
     """Process Beefy finance vault data from the API and prepare cache entries.
     May raise:
@@ -112,7 +112,7 @@ def _process_beefy_vault(
     return f'{vault_token_address},{underlying_token_address},{is_legacy}'
 
 
-def query_beefy_vaults(evm_inquirer: 'EvmNodeInquirer') -> None:
+def query_beefy_vaults(evm_inquirer: EvmNodeInquirer) -> None:
     """Query list of Beefy finance vaults and cache their token relationships."""
     if (vault_list := _query_beefy_vaults_api(evm_inquirer.chain_id)) is None:
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -161,9 +161,9 @@ def query_beefy_vaults(evm_inquirer: 'EvmNodeInquirer') -> None:
 
 
 def _query_beefy_cow_token_price(
-        inquirer: 'Inquirer',
-        evm_inquirer: 'EvmNodeInquirer',
-        vault_token: 'EvmToken',
+        inquirer: Inquirer,
+        evm_inquirer: EvmNodeInquirer,
+        vault_token: EvmToken,
 ) -> Price:
     """Gets the token price for a Beefy cow token (CLM vault).
     Queries the amounts of the underlying tokens that are equivalent to one vault token and
@@ -232,9 +232,9 @@ def _query_beefy_cow_token_price(
 
 
 def query_beefy_vault_price(
-        inquirer: 'Inquirer',
-        vault_token: 'EvmToken',
-        evm_inquirer: 'EvmNodeInquirer',
+        inquirer: Inquirer,
+        vault_token: EvmToken,
+        evm_inquirer: EvmNodeInquirer,
 ) -> Price:
     """Gets the token price for a Beefy vault token.
 

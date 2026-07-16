@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_cowswap_swap_with_fee(accountant: 'Accountant'):
+def test_cowswap_swap_with_fee(accountant: Accountant):
     """Test that the fee in cowswap is handled correctly during accounting"""
     tx_hash = make_evm_tx_hash()
     user_address = make_evm_address()

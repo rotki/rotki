@@ -62,7 +62,7 @@ def test_bitmex_api_signature(mock_bitmex):
 
 
 def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
-        database: 'DBHandler',
+        database: DBHandler,
         sandbox_bitmex: Bitmex,
 ) -> None:
     """Test the happy case of bitmex withdrawals deposit query."""
@@ -128,7 +128,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
         assert isinstance(movement.asset, Asset)
 
 
-def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex: 'Bitmex') -> None:
+def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex: Bitmex) -> None:
     """Test getting unexpected data in bitmex withdrawals deposit query is handled gracefully"""
     original_input = TEST_BITMEX_WITHDRAWAL
     now = ts_now()
@@ -192,7 +192,7 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex: 'Bitmex'
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-def test_bitmex_api_withdrawals_deposit_unknown_asset(mock_bitmex: 'Bitmex') -> None:
+def test_bitmex_api_withdrawals_deposit_unknown_asset(mock_bitmex: Bitmex) -> None:
     """Test getting unknown asset in bitmex withdrawals deposit query is handled gracefully"""
 
     def mock_get_response(method, url, **kwargs):  # pylint: disable=unused-argument

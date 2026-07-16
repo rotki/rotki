@@ -29,7 +29,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class OpenOceanDecoder(OpenOceanBaseDecoder):
 
-    def _process_arb_airdrop(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
+    def _process_arb_airdrop(self, context: DecoderContext) -> EvmDecodingOutput:
         """This logic processes an airdrop made from the OpenOcean team as part of the
         swaps incentive program using the ARB granted by the Arbitrum DAO
         https://forum.arbitrum.foundation/t/openocean-final-stip-round-1/17564/1
@@ -61,5 +61,5 @@ class OpenOceanDecoder(OpenOceanBaseDecoder):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return super().addresses_to_decoders() | {DISTRIBUTOR_ADDR: (self._process_arb_airdrop,)}

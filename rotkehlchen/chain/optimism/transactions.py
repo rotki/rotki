@@ -16,7 +16,7 @@ class OptimismTransactions(L2WithL1FeesTransactions):
 
     def __init__(
             self,
-            optimism_inquirer: 'OptimismInquirer',
-            database: 'DBHandler',
+            optimism_inquirer: OptimismInquirer,
+            database: DBHandler,
     ) -> None:
         super().__init__(node_inquirer=optimism_inquirer, database=database)

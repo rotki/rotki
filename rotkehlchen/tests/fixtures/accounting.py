@@ -3,11 +3,10 @@ import os
 import shutil
 import sys
 from collections import defaultdict
-from collections.abc import Generator
 from contextlib import ExitStack
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -35,6 +34,9 @@ from rotkehlchen.types import ApiKey, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 LAST_ACCOUNTING_RULES_VERSION = 5
 
 
@@ -47,7 +49,7 @@ def fixture_use_clean_caching_directory():
 
 
 @pytest.fixture(name='data_dir')
-def fixture_data_dir(use_clean_caching_directory, tmpdir_factory, worker_id) -> Generator[Path | None, None, None]:  # noqa: E501
+def fixture_data_dir(use_clean_caching_directory, tmpdir_factory, worker_id) -> Generator[Path | None]:  # noqa: E501
     """The tests data dir is persistent so that we can cache global DB.
     Adjusted from old code. Not sure if it makes sense to keep. Could also just
     force clean caching directory everywhere"""

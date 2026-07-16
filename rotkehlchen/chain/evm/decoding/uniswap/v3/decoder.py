@@ -1,8 +1,6 @@
 import logging
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.types import (
     CounterpartyDetails,
@@ -37,26 +35,29 @@ from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import (
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    ChecksumEvmAddress,
-    EvmTransaction,
-)
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.assets.asset import Asset, EvmToken
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import (
+        ChecksumEvmAddress,
+        EvmTransaction,
+    )
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _find_from_asset_and_amount(events: list['EvmEvent']) -> tuple[Asset, FVal] | None:
+def _find_from_asset_and_amount(events: list[EvmEvent]) -> tuple[Asset, FVal] | None:
     """
     Searches for uniswap v2/v3 swaps, detects `from_asset` and sums up `from_amount`.
     Works only with `from_asset` being the same for all swaps.
@@ -85,11 +86,11 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            routers_addresses: set['ChecksumEvmAddress'],
-            nft_manager: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            routers_addresses: set[ChecksumEvmAddress],
+            nft_manager: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -99,7 +100,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
         self.routers_addresses = routers_addresses
         self.nft_manager = nft_manager
 
-    def _find_to_asset_and_amount(self, events: list['EvmEvent']) -> tuple[Asset, FVal] | None:
+    def _find_to_asset_and_amount(self, events: list[EvmEvent]) -> tuple[Asset, FVal] | None:
         """
         Searches for uniswap v2/v3 swaps, detects `to_asset` and sums up `to_amount`.
         Works only with `to_asset` being the same for all swaps.
@@ -186,7 +187,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
             token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
@@ -217,9 +218,9 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
 
     def _decode_native_to_token_swap(
             self,
-            decoded_events: list['EvmEvent'],
-            send_native_event: 'EvmEvent',
-            receive_native_event: Optional['EvmEvent'],
+            decoded_events: list[EvmEvent],
+            send_native_event: EvmEvent,
+            receive_native_event: EvmEvent | None,
     ) -> SwapData | None:
         """
         Decode a swap of native currency to a token. Such swap consists of 3 events:
@@ -244,8 +245,8 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
 
     def _decode_token_to_native_swap(
             self,
-            decoded_events: list['EvmEvent'],
-            receive_native_event: 'EvmEvent',
+            decoded_events: list[EvmEvent],
+            receive_native_event: EvmEvent,
     ) -> SwapData | None:
         from_data = _find_from_asset_and_amount(decoded_events)
         if from_data is None:
@@ -260,7 +261,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
 
     def _decode_token_to_token_swap(
             self,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
     ) -> SwapData | None:
         from_data = _find_from_asset_and_amount(decoded_events)
         to_data = self._find_to_asset_and_amount(decoded_events)
@@ -277,9 +278,9 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
     def _routers_post_decoding(
             self,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> list['EvmEvent']:
+    ) -> list[EvmEvent]:
         """
         Ensures that if an auto router (either v1 or v2) is used, events have correct order and
         are properly combined (i.e. each swap consists only of one spend and one receive event).
@@ -374,9 +375,9 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
     def _lp_post_decoding(
             self,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> list['EvmEvent']:
+    ) -> list[EvmEvent]:
         """Update the lp position creation event and position token."""
         return decode_uniswap_v3_like_position_create_or_exit(
             decoded_events=decoded_events,

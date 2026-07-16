@@ -1,10 +1,9 @@
 import logging
 import shutil
-from collections.abc import Callable, Iterator
 from pathlib import Path
 from threading import Lock
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, Final, Literal, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, cast, overload
 
 import rsqlite
 
@@ -69,6 +68,8 @@ from .upgrades.manager import configure_globaldb
 from .utils import GLOBAL_DB_VERSION, globaldb_get_setting_value, initialize_globaldb
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.filtering import (
         AssetsFilterQuery,
@@ -144,7 +145,7 @@ def _prioritize_manual_balances_query(
 
 class GlobalDBHandler:
     """A singleton class controlling the global DB"""
-    __instance: Optional['GlobalDBHandler'] = None
+    __instance: GlobalDBHandler | None = None
     _data_directory: Path | None = None
     _packaged_db_conn: DBConnection | None = None
     conn: DBConnection
@@ -153,15 +154,15 @@ class GlobalDBHandler:
     # guards the lazy creation of _packaged_db_conn. Class-level since the
     # connection may first be needed concurrently from any two threads
     _packaged_db_conn_lock: Lock = Lock()
-    msg_aggregator: 'MessagesAggregator | None' = None
+    msg_aggregator: MessagesAggregator | None = None
 
     def __new__(   # noqa: PYI034  # singleton is an exception
             cls,
             data_dir: Path | None = None,
             sql_vm_instructions_cb: int | None = None,
             perform_assets_updates: bool | None = None,
-            msg_aggregator: 'MessagesAggregator | None' = None,
-    ) -> 'GlobalDBHandler':
+            msg_aggregator: MessagesAggregator | None = None,
+    ) -> GlobalDBHandler:
         """
         Initializes the GlobalDB.
 
@@ -317,7 +318,7 @@ class GlobalDBHandler:
             ) from e
 
     @staticmethod
-    def retrieve_assets(userdb: 'DBHandler', filter_query: 'AssetsFilterQuery') -> tuple[list[dict[str, Any]], int]:  # noqa: E501
+    def retrieve_assets(userdb: DBHandler, filter_query: AssetsFilterQuery) -> tuple[list[dict[str, Any]], int]:  # noqa: E501
         """
         Returns a tuple that contains a list of assets details and a
         count of those assets that match the filter query.
@@ -503,7 +504,7 @@ class GlobalDBHandler:
         return result, asset_collections
 
     @staticmethod
-    def search_assets(filter_query: 'AssetsFilterQuery', db: 'DBHandler') -> list[dict[str, Any]]:
+    def search_assets(filter_query: AssetsFilterQuery, db: DBHandler) -> list[dict[str, Any]]:
         """Returns a list of asset details that match the search query provided."""
         search_result = []
         should_skip = filter_query.ignored_assets_handling.get_should_skip_handler()
@@ -833,7 +834,7 @@ class GlobalDBHandler:
     @staticmethod
     def _get_single_token_from_db(
             table_name: str,
-            token_class: type[EvmToken] | type[SolanaToken],
+            token_class: type[EvmToken | SolanaToken],
             address_filter: tuple[str, Any],
             chain_filter: tuple[str, Any] | None = None,
             extra_columns: list[str] | None = None,
@@ -898,7 +899,7 @@ class GlobalDBHandler:
     @staticmethod
     def _get_tokens_from_db(
             table_name: str,
-            token_class: type[EvmToken] | type[SolanaToken],
+            token_class: type[EvmToken | SolanaToken],
             exceptions: set | None = None,
             protocol: str | None = None,
             ignore_spam: bool = True,
@@ -1095,7 +1096,7 @@ class GlobalDBHandler:
 
     @staticmethod
     def _add_token_data(
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             query: str,
             bindings: tuple,
             token_type: Literal['evm', 'solana'],
@@ -1126,7 +1127,7 @@ class GlobalDBHandler:
 
         Returns the token's rotki identifier and clears the cache of the asset resolver
         """
-        def evm_update_callback(write_cursor: 'DBCursor', _entry: EvmToken) -> None:
+        def evm_update_callback(write_cursor: DBCursor, _entry: EvmToken) -> None:
             write_cursor.execute(
                 'UPDATE evm_tokens SET token_kind=?, chain=?, address=?, decimals=?, '
                 'protocol=? WHERE identifier=?',
@@ -1313,7 +1314,7 @@ class GlobalDBHandler:
                 ) from e
 
     @staticmethod
-    def add_user_owned_assets(assets: list['Asset']) -> None:
+    def add_user_owned_assets(assets: list[Asset]) -> None:
         """Make sure all assets in the list are included in the user owned assets
 
         These assets are there so that when someone tries to delete assets from the global DB
@@ -1414,12 +1415,12 @@ class GlobalDBHandler:
 
     @staticmethod
     def get_historical_price(
-            from_asset: 'Asset',
-            to_asset: 'Asset',
+            from_asset: Asset,
+            to_asset: Asset,
             timestamp: Timestamp,
             max_seconds_distance: int,
             sources: tuple[HistoricalPriceOracle, ...] | None = None,
-    ) -> Optional['HistoricalPrice']:
+    ) -> HistoricalPrice | None:
         """Gets the price around a particular timestamp
 
         If no price can be found returns None
@@ -1454,7 +1455,7 @@ class GlobalDBHandler:
 
     @staticmethod
     def get_historical_prices(
-            query_data: list[tuple['Asset', 'Asset', Timestamp]],
+            query_data: list[tuple[Asset, Asset, Timestamp]],
             max_seconds_distance: int,
             source: HistoricalPriceOracle | None = None,
     ) -> list[HistoricalPrice | None]:
@@ -1497,7 +1498,7 @@ class GlobalDBHandler:
         return prices_results
 
     @staticmethod
-    def add_historical_prices(entries: list['HistoricalPrice']) -> None:
+    def add_historical_prices(entries: list[HistoricalPrice]) -> None:
         """Adds the given historical price entries in the DB
 
         If any addition causes a DB error it's skipped and an error is logged
@@ -1741,8 +1742,8 @@ class GlobalDBHandler:
 
     @staticmethod
     def delete_historical_price(
-            from_asset: 'Asset',
-            to_asset: 'Asset',
+            from_asset: Asset,
+            to_asset: Asset,
             timestamp: Timestamp,
             source_type: HistoricalPriceOracle,
     ) -> bool:
@@ -1773,8 +1774,8 @@ class GlobalDBHandler:
 
     @staticmethod
     def delete_historical_prices(
-            from_asset: 'Asset',
-            to_asset: 'Asset',
+            from_asset: Asset,
+            to_asset: Asset,
             source: HistoricalPriceOracle | None = None,
     ) -> None:
         querystr = 'DELETE FROM price_history WHERE from_asset=? AND to_asset=?'
@@ -1794,8 +1795,8 @@ class GlobalDBHandler:
 
     @staticmethod
     def get_historical_price_range(
-            from_asset: 'Asset',
-            to_asset: 'Asset',
+            from_asset: Asset,
+            to_asset: Asset,
             source: HistoricalPriceOracle | None = None,
     ) -> tuple[Timestamp, Timestamp] | None:
         querystr = 'SELECT MIN(timestamp), MAX(timestamp) FROM price_history WHERE from_asset=? AND to_asset=?'  # noqa: E501
@@ -1831,7 +1832,7 @@ class GlobalDBHandler:
 
     def hard_reset_assets_list(
             self,
-            user_db: 'DBHandler',
+            user_db: DBHandler,
             force: bool = False,
     ) -> tuple[bool, str]:
         """
@@ -2000,7 +2001,7 @@ class GlobalDBHandler:
     def get_user_added_assets(
             cursor: DBCursor,
             user_db_cursor: DBCursor,
-            user_db: 'DBHandler',
+            user_db: DBHandler,
             only_owned: bool = False,
     ) -> set[str]:
         """
@@ -2358,7 +2359,7 @@ class GlobalDBHandler:
             dict_keys: tuple[str, str, str],
             mapping_type: Literal['location', 'counterparty'],
             query_columns: Literal['local_id, location, exchange_symbol', 'local_id, counterparty, symbol'],  # noqa: E501
-            filter_query: Union['LocationAssetMappingsFilterQuery', 'CounterpartyAssetMappingsFilterQuery'],  # noqa: E501
+            filter_query: LocationAssetMappingsFilterQuery | CounterpartyAssetMappingsFilterQuery,
             location_or_counterparty_reader_callback: Callable,
     ) -> tuple[list[dict[str, str | Location | None]], int, int]:
         """Query asset mappings based on the mapping type.
@@ -2456,7 +2457,7 @@ class GlobalDBHandler:
         )
 
     @staticmethod
-    def _location_asset_mapping_null_precheck(cursor: 'DBCursor', entry: LocationAssetMappingUpdateEntry) -> None:  # noqa: E501
+    def _location_asset_mapping_null_precheck(cursor: DBCursor, entry: LocationAssetMappingUpdateEntry) -> None:  # noqa: E501
         if (
                 entry.location is None and
                 cursor.execute(

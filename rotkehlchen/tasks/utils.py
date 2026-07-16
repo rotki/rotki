@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Final, Literal
 
 from rotkehlchen.db.cache import DBCacheStatic
@@ -8,6 +7,8 @@ from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ SCHEDULER_PERIODIC_TASK_KEYS: Final = (
 )
 
 
-def prefetch_scheduler_task_timestamps(database: 'DBHandler') -> dict[str, str]:
+def prefetch_scheduler_task_timestamps(database: DBHandler) -> dict[str, str]:
     """Read all periodic-task last-run timestamps the scheduler needs in a single query.
 
     The returned mapping is meant to be passed to should_run_periodic_task as cached_timestamps
@@ -48,7 +49,7 @@ def prefetch_scheduler_task_timestamps(database: 'DBHandler') -> dict[str, str]:
 
 
 def should_run_periodic_task(
-        database: 'DBHandler',
+        database: DBHandler,
         key_name: Literal[
             DBCacheStatic.LAST_DATA_UPDATES_TS,
             DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS,

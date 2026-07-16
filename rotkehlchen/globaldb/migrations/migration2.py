@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.sqlite import DBConnection
 
 
-def globaldb_data_migration_2(conn: 'DBConnection') -> None:
+def globaldb_data_migration_2(conn: DBConnection) -> None:
     """Introduced at 1.36.0
     - Removes number of queried yearn vaults to ensure that a refresh is made and
     users get the staking vaults.

@@ -1,5 +1,4 @@
 import time
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, call, patch
 
@@ -34,6 +33,8 @@ from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import ChainID, EvmTransaction, Location, Timestamp
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.aggregator import ChainsAggregator
 
 

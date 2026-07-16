@@ -19,9 +19,9 @@ class PolygonPOSManager(EvmManager, CurveManagerMixin):
 
     def __init__(
             self,
-            node_inquirer: 'PolygonPOSInquirer',
-            premium: 'Premium | None' = None,
-            monerium: 'Monerium | None' = None,
+            node_inquirer: PolygonPOSInquirer,
+            premium: Premium | None = None,
+            monerium: Monerium | None = None,
     ) -> None:
         transactions = PolygonPOSTransactions(
             polygon_pos_inquirer=node_inquirer,

@@ -8,21 +8,17 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 import requests
 from eth_abi.exceptions import DecodingError
-from eth_typing.abi import ABI
 from eth_utils.abi import get_abi_output_types
 from web3 import Web3
 from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
 from web3.exceptions import InvalidAddress, TransactionNotFound, Web3Exception
-from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN, token_normalized_value_decimals
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT, SAFE_BASIC_ABI
 from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE_NAME
-from rotkehlchen.chain.ethereum.types import LogIterationCallback
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS, should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import (
     DEFAULT_TOKEN_DECIMALS,
@@ -55,10 +51,6 @@ from rotkehlchen.errors.misc import (
     RequestTooLargeError,
 )
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.blockscout import Blockscout
-from rotkehlchen.externalapis.etherscan import Etherscan
-from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
-from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -67,7 +59,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_hex,
 )
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
@@ -85,9 +76,18 @@ from rotkehlchen.utils.misc import from_wei, get_chunks
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import EvmToken
+    from eth_typing.abi import ABI
+    from web3.types import BlockIdentifier, FilterParams
+
+    from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+    from rotkehlchen.chain.ethereum.types import LogIterationCallback
     from rotkehlchen.chain.gnosis.transactions import GnosisWithdrawalsQueryParameters
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.blockscout import Blockscout
+    from rotkehlchen.externalapis.etherscan import Etherscan
+    from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
+    from rotkehlchen.externalapis.routescan import Routescan
+    from rotkehlchen.tasks.supervisor import TaskSupervisor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -114,7 +114,7 @@ def _query_web3_get_logs(
         argument_filters: dict[str, Any],
         initial_block_range: int,
         log_iteration_cb: LogIterationCallback | None = None,
-        log_iteration_cb_arguments: 'GnosisWithdrawalsQueryParameters | None' = None,
+        log_iteration_cb_arguments: GnosisWithdrawalsQueryParameters | None = None,
 ) -> list[dict[str, Any]]:
     until_block = web3.eth.block_number if to_block == 'latest' else to_block
     events: list[dict[str, Any]] = []
@@ -219,14 +219,14 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     def __init__(
             self,
             task_supervisor: TaskSupervisor,
-            database: 'DBHandler',
+            database: DBHandler,
             etherscan: Etherscan,
             blockscout: Blockscout,
             routescan: Routescan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             contracts: EvmContracts,
-            contract_scan: 'EvmContract',
-            contract_multicall: 'EvmContract',
+            contract_scan: EvmContract,
+            contract_multicall: EvmContract,
             native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
@@ -392,7 +392,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     def get_historical_token_balance(
             self,
             address: ChecksumEvmAddress,
-            token: 'EvmToken',
+            token: EvmToken,
             block_number: int,
             queried_timestamp: Timestamp | None = None,
     ) -> FVal | None:
@@ -453,7 +453,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         # iterate a snapshot: spawned connect tasks insert into the mapping concurrently
         return any(rpc_node.is_archive for rpc_node in list(self.rpc_mapping.values()))
 
-    def get_archive_call_order(self) -> list['WeightedNode']:
+    def get_archive_call_order(self) -> list[WeightedNode]:
         """Get connected archive nodes for historical queries."""
         return [
             WeightedNode(node_info=node, active=True, weight=ONE)
@@ -1043,7 +1043,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             to_block: int | Literal['latest'] = 'latest',
             call_order: Sequence[WeightedNode] | None = None,
             log_iteration_cb: LogIterationCallback | None = None,
-            log_iteration_cb_arguments: 'GnosisWithdrawalsQueryParameters | None' = None,
+            log_iteration_cb_arguments: GnosisWithdrawalsQueryParameters | None = None,
     ) -> list[dict[str, Any]]:
         if call_order is None:  # Default call order for logs
             call_order = [self.indexers_node]
@@ -1078,7 +1078,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             from_block: int,
             to_block: int | Literal['latest'] = 'latest',
             log_iteration_cb: LogIterationCallback | None = None,
-            log_iteration_cb_arguments: 'GnosisWithdrawalsQueryParameters | None' = None,
+            log_iteration_cb_arguments: GnosisWithdrawalsQueryParameters | None = None,
     ) -> list[dict[str, Any]]:
         """Queries logs of an evm contract
         May raise:
@@ -1177,7 +1177,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             calls: list[tuple[ChecksumEvmAddress, str]],
             # only here to comply with multicall_2
             require_success: bool = True,  # pylint: disable=unused-argument
-            call_order: Sequence['WeightedNode'] | None = None,
+            call_order: Sequence[WeightedNode] | None = None,
             block_identifier: BlockIdentifier = 'latest',
             calls_chunk_size: int = MULTICALL_CHUNKS,
     ) -> Any:
@@ -1225,7 +1225,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     def _execute_multicall(
             self,
             calls: list[tuple[ChecksumEvmAddress, str]],
-            call_order: Sequence['WeightedNode'],
+            call_order: Sequence[WeightedNode],
             block_identifier: BlockIdentifier,
             calls_chunk_size: int,
             estimated_length: int,
@@ -1268,7 +1268,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             self,
             calls: list[tuple[ChecksumEvmAddress, str]],
             require_success: bool,
-            call_order: Sequence['WeightedNode'] | None = None,
+            call_order: Sequence[WeightedNode] | None = None,
             block_identifier: BlockIdentifier = 'latest',
             # only here to comply with multicall
             calls_chunk_size: int = MULTICALL_CHUNKS,  # pylint: disable=unused-argument
@@ -1287,10 +1287,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
     def multicall_specific(
             self,
-            contract: 'EvmContract',
+            contract: EvmContract,
             method_name: str,
             arguments: list[Any],
-            call_order: Sequence['WeightedNode'] | None = None,
+            call_order: Sequence[WeightedNode] | None = None,
             decode_result: bool = True,
     ) -> Any:
         calls = [(
@@ -1901,15 +1901,15 @@ class EvmNodeInquirerWithProxies(EvmNodeInquirer):
     def __init__(
             self,
             task_supervisor: TaskSupervisor,
-            database: 'DBHandler',
+            database: DBHandler,
             etherscan: Etherscan,
             blockscout: Blockscout,
             routescan: Routescan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             contracts: EvmContracts,
-            contract_scan: 'EvmContract',
-            contract_multicall: 'EvmContract',
-            dsproxy_registry: 'EvmContract',
+            contract_scan: EvmContract,
+            contract_multicall: EvmContract,
+            dsproxy_registry: EvmContract,
             native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
@@ -1940,15 +1940,15 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
     def __init__(
             self,
             task_supervisor: TaskSupervisor,
-            database: 'DBHandler',
+            database: DBHandler,
             etherscan: Etherscan,
             blockscout: Blockscout,
             routescan: Routescan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             contracts: EvmContracts,
-            contract_scan: 'EvmContract',
-            contract_multicall: 'EvmContract',
-            dsproxy_registry: 'EvmContract',
+            contract_scan: EvmContract,
+            contract_multicall: EvmContract,
+            dsproxy_registry: EvmContract,
             native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:

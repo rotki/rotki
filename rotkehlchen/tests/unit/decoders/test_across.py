@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 )])
 @pytest.mark.parametrize('base_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_across_bridge_receive_on_base(
-        base_inquirer: 'BaseInquirer',
+        base_inquirer: BaseInquirer,
         base_accounts: list[ChecksumEvmAddress],
         allow_base_routescan,
 ):

@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import EvmToken
@@ -54,6 +53,8 @@ from rotkehlchen.types import CacheType, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -68,9 +69,9 @@ class ExtrafiCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             extra_token_identifier: str,
     ) -> None:
         ReloadableCacheDecoderMixin.__init__(
@@ -443,7 +444,7 @@ class ExtrafiCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
     def _cache_mapping_methods(self) -> tuple[Callable[[DecoderContext], EvmDecodingOutput]]:
         return (self.decode_lending_claim_reward,)
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {  # same addresses are used in base and optimism
             EXTRAFI_POOL_CONTRACT: (self._handle_pool_events,),
             EXTRAFI_DISTRIBUTOR: (self._handle_claim,),

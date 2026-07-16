@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Final, NamedTuple, overload
 
@@ -16,9 +15,7 @@ from rotkehlchen.assets.asset import (
     WrongAssetType,
 )
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
-from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.utils import is_solana_token_nft
 from rotkehlchen.constants.assets import (
     A_BSC_BNB,
@@ -59,8 +56,12 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.assets.types import AssetType
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
+    from rotkehlchen.chain.solana.rpc import Signature
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -79,7 +80,7 @@ SPAM_ASSET_PATTERN = regex.compile(SPAM_ASSET_REGEX, regex.IGNORECASE | regex.VE
 
 
 def _query_or_get_given_token_info(
-        chain_inquirer: 'EvmNodeInquirer | SolanaInquirer',
+        chain_inquirer: EvmNodeInquirer | SolanaInquirer,
         address: ChecksumEvmAddress | SolanaAddress,
         name: str | None,
         symbol: str | None,
@@ -133,7 +134,7 @@ def edit_token_and_clean_cache(
         symbol: str | None,
         decimals: int | None,
         started: Timestamp | None,
-        chain_inquirer: 'EvmNodeInquirer | SolanaInquirer | None',
+        chain_inquirer: EvmNodeInquirer | SolanaInquirer | None,
         underlying_tokens: list[UnderlyingToken] | None = None,
         coingecko: str | None = None,
         cryptocompare: str | None = None,
@@ -280,7 +281,7 @@ def get_solana_token(
     return None
 
 
-def get_single_underlying_token(token: 'EvmToken') -> 'EvmToken | None':
+def get_single_underlying_token(token: EvmToken) -> EvmToken | None:
     """Get a token's single underlying token.
     Returns the underlying token or None if the token has no/multiple underlying tokens.
     """
@@ -298,7 +299,7 @@ def get_single_underlying_token(token: 'EvmToken') -> 'EvmToken | None':
 
 
 def get_or_create_evm_token(
-        userdb: 'DBHandler',
+        userdb: DBHandler,
         evm_address: ChecksumEvmAddress,
         chain_id: ChainID,
         token_kind: EVM_TOKEN_KINDS_TYPE = TokenKind.ERC20,
@@ -308,7 +309,7 @@ def get_or_create_evm_token(
         protocol: str | None = None,
         started: Timestamp | None = None,
         underlying_tokens: list[UnderlyingToken] | None = None,
-        evm_inquirer: 'EvmNodeInquirer | None' = None,
+        evm_inquirer: EvmNodeInquirer | None = None,
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
         cryptocompare: str | None = None,
@@ -351,7 +352,7 @@ def get_or_create_evm_token(
 
 
 def get_or_create_solana_token(
-        userdb: 'DBHandler',
+        userdb: DBHandler,
         address: SolanaAddress,
         token_kind: SOLANA_TOKEN_KINDS_TYPE | None = None,
         symbol: str | None = None,
@@ -359,7 +360,7 @@ def get_or_create_solana_token(
         decimals: int | None = None,
         protocol: str | None = None,
         started: Timestamp | None = None,
-        solana_inquirer: 'SolanaInquirer | None' = None,
+        solana_inquirer: SolanaInquirer | None = None,
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
         cryptocompare: str | None = None,
@@ -418,11 +419,11 @@ def get_or_create_solana_token(
 
 @overload
 def _get_or_create_token(
-        userdb: 'DBHandler',
+        userdb: DBHandler,
         identifier: str,
         address: ChecksumEvmAddress,
         token_class: type[EvmToken],
-        edit_token_fn: Callable[['EvmToken'], str],
+        edit_token_fn: Callable[[EvmToken], str],
         token_kind: EVM_TOKEN_KINDS_TYPE,
         chain_id: ChainID,
         symbol: str | None = None,
@@ -431,7 +432,7 @@ def _get_or_create_token(
         protocol: str | None = None,
         started: Timestamp | None = None,
         underlying_tokens: list[UnderlyingToken] | None = None,
-        chain_inquirer: 'EvmNodeInquirer | None' = None,
+        chain_inquirer: EvmNodeInquirer | None = None,
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
         cryptocompare: str | None = None,
@@ -445,11 +446,11 @@ def _get_or_create_token(
 
 @overload
 def _get_or_create_token(
-        userdb: 'DBHandler',
+        userdb: DBHandler,
         identifier: str | None,
         address: SolanaAddress,
         token_class: type[SolanaToken],
-        edit_token_fn: Callable[['SolanaToken'], str],
+        edit_token_fn: Callable[[SolanaToken], str],
         token_kind: SOLANA_TOKEN_KINDS_TYPE | None = None,
         chain_id: None = None,
         symbol: str | None = None,
@@ -458,7 +459,7 @@ def _get_or_create_token(
         protocol: str | None = None,
         started: Timestamp | None = None,
         underlying_tokens: list[UnderlyingToken] | None = None,
-        chain_inquirer: 'SolanaInquirer | None' = None,
+        chain_inquirer: SolanaInquirer | None = None,
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
         cryptocompare: str | None = None,
@@ -470,11 +471,11 @@ def _get_or_create_token(
 
 
 def _get_or_create_token(
-        userdb: 'DBHandler',
+        userdb: DBHandler,
         identifier: str | None,
         address: ChecksumEvmAddress | SolanaAddress,
-        token_class: type[EvmToken] | type[SolanaToken],
-        edit_token_fn: Callable[['EvmToken'], str] | Callable[['SolanaToken'], str],
+        token_class: type[EvmToken | SolanaToken],
+        edit_token_fn: Callable[[EvmToken], str] | Callable[[SolanaToken], str],
         token_kind: EVM_TOKEN_KINDS_TYPE | SOLANA_TOKEN_KINDS_TYPE | None = None,
         chain_id: ChainID | None = None,
         symbol: str | None = None,
@@ -483,7 +484,7 @@ def _get_or_create_token(
         protocol: str | None = None,
         started: Timestamp | None = None,
         underlying_tokens: list[UnderlyingToken] | None = None,
-        chain_inquirer: 'EvmNodeInquirer | SolanaInquirer | None' = None,
+        chain_inquirer: EvmNodeInquirer | SolanaInquirer | None = None,
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
         cryptocompare: str | None = None,

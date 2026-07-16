@@ -6,18 +6,18 @@ from rotkehlchen.chain.solana.decoding.structures import DEFAULT_SOLANA_DECODING
 from rotkehlchen.chain.solana.modules.jito.constants import CPT_JITO, JITO_TIP_PAYMENT_ACCOUNTS
 from rotkehlchen.constants.assets import A_SOL
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import SolanaAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.solana.decoding.structures import (
         SolanaDecodingOutput,
         SolanaEventDecoderContext,
     )
+    from rotkehlchen.types import SolanaAddress
 
 
 class JitoDecoder(SolanaDecoderInterface):
 
-    def decode_jito_tip(self, context: 'SolanaEventDecoderContext') -> 'SolanaDecodingOutput':
+    def decode_jito_tip(self, context: SolanaEventDecoderContext) -> SolanaDecodingOutput:
         """Decode Jito tip events.
         https://jito-foundation.gitbook.io/mev/mev-payment-and-distribution/tip-payment-program
         """
@@ -33,7 +33,7 @@ class JitoDecoder(SolanaDecoderInterface):
         return dict.fromkeys(JITO_TIP_PAYMENT_ACCOUNTS, (self.decode_jito_tip,))
 
     @staticmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_JITO,
             label='Jito',

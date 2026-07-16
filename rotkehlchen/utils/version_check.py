@@ -2,7 +2,7 @@ import logging
 import platform
 import sys
 from importlib.metadata import PackageNotFoundError, version
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple
 
 from packaging.version import InvalidVersion, Version
 
@@ -47,7 +47,7 @@ class VersionCheckResult(NamedTuple):
     download_url: str | None = None
 
 
-def get_current_version(github: Optional['Github'] = None) -> VersionCheckResult:
+def get_current_version(github: Github | None = None) -> VersionCheckResult:
     """Get current version of rotki. If a github is passed then it is contacted to ask
     if there is any updates.
 

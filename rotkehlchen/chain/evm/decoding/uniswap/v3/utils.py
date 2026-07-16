@@ -1,13 +1,10 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Final, NamedTuple
 
 from eth_abi import encode as encode_abi
 from eth_utils import to_checksum_address, to_hex
 from web3 import Web3
-from web3.types import BlockIdentifier
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     asset_normalized_value,
@@ -30,7 +27,11 @@ from rotkehlchen.types import ChecksumEvmAddress, Price, TokenKind
 from .constants import UNISWAP_V3_NFT_MANAGER_ADDRESSES
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import EvmToken
+    from collections.abc import Callable
+
+    from web3.types import BlockIdentifier
+
+    from rotkehlchen.assets.asset import Asset, EvmToken
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.fval import FVal
 
@@ -42,8 +43,8 @@ POOL_INIT_CODE_HASH: Final = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea8
 
 class CryptoAssetAmount(NamedTuple):
     """This is used to represent a pair of resolved crypto asset to an amount."""
-    asset: 'EvmToken'
-    amount: 'FVal'
+    asset: EvmToken
+    amount: FVal
 
 
 def _compute_pool_address(
@@ -76,8 +77,8 @@ def _compute_pool_address(
 
 
 def get_uniswap_v3_position_price(
-        evm_inquirer: 'EvmNodeInquirer',
-        token: 'EvmToken',
+        evm_inquirer: EvmNodeInquirer,
+        token: EvmToken,
         price_func: Callable[[Asset], Price],
         block_identifier: BlockIdentifier = 'latest',
 ) -> Price:
@@ -154,7 +155,7 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
         amount0_raw: int,
         amount1_raw: int,
         position_id: int,
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
 ) -> EvmDecodingOutput:
     """This method decodes a Uniswap V3 like LP liquidity increase or decrease.
 

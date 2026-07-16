@@ -5,9 +5,7 @@ from typing import TYPE_CHECKING
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.export.csv import CSVWriteError, dict_to_csv_file
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.asset import UnknownAsset
@@ -15,12 +13,14 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Price, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.snapshots import get_main_currency_price
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import AssetWithOracles
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.types import Price, Timestamp
+    from rotkehlchen.user_messages import MessagesAggregator
 
 BALANCES_FILENAME = 'balances_snapshot.csv'
 BALANCES_FOR_IMPORT_FILENAME = 'balances_snapshot_import.csv'
@@ -38,7 +38,7 @@ class DBSnapshot:
 
     def get_timed_balances(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             timestamp: Timestamp,
     ) -> list[DBAssetBalance]:
         """Retrieves the timed_balances from the db for a given timestamp."""
@@ -65,7 +65,7 @@ class DBSnapshot:
 
     @staticmethod
     def get_timed_location_data(
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             timestamp: Timestamp,
     ) -> list[LocationData]:
         """Retrieves the timed_location_data from the db for a given timestamp."""
@@ -221,7 +221,7 @@ class DBSnapshot:
 
     def import_snapshot(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             processed_balances_list: list[DBAssetBalance],
             processed_location_data_list: list[LocationData],
     ) -> None:
@@ -239,7 +239,7 @@ class DBSnapshot:
 
     def update(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             timestamp: Timestamp,
             balances_snapshot: list[DBAssetBalance],
             location_data_snapshot: list[LocationData],
@@ -261,7 +261,7 @@ class DBSnapshot:
             processed_location_data_list=location_data_snapshot,
         )
 
-    def delete(self, write_cursor: 'DBCursor', timestamp: Timestamp) -> None:
+    def delete(self, write_cursor: DBCursor, timestamp: Timestamp) -> None:
         """Deletes a snapshot of the database at a given timestamp
         May raise:
         - InputError
@@ -275,7 +275,7 @@ class DBSnapshot:
         if balances_deleted == 0 and location_deleted == 0:
             raise InputError('No snapshot found for the specified timestamp')
 
-    def add_nft_asset_ids(self, write_cursor: 'DBCursor', entries: list[str]) -> None:
+    def add_nft_asset_ids(self, write_cursor: DBCursor, entries: list[str]) -> None:
         """Add NFT identifiers to the DB to prevent unknown asset error."""
         nft_ids = [x for x in entries if x.startswith(NFT_DIRECTIVE)]
         self.db.add_asset_identifiers(write_cursor, nft_ids)

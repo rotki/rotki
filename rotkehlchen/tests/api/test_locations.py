@@ -34,7 +34,7 @@ UNISWAP_ADDR = string_to_evm_address('0xcaf012cB72f2c7152b255E091837E3a628F739e7
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_associated_locations(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
         added_exchanges: list[EVM_LOCATIONS_TYPE],
         ethereum_accounts: list[ChecksumEvmAddress],  # pylint: disable=unused-argument
         start_with_valid_premium: bool,  # pylint: disable=unused-argument
@@ -67,9 +67,9 @@ def test_get_associated_locations(
 @pytest.mark.parametrize('ethereum_accounts', [['0x9DBE4Eb4A0a41955E1DC733E322f84295a0aa5c0']])
 @pytest.mark.parametrize('btc_accounts', [['bc1qdf3av8da4up78shctfual6j6cv3kyvcw6qk3fz']])
 def test_get_location_labels(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        btc_accounts: list['BTCAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
 ) -> None:
     """Test that location labels endpoint returns labels ordered by frequency."""
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -118,8 +118,8 @@ def test_get_location_labels(
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x9DBE4Eb4A0a41955E1DC733E322f84295a0aa5c0']])
 def test_get_location_labels_excludes_untracked_accounts(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that location labels endpoint excludes untracked blockchain accounts"""
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db

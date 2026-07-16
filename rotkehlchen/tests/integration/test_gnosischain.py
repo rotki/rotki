@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0x2449fE0bEA58e027f374e90b296e72Dfd7bCcBaE']])  # noqa: E501
 def test_gnosischain_specific_chain_data(
-        database: 'DBHandler',
-        gnosis_transactions: 'GnosisTransactions',
+        database: DBHandler,
+        gnosis_transactions: GnosisTransactions,
         gnosis_accounts: list[ChecksumEvmAddress],
 ) -> None:
     now = ts_now()
@@ -74,8 +74,8 @@ def test_gnosischain_specific_chain_data(
     order={ChainID.GNOSIS: [EvmIndexer.ETHERSCAN]},
 )}])
 def test_gnosischain_specific_chain_data_failing_logic(
-        database: 'DBHandler',
-        gnosis_transactions: 'GnosisTransactions',
+        database: DBHandler,
+        gnosis_transactions: GnosisTransactions,
         gnosis_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Tests that in case of error while querying gnosis logs
@@ -114,8 +114,8 @@ def test_gnosischain_specific_chain_data_failing_logic(
     order={ChainID.GNOSIS: [EvmIndexer.ETHERSCAN]},
 )}])
 def test_gnosischain_specific_chain_data_ts_logic(
-        database: 'DBHandler',
-        gnosis_transactions: 'GnosisTransactions',
+        database: DBHandler,
+        gnosis_transactions: GnosisTransactions,
         gnosis_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """

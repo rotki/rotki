@@ -1,4 +1,5 @@
-from collections.abc import Callable
+
+from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
@@ -8,6 +9,9 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 COINBASE_DAI_UPGRADE_END_TS = 1575244800  # December 2
 

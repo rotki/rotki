@@ -77,10 +77,10 @@ def create_swap_events_v47_v48(
 
 def get_swap_spend_receive_v47_48(
         is_buy: bool,
-        base_asset: 'Asset',
-        quote_asset: 'Asset',
-        amount: 'FVal',
-        rate: 'Price',
+        base_asset: Asset,
+        quote_asset: Asset,
+        amount: FVal,
+        rate: Price,
 ) -> tuple[AssetAmount, AssetAmount]:
     """Calculates amounts and assets spent and received depending on the is_buy flag.
     Returns the spend asset amount and receive asset amount in a tuple.

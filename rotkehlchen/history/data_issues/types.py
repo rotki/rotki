@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, NotRequired, TypeAlias, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 
 class BaseIssuePayload(TypedDict):
@@ -23,7 +23,7 @@ class CurrentBalanceMismatchIssuePayload(BaseIssuePayload):
     latest_event_identifier: int | None
 
 
-DataIssuePayload: TypeAlias = NegativeBalanceIssuePayload | CurrentBalanceMismatchIssuePayload
+type DataIssuePayload = NegativeBalanceIssuePayload | CurrentBalanceMismatchIssuePayload
 """Typed payload variants accepted when writing data issues."""
 
 

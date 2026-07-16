@@ -26,7 +26,6 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
 from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -35,6 +34,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -46,7 +46,7 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
@@ -240,7 +240,7 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple['Sequence[HistoryBaseEntry]', Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         page, all_transactions, events = 0, [], []
         while True:
             resp = self._api_query('get', 'user/activity', {'pageNumber': str(page)})

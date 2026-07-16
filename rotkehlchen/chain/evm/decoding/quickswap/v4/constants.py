@@ -1,6 +1,7 @@
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
-from eth_typing.abi import ABI
+if TYPE_CHECKING:
+    from eth_typing.abi import ABI
 
 QUICKSWAP_SWAP_TOPIC: Final = b'\x12\x1c\xb4N\xe5@\x98\xb1\xa0GC\xc4\x87\xe7F\r\x8d\xd4)\xb2\x7f\x88\xb1\xf4\xd4vs\x96\xe1\xa5\x9fy'  # noqa: E501
 

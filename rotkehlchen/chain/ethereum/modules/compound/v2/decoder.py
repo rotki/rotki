@@ -22,7 +22,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_COMP, A_ETH
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -37,6 +36,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -56,9 +56,9 @@ class Compoundv2Decoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -72,7 +72,7 @@ class Compoundv2Decoder(EvmDecoderInterface):
             self,
             transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             compound_token: EvmToken,
     ) -> EvmDecodingOutput:
         minter = bytes_to_address(tx_log.data[0:32])
@@ -124,7 +124,7 @@ class Compoundv2Decoder(EvmDecoderInterface):
     def _decode_redeem(
             self,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             compound_token: EvmToken,
     ) -> EvmDecodingOutput:
         redeemer = bytes_to_address(tx_log.data[0:32])
@@ -160,7 +160,7 @@ class Compoundv2Decoder(EvmDecoderInterface):
     def _decode_borrow_and_repay(
             self,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             compound_token: EvmToken,
     ) -> EvmDecodingOutput:
         """
@@ -222,9 +222,9 @@ class Compoundv2Decoder(EvmDecoderInterface):
     def _decode_liquidate(
             self,
             transaction: EvmTransaction,
-            tx_log: 'EvmTxReceiptLog',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
+            tx_log: EvmTxReceiptLog,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
     ) -> EvmDecodingOutput:
         """Decode a liquidation event happening over a tracked account"""
         borrower = bytes_to_address(tx_log.data[32:64])

@@ -5,7 +5,7 @@ import hashlib
 import hmac
 from dataclasses import dataclass
 from enum import auto
-from typing import NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 from rotkehlchen.chain.bitcoin.secp256k1 import PrivateKey, PublicKey
 from rotkehlchen.chain.bitcoin.utils import (
@@ -18,9 +18,11 @@ from rotkehlchen.chain.bitcoin.utils import (
 )
 from rotkehlchen.errors.misc import XPUBError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.types import BTCAddress
 from rotkehlchen.utils.base58 import b58decode, b58encode
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
+
+if TYPE_CHECKING:
+    from rotkehlchen.types import BTCAddress
 
 COMPRESSED_PUBKEY = True
 
@@ -48,7 +50,7 @@ class XpubType(SerializableEnumNameMixin):
         return XPUB_TYPE_MAPPING_BYTES[self]  # should not raise due to enum
 
     @classmethod
-    def deserialize(cls, value: str) -> 'XpubType':
+    def deserialize(cls, value: str) -> XpubType:
         if value == 'p2pkh':
             return cls.P2PKH
         if value == 'p2sh_p2wpkh':
@@ -136,7 +138,7 @@ class HDKey:
     depth: int | None
     parent_fingerprint: bytes | None
     index: int | None
-    parent: Optional['HDKey']  # forward type reference
+    parent: HDKey | None  # forward type reference
     chain_code: bytes | None
     fingerprint: bytes
     xpub: str | None
@@ -150,7 +152,7 @@ class HDKey:
             xpub: str,
             xpub_type: XpubType | None = None,
             path: str | None = None,
-    ) -> 'HDKey':
+    ) -> HDKey:
         """
         Instantiate an HDKey from an xpub. Populates all possible fields
         Args:
@@ -225,7 +227,7 @@ class HDKey:
             return int(idx[:-1]) + BIP32_HARDEN
         return int(idx)
 
-    def _child_from_xpub(self, index: int, child_xpub: str) -> 'HDKey':
+    def _child_from_xpub(self, index: int, child_xpub: str) -> HDKey:
         """
         Returns a new HDKey object based on the current object and the new
             child xpub. Don't call this directly, it's for child derivation.
@@ -315,7 +317,7 @@ class HDKey:
                 int_nodes.append(int(node))
         return int_nodes
 
-    def derive_path(self, path: str) -> 'HDKey':
+    def derive_path(self, path: str) -> HDKey:
         """
         Derives a descendant of the current node
         Throws an error if the requested path is not known to be a descendant
@@ -343,7 +345,7 @@ class HDKey:
             current_node = current_node.derive_child(path_nodes[i])
         return current_node
 
-    def derive_child(self, idx: int | str) -> 'HDKey':
+    def derive_child(self, idx: int | str) -> HDKey:
         """
         Derives a bip32 child node from the current node
         Args:

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def test_curve_lend_api(database: 'DBHandler') -> None:
+def test_curve_lend_api(database: DBHandler) -> None:
     """Test that vaults are queried correctly"""
     original_request = requests.get
 

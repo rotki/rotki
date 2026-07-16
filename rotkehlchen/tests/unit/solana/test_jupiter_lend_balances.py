@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -18,6 +17,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.types import SolanaAddress, TokenKind
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.jupiter import Jupiter
@@ -28,16 +29,16 @@ JUPUSD_SOLANA: SolanaAddress = SolanaAddress('JuprjznTrTSp2UFa3ZBUFgwdAmtZCq4MQC
 
 
 @pytest.fixture(name='jupiter_api')
-def fixture_jupiter_api(database: 'DBHandler') -> 'Jupiter':
+def fixture_jupiter_api(database: DBHandler) -> Jupiter:
     from rotkehlchen.externalapis.jupiter import Jupiter
     return Jupiter(database=database)
 
 
 @pytest.fixture(name='jupiter_lend_balances')
 def fixture_jupiter_lend_balances(
-        database: 'DBHandler',
-        solana_inquirer: 'SolanaInquirer',
-        jupiter_api: 'Jupiter',
+        database: DBHandler,
+        solana_inquirer: SolanaInquirer,
+        jupiter_api: Jupiter,
 ) -> JupiterLendBalances:
     return JupiterLendBalances(
         database=database,

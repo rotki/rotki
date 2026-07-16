@@ -22,8 +22,8 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x7Bee86266A59fd7bAf6983bBBf78cE47Fb20a1b4']])
 def test_create_account(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xaeb2f799a5a9beafb035ea664ba50ea525bf684b418467485912d3971c2a8780')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)

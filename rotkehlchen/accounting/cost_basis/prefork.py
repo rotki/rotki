@@ -3,18 +3,19 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BCH_BSV_FORK_TS, BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETC, A_ETH
-from rotkehlchen.fval import FVal
-from rotkehlchen.types import Location, Price, Timestamp
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.types import Location, Price, Timestamp
+
     from .base import CostBasisCalculator
 
 
 def handle_prefork_asset_acquisitions(
-        cost_basis: 'CostBasisCalculator',
+        cost_basis: CostBasisCalculator,
         location: Location,
         timestamp: Timestamp,
         asset: Asset,
@@ -22,7 +23,7 @@ def handle_prefork_asset_acquisitions(
         price: Price,
         ignored_asset_ids: set[str],
         starting_index: int,
-) -> list['ProcessedAccountingEvent']:
+) -> list[ProcessedAccountingEvent]:
     """
         Calculate the prefork asset acquisitions, meaning how is the acquisition
         of ETC pre ETH fork handled etc.
@@ -70,7 +71,7 @@ def handle_prefork_asset_acquisitions(
 
 def handle_prefork_asset_spends(
         originating_event_id: int | None,
-        cost_basis: 'CostBasisCalculator',
+        cost_basis: CostBasisCalculator,
         asset: Asset,
         amount: FVal,
         timestamp: Timestamp,

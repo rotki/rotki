@@ -9,7 +9,6 @@ from rotkehlchen.chain.base.modules.odos.v2.constants import (
     ODOS_ASSET_ID,
     ODOS_V2_ROUTER as BASE_ROUTER,
 )
-from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.binance_sc.modules.odos.v2.constants import ODOS_V2_ROUTER as BSC_ROUTER
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
@@ -40,6 +39,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
 
 
@@ -791,8 +791,8 @@ def test_swap_on_scroll(scroll_inquirer, scroll_accounts, allow_scroll_etherscan
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0x4d29a5fdB0787690bd1c68e0107753c3ad1cF67B']])
 def test_swap_on_binance_sc(
-        binance_sc_inquirer: 'BinanceSCInquirer',
-        binance_sc_accounts: list['ChecksumEvmAddress'],
+        binance_sc_inquirer: BinanceSCInquirer,
+        binance_sc_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x21d24bd239db461b7fe53aef5b82d0d3b7c3a62241a3a3fd3a2ba9434bf4a53d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501

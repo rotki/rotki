@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import (
@@ -27,11 +26,13 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -42,9 +43,9 @@ class GitcoinDecoder(GovernableDecoderInterface, GitcoinOldCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         """Some sources for merkle payouts can be seen here:
         https://github.com/thelostone-mc/merkle_payouts

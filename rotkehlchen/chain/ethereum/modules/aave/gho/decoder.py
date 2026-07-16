@@ -14,7 +14,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -32,15 +31,16 @@ log = RotkehlchenLogsAdapter(logger)
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 
 class AaveghoDecoder(EvmDecoderInterface):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -48,7 +48,7 @@ class AaveghoDecoder(EvmDecoderInterface):
             msg_aggregator=msg_aggregator,
         )
 
-    def _decode_cooldown_event(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _decode_cooldown_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode cooldown activation on stkGHO, starting the unstaking window."""
         if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_EVM_DECODING_OUTPUT
@@ -72,7 +72,7 @@ class AaveghoDecoder(EvmDecoderInterface):
 
     def _decode_stake_or_redeem_event(
             self,
-            context: 'DecoderContext',
+            context: DecoderContext,
             is_stake: bool,
     ) -> EvmDecodingOutput:
         """Decode staking GHO for stkGHO or redeeming stkGHO back to GHO."""
@@ -137,7 +137,7 @@ class AaveghoDecoder(EvmDecoderInterface):
         )
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_staked_gho_events(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _decode_staked_gho_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Route stkGHO contract events to the appropriate decoder."""
         match context.tx_log.topics[0]:
             case topic if topic == COOLDOWN_TOPIC:
@@ -153,5 +153,5 @@ class AaveghoDecoder(EvmDecoderInterface):
         return {STAKED_GHO_ADDRESS: (self._decode_staked_gho_events,)}
 
     @staticmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(identifier=CPT_GHO, label='Gho', image='gho.svg'),)

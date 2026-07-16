@@ -2,8 +2,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
-from eth_typing.abi import ABI
-
 from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.assets.utils import asset_normalized_value, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
@@ -24,6 +22,8 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from eth_typing.abi import ABI
+
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -35,10 +35,10 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def _read_underlying_assets(
-        evm_inquirer: 'EthereumInquirer',
+        evm_inquirer: EthereumInquirer,
         strategy_address: ChecksumEvmAddress,
         depositor: ChecksumEvmAddress,
-) -> tuple['FVal', 'EvmToken']:
+) -> tuple[FVal, EvmToken]:
     """
     Query the amount deposited in an eigenlayer strategy and the token of the strategy
     May raise:
@@ -74,8 +74,8 @@ def _read_underlying_assets(
 class EigenlayerBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            tx_decoder: 'EthereumTransactionDecoder',
+            evm_inquirer: EthereumInquirer,
+            tx_decoder: EthereumTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -85,7 +85,7 @@ class EigenlayerBalances(ProtocolWithBalance):
         )
         self.evm_inquirer: EthereumInquirer
 
-    def _query_lst_deposits(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':
+    def _query_lst_deposits(self, balances: BalancesSheetType) -> BalancesSheetType:
         addresses_with_deposits = self.addresses_with_deposits()
         # remap all events into a list that will contain all pairs (depositor, strategy)
         deposits = set()
@@ -118,7 +118,7 @@ class EigenlayerBalances(ProtocolWithBalance):
         self._add_priced_balances(balances=balances, amounts=entries)
         return balances
 
-    def _query_token_pending_withdrawals(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':  # noqa: E501
+    def _query_token_pending_withdrawals(self, balances: BalancesSheetType) -> BalancesSheetType:
         """Query any balances that are being withdrawn from Eigenlayer and are on the fly"""
         # First find if there is any completed withdrawals unmatched,
         # as that would lead to double counting of balances
@@ -178,7 +178,7 @@ class EigenlayerBalances(ProtocolWithBalance):
         self._add_priced_balances(balances=balances, amounts=entries)
         return balances
 
-    def _query_eigenpod_balances(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':
+    def _query_eigenpod_balances(self, balances: BalancesSheetType) -> BalancesSheetType:
         """Queries the balance of ETH in the eigenpod and in the Delayed Withdrawal router"""
         if len(eigenpod_to_owner := get_eigenpods_to_owners_mapping(self.event_db.db)) == 0:
             return balances
@@ -190,7 +190,7 @@ class EigenlayerBalances(ProtocolWithBalance):
         ])
         return balances
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """
         Query underlying balances for deposits in eigenlayer. Also for eigenpod
         owners and funds deposited in eigenpods. Also for any pending withdrawals

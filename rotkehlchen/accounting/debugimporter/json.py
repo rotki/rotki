@@ -1,13 +1,11 @@
 import json
 import logging
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from marshmallow import EXCLUDE, ValidationError
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.api.v1.schemas import ModifiableSettingsSchema
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -17,6 +15,11 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

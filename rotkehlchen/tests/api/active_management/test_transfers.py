@@ -1,9 +1,9 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
 
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     NodeName,
@@ -32,6 +32,9 @@ from rotkehlchen.types import (
     Location,
     TimestampMS,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.vcr(match_on=['match_rpc_calls'])

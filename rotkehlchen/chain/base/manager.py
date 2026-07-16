@@ -19,9 +19,9 @@ class BaseManager(EvmManager, CurveManagerMixin):
 
     def __init__(
             self,
-            node_inquirer: 'BaseInquirer',
-            premium: 'Premium | None' = None,
-            monerium: 'Monerium | None' = None,
+            node_inquirer: BaseInquirer,
+            premium: Premium | None = None,
+            monerium: Monerium | None = None,
     ) -> None:
         transactions = BaseTransactions(
             base_inquirer=node_inquirer,

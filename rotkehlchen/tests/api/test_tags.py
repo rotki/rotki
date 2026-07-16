@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 TEST_ADDRESS: Final = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'
 
 
-def test_add_and_query_tags(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_and_query_tags(rotkehlchen_api_server: APIServer) -> None:
     """Test that adding and querying tags via the API works fine"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     response = requests.get(
@@ -113,7 +113,7 @@ def test_add_and_query_tags(rotkehlchen_api_server: 'APIServer') -> None:
     assert db_response['private'].serialize() == tag2
 
 
-def test_add_tag_without_description(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_tag_without_description(rotkehlchen_api_server: APIServer) -> None:
     """Test that adding a tag without a description works"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     tag1: dict[str, str | None] = {
@@ -154,7 +154,7 @@ def test_add_tag_without_description(rotkehlchen_api_server: 'APIServer') -> Non
 
 @pytest.mark.parametrize('verb', ['PUT', 'PATCH'])
 def test_add_edit_tag_errors(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         verb: str,
 ) -> None:
     """Test that errors in input data while adding/editing a tag are handled correctly"""
@@ -311,7 +311,7 @@ def test_add_edit_tag_errors(
         )
 
 
-def test_edit_tags(rotkehlchen_api_server: 'APIServer') -> None:
+def test_edit_tags(rotkehlchen_api_server: APIServer) -> None:
     """Test that editing a tag via the REST API works fine"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -501,7 +501,7 @@ def test_edit_tags(rotkehlchen_api_server: 'APIServer') -> None:
     assert db_response['personal'].serialize() == tag2
 
 
-def test_delete_tags(rotkehlchen_api_server: 'APIServer') -> None:
+def test_delete_tags(rotkehlchen_api_server: APIServer) -> None:
     """Test that deleting a tag via the REST API works fine"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -596,7 +596,7 @@ def test_delete_tags(rotkehlchen_api_server: 'APIServer') -> None:
     assert db_response['private'].serialize() == tag2
 
 
-def test_delete_tag_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_delete_tag_errors(rotkehlchen_api_server: APIServer) -> None:
     """Test that errors in input data while deleting a tag are handled correctly"""
     # Name missing
     data: dict[str, float] = {}
@@ -627,7 +627,7 @@ def test_delete_tag_errors(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_delete_utilized_tag(rotkehlchen_api_server: 'APIServer') -> None:
+def test_delete_utilized_tag(rotkehlchen_api_server: APIServer) -> None:
     """
     Test that deleting a tag that is already utilized by an account
     also removes it from the account"""
@@ -713,7 +713,7 @@ def test_delete_utilized_tag(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_delete_all_tags(rotkehlchen_api_server: 'APIServer') -> None:
+def test_delete_all_tags(rotkehlchen_api_server: APIServer) -> None:
     """Tests that trying to delete all remaining tags of a blockchain account works."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # Add a tag
@@ -782,7 +782,7 @@ def test_delete_all_tags(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('gnosis_accounts', [[TEST_ADDRESS]])
 @pytest.mark.parametrize('optimism_accounts', [[TEST_ADDRESS]])
 @pytest.mark.parametrize('base_accounts', [[TEST_ADDRESS]])
-def test_editing_chain_type_tags(rotkehlchen_api_server: 'APIServer') -> None:
+def test_editing_chain_type_tags(rotkehlchen_api_server: APIServer) -> None:
     """Test that modifying the label and tags of an account using the
     chain type account endpoint works correctly removing previous values
     """
@@ -852,7 +852,7 @@ def test_editing_chain_type_tags(rotkehlchen_api_server: 'APIServer') -> None:
         assert result[0]['label'] == 'validators'
 
 
-def test_cannot_delete_reserved_contract_tag(rotkehlchen_api_server: 'APIServer') -> None:
+def test_cannot_delete_reserved_contract_tag(rotkehlchen_api_server: APIServer) -> None:
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, 'tagsresource'),
         json={'name': CONTRACT_TAG_NAME},
@@ -874,7 +874,7 @@ def test_cannot_delete_reserved_contract_tag(rotkehlchen_api_server: 'APIServer'
     )
 
 
-def test_cannot_rename_reserved_contract_tag(rotkehlchen_api_server: 'APIServer') -> None:
+def test_cannot_rename_reserved_contract_tag(rotkehlchen_api_server: APIServer) -> None:
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'tagsresource'),
         json={'name': CONTRACT_TAG_NAME, 'new_name': 'MyContract'},
@@ -896,7 +896,7 @@ def test_cannot_rename_reserved_contract_tag(rotkehlchen_api_server: 'APIServer'
     )
 
 
-def test_can_edit_contract_tag_appearance(rotkehlchen_api_server: 'APIServer') -> None:
+def test_can_edit_contract_tag_appearance(rotkehlchen_api_server: APIServer) -> None:
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'tagsresource'),
         json={

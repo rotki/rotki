@@ -13,9 +13,9 @@ if TYPE_CHECKING:
 class Odosv2Decoder(Odosv2DecoderBase):
     def __init__(
             self,
-            evm_inquirer: 'OptimismInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: OptimismInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

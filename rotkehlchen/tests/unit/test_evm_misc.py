@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.weth.constants import (
@@ -35,6 +34,7 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 
@@ -116,7 +116,7 @@ def test_is_safe_proxy(blockchain: ChainsAggregator):
     weight=ONE,
 ),)])
 def test_multicall_error_retry(
-        gnosis_inquirer: 'GnosisInquirer',
+        gnosis_inquirer: GnosisInquirer,
         gnosis_manager_connect_at_start: list[tuple],
 ):
     """Test multicall retries with smaller chunks on errors."""
@@ -168,7 +168,7 @@ def test_multicall_error_retry(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize(*ETHEREUM_WEB3_AND_ETHERSCAN_TEST_PARAMETERS)
 def test_query_raises_request_too_large_when_gas_limit_seen(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         ethereum_manager_connect_at_start: list[tuple],
 ) -> None:
     """Test that _query raises RequestTooLargeError when any node returns gas limit error,
@@ -192,7 +192,7 @@ def test_query_raises_request_too_large_when_gas_limit_seen(
 
 
 def test_get_transactions_populates_block_timestamp_cache(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
 ) -> None:
     tx = EvmTransaction(
         tx_hash=make_evm_tx_hash(),
@@ -219,7 +219,7 @@ def test_get_transactions_populates_block_timestamp_cache(
 
 
 def test_get_token_transaction_hashes_populates_block_timestamp_cache(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
 ) -> None:
     tx_hash = make_evm_tx_hash()
     block_number = 654321
@@ -238,7 +238,7 @@ def test_get_token_transaction_hashes_populates_block_timestamp_cache(
 
 
 def test_deserialize_evm_transaction_uses_cached_block_timestamp(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
 ) -> None:
     block_number = 999
     expected_timestamp = Timestamp(1711111111)

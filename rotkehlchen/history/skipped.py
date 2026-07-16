@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def get_skipped_external_events_summary(rotki: 'Rotkehlchen') -> dict[str, Any]:
+def get_skipped_external_events_summary(rotki: Rotkehlchen) -> dict[str, Any]:
     """Get a summary of skipped external events by location"""
     summary: dict[str, Any] = {'locations': {}}
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -39,7 +39,7 @@ def get_skipped_external_events_summary(rotki: 'Rotkehlchen') -> dict[str, Any]:
     return summary
 
 
-def export_skipped_external_events(rotki: 'Rotkehlchen', directory: Path | None) -> Path:
+def export_skipped_external_events(rotki: Rotkehlchen, directory: Path | None) -> Path:
     """
     Export the skipped events in a CSV file.
 
@@ -70,7 +70,7 @@ def export_skipped_external_events(rotki: 'Rotkehlchen', directory: Path | None)
     return Path(newfilepath)
 
 
-def reprocess_skipped_external_events(rotki: 'Rotkehlchen') -> tuple[int, int]:
+def reprocess_skipped_external_events(rotki: Rotkehlchen) -> tuple[int, int]:
     """Go through the skipped external events, try to re-process them and if any
     are successfully reprocessed them remove them from the table
 

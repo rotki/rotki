@@ -68,7 +68,7 @@ def check_proper_unlock_result(
             assert response_data['settings'][setting_to_check] == value
 
 
-def check_user_status(api_server: 'APIServer') -> dict[str, str]:
+def check_user_status(api_server: APIServer) -> dict[str, str]:
     # Check users status
     response = requests.get(
         api_url_for(api_server, 'usersresource'),
@@ -77,7 +77,7 @@ def check_user_status(api_server: 'APIServer') -> dict[str, str]:
 
 
 def test_loggedin_user_querying(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
         data_dir: Path,
 ) -> None:
@@ -94,7 +94,7 @@ def test_loggedin_user_querying(
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_async_login_holds_login_lock(rotkehlchen_api_server: 'APIServer') -> None:
+def test_async_login_holds_login_lock(rotkehlchen_api_server: APIServer) -> None:
     """Test that the login lock is held while an async login actually runs the unlock
     logic, and not just while the async task is dispatched. Otherwise two quick
     successive login/create-user requests can run the unlock logic concurrently."""
@@ -121,7 +121,7 @@ def test_async_login_holds_login_lock(rotkehlchen_api_server: 'APIServer') -> No
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 def test_not_loggedin_user_querying(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         start_with_logged_in_user: bool,
         username: str,
         data_dir: Path,
@@ -144,7 +144,7 @@ def test_not_loggedin_user_querying(
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 def test_user_creation(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         start_with_logged_in_user: bool,
         data_dir: Path,
 ) -> None:
@@ -190,7 +190,7 @@ def test_user_creation(
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 def test_user_creation_with_no_analytics(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         start_with_logged_in_user: bool,
         data_dir: Path,
 ) -> None:
@@ -230,7 +230,7 @@ def test_user_creation_with_no_analytics(
 )
 def test_user_creation_permission_error(
         mock_path_mkdir: mock.MagicMock,
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         use_clean_caching_directory: bool,
         start_with_logged_in_user: bool,
 ) -> None:
@@ -254,7 +254,7 @@ def test_user_creation_permission_error(
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 def test_user_creation_with_premium_credentials(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         start_with_logged_in_user: bool,
         data_dir: Path,
 ) -> None:
@@ -303,7 +303,7 @@ def test_user_creation_with_premium_credentials(
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 def test_user_creation_with_invalid_premium_credentials(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         data_dir: Path,
 ) -> None:
     """
@@ -393,7 +393,7 @@ def test_user_creation_with_invalid_premium_credentials(
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 def test_user_creation_errors(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         start_with_logged_in_user: bool,
         data_dir: Path,
 ) -> None:
@@ -533,7 +533,7 @@ def test_user_creation_errors(
 
 
 def test_user_creation_with_already_loggedin_user(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
 ) -> None:
     """Test that creating a user while another one is logged in fails"""
@@ -555,7 +555,7 @@ def test_user_creation_with_already_loggedin_user(
 
 
 def test_user_password_change(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
         db_password: str,
 ) -> None:
@@ -647,7 +647,7 @@ def test_user_password_change(
 
 
 def test_user_logout(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
         db_password: str,
 ) -> None:
@@ -719,7 +719,7 @@ def test_user_logout(
 
 
 def test_user_logout_under_concurrent_api_load(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
 ) -> None:
     """Stress test: hammer the API with concurrent readers and writers on real
@@ -784,7 +784,7 @@ def test_user_logout_under_concurrent_api_load(
 
 
 def test_user_login(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
         db_password: str,
         data_dir: Path,
@@ -1005,7 +1005,7 @@ def test_user_login(
 
 
 def test_user_set_premium_credentials(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
 ) -> None:
     """Test that setting the premium credentials endpoint works.
@@ -1039,7 +1039,7 @@ def test_user_set_premium_credentials(
 
 
 def test_user_del_premium_credentials(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
 ) -> None:
     """Test that removing the premium credentials endpoint works.
@@ -1083,7 +1083,7 @@ def test_user_del_premium_credentials(
 def test_user_login_user_dir_permission_error(
         mock_path_exists: bool,
         start_with_logged_in_user: bool,
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         data_dir: Path,  # pylint: disable=unused-argument
 ) -> None:
     """Test that user login with userdir path permission errors is handled properly"""
@@ -1120,7 +1120,7 @@ def test_user_login_user_dir_permission_error(
 def test_user_login_db_permission_error(
         mock_db_conn: DBConnection,
         start_with_logged_in_user: bool,
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         data_dir: Path,  # pylint: disable=unused-argument
 ) -> None:
     """Test that user login with db path permission errors is handled properly"""
@@ -1149,7 +1149,7 @@ def test_user_login_db_permission_error(
 
 
 def test_user_set_premium_credentials_errors(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
 ) -> None:
     """Test that setting the premium credentials endpoint reacts properly to bad input"""
@@ -1180,7 +1180,7 @@ def test_user_set_premium_credentials_errors(
 
 
 def test_users_by_name_endpoint_errors(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
         db_password: str,
 ) -> None:

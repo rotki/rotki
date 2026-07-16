@@ -1,10 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
-from requests import Response
 from sqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
@@ -30,6 +28,9 @@ from rotkehlchen.utils.misc import from_gwei, ts_sec_to_ms
 from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
+    from requests import Response
+
+    from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -70,8 +71,8 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
     """Base class for all Etherscan implementations"""
     def __init__(
             self,
-            database: 'DBHandler',
-            msg_aggregator: 'MessagesAggregator',
+            database: DBHandler,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         ExternalServiceWithRecommendedApiKey.__init__(
             self,

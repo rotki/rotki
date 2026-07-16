@@ -6,12 +6,12 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.types import ApiSecret
 
 import requests
 from eth_utils.address import to_checksum_address
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -38,7 +38,7 @@ class SignatureGeneratorMixin:
     """
 
     # Type annotation for mypy - the implementing class must have this attribute
-    secret: 'ApiSecret'
+    secret: ApiSecret
 
     def generate_hmac_signature(
             self,

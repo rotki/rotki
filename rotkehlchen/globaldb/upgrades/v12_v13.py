@@ -14,7 +14,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log(name='globaldb v12->v13 upgrade')
-def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+def migrate_to_v13(connection: DBConnection, progress_handler: DBUpgradeProgressHandler) -> None:
     """This globalDB upgrade does the following:
     - Add new token kinds (SPL Tokens & NFTs) for the solana ecosystem.
     - Add solana_tokens table and migrate solana tokens to that.
@@ -23,7 +23,7 @@ def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
 
     This upgrade takes place in v1.40.0"""  # noqa: E501
     @progress_step('Add new token kinds for Solana')
-    def _update_token_kinds_to_include_solana(write_cursor: 'DBCursor') -> None:
+    def _update_token_kinds_to_include_solana(write_cursor: DBCursor) -> None:
         write_cursor.executescript("""
             /* SPL TOKEN */
             INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('D', 4);
@@ -32,7 +32,7 @@ def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         """)
 
     @progress_step('Add solana tokens table and populate from CSV')
-    def _add_and_populate_solana_tokens(write_cursor: 'DBCursor') -> None:
+    def _add_and_populate_solana_tokens(write_cursor: DBCursor) -> None:
         """Create solana tokens table and update asset identifiers to use new solana format"""
         write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS solana_tokens (
@@ -74,7 +74,7 @@ def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         write_cursor.execute('DELETE FROM assets WHERE identifier IN (?, ?)', ('TRISIG', 'HODLSOL'))  # noqa: E501
 
     @progress_step('Move user-added solana tokens to different type')
-    def _migrate_user_solana_tokens(write_cursor: 'DBCursor') -> None:
+    def _migrate_user_solana_tokens(write_cursor: DBCursor) -> None:
         if len(user_tokens := write_cursor.execute(
             'SELECT identifier FROM assets WHERE type = ? AND identifier NOT LIKE ?',
             ('Y', 'solana%'),
@@ -99,7 +99,7 @@ def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         )
 
     @progress_step('Update token protocols to use counterparty identifiers')
-    def _update_token_protocols_to_counterparties(write_cursor: 'DBCursor') -> None:
+    def _update_token_protocols_to_counterparties(write_cursor: DBCursor) -> None:
         """Updates token protocol identifiers to use their corresponding counterparty values."""
         write_cursor.execute("""
             UPDATE evm_tokens SET protocol = CASE protocol
@@ -127,7 +127,7 @@ def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         """)
 
     @progress_step('Migrate balancer gauge cache entries to version-specific keys')
-    def _migrate_balancer_gauges_cache_entries(write_cursor: 'DBCursor') -> None:
+    def _migrate_balancer_gauges_cache_entries(write_cursor: DBCursor) -> None:
         """Migrate BALANCER_GAUGES cache entries to separate V1/V2 cache types.
 
         Old format: BALANCER_GAUGES<chain_id><version>
@@ -154,7 +154,7 @@ def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         write_cursor.execute("DELETE FROM general_cache WHERE key LIKE 'BALANCER_GAUGES%'")
 
     @progress_step('Combine exchange asset mappings')
-    def _combine_exchange_asset_mappings(write_cursor: 'DBCursor') -> None:
+    def _combine_exchange_asset_mappings(write_cursor: DBCursor) -> None:
         """Combine the mappings for exchanges that have multiple locations but common mappings."""
         for old_location, new_location in (
             ('S', 'E'),  # BinanceUS, Binance

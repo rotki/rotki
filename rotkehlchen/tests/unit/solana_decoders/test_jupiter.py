@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['FvTqiyvB52rmV82jj9Wc5efLyuWht9vprr8bivDBzGnV']])
 def test_swap_token_to_token(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('4G1gvudg2PyQV17v8agjHKYJQA9bxxJtMWEvKzk1Lb9k5yHTj3dnrvDGEiaDT7qSYePvswBrUq1bC5j4iPbk5gzQ')  # noqa: E501
@@ -80,7 +80,7 @@ def test_swap_token_to_token(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['DYH6x4JoTXUUc4GJUcBYv4gPRApbfTsoZEeD318ernQY']])
 def test_swap_with_temp_token_account(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     """This swaps from CORL to Wrapped SOL and uses a temporary token account in some of its
@@ -126,7 +126,7 @@ def test_swap_with_temp_token_account(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY']])
 def test_rfq_swap(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('5vBFfTGrcdkE7ZdsUDSU2kRkhoFp4EgKtLLB6h2m1uQoG5wCddCkFGnNjXaHrV2r1kZ8CpJfh7UcWJ9tFXAyKc8Q')  # noqa: E501
@@ -159,7 +159,7 @@ def test_rfq_swap(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['AV6VwqhnPSPJQU9i4xfHNscNkkm5GYSP4TajCKS4LAhh']])
 def test_route_v2(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('5yFvtkWX3G9ANAvXgc9jtd7EgTE6x36XhC81ochM9CFTneBYooP8fSPVN3eyYQFp7361xdGGey8MQ7QfiDGcqBci')  # noqa: E501
@@ -214,7 +214,7 @@ def test_route_v2(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['HQd6KuZ1JjHDLkNmsX7dwdobHPZ4VkXHwRCjGenbwCzq']])
 def test_route_v2_with_multiple_underlying_swaps(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     """This swap uses the route_v2 instruction, with multiple underlying swaps in the route that
@@ -321,7 +321,7 @@ def test_route_v2_with_multiple_underlying_swaps(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['FD7ocZaUHGHcqArBmLPVq8ByWsY29MVctfU4Nhjfrr4J']])
 def test_exact_out_route(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('s5sthr57drUS4gyg5SVaCrbXnAEE584BYBGaYgKRMkUgERZupJ9KxN3cQ8RDR1cNiASjuTM5svQWiCGL5V5Ds4y')  # noqa: E501
@@ -368,7 +368,7 @@ def test_exact_out_route(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['AS25zph72ZmhtLAz2LjEF9qT8vv5x29GJsXVj1DBNKrw']])
 def test_exact_out_route_v2(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('5XYf7V6rNjRuStgG1ELmug5K5ErGWtfZBa4msAdqw1PeYWAYEg6qcJyFqoHJ5uNmNp3B6YdnQgdyQrpg2XZUDE3q')  # noqa: E501
@@ -412,7 +412,7 @@ def test_exact_out_route_v2(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['7HK4mhjjr3S6BpkWyzGgtjV3X5sgavRewg422GTrF3vw']])
 def test_shared_accounts_route(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('62osuRs27DqDwWdgLR7VXQmTntc3h8ZKMWAr5Jfe8BG6Yt7LS46rptyN2queAmPeWM6w3PbeQ7YADnPCYjx3NPhQ')  # noqa: E501
@@ -458,7 +458,7 @@ def test_shared_accounts_route(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['FkzRQKW8Mzip4xXHamibLZB28sjqN9ZLFacQdbuVEYxa']])
 def test_shared_accounts_route_v2(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('2tWRF2xVhaXKBTsTssiLhAchpJN8GbqeM3uKHdPBuTtbxzCXngGKwiQCfcekCk1XNmcXZTHwi8BSCjTGLoYh1DZv')  # noqa: E501
@@ -502,7 +502,7 @@ def test_shared_accounts_route_v2(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['E2MPTDnFPNiCRmbJGKYSYew48NWRGVNfHjoiibFP5VL2']])
 def test_arbitrage_swap(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     """This transaction has two jupiter swap route instructions. In the first one it swaps
@@ -584,7 +584,7 @@ def test_arbitrage_swap(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY']])
 def test_earn_deposit(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('2Cxrz8NWZvN7r13GbahJPHVjL21Japmp7ThvpA2AzCjwznA72Vbb2mkD4crGVnXEajJDVHJpkC1WueGMaKJToTks')  # noqa: E501
@@ -629,7 +629,7 @@ def test_earn_deposit(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['5P8QZdPo2pipnpPQ6njUqjLH9kRnRgweDJptdDTu9iZT']])
 def test_earn_withdraw(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('4Tnpv3ZgMcUTcYdq6tPkR1y9kHqMtXtscR5S22A5hb7diKxUH81fit2FRQZ2iaYfocMj7PJP5XysnwXmTDSt84pG')  # noqa: E501
@@ -674,7 +674,7 @@ def test_earn_withdraw(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['FPjx1P5RUwKGESWoksupbNexMiCzwsYhazoN268kpBvt']])
 def test_deposit_collateral_token(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('2D9xoA7oaXvSrABH4Ei1GFkvQRTteSKd482Ho66QR3P6WVrZ54ec8pNqn2mM545FQSS4L2pH6fkkH8fdMjdSV7Ui')  # noqa: E501
@@ -731,7 +731,7 @@ def test_deposit_collateral_token(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['8TWYdXrcz6uTyih9yxABWhczap4EDGY9gipXh62VQRVG']])
 def test_withdraw_collateral_token(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('duP4A5qSZKr6W371xXQMRqog1s85nzA1ejRedkPMDoBQgdLECTH5qGeVSAet66xyh2fUctFC69b5XMiUv7KkmGZ')  # noqa: E501
@@ -765,7 +765,7 @@ def test_withdraw_collateral_token(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY']])
 def test_deposit_collateral_native(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('5P8xF7oLokSYkat4ShGghmqWZFR37odt5XKyM5cZEJbPiNUJkqpB6o8kpmTScmfMokHUnnBcfNGFoorjNjTYnnxB')  # noqa: E501
@@ -822,7 +822,7 @@ def test_deposit_collateral_native(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['EgE4Gn3FoV3X4oC4jNziFpSbzThUUeEMBYjDpiUzcsFo']])
 def test_withdraw_collateral_native(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('4AS3tNA6ncWCQMHHNzTmkXyMSCnfgSCrhALwdP6MExDxJT2AkCXNRYrLo7hsr2w2KXUD3NeJJa3tZA8HzR9sXYiN')  # noqa: E501
@@ -856,7 +856,7 @@ def test_withdraw_collateral_native(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['5Y3zm2KGufcWD9c5T6n7he1mnX8bYQfWmP38nZS6bX5G']])
 def test_borrow_token(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('2GfJEnDHUXQUBXxH9SZT7XuVQrrR9ZNLLRzz5Nj47iBqvSFr8ZJk7iB6MSWPiXF4aATjhomMXxj7YdAbRjiNJGg2')  # noqa: E501
@@ -890,7 +890,7 @@ def test_borrow_token(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['8LWBRWyhQtqNZozDWuaiYVvFEk8aY1bBVxZm3FF4ZLYy']])
 def test_repay_token(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('FnFdc9MtfQE58iqaQbRCjngTQZeTZ7wfokaQADq6W6sbvFSXwF6aTUpzLEYaxJCqimQyqfjRQLfCLFcadyXWsK5')  # noqa: E501
@@ -924,7 +924,7 @@ def test_repay_token(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['GEh1BykeeCSrrjreChtChxcpwfdou3SgK91BDcah33BR']])
 def test_borrow_native(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('4ecKm513Wi1axUwehXeWbXUk8gQxkAPPJG2Jn87DtWBoZ5mN9R8UyurTbCsTVmbH5UUasYEsykCjaJP8ucMTpQoo')  # noqa: E501
@@ -958,7 +958,7 @@ def test_borrow_native(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['HXdEpiutwf6ri5NaTvY1Tfx7JfzTA8MkBHyV9vCn3XAC']])
 def test_repay_native(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     signature = deserialize_tx_signature('2VvCxb438uarJi9duWbCKegGNEzg2exiciNezWFD56KVNvDWxe16tmoBZsqX5nKFhcAsgFuBQUaEQGJvWjTfEJJd')  # noqa: E501

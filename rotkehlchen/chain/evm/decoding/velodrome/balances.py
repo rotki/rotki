@@ -17,7 +17,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
@@ -26,6 +25,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 logger = logging.getLogger(__name__)
@@ -40,9 +40,9 @@ class VelodromeLikeBalances(ProtocolWithGauges):
 
     def __init__(
             self,
-            evm_inquirer: 'OptimismInquirer | BaseInquirer',
-            tx_decoder: 'OptimismTransactionDecoder | BaseTransactionDecoder',
-            protocol_token: 'EvmToken',
+            evm_inquirer: OptimismInquirer | BaseInquirer,
+            tx_decoder: OptimismTransactionDecoder | BaseTransactionDecoder,
+            protocol_token: EvmToken,
             voting_escrow_address: ChecksumEvmAddress,
             counterparty: PROTOCOLS_WITH_BALANCES,
     ):
@@ -56,7 +56,7 @@ class VelodromeLikeBalances(ProtocolWithGauges):
         self.protocol_token = protocol_token
         self.voting_escrow_address = voting_escrow_address
 
-    def get_gauge_address(self, event: 'EvmEvent') -> ChecksumEvmAddress | None:
+    def get_gauge_address(self, event: EvmEvent) -> ChecksumEvmAddress | None:
         return event.address if event.asset != self.protocol_token else None
 
     def query_balances(self) -> BalancesSheetType:

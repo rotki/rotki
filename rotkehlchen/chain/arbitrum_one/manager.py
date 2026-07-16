@@ -19,9 +19,9 @@ class ArbitrumOneManager(EvmManager, CurveManagerMixin):
 
     def __init__(
             self,
-            node_inquirer: 'ArbitrumOneInquirer',
-            premium: 'Premium | None' = None,
-            monerium: 'Monerium | None' = None,
+            node_inquirer: ArbitrumOneInquirer,
+            premium: Premium | None = None,
+            monerium: Monerium | None = None,
     ) -> None:
         transactions = ArbitrumOneTransactions(
             arbitrum_one_inquirer=node_inquirer,

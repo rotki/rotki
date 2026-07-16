@@ -1,9 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final
 
-from requests import Response
-
-from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -22,6 +19,9 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
+    from requests import Response
+
+    from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -44,8 +44,8 @@ ROUTESCAN_RATE_LIMIT_BURST: Final = 20
 class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
     def __init__(
             self,
-            database: 'DBHandler',
-            msg_aggregator: 'MessagesAggregator',
+            database: DBHandler,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         ExternalServiceWithApiKey.__init__(
             self,

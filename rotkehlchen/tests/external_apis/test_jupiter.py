@@ -19,7 +19,7 @@ JUPUSD_SOLANA: SolanaAddress = SolanaAddress('JuprjznTrTSp2UFa3ZBUFgwdAmtZCq4MQC
 
 
 @pytest.fixture(name='jupiter_api')
-def fixture_jupiter_api(database: 'DBHandler') -> Jupiter:
+def fixture_jupiter_api(database: DBHandler) -> Jupiter:
     return Jupiter(database=database)
 
 

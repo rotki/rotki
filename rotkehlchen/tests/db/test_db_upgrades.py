@@ -2626,7 +2626,7 @@ def test_upgrade_db_44_to_45(user_data_dir, messages_aggregator):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
+def test_upgrade_db_45_to_46(user_data_dir: Path, messages_aggregator):
     """Test upgrading the DB from version 45 to version 46"""
     _use_prepared_db(user_data_dir, 'v45_rotkehlchen.db')
     db_v45 = _init_db_with_target_version(
@@ -2739,7 +2739,7 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
 def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
     """Test upgrading the DB from version 46 to version 47. This happened in 1.38"""
 
-    def _check_tokens_existence(user_db_cursor: 'DBCursor', expect_removed: bool = False):
+    def _check_tokens_existence(user_db_cursor: DBCursor, expect_removed: bool = False):
         """Assert whether the tokens are in the db or not depending on `expect_removed`"""
         for table, column, count in [
             ('assets', 'identifier', 2),

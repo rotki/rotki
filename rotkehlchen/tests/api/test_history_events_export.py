@@ -3,13 +3,12 @@ import re
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
 import requests
 
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.constants import (
@@ -37,6 +36,9 @@ from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test
 from rotkehlchen.tests.utils.history_base_entry import add_entries
 from rotkehlchen.types import Location, TimestampMS
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.fixture(name='historical_price_oracles_order')

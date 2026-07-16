@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import Asset
@@ -23,6 +22,8 @@ from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import Location, TimestampMS
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -61,7 +62,7 @@ def _insert_duplicate_group(
 
 
 def test_find_customized_event_duplicate_groups_filters_group_ids_in_sql(
-        database: 'DBHandler',
+        database: DBHandler,
         monkeypatch,
 ) -> None:
     """Ensure the group identifier filter is applied in the SQL query."""
@@ -110,7 +111,7 @@ def test_find_customized_event_duplicate_groups_filters_group_ids_in_sql(
     )
 
 
-def test_customized_event_deposit(database: 'DBHandler') -> None:
+def test_customized_event_deposit(database: DBHandler) -> None:
     """Regression test for customized event depositing in pool
 
     tx in ethreum 0x1fc371c505230e0a57de8f60100b6e8ebeb64ee73910ed791900f9f719b349b5"""
@@ -211,7 +212,7 @@ def test_customized_event_deposit(database: 'DBHandler') -> None:
     assert event.group_identifier not in manual_review_group_ids
 
 
-def test_ignored_groups_excluded_from_detection(database: 'DBHandler') -> None:
+def test_ignored_groups_excluded_from_detection(database: DBHandler) -> None:
     """Verify that groups marked as ignored in key_value_cache are excluded by the SQL query."""
     with database.conn.write_ctx() as write_cursor:
         group_id_1, _ = _insert_duplicate_group(

@@ -1,11 +1,9 @@
 import csv
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_BSQ, A_BTC
 from rotkehlchen.data_import.utils import BaseExchangeImporter
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -24,13 +22,16 @@ from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Price, Ti
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 class BisqTradesImporter(BaseExchangeImporter):
     """Bisq CSV importer"""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Bisq')
 
     def _consume_bisq_trade(

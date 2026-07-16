@@ -3,7 +3,6 @@ import hashlib
 import hmac
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlparse
 
@@ -16,7 +15,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import (
@@ -45,7 +43,6 @@ from rotkehlchen.types import (
     Location,
     Timestamp,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     iso8601ts_to_timestamp,
     timestamp_to_iso8601,
@@ -56,9 +53,13 @@ from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 PRIME_BASE_URL: Final = 'https://api.prime.coinbase.com/v1'
@@ -277,7 +278,7 @@ class Coinbaseprime(ExchangeInterface):
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
             passphrase: str,
     ):
@@ -319,7 +320,7 @@ class Coinbaseprime(ExchangeInterface):
         else:
             return True, ''
 
-    def edit_exchange_credentials(self, credentials: 'ExchangeAuthCredentials') -> bool:
+    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         if super().edit_exchange_credentials(credentials) is False:
             return False
 
@@ -522,7 +523,7 @@ class Coinbaseprime(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         events: list[HistoryEvent | AssetMovement | SwapEvent] = []
         for portfolio_id in self._get_portfolio_ids():
             events.extend(self._query_paginated_endpoint(

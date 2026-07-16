@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from .tools import BaseDecoderTools
 
@@ -11,9 +11,9 @@ T_NodeInquirer = TypeVar('T_NodeInquirer')
 T_DecoderTools = TypeVar('T_DecoderTools', bound=BaseDecoderTools)
 
 
-class DecoderInterface(ABC, Generic[T_Address, T_NodeInquirer, T_DecoderTools]):
+class DecoderInterface[T_Address, T_NodeInquirer, T_DecoderTools: BaseDecoderTools](ABC):
 
-    def __init__(self, node_inquirer: 'T_NodeInquirer', base_tools: 'T_DecoderTools') -> None:
+    def __init__(self, node_inquirer: T_NodeInquirer, base_tools: T_DecoderTools) -> None:
         self.base = base_tools
         self.node_inquirer = node_inquirer
 
@@ -25,5 +25,5 @@ class DecoderInterface(ABC, Generic[T_Address, T_NodeInquirer, T_DecoderTools]):
 
     @staticmethod
     @abstractmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         """Subclasses implement this to specify which counterparties they introduce."""

@@ -1,6 +1,5 @@
 import csv
 from itertools import count
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 from uuid import uuid4
 
@@ -16,7 +15,6 @@ from rotkehlchen.data_import.utils import (
     detect_duplicate_event,
     hash_csv_row,
 )
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -36,7 +34,10 @@ from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 def remap_header(fieldnames: list[str]) -> list[str]:
@@ -89,7 +90,7 @@ def exchange_row_to_location(entry: str) -> Location:
 class CointrackingImporter(BaseExchangeImporter):
     """Cointracking CSV importer"""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Cointracking')
         self.usd = A_USD.resolve_to_asset_with_oracles()
 

@@ -5,7 +5,7 @@ import tempfile
 import time
 from contextlib import suppress
 from copy import deepcopy
-from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -128,6 +128,9 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 TABLES_AT_INIT = [
     'assets',
@@ -2034,7 +2037,7 @@ def test_fresh_db_adds_version(user_data_dir, sql_vm_instructions_cb):
     db.logout()
 
 
-def test_db_schema_sanity_check(database: 'DBHandler', caplog) -> None:
+def test_db_schema_sanity_check(database: DBHandler, caplog) -> None:
     connection = database.conn
     # by default should run without problems
     connection.schema_sanity_check()
@@ -2068,7 +2071,7 @@ def test_db_schema_sanity_check(database: 'DBHandler', caplog) -> None:
     assert "Tables {'user_notes'} are missing" in str(exception_info.value)
 
 
-def test_db_integrity_check(database: 'DBHandler') -> None:
+def test_db_integrity_check(database: DBHandler) -> None:
     """The integrity check on a healthy user DB should pass and on a corrupted file fail."""
     ok, error = database.db_integrity_check()
     assert ok is True
@@ -2112,7 +2115,7 @@ def test_evaluate_integrity_check_rows() -> None:
     assert error == 'error a; error b'
 
 
-def test_db_add_skipped_external_event_twice(database: 'DBHandler') -> None:
+def test_db_add_skipped_external_event_twice(database: DBHandler) -> None:
     """Test that adding same skipped event twice in the DB does not duplicate it"""
     data = {'event': 'someid', 'time': 'atime'}
     with database.user_write() as write_cursor:
@@ -2126,7 +2129,7 @@ def test_db_add_skipped_external_event_twice(database: 'DBHandler') -> None:
             assert write_cursor.execute('SELECT COUNT(*) FROM skipped_external_events').fetchone()[0] == 1  # noqa: E501
 
 
-def test_ignored_assets_cache_consistency(database: 'DBHandler') -> None:
+def test_ignored_assets_cache_consistency(database: DBHandler) -> None:
     """The ignored assets cache must never be filled from uncommitted or stale data.
 
     A task inside a write transaction reads its own uncommitted ignored assets
@@ -2165,7 +2168,7 @@ def test_ignored_assets_cache_consistency(database: 'DBHandler') -> None:
         ],
     },
 ])
-def test_startup_check_settings(database: 'DBHandler') -> None:
+def test_startup_check_settings(database: DBHandler) -> None:
     """
     Test that after first connection we remove locations from the non syncing exchanges setting
     that are no longer available in the app

@@ -1,8 +1,6 @@
 import logging
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
@@ -16,19 +14,22 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.misc import DataIntegrityError, RemoteError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 from .constants import CPT_RAINBOW_SWAPS, RAINBOW_ROUTER_CONTRACT
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -39,9 +40,9 @@ class RainbowDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -55,9 +56,9 @@ class RainbowDecoder(EvmDecoderInterface):
             transaction: EvmTransaction,
             fee_amount: FVal,
             fee_asset: CryptoAsset,
-            decoded_events: list['EvmEvent'],
-            in_event: Optional['EvmEvent'],
-            out_event: Optional['EvmEvent'],
+            decoded_events: list[EvmEvent],
+            in_event: EvmEvent | None,
+            out_event: EvmEvent | None,
     ) -> None:
         """Create and append a fee event to the decoded events list."""
         fee_event = self.base.make_event(
@@ -78,10 +79,10 @@ class RainbowDecoder(EvmDecoderInterface):
 
     def _process_swap(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """
         Process a swap transaction by decoding the relevant events and logs.
 
@@ -136,11 +137,11 @@ class RainbowDecoder(EvmDecoderInterface):
 
     def _find_fees(
             self,
-            out_event: 'EvmEvent',
-            in_event: 'EvmEvent',
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
+            out_event: EvmEvent,
+            in_event: EvmEvent,
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
     ) -> None:
         """Check transfers to find the fee taken from rainbow. They can be ETH fees in which
         case we check the internal transactions or token fees which we check in the log events

@@ -23,10 +23,10 @@ class SummerFiCommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            account_factory: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            account_factory: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -61,7 +61,7 @@ class SummerFiCommonDecoder(EvmDecoderInterface):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.account_factory: (self._decode_account_creation,)}
 
     @staticmethod

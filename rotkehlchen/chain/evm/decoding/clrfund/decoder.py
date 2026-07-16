@@ -2,14 +2,12 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.arbitrum_one.modules.clrfund.constants import (
     CLRFUND_CPT_DETAILS,
     CPT_CLRFUND,
     REQUEST_SUBMITTED_ABI,
 )
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.evm.decoding.constants import FUNDS_CLAIMED
 from rotkehlchen.chain.evm.decoding.interfaces import CommonGrantsDecoderMixin
@@ -23,12 +21,14 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset, CryptoAsset
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -39,9 +39,9 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,  # pylint: disable=unused-argument
             rounds_data: list[tuple[ChecksumEvmAddress, ChecksumEvmAddress, str, Asset]],
     ) -> None:
         """Initialize Clrfund decoder. Rounds exist in arbitrum and gnosis chains

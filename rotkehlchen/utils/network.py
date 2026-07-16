@@ -1,8 +1,7 @@
 import json
 import logging
-from collections.abc import Callable
 from http import HTTPStatus
-from typing import Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -13,6 +12,9 @@ from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

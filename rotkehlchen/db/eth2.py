@@ -1,7 +1,6 @@
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Collection
 from typing import TYPE_CHECKING, Literal
 
 from sqlcipher3 import dbapi2 as sqlcipher
@@ -48,6 +47,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from collections.abc import Collection
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
@@ -57,29 +58,29 @@ log = RotkehlchenLogsAdapter(logger)
 
 class DBEth2:
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         self.db = database
 
     def validator_exists(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             field: Literal['validator_index', 'public_key'],
             arg: int | Eth2PubKey,
     ) -> bool:
         cursor.execute(f'SELECT COUNT(*) from eth2_validators WHERE {field}=?', (arg,))
         return cursor.fetchone()[0] == 1  # count always returns
 
-    def get_active_pubkeys_to_ownership(self, cursor: 'DBCursor') -> dict[Eth2PubKey, FVal]:
+    def get_active_pubkeys_to_ownership(self, cursor: DBCursor) -> dict[Eth2PubKey, FVal]:
         return {x[0]: FVal(x[1]) for x in cursor.execute('SELECT public_key, ownership_proportion FROM eth2_validators WHERE exited_timestamp IS NULL')}  # noqa: E501
 
-    def get_validators(self, cursor: 'DBCursor') -> list[ValidatorDetails]:
+    def get_validators(self, cursor: DBCursor) -> list[ValidatorDetails]:
         cursor.execute(
             'SELECT validator_index, public_key, validator_type, ownership_proportion, withdrawal_address, '  # noqa: E501
             'activation_timestamp, withdrawable_timestamp, exited_timestamp FROM eth2_validators;',
         )
         return [ValidatorDetails.deserialize_from_db(x) for x in cursor]
 
-    def get_consolidated_validators(self, cursor: 'DBCursor') -> dict[int, int]:
+    def get_consolidated_validators(self, cursor: DBCursor) -> dict[int, int]:
         """Returns a mapping of source validator index to target validator index
         for all validators that have been consolidated.
         """
@@ -100,7 +101,7 @@ class DBEth2:
 
     def get_validators_with_status(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             validator_indices: set[int] | None,
     ) -> list[ValidatorDetailsWithStatus]:
         result: list[ValidatorDetailsWithStatus] = []
@@ -126,7 +127,7 @@ class DBEth2:
 
         return result
 
-    def get_active_validator_indices(self, cursor: 'DBCursor') -> set[int]:
+    def get_active_validator_indices(self, cursor: DBCursor) -> set[int]:
         """Returns the indices of the tracked validators that we know have not exited and are not consolidated"""  # noqa: E501
         consolidated_indices = set(self.get_consolidated_validators(cursor))
         cursor.execute(
@@ -135,7 +136,7 @@ class DBEth2:
         return {x[0] for x in cursor} - consolidated_indices
 
     @staticmethod
-    def get_exited_validator_indices(cursor: 'DBCursor', validator_indices: Collection[int] | None) -> set[int]:  # noqa: E501
+    def get_exited_validator_indices(cursor: DBCursor, validator_indices: Collection[int] | None) -> set[int]:  # noqa: E501
         """Returns the indices of tracked validators that we know have exited.
         If `validator_indices` is provided, results are filtered to include only those indices.
         """
@@ -154,7 +155,7 @@ class DBEth2:
 
     def get_associated_with_addresses_validator_indices(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             addresses: list[ChecksumEvmAddress],
     ) -> set[int]:
         """Returns indices of validators that are associated with the given addresses.
@@ -172,7 +173,7 @@ class DBEth2:
 
     def set_validator_exit(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             index: int,
             withdrawable_timestamp: Timestamp,
     ) -> None:
@@ -202,7 +203,7 @@ class DBEth2:
 
     def add_or_update_validators_except_ownership(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             validators: list[ValidatorDetails],
     ) -> None:
         """Adds or update validator data but keeps the ownership already in the DB"""
@@ -214,7 +215,7 @@ class DBEth2:
 
     def add_or_update_validators(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             validators: list[ValidatorDetails],
             updatable_attributes: tuple[str, ...] = ('validator_index', 'ownership_proportion', 'validator_type', 'withdrawal_address', 'activation_timestamp', 'withdrawable_timestamp', 'exited_timestamp'),  # noqa: E501
     ) -> None:
@@ -249,7 +250,7 @@ class DBEth2:
                     validator.serialize_for_db(),
                 )
 
-    def edit_validator_ownership(self, write_cursor: 'DBCursor', validator_index: int, ownership_proportion: FVal) -> None:  # noqa: E501
+    def edit_validator_ownership(self, write_cursor: DBCursor, validator_index: int, ownership_proportion: FVal) -> None:  # noqa: E501
         """Edits the ownership proportion for a validator identified by its index.
         May raise:
         - InputError if we try to edit a non existing validator.
@@ -314,7 +315,7 @@ class DBEth2:
 
     @staticmethod
     def _validator_stats_process_queries(
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             amount_querystr: str,
             filter_query: EthStakingEventFilterQuery,
     ) -> dict[int, FVal]:
@@ -329,7 +330,7 @@ class DBEth2:
 
     def group_validators_by_type(
             self,
-            database: 'DBHandler',
+            database: DBHandler,
             validator_indices: set[int] | None,
     ) -> tuple[list[int], list[int]]:
         """Group validators into two categories: non-accumulating (0x00, 0x01) and accumulating (0x02).
@@ -360,7 +361,7 @@ class DBEth2:
 
     def _query_chunked_withdrawal_amount_sums(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             from_ts: Timestamp,
             to_ts: Timestamp,
             amount_querystr: str,
@@ -621,7 +622,7 @@ class DBEth2:
 
     @staticmethod
     def _load_eth2_validator_cache(
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             from_ts: Timestamp,
             to_ts: Timestamp,
             validator_indices: list[int] | None,
@@ -664,7 +665,7 @@ class DBEth2:
 
     @staticmethod
     def _save_eth2_validator_cache(
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             to_ts: Timestamp,
             balances_over_time: dict[int, dict[TimestampMS, FVal]],
             withdrawals_pnl_over_time: dict[int, dict[TimestampMS, FVal]],
@@ -718,7 +719,7 @@ class DBEth2:
 
     def get_validators_block_and_mev_rewards(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             blocks_execution_filter_query: EthStakingEventFilterQuery,
             mev_execution_filter_query: HistoryEventFilterQuery,
             to_filter_indices: set[int] | None,

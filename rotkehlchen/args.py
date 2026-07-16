@@ -1,7 +1,6 @@
 import argparse
 import sys
-from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.constants.misc import (
     DEFAULT_MAX_LOG_BACKUP_FILES,
@@ -10,6 +9,9 @@ from rotkehlchen.constants.misc import (
     VALID_LOGLEVELS,
 )
 from rotkehlchen.utils.misc import get_system_spec
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class CommandAction(argparse.Action):

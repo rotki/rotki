@@ -12,9 +12,9 @@ if TYPE_CHECKING:
 class MagpieDecoder(MagpieCommonDecoder):
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

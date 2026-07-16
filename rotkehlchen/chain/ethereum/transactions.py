@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Sequence
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any
 
@@ -21,6 +20,8 @@ from rotkehlchen.types import ChecksumEvmAddress, Location, deserialize_evm_tx_h
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.chain.gnosis.transactions import GnosisWithdrawalsQueryParameters
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -34,8 +35,8 @@ class EthereumTransactions(EvmTransactions):
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            database: 'DBHandler',
+            ethereum_inquirer: EthereumInquirer,
+            database: DBHandler,
     ) -> None:
         super().__init__(evm_inquirer=ethereum_inquirer, database=database)
 
@@ -44,7 +45,7 @@ class EthereumTransactions(EvmTransactions):
             last_block_queried: int,
             filters: dict[str, Any],
             new_events: list[dict[str, Any]],  # pylint: disable=unused-argument
-            cb_arguments: 'GnosisWithdrawalsQueryParameters | None',  # pylint: disable=unused-argument
+            cb_arguments: GnosisWithdrawalsQueryParameters | None,  # pylint: disable=unused-argument
     ) -> None:
         """Callback used in query_for_graph_delegation_txns when querying logs.
         Ensures that when iterating the logs we keep the progress of the queried

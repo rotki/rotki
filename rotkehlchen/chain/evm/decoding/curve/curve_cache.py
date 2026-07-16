@@ -118,7 +118,7 @@ def read_curve_pools_and_gauges(chain_id: ChainID) -> tuple[dict[ChecksumEvmAddr
 
 
 def _save_curve_data_to_cache(
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
         new_data: list[CurvePoolData],
 ) -> None:
     """Stores data received about curve pools and gauges in the cache"""
@@ -173,7 +173,7 @@ def _save_curve_data_to_cache(
 
 
 def _query_curve_data_from_api(
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
         existing_pools: set[ChecksumEvmAddress],
 ) -> list[CurvePoolData]:
     """
@@ -234,9 +234,9 @@ def _query_curve_data_from_api(
 
 
 def _query_curve_data_from_chain(
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
         existing_pools: set[ChecksumEvmAddress],
-        msg_aggregator: 'MessagesAggregator',
+        msg_aggregator: MessagesAggregator,
         reload_all: bool,
 ) -> list[CurvePoolData]:
     """Query all curve information(lp tokens, pools, gauges, pool coins) from the metaregistry.
@@ -385,9 +385,9 @@ def _query_curve_data_from_chain(
 
 
 def query_curve_data(
-        inquirer: 'EvmNodeInquirer',
+        inquirer: EvmNodeInquirer,
         cache_type: Literal[CacheType.CURVE_LP_TOKENS],
-        msg_aggregator: 'MessagesAggregator',
+        msg_aggregator: MessagesAggregator,
         reload_all: bool,
 ) -> list[CurvePoolData] | None:
     """Query curve lp tokens, curve pools and curve gauges and save them in the database.
@@ -435,9 +435,9 @@ def query_curve_data(
 
 
 def get_lp_and_gauge_token_addresses(
-        pool_address: 'ChecksumEvmAddress',
+        pool_address: ChecksumEvmAddress,
         chain_id: ChainID,
-) -> set['ChecksumEvmAddress']:
+) -> set[ChecksumEvmAddress]:
     """Reads the db to get the lp and gauge token addresses for the given pool address"""
     addresses, chain_id_str = set(), str(chain_id.serialize_for_db())
     with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -457,7 +457,7 @@ def get_lp_and_gauge_token_addresses(
 
 
 def get_curve_address_from_cache(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         cache_type: CacheType,
         chain_id: ChainID,
         cache_value: ChecksumEvmAddress,

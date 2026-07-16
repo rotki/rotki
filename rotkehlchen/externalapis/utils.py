@@ -92,7 +92,7 @@ def get_earliest_ts(chain_id: SUPPORTED_CHAIN_IDS) -> Timestamp:
     raise InputError(f'Unexpected chain {chain_id} when querying earliest block ts')
 
 
-def notify_reauthentication_required(database: 'DBHandler', service: ReauthService) -> None:
+def notify_reauthentication_required(database: DBHandler, service: ReauthService) -> None:
     database.msg_aggregator.add_message(
         message_type=REAUTHENTICATION_MESSAGE_TYPES[service],
         data={'error': REAUTHENTICATION_MESSAGES[service]},

@@ -1,12 +1,10 @@
 import json
 import random
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.kraken import Kraken
-from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.factories import (
     make_random_positive_fval,
@@ -14,9 +12,13 @@ from rotkehlchen.tests.utils.factories import (
     make_random_uppercasenumeric_string,
 )
 from rotkehlchen.types import ApiKey, ApiSecret, Location, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.user_messages import MessagesAggregator
 
 KRAKEN_DELISTED = (
     'XDAO',

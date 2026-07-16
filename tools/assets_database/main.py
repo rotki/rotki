@@ -25,7 +25,6 @@ Args:
 Example command:
 python -m tools.assets_database.main --start-db-path /<path to last release's db>/global.db --target-version 28 --assets-branch develop --update-mode all
 """  # noqa: E501
-import argparse
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
@@ -40,6 +39,8 @@ from rotkehlchen.user_messages import MessagesAggregator
 from .utils import clean_folder, parse_args, prepare_globaldb
 
 if TYPE_CHECKING:
+    import argparse
+
     from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 
@@ -57,7 +58,7 @@ def _print_collected_messages(msg_aggregator: MessagesAggregator, stage: str) ->
         print(f'[{stage}] ERROR: {error}')
 
 
-def populate_db_with_assets(globaldb: 'GlobalDBHandler', args: argparse.Namespace) -> None:
+def populate_db_with_assets(globaldb: GlobalDBHandler, args: argparse.Namespace) -> None:
     """Populate the globaldb created in target_directory with the updates in the remote assets repo
     """
     print('Applying updates...')

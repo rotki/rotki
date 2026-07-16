@@ -8,9 +8,8 @@ import sys
 import time
 from binascii import unhexlify
 from collections import defaultdict
-from collections.abc import Callable, Iterable, Iterator, Sequence
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Final, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Final, overload
 
 from eth_utils import is_hexstr
 from eth_utils.address import to_checksum_address
@@ -22,6 +21,8 @@ from rotkehlchen.types import ChecksumEvmAddress, SolanaAddress, Timestamp, Time
 from rotkehlchen.utils.version_check import get_current_version, get_system_spec
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Iterator, Sequence
+
     from requests import Session
 
 log = logging.getLogger(__name__)
@@ -146,17 +147,13 @@ def from_gwei(gwei_value: FVal | int) -> FVal:
     return gwei_value / FVal(10 ** 9)
 
 
-K = TypeVar('K')
-V = TypeVar('V')
-
-
 @overload
-def combine_dicts(a: dict[K, V], b: dict[K, V], op: Callable = operator.add) -> dict[K, V]:
+def combine_dicts[K, V](a: dict[K, V], b: dict[K, V], op: Callable = operator.add) -> dict[K, V]:
     ...
 
 
 @overload
-def combine_dicts(
+def combine_dicts[K, V](
         a: defaultdict[K, V],
         b: defaultdict[K, V],
         op: Callable = operator.add,
@@ -164,7 +161,7 @@ def combine_dicts(
     ...
 
 
-def combine_dicts(
+def combine_dicts[K, V](
         a: dict[K, V] | defaultdict[K, V],
         b: dict[K, V] | defaultdict[K, V],
         op: Callable = operator.add,
@@ -179,7 +176,7 @@ def combine_dicts(
     return new_dict
 
 
-def combine_nested_dicts_inplace(
+def combine_nested_dicts_inplace[K, V](
         a: defaultdict[K, defaultdict[Any, V]],
         b: defaultdict[K, defaultdict[Any, V]],
         op: Callable = operator.add,
@@ -248,7 +245,7 @@ def convert_to_int(
     raise ConversionError(f'Can not convert {val} which is of type {type(val)} to int.')
 
 
-def set_user_agent(session: 'Session') -> None:
+def set_user_agent(session: Session) -> None:
     """update the given session headers by adding our user agent string"""
     session.headers.update({'User-Agent': ROTKI_USER_AGENT})
 
@@ -323,20 +320,17 @@ def bytes32hexstr_to_address(hexstr: str) -> ChecksumEvmAddress:
         ) from e
 
 
-T = TypeVar('T')
-
-
 @overload
-def get_chunks(lst: list[T], n: int) -> Iterator[list[T]]:
+def get_chunks[T](lst: list[T], n: int) -> Iterator[list[T]]:
     ...
 
 
 @overload
-def get_chunks(lst: Sequence[T], n: int) -> Iterator[Sequence[T]]:
+def get_chunks[T](lst: Sequence[T], n: int) -> Iterator[Sequence[T]]:
     ...
 
 
-def get_chunks(lst: Sequence[T] | list[T], n: int) -> Iterator[Sequence[T]] | Iterator[list[T]]:
+def get_chunks[T](lst: Sequence[T] | list[T], n: int) -> Iterator[Sequence[T]] | Iterator[list[T]]:
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]

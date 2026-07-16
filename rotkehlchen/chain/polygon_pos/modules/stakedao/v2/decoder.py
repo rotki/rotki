@@ -12,9 +12,9 @@ class Stakedaov2Decoder(Stakedaov2CommonDecoder):
 
     def __init__(
             self,
-            polygon_pos_inquirer: 'PolygonPOSInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            polygon_pos_inquirer: PolygonPOSInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
             evm_inquirer=polygon_pos_inquirer,

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class DegenDecoder(MerkleClaimDecoderInterface):
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             CLAIM_AIRDROP_1_CONTRACT: (
                 self._decode_indexed_merkle_claim,

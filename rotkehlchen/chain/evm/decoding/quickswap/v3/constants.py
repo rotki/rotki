@@ -1,6 +1,7 @@
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
-from eth_typing.abi import ABI
+if TYPE_CHECKING:
+    from eth_typing.abi import ABI
 
 QUICKSWAP_INCREASE_LIQUIDITY_TOPIC: Final = b'\x8a\x82\xde\x7f\xe9\xb3>\x0ek\xca\x0e&\xf5\xbd\x14\xa7O\x11d\xff\xe26\xd5\x0e\n6\xc3\xeap\xf2\xb8\x14'  # noqa: E501
 QUICKSWAP_COLLECT_LIQUIDITY_TOPIC: Final = b"@\xd0\xef\xd1\xa5=`\xec\xbf@\x97\x1b\x9d\xaf}\xc9\x01x\xc3\xaa\xdcz\xab\x17ec'8\xfa\x8b\x8f\x01"  # noqa: E501

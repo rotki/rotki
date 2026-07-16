@@ -12,9 +12,9 @@ if TYPE_CHECKING:
 class StakedaoDecoder(StakedaoCommonDecoder):
     def __init__(
             self,
-            evm_inquirer: 'ArbitrumOneInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: ArbitrumOneInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,

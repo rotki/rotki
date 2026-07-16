@@ -2,8 +2,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
-from eth_typing.abi import ABI
-
 from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
@@ -18,6 +16,8 @@ from rotkehlchen.utils.misc import from_wei
 from .constants import CPT_KINETIQ, KINETIQ_EARN_QUEUE, KINETIQ_STAKING_MANAGER
 
 if TYPE_CHECKING:
+    from eth_typing.abi import ABI
+
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
     from rotkehlchen.types import ChecksumEvmAddress
@@ -62,8 +62,8 @@ class KinetiqBalances(ProtocolWithBalance):
 
     def __init__(
             self,
-            evm_inquirer: 'HyperliquidInquirer',
-            tx_decoder: 'EVMTransactionDecoder',
+            evm_inquirer: HyperliquidInquirer,
+            tx_decoder: EVMTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -74,8 +74,8 @@ class KinetiqBalances(ProtocolWithBalance):
 
     def _query_staking_withdrawals(
             self,
-            staking_requests: list[tuple['ChecksumEvmAddress', 'ChecksumEvmAddress', int]],
-    ) -> list[tuple['ChecksumEvmAddress', Asset, FVal]]:
+            staking_requests: list[tuple[ChecksumEvmAddress, ChecksumEvmAddress, int]],
+    ) -> list[tuple[ChecksumEvmAddress, Asset, FVal]]:
         """Query the HYPE amounts of the given still-queued staking manager withdrawals"""
         staking_manager = EvmContract(  # only used for encoding/decoding. The call targets are the events' staking managers.  # noqa: E501
             address=KINETIQ_STAKING_MANAGER,
@@ -110,8 +110,8 @@ class KinetiqBalances(ProtocolWithBalance):
 
     def _query_earn_withdrawals(
             self,
-            earn_requests: list[tuple['ChecksumEvmAddress', str, str, str]],
-    ) -> list[tuple['ChecksumEvmAddress', Asset, FVal]]:
+            earn_requests: list[tuple[ChecksumEvmAddress, str, str, str]],
+    ) -> list[tuple[ChecksumEvmAddress, Asset, FVal]]:
         """Filter the given Kinetiq Earn withdrawal requests to the ones still pending
         in the on-chain withdraw queue and return their asset amounts."""
         try:
@@ -130,7 +130,7 @@ class KinetiqBalances(ProtocolWithBalance):
             if request_id in pending_ids
         ]
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         staking_requests, earn_requests = [], []
         for user_address, events in self.addresses_with_deposits().items():

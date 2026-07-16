@@ -1,8 +1,7 @@
 import logging
 import threading
 import traceback
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.concurrency import (
     DEFAULT_CANCEL_GRACE_SECONDS,
@@ -12,7 +11,11 @@ from rotkehlchen.concurrency import (
     wait,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.user_messages import MessagesAggregator
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

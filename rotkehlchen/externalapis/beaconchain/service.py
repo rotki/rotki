@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-from collections.abc import Sequence
 from dataclasses import dataclass
 from json.decoder import JSONDecodeError
 from threading import Lock
@@ -38,7 +37,6 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     convert_to_int,
     from_gwei,
@@ -52,7 +50,10 @@ from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 from .constants import BEACONCHAIN_READ_TIMEOUT, BEACONCHAIN_ROOT_URL, MAX_WAIT_SECS
 
@@ -74,7 +75,7 @@ class BeaconChainQueryResponse:
 class BeaconChain(ExternalServiceWithRecommendedApiKey):
     """BeaconChain handler https://docs.beaconcha.in/api/overview"""
 
-    def __init__(self, database: 'DBHandler', msg_aggregator: MessagesAggregator) -> None:
+    def __init__(self, database: DBHandler, msg_aggregator: MessagesAggregator) -> None:
         super().__init__(database=database, service_name=ExternalService.BEACONCHAIN)
         self.msg_aggregator = msg_aggregator
         self.session = create_session()

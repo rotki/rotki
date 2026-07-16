@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
@@ -16,17 +15,19 @@ from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.constants import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_ZEROX, METATX_ZEROX
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -36,9 +37,9 @@ log = RotkehlchenLogsAdapter(logger)
 class ZeroxCommonDecoder(EvmDecoderInterface):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             router_address: ChecksumEvmAddress | None = None,
             flash_wallet_address: ChecksumEvmAddress | None = None,
             settler_routers_addresses: set[ChecksumEvmAddress] | None = None,
@@ -60,10 +61,10 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
 
     def _update_send_receive_fee_events(
             self,
-            send_event: 'EvmEvent | None' = None,
-            receive_event: 'EvmEvent | None' = None,
-            fee_event: 'EvmEvent | None' = None,
-            used_router_address: 'ChecksumEvmAddress | None' = None,
+            send_event: EvmEvent | None = None,
+            receive_event: EvmEvent | None = None,
+            fee_event: EvmEvent | None = None,
+            used_router_address: ChecksumEvmAddress | None = None,
     ) -> None:
         """An auxiliary function to update the send, receive and/or fee events with the 0x values"""  # noqa: E501
         # This is a case for swaps made via the settler
@@ -96,11 +97,11 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
 
     def _merge_split_swap_events(
             self,
-            decoded_events: list['EvmEvent'],
-            send_events: list['EvmEvent'],
-            receive_events: list['EvmEvent'],
-            fee_event: 'EvmEvent | None' = None,
-            return_amount: 'FVal' = ZERO,
+            decoded_events: list[EvmEvent],
+            send_events: list[EvmEvent],
+            receive_events: list[EvmEvent],
+            fee_event: EvmEvent | None = None,
+            return_amount: FVal = ZERO,
     ) -> None:
         """Sum the balances of the events, update them with the 0x values, replace them with the
         Merged Events in decoded_events list, and maybe shuffle them with proper order. This is
@@ -133,10 +134,10 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
 
     def _decode_swap(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """This function is used to decode the swaps done via 0x. It checks if already decoded
         events interacted with the 0x router, and overwrites them if they did."""
         send_address_to_events: dict[ChecksumEvmAddress, EvmEvent] = {}
@@ -245,7 +246,7 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
 
         return decoded_events
 
-    def _decode_meta_tx_swap(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _decode_meta_tx_swap(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes the swap event from the 0x router contract via executeMetaTransactionV2."""
         if self.router_address is None or context.tx_log.topics[0] != METATX_ZEROX or context.tx_log.address != self.router_address:  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT

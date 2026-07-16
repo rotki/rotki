@@ -1181,7 +1181,7 @@ def test_swap_optimism_with_return(optimism_inquirer, optimism_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x43F9A40200310CE535EdF5EA0eb71afB53779BA4']])
-def test_swap_anon_event(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts):
+def test_swap_anon_event(ethereum_inquirer: EthereumInquirer, ethereum_accounts):
     """zerox has a special contract for swaps that emits an anonymous event that causes the
     logic of some post decoding rules to fail. This is a regression test for this contract.
     """

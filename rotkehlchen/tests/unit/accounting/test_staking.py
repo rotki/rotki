@@ -1,9 +1,9 @@
 
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
@@ -32,6 +32,9 @@ from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.accountant import Accountant
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])

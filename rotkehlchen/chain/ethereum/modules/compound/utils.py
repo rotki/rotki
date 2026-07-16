@@ -6,9 +6,9 @@ if TYPE_CHECKING:
 
 
 class CompoundBalance(NamedTuple):
-    balance_type: 'BalanceType'
-    balance: 'Balance'
-    apy: 'FVal | None'
+    balance_type: BalanceType
+    balance: Balance
+    apy: FVal | None
 
     def serialize(self) -> dict[str, str | dict[str, str] | None]:
         return {

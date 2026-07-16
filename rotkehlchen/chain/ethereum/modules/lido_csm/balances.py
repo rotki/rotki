@@ -20,13 +20,13 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.lido_csm import DBLidoCsm
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -37,8 +37,8 @@ class LidoCsmBalances(ProtocolWithBalance):
 
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            tx_decoder: 'EthereumTransactionDecoder',
+            evm_inquirer: EthereumInquirer,
+            tx_decoder: EthereumTransactionDecoder,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

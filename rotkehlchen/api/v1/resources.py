@@ -1,18 +1,16 @@
 import json
 import sys
-from collections.abc import Callable, Sequence
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 
 from flask import Blueprint, Request, Response, request as flask_request
 from marshmallow import Schema, ValidationError, fields
 from marshmallow.utils import missing
 from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
-from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.api.rest import (
     RestAPI,
@@ -213,53 +211,12 @@ from rotkehlchen.api.v1.schemas import (
     XpubPatchSchema,
     create_counterparty_asset_mappings_schema,
 )
-from rotkehlchen.assets.asset import (
-    Asset,
-    AssetWithNameAndType,
-    AssetWithOracles,
-    CryptoAsset,
-    CustomAsset,
-    EvmToken,
-    SolanaToken,
-)
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubData
-from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
-from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import EvmIndexer, NodeName, WeightedNode
-from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
-from rotkehlchen.data_import.manager import DataImportSource
-from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, ReminderEntry
-from rotkehlchen.db.constants import (
-    LINKABLE_ACCOUNTING_PROPERTIES,
-    LINKABLE_ACCOUNTING_SETTINGS_NAME,
-)
-from rotkehlchen.db.filtering import (
-    AccountingRulesFilterQuery,
-    AddressbookFilterQuery,
-    AssetsFilterQuery,
-    CounterpartyAssetMappingsFilterQuery,
-    CustomAssetsFilterQuery,
-    DataIssuesFilterQuery,
-    DBFilterQuery,
-    HistoricalBalancesFilterQuery,
-    HistoryBaseEntryFilterQuery,
-    LevenshteinFilterQuery,
-    LocationAssetMappingsFilterQuery,
-    NFTFilterQuery,
-    ReportDataFilterQuery,
-    UserNotesFilterQuery,
-)
-from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.utils import DBAssetBalance, LocationData
-from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.premium.premium import (
     GNOSIS_PAY_CAPABILITY,
     MONERIUM_CAPABILITY,
@@ -313,16 +270,58 @@ from rotkehlchen.types import (
 from .types import ModuleWithBalances, ModuleWithStats, TaskName
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from werkzeug.datastructures import FileStorage
+
+    from rotkehlchen.assets.asset import (
+        Asset,
+        AssetWithNameAndType,
+        AssetWithOracles,
+        CryptoAsset,
+        CustomAsset,
+        EvmToken,
+        SolanaToken,
+    )
+    from rotkehlchen.balances.manual import ManuallyTrackedBalance
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
+    from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
+    from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
+    from rotkehlchen.chain.solana.rpc import Signature
+    from rotkehlchen.data_import.manager import DataImportSource
+    from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, ReminderEntry
+    from rotkehlchen.db.constants import (
+        LINKABLE_ACCOUNTING_PROPERTIES,
+        LINKABLE_ACCOUNTING_SETTINGS_NAME,
+    )
     from rotkehlchen.db.filtering import (
+        AccountingRulesFilterQuery,
+        AddressbookFilterQuery,
+        AssetsFilterQuery,
+        CounterpartyAssetMappingsFilterQuery,
+        CustomAssetsFilterQuery,
+        DataIssuesFilterQuery,
+        DBFilterQuery,
+        HistoricalBalancesFilterQuery,
+        HistoryBaseEntryFilterQuery,
         HistoryEventFilterQuery,
         InternalTxConflictsFilterQuery,
+        LevenshteinFilterQuery,
+        LocationAssetMappingsFilterQuery,
+        NFTFilterQuery,
+        ReportDataFilterQuery,
+        UserNotesFilterQuery,
     )
+    from rotkehlchen.db.settings import ModifiableDBSettings
+    from rotkehlchen.db.utils import DBAssetBalance, LocationData
     from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
-    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
+    from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+    from rotkehlchen.history.types import HistoricalPriceOracle
 
 
 def _combine_parser_data(
@@ -617,12 +616,12 @@ class ExchangesResource(BaseMethodView):
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None,
-            kraken_account_type: Optional['KrakenAccountType'],
+            kraken_account_type: KrakenAccountType | None,
             kraken_futures_api_key: ApiKey | None,
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
-            okx_location: Optional['OkxLocation'],
-            gate_location: Optional['GateLocation'],
+            okx_location: OkxLocation | None,
+            gate_location: GateLocation | None,
     ) -> Response:
         return self.rest_api.setup_exchange(
             name=name,
@@ -648,12 +647,12 @@ class ExchangesResource(BaseMethodView):
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
             passphrase: str | None,
-            kraken_account_type: Optional['KrakenAccountType'],
+            kraken_account_type: KrakenAccountType | None,
             kraken_futures_api_key: ApiKey | None,
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
-            okx_location: Optional['OkxLocation'],
-            gate_location: Optional['GateLocation'],
+            okx_location: OkxLocation | None,
+            gate_location: GateLocation | None,
     ) -> Response:
         return self.rest_api.edit_exchange(
             name=name,
@@ -1393,24 +1392,24 @@ class HistoryEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, filter_query: 'HistoryBaseEntryFilterQuery', aggregate_by_group_ids: bool) -> Response:  # noqa: E501
+    def post(self, filter_query: HistoryBaseEntryFilterQuery, aggregate_by_group_ids: bool) -> Response:  # noqa: E501
         return self.rest_api.get_history_events(filter_query=filter_query, aggregate_by_group_ids=aggregate_by_group_ids)  # noqa: E501
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_put_schema, location='json')
-    def put(self, events: list['HistoryBaseEntry']) -> Response:
+    def put(self, events: list[HistoryBaseEntry]) -> Response:
         return self.rest_api.add_history_events(events)
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_patch_schema, location='json')
-    def patch(self, events: list['HistoryBaseEntry'], identifiers: list[int] | None = None) -> Response:  # noqa: E501
+    def patch(self, events: list[HistoryBaseEntry], identifiers: list[int] | None = None) -> Response:  # noqa: E501
         return self.rest_api.edit_history_events(events, identifiers)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
     def delete(
             self,
-            filter_query: 'HistoryBaseEntryFilterQuery',
+            filter_query: HistoryBaseEntryFilterQuery,
             force_delete: bool,
             requested_identifiers: list[int] | None,
     ) -> Response:
@@ -1956,7 +1955,7 @@ class BTCXpubResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
             self,
-            xpub: 'HDKey',
+            xpub: HDKey,
             derivation_path: str | None,
             async_query: bool,
             ignore_cache: bool,
@@ -1978,7 +1977,7 @@ class BTCXpubResource(BaseMethodView):
     @use_kwargs(put_schema, location='json_and_view_args')
     def put(
             self,
-            xpub: 'HDKey',
+            xpub: HDKey,
             derivation_path: str | None,
             label: str | None,
             tags: list[str] | None,
@@ -2000,7 +1999,7 @@ class BTCXpubResource(BaseMethodView):
     @use_kwargs(delete_schema, location='json_and_view_args')
     def delete(
             self,
-            xpub: 'HDKey',
+            xpub: HDKey,
             derivation_path: str | None,
             async_query: bool,
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
@@ -2020,7 +2019,7 @@ class BTCXpubResource(BaseMethodView):
     @use_kwargs(patch_schema, location='json_and_view_args')
     def patch(
             self,
-            xpub: 'HDKey',
+            xpub: HDKey,
             derivation_path: str | None,
             label: str | None,
             tags: list[str] | None,
@@ -2834,8 +2833,8 @@ class BinanceSavingsResource(BaseMethodView):
             async_query: bool,
             only_cache: bool,
             location: Literal[Location.BINANCE, Location.BINANCEUS],
-            query_filter: 'HistoryEventFilterQuery',
-            value_filter: 'HistoryEventFilterQuery',
+            query_filter: HistoryEventFilterQuery,
+            value_filter: HistoryEventFilterQuery,
     ) -> Response:
         return self.rest_api.get_binance_savings_history(
             async_query=async_query,
@@ -2893,8 +2892,8 @@ class StakingResource(BaseMethodView):
             self,
             async_query: bool,
             only_cache: bool,
-            query_filter: 'HistoryEventFilterQuery',
-            value_filter: 'HistoryEventFilterQuery',
+            query_filter: HistoryEventFilterQuery,
+            value_filter: HistoryEventFilterQuery,
     ) -> Response:
         return self.rest_api.query_kraken_staking_events(
             async_query=async_query,
@@ -3232,7 +3231,7 @@ class EventGroupPositionResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, group_identifier: str, filter_query: 'HistoryBaseEntryFilterQuery') -> Response:
+    def post(self, group_identifier: str, filter_query: HistoryBaseEntryFilterQuery) -> Response:
         return self.rest_api.get_history_event_group_position(
             group_identifier=group_identifier,
             filter_query=filter_query,
@@ -3337,7 +3336,7 @@ class ExportHistoryEventResource(BaseMethodView):
     def post(
             self,
             async_query: bool,
-            filter_query: 'HistoryBaseEntryFilterQuery',
+            filter_query: HistoryBaseEntryFilterQuery,
             directory_path: Path,
             match_exact_events: bool,
     ) -> dict[str, Any]:
@@ -3350,7 +3349,7 @@ class ExportHistoryEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_query')
-    def put(self, async_query: bool, filter_query: 'HistoryBaseEntryFilterQuery', match_exact_events: bool) -> Response | dict[str, Any]:  # noqa: E501
+    def put(self, async_query: bool, filter_query: HistoryBaseEntryFilterQuery, match_exact_events: bool) -> Response | dict[str, Any]:  # noqa: E501
         return self.rest_api.export_history_events(
             filter_query=filter_query,
             directory_path=None,
@@ -3392,7 +3391,7 @@ class AccountingRulesResource(BaseMethodView):
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             counterparty: str | None,
-            rule: 'BaseEventSettings',
+            rule: BaseEventSettings,
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
     ) -> Response:
         return self.rest_api.add_accounting_rule(
@@ -3412,7 +3411,7 @@ class AccountingRulesResource(BaseMethodView):
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             counterparty: str | None,
-            rule: 'BaseEventSettings',
+            rule: BaseEventSettings,
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
             identifier: int,
     ) -> Response:
@@ -3428,7 +3427,7 @@ class AccountingRulesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
-    def post(self, filter_query: 'AccountingRulesFilterQuery') -> Response:
+    def post(self, filter_query: AccountingRulesFilterQuery) -> Response:
         return self.rest_api.query_accounting_rules(filter_query)
 
     @require_loggedin_user()
@@ -3915,7 +3914,7 @@ class InternalTxConflictsResource(BaseMethodView):
     def get(
             self,
             async_query: bool,
-            filter_query: 'InternalTxConflictsFilterQuery',
+            filter_query: InternalTxConflictsFilterQuery,
     ) -> Response:
         return self.rest_api.get_pending_internal_tx_repull_conflicts(
             async_query=async_query,
@@ -3944,8 +3943,8 @@ class SolanaTokenMigrationResource(BaseMethodView):
     def post(
             self,
             async_query: bool,
-            old_asset: 'CryptoAsset',
-            address: 'SolanaAddress',
+            old_asset: CryptoAsset,
+            address: SolanaAddress,
             decimals: int,
             token_kind: SOLANA_TOKEN_KINDS_TYPE,
     ) -> Response:

@@ -1,14 +1,14 @@
 import logging
 from abc import ABC
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
-from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
@@ -26,17 +26,17 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
     def __init__(
             self,
             node_inquirer: EvmNodeInquirer,
-            database: 'DBHandler',
+            database: DBHandler,
     ) -> None:
         super().__init__(evm_inquirer=node_inquirer, database=database)
         self.dbevmtx = DBL2WithL1FeesTx(database)
 
     def ensure_tx_data_exists(
             self,
-            cursor: 'DBCursor',
-            tx_hash: 'EVMTxHash',
-            relevant_address: Optional['ChecksumEvmAddress'],
-    ) -> tuple['L2WithL1FeesTransaction', 'EvmTxReceipt']:
+            cursor: DBCursor,
+            tx_hash: EVMTxHash,
+            relevant_address: ChecksumEvmAddress | None,
+    ) -> tuple[L2WithL1FeesTransaction, EvmTxReceipt]:
         """In addition to the base class check, also checks that the transaction has
         a corresponding l1_fee value in the database. If not, pulls it.
 

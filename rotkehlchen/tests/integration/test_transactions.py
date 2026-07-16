@@ -32,9 +32,9 @@ if TYPE_CHECKING:
 @pytest.mark.freeze_time('2023-01-24 22:45:45 GMT')
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_transaction_receipt(
-        database: 'DBHandler',
-        eth_transactions: 'EthereumTransactions',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        database: DBHandler,
+        eth_transactions: EthereumTransactions,
+        ethereum_accounts: list[ChecksumEvmAddress],
         transaction_already_queried: bool,
 ) -> None:
     """Test that getting a transaction receipt from the network and saving it in the DB works"""

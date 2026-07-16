@@ -28,9 +28,9 @@ if TYPE_CHECKING:
 class Odosv2Decoder(Odosv2DecoderBase):
     def __init__(
             self,
-            evm_inquirer: 'BaseInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: BaseInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -39,7 +39,7 @@ class Odosv2Decoder(Odosv2DecoderBase):
             router_address=ODOS_V2_ROUTER,
         )
 
-    def decode_claim(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
+    def decode_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         if (
             context.tx_log.topics[0] != REWARD_CLAIMED_TOPIC or
             context.tx_log.address != ODOS_AIRDROP_DISTRIBUTOR
@@ -69,7 +69,7 @@ class Odosv2Decoder(Odosv2DecoderBase):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return super().addresses_to_decoders() | {
             string_to_evm_address('0x4C8f8055D88705f52c9994969DDe61AB574895a3'): (self.decode_claim,),  # noqa: E501
         }

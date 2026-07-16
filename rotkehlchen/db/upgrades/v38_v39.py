@@ -21,7 +21,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log(name='UserDB v38->v39 upgrade')
-def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v38_to_v39(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v38 to v39. This was in v1.30.0 release.
         - Update NFT table to not use double quotes
         - Reduce size of some event identifiers
@@ -30,7 +30,7 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Add Arbitrum One location and nodes
     """
     @progress_step(description='Updating nfts table.')
-    def _update_nfts_table(write_cursor: 'DBCursor') -> None:
+    def _update_nfts_table(write_cursor: DBCursor) -> None:
         """
         Update the nft table to remove double quotes due to https://github.com/rotki/rotki/issues/6368
         """
@@ -54,7 +54,7 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Creating new tables.')
-    def _create_new_tables(write_cursor: 'DBCursor') -> None:
+    def _create_new_tables(write_cursor: DBCursor) -> None:
         write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS optimism_transactions (
             tx_id INTEGER NOT NULL PRIMARY KEY,
@@ -63,7 +63,7 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         );""")  # noqa: E501
 
     @progress_step(description='Reducing history event id size.')
-    def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
+    def _reduce_eventid_size(write_cursor: DBCursor) -> None:
         """Reduce the size of history event ids"""
         staking_events = write_cursor.execute(
             'SELECT H.identifier, H.subtype, S.validator_index, S.is_exit_or_blocknumber, '
@@ -91,7 +91,7 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Updating evm transaction data.')
-    def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
+    def _update_evm_transaction_data(write_cursor: DBCursor) -> None:
         """Turn the primary key of evm transactions to be a unique integer ID instead
         of composite primary with hash + chain id. Saves lots of DB space.
 
@@ -234,11 +234,11 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Adding Arbitrum One location')
-    def _add_arbitrum_one_location(write_cursor: 'DBCursor') -> None:
+    def _add_arbitrum_one_location(write_cursor: DBCursor) -> None:
         write_cursor.execute("INSERT OR IGNORE INTO location(location, seq) VALUES ('i', 41);")
 
     @progress_step(description='Updating rpc nodes table.')
-    def _update_rpc_nodes_table(write_cursor: 'DBCursor') -> None:
+    def _update_rpc_nodes_table(write_cursor: DBCursor) -> None:
         table_exists = write_cursor.execute(
             "SELECT COUNT(*) FROM sqlite_master "
             "WHERE type='table' AND name='rpc_nodes'",
@@ -266,7 +266,7 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Removing saddle oracle.')
-    def _remove_saddle_oracle(write_cursor: 'DBCursor') -> None:
+    def _remove_saddle_oracle(write_cursor: DBCursor) -> None:
         write_cursor.execute("SELECT value FROM settings WHERE name='current_price_oracles'")
         if (data := write_cursor.fetchone()) is None:
             return  # oracles not configured
@@ -283,7 +283,7 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """
         Reset all decoded evm events except the customized ones for ethereum mainnet,
         optimism and polygon.

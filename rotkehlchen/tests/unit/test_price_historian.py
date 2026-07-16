@@ -135,7 +135,7 @@ def test_set_oracles_custom_order(fake_price_historian):
 
 def test_fiat_to_fiat(
         fake_price_historian: PriceHistorian,
-        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+        inquirer: Inquirer,  # pylint: disable=unused-argument
 ) -> None:
     """Test the price is returned via exchangerates API when requesting the
     historical price from fiat to fiat.
@@ -147,8 +147,8 @@ def test_fiat_to_fiat(
 
     def mock_price_query(
             _cls,
-            from_fiat_currency: 'FiatAsset',
-            to_fiat_currency: 'FiatAsset',
+            from_fiat_currency: FiatAsset,
+            to_fiat_currency: FiatAsset,
             timestamp: Timestamp,
     ) -> Price | None:
         """
@@ -297,7 +297,7 @@ def test_disabled_historical_oracle_cache_is_ignored(
         )
 
 
-def test_get_historical_prices(globaldb: 'GlobalDBHandler') -> None:
+def test_get_historical_prices(globaldb: GlobalDBHandler) -> None:
     ts1 = Timestamp(1611595470)
     price1, price2, price3, price4 = Price(FVal(30000)), Price(FVal(35000)), Price(FVal(45000)), Price(FVal(77000))  # noqa: E501
     # Add price at timestamp
@@ -448,7 +448,7 @@ def test_price_priority_order():
     assert HistoricalPriceOracle.DEFILLAMA.serialize_for_db() in order_bindings
 
 
-def test_price_priority_distance_then_source(globaldb: 'GlobalDBHandler') -> None:
+def test_price_priority_distance_then_source(globaldb: GlobalDBHandler) -> None:
     """Prefer closest timestamp across oracles (cryptocompare over manual/defillama),
     then use source priority as tie-breaker (manual over cryptocompare)."""
     query_timestamp = Timestamp(100)
@@ -580,7 +580,7 @@ def test_matic_pol_hardforked_price(price_historian: PriceHistorian) -> None:
             ).is_close(expected_price, max_diff='0.003')
 
 
-def test_historical_price_underlying_tokens(globaldb: 'GlobalDBHandler') -> None:
+def test_historical_price_underlying_tokens(globaldb: GlobalDBHandler) -> None:
     """Test that querying a historical price for a token with underlying tokens
     resolves the price from the underlying tokens weighted by their proportions."""
     aave_weight, link_weight, crv_weight = FVal('0.6'), FVal('0.2'), FVal('0.2')
@@ -626,7 +626,7 @@ def test_historical_price_underlying_tokens(globaldb: 'GlobalDBHandler') -> None
 
 
 def test_historical_price_underlying_tokens_unpriced_when_a_leg_is_missing(
-        globaldb: 'GlobalDBHandler',
+        globaldb: GlobalDBHandler,
 ) -> None:
     """Regression test: a token valued from its underlying tokens must be reported as
     unpriced when any underlying leg has no historical price, instead of returning a

@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import EvmToken
@@ -34,6 +33,8 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -48,11 +49,11 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            rewards_address: 'ChecksumEvmAddress',
-            bulker_address: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            rewards_address: ChecksumEvmAddress,
+            bulker_address: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -110,10 +111,10 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
 
     def _correct_supply_or_withdraw_event(
             self,
-            decoded_events: list['EvmEvent'],
-            transaction: 'EvmTransaction',  # pylint: disable=unused-argument
-            all_logs: list['EvmTxReceiptLog'],  # pylint: disable=unused-argument
-    ) -> list['EvmEvent']:
+            decoded_events: list[EvmEvent],
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> list[EvmEvent]:
         """Post decoding function to correct supply/withdraw event's receive amount in notes."""
         for event in decoded_events:
             if ((
@@ -130,7 +131,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
     def _decode_supply_or_repay_event(
             self,
             context: DecoderContext,
-            compound_token: 'EvmToken',
+            compound_token: EvmToken,
     ) -> EvmDecodingOutput:
         """Decode a compound v3 supply or repay event. Takes decoder context and
         the compound v3 wrapped token of the supplied/withdrawn underlying token."""
@@ -404,7 +405,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
             )
         }
 
-    def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
+    def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(
             chain_id=self.node_inquirer.chain_id,
             protocol=CPT_COMPOUND_V3,

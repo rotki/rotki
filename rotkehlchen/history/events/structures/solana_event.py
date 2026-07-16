@@ -6,10 +6,6 @@ from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
 )
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
-from rotkehlchen.history.events.structures.types import (
-    HistoryEventSubType,
-    HistoryEventType,
-)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.types import (
@@ -21,6 +17,10 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.history.events.structures.types import (
+        HistoryEventSubType,
+        HistoryEventType,
+    )
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -35,7 +35,7 @@ class SolanaEvent(OnchainEvent[Signature, SolanaAddress]):  # hash in superclass
             timestamp: TimestampMS,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            asset: 'Asset',
+            asset: Asset,
             amount: FVal,
             # Keep location param to reuse parent's deserialize methods
             location: Literal[Location.SOLANA] = Location.SOLANA,

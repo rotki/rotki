@@ -19,9 +19,9 @@ class GnosisManager(EvmManager, CurveManagerMixin):
 
     def __init__(
             self,
-            node_inquirer: 'GnosisInquirer',
-            premium: 'Premium | None' = None,
-            monerium: 'Monerium | None' = None,
+            node_inquirer: GnosisInquirer,
+            premium: Premium | None = None,
+            monerium: Monerium | None = None,
     ) -> None:
         transactions = GnosisTransactions(
             gnosis_inquirer=node_inquirer,

@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _get_balancer_api_chain(chain: 'ChainID') -> str:
+def _get_balancer_api_chain(chain: ChainID) -> str:
     """Get Balancer API chain name or raise for unsupported chains."""
     if (balancer_chain := CHAIN_ID_TO_BALANCER_API_MAPPINGS.get(chain)) is None:
         raise RemoteError(f'Balancer API does not support chain {chain}')
@@ -67,7 +67,7 @@ def query_balancer_api(query: str, variables: dict[str, Any]) -> dict[str, Any]:
         raise RemoteError(f'Balancer API request with query={query} and vars={variables} failed due to {msg}') from e  # noqa: E501
 
 
-def query_balancer_pools_count(chain: 'ChainID', version: Literal[1, 2, 3]) -> int:
+def query_balancer_pools_count(chain: ChainID, version: Literal[1, 2, 3]) -> int:
     """Fetch the total number of balancer pools for the specified chain and protocol
     May raise:
     - RemoteError
@@ -86,7 +86,7 @@ def query_balancer_pools_count(chain: 'ChainID', version: Literal[1, 2, 3]) -> i
         raise RemoteError(f'Balancer v{version} pools count query for {chain} failed due to {msg}') from e  # noqa: E501
 
 
-def query_balancer_pools(chain: 'ChainID', version: Literal[1, 2, 3]) -> list[dict[str, Any]]:
+def query_balancer_pools(chain: ChainID, version: Literal[1, 2, 3]) -> list[dict[str, Any]]:
     """Fetches and processes balancer pools from API.
     May raise:
     - RemoteError
@@ -116,8 +116,8 @@ def query_balancer_pools(chain: 'ChainID', version: Literal[1, 2, 3]) -> list[di
 
 
 def get_balancer_pool_price(
-        pool_token: 'EvmToken',
-        evm_inquirer: 'EvmNodeInquirer',
+        pool_token: EvmToken,
+        evm_inquirer: EvmNodeInquirer,
 ) -> Price:
     """Get price for a Balancer pool token
     May raise:

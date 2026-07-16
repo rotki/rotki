@@ -4,15 +4,12 @@ import sys
 import time
 import traceback
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import uvicorn
-import werkzeug
 from flask import Blueprint, Flask, Response, abort, g, jsonify, request
 from flask.views import MethodView
 from flask_cors import CORS
-from marshmallow import Schema
-from marshmallow.exceptions import ValidationError
 from webargs.flaskparser import parser
 from werkzeug.exceptions import NotFound
 
@@ -196,10 +193,16 @@ from rotkehlchen.api.v1.wallet_resources import (
     PrepareNativeTransferResource,
     PrepareTokenTransferResource,
 )
-from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.concurrency import Task
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.version_check import get_current_version
+
+if TYPE_CHECKING:
+    import werkzeug
+    from marshmallow import Schema
+    from marshmallow.exceptions import ValidationError
+
+    from rotkehlchen.api.websockets.notifier import RotkiNotifier
 
 URLS = list[
     tuple[str, type[MethodView]] | tuple[str, type[MethodView], str]

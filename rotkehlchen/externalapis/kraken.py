@@ -1,10 +1,9 @@
 import logging
 from http import HTTPStatus
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import requests
 
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
@@ -17,6 +16,9 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.network import create_session
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import AssetWithOracles
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

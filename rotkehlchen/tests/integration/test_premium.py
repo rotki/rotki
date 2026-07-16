@@ -69,7 +69,7 @@ def fixture_load_remote_premium_data() -> bytes:
     {'premium_should_sync': False},
 ])
 def test_upload_data_to_server(
-        rotkehlchen_instance: 'Rotkehlchen',
+        rotkehlchen_instance: Rotkehlchen,
         username: str,
         db_password: str,
         db_settings: dict[str, bool],
@@ -279,7 +279,7 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_settings: dic
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_upload_aborts_on_local_db_integrity_failure(rotkehlchen_instance: 'Rotkehlchen') -> None:
+def test_upload_aborts_on_local_db_integrity_failure(rotkehlchen_instance: Rotkehlchen) -> None:
     """If the local DB fails the integrity check, no upload happens and the user is notified."""
     with rotkehlchen_instance.data.db.user_write() as write_cursor:
         # Write to the DB so last_write_ts is non-zero and would normally trigger an upload
@@ -765,7 +765,7 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
-def test_upload_data_error(rotkehlchen_instance: 'Rotkehlchen') -> None:
+def test_upload_data_error(rotkehlchen_instance: Rotkehlchen) -> None:
     """Test that we correctly handle errors from the nest server"""
     assert rotkehlchen_instance.premium is not None
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
@@ -798,7 +798,7 @@ def test_upload_data_error(rotkehlchen_instance: 'Rotkehlchen') -> None:
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('premium_limits_override', [{'max_backup_size_mb': 0}])
-def test_upload_skipped_when_backup_limit_is_zero(rotkehlchen_instance: 'Rotkehlchen') -> None:
+def test_upload_skipped_when_backup_limit_is_zero(rotkehlchen_instance: Rotkehlchen) -> None:
     """Test that upload is disabled when the premium tier does not allow backups."""
     assert rotkehlchen_instance.task_manager is not None
     with patch.object(
@@ -818,7 +818,7 @@ def test_upload_skipped_when_backup_limit_is_zero(rotkehlchen_instance: 'Rotkehl
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('device_limit', [1, 2])
-def test_device_limits(rotkehlchen_instance: 'Rotkehlchen', device_limit: int) -> None:
+def test_device_limits(rotkehlchen_instance: Rotkehlchen, device_limit: int) -> None:
     """
     Test that registering new devices works both when we can register a new device and when the
     limit has been reached
@@ -874,7 +874,7 @@ def test_device_limits(rotkehlchen_instance: 'Rotkehlchen', device_limit: int) -
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_limits_caching(rotkehlchen_instance: 'Rotkehlchen') -> None:
+def test_limits_caching(rotkehlchen_instance: Rotkehlchen) -> None:
     """Test that user limits are cached properly to avoid repeated API calls."""
     premium = rotkehlchen_instance.premium
     assert premium is not None

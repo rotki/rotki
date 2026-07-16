@@ -8,7 +8,6 @@ from unittest.mock import _patch, patch
 
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL, Binance
 from rotkehlchen.exchanges.bit2me import Bit2me
@@ -22,14 +21,12 @@ from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbaseprime import Coinbaseprime
 from rotkehlchen.exchanges.coinex import Coinex
 from rotkehlchen.exchanges.cryptocom import Cryptocom
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithoutApiSecret
 from rotkehlchen.exchanges.gate import Gate
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.htx import Htx
 from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.exchanges.independentreserve import Independentreserve
 from rotkehlchen.exchanges.kucoin import Kucoin
-from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.okx import Okx
 from rotkehlchen.exchanges.poloniex import Poloniex
 from rotkehlchen.exchanges.utils import create_binance_symbols_to_pair
@@ -53,10 +50,13 @@ from rotkehlchen.types import (
     Location,
     TimestampMS,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithoutApiSecret
     from rotkehlchen.exchanges.kraken import Kraken
+    from rotkehlchen.exchanges.manager import ExchangeManager
+    from rotkehlchen.user_messages import MessagesAggregator
 
 POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE: Final = """{
   "adjustments": [],
@@ -652,7 +652,7 @@ def mock_binance_balance_response(url, **kwargs):  # pylint: disable=unused-argu
     return MockResponse(200, BINANCE_BALANCES_RESPONSE)
 
 
-def patch_binance_balances_query(binance: 'Binance') -> _patch:
+def patch_binance_balances_query(binance: Binance) -> _patch:
     def mock_binance_asset_return(url, *args, **kwargs):  # pylint: disable=unused-argument
         if 'futures' in url:
             response = '{"crossCollaterals":[]}'
@@ -671,7 +671,7 @@ def patch_binance_balances_query(binance: 'Binance') -> _patch:
     return patch.object(binance.session, 'request', side_effect=mock_binance_asset_return)
 
 
-def patch_poloniex_balances_query(poloniex: 'Poloniex') -> _patch:
+def patch_poloniex_balances_query(poloniex: Poloniex) -> _patch:
     def mock_poloniex_asset_return(url, *args, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
 
@@ -1165,7 +1165,7 @@ def try_get_first_exchange(
 def try_get_first_exchange(
         exchange_manager: ExchangeManager,
         location: Literal[Location.KRAKEN],
-) -> 'Kraken | None':
+) -> Kraken | None:
     ...
 
 
@@ -1197,7 +1197,7 @@ def try_get_first_exchange(
 def try_get_first_exchange(
         exchange_manager: ExchangeManager,
         location: Literal[Location.KUCOIN],
-) -> 'Kucoin | None':
+) -> Kucoin | None:
     ...
 
 

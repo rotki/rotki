@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP, HOP_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.hop.decoder import HopCommonDecoder
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
@@ -11,14 +10,15 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import BRIDGES, HOP_GOVERNOR
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 TRANSFER_TO_L2 = b'\n\x06\x07h\x8c\x86\xec\x17u\xab\xcd\xba\xb7\xb3::5\xa6\xc9\xcd\xe6w\xc9\xbe\x88\x01P\xc21\xcck\x0b'  # noqa: E501
@@ -27,9 +27,9 @@ TRANSFER_TO_L2 = b'\n\x06\x07h\x8c\x86\xec\x17u\xab\xcd\xba\xb7\xb3::5\xa6\xc9\x
 class HopDecoder(HopCommonDecoder, GovernableDecoderInterface):
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            ethereum_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         HopCommonDecoder.__init__(  # using direct constructor calls due to
             self,  # having diamond inheritance. TODO: Perhaps Governable should be a mixin?

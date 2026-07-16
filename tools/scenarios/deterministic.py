@@ -5,14 +5,16 @@ builds of the same profile at the same DB schema version produce identical
 row data. Never use wall-clock time or unseeded randomness here.
 """
 import random
-from collections.abc import Sequence
-from typing import Final, TypeVar
+from typing import TYPE_CHECKING, Final, TypeVar
 
 from eth_utils import to_checksum_address
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_evm_tx_hash
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp, TimestampMS
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 T = TypeVar('T')
 

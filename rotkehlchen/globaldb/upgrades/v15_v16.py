@@ -28,20 +28,20 @@ ETHEREUM_YEARN_VAULTS_CACHE_KEY: Final = compute_cache_key((
 
 @enter_exit_debug_log(name='globaldb v15->v16 upgrade')
 def migrate_to_v16(
-        connection: 'DBConnection',
-        progress_handler: 'DBUpgradeProgressHandler',
+        connection: DBConnection,
+        progress_handler: DBUpgradeProgressHandler,
 ) -> None:
     """This upgrade takes place in v1.43.0."""
 
     @progress_step('Create price history timestamp order index.')
-    def _create_price_history_timestamp_order_index(write_cursor: 'DBCursor') -> None:
+    def _create_price_history_timestamp_order_index(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'CREATE INDEX IF NOT EXISTS idx_price_history_timestamp_desc_order '
             'ON price_history (timestamp DESC, from_asset, to_asset, source_type);',
         )
 
     @progress_step('Update legacy yearn vaults cache key.')
-    def _update_legacy_yearn_cache_key(write_cursor: 'DBCursor') -> None:
+    def _update_legacy_yearn_cache_key(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'UPDATE OR IGNORE unique_cache SET key=? WHERE key=?',
             (ETHEREUM_YEARN_VAULTS_CACHE_KEY, LEGACY_YEARN_VAULTS_CACHE_KEY),
@@ -52,7 +52,7 @@ def migrate_to_v16(
         )
 
     @progress_step('Remove invalid old Cryptocompare prices.')
-    def _remove_invalid_old_cryptocompare_prices(write_cursor: 'DBCursor') -> None:
+    def _remove_invalid_old_cryptocompare_prices(write_cursor: DBCursor) -> None:
         """
         With the introduction of the new price handling we identified some incorrect
         entries in the price cache coming from Cryptocompare. We checked that these

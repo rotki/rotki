@@ -4,8 +4,6 @@ import time
 from typing import TYPE_CHECKING, Any, overload
 from unittest.mock import patch
 
-from eth_typing import ChecksumAddress
-
 from rotkehlchen.chain.arbitrum_one.decoding.decoder import ArbitrumOneTransactionDecoder
 from rotkehlchen.chain.arbitrum_one.transactions import ArbitrumOneTransactions
 from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
@@ -18,7 +16,6 @@ from rotkehlchen.chain.ethereum.constants import (
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
-from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.gnosis.decoding.decoder import GnosisTransactionDecoder
 from rotkehlchen.chain.gnosis.transactions import GnosisTransactions
@@ -33,7 +30,6 @@ from rotkehlchen.chain.polygon_pos.transactions import PolygonPOSTransactions
 from rotkehlchen.chain.scroll.decoding.decoder import ScrollTransactionDecoder
 from rotkehlchen.chain.scroll.transactions import ScrollTransactions
 from rotkehlchen.constants import ONE
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
@@ -52,17 +48,21 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 if TYPE_CHECKING:
+    from eth_typing import ChecksumAddress
+
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.transactions import EvmTransactions
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 NODE_CONNECTION_TIMEOUT = 10
@@ -343,112 +343,112 @@ def setup_ethereum_transactions_test(
 
 @overload
 def get_decoded_events_of_transaction(
-        evm_inquirer: 'EthereumInquirer',
+        evm_inquirer: EthereumInquirer,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
         load_global_caches: list[str] | None = None,
         evm_decoder: EthereumTransactionDecoder | None = None,
-) -> tuple[list['EvmEvent'], EthereumTransactionDecoder]:
+) -> tuple[list[EvmEvent], EthereumTransactionDecoder]:
     ...
 
 
 @overload
 def get_decoded_events_of_transaction(
-        evm_inquirer: 'OptimismInquirer',
+        evm_inquirer: OptimismInquirer,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
         load_global_caches: list[str] | None = None,
-) -> tuple[list['EvmEvent'], OptimismTransactionDecoder]:
+) -> tuple[list[EvmEvent], OptimismTransactionDecoder]:
     ...
 
 
 @overload
 def get_decoded_events_of_transaction(
-        evm_inquirer: 'ArbitrumOneInquirer',
+        evm_inquirer: ArbitrumOneInquirer,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
         load_global_caches: list[str] | None = None,
-) -> tuple[list['EvmEvent'], ArbitrumOneTransactionDecoder]:
+) -> tuple[list[EvmEvent], ArbitrumOneTransactionDecoder]:
     ...
 
 
 @overload
 def get_decoded_events_of_transaction(
-        evm_inquirer: 'BaseInquirer',
+        evm_inquirer: BaseInquirer,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
         load_global_caches: list[str] | None = None,
-) -> tuple[list['EvmEvent'], BaseTransactionDecoder]:
+) -> tuple[list[EvmEvent], BaseTransactionDecoder]:
     ...
 
 
 @overload
 def get_decoded_events_of_transaction(
-        evm_inquirer: 'GnosisInquirer',
+        evm_inquirer: GnosisInquirer,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
         load_global_caches: list[str] | None = None,
-) -> tuple[list['EvmEvent'], GnosisTransactionDecoder]:
+) -> tuple[list[EvmEvent], GnosisTransactionDecoder]:
     ...
 
 
 @overload
 def get_decoded_events_of_transaction(
-        evm_inquirer: 'PolygonPOSInquirer',
+        evm_inquirer: PolygonPOSInquirer,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
         load_global_caches: list[str] | None = None,
-) -> tuple[list['EvmEvent'], PolygonPOSTransactionDecoder]:
+) -> tuple[list[EvmEvent], PolygonPOSTransactionDecoder]:
     ...
 
 
 @overload
 def get_decoded_events_of_transaction(
-        evm_inquirer: 'ScrollInquirer',
+        evm_inquirer: ScrollInquirer,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
         load_global_caches: list[str] | None = None,
-) -> tuple[list['EvmEvent'], ScrollTransactionDecoder]:
+) -> tuple[list[EvmEvent], ScrollTransactionDecoder]:
     ...
 
 
 @overload
 def get_decoded_events_of_transaction(
-        evm_inquirer: 'BinanceSCInquirer',
+        evm_inquirer: BinanceSCInquirer,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
         load_global_caches: list[str] | None = None,
-) -> tuple[list['EvmEvent'], BinanceSCTransactionDecoder]:
+) -> tuple[list[EvmEvent], BinanceSCTransactionDecoder]:
     ...
 
 
 @overload
 def get_decoded_events_of_transaction(
-        evm_inquirer: 'HyperliquidInquirer',
+        evm_inquirer: HyperliquidInquirer,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
         load_global_caches: list[str] | None = None,
-) -> tuple[list['EvmEvent'], HyperliquidTransactionDecoder]:
+) -> tuple[list[EvmEvent], HyperliquidTransactionDecoder]:
     ...
 
 
 def get_decoded_events_of_transaction(
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
         load_global_caches: list[str] | None = None,
-        evm_decoder: 'EVMTransactionDecoder|None' = None,
-) -> tuple[list['EvmEvent'], 'EVMTransactionDecoder']:
+        evm_decoder: EVMTransactionDecoder | None = None,
+) -> tuple[list[EvmEvent], EVMTransactionDecoder]:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
 
     It also accepts `transactions` in case the caller wants to apply some mocks (like call_count)

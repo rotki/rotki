@@ -47,18 +47,18 @@ class NamingSystem(NamedTuple):
     identifier: str
     source: AddressNameSource
     suffix: str
-    reverse_lookup: Callable[['EthereumInquirer', list[ChecksumEvmAddress]], dict[ChecksumEvmAddress, str | None]]  # noqa: E501
-    resolve: Callable[['EthereumInquirer', str], ChecksumEvmAddress | None]
+    reverse_lookup: Callable[[EthereumInquirer, list[ChecksumEvmAddress]], dict[ChecksumEvmAddress, str | None]]  # noqa: E501
+    resolve: Callable[[EthereumInquirer, str], ChecksumEvmAddress | None]
 
 
 def _ens_reverse_lookup(
-        inquirer: 'EthereumInquirer',
+        inquirer: EthereumInquirer,
         addresses: list[ChecksumEvmAddress],
 ) -> dict[ChecksumEvmAddress, str | None]:
     return inquirer.ens_reverse_lookup(addresses)
 
 
-def _ens_resolve(inquirer: 'EthereumInquirer', name: str) -> ChecksumEvmAddress | None:
+def _ens_resolve(inquirer: EthereumInquirer, name: str) -> ChecksumEvmAddress | None:
     return inquirer.ens_lookup(name)
 
 
@@ -81,7 +81,7 @@ ETHEREUM_NAMING_SYSTEMS: Final = (ENS_NAMING_SYSTEM, GNS_NAMING_SYSTEM)
 
 def _find_system_name_mappings(
         dbens: DBEns,
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         system: NamingSystem,
         addresses: list[ChecksumEvmAddress],
         ignore_cache: bool,
@@ -129,7 +129,7 @@ def _find_system_name_mappings(
 
 
 def find_ens_mappings(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         addresses: list[ChecksumEvmAddress],
         ignore_cache: bool,
 ) -> dict[ChecksumEvmAddress, str]:
@@ -171,7 +171,7 @@ def find_ens_mappings(
 
 
 def search_for_addresses_names(
-        prioritizer: 'NamePrioritizer',
+        prioritizer: NamePrioritizer,
         chain_addresses: list[OptionalChainAddress],
 ) -> list[AddressbookEntryWithSource]:
     """
@@ -188,7 +188,7 @@ def search_for_addresses_names(
 
 
 def maybe_resolve_name(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         name: str,
         ignore_cache: bool,
 ) -> ChecksumEvmAddress | None:

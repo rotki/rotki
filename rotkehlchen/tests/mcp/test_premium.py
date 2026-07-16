@@ -1,12 +1,14 @@
-from collections.abc import Generator
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import requests
 
 from rotkehlchen.mcp import premium
 from rotkehlchen.mcp.backend import configure_backend
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 class MockResponse:

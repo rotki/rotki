@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Optional
-
-from rotkehlchen.types import ChecksumEvmAddress
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -17,10 +17,10 @@ class EthereumModule(ABC):
     @abstractmethod
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            database: 'DBHandler',
-            premium: Optional['Premium'],
-            msg_aggregator: 'MessagesAggregator',
+            ethereum_inquirer: EthereumInquirer,
+            database: DBHandler,
+            premium: Premium | None,
+            msg_aggregator: MessagesAggregator,
             **kwargs: Any,
     ) -> None:
         ...
@@ -28,7 +28,7 @@ class EthereumModule(ABC):
     # Optional callback to run on a module's startup
     # Is optional as opposed to a no-op  since at initialization we
     # start a greenlet to run it and there is no reason to bring up no-op greenlets
-    on_startup: Callable[['EthereumModule'], None] | None = None
+    on_startup: Callable[[EthereumModule], None] | None = None
 
     @abstractmethod
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:
@@ -50,7 +50,7 @@ class ProgressUpdater(ABC):
     DB Upgrades and Data Migrations
     """
 
-    def __init__(self, messages_aggregator: 'MessagesAggregator', target_version: int) -> None:
+    def __init__(self, messages_aggregator: MessagesAggregator, target_version: int) -> None:
         self.messages_aggregator = messages_aggregator
         self.target_version = target_version
         self.start_version: int | None = None
@@ -98,13 +98,13 @@ class DBSetterMixin:
 
     At the moment of writing, used for Oracles and External services"""
 
-    db: 'DBHandler|None'
+    db: DBHandler | None
 
     @abstractmethod
     def _get_name(self) -> str:
         """Return the name of the module/instance"""
 
-    def set_database(self, database: 'DBHandler') -> None:
+    def set_database(self, database: DBHandler) -> None:
         """If the instance was initialized without a DB this sets its DB"""
         assert self.db is None, f'set_database was called on a {self._get_name()} instance that already has a DB'  # noqa: E501
         self.db = database

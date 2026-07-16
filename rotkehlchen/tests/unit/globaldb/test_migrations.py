@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
 @pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])
-def test_migration1(globaldb: 'GlobalDBHandler'):
+def test_migration1(globaldb: GlobalDBHandler):
     """Test for the 1st globalDB data migration"""
     # Check state before migration
     with globaldb.conn.read_ctx() as cursor:
@@ -52,7 +52,7 @@ def test_migration1(globaldb: 'GlobalDBHandler'):
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
 @pytest.mark.parametrize('custom_globaldb', ['v8_global.db'])
-def test_migration2(globaldb: 'GlobalDBHandler'):
+def test_migration2(globaldb: GlobalDBHandler):
     """Test for the 1st globalDB data migration"""
     # Check state before migration
     ethereum_yearn_cache_key = compute_cache_key((
@@ -79,7 +79,7 @@ def test_migration2(globaldb: 'GlobalDBHandler'):
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
 @pytest.mark.parametrize('custom_globaldb', ['v14_global.db'])
-def test_migration3_updates_address_book(globaldb: 'GlobalDBHandler') -> None:
+def test_migration3_updates_address_book(globaldb: GlobalDBHandler) -> None:
     """Test that migration 3 replaces 'NONE' with ecosystem key in address_book"""
     evm_addr = '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
     eth_addr = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'

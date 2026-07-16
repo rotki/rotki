@@ -150,7 +150,7 @@ def test_format_own_rpc_endpoint(endpoint, formatted_endpoint):
     assert formatted_endpoint == SubstrateManager._format_own_rpc_endpoint(endpoint)
 
 
-def test_connect_to_own_node(polkadot_manager: 'SubstrateManager'):
+def test_connect_to_own_node(polkadot_manager: SubstrateManager):
     polkadot_manager.connect_at_start = [PolkadotNodeName.OWN, PolkadotNodeName.DWELLIR]
     polkadot_manager.own_rpc_endpoint = ''
     polkadot_manager.attempt_connections()

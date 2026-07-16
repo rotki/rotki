@@ -1,7 +1,8 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -9,7 +10,6 @@ from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import GPV2_SETTLEMENT_ADDRESS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
-from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.constants.assets import (
     A_ARB,
     A_BSC_BNB,
@@ -31,6 +31,10 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.unit.test_binance_sc_inquirer import ONE_RPC_BINANCE_SC_NODE
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
+    from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 
 BSC_NODES_TO_CONNECT = [(WeightedNode(
     node_info=ONE_RPC_BINANCE_SC_NODE,

@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -24,7 +23,6 @@ from rotkehlchen.db.settings import DEFAULT_INCLUDE_CRYPTO2CRYPTO, DEFAULT_INCLU
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.eth2 import EthStakingEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -32,10 +30,13 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from rotkehlchen.accounting.accountant import Accountant
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 logger = logging.getLogger(__name__)
@@ -62,7 +63,7 @@ class RuleInformation:
 
 class DBAccountingRules:
 
-    def __init__(self, db_handler: 'DBHandler') -> None:
+    def __init__(self, db_handler: DBHandler) -> None:
         self.db = db_handler
 
     @classmethod
@@ -83,11 +84,11 @@ class DBAccountingRules:
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             counterparty: str | None,
-            rule: 'BaseEventSettings',
+            rule: BaseEventSettings,
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
             force_update: bool = False,
             event_ids: list[int] | None = None,
-            write_cursor: 'DBCursor | None' = None,
+            write_cursor: DBCursor | None = None,
     ) -> int:
         """
         Adds a single accounting rule to the database and returns the identifier
@@ -130,11 +131,11 @@ class DBAccountingRules:
 
     def _add_accounting_rule(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             counterparty: str | None,
-            rule: 'BaseEventSettings',
+            rule: BaseEventSettings,
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
             force_update: bool,
             event_ids: list[int] | None,
@@ -249,7 +250,7 @@ class DBAccountingRules:
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             counterparty: str | None,
-            rule: 'BaseEventSettings',
+            rule: BaseEventSettings,
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
             identifier: int,
             event_ids: list[int] | None = None,
@@ -307,7 +308,7 @@ class DBAccountingRules:
 
     def add_linked_setting(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             rule_identifier: int,
             rule_property: LINKABLE_ACCOUNTING_PROPERTIES,
             setting_name: LINKABLE_ACCOUNTING_SETTINGS_NAME,
@@ -549,12 +550,12 @@ class DBAccountingRules:
 
 
 def _events_to_consume(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         callbacks: dict[int, tuple[int, EventsAccountantCallback]],
-        events_iterator: "peekable[tuple[tuple[Any, ...], 'HistoryBaseEntry']]",
+        events_iterator: peekable[tuple[tuple[Any, ...], HistoryBaseEntry]],
         next_events: Sequence[HistoryBaseEntry],
         event: HistoryBaseEntry,
-        pot: 'AccountingPot',
+        pot: AccountingPot,
         event_specific_treatments: dict[int, str | None] | None = None,
         generic_treatments: dict[tuple[str, str, str], str | None] | None = None,
 ) -> list[tuple[int, int]]:
@@ -632,7 +633,7 @@ def _events_to_consume(
 
 
 def _resolve_accounting_treatment(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         event: HistoryBaseEntry,
         event_specific_treatments: dict[int, str | None] | None = None,
         generic_treatments: dict[tuple[str, str, str], str | None] | None = None,
@@ -725,7 +726,7 @@ def _resolve_accounting_treatment(
 
 
 def _prefetch_accounting_treatments(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         related_events: Sequence[HistoryBaseEntry],
 ) -> tuple[dict[int, str | None], dict[tuple[str, str, str], str | None]]:
     """Prefetch event-specific and generic accounting treatments for rule resolution."""
@@ -757,9 +758,9 @@ def _prefetch_accounting_treatments(
 
 
 def query_missing_accounting_rules(
-        db: 'DBHandler',
-        accountant: 'Accountant',
-        pot_factory: 'Callable[[], AccountingPot]',
+        db: DBHandler,
+        accountant: Accountant,
+        pot_factory: Callable[[], AccountingPot],
         events: Sequence[HistoryBaseEntry],
 ) -> list[EventAccountingRuleStatus]:
     """

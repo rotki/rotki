@@ -1,10 +1,12 @@
-from collections.abc import Callable
-from typing import Any, Final, TypedDict, Unpack, overload
+from typing import TYPE_CHECKING, Any, Final, TypedDict, Unpack, overload
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.constants import EXTRAINTERNALTXPREFIX
 from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, SolanaAddress, Timestamp
 from rotkehlchen.utils.mixins.enums import Enum
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX: Final = 'ignored_ced_'
 

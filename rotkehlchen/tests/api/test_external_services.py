@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('include_cryptocompare_key', [False])
 @pytest.mark.parametrize('include_beaconchain_key', [False])
 @pytest.mark.parametrize('include_blockscout_key', [False])
-def test_add_get_external_service(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_get_external_service(rotkehlchen_api_server: APIServer) -> None:
     """Tests that adding and retrieving external service credentials works"""
     # With no data an empty response should be returned
     response = requests.get(
@@ -78,7 +78,7 @@ def test_add_get_external_service(rotkehlchen_api_server: 'APIServer') -> None:
     assert result == expected_result
 
 
-def test_etherscan_re_enabled(rotkehlchen_api_server: 'APIServer') -> None:
+def test_etherscan_re_enabled(rotkehlchen_api_server: APIServer) -> None:
     """Test that etherscan is re-enabled when a user adds a new api key."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     for chain_manager in (chain_managers := (
@@ -96,7 +96,7 @@ def test_etherscan_re_enabled(rotkehlchen_api_server: 'APIServer') -> None:
         assert EvmIndexer.ETHERSCAN in chain_manager.node_inquirer.available_indexers
 
 
-def test_helius_key_syncs_solana_rpc_node(rotkehlchen_api_server: 'APIServer') -> None:
+def test_helius_key_syncs_solana_rpc_node(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     node_inquirer = rotki.chains_aggregator.solana.node_inquirer
 
@@ -157,7 +157,7 @@ def test_helius_key_syncs_solana_rpc_node(rotkehlchen_api_server: 'APIServer') -
 @pytest.mark.parametrize('include_etherscan_key', [False])
 @pytest.mark.parametrize('include_beaconchain_key', [False])
 @pytest.mark.parametrize('include_blockscout_key', [False])
-def test_delete_external_service(rotkehlchen_api_server: 'APIServer') -> None:
+def test_delete_external_service(rotkehlchen_api_server: APIServer) -> None:
     """Tests that delete external service credentials works"""
     # Add some data and see that the response shows they are added
     expected_result = {
@@ -207,7 +207,7 @@ def test_delete_external_service(rotkehlchen_api_server: 'APIServer') -> None:
     assert result == {}
 
 
-def test_add_external_services_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_external_services_errors(rotkehlchen_api_server: APIServer) -> None:
     """Tests that errors at adding external service credentials are handled properly"""
     # Missing data
     response = requests.put(
@@ -299,7 +299,7 @@ def test_add_external_services_errors(rotkehlchen_api_server: 'APIServer') -> No
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_complete_monerium_oauth_triggers_background_refresh(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         start_with_valid_premium: bool,  # pylint: disable=unused-argument
 ) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -343,7 +343,7 @@ def test_complete_monerium_oauth_triggers_background_refresh(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_complete_monerium_oauth_requires_capability(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         start_with_valid_premium: bool,  # pylint: disable=unused-argument
 ) -> None:
     with patch(
@@ -366,7 +366,7 @@ def test_complete_monerium_oauth_requires_capability(
     )
 
 
-def test_remove_external_services_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_remove_external_services_errors(rotkehlchen_api_server: APIServer) -> None:
     """Tests that errors at removing external service credentials are handled properly"""
     # Missing data
     response = requests.delete(

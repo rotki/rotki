@@ -1,8 +1,9 @@
-from typing import Final
-
-from eth_typing import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.types import ChainID
+
+if TYPE_CHECKING:
+    from eth_typing import ABI
 
 CPT_STAKEDAO: Final = 'stakedao'
 

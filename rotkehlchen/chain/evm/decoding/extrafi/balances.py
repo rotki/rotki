@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Final, Literal
 from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import (
     get_or_create_evm_token,
     token_normalized_value,
@@ -35,6 +34,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset, EvmToken
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.types import ChecksumEvmAddress
@@ -46,8 +46,8 @@ log = RotkehlchenLogsAdapter(logger)
 class ExtrafiCommonBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_decoder: 'EVMTransactionDecoder',
+            evm_inquirer: EvmNodeInquirer,
+            tx_decoder: EVMTransactionDecoder,
             extrafi_token: Asset,
     ):
         super().__init__(
@@ -58,7 +58,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
         )
         self.extrafi_token = extrafi_token
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Query balances of lending pools and extra locking"""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         address_to_deposits = self.addresses_with_deposits()
@@ -98,7 +98,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
 
     def _query_farm_positions(
             self,
-            address: 'ChecksumEvmAddress',
+            address: ChecksumEvmAddress,
             farm_positions: list[tuple[int, int]],
             balances: BalancesSheetType,
     ) -> None:
@@ -155,7 +155,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
 
     def _query_locked_extra(
             self,
-            addresses: list['ChecksumEvmAddress'],
+            addresses: list[ChecksumEvmAddress],
             balances: BalancesSheetType,
     ) -> None:
         """Query the EXTRA balance locked in the platform for the given address. This
@@ -242,7 +242,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
 
     def query_lending_reserves(
             self,
-            address: 'ChecksumEvmAddress',
+            address: ChecksumEvmAddress,
             reserves: list[int],
     ) -> dict[EvmToken, FVal]:
         """Query the balances on the given reserves ids for a single address.

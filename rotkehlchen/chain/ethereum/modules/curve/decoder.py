@@ -19,7 +19,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.constants.assets import A_CRV, A_CRV_3CRV, A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
@@ -44,6 +43,7 @@ from .constants import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
+    from rotkehlchen.fval import FVal
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -55,9 +55,9 @@ class CurveDecoder(CurveCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

@@ -1,9 +1,10 @@
-from typing import Final
-
-from eth_typing import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
+
+if TYPE_CHECKING:
+    from eth_typing import ABI
 
 CPT_BEEFY_FINANCE: Final = 'beefy_finance'
 TOKEN_RETURNED_TOPIC: Final = b'\xea\xf4I1\x9c\x04,\x9b\xa3GO\xa0\xc52\x9e\xb5\x8c\xd1\xf2;\xe1\x10\xcd\xbf\x9di{\x8d0=\xac\x15'  # noqa: E501

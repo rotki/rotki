@@ -1,9 +1,8 @@
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
 from rotkehlchen.chain.base.modules.degen.constants import (
     CLAIM_AIRDROP_1_CONTRACT,
     CLAIM_AIRDROP_2_CONTRACT,
@@ -28,6 +27,9 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
 
 DEGEN_TOKEN: Final = Asset(DEGEN_TOKEN_ID)
 

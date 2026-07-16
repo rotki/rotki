@@ -1,7 +1,6 @@
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from base58 import b58decode_check, b58encode_check
-from eth_typing import ChecksumAddress
 from marshmallow import ValidationError
 
 from rotkehlchen.chain.bitcoin.bch.cashaddr import cashaddr_decode, cashaddr_encode
@@ -9,6 +8,9 @@ from rotkehlchen.chain.bitcoin.bch.constants import CASHADDR_PREFIX
 from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
 from rotkehlchen.chain.bitcoin.validation import is_valid_base58_address
 from rotkehlchen.types import BTCAddress
+
+if TYPE_CHECKING:
+    from eth_typing import ChecksumAddress
 
 
 def convert_version(version: int, target_type: Literal['legacy', 'cash']) -> int:

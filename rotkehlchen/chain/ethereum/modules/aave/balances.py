@@ -27,8 +27,8 @@ log = RotkehlchenLogsAdapter(logger)
 class AaveBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            tx_decoder: 'EthereumTransactionDecoder',
+            evm_inquirer: EthereumInquirer,
+            tx_decoder: EthereumTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -37,7 +37,7 @@ class AaveBalances(ProtocolWithBalance):
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Queries and returns the balances sheet for staking events.
 
         Retrieves deposit events and calls staking contract to get the total rewards balance.

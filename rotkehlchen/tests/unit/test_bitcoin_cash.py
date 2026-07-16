@@ -91,9 +91,9 @@ def test_validate_bch_address_input():
 @pytest.mark.vcr
 @pytest.mark.parametrize('bch_accounts', [['38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr']])
 def test_query_bch_has_transactions_and_balances(
-        bitcoin_cash_manager: 'BitcoinCashManager',
-        bch_accounts: list['BTCAddress'],
-        inquirer: 'Inquirer',
+        bitcoin_cash_manager: BitcoinCashManager,
+        bch_accounts: list[BTCAddress],
+        inquirer: Inquirer,
 ) -> None:
     """Test that the bch have_transactions and get_balances work correctly from all apis."""
     user_address, expected_balance = bch_accounts[0], FVal('5.33798911')

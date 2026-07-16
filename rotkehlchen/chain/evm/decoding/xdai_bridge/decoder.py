@@ -3,7 +3,6 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import asset_normalized_value
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.decoding.constants import GNOSIS_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -19,6 +18,7 @@ from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
@@ -31,13 +31,13 @@ class XdaiBridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             deposit_topics: tuple[bytes, ...],
             withdrawal_topic: bytes | None,  # withdrawal is currently unsupported on gnosis
             bridge_address: ChecksumEvmAddress,
-            bridged_asset: 'Asset',
+            bridged_asset: Asset,
             source_chain: ChainID,
             target_chain: ChainID,
             peripheral_addresses: tuple[ChecksumEvmAddress, ...] | None = None,

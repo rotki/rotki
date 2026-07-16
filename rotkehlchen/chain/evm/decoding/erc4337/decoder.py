@@ -1,6 +1,5 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -8,10 +7,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import ERC4337_ENTRYPOINTS, USER_OPERATION_EVENT
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 class Erc4337Decoder(EvmDecoderInterface):

@@ -34,12 +34,12 @@ WITHDRAWAL_PROVEN: Final = b'g\xa6 \x8c\xfc\xc0\x80\x1dP\xf6\xcb\xe7ds?O\xdd\xf6
 class SuperchainL1SideCommonBridgeDecoder(EvmDecoderInterface, ABC):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            bridge_addresses: tuple['ChecksumEvmAddress', ...],
-            counterparty: 'CounterpartyDetails',
-            l2_chain: 'ChainID',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            bridge_addresses: tuple[ChecksumEvmAddress, ...],
+            counterparty: CounterpartyDetails,
+            l2_chain: ChainID,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,

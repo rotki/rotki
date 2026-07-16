@@ -3,9 +3,8 @@ import json
 import logging
 from contextlib import suppress
 from json import JSONDecodeError
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.misc import RemoteError
@@ -20,6 +19,9 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, Price, Timestamp
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset, AssetWithOracles
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

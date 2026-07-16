@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def run_single_migration(database: 'DBHandler', migration: int) -> MockRotkiForMigrations:
+def run_single_migration(database: DBHandler, migration: int) -> MockRotkiForMigrations:
     """Helper function to run a single migration in the migration tests."""
     migration_record = None
     for record in MIGRATION_LIST:

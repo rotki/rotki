@@ -94,7 +94,7 @@ class CalendarEntry(NamedTuple):
                 str | None,
                 int,
             ],
-    ) -> 'CalendarEntry':
+    ) -> CalendarEntry:
         return cls(
             identifier=row[0],
             name=row[1],
@@ -150,7 +150,7 @@ class ReminderEntry(BaseReminderData):
     def deserialize_from_db(
             cls,
             row: tuple[int, int, int, int],
-    ) -> 'ReminderEntry':
+    ) -> ReminderEntry:
         return cls(
             identifier=row[0],
             event_id=row[1],
@@ -164,7 +164,7 @@ class CalendarFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @classmethod
     def make(
-            cls: type['CalendarFilterQuery'],
+            cls: type[CalendarFilterQuery],
             and_op: bool = True,
             order_by_rules: list[tuple[str, bool]] | None = None,
             limit: int | None = None,
@@ -177,7 +177,7 @@ class CalendarFilterQuery(DBFilterQuery, FilterWithTimestamp):
             counterparty: str | None = None,
             identifiers: list[int] | None = None,
             blockchain: SupportedBlockchain | None = None,
-    ) -> 'CalendarFilterQuery':
+    ) -> CalendarFilterQuery:
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
 
@@ -236,7 +236,7 @@ class CalendarFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
 class DBCalendar:
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         self.db = database
 
     def create_calendar_entry(self, calendar: CalendarEntry) -> int:

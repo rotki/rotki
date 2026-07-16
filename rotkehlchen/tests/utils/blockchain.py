@@ -1,6 +1,5 @@
 import json
 import re
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import patch
 
@@ -11,17 +10,13 @@ from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.evm.constants import BALANCE_SCANNER_ADDRESS
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
-from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.beaconchain.service import BeaconChain
-from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
-from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -35,19 +30,24 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from contextlib import ExitStack
 
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.types import WeightedNode
+    from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+    from rotkehlchen.externalapis.etherscan import Etherscan
+    from rotkehlchen.rotkehlchen import Rotkehlchen
 
 ETHERSCAN_API_URL: Final = 'https://api.etherscan.io/v2/api'
 
 
 def assert_btc_balances_result(
         result: dict[str, Any],
-        btc_accounts: list['BTCAddress'],
+        btc_accounts: list[BTCAddress],
         btc_balances: list[str],
         also_eth: bool,
         expect_non_zero_values: bool = True,
@@ -90,7 +90,7 @@ def assert_btc_balances_result(
 def assert_eth_balances_result(
         rotki: Rotkehlchen,
         result: dict[str, Any],
-        eth_accounts: list['ChecksumEvmAddress'],
+        eth_accounts: list[ChecksumEvmAddress],
         eth_balances: list[str],
         token_balances: dict[EvmToken, list[str]],
         also_btc: bool,
@@ -203,7 +203,7 @@ def mock_beaconchain(
 def mock_etherscan_query(
         eth_map: dict[ChecksumEvmAddress, dict[str | EvmToken, Any]],
         etherscan: Etherscan,
-        ethereum: 'EthereumInquirer',
+        ethereum: EthereumInquirer,
         original_queries: list[str] | None,
         extra_flags: list[str] | None,
         original_requests_get,
@@ -585,7 +585,7 @@ def compare_account_data(expected: list[dict], got: list[dict]) -> None:
         assert found, msg
 
 
-def get_web3_node_from_inquirer(ethereum_inquirer: 'EthereumInquirer') -> RPCNode:
+def get_web3_node_from_inquirer(ethereum_inquirer: EthereumInquirer) -> RPCNode:
     """Util function to simplify getting the testing web3 node object from an ethereum inquirer"""
     node_name = NodeName(
         name='own',
@@ -596,7 +596,7 @@ def get_web3_node_from_inquirer(ethereum_inquirer: 'EthereumInquirer') -> RPCNod
     return ethereum_inquirer.rpc_mapping[node_name]
 
 
-def set_web3_node_in_inquirer(ethereum_inquirer: 'EthereumInquirer', rpc_node: RPCNode) -> None:
+def set_web3_node_in_inquirer(ethereum_inquirer: EthereumInquirer, rpc_node: RPCNode) -> None:
     """Util function to simplify setting the testing web3 node object from an ethereum inquirer"""
     node_name = NodeName(
         name='own',
@@ -608,8 +608,8 @@ def set_web3_node_in_inquirer(ethereum_inquirer: 'EthereumInquirer', rpc_node: R
 
 
 def setup_evm_addresses_activity_mock(
-        stack: 'ExitStack',
-        chains_aggregator: 'ChainsAggregator',
+        stack: ExitStack,
+        chains_aggregator: ChainsAggregator,
         eth_contract_addresses: list[ChecksumEvmAddress],
         ethereum_addresses: list[ChecksumEvmAddress],  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
         avalanche_addresses: list[ChecksumEvmAddress] | None = None,
@@ -623,7 +623,7 @@ def setup_evm_addresses_activity_mock(
         hyperliquid_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
         monad_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
         zksync_lite_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
-) -> 'ExitStack':
+) -> ExitStack:
     saved_locals = locals()  # bit hacky, but save locals here so they can be accessed by mock_chain_has_activity  # noqa: E501
 
     def mock_ethereum_get_code(account):
@@ -701,10 +701,10 @@ def setup_evm_addresses_activity_mock(
 
 
 def maybe_modify_rpc_nodes(
-        database: 'DBHandler',
+        database: DBHandler,
         blockchain: SupportedBlockchain,
-        manager_connect_at_start: str | Sequence['WeightedNode'],
-) -> Sequence['WeightedNode']:
+        manager_connect_at_start: str | Sequence[WeightedNode],
+) -> Sequence[WeightedNode]:
     """Modify the rpc nodes in the DB for the given blockchain depending on
     the value of the managager_connect_at_start.
 

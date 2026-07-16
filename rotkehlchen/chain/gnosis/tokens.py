@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class GnosisTokens(EvmTokens):
 
     # -- methods that need to be implemented per chain
-    def _per_chain_token_exceptions(self) -> set['ChecksumEvmAddress']:
+    def _per_chain_token_exceptions(self) -> set[ChecksumEvmAddress]:
         return super()._per_chain_token_exceptions() | GNOSIS_MONERIUM_LEGACY_ADDRESSES | {
             GIVPOW_ADDRESS, GNOSIS_GIVPOWERSTAKING_WRAPPER,
         }

@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal, NotRequired, TypedDict
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
@@ -15,16 +14,18 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import AssetAmount, Location, TimestampMS
 
-from .base import HISTORY_EVENT_DB_TUPLE_WRITE
-from .onchain_event import CHAIN_EVENT_FIELDS_TYPE
-
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from more_itertools import peekable
 
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.fval import FVal
     from rotkehlchen.types import Price
+
+    from .base import HISTORY_EVENT_DB_TUPLE_WRITE
+    from .onchain_event import CHAIN_EVENT_FIELDS_TYPE
 
 
 class SwapEventExtraData(TypedDict):
@@ -45,7 +46,7 @@ class SwapEventEntryData(TypedDict):
         HistoryEventSubType.FEE,
     ]
     asset: Asset
-    amount: 'FVal'
+    amount: FVal
     location_label: str | None
     identifier: int | None
     group_identifier: str | None
@@ -66,7 +67,7 @@ class SwapEvent(HistoryBaseEntry):
                 HistoryEventSubType.FEE,
             ],
             asset: Asset,
-            amount: 'FVal',
+            amount: FVal,
             group_identifier: str,
             identifier: int | None = None,
             location_label: str | None = None,
@@ -112,7 +113,7 @@ class SwapEvent(HistoryBaseEntry):
         return (self._serialize_base_tuple_for_db(),)
 
     @classmethod
-    def deserialize_from_db(cls: type['SwapEvent'], entry: tuple) -> 'SwapEvent':
+    def deserialize_from_db(cls: type[SwapEvent], entry: tuple) -> SwapEvent:
         """Deserialize a SwapEvent DB tuple.
         May raise:
         - DeserializationError
@@ -155,7 +156,7 @@ class SwapEvent(HistoryBaseEntry):
 
     @classmethod
     def _deserialize_swap_data(
-            cls: type['SwapEvent'],
+            cls: type[SwapEvent],
             base_data: HistoryBaseEntryData,
     ) -> SwapEventEntryData:
         if (event_subtype := base_data['event_subtype']) not in {
@@ -182,7 +183,7 @@ class SwapEvent(HistoryBaseEntry):
         )
 
     @classmethod
-    def deserialize(cls: type['SwapEvent'], data: dict[str, Any]) -> 'SwapEvent':
+    def deserialize(cls: type[SwapEvent], data: dict[str, Any]) -> SwapEvent:
         return cls(**cls._deserialize_swap_data(  # type: ignore[arg-type]  # deserialized extra_data should be valid SwapEventExtraData
             base_data=cls._deserialize_base_history_data(data),
         ))
@@ -198,8 +199,8 @@ class SwapEvent(HistoryBaseEntry):
 
     def process(
             self,
-            accounting: 'AccountingPot',
-            events_iterator: "peekable['AccountingEventMixin']",  # pylint: disable=unused-argument
+            accounting: AccountingPot,
+            events_iterator: peekable[AccountingEventMixin],  # pylint: disable=unused-argument
     ) -> int:
         return accounting.events_accountant.process(self, events_iterator)
 
@@ -318,8 +319,8 @@ def get_swap_spend_receive(
         is_buy: bool,
         base_asset: Asset,
         quote_asset: Asset,
-        amount: 'FVal',
-        rate: 'Price',
+        amount: FVal,
+        rate: Price,
 ) -> tuple[AssetAmount, AssetAmount]:
     """Calculates amounts and assets spent and received depending on the is_buy flag.
     Returns the spend asset amount and receive asset amount in a tuple.

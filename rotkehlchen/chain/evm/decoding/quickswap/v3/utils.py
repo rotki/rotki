@@ -12,17 +12,17 @@ from rotkehlchen.chain.polygon_pos.modules.quickswap.v3.constants import (
     QUICKSWAP_V3_POOL_DEPLOYER,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Price
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.inquirer import Inquirer
+    from rotkehlchen.types import Price
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def get_quickswap_v3_position_price(inquirer: 'Inquirer', token: 'EvmToken') -> Price:
+def get_quickswap_v3_position_price(inquirer: Inquirer, token: EvmToken) -> Price:
     """Get the price of a Quickswap V3 LP position."""
     return get_quickswap_algebra_position_price(
         inquirer=inquirer,

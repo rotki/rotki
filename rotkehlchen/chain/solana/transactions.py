@@ -14,7 +14,6 @@ from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import MissingAPIKey, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.types import SolanaAddress, SupportedBlockchain, Timestamp
@@ -23,6 +22,7 @@ from rotkehlchen.utils.misc import get_chunks, ts_now
 if TYPE_CHECKING:
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.helius import Helius
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -36,8 +36,8 @@ class SolanaTransactions:
 
     def __init__(
             self,
-            node_inquirer: 'SolanaInquirer',
-            database: 'DBHandler',
+            node_inquirer: SolanaInquirer,
+            database: DBHandler,
             helius: Helius,
     ) -> None:
         self.node_inquirer = node_inquirer

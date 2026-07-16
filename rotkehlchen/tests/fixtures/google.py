@@ -1,10 +1,9 @@
 import logging
 import os
 import warnings as test_warnings
-from collections.abc import Generator
 from contextlib import suppress
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from google.oauth2.service_account import Credentials
@@ -13,6 +12,9 @@ from googleapiclient.errors import HttpError
 
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -173,7 +175,7 @@ class GoogleService:
 
 
 @pytest.fixture(scope='session', name='session_google_service')
-def fixture_session_google_service() -> Generator[GoogleService | None, None, None]:
+def fixture_session_google_service() -> Generator[GoogleService | None]:
     service = None
     credentials_file_path = os.environ.get('GOOGLE_CREDENTIALS_FILE', None)
     if credentials_file_path is None:

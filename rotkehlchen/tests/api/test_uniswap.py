@@ -6,7 +6,6 @@ import pytest
 import requests
 
 from rotkehlchen.chain.evm.types import ChecksumEvmAddress, string_to_evm_address
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
@@ -23,6 +22,7 @@ from rotkehlchen.types import deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.inquirer import Inquirer
 
 # Addresses
 # DAI/WETH pool: 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11
@@ -33,7 +33,7 @@ LP_HOLDER_ADDRESS = string_to_evm_address('0x1778CB9fd8D489C740568A9bF16004D948d
 @pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 def test_get_balances_module_not_activated(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],  # pylint: disable=unused-argument
 ) -> None:
     response = requests.get(
@@ -57,7 +57,7 @@ def test_get_balances_module_not_activated(
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_get_balances(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         start_with_valid_premium: bool,
         inquirer: Inquirer,  # pylint: disable=unused-argument
 ) -> None:

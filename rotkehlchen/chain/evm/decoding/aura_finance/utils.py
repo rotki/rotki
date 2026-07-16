@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def get_aura_pool_price(inquirer: 'Inquirer', token: 'EvmToken') -> Price:
+def get_aura_pool_price(inquirer: Inquirer, token: EvmToken) -> Price:
     """Get the USD price for an Aura pool token by using its underlying BPT token price."""
     if token.underlying_tokens is None:
         log.warning(

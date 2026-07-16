@@ -41,7 +41,7 @@ def fixture_coingecko():
 
 
 @pytest.fixture(name='alchemy')
-def fixture_alchemy(database: 'DBHandler'):
+def fixture_alchemy(database: DBHandler):
     with database.user_write() as write_cursor:
         database.add_external_service_credentials(
             write_cursor=write_cursor,
@@ -54,7 +54,7 @@ def fixture_alchemy(database: 'DBHandler'):
 
 
 @pytest.fixture(name='moralis')
-def fixture_moralis(database: 'DBHandler'):
+def fixture_moralis(database: DBHandler):
     with database.user_write() as write_cursor:
         database.add_external_service_credentials(
             write_cursor=write_cursor,

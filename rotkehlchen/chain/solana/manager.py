@@ -1,10 +1,8 @@
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     get_or_create_solana_token,
@@ -18,7 +16,6 @@ from rotkehlchen.constants.assets import A_SOL
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import NotSPLConformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SolanaAddress, Timestamp
@@ -30,7 +27,11 @@ from .node_inquirer import SolanaInquirer
 from .transactions import SolanaTransactions
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.externalapis.jupiter import Jupiter
+    from rotkehlchen.fval import FVal
     from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
@@ -42,8 +43,8 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
     def __init__(
             self,
             node_inquirer: SolanaInquirer,
-            jupiter: 'Jupiter',
-            premium: 'Premium | None' = None,
+            jupiter: Jupiter,
+            premium: Premium | None = None,
     ) -> None:
         super().__init__(node_inquirer=node_inquirer)
         self.database = node_inquirer.database

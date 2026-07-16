@@ -5,11 +5,10 @@ import re
 import shutil
 import tempfile
 from collections import defaultdict
-from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from threading import Semaphore
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Unpack, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Unpack, cast, overload
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
@@ -32,7 +31,6 @@ from rotkehlchen.chain.bitcoin.xpub import (
 )
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
-from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.limits import FREE_USER_NOTES_LIMIT
@@ -64,7 +62,6 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.misc import detect_sqlcipher_version, evaluate_integrity_check_rows
 from rotkehlchen.db.pending_transactions import PendingTransactionsTracker
@@ -160,13 +157,17 @@ from rotkehlchen.types import (
     Timestamp,
     UserNote,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hashing import file_md5
 from rotkehlchen.utils.misc import get_chunks, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Mapping, Sequence
+
+    from rotkehlchen.chain.substrate.types import SubstrateAddress
+    from rotkehlchen.db.filtering import UserNotesFilterQuery
     from rotkehlchen.history.price import Price
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -442,44 +443,44 @@ class DBHandler:
         return file_md5(self.user_data_dir / USERDB_NAME)
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['version']) -> int:
+    def get_setting(self, cursor: DBCursor, name: Literal['version']) -> int:
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['last_write_ts']) -> Timestamp:
+    def get_setting(self, cursor: DBCursor, name: Literal['last_write_ts']) -> Timestamp:
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['premium_should_sync']) -> bool:
+    def get_setting(self, cursor: DBCursor, name: Literal['premium_should_sync']) -> bool:
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['main_currency']) -> Asset:
+    def get_setting(self, cursor: DBCursor, name: Literal['main_currency']) -> Asset:
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['ongoing_upgrade_from_version']) -> int | None:  # noqa: E501
+    def get_setting(self, cursor: DBCursor, name: Literal['ongoing_upgrade_from_version']) -> int | None:  # noqa: E501
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['last_data_migration']) -> int | None:
+    def get_setting(self, cursor: DBCursor, name: Literal['last_data_migration']) -> int | None:
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['non_syncing_exchanges']) -> frozenset['ExchangeLocationID']:  # noqa: E501
+    def get_setting(self, cursor: DBCursor, name: Literal['non_syncing_exchanges']) -> frozenset[ExchangeLocationID]:  # noqa: E501
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['beacon_rpc_endpoint']) -> str:
+    def get_setting(self, cursor: DBCursor, name: Literal['beacon_rpc_endpoint']) -> str:
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['ask_user_upon_size_discrepancy']) -> bool:  # noqa: E501
+    def get_setting(self, cursor: DBCursor, name: Literal['ask_user_upon_size_discrepancy']) -> bool:  # noqa: E501
         ...
 
     def get_setting(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[
                 'version',
                 'last_write_ts',
@@ -492,7 +493,7 @@ class DBHandler:
                 'btc_mempool_api',
                 'ask_user_upon_size_discrepancy',
             ],
-    ) -> int | Timestamp | bool | Asset | frozenset['ExchangeLocationID'] | str | None:
+    ) -> int | Timestamp | bool | Asset | frozenset[ExchangeLocationID] | str | None:
         deserializer, default_value = self.setting_to_default_type[name]
         if (result := cursor.execute('SELECT value FROM settings WHERE name=?;', (name,)).fetchone()) is not None:  # noqa: E501
             return deserializer(result[0])  # type: ignore
@@ -501,7 +502,7 @@ class DBHandler:
 
     def set_setting(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[
                 'version',
                 'last_write_ts',
@@ -628,7 +629,7 @@ class DBHandler:
             return False, str(e)
         return evaluate_integrity_check_rows(rows)
 
-    def export_unencrypted(self, tempdbfile: 'tempfile._TemporaryFileWrapper[bytes]') -> Path:
+    def export_unencrypted(self, tempdbfile: tempfile._TemporaryFileWrapper[bytes]) -> Path:
         """Export the unencrypted DB to the temppath as plaintext DB
 
         The critical section is absolutely needed as a context switch
@@ -719,7 +720,7 @@ class DBHandler:
         with self.conn_transient.write_ctx() as cursor:
             yield cursor
 
-    def get_settings(self, cursor: 'DBCursor', have_premium: bool = False) -> DBSettings:
+    def get_settings(self, cursor: DBCursor, have_premium: bool = False) -> DBSettings:
         """Aggregates settings from DB and from the given args and returns the settings object"""
         cursor.execute('SELECT name, value FROM settings;')
         settings_dict = {}
@@ -730,7 +731,7 @@ class DBHandler:
         settings_dict['have_premium'] = have_premium
         return db_settings_from_dict(settings_dict, self.msg_aggregator)
 
-    def set_settings(self, write_cursor: 'DBCursor', settings: ModifiableDBSettings) -> None:
+    def set_settings(self, write_cursor: DBCursor, settings: ModifiableDBSettings) -> None:
         settings_dict = settings.serialize()
         # Settings whose value is an empty string and which support being unset
         # are removed from the DB (instead of stored as ''), so the dataclass
@@ -755,7 +756,7 @@ class DBHandler:
             )
         CachedSettings().update_entries(settings)
 
-    def get_cache_for_api(self, cursor: 'DBCursor') -> dict[str, int]:
+    def get_cache_for_api(self, cursor: DBCursor) -> dict[str, int]:
         """Returns a few key-value pairs that are used in the API
         from the `key_value_cache` table of the DB. Defaults to `Timestamp(0)` if not found"""
         cursor.execute(
@@ -786,7 +787,7 @@ class DBHandler:
     @overload
     def get_static_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[
                 DBCacheStatic.DOCKER_DEVICE_INFO,
                 DBCacheStatic.ETHERSCAN_API_KEY_TIER,
@@ -801,7 +802,7 @@ class DBHandler:
     @overload
     def get_static_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[
                 DBCacheStatic.LAST_BALANCE_SAVE,
                 DBCacheStatic.LAST_DATA_UPLOAD_TS,
@@ -828,14 +829,14 @@ class DBHandler:
     @overload
     def get_static_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: DBCacheStatic,
     ) -> Timestamp | str | None:
         ...
 
     def get_static_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: DBCacheStatic,
     ) -> Timestamp | str | None:
         """Returns the cache value from the `key_value_cache` table of the DB
@@ -849,7 +850,7 @@ class DBHandler:
 
     def get_static_caches(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             names: tuple[DBCacheStatic, ...],
     ) -> tuple[Timestamp | str | None, ...]:
         """Returns cache values in the same order as the requested static cache names."""
@@ -869,7 +870,7 @@ class DBHandler:
 
     def set_static_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: DBCacheStatic,
             value: Timestamp | str,
     ) -> None:
@@ -883,7 +884,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_CRYPTOTX_OFFSET],
             **kwargs: Unpack[LabeledLocationArgsType],
     ) -> int | None:
@@ -892,7 +893,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.BINANCE_PAIR_LAST_ID],
             **kwargs: Unpack[BinancePairLastTradeArgsType],
     ) -> int | None:
@@ -901,7 +902,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_QUERY_TS],
             **kwargs: Unpack[LabeledLocationIdArgsType],
     ) -> Timestamp | None:
@@ -910,7 +911,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_QUERY_ID],
             **kwargs: Unpack[LabeledLocationIdArgsType],
     ) -> str | None:
@@ -919,7 +920,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_BLOCK_ID],
             **kwargs: Unpack[LabeledLocationIdArgsType],
     ) -> int | None:
@@ -928,7 +929,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.SOLANA_TOKEN_ACCOUNT],
             **kwargs: Unpack[AddressArgType],
     ) -> tuple[SolanaAddress, SolanaAddress] | None:
@@ -937,7 +938,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.WITHDRAWALS_TS],
             **kwargs: Unpack[AddressArgType],
     ) -> Timestamp | None:
@@ -946,7 +947,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.WITHDRAWALS_IDX],
             **kwargs: Unpack[AddressArgType],
     ) -> int | None:
@@ -955,7 +956,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.EXTRA_INTERNAL_TX],
             **kwargs: Unpack[ExtraTxArgType],
     ) -> ChecksumEvmAddress | None:
@@ -964,7 +965,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS],
             **kwargs: Unpack[IndexArgType],
     ) -> Timestamp | None:
@@ -973,7 +974,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK],
             **kwargs: Unpack[AddressArgType],
     ) -> int | None:
@@ -982,7 +983,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.LINEA_AIRDROP_ALLOCATION],
             **kwargs: Unpack[AddressArgType],
     ) -> str | None:
@@ -991,7 +992,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.ZKSYNC_LITE_BALANCES_CLAIMED],
             **kwargs: Unpack[AddressArgType],
     ) -> int | None:
@@ -1000,7 +1001,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.ZKSYNC_LITE_ELIGIBILITY],
             **kwargs: Unpack[AddressArgType],
     ) -> str | None:
@@ -1009,7 +1010,7 @@ class DBHandler:
     @overload
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS],
             **kwargs: Unpack[BlockchainArgType],
     ) -> Timestamp | None:
@@ -1017,7 +1018,7 @@ class DBHandler:
 
     def get_dynamic_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: DBCacheDynamic,
             **kwargs: Any,
     ) -> int | Timestamp | str | ChecksumEvmAddress | tuple[SolanaAddress, SolanaAddress] | None:
@@ -1030,7 +1031,7 @@ class DBHandler:
 
     def delete_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: DBCacheDynamic,
             **kwargs: str,
     ) -> None:
@@ -1042,7 +1043,7 @@ class DBHandler:
 
     @staticmethod
     def delete_dynamic_caches(
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             key_parts: Sequence[str],
     ) -> None:
         """Delete cache entries whose names start with any of the given `key_parts`"""
@@ -1055,7 +1056,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_CRYPTOTX_OFFSET],
             value: int,
             **kwargs: Unpack[LabeledLocationArgsType],
@@ -1065,7 +1066,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.BINANCE_PAIR_LAST_ID],
             value: int,
             **kwargs: Unpack[BinancePairLastTradeArgsType],
@@ -1075,7 +1076,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_QUERY_TS],
             value: Timestamp,
             **kwargs: Unpack[LabeledLocationIdArgsType],
@@ -1085,7 +1086,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_QUERY_ID],
             value: int,
             **kwargs: Unpack[LabeledLocationIdArgsType],
@@ -1095,7 +1096,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_BLOCK_ID],
             value: int,
             **kwargs: Unpack[LabeledLocationIdArgsType],
@@ -1105,7 +1106,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.WITHDRAWALS_TS],
             value: Timestamp,
             **kwargs: Unpack[AddressArgType],
@@ -1115,7 +1116,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.WITHDRAWALS_IDX],
             value: int,
             **kwargs: Unpack[AddressArgType],
@@ -1125,7 +1126,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.EXTRA_INTERNAL_TX],
             value: ChecksumEvmAddress,
             **kwargs: Unpack[ExtraTxArgType],
@@ -1135,7 +1136,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS],
             value: Timestamp,
             **kwargs: Unpack[IndexArgType],
@@ -1145,7 +1146,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK],
             value: int,
             **kwargs: Unpack[AddressArgType],
@@ -1155,7 +1156,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LINEA_AIRDROP_ALLOCATION],
             value: str,
             **kwargs: Unpack[AddressArgType],
@@ -1165,7 +1166,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.ZKSYNC_LITE_BALANCES_CLAIMED],
             value: int,
             **kwargs: Unpack[AddressArgType],
@@ -1175,7 +1176,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.ZKSYNC_LITE_ELIGIBILITY],
             value: str,
             **kwargs: Unpack[AddressArgType],
@@ -1185,7 +1186,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.SOLANA_TOKEN_ACCOUNT],
             value: str,
             **kwargs: Unpack[AddressArgType],
@@ -1195,7 +1196,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS],
             value: Timestamp,
             **kwargs: Unpack[BlockchainArgType],
@@ -1204,7 +1205,7 @@ class DBHandler:
 
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: DBCacheDynamic,
             value: int | Timestamp | ChecksumEvmAddress | SolanaAddress | str,
             **kwargs: Any,
@@ -1217,7 +1218,7 @@ class DBHandler:
 
     def set_blockchain_balances_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             blockchain: SupportedBlockchain,
             balances: dict[str, BalanceSheet | Balance],
     ) -> None:
@@ -1261,7 +1262,7 @@ class DBHandler:
 
     def set_blockchain_detected_token_balances_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             blockchain: SupportedBlockchain,
             balances_per_address: Mapping[ChecksumEvmAddress, Mapping[Asset | EvmToken, FVal]],
             failed_detection_addresses: set[ChecksumEvmAddress],
@@ -1325,7 +1326,7 @@ class DBHandler:
 
     def get_blockchain_balances_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             blockchain: SupportedBlockchain | None = None,
             addresses: ListOfBlockchainAddresses | None = None,
     ) -> BlockchainBalances:
@@ -1372,7 +1373,7 @@ class DBHandler:
 
     def delete_blockchain_balances_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             blockchain: SupportedBlockchain | None = None,
             address: BlockchainAddress | None = None,
     ) -> None:
@@ -1392,7 +1393,7 @@ class DBHandler:
 
     def get_historical_balance_cache(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             blockchain: SupportedBlockchain,
             address: str,
             asset: Asset,
@@ -1409,7 +1410,7 @@ class DBHandler:
 
     def set_historical_balance_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             blockchain: SupportedBlockchain,
             address: str,
             asset: Asset,
@@ -1426,7 +1427,7 @@ class DBHandler:
 
     def add_external_service_credentials(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             credentials: list[ExternalServiceApiCredentials],
     ) -> None:
         if any(credential.service == ExternalService.BEACONCHAIN for credential in credentials):
@@ -1487,7 +1488,7 @@ class DBHandler:
             # There can only be 1 result, since name is the primary key of the table
             return ExternalServiceApiCredentials(service=service_name, api_key=result[0], api_secret=result[1])  # noqa: E501
 
-    def add_to_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
+    def add_to_ignored_assets(self, write_cursor: DBCursor, asset: Asset) -> None:
         """Add a new asset to the set of ignored assets. If the asset was already marked as
         ignored then we don't do anything. Also ignore history events with this asset.
         """
@@ -1501,7 +1502,7 @@ class DBHandler:
         )
         self.invalidate_ignored_assets_cache()
 
-    def ignore_multiple_assets(self, write_cursor: 'DBCursor', assets: list[str]) -> None:
+    def ignore_multiple_assets(self, write_cursor: DBCursor, assets: list[str]) -> None:
         """Add the provided identifiers to the list of ignored assets. If any asset was already
         marked as ignored then we don't do anything. Also ignore history events with these assets.
         """
@@ -1517,7 +1518,7 @@ class DBHandler:
             )
         self.invalidate_ignored_assets_cache()
 
-    def remove_from_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
+    def remove_from_ignored_assets(self, write_cursor: DBCursor, asset: Asset) -> None:
         """Remove an asset from the ignored assets and un-ignore history events with this asset."""
         write_cursor.execute(
             "DELETE FROM multisettings WHERE name='ignored_asset' AND value=?;",
@@ -1550,7 +1551,7 @@ class DBHandler:
             self.conn.savepoint_task_ident is None
         )
 
-    def get_ignored_asset_ids(self, cursor: 'DBCursor', only_nfts: bool = False) -> set[str]:
+    def get_ignored_asset_ids(self, cursor: DBCursor, only_nfts: bool = False) -> set[str]:
         """Gets the ignored asset ids without converting each one of them to an asset object
 
         We used to have a heavier version which converted them to an asset but removed
@@ -1580,7 +1581,7 @@ class DBHandler:
 
     def add_to_ignored_action_ids(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             identifiers: list[str],
     ) -> None:
         """Adds a list of identifiers to be ignored.
@@ -1598,7 +1599,7 @@ class DBHandler:
 
     def remove_from_ignored_action_ids(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             identifiers: list[str],
     ) -> None:
         """Removes a list of identifiers to be ignored.
@@ -1619,11 +1620,11 @@ class DBHandler:
 
     def get_ignored_action_ids(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
     ) -> set[str]:
         return {entry[0] for entry in cursor.execute('SELECT identifier from ignored_actions;')}
 
-    def add_multiple_balances(self, write_cursor: 'DBCursor', balances: list[DBAssetBalance]) -> None:  # noqa: E501
+    def add_multiple_balances(self, write_cursor: DBCursor, balances: list[DBAssetBalance]) -> None:  # noqa: E501
         """Execute addition of multiple balances in the DB"""
         serialized_balances = [balance.serialize_for_db() for balance in balances]
         try:
@@ -1638,11 +1639,11 @@ class DBHandler:
                 'or an entry for the given timestamp already exists',
             ) from e
 
-    def delete_cowswap_trade_data(self, write_cursor: 'DBCursor') -> None:
+    def delete_cowswap_trade_data(self, write_cursor: DBCursor) -> None:
         """Delete all cowswap trade/orders data from the DB"""
         write_cursor.execute('DELETE FROM cowswap_orders;')
 
-    def delete_gnosispay_data(self, write_cursor: 'DBCursor') -> None:
+    def delete_gnosispay_data(self, write_cursor: DBCursor) -> None:
         """Delete all saved gnosispay merchant data from the DB"""
         write_cursor.execute(
             'DELETE FROM key_value_cache WHERE name=?;',
@@ -1650,7 +1651,7 @@ class DBHandler:
         )
         write_cursor.execute('DELETE FROM gnosispay_data;')
 
-    def delete_loopring_data(self, write_cursor: 'DBCursor') -> None:
+    def delete_loopring_data(self, write_cursor: DBCursor) -> None:
         """Delete all legacy loopring related data"""
         write_cursor.execute(
             'DELETE FROM multisettings WHERE name LIKE ? ESCAPE ?',
@@ -1677,7 +1678,7 @@ class DBHandler:
 
             log.debug(f'Purged {module_name} data from the DB')
 
-    def get_used_query_range(self, cursor: 'DBCursor', name: str) -> tuple[Timestamp, Timestamp] | None:  # noqa: E501
+    def get_used_query_range(self, cursor: DBCursor, name: str) -> tuple[Timestamp, Timestamp] | None:  # noqa: E501
         """Get the last start/end timestamp range that has been queried for name
 
         Currently possible names are:
@@ -1695,7 +1696,7 @@ class DBHandler:
 
     def delete_used_query_range_for_exchange(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             location: Location,
             exchange_name: str | None = None,
             data_type: ExchangePurgeType = ExchangePurgeType.ALL,
@@ -1740,7 +1741,7 @@ class DBHandler:
 
     def purge_exchange_data(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             location: Location,
             data_type: ExchangePurgeType = ExchangePurgeType.ALL,
     ) -> None:
@@ -1779,13 +1780,13 @@ class DBHandler:
             where_bindings=where_bindings,
         )
 
-    def update_used_query_range(self, write_cursor: 'DBCursor', name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
+    def update_used_query_range(self, write_cursor: DBCursor, name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
         write_cursor.execute(
             'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES (?, ?, ?)',
             (name, str(start_ts), str(end_ts)),
         )
 
-    def get_last_balance_save_time(self, cursor: 'DBCursor') -> Timestamp:
+    def get_last_balance_save_time(self, cursor: DBCursor) -> Timestamp:
         cursor.execute(
             'SELECT MAX(timestamp) from timed_location_data',
         )
@@ -1795,7 +1796,7 @@ class DBHandler:
 
         return Timestamp(int(result[0]))
 
-    def add_multiple_location_data(self, write_cursor: 'DBCursor', location_data: list[LocationData]) -> None:  # noqa: E501
+    def add_multiple_location_data(self, write_cursor: DBCursor, location_data: list[LocationData]) -> None:  # noqa: E501
         """Execute addition of multiple location data in the DB"""
         for entry in location_data:
             try:
@@ -1814,7 +1815,7 @@ class DBHandler:
 
     def add_blockchain_accounts(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             account_data: list[BlockchainAccountData],
     ) -> None:
         # Insert the blockchain account addresses and labels to the DB
@@ -1842,7 +1843,7 @@ class DBHandler:
 
     def edit_blockchain_accounts(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             account_data: list[BlockchainAccountData],
     ) -> None:
         """Edit the given blockchain accounts
@@ -1898,7 +1899,7 @@ class DBHandler:
 
     def remove_single_blockchain_accounts(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
     ) -> None:
@@ -1957,7 +1958,7 @@ class DBHandler:
 
     def get_tokens_for_address(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             address: ChecksumEvmAddress,
             blockchain: SupportedBlockchain,
             token_exceptions: set[ChecksumEvmAddress],
@@ -2007,7 +2008,7 @@ class DBHandler:
 
     def save_tokens_for_address(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             address: ChecksumEvmAddress,
             blockchain: SupportedBlockchain,
             tokens: Sequence[Asset],
@@ -2069,7 +2070,7 @@ class DBHandler:
 
     def get_blockchains_for_accounts(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             accounts: list[BlockchainAddress],
     ) -> list[tuple[BlockchainAddress, SupportedBlockchain]]:
         """Gets all blockchains for the specified accounts.
@@ -2088,7 +2089,7 @@ class DBHandler:
             )) is not None
         ]
 
-    def get_evm_accounts(self, cursor: 'DBCursor') -> list[ChecksumEvmAddress]:
+    def get_evm_accounts(self, cursor: DBCursor) -> list[ChecksumEvmAddress]:
         """Returns a list of unique EVM accounts from all EVM chains."""
         placeholders = ','.join('?' * len(SUPPORTED_EVM_CHAINS))
         cursor.execute(
@@ -2097,7 +2098,7 @@ class DBHandler:
         )
         return [entry[0] for entry in cursor]
 
-    def get_blockchain_accounts(self, cursor: 'DBCursor') -> BlockchainAccounts:
+    def get_blockchain_accounts(self, cursor: DBCursor) -> BlockchainAccounts:
         """Returns a Blockchain accounts instance containing all blockchain account addresses"""
         cursor.execute(
             'SELECT blockchain, account FROM blockchain_accounts;',
@@ -2114,7 +2115,7 @@ class DBHandler:
 
     def get_blockchain_account_data(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             blockchain: SupportedBlockchain,
     ) -> list[SingleBlockchainAccountData]:
         """Returns account data for a particular blockchain.
@@ -2148,7 +2149,7 @@ class DBHandler:
     @overload
     def get_single_blockchain_addresses(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             blockchain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     ) -> list[ChecksumEvmAddress]:
         ...
@@ -2156,7 +2157,7 @@ class DBHandler:
     @overload
     def get_single_blockchain_addresses(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             blockchain: SUPPORTED_BITCOIN_CHAINS_TYPE,
     ) -> list[BTCAddress]:
         ...
@@ -2164,7 +2165,7 @@ class DBHandler:
     @overload
     def get_single_blockchain_addresses(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             blockchain: SUPPORTED_SUBSTRATE_CHAINS_TYPE,
     ) -> list[SubstrateAddress]:
         ...
@@ -2172,14 +2173,14 @@ class DBHandler:
     @overload
     def get_single_blockchain_addresses(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             blockchain: Literal[SupportedBlockchain.SOLANA],
     ) -> list[SolanaAddress]:
         ...
 
     def get_single_blockchain_addresses(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             blockchain: SupportedBlockchain,
     ) -> list[AnyBlockchainAddress]:
         """Returns addresses for a particular blockchain"""
@@ -2204,7 +2205,7 @@ class DBHandler:
 
     def get_manually_tracked_balances(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             balance_type: BalanceType | None = BalanceType.ASSET,
             include_entries_with_missing_assets: bool = False,
     ) -> list[ManuallyTrackedBalance]:
@@ -2248,7 +2249,7 @@ class DBHandler:
 
         return data
 
-    def add_manually_tracked_balances(self, write_cursor: 'DBCursor', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
+    def add_manually_tracked_balances(self, write_cursor: DBCursor, data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
         """Adds manually tracked balances in the DB
 
         May raise:
@@ -2272,7 +2273,7 @@ class DBHandler:
         # make sure assets are included in the global db user owned assets
         GlobalDBHandler.add_user_owned_assets([x.asset for x in data])
 
-    def edit_manually_tracked_balances(self, write_cursor: 'DBCursor', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
+    def edit_manually_tracked_balances(self, write_cursor: DBCursor, data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
         """Edits manually tracked balances
 
         Edits the manually tracked balances for each of the given balance labels.
@@ -2314,7 +2315,7 @@ class DBHandler:
             raise InputError(msg)
         replace_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['identifier'])  # noqa: E501
 
-    def remove_manually_tracked_balances(self, write_cursor: 'DBCursor', ids: list[int]) -> None:
+    def remove_manually_tracked_balances(self, write_cursor: DBCursor, ids: list[int]) -> None:
         """
         Removes manually tracked balances for the given ids
 
@@ -2338,10 +2339,10 @@ class DBHandler:
 
     def save_balances_data(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             data: dict[str, Any],
             timestamp: Timestamp,
-            main_to_usd_rate: 'Price',
+            main_to_usd_rate: Price,
     ) -> None:
         """The keys of the data dictionary can be any kind of asset plus 'location'
         and 'net_value'. This gives us the balance data per assets, the balance data
@@ -2461,19 +2462,19 @@ class DBHandler:
 
     def edit_exchange(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: str,
             location: Location,
             new_name: str | None,
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
             passphrase: str | None,
-            kraken_account_type: Optional['KrakenAccountType'],
+            kraken_account_type: KrakenAccountType | None,
             kraken_futures_api_key: ApiKey | None,
             kraken_futures_api_secret: ApiSecret | None,
             binance_selected_trade_pairs: list[str] | None,
-            okx_location: Optional['OkxLocation'],
-            gate_location: Optional['GateLocation'] = None,
+            okx_location: OkxLocation | None,
+            gate_location: GateLocation | None = None,
     ) -> None:
         """May raise InputError if something is wrong with editing the DB"""
         if location not in SUPPORTED_EXCHANGES:
@@ -2596,7 +2597,7 @@ class DBHandler:
                 set_bindings=(new_name,),
             )
 
-    def remove_exchange(self, write_cursor: 'DBCursor', name: str, location: Location) -> None:
+    def remove_exchange(self, write_cursor: DBCursor, name: str, location: Location) -> None:
         """
         Removes the exchange location from user_credentials and from
         `the non_syncing_exchanges`setting.
@@ -2626,7 +2627,7 @@ class DBHandler:
 
     def get_exchange_credentials(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             location: Location | None = None,
             name: str | None = None,
     ) -> dict[Location, list[ExchangeApiCredentials]]:
@@ -2712,7 +2713,7 @@ class DBHandler:
 
         return extras
 
-    def set_binance_pairs(self, write_cursor: 'DBCursor', name: str, pairs: list[str], location: Location) -> None:  # noqa: E501
+    def set_binance_pairs(self, write_cursor: DBCursor, name: str, pairs: list[str], location: Location) -> None:  # noqa: E501
         """Sets the market pairs used by the user on a specific binance exchange"""
         data = json.dumps(pairs)
         write_cursor.execute(
@@ -2742,7 +2743,7 @@ class DBHandler:
 
     def write_tuples(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             tuple_type: DBTupleType,
             query: str,
             tuples: Sequence[tuple[Any, ...]],
@@ -2797,7 +2798,7 @@ class DBHandler:
 
     @staticmethod
     def write_single_tuple(
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             tuple_type: DBTupleType,
             query: str,
             entry: tuple[Any, ...],
@@ -2849,7 +2850,7 @@ class DBHandler:
 
         return tx_id, is_new  # row_id (new or existing or None on error), and is_new flag
 
-    def add_margin_positions(self, write_cursor: 'DBCursor', margin_positions: list[MarginPosition]) -> None:  # noqa: E501
+    def add_margin_positions(self, write_cursor: DBCursor, margin_positions: list[MarginPosition]) -> None:  # noqa: E501
         margin_tuples: list[tuple[Any, ...]] = []
         for margin in margin_positions:
             open_time = 0 if margin.open_time is None else margin.open_time
@@ -2884,7 +2885,7 @@ class DBHandler:
 
     def get_margin_positions(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
             location: Location | None = None,
@@ -2921,7 +2922,7 @@ class DBHandler:
 
     def get_entries_count(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             entries_table: Literal[
                 'address_book',
                 'evm_transactions',
@@ -2952,7 +2953,7 @@ class DBHandler:
 
     def delete_data_for_evm_address(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             address: ChecksumEvmAddress,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
     ) -> None:
@@ -2987,7 +2988,7 @@ class DBHandler:
 
     def delete_data_for_evmlike_address(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             address: ChecksumEvmAddress,
             blockchain: SUPPORTED_EVMLIKE_CHAINS_TYPE,  # pylint: disable=unused-argument
     ) -> None:
@@ -3026,7 +3027,7 @@ class DBHandler:
 
     def delete_data_for_bitcoin_address(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             address: BTCAddress,
             blockchain: SUPPORTED_BITCOIN_CHAINS_TYPE,
     ) -> None:
@@ -3067,7 +3068,7 @@ class DBHandler:
                 return False
         return True
 
-    def get_rotkehlchen_premium(self, cursor: 'DBCursor') -> PremiumCredentials | None:
+    def get_rotkehlchen_premium(self, cursor: DBCursor) -> PremiumCredentials | None:
         cursor.execute(
             "SELECT api_key, api_secret FROM user_credentials where name='rotkehlchen';",
         )
@@ -3123,7 +3124,7 @@ class DBHandler:
 
     @staticmethod
     def _count_distinct_balance_timestamps(
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> int:
@@ -3135,7 +3136,7 @@ class DBHandler:
 
     @staticmethod
     def _query_balance_timestamps_and_categories(
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> tuple[tuple[Timestamp, ...], tuple[str, ...]]:
@@ -3155,7 +3156,7 @@ class DBHandler:
 
     def _infer_zero_timed_balances(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             balances: list[SingleDBAssetBalance],
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
@@ -3251,7 +3252,7 @@ class DBHandler:
 
     def query_timed_balances(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             asset: Asset,
             balance_type: BalanceType,
             from_ts: Timestamp | None = None,
@@ -3335,7 +3336,7 @@ class DBHandler:
 
     def query_collection_timed_balances(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             collection_id: int,
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
@@ -3382,7 +3383,7 @@ class DBHandler:
         asset_balances.sort(key=lambda x: x.time)
         return combine_asset_balances(asset_balances)
 
-    def query_owned_assets(self, cursor: 'DBCursor') -> list[Asset]:
+    def query_owned_assets(self, cursor: DBCursor) -> list[Asset]:
         """Query the DB for a list of all assets ever owned
 
         The assets are taken from:
@@ -3450,19 +3451,19 @@ class DBHandler:
 
         return list(results)
 
-    def update_owned_assets_in_globaldb(self, cursor: 'DBCursor') -> None:
+    def update_owned_assets_in_globaldb(self, cursor: DBCursor) -> None:
         """Makes sure all owned assets of the user are in the Global DB"""
         assets = self.query_owned_assets(cursor)
         GlobalDBHandler.add_user_owned_assets(assets)
 
-    def add_asset_identifiers(self, write_cursor: 'DBCursor', asset_identifiers: list[str]) -> None:  # noqa: E501
+    def add_asset_identifiers(self, write_cursor: DBCursor, asset_identifiers: list[str]) -> None:
         """Adds an asset to the user db asset identifier table"""
         write_cursor.executemany(
             'INSERT OR IGNORE INTO assets(identifier) VALUES(?);',
             [(x,) for x in asset_identifiers],
         )
 
-    def sync_globaldb_assets(self, write_cursor: 'DBCursor') -> None:
+    def sync_globaldb_assets(self, write_cursor: DBCursor) -> None:
         """Makes sure that:
         - all the GlobalDB asset identifiers are mirrored in the user DB
         - all the assets set to have the SPAM_PROTOCOL in the global DB
@@ -3484,7 +3485,7 @@ class DBHandler:
                 assets=[identifier[0] for identifier in globaldb_spam],
             )
 
-    def delete_asset_identifier(self, write_cursor: 'DBCursor', asset_id: str) -> None:
+    def delete_asset_identifier(self, write_cursor: DBCursor, asset_id: str) -> None:
         """Deletes an asset identifier from the user db asset identifier table
 
         May raise:
@@ -3651,7 +3652,7 @@ class DBHandler:
                     asset_balances.append(eth_balance)
         return asset_balances
 
-    def get_tags(self, cursor: 'DBCursor') -> dict[str, Tag]:
+    def get_tags(self, cursor: DBCursor) -> dict[str, Tag]:
         tags_mapping: dict[str, Tag] = {}
         cursor.execute(
             'SELECT name, description, background_color, foreground_color FROM tags;',
@@ -3689,7 +3690,7 @@ class DBHandler:
 
     def add_tag(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: str,
             description: str | None,
             background_color: HexColorCode,
@@ -3719,7 +3720,7 @@ class DBHandler:
 
     def edit_tag(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             name: str,
             new_name: str | None,
             description: str | None,
@@ -3808,7 +3809,7 @@ class DBHandler:
                 (new_name, name),
             )
 
-    def delete_tag(self, write_cursor: 'DBCursor', name: str) -> None:
+    def delete_tag(self, write_cursor: DBCursor, name: str) -> None:
         """Deletes a tag already existing in the DB
 
         Raises:
@@ -3830,7 +3831,7 @@ class DBHandler:
 
     def ensure_tags_exist(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             given_data: (
                 list[SingleBlockchainAccountData] |
                 list[BlockchainAccountData] |
@@ -3865,7 +3866,7 @@ class DBHandler:
 
     def add_bitcoin_xpub(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             xpub_data: XpubData,
     ) -> None:
         """Add the xpub to the DB
@@ -3892,7 +3893,7 @@ class DBHandler:
 
     def delete_bitcoin_xpub(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             xpub_data: XpubData,
     ) -> None:
         """Deletes an xpub from the DB. Also deletes all derived addresses and mappings
@@ -3953,7 +3954,7 @@ class DBHandler:
             ),
         )
 
-    def edit_bitcoin_xpub(self, write_cursor: 'DBCursor', xpub_data: XpubData) -> None:
+    def edit_bitcoin_xpub(self, write_cursor: DBCursor, xpub_data: XpubData) -> None:
         """Edit the xpub tags and label
 
         May raise:
@@ -4008,7 +4009,7 @@ class DBHandler:
 
     def get_bitcoin_xpub_data(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> list[XpubData]:
         query = cursor.execute(
@@ -4030,7 +4031,7 @@ class DBHandler:
 
         return result
 
-    def get_last_consecutive_xpub_derived_indices(self, cursor: 'DBCursor', xpub_data: XpubData) -> tuple[int, int]:  # noqa: E501
+    def get_last_consecutive_xpub_derived_indices(self, cursor: DBCursor, xpub_data: XpubData) -> tuple[int, int]:  # noqa: E501
         """
         Get the last known receiving and change derived indices from the given
         xpub that are consecutive since the beginning.
@@ -4065,7 +4066,7 @@ class DBHandler:
 
     def get_addresses_to_xpub_mapping(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
             addresses: Sequence[BTCAddress],
     ) -> dict[BTCAddress, XpubData]:
@@ -4091,7 +4092,7 @@ class DBHandler:
 
     def get_xpub_derived_addresses(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             xpub_data: XpubData,
     ) -> list[BTCAddress]:
         """Get all derived addresses for a specific xpub"""
@@ -4108,7 +4109,7 @@ class DBHandler:
 
     def ensure_xpub_mappings_exist(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             xpub_data: XpubData,
             derived_addresses_data: list[XpubDerivedAddressData],
     ) -> None:
@@ -4135,7 +4136,7 @@ class DBHandler:
                 # mapping already exists
                 continue
 
-    def get_db_info(self, cursor: 'DBCursor') -> dict[str, Any]:
+    def get_db_info(self, cursor: DBCursor) -> dict[str, Any]:
         filepath = self.user_data_dir / USERDB_NAME
         size = Path(self.user_data_dir / USERDB_NAME).stat().st_size
         version = self.get_setting(cursor, 'version')
@@ -4198,7 +4199,7 @@ class DBHandler:
 
     def should_save_balances(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             last_query_ts: Timestamp | None = None,
     ) -> bool:
         """
@@ -4251,7 +4252,7 @@ class DBHandler:
 
     def rebalance_rpc_nodes_weights(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             proportion_to_share: FVal,
             exclude_identifier: int | None,
             blockchain: SupportedBlockchain,
@@ -4364,7 +4365,7 @@ class DBHandler:
     def get_user_notes(
             self,
             filter_query: UserNotesFilterQuery,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             has_premium: bool,
     ) -> list[UserNote]:
         """Returns all the notes created by a user filtered by the given filter"""
@@ -4381,7 +4382,7 @@ class DBHandler:
     def get_user_notes_and_limit_info(
             self,
             filter_query: UserNotesFilterQuery,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             has_premium: bool,
     ) -> tuple[list[UserNote], int]:
         """Gets all user_notes for the query from the DB
@@ -4477,7 +4478,7 @@ class DBHandler:
 
     def add_skipped_external_event(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             location: Location,
             data: dict[str, Any],
             extra_data: dict[str, Any] | None,

@@ -65,7 +65,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_purge_all_exchange_data(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
         added_exchanges: tuple[Location, ...],
 ) -> None:
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -86,7 +86,7 @@ def test_purge_all_exchange_data(
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_purge_single_exchange_data(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
         added_exchanges: tuple[Location, ...],
 ) -> None:
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -106,7 +106,7 @@ def test_purge_single_exchange_data(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_purge_exchange_data_by_category(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
 ) -> None:
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     db = rotki.data.db
@@ -201,7 +201,7 @@ def test_purge_exchange_data_by_category(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_purge_exchange_data_by_category_without_shared_range_fallback(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
 ) -> None:
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     db = rotki.data.db
@@ -222,7 +222,7 @@ def test_purge_exchange_data_by_category_without_shared_range_fallback(
         assert db.get_used_query_range(cursor, 'poloniex_history_events_poloniex') == (Timestamp(0), Timestamp(10))  # noqa: E501
 
 
-def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') -> None:
+def test_purge_blockchain_transaction_data(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     addr1 = make_evm_address()
     db, dbevents = DBEvmTx(rotki.data.db), DBHistoryEvents(rotki.data.db)
@@ -299,7 +299,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
             query_filter=HistoryEventFilterQuery.make(),
         )[0] == 3  # the eth withdrawal event, eth block event, and evm event with no corresponding tx are not deleted  # noqa: E501
 
-    def _add_zksynclitetxs(write_cursor: 'DBCursor') -> None:
+    def _add_zksynclitetxs(write_cursor: DBCursor) -> None:
         for i in range(2):
             rotki.chains_aggregator.zksync_lite._add_zksynctxs_db(
                 write_cursor=write_cursor,
@@ -317,7 +317,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
                 )],
             )
 
-    def _assert_zksynclite_txs_num(cursor: 'DBCursor', tx_num: int, swap_num: int) -> None:
+    def _assert_zksynclite_txs_num(cursor: DBCursor, tx_num: int, swap_num: int) -> None:
         assert cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0] == tx_num  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) FROM zksynclite_swaps').fetchone()[0] == swap_num
 
@@ -434,7 +434,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
             ).fetchone()[0] == 0
 
 
-def test_purge_solana_transaction_data(rotkehlchen_api_server: 'APIServer') -> None:
+def test_purge_solana_transaction_data(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     solana_tx_db = DBSolanaTx(rotki.data.db)
     events_db = DBHistoryEvents(rotki.data.db)
@@ -501,7 +501,7 @@ def test_purge_solana_transaction_data(rotkehlchen_api_server: 'APIServer') -> N
         assert events[0].group_identifier == customized_event.group_identifier
 
 
-def test_purge_module_data(rotkehlchen_api_server: 'APIServer') -> None:
+def test_purge_module_data(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     def populate_data() -> None:
@@ -569,7 +569,7 @@ def test_purge_module_data(rotkehlchen_api_server: 'APIServer') -> None:
     check_data(name=None, before=False)
 
 
-def test_purge_eth2_staking_events_and_cache(rotkehlchen_api_server: 'APIServer') -> None:
+def test_purge_eth2_staking_events_and_cache(rotkehlchen_api_server: APIServer) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     events_db = DBHistoryEvents(db)
     with db.conn.write_ctx() as write_cursor:

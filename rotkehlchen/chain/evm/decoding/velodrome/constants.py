@@ -1,6 +1,7 @@
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
-from eth_typing import ABI
+if TYPE_CHECKING:
+    from eth_typing import ABI
 
 CPT_VELODROME: Final = 'velodrome'
 CPT_AERODROME: Final = 'aerodrome'

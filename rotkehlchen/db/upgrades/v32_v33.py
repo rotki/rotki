@@ -22,14 +22,14 @@ def _deserialize_event_identifier(val: str) -> bytes:
     return val.encode()
 
 
-def upgrade_v32_to_v33(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v32_to_v33(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v32 to v33
     - Change the schema of `blockchain` column in `xpub_mappings` table to be required.
     - Add blockchain column to `xpubs` table.
     - Change tx_hash for tables to BLOB type & history events event_identifier column to BLOB type.
     """
     @progress_step(description='Refactoring xpubs and xpub mappings.')
-    def _refactor_xpubs_and_xpub_mappings(cursor: 'DBCursor') -> None:
+    def _refactor_xpubs_and_xpub_mappings(cursor: DBCursor) -> None:
         # Keep a copy of the xpub_mappings because it will get deleted once
         # xpubs table is dropped.
         xpub_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
@@ -80,7 +80,7 @@ def upgrade_v32_to_v33(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         cursor.execute('ALTER TABLE xpub_mappings_copy RENAME TO xpub_mappings;')
 
     @progress_step(description='Creating new tables.')
-    def _create_new_tables(cursor: 'DBCursor') -> None:
+    def _create_new_tables(cursor: DBCursor) -> None:
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS address_book (
             address TEXT NOT NULL,
@@ -91,7 +91,7 @@ def upgrade_v32_to_v33(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     """)
 
     @progress_step(description='Creating web3_nodes table.')
-    def _create_nodes(cursor: 'DBCursor') -> None:
+    def _create_nodes(cursor: DBCursor) -> None:
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS web3_nodes(
         identifier INTEGER NOT NULL PRIMARY KEY,
@@ -104,7 +104,7 @@ def upgrade_v32_to_v33(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     """)
 
     @progress_step(description='Updating schemas to store tx hashes and event ids as bytes.')
-    def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
+    def _force_bytes_for_tx_hashes(cursor: DBCursor) -> None:
         """This DB upgrade function:
         - Updates the tx_hash column schema in aave_events, adex_events, balancer_events,
         amm_swaps, amm_events & yearn_vaults_events from TEXT to BLOB.
@@ -488,7 +488,7 @@ def upgrade_v32_to_v33(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Refactoring blockchain account labels.')
-    def _refactor_blockchain_account_labels(cursor: 'DBCursor') -> None:
+    def _refactor_blockchain_account_labels(cursor: DBCursor) -> None:
         cursor.execute("UPDATE blockchain_accounts SET label = NULL WHERE label =''")
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)

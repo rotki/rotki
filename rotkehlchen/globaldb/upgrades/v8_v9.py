@@ -10,18 +10,18 @@ if TYPE_CHECKING:
 
 
 @enter_exit_debug_log(name='globaldb v8->v9 upgrade')
-def migrate_to_v9(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+def migrate_to_v9(connection: DBConnection, progress_handler: DBUpgradeProgressHandler) -> None:
     """This globalDB upgrade does the following:
     - make the blockchain column not nullable since we use `NONE` as string
 
     This upgrade takes place in v1.35.0"""
     @progress_step('Fixing addressbook duplications.')
-    def _addressbook_schema_update(write_cursor: 'DBCursor') -> None:
+    def _addressbook_schema_update(write_cursor: DBCursor) -> None:
         """Make the blockchain column to a non nullable column for address_book"""
         fix_address_book_duplications(write_cursor=write_cursor)
 
     @progress_step('Enabling uniswap v2, v3 as history sources.')
-    def _add_uniswap_to_price_history_source_types(write_cursor: 'DBCursor') -> None:
+    def _add_uniswap_to_price_history_source_types(write_cursor: DBCursor) -> None:
         """Add entries for Uniswap V2 and V3 to price_history_source_types table"""
         write_cursor.executemany(
             'INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES (?, ?);',
@@ -29,7 +29,7 @@ def migrate_to_v9(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         )
 
     @progress_step('Removing bad curve cache entries.')
-    def _remove_bad_cache_entries(write_cursor: 'DBCursor') -> None:
+    def _remove_bad_cache_entries(write_cursor: DBCursor) -> None:
         """Removes entries from the globaldb cache for curve pools that might be keeping
         an invalid last_queried_ts.
         """
@@ -39,7 +39,7 @@ def migrate_to_v9(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         )
 
     @progress_step('Removing underlying tokens pointing to themselves.')
-    def _remove_own_underlying_tokens(write_cursor: 'DBCursor') -> None:
+    def _remove_own_underlying_tokens(write_cursor: DBCursor) -> None:
         """Moved here from userdb (lol) migration 16 (v1.34.2)
 
         Removes the underlying token entries from the global DB that have themselves

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 from eth_abi import decode as decode_abi
 from eth_utils import keccak
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.ens.constants import (
@@ -47,6 +46,7 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
@@ -67,9 +67,9 @@ class GweiNamesDecoder(EnsCommonDecoder):
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            ethereum_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=ethereum_inquirer,
@@ -135,7 +135,7 @@ class GweiNamesDecoder(EnsCommonDecoder):
 
     def _get_new_contenthash(self, context: DecoderContext) -> str | None:
         """The GNS contract is not in the contracts DB, so decode the log data directly"""
-        return decode_abi(['bytes'], context.tx_log.data)[0].hex()
+        return decode_abi(['bytes'], context.tx_log.data)[0].hex()  # pylint: disable=no-member
 
     def _token_identifier(self, token_id: int) -> str:
         return evm_address_to_identifier(

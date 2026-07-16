@@ -31,8 +31,8 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4C0F41D710395D0e4d1afcA4207F8C72C0667140']])
 def test_airdrop_claim(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1bf831eb53a09cbd1ed309b938d3a09d0a00c17cd777830e3a47f49422eff3e6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
@@ -72,8 +72,8 @@ def test_airdrop_claim(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xc0d5dBe750bb5c001Ba8C499385143f566611679']])
 def test_stake(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xcc691ea8eeb56fd5f5ceb98879e3571ee167a2ac4c5bad4c9463127262d096af')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -114,8 +114,8 @@ def test_stake(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xd14D32F30b184983d3360c6F4b6593d41eD834F4']])
 def test_unstake(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x73d20d4ad0af8350fa66e9d8ee5a83b65b5099cde5a9ae51299c440793951b18')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
@@ -154,9 +154,9 @@ def test_unstake(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4Bf0B0ed0c9520b24F7E30Ad51Fcd89781dAEc8d']])
 def test_increase_lock(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
-        database: 'DBHandler',
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
+        database: DBHandler,
 ) -> None:
     # make sure WCT is in the DB (we have not yet added it in globalDB as of this writing and decoding this transaction has no transfers so it does not get autoadded)  # noqa: E501
     get_or_create_evm_token(
@@ -203,8 +203,8 @@ def test_increase_lock(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x595a053dD045f7b803Dd29d965a5397FEfA9a5d5']])
 def test_update_lock(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Updates an existing staking lock by adding more WCT to it"""
     tx_hash = deserialize_evm_tx_hash('0xf5c75dc26c66075cea2105cae62f31200a2518123b6106876229e661573bada7')  # noqa: E501
@@ -245,8 +245,8 @@ def test_update_lock(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0x3bae0F9811fB3869267CaFf8B5a1bAF00a352935']])
 def test_claim_staking_reward(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,

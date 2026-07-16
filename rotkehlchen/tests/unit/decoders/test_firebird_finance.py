@@ -177,8 +177,8 @@ def test_swap_erc20_token_for_eth(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0x887e8b6119B38C60cb03CAb204C0A704c6E0A473']])
 def test_swap_erc20_token_for_bnb(
-        binance_sc_inquirer: 'BinanceSCInquirer',
-        binance_sc_accounts: list['ChecksumEvmAddress'],
+        binance_sc_inquirer: BinanceSCInquirer,
+        binance_sc_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x38196d5c4c890ba5fbc897868da0fba917394f64daedb95c494fbf2c4da1145a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501

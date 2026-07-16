@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 @enter_exit_debug_log(name='globaldb v10->v11 upgrade')
-def migrate_to_v11(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+def migrate_to_v11(connection: DBConnection, progress_handler: DBUpgradeProgressHandler) -> None:
     """This globalDB upgrade does the following:
 
     1. Adds alchemy to the historical price sources table.
@@ -18,14 +18,14 @@ def migrate_to_v11(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
     """
 
     @progress_step('Adding alchemy to price_history_source_types')
-    def update_price_history_source_types_entries(write_cursor: 'DBCursor') -> None:
+    def update_price_history_source_types_entries(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'INSERT INTO price_history_source_types(type, seq) VALUES (?, ?)',
             ('I', 9),
         )
 
     @progress_step('Create indexes')
-    def create_assets_indexes(write_cursor: 'DBCursor') -> None:
+    def create_assets_indexes(write_cursor: DBCursor) -> None:
         for query in (
             'CREATE INDEX IF NOT EXISTS idx_assets_identifier ON assets (identifier);',
             'CREATE INDEX IF NOT EXISTS idx_evm_tokens_identifier ON evm_tokens (identifier, chain, protocol);',  # noqa: E501
@@ -42,7 +42,7 @@ def migrate_to_v11(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
             write_cursor.execute(query)
 
     @progress_step('Remove avalanche and binance asset type')
-    def remove_avalanche_binance_asset_type(write_cursor: 'DBCursor') -> None:
+    def remove_avalanche_binance_asset_type(write_cursor: DBCursor) -> None:
         """Update the assets we have in our global DB that are of avalanche and binance asset
         type to be EVM tokens with the proper identifier and chain id.
 

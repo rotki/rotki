@@ -16,12 +16,12 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log()
-def data_migration_23(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
+def data_migration_23(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:
     """Introduced at v1.42.1
     - Move extrainternaltx dynamic cache entries to evm_tx_mappings(TX_INTERNALS_QUERIED)
     """
     @progress_step(description='Migrating internal transaction query cache to tx mappings')
-    def _migrate_internal_tx_cache_to_mappings(rotki: 'Rotkehlchen') -> None:
+    def _migrate_internal_tx_cache_to_mappings(rotki: Rotkehlchen) -> None:
         with rotki.data.db.conn.write_ctx() as write_cursor:
             rows = write_cursor.execute(
                 'SELECT name FROM key_value_cache WHERE name LIKE ? ESCAPE ?',

@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 NUM_PACKAGED_COUNTERPARTY_ASSETS_MAPPINGS: Final = 31
 
 
-def _get_all_counterparty_mappings(globaldb: 'GlobalDBHandler') -> dict[str, Any]:
+def _get_all_counterparty_mappings(globaldb: GlobalDBHandler) -> dict[str, Any]:
     """Utility function to return all the counterparty asset mappings in the DB."""
     mappings, mappings_found, mappings_total = globaldb.query_asset_mappings_by_type(
         mapping_type='counterparty',
@@ -36,8 +36,8 @@ def _get_all_counterparty_mappings(globaldb: 'GlobalDBHandler') -> dict[str, Any
 
 @pytest.mark.parametrize('have_decoders', [True])
 def test_counterparty_asset_mappings_query(
-        rotkehlchen_api_server: 'APIServer',
-        globaldb: 'GlobalDBHandler',
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
 ) -> None:
     result = _get_all_counterparty_mappings(globaldb)  # query all the mappings
     assert len(result['entries']) == result['entries_found'] == result['entries_total'] == NUM_PACKAGED_COUNTERPARTY_ASSETS_MAPPINGS  # noqa: E501
@@ -75,8 +75,8 @@ def test_counterparty_asset_mappings_query(
 
 @pytest.mark.parametrize('have_decoders', [True])
 def test_counterparty_asset_mappings_add(
-        rotkehlchen_api_server: 'APIServer',
-        globaldb: 'GlobalDBHandler',
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
 ) -> None:
     all_mappings = _get_all_counterparty_mappings(globaldb)['entries']
     added_mappings = [{
@@ -115,8 +115,8 @@ def test_counterparty_asset_mappings_add(
 
 @pytest.mark.parametrize('have_decoders', [True])
 def test_counterparty_asset_mappings_update(
-        rotkehlchen_api_server: 'APIServer',
-        globaldb: 'GlobalDBHandler',
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
 ) -> None:
     assert_proper_sync_response_with_result(requests.put(
         api_url_for(
@@ -156,8 +156,8 @@ def test_counterparty_asset_mappings_update(
 
 @pytest.mark.parametrize('have_decoders', [True])
 def test_counterparty_asset_mappings_delete(
-        rotkehlchen_api_server: 'APIServer',
-        globaldb: 'GlobalDBHandler',
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
 ) -> None:
     assert_proper_sync_response_with_result(requests.put(
         api_url_for(
@@ -192,7 +192,7 @@ def test_counterparty_asset_mappings_delete(
 
 
 @pytest.mark.parametrize('have_decoders', [True])
-def test_counterparty_asset_mappings_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_counterparty_asset_mappings_errors(rotkehlchen_api_server: APIServer) -> None:
     assert_proper_sync_response_with_result(requests.put(
         api_url_for(    # add a mapping that already exists and expect failure
             rotkehlchen_api_server,

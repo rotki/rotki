@@ -39,7 +39,7 @@ from rotkehlchen.utils.misc import ts_now
 @pytest.mark.parametrize('beacon_rpc_endpoint', ['https://ethereum-beacon-api.publicnode.com'])
 @pytest.mark.parametrize('vcr_cassette_name', ['test_etherscan_and_blockscout_produced_block_proposer_match'])  # noqa: E501
 def test_etherscan_and_blockscout_produced_block_proposer_match(
-        eth2: 'Eth2',
+        eth2: Eth2,
         vcr_cassette_name: str,  # pylint: disable=unused-argument
 ) -> None:
     """Test Etherscan and Blockscout agree for a block whose slot proposer is queried."""
@@ -81,7 +81,7 @@ if TYPE_CHECKING:
 ]])
 @pytest.mark.parametrize('query_method', ['etherscan', 'blockscout'])
 @pytest.mark.freeze_time('2024-02-04 23:50:00 GMT')
-def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
+def test_withdrawals(eth2: Eth2, database, ethereum_accounts, query_method):
     """Test that when withdrawals are queried, they are properly saved in the DB.
 
     Test that the sources we can query agree with each other.
@@ -213,7 +213,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
     ),
 ])
 def test_block_production(
-        eth2: 'Eth2',
+        eth2: Eth2,
         database,
         ethereum_inquirer,
         ethereum_accounts,
@@ -381,7 +381,7 @@ def test_block_production(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2023-11-19 16:30:00 GMT')
-def test_withdrawals_detect_exit(eth2: 'Eth2', database):
+def test_withdrawals_detect_exit(eth2: Eth2, database):
     """Test that detecting an exit for slashed and exited validators work fine"""
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
@@ -475,8 +475,8 @@ def test_withdrawals_detect_exit(eth2: 'Eth2', database):
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 @pytest.mark.freeze_time('2023-11-20 07:07:55 GMT')
 def test_query_no_withdrawals(
-        eth2: 'Eth2',
-        database: 'DBHandler',
+        eth2: Eth2,
+        database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that if an address has no withdrawals we correctly handle it"""
@@ -505,7 +505,7 @@ def test_query_no_withdrawals(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2024-02-07 10:00:00 GMT')
-def test_beacon_node_rpc_queries(eth2: 'Eth2'):
+def test_beacon_node_rpc_queries(eth2: Eth2):
     # Test setting rpc endpoint both with/without trailing slash. Also unsetting
     eth2.beacon_inquirer.set_rpc_endpoint('http://42.42.42.42:6969')  # without trailing slash
     assert eth2.beacon_inquirer.node is not None
@@ -538,7 +538,7 @@ def test_beacon_node_rpc_queries(eth2: 'Eth2'):
 
 @pytest.mark.freeze_time('2024-02-07 10:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
-def test_details_with_beacon_node(eth2: 'Eth2'):
+def test_details_with_beacon_node(eth2: Eth2):
     """Check that when we have a beacon node setup the function
     get_validator_data processes the validator details and queries
     access the correct keys.
@@ -605,7 +605,7 @@ def test_details_with_beacon_node(eth2: 'Eth2'):
     ),
 ])
 def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
-        eth2: 'Eth2',
+        eth2: Eth2,
         database,
         ethereum_inquirer,
         ethereum_accounts,

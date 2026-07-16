@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 class GivethBalances(GivethCommonBalances):
     def __init__(
             self,
-            evm_inquirer: 'GnosisInquirer',
-            tx_decoder: 'GnosisTransactionDecoder',
+            evm_inquirer: GnosisInquirer,
+            tx_decoder: GnosisTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,

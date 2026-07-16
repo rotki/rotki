@@ -10,7 +10,6 @@ import secrets
 import time
 from base64 import b64decode, b64encode
 from binascii import Error as BinasciiError
-from collections.abc import Sequence
 from contextlib import suppress
 from enum import Enum
 from http import HTTPStatus
@@ -45,6 +44,8 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 from rotkehlchen.utils.version_check import get_system_spec
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -475,8 +476,8 @@ class Premium:
             self,
             credentials: PremiumCredentials,
             username: str,
-            msg_aggregator: 'MessagesAggregator',
-            db: 'DBHandler',
+            msg_aggregator: MessagesAggregator,
+            db: DBHandler,
     ) -> None:
         self.status = SubscriptionStatus.UNKNOWN
         self.session = create_session()
@@ -1081,8 +1082,8 @@ class Premium:
 def premium_create_and_verify(
         credentials: PremiumCredentials,
         username: str,
-        msg_aggregator: 'MessagesAggregator',
-        db: 'DBHandler',
+        msg_aggregator: MessagesAggregator,
+        db: DBHandler,
 ) -> Premium:
     """Create a Premium object with the key pairs and verify them.
 

@@ -32,18 +32,18 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log(name='UserDB v50->v51 upgrade')
-def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v50_to_v51(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v50 to v51. This happened in the v1.42 release."""
 
     @progress_step(description='Adding Avalanche location to the DB.')
-    def _add_avalanche_location(write_cursor: 'DBCursor') -> None:
+    def _add_avalanche_location(write_cursor: DBCursor) -> None:
         write_cursor.executescript("""
         /* Avalanche */
         INSERT OR IGNORE INTO location(location, seq) VALUES ('x', 56);
         """)
 
     @progress_step(description='Rename event_identifier column to group_identifier in history_events table.')  # noqa: E501
-    def _rename_event_identifier_to_group_identifier(write_cursor: 'DBCursor') -> None:
+    def _rename_event_identifier_to_group_identifier(write_cursor: DBCursor) -> None:
         """Rename event_identifier column to group_identifier in history_events table."""
         write_cursor.switch_foreign_keys('OFF')
         update_table_schema(
@@ -71,7 +71,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.switch_foreign_keys('ON')
 
     @progress_step(description='Create new tables.')
-    def _add_new_tables(write_cursor: 'DBCursor') -> None:
+    def _add_new_tables(write_cursor: DBCursor) -> None:
         """Add new tables
         - lido_csm_node_operators
         - lido_csm_node_operator_metrics
@@ -146,7 +146,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Create historical balance cache table.')
-    def _add_historical_balance_cache(write_cursor: 'DBCursor') -> None:
+    def _add_historical_balance_cache(write_cursor: DBCursor) -> None:
         write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS historical_balance_cache (
             id INTEGER NOT NULL PRIMARY KEY,
@@ -162,7 +162,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """)
 
     @progress_step(description='Adding reserved Contract tag.')
-    def _add_contract_tag(write_cursor: 'DBCursor') -> None:
+    def _add_contract_tag(write_cursor: DBCursor) -> None:
         """Adds the reserved 'Contract' system tag for tagging smart contract addresses.
         Renames any existing user 'Contract' tag to 'Contract (Custom)' first.
         """
@@ -187,7 +187,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             log.error(f'Failed to insert Contract tag during upgrade: {e}')
 
     @progress_step(description='Tagging Safe contract addresses.')
-    def _tag_safe_addresses(write_cursor: 'DBCursor') -> None:
+    def _tag_safe_addresses(write_cursor: DBCursor) -> None:
         """Tags existing tracked accounts that have Safe deployment events with the Contract tag.
 
         Note: This step must run before any step that deletes history_events, as it depends
@@ -214,7 +214,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Migrate last event processing ts cache key.')
-    def _migrate_last_event_processing_ts_cache_key(write_cursor: 'DBCursor') -> None:
+    def _migrate_last_event_processing_ts_cache_key(write_cursor: DBCursor) -> None:
         """Migrates the last event processing ts cache key to a new eth2 events specific key.
         This is to differentiate it from the new last processing ts key for asset movements.
         """
@@ -224,7 +224,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Remove Monerium profile data from cached credentials.')
-    def _remove_monerium_profiles_from_cache(write_cursor: 'DBCursor') -> None:
+    def _remove_monerium_profiles_from_cache(write_cursor: DBCursor) -> None:
         """Remove stored Monerium OAuth profile data from cached credentials."""
         if (result := write_cursor.execute(
             'SELECT value FROM key_value_cache WHERE name=?',
@@ -259,7 +259,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         log.debug(f'_remove_monerium_profiles_from_cache successfully saved in the database {cached_data=}')  # noqa: E501
 
     @progress_step(description='Migrating deposit/withdrawal subtypes for customized events.')
-    def _migrate_defi_protocol_subtypes(write_cursor: 'DBCursor') -> None:
+    def _migrate_defi_protocol_subtypes(write_cursor: DBCursor) -> None:
         """Migrate customized events from deposit_asset/remove_asset to
         deposit_to_protocol/withdraw_from_protocol subtypes.
 
@@ -309,7 +309,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Migrate asset movement type/subtype to exchange_transfer.')
-    def _migrate_asset_movement_types(write_cursor: 'DBCursor') -> None:
+    def _migrate_asset_movement_types(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             """
             UPDATE history_events
@@ -335,7 +335,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Remove Coinbase swaps with identical spend/receive amounts and assets.')  # noqa: E501
-    def _remove_same_asset_same_amount_coinbase_swaps(write_cursor: 'DBCursor') -> None:
+    def _remove_same_asset_same_amount_coinbase_swaps(write_cursor: DBCursor) -> None:
         """Removes any Coinbase swaps where the spend and receive have the same amount and asset.
         Coinbase reports these in some cases in connection with usually a stablecoin to fiat
         swap, but they do not provide any useful data, and we are now ignoring them. So need to
@@ -360,7 +360,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Create tables for backups of history events.')
-    def _create_history_events_backup_tables(write_cursor: 'DBCursor') -> None:
+    def _create_history_events_backup_tables(write_cursor: DBCursor) -> None:
         """Create history_events_backup and chain_events_info_backup tables for storing
         backup copies of history events.
         """
@@ -381,7 +381,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             write_cursor.execute(table_sql)
 
     @progress_step(description='Clean duplicated internal tx rows with zero gas.')
-    def _cleanup_internal_txs_with_zero_gas(write_cursor: 'DBCursor') -> None:
+    def _cleanup_internal_txs_with_zero_gas(write_cursor: DBCursor) -> None:
         """Remove internal tx rows with gas=0 when a non-zero gas duplicate exists.
 
         Duplicate match criteria:
@@ -430,7 +430,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """Reset all decoded evm and solana events except those in zksync lite.
         If any event in a transaction is customized, all events in that transaction
         are preserved along with its decoded status.

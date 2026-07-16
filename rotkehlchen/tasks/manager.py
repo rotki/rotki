@@ -2,17 +2,14 @@ import logging
 import random
 import threading
 from collections import defaultdict, deque
-from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Final, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
 )
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
-from rotkehlchen.concurrency import Task
 from rotkehlchen.constants import WEEK_IN_SECONDS
 from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
@@ -84,7 +81,11 @@ HISTORICAL_BALANCE_PROCESSING_REFRESH: Final = DAY_IN_SECONDS
 HISTORICAL_BALANCE_PROCESSING_TASK_NAME: Final = 'Process historical balances'
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
+    from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.chain.aggregator import ChainsAggregator
+    from rotkehlchen.concurrency import Task
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.updates import RotkiDataUpdater
     from rotkehlchen.exchanges.manager import ExchangeManager
@@ -126,20 +127,20 @@ class TaskManager:
     def __init__(
             self,
             max_tasks_num: int,
-            task_supervisor: 'TaskSupervisor',
+            task_supervisor: TaskSupervisor,
             api_tasks: list[Task],
-            database: 'DBHandler',
-            cryptocompare: 'Cryptocompare',
-            premium_sync_manager: 'PremiumSyncManager | None',
-            chains_aggregator: 'ChainsAggregator',
-            exchange_manager: 'ExchangeManager',
+            database: DBHandler,
+            cryptocompare: Cryptocompare,
+            premium_sync_manager: PremiumSyncManager | None,
+            chains_aggregator: ChainsAggregator,
+            exchange_manager: ExchangeManager,
             deactivate_premium: Callable[[], None],
             activate_premium: Callable[[Premium], None],
             query_balances: Callable,
-            msg_aggregator: 'MessagesAggregator',
-            data_updater: 'RotkiDataUpdater',
+            msg_aggregator: MessagesAggregator,
+            data_updater: RotkiDataUpdater,
             username: str,
-            history_processing_coordinator: 'HistoryProcessingCoordinator',
+            history_processing_coordinator: HistoryProcessingCoordinator,
     ) -> None:
         self.should_schedule = False
         self.max_tasks_num = max_tasks_num
@@ -1053,7 +1054,7 @@ class TaskManager:
             if not all(task.dead for task in tasks)
         }
 
-    def _run_scheduler_check(self, scheduling_fn: 'SchedulerTask') -> bool:
+    def _run_scheduler_check(self, scheduling_fn: SchedulerTask) -> bool:
         if scheduling_fn in self.running_tasks:
             return False  # the specified task is already running
         try:

@@ -8,5 +8,5 @@ if TYPE_CHECKING:
     from tools.scenarios.base import ProfileBuilder
 
 
-def build(builder: 'ProfileBuilder') -> dict[str, Any] | None:
+def build(builder: ProfileBuilder) -> dict[str, Any] | None:
     return None  # user creation alone is the whole profile

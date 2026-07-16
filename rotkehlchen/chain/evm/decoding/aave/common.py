@@ -1,7 +1,6 @@
 import logging
 from abc import abstractmethod
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import asset_normalized_value, get_single_underlying_token
@@ -21,21 +20,23 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -47,14 +48,14 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
             self,
             counterparty: Literal['aave-v2', 'aave-v3', 'spark'],
             label: Literal['AAVE v2', 'AAVE v3', 'Spark'],
-            pool_addresses: Sequence['ChecksumEvmAddress'],
+            pool_addresses: Sequence[ChecksumEvmAddress],
             deposit_signature: bytes,
             borrow_signature: bytes,
             repay_signature: bytes,
-            native_gateways: tuple['ChecksumEvmAddress', ...],
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            native_gateways: tuple[ChecksumEvmAddress, ...],
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ):
         self.counterparty = counterparty
         self.pool_addresses = pool_addresses
@@ -76,7 +77,7 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
         token and part of the collateral deposited is lost too. Those two events happen as
         transfers in a transaction started by the liquidator."""
 
-    def _address_is_aave_contract(self, queried_address: 'ChecksumEvmAddress') -> bool:
+    def _address_is_aave_contract(self, queried_address: ChecksumEvmAddress) -> bool:
         """Utility function for checking if a queried_address is an address of an
         aave token. Returns True if it is an aave token, or False if it is not."""
         return GlobalDBHandler.get_protocol_for_asset(
@@ -87,7 +88,7 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
             ),
         ) == self.counterparty
 
-    def _token_is_aave_contract(self, asset: 'Asset') -> bool:
+    def _token_is_aave_contract(self, asset: Asset) -> bool:
         """Utility function for checking if a asset is an aave token.
         Returns True if it is an aave token, or False if it is not."""
         return GlobalDBHandler.get_protocol_for_asset(
@@ -96,10 +97,10 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
 
     def _decode_collateral_events(
             self,
-            token: 'EvmToken',
+            token: EvmToken,
             transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
-    ) -> Optional['EvmEvent']:
+    ) -> EvmEvent | None:
         """Decode aave v2/v3 collateral events"""
         user = bytes_to_address(tx_log.topics[2])
         if not self.base.is_tracked(user):
@@ -119,9 +120,9 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
 
     def _decode_deposit(
             self,
-            token: 'EvmToken',
+            token: EvmToken,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
     ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode aave v2/v3 deposit event. Returns the Deposit and Receive events."""
         user = bytes_to_address(tx_log.data[:32])
@@ -184,9 +185,9 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
 
     def _decode_withdrawal(
             self,
-            token: 'EvmToken',
+            token: EvmToken,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
     ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode aave v2/v3 withdrawal event. Returns the Return and Withdraw events."""
         user = bytes_to_address(tx_log.topics[2])
@@ -243,9 +244,9 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
 
     def _decode_borrow(
             self,
-            token: 'EvmToken',
+            token: EvmToken,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
     ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode aave v2/v3 borrow event. Returns the Receive and Borrow events."""
         on_behalf_of = bytes_to_address(tx_log.topics[2])
@@ -299,9 +300,9 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
 
     def _decode_repay(
             self,
-            token: 'EvmToken',
+            token: EvmToken,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
     ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode aave v2/v3 repay event. Returns the Return and Repay events."""
         user = bytes_to_address(tx_log.topics[2])
@@ -396,7 +397,7 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
 
     def _decode_incentives_common(
             self,
-            context: 'DecoderContext',
+            context: DecoderContext,
             to_idx: int,
             claimer_raw: bytes,
             reward_token_address: ChecksumEvmAddress,

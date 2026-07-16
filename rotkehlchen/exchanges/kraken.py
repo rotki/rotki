@@ -8,7 +8,6 @@ import logging
 import operator
 import threading
 from collections import defaultdict
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
@@ -36,7 +35,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
     ExchangeQueryBalances,
@@ -85,8 +83,11 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -193,8 +194,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
-            msg_aggregator: 'MessagesAggregator',
+            database: DBHandler,
+            msg_aggregator: MessagesAggregator,
             kraken_account_type: KrakenAccountType | None = None,
             kraken_futures_api_key: ApiKey | None = None,
             kraken_futures_api_secret: ApiSecret | None = None,
@@ -882,7 +883,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Query Kraken's ledger to retrieve events and transform them to our
         internal representation of history events.
 

@@ -32,8 +32,8 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x2195a238350A51C077A9C499E18Ce720048fbbD2']])
 def test_polygon_pos_bridge_l2_deposit(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xa97396d6b61f213ebf194807553c06768fb9d1ca04ba30bfafb1a788357f3c36')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -71,8 +71,8 @@ def test_polygon_pos_bridge_l2_deposit(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x76a5217E52fd01F468743f62a874e2Ec9bbB3e1c']])
 def test_polygon_pos_bridge_l2_plasma_deposit(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8b86c3f67ce0497075fd4d7ffa0c57a0b4c752bace3e0764f6e7a8b8f6a720a9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -110,8 +110,8 @@ def test_polygon_pos_bridge_l2_plasma_deposit(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x07aE8551Be970cB1cCa11Dd7a11F47Ae82e70E67']])
 def test_polygon_pos_bridge_l2_withdraw(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x74b36dd98fb9e3a6bf9fa4cd6ba2066cd3fa86797b206bd709cfb097bb0c85a4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -137,8 +137,8 @@ def test_polygon_pos_bridge_l2_withdraw(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xBa95718a52b5a3DBa749a7641712Dc05a3550d4f']])
 def test_polygon_pos_bridge_l2_plasma_withdraw(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x962b5ec3701a4441ceca761c77879ae112e5052d53e80b3a2948fc52abdf8aee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -164,8 +164,8 @@ def test_polygon_pos_bridge_l2_plasma_withdraw(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x5CbE388d4C1Bc89C772cc14B1cBC58f4fAeBC4E3']])
 def test_polygon_pos_bridge_deposit_token(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6d3e7d69b34a9f6454de29f7b0f3fcebac17360a07918fc73dc3f6cf1baf3305')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -203,8 +203,8 @@ def test_polygon_pos_bridge_deposit_token(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2247C97f32A1A29a1359580CA3dA7cd51990CB04']])
 def test_polygon_pos_bridge_deposit_eth(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x418f03068bdfcd64693f133908a40a6e87acba416a88fe4436939079a1853e26')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -242,8 +242,8 @@ def test_polygon_pos_bridge_deposit_eth(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xE34396C7D34280Af3959D47826bF4f4346fab2A7']])
 def test_polygon_pos_bridge_deposit_plasma(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9ad56dd8369a184c2a56931e496691bb78ae604c375b29c5f8971a50a39cfee7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -293,8 +293,8 @@ def test_polygon_pos_bridge_deposit_plasma(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0CDa93172497f319a85c8f83132B61bd92D51cCE']])
 def test_polygon_pos_bridge_withdraw_token(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x0bc7401a1b8a1ae7182f16f9e26db50ac114a7a4d1543f13651fdb0d9ea5d95a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -332,8 +332,8 @@ def test_polygon_pos_bridge_withdraw_token(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xF04c50634CCc5746720f679e8689e3198208636B']])
 def test_polygon_pos_bridge_withdraw_eth(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8b097020083573f2121564048947746eda00ea3d9111a52a47f4d1d7e40739a0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -371,8 +371,8 @@ def test_polygon_pos_bridge_withdraw_eth(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xddeB04d7Dab85BD6AdfaC8851F9cdB3a06Be77aD']])
 def test_polygon_pos_bridge_plasma_start_exit(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x42e58d6bde4d59aba15cd37c16a693f583a5d477b8c3f8d9ca5b4c2fefc55cfe')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -410,8 +410,8 @@ def test_polygon_pos_bridge_plasma_start_exit(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xddeB04d7Dab85BD6AdfaC8851F9cdB3a06Be77aD']])
 def test_polygon_pos_bridge_plasma_process_exit(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x772c7c665a24954b11aa66226a4602537e970df114b0d7875572975b641ba47f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)

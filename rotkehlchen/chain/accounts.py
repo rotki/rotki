@@ -1,10 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Any, Generic, Literal, NamedTuple, overload
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
 
-from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.types import (
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
-    AnyBlockchainAddress,
     BlockchainAddress,
     BTCAddress,
     ChecksumEvmAddress,
@@ -12,6 +10,9 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     TuplesOfBlockchainAddresses,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.substrate.types import SubstrateAddress
 
 
 @dataclass(init=True, repr=False, eq=True, order=False, unsafe_hash=False, frozen=True)
@@ -78,7 +79,9 @@ class BlockchainAccountData(NamedTuple):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
-class SingleBlockchainAccountData(Generic[AnyBlockchainAddress]):
+class SingleBlockchainAccountData[
+        AnyBlockchainAddress: (BTCAddress, ChecksumEvmAddress, SubstrateAddress, SolanaAddress),
+]:
     address: AnyBlockchainAddress
     label: str | None = None
     tags: list[str] | None = None

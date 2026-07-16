@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING
 
 from eth_abi import encode
-from eth_typing import ABI
 from web3 import Web3
 
 from rotkehlchen.chain.decoding.types import get_versioned_counterparty_label
@@ -18,6 +17,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 
 if TYPE_CHECKING:
+    from eth_typing import ABI
+
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -29,9 +30,9 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def decode_quickswap_swap(
-        tx_log: 'EvmTxReceiptLog',
-        decoded_events: list['EvmEvent'],
-) -> list['EvmEvent']:
+        tx_log: EvmTxReceiptLog,
+        decoded_events: list[EvmEvent],
+) -> list[EvmEvent]:
     """Quickswap swaps are already decoded by the uniswap decoders since they use the same swap
     tx_log signature. Finds the decoded uniswap events and updates the counterparty and notes.
     """
@@ -54,14 +55,14 @@ def decode_quickswap_swap(
 
 
 def get_quickswap_algebra_position_price(
-        inquirer: 'Inquirer',
-        token: 'EvmToken',
-        nft_manager: 'ChecksumEvmAddress',
+        inquirer: Inquirer,
+        token: EvmToken,
+        nft_manager: ChecksumEvmAddress,
         nft_manager_abi: ABI,
-        pool_deployer: 'ChecksumEvmAddress',
+        pool_deployer: ChecksumEvmAddress,
         pool_abi: ABI,
         pool_init_code_hash: str,
-) -> 'Price':
+) -> Price:
     """Get the price of a Quickswap V3/V4 Algebra LP position."""
     if (collectible_id := tokenid_to_collectible_id(identifier=token.identifier)) is None:
         log.error(f'Failed to find Quickswap position price for {token} due to missing token ID.')

@@ -48,9 +48,9 @@ def _query_stakedao_v2_api(chain_id: ChainID) -> list[dict[str, Any]] | None:
 
 
 def ensure_stakedao_v2_vault_token_exists(
-        evm_inquirer: 'EvmNodeInquirer',
-        vault: 'ChecksumEvmAddress',
-        underlying: 'ChecksumEvmAddress',
+        evm_inquirer: EvmNodeInquirer,
+        vault: ChecksumEvmAddress,
+        underlying: ChecksumEvmAddress,
 ) -> None:
     """Ensure that a StakeDAO V2 vault token and its underlying token exist in the database."""
     get_or_create_evm_token(
@@ -74,7 +74,7 @@ def ensure_stakedao_v2_vault_token_exists(
     )
 
 
-def query_stakedao_v2_vaults(chain_id: ChainID, msg_aggregator: 'MessagesAggregator') -> None:
+def query_stakedao_v2_vaults(chain_id: ChainID, msg_aggregator: MessagesAggregator) -> None:
     """Query StakeDAO V2 vaults from the API and cache the vault and underlying token addresses."""
     if (vault_data := _query_stakedao_v2_api(chain_id)) is None:
         with GlobalDBHandler().conn.write_ctx() as write_cursor:

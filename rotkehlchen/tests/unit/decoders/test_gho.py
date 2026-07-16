@@ -26,8 +26,8 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x5F8d3A0b0E986E36f6a556ebF1c3c4BDACcC987E']])
 def test_activate_cooldown(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that the decoder handles the stkGHO cooldown activation event."""
     events, _ = get_decoded_events_of_transaction(
@@ -65,8 +65,8 @@ def test_activate_cooldown(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x5A580658e119CDFBbb7e0269c32C5Ddf40B53f6a']])
 def test_stake_gho(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that the decoder handles staking GHO to receive stkGHO."""
     events, _ = get_decoded_events_of_transaction(
@@ -129,8 +129,8 @@ def test_stake_gho(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x5F8d3A0b0E986E36f6a556ebF1c3c4BDACcC987E']])
 def test_redeem_stkgho(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that the decoder handles redeeming stkGHO back to GHO."""
     events, _ = get_decoded_events_of_transaction(

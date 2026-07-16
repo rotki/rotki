@@ -1,12 +1,10 @@
 import logging
-from collections.abc import Callable, Sequence
 from functools import partial
 from typing import TYPE_CHECKING, Final, TypeVar
 
 import requests
 
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
-from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import SolanaNodeCapabilities, SolanaRPCMixin
 from rotkehlchen.chain.solana.rpc import (
     LOOKUP_TABLE_META_SIZE,
@@ -61,6 +59,9 @@ from .constants import (
 from .types import SolanaTransaction, pubkey_to_solana_address
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from rotkehlchen.chain.evm.types import WeightedNode
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.helius import Helius
     from rotkehlchen.tasks.supervisor import TaskSupervisor
@@ -80,9 +81,9 @@ class SolanaInquirer(SolanaRPCMixin):
 
     def __init__(
             self,
-            task_supervisor: 'TaskSupervisor',
-            database: 'DBHandler',
-            helius: 'Helius',
+            task_supervisor: TaskSupervisor,
+            database: DBHandler,
+            helius: Helius,
     ):
         SolanaRPCMixin.__init__(self)
         self.task_supervisor = task_supervisor
@@ -93,7 +94,7 @@ class SolanaInquirer(SolanaRPCMixin):
         self.known_node_capabilities: dict[str, SolanaNodeCapabilities] = {}
         self.node_backoff_info: dict[str, tuple[Timestamp | None, int, int]] = {}
 
-    def default_call_order(self) -> list['WeightedNode']:
+    def default_call_order(self) -> list[WeightedNode]:
         """Default call order for solana nodes.
         Adds the helius rpc as a fallback in case there are no other active RPCs. This is mostly
         needed for queries requiring archive nodes, since there are few open archive nodes, but

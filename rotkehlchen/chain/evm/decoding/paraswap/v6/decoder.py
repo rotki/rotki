@@ -1,6 +1,5 @@
 import logging
 from abc import ABC
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.paraswap.constants import CPT_PARASWAP
@@ -14,15 +13,17 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 from .constants import PARASWAP_AUGUSTUS_V6_ROUTER, PARASWAP_METHODS, PARASWAP_V6_FEE_CLAIMER
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -33,9 +34,9 @@ class Paraswapv6CommonDecoder(ParaswapCommonDecoder, ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -48,9 +49,9 @@ class Paraswapv6CommonDecoder(ParaswapCommonDecoder, ABC):
     def _handle_post_decoding(
             self,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Decode Paraswap v6 swaps in post decoding
         since they don't have any relevant log event.
         """
@@ -87,7 +88,7 @@ class Paraswapv6CommonDecoder(ParaswapCommonDecoder, ABC):
 
     def _maybe_enrich_swap_transfer(
             self,
-            context: 'EnricherContext',
+            context: EnricherContext,
     ) -> TransferEnrichmentOutput:
         """Label ParaSwap V6 swap transfers with the ParaSwap counterparty.
 

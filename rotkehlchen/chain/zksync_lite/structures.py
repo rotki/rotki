@@ -1,8 +1,8 @@
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
     ChecksumEvmAddress,
@@ -11,6 +11,9 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
+
+if TYPE_CHECKING:
+    from rotkehlchen.fval import FVal
 
 
 class ZKSyncLiteTXType(DBCharEnumMixIn):
@@ -64,7 +67,7 @@ class ZKSyncLiteSwapData:
     def deserialize_from_db(
             cls,
             data: tuple[str, str, str, str],
-    ) -> 'ZKSyncLiteSwapData':
+    ) -> ZKSyncLiteSwapData:
         """May raise:
         - DeserializationError
         - UnknownAsset
@@ -107,7 +110,7 @@ class ZKSyncLiteTransaction:
     def deserialize_from_db(
             cls,
             data: ZKSyncLiteTransactionDBTuple,
-    ) -> 'ZKSyncLiteTransaction':
+    ) -> ZKSyncLiteTransaction:
         """May raise:
         - DeserializationError
         - UnknownAsset

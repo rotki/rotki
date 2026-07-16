@@ -2,20 +2,16 @@ import base64
 import os
 import random
 from dataclasses import asdict
-from pathlib import Path
 from shutil import copyfile
 from typing import TYPE_CHECKING, Any
 from unittest.mock import _patch, patch
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
 from rotkehlchen.constants.misc import USERDB_NAME
 from rotkehlchen.db.checks import db_script_normalizer
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -29,6 +25,11 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.balances.manual import ManuallyTrackedBalance
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
@@ -236,12 +237,12 @@ def clean_ignored_assets(database: DBHandler):
     database.invalidate_ignored_assets_cache()
 
 
-def column_exists(cursor: 'DBCursor', table_name: str, column_name: str) -> bool:
+def column_exists(cursor: DBCursor, table_name: str, column_name: str) -> bool:
     columns = [row[1] for row in cursor.execute(f'PRAGMA table_info({table_name})')]
     return column_name in columns
 
 
-def index_exists(cursor: 'DBCursor', name: str, schema: str | None = None) -> bool:
+def index_exists(cursor: DBCursor, name: str, schema: str | None = None) -> bool:
     exists: bool = cursor.execute(
         "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=?", (name,),
     ).fetchone()[0] == 1

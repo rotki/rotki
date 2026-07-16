@@ -91,9 +91,9 @@ if TYPE_CHECKING:
 
 
 def assert_editing_works(
-        entry: 'HistoryBaseEntry',
-        rotkehlchen_api_server: 'APIServer',
-        events_db: 'DBHistoryEvents',
+        entry: HistoryBaseEntry,
+        rotkehlchen_api_server: APIServer,
+        events_db: DBHistoryEvents,
         sequence_index: int,
         autoedited: dict[str, Any] | None = None,
         also_redecode: bool = False,
@@ -113,7 +113,7 @@ def assert_editing_works(
             assert hasattr(entry, attr), f'No {attr} in entry'
             setattr(entry, attr, value)
 
-    def assert_event_got_edited(entry: 'HistoryBaseEntry') -> None:
+    def assert_event_got_edited(entry: HistoryBaseEntry) -> None:
         with events_db.db.conn.read_ctx() as cursor:
             events = events_db.get_history_events_internal(
                 cursor=cursor,
@@ -166,7 +166,7 @@ def assert_editing_works(
     assert_event_got_edited(entry)
 
 
-def add_test_evm_tx(database: 'DBHandler', tx_hash: 'EVMTxHash') -> None:
+def add_test_evm_tx(database: DBHandler, tx_hash: EVMTxHash) -> None:
     """Add a blank tx so evm events can be added/edited without the tx_hash validation failing."""
     with database.conn.write_ctx() as write_cursor:
         DBEvmTx(database).add_transactions(
@@ -193,8 +193,8 @@ def add_test_evm_tx(database: 'DBHandler', tx_hash: 'EVMTxHash') -> None:
 @pytest.mark.parametrize('have_decoders', [True])  # so we can run redecode after add/edit/delete
 @pytest.mark.parametrize('ethereum_accounts', [['0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990']])
 def test_add_edit_delete_entries(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
@@ -413,7 +413,7 @@ def test_add_edit_delete_entries(
         assert saved_events == [entries[0], entries[2]] + entries[4:]
 
 
-def test_event_with_details(rotkehlchen_api_server: 'APIServer') -> None:
+def test_event_with_details(rotkehlchen_api_server: APIServer) -> None:
     """Checks that if some events have details this is handled correctly."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
@@ -523,7 +523,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990']])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
-def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_events(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     entries = add_entries(events_db=DBHistoryEvents(rotki.data.db))
     expected_entries = [x.serialize() for x in entries]
@@ -775,7 +775,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     assert result['entries'][1]['entry']['user_notes'] == 'Receive 2.5 ETH from 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # noqa: E501
 
 
-def test_get_events_with_location_labels_filter(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_events_with_location_labels_filter(rotkehlchen_api_server: APIServer) -> None:
     """Regression test for a problem where filtering by location_labels used an evm filter query
     even if they were not evm addresses.
     """
@@ -807,7 +807,7 @@ def test_get_events_with_location_labels_filter(rotkehlchen_api_server: 'APIServ
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
-def test_query_new_events(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
+def test_query_new_events(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     """Test that querying new exchange events works correctly both sync and async"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
@@ -847,7 +847,7 @@ def test_query_new_events(rotkehlchen_api_server_with_exchanges: 'APIServer') ->
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_edit_asset_movements(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
     entries = [
@@ -998,7 +998,7 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
-def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_edit_swap_events(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
     entries = [
@@ -1219,7 +1219,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
-def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
     entries = [{
@@ -1526,7 +1526,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
     }
 
 
-def test_event_grouping(rotkehlchen_api_server: 'APIServer') -> None:
+def test_event_grouping(rotkehlchen_api_server: APIServer) -> None:
     """Test that events are properly grouped into sub-lists
     when they are serialized for the api.
 
@@ -1661,7 +1661,7 @@ def test_event_grouping(rotkehlchen_api_server: 'APIServer') -> None:
     assert entries[3][4]['entry']['event_subtype'] == 'fee'
 
 
-def test_group_has_ignored_assets_flag(rotkehlchen_api_server: 'APIServer') -> None:
+def test_group_has_ignored_assets_flag(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
     tx_hash = deserialize_evm_tx_hash(
@@ -1709,7 +1709,7 @@ def test_group_has_ignored_assets_flag(rotkehlchen_api_server: 'APIServer') -> N
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_edit_delete_solana_events(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_edit_delete_solana_events(rotkehlchen_api_server: APIServer) -> None:
     """test that adding, editing, filtering, and deleting solana events works correctly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
@@ -1825,7 +1825,7 @@ def test_add_edit_delete_solana_events(rotkehlchen_api_server: 'APIServer') -> N
     assert result['entries_found'] == 2
 
 
-def test_tx_ref_and_address_filtering(rotkehlchen_api_server: 'APIServer') -> None:
+def test_tx_ref_and_address_filtering(rotkehlchen_api_server: APIServer) -> None:
     """Test that filtering by tx_ref and address works correctly."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
@@ -1944,7 +1944,7 @@ def test_tx_ref_and_address_filtering(rotkehlchen_api_server: 'APIServer') -> No
     }
 
 
-def test_add_edit_solana_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_edit_solana_swap_events(rotkehlchen_api_server: APIServer) -> None:
     """Test that adding and editing Solana swap events works correctly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
@@ -2123,7 +2123,7 @@ def test_add_edit_solana_swap_events(rotkehlchen_api_server: 'APIServer') -> Non
     assert len([e for e in edited_events if e.event_subtype == HistoryEventSubType.FEE and e.timestamp == timestamp_to_edit]) == 0  # noqa: E501
 
 
-def test_delete_events_by_filter(rotkehlchen_api_server: 'APIServer') -> None:
+def test_delete_events_by_filter(rotkehlchen_api_server: APIServer) -> None:
     """Test deleting history events using various filter parameters."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)

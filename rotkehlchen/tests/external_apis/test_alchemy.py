@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.vcr(match_on=['alchemy_api_matcher'])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
-def test_alchemy_historical_prices(price_historian: 'PriceHistorian', alchemy: 'Alchemy'):  # pylint: disable=unused-argument
+def test_alchemy_historical_prices(price_historian: PriceHistorian, alchemy: Alchemy):  # pylint: disable=unused-argument
     eur = A_EUR.resolve_to_asset_with_oracles()
     eth = A_ETH.resolve_to_asset_with_oracles()
     usd = A_USD.resolve_to_asset_with_oracles()
@@ -58,7 +58,7 @@ def test_alchemy_historical_prices(price_historian: 'PriceHistorian', alchemy: '
 
 @pytest.mark.vcr(match_on=['alchemy_api_matcher'])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
-def test_alchemy_current_prices(price_historian: 'PriceHistorian', alchemy: 'Alchemy'):  # pylint: disable=unused-argument
+def test_alchemy_current_prices(price_historian: PriceHistorian, alchemy: Alchemy):  # pylint: disable=unused-argument
     eth = A_ETH.resolve_to_asset_with_oracles()
     usd = A_USD.resolve_to_asset_with_oracles()
     dai = A_DAI.resolve_to_asset_with_oracles()
@@ -79,9 +79,9 @@ def test_alchemy_current_prices(price_historian: 'PriceHistorian', alchemy: 'Alc
 @pytest.mark.vcr(match_on=['alchemy_api_matcher'])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_alchemy_api_errors(
-        price_historian: 'PriceHistorian',  # pylint: disable=unused-argument
-        alchemy: 'Alchemy',
-        database: 'DBHandler',
+        price_historian: PriceHistorian,  # pylint: disable=unused-argument
+        alchemy: Alchemy,
+        database: DBHandler,
 ):
     usd = A_USD.resolve_to_asset_with_oracles()
     sample_token = get_or_create_evm_token(
@@ -108,7 +108,7 @@ def test_alchemy_api_errors(
 
 @pytest.mark.vcr(match_on=['alchemy_api_matcher'])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
-def test_alchemy_invalid_api_key(price_historian: 'PriceHistorian', database: 'DBHandler'):  # pylint: disable=unused-argument
+def test_alchemy_invalid_api_key(price_historian: PriceHistorian, database: DBHandler):  # pylint: disable=unused-argument
     with database.user_write() as write_cursor:  # add the api key to the DB
         database.add_external_service_credentials(
             write_cursor=write_cursor,

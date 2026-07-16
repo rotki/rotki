@@ -1,8 +1,9 @@
-from typing import Final
-
-from eth_typing.abi import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+
+if TYPE_CHECKING:
+    from eth_typing.abi import ABI
 
 CPT_JUICEBOX: Final = 'juicebox'
 PAY_SIGNATURE: Final = b'\x131a\xf1\xc9\x16\x14\x88\xf7w\xab\x9a&\xaa\xe9\x1dG\xc0\xd9\xa3\xfa\xfb9\x89`\xf18\xdb\x02\xc77\x97'  # noqa: E501

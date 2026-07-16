@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 def test_history_events_search_by_notes(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test searching history events by notes substring"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -133,7 +133,7 @@ def test_history_events_search_by_notes(
 
 
 def test_history_events_combined_filters(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test combining notes search with other filters"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

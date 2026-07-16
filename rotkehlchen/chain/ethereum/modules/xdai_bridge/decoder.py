@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
@@ -14,6 +13,8 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.types import ChainID
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
@@ -32,9 +33,9 @@ class XdaiBridgeDecoder(XdaiBridgeCommonDecoder):
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            ethereum_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=ethereum_inquirer,

@@ -20,8 +20,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 def update_data_and_detect_accounts(
         chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] | None,
-        rotki: 'Rotkehlchen',
-        progress_handler: 'MigrationProgressHandler',
+        rotki: Rotkehlchen,
+        progress_handler: MigrationProgressHandler,
 ) -> None:
     """
     Detect accounts that have activity in other evm chains and are not yet tracked.

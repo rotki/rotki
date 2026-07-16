@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 
 
 def test_async_task_death_traceback(
-        rotkehlchen_api_server: 'APIServer',
-        caplog: 'pytest.LogCaptureFixture',
+        rotkehlchen_api_server: APIServer,
+        caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Test that the exception traceback appears in the logs for dead async tasks"""
     with patch('rotkehlchen.inquirer.Inquirer.find_usd_price', side_effect=ValueError('Boom')):
@@ -36,8 +36,8 @@ def test_async_task_death_traceback(
 
 
 def test_unhandled_external_exception_logs_traceback(
-        rotkehlchen_api_server: 'APIServer',
-        caplog: 'pytest.LogCaptureFixture',
+        rotkehlchen_api_server: APIServer,
+        caplog: pytest.LogCaptureFixture,
 ) -> None:
     with patch.object(
         rotkehlchen_api_server.rest_api,

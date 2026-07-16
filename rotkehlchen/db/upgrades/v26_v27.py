@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def _do_upgrade(cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def _do_upgrade(cursor: DBCursor, progress_handler: DBUpgradeProgressHandler) -> None:
     progress_handler.new_step(name='Updating balancer tables.')
     cursor.execute('DROP TABLE IF EXISTS balancer_events;')
     cursor.execute("""
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS uniswap_events (
     )
 
 
-def upgrade_v26_to_v27(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v26_to_v27(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v26 to v27
 
     - Deletes and recreates the tables that were changed after removing UnknownEthereumToken

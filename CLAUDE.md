@@ -13,7 +13,7 @@ Rotki is a privacy-focused crypto portfolio management and tax reporting applica
 
 ### Prerequisites
 - Node.js 22+, pnpm 10+
-- Python 3.11+
+- Python 3.14t
 - Rust (stable toolchain)
 - uv (https://docs.astral.sh/uv/)
 

@@ -1,8 +1,10 @@
-from collections.abc import Callable
 from enum import auto
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class IgnoredAssetsHandling(SerializableEnumNameMixin):

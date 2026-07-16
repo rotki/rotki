@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class OptimismTokens(EvmTokens):
 
     # -- methods that need to be implemented per chain
-    def _per_chain_token_exceptions(self) -> set['ChecksumEvmAddress']:
+    def _per_chain_token_exceptions(self) -> set[ChecksumEvmAddress]:
         """
         Optimism ETH ERC20 token mirrors the user's balance on the chain.
         To avoid double counting, we exclude the token from the balance query.

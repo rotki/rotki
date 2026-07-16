@@ -1,8 +1,8 @@
 import os
+from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -37,6 +37,9 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.accountant import Accountant
 
 history5 = history1 + create_swap_events(
     timestamp=TimestampMS(1512693374000),  # cryptocompare hourly BTC/EUR price: 537.805

@@ -341,7 +341,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
     )]
 
 
-def test_get_db_transactions(zksync_lite_manager: 'ZksyncLiteManager'):
+def test_get_db_transactions(zksync_lite_manager: ZksyncLiteManager):
     """Test that all zksync lite transactions are loaded from the database
     when a swap transaction is present.
 

@@ -1,15 +1,18 @@
 import importlib.util
 import inspect
 import sys
-from pathlib import Path
-from typing import TypeVar
+from typing import TYPE_CHECKING
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup
 
 
 def get_asset_balance_total(asset: Asset, setup: BalancesTestSetup) -> FVal:
@@ -38,10 +41,7 @@ def get_asset_balance_total(asset: Asset, setup: BalancesTestSetup) -> FVal:
     return total
 
 
-T = TypeVar('T')
-
-
-def find_inheriting_classes(
+def find_inheriting_classes[T](
         root_directory: Path,
         search_directory: Path,
         base_class: type[T],

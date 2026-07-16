@@ -84,7 +84,7 @@ UPGRADES_LIST = [
 class DBUpgradeManager:
     """Separate class to manage DB upgrades/migrations"""
 
-    def __init__(self, db: 'DBHandler'):
+    def __init__(self, db: DBHandler):
         self.db = db
 
     def run_upgrades(self) -> bool:

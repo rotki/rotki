@@ -1,6 +1,5 @@
 import logging
 from abc import ABC
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import token_normalized_value_decimals
@@ -19,16 +18,18 @@ from rotkehlchen.chain.evm.decoding.uniswap.constants import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_OPENOCEAN, OPENOCEAN_EXCHANGE_ADDRESS, OPENOCEAN_LABEL, SWAPPED_TOPIC
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.assets.asset import Asset, CryptoAsset
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -38,9 +39,9 @@ class OpenOceanDecoder(EvmDecoderInterface, ABC):
 
     def _get_asset_and_amount(
             self,
-            asset_address: 'ChecksumEvmAddress',
+            asset_address: ChecksumEvmAddress,
             raw_amount: int,
-    ) -> tuple['CryptoAsset', 'FVal']:
+    ) -> tuple[CryptoAsset, FVal]:
         """Get asset and normalized amount from asset address and raw amount.
         Handles decimals when asset is native rather than an erc20 token.
         Uses native token if address is ZERO_ADDRESS:
@@ -82,11 +83,11 @@ class OpenOceanDecoder(EvmDecoderInterface, ABC):
     @staticmethod
     def _decode_swap(
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            spend_asset: 'Asset | None' = None,
-            spend_amount: 'FVal | None' = None,
-            receive_asset: 'Asset | None' = None,
-            receive_amount: 'FVal | None' = None,
+            decoded_events: list[EvmEvent],
+            spend_asset: Asset | None = None,
+            spend_amount: FVal | None = None,
+            receive_asset: Asset | None = None,
+            receive_amount: FVal | None = None,
     ) -> None:
         """Decode OpenOcean swap in/out events.
         If assets and amounts are None they are ignored, and only the event type is matched.
@@ -129,9 +130,9 @@ class OpenOceanDecoder(EvmDecoderInterface, ABC):
     def _handle_post_decoding(
             self,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Handle post decoding for OpenOcean.
         Decodes swaps that used uniswap and have no SWAPPED_TOPIC tx_log.
         """

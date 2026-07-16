@@ -24,7 +24,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class IntegrationsService:
-    def __init__(self, rotkehlchen: 'Rotkehlchen') -> None:
+    def __init__(self, rotkehlchen: Rotkehlchen) -> None:
         self.rotkehlchen = rotkehlchen
 
     def create_calendar_entry(self, calendar: CalendarEntry) -> dict[str, Any]:

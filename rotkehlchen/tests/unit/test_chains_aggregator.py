@@ -71,7 +71,7 @@ def test_module_deactivation(blockchain):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[]])
-def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
+def test_detect_evm_accounts(blockchain: ChainsAggregator) -> None:
     """
     Tests that the detection of EVM accounts activity in chains where they are not tracked yet
     works as expected.
@@ -224,7 +224,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
 @pytest.mark.freeze_time('2023-06-19 05:16:10 GMT')
 @pytest.mark.parametrize('polygon_pos_manager_connect_at_start', [(ALCHEMY_POLYGON_NODE,)])
 @pytest.mark.parametrize('polygon_pos_accounts', [[make_evm_address()]])  # to connect to nodes
-def test_detect_evm_accounts_spam_tx(polygon_pos_manager: 'PolygonPOSManager') -> None:
+def test_detect_evm_accounts_spam_tx(polygon_pos_manager: PolygonPOSManager) -> None:
     """
     Test that an account with only erc20 transfers of spam tokens gets marked as spam
     and does not get detected as a tracked account in the EVM chain.
@@ -282,7 +282,7 @@ def test_detect_evm_accounts_spam_tx(polygon_pos_manager: 'PolygonPOSManager') -
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2024-05-03 10:45:00 GMT')
 @pytest.mark.parametrize('gnosis_accounts', [[make_evm_address()]])  # to connect to nodes
-def test_detect_evm_accounts_spam_tx_gnosis(gnosis_manager: 'GnosisManager') -> None:
+def test_detect_evm_accounts_spam_tx_gnosis(gnosis_manager: GnosisManager) -> None:
     """
     Test that an account with only erc20 transfers of spam tokens gets marked as spam
     and does not get detected as a tracked account in the EVM chain.
@@ -346,7 +346,7 @@ def test_detect_evm_accounts_spam_tx_gnosis(gnosis_manager: 'GnosisManager') -> 
 @pytest.mark.freeze_time(datetime.datetime.fromtimestamp(1717416305, tz=datetime.UTC))
 @pytest.mark.parametrize('base_accounts', [['0xeA2B3D309bC480Fe385BBF8aEF6D45D81825A784']])
 def test_detect_spammed_transaction_new_token(
-        base_manager: 'BaseManager',
+        base_manager: BaseManager,
         base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Check that the functionality to detect accounts that have been sent only spam tokens
@@ -368,7 +368,7 @@ def test_detect_spammed_transaction_new_token(
     '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c',
     '0xC0FfEE254729296a45a3885639AC7E10F9d54979',
 ]])
-def test_get_active_addresses(blockchain: 'ChainsAggregator') -> None:
+def test_get_active_addresses(blockchain: ChainsAggregator) -> None:
     """`get_active_addresses` honors the `disabled_chain_queries` setting:
     - missing key   => returns all tracked addresses
     - empty frozen  => returns ()
@@ -402,7 +402,7 @@ def test_get_active_addresses(blockchain: 'ChainsAggregator') -> None:
 @pytest.mark.parametrize('ethereum_modules', [[]])
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 def test_modify_blockchain_accounts_flushes_balance_cache(
-        blockchain: 'ChainsAggregator',
+        blockchain: ChainsAggregator,
 ) -> None:
     """Regression test for balance result-cache invalidation on account changes.
 
@@ -436,7 +436,7 @@ def test_modify_blockchain_accounts_flushes_balance_cache(
 @pytest.mark.parametrize('ethereum_modules', [[]])
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 def test_query_balances_skips_chains_without_accounts(
-        blockchain: 'ChainsAggregator',
+        blockchain: ChainsAggregator,
 ) -> None:
     """Regression test: a full balance refresh must not touch the balances cache for
     chains that have no tracked accounts.

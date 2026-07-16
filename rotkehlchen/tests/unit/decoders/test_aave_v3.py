@@ -5,7 +5,6 @@ import pytest
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
-from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import OLD_POOL_ADDRESS
@@ -47,6 +46,7 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1638,8 +1638,8 @@ def test_aave_v3_lido_pool(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 def test_aave_v3_deposit_bnb(
-        binance_sc_inquirer: 'BinanceSCInquirer',
-        binance_sc_accounts: list['ChecksumEvmAddress'],
+        binance_sc_inquirer: BinanceSCInquirer,
+        binance_sc_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x07b14d73cf0b4ca453883178c6521a6c6fd21cd7ee2bf7650badc8be61d9c76e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501

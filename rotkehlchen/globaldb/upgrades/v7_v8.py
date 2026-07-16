@@ -56,7 +56,7 @@ ASSETS_TO_WHITELIST: Final = (
 
 
 @enter_exit_debug_log(name='globaldb v7->v8 upgrade')
-def migrate_to_v8(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+def migrate_to_v8(connection: DBConnection, progress_handler: DBUpgradeProgressHandler) -> None:
     """This globalDB upgrade does the following:
     - Fix autodetected spam assets by mistake
     - Adds UNIQUE constraint in asset_collections table.
@@ -65,7 +65,7 @@ def migrate_to_v8(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
 
     This upgrade takes place in v1.34.0"""
     @progress_step('Fixing erroneously detected spam tokens.')
-    def fix_detected_spam_tokens(write_cursor: 'DBCursor') -> None:
+    def fix_detected_spam_tokens(write_cursor: DBCursor) -> None:
         """Remove assets marked as spam by error and whitelist them"""
         write_cursor.executemany(
             'UPDATE evm_tokens SET protocol=NULL WHERE identifier=?',
@@ -78,7 +78,7 @@ def migrate_to_v8(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         )
 
     @progress_step('Fixing asset collections table.')
-    def set_unique_asset_collections(write_cursor: 'DBCursor') -> None:
+    def set_unique_asset_collections(write_cursor: DBCursor) -> None:
         """It does the following:
         - Fixes the asset_collections table, to remove duplicated entries.
         - Adds UNIQUE constraint in asset_collections table.
@@ -117,7 +117,7 @@ def migrate_to_v8(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         )
 
     @progress_step('Updating scroll balance scanner contract.')
-    def _update_scrollscan_contract(cursor: 'DBCursor') -> None:
+    def _update_scrollscan_contract(cursor: DBCursor) -> None:
         """Update the balance scanner contract in scroll to use the
         same version as we use in other chains"""
         cursor.execute(
@@ -129,7 +129,7 @@ def migrate_to_v8(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         )
 
     @progress_step('Renaming cure tokens cache keys.')
-    def _rename_curve_tokens_cache_keys(write_cursor: 'DBCursor') -> None:
+    def _rename_curve_tokens_cache_keys(write_cursor: DBCursor) -> None:
         """Rename curve cache keys to include chain id and set their last_queried_ts to 0,
         so that other chains are queried again at the time of decoding the events. Adding only 1
         as chain_id because at the time of this upgrade only ethereum
@@ -146,7 +146,7 @@ def migrate_to_v8(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         )
 
     @progress_step('Updating contracts ABI schema.')
-    def _update_contracts_abis(write_cursor: 'DBCursor') -> None:
+    def _update_contracts_abis(write_cursor: DBCursor) -> None:
         """Make the abi of contracts unique in the globaldb"""
         write_cursor.executescript('PRAGMA foreign_keys = OFF;')
         update_table_schema(

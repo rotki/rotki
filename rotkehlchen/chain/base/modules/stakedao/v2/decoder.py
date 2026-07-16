@@ -13,9 +13,9 @@ class Stakedaov2Decoder(Stakedaov2CommonDecoder):
 
     def __init__(
             self,
-            base_inquirer: 'BaseInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            base_inquirer: BaseInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
             evm_inquirer=base_inquirer,

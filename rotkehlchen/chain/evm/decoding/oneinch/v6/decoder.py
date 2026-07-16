@@ -1,17 +1,17 @@
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.balancer.v3.constants import (
     SWAP_TOPIC as BALANCER_V3_SWAP_TOPIC,
 )
 from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6, ONEINCH_V6_ROUTER
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.v4.decoder import Oneinchv3n4DecoderBase
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 # OrderFilled(bytes32,uint256) of the limit order protocol v4 embedded in the v6 router.
@@ -21,9 +21,9 @@ ORDER_FILLED_TOPIC: Final = b'\xfe\xc315\x0f\xcex\xbae\x8e\x08*q\xda \xac\x9f\x8
 class Oneinchv6Decoder(Oneinchv3n4DecoderBase):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

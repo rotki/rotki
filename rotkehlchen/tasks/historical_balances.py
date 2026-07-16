@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import TYPE_CHECKING, Final, Literal, NamedTuple, TypeAlias
+from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.concurrency import checkpoint
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-EventTypeSubtypePairs: TypeAlias = set[tuple[HistoryEventType, HistoryEventSubType]]
+type EventTypeSubtypePairs = set[tuple[HistoryEventType, HistoryEventSubType]]
 
 # Event subtypes that route to a protocol bucket (single bucket).
 # These represent positions within a protocol (e.g., generating debt).
@@ -94,7 +94,7 @@ class Bucket(NamedTuple):
     asset: str
 
     @classmethod
-    def from_db(cls, row: tuple[str, str | None, str | None, str]) -> 'Bucket':
+    def from_db(cls, row: tuple[str, str | None, str | None, str]) -> Bucket:
         return cls(location=row[0], location_label=row[1], protocol=row[2], asset=row[3])
 
     def serialize(self) -> dict[str, str | None]:
@@ -108,9 +108,9 @@ class Bucket(NamedTuple):
     @classmethod
     def from_event(
             cls,
-            event: 'HistoryBaseEntry',
+            event: HistoryBaseEntry,
             treat_eth2_as_eth: bool = False,
-    ) -> list[tuple['Bucket', Literal[EventDirection.IN, EventDirection.OUT]]]:
+    ) -> list[tuple[Bucket, Literal[EventDirection.IN, EventDirection.OUT]]]:
         """Returns list of (Bucket, direction) pairs affected by this event.
 
         Handles the following cases:
@@ -204,12 +204,12 @@ class Bucket(NamedTuple):
         ), direction)]
 
 
-ModifiedBucketData: TypeAlias = tuple[TimestampMS, int]
-ModifiedBuckets: TypeAlias = dict[Bucket, ModifiedBucketData]
+type ModifiedBucketData = tuple[TimestampMS, int]
+type ModifiedBuckets = dict[Bucket, ModifiedBucketData]
 
 
 def _load_bucket_balances_before_ts(
-        database: 'DBHandler',
+        database: DBHandler,
         from_ts: TimestampMS,
 ) -> dict[Bucket, FVal]:
     """Load the latest balance per bucket before from_ts.
@@ -243,8 +243,8 @@ def _load_bucket_balances_before_ts(
 
 @skip_if_running
 def process_historical_balances(
-        database: 'DBHandler',
-        msg_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
         from_ts: TimestampMS | None = None,
 ) -> None:
     """Process events and compute balance metrics."""
@@ -358,7 +358,7 @@ def process_historical_balances(
 
 
 def _finalize_processing(
-        database: 'DBHandler',
+        database: DBHandler,
         modification_ts_at_start: int | None,
 ) -> None:
     """Update cache timestamps. Only clears stale marker if no modifications during processing.
@@ -396,7 +396,7 @@ def _finalize_processing(
 
 
 def _write_metrics_batch(
-        write_cursor: 'DBCursor',
+        write_cursor: DBCursor,
         metrics_batch: list[tuple[int | None, str, str | None, str | None, str, str, str, int, int, int]],  # noqa: E501
         from_ts: TimestampMS | None,
         first_batch_written: bool,
@@ -420,8 +420,8 @@ def _write_metrics_batch(
 
 
 def _apply_to_buckets(
-        database: 'DBHandler',
-        event: 'HistoryBaseEntry',
+        database: DBHandler,
+        event: HistoryBaseEntry,
         bucket_balances: dict[Bucket, FVal],
         metrics_batch: list[tuple[int | None, str, str | None, str | None, str, str, str, int, int, int]],  # noqa: E501
         modified_buckets: ModifiedBuckets,
@@ -493,8 +493,8 @@ def _apply_to_buckets(
 
 
 def _maybe_add_profit_event(
-        database: 'DBHandler',
-        event: 'HistoryBaseEntry',
+        database: DBHandler,
+        event: HistoryBaseEntry,
         bucket_balances: dict[Bucket, FVal],
         treat_eth2_as_eth: bool,
 ) -> tuple[OnchainEvent, ...] | None:

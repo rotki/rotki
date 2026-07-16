@@ -2,8 +2,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
-from eth_typing.abi import ABI
-
 from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
@@ -16,6 +14,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from .constants import LP_STAKING
 
 if TYPE_CHECKING:
+    from eth_typing.abi import ABI
+
     from rotkehlchen.assets.asset import Asset, EvmToken
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -31,8 +31,8 @@ ACROSS_LP_STAKING_ABI: Final[ABI] = [{'inputs': [{'name': 'stakedToken', 'type':
 class AcrossBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            tx_decoder: 'EthereumTransactionDecoder',
+            evm_inquirer: EthereumInquirer,
+            tx_decoder: EthereumTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -41,7 +41,7 @@ class AcrossBalances(ProtocolWithBalance):
             deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},  # noqa: E501
         )
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Query Across LP tokens staked in the Across accelerating distributor."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         if len(addresses_with_deposits := self.addresses_with_deposits()) == 0:

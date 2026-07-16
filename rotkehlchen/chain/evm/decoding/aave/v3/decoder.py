@@ -1,6 +1,5 @@
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -26,6 +25,8 @@ from ..constants import CPT_AAVE_V3, MINT
 from .constants import BORROW, BURN, DEPOSIT, REPAY, REWARDS_CLAIMED, SWAPPED
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.decoding.structures import DecoderContext
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -40,14 +41,14 @@ log = RotkehlchenLogsAdapter(logger)
 class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            pool_addresses: Sequence['ChecksumEvmAddress'],
-            native_gateways: 'tuple[ChecksumEvmAddress, ...]',
-            treasury: 'ChecksumEvmAddress',
-            incentives: 'ChecksumEvmAddress',
-            collateral_swap_address: 'ChecksumEvmAddress | None' = None,
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            pool_addresses: Sequence[ChecksumEvmAddress],
+            native_gateways: tuple[ChecksumEvmAddress, ...],
+            treasury: ChecksumEvmAddress,
+            incentives: ChecksumEvmAddress,
+            collateral_swap_address: ChecksumEvmAddress | None = None,
             label: Literal['AAVE v3', 'Spark'] = 'AAVE v3',
             counterparty: Literal['aave-v3', 'spark'] = CPT_AAVE_V3,
     ):
@@ -68,7 +69,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         self.incentives = incentives
         self.collateral_swap_address = collateral_swap_address
 
-    def decode_liquidation(self, context: 'DecoderContext') -> None:
+    def decode_liquidation(self, context: DecoderContext) -> None:
         """
         Decode AAVE v3 liquidations. When a liquidation happens the user returns the debt token
         and part of the collateral deposited is lost too. Those two events happen as transfers in
@@ -120,7 +121,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 event.notes = f'Spend {event.amount} {asset.symbol} as an {self.label} fee'
                 event.counterparty = self.counterparty
 
-    def _decode_incentives(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _decode_incentives(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != REWARDS_CLAIMED:
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -134,10 +135,10 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
 
     def _decode_interest(
             self,
-            decoded_events: list['EvmEvent'],
-            transaction: 'EvmTransaction',
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            decoded_events: list[EvmEvent],
+            transaction: EvmTransaction,
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Post-decode AAVE v3 interest events.
         1. First find and identify the decoded events (supply/receive or withdraw/return)
         2. Also, if there is a mint on simple transfer, decode it as interest
@@ -456,12 +457,12 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
 
     @staticmethod
     def _pair_events_by_asset(
-            primary_events: list['EvmEvent'],
-            secondary_events: list['EvmEvent'],
-            ordered_events: list['EvmEvent'],
-            interest_event_lookup: 'dict[Asset, list["EvmEvent"]]',
+            primary_events: list[EvmEvent],
+            secondary_events: list[EvmEvent],
+            ordered_events: list[EvmEvent],
+            interest_event_lookup: dict[Asset, list[EvmEvent]],
             used_interest_event_ids: set[int],
-            match_fn: 'Callable[["EvmEvent", "EvmEvent"], bool]',
+            match_fn: Callable[[EvmEvent, EvmEvent], bool],
     ) -> None:
         """Helper to pair events by underlying asset and track assets for interest events."""
         used_primary_events: set[int] = set()
@@ -493,10 +494,10 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
 
     @staticmethod
     def _append_interest_events(
-            matched_asset: set['Asset'],
-            location_label: 'ChecksumEvmAddress | None',
-            ordered_events: list['EvmEvent'],
-            interest_event_lookup: 'dict[Asset, list[EvmEvent]]',
+            matched_asset: set[Asset],
+            location_label: ChecksumEvmAddress | None,
+            ordered_events: list[EvmEvent],
+            interest_event_lookup: dict[Asset, list[EvmEvent]],
             used_interest_event_ids: set[int],
     ) -> None:
         """Attach interest events matching the provided identifiers/location."""
@@ -513,9 +514,9 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
 
     @staticmethod
     def _get_interest_amount_for_event(
-            asset: 'Asset',
-            location_label: 'ChecksumEvmAddress | None',
-            interest_event_lookup: 'dict[Asset, list[EvmEvent]]',
+            asset: Asset,
+            location_label: ChecksumEvmAddress | None,
+            interest_event_lookup: dict[Asset, list[EvmEvent]],
     ) -> FVal:
         """Return the total interest amount already decoded for the same asset and user."""
         if (interest_events := interest_event_lookup.get(asset)) is None:
@@ -527,7 +528,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
             start=ZERO,
         ))
 
-    def _collateral_swap(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _collateral_swap(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a collateral swap event from aave.
 
         This swapped event logs the underlying token swapped. At this point we have decoded

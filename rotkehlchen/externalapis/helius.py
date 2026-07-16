@@ -7,7 +7,6 @@ import requests
 from base58 import b58decode
 
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
-from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.misc import ONE
@@ -31,6 +30,7 @@ from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.solana.rpc import Signature
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import SolanaAddress
 
@@ -54,7 +54,7 @@ RETRY_LIMIT: Final = 1
 
 class Helius(ExternalServiceWithRecommendedApiKey):
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         super().__init__(database=database, service_name=ExternalService.HELIUS)
 
     def _query(
@@ -131,7 +131,7 @@ class Helius(ExternalServiceWithRecommendedApiKey):
     def get_transactions(
             self,
             signatures: list[str],
-            relevant_address: 'SolanaAddress',
+            relevant_address: SolanaAddress,
             return_queried_hashes: Literal[True],
     ) -> list[Signature]:
         ...
@@ -140,7 +140,7 @@ class Helius(ExternalServiceWithRecommendedApiKey):
     def get_transactions(
             self,
             signatures: list[str],
-            relevant_address: 'SolanaAddress',
+            relevant_address: SolanaAddress,
             return_queried_hashes: Literal[False] = False,
     ) -> None:
         ...
@@ -149,7 +149,7 @@ class Helius(ExternalServiceWithRecommendedApiKey):
     def get_transactions(
             self,
             signatures: list[str],
-            relevant_address: 'SolanaAddress',
+            relevant_address: SolanaAddress,
             return_queried_hashes: bool = False,
     ) -> list[Signature] | None:
         ...
@@ -157,7 +157,7 @@ class Helius(ExternalServiceWithRecommendedApiKey):
     def get_transactions(
             self,
             signatures: list[str],
-            relevant_address: 'SolanaAddress',
+            relevant_address: SolanaAddress,
             return_queried_hashes: bool = False,
     ) -> list[Signature] | None:
         """Query Helius for txs corresponding to the given signatures and save them in the DB.
@@ -225,7 +225,7 @@ class Helius(ExternalServiceWithRecommendedApiKey):
             self,
             signature: Signature,
             raw_transfers: list[dict[str, Any]] | None,
-    ) -> dict['SolanaAddress', tuple['SolanaAddress', 'SolanaAddress']]:
+    ) -> dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]]:
         """Deserialize raw token transfers from Helius into token account mappings.
         Since a missing mapping doesn't break the entire tx, any errors in this process are
         caught and logged to avoid breaking the deserialization of the entire tx.
@@ -269,7 +269,7 @@ class Helius(ExternalServiceWithRecommendedApiKey):
 
         return token_account_mapping
 
-    def _deserialize_raw_tx(self, raw_tx: dict[str, Any]) -> tuple[SolanaTransaction, dict['SolanaAddress', tuple['SolanaAddress', 'SolanaAddress']]]:  # noqa: E501
+    def _deserialize_raw_tx(self, raw_tx: dict[str, Any]) -> tuple[SolanaTransaction, dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]]]:  # noqa: E501
         """Deserialize a raw transaction from Helius to a SolanaTransaction.
         Returns a tuple containing the transaction
         and a mapping of token accounts to (owner, mint).

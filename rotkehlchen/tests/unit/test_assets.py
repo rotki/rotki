@@ -1200,7 +1200,7 @@ def test_nexo_converter():
     assert EvmToken('eip155:1/erc20:0xB62132e35a6c13ee1EE0f84dC5d40bad8d815206') == asset_from_nexo('NEXONEXO')  # noqa: E501
 
 
-def test_spam_detection_respects_whitelist(globaldb: 'GlobalDBHandler', database: 'DBHandler'):
+def test_spam_detection_respects_whitelist(globaldb: GlobalDBHandler, database: DBHandler):
     """Check that automatic spam detection doesn't add whitelisted assets"""
     token = Asset('eip155:1/erc20:0xB63B606Ac810a52cCa15e44bB630fd42D8d1d83d')  # crypto.com that gets detected as spam due to the . in the name  # noqa: E501
     new_token_whitelisted = EvmToken.initialize(
@@ -1228,7 +1228,7 @@ def test_spam_detection_respects_whitelist(globaldb: 'GlobalDBHandler', database
     ) is False
 
 
-def test_all_assets_pagination(globaldb: 'GlobalDBHandler', database: 'DBHandler'):
+def test_all_assets_pagination(globaldb: GlobalDBHandler, database: DBHandler):
     """Test the pagination by OFFSET and LIMIT parameters in the assets retrieval function.
     With page1 having un-ignored assets from 0-10 and page2 having un-ignored assets from 10-20,
     page1 and page2 should be different, and page1 + page2 should return assets from 0-20."""
@@ -1284,7 +1284,7 @@ def test_all_assets_pagination(globaldb: 'GlobalDBHandler', database: 'DBHandler
     assert found_ignored < found_without_ignored < found_all
 
 
-def test_merge_assets_timed_balances(database: 'DBHandler') -> None:
+def test_merge_assets_timed_balances(database: DBHandler) -> None:
     """Ensure that timed balances are merged when replacing assets.
     This is a regression test.
     """

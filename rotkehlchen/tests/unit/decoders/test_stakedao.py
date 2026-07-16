@@ -34,7 +34,7 @@ BSC_NODES_TO_CONNECT = [(WeightedNode(node_info=ZAN_BINANCE_SC_NODE, active=True
 
 
 @pytest.fixture(name='stakedao_gauges')
-def _stakedao_gauges(globaldb: 'GlobalDBHandler') -> None:
+def _stakedao_gauges(globaldb: GlobalDBHandler) -> None:
     with globaldb.conn.write_ctx() as write_cursor:
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
@@ -529,8 +529,8 @@ def test_claim_bribe_with_protocolfee(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xFa4Ebcb83902Bb1106b85Bb3D4916Dfd72E06721']])
 def test_withdraw_ethereum(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
         stakedao_gauges: None,
 ) -> None:
     """Regression test for StakeDAO withdrawal on Ethereum.

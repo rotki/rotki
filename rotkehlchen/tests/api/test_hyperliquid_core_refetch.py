@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(match_on=['uri', 'method', 'body'])
 @pytest.mark.parametrize('hyperliquid_accounts', [[string_to_evm_address('0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF')]])  # noqa: E501
 def test_refetch_hyperliquid_core_history_with_max_event(
-        rotkehlchen_api_server: 'APIServer',
-        hyperliquid_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        hyperliquid_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Regression test for force-refetching Hyperliquid core history.
 

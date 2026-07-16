@@ -3,7 +3,7 @@ import logging
 from collections.abc import Mapping, Sequence
 from contextvars import ContextVar
 from dataclasses import MISSING, dataclass, field, fields
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal, NamedTuple
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.evm.types import (
@@ -436,7 +436,7 @@ def _deserialize_evm_indexers_order(value: str) -> SerializableChainIndexerOrder
 
 def db_settings_from_dict(
         settings_dict: dict[str, Any],
-        msg_aggregator: 'MessagesAggregator',
+        msg_aggregator: MessagesAggregator,
 ) -> DBSettings:
     specified_args: dict[str, Any] = {}
     for key, value in settings_dict.items():
@@ -569,7 +569,7 @@ class CachedSettings:
     not set with the set_setting method are not being cached. Settings not in the DBSettings
     but set with the set_setting method are cached.
     """
-    __instance: Optional['CachedSettings'] = None
+    __instance: CachedSettings | None = None
     _settings: DBSettings = DBSettings()  # the default settings values
     _evm_indexers_order_per_chain: ClassVar[Mapping[ChainID, tuple[EvmIndexer, ...]]] = {}
     evm_indexers_order_override_var: ClassVar[ContextVar[tuple[EvmIndexer, ...] | None]] = ContextVar(  # noqa: E501
@@ -577,7 +577,7 @@ class CachedSettings:
         default=None,
     )
 
-    def __new__(cls) -> 'CachedSettings':   # noqa: PYI034  # singleton is an exception
+    def __new__(cls) -> CachedSettings:   # noqa: PYI034  # singleton is an exception
         if CachedSettings.__instance is not None:
             return CachedSettings.__instance
 

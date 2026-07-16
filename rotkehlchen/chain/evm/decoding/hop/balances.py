@@ -30,8 +30,8 @@ log = RotkehlchenLogsAdapter(logger)
 class HopBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_decoder: 'EVMTransactionDecoder',
+            evm_inquirer: EvmNodeInquirer,
+            tx_decoder: EVMTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -40,7 +40,7 @@ class HopBalances(ProtocolWithBalance):
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Queries and returns the balance sheet for staking events.
 
         This method:

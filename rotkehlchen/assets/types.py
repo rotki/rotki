@@ -1,10 +1,9 @@
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple
 
-from rotkehlchen.types import ChainID, TokenKind
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
 if TYPE_CHECKING:
-    from rotkehlchen.types import ChecksumEvmAddress, SolanaAddress, Timestamp
+    from rotkehlchen.types import ChainID, ChecksumEvmAddress, SolanaAddress, Timestamp, TokenKind
 
 
 class AssetType(DBCharEnumMixIn):
@@ -37,7 +36,7 @@ class AssetType(DBCharEnumMixIn):
     CUSTOM_ASSET = 27
 
     @staticmethod
-    def is_crypto_asset(asset_type: 'AssetType') -> bool:
+    def is_crypto_asset(asset_type: AssetType) -> bool:
         crypto_asset_types_values = set(range(4, 27))
         crypto_asset_types_values.add(2)  # include `OWN_CHAIN`
         return asset_type.value in crypto_asset_types_values
@@ -56,10 +55,10 @@ class AssetData(NamedTuple):
     asset_type: AssetType
     # Every asset should have a started timestamp except for FIAT which are
     # most of the times older than epoch
-    started: Optional['Timestamp']
+    started: Timestamp | None
     forked: str | None
     swapped_for: str | None
-    address: 'ChecksumEvmAddress | SolanaAddress | None'
+    address: ChecksumEvmAddress | SolanaAddress | None
     chain_id: ChainID | None
     token_kind: TokenKind | None
     decimals: int | None

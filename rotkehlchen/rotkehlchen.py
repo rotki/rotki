@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 
-import argparse
 import contextlib
 import logging
 import os
 import threading
 import time
 from collections import defaultdict
-from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
@@ -141,6 +139,9 @@ from rotkehlchen.utils.datadir import maybe_restructure_rotki_data_directory
 from rotkehlchen.utils.misc import combine_dicts, ts_now
 
 if TYPE_CHECKING:
+    import argparse
+    from collections.abc import Callable, Sequence
+
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.db.drivers.sqlite import DBConnection, DBCursor
     from rotkehlchen.exchanges.gate import GateLocation
@@ -808,7 +809,7 @@ class Rotkehlchen:
 
     def get_blockchain_account_data(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             blockchain: SupportedBlockchain,
     ) -> list[SingleBlockchainAccountData] | dict[str, Any]:
         account_data = self.data.db.get_blockchain_account_data(cursor, blockchain)
@@ -981,7 +982,7 @@ class Rotkehlchen:
 
     def edit_single_blockchain_accounts(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             blockchain: SupportedBlockchain,
             account_data: list[SingleBlockchainAccountData],
     ) -> None:
@@ -1016,7 +1017,7 @@ class Rotkehlchen:
 
     def edit_chain_type_accounts_labels(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             account_data: list[SingleBlockchainAccountData],
     ) -> None:
         """Edit the tags and labels for the accounts in all the chains
@@ -1490,7 +1491,7 @@ class Rotkehlchen:
         set_oracles_order_method(oracles)
         return True, ''
 
-    def get_settings(self, cursor: 'DBCursor') -> DBSettings:
+    def get_settings(self, cursor: DBCursor) -> DBSettings:
         """Returns the db settings with a check whether premium is active or not"""
         return self.data.db.get_settings(cursor, have_premium=self.premium is not None)
 
@@ -1501,12 +1502,12 @@ class Rotkehlchen:
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None = None,
-            kraken_account_type: Optional['KrakenAccountType'] = None,
+            kraken_account_type: KrakenAccountType | None = None,
             kraken_futures_api_key: ApiKey | None = None,
             kraken_futures_api_secret: ApiSecret | None = None,
             binance_selected_trade_pairs: list[str] | None = None,
-            okx_location: Optional['OkxLocation'] = None,
-            gate_location: Optional['GateLocation'] = None,
+            okx_location: OkxLocation | None = None,
+            gate_location: GateLocation | None = None,
     ) -> tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret and optionally a passphrase.
@@ -1596,7 +1597,7 @@ class Rotkehlchen:
 
     @staticmethod
     def _check_migration_table_and_notify(
-            conn: 'DBConnection',
+            conn: DBConnection,
             table_name: str,
             notification_callback: Callable,
             extra_check_callback: Callable | None = None,

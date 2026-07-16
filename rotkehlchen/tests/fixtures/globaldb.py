@@ -1,5 +1,4 @@
 import shutil
-from collections.abc import Callable
 from contextlib import ExitStack
 from pathlib import Path
 from shutil import copyfile
@@ -9,7 +8,6 @@ from unittest.mock import patch
 import pytest
 import rsqlite
 
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
@@ -25,6 +23,9 @@ from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.globaldb.migrations.manager import MigrationRecord
     from rotkehlchen.utils.upgrades import UpgradeRecord
 
@@ -50,12 +51,12 @@ def fixture_target_globaldb_version() -> int:
 
 
 @pytest.fixture(name='globaldb_upgrades')
-def fixture_globaldb_upgrades() -> list['UpgradeRecord']:
+def fixture_globaldb_upgrades() -> list[UpgradeRecord]:
     return UPGRADES_LIST
 
 
 @pytest.fixture(name='globaldb_migrations')
-def fixture_globaldb_migrations() -> list['MigrationRecord']:
+def fixture_globaldb_migrations() -> list[MigrationRecord]:
     return []
 
 

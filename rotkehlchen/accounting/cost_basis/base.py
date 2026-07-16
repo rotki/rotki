@@ -2,28 +2,29 @@ import heapq
 import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, overload
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
 
 from rotkehlchen.accounting.types import MissingAcquisition, MissingPrice
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH
-from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.misc import AccountingError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import CostBasisMethod, Location, Price, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+
     from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.settings import DBSettings
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -46,7 +47,7 @@ class AssetAcquisitionEvent:
         )
 
     @classmethod
-    def from_processed_event(cls: type['AssetAcquisitionEvent'], event: 'ProcessedAccountingEvent') -> 'AssetAcquisitionEvent':  # noqa: E501
+    def from_processed_event(cls: type[AssetAcquisitionEvent], event: ProcessedAccountingEvent) -> AssetAcquisitionEvent:  # noqa: E501
         return cls(
             amount=event.taxable_amount + event.free_amount,
             timestamp=event.timestamp,
@@ -55,7 +56,7 @@ class AssetAcquisitionEvent:
         )
 
     @classmethod
-    def deserialize(cls: type['AssetAcquisitionEvent'], data: dict[str, Any]) -> 'AssetAcquisitionEvent':  # noqa: E501
+    def deserialize(cls: type[AssetAcquisitionEvent], data: dict[str, Any]) -> AssetAcquisitionEvent:  # noqa: E501
         """May raise DeserializationError"""
         try:
             return cls(
@@ -178,7 +179,7 @@ class BaseCostBasisMethod(ABC):
             timestamp_to_date: Callable[[Timestamp], str],
             average_cost_basis: FVal | None = None,
             originating_event_id: int | None = None,
-    ) -> 'CostBasisInfo':
+    ) -> CostBasisInfo:
         """
         When spending `spending_amount` of `spending_asset` at `timestamp` this function
         calculates using the method defined by class the corresponding buy(s) from which to do profit calculation.
@@ -412,7 +413,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             timestamp_to_date: Callable[[Timestamp], str],
             average_cost_basis: FVal | None = None,  # pylint: disable=unused-argument
             originating_event_id: int | None = None,
-    ) -> 'CostBasisInfo':
+    ) -> CostBasisInfo:
         """Calculates the cost basis of the spend using the average cost basis method."""
         if self.current_amount == ZERO:
             missing_acquisitions.append(
@@ -479,7 +480,7 @@ class MatchedAcquisition(NamedTuple):
         }
 
     @classmethod
-    def deserialize(cls: type['MatchedAcquisition'], data: dict[str, Any]) -> 'MatchedAcquisition':
+    def deserialize(cls: type[MatchedAcquisition], data: dict[str, Any]) -> MatchedAcquisition:
         """May raise DeserializationError"""
         try:
             event = AssetAcquisitionEvent.deserialize(data['event'])
@@ -529,7 +530,7 @@ class CostBasisInfo(NamedTuple):
         }
 
     @classmethod
-    def deserialize(cls: type['CostBasisInfo'], data: dict[str, Any]) -> Optional['CostBasisInfo']:
+    def deserialize(cls: type[CostBasisInfo], data: dict[str, Any]) -> CostBasisInfo | None:
         """Creates a CostBasisInfo object from a json dict made from serialize()
 
         May raise:
@@ -580,7 +581,7 @@ class CostBasisCalculator(CustomizableDateMixin):
 
     def __init__(
             self,
-            database: 'DBHandler',
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(database=database)
@@ -778,7 +779,7 @@ class CostBasisCalculator(CustomizableDateMixin):
 
     def obtain_asset(
             self,
-            event: 'ProcessedAccountingEvent',
+            event: ProcessedAccountingEvent,
     ) -> None:
         """Adds an acquisition event for an asset"""
         asset_event = AssetAcquisitionEvent.from_processed_event(event=event)

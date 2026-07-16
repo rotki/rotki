@@ -5,12 +5,10 @@ from typing import TYPE_CHECKING, Any
 import pytest
 import requests
 
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_CRV, A_ETH, A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -23,6 +21,8 @@ from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
@@ -38,7 +38,7 @@ def fixture_historical_price_oracles_order(
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_get_historical_assets_price(
         rotkehlchen_api_server: APIServer,
-        websocket_connection: 'WebsocketReader',
+        websocket_connection: WebsocketReader,
         legacy_messages_via_websockets: bool,  # pylint: disable=unused-argument
 ) -> None:
     """Test given a list of asset-timestamp tuples it returns the asset price

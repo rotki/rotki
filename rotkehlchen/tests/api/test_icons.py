@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('file_upload', [True, False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_upload_custom_icon(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         file_upload: bool,
         data_dir: Path,
     ) -> None:
@@ -72,7 +72,7 @@ def test_upload_custom_icon(
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('file_upload', [True, False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upload_custom_icon_errors(rotkehlchen_api_server: 'APIServer', file_upload: bool) -> None:
+def test_upload_custom_icon_errors(rotkehlchen_api_server: APIServer, file_upload: bool) -> None:
     """Test that common error handling for uploading custom icons"""
     root_path = Path(__file__).resolve().parent.parent.parent.parent
     filepath = root_path / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'protocols' / 'kraken.svg'  # noqa: E501
@@ -111,7 +111,7 @@ def test_upload_custom_icon_errors(rotkehlchen_api_server: 'APIServer', file_upl
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_refresh_icon(rotkehlchen_api_server: 'APIServer') -> None:
+def test_refresh_icon(rotkehlchen_api_server: APIServer) -> None:
     """Test that checks refreshing the icon of an asset works."""
     # add icon for an asset
     icon_manager = rotkehlchen_api_server.rest_api.rotkehlchen.icon_manager

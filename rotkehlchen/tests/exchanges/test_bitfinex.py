@@ -1,6 +1,5 @@
 import datetime
 import warnings as test_warnings
-from collections.abc import Generator
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final
@@ -41,6 +40,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.inquirer import Inquirer
 
@@ -215,7 +216,7 @@ def test_first_connection(mock_bitfinex, globaldb):
     assert mock_bitfinex.first_connection_made is True
 
 
-def test_api_key_err_auth_nonce(mock_bitfinex: 'Bitfinex') -> None:
+def test_api_key_err_auth_nonce(mock_bitfinex: Bitfinex) -> None:
     """Test the error code related with the nonce authentication is properly handled"""
     def mock_api_query_response(endpoint, options=None):  # pylint: disable=unused-argument
         return MockResponse(
@@ -259,9 +260,9 @@ def test_validate_api_key_invalid_key(mock_bitfinex):
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_balances_asset_balance(
-        mock_bitfinex: 'Bitfinex',
-        inquirer: 'Inquirer',  # pylint: disable=unused-argument
-        globaldb: 'GlobalDBHandler',
+        mock_bitfinex: Bitfinex,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+        globaldb: GlobalDBHandler,
 ):
     """Test the balances of the assets are returned as expected.
 
@@ -339,7 +340,7 @@ def test_query_balances_asset_balance(
         assert msg == ''
 
 
-def test_api_query_paginated_stops_requesting(mock_bitfinex: 'Bitfinex') -> None:
+def test_api_query_paginated_stops_requesting(mock_bitfinex: Bitfinex) -> None:
     """Test requests are stopped after retry limit is reached.
     """
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
@@ -374,14 +375,14 @@ def test_api_query_paginated_stops_requesting(mock_bitfinex: 'Bitfinex') -> None
         assert with_errors is True
 
 
-def test_api_query_paginated_retries_request(mock_bitfinex: 'Bitfinex') -> None:
+def test_api_query_paginated_retries_request(mock_bitfinex: Bitfinex) -> None:
     """Test retry logic works as expected.
 
     It also tests that trying to decode first the unsuccessful response
     JSON as a dict and later as a list (via `_process_unsuccessful_response()`)
     works as expected.
     """
-    def get_paginated_response() -> Generator[str, None, None]:
+    def get_paginated_response() -> Generator[str]:
         yield from [
             f'{{"error":"{API_RATE_LIMITS_ERROR_MESSAGE}"}}',
             '["error", 10000, "unknown error"]',
@@ -518,7 +519,7 @@ def test_deserialize_trade_sell(mock_bitfinex):
     )]
 
 
-def test_delisted_pair_trades_work(mock_bitfinex: 'Bitfinex') -> None:
+def test_delisted_pair_trades_work(mock_bitfinex: Bitfinex) -> None:
     """A user reported inability to deserialize trades from delisted pairs
 
     This is a regression test for this. RLC was delisted and as such is no
@@ -581,7 +582,7 @@ def test_delisted_pair_trades_work(mock_bitfinex: 'Bitfinex') -> None:
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.UTC))
-def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
+def test_query_online_trade_history_case_1(mock_bitfinex: Bitfinex) -> None:
     """Test pagination logic for trades works as expected when each request
     does not return a result already processed.
 
@@ -673,7 +674,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
         ),
     ]
 
-    def get_paginated_response() -> Generator[str, None, None]:
+    def get_paginated_response() -> Generator[str]:
         yield from [
             f'[{TRADE_1},{TRADE_2}]',
             f'[{TRADE_3},{trade_4}]',
@@ -1062,7 +1063,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
         )]
 
 
-def test_deserialize_asset_movement_deposit(mock_bitfinex: 'Bitfinex') -> None:
+def test_deserialize_asset_movement_deposit(mock_bitfinex: Bitfinex) -> None:
     raw_result = [
         13105603,
         'WBT',
@@ -1114,7 +1115,7 @@ def test_deserialize_asset_movement_deposit(mock_bitfinex: 'Bitfinex') -> None:
     assert asset_movement == expected_asset_movement
 
 
-def test_deserialize_asset_movement_withdrawal(mock_bitfinex: 'Bitfinex') -> None:
+def test_deserialize_asset_movement_withdrawal(mock_bitfinex: Bitfinex) -> None:
     """Test also both 'address' and 'transaction_id' are None for fiat
     movements.
     """
@@ -1166,7 +1167,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitfinex: 'Bitfinex') -> Non
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.UTC))
-def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: 'Bitfinex') -> None:
+def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: Bitfinex) -> None:
     """Test pagination logic for asset movements works as expected when each
     request does not return a result already processed.
 
@@ -1356,7 +1357,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: 'Bitfinex') -> 
         ),
     ]
 
-    def get_paginated_response() -> Generator[str, None, None]:
+    def get_paginated_response() -> Generator[str]:
         yield from [
             f'[{movement_2},{movement_1}]',
             f'[{movement_4},{movement_3}]',
@@ -1461,7 +1462,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: 'Bitfinex') -> 
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.UTC))
-def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: 'Bitfinex') -> None:
+def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: Bitfinex) -> None:
     """Test pagination logic for asset movements works as expected when a
     request returns a result already processed in the previous request.
 
@@ -1586,7 +1587,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: 'Bitfinex') -> 
     ]
     """
 
-    def get_paginated_response() -> Generator[str, None, None]:
+    def get_paginated_response() -> Generator[str]:
         yield from [
             f'[{movement_2},{movement_1}]',
             f'[{movement_2},{movement_1}]',
@@ -1712,7 +1713,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: 'Bitfinex') -> 
         assert asset_movements == expected_asset_movements
 
 
-def test_partial_query_online_history_events(mock_bitfinex: 'Bitfinex') -> None:
+def test_partial_query_online_history_events(mock_bitfinex: Bitfinex) -> None:
     """Test that the logic for history events works as expected when there is an error
     causing only part of the range to be queried.
     """
@@ -1748,7 +1749,7 @@ def test_partial_query_online_history_events(mock_bitfinex: 'Bitfinex') -> None:
         ),
     ]
 
-    def get_paginated_response() -> Generator[tuple[HTTPStatus, str], None, None]:
+    def get_paginated_response() -> Generator[tuple[HTTPStatus, str]]:
         yield from [
             (HTTPStatus.OK, f'[{MOVEMENT_1}]'),
             (HTTPStatus.OK, f'[{TRADE_1},{TRADE_2}]'),

@@ -1,8 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Final
 
-from eth_typing import ABI
-
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.utils import normalized_fval_value_decimals
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithGauges
@@ -21,6 +19,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Location
 
 if TYPE_CHECKING:
+    from eth_typing import ABI
+
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -40,8 +40,8 @@ class CurveBalances(ProtocolWithGauges):
 
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            tx_decoder: 'EthereumTransactionDecoder',
+            evm_inquirer: EthereumInquirer,
+            tx_decoder: EthereumTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -52,10 +52,10 @@ class CurveBalances(ProtocolWithGauges):
             excluded_addresses=[VOTING_ESCROW],  # exclude the veCRV from the list of interacted contracts  # noqa: E501
         )
 
-    def get_gauge_address(self, event: 'EvmEvent') -> ChecksumEvmAddress | None:
+    def get_gauge_address(self, event: EvmEvent) -> ChecksumEvmAddress | None:
         return event.address
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Query gauge balances and CRV deposited in the veCRV contract"""
         balances = super().query_balances()  # gauge balances
         db_filter = EvmEventFilterQuery.make(
@@ -88,7 +88,7 @@ class CurveBalances(ProtocolWithGauges):
     def _query_and_save_vecrv_balances(
             self,
             addresses: list[ChecksumEvmAddress],
-            balances: 'BalancesSheetType',
+            balances: BalancesSheetType,
     ) -> None:
         """
         This logic handles CRV deposits into the escrow contract among

@@ -3,17 +3,16 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.db.filtering import DBMultiStringFilter
 from rotkehlchen.exchanges.data_structures import hash_id
-from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.db.filtering import HistoryBaseEntryFilterQuery
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
-    from rotkehlchen.types import Asset, TimestampMS
+    from rotkehlchen.types import Asset, AssetAmount, Location, TimestampMS
 
 
-def history_event_to_staking_for_api(event: 'HistoryBaseEntry') -> dict[str, Any]:
+def history_event_to_staking_for_api(event: HistoryBaseEntry) -> dict[str, Any]:
     """This is a utility function to be used by kraken staking and binance savings
     rotki api endpoints. It just serves to reduce the returned data by the api
     for those endpoints.
@@ -46,9 +45,9 @@ def create_group_identifier_from_unique_id(
 
 def create_group_identifier(
         location: Location,
-        timestamp: 'TimestampMS',
-        asset: 'Asset',
-        amount: 'FVal',
+        timestamp: TimestampMS,
+        asset: Asset,
+        amount: FVal,
         unique_id: str | None,
 ) -> str:
     """Create a unique group identifier from the given parameters.
@@ -69,7 +68,7 @@ def create_group_identifier(
 
 def create_group_identifier_from_swap(
         location: Location,
-        timestamp: 'TimestampMS',
+        timestamp: TimestampMS,
         spend: AssetAmount,
         receive: AssetAmount,
         unique_id: str | None = None,
@@ -87,7 +86,7 @@ def create_group_identifier_from_swap(
     })
 
 
-def generate_events_export_filename(filter_query: 'HistoryBaseEntryFilterQuery', use_localtime: bool) -> str:  # noqa: E501
+def generate_events_export_filename(filter_query: HistoryBaseEntryFilterQuery, use_localtime: bool) -> str:  # noqa: E501
     """Generate a filename for CSV export based on filter properties."""
     parts = [f'{filter_query.__class__.__name__.replace("FilterQuery", "").lower()}s']
     date_format = '%Y%m%d'

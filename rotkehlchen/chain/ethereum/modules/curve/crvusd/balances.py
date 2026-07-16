@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveControllerCommonBalances
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -11,6 +10,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.contracts import EvmContract
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.types import ChecksumEvmAddress
@@ -23,8 +23,8 @@ class CurveCrvusdBalances(CurveControllerCommonBalances):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_decoder: 'EVMTransactionDecoder',
+            evm_inquirer: EvmNodeInquirer,
+            tx_decoder: EVMTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -33,9 +33,9 @@ class CurveCrvusdBalances(CurveControllerCommonBalances):
 
     def get_collateral_and_borrowed_tokens(
             self,
-            controller_address: 'ChecksumEvmAddress',
+            controller_address: ChecksumEvmAddress,
             controller_contract: EvmContract,
-    ) -> tuple['EvmToken', 'EvmToken'] | None:
+    ) -> tuple[EvmToken, EvmToken] | None:
         """Retrieve the collateral and borrowed tokens for the specified controller.
         For crvUSD controllers the borrowed token will always be crvUSD.
         """

@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from eth_abi import encode as encode_abi
@@ -17,20 +16,22 @@ from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Price
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.assets.asset import Asset, EvmToken
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import Price
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 def get_uniswap_v4_position_price(
-        evm_inquirer: 'EvmNodeInquirer',
-        token: 'EvmToken',
-        price_func: Callable[['Asset'], Price],
+        evm_inquirer: EvmNodeInquirer,
+        token: EvmToken,
+        price_func: Callable[[Asset], Price],
 ) -> Price:
     """Get the price of a Uniswap V4 LP position nft."""
     if (token_id_str := tokenid_to_collectible_id(identifier=token.identifier)) is None:

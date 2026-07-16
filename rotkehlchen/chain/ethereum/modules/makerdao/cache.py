@@ -1,6 +1,5 @@
 import json
 import logging
-from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from eth_utils.address import to_checksum_address
@@ -23,6 +22,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
@@ -34,7 +35,7 @@ GENERAL_ILK_CACHE_KEY = f'{CacheType.MAKERDAO_VAULT_ILK.serialize()}ETH-A'
 
 
 def _collateral_type_to_info(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         collateral_type: str,
 ) -> tuple[int, ChecksumEvmAddress, ChecksumEvmAddress] | None:
     cursor.execute(
@@ -73,7 +74,7 @@ def collateral_type_to_underlying_asset(collateral_type: str) -> CryptoAsset | N
 
 
 def ilk_cache_foreach(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
 ) -> Iterator[tuple[str, int, CryptoAsset, ChecksumEvmAddress]]:
     """Reads the ilk cache from the globalDB and yields at each iteration of the cursor"""
     cache_prefix = CacheType.MAKERDAO_VAULT_ILK.serialize()
@@ -100,7 +101,7 @@ def ilk_cache_foreach(
 
 
 def query_ilk_registry(
-        ethereum: 'EthereumInquirer',
+        ethereum: EthereumInquirer,
 ) -> dict[str, tuple[int, ChecksumEvmAddress, ChecksumEvmAddress]]:
     """Queries ilk registry for some info
     https://github.com/makerdao/ilk-registry
@@ -155,7 +156,7 @@ def query_ilk_registry(
 
 
 def update_ilk_registry(
-        ethereum: 'EthereumInquirer',
+        ethereum: EthereumInquirer,
         ilk_mappings: dict[str, tuple[int, ChecksumEvmAddress, ChecksumEvmAddress]],
 ) -> None:
     """Uses the queried ilk registry data and updates the global DB ilk cache by
@@ -249,7 +250,7 @@ def update_ilk_registry(
         )
 
 
-def query_ilk_registry_and_maybe_update_cache(ethereum: 'EthereumInquirer') -> None:
+def query_ilk_registry_and_maybe_update_cache(ethereum: EthereumInquirer) -> None:
     """
     Query the on-chain ilk registry, and for any collateral type that is not yet known,
     pull it's contract data, put it in the DB and then add it in the cache.

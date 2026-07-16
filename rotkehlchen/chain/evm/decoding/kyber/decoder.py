@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
@@ -12,10 +11,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -25,7 +22,10 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import CryptoAsset
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -35,7 +35,7 @@ class KyberCommonDecoder(EvmDecoderInterface):
 
     def _maybe_update_events(
             self,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             sender: ChecksumEvmAddress,
             source_asset: CryptoAsset,
             destination_asset: CryptoAsset,

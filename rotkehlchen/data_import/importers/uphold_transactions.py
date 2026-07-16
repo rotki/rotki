@@ -1,11 +1,9 @@
 import csv
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.converters import asset_from_uphold
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import BaseExchangeImporter, SkippedCSVEntry, hash_csv_row
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -23,7 +21,10 @@ from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 UPHOLD_PREFIX = 'UPH_'
@@ -32,7 +33,7 @@ UPHOLD_PREFIX = 'UPH_'
 class UpholdTransactionsImporter(BaseExchangeImporter):
     """Uphold CSV importer"""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Uphold')
 
     def _consume_uphold_transaction(

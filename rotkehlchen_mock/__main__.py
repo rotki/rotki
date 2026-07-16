@@ -1,9 +1,7 @@
 import logging
 import threading
 from http import HTTPStatus
-from typing import Any
-
-from flask import Response
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.api.rest import RestAPI, api_response
 from rotkehlchen.api.server import APIServer
@@ -11,6 +9,9 @@ from rotkehlchen.args import app_args
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.server import RotkehlchenServer
+
+if TYPE_CHECKING:
+    from flask import Response
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
