@@ -1,9 +1,11 @@
+import ctypes
 import importlib.metadata
 import logging
 import os
 import signal
 import sys
 import threading
+from ctypes import wintypes
 from typing import Any
 
 import rsqlite
@@ -44,9 +46,11 @@ class RotkehlchenServer:
         configure_logging(self.args)
         self.rotkehlchen = Rotkehlchen(self.args)
         self.stop_event = threading.Event()
+        self._shutdown_requested = threading.Event()
         # never released: makes shutdown() run once even when two signal paths
         # fire together (e.g. the windows console ctrl handler and SIGINT)
         self._shutdown_lock = threading.Lock()
+        self._windows_console_ctrl_handler: Any = None
         if ',' in self.args.api_cors:
             domain_list = [str(domain) for domain in self.args.api_cors.split(',')]
         else:
@@ -58,14 +62,55 @@ class RotkehlchenServer:
         )
 
     def shutdown(self, *args: Any) -> None:
-        """Shut the server down. Also used as a signal/console-ctrl handler,
-        hence the unused extra arguments."""
+        """Shut the server down. Also used as a signal handler, hence the extra arguments."""
+        self._shutdown_requested.set()
         if self._shutdown_lock.acquire(blocking=False) is False:
             return  # a concurrent signal already runs the shutdown
 
         log.debug('Shutdown initiated')
-        self.api_server.stop()
-        self.stop_event.set()
+        try:
+            self.api_server.stop()
+        finally:
+            self.stop_event.set()
+
+    def _handle_windows_console_ctrl(self, _signal_type: int) -> bool:
+        """Ask the main thread to shut down after a Windows console control event.
+
+        Windows invokes this callback on a new native thread. Keep it alive until
+        cleanup completes so returning True does not let the process be terminated
+        before the main thread has had its opportunity to shut down gracefully.
+        """
+        self._shutdown_requested.set()
+        self.stop_event.wait()
+        return True
+
+    def _register_windows_console_ctrl_handler(self) -> None:
+        """Register the shutdown handler for Windows console control events.
+
+        This calls kernel32's SetConsoleCtrlHandler directly instead of depending
+        on pywin32. The native callback is stored on the server because Windows
+        retains only its pointer and ctypes callbacks must remain alive while they
+        can be called. Registration failures are raised as Windows errors.
+        """
+        ctypes_vars = vars(ctypes)
+        callback_type = ctypes_vars['WINFUNCTYPE'](wintypes.BOOL, wintypes.DWORD)
+        self._windows_console_ctrl_handler = callback_type(self._handle_windows_console_ctrl)
+        set_console_ctrl_handler = ctypes_vars['WinDLL'](
+            'kernel32',
+            use_last_error=True,
+        ).SetConsoleCtrlHandler
+        set_console_ctrl_handler.argtypes = (callback_type, wintypes.BOOL)
+        set_console_ctrl_handler.restype = wintypes.BOOL
+        if set_console_ctrl_handler(self._windows_console_ctrl_handler, True) == 0:
+            raise ctypes_vars['WinError'](ctypes_vars['get_last_error']())
+
+    def _wait_for_shutdown(self) -> None:
+        """Wait for shutdown and perform Windows console cleanup on the main thread."""
+        if os.name == 'nt':
+            self._shutdown_requested.wait()
+            self.shutdown()
+
+        self.stop_event.wait()
 
     def main(self) -> None:
         # log version of some special dependencies
@@ -81,8 +126,7 @@ class RotkehlchenServer:
             # This logic handles the signal sent from the bootloader equivalent to sigterm in
             # addition to the signals sent by windows's taskkill.
             # Research documented in https://github.com/yabirgb/rotki-python-research
-            import win32api  # pylint: disable=import-outside-toplevel  # isort:skip
-            win32api.SetConsoleCtrlHandler(self.shutdown, True)
+            self._register_windows_console_ctrl_handler()
 
         signal.signal(signal.SIGINT, self.shutdown)
         # The api server's RestAPI starts rotki main loop
@@ -90,11 +134,17 @@ class RotkehlchenServer:
             host=self.args.api_host,
             rest_port=self.args.rest_api_port,
         )
-        self.stop_event.wait()
-        # Exit without running interpreter shutdown. All rotki task threads are
-        # daemons, but the WSGI bridge's executor threads are not and the
-        # interpreter joins non-daemon threads at exit -- a single request handler
-        # wedged in a remote call would keep the process alive (appearing to
-        # ignore SIGTERM) indefinitely. State is already persisted and logging
-        # flushed by rest_api.stop() before stop_event is set.
-        os._exit(0)
+        exit_code = 0
+        try:
+            self._wait_for_shutdown()
+        except BaseException:
+            exit_code = 1
+            log.exception('Backend shutdown failed')
+        finally:
+            # Exit without running interpreter shutdown. All rotki task threads are
+            # daemons, but the WSGI bridge's executor threads are not and the
+            # interpreter joins non-daemon threads at exit -- a single request handler
+            # wedged in a remote call would keep the process alive (appearing to
+            # ignore SIGTERM) indefinitely. On successful shutdown state is already
+            # persisted and logging flushed by rest_api.stop().
+            os._exit(exit_code)

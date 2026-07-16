@@ -192,7 +192,7 @@ def test_query_asset_movements(coinex_exchange: Coinex) -> None:
     ]
 
 
-def test_query_trades(coinex_exchange: Coinex, globaldb: 'GlobalDBHandler') -> None:
+def test_query_trades(coinex_exchange: Coinex, globaldb: GlobalDBHandler) -> None:
     cet_asset = Asset('eip155:1/erc20:0x081F67aFA0cCF8c7B17540767BBe95DF2bA8D97F').resolve_to_asset_with_oracles()  # noqa: E501
     globaldb.add_location_asset_mappings([
         LocationAssetMappingUpdateEntry(
