@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import type { Nullable } from '@rotki/common';
-import type { Pinned } from '@/modules/session/types';
-import { startPromise } from '@shared/utils';
-import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import MatchAssetMovementsContent from '@/modules/history/events/MatchAssetMovementsContent.vue';
 import PotentialMatchesContent from '@/modules/history/events/PotentialMatchesContent.vue';
@@ -11,6 +7,9 @@ import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
 } from '@/modules/history/events/use-unmatched-asset-movements';
+import { PinnedNames } from '@/modules/session/types';
+import { usePinnedHighlightNavigation } from '@/modules/shell/pinned/use-pinned-highlight-navigation';
+import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 
 const { highlightedGroupIdentifier, highlightedPotentialMatchIdentifier, potentialMatchGroupIdentifier } = defineProps<{
   highlightedGroupIdentifier?: string;
@@ -27,29 +26,26 @@ const activePotentialMatchIdentifier = ref<number | undefined>(highlightedPotent
 const potentialMatchMovement = ref<UnmatchedAssetMovement>();
 const showPotentialMatchesDrawer = ref<boolean>(false);
 
-const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
+const { isPinned, unpin: unpinPanel } = usePinnedPanel(PinnedNames.MATCH_ASSET_MOVEMENTS);
 const {
-  clearAllHighlightTargets,
   clearHighlightTarget,
-  highlightTargets,
   requestNavigation,
   setHighlightTarget,
 } = useHistoryEventNavigation();
+
+const { clearHighlight } = usePinnedHighlightNavigation(
+  ['highlightedAssetMovement', 'highlightedPotentialMatch'],
+  () => {
+    set(activeGroupIdentifier, undefined);
+    set(activePotentialMatchIdentifier, undefined);
+  },
+  () => get(isPinned),
+);
 
 const {
   ignoredMovements,
   unmatchedMovements,
 } = useUnmatchedAssetMovements();
-
-async function clearHighlight(): Promise<void> {
-  set(activeGroupIdentifier, undefined);
-  set(activePotentialMatchIdentifier, undefined);
-  clearAllHighlightTargets();
-  const { highlightedAssetMovement, highlightedPotentialMatch, ...remainingQuery } = get(route).query;
-  if (highlightedAssetMovement || highlightedPotentialMatch) {
-    await router.replace({ query: remainingQuery });
-  }
-}
 
 function selectMovement(movement: UnmatchedAssetMovement): void {
   const identifier = getEventEntryFromCollection(movement.events).entry.identifier;
@@ -86,17 +82,9 @@ async function onPinnedMatched(): Promise<void> {
   await clearHighlight();
 }
 
-function setPinned(pin: Nullable<Pinned>): void {
-  set(pinned, pin);
-}
-
 async function unpin(): Promise<void> {
   await clearHighlight();
-  setPinned(null);
-}
-
-function closePinnedSidebar(): void {
-  set(showPinned, false);
+  unpinPanel();
 }
 
 function showInHistoryEvents(movement: UnmatchedAssetMovement): void {
@@ -187,68 +175,10 @@ watch(() => highlightedGroupIdentifier, (newHighlight, oldHighlight) => {
   set(activeGroupIdentifier, newHighlight);
   navigateToHighlightedMovement(newHighlight);
 });
-
-watch(highlightTargets, (targets) => {
-  if (Object.keys(targets).length > 0) {
-    return;
-  }
-  set(activeGroupIdentifier, undefined);
-  set(activePotentialMatchIdentifier, undefined);
-});
-
-onUnmounted(() => {
-  startPromise(clearHighlight());
-});
 </script>
 
 <template>
-  <RuiCard
-    no-padding
-    class="overflow-hidden !rounded-none h-full flex flex-col"
-    variant="flat"
-  >
-    <div class="flex items-center bg-rui-primary text-white p-2 shrink-0">
-      <RuiButton
-        variant="text"
-        size="sm"
-        icon
-        @click="closePinnedSidebar()"
-      >
-        <RuiIcon
-          class="text-white"
-          name="lu-chevron-right"
-          size="20"
-        />
-      </RuiButton>
-
-      <h6 class="flex items-center text-body-1 pl-2">
-        {{ t('asset_movement_matching.dialog.title') }}
-      </h6>
-
-      <div class="grow" />
-
-      <RuiTooltip
-        :popper="{ placement: 'bottom' }"
-        :open-delay="400"
-      >
-        <template #activator>
-          <RuiButton
-            variant="text"
-            icon
-            size="sm"
-            @click="unpin()"
-          >
-            <RuiIcon
-              size="20"
-              class="text-white"
-              name="lu-x"
-            />
-          </RuiButton>
-        </template>
-        {{ t('asset_movement_matching.actions_pin.unpin_section') }}
-      </RuiTooltip>
-    </div>
-
+  <div class="h-full flex flex-col overflow-hidden">
     <div class="flex-1 overflow-hidden flex flex-col relative">
       <MatchAssetMovementsContent
         :highlighted-group-identifier="activeGroupIdentifier"
@@ -318,5 +248,5 @@ onUnmounted(() => {
         </RuiCard>
       </Transition>
     </div>
-  </RuiCard>
+  </div>
 </template>

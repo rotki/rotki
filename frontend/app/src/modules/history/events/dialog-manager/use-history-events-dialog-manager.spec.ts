@@ -73,9 +73,10 @@ describe('useHistoryEventsDialogManager', () => {
     });
   });
 
-  it('should reveal the pinned panel instead of opening the conflicts dialog when already pinned', async () => {
-    const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
-    set(pinned, { name: PinnedNames.INTERNAL_TX_CONFLICTS, props: {} });
+  it('should focus the pinned panel instead of opening the conflicts dialog when already pinned', async () => {
+    const visibility = useAreaVisibilityStore();
+    const { showPinned } = storeToRefs(visibility);
+    visibility.pinPanel({ name: PinnedNames.INTERNAL_TX_CONFLICTS, props: {} });
     set(showPinned, false);
 
     const { currentDialog, show } = useHistoryEventsDialogManager();

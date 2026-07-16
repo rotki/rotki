@@ -4415,8 +4415,7 @@
     "actionable": {
       "actions": {
         "pin_section": "Закрепить секцию",
-        "regenerate_report": "Перегенерировать отчет",
-        "unpin_section": "Открепить секцию"
+        "regenerate_report": "Перегенерировать отчет"
       },
       "issues_found": "Найдено {total} проблем с сгенерированным отчетом",
       "missing_acquisitions": {

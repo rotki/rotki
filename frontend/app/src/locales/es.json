@@ -2655,8 +2655,7 @@
     "actionable": {
       "actions": {
         "pin_section": "Pin Section",
-        "regenerate_report": "Re-Generate Report",
-        "unpin_section": "Unpin Section"
+        "regenerate_report": "Re-Generate Report"
       },
       "issues_found": "{total} issues found with the generated report",
       "missing_acquisitions": {

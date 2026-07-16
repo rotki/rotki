@@ -3067,8 +3067,7 @@
     "actionable": {
       "actions": {
         "pin_section": "Épingler la section",
-        "regenerate_report": "Générer le rapport à nouveau",
-        "unpin_section": "Désépingler la section"
+        "regenerate_report": "Générer le rapport à nouveau"
       },
       "issues_found": "{total} problèmes trouvés dans le rapport généré",
       "missing_acquisitions": {

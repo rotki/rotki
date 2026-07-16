@@ -5,7 +5,7 @@ import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/event
 import { AccountingOverlayToggle, BalanceDivergencePanel, BalanceDivergenceToggle } from '@/modules/history/balances/components';
 import { OverlayMode, type OverlayPair, useAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay';
 import { provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
-import { DataIssuesPanel, DataIssuesToggle } from '@/modules/history/data-issues/components/inbox';
+import DataIssuesToggle from '@/modules/history/data-issues/components/DataIssuesToggle.vue';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/modules/history/events/action-types';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import {
@@ -397,7 +397,6 @@ watchDebounced(route, async () => {
               @update-event-ids="handleUpdateEventIds($event)"
             />
           </RuiCard>
-          <DataIssuesPanel v-if="overlayAvailable" />
         </div>
 
         <HistoryEventsDialogContainer

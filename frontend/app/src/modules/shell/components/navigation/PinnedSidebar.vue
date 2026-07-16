@@ -1,38 +1,82 @@
 <script setup lang="ts">
-import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
-import { PinnedNames } from '@/modules/session/types';
+import type { Component } from 'vue';
+import type { Pinned } from '@/modules/session/types';
+import { PINNED_CAP, useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useSidebarResize } from '@/modules/shell/layout/use-sidebar-resize';
+import { PINNED_PANELS } from '@/modules/shell/pinned/pinned-registry';
+import PinnedPanelBody from '@/modules/shell/pinned/PinnedPanelBody.vue';
+import { usePinnedTabs } from '@/modules/shell/pinned/use-pinned-tabs';
 
-const ReportActionableCard = defineAsyncComponent(() => import('@/modules/reports/ReportActionableCard.vue'));
-const MatchAssetMovementsPinned = defineAsyncComponent(() => import('@/modules/history/events/MatchAssetMovementsPinned.vue'));
-const InternalTxConflictsPinned = defineAsyncComponent(() => import('@/modules/history/internal-tx-conflicts/InternalTxConflictsPinned.vue'));
-const DataIssuesPinned = defineAsyncComponent(() => import('@/modules/history/data-issues/components/DataIssuesPinned.vue'));
-
-const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
-
-const { isLgAndDown } = useBreakpoint();
-
-const component = computed<typeof ReportActionableCard | typeof MatchAssetMovementsPinned | typeof InternalTxConflictsPinned | typeof DataIssuesPinned | undefined>(() => {
-  const pinnedValue = get(pinned);
-  if (pinnedValue && pinnedValue.name === PinnedNames.REPORT_ACTIONABLE_CARD)
-    return ReportActionableCard;
-
-  if (pinnedValue && pinnedValue.name === PinnedNames.MATCH_ASSET_MOVEMENTS)
-    return MatchAssetMovementsPinned;
-
-  if (pinnedValue && pinnedValue.name === PinnedNames.INTERNAL_TX_CONFLICTS)
-    return InternalTxConflictsPinned;
-
-  if (pinnedValue && pinnedValue.name === PinnedNames.DATA_ISSUES)
-    return DataIssuesPinned;
-
-  return undefined;
+defineOptions({
+  // Two root nodes (mini-bar + drawer); the rail's visibility is driven by the
+  // store, so parent attribute fallthrough is intentionally dropped.
+  inheritAttrs: false,
 });
 
+const store = useAreaVisibilityStore();
+const { pinnedPanels, showPinned } = storeToRefs(store);
+const { activePinnedId, close, focus, tabs } = usePinnedTabs();
+
+const { t } = useI18n({ useScope: 'global' });
+const { isLgAndDown } = useBreakpoint();
+
+const activePanel = computed<Pinned | undefined>(() =>
+  get(pinnedPanels).find(panel => panel.name === get(activePinnedId)));
+
+const activeComponent = computed<Component | undefined>(() => {
+  const panel = get(activePanel);
+  return panel ? PINNED_PANELS[panel.name].component : undefined;
+});
+
+/** Panel-specific controls for the active tab, rendered on the tab strip (e.g. ITC settings). */
+const activeActions = computed<Component | undefined>(() => {
+  const id = get(activePinnedId);
+  return id ? PINNED_PANELS[id].actions : undefined;
+});
+
+/** Collapsed icon rail: shown on desktop when panels are pinned but the rail is hidden. */
+const showMiniBar = computed<boolean>(() =>
+  get(tabs).length > 0 && !get(showPinned) && !get(isLgAndDown));
+
 const { dragging, widthPx, onPointerDown, onPointerMove, onPointerUp } = useSidebarResize();
+
+function collapse(): void {
+  set(showPinned, false);
+}
 </script>
 
 <template>
+  <!-- Collapsed state: a thin vertical strip of tool icons on the right edge. -->
+  <div
+    v-if="showMiniBar"
+    class="fixed right-0 top-1/2 -translate-y-1/2 z-[6] flex flex-col gap-1 p-1.5 bg-white dark:bg-rui-grey-900 border border-r-0 border-rui-grey-300 dark:border-rui-grey-800 rounded-l-lg shadow-md"
+    data-testid="pinned-mini-bar"
+  >
+    <RuiTooltip
+      v-for="tab in tabs"
+      :key="tab.name"
+      :popper="{ placement: 'left' }"
+      :open-delay="300"
+    >
+      <template #activator>
+        <RuiButton
+          variant="text"
+          icon
+          size="sm"
+          :class="tab.name === activePinnedId ? '!bg-rui-primary !text-white' : '!text-rui-text-secondary'"
+          :data-testid="`pinned-mini-${tab.name}`"
+          @click="focus(tab.name)"
+        >
+          <RuiIcon
+            :name="tab.icon"
+            size="18"
+          />
+        </RuiButton>
+      </template>
+      {{ t(tab.labelKey) }}
+    </RuiTooltip>
+  </div>
+
   <RuiNavigationDrawer
     v-model="showPinned"
     :temporary="isLgAndDown"
@@ -65,11 +109,73 @@ const { dragging, widthPx, onPointerDown, onPointerMove, onPointerUp } = useSide
           />
         </div>
       </div>
-      <Component
-        :is="component"
-        v-if="pinned && component"
-        v-bind="pinned.props"
-      />
+
+      <div class="h-full flex flex-col">
+        <!-- Tab strip: the single title + close + collapse bar for the rail (always shown while pinned).
+             Tabs scroll horizontally; the actions + collapse cluster stays pinned to the right. -->
+        <div
+          v-if="tabs.length > 0"
+          class="flex items-stretch shrink-0 bg-rui-grey-100 dark:bg-rui-grey-900 border-b border-default"
+        >
+          <div class="flex items-stretch overflow-x-auto min-w-0 flex-1">
+            <button
+              v-for="tab in tabs"
+              :key="tab.name"
+              type="button"
+              class="flex items-center gap-1.5 px-3 py-2 text-caption border-r border-default whitespace-nowrap transition-colors"
+              :class="tab.name === activePinnedId
+                ? 'bg-rui-primary text-white'
+                : 'text-rui-text-secondary hover:bg-rui-grey-200 dark:hover:bg-rui-grey-800'"
+              :data-testid="`pinned-tab-${tab.name}`"
+              @click="focus(tab.name)"
+            >
+              <RuiIcon
+                :name="tab.icon"
+                size="16"
+              />
+              <span class="max-w-[10rem] truncate">{{ t(tab.labelKey) }}</span>
+              <RuiIcon
+                name="lu-x"
+                size="14"
+                class="ml-1 opacity-60 hover:opacity-100"
+                :data-testid="`pinned-tab-close-${tab.name}`"
+                @click.stop="close(tab.name)"
+              />
+            </button>
+          </div>
+
+          <div class="flex items-center shrink-0 border-l border-default px-1 gap-0.5">
+            <Component
+              :is="activeActions"
+              v-if="activeActions"
+            />
+            <button
+              type="button"
+              class="flex items-center p-1 rounded text-rui-text-secondary hover:bg-rui-grey-200 dark:hover:bg-rui-grey-800"
+              data-testid="pinned-collapse"
+              @click="collapse()"
+            >
+              <RuiIcon
+                name="lu-chevron-right"
+                size="18"
+              />
+            </button>
+          </div>
+        </div>
+
+        <!-- Active panel, kept alive so backgrounded panels retain their state.
+             PinnedPanelBody enforces the shared height/scroll contract for every panel. -->
+        <PinnedPanelBody>
+          <KeepAlive :max="PINNED_CAP">
+            <Component
+              :is="activeComponent"
+              v-if="activePanel && activeComponent"
+              :key="activePinnedId"
+              v-bind="activePanel.props"
+            />
+          </KeepAlive>
+        </PinnedPanelBody>
+      </div>
     </div>
   </RuiNavigationDrawer>
 </template>

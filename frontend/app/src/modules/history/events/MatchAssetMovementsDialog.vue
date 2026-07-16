@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { Nullable } from '@rotki/common';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
-import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import MatchAssetMovementsContent from '@/modules/history/events/MatchAssetMovementsContent.vue';
-import { type Pinned, PinnedNames } from '@/modules/session/types';
+import { PinnedNames } from '@/modules/session/types';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
+import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 
 const modelValue = defineModel<boolean>({ default: false });
 
@@ -14,7 +13,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
+const { pin } = usePinnedPanel(PinnedNames.MATCH_ASSET_MOVEMENTS);
 
 function selectMovement(movement: UnmatchedAssetMovement): void {
   emit('find-match', movement);
@@ -24,18 +23,8 @@ function closeDialog(): void {
   set(modelValue, false);
 }
 
-function setPinned(pin: Nullable<Pinned>): void {
-  set(pinned, pin);
-}
-
 function pinSection(highlightedGroupIdentifier?: string): void {
-  const pin: Pinned = {
-    name: PinnedNames.MATCH_ASSET_MOVEMENTS,
-    props: highlightedGroupIdentifier ? { highlightedGroupIdentifier } : {},
-  };
-
-  setPinned(pin);
-  set(showPinned, true);
+  pin(highlightedGroupIdentifier ? { highlightedGroupIdentifier } : {});
   set(modelValue, false);
 }
 

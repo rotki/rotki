@@ -1,11 +1,10 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { get, set } from '@vueuse/core';
+import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, ref } from 'vue';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import DataIssuesToggle from '@/modules/history/data-issues/components/DataIssuesToggle.vue';
-import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
 import { PinnedNames } from '@/modules/session/types';
 import { createRuiPlugin } from '@/plugins/rui';
 
@@ -54,57 +53,36 @@ describe('dataIssuesToggle', () => {
     expect(refreshSummary).toHaveBeenCalledOnce();
   });
 
-  it('should open the overlay when toggled while hidden and unpinned', async () => {
+  it('should pin the panel when toggled while unpinned', async () => {
     const wrapper = createWrapper();
-    const { overlayVisible } = storeToRefs(useDataIssuesInboxStore());
+    const { pinnedPanels } = storeToRefs(useAreaVisibilityStore());
 
     await wrapper.find('[data-testid="data-issues-toggle"]').trigger('click');
 
-    expect(get(overlayVisible)).toBe(true);
+    expect(get(pinnedPanels).map(panel => panel.name)).toContain(PinnedNames.DATA_ISSUES);
   });
 
-  it('should close the overlay when toggled while already open', async () => {
+  it('should unpin the panel when toggled while shown and active', async () => {
     const wrapper = createWrapper();
-    const { overlayVisible } = storeToRefs(useDataIssuesInboxStore());
-    set(overlayVisible, true);
+    const visibility = useAreaVisibilityStore();
+    const { pinnedPanels } = storeToRefs(visibility);
+    visibility.pinPanel({ name: PinnedNames.DATA_ISSUES, props: {} });
 
     await wrapper.find('[data-testid="data-issues-toggle"]').trigger('click');
 
-    expect(get(overlayVisible)).toBe(false);
-  });
-
-  it('should unpin the panel instead of opening an overlay when it is pinned', async () => {
-    const wrapper = createWrapper();
-    const { overlayVisible } = storeToRefs(useDataIssuesInboxStore());
-    const { pinned } = storeToRefs(useAreaVisibilityStore());
-    set(pinned, { name: PinnedNames.DATA_ISSUES, props: {} });
-
-    await wrapper.find('[data-testid="data-issues-toggle"]').trigger('click');
-
-    expect(get(pinned)).toBeNull();
-    expect(get(overlayVisible)).toBe(false);
-  });
-
-  it('should mark the toggle active when the overlay is open', async () => {
-    const wrapper = createWrapper();
-    const { overlayVisible } = storeToRefs(useDataIssuesInboxStore());
-    const button = wrapper.find('[data-testid="data-issues-toggle"]');
-    expect(button.classes()).not.toContain('!bg-rui-primary');
-
-    set(overlayVisible, true);
-    await nextTick();
-
-    expect(button.classes()).toContain('!bg-rui-primary');
+    expect(get(pinnedPanels)).toHaveLength(0);
   });
 
   it('should mark the toggle active when the panel is pinned', async () => {
     const wrapper = createWrapper();
-    const { pinned } = storeToRefs(useAreaVisibilityStore());
+    const visibility = useAreaVisibilityStore();
+    const button = wrapper.find('[data-testid="data-issues-toggle"]');
+    expect(button.classes()).not.toContain('!bg-rui-primary');
 
-    set(pinned, { name: PinnedNames.DATA_ISSUES, props: {} });
+    visibility.pinPanel({ name: PinnedNames.DATA_ISSUES, props: {} });
     await nextTick();
 
-    expect(wrapper.find('[data-testid="data-issues-toggle"]').classes()).toContain('!bg-rui-primary');
+    expect(button.classes()).toContain('!bg-rui-primary');
   });
 
   it('should refresh the summary again when a sync completes', async () => {

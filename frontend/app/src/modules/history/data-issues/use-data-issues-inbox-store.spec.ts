@@ -1,4 +1,4 @@
-import { get, set } from '@vueuse/core';
+import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
@@ -15,12 +15,11 @@ describe('useDataIssuesInboxStore', () => {
     setActivePinia(createPinia());
   });
 
-  it('should start with zeroed counts and a hidden overlay', () => {
+  it('should start with zeroed counts', () => {
     const store = useDataIssuesInboxStore();
 
     expect(get(store.counts)).toStrictEqual(emptyCounts());
     expect(get(store.baselineTotal)).toBe(0);
-    expect(get(store.overlayVisible)).toBe(false);
     expect(get(store.actionableCount)).toBe(0);
   });
 
@@ -48,27 +47,26 @@ describe('useDataIssuesInboxStore', () => {
     expect(get(store.baselineTotal)).toBe(42);
   });
 
-  it('should hide the overlay and clear the data-issues pin when dismissing inline panels', () => {
+  it('should remove the data-issues tab when dismissing inline panels', () => {
     const store = useDataIssuesInboxStore();
-    const { overlayVisible } = storeToRefs(store);
-    const { pinned } = storeToRefs(useAreaVisibilityStore());
-    set(overlayVisible, true);
-    set(pinned, { name: PinnedNames.DATA_ISSUES, props: {} });
+    const visibility = useAreaVisibilityStore();
+    const { pinnedPanels } = storeToRefs(visibility);
+    visibility.pinPanel({ name: PinnedNames.DATA_ISSUES, props: {} });
 
     store.dismissInlinePanels();
 
-    expect(get(overlayVisible)).toBe(false);
-    expect(get(pinned)).toBeNull();
+    expect(get(pinnedPanels)).toHaveLength(0);
   });
 
-  it('should leave an unrelated pin untouched when dismissing inline panels', () => {
+  it('should leave an unrelated tab untouched when dismissing inline panels', () => {
     const store = useDataIssuesInboxStore();
-    const { pinned } = storeToRefs(useAreaVisibilityStore());
+    const visibility = useAreaVisibilityStore();
+    const { pinnedPanels } = storeToRefs(visibility);
     const other = { name: PinnedNames.MATCH_ASSET_MOVEMENTS, props: {} };
-    set(pinned, other);
+    visibility.pinPanel(other);
 
     store.dismissInlinePanels();
 
-    expect(get(pinned)).toStrictEqual(other);
+    expect(get(pinnedPanels)).toStrictEqual([other]);
   });
 });

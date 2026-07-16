@@ -4,9 +4,13 @@ import NotificationSidebar from '@/modules/core/notifications/NotificationSideba
 import UserNotesSidebar from '@/modules/notes/UserNotesSidebar.vue';
 import HelpSidebar from '@/modules/shell/components/HelpSidebar.vue';
 import PinnedSidebar from '@/modules/shell/components/navigation/PinnedSidebar.vue';
+import { usePinnedPersistence } from '@/modules/shell/pinned/use-pinned-persistence';
 
 const { showAbout, showHelpBar, showNotesSidebar, showNotificationBar, showPinned }
   = storeToRefs(useAreaVisibilityStore());
+
+// Restore the rail width + open tabs from localStorage and keep them in sync.
+usePinnedPersistence();
 </script>
 
 <template>

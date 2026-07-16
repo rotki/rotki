@@ -1,35 +1,15 @@
 <script setup lang="ts">
-import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import DataIssuesPanelContent from '@/modules/history/data-issues/components/DataIssuesPanelContent.vue';
-import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
+import { PinnedNames } from '@/modules/session/types';
+import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 
-const { pinned } = storeToRefs(useAreaVisibilityStore());
-const { overlayVisible } = storeToRefs(useDataIssuesInboxStore());
-
-/** Hand the panel back to the floating overlay. */
-function unpin(): void {
-  set(pinned, null);
-  set(overlayVisible, true);
-}
-
-/** Dismiss the panel entirely. */
-function close(): void {
-  set(pinned, null);
-  set(overlayVisible, false);
-}
+const { unpin } = usePinnedPanel(PinnedNames.DATA_ISSUES);
 </script>
 
 <template>
-  <RuiCard
-    no-padding
-    variant="flat"
-    class="!rounded-none h-full flex flex-col overflow-hidden"
-    content-class="h-full min-h-0"
-  >
+  <div class="h-full flex flex-col overflow-hidden">
     <DataIssuesPanelContent
-      :pinned="true"
-      @close="close()"
-      @toggle-pin="unpin()"
+      @close="unpin()"
     />
-  </RuiCard>
+  </div>
 </template>
