@@ -102,7 +102,6 @@ export interface Listeners {
   onError: (backendOutput: string, code: BackendCode) => void;
   onAbout: () => void;
   onRestart: () => void;
-  onProcessDetected: (pids: string[]) => void;
   onOAuthCallback?: (oAuthResult: OAuthResult) => void;
 }
 

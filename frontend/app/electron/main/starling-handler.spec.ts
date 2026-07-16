@@ -1,0 +1,186 @@
+import type { AppConfig } from '@electron/main/app-config';
+import type { LogService } from '@electron/main/log-service';
+import { EventEmitter } from 'node:events';
+import { PassThrough, Writable } from 'node:stream';
+import { BackendCode } from '@shared/ipc';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { StarlingHandler } from './starling-handler';
+
+// Mutable os identity the handler's version gates read through.
+const osState = { platform: 'linux', release: '5.0.0' };
+vi.mock('node:os', () => ({
+  platform: (): string => osState.platform,
+  release: (): string => osState.release,
+}));
+
+// `spawn` hands back whatever fake child the test installs; the rest of the
+// builtin stays real (other modules in the graph rely on it). `vi.hoisted` keeps
+// the mock fn defined before the hoisted vi.mock factory references it.
+const { spawnMock } = vi.hoisted(() => ({ spawnMock: vi.fn() }));
+vi.mock('node:child_process', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:child_process')>();
+  return { ...actual, default: { ...actual, spawn: spawnMock }, spawn: spawnMock };
+});
+
+// The invocation builder touches the filesystem / uv detection in real life —
+// the handler only forwards its result to spawn(), so a stub is enough.
+vi.mock('@electron/main/starling-args', () => ({
+  buildStarlingInvocation: (): { command: string; args: string[] } => ({ command: 'starling', args: [] }),
+}));
+
+vi.mock('@electron/main/port-utils', () => ({
+  selectPort: vi.fn(async (port: number) => port),
+}));
+
+interface FakeChild extends EventEmitter {
+  stdin: Writable;
+  stdout: PassThrough;
+  stderr: PassThrough;
+  kill: ReturnType<typeof vi.fn>;
+}
+
+type RequestHandler = (message: { id?: number; method?: string }, stdout: PassThrough) => void;
+
+/** A starling stand-in: stdin parses JSON-RPC, the responder answers on stdout. */
+function makeFakeChild(onRequest: RequestHandler): FakeChild {
+  const stdout = new PassThrough();
+  const stderr = new PassThrough();
+  const stdin = new Writable({
+    write(chunk, _encoding, callback): void {
+      const line = chunk.toString().trim();
+      if (line)
+        onRequest(JSON.parse(line), stdout);
+      callback();
+    },
+  });
+  const child: FakeChild = Object.assign(new EventEmitter(), { stdin, stdout, stderr, kill: vi.fn() });
+  return child;
+}
+
+function writeMessage(stdout: PassThrough, message: Record<string, unknown>): void {
+  stdout.write(`${JSON.stringify({ jsonrpc: '2.0', ...message })}\n`);
+}
+
+/** Replies to any request with a null result (control RPCs the tests don't drive). */
+const nullResponder: RequestHandler = (message, stdout): void => {
+  writeMessage(stdout, { id: message.id, result: null });
+};
+
+/** Push the controller's initial `ready` event, as starling does once the tree is up. */
+function emitReady(child: FakeChild): void {
+  writeMessage(child.stdout, { method: 'event.ready', params: { services: ['core', 'colibri'] } });
+}
+
+function makeLogger(): LogService {
+  return {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    write: vi.fn(),
+    getLogLevel: vi.fn(() => 0),
+    updateLogDirectory: vi.fn(),
+    get coreProcessLogPath(): string {
+      return '/tmp/logs/rotkehlchen.log';
+    },
+  } as unknown as LogService;
+}
+
+function makeConfig(): AppConfig {
+  return {
+    isDev: false,
+    ports: { corePort: 4242, colibriPort: 4343 },
+    urls: { coreApiUrl: '', colibriApiUrl: '' },
+  } as unknown as AppConfig;
+}
+
+describe('starlingHandler', () => {
+  beforeEach(() => {
+    osState.platform = 'linux';
+    osState.release = '5.0.0';
+    spawnMock.mockReset();
+  });
+
+  it('should drive the initial bring-up via the start request and publish both loopback URLs', async () => {
+    // starling boots idle; the handler drives the first start and resolves on
+    // its reply (not on an event), so record which control methods it sends.
+    const methods: string[] = [];
+    const child = makeFakeChild((message, stdout) => {
+      if (message.method)
+        methods.push(message.method);
+      writeMessage(stdout, { id: message.id, result: null });
+    });
+    spawnMock.mockImplementation(() => child);
+    const config = makeConfig();
+    const handler = new StarlingHandler(makeLogger(), config);
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+
+    expect(spawnMock).toHaveBeenCalledTimes(1);
+    expect(methods).toContain('start'); // renderer drives the first bring-up
+    expect(onProcessError).not.toHaveBeenCalled();
+    // Two-URL posture: the renderer dials the allocated loopback ports directly.
+    expect(config.urls.coreApiUrl).toBe('http://127.0.0.1:4242');
+    expect(config.urls.colibriApiUrl).toBe('http://127.0.0.1:4343');
+  });
+
+  it('should map an unsupported macOS version to MACOS_VERSION', async () => {
+    osState.platform = 'darwin';
+    osState.release = '16.0.0'; // darwin 17 == High Sierra; 16 is too old
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+
+    expect(onProcessError).toHaveBeenCalledWith('rotki requires at least macOS High Sierra', BackendCode.MACOS_VERSION);
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it('should map an unsupported Windows version to WIN_VERSION', async () => {
+    osState.platform = 'win32';
+    osState.release = '6.0.6000'; // < 6.1 (Windows 7)
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+
+    expect(onProcessError).toHaveBeenCalledWith('rotki requires at least Windows 10', BackendCode.WIN_VERSION);
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it('should map a crash event to a TERMINATED process error', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => emitReady(child));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+    writeMessage(child.stdout, { method: 'event.crashed', params: { lastError: 'core died' } });
+
+    await vi.waitFor(() => expect(onProcessError).toHaveBeenCalledWith('core died', BackendCode.TERMINATED));
+  });
+
+  it('should surface the data-dir-in-use exit code as a TERMINATED error', async () => {
+    const child = makeFakeChild(nullResponder);
+    // Exit before readiness completes: starling could not acquire the data-dir lock.
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => child.emit('exit', 3, null));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+
+    expect(onProcessError).toHaveBeenCalledWith(
+      'Another rotki instance is already using this data directory. Please close it and try again.',
+      BackendCode.TERMINATED,
+    );
+    // The exit reason is reported once; the readiness path must not double it.
+    expect(onProcessError).toHaveBeenCalledTimes(1);
+  });
+});

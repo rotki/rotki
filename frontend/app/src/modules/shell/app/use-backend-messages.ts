@@ -29,7 +29,6 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   const isDevelopment = checkIfDevelopment();
   const { getStartupError, setupListeners } = useInterop();
   const { restartBackend } = useBackendManagement();
-  const { t } = useI18n({ useScope: 'global' });
   const { start: startMonitoring, stop: stopMonitoring } = useMonitorService();
   const { showAbout } = storeToRefs(useAreaVisibilityStore());
   const { logged } = storeToRefs(useSessionAuthStore());
@@ -98,18 +97,6 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
         handlers.forEach((handler) => {
           handler(oAuthResult);
         });
-      },
-      onProcessDetected: (pids) => {
-        // Stop all connection attempts and monitoring - another backend process is running
-        stopConnectionAttempts();
-        stopMonitoring();
-        setWsConnectionEnabled(false);
-        set(
-          startupErrorMessage,
-          t('error.process_running', {
-            pids: pids.join(', '),
-          }),
-        );
       },
       onRestart: () => {
         set(startupErrorMessage, '');

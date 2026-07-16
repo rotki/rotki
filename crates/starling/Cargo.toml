@@ -1,0 +1,25 @@
+[package]
+name = "starling"
+version = "0.1.0"
+description = "Cross-platform supervisor that owns the lifecycle of the rotki backend services (rotki-core + colibri)."
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "starling"
+path = "src/main.rs"
+
+[dependencies]
+starling-core = { path = "../starling-core" }
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json = "1"
+
+# Cross-platform advisory file locking for the single-instance data-directory
+# guard (flock / LockFileEx). Held for the supervised lifetime; OS-released on exit.
+fs4 = { version = "0.13", features = ["sync"] }

@@ -56,7 +56,13 @@ fn is_production_build() -> bool {
         return false;
     }
 
-    !get_version().contains(".dev")
+    // A production build is a release binary built from an exact release tag.
+    // Every dev/nightly build carries a `dev` marker in its version, but the two
+    // producers spell it differently: setuptools_scm (local + electron nightly)
+    // emits `.dev` (e.g. `1.43.3.dev424+g914cfb`) while the docker nightly
+    // workflow emits `-dev` (e.g. `1.43.2-dev20260716`). Match the bare `dev`
+    // substring so both read as dev, and only a clean tag counts as production.
+    !get_version().contains("dev")
 }
 
 pub fn parse_args() -> Args {

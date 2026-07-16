@@ -4,6 +4,7 @@ import { platform } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import consola from 'consola';
+import { buildCargoEnv, STRAWBERRY_MISSING_WARNING } from '../../app/shared/cargo-env';
 import { DEFAULT_PORTS, type InstanceRuntime } from '../dev-instance';
 import { formatPort } from '../dev-instance/format';
 import { getDebuggerPort, isUsingUvForPython, selectPort } from './prerequisites';
@@ -25,55 +26,6 @@ const COLIBRI = 'colibri';
 
 const READINESS_TIMEOUT_MS = 60_000;
 const READINESS_POLL_MS = 250;
-
-const isWindows = platform() === 'win32';
-
-/**
- * Mirrors `__get_windows_cargo_env` in `package.py`: when colibri builds on
- * Windows, `rusqlite`'s `bundled-sqlcipher-vendored-openssl` feature compiles
- * OpenSSL from source, whose Configure script is a Perl script. Git for
- * Windows ships a mingw64 Perl that mishandles string interpolation in OpenSSL's
- * Configure (e.g. eats `$M` from `SYS$MANAGER:[OPENSSL]`), making the build
- * fail with a cryptic `Number found where operator expected` error. Strawberry
- * Perl handles this correctly, so we prepend it on PATH.
- *
- * Important: Windows env is case-insensitive, but Node spawns children with
- * the literal keys you pass. If we add `PATH` while `process.env` still has
- * `Path`, the child receives both and which one wins is undefined — the
- * original Git Perl keeps winning. We must replace the existing key in place
- * (not add a duplicate-cased one).
- *
- * Returns undefined on POSIX, or null on Windows when Strawberry isn't
- * installed (caller decides whether to warn/abort).
- */
-function buildColibriEnv(): Record<string, string> | null | undefined {
-  if (!isWindows)
-    return undefined;
-  const strawberryPaths = [
-    'C:\\Strawberry\\perl\\bin',
-    'C:\\Strawberry\\perl\\site\\bin',
-    'C:\\Strawberry\\c\\bin',
-  ];
-  const existing = strawberryPaths.filter(p => fs.existsSync(p));
-  if (existing.length === 0)
-    return null;
-
-  const merged: Record<string, string> = {};
-  let pathKey = 'Path';
-  for (const [key, value] of Object.entries(process.env)) {
-    if (value === undefined)
-      continue;
-    if (key.toUpperCase() === 'PATH') {
-      pathKey = key;
-      continue;
-    }
-    merged[key] = value;
-  }
-  const currentPath = process.env.Path ?? process.env.PATH ?? '';
-  const parts = currentPath.split(';').filter(p => p && !existing.includes(p));
-  merged[pathKey] = [...existing, ...parts].join(';');
-  return merged;
-}
 
 export interface BackendEnv {
   VITE_BACKEND_URL: string;
@@ -140,31 +92,93 @@ export async function warmColibri(): Promise<void> {
   await buildColibriEagerly(path.join('..', 'colibri'));
 }
 
+/**
+ * Warm the starling supervisor debug build. Electron mode spawns starling via
+ * `cargo run --locked -p starling` from the `crates` workspace, which compiles
+ * the whole supervisor on a cold cache — mid electron-startup on a fresh
+ * worktree. Pre-building here (same debug profile, same target dir) makes that
+ * later `cargo run` a plain launch. Only electron mode uses starling; web mode
+ * spawns python + colibri directly, so callers skip this there. Starling lives
+ * in its own `crates` workspace (separate target dir from colibri) and pulls in
+ * no vendored-openssl, so it needs neither a separate warm from colibri nor the
+ * Strawberry Perl PATH shim.
+ */
+export async function warmStarling(): Promise<void> {
+  logger.info('Warming starling (cargo build --locked -p starling) so the electron dev launch does not compile the supervisor at startup; the first build may take a while');
+  await runCargoBuild(path.join('..', 'crates'), ['build', '--locked', '-p', 'starling']);
+}
+
+/**
+ * Warm the rust builds a dev launch needs before either mode reaches its start
+ * point, so a fresh worktree doesn't hit a cold compile at launch. Colibri is
+ * needed in both modes; starling only in electron mode (web spawns python +
+ * colibri directly). They live in separate workspaces, so warm concurrently.
+ *
+ * The python deps are synced afterwards rather than concurrently: both stages
+ * inherit stdio, and serialising keeps `uv sync`'s resolver output from being
+ * interleaved into the middle of cargo's progress bars.
+ */
+export async function warmDevServices(webMode: boolean): Promise<void> {
+  await Promise.all([
+    warmColibri(),
+    webMode ? Promise.resolve() : warmStarling(),
+  ]);
+  await syncPythonDeps();
+}
+
+/**
+ * Sync the backend deps from `uv.lock` before anything tries to launch python.
+ * `--locked` errors instead of silently re-resolving when the lock is stale,
+ * matching the `uv run --locked` the backend is actually started with - without
+ * this, a fresh worktree (or a rebase that moved `uv.lock`) pays the resolve at
+ * spawn time and can blow the readiness timeout.
+ *
+ * Only the uv path is synced. With a venv active, the deps are the developer's to
+ * manage and `verifyBackendReady()` already checks the venv actually answers.
+ */
+async function syncPythonDeps(): Promise<void> {
+  if (!isUsingUvForPython())
+    return;
+  logger.info('Syncing python deps (uv sync --locked)');
+  await runCommand('uv', ['sync', '--locked'], path.join('..'));
+}
+
 async function buildColibriEagerly(cwd: string): Promise<void> {
   logger.info('Warming colibri (cargo build --locked) so the dev launch does not compile at startup; the first build may take a while');
-  const buildEnv = buildColibriEnv();
+  const buildEnv = buildCargoEnv();
   if (buildEnv === null) {
-    logger.warn(
-      'Strawberry Perl not found at C:\\Strawberry — OpenSSL build will likely fail. '
-      + 'Install Strawberry Perl from https://strawberryperl.com and re-run.',
-    );
+    logger.warn(STRAWBERRY_MISSING_WARNING);
   }
   else if (buildEnv) {
     logger.info('Prioritizing Strawberry Perl on PATH for cargo build (vendored openssl)');
   }
+  await runCargoBuild(cwd, ['build', '--locked'], buildEnv ?? undefined);
+}
+
+/** `cargo` with the colibri PATH shim applied by the caller. */
+async function runCargoBuild(cwd: string, args: string[], env?: Record<string, string>): Promise<void> {
+  await runCommand('cargo', args, cwd, env);
+}
+
+/**
+ * Run a warm-up command to completion, inheriting stdio so its progress is
+ * visible. `env` undefined inherits `process.env`; pass an explicit map (e.g.
+ * colibri's Strawberry-Perl PATH shim) to override it.
+ */
+async function runCommand(cmd: string, args: string[], cwd: string, env?: Record<string, string>): Promise<void> {
   await new Promise<void>((resolve, reject) => {
-    const child = spawn('cargo', ['build', '--locked'], {
+    const child = spawn(cmd, args, {
       cwd,
       stdio: 'inherit',
       shell: true,
       windowsHide: true,
-      env: buildEnv ?? process.env,
+      env: env ?? process.env,
     });
     child.on('exit', (code) => {
       if (code === 0)
         resolve();
       else
-        reject(new Error(`cargo build --locked exited with code ${code}`));
+        reject(new Error(`${cmd} ${args.join(' ')} exited with code ${code}`));
     });
     child.on('error', reject);
   });
@@ -190,7 +204,7 @@ async function startColibriService(opts: ColibriSpawnOptions): Promise<number> {
     cwd: colibriCwd,
     // null (win32, Strawberry missing) and undefined both mean "inherit
     // process.env" in startProcess; normalise so the env type matches.
-    env: buildColibriEnv() ?? undefined,
+    env: buildCargoEnv() ?? undefined,
   });
   return chosenPort;
 }
@@ -301,6 +315,10 @@ export function startDevServer(opts: DevServerOptions): void {
   const env = { ...opts.backendEnv, ...opts.extraEnv };
   const child = startProcess(`${serveCmd}${debuggerArgs}`, colors.magenta(ROTKI), ROTKI, [], {
     env: Object.keys(env).length > 0 ? env : undefined,
+    // Electron mode only: this chain ends in an electron window, the one child
+    // that can act on a polite close and quit cleanly (which is what lets starling
+    // stop the backends gracefully). In web mode it ends in vite, which cannot.
+    windowed: !opts.noElectron,
   });
 
   child.on('exit', () => {

@@ -38,10 +38,6 @@ contextBridge.exposeInMainWorld('interop', {
       listeners.onAbout();
     });
 
-    ipcRenderer.on(IpcCommands.BACKEND_PROCESS_DETECTED, (_event, pids) => {
-      listeners.onProcessDetected(pids);
-    });
-
     const onOAuthCallback = listeners.onOAuthCallback;
     if (onOAuthCallback) {
       ipcRenderer.on('oauth-callback', (_event, oAuthResult) => {

@@ -16,6 +16,7 @@
     "playwright.config.*",
     "tailwind.config.*",
     "scripts/**/*",
+    "shared/cargo-env.ts",
     "shared/external-links.ts",
     ".electron-builder.config.*",
     "backend-icons.generated.ts"

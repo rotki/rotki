@@ -213,9 +213,6 @@ catalogs:
     postcss-html:
       specifier: 1.8.1
       version: 1.8.1
-    ps-list:
-      specifier: 9.0.0
-      version: 9.0.0
     qrcode:
       specifier: 1.5.4
       version: 1.5.4
@@ -439,9 +436,6 @@ importers:
       plainfp:
         specifier: 'catalog:'
         version: 0.1.1(zod@4.4.3)
-      ps-list:
-        specifier: 'catalog:'
-        version: 9.0.0
       qrcode:
         specifier: 'catalog:'
         version: 1.5.4
@@ -5305,10 +5299,6 @@ packages:
   proxy-addr@2.0.7:
     resolution: {integrity: sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg==}
     engines: {node: '>= 0.10'}
-
-  ps-list@9.0.0:
-    resolution: {integrity: sha512-lxMEoIL/BQlk2KunFzxwUPwMvjFH7x7cmvzSLsSHpyMXl9FFfLUlfKrYwFc4wx/ZaIxxuXC4n8rjQ1CX/tkXVQ==}
-    engines: {node: '>=20'}
 
   pump@3.0.4:
     resolution: {integrity: sha512-VS7sjc6KR7e1ukRFhQSY5LM2uBWAUPiOPa/A3mkKmiMwSmRFUITt0xuj+/lesgnCv+dPIEYlkzrcyXgquIHMcA==}
@@ -11813,8 +11803,6 @@ snapshots:
     dependencies:
       forwarded: 0.2.0
       ipaddr.js: 1.9.1
-
-  ps-list@9.0.0: {}
 
   pump@3.0.4:
     dependencies:

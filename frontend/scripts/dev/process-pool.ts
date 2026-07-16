@@ -15,6 +15,7 @@ interface TrackedProcess {
   child: ChildProcess;
   name: string;
   listeners: OutputListener;
+  windowed: boolean;
 }
 
 const SHUTDOWN_GRACE_MS = 5_000;
@@ -25,6 +26,14 @@ const tracked: TrackedProcess[] = [];
 export interface SpawnOpts {
   cwd?: string;
   env?: Record<string, string | undefined>;
+  /**
+   * Windows: this child owns a window, so it can be asked to close politely and
+   * given the grace period to do it. Windowless console children (every `cmd.exe`
+   * wrapper we spawn) reject a polite close outright, so asking only burns the
+   * whole grace before the forced kill that was always going to happen. Ignored
+   * on POSIX, where the signal itself is the graceful request.
+   */
+  windowed?: boolean;
 }
 
 /**
@@ -94,18 +103,26 @@ export function startProcess(cmd: string, tag: string, name: string, args: strin
 
   child.stdout?.on('data', listeners.out);
   child.stderr?.on('data', listeners.err);
-  tracked.push({ child, name, listeners });
+  tracked.push({ child, name, listeners, windowed: opts.windowed ?? false });
   return child;
 }
 
-function killGroup(pid: number, signal: NodeJS.Signals): void {
+function killGroup(pid: number, signal: NodeJS.Signals, windowed = false): void {
   if (isWindows) {
     // No POSIX process groups on Windows. `taskkill /T` walks the child
     // tree via the job/parent-pid table — this is the only reliable way
     // to reach cargo's spawned colibri.exe or pnpm's node workers.
-    // `/F` is required because SIGINT/SIGTERM aren't deliverable to a
-    // process that isn't sharing our console (cmd.exe shell wrappers).
-    spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { windowsHide: true });
+    //
+    // `/F` is an unconditional TerminateProcess. Forcing a windowed child during
+    // the graceful phase kills electron mid-quit, before it can run its ordered
+    // backend teardown, so those get a polite close (WM_CLOSE) instead and their
+    // exit unwinds the serve/pnpm/cmd chain behind them.
+    //
+    // Everything else we spawn is a windowless console process, which rejects a
+    // polite close outright. Asking anyway would just burn the whole grace period
+    // before the forced kill that was always going to happen.
+    const force = windowed && signal !== 'SIGKILL' ? [] : ['/F'];
+    spawnSync('taskkill', ['/pid', String(pid), '/T', ...force], { windowsHide: true });
     return;
   }
   try {
@@ -130,7 +147,7 @@ function hasExited(child: ChildProcess): boolean {
 }
 
 function softKill(entry: TrackedProcess): boolean {
-  const { child, name, listeners } = entry;
+  const { child, name, listeners, windowed } = entry;
   if (hasExited(child))
     return false;
   const pid = child.pid;
@@ -144,7 +161,7 @@ function softKill(entry: TrackedProcess): boolean {
   // cargo all install graceful SIGINT handlers (they expect Ctrl+C) but
   // electron's main process does not treat SIGTERM the same way and hangs
   // on shutdown. Match the Ctrl+C semantics they expect.
-  killGroup(pid, 'SIGINT');
+  killGroup(pid, 'SIGINT', windowed);
   return true;
 }
 

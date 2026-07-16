@@ -1,78 +1,53 @@
 import type { LogService } from '@electron/main/log-service';
-import type { BackendOptions } from '@shared/ipc';
-import { IpcCommands } from '@electron/ipc-commands';
-import { createMock } from '@test/utils/create-mock';
-import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { BackendHandlers } from './backend-handlers';
 
+function makeLogger(): LogService {
+  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } as unknown as LogService;
+}
+
 describe('backendHandlers', () => {
-  let handlers: BackendHandlers;
-  let restartSubprocesses: Mock<(options: Partial<BackendOptions>) => Promise<void>>;
-  let getRunningCorePIDs: Mock<() => Promise<number[]>>;
-  let sendIpcMessage: Mock<(channel: string, ...args: any[]) => void>;
-  let coreRunning: boolean;
+  it('should run restartSubprocesses and report success', async () => {
+    const restartSubprocesses = vi.fn(async (): Promise<void> => {});
+    const handlers = new BackendHandlers(makeLogger());
+    handlers.initialize({ restartSubprocesses, sendIpcMessage: vi.fn() });
 
-  const options: Partial<BackendOptions> = { dataDirectory: '/tmp/rotki-data' };
+    const ok = await handlers.restartBackend({ logFromOtherModules: true });
 
-  beforeEach(() => {
-    coreRunning = false;
-    restartSubprocesses = vi.fn<(options: Partial<BackendOptions>) => Promise<void>>().mockResolvedValue(undefined);
-    getRunningCorePIDs = vi.fn<() => Promise<number[]>>().mockResolvedValue([]);
-    sendIpcMessage = vi.fn<(channel: string, ...args: any[]) => void>();
+    expect(ok).toBe(true);
+    expect(restartSubprocesses).toHaveBeenCalledWith({ logFromOtherModules: true });
+  });
 
-    handlers = new BackendHandlers(createMock<LogService>());
-    handlers.initialize({
-      restartSubprocesses,
-      getRunningCorePIDs,
-      isCoreRunning: () => coreRunning,
-      sendIpcMessage,
+  it('should report failure when restartSubprocesses throws', async () => {
+    const restartSubprocesses = vi.fn(async (): Promise<void> => {
+      throw new Error('boom');
     });
+    const handlers = new BackendHandlers(makeLogger());
+    handlers.initialize({ restartSubprocesses, sendIpcMessage: vi.fn() });
+
+    const ok = await handlers.restartBackend({});
+
+    expect(ok).toBe(false);
   });
 
-  it('should start the backend on first load when none is running', async () => {
-    coreRunning = false;
+  it('should ignore a re-entrant restart while one is already in flight', async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const restartSubprocesses = vi.fn(async (): Promise<void> => {
+      await gate;
+    });
+    const handlers = new BackendHandlers(makeLogger());
+    handlers.initialize({ restartSubprocesses, sendIpcMessage: vi.fn() });
 
-    const success = await handlers.restartBackend(options);
+    const first = handlers.restartBackend({});
+    const second = await handlers.restartBackend({}); // in-flight → returns false without re-running
 
-    expect(success).toBe(true);
-    expect(restartSubprocesses).toHaveBeenCalledWith(options);
-  });
+    expect(second).toBe(false);
+    expect(restartSubprocesses).toHaveBeenCalledTimes(1);
 
-  it('should attach instead of restarting when a backend is already running (refresh)', async () => {
-    // first call performs the initial start
-    await handlers.restartBackend(options);
-    restartSubprocesses.mockClear();
-    coreRunning = true;
-
-    // second call simulates a page refresh: not forced, backend already up
-    const success = await handlers.restartBackend(options);
-
-    expect(success).toBe(true);
-    expect(restartSubprocesses).not.toHaveBeenCalled();
-  });
-
-  it('should restart a running backend when forceRestart is true', async () => {
-    await handlers.restartBackend(options);
-    restartSubprocesses.mockClear();
-    coreRunning = true;
-
-    const success = await handlers.restartBackend(options, true);
-
-    expect(success).toBe(true);
-    expect(restartSubprocesses).toHaveBeenCalledWith(options);
-  });
-
-  it('should detect and report an existing backend process only on first start', async () => {
-    getRunningCorePIDs.mockResolvedValue([4242]);
-    const send = vi.fn<Electron.WebContents['send']>();
-    const event = createMock<Electron.IpcMainInvokeEvent>({ sender: { send } });
-
-    await handlers.restartBackend(options, false, event);
-    expect(getRunningCorePIDs).toHaveBeenCalledTimes(1);
-    expect(send).toHaveBeenCalledWith(IpcCommands.BACKEND_PROCESS_DETECTED, [4242]);
-
-    // subsequent calls must not re-run PID detection
-    await handlers.restartBackend(options, false, event);
-    expect(getRunningCorePIDs).toHaveBeenCalledTimes(1);
+    release();
+    expect(await first).toBe(true);
   });
 });

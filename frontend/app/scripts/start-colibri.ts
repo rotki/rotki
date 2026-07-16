@@ -4,6 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { cac } from 'cac';
 import consola from 'consola';
+import { buildCargoEnv, STRAWBERRY_MISSING_WARNING } from '../shared/cargo-env';
 
 interface ColibriOptions {
   data: string;
@@ -52,10 +53,22 @@ function startColibri(options: ColibriOptions): void {
   const command = useBinary ? binaryPath : 'cargo run --locked --';
   consola.info(`Starting Colibri in ${workDir} using ${useBinary ? 'pre-built binary' : 'cargo run'}`);
 
+  // Unlike the dev launcher there is no warm-up ahead of this, so on a cold cache
+  // `cargo run` compiles the vendored OpenSSL right here - it needs the Windows
+  // Strawberry Perl shim. Irrelevant once `useBinary` short-circuits the build.
+  let env: Record<string, string> | undefined;
+  if (!useBinary) {
+    const cargoEnv = buildCargoEnv();
+    if (cargoEnv === null)
+      consola.warn(STRAWBERRY_MISSING_WARNING);
+    env = cargoEnv ?? undefined;
+  }
+
   backend = spawn(command, args, {
     stdio: [process.stdin, process.stdout, process.stderr],
     shell: true,
     cwd: workDir,
+    env: env ?? process.env,
   });
 
   backend.on('exit', (code) => {
