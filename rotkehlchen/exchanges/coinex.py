@@ -290,7 +290,7 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
             self,
             trade: dict[str, Any],
             market: CoinexMarket,
-            cet_fee_asset: 'AssetWithOracles | None',
+            cet_fee_asset: AssetWithOracles | None,
     ) -> list[SwapEvent]:
         """Deserialize a CoinEx finished order into swap events.
 
