@@ -22,7 +22,9 @@ WORKDIR /app
 COPY colibri/ ./colibri
 RUN cargo build --target-dir /tmp/dist/colibri --manifest-path ./colibri/Cargo.toml --release
 
-FROM ghcr.io/astral-sh/uv:bookworm AS backend-build-stage
+FROM python:3.14-bookworm AS backend-build-stage
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 ARG TARGETARCH
 ARG ROTKI_VERSION
@@ -30,16 +32,15 @@ ENV PACKAGE_FALLBACK_VERSION=$ROTKI_VERSION
 ARG PYINSTALLER_VERSION=v6.21.0
 
 WORKDIR /app
-COPY pyproject.toml uv.lock* ./
-
-ENV UV_PYTHON=3.14
-RUN uv python install "$UV_PYTHON" && \
-    uv sync --locked --no-dev --no-install-project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-dev --no-install-workspace
 
 COPY . /app
 
 RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/" -i pyproject.toml && \
-    uv sync --locked --no-dev --no-install-project && \
+    uv sync --locked --no-dev && \
     if [ "$TARGETARCH" != "amd64" ]; then \
       git clone https://github.com/pyinstaller/pyinstaller.git && \
       cd pyinstaller && git checkout ${PYINSTALLER_VERSION} && \
@@ -49,7 +50,6 @@ RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/"
       uv pip install pyinstaller==${PYINSTALLER_VERSION}; \
     fi && \
     cd /app && \
-    uv pip install -e . && \
     uv run python -c "import sys;from rotkehlchen.db.misc import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     PYTHONOPTIMIZE=2 uv run pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 
