@@ -1,5 +1,6 @@
 import { bigNumberify, Blockchain, isEvmIdentifier } from '@rotki/common';
-import { describe, expect, it, vi } from 'vitest';
+import { createCustomPinia } from '@test/utils/create-pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type NoteFormat, NoteType, useHistoryEventNote } from '@/modules/history/events/use-history-event-note';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
@@ -25,9 +26,14 @@ vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
 }));
 
 describe('useHistoryEventNotes', () => {
-  setActivePinia(createPinia());
-  const { formatNotes } = useHistoryEventNote();
-  const store = useSettingsRepo();
+  let formatNotes: ReturnType<typeof useHistoryEventNote>['formatNotes'];
+  let store: ReturnType<typeof useSettingsRepo>;
+
+  beforeEach(() => {
+    setActivePinia(createCustomPinia());
+    ({ formatNotes } = useHistoryEventNote());
+    store = useSettingsRepo();
+  });
 
   it('should parse normal text', () => {
     const notes = 'Normal text';

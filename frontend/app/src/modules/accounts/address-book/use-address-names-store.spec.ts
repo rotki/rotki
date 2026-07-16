@@ -1,11 +1,12 @@
+import { createCustomPinia } from '@test/utils/create-pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAddressNamesStore } from '@/modules/accounts/address-book/use-address-names-store';
 
 describe('useAddressNamesStore', () => {
   let store: ReturnType<typeof useAddressNamesStore>;
-  setActivePinia(createPinia());
 
   beforeEach(() => {
+    setActivePinia(createCustomPinia());
     store = useAddressNamesStore();
     const { ensNames } = storeToRefs(store);
     set(ensNames, {});

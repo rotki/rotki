@@ -1,5 +1,6 @@
 import type { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
 import type { AssetMergePayload, AssetUpdatePayload } from '@/modules/assets/types';
+import { createCustomPinia } from '@test/utils/create-pinia';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
@@ -53,11 +54,11 @@ vi.mock('@/modules/shell/app/use-electron-interop', () => {
 });
 
 describe('useAssets', () => {
-  setActivePinia(createPinia());
   let store: ReturnType<typeof useAssets>;
   let api: ReturnType<typeof useAssetsApi>;
 
   beforeEach(() => {
+    setActivePinia(createCustomPinia());
     vi.clearAllMocks();
     store = useAssets();
     api = useAssetsApi();

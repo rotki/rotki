@@ -1,6 +1,7 @@
 import type { EvmChainInfo, SupportedChains } from '@/modules/core/api/types/chains';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { createCustomPinia } from '@test/utils/create-pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -87,11 +88,11 @@ vi.mock('@/modules/balances/use-balance-queue', () => ({
 }));
 
 describe('useBlockchainBalances', () => {
-  setActivePinia(createPinia());
-  let api: ReturnType<typeof useBlockchainBalancesApi> = useBlockchainBalancesApi();
-  let blockchainBalances: ReturnType<typeof useBlockchainBalances> = useBlockchainBalances();
+  let api: ReturnType<typeof useBlockchainBalancesApi>;
+  let blockchainBalances: ReturnType<typeof useBlockchainBalances>;
 
   beforeEach(() => {
+    setActivePinia(createCustomPinia());
     api = useBlockchainBalancesApi();
     blockchainBalances = useBlockchainBalances();
     vi.clearAllMocks();
@@ -125,6 +126,18 @@ describe('useBlockchainBalances', () => {
   });
 
   describe('refreshBlockchainBalances', () => {
+    beforeEach(() => {
+      // refresh only calls the api when the chain has an account (see executeBalanceQuery);
+      // add one per test so these cases don't rely on state left by a sibling test.
+      const { updateAccounts } = useBlockchainAccountsStore();
+      updateAccounts(Blockchain.ETH, [
+        createAccount(
+          { address: '0x49ff149D649769033d43783E7456F626862CD160', label: null, tags: null },
+          { chain: Blockchain.ETH, nativeAsset: 'ETH' },
+        ),
+      ]);
+    });
+
     it('should refresh particular blockchain - default', () => {
       const call = async (periodic = true): Promise<void> => {
         await blockchainBalances.refreshBlockchainBalances(

@@ -1,3 +1,4 @@
+import { withSetup } from '@test/utils/with-setup';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/use-snapshot-actions';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
@@ -55,7 +56,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-actions', () => {
 
   describe('forceSave', () => {
     it('should refetch balances ignoring the cache and persist a snapshot', async () => {
-      const { forceSave } = useSnapshotActions();
+      const { forceSave } = withSetup(() => useSnapshotActions()).result;
 
       await forceSave();
 
@@ -65,7 +66,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-actions', () => {
 
     it('should pass ignoreErrors when the frontend setting is enabled', async () => {
       useSettingsRepo().updateFrontend({ ignoreSnapshotError: true });
-      const { forceSave } = useSnapshotActions();
+      const { forceSave } = withSetup(() => useSnapshotActions()).result;
 
       await forceSave();
 
@@ -73,7 +74,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-actions', () => {
     });
 
     it('should toggle the saving flag around the operation', async () => {
-      const { forceSave, forceSaving } = useSnapshotActions();
+      const { forceSave, forceSaving } = withSetup(() => useSnapshotActions()).result;
       expect(get(forceSaving)).toBe(false);
 
       const promise = forceSave();
@@ -86,7 +87,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-actions', () => {
 
   describe('importSnapshot', () => {
     it('should do nothing when both files are not set', async () => {
-      const { modelBalanceFile, importSnapshot } = useSnapshotActions();
+      const { modelBalanceFile, importSnapshot } = withSetup(() => useSnapshotActions()).result;
       set(modelBalanceFile, new File([], 'balances.csv'));
       // location file left unset
 
@@ -99,7 +100,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-actions', () => {
     it('should upload the files and log out on success (web path)', async () => {
       vi.useFakeTimers();
       uploadBalancesSnapshot.mockResolvedValue(undefined);
-      const { modelBalanceFile, importSnapshot, modelLocationFile } = useSnapshotActions();
+      const { modelBalanceFile, importSnapshot, modelLocationFile } = withSetup(() => useSnapshotActions()).result;
       const balance = new File([], 'balances.csv');
       const location = new File([], 'locations.csv');
       set(modelBalanceFile, balance);
@@ -123,7 +124,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-actions', () => {
       vi.useFakeTimers();
       getPath.mockImplementation((file: File) => `/tmp/${file.name}`);
       importBalancesSnapshot.mockResolvedValue(undefined);
-      const { modelBalanceFile, importSnapshot, modelLocationFile } = useSnapshotActions();
+      const { modelBalanceFile, importSnapshot, modelLocationFile } = withSetup(() => useSnapshotActions()).result;
       set(modelBalanceFile, new File([], 'balances.csv'));
       set(modelLocationFile, new File([], 'locations.csv'));
 
@@ -136,7 +137,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-actions', () => {
     it('should surface a failure message and not log out when the import throws', async () => {
       vi.useFakeTimers();
       uploadBalancesSnapshot.mockRejectedValue(new Error('boom'));
-      const { modelBalanceFile, importSnapshot, modelLocationFile } = useSnapshotActions();
+      const { modelBalanceFile, importSnapshot, modelLocationFile } = withSetup(() => useSnapshotActions()).result;
       set(modelBalanceFile, new File([], 'balances.csv'));
       set(modelLocationFile, new File([], 'locations.csv'));
 

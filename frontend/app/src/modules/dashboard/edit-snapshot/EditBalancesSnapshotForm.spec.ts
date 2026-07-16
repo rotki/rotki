@@ -94,11 +94,22 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
     const model = baseModel();
     // @ts-expect-error category is required by type but we simulate invalid state
     model.category = undefined;
+    // Feeding undefined to BalanceTypeInput's required String model emits an
+    // expected Vue prop warning on mount; swallow only that one so it doesn't
+    // pollute output, while letting any other warning through.
+    const originalWarn = console.warn;
+    const warn = vi.spyOn(console, 'warn').mockImplementation((...args: unknown[]): void => {
+      const first = args[0];
+      if (typeof first === 'string' && first.includes('Invalid prop') && first.includes('modelValue'))
+        return;
+      originalWarn(...args);
+    });
     wrapper = createWrapper(model);
     await vi.advanceTimersToNextTimerAsync();
 
     const valid = await wrapper.vm.validate();
     expect(valid).toBe(false);
+    warn.mockRestore();
   });
 
   it('should pass validation when category is set', async () => {

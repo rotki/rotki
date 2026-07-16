@@ -1,3 +1,4 @@
+import { createCustomPinia } from '@test/utils/create-pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
@@ -34,9 +35,8 @@ describe('useEnsOperations', () => {
   let api: ReturnType<typeof useAddressesNamesApi>;
   let resolution: ReturnType<typeof useAddressNameResolution>;
 
-  setActivePinia(createPinia());
-
   beforeEach(() => {
+    setActivePinia(createCustomPinia());
     api = useAddressesNamesApi();
     resolution = useAddressNameResolution();
     vi.clearAllMocks();

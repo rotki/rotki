@@ -16,6 +16,9 @@ describe('useUpdateChecker', () => {
     vi.resetModules();
     vi.clearAllMocks();
     localStorage.clear();
+    // showUpdatePopup is backed by useSessionStorage, so sessionStorage must be
+    // cleared too or a prior test's `true` leaks into the default-false test.
+    sessionStorage.clear();
   });
 
   it('should default the update popup to false', async () => {

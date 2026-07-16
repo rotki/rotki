@@ -61,7 +61,11 @@ describe('use-internal-tx-conflict-resolution', () => {
   let scope: ReturnType<typeof effectScope>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    // mockReset (not clearAllMocks) so any unconsumed *Once queue entries from a
+    // prior test do not leak into this one when tests run in a shuffled order.
+    spies.pullAndDecodeTransactionsRaw.mockReset();
+    spies.cancelDecoding.mockReset();
+    spies.removeKeys.mockReset();
     spies.pullAndDecodeTransactionsRaw.mockResolvedValue(undefined);
     spies.cancelDecoding.mockResolvedValue(undefined);
     scope = effectScope();

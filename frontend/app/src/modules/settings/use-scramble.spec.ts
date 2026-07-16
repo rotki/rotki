@@ -1,14 +1,13 @@
 import { consistOfNumbers, isValidEthAddress } from '@rotki/common';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useScramble } from '@/modules/settings/use-scramble';
 
 describe('useScramble', () => {
   let store: ReturnType<typeof useSettingsRepo>;
 
-  beforeAll(() => {
-    const pinia = createPinia();
-    setActivePinia(pinia);
+  beforeEach(() => {
+    setActivePinia(createPinia());
     store = useSettingsRepo();
   });
 
@@ -33,7 +32,7 @@ describe('useScramble', () => {
   });
 
   describe('when scramble is enabled', () => {
-    beforeAll(async () => {
+    beforeEach(() => {
       store.updateFrontend({ scrambleData: true, scrambleMultiplier: 7 });
     });
 

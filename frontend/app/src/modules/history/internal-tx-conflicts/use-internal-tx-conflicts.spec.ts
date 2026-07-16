@@ -1,4 +1,4 @@
-import type { Ref } from 'vue';
+import type { EffectScope, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type InternalTxConflict, type InternalTxConflictsCountResponse, InternalTxConflictStatuses } from './types';
@@ -82,15 +82,23 @@ function createMockConflict(overrides: Partial<InternalTxConflict> = {}): Intern
 
 describe('use-internal-tx-conflicts', () => {
   let composable: ReturnType<typeof useInternalTxConflicts>;
+  let scope: EffectScope;
 
   beforeEach(() => {
     vi.clearAllMocks();
     spies.fetchInternalTxConflicts.mockResolvedValue(createMockCollection());
     spies.fetchInternalTxConflictsCount.mockResolvedValue({ pending: 0, failed: 0 });
-    composable = useInternalTxConflicts();
+    // `useInternalTxConflicts` is a `createSharedComposable` singleton; acquire it
+    // inside an owned scope so `afterEach` disposes it and its count/filter refs
+    // start fresh each test instead of carrying over.
+    scope = effectScope();
+    scope.run(() => {
+      composable = useInternalTxConflicts();
+    });
   });
 
   afterEach(() => {
+    scope.stop();
     vi.restoreAllMocks();
   });
 

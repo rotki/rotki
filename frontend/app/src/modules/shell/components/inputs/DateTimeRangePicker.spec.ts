@@ -121,7 +121,10 @@ describe('components/inputs/DateTimeRangePicker.vue', () => {
       // Click the first quick option ("Last 12 hours") in the start picker.
       const buttons = wrapper.findAll('button.quick-option');
       await buttons[0].trigger('click');
-      await vi.advanceTimersToNextTimerAsync();
+      // `start` is written in a `nextTick` microtask; flush it without moving
+      // the fake clock (see the preset test below for why advancing timers is
+      // order-fragile here).
+      await nextTick();
 
       // Both update events should have fired exactly once each.
       const endEmits = wrapper.emitted('update:end');
@@ -162,7 +165,13 @@ describe('components/inputs/DateTimeRangePicker.vue', () => {
 
       for (const { index } of cases) {
         await buttons[index].trigger('click');
-        await vi.advanceTimersToNextTimerAsync();
+        // `applyQuickOption` writes `start` in a `nextTick` microtask, not a
+        // real timer. Flush that microtask directly instead of advancing the
+        // fake clock: `advanceTimersToNextTimerAsync` would jump the clock to
+        // whatever unrelated global timer happens to be pending (e.g. a
+        // module-level singleton's interval started on first mount), which
+        // drifts `dayjs()` and makes the preset math order-dependent.
+        await nextTick();
       }
 
       const startEmits = wrapper.emitted('update:start');

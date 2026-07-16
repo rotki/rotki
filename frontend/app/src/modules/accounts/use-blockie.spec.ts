@@ -1,33 +1,50 @@
+import type { EffectScope } from 'vue';
 import { createBlockie } from '@rotki/ui-library';
-import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createCustomPinia } from '@test/utils/create-pinia';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBlockie } from '@/modules/accounts/use-blockie';
 
 describe('useBlockie', () => {
-  setActivePinia(createPinia());
-  const { cache, getBlockie } = useBlockie();
-  let firstBlockie = '';
+  let cache: ReturnType<typeof useBlockie>['cache'];
+  let getBlockie: ReturnType<typeof useBlockie>['getBlockie'];
+  let scope: EffectScope;
   const address = '0x790b4086d106eafd913e71843aed987efe291c92';
 
   beforeEach(() => {
+    setActivePinia(createCustomPinia());
     vi.clearAllMocks();
+    // `useBlockie` is a `createSharedComposable`; acquire it inside an owned scope so
+    // `afterEach` disposes the shared instance and each test starts with an empty cache.
+    scope = effectScope();
+    scope.run(() => {
+      ({ cache, getBlockie } = useBlockie());
+    });
   });
 
-  it('should create new blockie', () => {
-    firstBlockie = getBlockie(address);
-    expect(createBlockie).toHaveBeenCalled();
+  afterEach(() => {
+    scope.stop();
   });
 
-  it('should not create new blockie', () => {
-    const addressInUppercase = '0x790B4086D106EAFD913E71843AED987EFE291C92';
-    const newBlockie = getBlockie(addressInUppercase);
+  it('should create a new blockie for an address', () => {
+    getBlockie(address);
+    expect(createBlockie).toHaveBeenCalledOnce();
+  });
+
+  it('should reuse the cached blockie for the same address regardless of case', () => {
+    const first = getBlockie(address);
+    vi.mocked(createBlockie).mockClear();
+
+    const second = getBlockie(address.toUpperCase());
+
     expect(createBlockie).not.toHaveBeenCalled();
-    expect(firstBlockie).toEqual(newBlockie);
+    expect(second).toEqual(first);
   });
 
-  it('should stop caching blockie after cache limit is reached', () => {
+  it('should evict the oldest entry once the cache limit is reached', () => {
+    getBlockie(address);
     expect(cache.size).toBe(1);
     expect(cache.has(address)).toBe(true);
+
     for (let i = 0; i < 100; i++) getBlockie(i.toString());
 
     expect(cache.size).toBe(100);

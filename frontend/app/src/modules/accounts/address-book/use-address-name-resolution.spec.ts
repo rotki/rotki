@@ -1,7 +1,9 @@
+import type { EffectScope } from 'vue';
 import type { AddressBookEntry } from '@/modules/accounts/address-book/eth-names';
 import { Blockchain } from '@rotki/common';
+import { createCustomPinia } from '@test/utils/create-pinia';
 import flushPromises from 'flush-promises';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressNamesStore } from '@/modules/accounts/address-book/use-address-names-store';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
@@ -37,18 +39,25 @@ function enableAliasNames(enabled: boolean): void {
 describe('useAddressNameResolution', () => {
   let resolution: ReturnType<typeof useAddressNameResolution>;
   let api: ReturnType<typeof useAddressesNamesApi>;
-  setActivePinia(createPinia());
+  let scope: EffectScope;
 
   beforeEach(() => {
+    setActivePinia(createCustomPinia());
     vi.useFakeTimers();
-    resolution = useAddressNameResolution();
-    api = useAddressesNamesApi();
-    resolution.resetAddressesNames();
-    // Reset ENS names state from previous tests
-    const store = useAddressNamesStore();
-    const { ensNames } = storeToRefs(store);
-    set(ensNames, {});
+    // `useAddressNameResolution` is a `createSharedComposable` singleton; acquire it
+    // inside an owned scope so `afterEach` can dispose it and force a fresh instance
+    // (bound to the new pinia) for the next test.
+    scope = effectScope();
+    scope.run(() => {
+      resolution = useAddressNameResolution();
+      api = useAddressesNamesApi();
+    });
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    scope.stop();
+    vi.useRealTimers();
   });
 
   describe('useAddressName', () => {

@@ -11,6 +11,8 @@ vi.mock('@/modules/core/common/use-main-store', () => ({
 
 const LAST_VERSION_KEY = 'rotki.last_version';
 
+const wrappers: ReturnType<typeof mount>[] = [];
+
 async function mountUpdateMessage(): Promise<{
   wrapper: ReturnType<typeof mount>;
   result: Awaited<ReturnType<typeof import('@/modules/core/messaging/use-update-message')['useUpdateMessage']>>;
@@ -26,6 +28,7 @@ async function mountUpdateMessage(): Promise<{
     template: '<div />',
   });
   const wrapper = mount(component);
+  wrappers.push(wrapper);
   return { result, wrapper };
 }
 
@@ -37,6 +40,12 @@ describe('useUpdateMessage', () => {
   });
 
   afterEach(() => {
+    // Unmount every mounted wrapper so the createSharedComposable scope disposes and its
+    // watch(appVersion) detaches from the shared mockAppVersion ref. Otherwise a leaked
+    // watcher from a prior test fires on the next beforeEach set() and writes localStorage
+    // after it was cleared, breaking within-file test-order isolation.
+    wrappers.forEach(wrapper => wrapper.unmount());
+    wrappers.length = 0;
     localStorage.clear();
   });
 

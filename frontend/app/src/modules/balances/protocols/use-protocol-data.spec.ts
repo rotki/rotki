@@ -50,9 +50,9 @@ describe('useProtocolData', () => {
   });
 
   it('should fall back to a location icon and the display name', () => {
-    set(locationData, { icon: 'lu-bank' });
+    set(locationData, { icon: 'lu-building' });
     const { protocolData } = useProtocolData('somebank');
-    expect(get(protocolData)).toEqual({ icon: 'lu-bank', name: 'Somebank', type: 'icon' });
+    expect(get(protocolData)).toEqual({ icon: 'lu-building', name: 'Somebank', type: 'icon' });
   });
 
   it('should use counterparty data when there is no location', () => {

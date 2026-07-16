@@ -6,7 +6,7 @@ import type { HistoryEvent, HistoryEventRow } from '@/modules/history/events/sch
 import { type Account, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
-import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { FilterBehaviour } from '@/modules/core/table/filtering';
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/modules/core/table/filters/use-events-filter';
@@ -38,11 +38,27 @@ describe('useHistoryEvents', () => {
   const router = useRouter();
   const route = useRoute();
 
-  beforeAll((): void => {
+  beforeEach(async (): Promise<void> => {
+    // Fresh pinia per test plus a reset of every shared piece of mutable state. The vue-router
+    // mock route query is a module-level singleton mutated by useRouter().push, and the refs
+    // below are mutated by individual tests (protocols, accounts via onUpdateFilters). Without
+    // resetting them here, state from one test leaks into whichever test runs next under
+    // shuffle and breaks the default sort / filter assertions. A fresh useRouter() has its own
+    // push mock, so this reset does not inflate any push-spy the tests assert on.
     setActivePinia(createPinia());
     const { connected } = storeToRefs(useMainStore());
     set(connected, true);
     fetchHistoryEvents = useHistoryEvents().fetchHistoryEvents;
+    await useRouter().push({ query: {} });
+    set(protocols, []);
+    set(eventTypes, []);
+    set(eventSubTypes, []);
+    set(accounts, [
+      {
+        address: '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',
+        chain: Blockchain.ETH,
+      },
+    ]);
   });
 
   afterEach((): void => {

@@ -143,6 +143,12 @@ export const useDatabase = createSharedComposable((): UseDatabaseReturn => {
     }
   }, { immediate: true });
 
+  // Close the open connection when the shared composable is disposed, so it does
+  // not linger and force Dexie to auto-close it on a later deleteDatabase.
+  onScopeDispose(() => {
+    get(dbInstance)?.close();
+  });
+
   return {
     db(): RotkiDB {
       assert(isDefined(dbInstance), 'Database is not initialized');
