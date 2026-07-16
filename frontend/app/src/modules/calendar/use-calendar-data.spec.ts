@@ -1,11 +1,11 @@
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, EffectScope, Ref } from 'vue';
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { CalendarEvent, CalendarEventRequestPayload } from '@/modules/calendar/types';
 import type { Collection } from '@/modules/core/common/collection';
 import { flushPromises } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCalendarData } from './use-calendar-data';
 
 interface PaginationOptions {
@@ -57,7 +57,17 @@ function makeEvent(overrides: Partial<CalendarEvent> = {}): CalendarEvent {
 }
 
 describe('useCalendarData', () => {
+  let scope: EffectScope;
+
+  // Run each instance inside an owned effect scope so its watchers are disposed
+  // in afterEach. Otherwise watchers on the shared module-level `state` ref leak
+  // across tests and fire on later `set(state, ...)` mutations.
+  function createCalendarData(accounts: Ref<BlockchainAccount[]>): ReturnType<typeof useCalendarData> {
+    return scope.run(() => useCalendarData(accounts))!;
+  }
+
   beforeEach(() => {
+    scope = effectScope();
     setActivePinia(createPinia());
     vi.clearAllMocks();
     captured = {};
@@ -68,9 +78,13 @@ describe('useCalendarData', () => {
     fetchData.mockResolvedValue(undefined);
   });
 
+  afterEach(() => {
+    scope.stop();
+  });
+
   it('should expose state, pagination and isLoading from usePaginationFilters', () => {
     const accounts = ref<BlockchainAccount[]>([]);
-    const result = useCalendarData(accounts);
+    const result = createCalendarData(accounts);
 
     expect(result.events).toBe(state);
     expect(result.pagination).toBe(pagination);
@@ -80,7 +94,7 @@ describe('useCalendarData', () => {
 
   it('should compute eventsWithDate by formatting the timestamp', () => {
     const accounts = ref<BlockchainAccount[]>([]);
-    const { eventsWithDate } = useCalendarData(accounts);
+    const { eventsWithDate } = createCalendarData(accounts);
 
     set(state, {
       data: [makeEvent()],
@@ -95,7 +109,7 @@ describe('useCalendarData', () => {
 
   it('should setToday update the today ref and return the new dayjs', () => {
     const accounts = ref<BlockchainAccount[]>([]);
-    const { setToday, today } = useCalendarData(accounts);
+    const { setToday, today } = createCalendarData(accounts);
 
     const before = get(today);
     const next = setToday();
@@ -106,7 +120,7 @@ describe('useCalendarData', () => {
 
   it('should initializePagination set limit=-1 and trigger fetchData', () => {
     const accounts = ref<BlockchainAccount[]>([]);
-    const { initializePagination } = useCalendarData(accounts);
+    const { initializePagination } = createCalendarData(accounts);
 
     initializePagination();
 
@@ -117,7 +131,7 @@ describe('useCalendarData', () => {
   describe('options to usePaginationFilters', () => {
     it('should pass extraParams with address#chain entries', async () => {
       const accounts = ref<BlockchainAccount[]>([makeAccount('0xabc', 'eth'), makeAccount('0xdef', 'optimism')]);
-      const { range } = useCalendarData(accounts);
+      const { range } = createCalendarData(accounts);
 
       set(range, [100, 200]);
       // debounced by 300ms — use fake timers to flush
@@ -131,7 +145,7 @@ describe('useCalendarData', () => {
 
     it('should build requestParams with blockchain when chain is a known blockchain', () => {
       const accounts = ref<BlockchainAccount[]>([makeAccount('0xabc', 'eth')]);
-      useCalendarData(accounts);
+      createCalendarData(accounts);
 
       const params = get(captured.requestParams!);
       expect(params.accounts).toEqual([{ address: '0xabc', blockchain: 'eth' }]);
@@ -139,7 +153,7 @@ describe('useCalendarData', () => {
 
     it('should omit blockchain when chain is ALL or not a blockchain', () => {
       const accounts = ref<BlockchainAccount[]>([makeAccount('0xabc', 'ALL'), makeAccount('0xdef', 'banana')]);
-      useCalendarData(accounts);
+      createCalendarData(accounts);
 
       const params = get(captured.requestParams!);
       expect(params.accounts).toEqual([
@@ -150,7 +164,7 @@ describe('useCalendarData', () => {
 
     it('should leave requestParams.accounts undefined when no accounts are selected', () => {
       const accounts = ref<BlockchainAccount[]>([]);
-      useCalendarData(accounts);
+      createCalendarData(accounts);
 
       const params = get(captured.requestParams!);
       expect(params.accounts).toBeUndefined();
@@ -158,7 +172,7 @@ describe('useCalendarData', () => {
 
     it('should reset accounts when onUpdateFilters receives no accounts', () => {
       const accounts = ref<BlockchainAccount[]>([makeAccount('0xabc', 'eth')]);
-      useCalendarData(accounts);
+      createCalendarData(accounts);
 
       captured.onUpdateFilters?.({});
       expect(get(accounts)).toEqual([]);
@@ -168,7 +182,7 @@ describe('useCalendarData', () => {
       const accounts = ref<BlockchainAccount[]>([]);
       const fetched = makeAccount('0xabc', 'eth');
       getAccountByAddress.mockReturnValue(fetched);
-      useCalendarData(accounts);
+      createCalendarData(accounts);
 
       captured.onUpdateFilters?.({ accounts: '0xabc#eth' });
 
@@ -180,7 +194,7 @@ describe('useCalendarData', () => {
   describe('upcoming events watcher', () => {
     it('should slice the first 5 upcoming events when state already has 5+', async () => {
       const accounts = ref<BlockchainAccount[]>([]);
-      const { upcomingEvents } = useCalendarData(accounts);
+      const { upcomingEvents } = createCalendarData(accounts);
 
       const future = dayjs().add(1, 'day').unix();
       const items: CalendarEvent[] = Array.from({ length: 7 }, (_, i) => makeEvent({
@@ -206,7 +220,7 @@ describe('useCalendarData', () => {
       };
       fetchCalendarEvents.mockResolvedValue(apiResponse);
 
-      const { upcomingEvents } = useCalendarData(accounts);
+      const { upcomingEvents } = createCalendarData(accounts);
       await flushPromises();
 
       // Trigger watcher with a state change so the latest resolve wins

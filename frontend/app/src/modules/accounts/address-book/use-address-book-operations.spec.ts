@@ -1,3 +1,4 @@
+import { createCustomPinia } from '@test/utils/create-pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
@@ -29,12 +30,18 @@ describe('useAddressBookOperations', () => {
   let api: ReturnType<typeof useAddressesNamesApi>;
   let resolution: ReturnType<typeof useAddressNameResolution>;
 
-  setActivePinia(createPinia());
-
   beforeEach(() => {
+    setActivePinia(createCustomPinia());
+    vi.clearAllMocks();
     api = useAddressesNamesApi();
     resolution = useAddressNameResolution();
-    vi.clearAllMocks();
+    // Re-establish default mock implementations: clearAllMocks only wipes call
+    // history, so per-test overrides (e.g. mockResolvedValue(false),
+    // mockRejectedValue) would otherwise leak into later tests under reshuffle.
+    vi.mocked(api.addAddressBook).mockResolvedValue(true);
+    vi.mocked(api.deleteAddressBook).mockResolvedValue(true);
+    vi.mocked(api.fetchAddressBook).mockResolvedValue(defaultCollectionState());
+    vi.mocked(api.updateAddressBook).mockResolvedValue(true);
   });
 
   describe('addAddressBook', () => {

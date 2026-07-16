@@ -1,3 +1,4 @@
+import { withSetup } from '@test/utils/with-setup';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetStatisticState } from './use-asset-statistic-state';
 
@@ -26,32 +27,32 @@ describe('useAssetStatisticState', () => {
   });
 
   it('should expose the asset name from the retrieval helper', () => {
-    const { name } = useAssetStatisticState(() => 'BTC');
+    const { name } = withSetup(() => useAssetStatisticState(() => 'BTC')).result;
     expect(get(name)).toBe('Bitcoin');
   });
 
   it('should report no preference for an untracked asset', () => {
-    const { getPreference, rememberStateForAsset } = useAssetStatisticState(() => 'BTC');
+    const { getPreference, rememberStateForAsset } = withSetup(() => useAssetStatisticState(() => 'BTC')).result;
     expect(getPreference('BTC')).toBeUndefined();
     expect(get(rememberStateForAsset)).toBe(false);
   });
 
   it('should store the snapshot preference when remembering with historical disabled', () => {
-    const { getPreference, rememberStateForAsset } = useAssetStatisticState(() => 'BTC');
+    const { getPreference, rememberStateForAsset } = withSetup(() => useAssetStatisticState(() => 'BTC')).result;
     set(rememberStateForAsset, true);
     expect(get(rememberStateForAsset)).toBe(true);
     expect(getPreference('BTC')).toBe('snapshot');
   });
 
   it('should store the events preference when remembering with historical enabled', () => {
-    const { getPreference, rememberStateForAsset, useHistoricalAssetBalances } = useAssetStatisticState(() => 'BTC');
+    const { getPreference, rememberStateForAsset, useHistoricalAssetBalances } = withSetup(() => useAssetStatisticState(() => 'BTC')).result;
     set(useHistoricalAssetBalances, true);
     set(rememberStateForAsset, true);
     expect(getPreference('BTC')).toBe('events');
   });
 
   it('should drop the preference when remembering is turned off', () => {
-    const { getPreference, rememberStateForAsset } = useAssetStatisticState(() => 'BTC');
+    const { getPreference, rememberStateForAsset } = withSetup(() => useAssetStatisticState(() => 'BTC')).result;
     set(rememberStateForAsset, true);
     expect(getPreference('BTC')).toBe('snapshot');
     set(rememberStateForAsset, false);
@@ -59,7 +60,7 @@ describe('useAssetStatisticState', () => {
   });
 
   it('should skip the callback in suppressIfPerAsset when remembering per asset', async () => {
-    const { rememberStateForAsset, suppressIfPerAsset } = useAssetStatisticState(() => 'BTC');
+    const { rememberStateForAsset, suppressIfPerAsset } = withSetup(() => useAssetStatisticState(() => 'BTC')).result;
     set(rememberStateForAsset, true);
     const func = vi.fn().mockResolvedValue(undefined);
     await suppressIfPerAsset(func);
@@ -67,7 +68,7 @@ describe('useAssetStatisticState', () => {
   });
 
   it('should run the callback in suppressIfPerAsset when not remembering per asset', async () => {
-    const { suppressIfPerAsset } = useAssetStatisticState(() => 'BTC');
+    const { suppressIfPerAsset } = withSetup(() => useAssetStatisticState(() => 'BTC')).result;
     const func = vi.fn().mockResolvedValue(undefined);
     await suppressIfPerAsset(func);
     expect(func).toHaveBeenCalledOnce();

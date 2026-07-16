@@ -1,4 +1,5 @@
 import { createMockCSV } from '@test/mocks/file';
+import { createCustomPinia } from '@test/utils/create-pinia';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressBookImport } from '@/modules/accounts/address-book/use-address-book-import';
@@ -21,10 +22,10 @@ vi.mock('@/modules/accounts/address-book/use-address-book-operations', () => ({
 
 describe('useAddressBookImport', () => {
   let addressBookOps: ReturnType<typeof useAddressBookOperations>;
-  setActivePinia(createPinia());
   const { parseCSV } = useCsvImportExport();
 
   beforeEach(() => {
+    setActivePinia(createCustomPinia());
     addressBookOps = useAddressBookOperations();
     vi.clearAllMocks();
   });

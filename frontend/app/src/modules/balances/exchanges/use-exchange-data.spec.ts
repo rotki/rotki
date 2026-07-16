@@ -1,5 +1,6 @@
 import { bigNumberify } from '@rotki/common';
 import { createTestBalance } from '@test/utils/create-data';
+import { createCustomPinia } from '@test/utils/create-pinia';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { createMockExchangeBalances } from '@test/utils/test-data';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,11 +9,12 @@ import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 
 describe('useExchangeData', () => {
-  setActivePinia(createPinia());
-  const store: ReturnType<typeof useBalancesStore> = useBalancesStore();
   const mockBalances = createMockExchangeBalances();
+  let store: ReturnType<typeof useBalancesStore>;
 
   beforeEach(() => {
+    setActivePinia(createCustomPinia());
+    store = useBalancesStore();
     vi.clearAllMocks();
     const { exchangeBalances } = storeToRefs(store);
     set(exchangeBalances, mockBalances);

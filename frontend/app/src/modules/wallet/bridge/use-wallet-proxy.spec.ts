@@ -1,3 +1,4 @@
+import { withSetup } from '@test/utils/with-setup';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { waitForCondition } from '@/modules/core/common/async/async-utilities';
 import { useWalletBridge } from '@/modules/shell/app/use-wallet-bridge';
@@ -38,21 +39,21 @@ describe('modules/wallet/bridge/use-wallet-proxy', () => {
 
   describe('setupProxy', () => {
     it('should return early without opening the page when fully connected and ready', async () => {
-      const { setupProxy } = useWalletProxy();
+      const { setupProxy } = withSetup(() => useWalletProxy()).result;
       await setupProxy();
       expect(bridge.openProxyPageInDefaultBrowser).not.toHaveBeenCalled();
     });
 
     it('should open the bridge page when fully connected but the client is not ready', async () => {
       bridge.isProxyClientReady.mockResolvedValue(false);
-      const { setupProxy } = useWalletProxy();
+      const { setupProxy } = withSetup(() => useWalletProxy()).result;
       await setupProxy();
       expect(bridge.openProxyPageInDefaultBrowser).toHaveBeenCalledTimes(1);
     });
 
     it('should start the servers when the bridge is not fully connected', async () => {
       bridge.isProxyClientConnected.mockResolvedValue(false);
-      const { setupProxy } = useWalletProxy();
+      const { setupProxy } = withSetup(() => useWalletProxy()).result;
       await setupProxy();
 
       expect(bridge.openProxyPageInDefaultBrowser).toHaveBeenCalled();
@@ -62,28 +63,28 @@ describe('modules/wallet/bridge/use-wallet-proxy', () => {
     it('should enable the wallet bridge when it is disabled', async () => {
       const enable = vi.fn(async () => {});
       stubWalletBridge({ enable, isEnabled: vi.fn(() => false) });
-      const { setupProxy } = useWalletProxy();
+      const { setupProxy } = withSetup(() => useWalletProxy()).result;
       await setupProxy();
       expect(enable).toHaveBeenCalledTimes(1);
     });
 
     it('should reject when the wallet bridge is missing from the window', async () => {
       Reflect.deleteProperty(window, 'walletBridge');
-      const { setupProxy } = useWalletProxy();
+      const { setupProxy } = withSetup(() => useWalletProxy()).result;
       await expect(setupProxy()).rejects.toThrow('Wallet bridge not available in window object');
     });
   });
 
   describe('disconnectProxy', () => {
     it('should stop the servers', async () => {
-      const { disconnectProxy } = useWalletProxy();
+      const { disconnectProxy } = withSetup(() => useWalletProxy()).result;
       await disconnectProxy();
       expect(bridge.proxyStopServers).toHaveBeenCalledTimes(1);
     });
 
     it('should throw when stopping the servers fails', async () => {
       bridge.proxyStopServers.mockRejectedValue(new Error('nope'));
-      const { disconnectProxy } = useWalletProxy();
+      const { disconnectProxy } = withSetup(() => useWalletProxy()).result;
       await expect(disconnectProxy()).rejects.toThrow('Failed to stop bridge servers: nope');
     });
   });
@@ -93,7 +94,7 @@ describe('modules/wallet/bridge/use-wallet-proxy', () => {
       vi.useFakeTimers();
       bridge.isProxyClientConnected.mockResolvedValue(false);
       const onDisconnect = vi.fn();
-      const { startConnectionHealthCheck } = useWalletProxy();
+      const { startConnectionHealthCheck } = withSetup(() => useWalletProxy()).result;
 
       startConnectionHealthCheck(() => true, onDisconnect);
       await vi.advanceTimersByTimeAsync(5000);
@@ -105,7 +106,7 @@ describe('modules/wallet/bridge/use-wallet-proxy', () => {
       vi.useFakeTimers();
       bridge.isProxyClientConnected.mockResolvedValue(true);
       const onDisconnect = vi.fn();
-      const { startConnectionHealthCheck, stopConnectionHealthCheck } = useWalletProxy();
+      const { startConnectionHealthCheck, stopConnectionHealthCheck } = withSetup(() => useWalletProxy()).result;
 
       startConnectionHealthCheck(() => true, onDisconnect);
       await vi.advanceTimersByTimeAsync(5000);
@@ -117,7 +118,7 @@ describe('modules/wallet/bridge/use-wallet-proxy', () => {
     it('should stop the interval so no further checks run', async () => {
       vi.useFakeTimers();
       const onDisconnect = vi.fn();
-      const { startConnectionHealthCheck, stopConnectionHealthCheck } = useWalletProxy();
+      const { startConnectionHealthCheck, stopConnectionHealthCheck } = withSetup(() => useWalletProxy()).result;
 
       startConnectionHealthCheck(() => true, onDisconnect);
       stopConnectionHealthCheck();

@@ -43,6 +43,10 @@ describe('useAssetRetrieval', () => {
   let api: ReturnType<typeof useAssetInfoApi>;
 
   beforeEach(() => {
+    // The mocked useNotificationDispatcher returns a module-level notify spy that
+    // is shared across tests; without clearing, calls from the failure/timeout
+    // tests leak into the success test when the order is reshuffled.
+    vi.clearAllMocks();
     setActivePinia(createPinia());
     assetInfoCache = useAssetInfoCache();
     vi.spyOn(assetInfoCache, 'isPending');

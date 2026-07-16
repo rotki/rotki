@@ -1,11 +1,11 @@
 import type { AssetBalance } from '@rotki/common';
-import type { MaybeRef } from 'vue';
+import type { EffectScope, MaybeRef } from 'vue';
 import type * as Vue from 'vue';
 import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/modules/balances/types/exchanges';
 import type { Collection } from '@/modules/core/common/collection';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
-import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
 import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 
@@ -24,13 +24,20 @@ describe('useBinanceSavings', () => {
   const mainPage = ref<boolean>(false);
   const router = useRouter();
   const route = useRoute();
+  let scope: EffectScope;
 
-  beforeAll((): void => {
+  beforeEach(async (): Promise<void> => {
+    scope = effectScope();
     setActivePinia(createPinia());
+    // Reset the shared route query (mutated by other tests' router.push). A fresh
+    // useRouter() call returns its own push mock, so this does not affect the
+    // push spy asserted on the describe-level router instance.
+    await useRouter().push({ query: {} });
     fetchExchangeSavings = useBinanceSavings().fetchExchangeSavings;
   });
 
   afterEach((): void => {
+    scope.stop();
     vi.clearAllMocks();
   });
 
@@ -55,7 +62,7 @@ describe('useBinanceSavings', () => {
     });
 
     it('should initialize composable correctly', async () => {
-      const { userAction, filters, sort, state, fetchData, isLoading } = usePaginationFilters<
+      const { userAction, filters, sort, state, fetchData, isLoading } = scope.run(() => usePaginationFilters<
         ExchangeSavingsEvent,
         ExchangeSavingsRequestPayload
       >(fetchSavings, {
@@ -65,7 +72,7 @@ describe('useBinanceSavings', () => {
         defaultSortBy: [{
           direction: 'asc',
         }],
-      });
+      }))!;
 
       expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
@@ -93,7 +100,7 @@ describe('useBinanceSavings', () => {
     });
 
     it('should return correct types', () => {
-      const { isLoading, state, filters, matchers } = usePaginationFilters<
+      const { isLoading, state, filters, matchers } = scope.run(() => usePaginationFilters<
         ExchangeSavingsEvent,
         ExchangeSavingsRequestPayload
       >(fetchExchangeSavings, {
@@ -103,7 +110,7 @@ describe('useBinanceSavings', () => {
         defaultSortBy: [{
           direction: 'asc',
         }],
-      });
+      }))!;
 
       expect(get(isLoading)).toBe(false);
 
@@ -118,7 +125,7 @@ describe('useBinanceSavings', () => {
       const pushSpy = vi.spyOn(router, 'push');
       const query = { sortOrder: ['desc'] };
 
-      const { isLoading, state, sort } = usePaginationFilters<
+      const { isLoading, state, sort } = scope.run(() => usePaginationFilters<
         ExchangeSavingsEvent,
         ExchangeSavingsRequestPayload
       >(fetchSavings, {
@@ -128,7 +135,7 @@ describe('useBinanceSavings', () => {
         defaultSortBy: [{
           direction: 'asc',
         }],
-      });
+      }))!;
 
       expect(get(sort)).toStrictEqual([{
         column: 'timestamp',

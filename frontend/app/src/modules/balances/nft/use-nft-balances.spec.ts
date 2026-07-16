@@ -1,11 +1,11 @@
-import type { MaybeRef } from 'vue';
+import type { EffectScope, MaybeRef } from 'vue';
 import type * as Vue from 'vue';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/modules/balances/types/nfbalances';
 import type { Collection } from '@/modules/core/common/collection';
 import type { LocationQuery } from '@/modules/core/table/route';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
-import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
 import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 
@@ -26,19 +26,26 @@ describe('useNftBalances', () => {
   const mainPage = ref<boolean>(false);
   const router = useRouter();
   const route = useRoute();
+  let scope: EffectScope;
 
-  beforeAll((): void => {
+  beforeEach(async (): Promise<void> => {
+    scope = effectScope();
     setActivePinia(createPinia());
+    // Reset the shared route query (mutated by other tests' router.push). A fresh
+    // useRouter() call returns its own push mock, so this does not affect the
+    // push spy asserted on the describe-level router instance.
+    await useRouter().push({ query: {} });
     fetchNonFungibleBalances = useNftBalances().fetchNonFungibleBalances;
   });
 
   afterEach((): void => {
+    scope.stop();
     vi.clearAllMocks();
   });
 
   describe('components::accounts/balances/NonFungibleBalances.vue', () => {
     set(locationOverview, '');
-    const ignoredAssetsHandling = ref('none');
+    const ignoredAssetsHandling = ref<string>();
     const extraParams = computed(() => ({
       includeIgnoredTrades: get(ignoredAssetsHandling),
     }));
@@ -49,6 +56,10 @@ describe('useNftBalances', () => {
 
     beforeEach((): void => {
       set(mainPage, true);
+      // Reset shared filter state to the settled baseline (undefined) so each test
+      // starts identically. A first mount with an empty route sets this from 'none'
+      // to undefined; leaving the 'none' seed leaks across tests and flips userAction.
+      set(ignoredAssetsHandling, undefined);
     });
 
     it('should initialize composable correctly', async () => {
@@ -59,7 +70,7 @@ describe('useNftBalances', () => {
         state,
         fetchData,
         isLoading,
-      } = usePaginationFilters<NonFungibleBalance>(fetchNonFungibleBalances, {
+      } = scope.run(() => usePaginationFilters<NonFungibleBalance>(fetchNonFungibleBalances, {
         history: get(mainPage) ? 'router' : false,
         locationOverview,
         onUpdateFilters,
@@ -68,7 +79,7 @@ describe('useNftBalances', () => {
           column: 'name',
           direction: 'asc',
         }],
-      });
+      }))!;
 
       expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
@@ -95,7 +106,7 @@ describe('useNftBalances', () => {
         state,
         filters,
         matchers,
-      } = usePaginationFilters<NonFungibleBalance>(fetchNonFungibleBalances, {
+      } = scope.run(() => usePaginationFilters<NonFungibleBalance>(fetchNonFungibleBalances, {
         history: get(mainPage) ? 'router' : false,
         locationOverview,
         onUpdateFilters,
@@ -106,7 +117,7 @@ describe('useNftBalances', () => {
             direction: 'asc',
           },
         ],
-      });
+      }))!;
 
       expect(get(isLoading)).toBe(false);
 
@@ -125,7 +136,7 @@ describe('useNftBalances', () => {
         isLoading,
         state,
         sort,
-      } = usePaginationFilters<NonFungibleBalance>(fetchNonFungibleBalances, {
+      } = scope.run(() => usePaginationFilters<NonFungibleBalance>(fetchNonFungibleBalances, {
         history: get(mainPage) ? 'router' : false,
         locationOverview,
         onUpdateFilters,
@@ -134,7 +145,7 @@ describe('useNftBalances', () => {
           column: 'name',
           direction: 'desc',
         }],
-      });
+      }))!;
 
       expect(get(sort)).toStrictEqual([{
         column: 'name',

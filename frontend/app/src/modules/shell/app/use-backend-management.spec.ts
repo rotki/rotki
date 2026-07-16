@@ -1,3 +1,4 @@
+import { withSetup } from '@test/utils/with-setup';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMainStore } from '@/modules/core/common/use-main-store';
@@ -61,11 +62,16 @@ vi.mock('@/modules/core/common/logging/logging', () => ({
 }));
 
 describe('useBackendManagement', () => {
-  let scope: ReturnType<typeof effectScope>;
+  let wrapper: ReturnType<typeof withSetup>['wrapper'] | undefined;
+
+  function create(composable: typeof import('./use-backend-management').useBackendManagement): ReturnType<typeof composable> {
+    const setup = withSetup(() => composable());
+    wrapper = setup.wrapper;
+    return setup.result;
+  }
 
   beforeEach(() => {
     setActivePinia(createPinia());
-    scope = effectScope();
     vi.clearAllMocks();
     mockConfig.mockResolvedValue({});
     mockRestartBackend.mockResolvedValue(true);
@@ -73,7 +79,8 @@ describe('useBackendManagement', () => {
   });
 
   afterEach(() => {
-    scope.stop();
+    wrapper?.unmount();
+    wrapper = undefined;
     vi.clearAllMocks();
   });
 
@@ -89,7 +96,7 @@ describe('useBackendManagement', () => {
       set(connectionEnabled, false);
 
       const { useBackendManagement } = await importModule();
-      const { restartBackend } = scope.run(() => useBackendManagement())!;
+      const { restartBackend } = create(useBackendManagement);
       await restartBackend();
 
       expect(get(connectionEnabled)).toBe(true);
@@ -111,7 +118,7 @@ describe('useBackendManagement', () => {
       });
 
       const { useBackendManagement } = await importModule();
-      const { restartBackend } = scope.run(() => useBackendManagement())!;
+      const { restartBackend } = create(useBackendManagement);
       await restartBackend();
 
       expect(callOrder).toEqual(['restart', 'setWs', 'connect']);
@@ -122,7 +129,7 @@ describe('useBackendManagement', () => {
       const { connectionEnabled } = storeToRefs(store);
 
       const { useBackendManagement } = await importModule();
-      const { restartBackend } = scope.run(() => useBackendManagement())!;
+      const { restartBackend } = create(useBackendManagement);
       await restartBackend();
 
       expect(get(connectionEnabled)).toBe(true);
@@ -134,7 +141,7 @@ describe('useBackendManagement', () => {
       store.setConnected(true);
 
       const { useBackendManagement } = await importModule();
-      const { restartBackend } = scope.run(() => useBackendManagement())!;
+      const { restartBackend } = create(useBackendManagement);
       await restartBackend();
 
       expect(get(store.connected)).toBe(false);
@@ -144,7 +151,7 @@ describe('useBackendManagement', () => {
   describe('forceRestart intent', () => {
     it('should attach (forceRestart=false) when setupBackend runs on a page refresh', async () => {
       const { useBackendManagement } = await importModule();
-      const { setupBackend } = scope.run(() => useBackendManagement())!;
+      const { setupBackend } = create(useBackendManagement);
       await setupBackend();
 
       expect(mockRestartBackend).toHaveBeenCalledWith(expect.anything(), false);
@@ -153,7 +160,7 @@ describe('useBackendManagement', () => {
     it('should force a restart when applying changed user options', async () => {
       const config = { dataDirectory: '/tmp/rotki-data' };
       const { useBackendManagement } = await importModule();
-      const { applyUserOptions } = scope.run(() => useBackendManagement())!;
+      const { applyUserOptions } = create(useBackendManagement);
       await applyUserOptions(config, false);
 
       expect(mockRestartBackend).toHaveBeenCalledWith(config, true);
@@ -161,7 +168,7 @@ describe('useBackendManagement', () => {
 
     it('should force a restart when resetting options', async () => {
       const { useBackendManagement } = await importModule();
-      const { resetOptions } = scope.run(() => useBackendManagement())!;
+      const { resetOptions } = create(useBackendManagement);
       await resetOptions();
 
       expect(mockRestartBackend).toHaveBeenCalledWith(expect.anything(), true);
@@ -175,7 +182,7 @@ describe('useBackendManagement', () => {
       set(connectionEnabled, false);
 
       const { useBackendManagement } = await importModule();
-      const { backendChanged } = scope.run(() => useBackendManagement())!;
+      const { backendChanged } = create(useBackendManagement);
       await backendChanged(null);
 
       expect(get(connectionEnabled)).toBe(true);
@@ -185,7 +192,7 @@ describe('useBackendManagement', () => {
 
     it('should connect to a custom url without restarting', async () => {
       const { useBackendManagement } = await importModule();
-      const { backendChanged } = scope.run(() => useBackendManagement())!;
+      const { backendChanged } = create(useBackendManagement);
       await backendChanged('http://custom:4242');
 
       expect(mockRestartBackend).not.toHaveBeenCalled();

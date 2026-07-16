@@ -18,6 +18,8 @@ export * from './nfts';
 
 export * from './premium';
 
+export * from './queried-addresses';
+
 export * from './settings';
 
 export * from './skipped-external-events';

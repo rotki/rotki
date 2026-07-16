@@ -69,7 +69,14 @@ describe('pages/user/login', () => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
     vi.clearAllMocks();
+    // These refs are hoisted module-level singletons shared by every test, so
+    // reset all of them (not just `stateRef`) to their initial values. Without
+    // this, a test that flips `upgradeVisibleRef`/`errorsRef`/`loadingRef`
+    // leaks that state into whichever test runs next under a shuffled order.
     set(stateRef, { kind: UnlockPhase.idle });
+    set(upgradeVisibleRef, false);
+    set(errorsRef, []);
+    set(loadingRef, false);
   });
 
   it('should show the login form on the idle phase', () => {

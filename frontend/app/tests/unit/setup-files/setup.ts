@@ -1,13 +1,44 @@
 import type { DatabaseInfo } from '@/modules/session/backup';
+import process from 'node:process';
 import { mockT } from '@test/i18n';
 import { RuiAlertStub } from '@test/stubs/RuiAlert';
 import { RuiAutoCompleteStub } from '@test/stubs/RuiAutoComplete';
 import { RuiIconStub } from '@test/stubs/RuiIcon';
 import { RuiTooltipStub } from '@test/stubs/RuiTooltip';
 import { config } from '@vue/test-utils';
-import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import consola, { type ConsolaReporter } from 'consola';
+import { afterAll, afterEach, beforeAll, beforeEach, onTestFailed, vi } from 'vitest';
 import { server } from './server';
 import 'fake-indexeddb/auto';
+
+// Consola (the app logger) noise control: buffer app log output per test and only
+// replay it when that test fails. Passing tests stay quiet; failing tests keep
+// their logs for debugging. Vue warnings and MSW warnings go through console.* and
+// are intentionally left untouched so genuine issues stay visible and get fixed at
+// the source. Set VITEST_VERBOSE=1 to disable buffering and see all logger output.
+if (!process.env.VITEST_VERBOSE) {
+  type LogArgs = Parameters<ConsolaReporter['log']>;
+  let capturedReporters: ConsolaReporter[] | undefined;
+  let logBuffer: LogArgs[] = [];
+
+  const bufferingReporter: ConsolaReporter = {
+    log(...args): void {
+      logBuffer.push(args);
+    },
+  };
+
+  beforeEach((): void => {
+    capturedReporters ??= consola.options.reporters.slice();
+    logBuffer = [];
+    consola.setReporters([bufferingReporter]);
+    onTestFailed((): void => {
+      for (const args of logBuffer) {
+        for (const reporter of capturedReporters ?? [])
+          reporter.log(...args);
+      }
+    });
+  });
+}
 
 vi.mock('@/modules/assets/api/use-asset-info-api', () => ({
   useAssetInfoApi: vi.fn().mockReturnValue({

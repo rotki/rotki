@@ -92,20 +92,32 @@ describe('useTaskMonitor', () => {
   });
 
   it('should apply exponential backoff on timeout errors and keep task running', async () => {
-    store.addTask(3, TaskType.QUERY_BALANCES, getMeta());
+    // The timeout path ends with a real `setTimeout(resolve, backoffMs)` (1s on the
+    // first retry). Fake timers let us fast-forward that sleep instead of waiting it
+    // out in real time; the asserted state is set before the sleep, so coverage is
+    // unchanged.
+    vi.useFakeTimers();
+    try {
+      store.addTask(3, TaskType.QUERY_BALANCES, getMeta());
 
-    const timeoutError = new FetchError('The operation was aborted due to timeout');
-    mockQueryTasks.mockResolvedValue({ pending: [], completed: [3] });
-    mockQueryTaskResult.mockRejectedValue(timeoutError);
+      const timeoutError = new FetchError('The operation was aborted due to timeout');
+      mockQueryTasks.mockResolvedValue({ pending: [], completed: [3] });
+      mockQueryTaskResult.mockRejectedValue(timeoutError);
 
-    await monitor.monitor();
+      const pending = monitor.monitor();
+      await vi.advanceTimersByTimeAsync(1000);
+      await pending;
 
-    // Task should still be running (not removed on timeout)
-    expect(store.isTaskRunning(TaskType.QUERY_BALANCES)).toBe(true);
-    // Handler should NOT be called for timeouts
-    expect(mockHandleResult).not.toHaveBeenCalled();
-    // Timeout count should be incremented
-    expect(store.getTimeoutCount(3)).toBe(1);
+      // Task should still be running (not removed on timeout)
+      expect(store.isTaskRunning(TaskType.QUERY_BALANCES)).toBe(true);
+      // Handler should NOT be called for timeouts
+      expect(mockHandleResult).not.toHaveBeenCalled();
+      // Timeout count should be incremented
+      expect(store.getTimeoutCount(3)).toBe(1);
+    }
+    finally {
+      vi.useRealTimers();
+    }
   });
 
   it('should remove task and call handler on generic errors', async () => {

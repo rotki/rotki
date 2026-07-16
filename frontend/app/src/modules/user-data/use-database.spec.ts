@@ -61,6 +61,10 @@ describe('useDatabase', () => {
   });
 
   afterEach(async () => {
+    // Dispose the shared composable first so it closes its open Dexie connection
+    // before we delete the databases; otherwise Dexie force-closes it and warns.
+    scope.stop();
+
     // Clean up all test databases
     const allDatabases = await Dexie.getDatabaseNames();
     for (const dbName of allDatabases) {
@@ -77,7 +81,6 @@ describe('useDatabase', () => {
     // Clean up localStorage
     localStorage.removeItem(localStorageKey);
 
-    scope.stop();
     vi.clearAllMocks();
   });
 

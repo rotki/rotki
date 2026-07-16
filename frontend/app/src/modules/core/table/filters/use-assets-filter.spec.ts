@@ -5,7 +5,7 @@ import type { AssetRequestPayload } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
-import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { type Filters, type Matcher, useAssetFilter } from '@/modules/core/table/filters/use-assets-filter';
 import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
@@ -26,9 +26,15 @@ describe('useAssetsFilter', () => {
   const router = useRouter();
   const route = useRoute();
 
-  beforeAll(() => {
+  beforeEach(async () => {
+    // Fresh pinia per test plus a reset of the shared vue-router mock route ref. The mock's
+    // route query is a module-level singleton that useRouter().push mutates, so the query set
+    // by the "modify filters" test would otherwise leak into whichever test runs next under
+    // shuffle and override the default sort. A fresh useRouter() has its own push mock, so
+    // this reset does not inflate any push-spy the tests assert on.
     setActivePinia(createPinia());
     fetchAssets = useAssetManagementApi().queryAllAssets;
+    await useRouter().push({ query: {} });
   });
 
   afterEach(() => {

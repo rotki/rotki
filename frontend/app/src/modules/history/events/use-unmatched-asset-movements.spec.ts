@@ -1,6 +1,5 @@
 import { NotificationGroup } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
@@ -94,9 +93,18 @@ describe('use-unmatched-asset-movements', () => {
     vi.restoreAllMocks();
   });
 
+  // `useUnmatchedAssetMovements` is a `createSharedComposable` singleton whose
+  // module-level refs would otherwise persist between tests; re-import per test
+  // so each starts from fresh state.
+  async function importFresh(): Promise<typeof import('@/modules/history/events/use-unmatched-asset-movements')> {
+    vi.resetModules();
+    return import('@/modules/history/events/use-unmatched-asset-movements');
+  }
+
   describe('fetchUnmatchedAssetMovements clears stale notification', () => {
     it('should clear the unmatched-movements notification when the unmatched list becomes empty', async () => {
       spies.getUnmatchedAssetMovements.mockResolvedValueOnce([]);
+      const { useUnmatchedAssetMovements } = await importFresh();
       const { fetchUnmatchedAssetMovements } = useUnmatchedAssetMovements();
 
       await fetchUnmatchedAssetMovements(false);
@@ -109,6 +117,7 @@ describe('use-unmatched-asset-movements', () => {
 
     it('should not clear the notification when fetching the ignored list', async () => {
       spies.getUnmatchedAssetMovements.mockResolvedValueOnce([]);
+      const { useUnmatchedAssetMovements } = await importFresh();
       const { fetchUnmatchedAssetMovements } = useUnmatchedAssetMovements();
 
       await fetchUnmatchedAssetMovements(true);
@@ -121,6 +130,7 @@ describe('use-unmatched-asset-movements', () => {
       spies.fetchHistoryEvents.mockResolvedValueOnce({
         entries: [{ entry: { asset: 'ETH', groupIdentifier: 'group-a' } }],
       });
+      const { useUnmatchedAssetMovements } = await importFresh();
       const { fetchUnmatchedAssetMovements } = useUnmatchedAssetMovements();
 
       await fetchUnmatchedAssetMovements(false);

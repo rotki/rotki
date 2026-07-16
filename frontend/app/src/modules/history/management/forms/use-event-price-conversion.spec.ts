@@ -1,6 +1,6 @@
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
-import { mount } from '@vue/test-utils';
+import { withSetup } from '@test/utils/with-setup';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
@@ -21,18 +21,6 @@ vi.mock('@/modules/core/tasks/use-task-store', () => ({
 }));
 
 const { useEventPriceConversion } = await import('@/modules/history/management/forms/use-event-price-conversion');
-
-function withSetup<T>(composable: () => T): { result: T; wrapper: ReturnType<typeof mount> } {
-  let result!: T;
-  const wrapper = mount({
-    setup() {
-      result = composable();
-      return {};
-    },
-    template: '<div />',
-  });
-  return { result, wrapper };
-}
 
 describe('useEventPriceConversion', () => {
   beforeEach(() => {

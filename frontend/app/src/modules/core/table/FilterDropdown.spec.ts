@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import FilterDropdown from '@/modules/core/table/FilterDropdown.vue';
 
 describe('filter-dropdown', () => {
-  let wrapper: VueWrapper<InstanceType<typeof FilterDropdown>>;
+  let wrapper: VueWrapper<InstanceType<typeof FilterDropdown>> | undefined;
   const createWrapper = (options: ComponentMountingOptions<typeof FilterDropdown> = {}): VueWrapper<InstanceType<typeof FilterDropdown>> => {
     const pinia = createCustomPinia();
     setActivePinia(pinia);
@@ -20,7 +20,10 @@ describe('filter-dropdown', () => {
   };
 
   afterEach((): void => {
-    wrapper.unmount();
+    // Every test assigns the describe-level `wrapper`; unmount it (guarded, in case a
+    // test threw before creating one) and reset so a later test never unmounts a stale one.
+    wrapper?.unmount();
+    wrapper = undefined;
   });
 
   const matchers: StringSuggestionMatcher<any>[] = [
@@ -116,7 +119,7 @@ describe('filter-dropdown', () => {
       keyword: '',
     };
 
-    const wrapper = createWrapper({ props });
+    wrapper = createWrapper({ props });
 
     await wrapper.setProps({
       selectedMatcher: matchers[1],
@@ -158,7 +161,7 @@ describe('filter-dropdown', () => {
       keyword: '',
     };
 
-    const wrapper = createWrapper({ props });
+    wrapper = createWrapper({ props });
 
     await wrapper.setProps({
       selectedMatcher: matchers[0],
@@ -194,7 +197,7 @@ describe('filter-dropdown', () => {
         keyword: '',
       };
 
-      const wrapper = createWrapper({ props });
+      wrapper = createWrapper({ props });
 
       await wrapper.setProps({
         selectedMatcher: strictMatchingMatchers[0],
@@ -216,7 +219,7 @@ describe('filter-dropdown', () => {
         keyword: '',
       };
 
-      const wrapper = createWrapper({ props });
+      wrapper = createWrapper({ props });
 
       await wrapper.setProps({
         selectedMatcher: strictMatchingMatchers[0],
@@ -237,7 +240,7 @@ describe('filter-dropdown', () => {
         keyword: '',
       };
 
-      const wrapper = createWrapper({ props });
+      wrapper = createWrapper({ props });
 
       await wrapper.setProps({
         selectedMatcher: strictMatchingMatchers[0],
@@ -259,7 +262,7 @@ describe('filter-dropdown', () => {
         keyword: '',
       };
 
-      const wrapper = createWrapper({ props });
+      wrapper = createWrapper({ props });
 
       await wrapper.setProps({
         selectedMatcher: strictMatchingMatchers[0],
@@ -294,7 +297,7 @@ describe('filter-dropdown', () => {
         keyword: '',
       };
 
-      const wrapper = createWrapper({ props });
+      wrapper = createWrapper({ props });
 
       await wrapper.setProps({
         selectedMatcher: sourceMatchers[0],
@@ -317,7 +320,7 @@ describe('filter-dropdown', () => {
         keyword: '',
       };
 
-      const wrapper = createWrapper({ props });
+      wrapper = createWrapper({ props });
 
       await wrapper.setProps({
         selectedMatcher: sourceMatchers[0],
@@ -343,7 +346,7 @@ describe('filter-dropdown', () => {
         },
       ];
 
-      const wrapper = createWrapper({
+      wrapper = createWrapper({
         props: {
           matches: {},
           matchers: nonStrictMatcher,

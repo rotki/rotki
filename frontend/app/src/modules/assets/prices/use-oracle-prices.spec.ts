@@ -1,5 +1,5 @@
 import { bigNumberify } from '@rotki/common';
-import { mount } from '@vue/test-utils';
+import { withSetup } from '@test/utils/with-setup';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
@@ -28,18 +28,6 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
 }));
 
 const { useOraclePrices } = await import('@/modules/assets/prices/use-oracle-prices');
-
-function withSetup<T>(composable: () => T): { result: T; wrapper: ReturnType<typeof mount> } {
-  let result!: T;
-  const wrapper = mount({
-    setup() {
-      result = composable();
-      return {};
-    },
-    template: '<div />',
-  });
-  return { result, wrapper };
-}
 
 function emptyCollection(): {
   data: never[];

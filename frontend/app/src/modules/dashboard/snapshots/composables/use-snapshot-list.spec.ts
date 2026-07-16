@@ -1,5 +1,7 @@
 import { bigNumberify, type NetValue, NoPrice } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
+import { withSetup } from '@test/utils/with-setup';
+import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
@@ -49,7 +51,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-list', () => {
     setCurrency('USD');
     set(netValue, { data: [bigNumberify(100), bigNumberify(150)], times: [day1, day2] });
 
-    const { rows } = useSnapshotList();
+    const { rows } = withSetup(() => useSnapshotList()).result;
     const result = get(rows);
 
     expect(result).toHaveLength(2);
@@ -66,7 +68,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-list', () => {
       ts === day1 ? bigNumberify(0.8) : bigNumberify(0.9));
     set(netValue, { data: [bigNumberify(100), bigNumberify(200)], times: [day1, day2] });
 
-    const { rows } = useSnapshotList();
+    const { rows } = withSetup(() => useSnapshotList()).result;
     const result = get(rows);
 
     expect(result[0].fiatValue.toNumber()).toBe(80); // 100 * 0.8
@@ -81,7 +83,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-list', () => {
     getIsPending.mockImplementation((key: string) => key === `USD#${day2}`);
     set(netValue, { data: [bigNumberify(100), bigNumberify(200)], times: [day1, day2] });
 
-    const { rows } = useSnapshotList();
+    const { rows } = withSetup(() => useSnapshotList()).result;
     const result = get(rows);
 
     expect(result[1].fiatPending).toBe(true);
@@ -94,7 +96,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-list', () => {
     setCurrency('USD');
     set(netValue, { data: [bigNumberify(1), bigNumberify(2), bigNumberify(3)], times: [day1, day2, day3] });
 
-    const { filters, rows } = useSnapshotList();
+    const { filters, rows } = withSetup(() => useSnapshotList()).result;
     set(filters, { fromTimestamp: day2, toTimestamp: day2 });
 
     const result = get(rows);
@@ -106,7 +108,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-list', () => {
     setCurrency('USD');
     set(netValue, { data: [bigNumberify(1), bigNumberify(2)], times: [day1, day2] });
 
-    const { filters, hasSnapshots, rows } = useSnapshotList();
+    const { filters, hasSnapshots, rows } = withSetup(() => useSnapshotList()).result;
     // A range that excludes everything still reports snapshots exist.
     set(filters, { fromTimestamp: day3 });
 
@@ -116,7 +118,11 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-list', () => {
 
   it('should reflect loading state across a refresh call', async () => {
     setCurrency('USD');
-    const { loading, refresh } = useSnapshotList();
+    const { loading, refresh } = withSetup(() => useSnapshotList()).result;
+    // netValue is empty at mount, so onMounted fires an initial refresh; let it
+    // settle and ignore it so the assertions target the explicit refresh below.
+    await flushPromises();
+    fetchNetValue.mockClear();
 
     expect(get(loading)).toBe(false);
     await refresh();

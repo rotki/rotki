@@ -47,6 +47,10 @@ describe('createAutoLogin', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    // clearAllMocks wipes call history but NOT implementations; a test that sets
+    // startAuto.mockImplementation would otherwise leak it into later tests under
+    // shuffle. Reset just that spy to its default resolved value.
+    startAuto.mockReset().mockResolvedValue(undefined);
     set(lastLoginRef, '');
     set(controllerStateRef, { kind: 'idle' });
     scope = effectScope();

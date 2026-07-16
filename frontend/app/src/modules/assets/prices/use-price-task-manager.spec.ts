@@ -1,7 +1,7 @@
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
@@ -22,12 +22,9 @@ describe('usePriceTaskManager', () => {
   let store: ReturnType<typeof useBalancePricesStore>;
   let priceTaskManager: ReturnType<typeof usePriceTaskManager>;
 
-  beforeAll(() => {
+  beforeEach(() => {
     setActivePinia(createPinia());
     store = useBalancePricesStore();
-  });
-
-  beforeEach(() => {
     runTaskMock.mockReset();
     vi.clearAllMocks();
     priceTaskManager = usePriceTaskManager();
@@ -73,9 +70,10 @@ describe('usePriceTaskManager', () => {
     });
 
     it('should append any new prices to the existing data when re-called', async () => {
-      const mockPricesResponse = createMockPriceResponse({ ETH: [2, 1] });
-
-      await executeFetchPrices(['ETH'], mockPricesResponse);
+      // Seed the existing DAI price first so this test does not depend on a sibling
+      // test's leftover store state, then append ETH.
+      await executeFetchPrices(['DAI'], createMockPriceResponse({ DAI: [1, 0] }));
+      await executeFetchPrices(['ETH'], createMockPriceResponse({ ETH: [2, 1] }));
 
       const { prices } = storeToRefs(store);
       expect(get(prices)).toMatchObject({

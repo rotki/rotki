@@ -2,7 +2,8 @@ import { bigNumberify, Blockchain } from '@rotki/common';
 import { createTestBalance, createTestManualBalance, createTestPriceInfo } from '@test/utils/create-data';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import flushPromises from 'flush-promises';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope, type EffectScope } from 'vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
@@ -26,19 +27,34 @@ vi.mock('@/modules/assets/prices/use-price-task-manager', (): any => ({
 const { usePriceRefresh } = await import('@/modules/assets/prices/use-price-refresh');
 
 describe('usePriceRefresh', () => {
+  // usePriceRefresh is a createSharedComposable singleton: it captures store refs
+  // at first instantiation and reuses them for the lifetime of the shared state.
+  // Acquire it inside an owned effectScope and stop the scope after each test so
+  // the singleton is disposed and re-created against the fresh pinia, instead of
+  // leaking the pinia bound by whichever test ran first under reshuffle.
+  let scope: EffectScope;
+  let priceRefresh: ReturnType<typeof usePriceRefresh>;
+
   beforeEach(() => {
     setActivePinia(createPinia());
 
     // Reset mocks before each test
     mockFetchExchangeRates.mockClear().mockResolvedValue({});
     mockFetchPrices.mockClear().mockResolvedValue({});
+
+    scope = effectScope();
+    priceRefresh = scope.run(() => usePriceRefresh())!;
+  });
+
+  afterEach(() => {
+    scope.stop();
   });
 
   describe('adjustPrices', () => {
     it('should handle currency conversion without breaking calculations', () => {
       const { exchangeBalances } = storeToRefs(useBalancesStore());
       const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
-      const { adjustPrices } = usePriceRefresh();
+      const { adjustPrices } = priceRefresh;
 
       set(connectedExchanges, [{
         location: 'kraken',
@@ -109,7 +125,7 @@ describe('usePriceRefresh', () => {
     });
 
     it('should update balances correctly when called with new prices', () => {
-      const { adjustPrices } = usePriceRefresh();
+      const { adjustPrices } = priceRefresh;
       const { exchangeBalances } = storeToRefs(useBalancesStore());
 
       // Set up initial exchange balances
@@ -135,7 +151,7 @@ describe('usePriceRefresh', () => {
     });
 
     it('should handle empty prices object', () => {
-      const { adjustPrices } = usePriceRefresh();
+      const { adjustPrices } = priceRefresh;
       const { prices } = storeToRefs(useBalancePricesStore());
 
       // Set initial prices
@@ -154,7 +170,7 @@ describe('usePriceRefresh', () => {
 
   describe('refreshPrice', () => {
     it('should handle single asset price refresh', async () => {
-      const { refreshPrice } = usePriceRefresh();
+      const { refreshPrice } = priceRefresh;
 
       // This test mainly verifies the function doesn't throw errors
       // In a real test environment, you'd mock the actual price fetching
@@ -164,21 +180,21 @@ describe('usePriceRefresh', () => {
 
   describe('refreshPrices', () => {
     it('should handle bulk price refresh', async () => {
-      const { refreshPrices } = usePriceRefresh();
+      const { refreshPrices } = priceRefresh;
 
       // This test mainly verifies the function doesn't throw errors
       await expect(refreshPrices()).resolves.not.toThrow();
     });
 
     it('should handle selected assets parameter', async () => {
-      const { refreshPrices } = usePriceRefresh();
+      const { refreshPrices } = priceRefresh;
 
       // Test with specific assets
       await expect(refreshPrices(false, ['BTC', 'ETH'])).resolves.not.toThrow();
     });
 
     it('should handle ignoreCache parameter', async () => {
-      const { refreshPrices } = usePriceRefresh();
+      const { refreshPrices } = priceRefresh;
 
       // Test with ignoreCache = true
       await expect(refreshPrices(true)).resolves.not.toThrow();
@@ -271,7 +287,7 @@ describe('usePriceRefresh', () => {
     });
 
     it('should process price refresh requests sequentially in FIFO order', async () => {
-      const { refreshPrice, refreshPrices } = usePriceRefresh();
+      const { refreshPrice, refreshPrices } = priceRefresh;
 
       // Configure mock for execution order tracking
       mockFetchPrices.mockImplementation(async (params: any) => {
@@ -292,7 +308,7 @@ describe('usePriceRefresh', () => {
     });
 
     it('should handle errors in queue without breaking subsequent tasks', async () => {
-      const { refreshPrice } = usePriceRefresh();
+      const { refreshPrice } = priceRefresh;
 
       // Configure mock to fail on second call
       mockFetchPrices.mockImplementation(async () => {
@@ -315,7 +331,7 @@ describe('usePriceRefresh', () => {
 
     it('should not start multiple queue processors simultaneously', async () => {
       vi.useFakeTimers();
-      const { refreshPrices } = usePriceRefresh();
+      const { refreshPrices } = priceRefresh;
 
       // Configure mock to track concurrent executions with fake-timer delays
       mockFetchPrices.mockImplementation(async () => {

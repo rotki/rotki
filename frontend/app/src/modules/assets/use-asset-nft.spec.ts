@@ -1,4 +1,5 @@
 import type { NftResponse } from '@/modules/assets/nfts';
+import { createCustomPinia } from '@test/utils/create-pinia';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
@@ -16,11 +17,11 @@ vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
   mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), { runTask: runTaskMock }));
 
 describe('useNftStore', () => {
-  setActivePinia(createPinia());
   let store: ReturnType<typeof useNfts>;
   let api: ReturnType<typeof useAssetsApi>;
 
   beforeEach(() => {
+    setActivePinia(createCustomPinia());
     vi.clearAllMocks();
     store = useNfts();
     api = useAssetsApi();
