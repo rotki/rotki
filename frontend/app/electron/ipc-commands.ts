@@ -42,6 +42,8 @@ export const IpcCommands = {
   SYNC_GET_STARTUP_ERROR: 'SYNC_GET_STARTUP_ERROR',
   RENDERER_READY: 'RENDERER_READY',
   STARTUP_ERROR: 'STARTUP_ERROR',
+  // Shutdown notice, main -> renderer, one-way
+  APP_CLOSING: 'APP_CLOSING',
 } as const;
 
 export type IpcCommands = typeof IpcCommands[keyof typeof IpcCommands];

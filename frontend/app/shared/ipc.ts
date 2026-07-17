@@ -103,6 +103,12 @@ export interface Listeners {
   onAbout: () => void;
   onRestart: () => void;
   onOAuthCallback?: (oAuthResult: OAuthResult) => void;
+  /**
+   * Invoked when the main process is about to quit, before the backend
+   * subprocesses are terminated. Gives the renderer a chance to swap in the
+   * shutdown screen and stop talking to a backend that is going down.
+   */
+  onAppClosing?: () => void;
 }
 
 export interface Interop {
