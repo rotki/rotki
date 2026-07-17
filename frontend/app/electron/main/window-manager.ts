@@ -228,6 +228,18 @@ export class WindowManager {
     this.window = null;
   }
 
+  /**
+   * Like {@link cleanup}, but also destroys the BrowserWindow. Called at the end
+   * of quit so the window can stay visible (shutdown screen) through teardown,
+   * yet not keep the process alive afterwards (esp. Windows, no final app.exit).
+   */
+  destroy(): void {
+    const window = this.window;
+    this.cleanup();
+    if (window && !window.isDestroyed())
+      window.destroy();
+  }
+
   private setupEventListeners(window: BrowserWindow) {
     window.on('close', e => this.handleClose(e));
     window.on('closed', () => this.handleClosed());
@@ -306,21 +318,11 @@ export class WindowManager {
   }
 
   /**
-   * Tells the renderer we are quitting so it can swap in the shutdown screen
-   * and stop talking to the backend. One-way: we do not wait for a reply, since
-   * nothing in the teardown depends on the renderer having finished.
+   * Tells the renderer we are quitting so it can swap in the shutdown screen and
+   * stop talking to the backend. One-way: nothing in teardown waits on it.
    */
   notifyClosing(): void {
-    const webContents = this.window?.webContents;
-    if (!webContents || webContents.isDestroyed())
-      return;
-
-    try {
-      webContents.send(IpcCommands.APP_CLOSING);
-    }
-    catch (error) {
-      this.logger.error('Failed to notify renderer of shutdown:', error);
-    }
+    this.sendIpcMessage(IpcCommands.APP_CLOSING);
   }
 
   sendIpcMessage(channel: string, ...args: any[]): void {
