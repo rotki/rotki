@@ -25,12 +25,14 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     EIGENLAYER_STRATEGY_MANAGER,
     EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
     EIGENPOD_MANAGER,
+    EXCHANGE_RATE_EMITTED,
     FULL_WITHDRAWAL_REDEEMED,
     OPERATOR_SHARES_DECREASED,
     OPERATOR_SHARES_INCREASED,
     PARTIAL_WITHDRAWAL_REDEEMED,
     POD_DEPLOYED,
     POD_SHARES_UPDATED,
+    RESTAKED_BEACON_CHAIN_ETH_WITHDRAWN,
     REWARDS_CLAIMED,
     REWARDS_COORDINATOR,
     SLASHING_WITHDRAWAL_COMPLETED,
@@ -92,7 +94,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
     forcibly undelegated then we won't see the event since the transaction won't be queried.
 
     For users like this they would need to add the transaction hash manually and
-    associate it with their address.
+    associate it with their address to see the queueing event. The eventual completion
+    of such a withdrawal is still decoded properly by matching the transfer from the
+    completion transaction's own logs (see _match_completion_without_queue_event).
 
     Eigenlayer folks also said we could get them with loq querying of this event.
     /// @notice Emitted when @param staker undelegates from @param operator.
@@ -417,18 +421,33 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         else:  # not found. Perhaps transaction and event not pulled or timing issue. Is rechecked from time to time when doing balance queries.  # noqa: E501
             log.debug(f'When decoding eigenlayer WithdrawalCompleted could not find corresponding Withdrawal queued: {context.transaction.tx_hash!s}')  # noqa: E501
 
-            new_event = self.base.make_event_from_transaction(  # so let's just keep minimal info
-                transaction=context.transaction,
-                tx_log=context.tx_log,
-                event_type=HistoryEventType.INFORMATIONAL,
-                event_subtype=HistoryEventSubType.NONE,
-                asset=A_ETH,
-                amount=ZERO,
-                location_label=context.transaction.from_address,
-                notes=f'Complete eigenlayer withdrawal {withdrawal_root}',
-                counterparty=CPT_EIGENLAYER,
-                address=context.tx_log.address,
-            )
+            if (matched_asset := self._match_completion_without_queue_event(context)) is not None:
+                new_event = self.base.make_event_from_transaction(
+                    transaction=context.transaction,
+                    tx_log=context.tx_log,
+                    event_type=HistoryEventType.INFORMATIONAL,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=matched_asset,
+                    amount=ZERO,
+                    location_label=context.transaction.from_address,
+                    notes=f'Complete eigenlayer withdrawal of {matched_asset.symbol}',
+                    counterparty=CPT_EIGENLAYER,
+                    address=context.tx_log.address,
+                    extra_data={'matched': True},
+                )
+            else:
+                new_event = self.base.make_event_from_transaction(  # so let's just keep minimal info  # noqa: E501
+                    transaction=context.transaction,
+                    tx_log=context.tx_log,
+                    event_type=HistoryEventType.INFORMATIONAL,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_ETH,
+                    amount=ZERO,
+                    location_label=context.transaction.from_address,
+                    notes=f'Complete eigenlayer withdrawal {withdrawal_root}',
+                    counterparty=CPT_EIGENLAYER,
+                    address=context.tx_log.address,
+                )
 
         return EvmDecodingOutput(events=[new_event])
 
@@ -470,6 +489,91 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 return True
 
         return False
+
+    def _match_completion_without_queue_event(self, context: DecoderContext) -> AssetWithSymbol | None:  # noqa: E501
+        """Match a completed withdrawal's transfer when the queueing event is not in the DB.
+
+        This happens when the withdrawal was queued by a transaction not associated with
+        any tracked address, for example when the staker got undelegated by the operator,
+        which also queues a withdrawal of all their shares.
+
+        Identify the withdrawn funds from the completion transaction's own logs. Natively
+        restaked ETH is sent by the user's eigenpod which emits RestakedBeaconChainETHWithdrawn
+        while tokens are sent by a strategy, recognized by it emitting ExchangeRateEmitted.
+
+        Returns the withdrawn asset if the transfer was found and transformed, None otherwise.
+        """
+        for tx_log in context.all_logs:
+            if (
+                    len(tx_log.topics) == 2 and
+                    tx_log.topics[0] == RESTAKED_BEACON_CHAIN_ETH_WITHDRAWN and
+                    self.base.is_tracked(recipient := bytes_to_address(tx_log.topics[1]))
+            ):
+                amount = from_wei(int.from_bytes(tx_log.data[0:32]))
+                for event in context.decoded_events:
+                    if (
+                            event.event_type == HistoryEventType.RECEIVE and
+                            event.event_subtype == HistoryEventSubType.NONE and
+                            event.asset == A_ETH and
+                            event.amount == amount and
+                            event.location_label == recipient
+                    ):
+                        # counted as a transfer between accounts since these withdrawals
+                        # are already tracked by validator index
+                        event.event_type = HistoryEventType.TRANSFER
+                        event.counterparty = CPT_EIGENLAYER
+                        event.notes = f'Withdraw {amount} ETH from Eigenlayer'
+                        return A_ETH.resolve_to_asset_with_symbol()
+
+        strategies = {tx_log.address for tx_log in context.all_logs if len(tx_log.topics) != 0 and tx_log.topics[0] == EXCHANGE_RATE_EMITTED}  # noqa: E501
+        for tx_log in context.all_logs:
+            if (
+                    len(tx_log.topics) == 3 and
+                    tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                    (strategy := bytes_to_address(tx_log.topics[1])) in strategies and
+                    self.base.is_tracked(bytes_to_address(tx_log.topics[2]))
+            ):
+                token = self.base.get_or_create_evm_token(
+                    address=tx_log.address,
+                    encounter=TokenEncounterInfo(
+                        description='Eigenlayer strategy token',
+                        should_notify=False,
+                    ),
+                )
+                amount = token_normalized_value(
+                    token_amount=int.from_bytes(tx_log.data[0:32]),
+                    token=token,
+                )
+                notes = f'Withdraw {amount} {token.symbol} from Eigenlayer'
+                for event in context.decoded_events:  # pre-slashing contracts transfer before emitting the completion event  # noqa: E501
+                    if (
+                            event.event_type == HistoryEventType.RECEIVE and
+                            event.event_subtype == HistoryEventSubType.NONE and
+                            event.asset == token and
+                            event.amount == amount and
+                            event.address == strategy
+                    ):
+                        event.event_type = HistoryEventType.WITHDRAWAL
+                        event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
+                        event.counterparty = CPT_EIGENLAYER
+                        event.notes = notes
+                        return token
+
+                if (action_item := ActionItem(  # post-slashing contracts transfer after it
+                    action='transform',
+                    from_event_type=HistoryEventType.RECEIVE,
+                    from_event_subtype=HistoryEventSubType.NONE,
+                    asset=token,
+                    amount=amount,
+                    to_event_type=HistoryEventType.WITHDRAWAL,
+                    to_event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+                    to_notes=notes,
+                    to_counterparty=CPT_EIGENLAYER,
+                )) not in context.action_items:  # a second completion in the same transaction should not re-add the same transform  # noqa: E501
+                    context.action_items.append(action_item)
+                    return token
+
+        return None
 
     def _decode_withdrawal_queued(self, context: DecoderContext) -> EvmDecodingOutput:
         """Creates and adds a queued withdrawal for each withdrawal in the event"""
