@@ -1,10 +1,15 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
+from eth_abi import decode as decode_abi
+from eth_utils import to_checksum_address
+
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import TokenEncounterInfo, token_normalized_value
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     BEACON_ETH_STRATEGY,
+    BEIGEN_TOKEN_ID,
     CHECKPOINT_CREATED,
     CHECKPOINT_FINALIZED,
     CPT_EIGENLAYER,
@@ -28,18 +33,23 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     POD_SHARES_UPDATED,
     REWARDS_CLAIMED,
     REWARDS_COORDINATOR,
+    SLASHING_WITHDRAWAL_COMPLETED,
+    SLASHING_WITHDRAWAL_QUEUED,
     STRATEGY_ABI,
     STRATEGY_WITHDRAWAL_COMPLETE_TOPIC,
     VALIDATOR_BALANCE_UPDATED,
     WITHDRAWAL_COMPLETED,
     WITHDRAWAL_QUEUED,
+    WITHDRAWAL_STRUCT,
 )
 from rotkehlchen.chain.ethereum.modules.eigenlayer.utils import get_eigenpods_to_owners_mapping
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.clique.decoder import CliqueAirdropDecoderInterface
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
+    ActionItem,
     DecoderContext,
     EvmDecodingOutput,
 )
@@ -66,6 +76,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -356,19 +367,47 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                         extra_data=withdrawal_event.extra_data | {'completed': True},
                     )
 
+                withdrawal_strategy = withdrawal_event.extra_data.get('strategy')
+                matched_transfer = False
                 for event in context.decoded_events:  # and now match the transfer
                     if (
-                            event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and  # noqa: E501
-                            event.asset == withdrawal_event.asset and
-                            event.address == withdrawal_event.extra_data.get('strategy')  # strategy sends it  # noqa: E501
-                    ):  # not checking amount as it can differ due to rebasing in some assets
+                            event.event_type != HistoryEventType.RECEIVE or
+                            event.event_subtype != HistoryEventSubType.NONE or
+                            event.asset != withdrawal_event.asset
+                    ):
+                        continue
+
+                    if withdrawal_strategy == BEACON_ETH_STRATEGY:
+                        # natively restaked ETH is sent by the user's eigenpod. Since
+                        # these withdrawals are already tracked by validator index count
+                        # it as a transfer between accounts to avoid double counting
+                        event.event_type = HistoryEventType.TRANSFER
+                        event.counterparty = CPT_EIGENLAYER
+                        event.notes = f'Withdraw {event.amount} ETH from Eigenlayer'
+                        matched_transfer = True
+                        break
+
+                    if event.address == withdrawal_strategy:  # strategy sends it
+                        # not checking amount as it can differ due to rebasing in some assets
                         event.event_type = HistoryEventType.WITHDRAWAL
                         event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                         event.counterparty = CPT_EIGENLAYER
                         event.notes = f'Withdraw {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Eigenlayer'  # noqa: E501
+                        matched_transfer = True
                         break
 
-                else:  # could not find the transfer, withdrawn as shares and not tokens
+                if not matched_transfer:
+                    # The post-slashing contracts emit WithdrawalCompleted before the token
+                    # transfer, so look ahead in the logs for the strategy's transfer and
+                    # transform it via an action item once it gets decoded
+                    matched_transfer = self._maybe_transform_upcoming_withdrawal_transfer(
+                        context=context,
+                        withdrawal_event=withdrawal_event,
+                        strategy=withdrawal_strategy,
+                    )
+
+                if not matched_transfer:
+                    # could not find the transfer, withdrawn as shares and not tokens
                     # https://github.com/Layr-Labs/eigenlayer-contracts/blob/dc3abf5d2a2689a98993c69e962d5d8b299e3fec/docs/core/DelegationManager.md#completequeuedwithdrawal
                     # https://github.com/Layr-Labs/eigenlayer-contracts/tree/dc3abf5d2a2689a98993c69e962d5d8b299e3fec/docs#completing-a-withdrawal-as-tokens
                     new_event.notes += ' as shares'  # type: ignore  # notes is not none
@@ -393,17 +432,68 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
 
         return EvmDecodingOutput(events=[new_event])
 
+    def _maybe_transform_upcoming_withdrawal_transfer(
+            self,
+            context: DecoderContext,
+            withdrawal_event: EvmEvent,
+            strategy: str | None,
+    ) -> bool:
+        """Find a not yet decoded transfer of the withdrawn token sent by the strategy
+        in an upcoming log and register an action item to transform it once decoded.
+        Returns whether such a transfer was found."""
+        if strategy is None or strategy == BEACON_ETH_STRATEGY:
+            return False  # ETH internal transfers are always decoded before the logs
+
+        token = withdrawal_event.asset.resolve_to_evm_token()
+        for tx_log in context.all_logs:
+            if (
+                    tx_log.log_index > context.tx_log.log_index and
+                    tx_log.address == token.evm_address and
+                    tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                    bytes_to_address(tx_log.topics[1]) == strategy
+            ):
+                amount = token_normalized_value(
+                    token_amount=int.from_bytes(tx_log.data[0:32]),
+                    token=token,
+                )
+                context.action_items.append(ActionItem(
+                    action='transform',
+                    from_event_type=HistoryEventType.RECEIVE,
+                    from_event_subtype=HistoryEventSubType.NONE,
+                    asset=token,
+                    amount=amount,
+                    to_event_type=HistoryEventType.WITHDRAWAL,
+                    to_event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+                    to_notes=f'Withdraw {amount} {token.symbol} from Eigenlayer',
+                    to_counterparty=CPT_EIGENLAYER,
+                ))
+                return True
+
+        return False
+
     def _decode_withdrawal_queued(self, context: DecoderContext) -> EvmDecodingOutput:
         """Creates and adds a queued withdrawal for each withdrawal in the event"""
-        contract = self.node_inquirer.contracts.contract(EIGENLAYER_DELEGATION)
-        _, log_data = contract.decode_event(tx_log=context.tx_log, event_name='WithdrawalQueued', argument_names=('withdrawalRoot', 'withdrawal'))  # noqa: E501
-        if not self.base.any_tracked([staker := log_data[1][0], withdrawer := log_data[1][2]]):
+        if context.tx_log.topics[0] == SLASHING_WITHDRAWAL_QUEUED:
+            # The post-slashing event is not in the delegation manager ABI we ship,
+            # so decode it directly. The third argument (sharesToWithdraw) contains
+            # the actually withdrawable shares after any slashing is applied
+            withdrawal_root, withdrawal, shares_entries = decode_abi(
+                types=['bytes32', WITHDRAWAL_STRUCT, 'uint256[]'],
+                data=context.tx_log.data,
+            )
+            staker, withdrawer = to_checksum_address(withdrawal[0]), to_checksum_address(withdrawal[2])  # noqa: E501
+            strategies = [to_checksum_address(x) for x in withdrawal[5]]
+        else:  # the pre-slashing upgrade (April 2025) WithdrawalQueued event
+            contract = self.node_inquirer.contracts.contract(EIGENLAYER_DELEGATION)
+            _, log_data = contract.decode_event(tx_log=context.tx_log, event_name='WithdrawalQueued', argument_names=('withdrawalRoot', 'withdrawal'))  # noqa: E501
+            withdrawal_root = log_data[0]
+            staker, withdrawer = log_data[1][0], log_data[1][2]
+            strategies, shares_entries = log_data[1][5], log_data[1][6]
+
+        if not self.base.any_tracked([staker, withdrawer]):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         location_label = withdrawer if self.base.is_tracked(withdrawer) else staker
-
-        strategies = log_data[1][5]
-        shares_entries = log_data[1][6]
         if len(strategies) != len(shares_entries):  # should not happen according to contracts
             log.error(f'When decoding eigenlayer WithdrawalQueued len(strategies) != len(shares) for {context.transaction.tx_hash!s}')  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
@@ -428,7 +518,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 extra_data={
                     'amount': str(underlying_amount),
                     'withdrawer': withdrawer,
-                    'withdrawal_root': '0x' + log_data[0].hex(),
+                    'withdrawal_root': '0x' + withdrawal_root.hex(),
                     'strategy': strategies[idx],
                 },
             )
@@ -469,12 +559,17 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
 
             ])
 
-        output = self.node_inquirer.multicall(calls=calls)
+        output = self.node_inquirer.multicall(calls=calls) if len(calls) != 0 else []
         for raw_address, raw_amount in pairwise(output):
-            underlying_tokens.append(underlying_token := self.base.get_or_create_evm_token(
+            underlying_token = self.base.get_or_create_evm_token(
                 address=bytes_to_address(raw_address),
                 encounter=encounter,
-            ))
+            )
+            if underlying_token.identifier == BEIGEN_TOKEN_ID:
+                # the EIGEN strategy's underlying token is bEIGEN but deposits and
+                # withdrawals are unwrapped 1:1 to EIGEN, so show EIGEN to the user
+                underlying_token = Asset(EIGEN_TOKEN_ID).resolve_to_evm_token()
+            underlying_tokens.append(underlying_token)
             underlying_amounts.append(token_normalized_value(
                 token_amount=int.from_bytes(raw_amount),
                 token=underlying_token,
@@ -492,10 +587,10 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             verb, preposition = 'Delegate', 'to'
         elif context.tx_log.topics[0] == OPERATOR_SHARES_DECREASED:
             verb, preposition = 'Undelegate', 'from'
-        elif context.tx_log.topics[0] == WITHDRAWAL_QUEUED:
-            return self. _decode_withdrawal_queued(context)
-        elif context.tx_log.topics[0] == WITHDRAWAL_COMPLETED:
-            return self. _decode_withdrawal_completed(context)
+        elif context.tx_log.topics[0] in (WITHDRAWAL_QUEUED, SLASHING_WITHDRAWAL_QUEUED):
+            return self._decode_withdrawal_queued(context)
+        elif context.tx_log.topics[0] in (WITHDRAWAL_COMPLETED, SLASHING_WITHDRAWAL_COMPLETED):
+            return self._decode_withdrawal_completed(context)
         else:
             return DEFAULT_EVM_DECODING_OUTPUT
 

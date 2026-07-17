@@ -522,6 +522,247 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x1DEd04611E3B48F620D42bC97f798cb085403f73']])
+def test_complete_withdrawal_post_slashing_token(database, ethereum_inquirer, ethereum_accounts):
+    """Test queueing and completing an EIGEN withdrawal emitting the SlashingWithdrawalQueued
+    and SlashingWithdrawalCompleted events introduced by the slashing upgrade (ELIP-002).
+    Also checks that the EIGEN strategy's bEIGEN underlying token is shown as EIGEN,
+    which is what is actually deposited and withdrawn by the user."""
+    queue_tx_hash = deserialize_evm_tx_hash('0x75d5947cf192631dd003fcf6fb5112f4f2eaca4d23f79397b72a3cf4d73a481e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=queue_tx_hash,
+    )
+    user_address, timestamp, gas_amount, amount, eigen, eigen_strategy = ethereum_accounts[0], TimestampMS(1753875839000), '0.00093321233696448', '60', Asset(EIGEN_TOKEN_ID), string_to_evm_address('0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7')  # noqa: E501
+    assert events == [EvmEvent(
+        tx_ref=queue_tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=queue_tx_hash,
+        sequence_index=625,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=eigen,
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Undelegate {amount} restaked EIGEN from 0x5ACCC90436492F24E6aF278569691e2c942A676d',  # noqa: E501
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENLAYER_DELEGATION,
+        extra_data={'amount': amount},
+    ), EvmEvent(
+        tx_ref=queue_tx_hash,
+        sequence_index=626,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.REMOVE_ASSET,
+        asset=eigen,
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Queue withdrawal of {amount} EIGEN from Eigenlayer',
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENLAYER_DELEGATION,
+        extra_data={
+            'amount': amount,
+            'withdrawer': user_address,
+            'withdrawal_root': '0x8e4008a087a4095d217cc2e7996f42e31cbfff67aeead1332d41706de408ec4e',  # noqa: E501
+            'strategy': eigen_strategy,
+        },
+    )]
+
+    tx_hash = deserialize_evm_tx_hash('0x9340fb42391c734caccb46048238ba2579c51e6f8096d2abb6216b509a1c1db6')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp, gas_amount = TimestampMS(1784026463000), '0.000206362625778015'
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=446,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=eigen,
+        amount=ZERO,
+        location_label=user_address,
+        notes='Complete eigenlayer withdrawal of EIGEN',
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENLAYER_DELEGATION,
+        extra_data={'matched': True},
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=453,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+        asset=eigen,
+        amount=FVal(amount),
+        location_label=user_address,
+        notes=f'Withdraw {amount} EIGEN from Eigenlayer',
+        counterparty=CPT_EIGENLAYER,
+        address=eigen_strategy,
+    )]
+
+    with database.conn.read_ctx() as cursor:  # check the queueing event is marked as completed
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(
+                tx_hashes=[queue_tx_hash],
+                event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
+            ),
+        )
+    assert events[0].extra_data == {
+        'amount': amount,
+        'completed': True,
+        'withdrawer': user_address,
+        'withdrawal_root': '0x8e4008a087a4095d217cc2e7996f42e31cbfff67aeead1332d41706de408ec4e',
+        'strategy': eigen_strategy,
+    }
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x79f4B334c0e290250Dd5b65799310805FD807F0F']])
+def test_complete_withdrawal_post_slashing_eth(database, ethereum_inquirer, ethereum_accounts):
+    """Test queueing and completing a natively restaked ETH withdrawal emitting the
+    events introduced by the slashing upgrade (ELIP-002). The ETH is sent to the
+    withdrawer by their eigenpod when the withdrawal is completed."""
+    queue_tx_hash = deserialize_evm_tx_hash('0xbc678ee75a2ee4fbbb24a29b614f6b601b9a08765f0b142f2c20b5aec27153a1')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=queue_tx_hash,
+    )
+    user_address, timestamp, gas_amount, amount = ethereum_accounts[0], TimestampMS(1782421343000), '0.000073031120801748', '6.24'  # noqa: E501
+    assert events == [EvmEvent(
+        tx_ref=queue_tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=queue_tx_hash,
+        sequence_index=640,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Undelegate {amount} restaked ETH from 0xa026265a0F01A6E1A19b04655519429df0a57c4e',
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENLAYER_DELEGATION,
+        extra_data={'amount': amount},
+    ), EvmEvent(
+        tx_ref=queue_tx_hash,
+        sequence_index=642,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.REMOVE_ASSET,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Queue withdrawal of {amount} ETH from Eigenlayer',
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENLAYER_DELEGATION,
+        extra_data={
+            'amount': amount,
+            'withdrawer': user_address,
+            'withdrawal_root': '0x359d4e37f59466007a6e5246531c6a46b53775266572072df45ec1a18848d9b6',  # noqa: E501
+            'strategy': '0xbeaC0eeEeeeeEEeEeEEEEeeEEeEeeeEeeEEBEaC0',
+        },
+    )]
+
+    tx_hash = deserialize_evm_tx_hash('0xcc0f01a59a1ce8854106f0a901ed0b272467e868b862fe1d104b97ddd5f630ae')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp, gas_amount, eigenpod_address = TimestampMS(1784217623000), '0.000300333566183211', string_to_evm_address('0x951C0537b78A92E505a96e19d808ddd3ba76Eb44')  # noqa: E501
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRANSFER,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal(amount),
+        location_label=user_address,
+        notes=f'Withdraw {amount} ETH from Eigenlayer',
+        counterparty=CPT_EIGENLAYER,
+        address=eigenpod_address,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=188,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=user_address,
+        notes='Complete eigenlayer withdrawal of ETH',
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENLAYER_DELEGATION,
+        extra_data={'matched': True},
+    )]
+
+    with database.conn.read_ctx() as cursor:  # check the queueing event is marked as completed
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(
+                tx_hashes=[queue_tx_hash],
+                event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
+            ),
+        )
+    assert events[0].extra_data == {
+        'amount': amount,
+        'completed': True,
+        'withdrawer': user_address,
+        'withdrawal_root': '0x359d4e37f59466007a6e5246531c6a46b53775266572072df45ec1a18848d9b6',
+        'strategy': '0xbeaC0eeEeeeeEEeEeEEEEeeEEeEeeeEeeEEBEaC0',
+    }
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xCd2bCdE423F36E1B81a25168D5373f908546c9BE', '0xf17606D3FFbd5B07454542146a74712Eb797Ac0a']])  # noqa: E501
 def test_claim_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc5d38c05567f5a4d51e686225dfc461ddf177eefa7c531822656b2ed9560ab12')  # noqa: E501

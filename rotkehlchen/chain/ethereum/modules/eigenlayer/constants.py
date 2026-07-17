@@ -27,6 +27,8 @@ OPERATOR_SHARES_INCREASED: Final = b'\x1e\xc0B\xc9e\xe2\xed\xd7\x10{Q\x18\x8e\xe
 OPERATOR_SHARES_DECREASED: Final = b'i\t`\x007\xb7]{G3\xae\xdd\x81TB\xb5\xec\x01\x8a\x82wQ\xc82\xaa\xffd\xeb\xa5\xd6\xd2\xdd'  # noqa: E501
 WITHDRAWAL_QUEUED: Final = b'\x90\t\xab\x15>\x80\x14\xfb\xfb\x02\xf2!\x7f\\\xdez\xa7\xf9\xadsJ\xe8\\\xa3\xee?L\xa2\xfd\xd4\x99\xf9'  # noqa: E501
 WITHDRAWAL_COMPLETED: Final = b'\xc9p\x98\xc2\xf6X\x80\x0bM\xf2\x90\x01R\x7fs$\xbc\xdf\xfc\xf6\xe8u\x1ai\x9a\xb9 \xa1\xec\xed[\x1d'  # noqa: E501
+SLASHING_WITHDRAWAL_QUEUED: Final = b'&\xb2\xaa\xe2e\x16\xe8q\x9e\xf5\x0e\xa2\xf6\x83\x1a.\xfb\xd4\xe3}\xcc\xdf\x0fi6\xb2{\xc0\x8ey>0'  # noqa: E501
+SLASHING_WITHDRAWAL_COMPLETED: Final = b"\x1f@@\x08\x89'N\xd0{$\x84^PT\xa8z\x0c\xab\x96\x9e\xb1'z\xaf\xe6\x1a\xe3R\xe7\xc3*\x00"  # noqa: E501
 POD_SHARES_UPDATED: Final = b'N+y\x1d\xed\xcc\xd9\xfb0\x14\x1b\x08\x8c\xab\xf5\xc1J\x89\x12\xb5/Y7\\\x95\xc0\x10p\x0b\x8ca\x93'  # noqa: E501
 CHECKPOINT_CREATED: Final = b'WW\x96\x13;\xbe\xd37\xe5\xb3\x9a\xa4\x9a0\xdc%V\xa9\x1e\x0cl*\xf4\xb7\xb8\x86\xaew\xeb\xef\x10v'  # noqa: E501
 CHECKPOINT_FINALIZED: Final = b'RT\x08\xc2\x01\xbc\x15v\xebD\x11odx\xf1\xc2\xa5Gu\xb1\x9a\x04;\xcf\xdcp\x83d\xf7O\x8eD'  # noqa: E501
@@ -39,6 +41,9 @@ EIGENLAYER_CPT_DETAILS: Final = CounterpartyDetails(
     image='eigenlayer.png',
 )
 EIGEN_TOKEN_ID: Final = 'eip155:1/erc20:0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83'
+BEIGEN_TOKEN_ID: Final = 'eip155:1/erc20:0x83E9115d334D248Ce39a6f36144aEaB5b3456e75'
+# withdrawal struct emitted by both WithdrawalQueued and SlashingWithdrawalQueued
+WITHDRAWAL_STRUCT: Final = '(address,address,address,uint256,uint32,address[],uint256[])'
 
 # not the full ABIs, just the functions we call for each contract
 STRATEGY_ABI: Final[ABI] = [{'inputs': [{'name': 'amountShares', 'type': 'uint256'}], 'name': 'sharesToUnderlyingView', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'underlyingToken', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
