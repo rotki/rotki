@@ -27,6 +27,7 @@ export enum PrivacyMode {
 }
 
 export const PinnedNames = {
+  BALANCE_DIVERGENCE: 'balance-divergence-pinned',
   DATA_ISSUES: 'data-issues-pinned',
   INTERNAL_TX_CONFLICTS: 'internal-tx-conflicts-pinned',
   MATCH_ASSET_MOVEMENTS: 'match-asset-movements-pinned',
@@ -41,6 +42,7 @@ export type PinnedName = typeof PinnedNames[keyof typeof PinnedNames];
  * entry in sync with the corresponding `*Pinned.vue` host's `defineProps`.
  */
 export interface PinnedPanelProps {
+  [PinnedNames.BALANCE_DIVERGENCE]: Record<never, never>;
   [PinnedNames.DATA_ISSUES]: Record<never, never>;
   [PinnedNames.INTERNAL_TX_CONFLICTS]: {
     highlightedGroupIdentifier?: string;

@@ -1,10 +1,16 @@
 <script setup lang="ts">
-const visible = defineModel<boolean>({ required: true });
+import { PinnedNames } from '@/modules/session/types';
+import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 
 const { t } = useI18n({ useScope: 'global' });
 
-function toggleVisibility(): void {
-  set(visible, !get(visible));
+const { isPinned, toggle: togglePanel } = usePinnedPanel(PinnedNames.BALANCE_DIVERGENCE);
+
+const active = isPinned;
+
+function toggle(): void {
+  // The divergence search lives only in the pinned rail now: pin it (and focus/reveal) or close it.
+  togglePanel({});
 }
 </script>
 
@@ -15,9 +21,9 @@ function toggleVisibility(): void {
         variant="outlined"
         color="primary"
         size="sm"
-        :class="{ '!bg-rui-primary !text-white': visible }"
+        :class="{ '!bg-rui-primary !text-white': active }"
         data-testid="balance-divergence-toggle"
-        @click="toggleVisibility()"
+        @click="toggle()"
       >
         <RuiIcon
           name="lu-search"

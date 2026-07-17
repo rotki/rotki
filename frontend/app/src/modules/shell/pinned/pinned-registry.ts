@@ -24,6 +24,11 @@ export interface PinnedPanelDef {
 }
 
 export const PINNED_PANELS: Record<PinnedName, PinnedPanelDef> = {
+  [PinnedNames.BALANCE_DIVERGENCE]: {
+    component: defineAsyncComponent(async () => import('@/modules/history/balances/BalanceDivergencePinned.vue')),
+    icon: 'lu-search',
+    labelKey: msg.$t('balance_divergence.title'),
+  },
   [PinnedNames.DATA_ISSUES]: {
     component: defineAsyncComponent(async () => import('@/modules/history/data-issues/components/DataIssuesPinned.vue')),
     icon: 'lu-shield-alert',

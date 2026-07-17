@@ -9,10 +9,6 @@ import LocationLabelSelector from '@/modules/history/LocationLabelSelector.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 
-const emit = defineEmits<{
-  close: [];
-}>();
-
 const { t } = useI18n({ useScope: 'global' });
 
 const {
@@ -53,33 +49,6 @@ watch([modelSelectedAsset, modelSelectedChain, modelSelectedLocationLabel], clea
 
 <template>
   <div class="h-full flex flex-col overflow-hidden">
-    <div class="flex items-center h-10 pl-2 pr-2 border-b border-default shrink-0">
-      <RuiButton
-        variant="text"
-        icon
-        size="sm"
-        data-testid="balance-divergence-close"
-        @click="emit('close')"
-      >
-        <RuiIcon
-          name="lu-chevron-right"
-          size="20"
-        />
-      </RuiButton>
-      <h6 class="font-medium pl-1">
-        {{ t('balance_divergence.title') }}
-      </h6>
-      <div class="grow" />
-      <RuiButton
-        variant="text"
-        icon
-        size="sm"
-        @click="emit('close')"
-      >
-        <RuiIcon name="lu-x" />
-      </RuiButton>
-    </div>
-
     <div class="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-6">
       <div class="grid grid-cols-1 gap-4">
         <ChainSelect
