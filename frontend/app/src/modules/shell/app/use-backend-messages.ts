@@ -2,9 +2,11 @@ import type { Ref } from 'vue';
 import { BackendCode, type OAuthResult } from '@shared/ipc';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { api } from '@/modules/core/api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
+import { useAppQuitting } from '@/modules/shell/app/use-app-quitting';
 import { useBackendConnection } from '@/modules/shell/app/use-backend-connection';
 import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
@@ -37,6 +39,19 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   const { setConnectionEnabled: setWsConnectionEnabled } = useWebsocketConnection();
   const { stopConnectionAttempts } = useBackendConnection();
   const { connectionEnabled } = storeToRefs(useMainStore());
+  const { startQuitting } = useAppQuitting();
+
+  /**
+   * Halts all outbound activity against the backend: stops the connection ping
+   * loop and disables future attempts, stops all monitoring (periodic tasks,
+   * websocket, etc.), and disables websocket reconnection. Used whenever the
+   * backend is unavailable or about to become unavailable.
+   */
+  function haltBackendActivity(): void {
+    stopConnectionAttempts();
+    stopMonitoring();
+    setWsConnectionEnabled(false);
+  }
 
   /**
    * Handle a startup error by logging it and updating the appropriate state.
@@ -44,12 +59,7 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
    */
   function handleStartupError(message: string, code: BackendCode): void {
     logger.error(message, code);
-    // Stop connection ping loop and disable future connection attempts
-    stopConnectionAttempts();
-    // Stop all monitoring (periodic tasks, websocket, etc.) - backend is not available
-    stopMonitoring();
-    // Also explicitly disable websocket reconnection
-    setWsConnectionEnabled(false);
+    haltBackendActivity();
 
     if (code === BackendCode.TERMINATED) {
       set(startupErrorMessage, message);
@@ -97,6 +107,14 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
         handlers.forEach((handler) => {
           handler(oAuthResult);
         });
+      },
+      onAppClosing: () => {
+        // The app is quitting. Swap the UI for the shutdown screen first: that
+        // unmounts the notification popup, so requests still unwinding against
+        // the dying backend cannot surface errors over a closing window.
+        startQuitting();
+        haltBackendActivity();
+        api.stopRequests();
       },
       onRestart: () => {
         set(startupErrorMessage, '');

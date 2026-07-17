@@ -230,6 +230,12 @@ export class Application {
   }
 
   private async quit() {
+    // Tell the renderer before anything is torn down: it swaps in the shutdown
+    // screen, which unmounts the notification popup, so requests unwinding
+    // against the dying backend cannot surface errors over a closing window.
+    // Must run before window.cleanup() drops the webContents.
+    this.window.notifyClosing();
+
     this.cleanup();
     this.menu.cleanup();
     this.window.cleanup();

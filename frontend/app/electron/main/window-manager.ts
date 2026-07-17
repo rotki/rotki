@@ -305,6 +305,24 @@ export class WindowManager {
     }
   }
 
+  /**
+   * Tells the renderer we are quitting so it can swap in the shutdown screen
+   * and stop talking to the backend. One-way: we do not wait for a reply, since
+   * nothing in the teardown depends on the renderer having finished.
+   */
+  notifyClosing(): void {
+    const webContents = this.window?.webContents;
+    if (!webContents || webContents.isDestroyed())
+      return;
+
+    try {
+      webContents.send(IpcCommands.APP_CLOSING);
+    }
+    catch (error) {
+      this.logger.error('Failed to notify renderer of shutdown:', error);
+    }
+  }
+
   sendIpcMessage(channel: string, ...args: any[]): void {
     try {
       if (this.window?.webContents) {

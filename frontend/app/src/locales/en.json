@@ -1179,7 +1179,10 @@
   "app": {
     "copyright": "© Rotki Solutions GmbH 2018-{year}",
     "moto": "the opensource portfolio manager that protects your privacy",
-    "name": "rotki"
+    "name": "rotki",
+    "quitting": {
+      "message": "Shutting down..."
+    }
   },
   "asset_balances": {
     "loading": "Please wait while rotki queries the balances..."

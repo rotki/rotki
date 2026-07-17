@@ -45,6 +45,10 @@ contextBridge.exposeInMainWorld('interop', {
       });
     }
 
+    ipcRenderer.on(IpcCommands.APP_CLOSING, () => {
+      listeners.onAppClosing?.();
+    });
+
     // Signal to main process that renderer is ready for async messages
     ipcRenderer.send(IpcCommands.RENDERER_READY);
   },
