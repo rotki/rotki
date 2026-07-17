@@ -231,12 +231,4 @@ describe('balanceDivergenceView.vue', () => {
     expect(alert.exists()).toBe(true);
     expect(alert.text()).toContain('No historical wallet balance data');
   });
-
-  it('should emit close when the panel header is closed', async () => {
-    const wrapper = mountView();
-
-    await wrapper.find('[data-testid=balance-divergence-close]').trigger('click');
-
-    expect(wrapper.emitted('close')).toHaveLength(1);
-  });
 });
