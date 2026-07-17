@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventEntryType } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
+import { checkIfDevelopment } from '@shared/utils';
 import { type HighlightSegment, splitHighlight } from '@/modules/history/events/action-picker/highlight-match';
 import HistoryEventActionDirectionBadge from '@/modules/history/events/action-picker/HistoryEventActionDirectionBadge.vue';
 import { useEventActionDescriptions } from '@/modules/history/events/action-picker/use-event-action-descriptions';
@@ -30,6 +31,10 @@ const RECENT_GROUP_ID = '__recent__';
 const RECENT_KEY_PREFIX = 'recent:';
 
 const { t } = useI18n({ useScope: 'global' });
+
+// Shown only in dev builds so developers can see the raw event type/subtype
+// combinations behind each user-facing action label.
+const isDevelopment = checkIfDevelopment();
 
 const search = ref<string>('');
 
@@ -301,6 +306,13 @@ function onUpdate(verbKey: string | undefined): void {
             class="text-xs text-rui-text-secondary whitespace-normal line-clamp-2"
           >
             {{ subtitleFor(item) }}
+          </div>
+          <div
+            v-if="isDevelopment"
+            class="text-xs text-rui-text-disabled font-mono whitespace-normal break-all"
+            data-testid="event-action-picker-row-dev-hint"
+          >
+            {{ rowEventTypes(item) }}
           </div>
         </div>
         <HistoryEventActionDirectionBadge
