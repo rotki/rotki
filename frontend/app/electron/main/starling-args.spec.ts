@@ -117,6 +117,16 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     expect(invocation.env).toBeUndefined();
   });
 
+  // StarlingHandler.stop() outwaits this same constant before it SIGKILLs, so
+  // starling must be told the grace rather than left on its own default: the two
+  // sides drifting means killing starling mid-teardown and orphaning a backend.
+  it('should tell starling the shutdown grace it is held to', async () => {
+    existsSyncMock.mockReturnValue(true);
+    const { args } = await buildDevInvocation();
+    const { SHUTDOWN_GRACE_SECS } = await import('./starling-args');
+    expect(flagValue(args, '--shutdown-grace-secs')).toBe(SHUTDOWN_GRACE_SECS.toString());
+  });
+
   describe('when the warm-up builds are missing', () => {
     beforeEach(() => {
       existsSyncMock.mockReturnValue(false);

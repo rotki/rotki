@@ -10,6 +10,15 @@ const COLIBRI_DIRECTORY = 'colibri';
 const STARLING_DIRECTORY = 'starling';
 
 /**
+ * Grace period starling gives the backend tree to exit before escalating to a
+ * hard kill. Passed explicitly rather than relying on starling's own default so
+ * this side knows the number: StarlingHandler.stop() must outwait it, or it
+ * would SIGKILL starling mid-grace and orphan the very children starling was
+ * about to reap.
+ */
+export const SHUTDOWN_GRACE_SECS = 10;
+
+/**
  * How to launch the single `starling` supervisor child, fully resolved for the
  * current mode. `command`/`args` are passed straight to `spawn`; `cwd`/`env`
  * apply to that spawn (used in dev to run `cargo run` from the workspace).
@@ -165,11 +174,12 @@ function corsOrigins(isDev: boolean): string {
 }
 
 /**
- * The mode-independent supervisor args: launch topology + addressing + dirs
- * only. The mutable backend tunables (log level, logfromothermodules, log-file
- * limits, sqlite-instructions, sleep-secs) are NOT passed here — the renderer
- * sends them in the `start` control request (see StarlingHandler), so they live
- * in one place (BackendOptions) instead of being mirrored on both CLI and RPC.
+ * The mode-independent supervisor args: launch topology, addressing, dirs and
+ * the shutdown grace. The mutable backend tunables (log level,
+ * logfromothermodules, log-file limits, sqlite-instructions, sleep-secs) are NOT
+ * passed here — the renderer sends them in the `start` control request (see
+ * StarlingHandler), so they live in one place (BackendOptions) instead of being
+ * mirrored on both CLI and RPC.
  */
 function commonStarlingArgs(input: StarlingLaunchInput): string[] {
   const { options, corePort, colibriPort, apiHost, logsDir, isDev } = input;
@@ -185,6 +195,8 @@ function commonStarlingArgs(input: StarlingLaunchInput): string[] {
     corsOrigins(isDev),
     '--logs-dir',
     logsDir,
+    '--shutdown-grace-secs',
+    SHUTDOWN_GRACE_SECS.toString(),
   ];
 
   // Only forward a data dir when the user explicitly chose one. Otherwise starling
