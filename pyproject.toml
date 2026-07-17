@@ -82,7 +82,7 @@ repository = "https://github.com/rotki/rotki"
 changelog = "https://github.com/rotki/rotki/blob/develop/docs/changelog.rst"
 
 [project.optional-dependencies]
-mcp = ["mcp==1.27.1"]
+mcp = ["mcp==1.28.1"]
 
 [dependency-groups]
 dev = [
@@ -131,12 +131,12 @@ docs = [
     # sphinxcontrib-httpexample imports pkg_resources, which no longer comes
     # with the venv by default (gevent's zope deps used to pull setuptools in)
     "setuptools==80.9.0",
-    "sphinx==7.2.6",
-    "sphinx-autobuild==2024.2.4",
-    "sphinx_inline_tabs==2023.4.21",
-    "sphinx_rtd_theme==2.0.0",
-    "sphinxcontrib-httpdomain==1.8.1",
-    "sphinxcontrib-httpexample==1.1",
+    "sphinx==8.2.3",
+    "sphinx-autobuild==2025.8.25",
+    "sphinx_inline_tabs==2025.12.21.14",
+    "sphinx_rtd_theme==3.1.0",
+    "sphinxcontrib-httpdomain==2.0.0",
+    "sphinxcontrib-httpexample==2.0",
     # This is our fork of releases in order to handle https://github.com/rotki/rotki/issues/704
     "rotki-releases==2.0.1",
 ]

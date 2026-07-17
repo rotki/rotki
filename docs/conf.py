@@ -15,15 +15,6 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import ast
-
-if not hasattr(ast, 'Str'):
-    # sphinxcontrib-httpexample 1.1 still builds ast.Str nodes, which were removed
-    # in python 3.12. It renders them via ast.unparse, for which Constant is a
-    # drop-in replacement. Remove once a fixed version of the extension is released.
-    ast.Str = ast.Constant  # type: ignore[attr-defined]
-
-
 # -- Project information -----------------------------------------------------
 
 project = 'rotki'
@@ -108,7 +99,7 @@ html_theme = 'sphinx_rtd_theme'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {'logo_only': True, 'display_version': False}
+html_theme_options = {'logo_only': True}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
