@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import MatchAssetMovementsContent from '@/modules/history/events/MatchAssetMovementsContent.vue';
 import PotentialMatchesContent from '@/modules/history/events/PotentialMatchesContent.vue';
@@ -8,6 +9,7 @@ import {
   useUnmatchedAssetMovements,
 } from '@/modules/history/events/use-unmatched-asset-movements';
 import { PinnedNames } from '@/modules/session/types';
+import PinnedDetailSheet from '@/modules/shell/pinned/PinnedDetailSheet.vue';
 import { usePinnedHighlightNavigation } from '@/modules/shell/pinned/use-pinned-highlight-navigation';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 
@@ -76,6 +78,16 @@ async function closePotentialMatchesDrawer(): Promise<void> {
     await router.replace({ query: remainingQuery });
   }
 }
+
+// The sheet is only open once a movement is actually selected, so it never flashes empty while the
+// close animation drains the movement. Closing routes through the same cleanup as the header button.
+const potentialMatchesSheetOpen = computed<boolean>({
+  get: () => get(showPotentialMatchesDrawer) && !!get(potentialMatchMovement),
+  set: (value) => {
+    if (!value)
+      startPromise(closePotentialMatchesDrawer());
+  },
+});
 
 async function onPinnedMatched(): Promise<void> {
   await closePotentialMatchesDrawer();
@@ -189,64 +201,40 @@ watch(() => highlightedGroupIdentifier, (newHighlight, oldHighlight) => {
         @show-in-events="showInHistoryEvents($event)"
       />
 
-      <!-- Overlay backdrop -->
-      <Transition
-        enter-active-class="transition-opacity duration-300"
-        leave-active-class="transition-opacity duration-300"
-        enter-from-class="opacity-0"
-        leave-to-class="opacity-0"
-      >
-        <div
-          v-if="showPotentialMatchesDrawer && potentialMatchMovement"
-          class="absolute inset-0 bg-black/50"
-          @click="closePotentialMatchesDrawer()"
-        />
-      </Transition>
-
-      <!-- Bottom drawer for potential matches (slides up from bottom) -->
-      <Transition
-        enter-active-class="transition-transform duration-300 ease-out"
-        leave-active-class="transition-transform duration-300 ease-out"
-        enter-from-class="translate-y-full"
-        leave-to-class="translate-y-full"
-      >
-        <RuiCard
-          v-if="showPotentialMatchesDrawer && potentialMatchMovement"
-          no-padding
-          class="absolute bottom-0 left-0 right-0 h-[95%] border-t-2 border-rui-primary flex flex-col shadow-lg !rounded-b-none z-10 overflow-hidden"
-          content-class="h-full"
-        >
-          <template #custom-header>
-            <div class="flex items-center justify-between bg-rui-grey-200 dark:bg-rui-grey-800 px-4 py-2 shrink-0">
-              <span class="text-body-2 font-medium">
-                {{ t('asset_movement_matching.dialog.select_match_title') }}
-              </span>
-              <RuiButton
-                variant="text"
-                icon
-                size="sm"
-                @click="closePotentialMatchesDrawer()"
-              >
-                <RuiIcon
-                  name="lu-x"
-                  size="16"
-                />
-              </RuiButton>
-            </div>
-          </template>
-          <div class="flex-1 h-full">
-            <PotentialMatchesContent
-              :movement="potentialMatchMovement"
-              :highlighted-identifier="activePotentialMatchIdentifier"
-              is-pinned
-              @close="closePotentialMatchesDrawer()"
-              @matched="onPinnedMatched()"
-              @show-in-events="showPotentialMatchInHistoryEvents($event)"
-              @show-unmatched-in-events="showInHistoryEvents(potentialMatchMovement)"
-            />
+      <PinnedDetailSheet v-model="potentialMatchesSheetOpen">
+        <template #header>
+          <div class="flex items-center justify-between bg-rui-grey-200 dark:bg-rui-grey-800 px-4 py-2 shrink-0">
+            <span class="text-body-2 font-medium">
+              {{ t('asset_movement_matching.dialog.select_match_title') }}
+            </span>
+            <RuiButton
+              variant="text"
+              icon
+              size="sm"
+              @click="closePotentialMatchesDrawer()"
+            >
+              <RuiIcon
+                name="lu-x"
+                size="16"
+              />
+            </RuiButton>
           </div>
-        </RuiCard>
-      </Transition>
+        </template>
+        <div
+          v-if="potentialMatchMovement"
+          class="flex-1 h-full"
+        >
+          <PotentialMatchesContent
+            :movement="potentialMatchMovement"
+            :highlighted-identifier="activePotentialMatchIdentifier"
+            is-pinned
+            @close="closePotentialMatchesDrawer()"
+            @matched="onPinnedMatched()"
+            @show-in-events="showPotentialMatchInHistoryEvents($event)"
+            @show-unmatched-in-events="showInHistoryEvents(potentialMatchMovement)"
+          />
+        </div>
+      </PinnedDetailSheet>
     </div>
   </div>
 </template>
