@@ -6,12 +6,18 @@ import { BackendCode } from '@shared/ipc';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { StarlingHandler } from './starling-handler';
 
-// Mutable os identity the handler's version gates read through.
+// Mutable os identity the handler's version gates read through. Only the two
+// identity calls are faked; the rest of the builtin stays real, since other
+// modules in the graph (cargo-env) read it too.
 const osState = { platform: 'linux', release: '5.0.0' };
-vi.mock('node:os', () => ({
-  platform: (): string => osState.platform,
-  release: (): string => osState.release,
-}));
+vi.mock('node:os', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:os')>();
+  const identity = {
+    platform: (): string => osState.platform,
+    release: (): string => osState.release,
+  };
+  return { ...actual, default: { ...actual, ...identity }, ...identity };
+});
 
 // `spawn` hands back whatever fake child the test installs; the rest of the
 // builtin stays real (other modules in the graph rely on it). `vi.hoisted` keeps
@@ -23,8 +29,11 @@ vi.mock('node:child_process', async (importOriginal) => {
 });
 
 // The invocation builder touches the filesystem / uv detection in real life —
-// the handler only forwards its result to spawn(), so a stub is enough.
-vi.mock('@electron/main/starling-args', () => ({
+// the handler only forwards its result to spawn(), so a stub is enough. The rest
+// of the module stays real: SHUTDOWN_GRACE_SECS is what the handler derives its
+// stop timeouts from, and a stubbed-away value would make those NaN.
+vi.mock('@electron/main/starling-args', async importOriginal => ({
+  ...await importOriginal<typeof import('@electron/main/starling-args')>(),
   buildStarlingInvocation: (): { command: string; args: string[] } => ({ command: 'starling', args: [] }),
 }));
 

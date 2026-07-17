@@ -7,13 +7,23 @@ import process from 'node:process';
 import readline from 'node:readline';
 import { selectPort } from '@electron/main/port-utils';
 import { resolveLogLevel } from '@electron/main/resolve-log-level';
-import { buildStarlingInvocation, type StarlingInvocation } from '@electron/main/starling-args';
+import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingInvocation } from '@electron/main/starling-args';
 import { BackendCode, type BackendOptions } from '@shared/ipc';
 import { wait } from '@shared/utils';
 
 /** starling exits with this code when the data dir is already locked (main.rs). */
 const EXIT_DATADIR_IN_USE = 3;
 const API_HOST = '127.0.0.1';
+
+/**
+ * How long `stop` may take to answer: starling only replies once the backend tree
+ * is down, which it gives itself `SHUTDOWN_GRACE_SECS` to do. Anything shorter
+ * gives up on a shutdown that is still going fine.
+ */
+const STOP_REQUEST_TIMEOUT = SHUTDOWN_GRACE_SECS * 1000;
+
+/** Time starling gets to exit itself once the grace elapsed, before SIGKILL. */
+const EXIT_MARGIN = 5_000;
 
 interface StarlingErrorListener {
   onProcessError: (message: string | Error, code: BackendCode) => void;
@@ -333,6 +343,10 @@ export class StarlingHandler {
    * Stop the running child: ask it to shut the backend tree down gracefully via
    * `stop`, then wait for exit (killing it if it does not go). starling does the
    * ordered teardown + Windows Job Objects, so there is no taskkill/ps-list here.
+   *
+   * Both waits are derived from the grace we hand starling on the CLI: killing it
+   * before its own escalation has run leaves the backends it was reaping orphaned,
+   * which is exactly what starling exists to prevent.
    */
   async stop(): Promise<void> {
     const child = this.child;
@@ -342,7 +356,7 @@ export class StarlingHandler {
     this.exiting = true;
     this.logger.debug('Stopping starling');
     try {
-      await Promise.race([this.request('stop').catch(() => undefined), wait(this.config.isDev ? 10_000 : 5_000)]);
+      await Promise.race([this.request('stop').catch(() => undefined), wait(STOP_REQUEST_TIMEOUT)]);
     }
     catch {
       // best-effort; fall through to wait/kill
@@ -350,7 +364,7 @@ export class StarlingHandler {
 
     if (this.child) {
       const exited = this.exited ?? Promise.resolve(null);
-      const timedOut = await Promise.race([exited.then(() => false), wait(5_000).then(() => true)]);
+      const timedOut = await Promise.race([exited.then(() => false), wait(EXIT_MARGIN).then(() => true)]);
       if (timedOut && this.child) {
         this.logger.warn('starling did not exit in time, killing it');
         this.child.kill('SIGKILL');
