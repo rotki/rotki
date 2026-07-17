@@ -15,6 +15,14 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import ast
+
+if not hasattr(ast, 'Str'):
+    # sphinxcontrib-httpexample 1.1 still builds ast.Str nodes, which were removed
+    # in python 3.12. It renders them via ast.unparse, for which Constant is a
+    # drop-in replacement. Remove once a fixed version of the extension is released.
+    ast.Str = ast.Constant  # type: ignore[attr-defined]
+
 
 # -- Project information -----------------------------------------------------
 
