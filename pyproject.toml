@@ -82,7 +82,7 @@ repository = "https://github.com/rotki/rotki"
 changelog = "https://github.com/rotki/rotki/blob/develop/docs/changelog.rst"
 
 [project.optional-dependencies]
-mcp = ["mcp==1.27.1"]
+mcp = ["mcp==1.28.1"]
 
 [dependency-groups]
 dev = [
