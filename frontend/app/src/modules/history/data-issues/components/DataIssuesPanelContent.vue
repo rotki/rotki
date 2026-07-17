@@ -4,7 +4,7 @@ import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data
 import type { IssueDescription } from '@/modules/history/data-issues/types';
 import { startPromise } from '@shared/utils';
 import TableFilter from '@/modules/core/table/TableFilter.vue';
-import DataIssueDetailDrawer from '@/modules/history/data-issues/components/DataIssueDetailDrawer.vue';
+import DataIssueDetailContent from '@/modules/history/data-issues/components/DataIssueDetailContent.vue';
 import DataIssuePanelCard from '@/modules/history/data-issues/components/DataIssuePanelCard.vue';
 import ResolveManuallyDialog from '@/modules/history/data-issues/components/ResolveManuallyDialog.vue';
 import { IssueState, NON_TERMINAL_STATES } from '@/modules/history/data-issues/constants';
@@ -14,6 +14,7 @@ import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
 import { type Filters, type Matcher, useDataIssuesFilter } from '@/modules/history/data-issues/use-data-issues-filter';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import { HighlightTargetTypes, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
+import PinnedDetailSheet from '@/modules/shell/pinned/PinnedDetailSheet.vue';
 import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
 
 /** Mirrors whether a stacked detail/resolve overlay is open, so the host drawer can stay stateless. */
@@ -275,7 +276,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full flex-1 min-h-0 overflow-hidden flex flex-col">
+  <div class="h-full flex-1 min-h-0 overflow-hidden flex flex-col relative">
     <div
       ref="filterWrapper"
       class="px-3 py-2 border-b border-default shrink-0"
@@ -408,14 +409,16 @@ onMounted(() => {
       </RouterLink>
     </div>
 
-    <DataIssueDetailDrawer
-      v-model="modelDrawerOpen"
-      :issue="modelSelectedIssue"
-      :busy="modelActionBusy"
-      @dismiss="onDismiss($event)"
-      @retry="onRetry($event)"
-      @resolve="onResolveRequest()"
-    />
+    <PinnedDetailSheet v-model="modelDrawerOpen">
+      <DataIssueDetailContent
+        :issue="modelSelectedIssue"
+        :busy="modelActionBusy"
+        @close="modelDrawerOpen = false"
+        @dismiss="onDismiss($event)"
+        @retry="onRetry($event)"
+        @resolve="onResolveRequest()"
+      />
+    </PinnedDetailSheet>
 
     <ResolveManuallyDialog
       v-model="modelResolveOpen"
