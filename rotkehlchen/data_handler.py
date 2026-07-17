@@ -4,7 +4,7 @@ import logging
 import shutil
 import tempfile
 import zlib
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import TYPE_CHECKING
 
 from sqlcipher3 import dbapi2 as sqlcipher  # pylint: disable=no-name-in-module
@@ -48,6 +48,28 @@ class DataHandler:
         self.msg_aggregator = msg_aggregator
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
 
+    def _get_user_data_dir(self, username: str) -> Path:
+        """Return the user's directory after ensuring the name is one safe path component.
+
+        May raise:
+        - SystemPermissionError if the username is not a safe path component within the users
+          directory.
+        """
+        users_dir = self.data_directory / USERSDIR_NAME
+        user_data_dir = users_dir / username
+        if (
+            username in {'.', '..'} or
+            PurePosixPath(username).name != username or
+            PureWindowsPath(username).name != username or
+            user_data_dir.resolve().parent != users_dir.resolve()
+        ):
+            raise SystemPermissionError(
+                f'Data dir for user {username} is not in the users directory. '
+                'Usernames may not contain path separators.',
+            )
+
+        return user_data_dir
+
     def check_password(self, username: str, password: str) -> bool:
         """Cheaply verify a user's password without the full unlock.
 
@@ -60,7 +82,11 @@ class DataHandler:
         Returns True if the password opens the DB, False on a wrong password or a
         missing/unreadable DB.
         """
-        user_db = self.data_directory / USERSDIR_NAME / username / USERDB_NAME
+        try:
+            user_db = self._get_user_data_dir(username) / USERDB_NAME
+        except SystemPermissionError:
+            return False
+
         if not user_db.exists():
             return False
 
@@ -118,14 +144,8 @@ class DataHandler:
         than the one supported.
         - DBSchemaError if database schema is malformed
         """
-        user_data_dir = self.data_directory / USERSDIR_NAME / username
+        user_data_dir = self._get_user_data_dir(username)
         if create_new:
-            if user_data_dir.parent != self.data_directory / USERSDIR_NAME:
-                raise SystemPermissionError(
-                    f'Data dir for user {username} is not in the users directory. '
-                    'Usernames may not contain path separators.',
-                )
-
             try:
                 if (user_data_dir / USERDB_NAME).exists():
                     raise AuthenticationError(

@@ -45,6 +45,39 @@ def _user_creation_and_login(
     handler.logout()
 
 
+@pytest.mark.parametrize('username', [
+    '..',
+    '../user',
+    '/outside/user',
+    'nested/user',
+    'nested\\user',
+    'C:\\users\\user',
+])
+def test_usernames_cannot_escape_users_directory(
+        username: str,
+        data_dir: Path,
+        function_scope_messages_aggregator: MessagesAggregator,
+        sql_vm_instructions_cb: int,
+) -> None:
+    handler = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=function_scope_messages_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+    )
+    assert handler.check_password(username=username, password='password') is False
+    for create_new in (True, False):
+        with pytest.raises(
+            SystemPermissionError,
+            match='Usernames may not contain path separators',
+        ):
+            handler.unlock(
+                username=username,
+                password='password',
+                create_new=create_new,
+                resume_from_backup=False,
+            )
+
+
 def test_user_long_password(
         data_dir: Path,
         function_scope_messages_aggregator: MessagesAggregator,
