@@ -238,13 +238,17 @@ export class Application {
 
     this.cleanup();
     this.menu.cleanup();
-    this.window.cleanup();
     this.tray.cleanup();
     this.ipc.cleanup();
     try {
       await this.processHandler.stop();
     }
     finally {
+      // Destroy the window only now: it kept the shutdown screen visible while
+      // the backend was torn down, and releasing it here makes sure it cannot
+      // keep the process alive.
+      this.window.destroy();
+
       // `will-quit` preventDefault()s, so this is the only thing that ends the
       // process - every platform must reach it.
       //
