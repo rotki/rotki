@@ -166,7 +166,6 @@ async function updateScramble(value: boolean): Promise<void> {
       <div class="border-t border-default p-4 flex flex-col gap-4">
         <RuiSwitch
           v-model="scrambleData"
-          class="bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l pt-[1px] -mt-[1px]"
           color="secondary"
           size="sm"
           data-cy="privacy-mode-scramble__toggle"
