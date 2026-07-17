@@ -308,9 +308,10 @@ pub struct ServiceLayout {
     pub api_host: String,
     pub api_cors: String,
     pub log_level: String,
-    /// Docker-layered core tunables (env/JSON), resolved by the binary. In
-    /// embedded mode these stay at their defaults (the bool `false`, the rest
-    /// `None`), so no extra flags are emitted.
+    /// Docker-layered tunables (env/JSON), resolved by the binary. In embedded
+    /// mode these stay at their defaults (the bool `false`, the rest `None`), so
+    /// no extra flags are emitted. The two log-rotation knobs reach colibri as
+    /// well; the rest are core-only.
     pub log_from_other_modules: bool,
     pub max_logfiles_num: Option<u32>,
     pub max_size_in_mb_all_logs: Option<u32>,
@@ -371,13 +372,29 @@ pub fn core_args(layout: &ServiceLayout) -> Vec<String> {
 /// The mode-independent argument vector for `colibri`.
 pub fn colibri_args(layout: &ServiceLayout) -> Vec<String> {
     let colibri_log = layout.logs_dir.join("colibri.log");
-    vec![
+    let mut args = vec![
         format!("--data-directory={}", layout.data_dir.to_string_lossy()),
         format!("--logfile-path={}", colibri_log.to_string_lossy()),
         format!("--port={}", layout.colibri_port),
         format!("--log-level={}", layout.log_level),
         format!("--api-cors={}", layout.api_cors),
-    ]
+    ];
+
+    // The log-rotation tunables apply to colibri's logfile too, so forward the
+    // same values core gets rather than leaving colibri on its built-in
+    // defaults (5 files / 50MB).
+    if let Some(n) = layout.max_logfiles_num {
+        args.push(format!("--max-logfiles-num={n}"));
+    }
+    // Note the flags are not equivalent: core's `--max-size-in-mb-all-logs` is a
+    // budget across every logfile, colibri's `--max-size-in-mb` caps each file
+    // individually. Forwarding the number keeps one knob for the user, but
+    // colibri treats it as a per-file ceiling.
+    if let Some(n) = layout.max_size_in_mb_all_logs {
+        args.push(format!("--max-size-in-mb={n}"));
+    }
+
+    args
 }
 
 /// Build the canonical `[core, colibri]` service graph from a [`ServiceLayout`].
@@ -556,6 +573,13 @@ mod tests {
             .map(String::as_str)
     }
 
+    /// Helper: the value of a `--flag=value` arg — colibri's CLI style, unlike
+    /// core's space-separated pairs.
+    fn eq_flag_value<'a>(args: &'a [String], flag: &str) -> Option<&'a str> {
+        args.iter()
+            .find_map(|a| a.strip_prefix(&format!("{flag}=")))
+    }
+
     #[test]
     fn unset_tunables_emit_no_extra_flags() {
         let layout = sample_layout(
@@ -589,5 +613,48 @@ mod tests {
         assert_eq!(flag_value(&args, "--max-size-in-mb-all-logs"), Some("300"));
         assert_eq!(flag_value(&args, "--sqlite-instructions"), Some("10000"));
         assert_eq!(flag_value(&args, "--sleep-secs"), Some("2"));
+    }
+
+    #[test]
+    fn unset_tunables_leave_colibri_on_its_own_log_defaults() {
+        let layout = sample_layout(
+            Launcher::binary("/usr/sbin/rotki"),
+            Launcher::binary("/usr/sbin/colibri"),
+        );
+        let args = colibri_args(&layout);
+        assert_eq!(eq_flag_value(&args, "--max-logfiles-num"), None);
+        assert_eq!(eq_flag_value(&args, "--max-size-in-mb"), None);
+    }
+
+    #[test]
+    fn set_log_tunables_reach_colibri_too() {
+        let mut layout = sample_layout(
+            Launcher::binary("/usr/sbin/rotki"),
+            Launcher::binary("/usr/sbin/colibri"),
+        );
+        layout.max_logfiles_num = Some(5);
+        layout.max_size_in_mb_all_logs = Some(300);
+        let args = colibri_args(&layout);
+
+        assert_eq!(eq_flag_value(&args, "--max-logfiles-num"), Some("5"));
+        // colibri's flag is the per-file cap, so the all-logs budget lands under
+        // a different name than core's.
+        assert_eq!(eq_flag_value(&args, "--max-size-in-mb"), Some("300"));
+    }
+
+    #[test]
+    fn core_only_tunables_do_not_reach_colibri() {
+        let mut layout = sample_layout(
+            Launcher::binary("/usr/sbin/rotki"),
+            Launcher::binary("/usr/sbin/colibri"),
+        );
+        layout.log_from_other_modules = true;
+        layout.sqlite_instructions = Some(10_000);
+        layout.sleep_secs = Some(2);
+        let args = colibri_args(&layout);
+
+        assert!(!args.iter().any(|a| a.starts_with("--logfromothermodules")));
+        assert!(!args.iter().any(|a| a.starts_with("--sqlite-instructions")));
+        assert!(!args.iter().any(|a| a.starts_with("--sleep-secs")));
     }
 }
