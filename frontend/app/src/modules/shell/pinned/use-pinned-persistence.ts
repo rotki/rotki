@@ -1,4 +1,5 @@
 import type { Nullable } from '@rotki/common';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { type PinnedName, PinnedNames, toPinned } from '@/modules/session/types';
 import { PINNED_DEFAULT_WIDTH } from '@/modules/shell/layout/sidebar-resize-constants';
@@ -12,7 +13,17 @@ interface PersistedPinnedTabs {
 }
 
 const WIDTH_KEY = 'rotki.pinned.width';
-const TABS_KEY = 'rotki.pinned.tabs';
+const TABS_KEY_PREFIX = 'rotki.pinned.tabs';
+
+/**
+ * Tabs are stored per user. The rail records what someone was investigating rather than how they
+ * like their machine set up, so another user signing in on the same device starts with their own
+ * tabs. The width is the opposite - it describes the screen, like the ui language - so it stays
+ * device-global.
+ */
+function tabsKeyFor(username: string): string {
+  return `${TABS_KEY_PREFIX}.${username}`;
+}
 
 const restorableNames = new Set<string>(
   Object.values(PinnedNames).filter(name => PINNED_PANELS[name].restorable !== false),
@@ -22,14 +33,6 @@ function isRestorable(name: string): name is PinnedName {
   return restorableNames.has(name);
 }
 
-/**
- * Persists the pinned rail's width and its open tabs (names + active id, never the
- * transient props) to localStorage, and restores them on load. Device-local, like
- * the app's other layout prefs. Restore is non-intrusive: the tabs come back but the
- * rail stays collapsed until the user opens it (the indicator shows the count).
- * Panels flagged `restorable: false` in the registry (they need live context) are
- * skipped. Call once from the app shell.
- */
 /** Falls back to the default when the stored width is corrupt (e.g. `NaN`). */
 function validWidth(width: unknown): number {
   return typeof width === 'number' && Number.isFinite(width) ? width : PINNED_DEFAULT_WIDTH;
@@ -45,12 +48,22 @@ function resolveActiveId(names: PinnedName[], storedActive: Nullable<PinnedName>
   return storedActive && names.includes(storedActive) ? storedActive : names.at(-1) ?? null;
 }
 
+/**
+ * Persists the pinned rail's width and its open tabs (names + active id, never the transient
+ * props), and restores them on load. The width is device-local; the tabs are stored per user
+ * (see `tabsKeyFor`). Restore is non-intrusive: the tabs come back but the rail stays collapsed
+ * until the user opens it (the indicator shows the count). Panels flagged `restorable: false` in
+ * the registry (they need live context) are skipped. Call once from the app shell.
+ */
 export function usePinnedPersistence(): void {
   const store = useAreaVisibilityStore();
   const { activePinnedId, pinnedPanels, pinnedWidth } = storeToRefs(store);
+  const { logged, username } = storeToRefs(useSessionAuthStore());
 
   const persistedWidth = useLocalStorage<number>(WIDTH_KEY, PINNED_DEFAULT_WIDTH);
-  const persistedTabs = useLocalStorage<PersistedPinnedTabs>(TABS_KEY, { activeId: null, names: [] });
+  // The app shell only mounts once a user is unlocked, and `username` is set before `logged`
+  // flips, so the key is bound to the user this rail belongs to.
+  const persistedTabs = useLocalStorage<PersistedPinnedTabs>(tabsKeyFor(get(username)), { activeId: null, names: [] });
 
   // Restore once, and only into an untouched rail so nothing already pinned is clobbered.
   if (get(pinnedPanels).length === 0) {
@@ -72,6 +85,12 @@ export function usePinnedPersistence(): void {
   // never mutates it in place), so a shallow watch is enough and avoids deep-traversing
   // panel props such as the report card's report object.
   watch([pinnedPanels, activePinnedId], ([panels, active]) => {
+    // Logging out resets every pinia store, which empties the rail. Writing that emptied state
+    // through would destroy the very tabs we are meant to restore on the next sign-in, so only
+    // a logged-in user's own changes are saved.
+    if (!get(logged))
+      return;
+
     const names = panels.map(panel => panel.name).filter(isRestorable);
     set(persistedTabs, { activeId: resolveActiveId(names, active), names });
   });
