@@ -2,6 +2,7 @@ import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultApiUrls } from '@/modules/core/api/api-urls';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { RotkiApi } from '@/modules/core/api/rotki-api';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { HTTPStatus } from '@/modules/core/api/types/http';
@@ -888,6 +889,48 @@ describe('modules/api/rotki-api', () => {
       );
 
       await expect(api.get('test')).rejects.toThrow();
+    });
+  });
+
+  describe('stopRequests', () => {
+    beforeEach(() => {
+      server.use(
+        http.get(`${backendUrl}/api/1/test`, () => HttpResponse.json({ result: { ok: true }, message: '' })),
+        http.head(`${backendUrl}/api/1/test`, () => new HttpResponse(null, { status: HTTPStatus.OK })),
+      );
+    });
+
+    it('should reject a queued fetch once stopped', async () => {
+      api.stopRequests();
+
+      await expect(api.get('test')).rejects.toThrow(RequestCancelledError);
+    });
+
+    it('should reject a skipQueue fetch once stopped', async () => {
+      api.stopRequests();
+
+      await expect(api.fetch('test', { skipQueue: true })).rejects.toThrow(RequestCancelledError);
+    });
+
+    it('should reject headStatus once stopped', async () => {
+      api.stopRequests();
+
+      await expect(api.headStatus('test')).rejects.toThrow(RequestCancelledError);
+    });
+
+    it('should reject fetchBlob once stopped', async () => {
+      api.stopRequests();
+
+      await expect(api.fetchBlob('test')).rejects.toThrow(RequestCancelledError);
+    });
+
+    it('should accept requests again after setup, so a backend restart recovers', async () => {
+      api.stopRequests();
+      await expect(api.get('test')).rejects.toThrow(RequestCancelledError);
+
+      api.setup(defaultApiUrls.coreApiUrl);
+
+      await expect(api.get('test')).resolves.toEqual({ ok: true });
     });
   });
 });
