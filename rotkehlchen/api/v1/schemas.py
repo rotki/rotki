@@ -1794,6 +1794,16 @@ class ModifiableSettingsSchema(Schema):
         load_default=None,
         validate=validate.Range(min=0, min_inclusive=False),
     )
+    bridge_match_amount_tolerance = fields.Decimal(
+        load_default=None,
+        as_string=True,
+        validate=validate.Range(min=0, max=1, min_inclusive=False, max_inclusive=False),
+    )
+    bridge_match_time_range = fields.Integer(
+        required=False,
+        load_default=None,
+        validate=validate.Range(min=0, min_inclusive=False),
+    )
     suppress_missing_key_msg_services = fields.List(
         SerializableEnumField(enum_class=ExternalService, required=True),
         required=False,
@@ -1877,6 +1887,8 @@ class ModifiableSettingsSchema(Schema):
             csv_export_delimiter=data['csv_export_delimiter'],
             asset_movement_amount_tolerance=FVal(data['asset_movement_amount_tolerance']) if data['asset_movement_amount_tolerance'] is not None else None,  # noqa: E501
             asset_movement_time_range=data['asset_movement_time_range'],
+            bridge_match_amount_tolerance=FVal(data['bridge_match_amount_tolerance']) if data['bridge_match_amount_tolerance'] is not None else None,  # noqa: E501
+            bridge_match_time_range=data['bridge_match_time_range'],
             suppress_missing_key_msg_services=data['suppress_missing_key_msg_services'],
             auto_create_profit_events=data['auto_create_profit_events'],
             use_asset_collections_in_cost_basis=data['use_asset_collections_in_cost_basis'],
@@ -5270,6 +5282,31 @@ class MatchAssetMovementsSchema(Schema):
 
 class FindPossibleMatchesSchema(Schema):
     asset_movement = fields.String(required=True)
+    time_range = fields.Integer(required=True, validate=validate.Range(min=0, min_inclusive=False))
+    only_expected_assets = fields.Boolean(required=False, load_default=True)
+    tolerance = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))
+
+
+class MatchBridgeTransactionsSchema(Schema):
+    bridge_event = fields.Integer(required=True)
+    matched_events = fields.List(fields.Integer(required=True), required=False, load_default=list)
+    external = fields.Boolean(required=False, load_default=False)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['external'] and len(data['matched_events']) != 0:
+            raise ValidationError(
+                message='external cannot be combined with matched_events',
+                field_name='external',
+            )
+
+
+class FindPossibleBridgeMatchesSchema(Schema):
+    bridge_event = fields.String(required=True)
     time_range = fields.Integer(required=True, validate=validate.Range(min=0, min_inclusive=False))
     only_expected_assets = fields.Boolean(required=False, load_default=True)
     tolerance = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))
