@@ -1,5 +1,6 @@
 import json
 import time
+from contextlib import suppress
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
@@ -1745,3 +1746,41 @@ def test_reset_events_for_redecode_preserves_customized_transaction(database: DB
             (remaining_tx_id,),
         ).fetchone()[0]
         assert remaining_tx_hash == bytes(tx_hash_a)
+
+
+def test_history_events_count_memoization(database: DBHandler) -> None:
+    """The unfiltered history_events counts scan the whole table on every history page
+    request, so they are memoized until any DB write happens. Check that the cache is
+    served while the DB is unchanged, that any write invalidates it, and that a count
+    taken inside an open write transaction is never cached (it sees uncommitted rows
+    and nothing would invalidate it after the commit -- or worse, after a rollback).
+    """
+    db = DBHistoryEvents(database)
+    add_history_events_to_db(db, {
+        1: ('TEST1', TimestampMS(1), ONE, None),
+        2: ('TEST2', TimestampMS(2), FVal(2), None),
+        3: ('TEST3', TimestampMS(3), FVal(3), None),
+    })
+    with database.conn.read_ctx() as cursor:
+        assert database.get_entries_count(cursor, entries_table='history_events') == 3
+        # plant a marker to prove the next identical call is served from the cache
+        database._history_events_count_cache[None] = (42, database._history_events_count_cache[None][1])  # noqa: E501
+        assert database.get_entries_count(cursor, entries_table='history_events') == 42
+
+    add_history_events_to_db(db, {4: ('TEST4', TimestampMS(4), FVal(4), None)})
+    with database.conn.read_ctx() as cursor:  # the write invalidated the cached counts
+        assert database.get_entries_count(cursor, entries_table='history_events') == 4
+        assert database.get_entries_count(
+            cursor,
+            entries_table='history_events',
+            group_by='group_identifier',
+        ) == 4
+
+    with suppress(ValueError), database.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (4,))
+        # the count sees the uncommitted delete but must not get cached
+        assert database.get_entries_count(write_cursor, entries_table='history_events') == 3
+        raise ValueError('force a rollback')
+
+    with database.conn.read_ctx() as cursor:  # rolled back: the full count is served again
+        assert database.get_entries_count(cursor, entries_table='history_events') == 4
