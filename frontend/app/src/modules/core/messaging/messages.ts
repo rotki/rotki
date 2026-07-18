@@ -17,6 +17,7 @@ import {
   NoAvailableIndexersData,
   SolanaTokensMigrationData,
   UnmatchedAssetMovementsData,
+  UnmatchedBridgeTransactionsData,
 } from './types/notification-types';
 import { DatabaseUploadProgress, DbUploadResult, PremiumStatusUpdateData } from './types/shared-types';
 import {
@@ -154,6 +155,11 @@ const UnmatchedAssetMovementsMessage = z.object({
   type: z.literal(SocketMessageType.UNMATCHED_ASSET_MOVEMENTS),
 });
 
+const UnmatchedBridgeTransactionsMessage = z.object({
+  data: UnmatchedBridgeTransactionsData,
+  type: z.literal(SocketMessageType.UNMATCHED_BRIDGE_TRANSACTIONS),
+});
+
 export const WebsocketMessage = z.discriminatedUnion('type', [
   LegacyWebsocketMessage,
   BalancesSnapshotErrorMessage,
@@ -180,6 +186,7 @@ export const WebsocketMessage = z.discriminatedUnion('type', [
   NoAvailableIndexersMessage,
   InternalTxFixedMessage,
   UnmatchedAssetMovementsMessage,
+  UnmatchedBridgeTransactionsMessage,
 ]);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;

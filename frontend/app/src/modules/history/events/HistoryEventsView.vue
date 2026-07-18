@@ -18,6 +18,7 @@ import {
   useHistoryEventsSelectionMode,
   useHistoryEventsStatus,
   useUnmatchedAssetMovements,
+  useUnmatchedBridgeTransactions,
 } from '@/modules/history/events/composables';
 import { DIALOG_TYPES, type DialogShowOptions, type HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import HistoryEventsAlerts from '@/modules/history/events/HistoryEventsAlerts.vue';
@@ -222,8 +223,9 @@ const {
 
 const debouncedProcessing = refDebounced(processing, 200);
 const { autoMatchLoading, autoMatchMovement, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
+const { autoMatchLoading: bridgeAutoMatchLoading, refreshUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
 useHistoryEventNavigationConsumer(pagination, pageParams, groupLoading);
-const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading);
+const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading, bridgeAutoMatchLoading);
 
 // Handle updating available event IDs from the table
 function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]>; rawEvents?: HistoryEventRow[] }): void {
@@ -251,6 +253,11 @@ async function handleMovementChanged(): Promise<void> {
   await actions.fetch.dataAndLocations();
 }
 
+async function handleBridgeChanged(): Promise<void> {
+  await refreshUnmatchedBridgeTransactions();
+  await actions.fetch.dataAndLocations();
+}
+
 provideEventPriceUpdate({
   open: (payload) => {
     set(eventPriceUpdatePayload, payload);
@@ -265,6 +272,7 @@ watchImmediate(groups, (newGroups) => {
 const queryToDialogMap: Record<string, DialogShowOptions> = {
   openDecodingStatusDialog: { type: DIALOG_TYPES.DECODING_STATUS },
   openMatchAssetMovementsDialog: { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS },
+  openMatchBridgesDialog: { type: DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS },
 };
 
 watchImmediate(route, async ({ query }) => {
@@ -321,6 +329,7 @@ watchDebounced(route, async () => {
           :processing="processing"
           :main-page="mainPage"
           @open:match-asset-movements="dialogContainer?.show({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS })"
+          @open:match-bridge-transactions="dialogContainer?.show({ type: DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS })"
           @open:internal-tx-conflicts="dialogContainer?.show({ type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS })"
         />
 
@@ -408,6 +417,7 @@ watchDebounced(route, async () => {
           :event-handlers="actions.dialogHandlers"
           :selected-event-ids="selectedEventIds"
           @accounting-rule-refresh="handleAccountingRuleRefresh()"
+          @bridge-matched="handleBridgeChanged()"
           @movement-matched="handleMovementChanged()"
         />
 

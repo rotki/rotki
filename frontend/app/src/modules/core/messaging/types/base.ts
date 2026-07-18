@@ -38,6 +38,7 @@ export const SocketMessageType = {
   SOLANA_TOKENS_MIGRATION: 'solana_tokens_migration',
   TRANSACTION_STATUS: 'transaction_status',
   UNMATCHED_ASSET_MOVEMENTS: 'unmatched_asset_movements',
+  UNMATCHED_BRIDGE_TRANSACTIONS: 'unmatched_bridge_transactions',
 } as const;
 
 export type SocketMessageType = (typeof SocketMessageType)[keyof typeof SocketMessageType];

@@ -4,6 +4,7 @@ import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
+import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
 import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
@@ -16,6 +17,7 @@ const { processing, mainPage } = defineProps<{
 
 const emit = defineEmits<{
   'open:match-asset-movements': [];
+  'open:match-bridge-transactions': [];
   'open:internal-tx-conflicts': [];
 }>();
 
@@ -31,7 +33,14 @@ const {
   unmatchedCount,
 } = useUnmatchedAssetMovements();
 
-const loading = useRefWithDebounce(logicOr(() => processing, autoMatchLoading), 200);
+const {
+  autoMatchLoading: bridgeAutoMatchLoading,
+  loading: unmatchedBridgesLoading,
+  refreshUnmatchedBridgeTransactions,
+  unmatchedCount: unmatchedBridgesCount,
+} = useUnmatchedBridgeTransactions();
+
+const loading = useRefWithDebounce(logicOr(() => processing, autoMatchLoading, bridgeAutoMatchLoading), 200);
 
 const {
   autoFixCount,
@@ -44,12 +53,13 @@ const {
 
 const { fetchCounts, issueCount: internalConflictsCount } = useInternalTxConflicts();
 const showUnmatchedMovements = computed<boolean>(() => !get(autoMatchLoading) && get(unmatchedCount) > 0);
+const showUnmatchedBridges = computed<boolean>(() => !get(bridgeAutoMatchLoading) && get(unmatchedBridgesCount) > 0);
 const showAutoFixDuplicates = computed<boolean>(() => get(autoFixCount) > 0);
 const showManualReviewDuplicates = computed<boolean>(() => get(manualReviewCount) > 0);
 const showInternalConflicts = computed<boolean>(() => get(internalConflictsCount) > 0);
 
-const hasAlerts = logicOr(showUnmatchedMovements, showAutoFixDuplicates, showManualReviewDuplicates, showInternalConflicts);
-const refreshing = logicOr(unmatchedLoading, duplicatesLoading);
+const hasAlerts = logicOr(showUnmatchedMovements, showUnmatchedBridges, showAutoFixDuplicates, showManualReviewDuplicates, showInternalConflicts);
+const refreshing = logicOr(unmatchedLoading, unmatchedBridgesLoading, duplicatesLoading);
 
 const showAlerts = logicAnd(() => mainPage, hasAlerts, show);
 
@@ -60,6 +70,11 @@ function closeAlerts(): void {
 function openMatchAssetMovements(): void {
   closeAlerts();
   emit('open:match-asset-movements');
+}
+
+function openMatchBridgeTransactions(): void {
+  closeAlerts();
+  emit('open:match-bridge-transactions');
 }
 
 function openInternalTxConflicts(): void {
@@ -83,6 +98,7 @@ watchImmediate(loading, async (isLoading) => {
   if (!isLoading && mainPage && !isFirstLoad()) {
     await Promise.all([
       refreshUnmatchedAssetMovements(),
+      refreshUnmatchedBridgeTransactions(),
       fetchCustomizedEventDuplicates(),
       fetchCounts(),
     ]);
@@ -129,6 +145,20 @@ watchImmediate(loading, async (isLoading) => {
               size="sm"
               class="ml-2 underline"
               @click="openMatchAssetMovements()"
+            >
+              {{ t('asset_movement_matching.banner.action') }}
+            </RuiButton>
+          </div>
+        </li>
+        <li v-if="showUnmatchedBridges">
+          <div class="flex items-center">
+            <span>{{ t('bridge_matching.banner.message', { count: unmatchedBridgesCount }) }}</span>
+            <RuiButton
+              variant="text"
+              color="warning"
+              size="sm"
+              class="ml-2 underline"
+              @click="openMatchBridgeTransactions()"
             >
               {{ t('asset_movement_matching.banner.action') }}
             </RuiButton>

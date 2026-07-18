@@ -9,6 +9,7 @@ import { createNoAvailableIndexersHandler } from '../handlers/no-available-index
 import { createPremiumStatusHandler } from '../handlers/premium-status';
 import { createSnapshotErrorHandler } from '../handlers/snapshot-error';
 import { createUnmatchedAssetMovementsHandler } from '../handlers/unmatched-asset-movements';
+import { createUnmatchedBridgeTransactionsHandler } from '../handlers/unmatched-bridge-transactions';
 import { SocketMessageType } from '../types/base';
 
 export function createNotificationRegistry(
@@ -29,5 +30,6 @@ export function createNotificationRegistry(
     [SocketMessageType.PREMIUM_STATUS_UPDATE]: createPremiumStatusHandler(t),
     [SocketMessageType.SOLANA_TOKENS_MIGRATION]: createSolanaTokensHandler(t, router),
     [SocketMessageType.UNMATCHED_ASSET_MOVEMENTS]: createUnmatchedAssetMovementsHandler(t, router),
+    [SocketMessageType.UNMATCHED_BRIDGE_TRANSACTIONS]: createUnmatchedBridgeTransactionsHandler(t, router),
   };
 }

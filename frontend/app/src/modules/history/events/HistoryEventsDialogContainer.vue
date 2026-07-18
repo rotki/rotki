@@ -2,6 +2,7 @@
 import type { HistoryEventAction } from '@/modules/history/events/action-types';
 import type { AddTransactionHashPayload } from '@/modules/history/events/event-payloads';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
+import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import { get } from '@vueuse/core';
 import { useHistoryEventsDialogManager } from '@/modules/history/events/dialog-manager/use-history-events-dialog-manager';
@@ -20,6 +21,7 @@ const { eventHandlers, selectedEventIds } = defineProps<{
 
 const emit = defineEmits<{
   'accounting-rule-refresh': [];
+  'bridge-matched': [];
   'movement-matched': [];
 }>();
 
@@ -86,6 +88,18 @@ const MatchAssetMovementsDialog = defineAsyncComponent({
 const PotentialMatchesDialog = defineAsyncComponent({
   delay: 200,
   loader: () => import('@/modules/history/events/PotentialMatchesDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
+const MatchBridgeTransactionsDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/modules/history/events/MatchBridgeTransactionsDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
+const BridgePotentialMatchesDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/modules/history/events/BridgePotentialMatchesDialog.vue'),
   loadingComponent: DialogLoadingComponent,
 });
 
@@ -156,8 +170,27 @@ function onPotentialMatchPinned(): void {
   set(potentialMatchMovement, undefined);
   closeDialog();
 }
+
+const bridgePotentialMatchTransaction = ref<UnmatchedBridgeTransaction>();
+const showBridgePotentialMatchesDialog = ref<boolean>(false);
+
+function showBridgePotentialMatches(transaction: UnmatchedBridgeTransaction): void {
+  set(bridgePotentialMatchTransaction, transaction);
+  set(showBridgePotentialMatchesDialog, true);
+}
+
+function onBridgePotentialMatchMatched(): void {
+  set(bridgePotentialMatchTransaction, undefined);
+  emit('bridge-matched');
+}
+
+function onBridgePotentialMatchPinned(): void {
+  set(bridgePotentialMatchTransaction, undefined);
+  closeDialog();
+}
 defineExpose({
   show: managerShow,
+  showBridgePotentialMatches,
   showPotentialMatches,
 });
 </script>
@@ -240,6 +273,20 @@ defineExpose({
       :movement="potentialMatchMovement"
       @matched="onPotentialMatchMatched()"
       @pinned="onPotentialMatchPinned()"
+    />
+
+    <MatchBridgeTransactionsDialog
+      v-if="currentDialog.type === DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS"
+      v-model="dialogIsOpen"
+      @find-match="showBridgePotentialMatches($event)"
+    />
+
+    <BridgePotentialMatchesDialog
+      v-if="bridgePotentialMatchTransaction && showBridgePotentialMatchesDialog"
+      v-model="showBridgePotentialMatchesDialog"
+      :transaction="bridgePotentialMatchTransaction"
+      @matched="onBridgePotentialMatchMatched()"
+      @pinned="onBridgePotentialMatchPinned()"
     />
   </div>
 </template>

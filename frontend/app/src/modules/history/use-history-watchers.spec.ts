@@ -55,6 +55,14 @@ vi.mock('@/modules/history/events/use-unmatched-asset-movements', () => ({
   })),
 }));
 
+const mockTriggerBridgeAutoMatching = vi.fn().mockResolvedValue(undefined);
+
+vi.mock('@/modules/history/events/use-unmatched-bridge-transactions', () => ({
+  useUnmatchedBridgeTransactions: vi.fn((): { triggerBridgeAutoMatching: () => Promise<void> } => ({
+    triggerBridgeAutoMatching: mockTriggerBridgeAutoMatching,
+  })),
+}));
+
 const mockTriggerHistoricalBalancesProcessing = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@/modules/history/balances/use-historical-balances', () => ({

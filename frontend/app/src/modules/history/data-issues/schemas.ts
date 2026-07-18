@@ -90,3 +90,13 @@ export const CurrentBalanceMismatchPayload = z.object({
 });
 
 export type CurrentBalanceMismatchPayload = z.infer<typeof CurrentBalanceMismatchPayload>;
+
+export const UnmatchedBridgePayload = z.object({
+  bridge: z.record(z.string(), z.unknown()).optional(),
+  counterparty: z.string().optional(),
+  direction: z.enum(['deposit', 'withdrawal']),
+  eventIdentifier: z.number(),
+  groupIdentifier: z.string(),
+});
+
+export type UnmatchedBridgePayload = z.infer<typeof UnmatchedBridgePayload>;

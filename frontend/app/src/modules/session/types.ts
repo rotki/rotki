@@ -31,6 +31,7 @@ export const PinnedNames = {
   DATA_ISSUES: 'data-issues-pinned',
   INTERNAL_TX_CONFLICTS: 'internal-tx-conflicts-pinned',
   MATCH_ASSET_MOVEMENTS: 'match-asset-movements-pinned',
+  MATCH_BRIDGE_TRANSACTIONS: 'match-bridge-transactions-pinned',
   REPORT_ACTIONABLE_CARD: 'report-actionable-card',
 } as const;
 
@@ -49,6 +50,11 @@ export interface PinnedPanelProps {
     highlightedTxHash?: string;
   };
   [PinnedNames.MATCH_ASSET_MOVEMENTS]: {
+    highlightedGroupIdentifier?: string;
+    highlightedPotentialMatchIdentifier?: number;
+    potentialMatchGroupIdentifier?: string;
+  };
+  [PinnedNames.MATCH_BRIDGE_TRANSACTIONS]: {
     highlightedGroupIdentifier?: string;
     highlightedPotentialMatchIdentifier?: number;
     potentialMatchGroupIdentifier?: string;

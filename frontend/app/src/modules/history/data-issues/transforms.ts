@@ -12,6 +12,7 @@ import {
   CurrentBalanceMismatchPayload,
   type DataIssue,
   NegativeBalancePayload,
+  UnmatchedBridgePayload,
 } from '@/modules/history/data-issues/schemas';
 
 /**
@@ -32,45 +33,68 @@ export function humanizeStrategy(strategy: string): string {
  * amounts with the user's decimals setting, rather than baking raw values into a
  * string. Also exposes an optional `eventIdentifier` to deep-link the offending event.
  */
-export function describeIssue(issue: DataIssue): IssueDescription {
-  if (issue.kind === IssueKind.NEGATIVE_BALANCE) {
-    const parsed = NegativeBalancePayload.safeParse(issue.payload);
-    if (parsed.success) {
-      const payload = parsed.data;
-      return {
-        amounts: {
-          // Signed value: the i18n string no longer prepends a literal "-", so
-          // ValueDisplay renders the sign (avoids awkward output like "-< 0.001").
-          amount: payload.inMemoryNegativeAmount,
-          before: payload.derivedBalanceBeforeEvent,
-        },
-        asset: issue.asset ?? undefined,
-        eventIdentifier: payload.eventIdentifier,
-        messageKey: msg.$t('data_issues.description.negative_balance'),
-      };
-    }
-  }
-  else if (issue.kind === IssueKind.CURRENT_BALANCE_MISMATCH) {
-    const parsed = CurrentBalanceMismatchPayload.safeParse(issue.payload);
-    if (parsed.success) {
-      const payload = parsed.data;
-      return {
-        amounts: {
-          delta: payload.delta,
-          derived: payload.derivedBalance,
-          observed: payload.observedBalance,
-        },
-        asset: issue.asset ?? undefined,
-        eventIdentifier: pipe(
-          fromNullable(payload.latestEventIdentifier),
-          (option): number | undefined => getOr(option, undefined),
-        ),
-        messageKey: msg.$t('data_issues.description.current_balance_mismatch'),
-      };
-    }
-  }
+function describeNegativeBalance(issue: DataIssue): IssueDescription | undefined {
+  const parsed = NegativeBalancePayload.safeParse(issue.payload);
+  if (!parsed.success)
+    return undefined;
+  const payload = parsed.data;
+  return {
+    amounts: {
+      // Signed value: the i18n string no longer prepends a literal "-", so
+      // ValueDisplay renders the sign (avoids awkward output like "-< 0.001").
+      amount: payload.inMemoryNegativeAmount,
+      before: payload.derivedBalanceBeforeEvent,
+    },
+    asset: issue.asset ?? undefined,
+    eventIdentifier: payload.eventIdentifier,
+    messageKey: msg.$t('data_issues.description.negative_balance'),
+  };
+}
 
-  return { amounts: {}, messageKey: msg.$t('data_issues.description.unknown') };
+function describeBalanceMismatch(issue: DataIssue): IssueDescription | undefined {
+  const parsed = CurrentBalanceMismatchPayload.safeParse(issue.payload);
+  if (!parsed.success)
+    return undefined;
+  const payload = parsed.data;
+  return {
+    amounts: {
+      delta: payload.delta,
+      derived: payload.derivedBalance,
+      observed: payload.observedBalance,
+    },
+    asset: issue.asset ?? undefined,
+    eventIdentifier: pipe(
+      fromNullable(payload.latestEventIdentifier),
+      (option): number | undefined => getOr(option, undefined),
+    ),
+    messageKey: msg.$t('data_issues.description.current_balance_mismatch'),
+  };
+}
+
+function describeUnmatchedBridge(issue: DataIssue): IssueDescription | undefined {
+  const parsed = UnmatchedBridgePayload.safeParse(issue.payload);
+  if (!parsed.success)
+    return undefined;
+  const payload = parsed.data;
+  return {
+    amounts: {},
+    asset: issue.asset ?? undefined,
+    eventIdentifier: payload.eventIdentifier,
+    messageKey: payload.direction === 'deposit'
+      ? msg.$t('data_issues.description.unmatched_bridge_deposit')
+      : msg.$t('data_issues.description.unmatched_bridge_withdrawal'),
+  };
+}
+
+const KIND_DESCRIBERS: Partial<Record<IssueKind, (issue: DataIssue) => IssueDescription | undefined>> = {
+  [IssueKind.CURRENT_BALANCE_MISMATCH]: describeBalanceMismatch,
+  [IssueKind.NEGATIVE_BALANCE]: describeNegativeBalance,
+  [IssueKind.UNMATCHED_BRIDGE]: describeUnmatchedBridge,
+};
+
+export function describeIssue(issue: DataIssue): IssueDescription {
+  const described = KIND_DESCRIBERS[issue.kind]?.(issue);
+  return described ?? { amounts: {}, messageKey: msg.$t('data_issues.description.unknown') };
 }
 
 /**
@@ -94,6 +118,12 @@ export function relatedEventRoute(
 
   const name = '/history/events/';
   const query: Record<string, string> = {};
+
+  // An unmatched bridge leg is fixed in the bridge match dialog, so deep-link
+  // straight into it (the events view opens it from this query param).
+  if (kind === IssueKind.UNMATCHED_BRIDGE) {
+    return { name, query: { openMatchBridgesDialog: 'true' } };
+  }
 
   if (kind === IssueKind.NEGATIVE_BALANCE) {
     query.highlightedNegativeBalanceEvent = eventIdentifier.toString();

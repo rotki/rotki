@@ -2,7 +2,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { TaskMeta } from '@/modules/core/tasks/types';
 import type { LinkedMovementMatch } from '@/modules/history/events/event-payloads';
-import type { HistoryEventCollectionRow, HistoryEventEntry } from '@/modules/history/events/schemas';
+import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import { NotificationGroup } from '@rotki/common';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { arrayify } from '@/modules/core/common/data/array';
@@ -16,21 +16,11 @@ import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-ev
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 
-interface RawUnmatchedAssetMovement {
-  groupIdentifier: string;
-  events: HistoryEventCollectionRow;
-  asset: string;
-}
-
-export interface UnmatchedAssetMovement extends RawUnmatchedAssetMovement {
+export interface UnmatchedAssetMovement extends UnmatchedEventGroup {
   isFiat: boolean;
 }
 
-export interface PotentialMatchRow {
-  identifier: number;
-  entry: HistoryEventEntry;
-  isCloseMatch: boolean;
-}
+export type { PotentialMatchRow } from '@/modules/history/events/matching/types';
 
 interface UseUnmatchedAssetMovementsReturn {
   unmatchedMovements: ComputedRef<UnmatchedAssetMovement[]>;
@@ -49,8 +39,8 @@ interface UseUnmatchedAssetMovementsReturn {
   triggerAssetMovementAutoMatching: () => Promise<void>;
 }
 
-const rawUnmatchedMovements = ref<RawUnmatchedAssetMovement[]>([]);
-const rawIgnoredMovements = ref<RawUnmatchedAssetMovement[]>([]);
+const rawUnmatchedMovements = ref<UnmatchedEventGroup[]>([]);
+const rawIgnoredMovements = ref<UnmatchedEventGroup[]>([]);
 const loading = ref<boolean>(false);
 const ignoredLoading = ref<boolean>(false);
 const triggerAutoMatchLoading = ref<boolean>(false);
@@ -75,7 +65,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   const isTaskRunning = useIsTaskRunning(TaskType.MATCH_ASSET_MOVEMENTS);
   const autoMatchLoading = logicOr(triggerAutoMatchLoading, isTaskRunning);
 
-  function addIsFiat(movements: RawUnmatchedAssetMovement[]): UnmatchedAssetMovement[] {
+  function addIsFiat(movements: UnmatchedEventGroup[]): UnmatchedAssetMovement[] {
     return movements.map(movement => ({
       ...movement,
       isFiat: getAssetInfo(movement.asset)?.assetType === 'fiat',
@@ -117,7 +107,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
         ascending: [false],
       });
 
-      const movements: RawUnmatchedAssetMovement[] = [];
+      const movements: UnmatchedEventGroup[] = [];
 
       for (const groupId of groupIdentifiers) {
         const eventsForGroup = response.entries.filter((row) => {

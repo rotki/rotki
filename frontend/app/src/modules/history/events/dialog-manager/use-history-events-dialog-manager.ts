@@ -84,6 +84,9 @@ export function useHistoryEventsDialogManager(): UseHistoryEventsDialogManager {
       case DIALOG_TYPES.MATCH_ASSET_MOVEMENTS:
         openDialog({ data: undefined, type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
         break;
+      case DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS:
+        openDialog({ data: undefined, type: DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS });
+        break;
       default:
         break;
     }

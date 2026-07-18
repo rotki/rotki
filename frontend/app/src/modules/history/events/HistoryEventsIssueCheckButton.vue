@@ -2,6 +2,7 @@
 import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/dialog-types';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
+import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
 
 const showAlerts = defineModel<boolean>('showAlerts', { default: false });
@@ -13,16 +14,19 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { autoMatchLoading, unmatchedCount } = useUnmatchedAssetMovements();
+const { autoMatchLoading: bridgeAutoMatchLoading, unmatchedCount: unmatchedBridgesCount } = useUnmatchedBridgeTransactions();
 const { actionableCount: duplicatesCount } = useCustomizedEventDuplicates();
 const { issueCount: internalConflictsCount } = useInternalTxConflicts();
 
-const totalIssuesCount = computed<number>(() => get(unmatchedCount) + get(duplicatesCount) + get(internalConflictsCount));
-const hasIssues = computed<boolean>(() => !get(autoMatchLoading) && get(totalIssuesCount) > 0);
+const totalIssuesCount = computed<number>(() => get(unmatchedCount) + get(unmatchedBridgesCount) + get(duplicatesCount) + get(internalConflictsCount));
+const hasIssues = computed<boolean>(() => !get(autoMatchLoading) && !get(bridgeAutoMatchLoading) && get(totalIssuesCount) > 0);
 
 const singleIssueDialog = computed<DialogShowOptions | undefined>(() => {
   const issueTypes: DialogShowOptions[] = [];
   if (get(unmatchedCount) > 0)
     issueTypes.push({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
+  if (get(unmatchedBridgesCount) > 0)
+    issueTypes.push({ type: DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS });
   if (get(duplicatesCount) > 0)
     issueTypes.push({ type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
   if (get(internalConflictsCount) > 0)
