@@ -6,6 +6,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
+from rotkehlchen.chain.evm.decoding.utils import set_bridge_extra_data
 from rotkehlchen.chain.evm.decoding.xdai_bridge.decoder import XdaiBridgeCommonDecoder
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI
@@ -70,6 +71,14 @@ class XdaiBridgeDecoder(XdaiBridgeCommonDecoder):
             context.event.notes = f'Bridge {context.event.amount} DAI from Ethereum to Gnosis via Gnosis Chain bridge'  # noqa: E501
             context.event.counterparty = CPT_GNOSIS_CHAIN
             context.event.address = BRIDGE_ADDRESS
+            set_bridge_extra_data(
+                event=context.event,
+                from_chain=ChainID.ETHEREUM,
+                to_chain=ChainID.GNOSIS,
+                from_address=context.transaction.from_address,
+                # the gnosis side AffirmationCompleted event references this tx hash
+                transfer_id=context.transaction.tx_hash.hex(),
+            )
             return TransferEnrichmentOutput(matched_counterparty=CPT_GNOSIS_CHAIN)
         return FAILED_ENRICHMENT_OUTPUT
 

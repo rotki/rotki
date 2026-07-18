@@ -64,6 +64,13 @@ def test_across_bridge_receive_on_base(
             notes=f'Bridge {bridge_amount} ETH from Arbitrum One to Base via Across',
             counterparty=CPT_ACROSS,
             address=string_to_evm_address('0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64'),
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 8453,
+                'from_address': '0x41ee28EE05341E7fdDdc8d433BA66054Cd302cA1',
+                'to_address': '0xc37b40ABdB939635068d3c5f13E7faF686F03B65',
+                'transfer_id': '1142258',
+            }},
         ),
     ]
 
@@ -86,6 +93,13 @@ def test_across_relayed_bridge_receive_on_ethereum(ethereum_inquirer, ethereum_a
         notes=f'Bridge {bridge_amount} ETH from Arbitrum One to Ethereum via Across',
         counterparty=CPT_ACROSS,
         address=string_to_evm_address('0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5'),
+        extra_data={'bridge': {
+            'from_chain': 42161,
+            'to_chain': 1,
+            'from_address': '0xF5d90Ac6747CB3352F05BF61f48b991ACeaE28eB',
+            'to_address': '0xF5d90Ac6747CB3352F05BF61f48b991ACeaE28eB',
+            'transfer_id': '4207290',
+        }},
     )]
 
 
@@ -107,6 +121,13 @@ def test_across_relayed_bridge_receive_usdc_on_ethereum(ethereum_inquirer, ether
         notes=f'Bridge {bridge_amount} USDC from Binance Smart Chain to Ethereum via Across',
         counterparty=CPT_ACROSS,
         address=string_to_evm_address('0x07aE8551Be970cB1cCa11Dd7a11F47Ae82e70E67'),
+        extra_data={'bridge': {
+            'from_chain': 56,
+            'to_chain': 1,
+            'from_address': '0xf70da97812CB96acDF810712Aa562db8dfA3dbEF',
+            'to_address': '0xf70da97812CB96acDF810712Aa562db8dfA3dbEF',
+            'transfer_id': '778375',
+        }},
     )]
 
 
@@ -142,6 +163,13 @@ def test_across_bridge_deposit_on_ethereum(ethereum_inquirer, ethereum_accounts)
             notes=f'Bridge {bridge_amount} USDT from Ethereum to Arbitrum One via Across',
             counterparty=CPT_ACROSS,
             address=string_to_evm_address('0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 42161,
+                'from_address': '0x6b21bb0D79C543B13DEE153700788D2c008633E5',
+                'to_address': '0x6b21bb0D79C543B13DEE153700788D2c008633E5',
+                'transfer_id': '4024312',
+            }},
         ),
     ]
 

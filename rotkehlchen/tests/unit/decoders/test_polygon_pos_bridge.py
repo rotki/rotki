@@ -64,6 +64,12 @@ def test_polygon_pos_bridge_l2_deposit(
             notes=f'Bridge {deposit_amount} RNDR from Polygon POS to Ethereum via Polygon bridge',
             counterparty=CPT_POLYGON,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 137,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+            }},
         ),
     ]
 
@@ -103,6 +109,12 @@ def test_polygon_pos_bridge_l2_plasma_deposit(
             notes=f'Bridge {deposit_amount} POL from Polygon POS to Ethereum via Polygon bridge',
             counterparty=CPT_POLYGON,
             address=string_to_evm_address('0x0000000000000000000000000000000000001010'),
+            extra_data={'bridge': {
+                'from_chain': 137,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+            }},
         ),
     ]
 
@@ -130,6 +142,13 @@ def test_polygon_pos_bridge_l2_withdraw(
             notes=f'Bridge {bridge_amount} USDC from Ethereum to Polygon POS via Polygon bridge',
             counterparty=CPT_POLYGON,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 137,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '2972707',
+            }},
         ),
     ]
 
@@ -157,6 +176,13 @@ def test_polygon_pos_bridge_l2_plasma_withdraw(
             notes=f'Bridge {bridge_amount} POL from Ethereum to Polygon POS via Polygon bridge',
             counterparty=CPT_POLYGON,
             address=PLASMA_BRIDGE_CHILD_CHAIN,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 137,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '2972282',
+            }},
         ),
     ]
 
@@ -196,6 +222,13 @@ def test_polygon_pos_bridge_deposit_token(
             tx_ref=tx_hash,
             counterparty=CPT_POLYGON,
             address=ERC20_BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 137,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '2973891',
+            }},
         ),
     ]
 
@@ -235,6 +268,13 @@ def test_polygon_pos_bridge_deposit_eth(
             tx_ref=tx_hash,
             counterparty=CPT_POLYGON,
             address=BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 137,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '2973894',
+            }},
         ),
     ]
 
@@ -286,6 +326,13 @@ def test_polygon_pos_bridge_deposit_plasma(
             tx_ref=tx_hash,
             counterparty=CPT_POLYGON,
             address=PLASMA_BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 137,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '2973886',
+            }},
         ),
     ]
 
@@ -325,6 +372,12 @@ def test_polygon_pos_bridge_withdraw_token(
             tx_ref=tx_hash,
             counterparty=CPT_POLYGON,
             address=ERC20_BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 137,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+            }},
         ),
     ]
 
@@ -364,6 +417,12 @@ def test_polygon_pos_bridge_withdraw_eth(
             tx_ref=tx_hash,
             counterparty=CPT_POLYGON,
             address=ETH_BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 137,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+            }},
         ),
     ]
 
@@ -455,5 +514,11 @@ def test_polygon_pos_bridge_plasma_process_exit(
             tx_ref=tx_hash,
             counterparty=CPT_POLYGON,
             address=PLASMA_BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 137,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+            }},
         ),
     ]

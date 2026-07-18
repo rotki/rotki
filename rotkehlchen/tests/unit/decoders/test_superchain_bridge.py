@@ -75,6 +75,13 @@ def test_deposit_erc20(ethereum_inquirer, ethereum_accounts):
             notes='Bridge 10 USDC from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 10,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xe30ab42bcf5783747df4954cab703a763e5135edada1493d83b3cb4cdf6fbdca',  # noqa: E501
+            }},
         ),
     ]
 
@@ -114,6 +121,13 @@ def test_deposit_eth(ethereum_inquirer, ethereum_accounts):
             notes='Bridge 0.1 ETH from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 10,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xcd2a443b3272e5dd77632c62f7a2e098ebfbdd64af5d6baa6b64e48319aa0e13',  # noqa: E501
+            }},
         ),
     ]
 
@@ -140,6 +154,13 @@ def test_receive_erc20_on_optimism_legacy(optimism_inquirer, optimism_accounts):
             notes='Bridge 10 USDC.e from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 10,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xe30ab42bcf5783747df4954cab703a763e5135edada1493d83b3cb4cdf6fbdca',  # noqa: E501
+            }},
         ),
     ]
 
@@ -166,6 +187,13 @@ def test_receive_erc20_on_optimism(optimism_inquirer, optimism_accounts):
             notes='Bridge 10000 USDC.e from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 10,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x360204f68fa18dee88d25e7d762708131b7e73d1586613569d7f3fbcae30dae1',  # noqa: E501
+            }},
         ),
     ]
 
@@ -189,6 +217,13 @@ def test_receive_eth_on_optimism(optimism_inquirer, optimism_accounts):
             notes=f'Bridge {amount_str} ETH from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 10,
+                'from_address': optimism_accounts[0],
+                'to_address': optimism_accounts[0],
+                'transfer_id': '0x0b75faa2749701422dc6a8b57b96b3a9e1a5360b0dca16dd5391567a56ecbe0a',  # noqa: E501
+            }},
         ),
     ]
 
@@ -213,6 +248,13 @@ def test_receive_eth_on_optimism_only_once(optimism_inquirer, optimism_accounts)
             notes=f'Bridge {amount_str} ETH from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0x4200000000000000000000000000000000000010'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 10,
+                'from_address': optimism_accounts[0],
+                'to_address': optimism_accounts[0],
+                'transfer_id': '0x30e0e9f59695f700008c1a8bb0ea764c3291af5d9549a8874f84a415a41bce81',  # noqa: E501
+            }},
         ),
     ]
 
@@ -253,6 +295,13 @@ def test_withdraw_erc20(optimism_inquirer, optimism_accounts):
             notes='Bridge 2718.857536 USDC.e from Optimism to Ethereum via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 10,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x398903fc0a6cae57b7f533c48d945a978126ab80e52af46d83ddcde465e02e88',  # noqa: E501
+            }},
         ),
     ]
 
@@ -293,6 +342,13 @@ def test_withdraw_eth(optimism_inquirer, optimism_accounts):
             notes='Bridge 0.435796826762301485 ETH from Optimism to Ethereum via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 10,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xb0466986c6f9201ad9cab5739596c5700bbbb4881e324324622dad29cd6ce7b1',  # noqa: E501
+            }},
         ),
     ]
 
@@ -332,6 +388,13 @@ def test_claim_erc20_on_ethereum(ethereum_inquirer, ethereum_accounts):
             notes='Bridge 2718.857536 USDC from Optimism to Ethereum via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
+            extra_data={'bridge': {
+                'from_chain': 10,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x398903fc0a6cae57b7f533c48d945a978126ab80e52af46d83ddcde465e02e88',  # noqa: E501
+            }},
         ),
     ]
 
@@ -371,6 +434,13 @@ def test_claim_eth_on_ethereum(ethereum_inquirer, ethereum_accounts):
             notes='Bridge 0.435796826762301485 ETH from Optimism to Ethereum via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
+            extra_data={'bridge': {
+                'from_chain': 10,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xb0466986c6f9201ad9cab5739596c5700bbbb4881e324324622dad29cd6ce7b1',  # noqa: E501
+            }},
         ),
     ]
 
@@ -447,6 +517,13 @@ def test_deposit_dai_on_optimism(optimism_inquirer, optimism_accounts):
             notes=f'Bridge {deposit_amount} DAI from Optimism to Ethereum via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 10,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xb64e70bbe1d838d56990d41cad5efa31f24d056f2804c49595743a3f871d3466',  # noqa: E501
+            }},
         ),
     ]
 
@@ -472,6 +549,13 @@ def test_withdraw_dai_on_optimism(optimism_inquirer, optimism_accounts):
             notes=f'Bridge {deposit_amount} DAI from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 10,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xa34f8c6901a9fb6795e81dd98f5f0b57ce55b2e42b162575c8fb04330e0894d9',  # noqa: E501
+            }},
         ),
     ]
 
@@ -506,6 +590,13 @@ def test_deposit_eth_ethereum_to_base_bridge(ethereum_inquirer, ethereum_account
             notes=f'Bridge {deposit_amount} ETH from Ethereum to Base via Base bridge',
             counterparty=CPT_BASE,
             address=string_to_evm_address('0x3154Cf16ccdb4C6d922629664174b904d80F2C35'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 8453,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xe49e44f5230db857aa36e2574f7487feb5491d845d2c549ccc117526f107a4e3',  # noqa: E501
+            }},
         ),
     ]
     assert events == expected_events
@@ -541,6 +632,13 @@ def test_deposit_erc20_ethereum_to_base_bridge(ethereum_inquirer, ethereum_accou
             notes=f'Bridge {deposit_amount} VIRTUAL from Ethereum to Base via Base bridge',
             counterparty=CPT_BASE,
             address=string_to_evm_address('0x3154Cf16ccdb4C6d922629664174b904d80F2C35'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 8453,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xfe9cfdbd8fd2bc9c0e38775964968b253967f18bf5b8894257360bf01707814e',  # noqa: E501
+            }},
         ),
     ]
     assert events == expected_events
@@ -565,6 +663,13 @@ def test_receive_eth_ethereum_to_base_bridge(base_inquirer, base_accounts):
             notes=f'Bridge {amount} ETH from Ethereum to Base via Base bridge',
             counterparty=CPT_BASE,
             address=string_to_evm_address('0x4200000000000000000000000000000000000010'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 8453,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xe6d6203913aaf4f803fbea23d4488a9a0fe4eb0864aea81d5bbb511d99c8944e',  # noqa: E501
+            }},
         ),
     ]
     assert events == expected_events
@@ -589,6 +694,13 @@ def test_receive_erc20_ethereum_to_base_bridge(base_inquirer, base_accounts):
             notes=f'Bridge {amount} NOVA from Ethereum to Base via Base bridge',
             counterparty=CPT_BASE,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 8453,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x9c9c6054cc8243041144c3582188cdcc37b83cc9a552e7965dee4de56fe4e15e',  # noqa: E501
+            }},
         ),
     ]
     assert events == expected_events
@@ -625,6 +737,13 @@ def test_withdraw_eth_base_to_ethereum_bridge(base_inquirer, base_accounts):
             notes=f'Bridge {deposit_amount} ETH from Base to Ethereum via Base bridge',
             counterparty=CPT_BASE,
             address=string_to_evm_address('0x4200000000000000000000000000000000000010'),
+            extra_data={'bridge': {
+                'from_chain': 8453,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xe41a9c00774db22293ec8df3157181f85426f87f8a9e9ca797b53f94fd9f0709',  # noqa: E501
+            }},
         ),
     ]
     assert events == expected_events
@@ -661,6 +780,13 @@ def test_withdraw_erc20_base_to_ethereum_bridge(base_inquirer, base_accounts):
             notes=f'Bridge {deposit_amount} USDbC from Base to Ethereum via Base bridge',
             counterparty=CPT_BASE,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 8453,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x43bf3960f283c4716e97c7239939756903ec685dee2276f8b56b8517f7f56d5c',  # noqa: E501
+            }},
         ),
     ]
     assert events == expected_events
@@ -688,6 +814,13 @@ def test_new_eth_bridge(
             notes='Bridge 0.1 ETH from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0x4200000000000000000000000000000000000010'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 10,
+                'from_address': optimism_accounts[0],
+                'to_address': optimism_accounts[0],
+                'transfer_id': '0x92f4a3e884aeb46867fdeb153d99f228d43e1fb7dc14e95cdf52934fb5b2fff5',  # noqa: E501
+            }},
         ),
     ]
     assert events == expected_events

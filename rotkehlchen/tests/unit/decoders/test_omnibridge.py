@@ -50,6 +50,12 @@ def test_omnibridge_ethereum_token_deposit(ethereum_inquirer, ethereum_accounts)
             tx_ref=tx_hash,
             counterparty=CPT_GNOSIS_CHAIN,
             address=ETHEREUM_BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 100,
+                'from_address': user_address,
+                'transfer_id': '0x000500004ac82b41bd819dd871590b510316f2385cb196fb0000000000024d7d',  # noqa: E501
+            }},
         ),
     ]
 
@@ -86,6 +92,12 @@ def test_omnibridge_ethereum_eth_deposit(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             counterparty=CPT_GNOSIS_CHAIN,
             address=string_to_evm_address('0xa6439Ca0FCbA1d0F80df0bE6A17220feD9c9038a'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 100,
+                'from_address': user_address,
+                'transfer_id': '0x000500004ac82b41bd819dd871590b510316f2385cb196fb0000000000025af9',  # noqa: E501
+            }},
         ),
     ]
 
@@ -122,6 +134,12 @@ def test_omnibridge_gnosis_token_deposit(gnosis_inquirer, gnosis_accounts):
             tx_ref=tx_hash,
             counterparty=CPT_GNOSIS_CHAIN,
             address=GNOSIS_BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 100,
+                'to_chain': 1,
+                'from_address': user_address,
+                'transfer_id': '0x00050000a7823d6f1e31569f51861e345b30c6bebf70ebe70000000000016059',  # noqa: E501
+            }},
         ),
     ]
 
@@ -158,6 +176,12 @@ def test_omnibridge_ethereum_token_withdrawal(ethereum_inquirer, ethereum_accoun
             tx_ref=tx_hash,
             counterparty=CPT_GNOSIS_CHAIN,
             address=ETHEREUM_BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 100,
+                'to_chain': 1,
+                'to_address': user_address,
+                'transfer_id': '0x00050000a7823d6f1e31569f51861e345b30c6bebf70ebe70000000000016050',  # noqa: E501
+            }},
         ),
     ]
 
@@ -194,6 +218,12 @@ def test_omnibridge_ethereum_eth_withdrawal(ethereum_inquirer, ethereum_accounts
             tx_ref=tx_hash,
             counterparty=CPT_GNOSIS_CHAIN,
             address=string_to_evm_address('0xa6439Ca0FCbA1d0F80df0bE6A17220feD9c9038a'),
+            extra_data={'bridge': {
+                'from_chain': 100,
+                'to_chain': 1,
+                'to_address': user_address,
+                'transfer_id': '0x00050000a7823d6f1e31569f51861e345b30c6bebf70ebe70000000000016069',  # noqa: E501
+            }},
         ),
     ]
 
@@ -218,5 +248,11 @@ def test_omnibridge_gnosis_token_withdrawal(gnosis_inquirer, gnosis_accounts):
             tx_ref=tx_hash,
             counterparty=CPT_GNOSIS_CHAIN,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 100,
+                'to_address': user_address,
+                'transfer_id': '0x000500004ac82b41bd819dd871590b510316f2385cb196fb000000000000003e',  # noqa: E501
+            }},
         ),
     ]

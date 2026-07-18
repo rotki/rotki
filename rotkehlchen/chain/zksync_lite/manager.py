@@ -29,7 +29,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_event import (
+    BRIDGE_EXTRA_DATA_KEY,
+    BridgeExtraData,
+    EvmEvent,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -40,6 +44,7 @@ from rotkehlchen.types import (
     EvmlikeChain,
     EVMTxHash,
     Location,
+    SupportedBlockchain,
     Timestamp,
     deserialize_evm_tx_hash,
 )
@@ -67,6 +72,26 @@ ZKSYNC_LITE_SUNSET_CLAIM_ABI: Final[ABI] = [{'inputs': [{'name': 'index', 'type'
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def _make_bridge_extra_data(
+        from_chain: int | str,
+        to_chain: int | str,
+        from_address: ChecksumEvmAddress | None,
+        to_address: ChecksumEvmAddress | None,
+) -> dict[str, BridgeExtraData]:
+    """Create the extra data of a bridge event between ethereum and zksync lite.
+
+    Local equivalent of chain/evm/decoding/utils.py::make_bridge_extra_data which
+    also accepts the serialized SupportedBlockchain string of the non-EVM zksync
+    lite chain as a chain value. None addresses are omitted.
+    """
+    bridge_data = BridgeExtraData(from_chain=from_chain, to_chain=to_chain)
+    if from_address is not None:
+        bridge_data['from_address'] = from_address
+    if to_address is not None:
+        bridge_data['to_address'] = to_address
+    return {BRIDGE_EXTRA_DATA_KEY: bridge_data}
 
 
 class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainWithEoA):
@@ -829,6 +854,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
         tracked_to = transaction.to_address in tracked_addresses
         group_identifier = ZKL_IDENTIFIER.format(tx_hash=str(transaction.tx_hash))
         events = []
+        bridge_extra_data: dict[str, BridgeExtraData] | None = None
         event_data: list[tuple[int, HistoryEventType, HistoryEventSubType, Asset, FVal, ChecksumEvmAddress, ChecksumEvmAddress | None, str]] = []  # noqa: E501
         match transaction.tx_type:
             case ZKSyncLiteTXType.DEPOSIT:
@@ -839,6 +865,12 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                     if transaction.from_address != transaction.to_address:
                         suffix = f' address {transaction.to_address}'
                     notes = f'Bridge {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} from Ethereum to ZKSync Lite{suffix}'  # noqa: E501
+                    bridge_extra_data = _make_bridge_extra_data(
+                        from_chain=ChainID.ETHEREUM.serialize(),
+                        to_chain=SupportedBlockchain.ZKSYNC_LITE.serialize(),
+                        from_address=transaction.from_address,
+                        to_address=transaction.to_address,
+                    )
                     event_data.append((
                         0,
                         HistoryEventType.WITHDRAWAL,
@@ -857,6 +889,12 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                     if transaction.from_address != transaction.to_address:
                         suffix = f' address {transaction.to_address}'
                     notes = f'Bridge {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} from ZKSync Lite to Ethereum{suffix}'  # noqa: E501
+                    bridge_extra_data = _make_bridge_extra_data(
+                        from_chain=SupportedBlockchain.ZKSYNC_LITE.serialize(),
+                        to_chain=ChainID.ETHEREUM.serialize(),
+                        from_address=transaction.from_address,
+                        to_address=transaction.to_address,
+                    )
                     event_data.append((
                         0,
                         HistoryEventType.DEPOSIT,
@@ -978,6 +1016,9 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                 address=target,
                 notes=notes,
             ))
+
+        if bridge_extra_data is not None and len(events) != 0:
+            events[0].extra_data = bridge_extra_data  # the bridge event is always first
 
         if transaction.fee is not None and len(events) != 0 and events[0].event_type != HistoryEventType.RECEIVE:  # sender pays  # noqa: E501
             if events[0].event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER):

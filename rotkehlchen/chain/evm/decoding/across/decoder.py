@@ -23,6 +23,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.utils import make_bridge_extra_data, set_bridge_extra_data
 from rotkehlchen.chain.evm.decoding.weth.constants import CHAIN_ID_TO_WETH_MAPPING
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -92,6 +93,14 @@ class AcrossCommonDecoder(EvmDecoderInterface):
                     f'Bridge {event.amount} {event.asset.symbol_or_name()}'
                     f'{chain_info} via Across'
                 )
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=self.node_inquirer.chain_id,
+                    to_chain=destination_chain_id,
+                    from_address=depositor,
+                    to_address=bytes_to_address(context.tx_log.data[224:256]),
+                    transfer_id=str(int.from_bytes(context.tx_log.topics[2])),
+                )
                 break
         else:
             log.error(
@@ -133,6 +142,13 @@ class AcrossCommonDecoder(EvmDecoderInterface):
         else:
             chain_info = ''
 
+        bridge_extra_data = make_bridge_extra_data(
+            from_chain=origin_chain_id,
+            to_chain=self.node_inquirer.chain_id,
+            from_address=bytes_to_address(context.tx_log.data[256:288]),
+            to_address=recipient,
+            transfer_id=str(int.from_bytes(context.tx_log.topics[2])),
+        )
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -149,6 +165,7 @@ class AcrossCommonDecoder(EvmDecoderInterface):
                     f'Bridge {event.amount} {event.asset.symbol_or_name()}'
                     f'{chain_info} via Across'
                 )
+                event.extra_data = (event.extra_data or {}) | bridge_extra_data
                 break
         else:
             return EvmDecodingOutput(action_items=[ActionItem(
@@ -165,6 +182,7 @@ class AcrossCommonDecoder(EvmDecoderInterface):
                     f'Bridge {{amount}} {{symbol}}'
                     f'{chain_info} via Across'
                 ),
+                extra_data=bridge_extra_data,
             ) for expected_asset in expected_assets or (None,)])
 
         return DEFAULT_EVM_DECODING_OUTPUT

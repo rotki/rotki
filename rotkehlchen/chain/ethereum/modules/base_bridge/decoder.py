@@ -7,6 +7,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.superchain_bridge.utils import get_messenger_transfer_id
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
@@ -62,6 +63,7 @@ class BaseBridgeDecoder(EvmDecoderInterface):
         )
 
         # Find the corresponding transfer event and update it
+        transfer_id = get_messenger_transfer_id(context.all_logs)
         for event in context.decoded_events:
             if (
                 event.event_type == expected_event_type and
@@ -81,6 +83,7 @@ class BaseBridgeDecoder(EvmDecoderInterface):
                     expected_event_type=expected_event_type,
                     new_event_type=new_event_type,
                     counterparty=BASE_CPT_DETAILS,
+                    transfer_id=transfer_id,
                 )
 
     def _decode_bridge_eth(self, context: DecoderContext) -> EvmDecodingOutput:

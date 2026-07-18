@@ -14,9 +14,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.utils import (
     bridge_match_transfer,
     bridge_prepare_data,
+    set_bridge_extra_data,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.scroll.constants import CPT_SCROLL, SCROLL_CPT_DETAILS
+from rotkehlchen.chain.scroll.utils import SENT_MESSAGE, get_scroll_messenger_transfer_id
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -45,7 +47,6 @@ L1_MESSENGER_PROXY: Final = string_to_evm_address('0x6774Bcbd5ceCeF1336b5300fb51
 
 DEPOSIT_ETH: Final = b'fp\xde\x85n\xc8\xbf\\\xb2\xb7\xe9W\xc5\xdc$u\x97\x16\x05oy\xd9~\xa5\xe7\xc99\xca\x0b\xa5\xa6u'  # noqa: E501
 FINALIZE_WITHDRAW_ETH: Final = b'\x96\xdb]\x1c\xee\x1d\xd2v\x08&\xbbV\xfa\xbd\x9c\x9fn\x97\x80\x83\xe0\xa8\xb8\x85Y\xc7A\xa2\x9e\x97F\xe7'  # noqa: E501
-SENT_MESSAGE: Final = b'\x10Cq\xf3\xb4B\x86\x1a*{\x82\xa0p\xaf\xbb\xaa\xb7H\xbb\x13u{\xf4wi\xe1p\xe3x\t\xec\x1e'  # noqa: E501
 DEPOSIT_ERC20: Final = b'1\xcd;\x97nMe@"\xbf\x95\xc6\x8a,\xe5?\x1d]\x94\xaf\xab\xe0EM(2 \x8e\xeb@\xaf%'  # noqa: E501
 FINALIZE_WITHDRAW_ERC20: Final = b'\xc6\xf9\x85\x87;7\x80W\x05\xf6\xbc\xe7V\xdc\xe3\xd1\xffK`>)\x8dPb\x88\xcc\xe4\x99\x92hF\xa7'  # noqa: E501
 
@@ -93,6 +94,8 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
             to_chain=to_chain,
             amount=amount,
             user_address=user_address,
+            from_address=bytes_to_address(context.tx_log.topics[1]),
+            to_address=bytes_to_address(context.tx_log.topics[2]),
         )
 
     def _decode_eth_send_message(self, context: DecoderContext) -> EvmDecodingOutput:
@@ -116,6 +119,8 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
             to_chain=ChainID.SCROLL,
             amount=amount,
             user_address=sender,
+            from_address=sender,
+            to_address=target,
         )
 
     def _decode_erc20_deposit_withdraw(self, context: DecoderContext) -> EvmDecodingOutput:
@@ -177,6 +182,10 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
                     expected_event_type=expected_event_type,
                     new_event_type=new_event_type,
                     counterparty=SCROLL_CPT_DETAILS,
+                    transfer_id=get_scroll_messenger_transfer_id(
+                        all_logs=context.all_logs,
+                        messenger=L1_MESSENGER_PROXY,
+                    ),
                 )
             elif (
                 event.event_type == HistoryEventType.SPEND and
@@ -199,6 +208,8 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
             to_chain: ChainID,
             amount: FVal,
             user_address: str,
+            from_address: ChecksumEvmAddress,
+            to_address: ChecksumEvmAddress,
     ) -> EvmDecodingOutput:
         """Updates the ETH bridge events given the event details"""
         # Find the corresponding transfer event and update it
@@ -220,6 +231,17 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
         bridge_event.notes = (
             f'Bridge {amount} ETH from {from_chain.label()} '
             f'to {to_chain.label()} via Scroll bridge'
+        )
+        set_bridge_extra_data(
+            event=bridge_event,
+            from_chain=from_chain,
+            to_chain=to_chain,
+            from_address=from_address,
+            to_address=to_address,
+            transfer_id=get_scroll_messenger_transfer_id(
+                all_logs=context.all_logs,
+                messenger=L1_MESSENGER_PROXY,
+            ),
         )
 
         # Edit the fee events: remove the refund event and add the L2 fees event

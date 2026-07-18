@@ -74,6 +74,13 @@ def test_deposit_eth_from_ethereum_to_scroll(ethereum_inquirer, ethereum_account
             notes=f'Bridge {amount} ETH from Ethereum to Scroll via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=L1_GATEWAY_ROUTER,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 534352,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xed97f8c9738adbc0400db0add62110069b4a335fd1483c1796247750f1a07299',  # noqa: E501
+            }},
         ),
     ]
 
@@ -98,6 +105,13 @@ def test_receive_eth_on_scroll(scroll_inquirer, scroll_accounts, allow_scroll_et
             notes=f'Bridge {amount} ETH from Ethereum to Scroll via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=L2_ETH_GATEWAY,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 534352,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xed97f8c9738adbc0400db0add62110069b4a335fd1483c1796247750f1a07299',  # noqa: E501
+            }},
         ),
     ]
 
@@ -135,6 +149,13 @@ def test_withdraw_eth_from_scroll_to_ethereum(scroll_inquirer, scroll_accounts, 
             notes=f'Bridge {amount} ETH from Scroll to Ethereum via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=string_to_evm_address(L2_ETH_GATEWAY),
+            extra_data={'bridge': {
+                'from_chain': 534352,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x9b5d08f6f6ef0d425c177c07b2367c3826f02fe52cfdcb58913b70992adedeb3',  # noqa: E501
+            }},
         ),
     ]
 
@@ -172,6 +193,13 @@ def test_receive_eth_on_ethereum(ethereum_inquirer, ethereum_accounts):
             notes=f'Bridge {amount} ETH from Scroll to Ethereum via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=string_to_evm_address(L1_ETH_GATEWAY_PROXY),
+            extra_data={'bridge': {
+                'from_chain': 534352,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x9b5d08f6f6ef0d425c177c07b2367c3826f02fe52cfdcb58913b70992adedeb3',  # noqa: E501
+            }},
         ),
     ]
 
@@ -222,6 +250,13 @@ def test_deposit_erc20_from_ethereum_to_scroll(ethereum_inquirer, ethereum_accou
             notes=f'Bridge {amount} USDC from Ethereum to Scroll via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=L1_USDC_GATEWAY,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 534352,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x9b808aed2c855badae0c8e56cacf2b0932d3496483b467bfb0b0ac84b5063d09',  # noqa: E501
+            }},
         ),
     ]
 
@@ -246,6 +281,13 @@ def test_receive_erc20_on_scroll(scroll_inquirer, scroll_accounts, allow_scroll_
             notes=f'Bridge {amount} USDC from Ethereum to Scroll via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 534352,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x9b808aed2c855badae0c8e56cacf2b0932d3496483b467bfb0b0ac84b5063d09',  # noqa: E501
+            }},
         ),
     ]
 
@@ -284,6 +326,13 @@ def test_withdraw_erc20_from_scroll_to_ethereum(scroll_inquirer, scroll_accounts
             notes=f'Bridge {amount} USDT from Scroll to Ethereum via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 534352,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xb8fc92c881334656367615b49233c1e5ba586173524488828069c902109fec33',  # noqa: E501
+            }},
         ),
     ]
     # also check that we only capture the erc20 log event and nothing else. Regression test for
@@ -328,6 +377,13 @@ def test_withdraw_usdc_from_scroll_to_ethereum(scroll_inquirer, scroll_accounts,
             notes=f'Bridge {amount} USDC from Scroll to Ethereum via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=L2_USDC_GATEWAY,
+            extra_data={'bridge': {
+                'from_chain': 534352,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x52437a25568cff5f9974d479b83f21fed240ddd44b302d5e4b0aed92d016ecce',  # noqa: E501
+            }},
         ),
     ]
 
@@ -365,6 +421,13 @@ def test_receive_erc20_on_ethereum(ethereum_inquirer, ethereum_accounts):
             notes=f'Bridge {amount} USDT from Scroll to Ethereum via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=L1_ERC20_GATEWAY,
+            extra_data={'bridge': {
+                'from_chain': 534352,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x7ce6ab38dd0465331728bc61935627f1f36db80f6ed3c33316cf90009bd201d9',  # noqa: E501
+            }},
         ),
     ]
 
@@ -415,6 +478,13 @@ def test_deposit_send_message_ethereum(ethereum_inquirer, ethereum_accounts):
             notes=f'Bridge {amount} ETH from Ethereum to Scroll via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=L1_MESSENGER_PROXY,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 534352,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x83c2e666436be90332e345140483da90cbe035daff49c35040a3fe9ebd17b2b9',  # noqa: E501
+            }},
         ),
     ]
 
@@ -439,5 +509,12 @@ def test_receive_deposit_message_scroll(scroll_inquirer, scroll_accounts, allow_
             notes=f'Bridge {amount} ETH from Ethereum to Scroll via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=L2_MESSENGER_PROXY,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 534352,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x83c2e666436be90332e345140483da90cbe035daff49c35040a3fe9ebd17b2b9',  # noqa: E501
+            }},
         ),
     ]

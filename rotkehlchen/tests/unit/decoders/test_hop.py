@@ -79,6 +79,12 @@ def test_hop_l2_deposit(ethereum_inquirer):
             notes='Bridge 0.2 ETH to Optimism via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0xb8901acB165ed027E32754E0FFe830802919727f'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 10,
+                'from_address': ADDY,
+                'to_address': ADDY,
+            }},
         )]
 
 
@@ -113,6 +119,12 @@ def test_hop_l2_deposit_usdc(ethereum_inquirer, ethereum_accounts):
             notes=f'Bridge {bridge_amount} USDC to Arbitrum One via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x3666f603Cc164936C1b87e207F36BEBa4AC5f18a'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 42161,
+                'from_address': ethereum_accounts[0],
+                'to_address': ethereum_accounts[0],
+            }},
         ),
     ]
 
@@ -140,6 +152,11 @@ def test_hop_optimism_eth_receive(optimism_inquirer):
             notes='Bridge 0.200077923923235647 ETH via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x86cA30bEF97fB651b8d866D45503684b90cb3312'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 10,
+                'to_address': ADDY,
+            }},
         )]
 
 
@@ -169,6 +186,11 @@ def test_hop_optimism_eth_receive_no_event(optimism_inquirer, optimism_accounts)
             notes=f'Bridge {bridge_amount} ETH via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x86cA30bEF97fB651b8d866D45503684b90cb3312'),
+            extra_data={'bridge': {
+                'to_chain': 10,
+                'to_address': user_address,
+                'transfer_id': '0x6e46f86dbe2b9a46bfc61acd488ea5421f30f7108bfd0ff9a96a69c3cdb63c5b',  # noqa: E501
+            }},
         ),
     ]
 
@@ -193,6 +215,11 @@ def test_hop_usdc_bridge(ethereum_inquirer, ethereum_accounts):
             notes=f'Bridge {bridge_amount} USDC via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x3666f603Cc164936C1b87e207F36BEBa4AC5f18a'),
+            extra_data={'bridge': {
+                'to_chain': 1,
+                'to_address': user_address,
+                'transfer_id': '0x51e4c703c8a893f2ce96b4b2f9d8109c248373f8969e6764a7010ca109ca11a0',  # noqa: E501
+            }},
         ),
     ]
 
@@ -218,6 +245,11 @@ def test_hop_eth_bridge_optimism(optimism_inquirer, optimism_accounts):
             notes=f'Bridge {bridge_amount} ETH via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x86cA30bEF97fB651b8d866D45503684b90cb3312'),
+            extra_data={'bridge': {
+                'to_chain': 10,
+                'to_address': user_address,
+                'transfer_id': '0x6b544dded5e056c98d5f2672d820eaad23036912a78d5bfb6684f6e6d233a181',  # noqa: E501
+            }},
         ),
     ]
 
@@ -242,6 +274,11 @@ def test_hop_eth_bridge_gnosis(gnosis_inquirer: GnosisInquirer, gnosis_accounts)
             notes=f'Bridge {bridge_amount} WETH via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x03D7f750777eC48d39D080b020D83Eb2CB4e3547'),
+            extra_data={'bridge': {
+                'to_chain': 100,
+                'to_address': user_address,
+                'transfer_id': '0x5e056ab3da73188a7ee6b302a505f037b85986ae5399d9991abd634ed24943df',  # noqa: E501
+            }},
         ),
     ]
 
@@ -266,6 +303,11 @@ def test_hop_usdc_bridge_gnosis(gnosis_inquirer: GnosisInquirer, gnosis_accounts
             notes=f'Bridge {bridge_amount} USDC via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x76b22b8C1079A44F1211D867D68b1eda76a635A7'),
+            extra_data={'bridge': {
+                'to_chain': 100,
+                'to_address': user_address,
+                'transfer_id': '0xd929e593aaff2ffb722305edf385a38c0c508f854401b59da465f9c59e0ac5e5',  # noqa: E501
+            }},
         ),
     ]
 
@@ -290,6 +332,11 @@ def test_hop_hop_bridge_gnosis(gnosis_inquirer: GnosisInquirer, gnosis_accounts)
             notes=f'Bridge {bridge_amount} HOP via Hop protocol',
             counterparty=CPT_HOP,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'to_chain': 100,
+                'to_address': user_address,
+                'transfer_id': '0xe7f8f0bc628f02ed4f1fde37a712d59ffb1b8a25b46bbc57e75354d86896b2ae',  # noqa: E501
+            }},
         ),
     ]
 
@@ -316,6 +363,11 @@ def test_hop_eth_bridge_polygon_pos(polygon_pos_inquirer: PolygonPOSInquirer, po
             notes=f'Bridge {bridge_amount} WETH via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0xc315239cFb05F1E130E7E28E603CEa4C014c57f0'),
+            extra_data={'bridge': {
+                'to_chain': 137,
+                'to_address': user_address,
+                'transfer_id': '0x9d6a9340294cca7bd8f7f7fa8884b6c647e05d2944cb8d397bac71679b1d5a91',  # noqa: E501
+            }},
         ),
     ]
 
@@ -343,6 +395,11 @@ def test_hop_eth_bridge_base(base_inquirer: BaseInquirer, base_accounts):
             notes=f'Bridge {bridge_amount} ETH via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x10541b07d8Ad2647Dc6cD67abd4c03575dade261'),
+            extra_data={'bridge': {
+                'to_chain': 8453,
+                'to_address': user_address,
+                'transfer_id': '0x2cfeadf0125c65dc1e019a8dc5cbc6fb10e256d229debb16e487e72f77808d2c',  # noqa: E501
+            }},
         ),
     ]
 
@@ -381,6 +438,13 @@ def test_hop_eth_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: ArbitrumOne
             notes=f'Bridge {bridge_amount} ETH to Ethereum via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x33ceb27b39d2Bb7D2e61F7564d3Df29344020417'),
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xf35871fe83fe4f160ae682ec23f6a6ad13f33600ddaab52a4f2101e31f000b80',  # noqa: E501
+            }},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
@@ -418,6 +482,11 @@ def test_hop_eth_bridge_l2_to_l1_ethereum(ethereum_inquirer: EthereumInquirer, e
             notes=f'Bridge {bridge_amount} ETH via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0xb8901acB165ed027E32754E0FFe830802919727f'),
+            extra_data={'bridge': {
+                'to_chain': 1,
+                'to_address': user_address,
+                'transfer_id': '0xf35871fe83fe4f160ae682ec23f6a6ad13f33600ddaab52a4f2101e31f000b80',  # noqa: E501
+            }},
         ),
     ]
 
@@ -469,6 +538,13 @@ def test_hop_magic_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: ArbitrumO
             notes=f'Bridge {bridge_amount} MAGIC to Ethereum via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x50a3a623d00fd8b8a4F3CbC5aa53D0Bc6FA912DD'),
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x91c1392c8ce630adb4d904ea0d42818f729d22b86c32f8b77a5179e434b1ea6b',  # noqa: E501
+            }},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=18,
@@ -506,6 +582,11 @@ def test_hop_usdc_bridge_l2_to_l1_ethereum(ethereum_inquirer: EthereumInquirer, 
             notes=f'Bridge {bridge_amount} USDC via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x3666f603Cc164936C1b87e207F36BEBa4AC5f18a'),
+            extra_data={'bridge': {
+                'to_chain': 1,
+                'to_address': user_address,
+                'transfer_id': '0x4a0eec59485aa9ae2105ea4af0eb470bbeb988269bfbcf317c18ac9a15999363',  # noqa: E501
+            }},
         ),
     ]
 
@@ -542,6 +623,13 @@ def test_hop_usdc_bridge_l2_to_l1_gnosis(gnosis_inquirer: GnosisInquirer, gnosis
             notes=f'Burn {bridge_amount} of Hop hUSDC',
             counterparty=CPT_HOP,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 100,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x4a0eec59485aa9ae2105ea4af0eb470bbeb988269bfbcf317c18ac9a15999363',  # noqa: E501
+            }},
         ),
     ]
 
@@ -580,6 +668,13 @@ def test_hop_eth_bridge_arbitrum_custom_recipient(arbitrum_one_inquirer: Arbitru
             notes=f'Bridge {bridge_amount} ETH to Base at address {arbitrum_one_accounts[1]} via Hop protocol',  # noqa: E501
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x33ceb27b39d2Bb7D2e61F7564d3Df29344020417'),
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 8453,
+                'from_address': user_address,
+                'to_address': arbitrum_one_accounts[1],
+                'transfer_id': '0x659ba773f24384c40ac70a1dee2de9396c3c11f1c1890520fcbd90fdb448fda3',  # noqa: E501
+            }},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,

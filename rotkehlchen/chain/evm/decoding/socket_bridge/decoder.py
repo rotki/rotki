@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.utils import set_bridge_extra_data
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -86,6 +87,13 @@ class SocketBridgeDecoder(EvmDecoderInterface):
                 if self.base.is_tracked(receiver):  # if receiver is not tracked we are spending it
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.BRIDGE
+                    set_bridge_extra_data(  # the metadata field is an integrator id, not a transfer id, so there is no transfer_id to extract  # noqa: E501
+                        event=event,
+                        from_chain=self.node_inquirer.chain_id,
+                        to_chain=to_chain_id_raw,
+                        from_address=sender,
+                        to_address=receiver,
+                    )
 
                 event.counterparty = CPT_SOCKET
                 event.notes = (

@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Any, Final
 
+from eth_utils import to_checksum_address
+
 from rotkehlchen.assets.utils import asset_normalized_value, asset_raw_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import CLAIM_REWARD_TOPIC, ZERO_ADDRESS
@@ -11,12 +13,18 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
 )
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.history.events.structures.evm_event import (
+    BRIDGE_EXTRA_DATA_KEY,
+    BridgeExtraData,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.types import ChainID, SupportedBlockchain
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_ZKSYNC, ZKSYNC_BRIDGE, ZKSYNC_LITE_SUNSET_CLAIM
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.types import ChecksumEvmAddress
 
 ONCHAIN_DEPOSIT: Final = b'\xb6\x86k\x02\x9f:\xa2\x9c\xd9\xe2\xbf\xf8\x15\x9a\x8c\xca\xa48\x9fz\x08|q\th\xe0\xb2\x00\xc0\xc7;\x08'  # noqa: E501
@@ -28,18 +36,50 @@ WITHDRAWAL: Final = b'\xef\xefa\x9a\xe4\xa5B\xa2\xb8\x81\x0bN\xfe\xcc\xd8G\x8b\x
 
 class ZksyncDecoder(EvmDecoderInterface):
 
+    @staticmethod
+    def _find_priority_deposit_log(context: DecoderContext) -> EvmTxReceiptLog | None:
+        """Find the NewPriorityRequest log of a deposit priority operation if any exists"""
+        for tx_log in context.all_logs:
+            if (
+                    tx_log.topics[0] == NEW_PRIORITY_REQUEST and
+                    int.from_bytes(tx_log.data[64:96]) == 1  # 1 is the deposit op type
+            ):
+                return tx_log
+
+        return None
+
+    @staticmethod
+    def _withdrawal_bridge_extra_data(to_address: str | None) -> dict[str, BridgeExtraData]:
+        """Create the bridge extra data of a withdrawal from zksync lite to ethereum"""
+        bridge_data = BridgeExtraData(
+            from_chain=SupportedBlockchain.ZKSYNC_LITE.serialize(),
+            to_chain=ChainID.ETHEREUM.serialize(),
+        )
+        if to_address is not None:
+            bridge_data['to_address'] = to_address
+        return {BRIDGE_EXTRA_DATA_KEY: bridge_data}
+
     def _decode_event(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == ONCHAIN_DEPOSIT:
-            user_address = bytes_to_address(context.tx_log.topics[1])
-            return self._decode_deposit(context, user_address)
+            priority_log = self._find_priority_deposit_log(context)
+            return self._decode_deposit(
+                context=context,
+                user_address=bytes_to_address(context.tx_log.topics[1]),
+                recipient=bytes_to_address(context.tx_log.topics[3]),
+                serial_id=str(int.from_bytes(priority_log.data[32:64])) if priority_log is not None else None,  # noqa: E501
+            )
         elif context.tx_log.topics[0] == DEPOSIT:
-            for tx_log in context.all_logs:  # iterate
-                if tx_log.topics[0] == NEW_PRIORITY_REQUEST:
-                    op_type = int.from_bytes(tx_log.data[64:96])
-                    if op_type != 1:
-                        continue  # 1 is deposit and this is what we are searching for
-                    user_address = bytes_to_address(tx_log.data[0:32])
-                    return self._decode_deposit(context, user_address)
+            if (priority_log := self._find_priority_deposit_log(context)) is not None:
+                # the deposit pubdata is opType, accountId, tokenId and amount (whose sizes
+                # differ per contract version) with the zksync lite recipient as its last 20 bytes
+                pubdata_offset = int.from_bytes(priority_log.data[96:128])
+                pubdata_end = pubdata_offset + 32 + int.from_bytes(priority_log.data[pubdata_offset:pubdata_offset + 32])  # noqa: E501
+                return self._decode_deposit(
+                    context=context,
+                    user_address=bytes_to_address(priority_log.data[0:32]),
+                    recipient=to_checksum_address(priority_log.data[pubdata_end - 20:pubdata_end]),
+                    serial_id=str(int.from_bytes(priority_log.data[32:64])),
+                )
         elif context.tx_log.topics[0] == PENDING_WITHDRAWALS_COMPLETE:
             return self._decode_withdrawal(context)
         elif context.tx_log.topics[0] == WITHDRAWAL:
@@ -49,7 +89,13 @@ class ZksyncDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_deposit(self, context: DecoderContext, user_address: ChecksumEvmAddress) -> EvmDecodingOutput:  # noqa: E501
+    def _decode_deposit(
+            self,
+            context: DecoderContext,
+            user_address: ChecksumEvmAddress,
+            recipient: ChecksumEvmAddress,
+            serial_id: str | None,
+    ) -> EvmDecodingOutput:
         """Match a zksync lite deposit with the transfer to decode it
 
         TODO: This is now quite bad. We don't use the token id of zksync as we should.
@@ -76,6 +122,15 @@ class ZksyncDecoder(EvmDecoderInterface):
                 event.counterparty = CPT_ZKSYNC
                 crypto_asset = resolved_event_asset
                 event.notes = f'Deposit {event.amount} {crypto_asset.symbol} to zksync'
+                bridge_data = BridgeExtraData(
+                    from_chain=ChainID.ETHEREUM.serialize(),
+                    to_chain=SupportedBlockchain.ZKSYNC_LITE.serialize(),
+                    from_address=user_address,
+                    to_address=recipient,
+                )
+                if serial_id is not None:
+                    bridge_data['transfer_id'] = serial_id
+                event.extra_data = {BRIDGE_EXTRA_DATA_KEY: bridge_data}
                 break
 
         return DEFAULT_EVM_DECODING_OUTPUT
@@ -91,6 +146,7 @@ class ZksyncDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_ZKSYNC
                 event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from zksync'
+                event.extra_data = self._withdrawal_bridge_extra_data(event.location_label)
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -124,6 +180,7 @@ class ZksyncDecoder(EvmDecoderInterface):
                     f'from the ZKsync Lite sunset'
                 )
                 event.address = ZKSYNC_LITE_SUNSET_CLAIM
+                event.extra_data = self._withdrawal_bridge_extra_data(user_address)
                 return DEFAULT_EVM_DECODING_OUTPUT
 
         if token_address != ZERO_ADDRESS:
@@ -139,6 +196,7 @@ class ZksyncDecoder(EvmDecoderInterface):
                 to_notes='Claim {amount} {symbol} from the ZKsync Lite sunset',
                 to_counterparty=CPT_ZKSYNC,
                 to_address=ZKSYNC_LITE_SUNSET_CLAIM,
+                extra_data=self._withdrawal_bridge_extra_data(user_address),
             )])
 
         return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
@@ -152,6 +210,7 @@ class ZksyncDecoder(EvmDecoderInterface):
             notes=f'Claim {amount} {asset.symbol} from the ZKsync Lite sunset',
             counterparty=CPT_ZKSYNC,
             address=ZKSYNC_LITE_SUNSET_CLAIM,
+            extra_data=self._withdrawal_bridge_extra_data(user_address),
         )])
 
     def _decode_single_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:
@@ -174,6 +233,7 @@ class ZksyncDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_ZKSYNC
                 event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from zksync'
+                event.extra_data = self._withdrawal_bridge_extra_data(user_address)
                 break
         else:  # no matching transfer found
             if int.from_bytes(context.tx_log.topics[2]) != 0:  # non-ETH token
@@ -187,6 +247,7 @@ class ZksyncDecoder(EvmDecoderInterface):
                     to_notes='Withdraw {amount} {symbol} from zksync',
                     to_counterparty=CPT_ZKSYNC,
                     to_address=ZKSYNC_BRIDGE,
+                    extra_data=self._withdrawal_bridge_extra_data(user_address),
                 )])
 
             amount = asset_normalized_value(
@@ -204,6 +265,7 @@ class ZksyncDecoder(EvmDecoderInterface):
                 notes=f'Withdraw {amount} {asset.symbol} from zksync',
                 counterparty=CPT_ZKSYNC,
                 address=ZKSYNC_BRIDGE,
+                extra_data=self._withdrawal_bridge_extra_data(user_address),
             )])
 
         return DEFAULT_EVM_DECODING_OUTPUT

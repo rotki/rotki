@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer
+from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, make_bridge_extra_data
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -51,24 +51,53 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
         if context.tx_log.topics[0] != STATE_COMMITTED_TOPIC:
             return DEFAULT_EVM_DECODING_OUTPUT
 
+        # A single state-sync system transaction can process several state syncs, each sync's
+        # logs being emitted right before its own StateCommitted log. Find the token mint
+        # belonging to this StateCommitted so the correct receive event and state id are matched.
+        mint_log = None
+        for tx_log in context.all_logs:
+            if tx_log.log_index >= context.tx_log.log_index:
+                break
+            if tx_log.address == STATE_RECEIVER_ADDRESS and tx_log.topics[0] == STATE_COMMITTED_TOPIC:  # noqa: E501
+                mint_log = None  # any mint seen before this belongs to a previous state sync
+            elif (
+                tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                len(tx_log.topics) == 3 and  # erc20 transfer (erc721 has the token id as topic 4)
+                bytes_to_address(tx_log.topics[1]) == ZERO_ADDRESS
+            ):
+                mint_log = tx_log
+
+        if mint_log is None or not self.base.is_tracked(
+            user_address := bytes_to_address(mint_log.topics[2]),
+        ):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        amount = asset_normalized_value(
+            amount=int.from_bytes(mint_log.data[0:32]),
+            asset=(token := self.base.get_or_create_evm_token(mint_log.address)),
+        )
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.address == ZERO_ADDRESS
+                event.address == ZERO_ADDRESS and
+                event.location_label == user_address and
+                event.asset == token and
+                event.amount == amount
             ):
-                user_address = string_to_evm_address(event.location_label)  # type: ignore  # history event location_labels are always initialized
                 bridge_match_transfer(
                     event=event,
                     from_address=user_address,
                     to_address=user_address,
                     from_chain=ChainID.ETHEREUM,
                     to_chain=ChainID.POLYGON_POS,
-                    amount=event.amount,
-                    asset=event.asset.resolve_to_asset_with_symbol(),
+                    amount=amount,
+                    asset=token,
                     expected_event_type=HistoryEventType.RECEIVE,
                     new_event_type=HistoryEventType.WITHDRAWAL,
                     counterparty=CPT_POLYGON_DETAILS,
+                    # the state sync id, also seen on the ethereum side in the StateSynced log
+                    transfer_id=str(int.from_bytes(context.tx_log.topics[1])),
                 )
                 break
         else:
@@ -89,6 +118,18 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
                 amount=int.from_bytes(context.tx_log.data[0:32]),
                 asset=asset,
             )
+            # The state sync that deposited the tokens commits right after the deposit logs,
+            # and its id is also seen on the ethereum side in the StateSynced log.
+            transfer_id = None
+            for tx_log in context.all_logs:
+                if (
+                    tx_log.log_index > context.tx_log.log_index and
+                    tx_log.address == STATE_RECEIVER_ADDRESS and
+                    tx_log.topics[0] == STATE_COMMITTED_TOPIC
+                ):
+                    transfer_id = str(int.from_bytes(tx_log.topics[1]))
+                    break
+
             return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
@@ -100,6 +141,13 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
                 notes=f'Bridge {amount} {asset.resolve_to_asset_with_symbol().symbol} from Ethereum to Polygon POS via Polygon bridge',  # noqa: E501
                 counterparty=CPT_POLYGON,
                 address=context.tx_log.address,
+                extra_data=make_bridge_extra_data(
+                    from_chain=ChainID.ETHEREUM,
+                    to_chain=ChainID.POLYGON_POS,
+                    from_address=user_address,
+                    to_address=user_address,
+                    transfer_id=transfer_id,
+                ),
             )])
 
         return DEFAULT_EVM_DECODING_OUTPUT
@@ -139,6 +187,13 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
                 to_event_subtype=HistoryEventSubType.BRIDGE,
                 to_notes=f'Bridge {amount} {asset.resolve_to_asset_with_symbol().symbol} from Polygon POS to Ethereum via Polygon bridge',  # noqa: E501
                 to_counterparty=CPT_POLYGON,
+                # no id is shared with the ethereum exit logs, so only chains/addresses here
+                extra_data=make_bridge_extra_data(
+                    from_chain=ChainID.POLYGON_POS,
+                    to_chain=ChainID.ETHEREUM,
+                    from_address=user_address,
+                    to_address=user_address,
+                ),
             ))
 
         return DEFAULT_EVM_DECODING_OUTPUT
