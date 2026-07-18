@@ -8,6 +8,7 @@ from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_GENESIS
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -164,10 +165,64 @@ def test_etherscan_uses_account_pagination_limit(temp_etherscan: Etherscan) -> N
         'page': '1',
         'offset': str(ETHERSCAN_PAGINATION_LIMIT),
     }
+    assert temp_etherscan._get_account_pagination_options(action='txsBeaconWithdrawal', options={}) == {  # noqa: E501
+        'page': '1',
+        'offset': str(ETHERSCAN_PAGINATION_LIMIT),
+    }
+    assert temp_etherscan._get_account_pagination_options(action='getminedblocks', options={}) == {
+        'page': '1',
+        'offset': str(ETHERSCAN_PAGINATION_LIMIT),
+    }
     assert temp_etherscan._get_account_pagination_options(
-        action='getminedblocks',
+        action='getLogs',
         options={},
     ) is None
+
+
+def test_maybe_paginate_page_sizes(temp_etherscan: Etherscan) -> None:
+    """Pagination continues only on an exactly full page: a short one is the last
+    page and an oversized one means the server ignored the requested page size
+    (blockscout's getminedblocks), leaving nothing to advance. Endpoints without
+    block range filtering paginate by page number instead of startblock."""
+    options = {'startblock': '0', 'endblock': '100', 'offset': '1000'}
+
+    def make_result(size: int) -> list[dict[str, str]]:
+        return [{'blockNumber': '42'}] * size
+
+    assert temp_etherscan._maybe_paginate(result=make_result(999), options=options.copy()) is None
+    assert temp_etherscan._maybe_paginate(result=make_result(1500), options=options.copy()) is None
+    assert temp_etherscan._maybe_paginate(
+        result=make_result(1000),
+        options=options.copy(),
+    ) == options | {'startblock': '42'}
+    assert temp_etherscan._maybe_paginate(
+        result=make_result(1000),
+        options=options | {'blocktype': 'blocks', 'page': '1'},
+    ) == options | {'blocktype': 'blocks', 'page': '2'}
+
+
+def test_validated_blocks_pagination(temp_etherscan: Etherscan) -> None:
+    """Full pages of validated blocks must be followed up by incrementing the page
+    number: getminedblocks supports no block range filtering, so startblock
+    re-anchoring cannot advance it. The query also used to send no offset at all,
+    stopping after the first page on any tier whose server-side page size differed
+    from ETHERSCAN_PAGINATION_LIMIT."""
+    pages = {
+        '1': [{'blockNumber': str(n)} for n in range(ETHERSCAN_PAGINATION_LIMIT)],
+        '2': [{'blockNumber': str(ETHERSCAN_PAGINATION_LIMIT)}],
+    }
+
+    def mock_query(chain_id, module, action, options):  # pylint: disable=unused-argument
+        assert options['offset'] == str(ETHERSCAN_PAGINATION_LIMIT)
+        return pages[options['page']]
+
+    with patch.object(temp_etherscan, '_query', side_effect=mock_query):
+        blocks = temp_etherscan.get_validated_blocks(
+            address=ZERO_ADDRESS,
+            period=TimestampOrBlockRange(range_type='blocks', from_value=0, to_value=10**9),
+        )
+
+    assert [x['blockNumber'] for x in blocks] == [str(n) for n in range(ETHERSCAN_PAGINATION_LIMIT + 1)]  # noqa: E501
 
 
 def test_get_logs_dedup_keeps_no_duplicates(temp_etherscan: Etherscan) -> None:

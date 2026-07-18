@@ -206,8 +206,14 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             action: str,
             options: dict[str, Any],
     ) -> dict[str, str] | None:
-        """Request the maximum page size for Etherscan account endpoints."""
-        if action in {'txlist', 'txlistinternal', 'tokentx'}:
+        """Request the maximum page size for Etherscan account endpoints.
+
+        Sending the offset explicitly is required for correct pagination: without it
+        the server picks its own page size (10000 on paid tiers, 1000 on the free
+        tier) and _maybe_paginate would stop after the first page whenever that
+        size does not match the expected self.pagination_limit.
+        """
+        if action in {'txlist', 'txlistinternal', 'tokentx', 'txsBeaconWithdrawal', 'getminedblocks'}:  # noqa: E501
             return {'page': '1', 'offset': str(self.pagination_limit)}
         return None
 
@@ -291,6 +297,11 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             period=period,
             options={'sort': 'asc', 'address': address, 'blocktype': 'blocks'},
         )
+        if (pagination_options := self._get_account_pagination_options(
+            action='getminedblocks',
+            options=options,
+        )) is not None:
+            options.update(pagination_options)
         blocks = []
         while True:
             previous_page_state = (options.get('startblock'), options.get('page'))
@@ -331,6 +342,11 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         - DeserializationError if we can't decode the response properly
         """
         options = self._process_timestamp_or_blockrange(ChainID.ETHEREUM, period, {'sort': 'asc', 'address': address})  # noqa: E501
+        if (pagination_options := self._get_account_pagination_options(
+            action='txsBeaconWithdrawal',
+            options=options,
+        )) is not None:
+            options.update(pagination_options)
         last_withdrawal_idx = -1
         touched_indices = set()
         with self.db.conn.read_ctx() as cursor:
