@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { PotentialMatchRow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
-import type {
-  PotentialMatchRow,
-  UnmatchedAssetMovement,
-} from '@/modules/history/events/use-unmatched-asset-movements';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
@@ -28,12 +25,16 @@ const onlyExpectedAssets = defineModel<boolean>('onlyExpectedAssets', { required
 
 const tolerancePercentage = defineModel<string>('tolerancePercentage', { required: true });
 
-const { movement, matches, loading, isPinned, highlightedIdentifier } = defineProps<{
-  movement: UnmatchedAssetMovement;
+const { movement, matches, loading, isPinned, highlightedIdentifier, typeLabel, locationHeader } = defineProps<{
+  movement: UnmatchedEventGroup;
   matches: PotentialMatchRow[];
   loading: boolean;
   isPinned?: boolean;
   highlightedIdentifier?: number;
+  /** Overrides the type badge of the unmatched entry (defaults to the asset-movement type). */
+  typeLabel?: string;
+  /** Overrides the location column header of the unmatched entry (defaults to exchange). */
+  locationHeader?: string;
 }>();
 
 const emit = defineEmits<{
@@ -118,6 +119,9 @@ const movementEntry = computed<HistoryEventEntry>(() => {
   const { entry, ...meta } = getEventEntryFromCollection(movement.events);
   return { ...entry, ...meta };
 });
+
+const usedTypeLabel = computed<string>(() => typeLabel ?? getAssetMovementsType(get(movementEntry).eventSubtype));
+const usedLocationHeader = computed<string>(() => locationHeader ?? t('common.exchange'));
 
 const searchControlsEl = useTemplateRef<HTMLElement>('searchControls');
 const { height: searchControlsHeight } = useElementSize(searchControlsEl);
@@ -211,7 +215,7 @@ watchDebounced(onlyExpectedAssets, () => {
               v-if="!isPinned"
               class="!text-center"
             >
-              {{ t('common.exchange') }}
+              {{ usedLocationHeader }}
             </th>
             <th>{{ t('common.asset') }}</th>
             <th />
@@ -227,7 +231,7 @@ watchDebounced(onlyExpectedAssets, () => {
             </td>
             <td>
               <BadgeDisplay :class="{ '!leading-6 mb-1': isPinned }">
-                {{ getAssetMovementsType(movementEntry.eventSubtype) }}
+                {{ usedTypeLabel }}
               </BadgeDisplay>
               <LocationDisplay
                 v-if="isPinned"

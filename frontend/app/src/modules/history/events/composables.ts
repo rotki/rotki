@@ -22,3 +22,5 @@ export { useHistoryEventsStatus } from './use-history-events-status';
 export { useHistoryEventsSelectionMode } from './use-selection-mode';
 
 export { useUnmatchedAssetMovements } from './use-unmatched-asset-movements';
+
+export { useUnmatchedBridgeTransactions } from './use-unmatched-bridge-transactions';

@@ -9,6 +9,7 @@ import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
+import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
@@ -21,6 +22,7 @@ export function useHistoryWatchers(): void {
   const historyStore = useHistoryStore();
   const { hasUnprocessedModifications } = storeToRefs(historyStore);
   const { triggerAssetMovementAutoMatching } = useUnmatchedAssetMovements();
+  const { triggerBridgeAutoMatching } = useUnmatchedBridgeTransactions();
   const { triggerHistoricalBalancesProcessing } = useHistoricalBalances();
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { removeMatching } = useNotifications();
@@ -76,13 +78,15 @@ export function useHistoryWatchers(): void {
       historyStore.acknowledgeModifications();
       await triggerHistoricalBalancesProcessing();
       await triggerAssetMovementAutoMatching();
+      await triggerBridgeAutoMatching();
     }
   });
 
   watchImmediate(router.currentRoute, (to) => {
     if (to.name === '/history/events/') {
       removeMatching(
-        notification => notification.group === NotificationGroup.UNMATCHED_ASSET_MOVEMENTS,
+        notification => notification.group === NotificationGroup.UNMATCHED_ASSET_MOVEMENTS
+          || notification.group === NotificationGroup.UNMATCHED_BRIDGE_TRANSACTIONS,
       );
     }
   });

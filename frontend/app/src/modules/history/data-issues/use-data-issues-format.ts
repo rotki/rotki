@@ -33,6 +33,8 @@ export function useDataIssuesFormat(): UseDataIssuesFormatReturn {
         return t('data_issues.kind.negative_balance');
       case IssueKind.CURRENT_BALANCE_MISMATCH:
         return t('data_issues.kind.current_balance_mismatch');
+      case IssueKind.UNMATCHED_BRIDGE:
+        return t('data_issues.kind.unmatched_bridge');
     }
   };
 

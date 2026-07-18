@@ -50,3 +50,9 @@ export const UnmatchedAssetMovementsData = z.object({
 });
 
 export type UnmatchedAssetMovementsData = z.infer<typeof UnmatchedAssetMovementsData>;
+
+export const UnmatchedBridgeTransactionsData = z.object({
+  count: z.number(),
+});
+
+export type UnmatchedBridgeTransactionsData = z.infer<typeof UnmatchedBridgeTransactionsData>;

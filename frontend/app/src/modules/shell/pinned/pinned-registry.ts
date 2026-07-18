@@ -45,6 +45,11 @@ export const PINNED_PANELS: Record<PinnedName, PinnedPanelDef> = {
     icon: 'lu-repeat',
     labelKey: msg.$t('asset_movement_matching.dialog.title'),
   },
+  [PinnedNames.MATCH_BRIDGE_TRANSACTIONS]: {
+    component: defineAsyncComponent(async () => import('@/modules/history/events/MatchBridgeTransactionsPinned.vue')),
+    icon: 'lu-git-compare-arrows',
+    labelKey: msg.$t('bridge_matching.dialog.title'),
+  },
   [PinnedNames.REPORT_ACTIONABLE_CARD]: {
     component: defineAsyncComponent(async () => import('@/modules/reports/ReportActionableCard.vue')),
     icon: 'lu-triangle-alert',

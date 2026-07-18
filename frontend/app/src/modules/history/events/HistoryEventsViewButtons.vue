@@ -4,6 +4,7 @@ import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/d
 import HistoryEventsIssueCheckButton from '@/modules/history/events/HistoryEventsIssueCheckButton.vue';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
+import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
 import HistoryRefreshButton from '@/modules/history/refresh/HistoryRefreshButton.vue';
 
@@ -22,13 +23,18 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-type IssueCheckType = 'unmatched' | 'duplicates';
+type IssueCheckType = 'unmatched' | 'bridges' | 'duplicates';
 
 const menuOpen = ref<boolean>(false);
 const checkingType = ref<IssueCheckType>();
 const noIssuesFeedback = ref<IssueCheckType>();
 
 const { refreshUnmatchedAssetMovements, unmatchedCount, ignoredCount } = useUnmatchedAssetMovements();
+const {
+  ignoredCount: ignoredBridgesCount,
+  refreshUnmatchedBridgeTransactions,
+  unmatchedCount: unmatchedBridgesCount,
+} = useUnmatchedBridgeTransactions();
 const { fetchCustomizedEventDuplicates, totalCount: duplicatesCount } = useCustomizedEventDuplicates();
 const { issueCount: internalConflictsCount } = useInternalTxConflicts();
 
@@ -52,6 +58,23 @@ async function checkUnmatched(): Promise<void> {
     }
     else {
       showNoIssuesFeedback('unmatched');
+    }
+  }
+  finally {
+    set(checkingType, undefined);
+  }
+}
+
+async function checkUnmatchedBridges(): Promise<void> {
+  set(checkingType, 'bridges');
+  try {
+    await refreshUnmatchedBridgeTransactions();
+    if (get(unmatchedBridgesCount) > 0 || get(ignoredBridgesCount) > 0) {
+      set(menuOpen, false);
+      emit('show:dialog', { type: DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS });
+    }
+    else {
+      showNoIssuesFeedback('bridges');
     }
   }
   finally {
@@ -191,6 +214,19 @@ function checkInternalConflicts(): void {
         <RuiIcon :name="noIssuesFeedback === 'unmatched' ? 'lu-circle-check' : 'lu-git-compare-arrows'" />
       </template>
       {{ noIssuesFeedback === 'unmatched' ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_unmatched_movements') }}
+    </RuiButton>
+
+    <RuiButton
+      variant="list"
+      :disabled="processing || !!checkingType"
+      :loading="checkingType === 'bridges'"
+      :color="noIssuesFeedback === 'bridges' ? 'success' : undefined"
+      @click.stop="checkUnmatchedBridges()"
+    >
+      <template #prepend>
+        <RuiIcon :name="noIssuesFeedback === 'bridges' ? 'lu-circle-check' : 'lu-git-compare-arrows'" />
+      </template>
+      {{ noIssuesFeedback === 'bridges' ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_unmatched_bridges') }}
     </RuiButton>
 
     <RuiButton

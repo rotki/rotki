@@ -10,7 +10,7 @@ import { HTTPStatus } from '@/modules/core/api/types/http';
 import { VALID_TASK_STATUS } from '@/modules/core/api/utils';
 import { type PendingTask, PendingTaskSchema, TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/modules/core/tasks/types';
 
-export type TriggerTaskType = 'historical_balance_processing' | 'asset_movement_matching';
+export type TriggerTaskType = 'historical_balance_processing' | 'asset_movement_matching' | 'bridge_matching';
 
 interface SchedulerStateResponse {
   enabled: boolean;

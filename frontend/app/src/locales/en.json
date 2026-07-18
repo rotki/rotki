@@ -546,6 +546,24 @@
         }
       }
     },
+    "bridge_matching": {
+      "error": {
+        "description": "Failed to match bridge transaction: {error}",
+        "title": "Bridge Transaction Matching"
+      },
+      "external_success": {
+        "description": "Bridge deposit marked as a payment to an external address.",
+        "title": "Bridge Transaction Resolved"
+      },
+      "fetch_error": {
+        "description": "Failed to fetch unmatched bridge transactions: {error}",
+        "title": "Fetching Unmatched Bridge Transactions"
+      },
+      "success": {
+        "description": "Bridge transaction successfully matched to its counterpart event.",
+        "title": "Bridge Transaction Matched"
+      }
+    },
     "customized_event_duplicates": {
       "fetch_error": {
         "description": "Failed to fetch customized event duplicates: {error}",
@@ -1844,6 +1862,45 @@
       "selected": "{count} validator(s) selected"
     }
   },
+  "bridge_matching": {
+    "actions": {
+      "auto_match_tooltip": "Automatically match bridge transactions with their counterpart events on the other chain based on amount, asset, and timestamp.",
+      "ignore_selected": "Ignore Selected",
+      "ignore_selected_confirm": "Are you sure you want to ignore {count} selected bridge transaction(s)? This action marks them as having no corresponding event.",
+      "mark_external": "Mark as External Payment",
+      "mark_external_confirm": "Are you sure you want to resolve this bridge deposit as a payment to an external (untracked) address? No counterpart event will be linked.",
+      "mark_external_confirm_address": "Are you sure you want to resolve this bridge deposit as a payment to the external (untracked) address {address}? No counterpart event will be linked.",
+      "mark_external_confirm_chain": "Are you sure you want to resolve this bridge deposit as a payment to an external (untracked) address on {chain}? No counterpart event will be linked.",
+      "mark_external_confirm_destination": "Are you sure you want to resolve this bridge deposit as a payment to the external (untracked) address {address} on {chain}? No counterpart event will be linked.",
+      "restore_selected": "Restore Selected",
+      "restore_selected_confirm": "Are you sure you want to restore {count} selected bridge transaction(s) to the unmatched list?"
+    },
+    "auto_match": {
+      "error": "Failed to run automatic bridge matching: {error}",
+      "error_title": "Bridge Auto Match Failed",
+      "task_title": "Matching bridge transactions"
+    },
+    "banner": {
+      "message": "There are {count} unmatched bridge transactions that require manual matching."
+    },
+    "dialog": {
+      "description": "Select an unmatched bridge transaction and find the counterpart event on the other chain to link them together.",
+      "ignore_tooltip": "Mark this bridge transaction as having no corresponding event.",
+      "ignored_description": "These bridge transactions have been marked as having no corresponding event. Restore them to retry matching.",
+      "info_column": "Info",
+      "manual_action": "Manual Action",
+      "mark_external": "External",
+      "mark_external_tooltip": "Resolve this bridge deposit as a payment to an external (untracked) address.",
+      "no_ignored": "No ignored bridge transactions.",
+      "no_unmatched": "All bridge transactions have been matched.",
+      "restore_tooltip": "Restore this bridge transaction to the unmatched list.",
+      "title": "Match Bridge Transactions"
+    },
+    "premium": {
+      "free_tooltip": "Bridge transaction matching requires a minimum of {tier} tier. {link} to unlock this feature.",
+      "premium_tooltip": "Bridge transaction matching requires a minimum of {tier} tier. Your current tier is {currentTier}. {link} to unlock it."
+    }
+  },
   "calendar": {
     "add_error": "Could not add event: {message}",
     "add_event": "Add Event",
@@ -2589,7 +2646,9 @@
     "description": {
       "current_balance_mismatch": "rotki's calculated {asset} balance ({derived}) doesn't match the actual on-chain balance ({observed}), a difference of {delta}. Some {asset} transactions are probably missing or were recorded incorrectly.",
       "negative_balance": "An event spent more {asset} than rotki had tracked, so your balance went negative to {amount} (it was {before} just before). This usually means an earlier {asset} transaction is missing or was recorded incorrectly.",
-      "unknown": "rotki flagged a data issue. Open the details below to see what was recorded."
+      "unknown": "rotki flagged a data issue. Open the details below to see what was recorded.",
+      "unmatched_bridge_deposit": "A {asset} bridge deposit has no matched counterpart event on the destination chain. Match it manually or resolve it as an external payment.",
+      "unmatched_bridge_withdrawal": "A {asset} bridge withdrawal has no matched counterpart deposit on the source chain. Match it manually to link the two legs."
     },
     "detail": {
       "detected": "Detected",
@@ -2629,7 +2688,8 @@
     },
     "kind": {
       "current_balance_mismatch": "Balance mismatch",
-      "negative_balance": "Negative balance"
+      "negative_balance": "Negative balance",
+      "unmatched_bridge": "Unmatched bridge"
     },
     "panel": {
       "clear_selection": "Clear selection",
@@ -4849,6 +4909,11 @@
       "action": "Review",
       "message": "{count} asset movement could not be automatically matched with a corresponding on-chain event. Please review and match manually.|{count} asset movements could not be automatically matched with corresponding on-chain events. Please review and match them manually.",
       "title": "Unmatched Asset Movement|Unmatched Asset Movements"
+    },
+    "unmatched_bridge_transactions": {
+      "action": "Review",
+      "message": "{count} bridge transaction could not be automatically matched with its counterpart event. Please review and match manually.|{count} bridge transactions could not be automatically matched with their counterpart events. Please review and match them manually.",
+      "title": "Unmatched Bridge Transaction|Unmatched Bridge Transactions"
     }
   },
   "notification_popup": {
@@ -6064,6 +6129,7 @@
       "button": "Actions needed",
       "check_duplicate_events": "Check duplicate events",
       "check_internal_conflicts": "Check internal tx conflicts",
+      "check_unmatched_bridges": "Check unmatched bridge transactions",
       "check_unmatched_movements": "Check unmatched movements",
       "no_issues_found": "No issues found",
       "title": "There are actions needed for your events"

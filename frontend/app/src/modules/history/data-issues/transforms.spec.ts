@@ -91,6 +91,38 @@ describe('data-issues transforms', () => {
       expect(describeIssue(issue).eventIdentifier).toBeUndefined();
     });
 
+    it('should describe an unmatched bridge leg with a direction-specific message', () => {
+      const issue = createIssue({
+        kind: IssueKind.UNMATCHED_BRIDGE,
+        payload: {
+          bridge: { toAddress: '0xdef', toChain: 'optimism' },
+          counterparty: 'hop',
+          direction: 'deposit',
+          eventIdentifier: 12,
+          groupIdentifier: '0xabc',
+        },
+      });
+
+      const result = describeIssue(issue);
+
+      expect(result.messageKey).toBe('data_issues.description.unmatched_bridge_deposit');
+      expect(result.eventIdentifier).toBe(12);
+      expect(result.asset).toBe('ETH');
+    });
+
+    it('should describe an unmatched bridge withdrawal with the withdrawal message', () => {
+      const issue = createIssue({
+        kind: IssueKind.UNMATCHED_BRIDGE,
+        payload: {
+          direction: 'withdrawal',
+          eventIdentifier: 13,
+          groupIdentifier: '0xabc',
+        },
+      });
+
+      expect(describeIssue(issue).messageKey).toBe('data_issues.description.unmatched_bridge_withdrawal');
+    });
+
     it('should fall back to an unknown description when the payload does not match the kind', () => {
       const issue = createIssue({ kind: IssueKind.NEGATIVE_BALANCE, payload: { garbage: true } });
 
@@ -139,6 +171,13 @@ describe('data-issues transforms', () => {
 
     it('should return undefined when there is no event identifier', () => {
       expect(relatedEventRoute(IssueKind.NEGATIVE_BALANCE, undefined)).toBeUndefined();
+    });
+
+    it('should deep-link an unmatched bridge issue to the bridge match dialog', () => {
+      expect(relatedEventRoute(IssueKind.UNMATCHED_BRIDGE, 12, '0xabc', 'ETH')).toEqual({
+        name: '/history/events/',
+        query: { openMatchBridgesDialog: 'true' },
+      });
     });
   });
 

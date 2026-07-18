@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { MatchingFlow, PotentialMatchRow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventCollectionRow } from '@/modules/history/events/schemas';
 import { bigNumberify } from '@rotki/common';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -6,17 +7,22 @@ import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-as
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import PotentialMatchesList from '@/modules/history/events/PotentialMatchesList.vue';
-import {
-  type PotentialMatchRow,
-  type UnmatchedAssetMovement,
-  useUnmatchedAssetMovements,
-} from '@/modules/history/events/use-unmatched-asset-movements';
+import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useAssetMovementSettings } from '@/modules/settings/use-asset-movement-settings';
 
-const { isPinned, movement } = defineProps<{
-  movement: UnmatchedAssetMovement;
+const { flow, isPinned, movement } = defineProps<{
+  movement: UnmatchedEventGroup;
   isPinned?: boolean;
   highlightedIdentifier?: number;
+  /**
+   * Overrides the default asset-movement matching backend calls, so the same
+   * content component can drive other matching flows (e.g. bridge transactions).
+   */
+  flow?: MatchingFlow;
+  /** Optional label describing the unmatched entry's type in the summary table. */
+  typeLabel?: string;
+  /** Optional header for the unmatched entry's location column in the summary table. */
+  locationHeader?: string;
 }>();
 
 const emit = defineEmits<{
@@ -79,7 +85,8 @@ async function searchPotentialMatches(): Promise<void> {
     const hours = Number.parseInt(get(searchTimeRange), 10) || getDefaultHourRange();
     const timeRangeInSeconds = hours * 60 * 60;
 
-    const suggestions = await getAssetMovementMatches(groupIdentifier, timeRangeInSeconds, get(onlyExpectedAssets), percentageToDecimal(get(tolerancePercentage)));
+    const getSuggestions = flow?.getSuggestions ?? getAssetMovementMatches;
+    const suggestions = await getSuggestions(groupIdentifier, timeRangeInSeconds, get(onlyExpectedAssets), percentageToDecimal(get(tolerancePercentage)));
     const allIdentifiers = [...suggestions.closeMatches, ...suggestions.otherEvents];
 
     if (allIdentifiers.length === 0) {
@@ -125,15 +132,20 @@ async function confirmMatch(): Promise<void> {
 
   try {
     const eventEntry = getEventEntryFromCollection(movement.events);
-    const assetMovementId = eventEntry.entry.identifier;
+    const unmatchedId = eventEntry.entry.identifier;
 
-    if (!assetMovementId)
+    if (!unmatchedId)
       return;
 
-    const result = await matchAssetMovement(assetMovementId, matchIds);
+    const result = flow
+      ? await flow.match(unmatchedId, matchIds)
+      : await matchAssetMovement(unmatchedId, matchIds);
 
     if (result.success) {
-      await refreshUnmatchedAssetMovements(true);
+      if (flow)
+        await flow.refresh(true);
+      else
+        await refreshUnmatchedAssetMovements(true);
       emit('matched');
     }
   }
@@ -172,6 +184,8 @@ watchImmediate(() => movement, async () => {
         :loading="searchLoading"
         :is-pinned="isPinned"
         :highlighted-identifier="highlightedIdentifier"
+        :type-label="typeLabel"
+        :location-header="locationHeader"
         @search="searchPotentialMatches()"
         @show-in-events="emit('show-in-events', $event)"
         @show-unmatched-in-events="emit('show-unmatched-in-events')"
