@@ -683,7 +683,7 @@ Querying premium capabilities
      - `enabled` (Boolean): Enables the statistics view and the historical analytics based on events.
      - `minimum_tier` (String): The minimum tier required to unlock this capability.
    - `asset_movement_matching`: Object with:
-     - `enabled` (Boolean): Enables automatic matching of exchange asset movements with onchain events when triggering the matching task.
+     - `enabled` (Boolean): Enables automatic matching of exchange asset movements with onchain events when triggering the matching task. Also gates the automatic matching of the two legs of cross-chain bridge transfers.
      - `minimum_tier` (String): The minimum tier required to unlock this capability.
    - `minimum_tier` can be `null` if the key is not present in the unlocks response from the server.
    - `current_tier`: String. Current user tier name. As of this writing the possible values are `Free` (no active subscription), `Supporter`, `Basic` and `Advanced`. The tier names are defined server-side, not in this repository, so the authoritative and up-to-date list can be fetched with an unauthenticated ``GET`` at ``https://rotki.com/webapi/2/available-tiers`` (the ``tier_name`` field of each entry). Paid tiers are ordered `Supporter` < `Basic` < `Advanced`.
@@ -979,6 +979,8 @@ Getting or modifying settings
               "csv_export_delimiter": ",",
               "asset_movement_amount_tolerance": "0.000001",
               "asset_movement_time_range": 54000,
+              "bridge_match_amount_tolerance": "0.01",
+              "bridge_match_time_range": 14400,
               "suppress_missing_key_msg_services": ["etherscan"],
               "auto_create_profit_events": false,
               "internal_txs_to_repull": 20,
@@ -1024,6 +1026,8 @@ Getting or modifying settings
    :resjson bool auto_detect_tokens: A boolean denoting whether to automatically detect and add tokens for EVM addresses. Default is ``true``.
    :resjson string csv_export_delimiter: The delimiter character to use when exporting data to CSV files. Default is ``","``.
    :resjson string asset_movement_amount_tolerance: The tolerance value used when matching asset movement amounts with onchain events. Must be a positive decimal number. Default is ``"0.000001"``.
+   :resjson string bridge_match_amount_tolerance: The tolerance value used when matching the amounts of the two legs of a cross-chain bridge transfer. Must be a positive decimal number. Default is ``"0.01"``.
+   :resjson int bridge_match_time_range: The time range after a bridge deposit in which to check for possible destination chain events. Default is 14400 (4 hours). Native bridges with challenge periods or manual claiming use longer hardcoded windows.
    :resjson int asset_movement_time_range: The time range before/after the asset movement (depending on if its a deposit/withdrawal) in which to check for possible matching events. Default is 54000 (15 hours). Note: there is also a 1 hour tolerance on the other side of the asset movement, since some exchanges do not provide accurate timestamps.
    :resjson list suppress_missing_key_msg_services: A list of services for which the missing api key WS message should be suppressed. Empty list by default.
    :resjson bool auto_create_profit_events: A boolean denoting whether profit history events are automatically created when protocol withdrawal events exceed deposits during historical balances processing. Default is ``false``.
@@ -1084,6 +1088,8 @@ Getting or modifying settings
    :resjson bool[optional] auto_detect_tokens: A boolean denoting whether to automatically detect and add tokens for EVM addresses.
    :resjson string[optional] csv_export_delimiter: The delimiter character to use when exporting data to CSV files.
    :resjson string[optional] asset_movement_amount_tolerance: The tolerance value used when matching asset movement amounts with onchain events. Must be a positive decimal number.
+   :resjson string[optional] bridge_match_amount_tolerance: The tolerance value used when matching the amounts of the two legs of a cross-chain bridge transfer. Must be a positive decimal number.
+   :resjson int[optional] bridge_match_time_range: The time range after a bridge deposit in which to check for possible destination chain events.
    :resjson int[optional] asset_movement_time_range: The time range before/after the asset movement (depending on if its a deposit/withdrawal) in which to check for possible matching events. Default is 54000 (15 hours). Note: there is also a 1 hour tolerance on the other side of the asset movement, since some exchanges do not provide accurate timestamps.
    :resjson list[optional] suppress_missing_key_msg_services: A list of services for which the missing api key WS message should be suppressed. Empty list by default.
    :resjson bool[optional] auto_create_profit_events: A boolean denoting whether profit history events are automatically created when protocol withdrawal events exceed deposits during historical balances processing.
@@ -1126,6 +1132,8 @@ Getting or modifying settings
               "csv_export_delimiter": ",",
               "asset_movement_amount_tolerance": "0.000001",
               "asset_movement_time_range": 54000,
+              "bridge_match_amount_tolerance": "0.01",
+              "bridge_match_time_range": 14400,
               "suppress_missing_key_msg_services": ["etherscan"],
               "auto_create_profit_events": false,
               "internal_txs_to_repull": 20,
@@ -1633,7 +1641,7 @@ Trigger an async task
 
           {"task": "historical_balance_processing"}
 
-        :reqjson str task: Name of the task to run. Valid values are ``historical_balance_processing`` and ``asset_movement_matching``. ``asset_movement_matching`` requires the premium capability ``asset_movement_matching``.
+        :reqjson str task: Name of the task to run. Valid values are ``historical_balance_processing``, ``asset_movement_matching`` and ``bridge_matching``. Both matching tasks require the premium capability ``asset_movement_matching``.
 
       **Example Response:**
 
@@ -6928,6 +6936,184 @@ Match exchange asset movements with onchain events
       }
 
    :reqjson int identifier: DB identifier of an asset movement or an event matched with an asset movement to unlink.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: A boolean for success or failure
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: Events unlinked successfully
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 401: No user is logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: Failure.
+   :statuscode 500: Internal rotki error
+
+Match the two legs of cross-chain bridge transfers
+==================================================
+
+.. http:put:: /api/(version)/history/events/match/bridges
+
+   Matches a source chain bridge deposit event with its destination chain event(s), resolves the deposit as a payment to an external (untracked) address, or marks it as having no match.
+
+   .. note::
+      This endpoint is only available for premium users
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/history/events/match/bridges HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "bridge_event": 123,
+          "matched_events": [124]
+      }
+
+   :reqjson int bridge_event: DB identifier of the bridge deposit event to match
+   :reqjson list[int][optional] matched_events: List of DB identifiers of destination chain events to match with the deposit. When omitted or empty the deposit is marked as having no match.
+   :reqjson bool[optional] external: When true (and matched_events is empty) the deposit is resolved as a payment to an external address that is not tracked. False by default.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: A boolean for success or failure
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: Events matched successfully
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 401: No user is logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 500: Internal rotki error
+
+.. http:get:: /api/(version)/history/events/match/bridges
+
+   Get a list of group identifiers of unmatched bridge events. Contains both source chain
+   deposits awaiting their destination leg and destination chain withdrawals whose source
+   leg is unknown. This endpoint does not require premium.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/events/match/bridges?only_ignored=false HTTP/1.1
+      Host: localhost:5042
+
+   :reqquery bool[optional] only_ignored: Flag indicating whether to return a list of the ignored bridge events, or the list of all bridge events that have not been matched or ignored yet.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+              "10x02age5aae29f74b39e7613a13eaaae00717bde70a165cfd69fef2fcd9d69e3",
+              "421610xc501c2198f7ed86f3047d23caf7b49df6dbaa3d9b1753a934b4e1c0d84"
+          ],
+          "message": ""
+      }
+
+   :resjson list result: A list of group identifiers for the unmatched bridge events.
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: List of group identifiers returned successfully
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in or failure
+   :statuscode 500: Internal rotki error
+
+.. http:post:: /api/(version)/history/events/match/bridges
+
+   Find possible destination chain matches for an unmatched bridge deposit.
+
+   .. note::
+      This endpoint is only available for premium users
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events/match/bridges HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "bridge_event": "10x02age5aae29f74b39e7613a13eaaae00717bde70a165cfd69fef2fcd9d69e3",
+          "time_range": 7200,
+          "only_expected_assets": true,
+          "tolerance": "0.01"
+      }
+
+   :reqjson string bridge_event: Group identifier of the bridge deposit to find matches for.
+   :reqjson int time_range: Time range in seconds to search for matches.
+   :reqjson bool[optional] only_expected_assets: Flag indicating whether to limit the possible matches to only events with assets in the same collection as the deposit's asset. True by default.
+   :reqjson string tolerance: The tolerance value used when matching amounts. Must be a positive decimal number.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "close_matches": [3, 4],
+              "other_events": [2, 5]
+          },
+          "message": ""
+      }
+
+   :resjson list close_matches: List of event identifiers that closely match the bridge deposit criteria (destination chain bridge withdrawals or plausible plain receives).
+   :resjson list other_events: List of other event identifiers within the time range.
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: Possible matches returned successfully
+   :statuscode 400: Provided JSON is in some way malformed or bridge deposit not found
+   :statuscode 401: No user is logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: Failure
+   :statuscode 500: Internal rotki error
+
+.. http:delete:: /api/(version)/history/events/match/bridges
+
+   Unlinks a matched bridge transfer restoring both legs to their pre-match state, or clears a no-match/external-payment resolution.
+
+   .. note::
+      This endpoint is only available for premium users
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/history/events/match/bridges HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "identifier": 123
+      }
+
+   :reqjson int identifier: DB identifier of either side of a matched bridge transfer, or of a bridge event marked as ignored/external.
 
    **Example Response**:
 

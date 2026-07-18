@@ -612,11 +612,13 @@ class DBHistoryEvents:
                 # The edit schema of plain history events provides no extra_data control,
                 # so an edit must not wipe it (e.g. events matched to asset movements).
                 event.extra_data = old_extra_data
-            elif (
-                (matched := old_extra_data.get('matched_asset_movement')) is not None and
-                (event.extra_data is None or 'matched_asset_movement' not in event.extra_data)
-            ):  # tied to the history_event_links table, which user edits don't touch
-                event.extra_data = (event.extra_data or {}) | {'matched_asset_movement': matched}
+            else:
+                for matched_key in ('matched_asset_movement', 'matched_bridge'):
+                    if (
+                        (matched := old_extra_data.get(matched_key)) is not None and
+                        (event.extra_data is None or matched_key not in event.extra_data)
+                    ):  # tied to the history_event_links table, which user edits don't touch
+                        event.extra_data = (event.extra_data or {}) | {matched_key: matched}
 
         if save_backup:
             self.save_history_event_backup(write_cursor=write_cursor, identifier=event.identifier)
@@ -2316,6 +2318,7 @@ class DBHistoryEvents:
             entries_with_limit: int,
             entries_total: int,
             ignored_group_identifiers: set[str],
+            link_type: HistoryEventLinkType = HistoryEventLinkType.ASSET_MOVEMENT_MATCH,
     ) -> tuple[
         list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry],
         dict[str, str],
@@ -2381,9 +2384,9 @@ class DBHistoryEvents:
                 'WHERE history_event_links.link_type = ? AND '
                 'history_event_links.left_event_id IN movement_ids',
                 (
-                    HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),
+                    link_type.serialize_for_db(),
                     *chunk,
-                    HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),
+                    link_type.serialize_for_db(),
                 ),
             ):
                 matched_rows.append((

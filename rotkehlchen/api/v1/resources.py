@@ -110,6 +110,7 @@ from rotkehlchen.api.v1.schemas import (
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
     FileListSchema,
+    FindPossibleBridgeMatchesSchema,
     FindPossibleMatchesSchema,
     GetUnmatchedAssetMovementsSchema,
     GnosisPaySiweChallengeSchema,
@@ -137,6 +138,7 @@ from rotkehlchen.api.v1.schemas import (
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
     MatchAssetMovementsSchema,
+    MatchBridgeTransactionsSchema,
     ModuleBalanceProcessingSchema,
     ModuleBalanceWithVersionProcessingSchema,
     ModuleHistoryProcessingSchema,
@@ -4029,6 +4031,52 @@ class MatchAssetMovementsResource(BaseMethodView):
     @use_kwargs(delete_schema, location='json')
     def delete(self, identifier: int) -> Response:
         return self.rest_api.unlink_matched_asset_movements(identifier=identifier)
+
+
+class MatchBridgeTransactionsResource(BaseMethodView):
+
+    get_schema = GetUnmatchedAssetMovementsSchema()
+    put_schema = MatchBridgeTransactionsSchema()
+    post_schema = FindPossibleBridgeMatchesSchema()
+    delete_schema = IntegerIdentifierSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, only_ignored: bool) -> Response:
+        return self.rest_api.get_unmatched_bridge_transactions(only_ignored=only_ignored)
+
+    @require_loggedin_user()
+    @require_premium_user(active_check=False)
+    @use_kwargs(put_schema, location='json')
+    def put(self, bridge_event: int, matched_events: list[int], external: bool) -> Response:
+        return self.rest_api.match_bridge_transactions(
+            bridge_event_identifier=bridge_event,
+            matched_event_identifiers=matched_events,
+            external=external,
+        )
+
+    @require_loggedin_user()
+    @require_premium_user(active_check=False)
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            bridge_event: str,
+            time_range: int,
+            only_expected_assets: bool,
+            tolerance: FVal,
+    ) -> Response:
+        return self.rest_api.get_matches_for_bridge_transaction(
+            bridge_group_identifier=bridge_event,
+            time_range=time_range,
+            only_expected_assets=only_expected_assets,
+            tolerance=tolerance,
+        )
+
+    @require_loggedin_user()
+    @require_premium_user(active_check=False)
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, identifier: int) -> Response:
+        return self.rest_api.unlink_matched_bridge_transactions(identifier=identifier)
 
 
 class CustomizedEventDuplicatesResource(BaseMethodView):

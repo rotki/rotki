@@ -170,6 +170,14 @@ from rotkehlchen.premium.premium import (
     has_premium_capability,
 )
 from rotkehlchen.serialization.serialize import process_result, process_result_list
+from rotkehlchen.tasks.bridges import (
+    ENTRY_TYPES_TO_EXCLUDE_FROM_BRIDGE_MATCHING,
+    MATCHED_BRIDGE_KEY,
+    find_bridge_transaction_matches,
+    get_unmatched_bridge_events,
+    process_bridge_transactions,
+    update_bridge_matched_event,
+)
 from rotkehlchen.tasks.events import (
     ENTRY_TYPES_TO_EXCLUDE_FROM_MATCHING,
     find_asset_movement_matches,
@@ -3706,20 +3714,26 @@ class RestAPI:
         if task == TaskName.HISTORICAL_BALANCE_PROCESSING:
             return self._trigger_historical_balance_processing()
 
-        else:  # task == TaskName.ASSET_MOVEMENT_MATCHING
+        else:  # task in (TaskName.ASSET_MOVEMENT_MATCHING, TaskName.BRIDGE_MATCHING)
             if has_premium_capability(
                     premium=self.rotkehlchen.premium,
                     capability_name=ASSET_MOVEMENT_MATCHING_CAPABILITY,
             ) is False:
                 return wrap_in_fail_result(
-                    message='Asset movement matching is not available for your current premium tier.',  # noqa: E501
+                    message='Automatic matching is not available for your current premium tier.',
                     status_code=HTTPStatus.FORBIDDEN,
                 )
 
-            process_asset_movements(
-                database=self.rotkehlchen.data.db,
-                should_auto_match=True,
-            )
+            if task == TaskName.ASSET_MOVEMENT_MATCHING:
+                process_asset_movements(
+                    database=self.rotkehlchen.data.db,
+                    should_auto_match=True,
+                )
+            else:  # task == TaskName.BRIDGE_MATCHING
+                process_bridge_transactions(
+                    database=self.rotkehlchen.data.db,
+                    should_auto_match=True,
+                )
 
         return OK_RESULT
 
@@ -4543,3 +4557,244 @@ class RestAPI:
                 )
             ],
         }))
+
+    def get_unmatched_bridge_transactions(self, only_ignored: bool) -> Response:
+        """Get the group identifiers of unmatched bridge events (both legs).
+        Gets the events marked as having no match if only_ignored is True, otherwise
+        all bridge events that have not been matched or ignored yet.
+        """
+        if only_ignored:
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                group_ids = [x[0] for x in cursor.execute(
+                    'SELECT DISTINCT history_events.group_identifier FROM history_events '
+                    'JOIN history_event_link_ignores ON '
+                    'history_events.identifier=history_event_link_ignores.event_id '
+                    'WHERE history_event_link_ignores.link_type=? '
+                    'ORDER BY timestamp, sequence_index',
+                    (HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(),),
+                )]
+        else:
+            deposits, withdrawals = get_unmatched_bridge_events(database=self.rotkehlchen.data.db)
+            # deposits first (they are actionable anchors), then orphan withdrawals
+            group_ids = list(dict.fromkeys(
+                event.group_identifier for event in deposits + withdrawals
+            ))
+
+        return api_response(_wrap_in_ok_result(result=group_ids))
+
+    def match_bridge_transactions(
+            self,
+            bridge_event_identifier: int,
+            matched_event_identifiers: list[int],
+            external: bool,
+    ) -> Response:
+        """Match a bridge deposit to destination chain event(s), resolve it as a payment to
+        an external (untracked) address, or mark it as having no match.
+        """
+        events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
+        if len(matched_event_identifiers) == 0:
+            if external:  # user confirmed the destination is not tracked: it is a payment
+                bridge_event = None
+                with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                    events = events_db.get_history_events_internal(
+                        cursor=cursor,
+                        filter_query=HistoryEventFilterQuery.make(
+                            identifiers=[bridge_event_identifier],
+                        ),
+                    )
+                    bridge_event = events[0] if len(events) == 1 else None
+
+                if bridge_event is None:
+                    return api_response(wrap_in_fail_result(
+                        message=f'No event found in the DB for identifier {bridge_event_identifier}',  # noqa: E501
+                    ), HTTPStatus.BAD_REQUEST)
+
+                if bridge_event.extra_data is None:
+                    bridge_event.extra_data = {}
+                bridge_event.extra_data[MATCHED_BRIDGE_KEY] = {'resolution': 'external'}
+                with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+                    events_db.edit_history_event(
+                        write_cursor=write_cursor,
+                        event=bridge_event,
+                        mapping_state=HistoryMappingState.MATCHED,
+                        save_backup=True,
+                    )
+
+            with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+                write_cursor.execute(
+                    'INSERT OR IGNORE INTO history_event_link_ignores(event_id, link_type) '
+                    'VALUES(?, ?)',
+                    (bridge_event_identifier, HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db()),  # noqa: E501
+                )
+            return api_response(OK_RESULT)
+
+        deposit, matched_events = None, []
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            for event in events_db.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(
+                    identifiers=[bridge_event_identifier, *matched_event_identifiers],
+                ),
+            ):
+                if event.identifier == bridge_event_identifier:
+                    deposit = event
+                elif event.identifier in matched_event_identifiers:
+                    matched_events.append(event)
+
+        if deposit is None:
+            error_msg = f'No bridge event found in the DB for identifier {bridge_event_identifier}'
+        elif len(matched_events) != len(matched_event_identifiers):
+            error_msg = f'Some of the specified matched event identifiers {matched_event_identifiers} are missing from the DB.'  # noqa: E501
+        else:
+            for matched_event in matched_events:
+                update_bridge_matched_event(
+                    events_db=events_db,
+                    deposit=deposit,
+                    matched_event=matched_event,
+                )
+            return api_response(OK_RESULT)
+
+        return api_response(wrap_in_fail_result(message=error_msg), HTTPStatus.BAD_REQUEST)
+
+    def get_matches_for_bridge_transaction(
+            self,
+            bridge_group_identifier: str,
+            time_range: int,
+            only_expected_assets: bool,
+            tolerance: FVal,
+    ) -> Response:
+        """Get possible destination-leg matches for the bridge deposit in the given group,
+        within the given time range."""
+        events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
+        deposit = None
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            for event in events_db.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(
+                    group_identifiers=[bridge_group_identifier],
+                    type_and_subtype_combinations=[
+                        (HistoryEventType.DEPOSIT, HistoryEventSubType.BRIDGE),
+                    ],
+                ),
+            ):
+                deposit = event
+                break
+
+        if deposit is None:
+            return api_response(wrap_in_fail_result(
+                message=f'No bridge deposit event found in the DB for group identifier {bridge_group_identifier}',  # noqa: E501
+            ), HTTPStatus.BAD_REQUEST)
+
+        assets_in_collection = GlobalDBHandler.get_assets_in_same_collection(
+            identifier=deposit.asset.identifier,
+        )
+        deposit_timestamp = ts_ms_to_sec(deposit.timestamp)
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            already_matched_event_ids = get_already_matched_event_ids(
+                cursor=cursor,
+                link_type=HistoryEventLinkType.BRIDGE_MATCH,
+            )
+            close_match_identifiers = [x.identifier for x in find_bridge_transaction_matches(
+                events_db=events_db,
+                deposit=deposit,
+                cursor=cursor,
+                assets_in_collection=assets_in_collection,
+                excluded_ids=already_matched_event_ids,
+                tolerance=tolerance,
+                match_window=time_range,
+            )]
+            other_events = events_db.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(
+                    order_by_rules=[TimestampProximityOrder(anchor=deposit.timestamp)],
+                    from_ts=Timestamp(deposit_timestamp - time_range),
+                    to_ts=Timestamp(deposit_timestamp + time_range),
+                    ignored_ids=close_match_identifiers + [deposit.identifier],  # type: ignore[arg-type]  # ids from db will not be none
+                    assets=assets_in_collection if only_expected_assets else None,
+                    entry_types=IncludeExcludeFilterData(
+                        values=ENTRY_TYPES_TO_EXCLUDE_FROM_BRIDGE_MATCHING,
+                        operator='NOT IN',
+                    ),
+                ),
+            )
+
+        return api_response(_wrap_in_ok_result(result={
+            'close_matches': close_match_identifiers,
+            'other_events': [
+                event.identifier for event in other_events
+                if (
+                    event.location != deposit.location and  # bridging is always cross-chain
+                    event.identifier not in already_matched_event_ids
+                )
+            ],
+        }))
+
+    def unlink_matched_bridge_transactions(self, identifier: int) -> Response:
+        """Unlink a bridge deposit from its matched destination event(s), restoring both
+        sides from the backups saved prior to matching. Also clears an external-payment
+        resolution or no-match marker if the event only had that.
+        """
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            linked_ids = defaultdict(list)
+            for deposit_id, matched_id in cursor.execute(
+                'SELECT left_event_id, right_event_id FROM history_event_links '
+                'WHERE link_type=? AND (left_event_id=? OR right_event_id=?)',
+                (HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(), identifier, identifier),
+            ):
+                linked_ids[deposit_id].append(matched_id)
+
+        if len(linked_ids) == 0:
+            with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+                if write_cursor.execute(
+                    'DELETE FROM history_event_link_ignores WHERE event_id=? AND link_type=?',
+                    (identifier, HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db()),
+                ).rowcount == 0:
+                    return api_response(wrap_in_fail_result(message=(
+                        f'The specified identifier {identifier} does not correspond to either '
+                        'side of any matched bridge transaction in the DB.'
+                    )), HTTPStatus.BAD_REQUEST)
+
+                # restore a possible external-payment resolution stamp
+                DBHistoryEvents.maybe_restore_history_events_from_backup(
+                    write_cursor=write_cursor,
+                    identifiers=[identifier],
+                )
+                write_cursor.execute(
+                    'DELETE FROM history_events_mappings '
+                    'WHERE parent_identifier=? AND name=? AND value=?',
+                    (
+                        identifier,
+                        HISTORY_MAPPING_KEY_STATE,
+                        HistoryMappingState.MATCHED.serialize_for_db(),
+                    ),
+                )
+                return api_response(OK_RESULT)
+
+        with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+            for deposit_identifier, matched_event_identifiers in linked_ids.items():
+                write_cursor.executemany(
+                    'DELETE FROM history_event_links WHERE left_event_id=? AND right_event_id=? '
+                    'AND link_type=?',
+                    [(
+                        deposit_identifier,
+                        matched_event_identifier,
+                        HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(),
+                    ) for matched_event_identifier in matched_event_identifiers],
+                )
+                DBHistoryEvents.maybe_restore_history_events_from_backup(
+                    write_cursor=write_cursor,
+                    identifiers=[*matched_event_identifiers, deposit_identifier],
+                )
+                placeholders = ','.join(['?'] * (len(matched_event_identifiers) + 1))
+                write_cursor.execute(
+                    'DELETE FROM history_events_mappings '
+                    f'WHERE parent_identifier IN({placeholders}) AND name=? AND value=?',
+                    (
+                        *matched_event_identifiers,
+                        deposit_identifier,
+                        HISTORY_MAPPING_KEY_STATE,
+                        HistoryMappingState.MATCHED.serialize_for_db(),
+                    ),
+                )
+
+        return api_response(OK_RESULT)

@@ -34,3 +34,4 @@ class ModuleWithStats(SerializableEnumNameMixin):
 class TaskName(SerializableEnumNameMixin):
     HISTORICAL_BALANCE_PROCESSING = auto()
     ASSET_MOVEMENT_MATCHING = auto()
+    BRIDGE_MATCHING = auto()

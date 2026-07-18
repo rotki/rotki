@@ -25,6 +25,7 @@ from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import HOUR_IN_SECONDS, ZERO
 from rotkehlchen.db.accounting_rules import query_missing_accounting_rules
+from rotkehlchen.db.constants import HistoryEventLinkType
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
@@ -730,6 +731,24 @@ class HistoryService:
             entries_total=entries_total,
             ignored_group_identifiers=set(events_result_info.ignored_group_identifiers),
         )
+        (  # also join the two legs of matched bridge transfers into one display group
+            processed_events_result,
+            bridge_joined_group_ids,
+            entries_found,
+            entries_with_limit,
+            entries_total,
+            ignored_group_identifiers,
+        ) = dbevents.process_matched_asset_movements(
+            cursor=cursor,
+            aggregate_by_group_ids=aggregate_by_group_ids,
+            events_result=processed_events_result,
+            entries_found=entries_found,
+            entries_with_limit=entries_with_limit,
+            entries_total=entries_total,
+            ignored_group_identifiers=ignored_group_identifiers,
+            link_type=HistoryEventLinkType.BRIDGE_MATCH,
+        )
+        joined_group_ids |= bridge_joined_group_ids
         return (
             events_result_info,
             processed_events_result,
@@ -810,12 +829,15 @@ class HistoryService:
                 replacement_group_id is not None and
                 ((  # this is a matched event
                      event.extra_data is not None and
-                     event.extra_data.get('matched_asset_movement') is not None
+                     (
+                         event.extra_data.get('matched_asset_movement') is not None or
+                         event.extra_data.get('matched_bridge') is not None
+                     )
                 ) or
                      event.entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT or
                      event.event_type == HistoryEventType.EXCHANGE_ADJUSTMENT
                 )
-            ):  # This event is part of a matched asset movement group.
+            ):  # This event is part of a matched asset movement or bridge group.
                 if len(current_sequential_group) > 0:  # First flush the current sequential group if present  # noqa: E501
                     entries.append(current_sequential_group)
                     current_sequential_group, last_subtype_index = [], None
