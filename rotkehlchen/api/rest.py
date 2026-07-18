@@ -611,8 +611,8 @@ class RestAPI:
         with self.task_lock:
             # From here on newly spawned tasks are cancelled at spawn (see
             # _query_async), so a task slipping in during the grace period below
-            # cannot escape cancellation. Reset by user_logout once teardown is done;
-            # deliberately never reset on shutdown.
+            # cannot escape cancellation. Reset by user_logout and session takeover
+            # once their teardown is done; deliberately never reset on shutdown.
             self.api_tasks_stop_reason = reason
             pending = [x for x in self.rotkehlchen.api_tasks if x.dead is False]
         if len(pending) != 0:
@@ -1182,6 +1182,8 @@ class RestAPI:
                 self._cancel_api_tasks(reason='Cancelled due to session takeover')
                 with self.task_lock:
                     self.task_results = {}
+                    # the session lives on: allow the taking-over session to spawn api tasks
+                    self.api_tasks_stop_reason = None
             token = self.session_store.login(name)
 
         response = api_response(_wrap_in_ok_result({}), status_code=HTTPStatus.OK)

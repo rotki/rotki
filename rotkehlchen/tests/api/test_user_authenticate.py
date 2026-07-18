@@ -26,6 +26,7 @@ from rotkehlchen.constants.misc import GLOBALDIR_NAME
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_ok_async_response,
     assert_proper_sync_response_with_result,
 )
 
@@ -281,6 +282,26 @@ def test_new_session_rotates_sid_and_kicks_the_old_window(
         )
         # the new window passes
         assert second.get(settings_url).status_code == HTTPStatus.OK
+
+        # the takeover must not leave the api-task kill switch latched: the new
+        # window's async queries have to actually run, not be cancelled at spawn
+        assert rotkehlchen_api_server.rest_api.api_tasks_stop_reason is None
+        task_id = assert_ok_async_response(second.get(
+            api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
+            json={'async_query': True},
+        ))
+        deadline = time.monotonic() + 30
+        while True:  # poll through `second` since the async-tasks route is cookie-gated
+            assert time.monotonic() < deadline, f'timed out waiting for task id {task_id}'
+            result = second.get(api_url_for(
+                rotkehlchen_api_server,
+                'specific_async_tasks_resource',
+                task_id=task_id,
+            )).json()['result']
+            if result['status'] == 'completed':
+                break
+            time.sleep(.2)
+        assert result['outcome']['result'] is not None
     finally:
         _disable_session(rotkehlchen_api_server)
 
