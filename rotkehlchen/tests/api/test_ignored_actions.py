@@ -180,3 +180,20 @@ def test_ignore_history_events_in_accountant(rotkehlchen_api_server: APIServer) 
         ignored.append(should_ignore)
 
     assert ignored == [False, True]
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_get_ignored_action_ids_scoped(rotkehlchen_api_server: APIServer) -> None:
+    """Test that restricting get_ignored_action_ids to given identifiers returns only
+    the matching ones. The history page uses this to check membership for one page of
+    events without materializing the whole (potentially huge) ignored_actions table."""
+    data = _populate_ignored_actions(rotkehlchen_api_server)
+    ignored_id = next(iter(data))
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert rotki.data.db.get_ignored_action_ids(
+            cursor=cursor,
+            identifiers={ignored_id, 'some-untracked-group-identifier'},
+        ) == {ignored_id}
+        assert rotki.data.db.get_ignored_action_ids(cursor=cursor, identifiers=set()) == set()
+        assert rotki.data.db.get_ignored_action_ids(cursor=cursor, identifiers=data) == data

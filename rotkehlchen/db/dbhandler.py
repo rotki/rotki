@@ -162,7 +162,7 @@ from rotkehlchen.utils.misc import get_chunks, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping, Sequence
+    from collections.abc import Collection, Iterator, Mapping, Sequence
 
     from rotkehlchen.chain.substrate.types import SubstrateAddress
     from rotkehlchen.db.filtering import UserNotesFilterQuery
@@ -260,6 +260,11 @@ class DBHandler:
         # resurrected by that query's stale result. Same pattern as
         # CacheableMixIn.cache_flush_generation.
         self._ignored_assets_flush_generation = 0
+        # Memoizes the unfiltered history_events (group) counts queried on every history
+        # page load, keyed by group_by. Each value carries the write connection's
+        # total_changes counter at query time: any DB write since then makes the entry
+        # stale, so no write path needs to know about this cache to invalidate it.
+        self._history_events_count_cache: dict[str | None, tuple[int, int]] = {}
         # tracks, in memory, which chains may have transactions pending receipt fetching or
         # decoding so the periodic scheduler can skip its full-table "is there work?" scans
         self.pending_txs_tracker = PendingTransactionsTracker()
@@ -1621,8 +1626,24 @@ class DBHandler:
     def get_ignored_action_ids(
             self,
             cursor: DBCursor,
+            identifiers: Collection[str] | None = None,
     ) -> set[str]:
-        return {entry[0] for entry in cursor.execute('SELECT identifier from ignored_actions;')}
+        """Get the ignored action identifiers, optionally restricted to the given ones.
+
+        Pass identifiers whenever the caller only needs membership checks for a known
+        set (e.g. the events of one history page) -- long-lived accounts accumulate tens
+        of thousands of ignored actions and materializing them all is wasteful.
+        """
+        if identifiers is None:
+            return {entry[0] for entry in cursor.execute('SELECT identifier from ignored_actions;')}  # noqa: E501
+
+        ignored_ids: set[str] = set()
+        for chunk, placeholders in get_query_chunks(data=list(identifiers)):
+            ignored_ids.update(entry[0] for entry in cursor.execute(
+                f'SELECT identifier FROM ignored_actions WHERE identifier IN ({placeholders})',
+                chunk,
+            ))
+        return ignored_ids
 
     def add_multiple_balances(self, write_cursor: DBCursor, balances: list[DBAssetBalance]) -> None:  # noqa: E501
         """Execute addition of multiple balances in the DB"""
@@ -2938,7 +2959,20 @@ class DBHandler:
             group_by: str | None = None,
             **kwargs: Any,
     ) -> int:
-        """Returns how many of a certain type of entry are saved in the DB"""
+        """Returns how many of a certain type of entry are saved in the DB
+
+        The unfiltered history_events counts are memoized since they scan the whole
+        (potentially huge) table and are queried on every history page request. A
+        cached count is only served while the connection's total_changes counter is
+        unchanged, i.e. while no DB row has been written since it was computed.
+        """
+        # snapshot BEFORE counting, so a write racing the count below can only
+        # invalidate, never validate, the cached entry
+        may_cache = entries_table == 'history_events' and len(kwargs) == 0
+        total_changes = self.conn.total_changes if may_cache else 0
+        if may_cache and (cache_entry := self._history_events_count_cache.get(group_by)) is not None and cache_entry[1] == total_changes:  # noqa: E501
+            return cache_entry[0]
+
         if group_by is not None:
             cursorstr = f'SELECT COUNT(DISTINCT {group_by}) from {entries_table}'
         else:
@@ -2949,7 +2983,18 @@ class DBHandler:
         cursorstr += ';'
         cursor.execute(cursorstr)
 
-        return cursor.fetchone()[0]
+        count = cursor.fetchone()[0]
+        if (
+            may_cache and
+            # Don't cache while a write transaction or savepoint stack is open: its rows
+            # already bumped total_changes at statement time, so once it commits nothing
+            # further invalidates an entry cached now from the pre-commit state (and a
+            # count read through the write connection would include uncommitted rows).
+            self.conn.write_task_ident is None and
+            self.conn.savepoint_task_ident is None
+        ):
+            self._history_events_count_cache[group_by] = (count, total_changes)
+        return count
 
     def delete_data_for_evm_address(
             self,
