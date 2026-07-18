@@ -514,9 +514,14 @@ class EtherscanLikeApi(ABC):
                 expected_page_size = int(offset)
 
         if len(result) != expected_page_size:
+            # a short page is the last page. An oversized one means the server ignored
+            # the expected page size (e.g. blockscout's getminedblocks disregards both
+            # the block range and the configured limit) so there is nothing to advance
             return None
 
-        if 'txhash' in options and (page := options.get('page')) is not None:
+        # txhash-scoped internal txs and getminedblocks lack block range filtering,
+        # so they can only be paginated by incrementing the page number
+        if ('txhash' in options or 'blocktype' in options) and (page := options.get('page')) is not None:  # noqa: E501
             with suppress(TypeError, ValueError):
                 options['page'] = str(int(page) + 1)
                 return options
