@@ -23,6 +23,7 @@ from rotkehlchen.constants.resolver import (
     solana_address_to_identifier,
     strethaddress_to_identifier,
 )
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
@@ -502,7 +503,9 @@ def test_deleting_user_assets(
     result = assert_proper_sync_response_with_result(response)
     user_asset3_id = result['identifier']
 
-    # Delete user asset 3 and assert it works
+    # Delete user asset 3 and assert it works. Resolve it first so the resolver
+    # caches are warm and we can check deletion also cleans them
+    Asset(user_asset3_id).check_existence()
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -512,6 +515,8 @@ def test_deleting_user_assets(
     )
     assert_proper_response(response)
     assert globaldb.get_asset_data(identifier=user_asset3_id, form_with_incomplete_data=False) is None  # noqa: E501
+    with pytest.raises(UnknownAsset):  # the existence cache entry is also gone
+        Asset(user_asset3_id).check_existence()
 
     # Delete user_asset1 and assert it works
     response = requests.delete(

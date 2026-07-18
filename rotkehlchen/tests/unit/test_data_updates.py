@@ -331,6 +331,9 @@ def test_update_spam_assets(data_updater: RotkiDataUpdater) -> None:
     with pytest.raises(UnknownAsset):
         EvmToken(op_spam_token_id)
 
+    with data_updater.user_db.conn.read_ctx() as cursor:  # warm the ignored assets cache to check the update invalidates it  # noqa: E501
+        assert eth_spam_token_id not in data_updater.user_db.get_ignored_asset_ids(cursor)
+
     # set a high version of the globaldb to avoid conflicts with future changes
     with patch('requests.get', wraps=make_single_mock_github_data_response(UpdateType.SPAM_ASSETS)):  # noqa: E501
         data_updater.check_for_updates()
@@ -344,6 +347,8 @@ def test_update_spam_assets(data_updater: RotkiDataUpdater) -> None:
     with data_updater.user_db.conn.read_ctx() as cursor:
         cursor.execute('SELECT identifier FROM assets WHERE identifier IN (?, ?)', (eth_spam_token_id, op_spam_token_id))  # noqa: E501
         assert cursor.fetchall() == [(eth_spam_token_id,), (op_spam_token_id,)]
+        # the ignored assets cache was invalidated so the new spam assets are visible
+        assert {eth_spam_token_id, op_spam_token_id} <= data_updater.user_db.get_ignored_asset_ids(cursor)  # noqa: E501
 
 
 def test_updates_run(data_updater: RotkiDataUpdater) -> None:

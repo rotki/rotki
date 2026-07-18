@@ -4132,6 +4132,7 @@ class RestAPI:
             except (UnknownAsset, InputError) as e:
                 # delete newly created asset from global db, safe since we just added it above
                 GlobalDBHandler.delete_asset_by_identifier(solana_token.identifier)
+                AssetResolver.clean_memory_cache(solana_token.identifier)
                 with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
                     # delete won't fail, either asset doesn't exist or has no references
                     self.rotkehlchen.data.db.delete_asset_identifier(

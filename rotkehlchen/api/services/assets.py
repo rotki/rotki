@@ -267,7 +267,7 @@ class AssetsService:
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
-        AssetResolver().assets_cache.remove(asset.identifier)
+        AssetResolver.clean_memory_cache(asset.identifier)
         self.rotkehlchen.icon_manager.failed_asset_ids.remove(asset.identifier)
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
@@ -282,7 +282,7 @@ class AssetsService:
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
-        AssetResolver().assets_cache.remove(identifier)
+        AssetResolver.clean_memory_cache(identifier)
         self.rotkehlchen.icon_manager.failed_asset_ids.remove(identifier)
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
@@ -292,7 +292,7 @@ class AssetsService:
         except (UnknownAsset, InputError) as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
-        AssetResolver().assets_cache.remove(source_identifier)
+        AssetResolver.clean_memory_cache(source_identifier)
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
     def get_custom_assets(self, filter_query: CustomAssetsFilterQuery) -> dict[str, Any]:
@@ -323,7 +323,7 @@ class AssetsService:
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
-        AssetResolver().assets_cache.remove(custom_asset.identifier)
+        AssetResolver.clean_memory_cache(custom_asset.identifier)
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
     def get_custom_asset_types(self) -> dict[str, Any]:

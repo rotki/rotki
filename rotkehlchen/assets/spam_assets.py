@@ -96,6 +96,7 @@ def update_spam_assets(db: DBHandler, assets_info: list[dict[str, Any]]) -> int:
             'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
             [('ignored_asset', x.identifier) for x in spam_tokens if x.identifier not in ignored_asset_ids],  # noqa: E501
         )
+        db.invalidate_ignored_assets_cache()
         return write_cursor.rowcount
 
 
