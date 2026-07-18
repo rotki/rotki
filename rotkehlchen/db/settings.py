@@ -83,6 +83,8 @@ DEFAULT_AUTO_DETECT_TOKENS: Final = True
 DEFAULT_CSV_EXPORT_DELIMITER: Final = ','
 DEFAULT_ASSET_MOVEMENT_AMOUNT_TOLERANCE: Final = FVal('0.005')
 DEFAULT_ASSET_MOVEMENT_TIME_RANGE: Final = HOUR_IN_SECONDS * 20
+DEFAULT_BRIDGE_MATCH_AMOUNT_TOLERANCE: Final = FVal('0.01')  # bridge relayer/bonder fees are larger than exchange withdrawal dust  # noqa: E501
+DEFAULT_BRIDGE_MATCH_TIME_RANGE: Final = HOUR_IN_SECONDS * 4
 DEFAULT_AUTO_CREATE_PROFIT_EVENTS: Final = False
 DEFAULT_USE_ASSET_COLLECTIONS_IN_COST_BASIS: Final = True
 DEFAULT_INTERNAL_TXS_TO_REPULL: Final = 100
@@ -143,6 +145,7 @@ INTEGER_KEYS: Final = (
     'oracle_penalty_threshold_count',
     'oracle_penalty_duration',
     'asset_movement_time_range',
+    'bridge_match_time_range',
     'internal_txs_to_repull',
     'internal_tx_conflict_repull_frequency',
 )
@@ -167,6 +170,7 @@ STRING_KEYS_REMOVE_IF_EMPTY: Final = frozenset({
 })
 FVAL_KEYS: Final = (
     'asset_movement_amount_tolerance',
+    'bridge_match_amount_tolerance',
 )
 
 UPDATE_TYPES_VERSIONS: Final = {x.serialize() for x in UpdateType}
@@ -218,6 +222,8 @@ CachedDBSettingsFieldNames = Literal[
     'ask_user_upon_size_discrepancy',
     'asset_movement_amount_tolerance',
     'asset_movement_time_range',
+    'bridge_match_amount_tolerance',
+    'bridge_match_time_range',
     'suppress_missing_key_msg_services',
     'auto_create_profit_events',
     'use_asset_collections_in_cost_basis',
@@ -298,6 +304,8 @@ class DBSettings:
     csv_export_delimiter: str = DEFAULT_CSV_EXPORT_DELIMITER
     asset_movement_amount_tolerance: FVal = DEFAULT_ASSET_MOVEMENT_AMOUNT_TOLERANCE
     asset_movement_time_range: int = DEFAULT_ASSET_MOVEMENT_TIME_RANGE
+    bridge_match_amount_tolerance: FVal = DEFAULT_BRIDGE_MATCH_AMOUNT_TOLERANCE
+    bridge_match_time_range: int = DEFAULT_BRIDGE_MATCH_TIME_RANGE
     suppress_missing_key_msg_services: list[ExternalService] = field(default_factory=list)
     auto_create_profit_events: bool = DEFAULT_AUTO_CREATE_PROFIT_EVENTS
     use_asset_collections_in_cost_basis: bool = DEFAULT_USE_ASSET_COLLECTIONS_IN_COST_BASIS
@@ -381,6 +389,8 @@ class ModifiableDBSettings(NamedTuple):
     btc_mempool_api: str | None = None
     asset_movement_amount_tolerance: FVal | None = None
     asset_movement_time_range: int | None = None
+    bridge_match_amount_tolerance: FVal | None = None
+    bridge_match_time_range: int | None = None
     suppress_missing_key_msg_services: list[ExternalService] | None = None
     auto_create_profit_events: bool | None = None
     use_asset_collections_in_cost_basis: bool | None = None

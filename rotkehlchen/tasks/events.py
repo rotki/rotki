@@ -1250,12 +1250,13 @@ def _match_amount(
 
 def get_already_matched_event_ids(
         cursor: DBCursor,
+        link_type: HistoryEventLinkType = HistoryEventLinkType.ASSET_MOVEMENT_MATCH,
 ) -> set[int]:
-    """Get ids already participating in asset movement matches on either side of the link."""
+    """Get ids already participating in matches of the given link type on either side."""
     event_ids: set[int] = set()
     for row in cursor.execute(
         'SELECT left_event_id, right_event_id FROM history_event_links WHERE link_type=?;',
-        (HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),),
+        (link_type.serialize_for_db(),),
     ):
         event_ids.add(int(row[0]))
         event_ids.add(int(row[1]))

@@ -690,6 +690,24 @@ Sent when the periodic event processing task is unable to find corresponding eve
 - ``count``: Total number of asset movements that could not be matched.
 
 
+Unmatched Bridge Transactions
+=================================
+
+Sent when the bridge matching task is unable to find the counterpart leg for some
+cross-chain bridge events. The count includes both source chain deposits awaiting
+their destination leg and destination chain withdrawals whose source leg is unknown.
+
+::
+
+    {
+        "type": "unmatched_bridge_transactions",
+        "data": {"count": 2}
+    }
+
+
+- ``count``: Total number of bridge events that could not be matched.
+
+
 Internal Transaction Conflict Fixed
 ====================================
 
