@@ -7029,8 +7029,8 @@ Match the two legs of cross-chain bridge transfers
 
       {
           "result": [
-              "10x02age5aae29f74b39e7613a13eaaae00717bde70a165cfd69fef2fcd9d69e3",
-              "421610xc501c2198f7ed86f3047d23caf7b49df6dbaa3d9b1753a934b4e1c0d84"
+              "10x0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8",
+              "421610x9f8e7d6c5b4a30219f8e7d6c5b4a30219f8e7d6c5b4a30219f8e7d6c5b4a3021"
           ],
           "message": ""
       }
@@ -7058,7 +7058,7 @@ Match the two legs of cross-chain bridge transfers
       Content-Type: application/json;charset=UTF-8
 
       {
-          "bridge_event": "10x02age5aae29f74b39e7613a13eaaae00717bde70a165cfd69fef2fcd9d69e3",
+          "bridge_event": "10x0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8",
           "time_range": 7200,
           "only_expected_assets": true,
           "tolerance": "0.01"
