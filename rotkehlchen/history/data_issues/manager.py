@@ -16,6 +16,7 @@ from rotkehlchen.history.data_issues.types import (
     DataIssueFilters,
     DataIssuePayload,
     NegativeBalanceIssuePayload,
+    UnmatchedBridgeIssuePayload,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
@@ -131,8 +132,11 @@ class DataIssuesManager:
         issue_severity = severity if severity is not None else ISSUE_KIND_SEVERITY[kind]
         payload_json = json.dumps(payload, separators=(',', ':'))
         created_at = ts_now()
-        if kind == IssueKind.NEGATIVE_BALANCE:
-            event_identifier = cast('NegativeBalanceIssuePayload', payload)['event_identifier']
+        if kind in (IssueKind.NEGATIVE_BALANCE, IssueKind.UNMATCHED_BRIDGE):
+            event_identifier = cast(
+                'NegativeBalanceIssuePayload | UnmatchedBridgeIssuePayload',
+                payload,
+            )['event_identifier']
         else:  # kind == IssueKind.CURRENT_BALANCE_MISMATCH
             event_identifier = None
         with self.db.user_write() as write_cursor:

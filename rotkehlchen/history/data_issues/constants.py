@@ -5,6 +5,7 @@ from typing import Final
 class IssueKind(StrEnum):
     CURRENT_BALANCE_MISMATCH = 'current_balance_mismatch'
     NEGATIVE_BALANCE = 'negative_balance'
+    UNMATCHED_BRIDGE = 'unmatched_bridge'
 
 
 class IssueState(StrEnum):
@@ -22,6 +23,7 @@ class IssueSeverity(StrEnum):
 ISSUE_KIND_SEVERITY: Final[dict[IssueKind, IssueSeverity]] = {
     IssueKind.CURRENT_BALANCE_MISMATCH: IssueSeverity.WARNING,
     IssueKind.NEGATIVE_BALANCE: IssueSeverity.WARNING,
+    IssueKind.UNMATCHED_BRIDGE: IssueSeverity.WARNING,
 }
 
 ALLOWED_STATE_TRANSITIONS: Final[dict[IssueState, frozenset[IssueState]]] = {
