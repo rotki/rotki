@@ -19,6 +19,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.utils import make_bridge_extra_data, set_bridge_extra_data
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -140,12 +141,14 @@ class HopCommonDecoder(EvmDecoderInterface):
 
     def _decode_withdrawal_bonded(self, context: DecoderContext) -> EvmDecodingOutput:
         """This function is used to decode the WithdrawalBonded events on Hop protocol."""
-        if not self.base.is_tracked(bytes_to_address(context.transaction.input_data[4:36])):
+        if not self.base.is_tracked(recipient := bytes_to_address(context.transaction.input_data[4:36])):  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
         if (bridge := self.bridges.get(context.tx_log.address)) is None:
             return DEFAULT_EVM_DECODING_OUTPUT
 
+        # the source chain is not present in the destination logs, so it is omitted here
+        transfer_id = '0x' + context.tx_log.topics[1].hex()
         for event in context.decoded_events:
             if (
                 event.address in (bridge.amm_wrapper, context.tx_log.address) and
@@ -159,6 +162,13 @@ class HopCommonDecoder(EvmDecoderInterface):
                     amount=event.amount, asset=event.asset,
                 )
                 event.counterparty = CPT_HOP
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=None,
+                    to_chain=self.node_inquirer.chain_id,
+                    to_address=recipient,
+                    transfer_id=transfer_id,
+                )
                 break
 
         else:
@@ -177,6 +187,12 @@ class HopCommonDecoder(EvmDecoderInterface):
                 to_event_subtype=HistoryEventSubType.BRIDGE,
                 to_notes=self._generate_bridge_note(amount=norm_amount, asset=asset),
                 to_counterparty=CPT_HOP,
+                extra_data=make_bridge_extra_data(
+                    from_chain=None,
+                    to_chain=self.node_inquirer.chain_id,
+                    to_address=recipient,
+                    transfer_id=transfer_id,
+                ),
             )
             return EvmDecodingOutput(action_items=[action_item])
 
@@ -194,6 +210,8 @@ class HopCommonDecoder(EvmDecoderInterface):
         amount = self._get_bridge_asset_amount(amount_raw=amount_raw, identifier=bridge.identifier)
         bonder_fee_raw = int.from_bytes(context.tx_log.data[64:96])
         bonder_fee = token_normalized_value_decimals(bonder_fee_raw, DEFAULT_TOKEN_DECIMALS)
+        to_chain = int.from_bytes(context.tx_log.topics[2])
+        transfer_id = '0x' + context.tx_log.topics[1].hex()
         for event in context.decoded_events:
             if (
                 event.address in (bridge.amm_wrapper, context.tx_log.address) and
@@ -228,8 +246,16 @@ class HopCommonDecoder(EvmDecoderInterface):
                     amount=event.amount,
                     asset=event.asset,
                     recipient=recipient,
-                    sender=string_to_evm_address(event.location_label) if event.location_label else None,  # noqa: E501
-                    chain_id=int.from_bytes(context.tx_log.topics[2]),
+                    sender=(sender := string_to_evm_address(event.location_label) if event.location_label else None),  # noqa: E501
+                    chain_id=to_chain,
+                )
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=self.node_inquirer.chain_id,
+                    to_chain=to_chain,
+                    from_address=sender,
+                    to_address=recipient,
+                    transfer_id=transfer_id,
                 )
                 break
 
@@ -246,13 +272,21 @@ class HopCommonDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_HOP
                 event.notes = f'Burn {event.amount} of Hop {event.asset.symbol_or_name()}'
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=self.node_inquirer.chain_id,
+                    to_chain=to_chain,
+                    from_address=string_to_evm_address(event.location_label) if event.location_label else None,  # noqa: E501
+                    to_address=recipient,
+                    transfer_id=transfer_id,
+                )
                 break
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:
         """This function is used to decode the Withdrew event on Hop protocol."""
-        if not self.base.is_tracked(bytes_to_address(context.tx_log.topics[2])):
+        if not self.base.is_tracked(recipient := bytes_to_address(context.tx_log.topics[2])):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         if (bridge := self.bridges.get(context.tx_log.address)) is None:
@@ -260,6 +294,8 @@ class HopCommonDecoder(EvmDecoderInterface):
 
         amount_raw = int.from_bytes(context.tx_log.data[:32])
         amount = self._get_bridge_asset_amount(amount_raw=amount_raw, identifier=bridge.identifier)
+        # the source chain is not present in the destination logs, so it is omitted here
+        transfer_id = '0x' + context.tx_log.topics[1].hex()
         for event in context.decoded_events:
             if (
                 event.address in (bridge.amm_wrapper, context.tx_log.address) and
@@ -274,6 +310,13 @@ class HopCommonDecoder(EvmDecoderInterface):
                     amount=event.amount, asset=event.asset,
                 )
                 event.counterparty = CPT_HOP
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=None,
+                    to_chain=self.node_inquirer.chain_id,
+                    to_address=recipient,
+                    transfer_id=transfer_id,
+                )
                 break
 
         else:
@@ -295,6 +338,12 @@ class HopCommonDecoder(EvmDecoderInterface):
                 to_event_subtype=HistoryEventSubType.BRIDGE,
                 to_notes=self._generate_bridge_note(amount=norm_amount, asset=asset),
                 to_counterparty=CPT_HOP,
+                extra_data=make_bridge_extra_data(
+                    from_chain=None,
+                    to_chain=self.node_inquirer.chain_id,
+                    to_address=recipient,
+                    transfer_id=transfer_id,
+                ),
             )
             return EvmDecodingOutput(action_items=[action_item])
 
@@ -318,6 +367,12 @@ class HopCommonDecoder(EvmDecoderInterface):
                     asset=event.asset,
                     recipient=recipient,
                     sender=string_to_evm_address(event.location_label) if event.location_label else None,  # noqa: E501
+                )
+                set_bridge_extra_data(  # no transfer id exists for L1 -> L2 transfers
+                    event=event,
+                    from_chain=ChainID.ETHEREUM,  # hop's L1 is always ethereum
+                    to_chain=self.node_inquirer.chain_id,
+                    to_address=recipient,
                 )
                 break
 

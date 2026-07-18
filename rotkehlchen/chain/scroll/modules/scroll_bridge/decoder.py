@@ -11,9 +11,18 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
+from rotkehlchen.chain.evm.decoding.utils import (
+    bridge_match_transfer,
+    bridge_prepare_data,
+    set_bridge_extra_data,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.scroll.constants import CPT_SCROLL, SCROLL_CPT_DETAILS
+from rotkehlchen.chain.scroll.utils import (
+    RELAY_MESSAGE,
+    RELAYED_MESSAGE,
+    get_scroll_messenger_transfer_id,
+)
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -37,16 +46,13 @@ L2_ETH_GATEWAY: Final = string_to_evm_address('0x6EA73e05AdC79974B931123675ea8F7
 L2_ERC20_GATEWAY: Final = string_to_evm_address('0xE2b4795039517653c5Ae8C2A9BFdd783b48f447A')
 # USDC has a special gateway
 L2_USDC_GATEWAY: Final = string_to_evm_address('0x33B60d5Dd260d453cAC3782b0bDC01ce84672142')
+L2_MESSENGER_PROXY: Final = string_to_evm_address('0x781e90f1c8Fc4611c9b7497C3B47F99Ef6969CbC')
 
 # Topics
 FINALIZE_DEPOSIT_ETH: Final = b'\x9e\x86\xc3V\xe1N$\xe2n<\xe7i\xbf\x8b\x87\xde8\xe0\xfa\xa0\xed\x0c\xa9F\xfa\te\x9a\xa6\x06\xbd-'  # noqa: E501
 WITHDRAW_ETH: Final = b'\xd8\xedn\xaa\x9az\x89\x80\xd7\x90\x1e\x91\x1f\xdef\x86\x81\x0b\x98\x9d0\x82\x18-\x1d:=\xf60l\xe2\x0e'  # noqa: E501
 FINALIZE_DEPOSIT_ERC20: Final = b'\x16[\xa6\x9fj\xb4\x0cP\xca\xdeoeC\x18\x01\xe5\xf9\xc7\xd7\x83\x0buE9\x19 \xdb\x03\x913\xba4'  # noqa: E501
 WITHDRAW_ERC20: Final = b"\xd8\xd3\xa3\xf4\xab\x95iK\xef@GY\x97Y\x8b\xcf\x8a\xcd>\xd9azL\x10\x13yT)AL'\xe8"  # noqa: E501
-RELAYED_MESSAGE: Final = b"FA\xdfJ\x96 q\xe1'\x19\xd8\xc8\xc8\xe5\xac\x7f\xc4\xd9{\x92sF\xa3\xd7\xa35\xb1\xf7Q~\x13<"  # noqa: E501
-
-# Method signatures
-RELAY_MESSAGE: Final = b'\x8e\xf13.'
 
 
 class ScrollBridgeDecoder(EvmDecoderInterface):
@@ -96,6 +102,17 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
                 event.notes = (
                     f'Bridge {event.amount} ETH from {from_chain.label()} '
                     f'to {to_chain.label()} via Scroll bridge'
+                )
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=from_chain,
+                    to_chain=to_chain,
+                    from_address=bytes_to_address(context.tx_log.topics[1]),
+                    to_address=bytes_to_address(context.tx_log.topics[2]),
+                    transfer_id=get_scroll_messenger_transfer_id(
+                        all_logs=context.all_logs,
+                        messenger=L2_MESSENGER_PROXY,
+                    ),
                 )
                 break
         else:
@@ -153,6 +170,10 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
                     expected_event_type=expected_event_type,
                     new_event_type=new_event_type,
                     counterparty=SCROLL_CPT_DETAILS,
+                    transfer_id=get_scroll_messenger_transfer_id(
+                        all_logs=context.all_logs,
+                        messenger=L2_MESSENGER_PROXY,
+                    ),
                 )
 
         log.error(
@@ -194,6 +215,17 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
                 event.notes = (
                     f'Bridge {amount} ETH from Ethereum to Scroll '
                     f'via Scroll bridge'
+                )
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=ChainID.ETHEREUM,
+                    to_chain=ChainID.SCROLL,
+                    from_address=from_address,
+                    to_address=to_address,
+                    transfer_id=get_scroll_messenger_transfer_id(
+                        all_logs=context.all_logs,
+                        messenger=L2_MESSENGER_PROXY,
+                    ),
                 )
                 break
 

@@ -50,6 +50,13 @@ def test_zksync_lite_legacy_deposit(ethereum_inquirer, ethereum_accounts):
             notes=f'Deposit {dai_str} DAI to zksync',
             counterparty=CPT_ZKSYNC,
             address=ZKSYNC_BRIDGE,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 'zksync_lite',
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '2310',
+            }},
         ),
     ]
 
@@ -87,6 +94,13 @@ def test_zksync_lite_deposit(ethereum_inquirer, ethereum_accounts):
             notes=f'Deposit {dai_str} DAI to zksync',
             counterparty=CPT_ZKSYNC,
             address=ZKSYNC_BRIDGE,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 'zksync_lite',
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '243318',
+            }},
         ),
     ]
 
@@ -112,6 +126,11 @@ def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
             notes=f'Withdraw {eth_str} ETH from zksync',
             counterparty=CPT_ZKSYNC,
             address=ZKSYNC_BRIDGE,
+            extra_data=(withdrawal_extra_data := {'bridge': {
+                'from_chain': 'zksync_lite',
+                'to_chain': 1,
+                'to_address': user_address,
+            }}),
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=176,
@@ -125,6 +144,7 @@ def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
             notes=f'Withdraw {dai_str} DAI from zksync',
             counterparty=CPT_ZKSYNC,
             address=ZKSYNC_BRIDGE,
+            extra_data=withdrawal_extra_data,
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=177,
@@ -138,6 +158,7 @@ def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
             notes=f'Withdraw {pan_str} PAN from zksync',
             counterparty=CPT_ZKSYNC,
             address=ZKSYNC_BRIDGE,
+            extra_data=withdrawal_extra_data,
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=178,
@@ -151,6 +172,7 @@ def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
             notes=f'Withdraw {usdc_str} USDC from zksync',
             counterparty=CPT_ZKSYNC,
             address=ZKSYNC_BRIDGE,
+            extra_data=withdrawal_extra_data,
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=179,
@@ -164,6 +186,7 @@ def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
             notes=f'Withdraw {usdt_str} USDT from zksync',
             counterparty=CPT_ZKSYNC,
             address=ZKSYNC_BRIDGE,
+            extra_data=withdrawal_extra_data,
         ),
     ]
 
@@ -187,6 +210,11 @@ def test_zksync_lite_batched_withdrawal(ethereum_inquirer, ethereum_accounts):
         notes='Withdraw 6.626770825 ETH from zksync',
         counterparty=CPT_ZKSYNC,
         address=ZKSYNC_BRIDGE,
+        extra_data={'bridge': {
+            'from_chain': 'zksync_lite',
+            'to_chain': 1,
+            'to_address': ethereum_accounts[0],
+        }},
     )]
     assert expected_events == events
 
@@ -210,6 +238,11 @@ def test_zksync_lite_batched_withdrawal_token(ethereum_inquirer, ethereum_accoun
         notes='Withdraw 2 USDC from zksync',
         counterparty=CPT_ZKSYNC,
         address=ZKSYNC_BRIDGE,
+        extra_data={'bridge': {
+            'from_chain': 'zksync_lite',
+            'to_chain': 1,
+            'to_address': ethereum_accounts[0],
+        }},
     )]
     assert expected_events == events
 
@@ -232,6 +265,11 @@ def test_zksync_lite_sunset_claim(ethereum_inquirer, ethereum_accounts):
         notes=f'Claim {eth_str} ETH from the ZKsync Lite sunset',
         counterparty=CPT_ZKSYNC,
         address=ZKSYNC_LITE_SUNSET_CLAIM,
+        extra_data=(claim_extra_data := {'bridge': {
+            'from_chain': 'zksync_lite',
+            'to_chain': 1,
+            'to_address': user_address,
+        }}),
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2119,
@@ -245,6 +283,7 @@ def test_zksync_lite_sunset_claim(ethereum_inquirer, ethereum_accounts):
         notes=f'Claim {usdc_str} USDC from the ZKsync Lite sunset',
         counterparty=CPT_ZKSYNC,
         address=ZKSYNC_LITE_SUNSET_CLAIM,
+        extra_data=claim_extra_data,
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2121,
@@ -258,5 +297,6 @@ def test_zksync_lite_sunset_claim(ethereum_inquirer, ethereum_accounts):
         notes=f'Claim {zz_str} ZZ from the ZKsync Lite sunset',
         counterparty=CPT_ZKSYNC,
         address=ZKSYNC_LITE_SUNSET_CLAIM,
+        extra_data=claim_extra_data,
     )]
     assert expected_events == events

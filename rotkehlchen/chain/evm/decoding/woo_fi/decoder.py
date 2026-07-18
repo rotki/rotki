@@ -27,6 +27,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.utils import set_bridge_extra_data
 from rotkehlchen.chain.evm.decoding.woo_fi.constants import (
     CPT_WOO_FI,
     CPT_WOO_FI_LABEL,
@@ -301,6 +302,20 @@ class WooFiCommonDecoder(EvmDecoderInterface):
                 counterparty=CPT_WOO_FI,
                 address=context.tx_log.address,
             ))])
+
+        if bridge_event is not None:
+            # The refId (topics[1]) is relayed in the LayerZero payload and emitted unchanged
+            # by WooCrossSwapOnDstChain, so it is the same on both legs of the bridge.
+            # On the destination side topics[2] is the LayerZero endpoint, not the source-chain
+            # sender, so from_address is only known on the source side.
+            set_bridge_extra_data(
+                event=bridge_event,
+                from_chain=self.node_inquirer.chain_id if on_src else chain_id,
+                to_chain=chain_id if on_src else self.node_inquirer.chain_id,
+                from_address=user_address if on_src else None,
+                to_address=bytes_to_address(context.tx_log.topics[3]),
+                transfer_id=str(int.from_bytes(context.tx_log.topics[1])),
+            )
 
         maybe_reshuffle_events(
             events_list=context.decoded_events,

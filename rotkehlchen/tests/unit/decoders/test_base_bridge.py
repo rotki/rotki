@@ -44,6 +44,12 @@ def test_deposit_eth(ethereum_inquirer, ethereum_accounts):
             notes='Bridge 200 ETH from Ethereum to Base via Base bridge',
             counterparty=CPT_BASE,
             address=string_to_evm_address('0x49048044D57e1C92A77f79988d21Fa8fAF74E97e'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 8453,
+                'from_address': user_address,
+                'to_address': user_address,
+            }},
         ),
     ]
 
@@ -80,6 +86,12 @@ def test_withdraw_eth(ethereum_inquirer, ethereum_accounts):
             notes='Bridge 0.003 ETH from Base to Ethereum via Base bridge',
             counterparty=CPT_BASE,
             address=string_to_evm_address('0x49048044D57e1C92A77f79988d21Fa8fAF74E97e'),
+            extra_data={'bridge': {
+                'from_chain': 8453,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+            }},
         ),
     ]
 
@@ -116,6 +128,13 @@ def test_deposit_token(ethereum_inquirer, ethereum_accounts):
             notes='Bridge 104.9426 cbETH from Ethereum to Base via Base bridge',
             counterparty=CPT_BASE,
             address=string_to_evm_address('0x3154Cf16ccdb4C6d922629664174b904d80F2C35'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 8453,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x882dc63920c47aee20e6362fb754e5a6d40c81c09b4fd6faad0e3c0ea40de778',  # noqa: E501
+            }},
         ),
     ]
 
@@ -152,5 +171,12 @@ def test_withdraw_token(ethereum_inquirer, ethereum_accounts):
             notes='Bridge 189.09 cbETH from Base to Ethereum via Base bridge',
             counterparty=CPT_BASE,
             address=string_to_evm_address('0x3154Cf16ccdb4C6d922629664174b904d80F2C35'),
+            extra_data={'bridge': {
+                'from_chain': 8453,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0xf3aafb8dbfd535c82f7ec44ff7272ffb957564d2f7d63aa788b7a4b3bab1b113',  # noqa: E501
+            }},
         ),
     ]

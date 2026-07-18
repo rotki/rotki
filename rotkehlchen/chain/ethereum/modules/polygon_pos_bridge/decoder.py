@@ -67,6 +67,8 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
                     expected_event_type=HistoryEventType.SPEND,
                     new_event_type=HistoryEventType.DEPOSIT,
                     counterparty=CPT_POLYGON_DETAILS,
+                    # the state sync id, also seen on the polygon side in the StateCommitted log
+                    transfer_id=str(int.from_bytes(context.tx_log.topics[1])),
                 )
                 break
         else:

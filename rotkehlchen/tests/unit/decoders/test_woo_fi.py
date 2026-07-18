@@ -177,6 +177,13 @@ def test_bridge_deposit(
         notes=f'Bridge {bridge_amount} USDT from Ethereum to Arbitrum One via WOOFi',
         counterparty=CPT_WOO_FI,
         address=WOO_CROSS_SWAP_ROUTER_V5,
+        extra_data={'bridge': {
+            'from_chain': 1,
+            'to_chain': 42161,
+            'from_address': user_address,
+            'to_address': user_address,
+            'transfer_id': '23656050805135342203649557840879363440553694939932725644063294165397009705494',  # noqa: E501
+        }},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2,
@@ -252,6 +259,13 @@ def test_bridge_deposit_and_swap(
         notes=f'Bridge {bridge_amount} USDC from Ethereum to Base via WOOFi',
         counterparty=CPT_WOO_FI,
         address=WOO_CROSS_SWAP_ROUTER_V5,
+        extra_data={'bridge': {
+            'from_chain': 1,
+            'to_chain': 8453,
+            'from_address': user_address,
+            'to_address': user_address,
+            'transfer_id': '72203740028563516218829722566395207337088538871932006492098907697637043011782',  # noqa: E501
+        }},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=4,
@@ -291,6 +305,12 @@ def test_bridge_withdrawal(
         notes=f'Bridge {bridge_amount} USDC from Polygon POS to Optimism via WOOFi',
         counterparty=CPT_WOO_FI,
         address=WOO_CROSS_SWAP_ROUTER_V5,
+        extra_data={'bridge': {
+            'from_chain': 137,
+            'to_chain': 10,
+            'to_address': optimism_accounts[0],
+            'transfer_id': '56478144550615322200995284491269266556120963622109470914260044325355603072354',  # noqa: E501
+        }},
     )]
 
 
@@ -317,6 +337,12 @@ def test_bridge_withdrawal_and_swap(
         notes=f'Bridge {bridge_amount} USDC from Arbitrum One to Polygon POS via WOOFi',
         counterparty=CPT_WOO_FI,
         address=WOO_CROSS_SWAP_ROUTER_V5,
+        extra_data={'bridge': {
+            'from_chain': 42161,
+            'to_chain': 137,
+            'to_address': user_address,
+            'transfer_id': '62985550242450211530229370392079201840374908476701459176843156210834352620439',  # noqa: E501
+        }},
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         sequence_index=1,

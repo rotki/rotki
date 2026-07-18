@@ -46,6 +46,12 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
             notes=f'Bridge {bridged_amount} USDC to {user_address} at Arbitrum One using Socket',
             counterparty=CPT_SOCKET,
             address=GATEWAY_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 10,
+                'to_chain': 42161,
+                'from_address': user_address,
+                'to_address': user_address,
+            }},
         ),
     ]
 
@@ -85,5 +91,11 @@ def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes=f'Bridge {bridged_amount} ETH to {user_address} at Base using Socket',
             counterparty=CPT_SOCKET,
             address=GATEWAY_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 8453,
+                'from_address': user_address,
+                'to_address': user_address,
+            }},
         ),
     ]

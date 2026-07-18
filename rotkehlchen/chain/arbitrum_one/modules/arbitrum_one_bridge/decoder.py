@@ -11,7 +11,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer
+from rotkehlchen.chain.evm.decoding.utils import (
+    bridge_match_transfer,
+    make_bridge_extra_data,
+    set_bridge_extra_data,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import RemoteError
@@ -148,6 +152,15 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         if to_address == from_address:
             to_label = ''
 
+        transfer_id = None
+        for tx_log in context.all_logs:
+            if tx_log.topics[0] == L2_TO_L1_TX:
+                # the position, matching the transaction index of the L1 outbox execution.
+                # Classic (pre-nitro) withdrawals emit a different event and their ids do
+                # not appear on the L1 side, so no id is set for them.
+                transfer_id = str(int.from_bytes(tx_log.topics[3]))
+                break
+
         # Corresponding transfer does not exist yet during decoding. So we create it
         # and send an action item to skip next one to not have duplicates
         notes = (
@@ -164,6 +177,13 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
             to_event_subtype=HistoryEventSubType.BRIDGE,
             to_notes=notes,
             to_counterparty=CPT_ARBITRUM_ONE,
+            extra_data=make_bridge_extra_data(
+                from_chain=ChainID.ARBITRUM_ONE,
+                to_chain=ChainID.ETHEREUM,
+                from_address=from_address,
+                to_address=to_address,
+                transfer_id=transfer_id,
+            ),
         )
         return EvmDecodingOutput(action_items=[action_item])
 
@@ -201,6 +221,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                     expected_event_type=HistoryEventType.SPEND,
                     new_event_type=HistoryEventType.DEPOSIT,
                     counterparty=ARBITRUM_ONE_CPT_DETAILS,
+                    transfer_id=str(int.from_bytes(context.tx_log.topics[3])),  # the position, matching the transaction index of the L1 outbox execution  # noqa: E501
                 )
                 break
 
@@ -239,6 +260,12 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                 event.notes = (
                     f'Bridge {event.amount} ETH from Ethereum to Arbitrum '
                     f'One via Arbitrum One bridge'
+                )
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=ChainID.ETHEREUM,
+                    to_chain=ChainID.ARBITRUM_ONE,
+                    to_address=to_address,
                 )
                 break
 
@@ -280,6 +307,13 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                 event.notes = (
                     f'Bridge {amount} {asset_resolved.symbol} from Ethereum{from_label} '
                     f'to Arbitrum One via Arbitrum One bridge'
+                )
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=ChainID.ETHEREUM,
+                    to_chain=ChainID.ARBITRUM_ONE,
+                    from_address=from_address,
+                    to_address=to_address,
                 )
                 break
 

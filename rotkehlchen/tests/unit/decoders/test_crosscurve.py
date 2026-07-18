@@ -83,6 +83,7 @@ def test_crosscurve_bridge_send(optimism_inquirer: OptimismInquirer, optimism_ac
             notes=f'Bridge {bridge_amount} USDC via CrossCurve',
             counterparty=CPT_CROSSCURVE,
             address=string_to_evm_address('0x0ECD8bfdABd6005c9F325f222E1f6427E4db39e1'),
+            extra_data={'bridge': {'from_chain': 10, 'from_address': user_address}},
         ),
     ]
 
@@ -131,6 +132,7 @@ def test_crosscurve_bridge_send_arbitrum(arbitrum_one_inquirer: ArbitrumOneInqui
             notes=f'Bridge {bridge_amount} USDC via CrossCurve',
             counterparty=CPT_CROSSCURVE,
             address=string_to_evm_address('0xaB54E380B074E537e2E965BF816d00EcB22F5133'),
+            extra_data={'bridge': {'from_chain': 42161, 'from_address': user_address}},
         ),
     ]
 
@@ -157,6 +159,7 @@ def test_crosscurve_bridge_receive_via_curve(arbitrum_one_inquirer: ArbitrumOneI
             notes=f'Bridge {receive_amount} USDC.e via CrossCurve',
             counterparty=CPT_CROSSCURVE,
             address=string_to_evm_address('0x7f90122BF0700F9E7e1F688fe926940E8839F353'),
+            extra_data={'bridge': {'to_chain': 42161, 'to_address': arbitrum_one_accounts[0]}},
         ),
     ]
 
@@ -180,5 +183,6 @@ def test_crosscurve_bridge_receive(gnosis_inquirer: GnosisInquirer, gnosis_accou
             notes=f'Bridge {receive_amount} EURe via CrossCurve',
             counterparty=CPT_CROSSCURVE,
             address=string_to_evm_address('0x056C6C5e684CeC248635eD86033378Cc444459B0'),
+            extra_data={'bridge': {'to_chain': 100, 'to_address': gnosis_accounts[0]}},
         ),
     ]

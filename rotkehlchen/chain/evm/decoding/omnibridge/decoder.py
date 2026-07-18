@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
 from rotkehlchen.constants.assets import A_ETH, A_WETH
+from rotkehlchen.history.events.structures.evm_event import BRIDGE_EXTRA_DATA_KEY
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import bytes_to_address
@@ -112,7 +113,14 @@ class OmnibridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
                     expected_event_type=expected_event_type,
                     new_event_type=new_event_type,
                     counterparty=GNOSIS_CPT_DETAILS,
+                    transfer_id=f'0x{context.tx_log.topics[3].hex()}',  # the AMB message id
                 )
+                if event.extra_data is not None:
+                    # the counterpart chain's address is not stated in the logs, so drop
+                    # the fabricated one and keep only what this side's log actually states
+                    event.extra_data[BRIDGE_EXTRA_DATA_KEY].pop(
+                        'to_address' if context.tx_log.topics[0] == TOKENS_BRIDGING_INITIATED else 'from_address',  # noqa: E501
+                    )
                 break
         else:
             log.error(f'Could not find the transfer event for bridging to {to_address} in {context.transaction}')  # noqa: E501

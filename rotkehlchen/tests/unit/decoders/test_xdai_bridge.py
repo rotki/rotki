@@ -56,6 +56,12 @@ def test_bridge_dai_from_ethereum(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             counterparty=CPT_GNOSIS_CHAIN,
             address=BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 100,
+                'from_address': user_address,
+                'transfer_id': '0xe17f61edb9fe278720679ecfd5498f75082e38bf4779e5e6403a551f5084ee23',  # noqa: E501
+            }},
         ),
     ]
 
@@ -93,6 +99,13 @@ def test_bridge_dai_from_ethereum_pre_usds_upgrade(
         tx_ref=tx_hash,
         counterparty=CPT_GNOSIS_CHAIN,
         address=XDAI_BRIDGE_PERIPHERAL_PRE_USDS,
+        extra_data={'bridge': {
+            'from_chain': 1,
+            'to_chain': 100,
+            'from_address': user_address,
+            'to_address': user_address,
+            'transfer_id': '0x220b7397ce4b2f03b6871eb57762396aa0140d57dac4623d241e5eb02a0bc349',
+        }},
     )]
 
 
@@ -130,6 +143,12 @@ def test_bridge_dai_from_ethereum_nolog(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             counterparty=CPT_GNOSIS_CHAIN,
             address=BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 100,
+                'from_address': user_address,
+                'transfer_id': '0x196e7d687e1e2ce280dbe7f52b6ffe5a61d3a851b38740a37d1d00caffce7562',  # noqa: E501
+            }},
         ),
     ]
 
@@ -167,6 +186,12 @@ def test_withdraw_dai_to_ethereum(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             counterparty=CPT_GNOSIS_CHAIN,
             address=BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 100,
+                'to_chain': 1,
+                'to_address': user_address,
+                'transfer_id': '0x1a7014cbc1e6af2558c3a3cafd7fe87d8d67d27242b5abe8af0d4bf51a5230f6',  # noqa: E501
+            }},
         ),
     ]
 
@@ -204,6 +229,13 @@ def test_withdraw_dai_from_gnosis(gnosis_inquirer, gnosis_accounts):
             tx_ref=tx_hash,
             counterparty=CPT_GNOSIS_CHAIN,
             address=GNOSIS_BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 100,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x1a7014cbc1e6af2558c3a3cafd7fe87d8d67d27242b5abe8af0d4bf51a5230f6',  # noqa: E501
+            }},
         ),
     ]
 
@@ -227,4 +259,10 @@ def test_deposit_dai_to_gnosis(gnosis_inquirer, gnosis_accounts):
         tx_ref=tx_hash,
         counterparty=CPT_GNOSIS_CHAIN,
         address=GNOSIS_BRIDGE_ADDRESS,
+        extra_data={'bridge': {
+            'from_chain': 1,
+            'to_chain': 100,
+            'to_address': user_address,
+            'transfer_id': '0x75834bda4a78f436f4fcf6159bbbb1c0e2957f35fb19492ec3ddba26c7d5eb3d',
+        }},
     )]

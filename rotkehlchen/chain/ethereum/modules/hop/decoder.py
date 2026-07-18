@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.utils import set_bridge_extra_data
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.utils.misc import bytes_to_address
@@ -60,6 +61,7 @@ class HopDecoder(HopCommonDecoder, GovernableDecoderInterface):
 
         amount_raw = int.from_bytes(context.tx_log.data[:32])
         amount = self._get_bridge_asset_amount(amount_raw=amount_raw, identifier=bridge.identifier)
+        to_chain = int.from_bytes(context.tx_log.topics[1])
 
         for event in context.decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.address == context.tx_log.address and event.asset.identifier == bridge.identifier and event.amount == amount:  # noqa: E501
@@ -70,8 +72,15 @@ class HopDecoder(HopCommonDecoder, GovernableDecoderInterface):
                     amount=amount,
                     asset=event.asset,
                     recipient=recipient,
-                    sender=string_to_evm_address(event.location_label) if event.location_label else None,  # noqa: E501
-                    chain_id=int.from_bytes(context.tx_log.topics[1]),
+                    sender=(sender := string_to_evm_address(event.location_label) if event.location_label else None),  # noqa: E501
+                    chain_id=to_chain,
+                )
+                set_bridge_extra_data(  # no transfer id exists for L1 -> L2 transfers
+                    event=event,
+                    from_chain=self.node_inquirer.chain_id,
+                    to_chain=to_chain,
+                    from_address=sender,
+                    to_address=recipient,
                 )
                 break
 

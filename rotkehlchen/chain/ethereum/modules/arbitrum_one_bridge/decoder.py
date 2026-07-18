@@ -9,7 +9,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
+from rotkehlchen.chain.evm.decoding.utils import (
+    bridge_match_transfer,
+    bridge_prepare_data,
+    set_bridge_extra_data,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
@@ -23,7 +27,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
-    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -40,6 +43,7 @@ ERC20_WITHDRAWAL_FINALIZED: Final = b'\x89\x1a\xfe\x02\x9cu\xc4\xf8\xc5\x85_\xc3
 MESSAGE_DELIVERED: Final = b'^<\x13\x11\xeaD&d\xe8\xb1a\x1b\xfa\xbe\xf6Y\x12\x0e\xa7\xa0\xa2\xcf\xc0fw\x00\xbe\xbci\xcb\xff\xe1'  # noqa: E501
 INBOX_MESSAGE_DELIVERED: Final = b'\xffd\x90_s\xa6\x7f\xb5\x94\xe0\xf9@\xa8\x07Z\x86\r\xb4\x89\xad\x99\x1e\x03/H\xc8\x11#\xebR\xd6\x0b'  # noqa: E501
 BRIDGE_CALL_TRIGGERED: Final = b'-\x9d\x11^\xf3\xe4\xa6\x06\xd6\x98\x91;\x1e\xae\x83\x1a<\xdf\xe2\r\x9a\x83\xd4\x80\x07\xb0RgI\xc3\xd4f'  # noqa: E501
+OUTBOX_TRANSACTION_EXECUTED: Final = b' \xaf\x7f;\xbf\xe3\x812\xb8\x90\n\xe2\x95\xcd\x9c\x8d\x19\x14\xbepR\xd0a\xa5\x11\xf3\xf7(\xda\xb1\x89d'  # 0x20af7f3bbfe38132b8900ae295cd9c8d1914be7052d061a511f3f728dab18964  # noqa: E501
 
 
 class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
@@ -75,6 +79,9 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
             expected_event_type = HistoryEventType.SPEND
             new_event_type = HistoryEventType.DEPOSIT
             from_chain, to_chain = ChainID.ETHEREUM, ChainID.ARBITRUM_ONE
+            from_address = user_address
+            # the inbox message number identifying the cross-chain message
+            transfer_id: str | None = str(int.from_bytes(context.tx_log.topics[1]))
         else:  # ETH_WITHDRAWAL_FINALIZED
             raw_amount = int.from_bytes(context.tx_log.data[:32])
             user_address = bytes_to_address(context.tx_log.topics[2])
@@ -82,6 +89,15 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
             expected_event_type = HistoryEventType.RECEIVE
             new_event_type = HistoryEventType.WITHDRAWAL
             from_chain, to_chain = ChainID.ARBITRUM_ONE, ChainID.ETHEREUM
+            from_address, transfer_id = None, None
+            for tx_log in context.all_logs:
+                if tx_log.topics[0] == OUTBOX_TRANSACTION_EXECUTED:
+                    from_address = bytes_to_address(tx_log.topics[2])  # the L2 sender
+                    if context.tx_log.address != OLD_BRIDGE_ADDRESS_MAINNET:
+                        # the transaction index equals the L2ToL1Tx position on the arbitrum
+                        # side. In the classic (pre-nitro) outbox it does not, so skip it there.
+                        transfer_id = str(int.from_bytes(tx_log.data[:32]))
+                    break
 
         if not self.base.is_tracked(user_address):
             return DEFAULT_EVM_DECODING_OUTPUT
@@ -101,6 +117,14 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
                     f'Bridge {amount} ETH from {from_chain.label()} '
                     f'to {to_chain.label()} via Arbitrum One bridge'
                 )
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=from_chain,
+                    to_chain=to_chain,
+                    from_address=from_address,
+                    to_address=user_address,
+                    transfer_id=transfer_id,
+                )
                 break
 
         else:
@@ -108,7 +132,7 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_erc20_deposit_withdraw(self, tx_log: EvmTxReceiptLog, decoded_events: list[EvmEvent]) -> EvmDecodingOutput:  # noqa: E501
+    def _decode_erc20_deposit_withdraw(self, context: DecoderContext, tx_log: EvmTxReceiptLog) -> EvmDecodingOutput:  # noqa: E501
         """Decodes ERC20 deposits and withdrawals. (Bridging ERC20 tokens from and to ethereum)"""
         from_address = bytes_to_address(tx_log.topics[1])
         to_address = bytes_to_address(tx_log.topics[2])
@@ -129,9 +153,20 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
             from_address=from_address,
             to_address=to_address,
         )
+        transfer_id = None
+        if tx_log.topics[0] == ERC20_DEPOSIT_INITIATED:
+            # the gateway sequence number, which also equals the inbox message number
+            transfer_id = str(int.from_bytes(tx_log.topics[3]))
+        elif context.tx_log.address != OLD_BRIDGE_ADDRESS_MAINNET:  # withdrawal finalization
+            for other_log in context.all_logs:
+                if other_log.topics[0] == OUTBOX_TRANSACTION_EXECUTED:
+                    # the transaction index equals the L2ToL1Tx position on the arbitrum
+                    # side. In the classic (pre-nitro) outbox it does not, so skip it there.
+                    transfer_id = str(int.from_bytes(other_log.data[:32]))
+                    break
 
         # Find the corresponding transfer event and update it
-        for event in decoded_events:
+        for event in context.decoded_events:
             if (
                 event.event_type == expected_event_type and
                 event.asset == asset and
@@ -148,6 +183,7 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
                     expected_event_type=expected_event_type,
                     new_event_type=new_event_type,
                     counterparty=ARBITRUM_ONE_CPT_DETAILS,
+                    transfer_id=transfer_id,
                 )
             elif (
                 event.event_type == HistoryEventType.SPEND and
@@ -166,7 +202,7 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
         if context.tx_log.topics[0] in {MESSAGE_DELIVERED, INBOX_MESSAGE_DELIVERED, BRIDGE_CALL_TRIGGERED}:  # noqa: E501
             for tx_log in context.all_logs:  # Check all logs to determine if it is an erc20 event. Eth events have no specific deposit/withdraw topic from which they can be identified.  # noqa: E501
                 if tx_log.topics[0] in {ERC20_DEPOSIT_INITIATED, ERC20_WITHDRAWAL_FINALIZED}:
-                    return self._decode_erc20_deposit_withdraw(tx_log, context.decoded_events)
+                    return self._decode_erc20_deposit_withdraw(context, tx_log)
             return self._decode_eth_deposit_withdraw(context)
 
         return DEFAULT_EVM_DECODING_OUTPUT

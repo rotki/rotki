@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.utils import set_bridge_extra_data
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import bytes_to_address
@@ -91,6 +92,16 @@ class CrossCurveCommonDecoder(EvmDecoderInterface):
                         event.event_subtype = HistoryEventSubType.BRIDGE
                         event.counterparty = CPT_CROSSCURVE
                         event.notes = f'Bridge {event.amount} {event.asset.symbol_or_name()} via CrossCurve'  # noqa: E501
+                        # The destination chain/recipient and any end-to-end id are not exposed
+                        # in the source logs: the relayer's RequestSent only carries the next-hop
+                        # chain (the CrossCurve hub) and a per-hop request id that differs from
+                        # the one emitted on the destination chain.
+                        set_bridge_extra_data(
+                            event=event,
+                            from_chain=self.node_inquirer.chain_id,
+                            to_chain=None,
+                            from_address=sender,
+                        )
                         bridge_found = True
 
             if not bridge_found:
@@ -123,6 +134,15 @@ class CrossCurveCommonDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_CROSSCURVE
                 event.notes = f'Bridge {event.amount} {event.asset.symbol_or_name()} via CrossCurve'  # noqa: E501
+                # The source chain is not exposed in the destination logs and the request id
+                # in RequestReceived/ComplexOpProcessed is per-hop (routed via the CrossCurve
+                # hub chain), so it cannot match the source leg and is not stored.
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=None,
+                    to_chain=self.node_inquirer.chain_id,
+                    to_address=event.location_label,  # type: ignore[arg-type]  # tracked address checked above
+                )
                 found = True
 
         if not found:

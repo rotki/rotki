@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
+from rotkehlchen.history.events.structures.evm_event import BRIDGE_EXTRA_DATA_KEY
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
@@ -70,9 +71,14 @@ class XdaiBridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
         if context.tx_log.topics[0] in self.deposit_topics:
             from_address = context.transaction.from_address
             to_address = self.bridge_address
+            # the destination side event references the source transaction hash,
+            # so the deposit's own tx hash identifies the transfer on both legs
+            transfer_id: str | None = context.transaction.tx_hash.hex()
         elif context.tx_log.topics[0] == self.withdrawal_topic:
             from_address = self.bridge_address
             to_address = bytes_to_address(context.tx_log.data[0:32])
+            # both RelayedMessage and AffirmationCompleted carry the source chain tx hash
+            transfer_id = f'0x{context.tx_log.data[64:96].hex()}' if len(context.tx_log.data) >= 96 else None  # noqa: E501
             if self.source_chain == ChainID.GNOSIS and self.target_chain == ChainID.ETHEREUM:
                 create_event = True
 
@@ -116,7 +122,10 @@ class XdaiBridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
                 expected_event_type=HistoryEventType.RECEIVE,
                 new_event_type=new_event_type,
                 counterparty=GNOSIS_CPT_DETAILS,
+                transfer_id=transfer_id,
             )
+            if event.extra_data is not None:  # the source address is not stated in the logs
+                event.extra_data[BRIDGE_EXTRA_DATA_KEY].pop('from_address')
             return EvmDecodingOutput(events=[event])
 
         for event in context.decoded_events:
@@ -138,7 +147,12 @@ class XdaiBridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
                     expected_event_type=expected_event_type,
                     new_event_type=new_event_type,
                     counterparty=GNOSIS_CPT_DETAILS,
+                    transfer_id=transfer_id,
                 )
+                if expected_event_type == HistoryEventType.RECEIVE and event.extra_data is not None:  # noqa: E501
+                    # withdrawal claims may be executed by anyone, so the transaction sender
+                    # is not the source chain sender. Only keep what the logs actually state.
+                    event.extra_data[BRIDGE_EXTRA_DATA_KEY].pop('from_address')
                 break
         else:
             log.error(

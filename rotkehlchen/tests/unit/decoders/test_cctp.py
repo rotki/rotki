@@ -56,6 +56,13 @@ def test_deposit_usdc_from_ethereum_to_arbitrum_one(
             tx_ref=tx_hash,
             counterparty=CPT_CCTP,
             address=string_to_evm_address('0xc4922d64a24675E16e1586e3e3Aa56C06fABe907'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 42161,
+                'from_address': ethereum_accounts[0],
+                'to_address': ethereum_accounts[0],
+                'transfer_id': '62883',
+            }},
         ),
     ]
 
@@ -96,6 +103,12 @@ def test_receive_usdc_on_arbitrum_one_from_ethereum(
             tx_ref=tx_hash,
             counterparty=CPT_CCTP,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 42161,
+                'to_address': arbitrum_one_accounts[0],
+                'transfer_id': '62883',
+            }},
         ),
     ]
 
@@ -136,6 +149,13 @@ def test_deposit_usdc_from_polygon_to_arbitrum_one(
             tx_ref=tx_hash,
             counterparty=CPT_CCTP,
             address=string_to_evm_address('0x10f7835F827D6Cf035115E10c50A853d7FB2D2EC'),
+            extra_data={'bridge': {
+                'from_chain': 137,
+                'to_chain': 42161,
+                'from_address': polygon_pos_accounts[0],
+                'to_address': polygon_pos_accounts[0],
+                'transfer_id': '104742',
+            }},
         ),
     ]
 
@@ -176,6 +196,12 @@ def test_receive_usdc_on_arbitrum_one_from_polygon(
             tx_ref=tx_hash,
             counterparty=CPT_CCTP,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 137,
+                'to_chain': 42161,
+                'to_address': arbitrum_one_accounts[0],
+                'transfer_id': '104742',
+            }},
         ),
     ]
 
@@ -204,5 +230,11 @@ def test_receive_usdc_on_arbitrum_one_from_polygon_2(
             tx_ref=tx_hash,
             counterparty=CPT_CCTP,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 137,
+                'to_chain': 42161,
+                'to_address': arbitrum_one_accounts[0],
+                'transfer_id': '104835',
+            }},
         ),
     ]

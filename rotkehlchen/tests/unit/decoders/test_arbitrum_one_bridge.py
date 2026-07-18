@@ -50,6 +50,13 @@ def test_deposit_eth_from_ethereum_to_arbitrum_one(ethereum_inquirer, ethereum_a
             notes='Bridge 0.008374552015335015 ETH from Ethereum to Arbitrum One via Arbitrum One bridge',  # noqa: E501
             counterparty=CPT_ARBITRUM_ONE,
             address=string_to_evm_address('0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f'),  # DELAYED_INBOX_ADDRESS  # noqa: E501
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 42161,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '1002800',
+            }},
         ),
     ]
 
@@ -76,6 +83,11 @@ def test_receive_eth_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_account
             notes='Bridge 0.008374552015335015 ETH from Ethereum to Arbitrum One via Arbitrum One bridge',  # noqa: E501
             counterparty=CPT_ARBITRUM_ONE,
             address=string_to_evm_address('0x5F8EF0FdA2d203f5DfbAa34B9fB64DDe51332A7f'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 42161,
+                'to_address': user_address,
+            }},
         ),
     ]
 
@@ -114,6 +126,13 @@ def test_withdraw_eth_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arbit
             notes='Bridge 98.34759123048141 ETH from Arbitrum One to Ethereum via Arbitrum One bridge',  # noqa: E501
             counterparty=CPT_ARBITRUM_ONE,
             address=string_to_evm_address(BRIDGE_ADDRESS),
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '82576',
+            }},
         ),
     ]
 
@@ -150,6 +169,13 @@ def test_receive_eth_on_ethereum(ethereum_inquirer, ethereum_accounts):
             notes='Bridge 98.34759123048141 ETH from Arbitrum One to Ethereum via Arbitrum One bridge',  # noqa: E501
             counterparty=CPT_ARBITRUM_ONE,
             address=string_to_evm_address(BRIDGE_ADDRESS_MAINNET),
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '82576',
+            }},
         ),
     ]
 
@@ -200,6 +226,13 @@ def test_deposit_erc20_from_ethereum_to_arbitrum_one(ethereum_inquirer, ethereum
             notes='Bridge 25000 DAI from Ethereum to Arbitrum One via Arbitrum One bridge',
             counterparty=CPT_ARBITRUM_ONE,
             address=string_to_evm_address('0xA10c7CE4b876998858b1a9E12b10092229539400'),
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 42161,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '1004330',
+            }},
         ),
     ]
 
@@ -226,6 +259,12 @@ def test_receive_erc20_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accou
             notes='Bridge 0.00032674 WBTC from Ethereum to Arbitrum One via Arbitrum One bridge',
             counterparty=CPT_ARBITRUM_ONE,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 1,
+                'to_chain': 42161,
+                'from_address': user_address,
+                'to_address': user_address,
+            }},
         ),
     ]
 
@@ -278,6 +317,13 @@ def test_withdraw_erc20_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arb
             notes='Bridge 6000 LPT from Arbitrum One to Ethereum via Arbitrum One bridge',
             counterparty=CPT_ARBITRUM_ONE,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '84309',
+            }},
         ),
     ]
     # also check that we only capture the erc20 log event and nothing else. Regression test for
@@ -323,6 +369,12 @@ def test_withdraw_dai_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arbit
             notes='Bridge 39566.332611058195231384 DAI from Arbitrum One to Ethereum via Arbitrum One bridge',  # noqa: E501
             counterparty=CPT_ARBITRUM_ONE,
             address=ZERO_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+            }},
         ),
     ]
 
@@ -359,6 +411,13 @@ def test_receive_erc20_on_ethereum(ethereum_inquirer, ethereum_accounts):
             notes='Bridge 6000 LPT from Arbitrum One to Ethereum via Arbitrum One bridge',
             counterparty=CPT_ARBITRUM_ONE,
             address=string_to_evm_address('0x6A23F4940BD5BA117Da261f98aae51A8BFfa210A'),
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '84309',
+            }},
         ),
     ]
 
@@ -395,5 +454,11 @@ def test_receive_erc20_on_ethereum_old_bridge(ethereum_inquirer, ethereum_accoun
             notes=f'Bridge {withdraw_amount} DAI from Arbitrum One to Ethereum via Arbitrum One bridge',  # noqa: E501
             counterparty=CPT_ARBITRUM_ONE,
             address=string_to_evm_address('0xA10c7CE4b876998858b1a9E12b10092229539400'),
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 1,
+                'from_address': user_address,
+                'to_address': user_address,
+            }},
         ),
     ]

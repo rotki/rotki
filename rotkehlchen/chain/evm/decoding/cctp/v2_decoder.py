@@ -17,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.utils import set_bridge_extra_data
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import bytes_to_address
@@ -70,15 +71,24 @@ class CctpV2CommonDecoder(EvmDecoderInterface):
                 event.amount == deposit_amount and
                 event.location_label == user_address
             ):
-                try:
-                    chain_info = f' from {self.node_inquirer.chain_id.label()} to {CCTP_DOMAIN_MAPPING[to_chain].label()}'  # noqa: E501
-                except KeyError:
+                if (mapped_to_chain := CCTP_DOMAIN_MAPPING.get(to_chain)) is not None:
+                    chain_info = f' from {self.node_inquirer.chain_id.label()} to {mapped_to_chain.label()}'  # noqa: E501
+                else:
                     log.error(f'Could not find chain ID {to_chain} for CCTP V2 transfer from {self.node_inquirer.chain_name}')  # noqa: E501
                     chain_info = ''
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.notes = f'Bridge {event.amount} USDC{chain_info} via CCTP'
                 event.counterparty = CPT_CCTP
+                # V2 has no protocol transfer id in the source logs: the message nonce
+                # is only assigned by Circle's attestation service at receive time.
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=self.node_inquirer.chain_id,
+                    to_chain=mapped_to_chain,
+                    from_address=user_address,
+                    to_address=bytes_to_address(context.tx_log.data[32:64]) if mapped_to_chain is not None else None,  # mintRecipient is not an EVM address for unsupported domains  # noqa: E501
+                )
                 break
         else:
             log.error(f'Could not find matching spend event for {self.node_inquirer.chain_name} CCTP V2 bridge deposit {context.transaction.tx_hash!s}')  # noqa: E501
@@ -106,6 +116,12 @@ class CctpV2CommonDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.notes = f'Bridge {event.amount} USDC via CCTP'
                 event.counterparty = CPT_CCTP
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=None,
+                    to_chain=self.node_inquirer.chain_id,
+                    to_address=user_address,
+                )
                 break
         else:
             log.error(f'Could not find matching receive event for {self.node_inquirer.chain_name} CCTP V2 bridge withdrawal {context.transaction.tx_hash!s}')  # noqa: E501
@@ -125,11 +141,16 @@ class CctpV2CommonDecoder(EvmDecoderInterface):
                 event.counterparty == CPT_CCTP
             ):
                 from_chain = int.from_bytes(context.tx_log.data[:32])
-                try:
-                    chain_info = f' from {CCTP_DOMAIN_MAPPING[from_chain].label()} to {self.node_inquirer.chain_id.label()}'  # noqa: E501
-                    event.notes = f'Bridge {event.amount} USDC{chain_info} via CCTP'
-                except KeyError:
+                if (mapped_from_chain := CCTP_DOMAIN_MAPPING.get(from_chain)) is not None:
+                    event.notes = f'Bridge {event.amount} USDC from {mapped_from_chain.label()} to {self.node_inquirer.chain_id.label()} via CCTP'  # noqa: E501
+                else:
                     log.error(f'Could not find chain ID {from_chain} for CCTP V2 transfer to {self.node_inquirer.chain_name}')  # noqa: E501
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=mapped_from_chain,
+                    to_chain=self.node_inquirer.chain_id,
+                    transfer_id=f'0x{context.tx_log.topics[2].hex()}',
+                )
                 break
         else:
             log.error(f'Could not find matching withdrawal event for {self.node_inquirer.chain_name} CCTP V2 bridge chain information {context.transaction.tx_hash!s}')  # noqa: E501

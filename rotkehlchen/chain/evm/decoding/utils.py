@@ -18,6 +18,10 @@ from rotkehlchen.globaldb.cache import (
     globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.evm_event import (
+    BRIDGE_EXTRA_DATA_KEY,
+    BridgeExtraData,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -79,6 +83,60 @@ def bridge_prepare_data(
     return expected_event_type, new_event_type, from_chain, to_chain, expected_location_label
 
 
+def make_bridge_extra_data(
+        from_chain: ChainID | int | None,
+        to_chain: ChainID | int | None,
+        from_address: ChecksumEvmAddress | None = None,
+        to_address: ChecksumEvmAddress | None = None,
+        transfer_id: str | None = None,
+) -> dict[str, BridgeExtraData]:
+    """Build the extra_data mapping with the structured cross-chain data of a bridge event.
+
+    Chains may be given as raw EVM chain ids to also record destinations that
+    rotki does not support. None values are omitted from the result.
+    """
+    bridge_data: BridgeExtraData = {}
+    for key, chain in (('from_chain', from_chain), ('to_chain', to_chain)):
+        if chain is not None:
+            bridge_data[key] = chain.serialize() if isinstance(chain, ChainID) else chain  # type: ignore[literal-required]  # key is a literal member of BridgeExtraData
+    for key, value in (
+            ('from_address', from_address),
+            ('to_address', to_address),
+            ('transfer_id', transfer_id),
+    ):
+        if value is not None:
+            bridge_data[key] = value  # type: ignore[literal-required]  # key is a literal member of BridgeExtraData
+
+    return {BRIDGE_EXTRA_DATA_KEY: bridge_data}
+
+
+def set_bridge_extra_data(
+        event: EvmEvent,
+        from_chain: ChainID | int | None,
+        to_chain: ChainID | int | None,
+        from_address: ChecksumEvmAddress | None = None,
+        to_address: ChecksumEvmAddress | None = None,
+        transfer_id: str | None = None,
+) -> None:
+    """Set the structured bridge data on the event, preserving other extra_data keys.
+
+    Merges into any bridge data already present on the event, so decoders that learn
+    different parts of the bridge context from different logs (e.g. the recipient from
+    the transfer log and the source chain from a messaging log) can each contribute.
+    """
+    existing_data = {} if event.extra_data is None else event.extra_data
+    bridge_data = make_bridge_extra_data(
+        from_chain=from_chain,
+        to_chain=to_chain,
+        from_address=from_address,
+        to_address=to_address,
+        transfer_id=transfer_id,
+    )[BRIDGE_EXTRA_DATA_KEY]
+    event.extra_data = existing_data | {
+        BRIDGE_EXTRA_DATA_KEY: existing_data.get(BRIDGE_EXTRA_DATA_KEY, {}) | bridge_data,
+    }
+
+
 def bridge_match_transfer(
         event: EvmEvent,
         from_address: ChecksumEvmAddress,
@@ -90,6 +148,7 @@ def bridge_match_transfer(
         expected_event_type: HistoryEventType,
         new_event_type: HistoryEventType,
         counterparty: CounterpartyDetails,
+        transfer_id: str | None = None,
 ) -> None:
     """Action to take when matching a bridge transfer event"""
     from_label, to_label = f' address {from_address}', f' address {to_address}'
@@ -110,6 +169,14 @@ def bridge_match_transfer(
     event.notes = (
         f'Bridge {amount} {asset.symbol} from {from_chain.label()}{from_label} to '
         f'{to_chain.label()}{to_label} via {counterparty.label} bridge'
+    )
+    set_bridge_extra_data(
+        event=event,
+        from_chain=from_chain,
+        to_chain=to_chain,
+        from_address=from_address,
+        to_address=to_address,
+        transfer_id=transfer_id,
     )
 
 

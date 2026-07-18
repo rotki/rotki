@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.superchain_bridge.utils import get_messenger_transfer_id
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -134,6 +135,7 @@ class SuperchainL2SideBridgeCommonDecoder(EvmDecoderInterface, ABC):
                 expected_event_type=expected_event_type,
                 new_event_type=new_event_type,
                 counterparty=self.counterparty,
+                transfer_id=get_messenger_transfer_id(context.all_logs),
             )
 
         return DEFAULT_EVM_DECODING_OUTPUT

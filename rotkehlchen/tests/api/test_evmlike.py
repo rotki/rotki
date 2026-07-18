@@ -326,6 +326,12 @@ def test_decode_pending_evmlike(
         location_label=user_address,
         address=user_address,
         notes='Bridge 6.626770825 ETH from ZKSync Lite to Ethereum',
+        extra_data={'bridge': {
+            'from_chain': 'zksync_lite',
+            'to_chain': 1,
+            'from_address': user_address,
+            'to_address': user_address,
+        }},
     ).serialize())
     compare_events_without_id(result['entries'][1]['entry'], EvmEvent(
         group_identifier='zkl0xbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970',
