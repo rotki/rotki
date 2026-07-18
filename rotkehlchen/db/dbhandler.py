@@ -253,6 +253,7 @@ class DBHandler:
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
         self.get_or_create_token_lock = Semaphore()
         self.match_asset_movements_lock = Semaphore()
+        self.match_bridge_transactions_lock = Semaphore()
         self._ignored_asset_ids_cache: dict[bool, set[str]] = {}
         # Bumped on every cache invalidation. get_ignored_asset_ids snapshots it
         # before querying and skips the write-back if it changed in the meantime,

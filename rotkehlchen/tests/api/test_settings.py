@@ -237,9 +237,9 @@ def test_set_settings(rotkehlchen_api_server: APIServer) -> None:
             value = ';'
         elif setting == 'events_processing_frequency':
             value = HOUR_IN_SECONDS
-        elif setting == 'asset_movement_amount_tolerance':
+        elif setting in ('asset_movement_amount_tolerance', 'bridge_match_amount_tolerance'):
             value = '0.0001'
-        elif setting == 'asset_movement_time_range':
+        elif setting in ('asset_movement_time_range', 'bridge_match_time_range'):
             value = HOUR_IN_SECONDS * 2
         elif setting == 'suppress_missing_key_msg_services':
             value = [ExternalService.ETHERSCAN.serialize()]

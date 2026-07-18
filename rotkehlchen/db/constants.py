@@ -50,6 +50,7 @@ class HistoryMappingState(DBIntEnumMixIn):
 
 class HistoryEventLinkType(DBIntEnumMixIn):
     ASSET_MOVEMENT_MATCH = 1
+    BRIDGE_MATCH = 2  # links the source chain bridge deposit (left) to the destination chain bridge withdrawal (right)  # noqa: E501
 
 
 EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS: Final = 'last_queried_timestamp'
