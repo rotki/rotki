@@ -1536,3 +1536,72 @@ def test_negative_balance_reopens_resolved_data_issue(
     DataIssuesManager(database).resolve_manually(issue_id)
     process_historical_balances(database, messages_aggregator)
     assert DataIssuesManager(database).get_issue(issue_id).state == 'open'
+
+
+def test_unmatched_bridge_data_issues(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """Unmatched bridge legs past their settlement window become data issues in the
+    inbox, and get system-resolved once the legs are matched."""
+    from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
+    from rotkehlchen.db.constants import HistoryEventLinkType
+    from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
+    from rotkehlchen.history.data_issues.types import DataIssueFilters
+
+    events_db = DBHistoryEvents(database)
+    old_ts = TimestampMS((ts_now() - 30 * 24 * 3600) * 1000)  # far beyond any match window
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=old_ts,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_ETH,
+                amount=ONE,
+                location_label=TEST_ADDR1,
+                counterparty=CPT_ACROSS,
+                extra_data={'bridge': {'from_chain': 1, 'to_chain': 42161}},
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(old_ts + 300000),
+                location=Location.ARBITRUM_ONE,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_ETH,
+                amount=ONE,
+                location_label=TEST_ADDR1,
+                counterparty=CPT_ACROSS,
+            )],
+        )
+
+    process_historical_balances(database, messages_aggregator)
+    issues_manager = DataIssuesManager(database=database)
+    issues = issues_manager.list_issues(
+        filters=DataIssueFilters(kind=IssueKind.UNMATCHED_BRIDGE.value),
+    )
+    assert {(issue.payload['direction'], issue.state) for issue in issues} == {
+        ('deposit', IssueState.OPEN.value),
+        ('withdrawal', IssueState.OPEN.value),
+    }
+
+    # linking the pair resolves both issues on the next run
+    deposit_id, withdrawal_id = sorted(
+        issue.payload['event_identifier'] for issue in issues
+    )
+    with database.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO history_event_links(left_event_id, right_event_id, link_type) '
+            'VALUES(?, ?, ?)',
+            (deposit_id, withdrawal_id, HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db()),
+        )
+    process_historical_balances(database, messages_aggregator)
+    issues = issues_manager.list_issues(
+        filters=DataIssueFilters(kind=IssueKind.UNMATCHED_BRIDGE.value),
+    )
+    assert {issue.state for issue in issues} == {IssueState.RESOLVED.value}

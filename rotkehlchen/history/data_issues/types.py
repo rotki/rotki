@@ -23,7 +23,25 @@ class CurrentBalanceMismatchIssuePayload(BaseIssuePayload):
     latest_event_identifier: int | None
 
 
-type DataIssuePayload = NegativeBalanceIssuePayload | CurrentBalanceMismatchIssuePayload
+class UnmatchedBridgeIssuePayload(BaseIssuePayload):
+    """Payload for an event-scoped issue about a bridge leg with no matched counterpart.
+
+    direction is 'deposit' for a source-chain outflow whose destination leg is unknown
+    past the bridge's expected settlement window, and 'withdrawal' for a destination
+    chain inflow whose source leg is unknown.
+    """
+    event_identifier: int
+    group_identifier: str
+    direction: str
+    counterparty: NotRequired[str]
+    bridge: NotRequired[dict[str, Any]]
+
+
+type DataIssuePayload = (
+    NegativeBalanceIssuePayload |
+    CurrentBalanceMismatchIssuePayload |
+    UnmatchedBridgeIssuePayload
+)
 """Typed payload variants accepted when writing data issues."""
 
 

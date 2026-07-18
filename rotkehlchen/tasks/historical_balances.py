@@ -13,8 +13,9 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.data_issues.constants import IssueKind
+from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.types import UnmatchedBridgeIssuePayload
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
@@ -22,8 +23,13 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.tasks.bridges import (
+    get_bridge_match_window,
+    get_event_bridge_data,
+    get_unmatched_bridge_events,
+)
 from rotkehlchen.types import EventMetricKey, Location, Timestamp, TimestampMS
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.lockable import skip_if_running
 
 if TYPE_CHECKING:
@@ -349,12 +355,82 @@ def process_historical_balances(
             'processed': total_events,
         },
     )
+    _detect_unmatched_bridge_issues(database=database)
     _finalize_processing(database=database, modification_ts_at_start=modification_ts_at_start)
     log.debug(
         'Completed historical balance processing for %s events with %s modified buckets',
         total_events,
         len(modified_buckets),
     )
+
+
+def _detect_unmatched_bridge_issues(database: DBHandler) -> None:
+    """Surface bridge legs whose counterpart is unknown as data issues.
+
+    A linked bridge pair is an internal transfer the scanner can follow across
+    chains. An unlinked deposit past its bridge's settlement window means money
+    left a tracked bucket for an unknown destination; an unlinked withdrawal is
+    an inflow from an unknown source. Both are reported in the issues inbox and
+    auto-resolved once the leg gets matched, ignored, or resolved as external.
+    """
+    deposits, withdrawals = get_unmatched_bridge_events(database=database)
+    issues_manager = DataIssuesManager(database=database)
+    now_ms = ts_sec_to_ms(ts_now())
+    default_window = CachedSettings().get_settings().bridge_match_time_range
+    unmatched_ids: set[int] = set()
+    for direction, events in (('deposit', deposits), ('withdrawal', withdrawals)):
+        for event in events:
+            if event.identifier is None:
+                continue
+
+            counterparty = getattr(event, 'counterparty', None)
+            window = get_bridge_match_window(
+                counterparty=counterparty,
+                default_window=default_window,
+            ) if direction == 'deposit' else default_window  # grace so we don't race the matcher
+            if now_ms < event.timestamp + window * 1000:
+                continue  # the counterpart leg may still legitimately appear
+
+            unmatched_ids.add(event.identifier)
+            payload = UnmatchedBridgeIssuePayload(
+                event_identifier=event.identifier,
+                group_identifier=event.group_identifier,
+                direction=direction,
+            )
+            if counterparty is not None:
+                payload['counterparty'] = counterparty
+            if len(bridge_data := get_event_bridge_data(event)) > 0:
+                payload['bridge'] = bridge_data
+            issues_manager.write_issue(
+                kind=IssueKind.UNMATCHED_BRIDGE,
+                location=event.location.serialize(),
+                location_label=event.location_label,
+                protocol=counterparty,
+                asset=event.asset.identifier,
+                payload=payload,
+                ts_start=event.timestamp,
+                ts_end=event.timestamp,
+            )
+
+    # System-resolve issues whose leg is no longer unmatched (got matched, ignored
+    # or resolved as external). This is an observed fact, not a user/remediation
+    # state transition, so it bypasses the state machine on purpose.
+    with database.user_write() as write_cursor:
+        query = (
+            'UPDATE data_issues SET state = ?, resolved_at = ? WHERE kind = ? '
+            'AND state != ? AND resolved_at IS NULL'
+        )
+        bindings: tuple = (
+            IssueState.RESOLVED,
+            ts_now(),
+            IssueKind.UNMATCHED_BRIDGE,
+            IssueState.DISMISSED,
+        )
+        if len(unmatched_ids) > 0:
+            placeholders = ','.join(['?'] * len(unmatched_ids))
+            query += f' AND event_identifier NOT IN ({placeholders})'
+            bindings += tuple(unmatched_ids)
+        write_cursor.execute(query, bindings)
 
 
 def _finalize_processing(
