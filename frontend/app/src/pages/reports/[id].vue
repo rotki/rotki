@@ -32,7 +32,7 @@ const refreshing = ref(false);
 const initialOpenReportActionable = ref<boolean>(false);
 
 const reportsStore = useReportsStore();
-const { reports } = storeToRefs(reportsStore);
+const { actionableItems, reports } = storeToRefs(reportsStore);
 const { isLatestReport } = reportsStore;
 const { fetchReports, getActionableItems } = useReportOperations();
 
@@ -44,6 +44,12 @@ const latest = isLatestReport(reportId);
 
 const selectedReport = computed<Report>(() => get(reports).entries.find(item => item.identifier === reportId)!);
 const settings = computed(() => get(selectedReport).settings);
+
+const missingAcquisitionsCount = computed<number>(() => get(actionableItems)?.missingAcquisitions.length ?? 0);
+const missingPricesCount = computed<number>(() => get(actionableItems)?.missingPrices.length ?? 0);
+const eventsSkippedCount = computed<number>(() => get(actionableItems)?.eventsSkippedNoRule ?? 0);
+const hasActionableIssues = computed<boolean>(() => get(latest) && (get(missingAcquisitionsCount) > 0 || get(missingPricesCount) > 0));
+const showCompletenessWarning = computed<boolean>(() => get(hasActionableIssues) || (get(latest) && get(eventsSkippedCount) > 0));
 
 const reportEvents = ref(defaultReportEvents());
 
@@ -111,6 +117,26 @@ async function regenerateReport() {
           {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
         </RuiButton>
       </div>
+      <RuiAlert
+        v-if="showCompletenessWarning"
+        type="warning"
+      >
+        <div v-if="hasActionableIssues">
+          {{ t('profit_loss_report.actionable.overview_warning', {
+            acquisitions: missingAcquisitionsCount,
+            prices: missingPricesCount,
+          }) }}
+        </div>
+        <div v-if="eventsSkippedCount > 0">
+          {{ t('profit_loss_report.actionable.skipped_no_rule', { count: eventsSkippedCount }) }}
+        </div>
+      </RuiAlert>
+      <RuiAlert
+        v-else-if="!latest"
+        type="info"
+      >
+        {{ t('profit_loss_report.actionable.stale_details') }}
+      </RuiAlert>
       <ProfitLossOverview
         :report="selectedReport"
         :symbol="settings.profitCurrency"

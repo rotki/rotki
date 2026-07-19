@@ -331,6 +331,7 @@ watchDebounced(route, async () => {
           @open:match-asset-movements="dialogContainer?.show({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS })"
           @open:match-bridge-transactions="dialogContainer?.show({ type: DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS })"
           @open:internal-tx-conflicts="dialogContainer?.show({ type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS })"
+          @open:decoding-status="dialogContainer?.show({ type: DIALOG_TYPES.DECODING_STATUS })"
         />
 
         <div class="flex gap-4 items-start">

@@ -79,6 +79,9 @@ class AccountingPot(CustomizableDateMixin):
         )
         self.pnls = PnlTotals()
         self.processed_events: list[ProcessedAccountingEvent] = []
+        # events excluded from the report because no accounting rule matched them.
+        # Surfaced to the user so the report doesn't silently omit data.
+        self.events_skipped_no_rule = 0
         self.events_accountant = EventsAccountant(
             evm_accounting_aggregators=evm_accounting_aggregators,
             pot=self,
@@ -200,6 +203,7 @@ class AccountingPot(CustomizableDateMixin):
         self.cost_basis.reset(settings)
         self.events_accountant.reset()
         self.processed_events = []
+        self.events_skipped_no_rule = 0
         self._pending_report_rows = []
 
     def add_in_event(

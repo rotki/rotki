@@ -149,6 +149,7 @@ export interface EditableMissingPrice extends MissingPrice {
 }
 
 export const ReportActionableItem = z.object({
+  eventsSkippedNoRule: z.number().default(0),
   missingAcquisitions: z.array(MissingAcquisition),
   missingPrices: z.array(MissingPrice),
 });

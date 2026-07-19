@@ -219,6 +219,7 @@ class HistoryService:
             'report_id': pot.report_id,
             'missing_acquisitions': processed_missing_acquisitions,
             'missing_prices': processed_missing_prices,
+            'events_skipped_no_rule': pot.events_skipped_no_rule,
         }
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 

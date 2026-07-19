@@ -173,6 +173,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges: APIServer, start_t
     result = assert_proper_sync_response_with_result(response=response, status_code=HTTPStatus.OK)
     assert len(result['missing_acquisitions']) == (10 if fees_in_cost_basis is False else 9)
     assert len(result['missing_prices']) == 0
+    assert result['events_skipped_no_rule'] == 1
     assert result['report_id'] == 1
 
 
