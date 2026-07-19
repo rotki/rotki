@@ -558,29 +558,37 @@ class EvmTransactions(ABC):  # noqa: B024
             if queried_from_ts is None:
                 continue
 
-            for _, timestamp in internal_txs_with_timestamps:
-                queried_to_ts = Timestamp(max(queried_from_ts, timestamp))
-                log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for {address} -> update range {queried_from_ts} - {queried_to_ts}')  # noqa: E501
-                if update_ranges:  # update last queried time for address
-                    assert location_string is not None, 'should always be given for timestamps'
-                    with self.database.conn.write_ctx() as write_cursor:
-                        self.dbranges.update_used_query_range(
-                            write_cursor=write_cursor,
-                            location_string=location_string,
-                            queried_ranges=[(queried_from_ts, queried_to_ts)],
-                        )
+            # Update the used query range and notify the frontend once per fetched
+            # batch instead of once per internal transaction. A DeFi-heavy address
+            # can have thousands of internal txs per chain, and a committed write
+            # transaction plus a websocket message for each one is orders of
+            # magnitude slower. The cumulative effect is identical: the per-row
+            # updates only ever extended the range to the running max timestamp.
+            queried_to_ts = Timestamp(max(
+                queried_from_ts,
+                *(timestamp for _, timestamp in internal_txs_with_timestamps),
+            ))
+            log.debug('Internal %s transactions for %s -> update range %s - %s', self.evm_inquirer.chain_name, address, queried_from_ts, queried_to_ts)  # noqa: E501
+            if update_ranges:  # update last queried time for address
+                assert location_string is not None, 'should always be given for timestamps'
+                with self.database.conn.write_ctx() as write_cursor:
+                    self.dbranges.update_used_query_range(
+                        write_cursor=write_cursor,
+                        location_string=location_string,
+                        queried_ranges=[(queried_from_ts, queried_to_ts)],
+                    )
 
-                self.msg_aggregator.add_message(
-                    message_type=WSMessageType.TRANSACTION_STATUS,
-                    data={
-                        'address': address,
-                        'chain': self.evm_inquirer.blockchain.value,
-                        'subtype': str(TransactionStatusSubType.EVM),
-                        'period': [period.from_value, timestamp],
-                        'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),
-                    },
-                )
-                queried_from_ts = queried_to_ts
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.TRANSACTION_STATUS,
+                data={
+                    'address': address,
+                    'chain': self.evm_inquirer.blockchain.value,
+                    'subtype': str(TransactionStatusSubType.EVM),
+                    'period': [period.from_value, queried_to_ts],
+                    'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),
+                },
+            )
+            queried_from_ts = queried_to_ts
 
         return queried_hashes
 

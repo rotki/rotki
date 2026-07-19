@@ -67,7 +67,7 @@ from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalan
 from rotkehlchen.chain.optimism.modules.walletconnect.balances import WalletconnectBalances
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
-from rotkehlchen.concurrency import exception_of, spawn, wait
+from rotkehlchen.concurrency import exception_of, result_of, spawn, wait
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_ETH2
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
@@ -1304,6 +1304,55 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             if EvmIndexer.ETHERSCAN not in chain_manager.node_inquirer.available_indexers:
                 chain_manager.node_inquirer.available_indexers[EvmIndexer.ETHERSCAN] = chain_manager.node_inquirer.etherscan  # noqa: E501
 
+    def _check_single_chain_activity(
+            self,
+            address: ChecksumEvmAddress,
+            chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
+    ) -> bool | None:
+        """Checks whether address is active in the given chain.
+        Returns True if active, False if not and None if we couldn't query the chain.
+        """
+        chain_manager = self.get_chain_manager(chain)
+        try:
+            if chain == SupportedBlockchain.AVALANCHE:
+                avax_manager = cast('AvalancheManager', chain_manager)
+                try:
+                    # just check balance and nonce in avalanche
+                    return (
+                        avax_manager.w3.eth.get_transaction_count(address) != 0 or
+                        avax_manager.get_avax_balance(address) != ZERO
+                    )
+                except (requests.exceptions.RequestException, Web3Exception) as e:
+                    log.error('Failed to check %s activity in avalanche due to %s', address, e)
+                    return None
+
+            if chain == SupportedBlockchain.ZKSYNC_LITE:
+                options = {'from': 'latest', 'limit': 1, 'direction': 'older'}
+                try:
+                    response = self.zksync_lite._query_api(
+                        url=f'accounts/{address}/transactions',
+                        options=options,
+                    )
+                except RemoteError:
+                    return None
+
+                return bool(response.get('list', None))  # falsy -> None or no transactions
+
+            evm_manager = cast('EvmManager', chain_manager)
+            chain_activity = evm_manager.node_inquirer.has_activity(
+                chain_id=chain.to_chain_id(),
+                account=address,
+            )
+            only_token_spam = (
+                chain_activity == HasChainActivity.TOKENS and
+                evm_manager.transactions.address_has_been_spammed(address=address)
+            )
+        except RemoteError as e:
+            log.error('%s when checking if %s is active at %s', e, address, chain)
+            return None
+        else:
+            return not (only_token_spam or chain_activity == HasChainActivity.NONE)
+
     def check_single_address_activity(
             self,
             address: ChecksumEvmAddress,
@@ -1311,61 +1360,25 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     ) -> tuple[list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE], list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE]]:
         """Checks whether address is active in the given chains.
         Returns a list of active chains and a list of chains where we couldn't query info
+
+        The per-chain checks run concurrently: independent backends (per-chain RPC
+        nodes) parallelize freely, while calls into shared upstreams (etherscan-v2's
+        unified key) are gated by the per-client TokenBucket. This turns the wait
+        from sum-of-chains into max-of-chains, which matters a lot when adding an
+        account since the user is blocked on the result.
         """
         active_chains = []
         failed_to_query_chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = []
-        for chain in chains:
-            chain_manager = self.get_chain_manager(chain)
-            try:
-                if chain == SupportedBlockchain.AVALANCHE:
-                    avax_manager = cast('AvalancheManager', chain_manager)
-                    try:
-                        # just check balance and nonce in avalanche
-                        has_activity = (
-                            avax_manager.w3.eth.get_transaction_count(address) != 0 or
-                            avax_manager.get_avax_balance(address) != ZERO
-                        )
-                    except (requests.exceptions.RequestException, Web3Exception) as e:
-                        log.error(f'Failed to check {address} activity in avalanche due to {e!s}')
-                        failed_to_query_chains.append(chain)
-                        has_activity = False
-
-                    if has_activity is False:
-                        continue
-
-                elif chain == SupportedBlockchain.ZKSYNC_LITE:
-                    options = {'from': 'latest', 'limit': 1, 'direction': 'older'}
-                    try:
-                        response = self.zksync_lite._query_api(
-                            url=f'accounts/{address}/transactions',
-                            options=options,
-                        )
-                    except RemoteError:
-                        failed_to_query_chains.append(chain)
-                        continue
-                    else:
-                        result = response.get('list', None)
-                        if not result:  # falsy -> None or no transactions:
-                            continue  # do not add the address for the chain
-
-                else:
-                    evm_manager = cast('EvmManager', chain_manager)
-                    chain_activity = evm_manager.node_inquirer.has_activity(
-                        chain_id=chain.to_chain_id(),
-                        account=address,
-                    )
-                    only_token_spam = (
-                        chain_activity == HasChainActivity.TOKENS and
-                        evm_manager.transactions.address_has_been_spammed(address=address)
-                    )
-                    if only_token_spam or chain_activity == HasChainActivity.NONE:
-                        continue  # do not add the address for the chain
-            except RemoteError as e:
-                log.error(f'{e!s} when checking if {address} is active at {chain}')
+        tasks = {
+            chain: spawn(self._check_single_chain_activity, address, chain)
+            for chain in chains
+        }
+        wait(list(tasks.values()))
+        for chain, task in tasks.items():
+            if (is_active := result_of(task)) is True:
+                active_chains.append(chain)
+            elif is_active is None:
                 failed_to_query_chains.append(chain)
-                continue
-
-            active_chains.append(chain)
 
         return active_chains, failed_to_query_chains
 
@@ -1479,11 +1492,15 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 else:
                     chains_to_check.append(chain)
 
-            chains_with_valid_addresses = []
-            for chain in chains_to_check:
-                chains_with_valid_addresses.append(chain)
-                if chain in EVM_CHAINS_WITH_TRANSACTIONS and self.get_chain_manager(chain).node_inquirer.is_contract(address=account):  # noqa: E501
-                    evm_contract_addresses.add(account)
+            chains_with_valid_addresses = list(chains_to_check)
+            contract_tasks = [
+                spawn(self.get_chain_manager(chain).node_inquirer.is_contract, address=account)
+                for chain in chains_to_check
+                if chain in EVM_CHAINS_WITH_TRANSACTIONS
+            ]
+            wait(contract_tasks)
+            if any(result_of(task) for task in contract_tasks):
+                evm_contract_addresses.add(account)
 
             new_accounts, new_failed_accounts, had_activity = self.check_chains_and_add_accounts(
                 account=account,
