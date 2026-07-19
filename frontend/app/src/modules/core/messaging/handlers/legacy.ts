@@ -10,6 +10,8 @@ export function createLegacyHandler(t: ReturnType<typeof useI18n>['t']): Notific
     message: value,
     priority: Priority.BULK,
     severity: verbosity === MESSAGE_WARNING ? Severity.WARNING : Severity.ERROR,
-    title: t('notification_messages.backend.title'),
+    title: verbosity === MESSAGE_WARNING
+      ? t('notification_messages.backend.warning_title')
+      : t('notification_messages.backend.title'),
   }));
 }

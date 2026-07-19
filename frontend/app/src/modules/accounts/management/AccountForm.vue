@@ -44,7 +44,7 @@ const form = useTemplateRef<
 
 const chain = useRefPropVModel(modelValue, 'chain');
 
-const { isEvm, isSolanaChains, txEvmChains } = useSupportedChains();
+const { getChainName, isEvm, isSolanaChains, txEvmChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 const { getApiKey } = useExternalApiKeys();
 
@@ -114,6 +114,17 @@ const showSolanaInitialAlert = computed<boolean>(() => {
   return currentModelValue.mode === 'add' && !!selectedChain && isSolanaChains(selectedChain);
 });
 
+const EARLY_INTEGRATION_CHAINS: string[] = ['avax', 'hyperliquid', 'monad'];
+
+const earlyIntegrationChain = computed<string | undefined>(() => {
+  const selectedChain = get(chain);
+  const currentModelValue = get(modelValue);
+
+  if (currentModelValue.mode === 'add' && selectedChain && EARLY_INTEGRATION_CHAINS.includes(selectedChain))
+    return selectedChain;
+  return undefined;
+});
+
 const showBinanceEtherscanWarning = computed<boolean>(() => {
   const selectedChain = get(chain);
   const currentModelValue = get(modelValue);
@@ -123,11 +134,12 @@ const showBinanceEtherscanWarning = computed<boolean>(() => {
 
 const warningExpanded = ref<boolean>(false);
 
-type WarningType = 'solana' | 'apiKey' | 'binance';
+type WarningType = 'solana' | 'apiKey' | 'binance' | 'earlyChain';
 
 interface WarningItem {
   type: WarningType;
   service?: 'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc' | 'blockscout';
+  chain?: string;
 }
 
 function isBeaconchainService(service: WarningItem['service']): boolean {
@@ -148,6 +160,9 @@ const warnings = computed<WarningItem[]>(() => {
     result.push({ service, type: 'apiKey' });
   if (get(showSolanaInitialAlert))
     result.push({ type: 'solana' });
+  const earlyChain = get(earlyIntegrationChain);
+  if (earlyChain)
+    result.push({ chain: earlyChain, type: 'earlyChain' });
   if (get(showBinanceEtherscanWarning))
     result.push({ type: 'binance' });
   return result;
@@ -322,6 +337,9 @@ defineExpose({
           </template>
           <template v-else-if="warning.type === 'solana'">
             {{ t('blockchain_balances.solana_warning') }}
+          </template>
+          <template v-else-if="warning.type === 'earlyChain' && warning.chain">
+            {{ t('blockchain_balances.early_chain_warning', { chain: getChainName(warning.chain) }) }}
           </template>
           <template v-else-if="warning.type === 'binance'">
             {{ t('blockchain_balances.binance_warning') }}

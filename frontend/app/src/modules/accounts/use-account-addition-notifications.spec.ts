@@ -74,12 +74,14 @@ describe('useAccountAdditionNotifications', () => {
       expect(h.notifyWarning).toHaveBeenCalledOnce();
       const [, message] = h.notifyWarning.mock.calls[0];
       expect(message).toContain('- eth');
+      expect(message).toContain('no_activity_hint');
     });
 
     it('should warn for eth contracts and existing accounts', () => {
       const { createFailureNotification } = useAccountAdditionNotifications();
       createFailureNotification({ ethContracts: ['0xabc'], existed: { '0xabc': ['optimism'] } }, account);
       expect(h.notifyWarning).toHaveBeenCalledOnce();
+      expect(h.notifyWarning.mock.calls[0][1]).not.toContain('no_activity_hint');
     });
 
     it('should skip a single binance_sc failure', () => {

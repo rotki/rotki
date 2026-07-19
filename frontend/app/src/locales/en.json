@@ -438,15 +438,16 @@
           "failed_reason": {
             "existed": "Has been added before",
             "is_contract": "Is ETH contract address",
-            "no_activity": "No activity"
+            "no_activity": "No activity found on this chain yet"
           },
+          "no_activity_hint": "Chains where the address has no activity yet are skipped. This is normal for a fresh wallet — once the address has transactions, add it again, or add it now with a specific chain selected to track it anyway.",
           "non_eth": "All non ETH chains"
         },
         "no_new": {
           "description": "The selected addresses are already tracked by rotki"
         },
         "success": {
-          "description": "Address {address} is successfully added for all EVM chains | Address {address} is successfully added for these chains: \n {list}"
+          "description": "Address {address} is successfully added for all EVM chains. Token detection and balance queries are now running — open the History page to also fetch and decode its transactions. | Address {address} is successfully added for these chains: \n {list}\nToken detection and balance queries are now running — open the History page to also fetch and decode its transactions."
         },
         "task": {
           "description": "Adding {address}",
@@ -1829,6 +1830,7 @@
     "add_account": "Add Account",
     "add_validator_premium": "Adding ETH staking validators is a premium feature. Upgrade to rotki Premium to add validators.",
     "binance_warning": "Binance Smart Chain accounts can only be detected with a paid Etherscan key.",
+    "early_chain_warning": "rotki's {chain} integration is early: only a limited set of protocols is decoded on this chain for now. Transactions from other protocols will appear as plain transfers, with more protocols added over time.",
     "eth_staking_limit_error": "Adding this validator would put you over your {currentTier} plan's ETH staking limit of {limit} ETH. Upgrade your plan via {link} or contact us for a custom plan to raise your limit.",
     "eth_staking_no_access": "Your {currentTier} plan doesn't include ETH staking. Upgrade your plan via {link} or contact us for a custom plan to get access.",
     "evm_detection": {
@@ -2362,10 +2364,10 @@
       },
       "go_to_history_events": "Go to history events",
       "incomplete_decoding": "The last event query completed {time}. Due to incomplete event processing, protocol balances may not reflect the latest state. Navigate to history events to begin processing.",
-      "just_updated": "The application has recently been updated. Some balances may not display until transaction processing is fully complete. Navigate to history events to begin to begin processing.",
+      "just_updated": "The application has recently been updated. Some balances may not display until transaction processing is fully complete. Navigate to history events to begin processing.",
       "last_queried": "The last event query completed {time}. Protocol balances may be stale or missing if the transaction history has not been refreshed recently. Navigate to history events to begin refreshing them.",
-      "last_queried_long": "Some balances may not display until transaction processing is fully complete. Navigate to history events to begin to begin processing.",
-      "never_queried": "The transaction history has not been queried yet. Navigate to history events to begin querying them.",
+      "last_queried_long": "Some balances may not display until transaction processing is fully complete. Navigate to history events to begin processing.",
+      "never_queried": "Your transaction history has not been downloaded yet. rotki is local-first: it fetches and decodes your full on-chain history on your device, which can take a while for active multi-chain addresses. Navigate to history events to start.",
       "processing": "Historical event processing is underway. Updated protocol balances will be available once the operation concludes.",
       "processing_operation_event": "{status} for {name} ({location})",
       "processing_operation_transaction": "{status} for {address}",
@@ -2622,6 +2624,7 @@
       "percentage_of_total_net_value": "% of net Value",
       "percentage_total": "% of total"
     },
+    "no_assets": "No assets yet. Add a blockchain address, connect an exchange, or add a manual balance above — your balances will appear here once the first query completes.",
     "no_search_result": "Your search for \"{search}\" yielded no results.",
     "select_visible_columns": "Select visible columns"
   },
@@ -3136,7 +3139,11 @@
       "signing_key": "Signing Key"
     },
     "keys": "Keys",
-    "subtitle": "rotki can connect to supported exchanges and automatically pull your trades and balances from them. See the {0} for more information.",
+    "setup_success": {
+      "message": "Your {location} balances are being fetched now. Open the History page to also import and process its trades, deposits and withdrawals.",
+      "title": "Exchange connected"
+    },
+    "subtitle": "rotki can connect to supported exchanges and automatically pull your balances from them. Trades, deposits and withdrawals are imported when you open the History page. See the {0} for more information.",
     "sync": {
       "messages": {
         "description": "Cannot {action} syncing exchange {location} with name {name}: {message}",
@@ -4624,8 +4631,10 @@
     }
   },
   "module_settings": {
+    "coverage_note": "These modules only control balance queries for a few specific protocols — they are not the full list of what rotki supports. Transaction decoding automatically covers 100+ DeFi protocols regardless of these settings. See the full list of supported chains, exchanges and protocols on {link}.",
     "hint": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled. Also, please remember that after activating a module, you need to logout and login again for the activation to take effect",
-    "subtitle": "Manage and view your module settings.",
+    "integrations_link_label": "rotki.com/integrations",
+    "subtitle": "Manage and view your balance-query module settings.",
     "title": "Module Settings"
   },
   "modules": {
@@ -4808,7 +4817,8 @@
       "title": "Address has been added to {chain}|Addresses have been added to {chain}"
     },
     "backend": {
-      "title": "Backend"
+      "title": "Backend",
+      "warning_title": "Some data was skipped during processing"
     },
     "beaconchain_rate_limited": {
       "message": "Beaconcha.in is rate limited{until}. The following query failed:\n{endpoints}\nCheck logs for more details.|Beaconcha.in is rate limited{until}. The following {count} queries failed:\n{endpoints}\n\nCheck logs for more details.",
@@ -5926,6 +5936,7 @@
     "decoding_label": "chains decoded",
     "decoding_progress": "{processed}/{total} txns",
     "events": "Events",
+    "explanation": "The first sync downloads and decodes your entire on-chain history locally. You can keep using rotki — results appear as they are ready. A personal (free) Etherscan API key speeds this up significantly.",
     "locations_label": "location | locations",
     "period": {
       "beginning": "Beginning"
@@ -6152,7 +6163,8 @@
     "empty_state": {
       "clear_filters": "Clear filters",
       "no_data_with_filters": "No events match the current filters",
-      "no_events": "No events found.\nAdd exchanges, track blockchain addresses, or manually add events to get started."
+      "no_events": "No events found.\nAdd exchanges, track blockchain addresses, or manually add events to get started.",
+      "syncing": "Your history is being queried and decoded.\nEvents will appear here as they are processed — this can take a while on the first sync."
     },
     "events": {
       "accounting_rule": {

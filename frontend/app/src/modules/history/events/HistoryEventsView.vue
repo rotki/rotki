@@ -387,6 +387,7 @@ watchDebounced(route, async () => {
               v-model:pagination="pagination"
               :table-height-offset="tableHeightOffset"
               :group-loading="groupLoading"
+              :processing="processing || refreshing"
               :groups="groups"
               :page-params="toggles.matchExactEvents ? pageParams : undefined"
               :exclude-ignored="!toggles.showIgnoredAssets"

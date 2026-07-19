@@ -21,6 +21,7 @@ export const heliusLink = 'https://dev.helius.xyz/dashboard/app';
 export const blockscoutLink = 'https://dev.blockscout.com/';
 
 export const externalLinks = {
+  integrations: `${BASE_URL}integrations`,
   premium: `${BASE_URL}products${UTM_PARAMS}`,
   premiumDevices: `${DOCS_BASE_URL}premium/devices`,
   sponsor: `${BASE_URL}sponsor/mint`,
