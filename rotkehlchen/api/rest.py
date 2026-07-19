@@ -1177,14 +1177,18 @@ class RestAPI:
             token = self.session_store.reissue(name, claims.sid)
             assert token is not None  # is_active ⇒ the session exists to re-issue
         else:  # takeover: rotate the sid so the previous window's cookie 401s
-            if self.rotkehlchen.user_is_logged_in:
+            taking_over_unlocked_user = self.rotkehlchen.user_is_logged_in
+            if taking_over_unlocked_user:
                 # cancel the previous session's tasks (as logout does), keep unlocked
                 self._cancel_api_tasks(reason='Cancelled due to session takeover')
                 with self.task_lock:
                     self.task_results = {}
-                    # the session lives on: allow the taking-over session to spawn api tasks
-                    self.api_tasks_stop_reason = None
             token = self.session_store.login(name)
+            if taking_over_unlocked_user:
+                with self.task_lock:
+                    # The old sid is now inactive, so only the taking-over session can
+                    # pass the gate and spawn new api tasks.
+                    self.api_tasks_stop_reason = None
 
         response = api_response(_wrap_in_ok_result({}), status_code=HTTPStatus.OK)
         set_session_cookie(response, token)
