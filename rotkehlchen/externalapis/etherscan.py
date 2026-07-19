@@ -348,7 +348,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         )) is not None:
             options.update(pagination_options)
         last_withdrawal_idx = -1
-        touched_indices = set()
+        touched_indices: set[int] = set()
         with self.db.conn.read_ctx() as cursor:
             if (idx_result := self.db.get_dynamic_cache(
                 cursor=cursor,
