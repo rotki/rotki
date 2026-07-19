@@ -2,8 +2,8 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref } from 'vue';
-import DashboardCompletenessIndicator from '@/modules/dashboard/DashboardCompletenessIndicator.vue';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
+import DashboardCompletenessIndicator from '@/modules/dashboard/DashboardCompletenessIndicator.vue';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import '@test/i18n';
 
