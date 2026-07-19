@@ -225,6 +225,26 @@ def test_validated_blocks_pagination(temp_etherscan: Etherscan) -> None:
     assert [x['blockNumber'] for x in blocks] == [str(n) for n in range(ETHERSCAN_PAGINATION_LIMIT + 1)]  # noqa: E501
 
 
+def test_withdrawals_exact_page_size_preserves_touched_validators(
+        temp_etherscan: Etherscan,
+) -> None:
+    """An empty page after a full withdrawals page must finalize the accumulated results."""
+    temp_etherscan.pagination_limit = 2
+    withdrawals = [{
+        'validatorIndex': str(idx),
+        'blockNumber': str(idx),
+        'timestamp': str(idx),
+        'amount': '1',
+        'withdrawalIndex': str(idx),
+    } for idx in range(1, 3)]
+
+    with patch.object(temp_etherscan, '_query', side_effect=[withdrawals, []]):
+        assert temp_etherscan.get_withdrawals(
+            address=ZERO_ADDRESS,
+            period=TimestampOrBlockRange(range_type='blocks', from_value=0, to_value=10),
+        ) == {1, 2}
+
+
 def test_get_logs_dedup_keeps_no_duplicates(temp_etherscan: Etherscan) -> None:
     """Regression test for the get_logs overlap dedup.
 
