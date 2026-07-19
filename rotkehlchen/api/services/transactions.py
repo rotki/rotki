@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.chain.mixins.rpc_nodes import NodeStatus
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
+from rotkehlchen.concurrency import exception_of, spawn, wait
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -509,27 +510,45 @@ class TransactionsService:
                 else:
                     del blockchain_addresses[chain]
 
+        def _query_one_chain(
+                blockchain: CHAINS_WITH_TRANSACTIONS_TYPE,
+                addresses: ListOfBlockchainAddresses,
+        ) -> None:
+            self.rotkehlchen.chains_aggregator.get_chain_manager(
+                blockchain=blockchain,
+            ).query_transactions(
+                addresses=addresses,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        # Query all chains concurrently instead of serially, so the first visible
+        # sync phase takes max-of-chains instead of sum-of-chains. Independent
+        # backends (per-chain RPC nodes) parallelize freely, while shared upstreams
+        # (etherscan-v2's unified key) are gated by the per-client TokenBucket. The
+        # per-(address, chain) TRANSACTION_STATUS websocket messages already render
+        # concurrent chains correctly in the frontend progress panel.
+        tasks = {
+            blockchain: spawn(_query_one_chain, blockchain, addresses)
+            for blockchain, addresses in blockchain_addresses.items()
+        }
+        wait(list(tasks.values()))
+
         result, message, status_code = True, '', HTTPStatus.OK
-        for blockchain, addresses in blockchain_addresses.items():
-            try:
-                self.rotkehlchen.chains_aggregator.get_chain_manager(
-                    blockchain=blockchain,
-                ).query_transactions(
-                    addresses=addresses,
-                    from_timestamp=from_timestamp,
-                    to_timestamp=to_timestamp,
-                )
-            except AttributeError:
+        for blockchain, task in tasks.items():
+            if (chain_exception := exception_of(task)) is None:
+                continue
+            if isinstance(chain_exception, AttributeError):
                 result = False
                 message = f'Transaction querying for {blockchain} is not implemented.'
                 status_code = HTTPStatus.BAD_REQUEST
-                break
-            except RemoteError as e:
-                result, message, status_code = False, str(e), HTTPStatus.BAD_GATEWAY
-                break
-            except sqlcipher.OperationalError as e:  # pylint: disable=no-member
-                result, message, status_code = False, str(e), HTTPStatus.BAD_REQUEST
-                break
+            elif isinstance(chain_exception, RemoteError):
+                result, message, status_code = False, str(chain_exception), HTTPStatus.BAD_GATEWAY
+            elif isinstance(chain_exception, sqlcipher.OperationalError):  # pylint: disable=no-member
+                result, message, status_code = False, str(chain_exception), HTTPStatus.BAD_REQUEST
+            else:
+                raise chain_exception
+            break
 
         return {'result': result, 'message': message, 'status_code': status_code}
 
