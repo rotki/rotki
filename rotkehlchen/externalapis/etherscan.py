@@ -365,7 +365,9 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 options=options,
             )
             if (result_length := len(result)) == 0:
-                return set()
+                if len(touched_indices) == 0:
+                    return set()
+                break  # an exact final full page is followed by an empty page
 
             withdrawals = []
             try:
