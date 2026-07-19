@@ -44,6 +44,10 @@ const {
 
 const { expanded, isRowExpandable, redirectToManualBalance } = useDashboardAssetOperations(() => tableType);
 
+const emptyDescription = computed<string>(() => tableType === DashboardTableType.ASSETS
+  ? t('dashboard_asset_table.no_assets')
+  : t('data_table.no_data'));
+
 // Watch search to reset pagination
 watch(search, () => setPage(1));
 </script>
@@ -84,7 +88,7 @@ watch(search, () => setPage(1));
       :cols="tableHeaders"
       :rows="sorted"
       :loading="loading"
-      :empty="{ description: t('data_table.no_data') }"
+      :empty="{ description: emptyDescription }"
       :expanded="expanded"
       :pagination="{
         page: pagination.page,

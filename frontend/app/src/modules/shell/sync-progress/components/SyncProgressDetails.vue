@@ -57,10 +57,10 @@ const protocolCacheCountColor = computed<string>(() =>
 
 <template>
   <div class="px-3 pb-4 space-y-5">
-    <div
-      v-if="hasChains"
-      class="pt-4"
-    >
+    <div class="pt-4 text-xs text-rui-text-secondary leading-snug">
+      {{ t('sync_progress.explanation') }}
+    </div>
+    <div v-if="hasChains">
       <div class="flex items-center gap-2 mb-2">
         <span class="text-xs font-medium text-rui-text-secondary">
           {{ t('sync_progress.transactions') }}
@@ -81,10 +81,7 @@ const protocolCacheCountColor = computed<string>(() =>
       <ChainProgressList :chains="chains" />
     </div>
 
-    <div
-      v-if="hasLocations"
-      :class="{ 'pt-4': !hasChains }"
-    >
+    <div v-if="hasLocations">
       <div class="flex items-center gap-2 mb-2">
         <span class="text-xs font-medium text-rui-text-secondary">
           {{ t('sync_progress.events') }}
@@ -105,10 +102,7 @@ const protocolCacheCountColor = computed<string>(() =>
       <LocationProgressList :locations="locations" />
     </div>
 
-    <div
-      v-if="hasDecoding"
-      :class="{ 'pt-4': !hasChains && !hasLocations }"
-    >
+    <div v-if="hasDecoding">
       <div class="flex items-center gap-2 mb-2">
         <span class="text-xs font-medium text-rui-text-secondary">
           {{ t('sync_progress.decoding') }}
@@ -129,10 +123,7 @@ const protocolCacheCountColor = computed<string>(() =>
       <DecodingProgressList :decoding="decoding" />
     </div>
 
-    <div
-      v-if="hasProtocolCache"
-      :class="{ 'pt-4': !hasChains && !hasLocations && !hasDecoding }"
-    >
+    <div v-if="hasProtocolCache">
       <div class="flex items-center gap-2 mb-2">
         <span class="text-xs font-medium text-rui-text-secondary">
           {{ t('sync_progress.protocol_cache') }}
@@ -153,10 +144,7 @@ const protocolCacheCountColor = computed<string>(() =>
       <ProtocolCacheProgressList :protocol-cache="protocolCache" />
     </div>
 
-    <div
-      v-if="hasWarnings"
-      :class="{ 'pt-4': !hasChains && !hasLocations && !hasDecoding && !hasProtocolCache }"
-    >
+    <div v-if="hasWarnings">
       <div class="flex items-center gap-2 mb-2">
         <RuiIcon
           name="lu-circle-alert"

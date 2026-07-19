@@ -62,6 +62,8 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
     };
 
     addFailureMessage(noActivity, t('actions.balances.blockchain_accounts_add.error.failed_reason.no_activity'));
+    if (noActivity)
+      listOfFailureText.push(t('actions.balances.blockchain_accounts_add.error.no_activity_hint'));
     addFailureMessage(existed, t('actions.balances.blockchain_accounts_add.error.failed_reason.existed'));
     addFailureMessage(ethContracts ? { ethContracts: [t('actions.balances.blockchain_accounts_add.error.non_eth')] } : undefined, t('actions.balances.blockchain_accounts_add.error.failed_reason.is_contract'));
 

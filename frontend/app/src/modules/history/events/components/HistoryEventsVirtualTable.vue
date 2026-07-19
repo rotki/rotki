@@ -29,6 +29,7 @@ const {
   excludeIgnored,
   groupLoading,
   hasActiveFilters,
+  processing,
   tableHeightOffset,
   identifiers,
   highlightedGroupIdentifier,
@@ -43,6 +44,7 @@ const {
   excludeIgnored: boolean;
   groupLoading: boolean;
   hasActiveFilters?: boolean;
+  processing?: boolean;
   tableHeightOffset?: number;
   identifiers?: string[];
   highlightedGroupIdentifier?: string;
@@ -262,6 +264,15 @@ function isShowingIgnoredAssets(groupId: string): boolean {
         >
           {{ t('transactions.empty_state.clear_filters') }}
         </RuiButton>
+      </template>
+      <template v-else-if="processing">
+        <RuiProgress
+          circular
+          variant="indeterminate"
+          color="primary"
+          size="24"
+        />
+        {{ t('transactions.empty_state.syncing') }}
       </template>
       <template v-else>
         {{ t('transactions.empty_state.no_events') }}
