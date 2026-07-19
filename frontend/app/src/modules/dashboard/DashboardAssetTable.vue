@@ -3,6 +3,7 @@ import type { AssetBalanceWithPrice } from '@rotki/common';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import DashboardAssetWarnings from '@/modules/dashboard/DashboardAssetWarnings.vue';
 import DashboardExpandableTable from '@/modules/dashboard/DashboardExpandableTable.vue';
 import { useDashboardAssetData } from '@/modules/dashboard/use-dashboard-asset-data';
@@ -25,6 +26,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 // Stores
 const { totalNetWorth } = useDashboardStores();
+const { prices } = storeToRefs(useBalancePricesStore());
 
 // Use composables - sort needs to be defined first for the computed dependency
 const { pagination, setPage, setTablePagination, sort, tableHeaders } = useDashboardTableConfig(
@@ -47,6 +49,10 @@ const { expanded, isRowExpandable, redirectToManualBalance } = useDashboardAsset
 const emptyDescription = computed<string>(() => tableType === DashboardTableType.ASSETS
   ? t('dashboard_asset_table.no_assets')
   : t('data_table.no_data'));
+
+function isPriceMissing(asset: string): boolean {
+  return get(prices)[asset]?.priceMissing === true;
+}
 
 // Watch search to reset pagination
 watch(search, () => setPage(1));
@@ -121,6 +127,16 @@ watch(search, () => setPage(1));
         <template v-if="isAssetMissing(row)">
           -
         </template>
+        <RuiTooltip
+          v-else-if="isPriceMissing(row.asset)"
+          :open-delay="400"
+          tooltip-class="max-w-[16rem]"
+        >
+          <template #activator>
+            <span class="cursor-help underline decoration-dotted">-</span>
+          </template>
+          {{ t('dashboard_asset_table.price_unknown') }}
+        </RuiTooltip>
         <FiatDisplay
           v-else
           :price-asset="row.asset"

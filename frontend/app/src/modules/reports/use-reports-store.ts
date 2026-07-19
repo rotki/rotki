@@ -48,6 +48,7 @@ export const useReportsStore = defineStore('reports', () => {
   const reportError = ref(emptyError());
   const lastGeneratedReport = ref<number | null>(null);
   const actionableItems = ref<ReportActionableItem>({
+    eventsSkippedNoRule: 0,
     missingAcquisitions: [],
     missingPrices: [],
   });

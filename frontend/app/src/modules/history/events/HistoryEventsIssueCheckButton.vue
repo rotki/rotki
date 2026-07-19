@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/dialog-types';
+import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
+import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
+import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 
 const showAlerts = defineModel<boolean>('showAlerts', { default: false });
 
@@ -17,8 +21,17 @@ const { autoMatchLoading, unmatchedCount } = useUnmatchedAssetMovements();
 const { autoMatchLoading: bridgeAutoMatchLoading, unmatchedCount: unmatchedBridgesCount } = useUnmatchedBridgeTransactions();
 const { actionableCount: duplicatesCount } = useCustomizedEventDuplicates();
 const { issueCount: internalConflictsCount } = useInternalTxConflicts();
+const { processing } = useHistoryEventsStatus();
+const { decodingStatus } = storeToRefs(useDecodingStatusStore());
+const { fetchUndecodedTransactionsBreakdown } = useHistoryTransactionDecoding();
 
-const totalIssuesCount = computed<number>(() => get(unmatchedCount) + get(unmatchedBridgesCount) + get(duplicatesCount) + get(internalConflictsCount));
+const undecodedCount = computed<number>(() => {
+  if (get(processing))
+    return 0;
+  return get(decodingStatus).reduce((sum, { processed, total }) => sum + Math.max(0, total - processed), 0);
+});
+
+const totalIssuesCount = computed<number>(() => get(unmatchedCount) + get(unmatchedBridgesCount) + get(duplicatesCount) + get(internalConflictsCount) + get(undecodedCount));
 const hasIssues = computed<boolean>(() => !get(autoMatchLoading) && !get(bridgeAutoMatchLoading) && get(totalIssuesCount) > 0);
 
 const singleIssueDialog = computed<DialogShowOptions | undefined>(() => {
@@ -31,6 +44,8 @@ const singleIssueDialog = computed<DialogShowOptions | undefined>(() => {
     issueTypes.push({ type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
   if (get(internalConflictsCount) > 0)
     issueTypes.push({ type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS });
+  if (get(undecodedCount) > 0)
+    issueTypes.push({ type: DIALOG_TYPES.DECODING_STATUS });
   return issueTypes.length === 1 ? issueTypes[0] : undefined;
 });
 
@@ -47,6 +62,10 @@ function toggleAlerts(): void {
 watch(hasIssues, (value) => {
   if (!value)
     set(showAlerts, false);
+});
+
+onMounted(() => {
+  startPromise(fetchUndecodedTransactionsBreakdown());
 });
 </script>
 

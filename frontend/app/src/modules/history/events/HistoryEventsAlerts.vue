@@ -6,6 +6,7 @@ import { useCustomizedEventDuplicates } from '@/modules/history/events/use-custo
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
+import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 const show = defineModel<boolean>('show', { required: true });
@@ -19,6 +20,7 @@ const emit = defineEmits<{
   'open:match-asset-movements': [];
   'open:match-bridge-transactions': [];
   'open:internal-tx-conflicts': [];
+  'open:decoding-status': [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -52,13 +54,22 @@ const {
 } = useCustomizedEventDuplicates();
 
 const { fetchCounts, issueCount: internalConflictsCount } = useInternalTxConflicts();
+const { decodingStatus } = storeToRefs(useDecodingStatusStore());
+
+const undecodedCount = computed<number>(() => {
+  if (processing)
+    return 0;
+  return get(decodingStatus).reduce((sum, { processed, total }) => sum + Math.max(0, total - processed), 0);
+});
+
 const showUnmatchedMovements = computed<boolean>(() => !get(autoMatchLoading) && get(unmatchedCount) > 0);
 const showUnmatchedBridges = computed<boolean>(() => !get(bridgeAutoMatchLoading) && get(unmatchedBridgesCount) > 0);
 const showAutoFixDuplicates = computed<boolean>(() => get(autoFixCount) > 0);
 const showManualReviewDuplicates = computed<boolean>(() => get(manualReviewCount) > 0);
 const showInternalConflicts = computed<boolean>(() => get(internalConflictsCount) > 0);
+const showUndecoded = computed<boolean>(() => get(undecodedCount) > 0);
 
-const hasAlerts = logicOr(showUnmatchedMovements, showUnmatchedBridges, showAutoFixDuplicates, showManualReviewDuplicates, showInternalConflicts);
+const hasAlerts = logicOr(showUnmatchedMovements, showUnmatchedBridges, showAutoFixDuplicates, showManualReviewDuplicates, showInternalConflicts, showUndecoded);
 const refreshing = logicOr(unmatchedLoading, unmatchedBridgesLoading, duplicatesLoading);
 
 const showAlerts = logicAnd(() => mainPage, hasAlerts, show);
@@ -80,6 +91,11 @@ function openMatchBridgeTransactions(): void {
 function openInternalTxConflicts(): void {
   closeAlerts();
   emit('open:internal-tx-conflicts');
+}
+
+function openDecodingStatus(): void {
+  closeAlerts();
+  emit('open:decoding-status');
 }
 
 async function viewDuplicates(groupIds: string[], status: DuplicateHandlingStatus): Promise<void> {
@@ -203,6 +219,20 @@ watchImmediate(loading, async (isLoading) => {
               @click="openInternalTxConflicts()"
             >
               {{ t('internal_tx_conflicts.banner.action') }}
+            </RuiButton>
+          </div>
+        </li>
+        <li v-if="showUndecoded">
+          <div class="flex items-center">
+            <span>{{ t('transactions.events_decoding.undecoded_banner.message', { count: undecodedCount }) }}</span>
+            <RuiButton
+              variant="text"
+              color="warning"
+              size="sm"
+              class="ml-2 underline"
+              @click="openDecodingStatus()"
+            >
+              {{ t('transactions.events_decoding.undecoded_banner.action') }}
             </RuiButton>
           </div>
         </li>

@@ -2344,6 +2344,11 @@
       },
       "title": "blockchain"
     },
+    "completeness": {
+      "data_issues": "{count} data issues need attention",
+      "missing_prices": "{count} assets without a price",
+      "undecoded": "{count} undecoded transactions"
+    },
     "exchange_balances": {
       "add": "Add an exchange",
       "refresh": "Refresh {exchange} balances",
@@ -2626,6 +2631,7 @@
     },
     "no_assets": "No assets yet. Add a blockchain address, connect an exchange, or add a manual balance above — your balances will appear here once the first query completes.",
     "no_search_result": "Your search for \"{search}\" yielded no results.",
+    "price_unknown": "No price could be found for this asset from any of your configured oracles, so it does not count towards your net worth. You can set a price manually in the price manager.",
     "select_visible_columns": "Select visible columns"
   },
   "data_issues": {
@@ -5578,7 +5584,10 @@
         "title": "Missing Prices ({total})",
         "total_skipped_prices": "{total} prices are skipped"
       },
-      "show_issues": "Show Issues"
+      "overview_warning": "This report has {acquisitions} disposal(s) with missing acquisition history and {prices} missing price(s). The totals below may overstate your gains — use \"Show Issues\" to review and fix them.",
+      "show_issues": "Show Issues",
+      "skipped_no_rule": "{count} history events were excluded from this report because they have no accounting rule. They are marked with a warning icon in the History view — assign a rule there to include them.",
+      "stale_details": "Missing price and missing acquisition details are only kept for the most recently generated report. Re-generate this report to inspect them."
     },
     "binance_markets_alert": "The following Binance exchange(s) do not have market pairs configured: \n{exchanges}.\n\n Please configure market pairs before generating a report.",
     "error": {
@@ -6475,6 +6484,10 @@
       "redecode_all": "Redecode All Transactions",
       "title": "Transaction decoding status",
       "transactions_processed": "{processed} / {total} transactions processed",
+      "undecoded_banner": {
+        "action": "View status",
+        "message": "{count} transactions have not been decoded into events yet. They are missing from your history and reports until they are processed."
+      },
       "undecoded_transactions": "Undecoded transactions"
     },
     "filter": {

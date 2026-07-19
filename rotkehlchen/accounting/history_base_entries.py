@@ -84,6 +84,7 @@ class EventsAccountant:
                     f'Multi trade events are not supported in accounting yet, so the '
                     f'multi trade with identifier {group_id} is not included in the report.',
                 )
+            self.pot.events_skipped_no_rule += 1
             log.debug(
                 f'During transaction accounting found history base entry {event} '
                 f'with no mapped event settings. Skipping...',

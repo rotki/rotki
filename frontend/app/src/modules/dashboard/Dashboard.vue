@@ -4,6 +4,7 @@ import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balance
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { useDynamicMessages } from '@/modules/core/messaging/use-dynamic-messages';
 import DashboardAssetTable from '@/modules/dashboard/DashboardAssetTable.vue';
+import DashboardCompletenessIndicator from '@/modules/dashboard/DashboardCompletenessIndicator.vue';
 import DynamicMessageDisplay from '@/modules/dashboard/DynamicMessageDisplay.vue';
 import NftBalanceTable from '@/modules/dashboard/NftBalanceTable.vue';
 import OverallBalances from '@/modules/dashboard/OverallBalances.vue';
@@ -85,6 +86,7 @@ watch(width, (newWidth) => {
       <div class="flex flex-wrap gap-6">
         <div class="w-full">
           <OverallBalances />
+          <DashboardCompletenessIndicator />
         </div>
         <Summary />
       </div>
