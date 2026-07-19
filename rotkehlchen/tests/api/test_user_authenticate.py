@@ -8,8 +8,11 @@ cookie's `sid` is the single active session (so a new login revokes old windows 
 exercised end-to-end through real HTTP.
 """
 import time
+from concurrent.futures import ThreadPoolExecutor
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from threading import Event
+from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -31,9 +34,31 @@ from rotkehlchen.tests.utils.api import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.api.server import APIServer
 
 SESSION_KEY = b'a-test-session-signing-key'
+
+
+class _BlockedSessionLogin:
+    def __init__(self, login: Callable[[str], str]) -> None:
+        self.login = login
+        self.entered = Event()
+        self.release = Event()
+
+    def __call__(self, username: str) -> str:
+        self.entered.set()
+        assert self.release.wait(timeout=10)
+        return self.login(username)
+
+
+class _BlockedAsyncQuery:
+    def __init__(self) -> None:
+        self.release = Event()
+
+    def __call__(self, *_args: Any, **_kwargs: Any) -> None:
+        assert self.release.wait(timeout=10)
 
 
 def _enable_session(api_server: APIServer) -> SessionStore:
@@ -303,6 +328,44 @@ def test_new_session_rotates_sid_and_kicks_the_old_window(
             time.sleep(.2)
         assert result['outcome']['result'] is not None
     finally:
+        _disable_session(rotkehlchen_api_server)
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_session_takeover_keeps_old_session_async_tasks_stopped(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+) -> None:
+    """An old cookie must not spawn an uncancelled task while takeover rotates its sid."""
+    rest_api = rotkehlchen_api_server.rest_api
+    store = _enable_session(rotkehlchen_api_server)
+    auth_url = api_url_for(rotkehlchen_api_server, 'userauthenticateresource', name=username)
+    balances_url = api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource')
+    first, second = requests.Session(), requests.Session()
+    first.post(auth_url, json={'password': '123'})
+    blocked_login = _BlockedSessionLogin(store.login)
+    blocked_query = _BlockedAsyncQuery()
+    try:
+        with (
+            patch.object(store, 'login', side_effect=blocked_login),
+            patch.object(rest_api, '_do_query_async', side_effect=blocked_query),
+            ThreadPoolExecutor(max_workers=1) as executor,
+        ):
+            takeover = executor.submit(second.post, auth_url, json={'password': '123'})
+            assert blocked_login.entered.wait(timeout=10)
+
+            assert_ok_async_response(first.get(balances_url, json={'async_query': True}))
+            with rest_api.task_lock:
+                escaped_task = rest_api.rotkehlchen.api_tasks[-1]
+
+            blocked_login.release.set()
+            assert takeover.result(timeout=10).status_code == HTTPStatus.OK
+            assert escaped_task.cancellation_token is not None
+            assert escaped_task.cancellation_token.cancelled is True
+    finally:
+        blocked_login.release.set()
+        blocked_query.release.set()
         _disable_session(rotkehlchen_api_server)
 
 
