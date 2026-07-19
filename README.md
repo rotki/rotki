@@ -56,7 +56,7 @@
 - **Multi-Platform Support** 🖥  
 - **Powerful Analytics & Reporting** 📊  
 
-For **advanced features**, check out the [Pro Version](https://rotki.com/products/) or explore the [Feature Coverage Page](https://rotki.com/products/details).
+For **advanced features**, check out the [Pro Version](https://rotki.com/products/) or explore the [Integrations Page](https://rotki.com/integrations).
 
 ---
 
