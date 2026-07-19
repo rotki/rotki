@@ -2970,7 +2970,16 @@ class DBHandler:
         # invalidate, never validate, the cached entry
         may_cache = entries_table == 'history_events' and len(kwargs) == 0
         total_changes = self.conn.total_changes if may_cache else 0
-        if may_cache and (cache_entry := self._history_events_count_cache.get(group_by)) is not None and cache_entry[1] == total_changes:  # noqa: E501
+        write_in_progress = (
+            self.conn.write_task_ident is not None or
+            self.conn.savepoint_task_ident is not None
+        )
+        if (
+            may_cache and
+            write_in_progress is False and
+            (cache_entry := self._history_events_count_cache.get(group_by)) is not None and
+            cache_entry[1] == total_changes
+        ):
             return cache_entry[0]
 
         if group_by is not None:
@@ -2986,10 +2995,11 @@ class DBHandler:
         count = cursor.fetchone()[0]
         if (
             may_cache and
-            # Don't cache while a write transaction or savepoint stack is open: its rows
-            # already bumped total_changes at statement time, so once it commits nothing
-            # further invalidates an entry cached now from the pre-commit state (and a
-            # count read through the write connection would include uncommitted rows).
+            write_in_progress is False and
+            # Re-read total_changes before checking the writer state. This ordering ensures
+            # that a writer starting after the read either changes the counter or is still
+            # visible below, so its pre-commit state can never be cached as current.
+            self.conn.total_changes == total_changes and
             self.conn.write_task_ident is None and
             self.conn.savepoint_task_ident is None
         ):

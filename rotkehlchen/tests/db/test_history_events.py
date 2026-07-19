@@ -1,6 +1,7 @@
 import json
 import time
 from contextlib import suppress
+from threading import Event, Thread
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
@@ -59,6 +60,53 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
+
+
+class _CommitDuringFetchCursor:
+    """Let a pending writer commit after COUNT reads its pre-commit snapshot."""
+
+    def __init__(
+            self,
+            cursor: DBCursor,
+            allow_commit: Event,
+            write_committed: Event,
+    ) -> None:
+        self.cursor = cursor
+        self.allow_commit = allow_commit
+        self.write_committed = write_committed
+
+    def execute(self, statement: str) -> DBCursor:
+        return self.cursor.execute(statement)
+
+    def fetchone(self) -> tuple[Any, ...]:
+        result = self.cursor.fetchone()
+        self.allow_commit.set()
+        assert self.write_committed.wait(timeout=10)
+        return result
+
+
+def _insert_history_event_during_count(
+        database: DBHandler,
+        write_started: Event,
+        allow_commit: Event,
+        write_committed: Event,
+) -> None:
+    # Some production history writers use the low-level write context directly
+    # (for example event matching), which does not append a commit timestamp write.
+    with database.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO history_events('
+            'entry_type, group_identifier, sequence_index, timestamp, location, '
+            'location_label, asset, amount, notes, type, subtype, extra_data, ignored'
+            ') SELECT entry_type, ?, sequence_index, timestamp, location, location_label, '
+            'asset, amount, notes, type, subtype, extra_data, ignored '
+            'FROM history_events LIMIT 1',
+            ('RACING-EVENT',),
+        )
+        write_started.set()
+        assert allow_commit.wait(timeout=10)
+    write_committed.set()
 
 
 def test_get_event_mapping_states(database):
@@ -1783,4 +1831,36 @@ def test_history_events_count_memoization(database: DBHandler) -> None:
         raise ValueError('force a rollback')
 
     with database.conn.read_ctx() as cursor:  # rolled back: the full count is served again
+        assert database.get_entries_count(cursor, entries_table='history_events') == 4
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_history_events_count_does_not_cache_precommit_reader_snapshot(
+        database: DBHandler,
+) -> None:
+    """A reader overlapping a commit must not cache its old count at the new change counter."""
+    add_history_events_to_db(DBHistoryEvents(database), {
+        1: ('TEST1', TimestampMS(1), ONE, None),
+        2: ('TEST2', TimestampMS(2), FVal(2), None),
+        3: ('TEST3', TimestampMS(3), FVal(3), None),
+    })
+    write_started, allow_commit, write_committed = Event(), Event(), Event()
+    writer = Thread(
+        target=_insert_history_event_during_count,
+        args=(database, write_started, allow_commit, write_committed),
+        daemon=True,
+    )
+    writer.start()
+    assert write_started.wait(timeout=10)
+
+    with database.conn.read_ctx() as cursor:
+        count_cursor = _CommitDuringFetchCursor(cursor, allow_commit, write_committed)
+        assert database.get_entries_count(
+            cursor=count_cursor,  # type: ignore[arg-type]  # deliberately coordinates the race
+            entries_table='history_events',
+        ) == 3
+
+    writer.join(timeout=10)
+    assert writer.is_alive() is False
+    with database.conn.read_ctx() as cursor:
         assert database.get_entries_count(cursor, entries_table='history_events') == 4
