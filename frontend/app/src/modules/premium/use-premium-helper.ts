@@ -22,8 +22,8 @@ export function usePremiumHelper(): UsePremiumHelperReturn {
   const ethStakedLimit = computed<number>(() => get(capabilities)?.ethStakedLimit ?? 0);
 
   return {
-    currentTier: readonly(currentTier),
-    ethStakedLimit: readonly(ethStakedLimit),
+    currentTier,
+    ethStakedLimit,
     premium: readonly(premium),
     showGetPremiumButton,
   };

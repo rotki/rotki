@@ -18,5 +18,5 @@ export function useModuleEnabled(module: MaybeRefOrGetter<Module>): UseModuleEna
 
   const enabled = computed<boolean>(() => get(activeModules).includes(toValue(module)));
 
-  return { enabled: readonly(enabled) };
+  return { enabled };
 }
