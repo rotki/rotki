@@ -347,9 +347,10 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                     transfer_id=transfer_id,
                 )
             event.counterparty = CPT_STAKEDAO_V2
+            receiver_part = f' for {receiver}' if receiver != bridge_sender else ''
             event.notes = (
                 f'Bridge {event.amount} {bridge_token.symbol} from {source_chain} '
-                f'to Ethereum for {receiver} via StakeDAO votemarket'
+                f'to Ethereum{receiver_part} via StakeDAO votemarket'
             )
             bridged_events.append(event)
 
@@ -448,8 +449,8 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 transfer_id=f'{message[6]}-{token_data[0]}',
             )
             event.notes = (
-                f'Bridge {event.amount} {bridge_token.symbol} from {source_chain} to '
-                f'{target_chain} for {receiver} via StakeDAO votemarket'
+                f'Receive {event.amount} {bridge_token.symbol} on {target_chain} '
+                f'bridged from {source_chain} via StakeDAO votemarket'
             )
             bridged_events.append(event)
 

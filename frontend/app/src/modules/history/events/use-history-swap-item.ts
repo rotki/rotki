@@ -25,6 +25,7 @@ export interface UseHistorySwapItemReturn {
   isSelected: ComputedRef<boolean>;
   toggleSelected: () => void;
   // Swap-specific
+  isBridge: ComputedRef<boolean>;
   spendEvents: ComputedRef<HistoryEventEntry[]>;
   receiveEvents: ComputedRef<HistoryEventEntry[]>;
   spendEvent: ComputedRef<HistoryEventEntry | undefined>;
@@ -44,7 +45,7 @@ export function useHistorySwapItem(
 ): UseHistorySwapItemReturn {
   const { events, selection } = props;
   const { t } = useI18n({ useScope: 'global' });
-  const { getChain } = useSupportedChains();
+  const { getChain, getChainName } = useSupportedChains();
   const { getAssetField, useAssetInfo } = useAssetInfoRetrieval();
   const { isAssetIgnored } = useAssetsStore();
 
@@ -155,6 +156,8 @@ export function useHistorySwapItem(
       ? t('history_events_list_swap.bridge_description', {
           ...spendNotes,
           ...receiveNotes,
+          fromChain: getChainName(spend[0].location),
+          toChain: getChainName(receive[0].location),
         })
       : t('history_events_list_swap.swap_description', {
           ...spendNotes,
@@ -175,6 +178,7 @@ export function useHistorySwapItem(
     compactNotes,
     counterparty,
     hasMissingRule,
+    isBridge,
     isCheckboxDisabled,
     isMultiReceive,
     isMultiSpend,

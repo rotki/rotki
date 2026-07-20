@@ -351,10 +351,10 @@ def update_bridge_matched_event(
             matched_event.counterparty = deposit_counterparty
 
         matched_event.notes = (
-            f'Bridge {matched_event.amount} '
+            f'Receive {matched_event.amount} '
             f'{matched_event.asset.resolve_to_asset_with_symbol().symbol} '
-            f'from {_location_chain_label(deposit.location)} '
-            f'to {_location_chain_label(matched_event.location)}'
+            f'on {_location_chain_label(matched_event.location)} '
+            f'bridged from {_location_chain_label(deposit.location)}'
         )
 
     fee_amount = deposit.amount - matched_event.amount

@@ -418,7 +418,7 @@ def test_votemarket_bridge_out(
         asset=Asset('eip155:42161/erc20:0x9243A659a67D2Edae7edEf1aDaDCCD5dAb3B0FdA'),
         amount=FVal(bridge_1 := '4662.160703455214399592'),
         location_label=user_address,
-        notes=f'Bridge {bridge_1} pOGN from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
+        notes=f'Bridge {bridge_1} pOGN from Arbitrum One to Ethereum via StakeDAO votemarket',
         counterparty=CPT_STAKEDAO_V2,
         extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-0'}},  # noqa: E501
         address=string_to_evm_address('0x67346f8b9B7dDA4639600C190DDaEcDc654359c8'),
@@ -432,7 +432,7 @@ def test_votemarket_bridge_out(
         asset=Asset('eip155:42161/erc20:0x84EC7B0923ff2d17152256aD36a33184e0079c9b'),
         amount=FVal(bridge_2 := '560.714771248050753093'),
         location_label=user_address,
-        notes=f'Bridge {bridge_2} popASF from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
+        notes=f'Bridge {bridge_2} popASF from Arbitrum One to Ethereum via StakeDAO votemarket',
         counterparty=CPT_STAKEDAO_V2,
         extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-1'}},  # noqa: E501
         address=string_to_evm_address('0x67346f8b9B7dDA4639600C190DDaEcDc654359c8'),
@@ -446,7 +446,7 @@ def test_votemarket_bridge_out(
         asset=Asset('eip155:42161/erc20:0x5660bdD5AD5F4ccD27ECc33f6Ef140079e7E9cb8'),
         amount=FVal(bridge_3 := '74.646308931723360141'),
         location_label=user_address,
-        notes=f'Bridge {bridge_3} pWFRAX from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
+        notes=f'Bridge {bridge_3} pWFRAX from Arbitrum One to Ethereum via StakeDAO votemarket',
         counterparty=CPT_STAKEDAO_V2,
         extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-2'}},  # noqa: E501
         address=string_to_evm_address('0x67346f8b9B7dDA4639600C190DDaEcDc654359c8'),
@@ -460,7 +460,7 @@ def test_votemarket_bridge_out(
         asset=Asset('eip155:42161/erc20:0x8D037f300C70A2194aD7dB16d54c3A14FdC7B0A2'),
         amount=FVal(bridge_4 := '27.616214928846510245'),
         location_label=user_address,
-        notes=f'Bridge {bridge_4} pOUSD from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
+        notes=f'Bridge {bridge_4} pOUSD from Arbitrum One to Ethereum via StakeDAO votemarket',
         counterparty=CPT_STAKEDAO_V2,
         extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-3'}},  # noqa: E501
         address=string_to_evm_address('0x67346f8b9B7dDA4639600C190DDaEcDc654359c8'),
@@ -516,7 +516,7 @@ def test_votemarket_bridge_in(
         asset=Asset('eip155:1/erc20:0x8207c1FfC5B6804F6024322CcF34F29c3541Ae26'),
         amount=FVal(bridge_1 := '4662.160703455214399592'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Bridge {bridge_1} OGN from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
+        notes=f'Receive {bridge_1} OGN on Ethereum bridged from Arbitrum One via StakeDAO votemarket',  # noqa: E501
         counterparty=CPT_STAKEDAO_V2,
         extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-0'}},  # noqa: E501
         address=string_to_evm_address('0x96006425Da428E45c282008b00004a00002B345e'),
@@ -530,7 +530,7 @@ def test_votemarket_bridge_in(
         asset=Asset('eip155:1/erc20:0x7fE24F1A024D33506966CB7CA48Bab8c65fB632d'),
         amount=FVal(bridge_2 := '560.714771248050753093'),
         location_label=user_address,
-        notes=f'Bridge {bridge_2} opASF from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
+        notes=f'Receive {bridge_2} opASF on Ethereum bridged from Arbitrum One via StakeDAO votemarket',  # noqa: E501
         counterparty=CPT_STAKEDAO_V2,
         extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-1'}},  # noqa: E501
         address=string_to_evm_address('0x96006425Da428E45c282008b00004a00002B345e'),
@@ -544,7 +544,7 @@ def test_votemarket_bridge_in(
         asset=Asset('eip155:1/erc20:0x04ACaF8D2865c0714F79da09645C13FD2888977f'),
         amount=FVal(bridge_3 := '74.646308931723360141'),
         location_label=user_address,
-        notes=f'Bridge {bridge_3} WFRAX from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
+        notes=f'Receive {bridge_3} WFRAX on Ethereum bridged from Arbitrum One via StakeDAO votemarket',  # noqa: E501
         counterparty=CPT_STAKEDAO_V2,
         extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-2'}},  # noqa: E501
         address=string_to_evm_address('0x96006425Da428E45c282008b00004a00002B345e'),
@@ -558,7 +558,7 @@ def test_votemarket_bridge_in(
         asset=Asset('eip155:1/erc20:0x2A8e1E676Ec238d8A992307B495b45B3fEAa5e86'),
         amount=FVal(bridge_4 := '27.616214928846510245'),
         location_label=user_address,
-        notes=f'Bridge {bridge_4} OUSD from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
+        notes=f'Receive {bridge_4} OUSD on Ethereum bridged from Arbitrum One via StakeDAO votemarket',  # noqa: E501
         counterparty=CPT_STAKEDAO_V2,
         extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-3'}},  # noqa: E501
         address=string_to_evm_address('0x96006425Da428E45c282008b00004a00002B345e'),
