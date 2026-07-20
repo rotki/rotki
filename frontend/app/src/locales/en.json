@@ -4064,8 +4064,9 @@
     "nudge": "History events need to be queried and decoded. Navigate to {link} view to ensure your data is up to date."
   },
   "history_events_list_swap": {
-    "bridge_description": "Bridge {spendAmount} {spendAsset} to {receiveAmount} {receiveAsset}",
+    "bridge_description": "Bridge {spendAmount} {spendAsset} on {fromChain} to {receiveAmount} {receiveAsset} on {toChain}",
     "bridge_expanded": "Linked bridge ({count} events) - click to collapse",
+    "bridge_label": "Bridge",
     "fee_description": "{notes} with fee: {feeText}",
     "movement_expanded": "Linked movement ({count} events) - click to collapse",
     "swap_description": "Swap {spendAmount} {spendAsset} for {receiveAmount} {receiveAsset}",

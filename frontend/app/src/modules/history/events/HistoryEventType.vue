@@ -10,10 +10,13 @@ import HistoryEventTypeCounterparty from '@/modules/history/events/HistoryEventT
 import HistoryEventTypeLocationBadge from '@/modules/history/events/HistoryEventTypeLocationBadge.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 
-const { event, groupLocationLabel, icon, highlight, hideStateChips, matchedMovement } = defineProps<{
+const { event, groupLocationLabel, icon, label, highlight, hideStateChips, matchedMovement } = defineProps<{
   event: HistoryEventEntry;
   groupLocationLabel?: string;
   icon?: RuiIcons;
+  /** Overrides the label derived from the event's category (e.g. a combined row
+   * representing both legs of a transfer instead of a single event). */
+  label?: string;
   highlight?: boolean;
   hideStateChips?: boolean;
   /** Set when the event is rendered inside an expanded linked (matched) movement. */
@@ -114,7 +117,7 @@ const showLocationLabel = computed<boolean>(() => {
 
     <div class="ml-3 min-w-0">
       <div class="font-medium uppercase text-sm truncate">
-        {{ attrs.label }}
+        {{ label ?? attrs.label }}
       </div>
       <HistoryEventAccount
         v-if="showLocationLabel"

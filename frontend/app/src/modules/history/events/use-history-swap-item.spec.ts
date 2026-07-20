@@ -14,6 +14,7 @@ const mockAssetInfoMap = new Map<string, { protocol?: string }>();
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: vi.fn(() => ({
     getChain: vi.fn((location: string) => location),
+    getChainName: vi.fn((location: string) => location),
   })),
 }));
 
@@ -372,6 +373,8 @@ describe('useHistorySwapItem', () => {
       const { compactNotes } = useHistorySwapItem({ events });
 
       expect(get(compactNotes)).toContain('history_events_list_swap.bridge_description');
+      expect(get(compactNotes)).toContain('arbitrum_one');
+      expect(get(compactNotes)).toContain('ethereum');
     });
   });
 

@@ -36,10 +36,13 @@ const emit = defineEmits<{
 
 const events = computed<HistoryEventEntry[]>(() => eventsProp);
 
+const { t } = useI18n({ useScope: 'global' });
+
 const {
   chain,
   compactNotes,
   counterparty,
+  isBridge,
   isCheckboxDisabled,
   isMultiReceive,
   isMultiSpend,
@@ -67,6 +70,12 @@ const isSelectedModel = computed<boolean>({
 });
 
 const isCard = computed<boolean>(() => variant === 'card');
+
+// A combined bridge row represents both legs, so show a neutral label instead
+// of the primary (out) leg's directional one.
+const typeLabel = computed<string | undefined>(() =>
+  get(isBridge) ? t('history_events_list_swap.bridge_label') : undefined,
+);
 </script>
 
 <template>
@@ -97,6 +106,7 @@ const isCard = computed<boolean>(() => variant === 'card');
           :chain="chain"
           :group-location-label="groupLocationLabel"
           :highlight="highlight"
+          :label="typeLabel"
           class="min-w-0 flex-1"
         />
 
@@ -227,6 +237,7 @@ const isCard = computed<boolean>(() => variant === 'card');
         :chain="chain"
         :group-location-label="groupLocationLabel"
         :highlight="highlight"
+        :label="typeLabel"
         icon="lu-arrow-right-left"
         hide-state-chips
         class="w-56 shrink-0 self-center"
