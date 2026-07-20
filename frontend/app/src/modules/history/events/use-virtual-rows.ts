@@ -64,6 +64,8 @@ export interface SwapCollapseRow {
   groupId: string;
   swapKey: string;
   eventCount: number;
+  /** True when the subgroup is a matched bridge transfer rather than a swap. */
+  bridge: boolean;
 }
 
 export interface MatchedMovementRow {
@@ -97,6 +99,14 @@ export type VirtualRow = GroupHeaderRow | EventDetailRow | EventPlaceholderRow |
  */
 function isMatchedMovementGroup(events: HistoryEventEntry[]): boolean {
   return events.some(e => e.entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT);
+}
+
+/**
+ * Checks if an array of events is a joined matched bridge transfer: the two
+ * legs of a cross-chain bridge, both carrying the bridge event subtype.
+ */
+function isMatchedBridgeGroup(events: HistoryEventEntry[]): boolean {
+  return events.some(e => e.eventSubtype === 'bridge');
 }
 
 interface UseVirtualRowsReturn {
@@ -220,6 +230,7 @@ export function useVirtualRows(
                   groupId,
                   swapKey,
                   eventCount: event.length,
+                  bridge: isMatchedBridgeGroup(event),
                 });
               }
 

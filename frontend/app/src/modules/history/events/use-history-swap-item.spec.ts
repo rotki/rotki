@@ -363,6 +363,31 @@ describe('useHistorySwapItem', () => {
 
       expect(get(compactNotes)).toBeUndefined();
     });
+
+    it('should build bridge notes for a matched bridge subgroup', () => {
+      const events = ref([
+        createMockEvent({ amount: bigNumberify('100'), asset: 'USDC', eventSubtype: 'bridge', eventType: 'deposit', identifier: 1, location: 'arbitrum_one' }),
+        createMockEvent({ amount: bigNumberify('100'), asset: 'DAI', eventSubtype: 'bridge', eventType: 'withdrawal', identifier: 2 }),
+      ]);
+      const { compactNotes } = useHistorySwapItem({ events });
+
+      expect(get(compactNotes)).toContain('history_events_list_swap.bridge_description');
+    });
+  });
+
+  describe('matched bridge subgroups', () => {
+    it('should separate bridge legs into spend and receive sides', () => {
+      const events = ref([
+        createMockEvent({ eventSubtype: 'bridge', eventType: 'deposit', identifier: 1, location: 'arbitrum_one' }),
+        createMockEvent({ eventSubtype: 'bridge', eventType: 'withdrawal', identifier: 2 }),
+      ]);
+      const { receiveEvents, spendEvents } = useHistorySwapItem({ events });
+
+      expect(get(spendEvents)).toHaveLength(1);
+      expect(get(spendEvents)[0].identifier).toBe(1);
+      expect(get(receiveEvents)).toHaveLength(1);
+      expect(get(receiveEvents)[0].identifier).toBe(2);
+    });
   });
 
   describe('isSpendHidden and isReceiveHidden', () => {

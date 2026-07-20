@@ -2326,6 +2326,7 @@ class DBHistoryEvents:
         int,
         int,
         set[str],
+        dict[int, int],
     ]:
         """Process the events_result joining asset movements with the group of their matched event.
 
@@ -2338,11 +2339,14 @@ class DBHistoryEvents:
          result, the corresponding asset movement events are added to the result.
 
         Returns a tuple containing the processed events, joined group ids dict, entries found,
-        entries with limit, entries total, and group identifiers with ignored assets.
+        entries with limit, entries total, group identifiers with ignored assets, and a mapping
+        of each linked event id to its link pair anchor (the left event id) so that display
+        grouping can tell apart several matched pairs joined into the same group.
         """
         movement_group_to_match_info: dict[str, list[tuple[int, str, int]]] = defaultdict(list)
         match_group_to_movement_info: dict[str, tuple[str, int]] = {}
         joined_group_ids: dict[str, str] = {}
+        event_to_pair: dict[int, int] = {}
         if len(events_result) == 0:
             return (
                 events_result,
@@ -2351,6 +2355,7 @@ class DBHistoryEvents:
                 entries_with_limit,
                 entries_total,
                 ignored_group_identifiers,
+                event_to_pair,
             )
 
         if aggregate_by_group_ids:
@@ -2390,13 +2395,15 @@ class DBHistoryEvents:
                 ),
             ):
                 matched_rows.append((
-                    int(row[0]),  # movement id
-                    int(row[1]),  # match id
+                    (movement_id := int(row[0])),
+                    (match_id := int(row[1])),
                     (movement_group_identifier := row[2]),
                     (match_group_identifier := row[3]),
                     int(row[4]),  # movement entry type
                     int(row[5]),  # match entry type
                 ))
+                event_to_pair[movement_id] = movement_id
+                event_to_pair[match_id] = movement_id
                 group_ids_to_count.add(movement_group_identifier)
                 group_ids_to_count.add(match_group_identifier)
 
@@ -2408,6 +2415,7 @@ class DBHistoryEvents:
                 entries_with_limit,
                 entries_total,
                 ignored_group_identifiers,
+                event_to_pair,
             )
 
         group_counts: dict[str, int] = {}
@@ -2623,4 +2631,5 @@ class DBHistoryEvents:
             entries_with_limit,
             entries_total,
             ignored_group_identifiers,
+            event_to_pair,
         )

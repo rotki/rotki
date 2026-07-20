@@ -247,11 +247,11 @@ EVENT_CATEGORY_DETAILS = {
         label='deploy with spend',
         icon='lu-rocket',
     )}, EventCategory.BRIDGE_DEPOSIT: {DEFAULT: EventCategoryDetails(
-        label='bridge',
+        label='bridge out',
         icon='lu-upload',
         color='error',
     )}, EventCategory.BRIDGE_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
-        label='bridge',
+        label='bridge in',
         icon='lu-download',
         color='success',
     )}, EventCategory.GOVERNANCE: {DEFAULT: EventCategoryDetails(
