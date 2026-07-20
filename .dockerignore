@@ -9,6 +9,7 @@
 build
 chromedriverlog.txt
 colibri/target
+crates/target
 frontend/app/.env.development.local
 frontend/app/.idea
 frontend/app/.nyc_output
@@ -24,5 +25,6 @@ frontend/logs
 frontend/node_modules
 node_modules
 rotkehlchen.egg-info
+tools/find-duplicate-constants/target
 rotkehlchen.log
 rotkehlchen_py_dist
