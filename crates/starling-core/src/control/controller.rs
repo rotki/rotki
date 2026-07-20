@@ -1,6 +1,6 @@
 //! The controller: a long-lived owner of the [`Supervisor`] that turns control
 //! requests into lifecycle operations, mode-agnostically. It is the adapter the
-//! design calls for — `restart`/`stop`/`status`/`health` over the supervisor —
+//! design calls for, `restart`/`stop`/`status`/`health` over the supervisor -
 //! with the security policies from [`super::protocol`] enforced at its edge.
 //!
 //! ## Concurrency shape
@@ -8,8 +8,8 @@
 //! Reads and mutations travel different paths on purpose:
 //!
 //! - **Mutations** (`restart`/`stop`) are sent as commands over an mpsc channel
-//!   and executed by the single [`Controller::run`] task. One at a time — the
-//!   loop processes a command to completion before the next — so operations are
+//!   and executed by the single [`Controller::run`] task. One at a time, the
+//!   loop processes a command to completion before the next, so operations are
 //!   serialized without locks (§S8 audit + §S10 rate limit live here).
 //! - **Reads** (`status`/`health`) are served by [`ControlHandle`] straight from
 //!   a `watch` snapshot the run loop publishes; they never enter the command
@@ -52,7 +52,6 @@ pub struct ControllerSnapshot {
     services: Vec<ServiceStatus>,
     started_at: Option<u64>,
     proxy_url: Option<String>,
-    renderer_secret: Option<String>,
 }
 
 impl ControllerSnapshot {
@@ -76,7 +75,6 @@ impl ControllerSnapshot {
             services: self.services.clone(),
             started_at: self.started_at,
             proxy_url: self.proxy_url.clone(),
-            renderer_secret: self.renderer_secret.clone(),
         }
     }
 }
@@ -105,7 +103,7 @@ pub enum Startup {
     Failed,
 }
 
-/// A mutation routed to the run loop. Reads are not commands — see the module docs.
+/// A mutation routed to the run loop. Reads are not commands, see the module docs.
 enum Command {
     Start {
         transport: Transport,
@@ -250,10 +248,6 @@ pub struct Controller<S: Spawner> {
     /// `status` so the embedder reads the single base URL from the supervisor
     /// rather than reconstructing it. `None` when no proxy runs.
     proxy_url: Option<String>,
-    /// The per-launch renderer secret (Mode A), surfaced in `status` so the
-    /// Electron renderer can pick it up and attach it to every request. `None`
-    /// in docker mode and when no proxy runs. See [`Self::set_renderer_secret`].
-    renderer_secret: Option<String>,
 }
 
 impl<S: Spawner> Controller<S> {
@@ -271,7 +265,6 @@ impl<S: Spawner> Controller<S> {
             services: supervisor.status(),
             started_at,
             proxy_url: None,
-            renderer_secret: None,
         };
         let (snapshot_tx, _) = watch::channel(initial);
         let (events, _) = broadcast::channel(EVENT_CHANNEL_CAPACITY);
@@ -292,7 +285,6 @@ impl<S: Spawner> Controller<S> {
             managed_pids: None,
             datadir_guard: None,
             proxy_url: None,
-            renderer_secret: None,
         }
     }
 
@@ -302,16 +294,6 @@ impl<S: Spawner> Controller<S> {
         self.proxy_url = url.clone();
         self.snapshot_tx
             .send_modify(|snapshot| snapshot.proxy_url = url);
-    }
-
-    /// Record the per-launch renderer secret (Mode A) so `status` carries it to
-    /// the Electron renderer. Call once after minting it, alongside
-    /// [`Self::set_proxy_url`]. `None` (docker / no proxy) leaves the status field
-    /// empty and the renderer attaches nothing.
-    pub fn set_renderer_secret(&mut self, secret: Option<String>) {
-        self.renderer_secret = secret.clone();
-        self.snapshot_tx
-            .send_modify(|snapshot| snapshot.renderer_secret = secret);
     }
 
     /// Attach the data-directory lock so a restart that switches the data dir
@@ -337,14 +319,14 @@ impl<S: Spawner> Controller<S> {
         }
     }
 
-    /// Final teardown — graceful, then hard kill after the grace period. Call
+    /// Final teardown, graceful, then hard kill after the grace period. Call
     /// after [`run`](Self::run) returns; it owns the supervisor.
     pub async fn shutdown(&mut self) {
         self.supervisor.shutdown(self.grace).await;
     }
 
     /// [`shutdown`](Self::shutdown) against a tighter budget than the configured
-    /// grace, for when something else is already enforcing a deadline — a windows
+    /// grace, for when something else is already enforcing a deadline, a windows
     /// console close kills the process a few seconds in, so a teardown that
     /// planned for longer would simply not finish. Never extends the grace.
     pub async fn shutdown_within(&mut self, grace: Duration) {
@@ -355,15 +337,15 @@ impl<S: Spawner> Controller<S> {
     /// `ready` event so a subscribed control client (the Electron main process)
     /// learns readiness by *event* instead of polling `status`. Bring-up takes
     /// real time (each service is ping-gated), so a transport that subscribed
-    /// before this call is guaranteed to observe the event — there is no
+    /// before this call is guaranteed to observe the event, there is no
     /// startup race. Races `shutdown` so a termination signal arriving
     /// mid-bring-up aborts cleanly instead of orphaning half-started children.
     ///
     /// Call once, after the control transport is serving, and before
     /// [`run`](Self::run):
-    /// - [`Startup::Ready`] — all services reached readiness; proceed to `run`.
-    /// - [`Startup::Aborted`] — a signal won the race; tear down, do not `run`.
-    /// - [`Startup::Failed`] — a service failed to come up; tear down with an error.
+    /// - [`Startup::Ready`], all services reached readiness; proceed to `run`.
+    /// - [`Startup::Aborted`], a signal won the race; tear down, do not `run`.
+    /// - [`Startup::Failed`], a service failed to come up; tear down with an error.
     pub async fn start(&mut self, shutdown: impl Future<Output = ()>) -> Startup {
         tokio::pin!(shutdown);
         tokio::select! {
@@ -425,7 +407,7 @@ impl<S: Spawner> Controller<S> {
                         // bring-up holds `&mut self`, so the poll cannot borrow the
                         // supervisor alongside it). A service that dies while a
                         // *later* one is gating is therefore reported only once
-                        // bring-up finishes — delayed, but bounded by the same
+                        // bring-up finishes, delayed, but bounded by the same
                         // readiness budget, and never a hang or an orphan.
                         Some(Command::Start { transport, options, reply }) => {
                             tokio::select! {
@@ -482,7 +464,7 @@ impl<S: Spawner> Controller<S> {
     }
 
     /// Execute a `start`: rate-limit, apply the initial options, rebuild specs
-    /// from the merged layout, and bring the tree up — emitting `ready` (or
+    /// from the merged layout, and bring the tree up, emitting `ready` (or
     /// returning [`ControlError::RestartFailed`] on a failed bring-up). Unlike
     /// `restart` there is nothing to tear down: the supervisor is idle, so no
     /// `restarting` event and no shutdown. `reconfigure` resets every service to
@@ -492,6 +474,32 @@ impl<S: Spawner> Controller<S> {
         transport: Transport,
         options: BackendOptions,
     ) -> Result<OkResult, ControlError> {
+        // `reconfigure` below requires everything to be stopped: it only swaps the
+        // declarative graph and resets each service to `Idle`. `handle_restart`
+        // honors that by tearing the tree down first; this path does not, so a
+        // `start` against a live tree would drop the running handles instead of
+        // stopping them. `process.rs` sets `kill_on_drop`, so they do die, but
+        // ungracefully: SIGKILL with no grace, no reverse-order teardown, no
+        // `Restarting` event, and the tree-kill path bypassed, leaving core's
+        // Python helpers to reparent to PID 1.
+        //
+        // Embedded cannot reach this (it boots idle and the router always stops
+        // before spawning), but docker can: starling starts itself and `start` is
+        // reachable over the uid-0 UDS. Guarding on state rather than on mode
+        // keeps the rule in the library, which has no notion of `Mode`.
+        //
+        // An error rather than a silent no-op: `start` carries `BackendOptions`,
+        // so answering OK without applying them would be an RPC that lies.
+        if self
+            .supervisor
+            .status()
+            .iter()
+            .any(|s| s.state != ServiceState::Idle)
+        {
+            self.audit("start", transport, "already-started");
+            return Err(ControlError::AlreadyStarted);
+        }
+
         let now = Instant::now();
         if let Some(prev) = self.last_mutation {
             if now.duration_since(prev) < self.min_mutation_interval {
@@ -549,7 +557,7 @@ impl<S: Spawner> Controller<S> {
     }
 
     /// Execute a `restart`: rate-limit, apply options, tear down, rebuild specs
-    /// from the updated layout, and start back up — emitting `restarting` then
+    /// from the updated layout, and start back up, emitting `restarting` then
     /// `ready` (or returning [`ControlError::RestartFailed`] on a failed bring-up).
     async fn handle_restart(
         &mut self,
@@ -662,7 +670,6 @@ impl<S: Spawner> Controller<S> {
             services,
             started_at: self.started_at,
             proxy_url: self.proxy_url.clone(),
-            renderer_secret: self.renderer_secret.clone(),
         };
         let _ = self.snapshot_tx.send(snapshot);
     }
@@ -943,7 +950,7 @@ mod tests {
         assert_eq!(spawner.spawns.load(Ordering::SeqCst), 2);
         assert_eq!(controller.layout.log_level, "debug");
 
-        // start emits ready, and — unlike restart — never emits restarting.
+        // start emits ready, and, unlike restart, never emits restarting.
         let mut seen = Vec::new();
         while let Ok(event) = events.try_recv() {
             seen.push(event);
@@ -952,6 +959,76 @@ mod tests {
         assert!(!seen
             .iter()
             .any(|e| matches!(e, ControlEvent::Restarting { .. })));
+    }
+
+    #[tokio::test]
+    async fn start_on_a_running_tree_is_rejected() {
+        // Docker is what makes this reachable: starling starts itself at boot and
+        // `start` is exposed on the uid-0 UDS. Without the guard this would
+        // reconfigure and respawn on top of live children, dropping their handles
+        // instead of stopping them -- an ungraceful, unordered, unannounced
+        // restart that silently differs from `restart`.
+        let spawner = TestSpawner::new();
+        let sup = Supervisor::new(spawner.clone(), specs()).unwrap();
+        let mut controller = Controller::new(
+            sup,
+            layout(),
+            Box::new(|_| specs()),
+            Duration::from_millis(50),
+            Some(1_700_000_000),
+        );
+        let handle = controller.handle();
+
+        // First start brings the tree up, then a second one hits a live tree.
+        //
+        // The option-carrying second call goes over stdio deliberately.
+        // `sanitize_restart_options` runs in the handle *before* the command is
+        // queued, so an option-carrying start on UDS is refused there as
+        // `OptionsNotAllowed` and never reaches this guard. Stdio permits options,
+        // which is what lets it through and makes the "options were not applied"
+        // assertion below meaningful.
+        let calls = tokio::spawn(async move {
+            let first = handle
+                .start(Transport::Stdio, BackendOptions::default())
+                .await;
+            assert!(first.is_ok(), "first start should succeed: {first:?}");
+            let second = handle
+                .start(
+                    Transport::Stdio,
+                    BackendOptions {
+                        loglevel: Some("debug".to_string()),
+                        ..Default::default()
+                    },
+                )
+                .await;
+            // Docker's actual shape: an optionless start over the uid-0 socket
+            // clears sanitize, so the controller guard is the only thing stopping
+            // it.
+            let bare_uds = handle
+                .start(Transport::Uds, BackendOptions::default())
+                .await;
+            (second, bare_uds)
+        });
+
+        let mut results = None;
+        let outcome = controller.run(async {
+            results = Some(calls.await.unwrap());
+        });
+        assert_eq!(outcome.await, Outcome::Shutdown);
+
+        let (second, bare_uds) = results.expect("calls completed");
+        assert!(
+            matches!(second, Err(ControlError::AlreadyStarted)),
+            "second start must be refused, got {second:?}",
+        );
+        assert!(
+            matches!(bare_uds, Err(ControlError::AlreadyStarted)),
+            "an optionless start over UDS must be refused too, got {bare_uds:?}",
+        );
+        // The tree was brought up exactly once: no respawn on top of live children.
+        assert_eq!(spawner.spawns.load(Ordering::SeqCst), 2);
+        // And the refused call's options were not silently applied.
+        assert_ne!(controller.layout.log_level, "debug");
     }
 
     #[tokio::test]
@@ -1075,7 +1152,7 @@ mod tests {
                 .restart(Transport::Stdio, BackendOptions::default())
                 .await;
             assert!(first.is_ok());
-            // Immediately again — inside the min interval.
+            // Immediately again, inside the min interval.
             let second = handle
                 .restart(Transport::Stdio, BackendOptions::default())
                 .await;

@@ -1,15 +1,23 @@
 [workspace]
 resolver = "2"
-members = ["starling", "starling-core"]
+members = ["starling", "starling-core", "starling-proxy"]
 
 [workspace.package]
+# Kept in lockstep with the rotki release version by `tools/scripts/bump.sh`
+# (see the `crates/Cargo.toml` entry in `.bumpversion.cfg`). Every member
+# inherits it via `version.workspace = true`, so this is the single place the
+# bump has to touch.
+version = "1.43.2"
 edition = "2021"
 license = "AGPL-3.0-only"
 rust-version = "1.86.0"
 repository = "https://github.com/rotki/rotki"
 
+# Exact-pinned, matching colibri's convention: reproducible builds, and a
+# dependency bump is always a deliberate, reviewable diff rather than something
+# that drifts in on the next lockfile refresh.
 [workspace.dependencies]
-tokio = { version = "1", features = [
+tokio = { version = "=1.52.3", features = [
     "rt-multi-thread",
     "macros",
     "process",
@@ -20,12 +28,12 @@ tokio = { version = "1", features = [
     "io-util",
     "io-std",
 ] }
-async-trait = "0.1"
-thiserror = "2"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-serde = { version = "1", features = ["derive"] }
-clap = { version = "4", features = ["derive"] }
+async-trait = "=0.1.89"
+thiserror = "=2.0.18"
+tracing = "=0.1.44"
+tracing-subscriber = { version = "=0.3.23", features = ["env-filter"] }
+serde = { version = "=1.0.228", features = ["derive"] }
+clap = { version = "=4.6.1", features = ["derive"] }
 
 [profile.release]
 strip = true

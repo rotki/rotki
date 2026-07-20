@@ -64,10 +64,11 @@ struct Notification {
 fn error_code(err: &ControlError) -> i64 {
     match err {
         ControlError::Unauthorized { .. } => ERR_UNAUTHORIZED,
-        ControlError::InvalidLogLevel(_) | ControlError::PathOverrideNotAllowed { .. } => {
-            INVALID_PARAMS
-        }
+        ControlError::InvalidLogLevel(_) | ControlError::OptionsNotAllowed { .. } => INVALID_PARAMS,
         ControlError::RateLimited => ERR_RATE_LIMITED,
+        // A precondition failure, not a malformed request: the caller asked for a
+        // valid thing at a moment it does not apply.
+        ControlError::AlreadyStarted => ERR_RESTART_FAILED,
         ControlError::RestartFailed(_) => ERR_RESTART_FAILED,
         ControlError::ControllerStopped => INTERNAL_ERROR,
     }

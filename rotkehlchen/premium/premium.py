@@ -56,7 +56,7 @@ DOCKER_PLATFORM_KEY: Final = 'docker'
 DOCKER_SHORT_ID_HASH_LENGTH: Final = 12
 KUBERNETES_PLATFORM_KEY: Final = 'kubernetes'
 CONTAINER_FALLBACK_ID_FILE: Final = Path('/opt/rotki/.container-id')
-DOCKER_ENTRYPOINT_PATH: Final = '/opt/rotki/entrypoint.py'
+DOCKER_SUPERVISOR_PATH: Final = '/opt/rotki/starling'
 UNKNOWN_CONTAINER_FALLBACK_ID_PREFIX: Final = 'unknown-container'
 ASSET_MOVEMENT_MATCHING_CAPABILITY: Final = 'asset_movement_matching'
 GNOSIS_PAY_CAPABILITY: Final = 'gnosispay'
@@ -313,13 +313,18 @@ def get_docker_container_id(mountinfo: str) -> str | None:
 
 
 def is_running_in_rotki_docker_image() -> bool:
-    """Return whether rotki appears to run in the official docker image."""
+    """Return whether rotki appears to run in the official docker image.
+
+    In the official image the `starling` supervisor is PID 1 (it replaced the old
+    `entrypoint.py`), so we look for its path in PID 1's cmdline, or the parent's,
+    since starling is what spawns the backend.
+    """
     try:
         init_cmdline = Path('/proc/1/cmdline').read_bytes().decode('utf-8', errors='ignore')
     except OSError:
         init_cmdline = ''
 
-    if DOCKER_ENTRYPOINT_PATH in init_cmdline:
+    if DOCKER_SUPERVISOR_PATH in init_cmdline:
         return True
 
     try:
@@ -327,7 +332,7 @@ def is_running_in_rotki_docker_image() -> bool:
     except OSError:
         return False
 
-    return DOCKER_ENTRYPOINT_PATH in parent_cmdline
+    return DOCKER_SUPERVISOR_PATH in parent_cmdline
 
 
 def get_or_create_fallback_container_id() -> str | None:

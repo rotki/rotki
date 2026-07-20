@@ -1,0 +1,45 @@
+[package]
+name = "starling-proxy"
+version.workspace = true
+description = "In-process HTTP server and reverse proxy that serves the rotki SPA and fronts the backend services (replaces nginx in the Docker image)."
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+
+[dependencies]
+tokio.workspace = true
+tracing.workspace = true
+
+# Body combinators: the access log wraps the response body to count the bytes
+# actually written, which Content-Length cannot give us once compression makes
+# the response chunked.
+http-body-util = "=0.1.4"
+
+# In-process HTTP server + reverse proxy, replaces nginx.
+axum = "=0.8.9"
+# `util` for `ServiceExt::oneshot`: the hyper accept loop drives the axum router
+# per connection, so it needs to call the router as a one-shot service.
+tower = { version = "=0.5.3", features = ["util"] }
+tower-http = { version = "=0.6.11", features = [
+    "fs",
+    "compression-gzip",
+    "compression-br",
+    "trace",
+    "limit",
+    "set-header",
+    "timeout",
+] }
+hyper = { version = "=1.10.1", features = ["http1", "client", "server"] }
+hyper-util = { version = "=0.1.20", features = [
+    "client",
+    "client-legacy",
+    "http1",
+    "tokio",
+] }
+
+[dev-dependencies]
+serde_json = "=1.0.150"
+tower = { version = "=0.5.3", features = ["util"] }
+tokio-tungstenite = "=0.24.0"
+futures-util = "=0.3.33"
