@@ -1680,7 +1680,8 @@ def test_pickle_dill_zero_positions_skip_price_query(
     assert result[user_address].pending_rewards.balance.value == FVal(10)
 
 
-@pytest.mark.parametrize('hyperliquid_accounts', [['0xC16D03879B158604958A7bAE8b61763c2953a5f2']])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('hyperliquid_accounts', [['0x9d731b5be6236C3De8EB7eECC9706bE2ffF3A105']])
 def test_kinetiq_pending_withdrawal_balances(
         hyperliquid_inquirer: HyperliquidInquirer,
         hyperliquid_accounts: list[ChecksumEvmAddress],
@@ -1689,19 +1690,20 @@ def test_kinetiq_pending_withdrawal_balances(
     """Check that the HYPE value of queued but unconfirmed Kinetiq withdrawals is detected"""
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=hyperliquid_inquirer,
-        tx_hash=deserialize_evm_tx_hash('0x1638247ae17adceb57fb31545c569ceed387c1d82c9b8e9ef55cfcec5446bf25'),
+        tx_hash=deserialize_evm_tx_hash('0xb2717aa3c23fc0b385cc794e880e4be2ba8f95c77dd6993ff2847dd4eacb2677'),
     )
     protocol_balances = KinetiqBalances(
         evm_inquirer=hyperliquid_inquirer,
         tx_decoder=tx_decoder,
     ).query_balances()
     expected_balance = Balance(  # a walrus inside the assert hits an UnboundLocalError under pytest's assertion rewriting  # noqa: E501
-        amount=(amount := FVal('9.140056182774328838')),
+        amount=(amount := FVal('0.620167133105137613')),
         value=amount * FVal(1.5),
     )
     assert protocol_balances[hyperliquid_accounts[0]].assets[A_HYPE][CPT_KINETIQ] == expected_balance  # noqa: E501
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('hyperliquid_accounts', [['0xD161D9C1871372c150ED68Fcc90Be73a9062a1b1']])
 def test_kinetiq_earn_pending_withdrawal_balances(
         hyperliquid_inquirer: HyperliquidInquirer,
