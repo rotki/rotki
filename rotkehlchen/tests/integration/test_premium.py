@@ -25,9 +25,9 @@ from rotkehlchen.errors.api import (
     RotkehlchenPermissionError,
 )
 from rotkehlchen.premium.premium import (
-    DOCKER_ENTRYPOINT_PATH,
     DOCKER_PLATFORM_KEY,
     DOCKER_SHORT_ID_HASH_LENGTH,
+    DOCKER_SUPERVISOR_PATH,
     KUBERNETES_PLATFORM_KEY,
     UNKNOWN_CONTAINER_FALLBACK_ID_PREFIX,
     Premium,
@@ -1073,6 +1073,6 @@ def test_check_docker_container_uses_fallback_identifier() -> None:
 
 def test_is_running_in_rotki_docker_image_detects_init_cmdline() -> None:
     with (
-        patch('rotkehlchen.premium.premium.Path.read_bytes', return_value=f'python3\x00{DOCKER_ENTRYPOINT_PATH}\x00'.encode()),  # noqa: E501
+        patch('rotkehlchen.premium.premium.Path.read_bytes', return_value=f'{DOCKER_SUPERVISOR_PATH}\x00--mode\x00docker\x00'.encode()),  # noqa: E501
     ):
         assert is_running_in_rotki_docker_image() is True

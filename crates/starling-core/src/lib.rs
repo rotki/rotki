@@ -30,4 +30,4 @@ pub use datadir::{build_version, default_data_dir, is_production_build, resolve_
 pub use error::{Result, SupervisorError};
 pub use lifecycle::{ServiceState, ServiceStatus, Supervisor};
 pub use process::{ExitInfo, OsSpawner, Process, Spawner};
-pub use readiness::http_ping;
+pub use readiness::{http_ping, PROBE_USER_AGENT};

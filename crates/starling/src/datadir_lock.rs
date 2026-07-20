@@ -90,13 +90,24 @@ impl starling_core::DataDirGuard for LockGuard {
 pub fn acquire(data_dir: &Path) -> Result<DataDirLock, Error> {
     fs::create_dir_all(data_dir).map_err(Error::Io)?;
     let path = data_dir.join(LOCK_FILE_NAME);
-    let file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .truncate(false)
-        .open(&path)
-        .map_err(Error::Io)?;
+    let mut options = OpenOptions::new();
+    options.read(true).write(true).create(true).truncate(false);
+
+    // Refuse to open through a symlink. In docker this runs as root, before the
+    // privilege drop, inside a data directory that privilege separation has just
+    // handed to the unprivileged backend uid. Write permission on the directory
+    // is enough to unlink this file and put a symlink in its place, so without
+    // O_NOFOLLOW a compromised backend could point it at any path and have root
+    // open it for writing, or create it if absent. The lock file is ours and is
+    // never legitimately a link, so refusing costs nothing.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        // via nix, already a unix-only dependency; avoids taking libc directly.
+        options.custom_flags(nix::libc::O_NOFOLLOW);
+    }
+
+    let file = options.open(&path).map_err(Error::Io)?;
 
     match FileExt::try_lock_exclusive(&file) {
         Ok(true) => Ok(DataDirLock { _file: file }),
@@ -111,6 +122,35 @@ mod tests {
     use std::time::Duration;
 
     use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn a_symlinked_lock_file_is_refused_rather_than_followed() {
+        // In docker this runs as root inside a data directory that privilege
+        // separation has just handed to the backend uid. Write permission on the
+        // directory is enough to swap this file for a symlink, so following one
+        // would give a compromised backend a root-owned open (or create) of any
+        // path it names.
+        let dir = std::env::temp_dir().join(format!("starling-lock-link-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+
+        // The file root would be tricked into opening. It must stay untouched.
+        let target = dir.join("target-outside");
+        std::os::unix::fs::symlink(&target, dir.join(LOCK_FILE_NAME)).unwrap();
+
+        match acquire(&dir) {
+            Err(Error::Io(_)) => {}
+            Err(other) => panic!("expected an IO error from O_NOFOLLOW, got {other:?}"),
+            Ok(_) => panic!("a symlinked lock file must be refused, not followed"),
+        }
+        assert!(
+            !target.exists(),
+            "the symlink was followed: root created the target it pointed at",
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     /// A self-cleaning, per-invocation temp directory. Keyed by an atomic counter
     /// in addition to the pid — every thread in a test binary shares one pid, so a

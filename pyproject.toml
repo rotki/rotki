@@ -490,9 +490,6 @@ known-third-party = ["packaging"]  # packaging is otherwise detected as first-pa
     "ERA001",  # Lots of comments with text combined with commented-out example code
     "INP001",  # no need for __init__ here
 ]
-"packaging/docker/entrypoint.py" = [
-    "S",  # fixme
-]
 
 
 [tool.vulture]

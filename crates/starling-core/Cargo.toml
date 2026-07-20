@@ -1,6 +1,6 @@
 [package]
 name = "starling-core"
-version = "0.1.0"
+version.workspace = true
 description = "Lifecycle core for the rotki starling supervisor: declarative service graph, readiness gating, and platform process termination."
 edition.workspace = true
 license.workspace = true
@@ -18,16 +18,16 @@ dirs = "=6.0.0"
 [dev-dependencies]
 # Test-only: exercise the control-protocol wire shapes. The library itself
 # serializes via serde derive only; the JSON format lives in the binary.
-serde_json = "1"
+serde_json = "=1.0.150"
 # `test-util` for `#[tokio::test(start_paused = true)]`: lets the shutdown-budget
 # tests assert against a virtual clock instead of a flaky wall-clock margin.
 tokio = { workspace = true, features = ["test-util"] }
 
 [target.'cfg(unix)'.dependencies]
-nix = { version = "0.30", features = ["signal", "process", "user"] }
+nix = { version = "=0.30.1", features = ["signal", "process", "user"] }
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.58", features = [
+windows = { version = "=0.58.0", features = [
     "Win32_Foundation",
     "Win32_Security",
     "Win32_System_Console",

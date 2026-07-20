@@ -1,9 +1,9 @@
-//! Readiness probing — the deduplicated ping-gate.
+//! Readiness probing, the deduplicated ping-gate.
 //!
 //! HTTP readiness is a tiny hand-rolled `HTTP/1.1 GET` over `tokio` rather than a
 //! full HTTP client: this is PID 1 and the only check it does is "did the local
 //! core answer 200 on /ping". When the proxy layer (later phase) brings in
-//! `hyper`, its client can replace this — but we never need `reqwest`.
+//! `hyper`, its client can replace this, but we never need `reqwest`.
 
 use std::time::Duration;
 
@@ -48,6 +48,16 @@ pub async fn wait_ready(readiness: &Readiness, name: &str) -> Result<()> {
     }
 }
 
+/// `User-Agent` sent on every probe.
+///
+/// Docker's `HEALTHCHECK` runs `starling healthcheck` on an interval, and that
+/// probe goes *through* the proxy, so without a way to recognize it, the access
+/// log fills with one self-inflicted entry per interval and drowns the real
+/// traffic. The proxy skips requests carrying this agent, but only from a
+/// loopback peer, so an external client cannot silence its own entries by
+/// sending the same header.
+pub const PROBE_USER_AGENT: &str = "starling-healthcheck";
+
 /// Issue a minimal `GET` and check the status line for `200`. Public so the
 /// binary's `healthcheck` subcommand can reuse the same hand-rolled probe (no
 /// `curl`, no extra deps) against the running proxy.
@@ -66,8 +76,10 @@ async fn http_ping_inner(url: &str) -> bool {
         return false;
     };
 
-    let request =
-        format!("GET {path} HTTP/1.1\r\nHost: {host}:{port}\r\nConnection: close\r\n\r\n");
+    let request = format!(
+        "GET {path} HTTP/1.1\r\nHost: {host}:{port}\r\n\
+         User-Agent: {PROBE_USER_AGENT}\r\nConnection: close\r\n\r\n",
+    );
     if stream.write_all(request.as_bytes()).await.is_err() {
         return false;
     }
@@ -86,7 +98,7 @@ async fn port_open(host: &str, port: u16) -> bool {
 }
 
 /// Parse `http://host[:port]/path` into `(host, port, path)`.
-/// Only plain `http` is needed — the probe target is always the local backend.
+/// Only plain `http` is needed, the probe target is always the local backend.
 fn parse_http_url(url: &str) -> Option<(String, u16, String)> {
     let rest = url.strip_prefix("http://")?;
     let (authority, path) = match rest.find('/') {

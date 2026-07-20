@@ -4,10 +4,15 @@
 //! `starling-core`; this layer frames requests on the wire and carries the
 //! bytes.
 //!
-//! Transport: [`stdio`] (embedded / dev), the private parent↔child pipe the
-//! Electron main process drives. The Docker UDS transport and its admin client
-//! land with the docker slice.
+//! Transports: [`stdio`] (embedded / dev), the private parent↔child pipe the
+//! Electron main process drives, and [`uds`] (docker), the uid-0 `SO_PEERCRED`
+//! gated admin socket. [`ctl`] is the admin client that speaks to the latter.
 
 pub mod framing;
 pub mod jsonrpc;
 pub mod stdio;
+
+#[cfg(unix)]
+pub mod ctl;
+#[cfg(unix)]
+pub mod uds;

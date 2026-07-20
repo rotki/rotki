@@ -210,10 +210,10 @@ URLS = list[
 ]
 
 
-# If you add an endpoint that accepts multipart file uploads, also update the
-# regex `location` block in packaging/docker/nginx.conf so the path gets the
-# higher `client_max_body_size`. The default cap is 1 MiB and applies to every
-# path not listed there.
+# Endpoints that accept multipart file uploads need no per-path configuration:
+# starling's in-process proxy replaced nginx and streams request bodies without
+# buffering, so a single global ceiling (`--max-body-mb`, default 50) covers every
+# proxied API route instead of nginx's per-`location` list of exceptions.
 URLS_V1: URLS = [
     ('/users', UsersResource),
     ('/watchers', WatchersResource),

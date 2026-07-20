@@ -11,7 +11,6 @@ PATHS_TO_CHECK = [
     'rotkehlchen_mock/',
     'package.py',
     'docs/conf.py',
-    'packaging/docker/entrypoint.py',
     'tools/',
 ]
 

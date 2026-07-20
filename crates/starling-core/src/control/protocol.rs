@@ -1,15 +1,16 @@
-//! Control-plane protocol types — the mode-agnostic vocabulary of the control
+//! Control-plane protocol types, the mode-agnostic vocabulary of the control
 //! RPC (methods, params, results, push events) plus the two security policies
 //! that must hold *regardless of transport*:
 //!
-//! - **§S9 — transport × method authorization matrix** ([`is_authorized`]),
+//! - **§S9, transport × method authorization matrix** ([`is_authorized`]),
 //!   written as an explicit, **fail-closed** table so a new method or transport
 //!   is denied until someone deliberately allows it.
-//! - **§S2 — transport-scoped restart params** ([`sanitize_restart_options`]):
-//!   the desktop (stdio) path may repoint data/log directories (the user picks a
-//!   folder); the Docker control surfaces accept `loglevel` only — a path
-//!   override there is rejected, not silently honored. `loglevel` is validated
-//!   against the backend's allowlist on every transport.
+//! - **§S2, transport-scoped restart params** ([`sanitize_restart_options`]):
+//!   the desktop (stdio) path may set anything, including repointing data/log
+//!   directories (the user picks a folder); every other transport accepts **no
+//!   options at all**, because Docker config is declarative and read once at
+//!   boot. `loglevel` is validated against the backend's allowlist wherever it is
+//!   accepted.
 //!
 //! These are pure value types with no I/O. The JSON-RPC envelope, the NDJSON
 //! framing, and the concrete transports live in the `starling` binary
@@ -29,13 +30,13 @@ pub const PROTOCOL_VERSION: u32 = 1;
 pub const VALID_LOG_LEVELS: [&str; 6] = ["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"];
 
 /// The surface a control request arrived on. This is the security-relevant input
-/// to the authorization matrix — *not* the run mode. One binary may expose
+/// to the authorization matrix, *not* the run mode. One binary may expose
 /// several at once (e.g. Docker runs both [`Transport::Uds`] and the public
 /// [`Transport::PublicHealth`]).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Transport {
     /// The private parent↔child pipe (Electron embedded / dev). Trusted by
-    /// construction — no other process can address it.
+    /// construction, no other process can address it.
     Stdio,
     /// The Docker admin Unix socket, behind a uid-0 `SO_PEERCRED` gate. The
     /// connecting peer is already container-root, so full control is allowed.
@@ -45,7 +46,7 @@ pub enum Transport {
     /// allowed once that gate passes; this surface is never the public `:80`.
     HttpControl,
     /// The unauthenticated public health endpoint folded onto the proxy
-    /// `/health`. Read-only **boolean** health only — never detailed status or
+    /// `/health`. Read-only **boolean** health only, never detailed status or
     /// any `lastError` (§S3).
     PublicHealth,
 }
@@ -53,7 +54,7 @@ pub enum Transport {
 /// The control methods. The wire `method` string maps 1:1 via [`Method::wire`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Method {
-    /// Minimal boolean liveness — the only thing the public surface may read.
+    /// Minimal boolean liveness, the only thing the public surface may read.
     Health,
     /// Detailed snapshot (pids, per-service state). Authenticated read.
     Status,
@@ -99,7 +100,7 @@ impl Method {
     }
 }
 
-/// §S9 — the authorization matrix, written as an explicit fail-closed table.
+/// §S9, the authorization matrix, written as an explicit fail-closed table.
 ///
 /// Every `(transport, method)` pair is listed; there is **no catch-all allow**,
 /// so adding a `Method` variant or a `Transport` variant fails to compile until
@@ -131,9 +132,9 @@ pub fn is_authorized(transport: Transport, method: Method) -> bool {
 pub struct BackendOptions {
     /// Core log level (validated against [`VALID_LOG_LEVELS`], case-insensitive).
     pub loglevel: Option<String>,
-    /// Data directory. **stdio only** — rejected on Docker control surfaces (§S2).
+    /// Data directory. **stdio only**, rejected on Docker control surfaces (§S2).
     pub data_directory: Option<String>,
-    /// Log directory. **stdio only** — rejected on Docker control surfaces (§S2).
+    /// Log directory. **stdio only**, rejected on Docker control surfaces (§S2).
     pub log_directory: Option<String>,
     /// Emit `--logfromothermodules` to core. Benign config, allowed on every
     /// transport; in practice only the desktop (stdio) ever sets it.
@@ -149,7 +150,23 @@ pub struct BackendOptions {
     pub sleep_seconds: Option<u32>,
 }
 
-/// Result of `health` — the minimal boolean shape safe for the public surface.
+impl BackendOptions {
+    /// Whether the caller set anything at all. Listed field by field on purpose:
+    /// a new option must be considered here rather than silently defaulting to
+    /// "allowed on every transport".
+    pub fn any_set(&self) -> bool {
+        self.loglevel.is_some()
+            || self.data_directory.is_some()
+            || self.log_directory.is_some()
+            || self.log_from_other_modules.is_some()
+            || self.max_logfiles_num.is_some()
+            || self.max_size_in_mb_all_logs.is_some()
+            || self.sqlite_instructions.is_some()
+            || self.sleep_seconds.is_some()
+    }
+}
+
+/// Result of `health`, the minimal boolean shape safe for the public surface.
 /// Deliberately carries no pids, states, or error detail (§S3).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HealthResult {
@@ -159,8 +176,8 @@ pub struct HealthResult {
     pub degraded: bool,
 }
 
-/// Result of `status` — the detailed, authenticated snapshot.
-#[derive(Clone, Serialize, Deserialize)]
+/// Result of `status`, the detailed, authenticated snapshot.
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StatusResult {
     pub control_version: u32,
@@ -173,31 +190,6 @@ pub struct StatusResult {
     /// confirms the proxy is up. `None` when no proxy runs (embedded without a
     /// `--port`).
     pub proxy_url: Option<String>,
-    /// The per-launch renderer secret the embedded proxy gates on (Mode A). It is
-    /// minted by starling and handed to the Electron renderer through this status
-    /// reply (the private stdio control pipe → preload → renderer), which then
-    /// attaches it as `X-Starling-Renderer` on every request. `None` in docker
-    /// mode (where the cookie gate applies instead) and when no proxy runs. Never
-    /// logged — `Debug` redacts it (the status reply is the *only* place it
-    /// legitimately travels).
-    pub renderer_secret: Option<String>,
-}
-
-/// Custom `Debug` that redacts `renderer_secret`: the value is a live credential
-/// and must never reach a log line, even via a derived `Debug` on this struct.
-impl std::fmt::Debug for StatusResult {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("StatusResult")
-            .field("control_version", &self.control_version)
-            .field("services", &self.services)
-            .field("started_at", &self.started_at)
-            .field("proxy_url", &self.proxy_url)
-            .field(
-                "renderer_secret",
-                &self.renderer_secret.as_ref().map(|_| "<redacted>"),
-            )
-            .finish()
-    }
 }
 
 /// Result of a mutating method that has no richer payload.
@@ -225,7 +217,7 @@ pub enum RestartReason {
 /// the event (each variant serializes to just its fields object).
 ///
 /// `Crashed::last_error` can carry paths / stack fragments, so events are only
-/// ever delivered on authenticated channels (stdio / authenticated control) —
+/// ever delivered on authenticated channels (stdio / authenticated control) -
 /// never the public health surface (§S3).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged, rename_all_fields = "camelCase")]
@@ -256,7 +248,7 @@ impl ControlEvent {
     }
 }
 
-/// Errors surfaced to a control client — both the protocol-level validation /
+/// Errors surfaced to a control client, both the protocol-level validation /
 /// authorization failures raised before a request reaches the controller, and
 /// the controller-level failures raised while executing one.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
@@ -270,12 +262,17 @@ pub enum ControlError {
     /// `loglevel` was not one of [`VALID_LOG_LEVELS`].
     #[error("invalid log level '{0}'")]
     InvalidLogLevel(String),
-    /// A data/log directory override was sent on a transport that forbids it (§S2).
-    #[error("data/log directory overrides are not allowed on the {transport} transport")]
-    PathOverrideNotAllowed { transport: &'static str },
+    /// Backend options were sent on a transport that forbids them (§S2). Only
+    /// stdio, the private pipe to the owning Electron process, may set them.
+    #[error("backend options cannot be set on the {transport} transport")]
+    OptionsNotAllowed { transport: &'static str },
     /// A mutating op was issued too soon after the previous one (§S10).
     #[error("control is rate-limited; retry shortly")]
     RateLimited,
+    /// A `start` arrived while the tree was already up, violating
+    /// `reconfigure`'s precondition that everything is stopped first.
+    #[error("backend is already running; use 'restart' to apply new options")]
+    AlreadyStarted,
     /// A `restart` tore down the backend but failed to bring it back up.
     #[error("restart failed: {0}")]
     RestartFailed(String),
@@ -309,17 +306,28 @@ pub fn authorize(transport: Transport, method: Method) -> Result<(), ControlErro
     }
 }
 
-/// §S2 — validate and transport-scope the options carried by a `restart`.
+/// §S2, validate and transport-scope the options carried by a `restart`.
 ///
 /// - `loglevel` (any case) must be in [`VALID_LOG_LEVELS`] on **every** transport.
 /// - `data_directory` / `log_directory` are honored **only on [`Transport::Stdio`]**
 ///   (the desktop, where the user genuinely chooses a folder). On any other
-///   transport their presence is rejected outright — in a container these are
+///   transport their presence is rejected outright, in a container these are
 ///   fixed volume mounts and a caller-chosen path is at best a DoS.
 ///
-/// Returns the options to actually apply (identical on stdio; on other transports
-/// only `loglevel` can be set, and this only returns once it has confirmed no
-/// path override was attempted).
+/// Returns the options to actually apply: identical on stdio, and on every other
+/// transport **no options at all**, any that are set is an error.
+///
+/// Docker config is declarative (`/config/rotki_config.json` + env, read once at
+/// boot), so there is nothing for an RPC option to usefully mutate. It could not
+/// persist anyway: the hardened run recipe mounts the container `--read-only`, and
+/// `restart` does not re-read the file, so an RPC-set value would be a change with
+/// a hidden TTL that the next container restart silently reverts. Config change
+/// means recreate the container; UDS `restart` means "bounce the backends with the
+/// boot-time layout" for un-wedging, not for reconfiguration.
+///
+/// `loglevel` is the arguable exception, and is rejected too: `-e LOGLEVEL=debug`
+/// plus a recreate is cheap and normal in docker, and core already exposes a live
+/// log-level change through `PUT /api/1/settings/configuration`.
 pub fn sanitize_restart_options(
     transport: Transport,
     options: BackendOptions,
@@ -333,10 +341,8 @@ pub fn sanitize_restart_options(
         }
     }
 
-    if transport != Transport::Stdio
-        && (options.data_directory.is_some() || options.log_directory.is_some())
-    {
-        return Err(ControlError::PathOverrideNotAllowed {
+    if transport != Transport::Stdio && options.any_set() {
+        return Err(ControlError::OptionsNotAllowed {
             transport: transport.label(),
         });
     }
@@ -449,19 +455,30 @@ mod tests {
     }
 
     #[test]
-    fn sanitize_accepts_loglevel_any_case_on_every_transport() {
-        for transport in [
-            Transport::Stdio,
-            Transport::Uds,
-            Transport::HttpControl,
-            Transport::PublicHealth,
-        ] {
+    fn sanitize_accepts_loglevel_any_case_on_stdio() {
+        // Case-insensitive, since core upper-cases its `--loglevel` before
+        // checking. stdio only: every other transport refuses options outright,
+        // covered by `sanitize_rejects_every_option_off_stdio`.
+        for spelling in ["Debug", "debug", "DEBUG"] {
             let opts = BackendOptions {
-                loglevel: Some("Debug".to_string()),
+                loglevel: Some(spelling.to_string()),
                 ..Default::default()
             };
-            assert!(sanitize_restart_options(transport, opts).is_ok());
+            assert!(sanitize_restart_options(Transport::Stdio, opts).is_ok());
         }
+    }
+
+    #[test]
+    fn invalid_loglevel_is_rejected_before_the_transport_gate() {
+        // Validation order matters for the error the caller sees: a bad level is
+        // reported as such even on a transport that would refuse the option
+        // anyway, rather than being masked by OptionsNotAllowed.
+        let opts = BackendOptions {
+            loglevel: Some("chatty".to_string()),
+            ..Default::default()
+        };
+        let err = sanitize_restart_options(Transport::Uds, opts).unwrap_err();
+        assert!(matches!(err, ControlError::InvalidLogLevel(_)));
     }
 
     #[test]
@@ -492,19 +509,112 @@ mod tests {
             Transport::PublicHealth,
         ] {
             let err = sanitize_restart_options(transport, with_paths()).unwrap_err();
-            assert!(matches!(err, ControlError::PathOverrideNotAllowed { .. }));
+            assert!(matches!(err, ControlError::OptionsNotAllowed { .. }));
         }
     }
 
     #[test]
-    fn sanitize_allows_loglevel_only_on_docker_control() {
+    fn sanitize_rejects_every_option_off_stdio() {
+        // Docker config is declarative and read once at boot, so no option is
+        // settable over a remote transport -- not even loglevel, which core can
+        // already change live through its own settings API.
+        let one_option_each = [
+            BackendOptions {
+                loglevel: Some("warning".to_string()),
+                ..Default::default()
+            },
+            BackendOptions {
+                log_from_other_modules: Some(true),
+                ..Default::default()
+            },
+            BackendOptions {
+                max_logfiles_num: Some(3),
+                ..Default::default()
+            },
+            BackendOptions {
+                max_size_in_mb_all_logs: Some(100),
+                ..Default::default()
+            },
+            BackendOptions {
+                sqlite_instructions: Some(5000),
+                ..Default::default()
+            },
+            BackendOptions {
+                sleep_seconds: Some(2),
+                ..Default::default()
+            },
+        ];
+        for opts in one_option_each {
+            let err = sanitize_restart_options(Transport::Uds, opts).unwrap_err();
+            assert!(matches!(err, ControlError::OptionsNotAllowed { .. }));
+        }
+    }
+
+    #[test]
+    fn sanitize_allows_an_empty_restart_off_stdio() {
+        // The docker UDS surface keeps a bare `restart` -- bounce the backends
+        // with the boot-time layout. Only options are refused.
+        assert!(sanitize_restart_options(Transport::Uds, BackendOptions::default()).is_ok());
+    }
+
+    #[test]
+    fn sanitize_passes_everything_through_on_stdio() {
+        // Electron owns the process and its options are the whole config path.
         let opts = BackendOptions {
             loglevel: Some("warning".to_string()),
+            sqlite_instructions: Some(5000),
             ..Default::default()
         };
-        let out = sanitize_restart_options(Transport::Uds, opts).unwrap();
+        let out = sanitize_restart_options(Transport::Stdio, opts).unwrap();
         assert_eq!(out.loglevel.as_deref(), Some("warning"));
-        assert_eq!(out.data_directory, None);
+        assert_eq!(out.sqlite_instructions, Some(5000));
+    }
+
+    #[test]
+    fn any_set_tracks_every_field() {
+        // Guards the field-by-field list: a new option added without updating
+        // any_set() would slip past the transport gate.
+        assert!(!BackendOptions::default().any_set());
+        assert!(BackendOptions {
+            loglevel: Some("info".into()),
+            ..Default::default()
+        }
+        .any_set());
+        assert!(BackendOptions {
+            data_directory: Some("/d".into()),
+            ..Default::default()
+        }
+        .any_set());
+        assert!(BackendOptions {
+            log_directory: Some("/l".into()),
+            ..Default::default()
+        }
+        .any_set());
+        assert!(BackendOptions {
+            log_from_other_modules: Some(false),
+            ..Default::default()
+        }
+        .any_set());
+        assert!(BackendOptions {
+            max_logfiles_num: Some(0),
+            ..Default::default()
+        }
+        .any_set());
+        assert!(BackendOptions {
+            max_size_in_mb_all_logs: Some(0),
+            ..Default::default()
+        }
+        .any_set());
+        assert!(BackendOptions {
+            sqlite_instructions: Some(0),
+            ..Default::default()
+        }
+        .any_set());
+        assert!(BackendOptions {
+            sleep_seconds: Some(0),
+            ..Default::default()
+        }
+        .any_set());
     }
 
     #[test]
@@ -551,26 +661,10 @@ mod tests {
             services: Vec::new(),
             started_at: Some(1_700_000_000),
             proxy_url: Some("http://127.0.0.1:4244".to_string()),
-            renderer_secret: Some("s3cr3t".to_string()),
         };
         let json = serde_json::to_value(&status).unwrap();
         assert_eq!(json["controlVersion"], PROTOCOL_VERSION);
         assert_eq!(json["startedAt"], 1_700_000_000);
         assert_eq!(json["proxyUrl"], "http://127.0.0.1:4244");
-        assert_eq!(json["rendererSecret"], "s3cr3t");
-    }
-
-    #[test]
-    fn status_debug_redacts_renderer_secret() {
-        let status = StatusResult {
-            control_version: PROTOCOL_VERSION,
-            services: Vec::new(),
-            started_at: None,
-            proxy_url: None,
-            renderer_secret: Some("super-secret-value".to_string()),
-        };
-        let rendered = format!("{status:?}");
-        assert!(!rendered.contains("super-secret-value"));
-        assert!(rendered.contains("<redacted>"));
     }
 }
