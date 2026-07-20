@@ -50,7 +50,7 @@ export function getDefaultToggles(): HistoryEventsToggles {
 interface UseHistoryEventsFiltersReturn {
   clearFilters: () => void;
   duplicateHandlingStatus: ComputedRef<DuplicateHandlingStatus | undefined>;
-  locationLabels: Ref<string[]>;
+  locationLabels: Readonly<Ref<string[]>>;
   groupIdentifiers: ComputedRef<string[] | undefined>;
   fetchData: () => Promise<void>;
   filters: ComputedRef<Filters>;
@@ -370,7 +370,7 @@ export function useHistoryEventsFilters(
     highlightTypes,
     identifiers: missingAcquisitionFromQuery,
     includes,
-    locationLabels,
+    locationLabels: shallowReadonly(locationLabels),
     locations,
     matchers,
     onLocationLabelsChanged,

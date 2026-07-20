@@ -29,7 +29,7 @@ interface HistoryEventsSelectionActions {
   handleAccountingRuleRefresh: () => void;
   handleSelectionAction: (action: string) => Promise<void>;
   ignoreStatus: ComputedRef<IgnoreStatus>;
-  selectedEventIds: Ref<number[]>;
+  selectedEventIds: Readonly<Ref<number[]>>;
 }
 
 export function useHistoryEventsSelectionActions(
@@ -170,6 +170,6 @@ export function useHistoryEventsSelectionActions(
     handleAccountingRuleRefresh,
     handleSelectionAction,
     ignoreStatus,
-    selectedEventIds,
+    selectedEventIds: shallowReadonly(selectedEventIds),
   };
 }

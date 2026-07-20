@@ -6,7 +6,7 @@ import { useWrapStatisticsApi, type WrapStatisticsResult } from '@/modules/stati
 interface UseWrappedStatisticsReturn {
   fetchData: () => Promise<void>;
   loading: Readonly<Ref<boolean>>;
-  summary: Ref<WrapStatisticsResult | null | undefined>;
+  summary: Readonly<Ref<WrapStatisticsResult | null | undefined>>;
 }
 
 export function useWrappedStatistics(
@@ -52,6 +52,6 @@ export function useWrappedStatistics(
   return {
     fetchData,
     loading: readonly(loading),
-    summary,
+    summary: shallowReadonly(summary),
   };
 }

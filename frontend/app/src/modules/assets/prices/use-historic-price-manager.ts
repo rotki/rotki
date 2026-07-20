@@ -8,7 +8,7 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 
 interface UseHistoricPricesReturn {
-  items: Ref<HistoricalPrice[]>;
+  items: Readonly<Ref<HistoricalPrice[]>>;
   loading: Readonly<Ref<boolean>>;
   save: (data: HistoricalPriceFormPayload, update: boolean) => Promise<boolean>;
   deletePrice: (item: HistoricalPrice) => Promise<void>;
@@ -106,7 +106,7 @@ export function useHistoricPrices(
 
   return {
     deletePrice,
-    items,
+    items: shallowReadonly(items),
     loading: readonly(loading),
     refresh,
     save,
