@@ -277,6 +277,11 @@ describe('use-virtual-rows', () => {
       const collapseRows = get(flattenedRows).filter(r => r.type === 'swap-collapse');
       expect(collapseRows).toHaveLength(1);
       expect(collapseRows[0]).toHaveProperty('bridge', true);
+
+      // both legs are marked as linked sub-events so per-leg chain/tx context is shown
+      const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
+      expect(eventRows).toHaveLength(2);
+      expect(eventRows.every(r => r.type === 'event-row' && r.matchedMovement)).toBe(true);
     });
 
     it('should not flag the collapse row of a plain swap subgroup as bridge', async () => {
@@ -298,6 +303,10 @@ describe('use-virtual-rows', () => {
       const collapseRows = get(flattenedRows).filter(r => r.type === 'swap-collapse');
       expect(collapseRows).toHaveLength(1);
       expect(collapseRows[0]).toHaveProperty('bridge', false);
+
+      // plain swap legs share one transaction, so no linked sub-event marking
+      const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
+      expect(eventRows.every(r => r.type === 'event-row' && !r.matchedMovement)).toBe(true);
     });
 
     it('should assign subgroup-relative index so the first expanded event has index 0', async () => {
