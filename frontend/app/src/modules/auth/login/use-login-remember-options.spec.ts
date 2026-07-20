@@ -10,7 +10,7 @@ const { clearPassword, interop, storePassword } = vi.hoisted(() => ({
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
   useInterop: (): Record<string, unknown> => ({
     clearPassword,
-    get isPackaged() {
+    get isPackaged(): boolean {
       return interop.isPackaged;
     },
     storePassword,

@@ -4,22 +4,24 @@ import { isValidUrl } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { deleteBackendUrl, getBackendUrl, saveBackendUrl } from '@/modules/auth/account-management';
+import { focusInput } from '@/modules/auth/login/focus-input';
 import IncompleteUpgradeAlert from '@/modules/auth/login/IncompleteUpgradeAlert.vue';
+import LoginBackendToggle from '@/modules/auth/login/LoginBackendToggle.vue';
+import LoginCustomBackendFields from '@/modules/auth/login/LoginCustomBackendFields.vue';
+import LoginRememberOptions from '@/modules/auth/login/LoginRememberOptions.vue';
+import LoginUsernameField from '@/modules/auth/login/LoginUsernameField.vue';
+import LoginWelcomeMessageDialog from '@/modules/auth/login/LoginWelcomeMessageDialog.vue';
 import PremiumSyncConflictAlert from '@/modules/auth/login/PremiumSyncConflictAlert.vue';
-import WelcomeMessageDisplay from '@/modules/auth/login/WelcomeMessageDisplay.vue';
+import { useCustomBackend } from '@/modules/auth/login/use-custom-backend';
+import { useLoginRememberOptions } from '@/modules/auth/login/use-login-remember-options';
 import { useLogout } from '@/modules/auth/use-logout';
-import { useRememberSettings } from '@/modules/auth/use-remember-settings';
 import { useSavedProfiles } from '@/modules/auth/use-saved-profiles';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { compareTextByKeyword } from '@/modules/core/common/display/assets';
 import { toMessages } from '@/modules/core/common/validation/validation';
-import { useDynamicMessages } from '@/modules/core/messaging/use-dynamic-messages';
-import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const {
-  errors = [] as string[],
+  errors = [],
   isDocker,
   loading,
 } = defineProps<{
@@ -37,8 +39,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const isTest = import.meta.env.VITE_TEST;
-
 const { loadProfiles, resolveStoredUsername, savedUsernames } = useSavedProfiles();
 const authStore = useSessionAuthStore();
 const { conflictExist } = storeToRefs(authStore);
@@ -53,19 +53,29 @@ const { logoutRemoteSession } = useLogout();
 const username = ref<string>('');
 const usernameSearch = ref<string>('');
 const password = ref<string>('');
-const rememberUsername = ref<boolean>(false);
-const rememberPassword = ref<boolean>(false);
-const customBackendDisplay = ref<boolean>(false);
-const customBackendUrl = ref<string>('');
-const customBackendSessionOnly = ref<boolean>(false);
-const customBackendSaved = ref<boolean>(false);
-const dynamicMessageDialog = ref<boolean>(false);
 
-const usernameRef = useTemplateRef('usernameRef');
+const usernameFieldRef = useTemplateRef<InstanceType<typeof LoginUsernameField>>('usernameFieldRef');
 const passwordRef = useTemplateRef('passwordRef');
 
-const { savedRememberPassword, savedRememberUsername, savedUsername } = useRememberSettings();
-const { activeWelcomeMessages, welcomeMessage } = useDynamicMessages();
+const {
+  clearBackend,
+  display: customBackendDisplay,
+  loadBackendSettings,
+  modelSessionOnly: customBackendSessionOnly,
+  modelUrl: customBackendUrl,
+  saveBackend,
+  saved: customBackendSaved,
+  serverColor,
+  toggleDisplay: toggleCustomBackend,
+} = useCustomBackend({ onChange: backendChanged });
+
+const {
+  loadRememberSettings,
+  modelRememberPassword: rememberPassword,
+  modelRememberUsername: rememberUsername,
+  rememberCredentials,
+  storedUsername,
+} = useLoginRememberOptions({ isDocker: () => !!isDocker });
 
 const rules = {
   customBackendUrl: {
@@ -99,11 +109,9 @@ const v$ = useVuelidate(
   },
 );
 
-const { clearPassword, isPackaged, storePassword } = useInterop();
-
 watch([username, password], ([username, password], [oldUsername, oldPassword]) => {
   // touched should not be emitted when restoring from local storage
-  if (!oldUsername && username === get(savedUsername))
+  if (!oldUsername && username === get(storedUsername))
     return;
 
   if (username !== oldUsername || password !== oldPassword)
@@ -114,16 +122,6 @@ const isLoggedInError = useArraySome(() => errors, error => error.includes('is a
 
 const usernameError = useArrayFind(() => errors, error => error.startsWith('User '));
 const passwordError = useArrayFind(() => errors, error => error.startsWith('Wrong password '));
-
-const orderedUsernamesList = computed(() => {
-  const search = get(usernameSearch) || '';
-  const usernames = get(savedUsernames);
-
-  if (!search)
-    return usernames;
-
-  return usernames.sort((a, b) => compareTextByKeyword(a, b, search));
-});
 
 const hasServerError = computed(() => !!get(usernameError) || !!get(passwordError));
 
@@ -151,50 +149,13 @@ async function logout() {
     touched();
 }
 
-const serverColor = computed(() => {
-  if (get(customBackendSessionOnly))
-    return 'primary';
-  else if (get(customBackendSaved))
-    return 'success';
-
-  return undefined;
-});
-
-function focusElement(element: any) {
-  if (!element)
-    return;
-
-  const input = element.$el.querySelector('input:not([type=hidden])') as HTMLInputElement;
-  input.focus();
-}
-
 function updateFocus() {
   nextTick(() => {
-    focusElement(get(username) ? get(passwordRef) : get(usernameRef));
+    if (get(username))
+      focusInput(get(passwordRef));
+    else
+      get(usernameFieldRef)?.focus();
   });
-}
-
-function saveCustomBackend() {
-  saveBackendUrl({
-    sessionOnly: get(customBackendSessionOnly),
-    url: get(customBackendUrl),
-  });
-  backendChanged(get(customBackendUrl));
-  set(customBackendSaved, true);
-  set(customBackendDisplay, false);
-}
-
-function clearCustomBackend() {
-  set(customBackendUrl, '');
-  set(customBackendSessionOnly, false);
-  deleteBackendUrl();
-  backendChanged(null);
-  set(customBackendSaved, false);
-  set(customBackendDisplay, false);
-}
-
-function checkRememberUsername() {
-  set(rememberUsername, !!get(savedRememberUsername) || !!get(savedRememberPassword) || !isDocker);
 }
 
 // Pre-fills the form and remember toggles for a manual login. The saved-password
@@ -202,15 +163,11 @@ function checkRememberUsername() {
 // `useAutoLogin` on backend connect (see use-auto-login.ts / startAuto), so this
 // component can never race that flow.
 function loadSettings(): void {
-  set(rememberPassword, !!get(savedRememberPassword));
-  checkRememberUsername();
+  loadRememberSettings();
   if (!get(username))
     set(username, resolveStoredUsername());
 
-  const { sessionOnly, url } = getBackendUrl();
-  set(customBackendUrl, url);
-  set(customBackendSessionOnly, sessionOnly);
-  set(customBackendSaved, !!url);
+  loadBackendSettings();
 }
 
 onBeforeMount(async () => {
@@ -226,35 +183,6 @@ onMounted(() => {
   updateFocus();
 });
 
-watch(rememberUsername, (remember: boolean, previous: boolean) => {
-  if (remember === previous)
-    return;
-
-  if (!remember) {
-    set(savedRememberUsername, null);
-    set(savedUsername, null);
-  }
-  else {
-    set(savedRememberUsername, 'true');
-  }
-});
-
-watch(rememberPassword, async (remember: boolean, previous: boolean) => {
-  if (remember === previous)
-    return;
-
-  if (!remember) {
-    set(savedRememberPassword, null);
-    if (isPackaged)
-      await clearPassword();
-  }
-  else {
-    set(savedRememberPassword, 'true');
-  }
-
-  checkRememberUsername();
-});
-
 async function login(actions?: { syncApproval?: SyncApproval; resumeFromBackup?: boolean }) {
   const credentials: LoginCredentials = {
     password: get(password),
@@ -262,11 +190,7 @@ async function login(actions?: { syncApproval?: SyncApproval; resumeFromBackup?:
     ...actions,
   };
   emit('login', credentials);
-  if (get(rememberUsername))
-    set(savedUsername, get(username));
-
-  if (get(rememberPassword) && isPackaged)
-    await storePassword(get(username), get(password));
+  await rememberCredentials(get(username), get(password));
 }
 
 function abortLogin() {
@@ -314,92 +238,16 @@ function abortLogin() {
             novalidate
             @submit.stop.prevent="login()"
           >
-            <RuiTextField
-              v-if="isDocker || isTest"
-              ref="usernameRef"
+            <LoginUsernameField
+              ref="usernameFieldRef"
               v-model="username"
-              variant="outlined"
-              color="primary"
-              autocomplete="username"
-              :label="t('login.label_username')"
-              :error-messages="usernameErrors"
+              v-model:search="usernameSearch"
               :disabled="loading || conflictExist || customBackendDisplay"
-              class="mb-2"
-              data-cy="username-input"
-              dense
+              :loading="loading"
+              :is-docker="isDocker"
+              :error-messages="usernameErrors"
+              @new-account="newAccount()"
             />
-            <RuiAutoComplete
-              v-else
-              ref="usernameRef"
-              v-model="username"
-              v-model:search-input="usernameSearch"
-              :label="t('login.label_username')"
-              :options="orderedUsernamesList"
-              :disabled="loading || conflictExist || customBackendDisplay"
-              :error-messages="usernameErrors"
-              data-cy="username-input"
-              class="mb-2 [&_[data-id=activator]]:bg-transparent"
-              auto-select-first
-              :hide-no-data="savedUsernames.length > 0"
-              clearable
-              variant="outlined"
-              :item-height="38"
-              dense
-            >
-              <template #item="{ item }">
-                <div class="py-1">
-                  {{ item }}
-                </div>
-              </template>
-              <template #no-data>
-                <div class="flex flex-col items-center py-3">
-                  <div>{{ t('login.no_profiles_found') }}</div>
-                  <div class="flex items-center gap-1">
-                    <i18n-t
-                      scope="global"
-                      keypath="login.no_profiles_found_action"
-                    >
-                      <template #refresh_profiles>
-                        <RuiButton
-                          color="primary"
-                          variant="text"
-                          class="text-[1em] py-0 px-1"
-                          :disabled="loading"
-                          type="button"
-                          @click="loadProfiles()"
-                        >
-                          <template #prepend>
-                            <RuiIcon
-                              name="lu-refresh-ccw"
-                              size="14"
-                            />
-                          </template>
-                          {{ t('login.button_refresh_profiles') }}
-                        </RuiButton>
-                      </template>
-                      <template #create_account>
-                        <RuiButton
-                          color="primary"
-                          variant="text"
-                          class="text-[1em] py-0 px-1"
-                          :disabled="loading"
-                          type="button"
-                          @click="newAccount()"
-                        >
-                          <template #prepend>
-                            <RuiIcon
-                              name="lu-plus"
-                              size="14"
-                            />
-                          </template>
-                          {{ t('login.button_create_account') }}
-                        </RuiButton>
-                      </template>
-                    </i18n-t>
-                  </div>
-                </div>
-              </template>
-            </RuiAutoComplete>
 
             <RuiRevealableTextField
               ref="passwordRef"
@@ -416,144 +264,31 @@ function abortLogin() {
             />
 
             <div class="flex items-center justify-between">
-              <div>
-                <RuiCheckbox
-                  v-if="isDocker"
-                  v-model="rememberUsername"
-                  :disabled="customBackendDisplay || rememberPassword || loading"
-                  color="primary"
-                  hide-details
-                  class="-ml-2"
-                >
-                  {{ t('login.remember_username') }}
-                </RuiCheckbox>
-                <div
-                  v-if="isPackaged"
-                  class="flex items-center justify-between"
-                >
-                  <div>
-                    <RuiCheckbox
-                      v-model="rememberPassword"
-                      :disabled="customBackendDisplay || loading"
-                      color="primary"
-                      hide-details
-                      class="-ml-2"
-                    >
-                      {{ t('login.remember_password') }}
-                    </RuiCheckbox>
-                  </div>
-                  <RuiTooltip
-                    :open-delay="400"
-                    :close-delay="0"
-                    class="ml-2"
-                    tooltip-class="max-w-[16rem]"
-                    :text="t('login.remember_password_tooltip')"
-                  >
-                    <template #activator>
-                      <RuiIcon
-                        name="lu-circle-question-mark"
-                        color="primary"
-                      />
-                    </template>
-                  </RuiTooltip>
-                </div>
-              </div>
-              <RuiTooltip
-                :open-delay="400"
-                :close-delay="0"
-                :text="t('login.custom_backend.tooltip')"
-              >
-                <template #activator>
-                  <RuiButton
-                    :disabled="loading"
-                    variant="text"
-                    type="button"
-                    icon
-                    @click="customBackendDisplay = !customBackendDisplay"
-                  >
-                    <RuiIcon
-                      name="lu-server"
-                      :color="serverColor"
-                    />
-                    <template #append>
-                      <RuiIcon
-                        size="16"
-                        class="-ml-2"
-                        :name="customBackendDisplay ? 'lu-chevron-up' : 'lu-chevron-down'"
-                      />
-                    </template>
-                  </RuiButton>
-                </template>
-              </RuiTooltip>
+              <LoginRememberOptions
+                v-model:remember-username="rememberUsername"
+                v-model:remember-password="rememberPassword"
+                :disabled="customBackendDisplay || loading"
+                :is-docker="isDocker"
+              />
+              <LoginBackendToggle
+                :open="customBackendDisplay"
+                :loading="loading"
+                :color="serverColor"
+                @toggle="toggleCustomBackend()"
+              />
             </div>
 
-            <RuiAccordion :open="customBackendDisplay">
-              <div
-                v-if="customBackendDisplay"
-                class="flex flex-col justify-stretch space-y-4 pt-4"
-              >
-                <RuiTextField
-                  v-model="customBackendUrl"
-                  color="primary"
-                  variant="outlined"
-                  :error-messages="toMessages(v$.customBackendUrl)"
-                  :disabled="customBackendSaved"
-                  :label="t('login.custom_backend.label')"
-                  :placeholder="t('login.custom_backend.placeholder')"
-                  :hint="t('login.custom_backend.hint')"
-                  class="[&>div]:bg-transparent"
-                  dense
-                >
-                  <template #prepend>
-                    <RuiIcon
-                      name="lu-server"
-                      :color="serverColor"
-                    />
-                  </template>
-                  <template #append>
-                    <RuiButton
-                      v-if="!customBackendSaved"
-                      :disabled="loading"
-                      variant="text"
-                      class="-mr-1 !p-2"
-                      type="button"
-                      icon
-                      @click="saveCustomBackend()"
-                    >
-                      <RuiIcon
-                        name="lu-save"
-                        color="primary"
-                        size="20"
-                      />
-                    </RuiButton>
-                    <RuiButton
-                      v-else
-                      variant="text"
-                      class="-mr-1 !p-2"
-                      type="button"
-                      icon
-                      @click="clearCustomBackend()"
-                    >
-                      <RuiIcon
-                        name="lu-trash-2"
-                        color="primary"
-                        size="20"
-                      />
-                    </RuiButton>
-                  </template>
-                </RuiTextField>
-
-                <RuiCheckbox
-                  v-model="customBackendSessionOnly"
-                  class="-ml-2"
-                  color="primary"
-                  hide-details
-                  :disabled="customBackendSaved"
-                >
-                  {{ t('login.custom_backend.session_only') }}
-                </RuiCheckbox>
-              </div>
-            </RuiAccordion>
+            <LoginCustomBackendFields
+              v-model:url="customBackendUrl"
+              v-model:session-only="customBackendSessionOnly"
+              :open="customBackendDisplay"
+              :loading="loading"
+              :saved="customBackendSaved"
+              :color="serverColor"
+              :error-messages="toMessages(v$.customBackendUrl)"
+              @save="saveBackend()"
+              @clear="clearBackend()"
+            />
 
             <PremiumSyncConflictAlert @proceed="login({ syncApproval: $event })" />
 
@@ -574,44 +309,7 @@ function abortLogin() {
                 {{ t('common.actions.continue') }}
               </RuiButton>
 
-              <RuiDialog
-                v-if="welcomeMessage && welcomeMessage.action"
-                v-model="dynamicMessageDialog"
-                max-width="400"
-              >
-                <template #activator="{ attrs }">
-                  <RuiButton
-                    color="primary"
-                    class="lg:hidden w-full"
-                    size="lg"
-                    :disabled="loading"
-                    variant="outlined"
-                    type="button"
-                    data-cy="show-dynamic-messages"
-                    v-bind="attrs"
-                  >
-                    {{ welcomeMessage.action.text }}
-                  </RuiButton>
-                </template>
-
-                <RuiCard>
-                  <WelcomeMessageDisplay
-                    class="!bg-transparent !p-0"
-                    :messages="activeWelcomeMessages"
-                  />
-
-                  <template #footer>
-                    <div class="w-full" />
-                    <RuiButton
-                      color="primary"
-                      variant="text"
-                      @click="dynamicMessageDialog = false"
-                    >
-                      {{ t('common.actions.close') }}
-                    </RuiButton>
-                  </template>
-                </RuiCard>
-              </RuiDialog>
+              <LoginWelcomeMessageDialog :loading="loading" />
 
               <div class="flex flex-wrap gap-1 sm:gap-0 items-center justify-center text-rui-text-secondary">
                 <span>{{ t('login.button_no_account') }}</span>
