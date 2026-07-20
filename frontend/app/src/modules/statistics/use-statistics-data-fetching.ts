@@ -1,3 +1,4 @@
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
@@ -19,6 +20,9 @@ export function useStatisticsDataFetching(): UseStatisticsDataFetchingReturn {
       set(netValue, await api.queryNetValueData(get(nftsInNetValue)));
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return;
+
       notifyError(t('actions.statistics.net_value.error.title'), t('actions.statistics.net_value.error.message', {
         message: getErrorMessage(error),
       }), { display: false });

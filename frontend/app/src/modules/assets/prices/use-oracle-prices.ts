@@ -3,6 +3,7 @@ import type { OraclePriceEntry, OraclePricesQuery } from '@/modules/assets/price
 import type { Collection } from '@/modules/core/common/collection';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { defaultCollectionState } from '@/modules/core/common/data/collection-utils';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -26,6 +27,9 @@ export function useOraclePrices(): UseOraclePricesReturn {
       return await fetchOraclePrices(get(payload));
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return defaultCollectionState<OraclePriceEntry>();
+
       notifyError(
         t('oracle_prices.fetch.failure.title'),
         t('oracle_prices.fetch.failure.message', { message: getErrorMessage(error) }),
@@ -46,6 +50,9 @@ export function useOraclePrices(): UseOraclePricesReturn {
       return true;
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return false;
+
       notifyError(
         t('oracle_prices.delete.failure.title'),
         t('oracle_prices.delete.failure.message', { message: getErrorMessage(error) }),

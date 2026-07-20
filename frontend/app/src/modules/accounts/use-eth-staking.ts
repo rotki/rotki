@@ -5,6 +5,7 @@ import type { TaskMeta } from '@/modules/core/tasks/types';
 import { type BigNumber, Blockchain, type EthValidatorFilter } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Section } from '@/modules/core/common/status';
@@ -131,6 +132,9 @@ export function useEthStaking(): UseEthStakingReturn {
       return success;
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return false;
+
       logger.error(error);
       showErrorMessage(t('actions.delete_eth2_validator.error.title'), t('actions.delete_eth2_validator.error.description', {
         message: getErrorMessage(error),

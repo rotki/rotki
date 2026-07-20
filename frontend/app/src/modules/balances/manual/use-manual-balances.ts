@@ -10,6 +10,7 @@ import {
   type RawManualBalance,
 } from '@/modules/balances/types/manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -155,6 +156,9 @@ export function useManualBalances(): UseManualBalancesReturn {
       updateBalances(balances);
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return;
+
       showErrorMessage(t('actions.balances.manual_delete.error.title'), getErrorMessage(error));
     }
   };

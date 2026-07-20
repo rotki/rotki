@@ -6,6 +6,7 @@ import { type BigNumber, One } from '@rotki/common';
 import { AssetPriceResponse, type HistoricPricePayload, HistoricPrices, type OracleCachePayload } from '@/modules/assets/prices/price-types';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { chunkArray } from '@/modules/core/common/data/data';
 import { convertFromTimestamp } from '@/modules/core/common/data/date';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -74,6 +75,9 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
       }
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return;
+
       const title = t('actions.session.fetch_prices.error.title');
       const message = t('actions.session.fetch_prices.error.message', {
         error: getErrorMessage(error),

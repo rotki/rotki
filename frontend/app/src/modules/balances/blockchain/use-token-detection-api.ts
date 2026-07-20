@@ -2,6 +2,7 @@ import type { EvmTokensRecord } from '@/modules/balances/types/balances';
 import type { TaskMeta } from '@/modules/core/tasks/types';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -58,6 +59,9 @@ export function useTokenDetectionApi(): UseTokenDetectionApiReturn {
         setState(chain, result);
       }
       catch (error: unknown) {
+        if (isRequestCancellation(error))
+          return;
+
         logger.error(error);
         notifyError(
           t('actions.balances.detect_tokens.task.title'),
