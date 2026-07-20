@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Omnibridge events containing fee payments will now be properly decoded.
 * :feature:`-` The GnosisDAO one-time pro-rata treasury redemption (GIP-151) is now decoded: GNO/osGNO deposits into the redemption contract and the subsequent claim of your share of the treasury are properly shown.
 * :bug:`-` EigenLayer withdrawals queued or completed after the protocol's slashing upgrade (ELIP-002, April 2025) are now decoded again, including withdrawals of natively restaked ETH sent by an eigenpod. Queued and completed withdrawals of the EIGEN strategy are now also shown as EIGEN instead of its wrapped bEIGEN underlying token.
 * :feature:`2922` The Docker version of rotki can now require authentication. When set up with the session key environment variable it issues a secure, HttpOnly session cookie on login and rejects unauthenticated API and websocket access, so a rotki instance reachable on your network is no longer open to anyone who can reach its port.
