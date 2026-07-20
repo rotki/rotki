@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/modules/assets/nfts';
+import AssetActionButton from '@/modules/assets/AssetActionButton.vue';
 import { isSpammableAssetType } from '@/modules/assets/types';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAssetPageNavigation } from '@/modules/assets/use-asset-page-navigation';
@@ -168,81 +169,33 @@ defineExpose({
               vertical
               class="h-6"
             />
-            <RuiTooltip
-              :open-delay="200"
-              :popper="{ placement: 'top' }"
-            >
-              <template #activator>
-                <RuiButton
-                  variant="text"
-                  color="primary"
-                  class="!py-0.5"
-                  size="sm"
-                  data-cy="asset-update-price"
-                  @click="openPriceUpdate()"
-                >
-                  <template #append>
-                    <RuiIcon
-                      name="lu-dollar-sign"
-                      size="18"
-                    />
-                  </template>
-                </RuiButton>
-              </template>
-              {{ t('assets.action.update_price') }}
-            </RuiTooltip>
+            <AssetActionButton
+              icon="lu-dollar-sign"
+              color="primary"
+              data-cy="asset-update-price"
+              :tooltip="t('assets.action.update_price')"
+              @click="openPriceUpdate()"
+            />
           </template>
           <template v-if="!hideActions && (isIgnoredAsset || asset.isSpam)">
             <RuiDivider
               vertical
               class="h-6"
             />
-            <RuiTooltip
+            <AssetActionButton
               v-if="asset.isSpam"
-              :open-delay="200"
-              :popper="{ placement: 'top' }"
-            >
-              <template #activator>
-                <RuiButton
-                  variant="text"
-                  color="warning"
-                  class="!py-0.5"
-                  size="sm"
-                  @click="actionClick('unmark_spam')"
-                >
-                  <template #append>
-                    <RuiIcon
-                      name="lu-shield-off"
-                      size="18"
-                    />
-                  </template>
-                </RuiButton>
-              </template>
-              {{ t('assets.action.unmark_as_spam') }}
-            </RuiTooltip>
-            <RuiTooltip
+              icon="lu-shield-off"
+              color="warning"
+              :tooltip="t('assets.action.unmark_as_spam')"
+              @click="actionClick('unmark_spam')"
+            />
+            <AssetActionButton
               v-else
-              :open-delay="200"
-              :popper="{ placement: 'top' }"
-            >
-              <template #activator>
-                <RuiButton
-                  variant="text"
-                  color="warning"
-                  class="!py-0.5"
-                  size="sm"
-                  @click="actionClick('unignore')"
-                >
-                  <template #append>
-                    <RuiIcon
-                      name="lu-eye"
-                      size="18"
-                    />
-                  </template>
-                </RuiButton>
-              </template>
-              {{ t('assets.action.unignore') }}
-            </RuiTooltip>
+              icon="lu-eye"
+              color="warning"
+              :tooltip="t('assets.action.unignore')"
+              @click="actionClick('unignore')"
+            />
           </template>
           <template v-else-if="!hideActions">
             <RuiDivider
@@ -250,51 +203,19 @@ defineExpose({
               class="h-6"
             />
             <div class="w-full flex items-center gap-1">
-              <RuiTooltip
-                :open-delay="200"
-                :popper="{ placement: 'top' }"
-              >
-                <template #activator>
-                  <RuiButton
-                    variant="text"
-                    color="error"
-                    class="!py-0.5"
-                    size="sm"
-                    @click="actionClick('ignore')"
-                  >
-                    <template #append>
-                      <RuiIcon
-                        name="lu-eye-off"
-                        size="18"
-                      />
-                    </template>
-                  </RuiButton>
-                </template>
-                {{ t('assets.action.ignore') }}
-              </RuiTooltip>
-              <RuiTooltip
+              <AssetActionButton
+                icon="lu-eye-off"
+                color="error"
+                :tooltip="t('assets.action.ignore')"
+                @click="actionClick('ignore')"
+              />
+              <AssetActionButton
                 v-if="isSpammableAssetType(asset.assetType)"
-                :open-delay="200"
-                :popper="{ placement: 'top' }"
-              >
-                <template #activator>
-                  <RuiButton
-                    variant="text"
-                    color="error"
-                    class="!py-0.5"
-                    size="sm"
-                    @click="actionClick('mark_as_spam')"
-                  >
-                    <template #append>
-                      <RuiIcon
-                        name="lu-ban"
-                        size="18"
-                      />
-                    </template>
-                  </RuiButton>
-                </template>
-                {{ t('assets.action.mark_as_spam') }}
-              </RuiTooltip>
+                icon="lu-ban"
+                color="error"
+                :tooltip="t('assets.action.mark_as_spam')"
+                @click="actionClick('mark_as_spam')"
+              />
             </div>
           </template>
         </div>
