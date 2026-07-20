@@ -145,6 +145,66 @@ def test_omnibridge_gnosis_token_deposit(gnosis_inquirer, gnosis_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_omnibridge_gnosis_token_deposit_with_fee(gnosis_inquirer, gnosis_accounts):
+    """Test bridging a token for which the mediator takes a home to foreign fee.
+
+    The TokensBridgingInitiated amount is the post-fee amount, so the fee has to be
+    taken into account to match the user's transfer and gets split into its own event.
+    """
+    tx_hash = deserialize_evm_tx_hash('0xfc28641f28964a7d0c19684ca0023d852a077dd7bfbdac9941b041c803ef1cad')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
+    timestamp, gas_amount, bridge_amount, fee_amount = TimestampMS(1640508790000), '0.000259037001813259', '10336.632820713184931506', '10.34697980051369863'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            amount=FVal(gas_amount),
+            location_label=(user_address := gnosis_accounts[0]),
+            notes=f'Burn {gas_amount} XDAI for gas',
+            tx_ref=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=(a_giv := Asset('eip155:100/erc20:0x4f4F9b8D5B4d0Dc10506e5551B0513B61fD59e75')),
+            amount=FVal(bridge_amount),
+            location_label=user_address,
+            notes=f'Bridge {bridge_amount} GIV from Gnosis to Ethereum via Gnosis Chain bridge',
+            tx_ref=tx_hash,
+            counterparty=CPT_GNOSIS_CHAIN,
+            address=GNOSIS_BRIDGE_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 100,
+                'to_chain': 1,
+                'from_address': user_address,
+                'transfer_id': '0x00050000a7823d6f1e31569f51861e345b30c6bebf70ebe700000000000087e4',  # noqa: E501
+            }},
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=a_giv,
+            amount=FVal(fee_amount),
+            location_label=user_address,
+            notes=f'Spend {fee_amount} GIV as a Gnosis Chain bridge fee',
+            tx_ref=tx_hash,
+            counterparty=CPT_GNOSIS_CHAIN,
+            address=GNOSIS_BRIDGE_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9164dDF23c029E30b2eB0EbacbB4dEa3C0E1ac43']])
 def test_omnibridge_ethereum_token_withdrawal(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xa56d72db76b6c7cfd3db1d2d51902b6f611f5124157ae50a6fd2f5dac7bbfa54')  # noqa: E501
