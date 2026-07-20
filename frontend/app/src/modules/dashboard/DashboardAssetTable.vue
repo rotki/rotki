@@ -133,7 +133,11 @@ watch(search, () => setPage(1));
           tooltip-class="max-w-[16rem]"
         >
           <template #activator>
-            <span class="cursor-help underline decoration-dotted">-</span>
+            <RuiIcon
+              name="lu-banknote-x"
+              size="16"
+              class="text-rui-text-disabled cursor-help"
+            />
           </template>
           {{ t('dashboard_asset_table.price_unknown') }}
         </RuiTooltip>

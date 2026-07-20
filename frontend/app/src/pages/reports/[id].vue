@@ -51,6 +51,15 @@ const eventsSkippedCount = computed<number>(() => get(actionableItems)?.eventsSk
 const hasActionableIssues = computed<boolean>(() => get(latest) && (get(missingAcquisitionsCount) > 0 || get(missingPricesCount) > 0));
 const showCompletenessWarning = computed<boolean>(() => get(hasActionableIssues) || (get(latest) && get(eventsSkippedCount) > 0));
 
+// Detailed issues are only kept for the latest report. For older reports we can
+// still tell whether they had incomplete processing, and only then is it worth
+// explaining why the details are unavailable.
+const reportHadIssues = computed<boolean>(() => {
+  const report = get(reports).entries.find(item => item.identifier === reportId);
+  return !!report && report.processedActions < report.totalActions;
+});
+const showStaleDetails = computed<boolean>(() => !get(latest) && get(reportHadIssues));
+
 const reportEvents = ref(defaultReportEvents());
 
 onMounted(async () => {
@@ -122,17 +131,25 @@ async function regenerateReport() {
         type="warning"
       >
         <div v-if="hasActionableIssues">
-          {{ t('profit_loss_report.actionable.overview_warning', {
-            acquisitions: missingAcquisitionsCount,
-            prices: missingPricesCount,
-          }) }}
+          <div class="font-medium">
+            {{ t('profit_loss_report.actionable.overview_warning_title') }}
+          </div>
+          <ul class="list-disc pl-4 my-1">
+            <li v-if="missingAcquisitionsCount > 0">
+              {{ t('profit_loss_report.actionable.overview_warning_acquisitions', { count: missingAcquisitionsCount }) }}
+            </li>
+            <li v-if="missingPricesCount > 0">
+              {{ t('profit_loss_report.actionable.overview_warning_prices', { count: missingPricesCount }) }}
+            </li>
+          </ul>
+          {{ t('profit_loss_report.actionable.overview_warning') }}
         </div>
         <div v-if="eventsSkippedCount > 0">
           {{ t('profit_loss_report.actionable.skipped_no_rule', { count: eventsSkippedCount }) }}
         </div>
       </RuiAlert>
       <RuiAlert
-        v-else-if="!latest"
+        v-else-if="showStaleDetails"
         type="info"
       >
         {{ t('profit_loss_report.actionable.stale_details') }}

@@ -86,12 +86,12 @@ watch(width, (newWidth) => {
       <div class="flex flex-wrap gap-6">
         <div class="w-full">
           <OverallBalances />
-          <DashboardCompletenessIndicator />
         </div>
         <Summary />
       </div>
-      <div class="flex justify-end my-4">
-        <PriceRefresh />
+      <div class="flex flex-wrap items-center gap-4 my-4">
+        <DashboardCompletenessIndicator />
+        <PriceRefresh class="ml-auto" />
       </div>
       <DashboardAssetTable
         :title="t('common.assets')"

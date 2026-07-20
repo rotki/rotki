@@ -10,6 +10,7 @@ import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -135,6 +136,27 @@ async function toggleSync(exchange: Exchange) {
   resetNonSyncingExchanges();
 }
 
+const { highlight: highlightExchange, rowClass } = useRowHighlight<{ location: string; name: string }>(
+  ({ location, name }) => `${location}#${name}`,
+);
+
+const showSetupHint = ref<boolean>(false);
+const { start: startHintTimeout, stop: stopHintTimeout } = useTimeoutFn(() => {
+  set(showSetupHint, false);
+}, 9000, { immediate: false });
+
+function onExchangeAdded(exchange: { location: string; name: string }): void {
+  highlightExchange(exchange);
+  set(showSetupHint, true);
+  stopHintTimeout();
+  startHintTimeout();
+}
+
+function dismissSetupHint(): void {
+  stopHintTimeout();
+  set(showSetupHint, false);
+}
+
 function addExchange() {
   set(exchange, createNewExchange());
 }
@@ -210,19 +232,52 @@ watch(route, async (route) => {
     </template>
 
     <RuiCard>
-      <div class="flex flex-row-reverse mb-2">
-        <HintMenuIcon>
-          <i18n-t
-            scope="global"
-            keypath="exchange_settings.subtitle"
-            tag="div"
+      <div class="flex items-center gap-2 mb-2 min-h-8">
+        <Transition
+          enter-active-class="transition-opacity duration-300"
+          enter-from-class="opacity-0"
+          leave-active-class="transition-opacity duration-300"
+          leave-to-class="opacity-0"
+        >
+          <div
+            v-if="showSetupHint"
+            class="flex items-center gap-2 flex-1 min-w-0 text-sm text-rui-text-secondary"
+            data-testid="exchange-setup-hint"
           >
-            <ExternalLink
-              :text="t('exchange_settings.usage_guide')"
-              :url="externalLinks.usageGuideSection.addingAnExchange"
+            <RuiIcon
+              name="lu-info"
+              size="16"
+              class="text-rui-info shrink-0"
             />
-          </i18n-t>
-        </HintMenuIcon>
+            <span class="min-w-0">{{ t('exchange_settings.setup_hint') }}</span>
+            <RuiButton
+              variant="text"
+              icon
+              size="sm"
+              class="shrink-0"
+              @click="dismissSetupHint()"
+            >
+              <RuiIcon
+                name="lu-x"
+                size="14"
+              />
+            </RuiButton>
+          </div>
+        </Transition>
+        <div class="ml-auto">
+          <HintMenuIcon>
+            <i18n-t
+              scope="global"
+              keypath="exchange_settings.subtitle"
+              tag="div"
+            >
+              <ExternalLink
+                :text="t('exchange_settings.usage_guide')"
+                :url="externalLinks.usageGuideSection.addingAnExchange"
+              />
+            </i18n-t>
+          </HintMenuIcon>
+        </div>
       </div>
 
       <RuiDataTable
@@ -232,6 +287,7 @@ watch(route, async (route) => {
         data-cy="exchange-table"
         :rows="rows"
         :cols="cols"
+        :item-class="rowClass"
       >
         <template #item.location="{ row }">
           <LocationDisplay :identifier="row.location" />
@@ -256,6 +312,9 @@ watch(route, async (route) => {
       </RuiDataTable>
     </RuiCard>
 
-    <ExchangeKeysFormDialog v-model="exchange" />
+    <ExchangeKeysFormDialog
+      v-model="exchange"
+      @added="onExchangeAdded($event)"
+    />
   </TablePageLayout>
 </template>

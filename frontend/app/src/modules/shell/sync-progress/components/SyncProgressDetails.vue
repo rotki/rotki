@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import { useSyncProgress } from '../use-sync-progress';
 import ChainProgressList from './ChainProgressList.vue';
 import DecodingProgressList from './DecodingProgressList.vue';
@@ -6,6 +7,14 @@ import LocationProgressList from './LocationProgressList.vue';
 import ProtocolCacheProgressList from './ProtocolCacheProgressList.vue';
 
 const { t } = useI18n({ useScope: 'global' });
+
+const { loading: apiKeysLoading, useApiKey } = useExternalApiKeys();
+const etherscanKey = useApiKey('etherscan');
+
+// The free-Etherscan-key tip is only useful to users who have not set one up.
+// Wait for the keys to load first, otherwise it briefly flashes for users who
+// already have a key (getApiKey returns '' until the keys are fetched).
+const showEtherscanHint = computed<boolean>(() => !get(apiKeysLoading) && !get(etherscanKey));
 
 const {
   chains,
@@ -59,6 +68,7 @@ const protocolCacheCountColor = computed<string>(() =>
   <div class="px-3 pb-4 space-y-5">
     <div class="pt-4 text-xs text-rui-text-secondary leading-snug">
       {{ t('sync_progress.explanation') }}
+      <span v-if="showEtherscanHint">{{ t('sync_progress.explanation_etherscan_hint') }}</span>
     </div>
     <div v-if="hasChains">
       <div class="flex items-center gap-2 mb-2">

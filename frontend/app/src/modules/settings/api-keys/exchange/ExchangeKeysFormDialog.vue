@@ -6,11 +6,14 @@ import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import ExchangeKeysForm from '@/modules/settings/api-keys/exchange/ExchangeKeysForm.vue';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const modelValue = defineModel<ExchangeFormData | undefined>({ required: true });
+
+const emit = defineEmits<{
+  added: [exchange: { location: string; name: string }];
+}>();
 
 const submitting = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
@@ -19,7 +22,6 @@ const form = useTemplateRef<ComponentExposed<typeof ExchangeKeysForm>>('form');
 
 const { setupExchange } = useExchanges();
 const { setMessage } = useMessageStore();
-const { notifyInfo } = useNotifications();
 const { t } = useI18n({ useScope: 'global' });
 
 const title = computed<string>(() => {
@@ -72,12 +74,8 @@ async function save(): Promise<void> {
 
   set(submitting, false);
   if (success) {
-    if (exchange.mode !== 'edit') {
-      notifyInfo(
-        t('exchange_settings.setup_success.title'),
-        t('exchange_settings.setup_success.message', { location: exchange.location }),
-      );
-    }
+    if (exchange.mode !== 'edit')
+      emit('added', { location: exchange.location, name: exchange.name });
     set(modelValue, undefined);
   }
 }
