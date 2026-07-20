@@ -10,6 +10,7 @@ import {
   IDLE_TIMEOUT_MS,
   type PendingRequest,
   REQUEST_TIMEOUT_MS,
+  SERVER_CLOSE_TIMEOUT_MS,
   type WalletBridgeIpcCallbacks,
   WEBSOCKET_PATH,
 } from './wallet-bridge-ws-types';
@@ -218,8 +219,8 @@ export class WalletBridgeWebSocketServer {
     return !!this.wsServer;
   }
 
-  /** Disconnect all connections and stop the server */
-  public disconnect(): void {
+  /** Tear down connection state, leaving the server itself alone */
+  private teardown(): void {
     // Clear idle timer
     this.clearIdleTimer();
 
@@ -232,11 +233,6 @@ export class WalletBridgeWebSocketServer {
     // Clear all connection mappings
     this.connectionManager.clearAll();
 
-    if (this.wsServer) {
-      this.wsServer.close();
-      this.wsServer = undefined;
-    }
-
     // Reject all pending requests
     this.pendingRequests.forEach(({ reject }) => {
       reject(new Error('Wallet bridge disconnected'));
@@ -244,9 +240,48 @@ export class WalletBridgeWebSocketServer {
     this.pendingRequests.clear();
   }
 
-  /** Stop the server (alias for disconnect) */
-  public stop(): void {
-    this.disconnect();
+  /** Disconnect all connections and stop the server */
+  public disconnect(): void {
+    this.teardown();
+
+    if (this.wsServer) {
+      this.wsServer.close();
+      this.wsServer = undefined;
+    }
+  }
+
+  /**
+   * Stop the server and wait for it to release its handle.
+   *
+   * Used on quit, where `disconnect()` is not enough: `close()` only stops new
+   * connections and resolves once the existing ones end, so a socket whose peer
+   * never answers keeps the handle, and with it the process, alive.
+   */
+  public async stop(): Promise<void> {
+    const server = this.wsServer;
+
+    // Terminate rather than close: a graceful close waits on a peer that may
+    // never reply while we are quitting.
+    for (const client of server?.clients ?? [])
+      client.terminate();
+
+    this.teardown();
+    this.wsServer = undefined;
+
+    if (!server)
+      return;
+
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(() => {
+        this.logger.warn('Timed out waiting for the wallet bridge server to close');
+        resolve();
+      }, SERVER_CLOSE_TIMEOUT_MS);
+
+      server.close(() => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
   }
 
   public setOnBridgeDisconnected(callback: () => void): void {
