@@ -47,9 +47,9 @@ export function useFeatureAccess(feature: MaybeRefOrGetter<PremiumFeature>): Use
   const currentTier = computed<string>(() => get(capabilities)?.currentTier ?? 'Free');
 
   return {
-    allowed: readonly(allowed),
-    currentTier: readonly(currentTier),
-    minimumTier: readonly(minimumTier),
+    allowed,
+    currentTier,
+    minimumTier,
     premium,
   };
 }

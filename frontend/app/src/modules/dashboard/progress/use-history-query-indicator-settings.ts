@@ -20,7 +20,7 @@ export function useHistoryQueryIndicatorSettings(): UseHistoryQueryIndicatorThre
   );
 
   return {
-    dismissalThresholdMs: readonly(evmQueryIndicatorDismissalThresholdMs),
-    minOutOfSyncPeriodMs: readonly(evmQueryIndicatorMinOutOfSyncPeriodMs),
+    dismissalThresholdMs: evmQueryIndicatorDismissalThresholdMs,
+    minOutOfSyncPeriodMs: evmQueryIndicatorMinOutOfSyncPeriodMs,
   };
 }

@@ -52,6 +52,6 @@ export function useProtocolData(protocol: MaybeRefOrGetter<string>, isDark: Mayb
   });
 
   return {
-    protocolData: readonly(protocolData),
+    protocolData,
   };
 }
