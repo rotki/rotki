@@ -13,7 +13,7 @@ from rsqlite import IntegrityError
 
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
-from rotkehlchen.constants.assets import A_PAX, A_SOL, A_USD, A_USDT
+from rotkehlchen.constants.assets import A_PAX, A_SOL, A_STETH, A_USD, A_USDT
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.constants.prices import (
     BITCOIN_GENESIS_BLOCK_TS,
@@ -1798,6 +1798,7 @@ def test_upgrade_v16_v17(
     assert globaldb.get_setting_value('version', 0) == 14
     with globaldb.conn.read_ctx() as cursor:
         assert table_exists(cursor=cursor, name='location_unsupported_assets') is True
+        assert table_exists(cursor=cursor, name='rebasing_tokens') is False
         assert cursor.execute(
             'SELECT COUNT(*) FROM price_history_source_types WHERE seq = 10',
         ).fetchone()[0] == 0
@@ -1814,6 +1815,9 @@ def test_upgrade_v16_v17(
     assert globaldb.get_setting_value('version', 0) == 17
     with globaldb.conn.read_ctx() as cursor:
         assert table_exists(cursor=cursor, name='location_unsupported_assets') is False
+        assert cursor.execute(
+            'SELECT asset_identifier FROM rebasing_tokens',
+        ).fetchall() == [(A_STETH.identifier,)]
         assert cursor.execute(
             "SELECT seq FROM price_history_source_types WHERE type = 'J'",
         ).fetchone()[0] == 10

@@ -25,6 +25,7 @@ from rotkehlchen.db.filtering import HistoricalBalancesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -32,7 +33,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import ChainID, Location, Timestamp, TimestampMS
+from rotkehlchen.types import ChainID, EventMetricKey, Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 pytestmark = pytest.mark.accounting_update
@@ -1415,6 +1416,147 @@ def test_swapped_for_asset_tracked_under_new_identifier(
             (glm.identifier, glm.identifier, '60'),  # spend 10 GLM -> 70 - 10 = 60
             (glm.identifier, glm.identifier, '110'),  # receive 50 GLM -> 60 + 50 = 110
         ]
+
+
+def test_rebasing_token_adjustment_and_globaldb_reprocessing(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """A configured rebasing token records yield and reprocesses earlier negative balances."""
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_DAI,
+                amount=FVal('10'),
+                location_label=TEST_ADDR1,
+            ),
+        )
+        spend_id = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_DAI,
+                amount=FVal('12'),
+                location_label=TEST_ADDR1,
+            ),
+        )
+
+    process_historical_balances(database, messages_aggregator)
+    assert DataIssuesManager(database).list_issues()[0].state == 'open'
+
+    GlobalDBHandler.add_rebasing_tokens([A_DAI])
+    with database.user_write() as write_cursor:
+        events_db.sync_rebasing_tokens(
+            write_cursor=write_cursor,
+            identifiers=GlobalDBHandler.get_rebasing_token_ids(),
+        )
+    assert _get_stale_cache_values(database)[0] == 1000
+
+    with patch.object(database.msg_aggregator, 'add_message') as msg_mock:
+        process_historical_balances(
+            database=database,
+            msg_aggregator=messages_aggregator,
+            from_ts=TimestampMS(1000),
+        )
+        assert WSMessageType.NEGATIVE_BALANCE_DETECTED not in [
+            call.kwargs['message_type'] for call in msg_mock.call_args_list
+        ]
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT metric_key, metric_value, sort_key FROM event_metrics '
+            'WHERE event_identifier = ? ORDER BY metric_key',
+            (spend_id,),
+        ).fetchall() == [
+            (EventMetricKey.BALANCE.serialize(), '0', 4001),
+            (EventMetricKey.REBASE_YIELD.serialize(), '2', 4000),
+        ]
+    assert DataIssuesManager(database).list_issues()[0].state == 'resolved'
+    GlobalDBHandler.remove_rebasing_tokens([A_DAI])
+
+
+def test_rebasing_protocol_withdrawal_does_not_create_profit_event(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """A rebasing deficit in a protocol bucket remains a metric-only adjustment."""
+    GlobalDBHandler.add_rebasing_tokens([A_DAI])
+    events_db = DBHistoryEvents(database)
+    try:
+        with database.user_write() as write_cursor:
+            events_db.add_history_events(
+                write_cursor=write_cursor,
+                history=[EvmEvent(
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=TimestampMS(1000),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_DAI,
+                    amount=FVal('10'),
+                    location_label=TEST_ADDR1,
+                ), EvmEvent(
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=TimestampMS(2000),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.DEPOSIT,
+                    event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                    asset=A_DAI,
+                    amount=FVal('10'),
+                    location_label=TEST_ADDR1,
+                    counterparty=CPT_LIQUITY,
+                ), EvmEvent(
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=TimestampMS(3000),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.WITHDRAWAL,
+                    event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+                    asset=A_DAI,
+                    amount=FVal('12'),
+                    location_label=TEST_ADDR1,
+                    counterparty=CPT_LIQUITY,
+                    notes='Withdraw 12 DAI from Liquity',
+                )],
+            )
+
+        process_historical_balances(database, messages_aggregator)
+
+        with database.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                'SELECT amount, sequence_index, notes FROM history_events '
+                'ORDER BY timestamp, sequence_index',
+            ).fetchall() == [
+                ('10', 0, None),
+                ('10', 0, None),
+                ('12', 0, 'Withdraw 12 DAI from Liquity'),
+            ]
+            assert cursor.execute(
+                'SELECT protocol, metric_key, metric_value, sort_key FROM event_metrics '
+                'WHERE timestamp = ? ORDER BY protocol NULLS FIRST, metric_key',
+                (TimestampMS(3000),),
+            ).fetchall() == [
+                (None, EventMetricKey.BALANCE.serialize(), '12', 6001),
+                (CPT_LIQUITY, EventMetricKey.BALANCE.serialize(), '0', 6001),
+                (CPT_LIQUITY, EventMetricKey.REBASE_YIELD.serialize(), '2', 6000),
+            ]
+    finally:
+        GlobalDBHandler.remove_rebasing_tokens([A_DAI])
 
 
 def test_negative_balance_writes_data_issue(

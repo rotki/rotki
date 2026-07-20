@@ -3,6 +3,7 @@ import time
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
@@ -13,6 +14,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import UnmatchedBridgeIssuePayload
@@ -42,6 +44,18 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 type EventTypeSubtypePairs = set[tuple[HistoryEventType, HistoryEventSubType]]
+type MetricRow = tuple[
+    int | None,
+    str,
+    str | None,
+    str | None,
+    str,
+    str,
+    str,
+    int,
+    int,
+    int,
+]
 
 # Event subtypes that route to a protocol bucket (single bucket).
 # These represent positions within a protocol (e.g., generating debt).
@@ -212,6 +226,7 @@ class Bucket(NamedTuple):
 
 type ModifiedBucketData = tuple[TimestampMS, int]
 type ModifiedBuckets = dict[Bucket, ModifiedBucketData]
+type NegativeBalanceResolution = tuple[str, str | None, str | None, str, int]
 
 
 def _load_bucket_balances_before_ts(
@@ -255,6 +270,15 @@ def process_historical_balances(
 ) -> None:
     """Process events and compute balance metrics."""
     log.debug(f'Starting historical balance processing from_ts={from_ts}')
+    rebasing_token_ids = GlobalDBHandler.get_rebasing_token_ids()
+    with database.user_write() as write_cursor:
+        registry_from_ts = DBHistoryEvents(database).sync_rebasing_tokens(
+            write_cursor=write_cursor,
+            identifiers=rebasing_token_ids,
+        )
+    if registry_from_ts is not None and from_ts is not None:
+        from_ts = min(from_ts, registry_from_ts)
+
     bucket_balances: dict[Bucket, FVal] = {}
     if from_ts is not None:
         bucket_balances = _load_bucket_balances_before_ts(database, from_ts)
@@ -284,6 +308,10 @@ def process_historical_balances(
             if modification_ts_at_start else None
         )
         treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
+        rebasing_assets = frozenset(
+            Asset(identifier).resolve_swapped_for().identifier
+            for identifier in rebasing_token_ids
+        )
 
     if (total_events := len(events)) == 0:
         log.debug('No events to process for historical balances')
@@ -293,14 +321,16 @@ def process_historical_balances(
         )
         return
 
-    metrics_batch: list[tuple[int | None, str, str | None, str | None, str, str, str, int, int, int]] = []  # noqa: E501
+    metrics_batch: list[MetricRow] = []
     modified_buckets: ModifiedBuckets = {}
+    negative_balance_resolutions: list[NegativeBalanceResolution] = []
     first_batch_written, send_ws_every = False, msg_aggregator.how_many_events_per_ws(total_events)
     for idx, event in enumerate(events):
         for event_to_apply in events_to_apply if (events_to_apply := _maybe_add_profit_event(
             database=database,
             event=event,
             bucket_balances=bucket_balances,
+            rebasing_assets=rebasing_assets,
             treat_eth2_as_eth=treat_eth2_as_eth,
         )) is not None else (event,):
             _apply_to_buckets(
@@ -309,7 +339,9 @@ def process_historical_balances(
                 bucket_balances=bucket_balances,
                 metrics_batch=metrics_batch,
                 modified_buckets=modified_buckets,
+                negative_balance_resolutions=negative_balance_resolutions,
                 last_run_ts=last_run_ts,
+                rebasing_assets=rebasing_assets,
                 treat_eth2_as_eth=treat_eth2_as_eth,
             )
 
@@ -346,6 +378,8 @@ def process_historical_balances(
                 from_ts=from_ts,
                 first_batch_written=first_batch_written,
             )
+
+    DataIssuesManager(database).resolve_negative_balance_issues(negative_balance_resolutions)
 
     msg_aggregator.add_message(
         message_type=WSMessageType.PROGRESS_UPDATES,
@@ -473,7 +507,7 @@ def _finalize_processing(
 
 def _write_metrics_batch(
         write_cursor: DBCursor,
-        metrics_batch: list[tuple[int | None, str, str | None, str | None, str, str, str, int, int, int]],  # noqa: E501
+        metrics_batch: list[MetricRow],
         from_ts: TimestampMS | None,
         first_batch_written: bool,
 ) -> None:
@@ -499,9 +533,11 @@ def _apply_to_buckets(
         database: DBHandler,
         event: HistoryBaseEntry,
         bucket_balances: dict[Bucket, FVal],
-        metrics_batch: list[tuple[int | None, str, str | None, str | None, str, str, str, int, int, int]],  # noqa: E501
+        metrics_batch: list[MetricRow],
         modified_buckets: ModifiedBuckets,
+        negative_balance_resolutions: list[NegativeBalanceResolution],
         last_run_ts: Timestamp | None,
+        rebasing_assets: frozenset[str],
         treat_eth2_as_eth: bool,
 ) -> None:
     """Apply the given event to the buckets it affects."""
@@ -519,59 +555,93 @@ def _apply_to_buckets(
             new_balance = current_balance + event.amount
         elif (new_balance := current_balance - event.amount) < ZERO:  # direction == EventDirection.OUT (direction from from_event will not be NEUTRAL) # noqa: E501
             assert event.identifier is not None, 'Processed history events should have identifiers'
-            database.msg_aggregator.add_message(
-                message_type=WSMessageType.NEGATIVE_BALANCE_DETECTED,
-                data={
-                    'event_identifier': event.identifier,
-                    'group_identifier': event.group_identifier,
-                    'asset': event.asset.identifier,
-                    'bucket': bucket.serialize(),
-                    'balance_before': str(current_balance),
-                    'last_run_ts': last_run_ts,
-                },
-            )
-            DataIssuesManager(database).write_issue(
-                IssueKind.NEGATIVE_BALANCE,
-                location=bucket.location,
-                location_label=bucket.location_label,
-                protocol=bucket.protocol,
-                asset=bucket.asset,
-                payload={
-                    'event_identifier': event.identifier,
-                    'in_memory_negative_amount': str(new_balance),
-                    'derived_balance_before_event': str(current_balance),
-                },
-                ts_start=event.timestamp,
-                ts_end=event.timestamp,
-            )
-            log.warning(
-                f'Negative balance detected for {event.asset.identifier} '
-                f'at event {event.identifier}. Skipping {bucket}.',
-            )
-            bucket_balances[bucket] = new_balance
-            continue
+            if bucket.asset in rebasing_assets:
+                metrics_batch.append(_make_metric_row(
+                    event=event,
+                    bucket=bucket,
+                    metric_key=EventMetricKey.REBASE_YIELD,
+                    value=(rebase_yield := abs(new_balance)),
+                ))
+                negative_balance_resolutions.append((
+                    bucket.location,
+                    bucket.location_label,
+                    bucket.protocol,
+                    bucket.asset,
+                    event.identifier,
+                ))
+                new_balance = current_balance + rebase_yield - event.amount
+            else:
+                database.msg_aggregator.add_message(
+                    message_type=WSMessageType.NEGATIVE_BALANCE_DETECTED,
+                    data={
+                        'event_identifier': event.identifier,
+                        'group_identifier': event.group_identifier,
+                        'asset': event.asset.identifier,
+                        'bucket': bucket.serialize(),
+                        'balance_before': str(current_balance),
+                        'last_run_ts': last_run_ts,
+                    },
+                )
+                DataIssuesManager(database).write_issue(
+                    IssueKind.NEGATIVE_BALANCE,
+                    location=bucket.location,
+                    location_label=bucket.location_label,
+                    protocol=bucket.protocol,
+                    asset=bucket.asset,
+                    payload={
+                        'event_identifier': event.identifier,
+                        'in_memory_negative_amount': str(new_balance),
+                        'derived_balance_before_event': str(current_balance),
+                    },
+                    ts_start=event.timestamp,
+                    ts_end=event.timestamp,
+                )
+                log.warning(
+                    'Negative balance detected for %s at event %s. Skipping %s.',
+                    event.asset.identifier,
+                    event.identifier,
+                    bucket,
+                )
+                bucket_balances[bucket] = new_balance
+                continue
 
         bucket_balances[bucket] = new_balance
-        metrics_batch.append((
-            event.identifier,
-            event.location.serialize_for_db(),
-            bucket.location_label,
-            bucket.protocol,
-            EventMetricKey.BALANCE.serialize(),
-            str(new_balance),
-            bucket.asset,
-            event.timestamp,
-            event.sequence_index,
-            event.timestamp + event.sequence_index,
+        metrics_batch.append(_make_metric_row(
+            event=event,
+            bucket=bucket,
+            metric_key=EventMetricKey.BALANCE,
+            value=new_balance,
         ))
         if event.identifier is not None:
             modified_buckets[bucket] = (event.timestamp, event.identifier)
+
+
+def _make_metric_row(
+        event: HistoryBaseEntry,
+        bucket: Bucket,
+        metric_key: EventMetricKey,
+        value: FVal,
+) -> MetricRow:
+    metric_order = 0 if metric_key == EventMetricKey.REBASE_YIELD else 1
+    return (
+        event.identifier,
+        bucket.location,
+        bucket.location_label,
+        bucket.protocol,
+        metric_key.serialize(),
+        str(value),
+        bucket.asset,
+        event.timestamp,
+        event.sequence_index,
+        (event.timestamp + event.sequence_index) * 2 + metric_order,
+    )
 
 
 def _maybe_add_profit_event(
         database: DBHandler,
         event: HistoryBaseEntry,
         bucket_balances: dict[Bucket, FVal],
+        rebasing_assets: frozenset[str],
         treat_eth2_as_eth: bool,
 ) -> tuple[OnchainEvent, ...] | None:
     """Maybe add a receive/reward event for the profit earned while an asset was in a protocol.
@@ -596,6 +666,7 @@ def _maybe_add_profit_event(
         if (
             direction == EventDirection.OUT and
             (new_balance := current_balance - event.amount) < ZERO and
+            bucket.asset not in rebasing_assets and
             bucket.protocol is not None and
             (event.event_type, event.event_subtype) in PROTOCOL_WITHDRAWAL_EVENTS and
             isinstance(event, OnchainEvent)

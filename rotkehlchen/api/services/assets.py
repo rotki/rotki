@@ -58,6 +58,7 @@ from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.ens import DBEns
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.search_assets import search_assets_levenshtein
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import EthSyncError, InputError, NotERC20Conformant, RemoteError
@@ -228,6 +229,49 @@ class AssetsService:
     def get_asset_types(self) -> dict[str, Any]:
         types = [str(x) for x in AssetType if x not in ASSET_TYPES_EXCLUDED_FOR_USERS]
         return {'result': types, 'message': '', 'status_code': HTTPStatus.OK}
+
+    def get_rebasing_tokens(self) -> dict[str, Any]:
+        return {
+            'result': sorted(GlobalDBHandler.get_rebasing_token_ids()),
+            'message': '',
+            'status_code': HTTPStatus.OK,
+        }
+
+    def add_rebasing_tokens(self, assets: list[Asset]) -> dict[str, Any]:
+        added, already_present = GlobalDBHandler.add_rebasing_tokens(assets)
+        if len(added) != 0:
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
+                DBHistoryEvents(self.rotkehlchen.data.db).sync_rebasing_tokens(
+                    write_cursor=write_cursor,
+                    identifiers=GlobalDBHandler.get_rebasing_token_ids(),
+                )
+
+        return {
+            'result': process_result({
+                'successful': sorted(added),
+                'no_action': sorted(already_present),
+            }),
+            'message': '',
+            'status_code': HTTPStatus.OK,
+        }
+
+    def remove_rebasing_tokens(self, assets: list[Asset]) -> dict[str, Any]:
+        removed, not_present = GlobalDBHandler.remove_rebasing_tokens(assets)
+        if len(removed) != 0:
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
+                DBHistoryEvents(self.rotkehlchen.data.db).sync_rebasing_tokens(
+                    write_cursor=write_cursor,
+                    identifiers=GlobalDBHandler.get_rebasing_token_ids(),
+                )
+
+        return {
+            'result': process_result({
+                'successful': sorted(removed),
+                'no_action': sorted(not_present),
+            }),
+            'message': '',
+            'status_code': HTTPStatus.OK,
+        }
 
     def add_user_asset(self, asset: AssetWithOracles) -> dict[str, Any]:
         if isinstance(asset, EvmToken):

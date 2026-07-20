@@ -35,6 +35,7 @@ from rotkehlchen.constants.assets import (
     A_LUSD,
     A_PICKLE,
     A_REP,
+    A_STETH,
     A_USD,
 )
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME, NFT_DIRECTIVE
@@ -443,6 +444,8 @@ def test_global_db_restore(globaldb, database):
     the database and checks that the added token is not in there and that
     the amount of assets is the expected
     """
+    GlobalDBHandler.add_rebasing_tokens([A_DAI])
+
     # Add a custom eth token
     address_to_delete = make_evm_address()
     token_to_delete = EvmToken.initialize(
@@ -519,6 +522,10 @@ def test_global_db_restore(globaldb, database):
     status, msg = GlobalDBHandler().hard_reset_assets_list(database, True)
     assert status, msg
     cursor = globaldb.conn.cursor()
+    assert GlobalDBHandler.get_rebasing_token_ids() == frozenset({
+        A_DAI.identifier,
+        A_STETH.identifier,
+    })
     query = f"SELECT COUNT(*) FROM evm_tokens where address == '{address_to_delete}';"
     r = cursor.execute(query)
     assert r.fetchone() == (0,), 'Ethereum token should have been deleted'
