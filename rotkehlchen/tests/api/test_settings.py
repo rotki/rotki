@@ -862,15 +862,16 @@ def test_excluded_exchanges_settings(rotkehlchen_api_server: APIServer) -> None:
 
 
 def test_update_oracles_order_settings(rotkehlchen_api_server: APIServer) -> None:
-    response = requests.put(
-        api_url_for(rotkehlchen_api_server, 'settingsresource'),
-        json={'settings': {'historical_price_oracles': ['alchemy']}},
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='You have enabled the Alchemy price oracle but you do not have an API key set',  # noqa: E501
-        status_code=HTTPStatus.CONFLICT,
-    )
+    for oracles_setting in ('historical_price_oracles', 'current_price_oracles'):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'settingsresource'),
+            json={'settings': {oracles_setting: ['alchemy']}},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='You have enabled the Alchemy price oracle but you do not have an API key set',  # noqa: E501
+            status_code=HTTPStatus.CONFLICT,
+        )
 
     # add the api key and see that it passes.
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
@@ -881,12 +882,13 @@ def test_update_oracles_order_settings(rotkehlchen_api_server: APIServer) -> Non
                 api_key=ApiKey('123totallyrealapikey123'),
             )],
         )
-    response = requests.put(
-        api_url_for(rotkehlchen_api_server, 'settingsresource'),
-        json={'settings': {'historical_price_oracles': ['alchemy']}},
-    )
-    result = assert_proper_sync_response_with_result(response=response)
-    assert result['historical_price_oracles'] == ['alchemy']
+    for oracles_setting in ('historical_price_oracles', 'current_price_oracles'):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'settingsresource'),
+            json={'settings': {oracles_setting: ['alchemy']}},
+        )
+        result = assert_proper_sync_response_with_result(response=response)
+        assert result[oracles_setting] == ['alchemy']
 
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'settingsresource'),
