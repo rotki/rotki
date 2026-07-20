@@ -331,7 +331,7 @@ pure-Python paths (event DB/API serialization, FVal aggregation math, filter
 query construction). Excluded from all normal test runs via a global
 `-m "not benchmark"` in addopts; run explicitly with:
 
-    uv run python pytestgeventwrapper.py -m benchmark --benchmark-only rotkehlchen/tests/benchmarks
+    uv run pytest -m benchmark --benchmark-only rotkehlchen/tests/benchmarks
 
 Initially informational; joins nightly once thresholds are calibrated.
 CodSpeed integration was considered and deferred — only the plain `benchmark`

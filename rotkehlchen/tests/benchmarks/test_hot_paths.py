@@ -3,7 +3,7 @@
 Excluded from normal test runs via the global `-m "not benchmark"` addopts.
 Run explicitly with:
 
-    uv run python pytestgeventwrapper.py -m benchmark --benchmark-only rotkehlchen/tests/benchmarks
+    uv run pytest -m benchmark --benchmark-only rotkehlchen/tests/benchmarks
 
 Kept pytest-codspeed compatible: only the plain `benchmark` fixture API is
 used, so switching/adding `pytest-codspeed` later is a drop-in.

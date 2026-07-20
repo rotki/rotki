@@ -32,7 +32,7 @@ def _run_micro_suite(side_root: Path, json_out: Path) -> dict[str, dict[str, flo
     """
     result = subprocess.run(  # noqa: S603  # trusted args
         [  # noqa: S607
-            'uv', 'run', 'python', 'pytestgeventwrapper.py',
+            'uv', 'run', 'pytest',
             '-m', 'benchmark', '--benchmark-only', '--benchmark-columns=median,min,stddev',
             f'--benchmark-json={json_out}', str(BENCH_DIR),
         ],

@@ -38,16 +38,16 @@ pnpm dev:web
 uv run python -m rotkehlchen --api-port 4242 --websockets-port 4333
 
 # Run all backend tests
-uv run python pytestgeventwrapper.py
+uv run pytest
 
 # Run specific test file
-uv run python pytestgeventwrapper.py rotkehlchen/tests/api/test_assets.py
+uv run pytest rotkehlchen/tests/api/test_assets.py
 
 # Run specific test
-uv run python pytestgeventwrapper.py rotkehlchen/tests/api/test_assets.py::test_add_user_asset
+uv run pytest rotkehlchen/tests/api/test_assets.py::test_add_user_asset
 
 # Filter tests with -k
-uv run python pytestgeventwrapper.py -k add_user_asset
+uv run pytest -k add_user_asset
 
 # Lint Python code
 uv run make lint
@@ -742,7 +742,7 @@ python package.py
 - `.github/workflows/` - CI/CD pipelines
 
 ## Development Tips
-1. Always run through `pytestgeventwrapper.py` for backend tests to ensure proper gevent patching
+1. Run backend tests directly with `uv run pytest`
 2. Frontend uses strict TypeScript - ensure types are properly defined
 3. Follow existing code patterns - the codebase has established conventions
 4. Use the existing test infrastructure - comprehensive fixtures are available
@@ -762,7 +762,7 @@ python package.py
 
 ## Common Issues & Solutions
 - Frontend build fails: Run `pnpm run clean:modules` then `pnpm install --frozen-lockfile`
-- Backend gevent errors: Always use `pytestgeventwrapper.py`, never direct pytest
+- Backend test failures: Re-run the relevant test directly with `uv run pytest`
 - WebSocket connection issues: Check ports 4242 (API) and 4333 (WS) are free
 
 ## Code Review Guidelines
