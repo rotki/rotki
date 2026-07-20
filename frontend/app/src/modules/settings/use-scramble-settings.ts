@@ -5,8 +5,8 @@ import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 interface UseScrambleSettingReturn {
-  scrambleData: Ref<boolean>;
-  scrambleMultiplier: Ref<string>;
+  modelScrambleData: Ref<boolean>;
+  modelScrambleMultiplier: Ref<string>;
   enabled: Readonly<Ref<boolean>>;
   multiplier: Readonly<Ref<number | undefined>>;
   handleMultiplierUpdate: (value: string) => void;
@@ -14,8 +14,8 @@ interface UseScrambleSettingReturn {
 }
 
 export function useScrambleSetting(): UseScrambleSettingReturn {
-  const scrambleData = shallowRef<boolean>(false);
-  const scrambleMultiplier = shallowRef<string>('0');
+  const modelScrambleData = shallowRef<boolean>(false);
+  const modelScrambleMultiplier = shallowRef<string>('0');
   const isUpdating = shallowRef<boolean>(false);
   let timeoutId: number;
 
@@ -30,13 +30,13 @@ export function useScrambleSetting(): UseScrambleSettingReturn {
 
   function randomMultiplier(): string {
     const value = generateRandomScrambleMultiplier().toString();
-    set(scrambleMultiplier, value);
+    set(modelScrambleMultiplier, value);
     return value;
   }
 
   function handleMultiplierUpdate(value: string): void {
     set(isUpdating, true);
-    set(scrambleMultiplier, value);
+    set(modelScrambleMultiplier, value);
 
     const numValue = Number(value);
 
@@ -48,9 +48,9 @@ export function useScrambleSetting(): UseScrambleSettingReturn {
   }
 
   function initializeData(): void {
-    set(scrambleData, get(enabled));
+    set(modelScrambleData, get(enabled));
     if (!get(isUpdating)) {
-      set(scrambleMultiplier, (get(multiplier) ?? generateRandomScrambleMultiplier()).toString());
+      set(modelScrambleMultiplier, (get(multiplier) ?? generateRandomScrambleMultiplier()).toString());
     }
   }
 
@@ -72,7 +72,7 @@ export function useScrambleSetting(): UseScrambleSettingReturn {
     handleMultiplierUpdate,
     multiplier,
     randomMultiplier,
-    scrambleData,
-    scrambleMultiplier,
+    modelScrambleData,
+    modelScrambleMultiplier,
   };
 }

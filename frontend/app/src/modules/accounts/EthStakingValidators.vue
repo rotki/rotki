@@ -28,7 +28,7 @@ const {
   matchers,
   pagination,
   rows,
-  selected,
+  modelSelected,
   sort,
 } = useEthValidatorData();
 
@@ -49,7 +49,7 @@ function edit(account: EthereumValidator) {
 }
 
 function deleteSelectedValidators() {
-  deleteSelected(get(rows).data, get(selected));
+  deleteSelected(get(rows).data, get(modelSelected));
 }
 
 defineExpose({
@@ -62,7 +62,7 @@ defineExpose({
     <div class="flex flex-row flex-wrap items-center gap-2">
       <div class="flex flex-row gap-3">
         <RuiButton
-          :disabled="selected.length === 0"
+          :disabled="modelSelected.length === 0"
           class="h-10"
           variant="outlined"
           color="error"
@@ -78,14 +78,14 @@ defineExpose({
           {{ t('common.actions.delete') }}
         </RuiButton>
         <div
-          v-if="selected.length > 0"
+          v-if="modelSelected.length > 0"
           class="flex gap-2 items-center text-sm"
         >
-          {{ t('blockchain_balances.validators.selected', { count: selected.length }) }}
+          {{ t('blockchain_balances.validators.selected', { count: modelSelected.length }) }}
           <RuiButton
             size="sm"
             class="!py-0 !px-1.5 !gap-0.5 dark:!bg-opacity-30 dark:!text-white"
-            @click="selected = []"
+            @click="modelSelected = []"
           >
             <template #prepend>
               <RuiIcon
@@ -105,7 +105,7 @@ defineExpose({
       />
     </div>
     <RuiDataTable
-      v-model="selected"
+      v-model="modelSelected"
       v-model:sort.external="sort"
       v-model:pagination.external="pagination"
       class="mt-4"

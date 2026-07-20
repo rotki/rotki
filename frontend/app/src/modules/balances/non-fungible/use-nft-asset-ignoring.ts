@@ -10,7 +10,7 @@ import { uniqueStrings } from '@/modules/core/common/data/data';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
 interface UseNftAssetIgnoringReturn {
-  selected: Ref<string[]>;
+  modelSelected: Ref<string[]>;
   massIgnore: (ignored: boolean) => Promise<void>;
   refreshCallback: () => void;
   toggleIgnoreAsset: (balance: NonFungibleBalance) => Promise<void>;
@@ -26,7 +26,7 @@ export function useNftAssetIgnoring(
   const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
   const { isAssetIgnored } = useAssetsStore();
 
-  const selected = ref<string[]>([]);
+  const modelSelected = ref<string[]>([]);
 
   function refreshCallback(): void {
     if (toValue(ignoredAssetsHandling) !== 'none') {
@@ -48,7 +48,7 @@ export function useNftAssetIgnoring(
   }
 
   async function massIgnore(ignored: boolean): Promise<void> {
-    const ids = get(selected)
+    const ids = get(modelSelected)
       .filter((item) => {
         const isItemIgnored = isAssetIgnored(item);
         return ignored ? !isItemIgnored : isItemIgnored;
@@ -68,7 +68,7 @@ export function useNftAssetIgnoring(
     else status = await unignoreAsset(ids);
 
     if (status.success) {
-      set(selected, []);
+      set(modelSelected, []);
       if (toValue(ignoredAssetsHandling) !== 'none')
         await fetchData();
     }
@@ -77,7 +77,7 @@ export function useNftAssetIgnoring(
   return {
     massIgnore,
     refreshCallback,
-    selected,
+    modelSelected,
     toggleIgnoreAsset,
   };
 }

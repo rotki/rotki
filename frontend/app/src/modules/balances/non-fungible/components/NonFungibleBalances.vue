@@ -26,7 +26,7 @@ const {
   data,
   dataLoading,
   fetchData,
-  ignoredAssetsHandling,
+  modelIgnoredAssetsHandling,
   pagination,
   refreshNonFungibleBalances,
   sectionLoading,
@@ -37,7 +37,7 @@ const {
 // Price management
 const {
   customPrice,
-  openPriceDialog,
+  modelOpenPriceDialog,
   setPriceForm,
   showDeleteConfirmation,
 } = useNftPriceManagement(fetchData);
@@ -45,9 +45,9 @@ const {
 // Asset ignoring
 const {
   massIgnore,
-  selected,
+  modelSelected,
   toggleIgnoreAsset,
-} = useNftAssetIgnoring(fetchData, ignoredAssetsHandling);
+} = useNftAssetIgnoring(fetchData, modelIgnoredAssetsHandling);
 
 onMounted(async () => {
   await fetchData();
@@ -73,14 +73,14 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
     <RuiCard>
       <NonFungibleBalancesFilter
         class="mb-4"
-        :selected="selected"
-        :ignored-assets-handling="ignoredAssetsHandling"
-        @update:selected="selected = $event"
-        @update:ignored-assets-handling="ignoredAssetsHandling = $event"
+        :selected="modelSelected"
+        :ignored-assets-handling="modelIgnoredAssetsHandling"
+        @update:selected="modelSelected = $event"
+        @update:ignored-assets-handling="modelIgnoredAssetsHandling = $event"
         @mass-ignore="massIgnore($event)"
       />
       <RuiDataTable
-        v-model="selected"
+        v-model="modelSelected"
         v-model:sort.external="sort"
         v-model:pagination.external="pagination"
         row-attr="id"
@@ -149,7 +149,7 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
     </RuiCard>
 
     <LatestPriceFormDialog
-      v-model:open="openPriceDialog"
+      v-model:open="modelOpenPriceDialog"
       :editable-item="customPrice"
       @refresh="fetchData()"
     />

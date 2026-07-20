@@ -22,12 +22,12 @@ const { disableAsset = false, nft = false, timestamp } = defineProps<{
 const { t } = useI18n({ useScope: 'global' });
 
 const {
-  assetToFiatPrice,
-  assetToUsdPrice,
+  modelAssetToFiatPrice,
+  modelAssetToUsdPrice,
   currencySymbol,
   fetching,
-  fiatValue,
-  fiatValueFocused,
+  modelFiatValue,
+  modelFiatValueFocused,
   isCurrentCurrencyUsd,
   reset,
   submitPrice,
@@ -102,7 +102,7 @@ defineExpose({
     </div>
     <TwoFieldsAmountInput
       v-if="isCurrentCurrencyUsd"
-      v-model:primary-value="assetToUsdPrice"
+      v-model:primary-value="modelAssetToUsdPrice"
       v-model:secondary-value="usdValue"
       class="mb-5"
       :loading="fetching"
@@ -120,13 +120,13 @@ defineExpose({
         secondary: toMessages(v$.usdValue),
       }"
       :hint="t('transactions.events.form.asset_price.hint')"
-      @update:reversed="fiatValueFocused = $event"
+      @update:reversed="modelFiatValueFocused = $event"
     />
 
     <TwoFieldsAmountInput
       v-else
-      v-model:primary-value="assetToFiatPrice"
-      v-model:secondary-value="fiatValue"
+      v-model:primary-value="modelAssetToFiatPrice"
+      v-model:secondary-value="modelFiatValue"
       class="mb-5"
       :loading="fetching"
       :disabled="fetching"
@@ -138,7 +138,7 @@ defineExpose({
           symbol: currencySymbol,
         }),
       }"
-      @update:reversed="fiatValueFocused = $event"
+      @update:reversed="modelFiatValueFocused = $event"
     />
   </div>
 </template>

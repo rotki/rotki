@@ -86,8 +86,8 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-asset-price', () 
     setCurrency('EUR');
     const { api, usdValue } = await setup();
 
-    set(api.fiatValueFocused, true);
-    set(api.fiatValue, '3600');
+    set(api.modelFiatValueFocused, true);
+    set(api.modelFiatValue, '3600');
     await nextTick();
 
     // 3600 EUR / 0.9 = 4000 USD

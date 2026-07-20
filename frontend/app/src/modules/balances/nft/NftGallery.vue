@@ -37,17 +37,17 @@ const {
   availableAddresses,
   collections,
   items,
-  selectedAccounts,
-  selectedCollection,
-  sortBy,
-  sortDescending,
+  modelSelectedAccounts,
+  modelSelectedCollection,
+  modelSortBy,
+  modelSortDescending,
 } = useNftGalleryFilters(nfts, perAccount);
 
 const { firstLimit, paginationData, visibleNfts } = useNftGalleryLayout(items);
 
 // Computed properties
 const noData = computed<boolean>(() =>
-  get(visibleNfts).length === 0 && !(get(selectedCollection) || get(selectedAccounts).length > 0),
+  get(visibleNfts).length === 0 && !(get(modelSelectedCollection) || get(modelSelectedAccounts).length > 0),
 );
 
 const openSeaKey = useApiKey('opensea');
@@ -59,7 +59,7 @@ function navigateToApiKeys(): void {
 }
 
 // Watchers
-watch([firstLimit, selectedAccounts, selectedCollection], () => {
+watch([firstLimit, modelSelectedAccounts, modelSelectedCollection], () => {
   set(paginationData, { ...get(paginationData), page: 1 });
 });
 
@@ -121,10 +121,10 @@ onMounted(() => {
 
     <div class="flex flex-col gap-6">
       <NftGalleryFilters
-        v-model:selected-accounts="selectedAccounts"
-        v-model:selected-collection="selectedCollection"
-        v-model:sort-by="sortBy"
-        v-model:sort-descending="sortDescending"
+        v-model:selected-accounts="modelSelectedAccounts"
+        v-model:selected-collection="modelSelectedCollection"
+        v-model:sort-by="modelSortBy"
+        v-model:sort-descending="modelSortDescending"
         :available-addresses="availableAddresses"
         :collections="collections"
       />

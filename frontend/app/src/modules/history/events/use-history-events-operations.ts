@@ -32,7 +32,7 @@ interface UseHistoryEventsOperationsOptions {
 
 interface UseHistoryEventsOperationsReturn {
   // State
-  showRedecodeConfirmation: Ref<boolean>;
+  modelShowRedecodeConfirmation: Ref<boolean>;
   redecodePayload: Ref<PullEventPayload | undefined>;
   hasCustomEvents: Readonly<Ref<boolean>>;
   showIndexerOptions: Readonly<Ref<boolean>>;
@@ -58,7 +58,7 @@ export function useHistoryEventsOperations(
   const { getGroupEvents } = useCompleteEvents(completeEventsMapped);
 
   const selected = ref<HistoryEventEntry[]>([]);
-  const showRedecodeConfirmation = shallowRef<boolean>(false);
+  const modelShowRedecodeConfirmation = shallowRef<boolean>(false);
   const redecodePayload = ref<PullEventPayload>();
   const hasCustomEvents = shallowRef<boolean>(false);
   const showIndexerOptions = shallowRef<boolean>(false);
@@ -235,7 +235,7 @@ export function useHistoryEventsOperations(
       set(hasCustomEvents, true);
       set(showIndexerOptions, false);
       set(redecodePayload, payload);
-      set(showRedecodeConfirmation, true);
+      set(modelShowRedecodeConfirmation, true);
       return;
     }
 
@@ -262,7 +262,7 @@ export function useHistoryEventsOperations(
     set(hasCustomEvents, isAnyCustom);
     set(showIndexerOptions, isEvmPayload(payload));
     set(redecodePayload, payload);
-    set(showRedecodeConfirmation, true);
+    set(modelShowRedecodeConfirmation, true);
   }
 
   function confirmRedecode(event: { payload: PullEventPayload; deleteCustom: boolean; customIndexersOrder?: string[] }): void {
@@ -296,7 +296,7 @@ export function useHistoryEventsOperations(
     redecodePayload,
     redecodeWithOptions,
     showIndexerOptions: readonly(showIndexerOptions),
-    showRedecodeConfirmation,
+    modelShowRedecodeConfirmation,
     suggestNextSequenceId,
     toggle,
   };

@@ -12,8 +12,8 @@ interface UseBridgeTransactionActionsOptions {
 
 interface UseBridgeTransactionActionsReturn {
   ignoreLoading: Readonly<Ref<boolean>>;
-  selectedIgnored: Ref<string[]>;
-  selectedUnmatched: Ref<string[]>;
+  modelSelectedIgnored: Ref<string[]>;
+  modelSelectedUnmatched: Ref<string[]>;
   confirmIgnoreSelected: () => void;
   confirmMarkExternal: (transaction: UnmatchedBridgeTransaction) => void;
   confirmRestoreSelected: () => void;
@@ -40,8 +40,8 @@ export function useBridgeTransactionActions(
   const { getChainName } = useSupportedChains();
 
   const ignoreLoading = shallowRef<boolean>(false);
-  const selectedUnmatched = ref<string[]>([]);
-  const selectedIgnored = ref<string[]>([]);
+  const modelSelectedUnmatched = ref<string[]>([]);
+  const modelSelectedIgnored = ref<string[]>([]);
 
   function getTransactionIdentifier(transaction: UnmatchedBridgeTransaction): number {
     return getEventEntryFromCollection(transaction.events).entry.identifier;
@@ -135,7 +135,7 @@ export function useBridgeTransactionActions(
         await matchBridgeTransactions(getTransactionIdentifier(transaction));
 
       await refreshUnmatchedBridgeTransactions();
-      set(selectedUnmatched, []);
+      set(modelSelectedUnmatched, []);
     }
     finally {
       set(ignoreLoading, false);
@@ -150,7 +150,7 @@ export function useBridgeTransactionActions(
         await unlinkBridgeTransaction(getTransactionIdentifier(transaction));
 
       await refreshUnmatchedBridgeTransactions();
-      set(selectedIgnored, []);
+      set(modelSelectedIgnored, []);
     }
     finally {
       set(ignoreLoading, false);
@@ -158,21 +158,21 @@ export function useBridgeTransactionActions(
   }
 
   function confirmIgnoreSelected(): void {
-    const count = get(selectedUnmatched).length;
+    const count = get(modelSelectedUnmatched).length;
     show({
       message: t('bridge_matching.actions.ignore_selected_confirm', { count }),
       primaryAction: t('common.actions.confirm'),
       title: t('bridge_matching.actions.ignore_selected'),
-    }, async () => ignoreSelectedTransactions(get(selectedUnmatched)));
+    }, async () => ignoreSelectedTransactions(get(modelSelectedUnmatched)));
   }
 
   function confirmRestoreSelected(): void {
-    const count = get(selectedIgnored).length;
+    const count = get(modelSelectedIgnored).length;
     show({
       message: t('bridge_matching.actions.restore_selected_confirm', { count }),
       primaryAction: t('common.actions.confirm'),
       title: t('bridge_matching.actions.restore_selected'),
-    }, async () => unignoreSelectedTransactions(get(selectedIgnored)));
+    }, async () => unignoreSelectedTransactions(get(modelSelectedIgnored)));
   }
 
   return {
@@ -182,7 +182,7 @@ export function useBridgeTransactionActions(
     ignoreLoading: readonly(ignoreLoading),
     ignoreTransaction,
     restoreTransaction,
-    selectedIgnored,
-    selectedUnmatched,
+    modelSelectedIgnored,
+    modelSelectedUnmatched,
   };
 }

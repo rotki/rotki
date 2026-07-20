@@ -21,11 +21,11 @@ interface UseAssetStatisticsStateReturn {
   name: ComputedRef<string>;
   rememberStateForAsset: WritableComputedRef<boolean>;
   suppressIfPerAsset: (func: () => Promise<void>) => Promise<void>;
-  useHistoricalAssetBalances: Ref<boolean, boolean>;
+  modelUseHistoricalAssetBalances: Ref<boolean, boolean>;
 }
 
 export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefined>): UseAssetStatisticsStateReturn {
-  const useHistoricalAssetBalances = shallowRef<boolean>(false);
+  const modelUseHistoricalAssetBalances = shallowRef<boolean>(false);
 
   const enabled = useSetting('useHistoricalAssetBalances');
 
@@ -50,7 +50,7 @@ export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefine
       if (enabled) {
         set(stateForAsset, {
           ...get<Record<string, number>>(stateForAsset),
-          [assetValue]: get(useHistoricalAssetBalances) ? Preference.EVENTS : Preference.SNAPSHOT,
+          [assetValue]: get(modelUseHistoricalAssetBalances) ? Preference.EVENTS : Preference.SNAPSHOT,
         });
       }
       else {
@@ -79,7 +79,7 @@ export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefine
     await func();
   }
 
-  watch(useHistoricalAssetBalances, (enabled) => {
+  watch(modelUseHistoricalAssetBalances, (enabled) => {
     const assetValue = toValue(asset);
     if (!(get(rememberStateForAsset)) || !assetValue) {
       return;
@@ -97,15 +97,15 @@ export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefine
     }
 
     if (get(rememberStateForAsset)) {
-      set(useHistoricalAssetBalances, get<Record<string, number>>(stateForAsset)[asset] === Preference.EVENTS);
+      set(modelUseHistoricalAssetBalances, get<Record<string, number>>(stateForAsset)[asset] === Preference.EVENTS);
     }
     else {
-      set(useHistoricalAssetBalances, get(enabled));
+      set(modelUseHistoricalAssetBalances, get(enabled));
     }
   });
 
   onMounted(() => {
-    set(useHistoricalAssetBalances, get(enabled));
+    set(modelUseHistoricalAssetBalances, get(enabled));
   });
 
   return {
@@ -113,6 +113,6 @@ export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefine
     name,
     rememberStateForAsset,
     suppressIfPerAsset,
-    useHistoricalAssetBalances,
+    modelUseHistoricalAssetBalances,
   };
 }

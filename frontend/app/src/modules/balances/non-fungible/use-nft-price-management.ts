@@ -8,7 +8,7 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 
 interface UseNftPriceManagementReturn {
   customPrice: DeepReadonly<Ref<ManualPriceFormPayload | null>>;
-  openPriceDialog: Ref<boolean>;
+  modelOpenPriceDialog: Ref<boolean>;
   deletePrice: (item: NonFungibleBalance) => Promise<void>;
   setPriceForm: (item: NonFungibleBalance) => void;
   showDeleteConfirmation: (item: NonFungibleBalance) => void;
@@ -22,7 +22,7 @@ export function useNftPriceManagement(
   const { deleteLatestPrice } = useAssetPricesApi();
   const { show } = useConfirmStore();
 
-  const openPriceDialog = shallowRef<boolean>(false);
+  const modelOpenPriceDialog = shallowRef<boolean>(false);
   const customPrice = shallowRef<ManualPriceFormPayload | null>(null);
 
   async function deletePrice(toDeletePrice: NonFungibleBalance): Promise<void> {
@@ -49,7 +49,7 @@ export function useNftPriceManagement(
       price: item.priceInAsset.toFixed(),
       toAsset: item.priceAsset,
     });
-    set(openPriceDialog, true);
+    set(modelOpenPriceDialog, true);
   }
 
   function showDeleteConfirmation(item: NonFungibleBalance): void {
@@ -67,7 +67,7 @@ export function useNftPriceManagement(
   return {
     customPrice: readonly(customPrice),
     deletePrice,
-    openPriceDialog,
+    modelOpenPriceDialog,
     setPriceForm,
     showDeleteConfirmation,
   };

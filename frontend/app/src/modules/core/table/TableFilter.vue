@@ -76,7 +76,7 @@ const { filteredMatchers } = useFilterMatchers(() => matchers, selection, search
 
 // Chip grouping composable
 const {
-  expandedGroupKey,
+  modelExpandedGroupKey,
   getChipDisplayType,
   getGroupedItemsForKey,
   getGroupedOverflowCount,
@@ -366,7 +366,7 @@ onMounted(() => {
         >
           <template #selection="{ item, chipAttrs }">
             <SelectionChip
-              v-model:expanded-group-key="expandedGroupKey"
+              v-model:expanded-group-key="modelExpandedGroupKey"
               :item="item"
               :chip-attrs="chipAttrs"
               :display-type="getChipDisplayType(item)"

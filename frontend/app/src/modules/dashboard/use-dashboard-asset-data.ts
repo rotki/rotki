@@ -12,7 +12,7 @@ interface UseDashboardAssetDataReturn {
   isAssetMissing: (item: AssetBalanceWithPrice) => boolean;
   percentageOfCurrentGroup: (item: AssetBalanceWithPrice) => string;
   percentageOfTotalNetValue: (item: AssetBalanceWithPrice) => string;
-  search: Ref<string>;
+  modelSearch: Ref<string>;
   sorted: ComputedRef<AssetBalanceWithPrice[]>;
   total: ComputedRef<BigNumber>;
 }
@@ -21,8 +21,8 @@ export function useDashboardAssetData(
   balances: MaybeRefOrGetter<AssetBalanceWithPrice[]>,
   sort: MaybeRefOrGetter<DataTableSortData<AssetBalanceWithPrice>>,
 ): UseDashboardAssetDataReturn {
-  const search = shallowRef<string>('');
-  const debouncedSearch = refDebounced(search, 200);
+  const modelSearch = shallowRef<string>('');
+  const debouncedSearch = refDebounced(modelSearch, 200);
 
   const { totalNetWorth } = useDashboardStores();
   const { getAssetInfo } = useAssetSelectInfo();
@@ -57,7 +57,7 @@ export function useDashboardAssetData(
     isAssetMissing,
     percentageOfCurrentGroup,
     percentageOfTotalNetValue,
-    search,
+    modelSearch,
     sorted,
     total,
   };

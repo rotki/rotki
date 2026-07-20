@@ -65,18 +65,18 @@ describe('useNftAssetIgnoring', () => {
   });
 
   it('should mass-ignore the not-yet-ignored selection and clear it', async () => {
-    const { massIgnore, selected } = useNftAssetIgnoring(fetchData, 'show_only');
-    set(selected, ['a', 'b', 'a']);
+    const { massIgnore, modelSelected } = useNftAssetIgnoring(fetchData, 'show_only');
+    set(modelSelected, ['a', 'b', 'a']);
     await massIgnore(true);
     expect(spies.ignoreAsset).toHaveBeenCalledWith(['a', 'b']);
-    expect(get(selected)).toEqual([]);
+    expect(get(modelSelected)).toEqual([]);
     expect(fetchData).toHaveBeenCalledOnce();
   });
 
   it('should warn when there is nothing to mass-ignore', async () => {
     spies.isAssetIgnored.mockReturnValue(true); // all already ignored
-    const { massIgnore, selected } = useNftAssetIgnoring(fetchData, 'none');
-    set(selected, ['a']);
+    const { massIgnore, modelSelected } = useNftAssetIgnoring(fetchData, 'none');
+    set(modelSelected, ['a']);
     await massIgnore(true);
     expect(spies.showErrorMessage).toHaveBeenCalledOnce();
     expect(spies.ignoreAsset).not.toHaveBeenCalled();

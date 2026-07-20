@@ -29,7 +29,7 @@ const { totalNetWorth } = useDashboardStores();
 const { prices } = storeToRefs(useBalancePricesStore());
 
 // Use composables - sort needs to be defined first for the computed dependency
-const { pagination, setPage, setTablePagination, sort, tableHeaders } = useDashboardTableConfig(
+const { modelSort, pagination, setPage, setTablePagination, tableHeaders } = useDashboardTableConfig(
   () => tableType,
   () => title,
   totalNetWorth,
@@ -39,12 +39,12 @@ const {
   isAssetMissing,
   percentageOfCurrentGroup,
   percentageOfTotalNetValue,
-  search,
+  modelSearch,
   sorted,
   total,
-} = useDashboardAssetData(() => balances, sort);
+} = useDashboardAssetData(() => balances, modelSort);
 
-const { expanded, isRowExpandable, redirectToManualBalance } = useDashboardAssetOperations(() => tableType);
+const { isRowExpandable, modelExpanded, redirectToManualBalance } = useDashboardAssetOperations(() => tableType);
 
 const emptyDescription = computed<string>(() => tableType === DashboardTableType.ASSETS
   ? t('dashboard_asset_table.no_assets')
@@ -55,7 +55,7 @@ function isPriceMissing(asset: string): boolean {
 }
 
 // Watch search to reset pagination
-watch(search, () => setPage(1));
+watch(modelSearch, () => setPage(1));
 </script>
 
 <template>
@@ -65,7 +65,7 @@ watch(search, () => setPage(1));
     </template>
     <template #details>
       <RuiTextField
-        v-model="search"
+        v-model="modelSearch"
         variant="outlined"
         color="primary"
         dense
@@ -74,7 +74,7 @@ watch(search, () => setPage(1));
         class="max-w-[28rem] w-full"
         hide-details
         clearable
-        @click:clear="search = ''"
+        @click:clear="modelSearch = ''"
       />
 
       <VisibleColumnsSelector
@@ -89,13 +89,13 @@ watch(search, () => setPage(1));
       />
     </template>
     <RuiDataTable
-      v-model:sort.external="sort"
+      v-model:sort.external="modelSort"
       data-cy="dashboard-asset-table__balances"
       :cols="tableHeaders"
       :rows="sorted"
       :loading="loading"
       :empty="{ description: emptyDescription }"
-      :expanded="expanded"
+      :expanded="modelExpanded"
       :pagination="{
         page: pagination.page,
         limit: pagination.itemsPerPage,
@@ -172,15 +172,15 @@ watch(search, () => setPage(1));
         />
       </template>
       <template
-        v-if="search.length > 0"
+        v-if="modelSearch.length > 0"
         #no-data
       >
         <span class="text-rui-text-secondary">
-          {{ t('dashboard_asset_table.no_search_result', { search }) }}
+          {{ t('dashboard_asset_table.no_search_result', { search: modelSearch }) }}
         </span>
       </template>
       <template
-        v-if="balances.length > 0 && (!search || search.length === 0)"
+        v-if="balances.length > 0 && (!modelSearch || modelSearch.length === 0)"
         #body.append
       >
         <RowAppend
@@ -202,8 +202,8 @@ watch(search, () => setPage(1));
       <template #item.expand="{ row }">
         <RuiTableRowExpander
           v-if="isRowExpandable(row)"
-          :expanded="expanded.includes(row)"
-          @click="expanded = expanded.includes(row) ? [] : [row]"
+          :expanded="modelExpanded.includes(row)"
+          @click="modelExpanded = modelExpanded.includes(row) ? [] : [row]"
         />
       </template>
     </RuiDataTable>

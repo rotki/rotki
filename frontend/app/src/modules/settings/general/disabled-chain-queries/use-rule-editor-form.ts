@@ -24,11 +24,11 @@ export interface UseRuleEditorFormOptions {
 }
 
 export interface UseRuleEditorFormReturn {
-  kind: Ref<RuleKind>;
-  chainId: Ref<string | undefined>;
-  address: Ref<string | undefined>;
-  scope: Ref<AddressScope>;
-  selectedChainIds: Ref<string[]>;
+  modelKind: Ref<RuleKind>;
+  modelChainId: Ref<string | undefined>;
+  modelAddress: Ref<string | undefined>;
+  modelScope: Ref<AddressScope>;
+  modelSelectedChainIds: Ref<string[]>;
   addressOptions: ComputedRef<AddressOption[]>;
   availableChainsForAddress: ComputedRef<string[]>;
   canSave: ComputedRef<boolean>;
@@ -68,101 +68,96 @@ export function useRuleEditorForm(options: UseRuleEditorFormOptions): UseRuleEdi
   const { accounts, chains, editing } = options;
 
   // These refs are the form model, bound via v-model from the dialog template.
-  // They are intentionally exposed as read-write — the readonly()-on-return lint
-  // would break the v-model wiring.
-  const kind = shallowRef<RuleKind>('chain');
-  const chainId = shallowRef<string>();
-  const address = shallowRef<string>();
-  const scope = shallowRef<AddressScope>('all');
-  const selectedChainIds = ref<string[]>([]);
+  // The `model` prefix marks them as writable by the consumer.
+  const modelKind = shallowRef<RuleKind>('chain');
+  const modelChainId = shallowRef<string>();
+  const modelAddress = shallowRef<string>();
+  const modelScope = shallowRef<AddressScope>('all');
+  const modelSelectedChainIds = ref<string[]>([]);
 
   const addressOptions = computed<AddressOption[]>(() => buildAddressOptions(toValue(accounts)));
 
   const availableChainsForAddress = computed<string[]>(() => {
-    const target = get(address);
+    const target = get(modelAddress);
     if (!target)
       return toValue(chains).map(c => c.id);
     return get(addressOptions).find(o => o.address === target)?.chainIds.slice() ?? [];
   });
 
   const canSave = computed<boolean>(() => {
-    if (get(kind) === 'chain')
-      return Boolean(get(chainId));
-    if (!get(address))
+    if (get(modelKind) === 'chain')
+      return Boolean(get(modelChainId));
+    if (!get(modelAddress))
       return false;
-    if (get(scope) === 'all')
+    if (get(modelScope) === 'all')
       return get(availableChainsForAddress).length > 0;
-    return get(selectedChainIds).length > 0;
+    return get(modelSelectedChainIds).length > 0;
   });
 
   function reset(): void {
     const current = toValue(editing);
     if (current?.kind === 'chain') {
-      set(kind, 'chain');
-      set(chainId, current.chainId);
-      set(address, undefined);
-      set(selectedChainIds, []);
-      set(scope, 'all');
+      set(modelKind, 'chain');
+      set(modelChainId, current.chainId);
+      set(modelAddress, undefined);
+      set(modelSelectedChainIds, []);
+      set(modelScope, 'all');
       return;
     }
     if (current?.kind === 'address') {
-      set(kind, 'address');
-      set(chainId, undefined);
-      set(address, current.address);
+      set(modelKind, 'address');
+      set(modelChainId, undefined);
+      set(modelAddress, current.address);
       const available = get(addressOptions).find(o => o.address === current.address)?.chainIds ?? [];
       const isAllChains = available.length > 0
         && current.chainIds.length === available.length
         && available.every(c => current.chainIds.includes(c));
-      set(scope, isAllChains ? 'all' : 'specific');
-      set(selectedChainIds, [...current.chainIds]);
+      set(modelScope, isAllChains ? 'all' : 'specific');
+      set(modelSelectedChainIds, [...current.chainIds]);
       return;
     }
-    set(kind, 'chain');
-    set(chainId, undefined);
-    set(address, undefined);
-    set(selectedChainIds, []);
-    set(scope, 'all');
+    set(modelKind, 'chain');
+    set(modelChainId, undefined);
+    set(modelAddress, undefined);
+    set(modelSelectedChainIds, []);
+    set(modelScope, 'all');
   }
 
   function buildDraft(): RuleDraft | undefined {
     if (!get(canSave))
       return undefined;
-    if (get(kind) === 'chain') {
-      const id = get(chainId);
+    if (get(modelKind) === 'chain') {
+      const id = get(modelChainId);
       if (!id)
         return undefined;
       return { chainId: id, kind: 'chain' };
     }
-    const addr = get(address);
+    const addr = get(modelAddress);
     if (!addr)
       return undefined;
-    const chainIds = get(scope) === 'all' ? get(availableChainsForAddress) : get(selectedChainIds);
+    const chainIds = get(modelScope) === 'all' ? get(availableChainsForAddress) : get(modelSelectedChainIds);
     return { address: addr, chainIds: [...chainIds], kind: 'address' };
   }
 
-  watch(address, () => {
-    if (get(kind) !== 'address' || get(scope) !== 'specific')
+  watch(modelAddress, () => {
+    if (get(modelKind) !== 'address' || get(modelScope) !== 'specific')
       return;
     const available = new Set(get(availableChainsForAddress));
-    set(selectedChainIds, get(selectedChainIds).filter(c => available.has(c)));
+    set(modelSelectedChainIds, get(modelSelectedChainIds).filter(c => available.has(c)));
   });
 
   reset();
 
-  /* eslint-disable @rotki/composable-return-readonly --
-   * Form-state refs are exposed read-write because the dialog binds them with v-model.
-   */
   return {
-    address,
     addressOptions,
     availableChainsForAddress,
     buildDraft,
     canSave,
-    chainId,
-    kind,
+    modelAddress,
+    modelChainId,
+    modelKind,
+    modelScope,
+    modelSelectedChainIds,
     reset,
-    scope,
-    selectedChainIds,
   };
-  /* eslint-enable @rotki/composable-return-readonly */
 }

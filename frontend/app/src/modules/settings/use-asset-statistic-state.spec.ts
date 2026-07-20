@@ -45,8 +45,8 @@ describe('useAssetStatisticState', () => {
   });
 
   it('should store the events preference when remembering with historical enabled', () => {
-    const { getPreference, rememberStateForAsset, useHistoricalAssetBalances } = withSetup(() => useAssetStatisticState(() => 'BTC')).result;
-    set(useHistoricalAssetBalances, true);
+    const { getPreference, modelUseHistoricalAssetBalances, rememberStateForAsset } = withSetup(() => useAssetStatisticState(() => 'BTC')).result;
+    set(modelUseHistoricalAssetBalances, true);
     set(rememberStateForAsset, true);
     expect(getPreference('BTC')).toBe('events');
   });

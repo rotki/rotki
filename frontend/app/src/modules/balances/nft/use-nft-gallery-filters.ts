@@ -9,10 +9,10 @@ interface UseNftGalleryFiltersReturn {
   availableAddresses: ComputedRef<string[]>;
   collections: ComputedRef<string[]>;
   items: ComputedRef<GalleryNft[]>;
-  selectedAccounts: Ref<BlockchainAccount<AddressData>[]>;
-  selectedCollection: Ref<string | undefined>;
-  sortBy: Ref<'name' | 'price' | 'collection'>;
-  sortDescending: Ref<boolean>;
+  modelSelectedAccounts: Ref<BlockchainAccount<AddressData>[]>;
+  modelSelectedCollection: Ref<string | undefined>;
+  modelSortBy: Ref<'name' | 'price' | 'collection'>;
+  modelSortDescending: Ref<boolean>;
   updateSortBy: (value: string) => void;
 }
 
@@ -21,10 +21,10 @@ export function useNftGalleryFilters(
   perAccount: Ref<Nfts | null>,
 ): UseNftGalleryFiltersReturn {
   // State
-  const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
-  const selectedCollection = ref<string | undefined>();
-  const sortBy = shallowRef<'name' | 'price' | 'collection'>('name');
-  const sortDescending = shallowRef<boolean>(false);
+  const modelSelectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
+  const modelSelectedCollection = ref<string | undefined>();
+  const modelSortBy = shallowRef<'name' | 'price' | 'collection'>('name');
+  const modelSortDescending = shallowRef<boolean>(false);
 
   // Computed properties
   const availableAddresses = computed<string[]>(() => get(perAccount) ? Object.keys(get(perAccount)!) : []);
@@ -39,8 +39,8 @@ export function useNftGalleryFilters(
   });
 
   const items = computed<GalleryNft[]>(() => {
-    const accounts = get(selectedAccounts);
-    const selection = get(selectedCollection);
+    const accounts = get(modelSelectedAccounts);
+    const selection = get(modelSelectedCollection);
     const hasAccounts = accounts.length > 0;
     const allNfts = [...get(nfts)];
 
@@ -51,25 +51,25 @@ export function useNftGalleryFilters(
           const sameCollection = selection ? selection === collection.name : true;
           return sameAccount && sameCollection;
         })
-        .sort((a, b) => sortNfts(sortBy, sortDescending, a, b));
+        .sort((a, b) => sortNfts(modelSortBy, modelSortDescending, a, b));
     }
 
-    return allNfts.sort((a, b) => sortNfts(sortBy, sortDescending, a, b));
+    return allNfts.sort((a, b) => sortNfts(modelSortBy, modelSortDescending, a, b));
   });
 
   // Methods
   function updateSortBy(value: string): void {
     assert(['name', 'price', 'collection'].includes(value));
-    set(sortBy, value as 'name' | 'price' | 'collection');
+    set(modelSortBy, value as 'name' | 'price' | 'collection');
   }
 
   function sortNfts(
-    sortBy: Ref<'name' | 'price' | 'collection'>,
+    sortProperty: Ref<'name' | 'price' | 'collection'>,
     sortDesc: Ref<boolean>,
     a: GalleryNft,
     b: GalleryNft,
   ): number {
-    const sortProp = get(sortBy);
+    const sortProp = get(sortProperty);
     const desc = get(sortDesc);
     const isCollection = sortProp === 'collection';
     const aElement = isCollection ? a.collection.name : a[sortProp];
@@ -99,10 +99,10 @@ export function useNftGalleryFilters(
     availableAddresses,
     collections,
     items,
-    selectedAccounts,
-    selectedCollection,
-    sortBy,
-    sortDescending,
+    modelSelectedAccounts,
+    modelSelectedCollection,
+    modelSortBy,
+    modelSortDescending,
     updateSortBy,
   };
 }

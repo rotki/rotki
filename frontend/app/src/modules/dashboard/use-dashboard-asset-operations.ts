@@ -5,7 +5,7 @@ import { isEvmNativeToken } from '@/modules/assets/types';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 
 interface UseDashboardAssetOperationsReturn {
-  expanded: Ref<AssetBalanceWithPrice[]>;
+  modelExpanded: Ref<AssetBalanceWithPrice[]>;
   isRowExpandable: (row: AssetBalanceWithPrice) => boolean;
   redirectToManualBalance: (item: AssetBalanceWithPrice) => void;
 }
@@ -14,7 +14,7 @@ export function useDashboardAssetOperations(
   tableType: MaybeRefOrGetter<DashboardTableType>,
 ): UseDashboardAssetOperationsReturn {
   const router = useRouter();
-  const expanded = ref<AssetBalanceWithPrice[]>([]);
+  const modelExpanded = ref<AssetBalanceWithPrice[]>([]);
 
   function redirectToManualBalance(item: AssetBalanceWithPrice): void {
     const type = toValue(tableType);
@@ -42,7 +42,7 @@ export function useDashboardAssetOperations(
   }
 
   return {
-    expanded,
+    modelExpanded,
     isRowExpandable,
     redirectToManualBalance,
   };

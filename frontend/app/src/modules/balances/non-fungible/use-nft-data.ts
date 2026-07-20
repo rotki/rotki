@@ -31,7 +31,7 @@ interface UseNftDataReturn {
   data: ComputedRef<NonFungibleBalance[]>;
   dataLoading: Ref<boolean>;
   fetchData: () => Promise<void>;
-  ignoredAssetsHandling: Ref<IgnoredAssetsHandlingType>;
+  modelIgnoredAssetsHandling: Ref<IgnoredAssetsHandlingType>;
   pagination: ComputedRef<TablePaginationData>;
   percentageOfCurrentGroup: (value: BigNumber) => string;
   percentageOfTotalNetValue: (value: BigNumber) => string;
@@ -48,10 +48,10 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
   const currencySymbol = useSetting('currencySymbol');
   const { t } = useI18n({ useScope: 'global' });
 
-  const ignoredAssetsHandling = shallowRef<IgnoredAssetsHandlingType>('exclude');
+  const modelIgnoredAssetsHandling = shallowRef<IgnoredAssetsHandlingType>('exclude');
 
   const extraParams = computed(() => ({
-    ignoredAssetsHandling: get(ignoredAssetsHandling),
+    ignoredAssetsHandling: get(modelIgnoredAssetsHandling),
   }));
 
   const { isLoading: sectionLoading } = useSectionStatus(Section.NON_FUNGIBLE_BALANCES);
@@ -75,7 +75,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
     history: dashboard ? 'external' : 'router',
     ...(!dashboard && {
       onUpdateFilters(query): void {
-        set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
+        set(modelIgnoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
       },
     }),
   });
@@ -84,7 +84,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
 
   // Watch ignoredAssetsHandling changes and reset to page 1 (only for non-dashboard)
   if (!dashboard) {
-    watch(ignoredAssetsHandling, () => {
+    watch(modelIgnoredAssetsHandling, () => {
       setPage(1);
     });
   }
@@ -199,7 +199,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
     data,
     dataLoading,
     fetchData,
-    ignoredAssetsHandling,
+    modelIgnoredAssetsHandling,
     pagination,
     percentageOfCurrentGroup,
     percentageOfTotalNetValue,

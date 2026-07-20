@@ -53,7 +53,7 @@ describe('useEventPriceConversion', () => {
       toAsset: 'USD',
     });
     expect(get(result.fetchedAssetToFiatPrice)).toBe('2500');
-    expect(get(result.assetToFiatPrice)).toBe('2500');
+    expect(get(result.modelAssetToFiatPrice)).toBe('2500');
   });
 
   it('should not fetch when asset is undefined', async () => {
@@ -109,7 +109,7 @@ describe('useEventPriceConversion', () => {
 
     await flushPromises();
 
-    expect(get(result.fiatValue)).toBe('7500');
+    expect(get(result.modelFiatValue)).toBe('7500');
   });
 
   it('should refetch when asset changes', async () => {
@@ -156,13 +156,13 @@ describe('useEventPriceConversion', () => {
 
     await flushPromises();
 
-    expect(get(result.assetToFiatPrice)).not.toBe('');
+    expect(get(result.modelAssetToFiatPrice)).not.toBe('');
 
     result.reset();
 
     expect(get(result.fetchedAssetToFiatPrice)).toBe('');
-    expect(get(result.assetToFiatPrice)).toBe('');
-    expect(get(result.fiatValue)).toBe('');
+    expect(get(result.modelAssetToFiatPrice)).toBe('');
+    expect(get(result.modelFiatValue)).toBe('');
   });
 
   it('should update fiat value when amount changes', async () => {
@@ -181,11 +181,11 @@ describe('useEventPriceConversion', () => {
     }));
 
     await flushPromises();
-    expect(get(result.fiatValue)).toBe('2000');
+    expect(get(result.modelFiatValue)).toBe('2000');
 
     set(amount, '5');
     await flushPromises();
 
-    expect(get(result.fiatValue)).toBe('5000');
+    expect(get(result.modelFiatValue)).toBe('5000');
   });
 });

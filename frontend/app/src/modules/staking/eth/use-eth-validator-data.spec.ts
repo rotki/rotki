@@ -131,8 +131,8 @@ describe('useEthValidatorData', () => {
   });
 
   it('should start with no selection', () => {
-    const { selected } = create();
-    expect(get(selected)).toEqual([]);
+    const { modelSelected } = create();
+    expect(get(modelSelected)).toEqual([]);
   });
 
   it('should register table sorting for the validators table', () => {

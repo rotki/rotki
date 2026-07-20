@@ -44,12 +44,12 @@ const chain = ref<string>();
 const showPriceFields = ref<boolean>(!hidePriceFields && !noPriceFields);
 
 const {
-  assetToFiatPrice,
+  modelAssetToFiatPrice,
   currencySymbol,
   fetchedAssetToFiatPrice,
   fetching,
-  fiatValue,
-  fiatValueFocused,
+  modelFiatValue,
+  modelFiatValueFocused,
   reset,
 } = useEventPriceConversion({
   amount,
@@ -69,11 +69,11 @@ async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStat
 
   try {
     const currency = get(currencySymbol);
-    if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice) && assetVal !== currency) {
+    if (get(modelAssetToFiatPrice) !== get(fetchedAssetToFiatPrice) && assetVal !== currency) {
       await updatePrice({
         fromAsset: assetVal,
         mode: 'manual',
-        price: get(assetToFiatPrice),
+        price: get(modelAssetToFiatPrice),
         timestampMs: timestamp,
         toAsset: currency,
       });
@@ -156,8 +156,8 @@ defineExpose({
     </div>
     <TwoFieldsAmountInput
       v-if="showPriceFields && !noPriceFields"
-      v-model:primary-value="assetToFiatPrice"
-      v-model:secondary-value="fiatValue"
+      v-model:primary-value="modelAssetToFiatPrice"
+      v-model:secondary-value="modelFiatValue"
       class="mb-4"
       :loading="fetching"
       :disabled="fetching || disabled"
@@ -169,7 +169,7 @@ defineExpose({
           symbol: currencySymbol,
         }),
       }"
-      @update:reversed="fiatValueFocused = $event"
+      @update:reversed="modelFiatValueFocused = $event"
     />
   </div>
 </template>

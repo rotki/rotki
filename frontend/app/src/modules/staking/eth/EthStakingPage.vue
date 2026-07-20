@@ -41,8 +41,8 @@ const missingApiKeyService = computed<'beaconchain' | 'consensusRpc' | undefined
 // Validator management
 const {
   fetchValidatorsWithFilter,
-  filter,
-  selection,
+  modelFilter,
+  modelSelection,
   setTotal,
   total,
 } = useEthValidatorManagement();
@@ -98,17 +98,17 @@ onBeforeMount(async () => {
 
       <EthStaking
         v-model:performance-pagination="performancePagination"
-        v-model:filter="filter"
+        v-model:filter="modelFilter"
         :refreshing="refreshing"
         :total="total"
-        :accounts="selection"
+        :accounts="modelSelection"
         :performance="performance"
         :performance-loading="performanceLoading"
       >
         <template #selection>
           <EthValidatorFilter
-            v-model="selection"
-            v-model:filter="filter"
+            v-model="modelSelection"
+            v-model:filter="modelFilter"
           />
         </template>
       </EthStaking>

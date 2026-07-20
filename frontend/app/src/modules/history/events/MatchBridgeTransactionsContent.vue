@@ -40,8 +40,8 @@ const {
   ignoreLoading,
   ignoreTransaction,
   restoreTransaction,
-  selectedIgnored,
-  selectedUnmatched,
+  modelSelectedIgnored,
+  modelSelectedUnmatched,
 } = useBridgeTransactionActions({ onActionComplete });
 
 const buttonSize = computed<'sm' | 'lg'>(() => isPinned ? 'sm' : 'lg');
@@ -88,7 +88,7 @@ onBeforeMount(async () => {
   >
     <RuiTabItem>
       <UnmatchedBridgesList
-        v-model:selected="selectedUnmatched"
+        v-model:selected="modelSelectedUnmatched"
         :transactions="unmatchedTransactions"
         :highlighted-group-identifier="highlightedGroupIdentifier"
         :ignore-loading="ignoreLoading"
@@ -105,7 +105,7 @@ onBeforeMount(async () => {
     </RuiTabItem>
     <RuiTabItem>
       <UnmatchedBridgesList
-        v-model:selected="selectedIgnored"
+        v-model:selected="modelSelectedIgnored"
         :transactions="ignoredTransactions"
         :highlighted-group-identifier="highlightedGroupIdentifier"
         :loading="ignoredLoading"
@@ -132,18 +132,18 @@ onBeforeMount(async () => {
         color="primary"
         :size="buttonSize"
         :class="{ 'h-[30px]': isPinned }"
-        :disabled="selectedUnmatched.length === 0 || ignoreLoading"
+        :disabled="modelSelectedUnmatched.length === 0 || ignoreLoading"
         :loading="ignoreLoading"
         @click="confirmIgnoreSelected()"
       >
         {{ t('asset_movement_matching.actions.ignore_selected') }}
         <RuiChip
-          v-if="!isPinned && selectedUnmatched.length > 0"
+          v-if="!isPinned && modelSelectedUnmatched.length > 0"
           size="sm"
           color="primary"
           class="ml-2 !py-0"
         >
-          {{ selectedUnmatched.length }}
+          {{ modelSelectedUnmatched.length }}
         </RuiChip>
       </RuiButton>
       <RuiButtonGroup
@@ -186,18 +186,18 @@ onBeforeMount(async () => {
         variant="outlined"
         color="primary"
         :size="buttonSize"
-        :disabled="selectedIgnored.length === 0 || ignoreLoading"
+        :disabled="modelSelectedIgnored.length === 0 || ignoreLoading"
         :loading="ignoreLoading"
         @click="confirmRestoreSelected()"
       >
         {{ t('asset_movement_matching.actions.restore_selected') }}
         <RuiChip
-          v-if="!isPinned && selectedIgnored.length > 0"
+          v-if="!isPinned && modelSelectedIgnored.length > 0"
           size="sm"
           color="primary"
           class="ml-2 !py-0"
         >
-          {{ selectedIgnored.length }}
+          {{ modelSelectedIgnored.length }}
         </RuiChip>
       </RuiButton>
     </div>

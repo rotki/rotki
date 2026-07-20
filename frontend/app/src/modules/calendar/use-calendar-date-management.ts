@@ -3,8 +3,8 @@ import type { CalendarEvent } from '@/modules/calendar/types';
 import dayjs, { type Dayjs } from 'dayjs';
 
 interface UseCalendarDateManagementReturn {
-  selectedDate: Ref<Dayjs>;
-  visibleDate: Ref<Dayjs>;
+  modelSelectedDate: Ref<Dayjs>;
+  modelVisibleDate: Ref<Dayjs>;
   selectedDateEvents: Ref<CalendarEvent[]>;
   setSelectedDate: (day: Dayjs) => void;
 }
@@ -13,33 +13,33 @@ export function useCalendarDateManagement(
   eventsWithDate: ComputedRef<(CalendarEvent & { date: string })[]>,
   dateFormat: string,
 ): UseCalendarDateManagementReturn {
-  const selectedDate = ref<Dayjs>(dayjs());
-  const visibleDate = ref<Dayjs>(dayjs());
+  const modelSelectedDate = ref<Dayjs>(dayjs());
+  const modelVisibleDate = ref<Dayjs>(dayjs());
   const selectedDateEvents = ref<CalendarEvent[]>([]);
 
   function setSelectedDate(day: Dayjs): void {
-    set(selectedDate, day);
+    set(modelSelectedDate, day);
   }
 
   // Watch selected date to update visible date
-  watch(selectedDate, (selected) => {
-    set(visibleDate, selected);
+  watch(modelSelectedDate, (selected) => {
+    set(modelVisibleDate, selected);
   });
 
   // Watch selected date and events to update selected date events
-  watch([selectedDate, eventsWithDate], ([selectedDate, eventsWithDate]) => {
-    const selectedDateFormatted = selectedDate.format(dateFormat);
+  watch([modelSelectedDate, eventsWithDate], ([modelSelectedDate, eventsWithDate]) => {
+    const selectedDateFormatted = modelSelectedDate.format(dateFormat);
     const events = eventsWithDate.filter(item => item.date === selectedDateFormatted);
-    if (events.length === 0 && selectedDateFormatted !== get(visibleDate).format(dateFormat))
+    if (events.length === 0 && selectedDateFormatted !== get(modelVisibleDate).format(dateFormat))
       return;
 
     set(selectedDateEvents, events);
   });
 
   return {
-    selectedDate,
+    modelSelectedDate,
     selectedDateEvents,
     setSelectedDate,
-    visibleDate,
+    modelVisibleDate,
   };
 }

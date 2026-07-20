@@ -65,7 +65,7 @@ const {
   defaultLogDirectory,
   defaultLogLevel,
   fileConfig,
-  logLevel,
+  modelLogLevel,
   options,
   resetOptions,
   saveOptions,
@@ -97,7 +97,7 @@ async function loaded() {
   }
   const initial = get(initialOptions);
 
-  set(logLevel, initial.loglevel);
+  set(modelLogLevel, initial.loglevel);
   set(userDataDirectory, initial.dataDirectory);
   set(userLogDirectory, initial.logDirectory);
   set(logFromOtherModules, initial.logFromOtherModules);
@@ -135,7 +135,7 @@ const newUserOptions = computed(() => {
   const initial = get(initialOptions);
   const newOptions: Writeable<Partial<BackendOptions>> = {};
 
-  const level = get(logLevel);
+  const level = get(modelLogLevel);
   if (level !== initial.loglevel)
     newOptions.loglevel = level;
 
@@ -171,7 +171,7 @@ const anyValueChanged = computed(() => {
     dataDirectory: get(userDataDirectory),
     logDirectory: get(userLogDirectory),
     logFromOtherModules: get(logFromOtherModules),
-    loglevel: get(logLevel),
+    loglevel: get(modelLogLevel),
     maxLogfilesNum: parseValue(get(maxLogFiles)),
     maxSizeInMbAllLogs: parseValue(get(maxLogSize)),
     sqliteInstructions: parseValue(get(sqliteInstructions)),
@@ -353,7 +353,7 @@ function showResetConfirmation() {
       </RuiTextField>
 
       <LogLevelInput
-        v-model="logLevel"
+        v-model="modelLogLevel"
         :disabled="!!fileConfig.loglevel"
         :error-messages="!!fileConfig.loglevel ? t('backend_settings.config_file_disabled') : undefined"
       />

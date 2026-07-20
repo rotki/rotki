@@ -12,8 +12,8 @@ interface UseAssetMovementActionsOptions {
 interface UseAssetMovementActionsReturn {
   fiatMovements: ComputedRef<UnmatchedAssetMovement[]>;
   ignoreLoading: Readonly<Ref<boolean>>;
-  selectedIgnored: Ref<string[]>;
-  selectedUnmatched: Ref<string[]>;
+  modelSelectedIgnored: Ref<string[]>;
+  modelSelectedUnmatched: Ref<string[]>;
   confirmIgnoreAllFiat: () => void;
   confirmIgnoreSelected: () => void;
   confirmRestoreSelected: () => void;
@@ -38,8 +38,8 @@ export function useAssetMovementActions(
   const { show } = useConfirmStore();
 
   const ignoreLoading = shallowRef<boolean>(false);
-  const selectedUnmatched = ref<string[]>([]);
-  const selectedIgnored = ref<string[]>([]);
+  const modelSelectedUnmatched = ref<string[]>([]);
+  const modelSelectedIgnored = ref<string[]>([]);
 
   const fiatMovements = computed<UnmatchedAssetMovement[]>(() =>
     get(unmatchedMovements).filter(movement => movement.isFiat),
@@ -81,7 +81,7 @@ export function useAssetMovementActions(
         await matchAssetMovements(getMovementIdentifier(movement));
 
       await refreshUnmatchedAssetMovements();
-      set(selectedUnmatched, []);
+      set(modelSelectedUnmatched, []);
     }
     finally {
       set(ignoreLoading, false);
@@ -96,7 +96,7 @@ export function useAssetMovementActions(
         await unlinkAssetMovement(getMovementIdentifier(movement));
 
       await refreshUnmatchedAssetMovements();
-      set(selectedIgnored, []);
+      set(modelSelectedIgnored, []);
     }
     finally {
       set(ignoreLoading, false);
@@ -104,21 +104,21 @@ export function useAssetMovementActions(
   }
 
   function confirmIgnoreSelected(): void {
-    const count = get(selectedUnmatched).length;
+    const count = get(modelSelectedUnmatched).length;
     show({
       message: t('asset_movement_matching.actions.ignore_selected_confirm', { count }),
       primaryAction: t('common.actions.confirm'),
       title: t('asset_movement_matching.actions.ignore_selected'),
-    }, async () => ignoreSelectedMovements(get(selectedUnmatched)));
+    }, async () => ignoreSelectedMovements(get(modelSelectedUnmatched)));
   }
 
   function confirmRestoreSelected(): void {
-    const count = get(selectedIgnored).length;
+    const count = get(modelSelectedIgnored).length;
     show({
       message: t('asset_movement_matching.actions.restore_selected_confirm', { count }),
       primaryAction: t('common.actions.confirm'),
       title: t('asset_movement_matching.actions.restore_selected'),
-    }, async () => unignoreSelectedMovements(get(selectedIgnored)));
+    }, async () => unignoreSelectedMovements(get(modelSelectedIgnored)));
   }
 
   async function ignoreAllFiatMovements(): Promise<void> {
@@ -128,7 +128,7 @@ export function useAssetMovementActions(
         await matchAssetMovements(getMovementIdentifier(movement));
 
       await refreshUnmatchedAssetMovements();
-      set(selectedUnmatched, []);
+      set(modelSelectedUnmatched, []);
     }
     finally {
       set(ignoreLoading, false);
@@ -152,7 +152,7 @@ export function useAssetMovementActions(
     ignoreLoading: readonly(ignoreLoading),
     ignoreMovement,
     restoreMovement,
-    selectedIgnored,
-    selectedUnmatched,
+    modelSelectedIgnored,
+    modelSelectedUnmatched,
   };
 }
