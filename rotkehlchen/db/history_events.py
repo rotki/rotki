@@ -189,6 +189,20 @@ class HistoryEventsWithCountResult(HistoryEventsResult):
 
 
 class DBHistoryEvents:
+    @staticmethod
+    def transaction_events_reference_address(
+            cursor: DBCursor,
+            tx_ref: bytes,
+            location: Location,
+            address: str,
+    ) -> bool:
+        """Return whether a transaction already has an event attributed to address."""
+        return cursor.execute(
+            'SELECT 1 FROM history_events h '
+            'INNER JOIN chain_events_info c ON h.identifier=c.identifier '
+            'WHERE c.tx_ref=? AND h.location=? AND h.location_label=? LIMIT 1',
+            (tx_ref, location.serialize_for_db(), address),
+        ).fetchone() is not None
 
     def __init__(self, database: DBHandler) -> None:
         self.db = database

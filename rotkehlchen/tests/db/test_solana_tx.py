@@ -3,14 +3,19 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
+from rotkehlchen.constants.assets import A_SOL
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.constants import TX_DECODED
 from rotkehlchen.db.filtering import (
     SolanaTransactionsFilterQuery,
     SolanaTransactionsNotDecodedFilterQuery,
 )
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.solanatx import DBSolanaTx
+from rotkehlchen.history.events.structures.solana_event import SolanaEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.factories import make_solana_address, make_solana_signature
-from rotkehlchen.types import SolanaAddress, Timestamp
+from rotkehlchen.types import Location, SolanaAddress, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -112,31 +117,76 @@ def test_existing_solana_transaction_is_redecoded_for_new_address(
             solana_transactions=[transaction],
             relevant_address=new_address,
         )
-        expected_decoded_count = 0 if has_existing_mapping else 1
         assert write_cursor.execute(
             'SELECT COUNT(*) FROM solana_tx_mappings WHERE tx_id=? AND value=?',
             (tx_id, TX_DECODED),
-        ).fetchone()[0] == expected_decoded_count
+        ).fetchone()[0] == 0
         expected_address_count = 2 if has_existing_mapping else 1
         assert write_cursor.execute(
             'SELECT COUNT(*) FROM solanatx_address_mappings WHERE tx_id=?',
             (tx_id,),
         ).fetchone()[0] == expected_address_count
 
-        if has_existing_mapping:
-            write_cursor.execute(
-                'INSERT INTO solana_tx_mappings(tx_id, value) VALUES(?, ?)',
-                (tx_id, TX_DECODED),
-            )
-            dbsolanatx.add_transactions(
-                write_cursor=write_cursor,
-                solana_transactions=[transaction],
-                relevant_address=new_address,
-            )
-            assert write_cursor.execute(
-                'SELECT COUNT(*) FROM solana_tx_mappings WHERE tx_id=? AND value=?',
-                (tx_id, TX_DECODED),
-            ).fetchone()[0] == 1
+        write_cursor.execute(
+            'INSERT INTO solana_tx_mappings(tx_id, value) VALUES(?, ?)',
+            (tx_id, TX_DECODED),
+        )
+        dbsolanatx.add_transactions(
+            write_cursor=write_cursor,
+            solana_transactions=[transaction],
+            relevant_address=new_address,
+        )
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM solana_tx_mappings WHERE tx_id=? AND value=?',
+            (tx_id, TX_DECODED),
+        ).fetchone()[0] == 1
+
+
+def test_first_solana_mapping_keeps_events_already_referencing_address(
+        database: DBHandler,
+) -> None:
+    """A by-signature decode for an already tracked address should not be invalidated."""
+    transaction = create_test_solana_transactions()[0][0]
+    relevant_address = make_solana_address()
+    dbsolanatx = DBSolanaTx(database)
+    with database.user_write() as write_cursor:
+        dbsolanatx.add_transactions(
+            write_cursor=write_cursor,
+            solana_transactions=[transaction],
+            relevant_address=None,
+        )
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=SolanaEvent(
+                tx_ref=transaction.signature,
+                sequence_index=0,
+                timestamp=TimestampMS(transaction.block_time * 1000),
+                location=Location.SOLANA,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_SOL,
+                amount=ONE,
+                location_label=relevant_address,
+            ),
+        )
+        tx_id = transaction.get_or_query_db_id(write_cursor)
+        write_cursor.execute(
+            'INSERT INTO solana_tx_mappings(tx_id, value) VALUES(?, ?)',
+            (tx_id, TX_DECODED),
+        )
+        dbsolanatx.add_transactions(
+            write_cursor=write_cursor,
+            solana_transactions=[transaction],
+            relevant_address=relevant_address,
+        )
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM solana_tx_mappings WHERE tx_id=? AND value=?',
+            (tx_id, TX_DECODED),
+        ).fetchone()[0] == 1
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM chain_events_info WHERE tx_ref=?',
+            (transaction.signature.to_bytes(),),
+        ).fetchone()[0] == 1
 
 
 def test_solana_transactions_filtering(database: DBHandler) -> None:
