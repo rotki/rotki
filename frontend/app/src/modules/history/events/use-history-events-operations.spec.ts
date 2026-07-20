@@ -114,7 +114,7 @@ describe('useHistoryEventsOperations', () => {
     const ops = setup();
     ops.redecode(evmPayload, 'g1');
     expect(get(ops.hasCustomEvents)).toBe(true);
-    expect(get(ops.showRedecodeConfirmation)).toBe(true);
+    expect(get(ops.modelShowRedecodeConfirmation)).toBe(true);
     expect(get(ops.redecodePayload)).toEqual(evmPayload);
     expect(emit).not.toHaveBeenCalledWith('refresh', expect.anything());
   });
@@ -134,7 +134,7 @@ describe('useHistoryEventsOperations', () => {
     const ops = setup();
     ops.redecodeWithOptions(evmPayload, 'g1');
     expect(get(ops.showIndexerOptions)).toBe(true);
-    expect(get(ops.showRedecodeConfirmation)).toBe(true);
+    expect(get(ops.modelShowRedecodeConfirmation)).toBe(true);
     expect(get(ops.redecodePayload)).toEqual(evmPayload);
   });
 

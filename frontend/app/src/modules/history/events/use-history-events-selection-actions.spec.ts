@@ -86,7 +86,7 @@ describe('useHistoryEventsSelectionActions', () => {
     const { actions } = setup([]);
     await actions.handleSelectionAction('create-rule');
     expect(spies.showConfirm).toHaveBeenCalledOnce();
-    expect(get(actions.accountingRuleToEdit)).toBeUndefined();
+    expect(get(actions.modelAccountingRuleToEdit)).toBeUndefined();
   });
 
   it('should warn when the selected events have differing types', async () => {
@@ -98,7 +98,7 @@ describe('useHistoryEventsSelectionActions', () => {
     select(selectionMode, 1, 2);
     await actions.handleSelectionAction('create-rule');
     expect(spies.showConfirm).toHaveBeenCalledOnce();
-    expect(get(actions.accountingRuleToEdit)).toBeUndefined();
+    expect(get(actions.modelAccountingRuleToEdit)).toBeUndefined();
   });
 
   it('should seed an accounting rule when the selection shares a type', async () => {
@@ -111,7 +111,7 @@ describe('useHistoryEventsSelectionActions', () => {
     await actions.handleSelectionAction('create-rule');
     expect(spies.showConfirm).not.toHaveBeenCalled();
     expect(get(actions.selectedEventIds)).toEqual([1, 2]);
-    expect(get(actions.accountingRuleToEdit)).toMatchObject({ eventSubtype: 'fee', eventType: 'spend' });
+    expect(get(actions.modelAccountingRuleToEdit)).toMatchObject({ eventSubtype: 'fee', eventType: 'spend' });
   });
 
   it('should ignore and unignore the selected events', async () => {

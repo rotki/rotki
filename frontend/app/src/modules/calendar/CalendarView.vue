@@ -27,15 +27,15 @@ const {
   fetchData,
   initializePagination,
   isLoading,
-  range,
+  modelRange,
   setToday: setTodayData,
   today,
   upcomingEvents,
 } = useCalendarData(accounts);
 
-const { selectedDate, selectedDateEvents, setSelectedDate, visibleDate } = useCalendarDateManagement(eventsWithDate, dateFormat);
+const { modelSelectedDate, selectedDateEvents, setSelectedDate, modelVisibleDate } = useCalendarDateManagement(eventsWithDate, dateFormat);
 
-const { add, deleteEvent, edit, editMode, modelValue } = useCalendarOperations(selectedDate, fetchData);
+const { add, deleteEvent, edit, editMode, modelValue } = useCalendarOperations(modelSelectedDate, fetchData);
 
 function setToday(): void {
   const now = setTodayData();
@@ -53,7 +53,7 @@ onMounted(async () => {
     const timestamp = Number(query.timestamp);
     const date = dayjs(timestamp * 1000);
     if (date.isValid())
-      set(selectedDate, date);
+      set(modelSelectedDate, date);
 
     await router.replace({ query: {} });
   }
@@ -90,10 +90,10 @@ onMounted(async () => {
             />
           </template>
           <div class="flex gap-4">
-            <CalendarMonthNavigator v-model="visibleDate" />
+            <CalendarMonthNavigator v-model="modelVisibleDate" />
             <CalendarDateNavigator
-              v-model="selectedDate"
-              :visible-date="visibleDate"
+              v-model="modelSelectedDate"
+              :visible-date="modelVisibleDate"
               :today="today"
               @set-today="setToday()"
             />
@@ -101,11 +101,11 @@ onMounted(async () => {
         </HistoryTableActions>
         <CalendarGrid
           :today="today"
-          :selected-date="selectedDate"
-          :visible-date="visibleDate"
+          :selected-date="modelSelectedDate"
+          :visible-date="modelVisibleDate"
           :events-with-date="eventsWithDate"
           @update:selected-date="setSelectedDate($event)"
-          @update:range="range = $event"
+          @update:range="modelRange = $event"
           @edit="edit($event)"
           @add="add($event)"
         />
@@ -113,7 +113,7 @@ onMounted(async () => {
         <CalendarFormDialog
           v-model="modelValue"
           :loading="isLoading"
-          :selected-date="selectedDate"
+          :selected-date="modelSelectedDate"
           :edit-mode="editMode"
           @delete="deleteEvent()"
           @refresh="fetchData()"
@@ -121,16 +121,16 @@ onMounted(async () => {
       </RuiCard>
       <div class="flex flex-col gap-4 h-auto">
         <CalendarSelectedEventsPanel
-          v-model:selected-date="selectedDate"
+          v-model:selected-date="modelSelectedDate"
           :selected-date-events="selectedDateEvents"
           :today="today"
-          :visible-date="visibleDate"
+          :visible-date="modelVisibleDate"
           @edit="edit($event)"
         />
         <CalendarUpcomingEventsPanel
-          v-model:selected-date="selectedDate"
+          v-model:selected-date="modelSelectedDate"
           :upcoming-events="upcomingEvents"
-          :visible-date="visibleDate"
+          :visible-date="modelVisibleDate"
           @edit="edit($event)"
         />
       </div>

@@ -145,7 +145,7 @@ const {
   redecodePayload,
   redecodeWithOptions,
   showIndexerOptions,
-  showRedecodeConfirmation,
+  modelShowRedecodeConfirmation,
   suggestNextSequenceId,
   toggle,
 } = useHistoryEventsOperations({
@@ -452,7 +452,7 @@ function isShowingIgnoredAssets(groupId: string): boolean {
 
   <!-- Redecode Confirmation Dialog -->
   <RedecodeConfirmationDialog
-    v-model:show="showRedecodeConfirmation"
+    v-model:show="modelShowRedecodeConfirmation"
     :payload="redecodePayload"
     :has-custom-events="hasCustomEvents"
     :show-indexer-options="showIndexerOptions"

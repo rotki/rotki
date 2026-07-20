@@ -68,8 +68,8 @@ describe('useRuleEditorForm', () => {
   describe('initial state', () => {
     it('should default to chain kind with nothing selected', () => {
       harness = createHarness();
-      expect(harness.form.kind.value).toBe('chain');
-      expect(harness.form.chainId.value).toBeUndefined();
+      expect(harness.form.modelKind.value).toBe('chain');
+      expect(harness.form.modelChainId.value).toBeUndefined();
       expect(harness.form.canSave.value).toBe(false);
     });
 
@@ -77,8 +77,8 @@ describe('useRuleEditorForm', () => {
       harness = createHarness({
         editing: { chainId: 'optimism', id: 'r1', kind: 'chain' },
       });
-      expect(harness.form.kind.value).toBe('chain');
-      expect(harness.form.chainId.value).toBe('optimism');
+      expect(harness.form.modelKind.value).toBe('chain');
+      expect(harness.form.modelChainId.value).toBe('optimism');
       expect(harness.form.canSave.value).toBe(true);
     });
 
@@ -86,17 +86,17 @@ describe('useRuleEditorForm', () => {
       harness = createHarness({
         editing: { address: ADDR_A, chainIds: ['eth', 'optimism'], id: 'r2', kind: 'address' },
       });
-      expect(harness.form.kind.value).toBe('address');
-      expect(harness.form.address.value).toBe(ADDR_A);
-      expect(harness.form.scope.value).toBe('all');
+      expect(harness.form.modelKind.value).toBe('address');
+      expect(harness.form.modelAddress.value).toBe(ADDR_A);
+      expect(harness.form.modelScope.value).toBe('all');
     });
 
     it('should prefill scope=specific when an editing address rule covers a subset', () => {
       harness = createHarness({
         editing: { address: ADDR_A, chainIds: ['optimism'], id: 'r3', kind: 'address' },
       });
-      expect(harness.form.scope.value).toBe('specific');
-      expect(harness.form.selectedChainIds.value).toEqual(['optimism']);
+      expect(harness.form.modelScope.value).toBe('specific');
+      expect(harness.form.modelSelectedChainIds.value).toEqual(['optimism']);
     });
   });
 
@@ -119,7 +119,7 @@ describe('useRuleEditorForm', () => {
   describe('availableChainsForAddress', () => {
     it('should fall back to every chain when no address is picked', () => {
       harness = createHarness();
-      harness.form.kind.value = 'address';
+      harness.form.modelKind.value = 'address';
       expect([...harness.form.availableChainsForAddress.value].sort()).toEqual(
         ['arbitrum_one', 'eth', 'optimism'],
       );
@@ -127,8 +127,8 @@ describe('useRuleEditorForm', () => {
 
     it('should narrow to chains where the picked address is tracked', () => {
       harness = createHarness();
-      harness.form.kind.value = 'address';
-      harness.form.address.value = ADDR_B;
+      harness.form.modelKind.value = 'address';
+      harness.form.modelAddress.value = ADDR_B;
       expect(harness.form.availableChainsForAddress.value).toEqual(['eth']);
     });
   });
@@ -136,21 +136,21 @@ describe('useRuleEditorForm', () => {
   describe('buildDraft', () => {
     it('should return undefined while the form is invalid', () => {
       harness = createHarness();
-      harness.form.kind.value = 'address';
+      harness.form.modelKind.value = 'address';
       expect(harness.form.buildDraft()).toBeUndefined();
     });
 
     it('should produce a chain draft', () => {
       harness = createHarness();
-      harness.form.chainId.value = 'eth';
+      harness.form.modelChainId.value = 'eth';
       expect(harness.form.buildDraft()).toEqual({ chainId: 'eth', kind: 'chain' });
     });
 
     it('should produce an address draft covering all tracked chains in scope=all', () => {
       harness = createHarness();
-      harness.form.kind.value = 'address';
-      harness.form.address.value = ADDR_A;
-      harness.form.scope.value = 'all';
+      harness.form.modelKind.value = 'address';
+      harness.form.modelAddress.value = ADDR_A;
+      harness.form.modelScope.value = 'all';
       const draft = harness.form.buildDraft();
       expect(draft).toEqual({
         address: ADDR_A,
@@ -161,10 +161,10 @@ describe('useRuleEditorForm', () => {
 
     it('should produce an address draft limited to selected chains in scope=specific', () => {
       harness = createHarness();
-      harness.form.kind.value = 'address';
-      harness.form.address.value = ADDR_A;
-      harness.form.scope.value = 'specific';
-      harness.form.selectedChainIds.value = ['optimism'];
+      harness.form.modelKind.value = 'address';
+      harness.form.modelAddress.value = ADDR_A;
+      harness.form.modelScope.value = 'specific';
+      harness.form.modelSelectedChainIds.value = ['optimism'];
       expect(harness.form.buildDraft()).toEqual({
         address: ADDR_A,
         chainIds: ['optimism'],
@@ -174,10 +174,10 @@ describe('useRuleEditorForm', () => {
 
     it('should require at least one chain in scope=specific', () => {
       harness = createHarness();
-      harness.form.kind.value = 'address';
-      harness.form.address.value = ADDR_A;
-      harness.form.scope.value = 'specific';
-      harness.form.selectedChainIds.value = [];
+      harness.form.modelKind.value = 'address';
+      harness.form.modelAddress.value = ADDR_A;
+      harness.form.modelScope.value = 'specific';
+      harness.form.modelSelectedChainIds.value = [];
       expect(harness.form.canSave.value).toBe(false);
       expect(harness.form.buildDraft()).toBeUndefined();
     });
@@ -186,14 +186,14 @@ describe('useRuleEditorForm', () => {
   describe('reactive pruning', () => {
     it('should prune selected chains that no longer apply when the picked address changes', async () => {
       harness = createHarness();
-      harness.form.kind.value = 'address';
-      harness.form.scope.value = 'specific';
-      harness.form.address.value = ADDR_A;
-      harness.form.selectedChainIds.value = ['eth', 'optimism'];
+      harness.form.modelKind.value = 'address';
+      harness.form.modelScope.value = 'specific';
+      harness.form.modelAddress.value = ADDR_A;
+      harness.form.modelSelectedChainIds.value = ['eth', 'optimism'];
       await nextTick();
-      harness.form.address.value = ADDR_B;
+      harness.form.modelAddress.value = ADDR_B;
       await nextTick();
-      expect(harness.form.selectedChainIds.value).toEqual(['eth']);
+      expect(harness.form.modelSelectedChainIds.value).toEqual(['eth']);
     });
   });
 
@@ -202,22 +202,22 @@ describe('useRuleEditorForm', () => {
       harness = createHarness({
         editing: { chainId: 'eth', id: 'r1', kind: 'chain' },
       });
-      harness.form.chainId.value = 'optimism';
+      harness.form.modelChainId.value = 'optimism';
       harness.form.reset();
-      expect(harness.form.chainId.value).toBe('eth');
+      expect(harness.form.modelChainId.value).toBe('eth');
     });
 
     it('should clear all fields when editing is undefined', () => {
       harness = createHarness();
-      harness.form.kind.value = 'address';
-      harness.form.address.value = ADDR_A;
-      harness.form.scope.value = 'specific';
-      harness.form.selectedChainIds.value = ['eth'];
+      harness.form.modelKind.value = 'address';
+      harness.form.modelAddress.value = ADDR_A;
+      harness.form.modelScope.value = 'specific';
+      harness.form.modelSelectedChainIds.value = ['eth'];
       harness.form.reset();
-      expect(harness.form.kind.value).toBe('chain');
-      expect(harness.form.address.value).toBeUndefined();
-      expect(harness.form.selectedChainIds.value).toEqual([]);
-      expect(harness.form.scope.value).toBe('all');
+      expect(harness.form.modelKind.value).toBe('chain');
+      expect(harness.form.modelAddress.value).toBeUndefined();
+      expect(harness.form.modelSelectedChainIds.value).toEqual([]);
+      expect(harness.form.modelScope.value).toBe('all');
     });
   });
 });

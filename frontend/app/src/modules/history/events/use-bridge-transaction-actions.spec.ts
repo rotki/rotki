@@ -190,14 +190,14 @@ describe('use-bridge-transaction-actions', () => {
       ]);
 
       const composable = useBridgeTransactionActions();
-      set(composable.selectedUnmatched, ['g1', 'g3']);
+      set(composable.modelSelectedUnmatched, ['g1', 'g3']);
       composable.confirmIgnoreSelected();
       await extractAndCallConfirmCallback();
 
       expect(spies.matchBridgeTransactions).toHaveBeenCalledTimes(2);
       expect(spies.matchBridgeTransactions).toHaveBeenCalledWith(10);
       expect(spies.matchBridgeTransactions).toHaveBeenCalledWith(30);
-      expect(get(composable.selectedUnmatched)).toEqual([]);
+      expect(get(composable.modelSelectedUnmatched)).toEqual([]);
     });
   });
 
@@ -209,13 +209,13 @@ describe('use-bridge-transaction-actions', () => {
       ]);
 
       const composable = useBridgeTransactionActions();
-      set(composable.selectedIgnored, ['g2']);
+      set(composable.modelSelectedIgnored, ['g2']);
       composable.confirmRestoreSelected();
       await extractAndCallConfirmCallback();
 
       expect(spies.unlinkBridgeTransaction).toHaveBeenCalledTimes(1);
       expect(spies.unlinkBridgeTransaction).toHaveBeenCalledWith(20);
-      expect(get(composable.selectedIgnored)).toEqual([]);
+      expect(get(composable.modelSelectedIgnored)).toEqual([]);
     });
   });
 });

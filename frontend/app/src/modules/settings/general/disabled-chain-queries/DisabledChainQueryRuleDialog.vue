@@ -22,16 +22,16 @@ const { accounts } = storeToRefs(useBlockchainAccountsStore());
 const { supportedChains } = useSupportedChains();
 
 const {
-  address,
+  modelAddress,
   addressOptions,
   availableChainsForAddress,
   buildDraft,
   canSave,
-  chainId,
-  kind,
+  modelChainId,
+  modelKind,
   reset,
-  scope,
-  selectedChainIds,
+  modelScope,
+  modelSelectedChainIds,
 } = useRuleEditorForm({
   accounts,
   chains: supportedChains,
@@ -70,7 +70,7 @@ watch(open, (value) => {
             {{ t('general_settings.disabled_chain_queries.dialog.kind_label') }}
           </div>
           <RuiButtonGroup
-            v-model="kind"
+            v-model="modelKind"
             color="primary"
             variant="outlined"
             required
@@ -86,8 +86,8 @@ watch(open, (value) => {
         </div>
 
         <RuiAutoComplete
-          v-if="kind === 'chain'"
-          v-model="chainId"
+          v-if="modelKind === 'chain'"
+          v-model="modelChainId"
           :options="supportedChains"
           :label="t('general_settings.disabled_chain_queries.dialog.chain_label')"
           variant="outlined"
@@ -113,7 +113,7 @@ watch(open, (value) => {
 
         <template v-else>
           <RuiAutoComplete
-            v-model="address"
+            v-model="modelAddress"
             :options="addressOptions"
             :label="t('general_settings.disabled_chain_queries.dialog.address_label')"
             variant="outlined"
@@ -147,7 +147,7 @@ watch(open, (value) => {
               {{ t('general_settings.disabled_chain_queries.dialog.scope_label') }}
             </div>
             <RuiButtonGroup
-              v-model="scope"
+              v-model="modelScope"
               color="primary"
               variant="outlined"
               required
@@ -163,8 +163,8 @@ watch(open, (value) => {
           </div>
 
           <RuiAutoComplete
-            v-if="scope === 'specific'"
-            :model-value="selectedChainIds"
+            v-if="modelScope === 'specific'"
+            :model-value="modelSelectedChainIds"
             :options="chainOptionsForAddress"
             :label="t('general_settings.disabled_chain_queries.dialog.chains_label')"
             variant="outlined"
@@ -174,7 +174,7 @@ watch(open, (value) => {
             hide-details
             auto-select-first
             data-testid="rule-chains-picker"
-            @update:model-value="selectedChainIds = $event"
+            @update:model-value="modelSelectedChainIds = $event"
           >
             <template #selection="{ item }">
               <ChainDisplay

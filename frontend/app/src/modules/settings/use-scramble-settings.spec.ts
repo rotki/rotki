@@ -50,14 +50,14 @@ describe('useScrambleSetting', () => {
     set(scrambleData, true);
     set(scrambleMultiplier, 7);
     const { api, unmount } = mountComposable();
-    expect(get(api.scrambleData)).toBe(true);
-    expect(get(api.scrambleMultiplier)).toBe('7');
+    expect(get(api.modelScrambleData)).toBe(true);
+    expect(get(api.modelScrambleMultiplier)).toBe('7');
     unmount();
   });
 
   it('should fall back to a random multiplier when none is stored', () => {
     const { api, unmount } = mountComposable();
-    expect(get(api.scrambleMultiplier)).toBe('5');
+    expect(get(api.modelScrambleMultiplier)).toBe('5');
     unmount();
   });
 
@@ -65,14 +65,14 @@ describe('useScrambleSetting', () => {
     const { api, unmount } = mountComposable();
     const value = api.randomMultiplier();
     expect(value).toBe('5');
-    expect(get(api.scrambleMultiplier)).toBe('5');
+    expect(get(api.modelScrambleMultiplier)).toBe('5');
     unmount();
   });
 
   it('should apply the setting locally immediately and to the backend after debounce', async () => {
     const { api, unmount } = mountComposable();
     api.handleMultiplierUpdate('3');
-    expect(get(api.scrambleMultiplier)).toBe('3');
+    expect(get(api.modelScrambleMultiplier)).toBe('3');
     expect(applyFrontendSettingLocal).toHaveBeenCalledWith({ scrambleMultiplier: 3 });
     expect(updateFrontendSetting).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(500);

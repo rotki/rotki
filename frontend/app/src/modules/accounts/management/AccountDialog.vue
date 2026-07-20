@@ -35,7 +35,7 @@ const subtitle = computed<string>(() =>
   get(model)?.mode === 'edit' ? t('blockchain_balances.form_dialog.edit_subtitle') : '',
 );
 
-const { errorMessages, pending, resetSaveError, save, saveError, saveErrorIsPremium } = useAccountManage();
+const { modelErrorMessages, pending, resetSaveError, save, saveError, saveErrorIsPremium } = useAccountManage();
 const { loading } = useAccountLoading();
 const { validatorsLimitInfo } = useEthStaking();
 const { currentTier, ethStakedLimit, premium } = usePremiumHelper();
@@ -74,7 +74,7 @@ function dismiss(): void {
 async function confirm(): Promise<void> {
   assert(isDefined(form));
   const accountForm = get(form);
-  set(errorMessages, {});
+  set(modelErrorMessages, {});
   resetSaveError();
   const valid = await accountForm.validate();
   if (!valid)
@@ -122,7 +122,7 @@ watch(model, (model, oldModel) => {
       v-if="model"
       ref="form"
       v-model="model"
-      v-model:error-messages="errorMessages"
+      v-model:error-messages="modelErrorMessages"
       :chain-ids="chainIds"
       :loading="loading"
     />

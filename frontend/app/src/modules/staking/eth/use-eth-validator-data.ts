@@ -19,13 +19,13 @@ interface UseEthValidatorDataReturn {
   matchers: ComputedRef<Matcher[]>;
   pagination: Ref<TablePaginationData>;
   rows: Ref<Collection<EthereumValidator>>;
-  selected: Ref<number[]>;
+  modelSelected: Ref<number[]>;
   sort: Ref<DataTableSortData<EthereumValidator>>;
 }
 
 export function useEthValidatorData(): UseEthValidatorDataReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const selected = ref<number[]>([]);
+  const modelSelected = ref<number[]>([]);
 
   const blockchainValidatorsStore = useBlockchainValidatorsStore();
   const { fetchValidators } = blockchainValidatorsStore;
@@ -118,7 +118,7 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
     matchers,
     pagination,
     rows,
-    selected,
+    modelSelected,
     sort,
   };
 }

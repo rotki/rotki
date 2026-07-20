@@ -95,8 +95,8 @@ describe('useEthValidatorManagement', () => {
         return { result: { entries: [], entriesFound: 0, entriesLimit: 100 }, success: true };
       });
 
-      const { selection } = create();
-      set(selection, { validators: [{ index: 42, publicKey: '0xaaa', status: 'active' }] });
+      const { modelSelection } = create();
+      set(modelSelection, { validators: [{ index: 42, publicKey: '0xaaa', status: 'active' }] });
       await flushPromises();
 
       expect(mockRunTask).toHaveBeenCalledOnce();
@@ -109,8 +109,8 @@ describe('useEthValidatorManagement', () => {
         return { result: { entries: [], entriesFound: 0, entriesLimit: 100 }, success: true };
       });
 
-      const { selection } = create();
-      set(selection, { accounts: [{ address: '0xdead', chain: 'eth2' }] });
+      const { modelSelection } = create();
+      set(modelSelection, { accounts: [{ address: '0xdead', chain: 'eth2' }] });
       await flushPromises();
 
       expect(mockGetEth2Validators).toHaveBeenCalledWith({ addresses: ['0xdead'] });
@@ -122,9 +122,9 @@ describe('useEthValidatorManagement', () => {
         return { result: { entries: [], entriesFound: 0, entriesLimit: 100 }, success: true };
       });
 
-      const { filter, selection } = create();
-      set(selection, { validators: [{ index: 7, publicKey: '0xaaa', status: 'active' }] });
-      set(filter, { fromTimestamp: 100, status: 'active', toTimestamp: 200 });
+      const { modelFilter, modelSelection } = create();
+      set(modelSelection, { validators: [{ index: 7, publicKey: '0xaaa', status: 'active' }] });
+      set(modelFilter, { fromTimestamp: 100, status: 'active', toTimestamp: 200 });
       await flushPromises();
 
       expect(mockGetEth2Validators).toHaveBeenLastCalledWith({ status: 'active', validatorIndices: [7] });
@@ -137,8 +137,8 @@ describe('useEthValidatorManagement', () => {
         success: true,
       });
 
-      const { selection, total } = create();
-      set(selection, { validators: [{ index: 1, publicKey: '0xbbb', status: 'active' }] });
+      const { modelSelection, total } = create();
+      set(modelSelection, { validators: [{ index: 1, publicKey: '0xbbb', status: 'active' }] });
       await flushPromises();
 
       expect(get(total).toNumber()).toBe(6);
@@ -153,8 +153,8 @@ describe('useEthValidatorManagement', () => {
         success: false,
       });
 
-      const { selection, total } = create();
-      set(selection, { validators: [{ index: 1, publicKey: '0xaaa', status: 'active' }] });
+      const { modelSelection, total } = create();
+      set(modelSelection, { validators: [{ index: 1, publicKey: '0xaaa', status: 'active' }] });
       await flushPromises();
 
       expect(get(total)).toStrictEqual(Zero);

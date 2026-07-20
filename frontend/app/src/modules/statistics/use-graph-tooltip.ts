@@ -11,7 +11,7 @@ export interface TooltipData {
 }
 
 interface UseGraphTooltipReturn {
-  tooltipData: Ref<TooltipData>;
+  modelTooltipData: Ref<TooltipData>;
   resetTooltipData: () => void;
 }
 
@@ -25,17 +25,17 @@ export function useGraphTooltip(): UseGraphTooltipReturn {
     y: 0,
   });
 
-  const tooltipData = ref<TooltipData>(defaultTooltipData());
+  const modelTooltipData = ref<TooltipData>(defaultTooltipData());
 
   function resetTooltipData(): void {
-    set(tooltipData, {
-      ...get(tooltipData),
+    set(modelTooltipData, {
+      ...get(modelTooltipData),
       visible: false,
     });
   }
 
   return {
     resetTooltipData,
-    tooltipData,
+    modelTooltipData,
   };
 }

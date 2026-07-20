@@ -25,7 +25,7 @@ export interface IgnoreStatus {
 }
 
 interface HistoryEventsSelectionActions {
-  accountingRuleToEdit: Ref<AccountingRuleEntry | undefined>;
+  modelAccountingRuleToEdit: Ref<AccountingRuleEntry | undefined>;
   handleAccountingRuleRefresh: () => void;
   handleSelectionAction: (action: string) => Promise<void>;
   ignoreStatus: ComputedRef<IgnoreStatus>;
@@ -40,7 +40,7 @@ export function useHistoryEventsSelectionActions(
 
   const { deletion, originalGroups, refreshCallback, selectionMode } = options;
 
-  const accountingRuleToEdit = ref<AccountingRuleEntry | undefined>();
+  const modelAccountingRuleToEdit = ref<AccountingRuleEntry | undefined>();
   const selectedEventIds = ref<number[]>([]);
   const selectedEventsForIgnore = ref<HistoryEventEntry[]>([]);
 
@@ -126,7 +126,7 @@ export function useHistoryEventsSelectionActions(
         // All events have the same type/subtype, proceed with rule creation
         set(selectedEventIds, selectedIds);
         // Initialize with the common event type and subtype
-        set(accountingRuleToEdit, {
+        set(modelAccountingRuleToEdit, {
           accountingTreatment: null,
           countCostBasisPnl: { value: false },
           countEntireAmountSpend: { value: false },
@@ -166,7 +166,7 @@ export function useHistoryEventsSelectionActions(
   }
 
   return {
-    accountingRuleToEdit,
+    modelAccountingRuleToEdit,
     handleAccountingRuleRefresh,
     handleSelectionAction,
     ignoreStatus,

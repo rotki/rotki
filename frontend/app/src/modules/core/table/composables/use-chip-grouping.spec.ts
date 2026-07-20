@@ -173,36 +173,36 @@ describe('composables/use-chip-grouping', () => {
   });
 
   describe('toggleGroupMenu', () => {
-    it('should set expandedGroupKey when not expanded', () => {
+    it('should set modelExpandedGroupKey when not expanded', () => {
       const selection = ref<Suggestion[]>([]);
       const updateMatches = vi.fn();
 
-      const { expandedGroupKey, toggleGroupMenu } = useChipGrouping(selection, updateMatches);
+      const { modelExpandedGroupKey, toggleGroupMenu } = useChipGrouping(selection, updateMatches);
 
       toggleGroupMenu('type');
-      expect(get(expandedGroupKey)).toBe('type');
+      expect(get(modelExpandedGroupKey)).toBe('type');
     });
 
-    it('should clear expandedGroupKey when already expanded', () => {
+    it('should clear modelExpandedGroupKey when already expanded', () => {
       const selection = ref<Suggestion[]>([]);
       const updateMatches = vi.fn();
 
-      const { expandedGroupKey, toggleGroupMenu } = useChipGrouping(selection, updateMatches);
+      const { modelExpandedGroupKey, toggleGroupMenu } = useChipGrouping(selection, updateMatches);
 
       toggleGroupMenu('type');
       toggleGroupMenu('type');
-      expect(get(expandedGroupKey)).toBeUndefined();
+      expect(get(modelExpandedGroupKey)).toBeUndefined();
     });
 
     it('should switch to different key', () => {
       const selection = ref<Suggestion[]>([]);
       const updateMatches = vi.fn();
 
-      const { expandedGroupKey, toggleGroupMenu } = useChipGrouping(selection, updateMatches);
+      const { modelExpandedGroupKey, toggleGroupMenu } = useChipGrouping(selection, updateMatches);
 
       toggleGroupMenu('type');
       toggleGroupMenu('status');
-      expect(get(expandedGroupKey)).toBe('status');
+      expect(get(modelExpandedGroupKey)).toBe('status');
     });
   });
 
@@ -236,15 +236,15 @@ describe('composables/use-chip-grouping', () => {
       expect(updateMatches).toHaveBeenCalledWith([item3]);
     });
 
-    it('should clear expandedGroupKey after removal', () => {
+    it('should clear modelExpandedGroupKey after removal', () => {
       const selection = ref<Suggestion[]>([createSuggestion('type', 'value1')]);
       const updateMatches = vi.fn();
 
-      const { expandedGroupKey, toggleGroupMenu, removeAllItemsForKey } = useChipGrouping(selection, updateMatches);
+      const { modelExpandedGroupKey, toggleGroupMenu, removeAllItemsForKey } = useChipGrouping(selection, updateMatches);
 
       toggleGroupMenu('type');
       removeAllItemsForKey('type');
-      expect(get(expandedGroupKey)).toBeUndefined();
+      expect(get(modelExpandedGroupKey)).toBeUndefined();
     });
   });
 

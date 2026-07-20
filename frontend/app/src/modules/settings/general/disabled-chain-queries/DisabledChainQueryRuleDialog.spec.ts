@@ -12,16 +12,16 @@ const scope = ref<'all' | 'specific'>('all');
 
 vi.mock('@/modules/settings/general/disabled-chain-queries/use-rule-editor-form', () => ({
   useRuleEditorForm: vi.fn().mockReturnValue({
-    address: ref<string | undefined>(undefined),
     addressOptions: computed(() => []),
     availableChainsForAddress: computed(() => []),
     buildDraft: (): RuleDraft | undefined => buildDraftMock(),
     canSave: computed<boolean>(() => get(canSave)),
-    chainId: ref<string | undefined>(undefined),
-    kind,
+    modelAddress: ref<string | undefined>(undefined),
+    modelChainId: ref<string | undefined>(undefined),
+    modelKind: kind,
+    modelScope: scope,
+    modelSelectedChainIds: ref<string[]>([]),
     reset: resetMock,
-    scope,
-    selectedChainIds: ref<string[]>([]),
   }),
 }));
 

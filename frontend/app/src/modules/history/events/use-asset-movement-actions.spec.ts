@@ -93,8 +93,8 @@ describe('use-asset-movement-actions', () => {
 
       expect(composable).toHaveProperty('fiatMovements');
       expect(composable).toHaveProperty('ignoreLoading');
-      expect(composable).toHaveProperty('selectedIgnored');
-      expect(composable).toHaveProperty('selectedUnmatched');
+      expect(composable).toHaveProperty('modelSelectedIgnored');
+      expect(composable).toHaveProperty('modelSelectedUnmatched');
       expect(composable).toHaveProperty('confirmIgnoreAllFiat');
       expect(composable).toHaveProperty('confirmIgnoreSelected');
       expect(composable).toHaveProperty('confirmRestoreSelected');
@@ -106,8 +106,8 @@ describe('use-asset-movement-actions', () => {
       const composable = setupWithoutCallback();
 
       expect(get(composable.ignoreLoading)).toBe(false);
-      expect(get(composable.selectedUnmatched)).toEqual([]);
-      expect(get(composable.selectedIgnored)).toEqual([]);
+      expect(get(composable.modelSelectedUnmatched)).toEqual([]);
+      expect(get(composable.modelSelectedIgnored)).toEqual([]);
     });
   });
 
@@ -260,7 +260,7 @@ describe('use-asset-movement-actions', () => {
       ]);
 
       const composable = setupWithoutCallback();
-      set(composable.selectedUnmatched, ['g1', 'g2']);
+      set(composable.modelSelectedUnmatched, ['g1', 'g2']);
       composable.confirmIgnoreSelected();
 
       expect(spies.showConfirm).toHaveBeenCalledOnce();
@@ -280,7 +280,7 @@ describe('use-asset-movement-actions', () => {
       ]);
 
       const composable = setupWithoutCallback();
-      set(composable.selectedUnmatched, ['g1', 'g3']);
+      set(composable.modelSelectedUnmatched, ['g1', 'g3']);
       composable.confirmIgnoreSelected();
       await extractAndCallConfirmCallback();
 
@@ -289,18 +289,18 @@ describe('use-asset-movement-actions', () => {
       expect(spies.matchAssetMovements).toHaveBeenCalledWith(30);
     });
 
-    it('should refresh and clear selectedUnmatched', async () => {
+    it('should refresh and clear modelSelectedUnmatched', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 1 }),
       ]);
 
       const composable = setupWithoutCallback();
-      set(composable.selectedUnmatched, ['g1']);
+      set(composable.modelSelectedUnmatched, ['g1']);
       composable.confirmIgnoreSelected();
       await extractAndCallConfirmCallback();
 
       expect(spies.refreshUnmatchedAssetMovements).toHaveBeenCalledOnce();
-      expect(get(composable.selectedUnmatched)).toEqual([]);
+      expect(get(composable.modelSelectedUnmatched)).toEqual([]);
     });
 
     it('should reset ignoreLoading on error', async () => {
@@ -310,7 +310,7 @@ describe('use-asset-movement-actions', () => {
       spies.matchAssetMovements.mockRejectedValueOnce(new Error('fail'));
 
       const composable = setupWithoutCallback();
-      set(composable.selectedUnmatched, ['g1']);
+      set(composable.modelSelectedUnmatched, ['g1']);
       composable.confirmIgnoreSelected();
 
       await expect(extractAndCallConfirmCallback()).rejects.toThrow('fail');
@@ -323,13 +323,13 @@ describe('use-asset-movement-actions', () => {
       ]);
 
       const composable = setupWithoutCallback();
-      set(composable.selectedUnmatched, ['non-existent']);
+      set(composable.modelSelectedUnmatched, ['non-existent']);
       composable.confirmIgnoreSelected();
       await extractAndCallConfirmCallback();
 
       expect(spies.matchAssetMovements).not.toHaveBeenCalled();
       expect(spies.refreshUnmatchedAssetMovements).toHaveBeenCalledOnce();
-      expect(get(composable.selectedUnmatched)).toEqual([]);
+      expect(get(composable.modelSelectedUnmatched)).toEqual([]);
     });
 
     it('should set ignoreLoading during batch operation', async () => {
@@ -339,7 +339,7 @@ describe('use-asset-movement-actions', () => {
       ]);
 
       const composable = setupWithoutCallback();
-      set(composable.selectedUnmatched, ['g1', 'g2']);
+      set(composable.modelSelectedUnmatched, ['g1', 'g2']);
 
       const loadingDuringCall: boolean[] = [];
       spies.matchAssetMovements.mockImplementation(async () => {
@@ -362,7 +362,7 @@ describe('use-asset-movement-actions', () => {
       ]);
 
       const composable = setupWithoutCallback();
-      set(composable.selectedIgnored, ['g1']);
+      set(composable.modelSelectedIgnored, ['g1']);
       composable.confirmRestoreSelected();
 
       expect(spies.showConfirm).toHaveBeenCalledOnce();
@@ -382,7 +382,7 @@ describe('use-asset-movement-actions', () => {
       ]);
 
       const composable = setupWithoutCallback();
-      set(composable.selectedIgnored, ['g2', 'g3']);
+      set(composable.modelSelectedIgnored, ['g2', 'g3']);
       composable.confirmRestoreSelected();
       await extractAndCallConfirmCallback();
 
@@ -391,18 +391,18 @@ describe('use-asset-movement-actions', () => {
       expect(spies.unlinkAssetMovement).toHaveBeenCalledWith(30);
     });
 
-    it('should refresh and clear selectedIgnored', async () => {
+    it('should refresh and clear modelSelectedIgnored', async () => {
       set(ignoredMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 1 }),
       ]);
 
       const composable = setupWithoutCallback();
-      set(composable.selectedIgnored, ['g1']);
+      set(composable.modelSelectedIgnored, ['g1']);
       composable.confirmRestoreSelected();
       await extractAndCallConfirmCallback();
 
       expect(spies.refreshUnmatchedAssetMovements).toHaveBeenCalledOnce();
-      expect(get(composable.selectedIgnored)).toEqual([]);
+      expect(get(composable.modelSelectedIgnored)).toEqual([]);
     });
 
     it('should reset ignoreLoading on error', async () => {
@@ -412,7 +412,7 @@ describe('use-asset-movement-actions', () => {
       spies.unlinkAssetMovement.mockRejectedValueOnce(new Error('fail'));
 
       const composable = setupWithoutCallback();
-      set(composable.selectedIgnored, ['g1']);
+      set(composable.modelSelectedIgnored, ['g1']);
       composable.confirmRestoreSelected();
 
       await expect(extractAndCallConfirmCallback()).rejects.toThrow('fail');
@@ -425,13 +425,13 @@ describe('use-asset-movement-actions', () => {
       ]);
 
       const composable = setupWithoutCallback();
-      set(composable.selectedIgnored, ['non-existent']);
+      set(composable.modelSelectedIgnored, ['non-existent']);
       composable.confirmRestoreSelected();
       await extractAndCallConfirmCallback();
 
       expect(spies.unlinkAssetMovement).not.toHaveBeenCalled();
       expect(spies.refreshUnmatchedAssetMovements).toHaveBeenCalledOnce();
-      expect(get(composable.selectedIgnored)).toEqual([]);
+      expect(get(composable.modelSelectedIgnored)).toEqual([]);
     });
 
     it('should set ignoreLoading during batch operation', async () => {
@@ -441,7 +441,7 @@ describe('use-asset-movement-actions', () => {
       ]);
 
       const composable = setupWithoutCallback();
-      set(composable.selectedIgnored, ['g1', 'g2']);
+      set(composable.modelSelectedIgnored, ['g1', 'g2']);
 
       const loadingDuringCall: boolean[] = [];
       spies.unlinkAssetMovement.mockImplementation(async () => {
@@ -493,18 +493,18 @@ describe('use-asset-movement-actions', () => {
       expect(spies.matchAssetMovements).toHaveBeenCalledWith(30);
     });
 
-    it('should refresh and clear selectedUnmatched', async () => {
+    it('should refresh and clear modelSelectedUnmatched', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ isFiat: true, identifier: 1 }),
       ]);
 
       const composable = setupWithoutCallback();
-      set(composable.selectedUnmatched, ['g1']);
+      set(composable.modelSelectedUnmatched, ['g1']);
       composable.confirmIgnoreAllFiat();
       await extractAndCallConfirmCallback();
 
       expect(spies.refreshUnmatchedAssetMovements).toHaveBeenCalledOnce();
-      expect(get(composable.selectedUnmatched)).toEqual([]);
+      expect(get(composable.modelSelectedUnmatched)).toEqual([]);
     });
 
     it('should reset ignoreLoading on error', async () => {
@@ -526,13 +526,13 @@ describe('use-asset-movement-actions', () => {
       ]);
 
       const composable = setupWithoutCallback();
-      set(composable.selectedUnmatched, ['g1']);
+      set(composable.modelSelectedUnmatched, ['g1']);
       composable.confirmIgnoreAllFiat();
       await extractAndCallConfirmCallback();
 
       expect(spies.matchAssetMovements).not.toHaveBeenCalled();
       expect(spies.refreshUnmatchedAssetMovements).toHaveBeenCalledOnce();
-      expect(get(composable.selectedUnmatched)).toEqual([]);
+      expect(get(composable.modelSelectedUnmatched)).toEqual([]);
     });
 
     it('should set ignoreLoading during batch operation', async () => {

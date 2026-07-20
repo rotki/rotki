@@ -22,7 +22,7 @@ interface UseCalendarDataReturn {
   initializePagination: () => void;
   isLoading: Ref<boolean>;
   pagination: Ref<TablePaginationData>;
-  range: Ref<[number, number]>;
+  modelRange: Ref<[number, number]>;
   setToday: () => Dayjs;
   today: DeepReadonly<Ref<Dayjs>>;
   upcomingEvents: Ref<CalendarEvent[]>;
@@ -33,8 +33,8 @@ export function useCalendarData(accounts: Ref<BlockchainAccount[]>): UseCalendar
   const { getAccountByAddress } = useBlockchainAccountsStore();
 
   const today = ref<Dayjs>(dayjs());
-  const range = ref<[number, number]>([0, 0]);
-  const rangeDebounced = refDebounced(range, 300);
+  const modelRange = ref<[number, number]>([0, 0]);
+  const rangeDebounced = refDebounced(modelRange, 300);
   const upcomingEvents = ref<CalendarEvent[]>([]);
 
   const extraParams = computed<{ accounts: string[]; fromTimestamp: string; toTimestamp: string }>(() => {
@@ -146,7 +146,7 @@ export function useCalendarData(accounts: Ref<BlockchainAccount[]>): UseCalendar
     initializePagination,
     isLoading,
     pagination,
-    range,
+    modelRange,
     setToday,
     today: readonly(today),
     upcomingEvents,

@@ -7,7 +7,7 @@ export type ChipDisplayType = 'normal' | 'grouped' | 'hidden';
 const MAX_CHIPS_PER_KEY = 3;
 
 interface UseChipGroupingReturn {
-  expandedGroupKey: Ref<string | undefined>;
+  modelExpandedGroupKey: Ref<string | undefined>;
   groupedKeysCounts: ComputedRef<Record<string, number>>;
   groupedKeys: ComputedRef<Set<string>>;
   isKeyGrouped: (key: string) => boolean;
@@ -23,7 +23,7 @@ export function useChipGrouping(
   selection: Ref<Suggestion[]>,
   updateMatches: (pairs: Suggestion[]) => void,
 ): UseChipGroupingReturn {
-  const expandedGroupKey = ref<string>();
+  const modelExpandedGroupKey = ref<string>();
 
   const groupedKeysCounts = computed<Record<string, number>>(() => {
     const counts: Record<string, number> = {};
@@ -72,11 +72,11 @@ export function useChipGrouping(
   }
 
   function toggleGroupMenu(key: string): void {
-    if (get(expandedGroupKey) === key) {
-      set(expandedGroupKey, undefined);
+    if (get(modelExpandedGroupKey) === key) {
+      set(modelExpandedGroupKey, undefined);
     }
     else {
-      set(expandedGroupKey, key);
+      set(modelExpandedGroupKey, key);
     }
   }
 
@@ -88,11 +88,11 @@ export function useChipGrouping(
   function removeAllItemsForKey(key: string): void {
     const newSelection = get(selection).filter(s => s.key !== key);
     updateMatches(newSelection);
-    set(expandedGroupKey, undefined);
+    set(modelExpandedGroupKey, undefined);
   }
 
   return {
-    expandedGroupKey,
+    modelExpandedGroupKey,
     getChipDisplayType,
     getGroupedItemsForKey,
     getGroupedOverflowCount,

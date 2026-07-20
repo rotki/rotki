@@ -85,7 +85,7 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     onZoomChange,
   } = params;
 
-  const { resetTooltipData, tooltipData } = useGraphTooltip();
+  const { modelTooltipData, resetTooltipData } = useGraphTooltip();
 
   function resetTooltip(): void {
     resetTooltipData();
@@ -162,7 +162,7 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
       const timestamp = xAxisInfo.value;
       const tooltipPosition = calculateTooltipPosition();
 
-      set(tooltipData, {
+      set(modelTooltipData, {
         currentBalance,
         timestamp,
         value: netValue,
@@ -392,6 +392,6 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
   return {
     setupChartEventHandlers,
     setupZoomToolHandler,
-    tooltipData,
+    tooltipData: modelTooltipData,
   };
 }

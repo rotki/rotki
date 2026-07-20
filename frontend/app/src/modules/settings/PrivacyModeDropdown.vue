@@ -36,8 +36,8 @@ const {
   enabled,
   handleMultiplierUpdate,
   randomMultiplier,
-  scrambleData,
-  scrambleMultiplier,
+  modelScrambleData,
+  modelScrambleMultiplier,
 } = useScrambleSetting();
 
 const settingMenuOpen = ref<boolean>(false);
@@ -165,7 +165,7 @@ async function updateScramble(value: boolean): Promise<void> {
       </label>
       <div class="border-t border-default p-4 flex flex-col gap-4">
         <RuiSwitch
-          v-model="scrambleData"
+          v-model="modelScrambleData"
           color="secondary"
           size="sm"
           data-cy="privacy-mode-scramble__toggle"
@@ -178,9 +178,9 @@ async function updateScramble(value: boolean): Promise<void> {
         </RuiSwitch>
 
         <AmountInput
-          v-model="scrambleMultiplier"
+          v-model="modelScrambleMultiplier"
           :label="t('frontend_settings.scramble.multiplier.label')"
-          :disabled="!scrambleData"
+          :disabled="!modelScrambleData"
           variant="outlined"
           color="secondary"
           data-cy="privacy-mode-scramble__multiplier"
@@ -190,7 +190,7 @@ async function updateScramble(value: boolean): Promise<void> {
         >
           <template #append>
             <RuiButton
-              :disabled="!scrambleData"
+              :disabled="!modelScrambleData"
               variant="text"
               type="button"
               class="-mr-2 !p-2"

@@ -79,9 +79,9 @@ describe('useDashboardAssetData', () => {
   it('should filter balances by the debounced search keyword', async () => {
     vi.useFakeTimers();
     const balances = [balance('BTC', 100), balance('ETH', 200)];
-    const { search, sorted } = useDashboardAssetData(balances, noSort);
+    const { modelSearch, sorted } = useDashboardAssetData(balances, noSort);
 
-    set(search, 'BTC');
+    set(modelSearch, 'BTC');
     await vi.advanceTimersByTimeAsync(200);
 
     const result = get(sorted);

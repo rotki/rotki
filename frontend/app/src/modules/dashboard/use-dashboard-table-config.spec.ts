@@ -68,9 +68,9 @@ describe('useDashboardTableConfig', () => {
 
   describe('sort', () => {
     it('should default to sorting by value descending', () => {
-      const { sort } = create();
+      const { modelSort } = create();
 
-      expect(get(sort)).toEqual({ column: 'value', direction: 'desc' });
+      expect(get(modelSort)).toEqual({ column: 'value', direction: 'desc' });
     });
   });
 

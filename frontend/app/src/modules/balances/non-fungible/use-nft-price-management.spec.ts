@@ -51,10 +51,10 @@ describe('useNftPriceManagement', () => {
   });
 
   it('should populate the price form and open the dialog', () => {
-    const { customPrice, openPriceDialog, setPriceForm } = useNftPriceManagement(fetchData);
+    const { customPrice, modelOpenPriceDialog, setPriceForm } = useNftPriceManagement(fetchData);
     setPriceForm(nftBalance());
     expect(get(customPrice)).toEqual({ fromAsset: 'nft-1', price: '2', toAsset: 'ETH' });
-    expect(get(openPriceDialog)).toBe(true);
+    expect(get(modelOpenPriceDialog)).toBe(true);
   });
 
   it('should delete through the confirmation dialog', async () => {

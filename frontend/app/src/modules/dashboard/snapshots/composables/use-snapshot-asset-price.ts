@@ -25,13 +25,13 @@ interface UseSnapshotAssetPriceOptions {
 
 interface UseSnapshotAssetPriceReturn {
   /** Asset price in USD (bound to the USD-mode primary field). */
-  assetToUsdPrice: Ref<string>;
+  modelAssetToUsdPrice: Ref<string>;
   /** Asset price in the user's display currency (non-USD primary field). */
-  assetToFiatPrice: Ref<string>;
+  modelAssetToFiatPrice: Ref<string>;
   /** Asset value in the user's display currency (non-USD secondary field). */
-  fiatValue: Ref<string>;
+  modelFiatValue: Ref<string>;
   /** Whether the user is editing the secondary (value) field. */
-  fiatValueFocused: Ref<boolean>;
+  modelFiatValueFocused: Ref<boolean>;
   /** Whether the user's main currency is USD (no conversion needed). */
   isCurrentCurrencyUsd: ComputedRef<boolean>;
   /** The user's main currency symbol. */
@@ -62,11 +62,11 @@ export function useSnapshotAssetPrice(
 ): UseSnapshotAssetPriceReturn {
   const { amount, asset, timestamp, usdValue } = options;
 
-  const fiatValue = shallowRef<string>('');
-  const assetToUsdPrice = shallowRef<string>('');
-  const assetToFiatPrice = shallowRef<string>('');
+  const modelFiatValue = shallowRef<string>('');
+  const modelAssetToUsdPrice = shallowRef<string>('');
+  const modelAssetToFiatPrice = shallowRef<string>('');
 
-  const fiatValueFocused = shallowRef<boolean>(false);
+  const modelFiatValueFocused = shallowRef<boolean>(false);
   const fetchedAssetToUsdPrice = shallowRef<string>('');
   const fetchedAssetToFiatPrice = shallowRef<string>('');
 
@@ -86,9 +86,9 @@ export function useSnapshotAssetPrice(
   // EUR-pegged assets, whose oracle USD price diverges from the forex rate.
   const { rate: usdToFiatRate } = useHistoricFiatConversion(timestamp);
 
-  const numericAssetToUsdPrice = bigNumberifyFromRef(assetToUsdPrice);
-  const numericAssetToFiatPrice = bigNumberifyFromRef(assetToFiatPrice);
-  const numericFiatValue = bigNumberifyFromRef(fiatValue);
+  const numericAssetToUsdPrice = bigNumberifyFromRef(modelAssetToUsdPrice);
+  const numericAssetToFiatPrice = bigNumberifyFromRef(modelAssetToFiatPrice);
+  const numericFiatValue = bigNumberifyFromRef(modelFiatValue);
   const numericAmount = bigNumberifyFromRef(amount);
   const numericUsdValue = bigNumberifyFromRef(usdValue);
 
@@ -101,18 +101,18 @@ export function useSnapshotAssetPrice(
     // USD main currency only: in a non-USD currency the stored USD value is
     // driven from the fiat value via the direct rate (see syncUsdValueFromFiat),
     // so this must not also write it from the asset's USD price.
-    if (get(isCurrentCurrencyUsd) && get(amount) && get(assetToUsdPrice) && (!get(fiatValueFocused) || forceUpdate))
+    if (get(isCurrentCurrencyUsd) && get(amount) && get(modelAssetToUsdPrice) && (!get(modelFiatValueFocused) || forceUpdate))
       set(usdValue, get(numericAmount).multipliedBy(get(numericAssetToUsdPrice)).toFixed());
   }
 
   function onAssetToFiatPriceChanged(forceUpdate = false): void {
-    if (get(amount) && get(assetToFiatPrice) && (!get(fiatValueFocused) || forceUpdate))
-      set(fiatValue, get(numericAmount).multipliedBy(get(numericAssetToFiatPrice)).toFixed());
+    if (get(amount) && get(modelAssetToFiatPrice) && (!get(modelFiatValueFocused) || forceUpdate))
+      set(modelFiatValue, get(numericAmount).multipliedBy(get(numericAssetToFiatPrice)).toFixed());
   }
 
   function onUsdValueChange(): void {
-    if (get(amount) && get(fiatValueFocused))
-      set(assetToUsdPrice, get(numericUsdValue).div(get(numericAmount)).toFixed());
+    if (get(amount) && get(modelFiatValueFocused))
+      set(modelAssetToUsdPrice, get(numericUsdValue).div(get(numericAmount)).toFixed());
   }
 
   // Keep the stored USD value in sync with the fiat value, using the direct
@@ -132,8 +132,8 @@ export function useSnapshotAssetPrice(
     if (!get(amount))
       return;
 
-    if (get(fiatValueFocused))
-      set(assetToFiatPrice, get(numericFiatValue).div(get(numericAmount)).toFixed());
+    if (get(modelFiatValueFocused))
+      set(modelAssetToFiatPrice, get(numericFiatValue).div(get(numericAmount)).toFixed());
 
     syncUsdValueFromFiat();
   }
@@ -161,7 +161,7 @@ export function useSnapshotAssetPrice(
       if (price.gt(0))
         set(fetchedAssetToUsdPrice, price.toFixed());
       else
-        set(assetToUsdPrice, oldUsdPrice.toFixed());
+        set(modelAssetToUsdPrice, oldUsdPrice.toFixed());
     }
 
     if (!get(isCurrentCurrencyUsd)) {
@@ -177,7 +177,7 @@ export function useSnapshotAssetPrice(
       if (price.gt(0))
         set(fetchedAssetToFiatPrice, price.toFixed());
       else
-        set(assetToFiatPrice, oldUsdPrice.toFixed());
+        set(modelAssetToFiatPrice, oldUsdPrice.toFixed());
     }
   }
 
@@ -187,20 +187,20 @@ export function useSnapshotAssetPrice(
       return;
 
     if (get(isCurrentCurrencyUsd)) {
-      if (get(assetToUsdPrice) !== get(fetchedAssetToUsdPrice)) {
+      if (get(modelAssetToUsdPrice) !== get(fetchedAssetToUsdPrice)) {
         await savePrice({
           fromAsset: assetVal,
-          price: get(assetToUsdPrice),
+          price: get(modelAssetToUsdPrice),
           sourceType: PriceOracle.MANUAL,
           timestamp: toValue(timestamp),
           toAsset: CURRENCY_USD,
         });
       }
     }
-    else if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice)) {
+    else if (get(modelAssetToFiatPrice) !== get(fetchedAssetToFiatPrice)) {
       await savePrice({
         fromAsset: assetVal,
-        price: get(assetToFiatPrice),
+        price: get(modelAssetToFiatPrice),
         sourceType: PriceOracle.MANUAL,
         timestamp: toValue(timestamp),
         toAsset: get(currencySymbol),
@@ -211,9 +211,9 @@ export function useSnapshotAssetPrice(
   function reset(): void {
     set(fetchedAssetToUsdPrice, '');
     set(fetchedAssetToFiatPrice, '');
-    set(assetToUsdPrice, '');
-    set(assetToFiatPrice, '');
-    set(fiatValue, '');
+    set(modelAssetToUsdPrice, '');
+    set(modelAssetToFiatPrice, '');
+    set(modelFiatValue, '');
     set(usdValue, '');
   }
 
@@ -224,11 +224,11 @@ export function useSnapshotAssetPrice(
   });
 
   watchImmediate(fetchedAssetToUsdPrice, (price) => {
-    set(assetToUsdPrice, price);
+    set(modelAssetToUsdPrice, price);
     onAssetToUsdPriceChange(true);
   });
 
-  watchImmediate(assetToUsdPrice, () => {
+  watchImmediate(modelAssetToUsdPrice, () => {
     onAssetToUsdPriceChange();
   });
 
@@ -237,15 +237,15 @@ export function useSnapshotAssetPrice(
   });
 
   watchImmediate(fetchedAssetToFiatPrice, (price) => {
-    set(assetToFiatPrice, price);
+    set(modelAssetToFiatPrice, price);
     onAssetToFiatPriceChanged(true);
   });
 
-  watchImmediate(assetToFiatPrice, () => {
+  watchImmediate(modelAssetToFiatPrice, () => {
     onAssetToFiatPriceChanged();
   });
 
-  watchImmediate(fiatValue, () => {
+  watchImmediate(modelFiatValue, () => {
     onFiatValueChange();
   });
 
@@ -266,19 +266,13 @@ export function useSnapshotAssetPrice(
   });
 
   return {
-    // These refs are two-way bound (v-model) by the consuming form, so they
-    // must stay writable rather than be wrapped in readonly().
-    // eslint-disable-next-line @rotki/composable-return-readonly
-    assetToFiatPrice,
-    // eslint-disable-next-line @rotki/composable-return-readonly
-    assetToUsdPrice,
     currencySymbol,
     fetching,
-    // eslint-disable-next-line @rotki/composable-return-readonly
-    fiatValue,
-    // eslint-disable-next-line @rotki/composable-return-readonly
-    fiatValueFocused,
     isCurrentCurrencyUsd,
+    modelAssetToFiatPrice,
+    modelAssetToUsdPrice,
+    modelFiatValue,
+    modelFiatValueFocused,
     reset,
     submitPrice,
   };

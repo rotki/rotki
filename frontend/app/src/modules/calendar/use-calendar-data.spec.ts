@@ -131,9 +131,9 @@ describe('useCalendarData', () => {
   describe('options to usePaginationFilters', () => {
     it('should pass extraParams with address#chain entries', async () => {
       const accounts = ref<BlockchainAccount[]>([makeAccount('0xabc', 'eth'), makeAccount('0xdef', 'optimism')]);
-      const { range } = createCalendarData(accounts);
+      const { modelRange } = createCalendarData(accounts);
 
-      set(range, [100, 200]);
+      set(modelRange, [100, 200]);
       // debounced by 300ms — use fake timers to flush
       await new Promise(resolve => setTimeout(resolve, 320));
 

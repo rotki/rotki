@@ -11,7 +11,7 @@ import { useWebsocketConnection } from '@/modules/shell/app/use-websocket-connec
 
 interface UseBackendManagementReturn {
   applyUserOptions: (config: Partial<BackendOptions>, skipRestart: boolean) => Promise<void>;
-  logLevel: Ref<LogLevel>;
+  modelLogLevel: Ref<LogLevel>;
   defaultLogLevel: ComputedRef<LogLevel>;
   defaultLogDirectory: Readonly<Ref<string>>;
   options: ComputedRef<Partial<BackendOptions>>;
@@ -33,7 +33,7 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   const { setConnectionEnabled: setWsConnectionEnabled } = useWebsocketConnection();
 
   const defaultLogLevel = computed<LogLevel>(() => getDefaultLogLevel());
-  const logLevel = ref<LogLevel>(get(defaultLogLevel));
+  const modelLogLevel = ref<LogLevel>(get(defaultLogLevel));
   const userOptions = ref<Partial<BackendOptions>>({});
   const fileConfig = ref<Partial<BackendOptions>>({});
   const defaultLogDirectory = shallowRef<string>('');
@@ -147,7 +147,7 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
     defaultLogDirectory: readonly(defaultLogDirectory),
     defaultLogLevel,
     fileConfig: readonly(fileConfig),
-    logLevel,
+    modelLogLevel,
     options,
     resetOptions,
     resetSessionBackend,

@@ -16,7 +16,7 @@ const {
   name,
   rememberStateForAsset,
   suppressIfPerAsset,
-  useHistoricalAssetBalances,
+  modelUseHistoricalAssetBalances,
 } = useAssetStatisticState(() => asset);
 
 const { t } = useI18n({ useScope: 'global' });
@@ -29,7 +29,7 @@ async function persistSource(value: boolean | undefined): Promise<void> {
   });
 }
 
-watch(useHistoricalAssetBalances, () => {
+watch(modelUseHistoricalAssetBalances, () => {
   if (!asset || !get(rememberStateForAsset)) {
     return;
   }
@@ -69,7 +69,7 @@ watchImmediate(() => asset, (asset) => {
         </template>
       </RuiCardHeader>
       <RuiRadioGroup
-        v-model="useHistoricalAssetBalances"
+        v-model="modelUseHistoricalAssetBalances"
         color="primary"
         :hint="t('statistics_graph_settings.source.warning')"
         size="sm"

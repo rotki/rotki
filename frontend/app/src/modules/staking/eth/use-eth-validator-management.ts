@@ -11,15 +11,15 @@ import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-v
 
 interface UseEthValidatorManagementReturn {
   fetchValidatorsWithFilter: () => Promise<void>;
-  filter: Ref<EthStakingCombinedFilter | undefined>;
-  selection: Ref<EthStakingFilter>;
+  modelFilter: Ref<EthStakingCombinedFilter | undefined>;
+  modelSelection: Ref<EthStakingFilter>;
   setTotal: (validators?: Eth2Validators['entries']) => void;
   total: DeepReadonly<Ref<BigNumber>>;
 }
 
 export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
-  const filter = ref<EthStakingCombinedFilter>();
-  const selection = ref<EthStakingFilter>({
+  const modelFilter = ref<EthStakingCombinedFilter>();
+  const modelSelection = ref<EthStakingFilter>({
     validators: [],
   });
   const total = ref<BigNumber>(Zero);
@@ -39,8 +39,8 @@ export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
   }
 
   async function fetchValidatorsWithFilter(): Promise<void> {
-    const filterVal = get(filter);
-    const selectionVal = get(selection);
+    const filterVal = get(modelFilter);
+    const selectionVal = get(modelSelection);
     const statusFilter = filterVal ? omit(filterVal, ['fromTimestamp', 'toTimestamp']) : {};
     const accounts
       = 'accounts' in selectionVal
@@ -66,14 +66,14 @@ export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
   }
 
   // Watch for filter changes
-  watch([selection, filter], async () => {
+  watch([modelSelection, modelFilter], async () => {
     await fetchValidatorsWithFilter();
   });
 
   return {
     fetchValidatorsWithFilter,
-    filter,
-    selection,
+    modelFilter,
+    modelSelection,
     setTotal,
     total: readonly(total),
   };

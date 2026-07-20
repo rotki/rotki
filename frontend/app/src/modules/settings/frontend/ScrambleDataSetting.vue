@@ -9,8 +9,8 @@ const { t } = useI18n({ useScope: 'global' });
 const {
   handleMultiplierUpdate,
   randomMultiplier,
-  scrambleData,
-  scrambleMultiplier,
+  modelScrambleData,
+  modelScrambleMultiplier,
 } = useScrambleSetting();
 </script>
 
@@ -28,18 +28,18 @@ const {
     />
     <div class="flex flex-col gap-2">
       <AmountInput
-        v-model="scrambleMultiplier"
+        v-model="modelScrambleMultiplier"
         :label="t('frontend_settings.scramble.multiplier.label')"
         :hint="t('frontend_settings.scramble.multiplier.hint')"
         variant="outlined"
-        :disabled="!scrambleData"
+        :disabled="!modelScrambleData"
         @update:model-value="handleMultiplierUpdate($event)"
       >
         <template #append>
           <RuiButton
             variant="text"
             icon
-            :disabled="!scrambleData"
+            :disabled="!modelScrambleData"
             @click="handleMultiplierUpdate(randomMultiplier())"
           >
             <RuiIcon name="lu-shuffle" />

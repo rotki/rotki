@@ -10,7 +10,7 @@ interface UseDashboardTableConfigReturn {
   pagination: DeepReadonly<Ref<{ itemsPerPage: number; page: number }>>;
   setPage: (page: number) => void;
   setTablePagination: (event: TablePaginationData | undefined) => void;
-  sort: Ref<DataTableSortData<AssetBalanceWithPrice>>;
+  modelSort: Ref<DataTableSortData<AssetBalanceWithPrice>>;
   tableHeaders: ComputedRef<DataTableColumn<AssetBalanceWithPrice>[]>;
 }
 
@@ -21,7 +21,7 @@ export function useDashboardTableConfig(
 ): UseDashboardTableConfigReturn {
   const { t } = useI18n({ useScope: 'global' });
 
-  const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
+  const modelSort = ref<DataTableSortData<AssetBalanceWithPrice>>({
     column: 'value',
     direction: 'desc' as const,
   });
@@ -121,13 +121,13 @@ export function useDashboardTableConfig(
     return headers;
   });
 
-  useRememberTableSorting<AssetBalanceWithPrice>(TableId.DASHBOARD_ASSET, sort, tableHeaders);
+  useRememberTableSorting<AssetBalanceWithPrice>(TableId.DASHBOARD_ASSET, modelSort, tableHeaders);
 
   return {
     pagination: readonly(pagination),
     setPage,
     setTablePagination,
-    sort,
+    modelSort,
     tableHeaders,
   };
 }

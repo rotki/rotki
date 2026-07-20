@@ -19,12 +19,12 @@ interface UseEventPriceConversionOptions {
 }
 
 interface UseEventPriceConversionReturn {
-  assetToFiatPrice: ShallowRef<string>;
+  modelAssetToFiatPrice: ShallowRef<string>;
   currencySymbol: DeepReadonly<Ref<string>>;
   fetchedAssetToFiatPrice: Readonly<ShallowRef<string>>;
   fetching: Ref<boolean>;
-  fiatValue: ShallowRef<string>;
-  fiatValueFocused: ShallowRef<boolean>;
+  modelFiatValue: ShallowRef<string>;
+  modelFiatValueFocused: ShallowRef<boolean>;
   reset: () => void;
 }
 
@@ -34,9 +34,9 @@ export function useEventPriceConversion({
   showPriceFields,
   timestamp,
 }: UseEventPriceConversionOptions): UseEventPriceConversionReturn {
-  const fiatValue = shallowRef<string>('');
-  const assetToFiatPrice = shallowRef<string>('');
-  const fiatValueFocused = shallowRef<boolean>(false);
+  const modelFiatValue = shallowRef<string>('');
+  const modelAssetToFiatPrice = shallowRef<string>('');
+  const modelFiatValueFocused = shallowRef<boolean>(false);
   const fetchedAssetToFiatPrice = shallowRef<string>('');
 
   const { useIsTaskRunning } = useTaskStore();
@@ -45,18 +45,18 @@ export function useEventPriceConversion({
 
   const fetching = useIsTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 
-  const numericAssetToFiatPrice = bigNumberifyFromRef(assetToFiatPrice);
-  const numericFiatValue = bigNumberifyFromRef(fiatValue);
+  const numericAssetToFiatPrice = bigNumberifyFromRef(modelAssetToFiatPrice);
+  const numericFiatValue = bigNumberifyFromRef(modelFiatValue);
   const numericAmount = bigNumberifyFromRef(amount);
 
   function onAssetToFiatPriceChanged(forceUpdate = false): void {
-    if (get(amount) && get(assetToFiatPrice) && (!get(fiatValueFocused) || forceUpdate))
-      set(fiatValue, get(numericAmount).multipliedBy(get(numericAssetToFiatPrice)).toFixed());
+    if (get(amount) && get(modelAssetToFiatPrice) && (!get(modelFiatValueFocused) || forceUpdate))
+      set(modelFiatValue, get(numericAmount).multipliedBy(get(numericAssetToFiatPrice)).toFixed());
   }
 
   function onFiatValueChange(): void {
-    if (get(amount) && get(fiatValueFocused))
-      set(assetToFiatPrice, get(numericFiatValue).div(get(numericAmount)).toFixed());
+    if (get(amount) && get(modelFiatValueFocused))
+      set(modelAssetToFiatPrice, get(numericFiatValue).div(get(numericAmount)).toFixed());
   }
 
   async function fetchHistoricPrices(): Promise<void> {
@@ -84,15 +84,15 @@ export function useEventPriceConversion({
   );
 
   watch(fetchedAssetToFiatPrice, (price) => {
-    set(assetToFiatPrice, price);
+    set(modelAssetToFiatPrice, price);
     onAssetToFiatPriceChanged(true);
   });
 
-  watch(assetToFiatPrice, () => {
+  watch(modelAssetToFiatPrice, () => {
     onAssetToFiatPriceChanged();
   });
 
-  watch(fiatValue, () => {
+  watch(modelFiatValue, () => {
     onFiatValueChange();
   });
 
@@ -103,17 +103,17 @@ export function useEventPriceConversion({
 
   function reset(): void {
     set(fetchedAssetToFiatPrice, '');
-    set(assetToFiatPrice, '');
-    set(fiatValue, '');
+    set(modelAssetToFiatPrice, '');
+    set(modelFiatValue, '');
   }
 
   return {
-    assetToFiatPrice,
+    modelAssetToFiatPrice,
     currencySymbol,
     fetchedAssetToFiatPrice: readonly(fetchedAssetToFiatPrice),
     fetching,
-    fiatValue,
-    fiatValueFocused,
+    modelFiatValue,
+    modelFiatValueFocused,
     reset,
   };
 }

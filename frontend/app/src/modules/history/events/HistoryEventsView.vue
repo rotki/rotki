@@ -209,7 +209,7 @@ const deletion = useHistoryEventsDeletion(
 );
 
 const {
-  accountingRuleToEdit,
+  modelAccountingRuleToEdit,
   handleAccountingRuleRefresh,
   handleSelectionAction,
   ignoreStatus,
@@ -411,7 +411,7 @@ watchDebounced(route, async () => {
 
         <HistoryEventsDialogContainer
           ref="dialogContainer"
-          v-model:accounting-rule-to-edit="accountingRuleToEdit"
+          v-model:accounting-rule-to-edit="modelAccountingRuleToEdit"
           v-model:current-action="currentAction"
           :loading="processing"
           :refreshing="refreshing"

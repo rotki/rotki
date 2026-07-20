@@ -141,7 +141,7 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       expect(get(saveErrorIsPremium)).toBe(true);
     });
 
-    it('should set errorMessages on failure with validation errors', async () => {
+    it('should set modelErrorMessages on failure with validation errors', async () => {
       const validationErrors: ValidationErrors = {
         publicKey: ['Invalid public key format'],
       };
@@ -150,11 +150,11 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
         success: false,
       });
 
-      const { errorMessages, save, saveError } = useAccountManage();
+      const { modelErrorMessages, save, saveError } = useAccountManage();
       const result = await save(createValidatorState());
 
       expect(result).toBe(false);
-      expect(get(errorMessages)).toEqual(validationErrors);
+      expect(get(modelErrorMessages)).toEqual(validationErrors);
       expect(get(saveError)).toBe('');
     });
 
@@ -240,11 +240,11 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     it('should map JSON-shaped api error message to inline form errors', async () => {
       mockAddAccounts.mockRejectedValueOnce(new Error('{"address": ["Given value Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK is not a valid solana address"]}'));
 
-      const { errorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save } = useAccountManage();
       const result = await save(createSolanaAccountState());
 
       expect(result).toBe(false);
-      expect(get(errorMessages)).toEqual({
+      expect(get(modelErrorMessages)).toEqual({
         address: ['Given value Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK is not a valid solana address'],
       });
       expect(mockShowErrorMessage).not.toHaveBeenCalled();
@@ -253,11 +253,11 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     it('should fall back to a toast for non-JSON api errors', async () => {
       mockAddAccounts.mockRejectedValueOnce(new Error('Network unreachable'));
 
-      const { errorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save } = useAccountManage();
       const result = await save(createSolanaAccountState());
 
       expect(result).toBe(false);
-      expect(get(errorMessages)).toEqual({});
+      expect(get(modelErrorMessages)).toEqual({});
       expect(mockShowErrorMessage).toHaveBeenCalledWith(
         'account_form.error.title',
         expect.stringContaining('Network unreachable'),
@@ -267,11 +267,11 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     it('should fall back to a toast for empty-object JSON', async () => {
       mockAddAccounts.mockRejectedValueOnce(new Error('{}'));
 
-      const { errorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save } = useAccountManage();
       const result = await save(createSolanaAccountState());
 
       expect(result).toBe(false);
-      expect(get(errorMessages)).toEqual({});
+      expect(get(modelErrorMessages)).toEqual({});
       expect(mockShowErrorMessage).toHaveBeenCalledWith(
         'account_form.error.title',
         expect.stringContaining('{}'),
@@ -281,11 +281,11 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     it('should not double-parse an existing ApiValidationError', async () => {
       mockAddAccounts.mockRejectedValueOnce(new ApiValidationError('{"address": ["already typed"]}'));
 
-      const { errorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save } = useAccountManage();
       const result = await save(createSolanaAccountState());
 
       expect(result).toBe(false);
-      expect(get(errorMessages)).toEqual({ address: ['already typed'] });
+      expect(get(modelErrorMessages)).toEqual({ address: ['already typed'] });
       expect(mockShowErrorMessage).not.toHaveBeenCalled();
     });
   });

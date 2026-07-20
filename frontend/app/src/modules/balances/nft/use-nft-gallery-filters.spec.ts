@@ -61,30 +61,30 @@ describe('useNftGalleryFilters', () => {
 
   it('should sort by price descending', () => {
     list = [nft({ name: 'a', price: 1 }), nft({ name: 'b', price: 9 })];
-    const { items, sortBy, sortDescending } = useNftGalleryFilters(nfts, ref(null));
-    set(sortBy, 'price');
-    set(sortDescending, true);
+    const { items, modelSortBy, modelSortDescending } = useNftGalleryFilters(nfts, ref(null));
+    set(modelSortBy, 'price');
+    set(modelSortDescending, true);
     expect(get(items).map(n => n.name)).toEqual(['b', 'a']);
   });
 
   it('should filter by the selected collection', () => {
     list = [nft({ name: 'a', collection: 'Punks' }), nft({ name: 'b', collection: 'Apes' })];
-    const { items, selectedCollection } = useNftGalleryFilters(nfts, ref(null));
-    set(selectedCollection, 'Apes');
+    const { items, modelSelectedCollection } = useNftGalleryFilters(nfts, ref(null));
+    set(modelSelectedCollection, 'Apes');
     expect(get(items).map(n => n.name)).toEqual(['b']);
   });
 
   it('should filter by the selected accounts', () => {
     list = [nft({ address: '0x1', name: 'a' }), nft({ address: '0x2', name: 'b' })];
-    const { items, selectedAccounts } = useNftGalleryFilters(nfts, ref(null));
-    set(selectedAccounts, [account('0x2')]);
+    const { items, modelSelectedAccounts } = useNftGalleryFilters(nfts, ref(null));
+    set(modelSelectedAccounts, [account('0x2')]);
     expect(get(items).map(n => n.name)).toEqual(['b']);
   });
 
   it('should validate the sort key on update', () => {
-    const { sortBy, updateSortBy } = useNftGalleryFilters(nfts, ref(null));
+    const { modelSortBy, updateSortBy } = useNftGalleryFilters(nfts, ref(null));
     updateSortBy('collection');
-    expect(get(sortBy)).toBe('collection');
+    expect(get(modelSortBy)).toBe('collection');
     expect(() => updateSortBy('bogus')).toThrow();
   });
 });

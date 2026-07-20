@@ -146,7 +146,7 @@ export function editBlockchainAccount(account: BlockchainAccountBalance): Accoun
 
 interface UseAccountManageReturn {
   pending: Readonly<Ref<boolean>>;
-  errorMessages: Ref<ValidationErrors>;
+  modelErrorMessages: Ref<ValidationErrors>;
   saveError: Readonly<Ref<string>>;
   saveErrorIsPremium: Readonly<Ref<boolean>>;
   save: (state: AccountManageState) => Promise<boolean>;
@@ -155,7 +155,7 @@ interface UseAccountManageReturn {
 
 export function useAccountManage(): UseAccountManageReturn {
   const pending = shallowRef<boolean>(false);
-  const errorMessages = ref<ValidationErrors>({});
+  const modelErrorMessages = ref<ValidationErrors>({});
   const saveError = shallowRef<string>('');
   const saveErrorIsPremium = shallowRef<boolean>(false);
 
@@ -184,7 +184,7 @@ export function useAccountManage(): UseAccountManageReturn {
       showErrorMessage(t('account_form.error.title'), t('account_form.error.description', { error: errors }));
     }
     else {
-      set(errorMessages, errors);
+      set(modelErrorMessages, errors);
     }
   }
 
@@ -296,7 +296,7 @@ export function useAccountManage(): UseAccountManageReturn {
         set(saveError, friendly);
       }
       else {
-        set(errorMessages, result.message);
+        set(modelErrorMessages, result.message);
       }
       return false;
     }
@@ -311,7 +311,7 @@ export function useAccountManage(): UseAccountManageReturn {
         if (typeof validation === 'string')
           set(saveError, validation);
         else
-          set(errorMessages, validation);
+          set(modelErrorMessages, validation);
       }
       else {
         set(saveError, getErrorMessage(error));
@@ -342,8 +342,7 @@ export function useAccountManage(): UseAccountManageReturn {
   };
 
   return {
-    // eslint-disable-next-line @rotki/composable-return-readonly
-    errorMessages,
+    modelErrorMessages,
     pending: readonly(pending),
     resetSaveError,
     save,
