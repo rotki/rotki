@@ -23,6 +23,9 @@ function makeTask(id: number, type: TaskType, meta: TaskMeta = getMeta()): Task<
 describe('useTaskHandler', () => {
   let handler: ReturnType<typeof import('@/modules/core/tasks/use-task-handler').useTaskHandler>;
   let store: ReturnType<typeof import('@/modules/core/tasks/use-task-store').useTaskStore>;
+  // built from the same (post-reset) module graph as the handler, otherwise the
+  // class identity differs and the handler's `instanceof` check misses
+  let cancellationError: (message: string) => Error;
 
   beforeEach(async () => {
     vi.resetModules();
@@ -31,6 +34,8 @@ describe('useTaskHandler', () => {
 
     const { useTaskStore } = await import('@/modules/core/tasks/use-task-store');
     const { useTaskHandler } = await import('@/modules/core/tasks/use-task-handler');
+    const { RequestCancelledError } = await import('@/modules/core/api/request-queue/errors');
+    cancellationError = (message: string): Error => new RequestCancelledError(message);
     store = useTaskStore();
     handler = useTaskHandler();
   });
@@ -55,6 +60,41 @@ describe('useTaskHandler', () => {
         message: undefined,
       });
       expect(taskFn).toHaveBeenCalledOnce();
+    });
+
+    it('should return a cancelled outcome when the task start is cancelled', async () => {
+      const taskFn = vi.fn().mockRejectedValue(cancellationError('All requests cancelled'));
+
+      const outcome = await handler.runTask<string, TaskMeta>(taskFn, {
+        type: TaskType.TX,
+        meta: getMeta(),
+      });
+
+      assert(!outcome.success);
+      expect(outcome.cancelled).toBe(true);
+      expect(outcome.skipped).toBe(false);
+      expect(store.hasRunningTasks).toBe(false);
+    });
+
+    it('should return a cancelled outcome when the task start is aborted', async () => {
+      const taskFn = vi.fn().mockRejectedValue(new DOMException('aborted', 'AbortError'));
+
+      const outcome = await handler.runTask<string, TaskMeta>(taskFn, {
+        type: TaskType.TX,
+        meta: getMeta(),
+      });
+
+      assert(!outcome.success);
+      expect(outcome.cancelled).toBe(true);
+    });
+
+    it('should rethrow non-cancellation errors from the task start', async () => {
+      const taskFn = vi.fn().mockRejectedValue(new Error('backend exploded'));
+
+      await expect(handler.runTask<string, TaskMeta>(taskFn, {
+        type: TaskType.TX,
+        meta: getMeta(),
+      })).rejects.toThrow('backend exploded');
     });
 
     it('should return TaskSuccess with message when present', async () => {
