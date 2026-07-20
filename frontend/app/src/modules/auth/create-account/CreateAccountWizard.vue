@@ -1,16 +1,14 @@
 <script lang="ts" setup>
 import type { CreateAccountMode } from '@/modules/auth/create-account/types';
 import type { CreateAccountPayload, LoginCredentials, PremiumSetup } from '@/modules/auth/login';
-import { externalLinks } from '@shared/external-links';
-import CreateAccountSubmitAnalytics
-  from '@/modules/auth/create-account/analytics/CreateAccountSubmitAnalytics.vue';
+import CreateAccountSubmitStep
+  from '@/modules/auth/create-account/analytics/CreateAccountSubmitStep.vue';
 import CreateAccountCredentials
   from '@/modules/auth/create-account/credentials/CreateAccountCredentials.vue';
 import CreateAccountIntroduction
   from '@/modules/auth/create-account/introduction/CreateAccountIntroduction.vue';
 import CreateAccountPremium from '@/modules/auth/create-account/premium/CreateAccountPremium.vue';
 import { useSavedProfiles } from '@/modules/auth/use-saved-profiles';
-import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
 
 const step = defineModel<number>('step', { required: true });
@@ -29,6 +27,31 @@ const emit = defineEmits<{
   'confirm': [payload: CreateAccountPayload];
   'clear-error': [];
 }>();
+
+const { t } = useI18n({ useScope: 'global' });
+
+const premiumEnabled = ref<boolean>(false);
+const premiumSetupForm = ref<PremiumSetup>({
+  apiKey: '',
+  apiSecret: '',
+  syncDatabase: false,
+});
+
+const credentialsForm = ref<LoginCredentials>({
+  password: '',
+  username: '',
+});
+const passwordConfirm = ref<string>('');
+const userPrompted = ref<boolean>(false);
+const submitUsageAnalytics = ref<boolean>(true);
+
+const { hasProfiles, loadProfiles } = useSavedProfiles();
+
+const isRestoreMode = computed<boolean>(() => get(mode) === 'restore');
+
+const wizardTitle = computed<string>(() =>
+  get(isRestoreMode) ? t('create_account.title_restore') : t('create_account.title'),
+);
 
 const cancel = (): void => emit('cancel');
 const errorClear = (): void => emit('clear-error');
@@ -53,53 +76,6 @@ function nextStep(): void {
   set(step, get(step) + 1);
 }
 
-const { t } = useI18n({ useScope: 'global' });
-
-const { hasProfiles, loadProfiles } = useSavedProfiles();
-
-onBeforeMount(loadProfiles);
-
-const parsedError = computed<{ hasLink: boolean; parts: string[] }>(() => {
-  const linkPlaceholder = '_DEVICE_LIMIT_LINK_';
-
-  if (!error || !error.includes(linkPlaceholder)) {
-    return {
-      hasLink: false,
-      parts: [error],
-    };
-  }
-
-  return {
-    hasLink: true,
-    parts: error.split(linkPlaceholder),
-  };
-});
-
-const premiumEnabled = ref<boolean>(false);
-const premiumSetupForm = ref<PremiumSetup>({
-  apiKey: '',
-  apiSecret: '',
-  syncDatabase: false,
-});
-
-const credentialsForm = ref<LoginCredentials>({
-  password: '',
-  username: '',
-});
-const passwordConfirm = ref<string>('');
-const userPrompted = ref<boolean>(false);
-const submitUsageAnalytics = ref<boolean>(true);
-
-const isRestoreMode = computed<boolean>(() => get(mode) === 'restore');
-
-const wizardTitle = computed<string>(() =>
-  get(isRestoreMode) ? t('create_account.title_restore') : t('create_account.title'),
-);
-
-const submitLabel = computed<string>(() =>
-  get(isRestoreMode) ? t('create_account.actions.restore_account') : t('create_account.actions.create_account'),
-);
-
 function selectMode(selected: CreateAccountMode): void {
   set(mode, selected);
   if (selected === 'restore') {
@@ -122,6 +98,8 @@ function confirm() {
 
   emit('confirm', payload);
 }
+
+onBeforeMount(loadProfiles);
 </script>
 
 <template>
@@ -171,55 +149,14 @@ function confirm() {
                 />
               </RuiTabItem>
               <RuiTabItem>
-                <div class="space-y-8">
-                  <CreateAccountSubmitAnalytics
-                    v-model:submit-usage-analytics="submitUsageAnalytics"
-                    :loading="loading"
-                  />
-                  <RuiAlert
-                    v-if="error"
-                    type="error"
-                  >
-                    <template v-if="parsedError.hasLink">
-                      {{ parsedError.parts[0] }}
-                      <i18n-t keypath="create_account.error.device_limit_link">
-                        <template #here>
-                          <ExternalLink
-                            :url="externalLinks.premiumDevices"
-                            custom
-                          >
-                            {{ t('common.here') }}
-                          </ExternalLink>
-                        </template>
-                      </i18n-t>
-                      {{ parsedError.parts[1] }}
-                    </template>
-                    <template v-else>
-                      {{ error }}
-                    </template>
-                  </RuiAlert>
-                  <div class="grid grid-cols-2 gap-4">
-                    <RuiButton
-                      size="lg"
-                      class="w-full"
-                      :disabled="loading"
-                      @click="prevStep()"
-                    >
-                      {{ t('common.actions.back') }}
-                    </RuiButton>
-                    <RuiButton
-                      data-cy="create-account__submit-analytics__button__continue"
-                      size="lg"
-                      class="w-full"
-                      :disabled="loading"
-                      :loading="loading"
-                      color="primary"
-                      @click="confirm()"
-                    >
-                      {{ submitLabel }}
-                    </RuiButton>
-                  </div>
-                </div>
+                <CreateAccountSubmitStep
+                  v-model:submit-usage-analytics="submitUsageAnalytics"
+                  :loading="loading"
+                  :mode="mode ?? 'create'"
+                  :error="error"
+                  @back="prevStep()"
+                  @confirm="confirm()"
+                />
               </RuiTabItem>
             </RuiTabItems>
           </div>
