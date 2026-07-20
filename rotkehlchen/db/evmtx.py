@@ -35,6 +35,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_evm_address,
@@ -99,7 +100,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             dict[int, EVMTxHash],
         ] = defaultdict(dict)
         for tx in evm_transactions:
-            row_id, is_new, is_new_shared_mapping = self.db.write_single_tuple(
+            row_id, is_new, should_redecode = self.db.write_single_tuple(
                 write_cursor=write_cursor,
                 tuple_type='evm_transaction',
                 query=query,
@@ -124,7 +125,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                 dirty_chains.add(tx.chain_id)
             elif (
                 row_id is not None and
-                is_new_shared_mapping and
+                should_redecode and
                 tx.chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
             ):
                 transactions_to_redecode[tx.chain_id][row_id] = tx.tx_hash
@@ -188,7 +189,10 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         transactions_to_redecode = {
             tx_id: transactions[tx_id]
             for tx_id in decoded_tx_ids
-            if f'{location.to_chain_id()}{transactions[tx_id]!s}' not in customized_group_ids
+            if EvmEvent._calculate_group_identifier(
+                tx_ref=transactions[tx_id],
+                location=location,
+            ) not in customized_group_ids
         }
         if len(transactions_to_redecode) == 0:
             return

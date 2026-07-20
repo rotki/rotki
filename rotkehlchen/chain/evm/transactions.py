@@ -23,6 +23,7 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import TX_INTERNALS_QUERIED, InternalTxSource
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset
@@ -45,6 +46,7 @@ from rotkehlchen.types import (
     EvmInternalTransaction,
     EvmTransaction,
     EVMTxHash,
+    Location,
     Timestamp,
     TokenKind,
     deserialize_evm_tx_hash,
@@ -204,13 +206,22 @@ class EvmTransactions(ABC):  # noqa: B024
 
             if relevant_address is not None:
                 transactions_to_redecode: dict[int, EVMTxHash] = {}
+                location = Location.from_chain_id(self.evm_inquirer.chain_id)
+                dbevents = DBHistoryEvents(self.database)
                 for tx_hash, (tx_id, has_mapping) in unmapped_tx_data.items():
                     write_cursor.execute(
                         'INSERT OR IGNORE INTO evmtx_address_mappings(tx_id, address) '
                         'VALUES (?, ?)',
                         (tx_id, relevant_address),
                     )
-                    if has_mapping and write_cursor.rowcount == 1:
+                    if write_cursor.rowcount == 1 and (
+                        has_mapping or dbevents.transaction_events_reference_address(
+                            cursor=write_cursor,
+                            tx_ref=tx_hash,
+                            location=location,
+                            address=relevant_address,
+                        ) is False
+                    ):
                         transactions_to_redecode[tx_id] = tx_hash
                 self.dbevmtx.flag_transactions_for_redecoding(
                     write_cursor=write_cursor,

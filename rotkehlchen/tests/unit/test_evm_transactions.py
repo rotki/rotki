@@ -189,7 +189,7 @@ def test_existing_decoded_transaction_is_redecoded_for_new_address(
         customized: bool,
         has_existing_mapping: bool,
 ) -> None:
-    """Only a newly discovered second address invalidates stale decoded events."""
+    """A newly discovered address invalidates stale decoded events."""
     dbevmtx = DBEvmTx(database)
     dbevents = DBHistoryEvents(database)
     transaction = make_ethereum_transaction()
@@ -248,7 +248,7 @@ def test_existing_decoded_transaction_is_redecoded_for_new_address(
 
     assert timestamps == {transaction.tx_hash: transaction.timestamp}
     assert newly_inserted == []
-    should_redecode = has_existing_mapping and customized is False
+    should_redecode = customized is False
     expected_remaining_entries = 0 if should_redecode else 1
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
@@ -294,6 +294,68 @@ def test_existing_decoded_transaction_is_redecoded_for_new_address(
                 'SELECT COUNT(*) FROM evmtx_address_mappings WHERE tx_id=? AND address=?',
                 (tx_id, new_address),
             ).fetchone()[0] == 1
+
+
+def test_first_evm_mapping_keeps_events_already_referencing_address(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """A by-hash decode for an already tracked address should not be invalidated."""
+    dbevmtx = DBEvmTx(database)
+    transaction = make_ethereum_transaction()
+    relevant_address = make_evm_address()
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[transaction],
+            relevant_address=None,
+        )
+        dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.ETHEREUM,
+            data=_make_receipt_data(transaction.tx_hash),
+        )
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=transaction.tx_hash,
+                sequence_index=0,
+                timestamp=TimestampMS(transaction.timestamp * 1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+                location_label=relevant_address,
+            ),
+        )
+        tx_id = write_cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (transaction.tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+        write_cursor.execute(
+            'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+            (tx_id, TX_DECODED),
+        )
+
+    ethereum_manager.transactions._batch_ensure_evm_txns_in_db(
+        tx_hashes=[transaction.tx_hash],
+        relevant_address=relevant_address,
+    )
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id=? AND value=?',
+            (tx_id, TX_DECODED),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM chain_events_info WHERE tx_ref=?',
+            (transaction.tx_hash,),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evmtx_address_mappings WHERE tx_id=? AND address=?',
+            (tx_id, relevant_address),
+        ).fetchone()[0] == 1
 
 
 def test_existing_transactions_are_batched_for_redecoding(database: DBHandler) -> None:

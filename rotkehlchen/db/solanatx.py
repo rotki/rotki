@@ -63,7 +63,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
         query = """INSERT OR IGNORE INTO solana_transactions(slot, fee, block_time, success, signature) VALUES (?, ?, ?, ?, ?)"""  # noqa: E501
         newly_inserted: list[Signature] = []
         for tx in solana_transactions:
-            tx_id, is_new, is_new_shared_mapping = self.db.write_single_tuple(
+            tx_id, is_new, should_redecode = self.db.write_single_tuple(
                 write_cursor=write_cursor,
                 tuple_type='solana_transaction',
                 query=query,
@@ -74,7 +74,8 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
                 newly_inserted.append(tx.signature)
             if tx_id is None:
                 continue
-            if is_new_shared_mapping and is_new is False:
+            # should_redecode is only set for a new mapping on an existing transaction.
+            if should_redecode:
                 self.flag_transaction_for_redecoding(
                     write_cursor=write_cursor,
                     tx_id=tx_id,
