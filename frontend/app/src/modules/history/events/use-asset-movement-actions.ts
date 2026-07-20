@@ -5,6 +5,7 @@ import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { type UnmatchedAssetMovement, useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 
 interface UseAssetMovementActionsOptions {
+  /** Awaited after a single movement is ignored or restored (not after the bulk actions), letting the caller refresh its own view. */
   onActionComplete?: () => Promise<void>;
 }
 

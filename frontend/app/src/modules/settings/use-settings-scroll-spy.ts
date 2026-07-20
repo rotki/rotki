@@ -6,7 +6,15 @@ interface Nav {
 }
 
 interface UseSettingsScrollSpyOptions {
+  /**
+   * Section entries in document order, whose `id` must match the element ids on the page. Read once at
+   * setup, so later changes to the list are not picked up.
+   */
   navigation: MaybeRef<Nav[]>;
+  /**
+   * Template ref of the scrolling container the sections live in. It is `null` until mount, and while
+   * null viewport checks report false and scrolling is a no-op.
+   */
   scroller: Readonly<ShallowRef<HTMLDivElement | null>>;
 }
 

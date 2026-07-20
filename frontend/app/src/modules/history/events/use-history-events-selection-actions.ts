@@ -7,11 +7,15 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useIgnore } from '@/modules/history/use-ignore';
 
 interface UseHistoryEventsSelectionActionsOptions {
+  /** Deletion handler owned by the caller; `deleteSelected` already knows the current selection and runs its own confirmation. */
   deletion: {
     deleteSelected: () => Promise<void>;
   };
+  /** Unfiltered rows the selection ids are resolved against, so an action still finds an event that the displayed rows hide. */
   originalGroups: Ref<HistoryEventRow[]>;
+  /** Invoked after an ignore or unignore succeeds, once selection mode has been exited, to reload the table. */
   refreshCallback: () => Promise<void>;
+  /** Selection state and actions; `state.selectedIds` is read to resolve the targets and `actions.exit` is called once an action completes. */
   selectionMode: UseHistoryEventsSelectionModeReturn;
 }
 

@@ -5,7 +5,9 @@ import { generateRandomScrambleMultiplier } from '@/modules/session/session-util
 import { useAmountDisplaySettings } from './use-amount-display-settings';
 
 export interface UseScrambledValueOptions {
+  /** The real, unscrambled amount. Read through `toValue`, so a plain value, a ref or a getter all work. */
   value: MaybeRefOrGetter<BigNumber>;
+  /** Opts this call site out of scrambling regardless of user settings. Used for values that must stay truthful, such as prices. */
   noScramble?: MaybeRefOrGetter<boolean>;
 }
 

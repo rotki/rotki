@@ -9,7 +9,15 @@ const HIGHLIGHT_CLASSES = ['rounded-lg', 'px-4', '-mx-4'] as const;
 const FALLBACK_PRIMARY = '78, 91, 166';
 
 interface UseSettingsPageHighlightOptions {
+  /**
+   * Scrolls the settings page container to the target. Awaited before the highlight animation starts, so
+   * it must resolve once the smooth scroll has settled (or timed out).
+   */
   scrollToElement: (el?: string | Element) => Promise<void>;
+  /**
+   * Decides whether scrolling can be skipped: a target already visible is highlighted in place, avoiding
+   * a jump when the user is looking at it.
+   */
   isElementInViewport: (el: Element) => boolean;
 }
 

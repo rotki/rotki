@@ -8,14 +8,23 @@ import { type GnosisPayAdminsMapping, GnosisPayError, type GnosisPayErrorContext
 import { useGnosisPaySiweApi } from './use-gnosis-pay-api';
 
 interface UseGnosisPayWalletOptions {
+  /** Owned by `useGnosisPayAuthState`, toggled here around the admins fetch so the auth card can show its "checking accounts" alert. */
   checkingRegisteredAccounts: Ref<boolean>;
+  /** Resets the shared error type and context. Called at the start of every wallet action so a stale error never survives a retry. */
   clearError: () => void;
+  /** Drops `isAddressValid` and `controlledSafeAddresses`. Called before re-validating and again if validation throws. */
   clearValidation: () => void;
+  /** Written only on a successful validation, with every safe address the connected admin address controls. */
   controlledSafeAddresses: Ref<string[]>;
+  /** Safe address to admin addresses, filled by `checkRegisteredAccounts` and read back by `validateAddress` to match the connected wallet. */
   gnosisPayAdminsMapping: Ref<GnosisPayAdminsMapping>;
+  /** False until the backend reports at least one registered Gnosis Pay safe. Gates whether the step flow renders at all. */
   hasRegisteredAccounts: Ref<boolean>;
+  /** Only ever set to true here, when the connected address is an admin of at least one safe. Clearing it is `clearValidation`'s job. */
   isAddressValid: Ref<boolean>;
+  /** Stores the error the auth component maps to a localized message. The context carries the extras it needs (`message`, `adminsMapping`). */
   setError: (type: GnosisPayError, context?: GnosisPayErrorContext) => void;
+  /** Toggled around `validateAddress`, driving both the validation step spinner and the current-step computation. */
   validatingAddress: Ref<boolean>;
 }
 

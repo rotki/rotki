@@ -17,6 +17,10 @@ import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-stat
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
 interface UseNftDataOptions {
+  /**
+   * Switches to the dashboard widget variant: pagination state is kept outside the router query, the columns follow the
+   * dashboard visible-column setting, and the reset-to-page-one watcher on the ignored assets filter is skipped.
+   */
   dashboard?: boolean;
 }
 

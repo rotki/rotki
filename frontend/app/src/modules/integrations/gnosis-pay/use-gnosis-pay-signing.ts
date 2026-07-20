@@ -14,12 +14,19 @@ import { GnosisPayError, type GnosisPayErrorContext } from './types';
 import { useGnosisPaySiweApi } from './use-gnosis-pay-api';
 
 interface UseGnosisPaySigningOptions {
+  /** Clears the shared error state before signing, skipped when the pending error is `INVALID_ADDRESS` so that warning stays visible. */
   clearError: () => void;
+  /** Comes from the wallet store via `useGnosisPayWallet`. Undefined means no wallet is connected and sign-in aborts immediately. */
   connectedAddress: Ref<string | undefined>;
+  /** Read, never written. Only used to detect the `INVALID_ADDRESS` warning that must be preserved across a sign-in attempt. */
   errorType: Ref<GnosisPayError | null>;
+  /** Awaited once the backend confirms the signature. The auth card uses it to reload the API key and re-check the safe migration. */
   onSignInComplete?: () => MaybePromise<void>;
+  /** Used only for the two locally recoverable cases (no wallet connected, user rejected the signature). Task failures go to notifications instead. */
   setError: (type: GnosisPayError, context?: GnosisPayErrorContext) => void;
+  /** Held true across the whole nonce, sign, verify sequence and cleared in `finally`. The component also clears it to cancel. */
   signingInProgress: Ref<boolean>;
+  /** Reset to false when sign-in starts, set to true only after backend verification. Advances the auth flow to its final step. */
   signInSuccess: Ref<boolean>;
 }
 
