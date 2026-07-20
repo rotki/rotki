@@ -7,12 +7,15 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 WORKDIR /app
 COPY frontend/ .
-RUN if [ "$BUILDARCH" != "amd64" ]; then \
+# The pnpm store is cached so a rebuild re-resolves rather than re-downloads.
+RUN --mount=type=cache,target=/pnpm-store \
+    if [ "$BUILDARCH" != "amd64" ]; then \
       apt-get update && \
       apt-get install -y build-essential python3 --no-install-recommends; \
     fi && \
     npm install -g corepack@latest && \
     corepack enable && \
+    pnpm config set store-dir /pnpm-store && \
     pnpm install --frozen-lockfile && \
     pnpm run docker:build
 
@@ -20,7 +23,20 @@ FROM rust:1.91-bookworm AS colibri-build-stage
 
 WORKDIR /app
 COPY colibri/ ./colibri
-RUN cargo build --target-dir /tmp/dist/colibri --manifest-path ./colibri/Cargo.toml --release
+# Cache the crates registry and the intermediate target dir. Without these every
+# build recompiles the whole dependency tree, including the vendored OpenSSL and
+# SQLCipher that dominate colibri's build. The release artifact is copied out of
+# the cache so the layer itself still holds a real file.
+# sharing=locked on the registry: BuildKit runs the two rust stages in parallel,
+# and an unlocked shared cache lets both cargos unpack into it at once, which
+# fails with "failed to unpack package ... File exists". The target dirs stay
+# per-stage since they hold different crates.
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/tmp/cargo-target-colibri \
+    CARGO_TARGET_DIR=/tmp/cargo-target-colibri \
+    cargo build --manifest-path ./colibri/Cargo.toml --release && \
+    mkdir -p /tmp/dist/colibri/release && \
+    cp /tmp/cargo-target-colibri/release/colibri /tmp/dist/colibri/release/colibri
 
 # starling, the PID-1 supervisor that replaces entrypoint.py *and* nginx: it
 # spawns core+colibri, serves the SPA and reverse-proxies to them in-process.
@@ -28,7 +44,12 @@ FROM rust:1.91-bookworm AS starling-build-stage
 
 WORKDIR /app
 COPY crates/ ./crates
-RUN cargo build --target-dir /tmp/dist/starling --manifest-path ./crates/Cargo.toml --release -p starling
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/tmp/cargo-target-starling \
+    CARGO_TARGET_DIR=/tmp/cargo-target-starling \
+    cargo build --manifest-path ./crates/Cargo.toml --release -p starling && \
+    mkdir -p /tmp/dist/starling/release && \
+    cp /tmp/cargo-target-starling/release/starling /tmp/dist/starling/release/starling
 
 FROM python:3.14-bookworm AS backend-build-stage
 
