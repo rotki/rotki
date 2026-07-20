@@ -5,7 +5,8 @@ import pytest
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
 from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.chain.evm.decoding.stakedao.v2.constants import CPT_STAKEDAO_V2
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.constants import HistoryEventLinkType
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -115,6 +116,69 @@ def test_match_bridge_transactions_exact_transfer_id(database: DBHandler) -> Non
     # a second run must not create further links or messages about these
     match_bridge_transactions(database=database)
     assert _get_bridge_links(database) == {(_event_id(database, deposit), _event_id(database, withdrawal))}  # noqa: E501
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_bridge_transactions_wrapped_assets_transfer_id(database: DBHandler) -> None:
+    """Legs whose assets are unrelated (e.g. LaPoste-wrapped side-chain tokens vs the
+    canonical mainnet tokens) still match exactly on transfer id, including several
+    tokens bridged in one message and disambiguated only by the token index."""
+    events_db = DBHistoryEvents(database)
+    user_address = make_evm_address()
+    deposit_tx, withdrawal_tx = make_evm_tx_hash(), make_evm_tx_hash()
+    deposits, withdrawals = [], []
+    for index, (deposit_asset, withdrawal_asset, amount) in enumerate([
+        (A_DAI, A_USDT, FVal('1000')),  # same nonce, same amounts impossible to
+        (A_USDC, A_WBTC, FVal('1000')),  # tell apart without the token index
+    ]):
+        deposits.append(EvmEvent(
+            tx_ref=deposit_tx,
+            sequence_index=index,
+            timestamp=TimestampMS(1700000000000),
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=deposit_asset,
+            amount=amount,
+            location_label=user_address,
+            counterparty=CPT_STAKEDAO_V2,
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 1,
+                'to_address': user_address,
+                'transfer_id': f'4242-{index}',
+            }},
+        ))
+        withdrawals.append(EvmEvent(
+            tx_ref=withdrawal_tx,
+            sequence_index=index,
+            timestamp=TimestampMS(1700001000000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=withdrawal_asset,
+            amount=amount,
+            location_label=user_address,
+            counterparty=CPT_STAKEDAO_V2,
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 1,
+                'to_address': user_address,
+                'transfer_id': f'4242-{index}',
+            }},
+        ))
+
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=deposits + withdrawals,
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (_event_id(database, deposits[0]), _event_id(database, withdrawals[0])),
+        (_event_id(database, deposits[1]), _event_id(database, withdrawals[1])),
+    }
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])

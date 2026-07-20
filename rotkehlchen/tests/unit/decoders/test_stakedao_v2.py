@@ -420,6 +420,7 @@ def test_votemarket_bridge_out(
         location_label=user_address,
         notes=f'Bridge {bridge_1} pOGN from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
         counterparty=CPT_STAKEDAO_V2,
+        extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-0'}},  # noqa: E501
         address=string_to_evm_address('0x67346f8b9B7dDA4639600C190DDaEcDc654359c8'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -433,6 +434,7 @@ def test_votemarket_bridge_out(
         location_label=user_address,
         notes=f'Bridge {bridge_2} popASF from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
         counterparty=CPT_STAKEDAO_V2,
+        extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-1'}},  # noqa: E501
         address=string_to_evm_address('0x67346f8b9B7dDA4639600C190DDaEcDc654359c8'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -446,6 +448,7 @@ def test_votemarket_bridge_out(
         location_label=user_address,
         notes=f'Bridge {bridge_3} pWFRAX from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
         counterparty=CPT_STAKEDAO_V2,
+        extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-2'}},  # noqa: E501
         address=string_to_evm_address('0x67346f8b9B7dDA4639600C190DDaEcDc654359c8'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -459,6 +462,7 @@ def test_votemarket_bridge_out(
         location_label=user_address,
         notes=f'Bridge {bridge_4} pOUSD from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
         counterparty=CPT_STAKEDAO_V2,
+        extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-3'}},  # noqa: E501
         address=string_to_evm_address('0x67346f8b9B7dDA4639600C190DDaEcDc654359c8'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -514,6 +518,7 @@ def test_votemarket_bridge_in(
         location_label=(user_address := ethereum_accounts[0]),
         notes=f'Bridge {bridge_1} OGN from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
         counterparty=CPT_STAKEDAO_V2,
+        extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-0'}},  # noqa: E501
         address=string_to_evm_address('0x96006425Da428E45c282008b00004a00002B345e'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -527,6 +532,7 @@ def test_votemarket_bridge_in(
         location_label=user_address,
         notes=f'Bridge {bridge_2} opASF from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
         counterparty=CPT_STAKEDAO_V2,
+        extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-1'}},  # noqa: E501
         address=string_to_evm_address('0x96006425Da428E45c282008b00004a00002B345e'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -540,6 +546,7 @@ def test_votemarket_bridge_in(
         location_label=user_address,
         notes=f'Bridge {bridge_3} WFRAX from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
         counterparty=CPT_STAKEDAO_V2,
+        extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-2'}},  # noqa: E501
         address=string_to_evm_address('0x96006425Da428E45c282008b00004a00002B345e'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -553,5 +560,6 @@ def test_votemarket_bridge_in(
         location_label=user_address,
         notes=f'Bridge {bridge_4} OUSD from Arbitrum One to Ethereum for {user_address} via StakeDAO votemarket',  # noqa: E501
         counterparty=CPT_STAKEDAO_V2,
+        extra_data={'bridge': {'from_chain': 42161, 'to_chain': 1, 'to_address': user_address, 'transfer_id': '4270-3'}},  # noqa: E501
         address=string_to_evm_address('0x96006425Da428E45c282008b00004a00002B345e'),
     )]

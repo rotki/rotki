@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.stakedao.v2.constants import (
     CPT_STAKEDAO_V2,
     LAPOSTE_ADDRESS,
     LAPOSTE_BUNDLER_ADDRESS,
+    LAPOSTE_MESSAGE_ABI,
     LAPOSTE_MESSAGE_RECEIVED_TOPIC,
     LAPOSTE_MESSAGE_SENT_TOPIC,
     LAPOSTE_TOKEN_FACTORY_ADDRESS,
@@ -29,7 +30,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import get_address_to_address_dict_from_cache
+from rotkehlchen.chain.evm.decoding.utils import (
+    get_address_to_address_dict_from_cache,
+    set_bridge_extra_data,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
@@ -288,7 +292,16 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         ):
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        receiver = bytes_to_address(context.tx_log.data[:32])
+        raw_receiver, message = decode_abi(
+            ['address', LAPOSTE_MESSAGE_ABI],
+            context.tx_log.data,
+        )
+        receiver = deserialize_evm_address(raw_receiver)
+        # The message lists the canonical mainnet token addresses and raw amounts, while
+        # the spent assets here are the LaPoste-wrapped side-chain tokens. Track the
+        # message token positions so each bridge leg gets a per-token transfer id that
+        # the destination side can reproduce from the same message.
+        pending_message_tokens = list(enumerate(message[3]))
         source_chain = self.node_inquirer.chain_id.label()
         bridge_sender = None
         bridged_events = []
@@ -316,9 +329,23 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             # Only classify as a bridge deposit when destination is tracked.
             # For untracked receivers we keep spend semantics, but still annotate
             # counterparty/notes to preserve protocol attribution and context.
+            transfer_id = None
+            for position, (token_index, token_data) in enumerate(pending_message_tokens):
+                if event.amount == token_normalized_value(token_data[1], bridge_token):
+                    transfer_id = f'{message[6]}-{token_index}'
+                    pending_message_tokens.pop(position)
+                    break
+
             if self.base.is_tracked(receiver):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.BRIDGE
+                set_bridge_extra_data(
+                    event=event,
+                    from_chain=self.node_inquirer.chain_id,
+                    to_chain=ChainID.ETHEREUM,
+                    to_address=receiver,
+                    transfer_id=transfer_id,
+                )
             event.counterparty = CPT_STAKEDAO_V2
             event.notes = (
                 f'Bridge {event.amount} {bridge_token.symbol} from {source_chain} '
@@ -376,7 +403,7 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         receiver, message, _ = decode_abi(
-            ['address', '(uint256,address,address,(address,uint256)[],(string,string,uint8)[],bytes,uint256)', 'bool'],  # noqa: E501
+            ['address', LAPOSTE_MESSAGE_ABI, 'bool'],
             context.tx_log.data,
         )
 
@@ -391,8 +418,8 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             source_chain = 'Unknown Chain'
 
         bridged_token_amounts = {
-            deserialize_evm_address(token_data[0]): token_data[1]
-            for token_data in message[3]
+            deserialize_evm_address(token_data[0]): (token_index, token_data[1])
+            for token_index, token_data in enumerate(message[3])
         }
         bridged_events = []
         for event in context.decoded_events:
@@ -403,20 +430,23 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 event.address == LAPOSTE_TOKEN_FACTORY_ADDRESS
             ):
                 continue
-            if (
-                (bridge_token := event.asset.resolve_to_evm_token()).evm_address not in
-                bridged_token_amounts
-            ):
+            if (token_data := bridged_token_amounts.get(
+                (bridge_token := event.asset.resolve_to_evm_token()).evm_address,
+            )) is None:
                 continue
-            if event.amount != token_normalized_value(
-                bridged_token_amounts[bridge_token.evm_address],
-                bridge_token,
-            ):
+            if event.amount != token_normalized_value(token_data[1], bridge_token):
                 continue
 
             event.event_type = HistoryEventType.WITHDRAWAL
             event.event_subtype = HistoryEventSubType.BRIDGE
             event.counterparty = CPT_STAKEDAO_V2
+            set_bridge_extra_data(
+                event=event,
+                from_chain=int.from_bytes(context.tx_log.topics[1]),
+                to_chain=self.node_inquirer.chain_id,
+                to_address=receiver,
+                transfer_id=f'{message[6]}-{token_data[0]}',
+            )
             event.notes = (
                 f'Bridge {event.amount} {bridge_token.symbol} from {source_chain} to '
                 f'{target_chain} for {receiver} via StakeDAO votemarket'
