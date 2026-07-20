@@ -256,6 +256,50 @@ describe('use-virtual-rows', () => {
       expect(eventRows).toHaveLength(2);
     });
 
+    it('should flag the collapse row of a matched bridge subgroup as bridge', async () => {
+      const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
+      const depositLeg = createMockEvent({ eventSubtype: 'bridge', eventType: 'deposit', groupIdentifier: 'group1', identifier: 2, location: 'arbitrum_one' });
+      const withdrawalLeg = createMockEvent({ eventSubtype: 'bridge', eventType: 'withdrawal', groupIdentifier: 'group1', identifier: 3 });
+
+      const groups = computed<HistoryEventEntry[]>(() => [group]);
+      const eventsByGroup = computed<Record<string, HistoryEventRow[]>>(() => ({
+        group1: [[depositLeg, withdrawalLeg]],
+      }));
+
+      const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
+
+      const swapRows = get(flattenedRows).filter(r => r.type === 'swap-row');
+      expect(swapRows).toHaveLength(1);
+
+      toggleSwapExpanded(swapRows[0].type === 'swap-row' ? swapRows[0].swapKey : '');
+      await nextTick();
+
+      const collapseRows = get(flattenedRows).filter(r => r.type === 'swap-collapse');
+      expect(collapseRows).toHaveLength(1);
+      expect(collapseRows[0]).toHaveProperty('bridge', true);
+    });
+
+    it('should not flag the collapse row of a plain swap subgroup as bridge', async () => {
+      const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
+      const swapSpend = createMockEvent({ eventSubtype: 'spend', groupIdentifier: 'group1', identifier: 2 });
+      const swapReceive = createMockEvent({ eventSubtype: 'receive', groupIdentifier: 'group1', identifier: 3 });
+
+      const groups = computed<HistoryEventEntry[]>(() => [group]);
+      const eventsByGroup = computed<Record<string, HistoryEventRow[]>>(() => ({
+        group1: [[swapSpend, swapReceive]],
+      }));
+
+      const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
+
+      const swapRow = get(flattenedRows).find(r => r.type === 'swap-row');
+      toggleSwapExpanded(swapRow?.type === 'swap-row' ? swapRow.swapKey : '');
+      await nextTick();
+
+      const collapseRows = get(flattenedRows).filter(r => r.type === 'swap-collapse');
+      expect(collapseRows).toHaveLength(1);
+      expect(collapseRows[0]).toHaveProperty('bridge', false);
+    });
+
     it('should assign subgroup-relative index so the first expanded event has index 0', async () => {
       const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
       const swapSpend = createMockEvent({ groupIdentifier: 'group1', identifier: 2, eventSubtype: 'spend' });

@@ -226,6 +226,93 @@ def test_get_unmatched_and_possible_bridge_matches(rotkehlchen_api_server: APISe
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_matched_bridge_pairs_display_as_separate_groups(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Two bridge matches sharing the same source and destination transactions
+    must be displayed as one subgroup per pair, each deposit grouped with its
+    actually linked withdrawal instead of all four legs merging into one group."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevents = DBHistoryEvents(rotki.data.db)
+    user_address = make_evm_address()
+    deposit_tx, withdrawal_tx = make_evm_tx_hash(), make_evm_tx_hash()
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        dbevents.add_history_events(
+            write_cursor=write_cursor,
+            history=[(deposit_1 := EvmEvent(
+                identifier=1,
+                tx_ref=deposit_tx,
+                sequence_index=0,
+                timestamp=TimestampMS(1700000000000),
+                location=Location.ARBITRUM_ONE,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_ETH,
+                amount=FVal('1'),
+                location_label=user_address,
+                counterparty=CPT_ACROSS,
+            )), EvmEvent(
+                identifier=2,
+                tx_ref=deposit_tx,
+                sequence_index=1,
+                timestamp=TimestampMS(1700000000000),
+                location=Location.ARBITRUM_ONE,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_ETH,
+                amount=FVal('2'),
+                location_label=user_address,
+                counterparty=CPT_ACROSS,
+            ), EvmEvent(
+                identifier=3,
+                tx_ref=withdrawal_tx,
+                sequence_index=0,
+                timestamp=TimestampMS(1700000300000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_ETH,
+                amount=FVal('0.999'),
+                location_label=user_address,
+                counterparty=CPT_ACROSS,
+            ), EvmEvent(
+                identifier=4,
+                tx_ref=withdrawal_tx,
+                sequence_index=1,
+                timestamp=TimestampMS(1700000300000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_ETH,
+                amount=FVal('1.999'),
+                location_label=user_address,
+                counterparty=CPT_ACROSS,
+            )],
+        )
+
+    for bridge_event, matched_event in ((1, 3), (2, 4)):
+        assert_simple_ok_response(requests.put(
+            url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+            json={'bridge_event': bridge_event, 'matched_events': [matched_event]},
+        ))
+
+    result = assert_proper_response_with_result(
+        response=requests.post(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json={
+                'aggregate_by_group_ids': False,
+                'group_identifiers': [deposit_1.group_identifier],
+            },
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+    )['entries']
+    assert [
+        [x['entry']['identifier'] for x in sublist]
+        for sublist in result
+    ] == [[1, 3], [2, 4]]
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_match_bridge_transactions_errors(rotkehlchen_api_server: APIServer) -> None:
     assert_error_response(
         response=requests.put(

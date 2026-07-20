@@ -394,6 +394,7 @@ function isShowingIgnoredAssets(groupId: string): boolean {
           <HistoryEventsSwapCollapseRow
             v-else-if="row.type === 'swap-collapse'"
             :event-count="row.eventCount"
+            :label-type="row.bridge ? 'bridge' : undefined"
             @collapse="toggleSwapExpanded(row.swapKey)"
           />
 

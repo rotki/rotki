@@ -1,7 +1,7 @@
 <script setup lang="ts">
-const { labelType } = defineProps<{
+const { eventCount, labelType } = defineProps<{
   eventCount: number;
-  labelType?: 'swap' | 'movement';
+  labelType?: 'swap' | 'movement' | 'bridge';
 }>();
 
 const emit = defineEmits<{
@@ -12,6 +12,14 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const isMovement = computed<boolean>(() => labelType === 'movement');
+
+const label = computed<string>(() => {
+  if (labelType === 'movement')
+    return t('history_events_list_swap.movement_expanded', { count: eventCount });
+  if (labelType === 'bridge')
+    return t('history_events_list_swap.bridge_expanded', { count: eventCount });
+  return t('history_events_list_swap.swap_expanded', { count: eventCount });
+});
 
 const { isMdAndUp } = useBreakpoint();
 </script>
@@ -38,11 +46,7 @@ const { isMdAndUp } = useBreakpoint();
 
     <!-- Label -->
     <span class="text-xs text-rui-text-secondary">
-      {{
-        isMovement
-          ? t('history_events_list_swap.movement_expanded', { count: eventCount })
-          : t('history_events_list_swap.swap_expanded', { count: eventCount })
-      }}
+      {{ label }}
     </span>
 
     <RuiTooltip

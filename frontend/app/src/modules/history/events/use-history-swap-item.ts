@@ -80,13 +80,18 @@ export function useHistorySwapItem(
     selection?.actions.toggleSwap(get(swapEventIds));
   }
 
-  // Separate spend and receive events
+  // A joined matched-bridge subgroup: both legs carry the bridge subtype
+  const isBridge = computed<boolean>(() => get(events).some(e => e.eventSubtype === 'bridge'));
+
+  // Separate spend and receive events. For matched bridge groups the source
+  // chain deposit is the spend side and the destination chain withdrawal the
+  // receive side.
   const spendEvents = computed<HistoryEventEntry[]>(() =>
-    get(events).filter(e => e.eventSubtype === 'spend'),
+    get(events).filter(e => e.eventSubtype === 'spend' || (e.eventSubtype === 'bridge' && e.eventType === 'deposit')),
   );
 
   const receiveEvents = computed<HistoryEventEntry[]>(() =>
-    get(events).filter(e => e.eventSubtype === 'receive'),
+    get(events).filter(e => e.eventSubtype === 'receive' || (e.eventSubtype === 'bridge' && e.eventType === 'withdrawal')),
   );
 
   // First spend/receive for visual display
@@ -146,10 +151,15 @@ export function useHistorySwapItem(
           receiveAsset: 'assets',
         };
 
-    const notes = t('history_events_list_swap.swap_description', {
-      ...spendNotes,
-      ...receiveNotes,
-    });
+    const notes = get(isBridge)
+      ? t('history_events_list_swap.bridge_description', {
+          ...spendNotes,
+          ...receiveNotes,
+        })
+      : t('history_events_list_swap.swap_description', {
+          ...spendNotes,
+          ...receiveNotes,
+        });
 
     // Append fee if exists
     const fee = get(events).filter(item => item.eventSubtype === 'fee');

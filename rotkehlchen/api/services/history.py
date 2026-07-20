@@ -103,6 +103,33 @@ def _sort_matched_group(matched_events_group: list[dict[str, Any]]) -> list[dict
         return matched_events_group
 
 
+def _split_matched_group(
+        matched_events_group: list[dict[str, Any]],
+        event_to_pair: dict[int, int],
+) -> list[list[dict[str, Any]]]:
+    """Split a joined matched events group into one sorted sublist per link pair.
+
+    A single transaction can contain several matched bridge transfers (e.g. one bridge
+    message carrying multiple tokens), whose legs all share the same joined group id.
+    Splitting by the link pair anchor shows each transfer as its own subgroup. Events
+    without a pair anchor (asset movement fee legs, exchange adjustments) can't be
+    attributed to one pair, so such groups keep the current merged display.
+    """
+    pairs: dict[int, list[dict[str, Any]]] = {}
+    for serialized in matched_events_group:
+        if (
+            (identifier := serialized['entry'].get('identifier')) is None or
+            (pair_id := event_to_pair.get(identifier)) is None
+        ):
+            return [_sort_matched_group(matched_events_group)]
+        pairs.setdefault(pair_id, []).append(serialized)
+
+    if len(pairs) <= 1:
+        return [_sort_matched_group(matched_events_group)]
+
+    return [_sort_matched_group(pair_events) for pair_events in pairs.values()]
+
+
 class HistoryService:
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
         self.rotkehlchen = rotkehlchen
@@ -372,7 +399,7 @@ class HistoryService:
             # This does NOT fire when only the filtered subset would fit — we would need an
             # extra query to know that, which is not worth it here.
             effective_entries_limit = None if entries_total <= entries_limit else entries_limit
-            _, processed_events_result, joined_group_ids, entries_found, entries_with_limit, entries_total, ignored_group_identifiers = self._query_history_events_with_matched_processing(  # noqa: E501
+            _, processed_events_result, joined_group_ids, entries_found, entries_with_limit, entries_total, ignored_group_identifiers, event_to_pair = self._query_history_events_with_matched_processing(  # noqa: E501
                 cursor=cursor,
                 dbevents=dbevents,
                 filter_query=filter_query,
@@ -442,6 +469,7 @@ class HistoryService:
                 ignored_ids=ignored_ids,
                 hidden_event_ids=hidden_event_ids,
                 joined_group_ids=joined_group_ids,
+                event_to_pair=event_to_pair,
                 group_has_ignored_assets=group_has_ignored_assets,
             )),
             'entries_found': entries_with_limit,
@@ -705,6 +733,7 @@ class HistoryService:
         int,
         int,
         set[str],
+        dict[int, int],
     ]:
         """Fetch events and apply matched-asset-movement post-processing."""
         events_result_info = dbevents.get_history_events_and_limit_info(
@@ -722,6 +751,7 @@ class HistoryService:
             entries_with_limit,
             entries_total,
             ignored_group_identifiers,
+            event_to_pair,
         ) = dbevents.process_matched_asset_movements(
             cursor=cursor,
             aggregate_by_group_ids=aggregate_by_group_ids,
@@ -738,6 +768,7 @@ class HistoryService:
             entries_with_limit,
             entries_total,
             ignored_group_identifiers,
+            bridge_event_to_pair,
         ) = dbevents.process_matched_asset_movements(
             cursor=cursor,
             aggregate_by_group_ids=aggregate_by_group_ids,
@@ -757,6 +788,7 @@ class HistoryService:
             entries_with_limit,
             entries_total,
             ignored_group_identifiers,
+            event_to_pair | bridge_event_to_pair,
         )
 
     @staticmethod
@@ -769,6 +801,7 @@ class HistoryService:
             ignored_ids: set[str],
             hidden_event_ids: set[int],
             joined_group_ids: dict[str, str],
+            event_to_pair: dict[int, int],
             group_has_ignored_assets: set[str],
     ) -> list[dict[str, Any] | list[dict[str, Any]]]:
         """Serialize and group history events for the api.
@@ -789,6 +822,8 @@ class HistoryService:
         - joined_group_ids: dict mapping group_identifiers to replacement group_identifiers. Used
            to join groups that are separate in the DB for accounting purposes but need to be shown
            in the frontend as a single unit, such as asset movements with their matched events.
+        - event_to_pair: dict mapping linked event ids to their link pair anchor. Used to split
+           several matched pairs sharing the same joined group into separate sublists.
         - group_has_ignored_assets: set of group identifiers that contain ignored assets.
 
         Returns a list of serialized events with grouped events in sub-lists.
@@ -849,7 +884,10 @@ class HistoryService:
                     # This is the beginning of an asset movement group coming immediately after
                     # another asset movement group. Add the current group to entries and reset
                     # to begin a new group.
-                    entries.append(_sort_matched_group(current_matched_group))
+                    entries.extend(_split_matched_group(
+                        matched_events_group=current_matched_group,
+                        event_to_pair=event_to_pair,
+                    ))
                     current_matched_group = []
 
                 # Append to current_matched_group and set the current_matched_group_id
@@ -882,7 +920,10 @@ class HistoryService:
                     entries.append(current_sequential_group)
                     current_sequential_group, last_subtype_index = [], None
                 if len(current_matched_group) > 0 and replacement_group_id is None:
-                    entries.append(_sort_matched_group(current_matched_group))
+                    entries.extend(_split_matched_group(
+                        matched_events_group=current_matched_group,
+                        event_to_pair=event_to_pair,
+                    ))
                     current_matched_group, current_matched_group_id = [], None
                 entries.append(serialized)
 
@@ -890,7 +931,10 @@ class HistoryService:
         if len(current_sequential_group) > 0:
             entries.append(current_sequential_group)
         if len(current_matched_group) > 0:
-            entries.append(_sort_matched_group(current_matched_group))
+            entries.extend(_split_matched_group(
+                matched_events_group=current_matched_group,
+                event_to_pair=event_to_pair,
+            ))
 
         return entries
 
