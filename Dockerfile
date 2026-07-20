@@ -61,25 +61,62 @@ RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/"
     uv run python -c "import sys;from rotkehlchen.db.misc import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     PYTHONOPTIMIZE=2 uv run pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 
+# Layout stage: assemble everything the runtime needs, while a shell still
+# exists. The final stage is distroless and has none, so nothing can be computed
+# there -- the version-stamped core binary has to be resolved here instead.
+FROM debian:12-slim AS layout-stage
+
+COPY --from=backend-build-stage /tmp/dist /opt/rotki
+COPY --from=colibri-build-stage /tmp/dist/colibri/release/colibri /opt/rotki/colibri
+COPY --from=starling-build-stage /tmp/dist/starling/release/starling /opt/rotki/starling
+COPY --from=frontend-build-stage /app/app/dist /opt/rotki/frontend
+
+# Give the core binary a stable name *in place*, rather than symlinking it onto
+# /usr/sbin as the nginx-era image did. Two reasons:
+#   - `COPY --from` dereferences symlinks, so a symlink would arrive in the final
+#     stage as a second full copy of the binary, at a path with no `_internal`
+#     directory beside it;
+#   - PyInstaller onedir resolves `_internal` relative to the executable it was
+#     actually started as, so the binary must stay next to its own bundle.
+# Getting this wrong fails at runtime, not build time, with
+# "Failed to load Python shared library .../_internal/libpython3.14.so.1.0".
+#
+# Also clear any setuid/setgid bit on the payload we are about to ship. The
+# distroless base has none of its own, so this covers only what we add.
+RUN APP=$(find "/opt/rotki" -name "rotki-core-*-linux" | head -n 1) && \
+    echo "core binary: ${APP}" && \
+    mv "${APP}" /opt/rotki/rotki-core/rotki && \
+    find /opt/rotki -perm /6000 -type f -exec chmod a-s {} + || true
+
 # Runtime. nginx is gone, starling is the only externally-bound listener and
 # serves the SPA + proxies to the loopback backends. This drops the entire nginx
 # userland, python3 (entrypoint.py), and curl (the old healthcheck).
 #
-# Base is debian:12-slim, not distroless: the PyInstaller core bootloader links
-# system libz (libz.so.1), which distroless/base does not ship. debian:12-slim
-# carries zlib already and keeps a shell for debugging; it is still
-# nginx/python-free.
+# distroless/cc rather than debian:12-slim: it carries glibc plus libgcc_s,
+# libm, libdl and libpthread, which is everything the two Rust binaries need,
+# along with /tmp and a CA trust store. What it does not carry is a shell, apt,
+# dpkg, coreutils, or a single setuid binary -- so the whole escalation class the
+# previous base needed stripping simply does not exist here. Nothing in the image
+# needs a shell at runtime: CMD and HEALTHCHECK are exec-form, and
+# `docker exec <container> /opt/rotki/starling ctl status` execs the binary
+# directly. For interactive debugging, use the `:debug` variant, which adds
+# busybox.
 #
-# No OpenSSL at all. Nothing here links the system one: colibri and starling use
-# rustls plus a statically vendored OpenSSL in rusqlite, and the core carries its
-# own libssl/libcrypto inside the PyInstaller bundle -- confirmed by reading the
-# running process's memory maps, which resolve to _internal/, never /usr/lib.
+# distroless/base is one rung too far: it omits libgcc_s.so.1, which both colibri
+# and starling link, and is only 2.6 MB smaller. Copying libs in to reach it
+# would be fragility for nothing.
 #
-# What we do need is the CA trust store, and installing `ca-certificates` with
-# apt drags openssl (and so libssl3) back in as a dependency. So the bundle is
-# copied from a build stage instead, which drops the package entirely rather than
-# leaving a CVE-tracked TLS library nothing loads.
-FROM debian:12-slim AS runtime
+# Two things do have to be brought in:
+#   - libz.so.1, which the PyInstaller core bootloader links and distroless does
+#     not ship;
+#   - the CA trust store. Installing `ca-certificates` with apt would drag
+#     openssl (and so libssl3) in as a dependency, and nothing here links the
+#     system OpenSSL: colibri and starling use rustls plus a statically vendored
+#     OpenSSL in rusqlite, and the core carries its own libssl/libcrypto inside
+#     the PyInstaller bundle -- confirmed by reading the running process's memory
+#     maps, which resolve to _internal/, never /usr/lib. Copying the bundle keeps
+#     TLS working without shipping a CVE-tracked library nothing loads.
+FROM gcr.io/distroless/cc-debian12 AS runtime
 
 LABEL maintainer="Rotki Solutions GmbH <info@rotki.com>"
 
@@ -88,27 +125,10 @@ ARG ROTKI_VERSION
 ENV REVISION=$REVISION
 ENV ROTKI_VERSION=$ROTKI_VERSION
 
+COPY --from=layout-stage /usr/lib/x86_64-linux-gnu/libz.so.1.2.13 /usr/lib/x86_64-linux-gnu/libz.so.1.2.13
+COPY --from=layout-stage /usr/lib/x86_64-linux-gnu/libz.so.1 /usr/lib/x86_64-linux-gnu/libz.so.1
 COPY --from=backend-build-stage /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-
-# Strip every setuid/setgid bit. The base ships su, mount, newgrp, passwd and
-# friends; none is needed to run rotki, and each is a way for a compromised
-# backend to re-enter as root after starling drops to uid 10001. starling also
-# sets no_new_privs at startup, which neutralizes these independently, but
-# removing them means there is nothing to neutralize.
-RUN find / -xdev -perm /6000 -type f -exec chmod a-s {} + || true
-
-COPY --from=backend-build-stage /tmp/dist /opt/rotki
-COPY --from=colibri-build-stage /tmp/dist/colibri/release/colibri /opt/rotki/colibri
-COPY --from=starling-build-stage /tmp/dist/starling/release/starling /opt/rotki/starling
-COPY --from=frontend-build-stage /app/app/dist /opt/rotki/frontend
-
-# Stable launch paths despite the version-stamped core binary name. starling is
-# given these via --core-binary/--colibri-binary; the symlinks also keep the
-# historical `docker exec` entry points working.
-RUN APP=$(find "/opt/rotki" -name "rotki-core-*-linux"  | head -n 1) && \
-    echo "core binary: ${APP}" && \
-    ln -s "${APP}" /usr/sbin/rotki && \
-    ln -s /opt/rotki/colibri /usr/sbin/colibri
+COPY --from=layout-stage /opt/rotki /opt/rotki
 
 VOLUME ["/data", "/logs", "/config"]
 
@@ -130,8 +150,8 @@ STOPSIGNAL SIGTERM
 # (privilege separation, in-process). `docker run --user <uid>` is honored -
 # starling detects it is already non-root and skips the drop.
 CMD ["/opt/rotki/starling", "--mode", "docker", \
-     "--core-binary", "/usr/sbin/rotki", \
-     "--colibri-binary", "/usr/sbin/colibri", \
+     "--core-binary", "/opt/rotki/rotki-core/rotki", \
+     "--colibri-binary", "/opt/rotki/colibri", \
      "--data-dir", "/data", \
      "--logs-dir", "/logs", \
      "--frontend-dir", "/opt/rotki/frontend", \
