@@ -239,7 +239,6 @@ export class Application {
     this.cleanup();
     this.menu.cleanup();
     this.tray.cleanup();
-    this.ipc.cleanup();
     try {
       await this.processHandler.stop();
     }
@@ -248,6 +247,12 @@ export class Application {
       // the backend was torn down, and releasing it here makes sure it cannot
       // keep the process alive.
       this.window.destroy();
+
+      // Drop the IPC handlers only once the renderer is gone. It stays alive
+      // for the whole teardown above and keeps invoking (provider detection,
+      // for one), which would fail with "No handler registered" if the handlers
+      // were released any earlier.
+      await this.ipc.cleanup();
 
       // `will-quit` preventDefault()s, so this is the only thing that ends the
       // process - every platform must reach it.

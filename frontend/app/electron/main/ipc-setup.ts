@@ -42,6 +42,8 @@ export class IpcManager {
   private readonly oauthHandlers: OAuthHandlers;
 
   private callbacks: Callbacks | null = null;
+  private readonly registeredListeners: string[] = [];
+  private readonly registeredHandlers: string[] = [];
 
   private get requireCallbacks(): Callbacks {
     const callbacks = this.callbacks;
@@ -79,6 +81,25 @@ export class IpcManager {
     });
   }
 
+  /**
+   * Registers an `ipcMain` listener and records its channel so `cleanup()` can
+   * remove it again. Registering through here rather than touching `ipcMain`
+   * directly is what keeps teardown complete as handlers get added over time.
+   */
+  private on(channel: string, listener: Parameters<typeof ipcMain.on>[1]): void {
+    this.registeredListeners.push(channel);
+    ipcMain.on(channel, listener);
+  }
+
+  /**
+   * Registers an `ipcMain` invoke handler, recorded for `cleanup()` the same way
+   * as {@link on}. Handlers need `removeHandler`, not `removeAllListeners`.
+   */
+  private handle(channel: string, listener: Parameters<typeof ipcMain.handle>[1]): void {
+    this.registeredHandlers.push(channel);
+    ipcMain.handle(channel, listener);
+  }
+
   initialize(callbacks: Callbacks) {
     this.callbacks = callbacks;
     this.logger.info('Registering IPC handlers');
@@ -105,68 +126,68 @@ export class IpcManager {
     });
 
     // System handlers
-    ipcMain.on(IpcCommands.SYNC_GET_DEBUG, (event) => {
+    this.on(IpcCommands.SYNC_GET_DEBUG, (event) => {
       event.returnValue = this.systemHandlers.getDebugSettings();
     });
-    ipcMain.on(IpcCommands.SYNC_API_URL, (event) => {
+    this.on(IpcCommands.SYNC_API_URL, (event) => {
       event.returnValue = this.systemHandlers.getApiUrls();
     });
-    ipcMain.on(IpcCommands.PREMIUM_LOGIN, (_event, showPremium) => {
+    this.on(IpcCommands.PREMIUM_LOGIN, (_event, showPremium) => {
       callbacks.updatePremiumMenu(showPremium);
     });
-    ipcMain.handle(IpcCommands.INVOKE_CLOSE_APP, callbacks.quit);
-    ipcMain.handle(IpcCommands.INVOKE_OPEN_URL, async (_, url: string) => this.systemHandlers.openUrl(url));
-    ipcMain.handle(IpcCommands.INVOKE_OPEN_DIRECTORY, async (_, title: string, defaultPath?: string) => this.systemHandlers.openDirectory(title, defaultPath));
-    ipcMain.handle(IpcCommands.INVOKE_OPEN_PATH, (_, path: string) => this.systemHandlers.openPath(path));
-    ipcMain.handle(IpcCommands.INVOKE_CONFIG, async (_, defaultConfig: boolean) => this.systemHandlers.getConfig(defaultConfig));
-    ipcMain.handle(IpcCommands.INVOKE_VERSION, () => this.systemHandlers.getVersion());
-    ipcMain.handle(IpcCommands.INVOKE_IS_MAC, () => this.systemHandlers.getIsMac());
-    ipcMain.handle(IpcCommands.INVOKE_THEME, (_, selectedTheme: number) => this.systemHandlers.setSelectedTheme(selectedTheme));
-    ipcMain.on(IpcCommands.LOG_TO_FILE, (_, level: LogLevel, message: string) => {
+    this.handle(IpcCommands.INVOKE_CLOSE_APP, callbacks.quit);
+    this.handle(IpcCommands.INVOKE_OPEN_URL, async (_, url: string) => this.systemHandlers.openUrl(url));
+    this.handle(IpcCommands.INVOKE_OPEN_DIRECTORY, async (_, title: string, defaultPath?: string) => this.systemHandlers.openDirectory(title, defaultPath));
+    this.handle(IpcCommands.INVOKE_OPEN_PATH, (_, path: string) => this.systemHandlers.openPath(path));
+    this.handle(IpcCommands.INVOKE_CONFIG, async (_, defaultConfig: boolean) => this.systemHandlers.getConfig(defaultConfig));
+    this.handle(IpcCommands.INVOKE_VERSION, () => this.systemHandlers.getVersion());
+    this.handle(IpcCommands.INVOKE_IS_MAC, () => this.systemHandlers.getIsMac());
+    this.handle(IpcCommands.INVOKE_THEME, (_, selectedTheme: number) => this.systemHandlers.setSelectedTheme(selectedTheme));
+    this.on(IpcCommands.LOG_TO_FILE, (_, level: LogLevel, message: string) => {
       this.systemHandlers.logToFile(level, message);
     });
-    ipcMain.on(IpcCommands.SET_LOG_LEVEL, (_, level: LogLevel) => {
+    this.on(IpcCommands.SET_LOG_LEVEL, (_, level: LogLevel) => {
       this.systemHandlers.setLogLevel(level);
     });
-    ipcMain.on(IpcCommands.TRAY_UPDATE, (_event, trayUpdate: TrayUpdate) => {
+    this.on(IpcCommands.TRAY_UPDATE, (_event, trayUpdate: TrayUpdate) => {
       this.systemHandlers.updateTray(trayUpdate);
     });
 
     // Backend handlers
-    ipcMain.handle(IpcCommands.INVOKE_SUBPROCESS_START, async (_event, options) => this.backendHandlers.restartBackend(options));
+    this.handle(IpcCommands.INVOKE_SUBPROCESS_START, async (_event, options) => this.backendHandlers.restartBackend(options));
 
     // Update handlers
-    ipcMain.handle(IpcCommands.INVOKE_UPDATE_CHECK, this.updateHandlers.checkForUpdates);
-    ipcMain.handle(IpcCommands.INVOKE_DOWNLOAD_UPDATE, this.updateHandlers.downloadUpdate);
-    ipcMain.handle(IpcCommands.INVOKE_INSTALL_UPDATE, this.updateHandlers.installUpdate);
+    this.handle(IpcCommands.INVOKE_UPDATE_CHECK, this.updateHandlers.checkForUpdates);
+    this.handle(IpcCommands.INVOKE_DOWNLOAD_UPDATE, this.updateHandlers.downloadUpdate);
+    this.handle(IpcCommands.INVOKE_INSTALL_UPDATE, this.updateHandlers.installUpdate);
 
     // Security handlers
-    ipcMain.handle(IpcCommands.INVOKE_STORE_PASSWORD, async (_, credentials: Credentials) => this.securityHandlers.storePassword(credentials));
-    ipcMain.handle(IpcCommands.INVOKE_GET_PASSWORD, async (_, username: string) => this.securityHandlers.getPassword(username));
-    ipcMain.handle(IpcCommands.INVOKE_CLEAR_PASSWORD, async () => this.securityHandlers.clearPassword());
+    this.handle(IpcCommands.INVOKE_STORE_PASSWORD, async (_, credentials: Credentials) => this.securityHandlers.storePassword(credentials));
+    this.handle(IpcCommands.INVOKE_GET_PASSWORD, async (_, username: string) => this.securityHandlers.getPassword(username));
+    this.handle(IpcCommands.INVOKE_CLEAR_PASSWORD, async () => this.securityHandlers.clearPassword());
 
     // Wallet import handlers
-    ipcMain.handle(IpcCommands.INVOKE_WALLET_IMPORT, this.walletImportHandlers.importFromWallet);
+    this.handle(IpcCommands.INVOKE_WALLET_IMPORT, this.walletImportHandlers.importFromWallet);
 
     // Wallet bridge IPC handlers
-    ipcMain.handle(IpcCommands.OPEN_WALLET_CONNECT_BRIDGE, this.walletBridgeIpcHandlers.openWalletConnectBridge);
-    ipcMain.handle(IpcCommands.WALLET_BRIDGE_HTTP_LISTENING, this.walletBridgeIpcHandlers.handleWalletBridgeHttpListening);
-    ipcMain.handle(IpcCommands.WALLET_BRIDGE_WS_LISTENING, this.walletBridgeIpcHandlers.handleWalletBridgeWsListening);
-    ipcMain.handle(IpcCommands.WALLET_BRIDGE_CLIENT_READY, this.walletBridgeIpcHandlers.handleWalletBridgeClientReady);
-    ipcMain.on(IpcCommands.USER_LOGOUT, () => {
+    this.handle(IpcCommands.OPEN_WALLET_CONNECT_BRIDGE, this.walletBridgeIpcHandlers.openWalletConnectBridge);
+    this.handle(IpcCommands.WALLET_BRIDGE_HTTP_LISTENING, this.walletBridgeIpcHandlers.handleWalletBridgeHttpListening);
+    this.handle(IpcCommands.WALLET_BRIDGE_WS_LISTENING, this.walletBridgeIpcHandlers.handleWalletBridgeWsListening);
+    this.handle(IpcCommands.WALLET_BRIDGE_CLIENT_READY, this.walletBridgeIpcHandlers.handleWalletBridgeClientReady);
+    this.on(IpcCommands.USER_LOGOUT, () => {
       this.walletBridgeIpcHandlers.handleUserLogout();
       startPromise(this.oauthHandlers.clearOAuthCookies());
     });
 
     // Wallet Bridge handlers (from existing handler class)
-    ipcMain.handle(IpcCommands.WALLET_BRIDGE_REQUEST, this.walletBridgeHandlers.handleWalletBridgeRequest);
-    ipcMain.handle(IpcCommands.WALLET_BRIDGE_IS_CLIENT_CONNECTED, this.walletBridgeHandlers.handleWalletBridgeConnectionStatus);
-    ipcMain.handle(IpcCommands.WALLET_BRIDGE_STOP_SERVERS, this.walletBridgeIpcHandlers.handleStopServers);
+    this.handle(IpcCommands.WALLET_BRIDGE_REQUEST, this.walletBridgeHandlers.handleWalletBridgeRequest);
+    this.handle(IpcCommands.WALLET_BRIDGE_IS_CLIENT_CONNECTED, this.walletBridgeHandlers.handleWalletBridgeConnectionStatus);
+    this.handle(IpcCommands.WALLET_BRIDGE_STOP_SERVERS, this.walletBridgeIpcHandlers.handleStopServers);
 
     // EIP-6963 Provider Detection handlers
-    ipcMain.handle(IpcCommands.WALLET_BRIDGE_GET_PROVIDERS, this.walletBridgeIpcHandlers.getAvailableProviders);
-    ipcMain.handle(IpcCommands.WALLET_BRIDGE_SELECT_PROVIDER, this.walletBridgeIpcHandlers.selectProvider);
-    ipcMain.handle(IpcCommands.WALLET_BRIDGE_GET_SELECTED_PROVIDER, this.walletBridgeIpcHandlers.getSelectedProvider);
+    this.handle(IpcCommands.WALLET_BRIDGE_GET_PROVIDERS, this.walletBridgeIpcHandlers.getAvailableProviders);
+    this.handle(IpcCommands.WALLET_BRIDGE_SELECT_PROVIDER, this.walletBridgeIpcHandlers.selectProvider);
+    this.handle(IpcCommands.WALLET_BRIDGE_GET_SELECTED_PROVIDER, this.walletBridgeIpcHandlers.getSelectedProvider);
   }
 
   /**
@@ -177,11 +198,23 @@ export class IpcManager {
     startPromise(this.oauthHandlers.clearOAuthCookies('startup'));
   }
 
-  cleanup(): void {
+  async cleanup(): Promise<void> {
     this.logger.info('Cleaning up IPC manager resources...');
 
-    // Stop WebSocket server
-    this.walletBridgeWebSocketServer.stop();
+    // Drop every registered handler. They close over this manager and its
+    // handler classes, and a live handler can keep the process from exiting.
+    for (const channel of this.registeredListeners)
+      ipcMain.removeAllListeners(channel);
+
+    for (const channel of this.registeredHandlers)
+      ipcMain.removeHandler(channel);
+
+    this.registeredListeners.length = 0;
+    this.registeredHandlers.length = 0;
+    this.callbacks = null;
+
+    // Stop WebSocket server, waiting for it to release its handle
+    await this.walletBridgeWebSocketServer.stop();
 
     // Cleanup wallet import handlers (they manage their own servers)
     this.walletImportHandlers.cleanup();
