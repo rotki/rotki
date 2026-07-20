@@ -19,7 +19,7 @@ interface UseSettingsScrollSpyOptions {
 }
 
 interface UseSettingsScrollSpyReturn {
-  currentId: Ref<string>;
+  currentId: Readonly<Ref<string>>;
   isElementInViewport: (el: Element) => boolean;
   scrollToElement: (el?: string | Element) => Promise<void>;
 }
@@ -108,7 +108,7 @@ export function useSettingsScrollSpy({ navigation, scroller }: UseSettingsScroll
   });
 
   return {
-    currentId,
+    currentId: readonly(currentId),
     isElementInViewport,
     scrollToElement,
   };

@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
 
@@ -112,9 +112,9 @@ function isMatchedBridgeGroup(events: HistoryEventEntry[]): boolean {
 
 interface UseVirtualRowsReturn {
   flattenedRows: ComputedRef<VirtualRow[]>;
-  groupVisibleCounts: Ref<Map<string, number>>;
-  expandedSwaps: Ref<Set<string>>;
-  expandedMovements: Ref<Set<string>>;
+  groupVisibleCounts: DeepReadonly<Ref<Map<string, number>>>;
+  expandedSwaps: DeepReadonly<Ref<Set<string>>>;
+  expandedMovements: DeepReadonly<Ref<Set<string>>>;
   loadMoreEvents: (groupId: string) => void;
   toggleSwapExpanded: (swapKey: string) => void;
   toggleMovementExpanded: (movementKey: string) => void;
@@ -327,12 +327,12 @@ export function useVirtualRows(
   }
 
   return {
-    expandedMovements,
-    expandedSwaps,
+    expandedMovements: readonly(expandedMovements),
+    expandedSwaps: readonly(expandedSwaps),
     flattenedRows,
     getCardHeight,
     getRowHeight,
-    groupVisibleCounts,
+    groupVisibleCounts: readonly(groupVisibleCounts),
     loadMoreEvents,
     toggleMovementExpanded,
     toggleSwapExpanded,

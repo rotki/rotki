@@ -1,4 +1,4 @@
-import type { Ref } from 'vue';
+import type { DeepReadonly, Ref } from 'vue';
 import type { ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { NonFungibleBalance } from '@/modules/balances/types/nfbalances';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
@@ -7,7 +7,7 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
 interface UseNftPriceManagementReturn {
-  customPrice: Ref<ManualPriceFormPayload | null>;
+  customPrice: DeepReadonly<Ref<ManualPriceFormPayload | null>>;
   openPriceDialog: Ref<boolean>;
   deletePrice: (item: NonFungibleBalance) => Promise<void>;
   setPriceForm: (item: NonFungibleBalance) => void;
@@ -65,7 +65,7 @@ export function useNftPriceManagement(
   }
 
   return {
-    customPrice,
+    customPrice: readonly(customPrice),
     deletePrice,
     openPriceDialog,
     setPriceForm,

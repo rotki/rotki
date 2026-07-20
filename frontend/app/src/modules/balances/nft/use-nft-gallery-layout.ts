@@ -4,9 +4,9 @@ import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 
 interface UseNftGalleryLayoutReturn {
   firstLimit: ComputedRef<number>;
-  itemsPerPage: Ref<number>;
+  itemsPerPage: Readonly<Ref<number>>;
   limits: ComputedRef<number[]>;
-  page: Ref<number>;
+  page: Readonly<Ref<number>>;
   paginationData: ComputedRef<TablePaginationData>;
   visibleNfts: ComputedRef<GalleryNft[]>;
 }
@@ -71,9 +71,9 @@ export function useNftGalleryLayout(
 
   return {
     firstLimit,
-    itemsPerPage,
+    itemsPerPage: readonly(itemsPerPage),
     limits,
-    page,
+    page: readonly(page),
     paginationData,
     visibleNfts,
   };

@@ -1,13 +1,13 @@
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseDashboardTableConfigReturn {
-  pagination: Ref<{ itemsPerPage: number; page: number }>;
+  pagination: DeepReadonly<Ref<{ itemsPerPage: number; page: number }>>;
   setPage: (page: number) => void;
   setTablePagination: (event: TablePaginationData | undefined) => void;
   sort: Ref<DataTableSortData<AssetBalanceWithPrice>>;
@@ -124,7 +124,7 @@ export function useDashboardTableConfig(
   useRememberTableSorting<AssetBalanceWithPrice>(TableId.DASHBOARD_ASSET, sort, tableHeaders);
 
   return {
-    pagination,
+    pagination: readonly(pagination),
     setPage,
     setTablePagination,
     sort,

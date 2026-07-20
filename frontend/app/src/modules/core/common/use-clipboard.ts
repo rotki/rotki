@@ -2,7 +2,7 @@ import type { MaybeRefOrGetter, Ref } from 'vue';
 
 interface UseCopyReturn {
   copy: () => Promise<void>;
-  copied: Ref<boolean>;
+  copied: Readonly<Ref<boolean>>;
 }
 
 export function useCopy(source: MaybeRefOrGetter<string>): UseCopyReturn {
@@ -30,5 +30,5 @@ export function useCopy(source: MaybeRefOrGetter<string>): UseCopyReturn {
     startAnimation();
   };
 
-  return { copied, copy };
+  return { copied: readonly(copied), copy };
 }

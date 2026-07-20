@@ -1,10 +1,10 @@
-import type { MaybeRef, Ref } from 'vue';
+import type { DeepReadonly, MaybeRef, Ref } from 'vue';
 import type { BaseMessage } from '@/modules/core/messaging/base-message';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 
 interface UseCacheClearReturn<T> {
-  status: Ref<BaseMessage | null>;
-  pending: Ref<boolean>;
+  status: DeepReadonly<Ref<BaseMessage | null>>;
+  pending: Readonly<Ref<boolean>>;
   showConfirmation: (source: T) => void;
 }
 
@@ -60,8 +60,8 @@ export function useCacheClear<T>(
   };
 
   return {
-    pending,
+    pending: readonly(pending),
     showConfirmation,
-    status,
+    status: readonly(status),
   };
 }

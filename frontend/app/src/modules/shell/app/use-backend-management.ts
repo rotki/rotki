@@ -1,6 +1,6 @@
 import type { BackendOptions } from '@shared/ipc';
 import type { LogLevel } from '@shared/log-level';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import { deleteBackendUrl, getBackendUrl } from '@/modules/auth/account-management';
 import { getDefaultLogLevel, logger, setLevel } from '@/modules/core/common/logging/logging';
 import { useMainStore } from '@/modules/core/common/use-main-store';
@@ -13,9 +13,9 @@ interface UseBackendManagementReturn {
   applyUserOptions: (config: Partial<BackendOptions>, skipRestart: boolean) => Promise<void>;
   logLevel: Ref<LogLevel>;
   defaultLogLevel: ComputedRef<LogLevel>;
-  defaultLogDirectory: Ref<string>;
+  defaultLogDirectory: Readonly<Ref<string>>;
   options: ComputedRef<Partial<BackendOptions>>;
-  fileConfig: Ref<Partial<BackendOptions>>;
+  fileConfig: DeepReadonly<Ref<Partial<BackendOptions>>>;
   saveOptions: (opts: Partial<BackendOptions>) => Promise<void>;
   resetOptions: () => Promise<void>;
   restartBackend: (forceRestart?: boolean) => Promise<void>;
@@ -144,9 +144,9 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   return {
     applyUserOptions,
     backendChanged,
-    defaultLogDirectory,
+    defaultLogDirectory: readonly(defaultLogDirectory),
     defaultLogLevel,
-    fileConfig,
+    fileConfig: readonly(fileConfig),
     logLevel,
     options,
     resetOptions,

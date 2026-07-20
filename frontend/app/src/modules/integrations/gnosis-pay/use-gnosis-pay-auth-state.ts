@@ -8,7 +8,7 @@ interface UseGnosisPayAuthStateReturn {
   controlledSafeAddresses: Ref<string[]>;
   errorCloseable: ComputedRef<boolean>;
   errorContext: Ref<GnosisPayErrorContext>;
-  errorType: Ref<GnosisPayError | null>;
+  errorType: Readonly<Ref<GnosisPayError | null>>;
   gnosisPayAdminsMapping: Ref<GnosisPayAdminsMapping>;
   hasRegisteredAccounts: Ref<boolean>;
   isAddressValid: Ref<boolean>;
@@ -87,7 +87,7 @@ export function useGnosisPayAuthState(): UseGnosisPayAuthStateReturn {
     controlledSafeAddresses,
     errorCloseable,
     errorContext,
-    errorType,
+    errorType: readonly(errorType),
     gnosisPayAdminsMapping,
     hasRegisteredAccounts,
     isAddressValid,

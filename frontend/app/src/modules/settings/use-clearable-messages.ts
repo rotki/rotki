@@ -3,11 +3,11 @@ import { promiseTimeout } from '@vueuse/core';
 
 interface UseClearableMessagesReturn {
   clearAll: () => void;
-  error: Ref<string>;
+  error: Readonly<Ref<string>>;
   setError: (message: string, useBase?: boolean) => void;
   setSuccess: (message: string, useBase?: boolean) => void;
   stop: () => void;
-  success: Ref<string>;
+  success: Readonly<Ref<string>>;
   wait: () => Promise<void>;
 }
 
@@ -52,11 +52,11 @@ export function useClearableMessages(): UseClearableMessagesReturn {
 
   return {
     clearAll,
-    error,
+    error: readonly(error),
     setError,
     setSuccess,
     stop,
-    success,
+    success: readonly(success),
     wait,
   };
 }

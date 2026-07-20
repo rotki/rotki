@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import type { GalleryNft, Nft, Nfts } from '@/modules/assets/nfts';
 import type { NftPrice } from '@/modules/assets/prices/price-types';
 import { keyBy } from 'es-toolkit';
@@ -6,17 +6,17 @@ import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useNfts } from '@/modules/assets/use-asset-nft';
 
 interface UseNftGalleryDataReturn {
-  error: Ref<string>;
+  error: Readonly<Ref<string>>;
   fetchNfts: (ignoreCache?: boolean) => Promise<void>;
   fetchPrices: () => Promise<void>;
-  limit: Ref<number>;
-  loading: Ref<boolean>;
+  limit: Readonly<Ref<number>>;
+  loading: Readonly<Ref<boolean>>;
   nftLimited: ComputedRef<boolean>;
   nfts: ComputedRef<GalleryNft[]>;
   perAccount: Ref<Nfts | null>;
-  priceError: Ref<string>;
-  prices: Ref<Record<string, NftPrice>>;
-  total: Ref<number>;
+  priceError: Readonly<Ref<string>>;
+  prices: DeepReadonly<Ref<Record<string, NftPrice>>>;
+  total: Readonly<Ref<number>>;
 }
 
 export function useNftGalleryData(): UseNftGalleryDataReturn {
@@ -86,16 +86,16 @@ export function useNftGalleryData(): UseNftGalleryDataReturn {
   }
 
   return {
-    error,
+    error: readonly(error),
     fetchNfts,
     fetchPrices,
-    limit,
-    loading,
+    limit: readonly(limit),
+    loading: readonly(loading),
     nftLimited,
     nfts,
     perAccount,
-    priceError,
-    prices,
-    total,
+    priceError: readonly(priceError),
+    prices: readonly(prices),
+    total: readonly(total),
   };
 }

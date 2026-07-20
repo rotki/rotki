@@ -5,7 +5,7 @@ import { getPublicPlaceholderImagePath } from '@/modules/core/common/file/file';
 
 interface UseNftImageReturnType {
   shouldRender: ComputedRef<boolean>;
-  isVideo: Ref<boolean>;
+  isVideo: Readonly<Ref<boolean>>;
   renderedMedia: ComputedRef<string>;
 }
 
@@ -61,7 +61,7 @@ export function useNftImage(mediaUrl: Ref<string | null>): UseNftImageReturnType
   });
 
   return {
-    isVideo,
+    isVideo: readonly(isVideo),
     renderedMedia,
     shouldRender,
   };

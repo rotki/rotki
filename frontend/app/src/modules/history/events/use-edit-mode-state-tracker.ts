@@ -1,8 +1,8 @@
-import type { Ref } from 'vue';
+import type { DeepReadonly, Ref } from 'vue';
 import { cloneDeep, isEqual } from 'es-toolkit';
 
 interface EditModeStateTracker {
-  editModeStateSnapshot: Ref<Record<string, any> | undefined>;
+  editModeStateSnapshot: DeepReadonly<Ref<Record<string, any> | undefined>>;
   captureEditModeState: (state: Record<string, any>) => void;
   captureEditModeStateFromRefs: (statesRefs: Record<string, Ref<any>>) => void;
   hasEditModeStateChanged: (currentState: Record<string, any>) => boolean;
@@ -70,7 +70,7 @@ export function useEditModeStateTracker(): EditModeStateTracker {
   return {
     captureEditModeState,
     captureEditModeStateFromRefs,
-    editModeStateSnapshot,
+    editModeStateSnapshot: readonly(editModeStateSnapshot),
     hasEditModeStateChanged,
     shouldSkipSave,
     shouldSkipSaveFromRefs,

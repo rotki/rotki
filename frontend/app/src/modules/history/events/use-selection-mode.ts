@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { get, set } from '@vueuse/shared';
 
@@ -30,7 +30,7 @@ export interface UseHistoryEventsSelectionModeReturn {
   setTotalMatchingCount: (count: number) => void;
   state: ComputedRef<SelectionState>;
   isEventSelected: (eventId: number) => boolean;
-  selectedEvents: Ref<Set<number>>;
+  selectedEvents: DeepReadonly<Ref<Set<number>>>;
   isSelectionMode: Readonly<Ref<boolean>>;
   isSelectAllMatching: Readonly<Ref<boolean>>;
 }
@@ -147,7 +147,7 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
     isEventSelected,
     isSelectAllMatching: readonly(selectAllMatching),
     isSelectionMode: readonly(isActive),
-    selectedEvents: selectedIds,
+    selectedEvents: readonly(selectedIds),
     setAvailableIds,
     setTotalMatchingCount,
     state,
