@@ -6963,7 +6963,7 @@ Match the two legs of cross-chain bridge transfers
 
 .. http:put:: /api/(version)/history/events/match/bridges
 
-   Matches a source chain bridge deposit event with its destination chain event(s), resolves the deposit as a payment to an external (untracked) address, or marks it as having no match.
+   Matches a source chain bridge deposit event with its destination chain event(s), resolves a bridge leg as involving an external (untracked) counterpart, or marks it as having no match. Resolving as external turns a deposit into a plain send (a payment to an untracked address) and a withdrawal into a plain receive (income from an untracked source), keeping a record of the original bridge leg and its direction in the event extra data. Unlinking restores the original event.
 
    .. note::
       This endpoint is only available for premium users
@@ -6983,7 +6983,7 @@ Match the two legs of cross-chain bridge transfers
 
    :reqjson int bridge_event: DB identifier of the bridge deposit event to match
    :reqjson list[int][optional] matched_events: List of DB identifiers of destination chain events to match with the deposit. When omitted or empty the deposit is marked as having no match.
-   :reqjson bool[optional] external: When true (and matched_events is empty) the deposit is resolved as a payment to an external address that is not tracked. False by default.
+   :reqjson bool[optional] external: When true (and matched_events is empty) the bridge leg is resolved as involving an external (untracked) counterpart: a deposit becomes a plain send accounted as a payment and a withdrawal becomes a plain receive accounted as income. False by default.
 
    **Example Response**:
 

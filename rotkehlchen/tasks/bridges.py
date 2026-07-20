@@ -396,6 +396,55 @@ def update_bridge_matched_event(
         )
 
 
+def resolve_bridge_event_external(
+        events_db: DBHistoryEvents,
+        event: HistoryBaseEntry,
+) -> bool:
+    """Resolve an unmatched bridge leg as involving an external (untracked) counterpart.
+
+    A deposit becomes a plain spend (a payment to an untracked address) and a
+    withdrawal becomes a plain receive (income from an untracked source), so the
+    default accounting treatment of the corresponding direction applies. The event
+    keeps its bridge extra_data and is stamped with the external resolution and its
+    original direction, and the edit saves a backup so unlinking restores the
+    original bridge event. Returns False when the event is not a bridge leg.
+    """
+    if event.event_subtype != HistoryEventSubType.BRIDGE:
+        return False
+
+    symbol = event.asset.resolve_to_asset_with_symbol().symbol
+    chain_label = _location_chain_label(event.location)
+    if event.event_type == HistoryEventType.DEPOSIT:
+        direction = 'deposit'
+        event.event_type = HistoryEventType.SPEND
+        event.notes = f'Send {event.amount} {symbol} from {chain_label} bridged to an external address'  # noqa: E501
+    elif event.event_type == HistoryEventType.WITHDRAWAL:
+        direction = 'withdrawal'
+        event.event_type = HistoryEventType.RECEIVE
+        event.notes = f'Receive {event.amount} {symbol} on {chain_label} bridged from an external address'  # noqa: E501
+    else:
+        return False
+
+    event.event_subtype = HistoryEventSubType.NONE
+    if event.extra_data is None:
+        event.extra_data = {}
+    event.extra_data[MATCHED_BRIDGE_KEY] = {'resolution': 'external', 'direction': direction}
+    with events_db.db.conn.write_ctx() as write_cursor:
+        events_db.edit_history_event(
+            write_cursor=write_cursor,
+            event=event,
+            mapping_state=HistoryMappingState.MATCHED,
+            save_backup=True,
+        )
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO history_event_link_ignores(event_id, link_type) '
+            'VALUES(?, ?)',
+            (event.identifier, HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db()),
+        )
+
+    return True
+
+
 def _should_auto_resolve_external(deposit: HistoryBaseEntry) -> bool:
     """Bridges to chains rotki cannot query will never find a destination leg."""
     to_chain = get_event_bridge_data(deposit).get('to_chain')

@@ -149,31 +149,63 @@ def test_match_and_unlink_bridge_transactions(rotkehlchen_api_server: APIServer)
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_resolve_bridge_deposit_as_external(rotkehlchen_api_server: APIServer) -> None:
-    """Resolving as an external payment stamps the event and ignores it; unlink restores."""
-    deposit, _ = _add_bridge_pair(rotkehlchen_api_server)
+@pytest.mark.parametrize(('event_identifier', 'expected_type', 'expected_direction', 'expected_notes'), [  # noqa: E501
+    (
+        1,
+        HistoryEventType.SPEND,
+        'deposit',
+        'Send 1 ETH from Ethereum bridged to an external address',
+    ), (
+        2,
+        HistoryEventType.RECEIVE,
+        'withdrawal',
+        'Receive 0.999 ETH on Arbitrum One bridged from an external address',
+    ),
+])
+def test_resolve_bridge_leg_as_external(
+        rotkehlchen_api_server: APIServer,
+        event_identifier: int,
+        expected_type: HistoryEventType,
+        expected_direction: str,
+        expected_notes: str,
+) -> None:
+    """Resolving a bridge leg as external transforms it into a plain spend/receive
+    so accounting treats it as a payment/income, stamps the resolution and the
+    original direction, and ignores it; unlink restores the original event."""
+    events = _add_bridge_pair(rotkehlchen_api_server)
+    original_event = events[event_identifier - 1]
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dbevents = DBHistoryEvents(rotki.data.db)
     assert_simple_ok_response(requests.put(
         url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
-        json={'bridge_event': 1, 'matched_events': [], 'external': True},
+        json={'bridge_event': event_identifier, 'matched_events': [], 'external': True},
     ))
     with rotki.data.db.conn.read_ctx() as cursor:
         assert cursor.execute(
             'SELECT event_id FROM history_event_link_ignores WHERE link_type=?',
             (HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(),),
-        ).fetchall() == [(1,)]
-        stamped = next(x for x in dbevents.get_history_events_internal(
+        ).fetchall() == [(event_identifier,)]
+        resolved = next(x for x in dbevents.get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(identifiers=[1]),
+            filter_query=HistoryEventFilterQuery.make(identifiers=[event_identifier]),
         ))
-        assert stamped.extra_data is not None
-        assert stamped.extra_data['matched_bridge'] == {'resolution': 'external'}
+        assert resolved.event_type == expected_type
+        assert resolved.event_subtype == HistoryEventSubType.NONE
+        assert resolved.notes == expected_notes
+        assert isinstance(resolved, EvmEvent)
+        assert resolved.counterparty == CPT_ACROSS
+        assert resolved.extra_data is not None
+        assert resolved.extra_data['matched_bridge'] == {
+            'resolution': 'external',
+            'direction': expected_direction,
+        }
+        if original_event.extra_data is not None:  # the recorded bridge leg data survives
+            assert resolved.extra_data['bridge'] == original_event.extra_data['bridge']
 
-    # unlinking clears the resolution and the ignore marker
+    # unlinking restores the original bridge event and clears the ignore marker
     assert_simple_ok_response(requests.delete(
         url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
-        json={'identifier': 1},
+        json={'identifier': event_identifier},
     ))
     with rotki.data.db.conn.read_ctx() as cursor:
         assert cursor.execute(
@@ -182,9 +214,23 @@ def test_resolve_bridge_deposit_as_external(rotkehlchen_api_server: APIServer) -
         ).fetchone()[0] == 0
         restored = next(x for x in dbevents.get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(identifiers=[1]),
+            filter_query=HistoryEventFilterQuery.make(identifiers=[event_identifier]),
         ))
-        assert restored.extra_data == deposit.extra_data
+        assert restored == original_event
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_resolve_non_bridge_event_as_external_fails(rotkehlchen_api_server: APIServer) -> None:
+    """A plain (non-bridge) event cannot be resolved as external."""
+    _add_bridge_pair(rotkehlchen_api_server, withdrawal_is_decoded_bridge=False)
+    assert_error_response(
+        response=requests.put(
+            url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+            json={'bridge_event': 2, 'matched_events': [], 'external': True},
+        ),
+        contained_in_msg='is not a bridge deposit or withdrawal',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
