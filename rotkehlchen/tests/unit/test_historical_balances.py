@@ -14,10 +14,11 @@ from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINANCE
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
+from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_WETH
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HistoryMappingState
@@ -1222,6 +1223,146 @@ def test_weth_wrap_then_swap_updates_wallet_buckets(
             (3000, A_DAI.identifier, TEST_ADDR1, None, '3000'),
             (3000, A_WETH.identifier, TEST_ADDR1, None, '0'),
         ]
+
+
+def test_cowswap_native_deposit_then_swap_updates_wallet_bucket_once(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """Test that a CowSwap native asset order deposit does not affect its wallet bucket.
+
+    CowSwap decodes the native asset flow as two separate transactions: first a PLACE_ORDER
+    deposit, then the actual trade. The trade accounts for the full deposited amount, so applying
+    the deposit too would deduct the native asset twice.
+    """
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('25'),
+                location_label=TEST_ADDR1,
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.PLACE_ORDER,
+                asset=A_ETH,
+                amount=FVal('24.311042505395616962'),
+                location_label=TEST_ADDR1,
+                counterparty=CPT_COWSWAP,
+            ), EvmEvent(
+                tx_ref=(swap_hash := make_evm_tx_hash()),
+                sequence_index=0,
+                timestamp=TimestampMS(3000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+                asset=A_ETH,
+                amount=FVal('24.304521595868826446'),
+                location_label=TEST_ADDR1,
+                counterparty=CPT_COWSWAP,
+            ), EvmEvent(
+                tx_ref=swap_hash,
+                sequence_index=1,
+                timestamp=TimestampMS(3000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_USDC,
+                amount=FVal('40690.637506'),
+                location_label=TEST_ADDR1,
+                counterparty=CPT_COWSWAP,
+            ), EvmEvent(
+                tx_ref=swap_hash,
+                sequence_index=2,
+                timestamp=TimestampMS(3000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.FEE,
+                asset=A_ETH,
+                amount=FVal('0.006520909526790516'),
+                location_label=TEST_ADDR1,
+                counterparty=CPT_COWSWAP,
+            )],
+        )
+
+    process_historical_balances(database, messages_aggregator)
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT timestamp, asset, location_label, protocol, metric_value FROM event_metrics '
+            'ORDER BY timestamp, sequence_index',
+        ).fetchall() == [
+            (1000, A_ETH.identifier, TEST_ADDR1, None, '25'),
+            (3000, A_ETH.identifier, TEST_ADDR1, None, '0.695478404131173554'),
+            (3000, A_USDC.identifier, TEST_ADDR1, None, '40690.637506'),
+            (3000, A_ETH.identifier, TEST_ADDR1, None, '0.688957494604383038'),
+        ]
+
+
+@pytest.mark.parametrize('return_subtype', [
+    HistoryEventSubType.REFUND,
+    HistoryEventSubType.CANCEL_ORDER,
+])
+def test_cowswap_native_deposit_then_return_does_not_update_wallet_bucket(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+        return_subtype: HistoryEventSubType,
+) -> None:
+    """Test that refunded or cancelled CowSwap orders leave the wallet bucket unchanged."""
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('25'),
+                location_label=TEST_ADDR1,
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.PLACE_ORDER,
+                asset=A_ETH,
+                amount=FVal('11'),
+                location_label=TEST_ADDR1,
+                counterparty=CPT_COWSWAP,
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(3000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=return_subtype,
+                asset=A_ETH,
+                amount=FVal('11'),
+                location_label=TEST_ADDR1,
+                counterparty=CPT_COWSWAP,
+            )],
+        )
+
+    process_historical_balances(database, messages_aggregator)
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT timestamp, asset, location_label, protocol, metric_value FROM event_metrics',
+        ).fetchall() == [(1000, A_ETH.identifier, TEST_ADDR1, None, '25')]
 
 
 def test_protocol_token_spend_from_wallet_bucket(

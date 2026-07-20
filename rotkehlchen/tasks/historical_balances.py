@@ -3,6 +3,7 @@ import time
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
@@ -78,6 +79,15 @@ DUAL_BUCKET_TRANSFER_EVENTS: Final[EventTypeSubtypePairs] = {
     (HistoryEventType.TRANSFER, HistoryEventSubType.DONATE),
 }
 
+# CowSwap native asset order deposits, refunds and cancellations are an escrow lifecycle. A
+# successful order is accounted by its eventual trade, while refunds and cancellations only return
+# escrowed assets, so none of these escrow transfers should affect wallet balances.
+COWSWAP_ORDER_EVENTS_TO_IGNORE: Final[EventTypeSubtypePairs] = {
+    (HistoryEventType.DEPOSIT, HistoryEventSubType.PLACE_ORDER),
+    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.CANCEL_ORDER),
+    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REFUND),
+}
+
 METRICS_BATCH_SIZE: Final = 500
 # How many events to process before voluntarily releasing the GIL, so concurrent
 # DB readers (e.g. the history page) interleave instead of waiting out the switch
@@ -120,6 +130,7 @@ class Bucket(NamedTuple):
         """Returns list of (Bucket, direction) pairs affected by this event.
 
         Handles the following cases:
+        - CowSwap native asset order deposits/refunds/cancellations: ignored as escrow transfers
         - Protocol deposits/withdrawals: affects both wallet and protocol buckets
         - Transfers: affects sender (OUT) and receiver (IN) wallet buckets.
         - Wrapped token deposits/redemptions: tracked as wallet-held asset conversions
@@ -134,6 +145,12 @@ class Bucket(NamedTuple):
         event_key = (event.event_type, event.event_subtype)
         counterparty = getattr(event, 'counterparty', None)
         address = getattr(event, 'address', None)
+
+        if (
+            event_key in COWSWAP_ORDER_EVENTS_TO_IGNORE and
+            counterparty == CPT_COWSWAP
+        ):
+            return []
 
         if (
             location == Location.KRAKEN.serialize_for_db() and
