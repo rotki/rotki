@@ -1,0 +1,40 @@
+<script setup lang="ts">
+import type { RuiIcons } from '@rotki/ui-library';
+
+const { color, dataCy, icon, tooltip } = defineProps<{
+  icon: RuiIcons;
+  color: 'primary' | 'warning' | 'error';
+  tooltip: string;
+  dataCy?: string;
+}>();
+
+const emit = defineEmits<{
+  click: [];
+}>();
+</script>
+
+<template>
+  <RuiTooltip
+    :open-delay="200"
+    :popper="{ placement: 'top' }"
+  >
+    <template #activator>
+      <RuiButton
+        variant="text"
+        :color="color"
+        class="!py-0.5"
+        size="sm"
+        :data-cy="dataCy"
+        @click="emit('click')"
+      >
+        <template #append>
+          <RuiIcon
+            :name="icon"
+            size="18"
+          />
+        </template>
+      </RuiButton>
+    </template>
+    {{ tooltip }}
+  </RuiTooltip>
+</template>
