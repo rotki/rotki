@@ -1,5 +1,6 @@
 import type { ActionResult } from '@rotki/common';
 import { checkIfDevelopment } from '@shared/utils';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
 import { TaskType } from '@/modules/core/tasks/task-type';
@@ -121,7 +122,15 @@ function useTaskHandlerInternal(): {
     if (guard && store.isTaskRunning(type, meta))
       return makeSkipped('Task already running');
 
-    const { taskId } = await task();
+    let taskId: number;
+    try {
+      ({ taskId } = await task());
+    }
+    catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return makeCancelled('Request cancelled');
+      throw error;
+    }
 
     store.addTask(taskId, type, meta);
 
