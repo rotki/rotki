@@ -4,6 +4,7 @@ import type {
   KrakenStakingPagination,
 } from '@/modules/staking/staking-types';
 import { omit } from 'es-toolkit';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Section, Status } from '@/modules/core/common/status';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -81,8 +82,12 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
       setStatus(isTaskRunning(TaskType.STAKING_KRAKEN) ? Status.REFRESHING : Status.LOADED);
     }
     catch (error: unknown) {
-      logger.error(error);
       setStatus(Status.LOADED);
+
+      if (isRequestCancellation(error))
+        return;
+
+      logger.error(error);
       notifyError(
         t('actions.kraken_staking.error.title'),
         t('actions.kraken_staking.error.message', {

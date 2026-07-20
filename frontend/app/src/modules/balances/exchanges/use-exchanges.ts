@@ -8,6 +8,7 @@ import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-con
 import { AssetBalances } from '@/modules/balances/types/balances';
 import { type EditExchange, Exchange, type ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { Section, Status } from '@/modules/core/common/status';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -149,6 +150,9 @@ export function useExchanges(): UseExchangesReturn {
       return success;
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return false;
+
       showErrorMessage(
         t('actions.balances.exchange_removal.title'),
         t('actions.balances.exchange_removal.description', {

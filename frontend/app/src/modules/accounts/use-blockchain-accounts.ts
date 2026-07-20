@@ -15,6 +15,7 @@ import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { type BtcChains, isBtcChain } from '@/modules/core/common/chains';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -218,6 +219,9 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
       return accounts.map(account => account.address);
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return null;
+
       logger.error(error);
       notifyError(
         t('actions.get_accounts.error.title'),
@@ -237,6 +241,9 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
       return true;
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return false;
+
       logger.error(error);
       notifyError(
         t('actions.get_accounts.error.title'),

@@ -2,6 +2,7 @@ import type { Ref } from 'vue';
 import type { ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { NonFungibleBalance } from '@/modules/balances/types/nfbalances';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
@@ -29,7 +30,10 @@ export function useNftPriceManagement(
       await deleteLatestPrice(toDeletePrice.id);
       await fetchData();
     }
-    catch {
+    catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return;
+
       notifyError(
         t('assets.custom_price.delete.error.title'),
         t('assets.custom_price.delete.error.message', {

@@ -1,4 +1,5 @@
 import { backoff } from '@shared/utils';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
@@ -49,6 +50,9 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
       set(failedToConnect, failed ?? {});
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return;
+
       notifyError(
         t('actions.session.periodic_query.error.title'),
         t('actions.session.periodic_query.error.message', {

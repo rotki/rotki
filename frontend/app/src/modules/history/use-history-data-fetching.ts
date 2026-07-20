@@ -1,3 +1,4 @@
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -23,6 +24,9 @@ export function useHistoryDataFetching(): UseHistoryDataFetchingReturn {
       store.setAssociatedLocations(await fetchAssociatedLocationsApi());
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return;
+
       logger.error(error);
       notifyError(
         t('actions.history.fetch_associated_locations.error.title'),
@@ -36,6 +40,9 @@ export function useHistoryDataFetching(): UseHistoryDataFetchingReturn {
       store.setLocationLabels(await fetchLocationLabelsApi());
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return;
+
       logger.error(error);
       notifyError(
         t('actions.history.fetch_location_labels.error.title'),
@@ -50,6 +57,9 @@ export function useHistoryDataFetching(): UseHistoryDataFetchingReturn {
       store.setTransactionStatusSummary(result);
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return;
+
       logger.error(error);
     }
   }
