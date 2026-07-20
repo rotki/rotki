@@ -32,4 +32,6 @@ SETTABLE_CURRENT_PRICE_ORACLES = {  # only these oracles should be configurable 
     CurrentPriceOracle.KRAKEN,
     CurrentPriceOracle.UNISWAPV3,
     CurrentPriceOracle.UNISWAPV2,
+    CurrentPriceOracle.ALCHEMY,
+    CurrentPriceOracle.MORALIS,
 }

@@ -62,10 +62,16 @@ export function useSettingModel<K extends WritableSettingKey>(
     set(success, false);
     const result: ActionStatus = await write(key, value);
     set(pending, false);
-    if (result.success)
+    if (result.success) {
       set(success, true);
-    else
+    }
+    else {
+      // Revert the draft so the UI doesn't keep showing a value that was rejected,
+      // but only if it wasn't changed again while the write was in flight.
+      if (isEqual(get(model), value))
+        set(model, get(source));
       set(error, result.message ?? '');
+    }
   };
 
   const schedule = debounce > 0 ? useDebounceFn(persist, debounce) : persist;

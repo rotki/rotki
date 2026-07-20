@@ -66,6 +66,33 @@ describe('useSettingModel', () => {
     expect(get(success)).toBe(false);
   });
 
+  it('should revert the model to the persisted value on a failed write', async () => {
+    mockWrite.mockResolvedValueOnce({ message: 'bad value', success: false });
+    const { error, model } = createModel();
+    set(model, 50);
+    await nextTick();
+    await flushPromises();
+    expect(get(model)).toBe(25);
+    expect(get(error)).toBe('bad value');
+    expect(mockWrite).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not revert the model on a failed write if it changed while in flight', async () => {
+    let resolveWrite!: (value: { success: boolean; message?: string }) => void;
+    mockWrite.mockImplementationOnce(async () => new Promise((resolve) => {
+      resolveWrite = resolve;
+    }));
+    const { error, model } = createModel();
+    set(model, 50);
+    await nextTick();
+    set(model, 75);
+    await nextTick();
+    resolveWrite({ message: 'bad value', success: false });
+    await flushPromises();
+    expect(get(model)).toBe(75);
+    expect(get(error)).toBe('bad value');
+  });
+
   it('should reflect external setting changes into the model without persisting', async () => {
     const { model } = createModel();
     set(mockSource, 99);

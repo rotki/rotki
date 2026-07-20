@@ -193,10 +193,12 @@ ASSETS_UNDERLYING_BTC = (
 
 
 CurrentPriceOracleInstance = Union[
+    'Alchemy',
     'Coingecko',
     'Cryptocompare',
     'Defillama',
     'Kraken',
+    'Moralis',
     'UniswapV3Oracle',
     'UniswapV2Oracle',
     'ManualCurrentOracle',
