@@ -44,7 +44,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
   const currencySymbol = useSetting('currencySymbol');
   const { t } = useI18n({ useScope: 'global' });
 
-  const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
+  const ignoredAssetsHandling = shallowRef<IgnoredAssetsHandlingType>('exclude');
 
   const extraParams = computed(() => ({
     ignoredAssetsHandling: get(ignoredAssetsHandling),

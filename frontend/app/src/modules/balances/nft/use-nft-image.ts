@@ -34,9 +34,9 @@ export function useNftImage(mediaUrl: Ref<string | null>): UseNftImageReturnType
     return shouldRenderImage(media);
   });
 
-  const checkingType = ref<boolean>(false);
+  const checkingType = shallowRef<boolean>(false);
 
-  const isVideo = ref<boolean>(false);
+  const isVideo = shallowRef<boolean>(false);
 
   watch([mediaUrl, shouldRender], async ([media, shouldRender], [prevMedia, prevShouldRender]) => {
     if (media === prevMedia && shouldRender === prevShouldRender)

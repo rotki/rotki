@@ -72,7 +72,7 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
   const lastHover = ref<{ timestamp: number; value: BigNumber }>();
   const mousePos = ref({ x: 0, y: 0 });
   const clickTimer = ref<ReturnType<typeof setTimeout>>();
-  const isDragging = ref<boolean>(false);
+  const isDragging = shallowRef<boolean>(false);
   const dragStartPos = ref({ x: 0, y: 0 });
 
   let chartEventHandlers: (() => void)[] = [];

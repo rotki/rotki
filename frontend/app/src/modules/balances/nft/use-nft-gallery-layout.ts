@@ -15,8 +15,8 @@ export function useNftGalleryLayout(
   items: ComputedRef<GalleryNft[]>,
 ): UseNftGalleryLayoutReturn {
   // State
-  const page = ref<number>(1);
-  const itemsPerPage = ref<number>(8);
+  const page = shallowRef<number>(1);
+  const itemsPerPage = shallowRef<number>(8);
 
   // Breakpoint composable
   const { is2xl, isMd, isSm, isSmAndDown } = useBreakpoint();

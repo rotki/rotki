@@ -27,7 +27,7 @@ export function useCalendarOperations(
   const autoDeleteCalendarEntries = useSetting('autoDeleteCalendarEntries');
 
   const modelValue = ref<CalendarEvent>();
-  const editMode = ref<boolean>(false);
+  const editMode = shallowRef<boolean>(false);
 
   function emptyEventForm(date?: Dayjs): CalendarEvent {
     const startOfTheDate = (date || get(selectedDate)).set('hours', 0).set('minutes', 0).set('seconds', 0);

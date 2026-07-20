@@ -25,9 +25,9 @@ export function useCacheClear<T>(
     message: string;
   },
 ): UseCacheClearReturn<T> {
-  const status = ref<BaseMessage | null>(null);
-  const confirm = ref<boolean>(false);
-  const pending = ref<boolean>(false);
+  const status = shallowRef<BaseMessage | null>(null);
+  const confirm = shallowRef<boolean>(false);
+  const pending = shallowRef<boolean>(false);
 
   const text = (source: T): string => get(clearable).find(({ id }) => id === source)?.text || '';
 

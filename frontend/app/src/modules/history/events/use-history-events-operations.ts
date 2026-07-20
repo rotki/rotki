@@ -56,10 +56,10 @@ export function useHistoryEventsOperations(
   const { getGroupEvents } = useCompleteEvents(completeEventsMapped);
 
   const selected = ref<HistoryEventEntry[]>([]);
-  const showRedecodeConfirmation = ref<boolean>(false);
+  const showRedecodeConfirmation = shallowRef<boolean>(false);
   const redecodePayload = ref<PullEventPayload>();
-  const hasCustomEvents = ref<boolean>(false);
-  const showIndexerOptions = ref<boolean>(false);
+  const hasCustomEvents = shallowRef<boolean>(false);
+  const showIndexerOptions = shallowRef<boolean>(false);
   const pendingLinkedMovement = ref<LinkedMovementMatch>();
 
   const { t } = useI18n({ useScope: 'global' });

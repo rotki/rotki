@@ -16,7 +16,7 @@ export function useWrappedStatistics(
 ): UseWrappedStatisticsReturn {
   const { fetchWrapStatistics } = useWrapStatisticsApi();
 
-  const loading = ref<boolean>(false);
+  const loading = shallowRef<boolean>(false);
   const summary = ref<WrapStatisticsResult | null>();
 
   async function fetchData(): Promise<void> {

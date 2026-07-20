@@ -23,8 +23,8 @@ export function useNftGalleryFilters(
   // State
   const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
   const selectedCollection = ref<string | undefined>();
-  const sortBy = ref<'name' | 'price' | 'collection'>('name');
-  const sortDescending = ref<boolean>(false);
+  const sortBy = shallowRef<'name' | 'price' | 'collection'>('name');
+  const sortDescending = shallowRef<boolean>(false);
 
   // Computed properties
   const availableAddresses = computed<string[]>(() => get(perAccount) ? Object.keys(get(perAccount)!) : []);

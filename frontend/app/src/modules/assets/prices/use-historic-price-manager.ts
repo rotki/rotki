@@ -19,7 +19,7 @@ export function useHistoricPrices(
   t: ReturnType<typeof useI18n>['t'],
   filter?: Ref<{ fromAsset?: string; toAsset?: string }>,
 ): UseHistoricPricesReturn {
-  const loading = ref(false);
+  const loading = shallowRef(false);
   const items = ref<HistoricalPrice[]>([]);
 
   const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();

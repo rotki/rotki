@@ -9,7 +9,7 @@ interface UseRandomStepperReturn {
 }
 
 export function useRandomStepper(steps: number, interval: number = 10000): UseRandomStepperReturn {
-  const step = ref(1);
+  const step = shallowRef(1);
 
   function setRandomStep(): void {
     let newStep = get(step);

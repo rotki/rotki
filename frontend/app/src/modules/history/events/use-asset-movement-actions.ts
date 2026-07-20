@@ -36,7 +36,7 @@ export function useAssetMovementActions(
   const { matchAssetMovements, unlinkAssetMovement } = useAssetMovementMatchingApi();
   const { show } = useConfirmStore();
 
-  const ignoreLoading = ref<boolean>(false);
+  const ignoreLoading = shallowRef<boolean>(false);
   const selectedUnmatched = ref<string[]>([]);
   const selectedIgnored = ref<string[]>([]);
 

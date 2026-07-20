@@ -30,16 +30,16 @@ interface UseGnosisPayAuthStepsReturn {
  * Composable for managing Gnosis Pay authentication state
  */
 export function useGnosisPayAuthState(): UseGnosisPayAuthStateReturn {
-  const errorType = ref<GnosisPayError | null>(null);
+  const errorType = shallowRef<GnosisPayError | null>(null);
   const errorContext = ref<GnosisPayErrorContext>({});
-  const signingInProgress = ref<boolean>(false);
-  const validatingAddress = ref<boolean>(false);
-  const isAddressValid = ref<boolean>(false);
+  const signingInProgress = shallowRef<boolean>(false);
+  const validatingAddress = shallowRef<boolean>(false);
+  const isAddressValid = shallowRef<boolean>(false);
   const gnosisPayAdminsMapping = ref<GnosisPayAdminsMapping>({});
   const controlledSafeAddresses = ref<string[]>([]);
-  const checkingRegisteredAccounts = ref<boolean>(false);
-  const hasRegisteredAccounts = ref<boolean>(false);
-  const signInSuccess = ref<boolean>(false);
+  const checkingRegisteredAccounts = shallowRef<boolean>(false);
+  const hasRegisteredAccounts = shallowRef<boolean>(false);
+  const signInSuccess = shallowRef<boolean>(false);
 
   const errorCloseable = computed<boolean>(() => {
     const type = get(errorType);

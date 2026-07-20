@@ -22,8 +22,8 @@ export function useNftPriceManagement(
   const { deleteLatestPrice } = useAssetPricesApi();
   const { show } = useConfirmStore();
 
-  const openPriceDialog = ref<boolean>(false);
-  const customPrice = ref<ManualPriceFormPayload | null>(null);
+  const openPriceDialog = shallowRef<boolean>(false);
+  const customPrice = shallowRef<ManualPriceFormPayload | null>(null);
 
   async function deletePrice(toDeletePrice: NonFungibleBalance): Promise<void> {
     try {

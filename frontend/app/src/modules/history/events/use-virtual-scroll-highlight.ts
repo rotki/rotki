@@ -52,8 +52,8 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
     pagination,
   } = options;
 
-  const hasScrolledToHighlight = ref<boolean>(false);
-  const pendingHighlightScroll = ref<boolean>(false);
+  const hasScrolledToHighlight = shallowRef<boolean>(false);
+  const pendingHighlightScroll = shallowRef<boolean>(false);
 
   const isCardLayout = useMediaQuery('(max-width: 860px)');
 

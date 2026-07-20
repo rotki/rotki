@@ -73,7 +73,7 @@ export function useHistoryEventsData(
 ): UseHistoryEventsDataReturn {
   const { excludeIgnored, groupLoading, groups, identifiers, pageParams } = options;
 
-  const eventsLoading = ref<boolean>(false);
+  const eventsLoading = shallowRef<boolean>(false);
   const events = ref<HistoryEventRow[]>([]);
   let fetchVersion = 0;
 

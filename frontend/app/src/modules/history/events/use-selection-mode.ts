@@ -36,11 +36,11 @@ export interface UseHistoryEventsSelectionModeReturn {
 }
 
 export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeReturn {
-  const isActive = ref<boolean>(false);
+  const isActive = shallowRef<boolean>(false);
   const selectedIds = shallowRef<Set<number>>(new Set());
   const availableIds = ref<number[]>([]);
-  const selectAllMatching = ref<boolean>(false);
-  const totalMatchingCount = ref<number>(0);
+  const selectAllMatching = shallowRef<boolean>(false);
+  const totalMatchingCount = shallowRef<number>(0);
 
   // Unified state object
   const state = computed<SelectionState>(() => {
