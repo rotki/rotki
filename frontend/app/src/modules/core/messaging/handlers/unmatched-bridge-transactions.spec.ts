@@ -1,7 +1,7 @@
 import type { Router } from 'vue-router';
-import { NotificationGroup } from '@rotki/common';
+import { NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
 import { mockT } from '@test/i18n';
-import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { assert, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { createUnmatchedBridgeTransactionsHandler } from '@/modules/core/messaging/handlers/unmatched-bridge-transactions';
 
 const { removeMatching } = vi.hoisted(() => ({
@@ -58,9 +58,16 @@ describe('createUnmatchedBridgeTransactionsHandler', () => {
     const result = await handler.handle({ count: 3 });
 
     expect(result).toMatchObject({
+      category: NotificationCategory.DEFAULT,
       display: true,
       group: NotificationGroup.UNMATCHED_BRIDGE_TRANSACTIONS,
+      priority: Priority.ACTION,
+      severity: Severity.WARNING,
     });
+
+    const action = result?.action;
+    assert(action && !Array.isArray(action));
+    expect(action.persist).toBe(true);
   });
 
   it('should route to the history events page with the bridge dialog query on action', async () => {
@@ -69,8 +76,7 @@ describe('createUnmatchedBridgeTransactionsHandler', () => {
 
     const result = await handler.handle({ count: 2 });
     const action = result?.action;
-    if (!action || Array.isArray(action))
-      throw new Error('expected a single notification action');
+    assert(action && !Array.isArray(action));
 
     await action.action();
 

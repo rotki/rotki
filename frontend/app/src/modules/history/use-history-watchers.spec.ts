@@ -236,6 +236,7 @@ describe('useHistoryWatchers', () => {
       expect(mockAcknowledgeModifications).toHaveBeenCalledOnce();
       expect(mockTriggerHistoricalBalancesProcessing).toHaveBeenCalledOnce();
       expect(mockTriggerAssetMovementAutoMatching).toHaveBeenCalledOnce();
+      expect(mockTriggerBridgeAutoMatching).toHaveBeenCalledOnce();
     });
 
     it('should not trigger reprocessing when processing goes from false to true', async () => {
@@ -251,6 +252,7 @@ describe('useHistoryWatchers', () => {
       expect(mockAcknowledgeModifications).not.toHaveBeenCalled();
       expect(mockTriggerHistoricalBalancesProcessing).not.toHaveBeenCalled();
       expect(mockTriggerAssetMovementAutoMatching).not.toHaveBeenCalled();
+      expect(mockTriggerBridgeAutoMatching).not.toHaveBeenCalled();
     });
   });
 

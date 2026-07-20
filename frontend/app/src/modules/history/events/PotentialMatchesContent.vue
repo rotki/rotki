@@ -45,11 +45,11 @@ const { getAssetMovementMatches } = useAssetMovementMatchingApi();
 const { assetMovementAmountTolerance, assetMovementTimeRange } = useAssetMovementSettings();
 
 function getDefaultHourRange(): number {
-  return get(assetMovementTimeRange) / 3600;
+  return (flow?.defaultTimeRangeSeconds ?? get(assetMovementTimeRange)) / 3600;
 }
 
 function getDefaultTolerancePercentage(): string {
-  return bigNumberify(get(assetMovementAmountTolerance)).multipliedBy(100).toString();
+  return bigNumberify(flow?.defaultTolerance ?? get(assetMovementAmountTolerance)).multipliedBy(100).toString();
 }
 
 const searchLoading = ref<boolean>(false);
@@ -131,8 +131,7 @@ async function confirmMatch(): Promise<void> {
   set(matchingLoading, true);
 
   try {
-    const eventEntry = getEventEntryFromCollection(movement.events);
-    const unmatchedId = eventEntry.entry.identifier;
+    const unmatchedId = movement.identifier ?? getEventEntryFromCollection(movement.events).entry.identifier;
 
     if (!unmatchedId)
       return;

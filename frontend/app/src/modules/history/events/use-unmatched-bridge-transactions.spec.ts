@@ -126,9 +126,11 @@ describe('use-unmatched-bridge-transactions', () => {
         entries: [{
           entry: {
             asset: 'ETH',
+            eventSubtype: 'bridge',
             eventType: 'deposit',
             extraData: { bridge: { toAddress: '0xdef', toChain: 'optimism' } },
             groupIdentifier: 'group-a',
+            identifier: 7,
           },
         }],
       });
@@ -144,18 +146,94 @@ describe('use-unmatched-bridge-transactions', () => {
         bridge: { toAddress: '0xdef', toChain: 'optimism' },
         direction: 'deposit',
         groupIdentifier: 'group-a',
+        identifier: 7,
       });
     });
 
-    it('should derive the direction of an external-resolved leg from the matched bridge stamp', async () => {
+    // The backend returns each event of a group as its own top-level row (verified against a
+    // real unmatched bridge group), so the gas fee event arrives as a separate row before the
+    // bridge leg rather than alongside it in one array.
+    it('should pick the bridge leg and not the gas fee event of the transaction group', async () => {
+      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce(['group-a']);
+      spies.fetchHistoryEvents.mockResolvedValueOnce({
+        entries: [{
+          entry: {
+            asset: 'ETH',
+            eventSubtype: 'fee',
+            eventType: 'spend',
+            groupIdentifier: 'group-a',
+            identifier: 1,
+            sequenceIndex: 0,
+          },
+        }, {
+          entry: {
+            asset: 'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+            eventSubtype: 'bridge',
+            eventType: 'deposit',
+            extraData: { bridge: { toAddress: '0xdef', toChain: 'optimism' } },
+            groupIdentifier: 'group-a',
+            identifier: 2,
+            sequenceIndex: 233,
+          },
+        }],
+      });
+      const { useUnmatchedBridgeTransactions } = await importFresh();
+      const { fetchUnmatchedBridgeTransactions, unmatchedTransactions } = useUnmatchedBridgeTransactions();
+
+      await fetchUnmatchedBridgeTransactions(false);
+
+      expect(get(unmatchedTransactions)[0]).toMatchObject({
+        asset: 'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        bridge: { toAddress: '0xdef', toChain: 'optimism' },
+        direction: 'deposit',
+        identifier: 2,
+      });
+    });
+
+    it('should keep the withdrawal direction for an orphan withdrawal leg', async () => {
       spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce(['group-b']);
+      spies.fetchHistoryEvents.mockResolvedValueOnce({
+        entries: [{
+          entry: {
+            asset: 'ETH',
+            eventSubtype: 'fee',
+            eventType: 'spend',
+            groupIdentifier: 'group-b',
+            identifier: 3,
+          },
+        }, {
+          entry: {
+            asset: 'ETH',
+            eventSubtype: 'bridge',
+            eventType: 'withdrawal',
+            groupIdentifier: 'group-b',
+            identifier: 4,
+          },
+        }],
+      });
+      const { useUnmatchedBridgeTransactions } = await importFresh();
+      const { fetchUnmatchedBridgeTransactions, unmatchedTransactions } = useUnmatchedBridgeTransactions();
+
+      await fetchUnmatchedBridgeTransactions(false);
+
+      expect(get(unmatchedTransactions)[0]).toMatchObject({
+        direction: 'withdrawal',
+        identifier: 4,
+      });
+    });
+
+    // A leg resolved as external is turned into a plain spend/receive and no longer carries the
+    // `bridge` subtype, so its direction has to come from the recorded matchedBridge stamp.
+    it('should derive the direction of an external-resolved leg from the matched bridge stamp', async () => {
+      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce(['group-d']);
       spies.fetchHistoryEvents.mockResolvedValueOnce({
         entries: [{
           entry: {
             asset: 'ETH',
             eventType: 'receive',
             extraData: { matchedBridge: { direction: 'withdrawal', resolution: 'external' } },
-            groupIdentifier: 'group-b',
+            groupIdentifier: 'group-d',
+            identifier: 6,
           },
         }],
       });
@@ -167,8 +245,29 @@ describe('use-unmatched-bridge-transactions', () => {
       expect(get(ignoredTransactions)).toHaveLength(1);
       expect(get(ignoredTransactions)[0]).toMatchObject({
         direction: 'withdrawal',
-        groupIdentifier: 'group-b',
+        groupIdentifier: 'group-d',
       });
+    });
+
+    it('should skip a group that contains no bridge event', async () => {
+      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce(['group-c']);
+      spies.fetchHistoryEvents.mockResolvedValueOnce({
+        entries: [{
+          entry: {
+            asset: 'ETH',
+            eventSubtype: 'fee',
+            eventType: 'spend',
+            groupIdentifier: 'group-c',
+            identifier: 5,
+          },
+        }],
+      });
+      const { useUnmatchedBridgeTransactions } = await importFresh();
+      const { fetchUnmatchedBridgeTransactions, unmatchedTransactions } = useUnmatchedBridgeTransactions();
+
+      await fetchUnmatchedBridgeTransactions(false);
+
+      expect(get(unmatchedTransactions)).toHaveLength(0);
     });
   });
 

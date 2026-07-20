@@ -3,6 +3,7 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import type { TaskMeta } from '@/modules/core/tasks/types';
 import type { LinkedMovementMatch } from '@/modules/history/events/event-payloads';
 import type { MatchingFlow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
+import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
 import { NotificationGroup } from '@rotki/common';
 import { z } from 'zod';
 import { arrayify } from '@/modules/core/common/data/array';
@@ -15,6 +16,7 @@ import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-ma
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
+import { useBridgeMatchSettings } from '@/modules/settings/use-bridge-match-settings';
 
 /** The bridge leg metadata the decoders record in the event's extra data. */
 const BridgeExtraData = z.object({
@@ -58,6 +60,22 @@ function deriveBridgeDirection(extraData: unknown, eventType?: string): 'deposit
 export interface UnmatchedBridgeTransaction extends UnmatchedEventGroup {
   direction: 'deposit' | 'withdrawal';
   bridge?: BridgeExtraData;
+}
+
+/**
+ * Picks the bridge leg out of a group. A bridge group is keyed by the EVM transaction
+ * hash, so it also contains the gas fee event (and possibly others). Only the bridge leg
+ * is the one the matching endpoints accept, so it has to be selected explicitly instead
+ * of taking the first event of the group. A raw leg is a deposit/withdrawal with the
+ * `bridge` subtype; a leg resolved as external is turned into a plain spend/receive but
+ * keeps the `matchedBridge` stamp, which is what tells it apart from the gas fee event.
+ */
+function findBridgeEntry(events: HistoryEventEntryWithMeta[]): HistoryEventEntryWithMeta | undefined {
+  return events.find(({ entry }) => {
+    if (entry.eventSubtype === 'bridge' && (entry.eventType === 'deposit' || entry.eventType === 'withdrawal'))
+      return true;
+    return getResolvedBridgeDirection('extraData' in entry ? entry.extraData : undefined) !== undefined;
+  });
 }
 
 interface UseUnmatchedBridgeTransactionsReturn {
@@ -147,17 +165,27 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
         });
 
         if (eventsForGroup.length > 0) {
-          const eventRow = eventsForGroup[0];
-          const events = arrayify(eventRow);
-          const entry = events[0]?.entry;
-          const extraData = entry && 'extraData' in entry ? entry.extraData : undefined;
+          // The events of a group come back as separate rows, so the bridge leg has to be looked
+          // for across all of them: the first row is the gas fee event, not the bridge event.
+          const bridgeMatch = eventsForGroup
+            .map(row => ({ event: findBridgeEntry(arrayify(row)), row }))
+            .find((candidate): candidate is { event: HistoryEventEntryWithMeta; row: HistoryEventCollectionRow } => !!candidate.event);
+
+          if (!bridgeMatch) {
+            logger.warn(`No bridge event found in group ${groupId}, skipping it`);
+            continue;
+          }
+
+          const entry = bridgeMatch.event.entry;
+          const extraData = 'extraData' in entry ? entry.extraData : undefined;
 
           transactions.push({
-            asset: entry?.asset ?? '',
+            asset: entry.asset,
             bridge: getBridgeExtraData(extraData),
-            direction: deriveBridgeDirection(extraData, entry?.eventType),
-            events: eventRow,
+            direction: deriveBridgeDirection(extraData, entry.eventType),
+            events: bridgeMatch.row,
             groupIdentifier: groupId,
+            identifier: entry.identifier,
           });
         }
       }
@@ -280,8 +308,11 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
 export function useBridgeMatchingFlow(): MatchingFlow {
   const { getBridgeMatches } = useBridgeMatchingApi();
   const { matchBridgeTransaction, refreshUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
+  const { bridgeMatchAmountTolerance, bridgeMatchTimeRange } = useBridgeMatchSettings();
 
   return {
+    defaultTimeRangeSeconds: get(bridgeMatchTimeRange),
+    defaultTolerance: get(bridgeMatchAmountTolerance),
     getSuggestions: getBridgeMatches,
     match: matchBridgeTransaction,
     refresh: refreshUnmatchedBridgeTransactions,

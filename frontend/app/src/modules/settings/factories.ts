@@ -9,6 +9,8 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     askUserUponSizeDiscrepancy: true,
     assetMovementAmountTolerance: Defaults.ASSET_MOVEMENT_AMOUNT_TOLERANCE,
     assetMovementTimeRange: Defaults.ASSET_MOVEMENT_TIME_RANGE,
+    bridgeMatchAmountTolerance: Defaults.BRIDGE_MATCH_AMOUNT_TOLERANCE,
+    bridgeMatchTimeRange: Defaults.BRIDGE_MATCH_TIME_RANGE,
     autoCreateCalendarReminders: true,
     autoCreateProfitEvents: false,
     autoDeleteCalendarEntries: true,

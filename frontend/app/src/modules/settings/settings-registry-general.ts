@@ -12,6 +12,8 @@ export const generalRegistry = {
   }),
   assetMovementAmountTolerance: general('assetMovementAmountTolerance'),
   assetMovementTimeRange: general('assetMovementTimeRange'),
+  bridgeMatchAmountTolerance: general('bridgeMatchAmountTolerance'),
+  bridgeMatchTimeRange: general('bridgeMatchTimeRange'),
   autoCreateCalendarReminders: general('autoCreateCalendarReminders'),
   autoCreateProfitEvents: general('autoCreateProfitEvents', {
     anchor: SettingsHighlightIds.AUTO_CREATE_PROFIT_EVENTS,
