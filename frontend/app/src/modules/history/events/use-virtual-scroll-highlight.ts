@@ -9,13 +9,21 @@ import { useMediaQuery, useVirtualList, type UseVirtualListReturn } from '@vueus
 const OVERSCAN_COUNT = 15;
 
 interface UseVirtualScrollHighlightOptions {
+  /** The fully flattened row list (group headers, event rows, swap rows) that backs the virtual list; row indices used for scrolling refer to this array. */
   flattenedRows: ComputedRef<VirtualRow[]>;
+  /** Height in pixels of the row at the given index in the wide table layout, used when the viewport is above 860px. */
   getRowHeight: (index: number) => number;
+  /** Height in pixels of the row at the given index in the narrow card layout, used when the viewport is at most 860px. */
   getCardHeight: (index: number) => number;
+  /** Group to highlight as a whole (matched against `groupIdentifier`); used to scroll to its group header when no individual identifiers are given. */
   highlightedGroupIdentifier: MaybeRefOrGetter<string | undefined>;
+  /** Individual event identifiers to highlight; the auto-scroll targets these first and only falls back to the group when empty or undefined. */
   highlightedIdentifiers: MaybeRefOrGetter<string[] | undefined>;
+  /** Highlight style per target, keyed by event identifier or by `group:<groupIdentifier>`; an entry on the event wins over the group entry. */
   highlightTypes: MaybeRefOrGetter<Record<string, HighlightType> | undefined>;
+  /** Whether rows are still being fetched; auto-scroll is suppressed while true so it runs once against final data. */
   loading: Ref<boolean>;
+  /** Table pagination state; a page change resets the scroll to the top unless a highlight scroll is pending. */
   pagination: Ref<TablePaginationData>;
 }
 

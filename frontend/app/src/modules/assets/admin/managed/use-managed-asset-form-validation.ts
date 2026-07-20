@@ -24,12 +24,19 @@ interface AssetFormStates {
 }
 
 interface UseManagedAssetFormValidationOptions {
+  /** Backend validation errors keyed by field, handed to Vuelidate as `$externalResults` so server messages surface on the matching input. */
   errors: Ref<ValidationErrors>;
+  /** Selects the ethereum address format check for the `address` field. */
   isEvmToken: ComputedRef<boolean>;
+  /** True for ERC721 token kinds, which is what makes `collectibleId` required. */
   isNft: ComputedRef<boolean>;
+  /** Selects the solana address format check for the `address` field. */
   isSolanaToken: ComputedRef<boolean>;
+  /** True for EVM or Solana tokens. Makes `address` required and turns on the format check. */
   isTokenRequiresAddress: ComputedRef<boolean>;
+  /** The form's field refs, bound to the edited asset. Serves both as the Vuelidate state object and as the source watched for dirty tracking. */
   states: AssetFormStates;
+  /** The parent dialog's model. `useFormStateWatcher` flips it to true once any field in `states` changes, so unsaved edits can be warned about. */
   stateUpdated: ModelRef<boolean>;
 }
 

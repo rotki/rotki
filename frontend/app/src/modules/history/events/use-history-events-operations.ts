@@ -24,7 +24,9 @@ import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatch
 import { useIgnore } from '@/modules/history/use-ignore';
 
 interface UseHistoryEventsOperationsOptions {
+  /** Events per group identifier including ignored-asset ones, so redecode and unlink act on the full group rather than what the table shows. */
   completeEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
+  /** Flat list of all loaded events, scanned to find the highest sequence index within a group when suggesting the next one. */
   flattenedEvents: ComputedRef<HistoryEventEntry[]>;
 }
 

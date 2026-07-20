@@ -6,9 +6,25 @@ import { isEmpty } from 'es-toolkit/compat';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 
 interface UseRememberTableFilterOptions {
+  /**
+   * Gates restoring only. Saving happens unconditionally, so the last filter is still there if the user
+   * turns remembering back on.
+   */
   enabled: Ref<boolean>;
+  /**
+   * Storage key of the table within the per-user localStorage entry. An empty value is possible when the
+   * caller did not configure persistence, and simply keys an unused slot.
+   */
   tableId: Ref<TableId>;
+  /**
+   * Filter target used when `history` is `external`: the restored filter is written into this ref instead
+   * of the route. Ignored for the other history modes.
+   */
   query: Ref<LocationQuery>;
+  /**
+   * Where the restored filter is applied: `router` replaces the route query, `external` writes to `query`,
+   * `false` restores nothing (saving still happens).
+   */
   history: false | 'router' | 'external';
 }
 

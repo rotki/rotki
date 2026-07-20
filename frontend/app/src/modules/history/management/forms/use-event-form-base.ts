@@ -22,9 +22,13 @@ interface UseEventFormBaseOptions<
   TState extends object,
   TRules extends ValidationArgs,
 > {
+  /** Validation rules, either given directly or as a function that receives the shared common rules and returns the form specific ones. */
   rules: RulesInput<TRules>;
+  /** The form fields validated by `rules`, and the default source for change tracking when `formStates` is omitted. */
   states: StatesInput<TState>;
+  /** Backend validation errors keyed by field, fed to vuelidate as `$externalResults`; writing to it retriggers validation. */
   errorMessages: Ref<Record<string, string[]>>;
+  /** The parent's `v-model` flag, set to true by the form state watcher once the user edits a field. */
   stateUpdated: ModelRef<boolean>;
   /** Optional: states to use for form state watcher (defaults to states if not provided) */
   formStates?: Record<string, MaybeRef<unknown>>;

@@ -39,6 +39,7 @@ interface UseHistoryEventsActionsOptions {
   fetchData: () => Promise<void>;
   /** The current collection of grouped history event rows. */
   groups: Ref<Collection<HistoryEventRow>>;
+  /** Marks this as the main history page; only then does an external event modification (e.g. from the pinned sidebar) trigger a refetch. */
   mainPage?: MaybeRefOrGetter<boolean>;
   /** When provided, enables periodic auto-fetching of events. */
   shouldFetchEventsRegularly?: Ref<boolean>;

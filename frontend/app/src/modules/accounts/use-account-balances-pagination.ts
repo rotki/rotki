@@ -18,11 +18,35 @@ import {
 import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 
 interface UseAccountBalancesPaginationOptions {
+  /**
+   * Account category the page is showing (`evm`, `solana`, ...). It selects the filter matchers and is
+   * sent as a request param, so changing it refetches with a different matcher set.
+   */
   category: MaybeRefOrGetter<string>;
+  /**
+   * Tags picked in the filter bar, sent as the `tags` request param. Written back by this composable
+   * when the route carries tags, so it is two-way: the caller owns the ref, the URL can overwrite it.
+   */
   visibleTags: Ref<string[]>;
+  /**
+   * Per-group chain exclusions keyed by group id, forwarded as the `excluded` request param. Read only,
+   * this composable never writes it.
+   */
   chainExclusionFilter: Ref<Record<string, string[]>>;
+  /**
+   * Active tab of the expanded row content. Mirrored into the URL only while at least one row is
+   * expanded, and restored from the route on navigation.
+   */
   tab: Ref<number>;
+  /**
+   * Group ids of the currently expanded rows. Drives whether any expansion state is put in the URL at
+   * all: an empty array keeps the query clean.
+   */
   expanded: Ref<string[]>;
+  /**
+   * Filter query of the nested table inside the expanded row. Persisted in the URL as a URI-encoded `q`
+   * param for tab 1 only, and reset to `{}` when the route has no `q`.
+   */
   query: Ref<LocationQuery>;
 }
 
