@@ -1,4 +1,4 @@
-import type { Ref } from 'vue';
+import type { DeepReadonly, Ref } from 'vue';
 import type {
   MatchedKeyword,
   MatchedKeywordWithBehaviour,
@@ -16,7 +16,7 @@ interface SuggestionText {
 
 interface UseFilterSelectionReturn {
   selection: Ref<Suggestion[]>;
-  suggestionBeingEdited: Ref<Suggestion | undefined>;
+  suggestionBeingEdited: DeepReadonly<Ref<Suggestion | undefined>>;
   updateMatches: (pairs: Suggestion[]) => void;
   restoreSelection: (matchesData: MatchedKeywordWithBehaviour<any>) => void;
   isSuggestionBeingEdited: (suggestion: Suggestion) => boolean;
@@ -239,7 +239,7 @@ export function useFilterSelection(
     isSuggestionBeingEdited,
     restoreSelection,
     selection,
-    suggestionBeingEdited,
+    suggestionBeingEdited: readonly(suggestionBeingEdited),
     updateEditSuggestionSearch,
     updateMatches,
   };

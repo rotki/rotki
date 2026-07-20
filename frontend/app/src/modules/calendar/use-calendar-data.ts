@@ -1,6 +1,6 @@
 import type { Writeable } from '@rotki/common';
 import type { TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { CalendarEvent, CalendarEventRequestPayload } from '@/modules/calendar/types';
 import type { Collection } from '@/modules/core/common/collection';
@@ -24,7 +24,7 @@ interface UseCalendarDataReturn {
   pagination: Ref<TablePaginationData>;
   range: Ref<[number, number]>;
   setToday: () => Dayjs;
-  today: Ref<Dayjs>;
+  today: DeepReadonly<Ref<Dayjs>>;
   upcomingEvents: Ref<CalendarEvent[]>;
 }
 
@@ -148,7 +148,7 @@ export function useCalendarData(accounts: Ref<BlockchainAccount[]>): UseCalendar
     pagination,
     range,
     setToday,
-    today,
+    today: readonly(today),
     upcomingEvents,
   };
 }

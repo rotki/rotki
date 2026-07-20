@@ -11,7 +11,7 @@ interface UseBridgeTransactionActionsOptions {
 }
 
 interface UseBridgeTransactionActionsReturn {
-  ignoreLoading: Ref<boolean>;
+  ignoreLoading: Readonly<Ref<boolean>>;
   selectedIgnored: Ref<string[]>;
   selectedUnmatched: Ref<string[]>;
   confirmIgnoreSelected: () => void;
@@ -179,7 +179,7 @@ export function useBridgeTransactionActions(
     confirmIgnoreSelected,
     confirmMarkExternal,
     confirmRestoreSelected,
-    ignoreLoading,
+    ignoreLoading: readonly(ignoreLoading),
     ignoreTransaction,
     restoreTransaction,
     selectedIgnored,

@@ -32,7 +32,7 @@ interface UseHistoryEventsDataOptions {
 
 interface UseHistoryEventsDataReturn {
   // Loading states
-  eventsLoading: Ref<boolean>;
+  eventsLoading: Readonly<Ref<boolean>>;
   sectionLoading: ComputedRef<boolean>;
   loading: Readonly<Ref<boolean>>;
 
@@ -321,7 +321,7 @@ export function useHistoryEventsData(
     displayedEventsMapped,
     entriesFoundTotal,
     events: flattenedEvents,
-    eventsLoading,
+    eventsLoading: readonly(eventsLoading),
     fetchEvents,
     found,
     getCompleteEventsForItem,

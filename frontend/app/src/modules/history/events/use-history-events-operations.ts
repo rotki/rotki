@@ -34,8 +34,8 @@ interface UseHistoryEventsOperationsReturn {
   // State
   showRedecodeConfirmation: Ref<boolean>;
   redecodePayload: Ref<PullEventPayload | undefined>;
-  hasCustomEvents: Ref<boolean>;
-  showIndexerOptions: Ref<boolean>;
+  hasCustomEvents: Readonly<Ref<boolean>>;
+  showIndexerOptions: Readonly<Ref<boolean>>;
 
   // Functions
   getItemClass: (item: HistoryEventEntry) => '' | 'opacity-50';
@@ -291,11 +291,11 @@ export function useHistoryEventsOperations(
     confirmUnlink,
     getItemClass,
     unlinkGroup,
-    hasCustomEvents,
+    hasCustomEvents: readonly(hasCustomEvents),
     redecode,
     redecodePayload,
     redecodeWithOptions,
-    showIndexerOptions,
+    showIndexerOptions: readonly(showIndexerOptions),
     showRedecodeConfirmation,
     suggestNextSequenceId,
     toggle,

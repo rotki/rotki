@@ -58,12 +58,13 @@ describe('useNftGalleryLayout', () => {
   });
 
   it('should page the visible nfts by items-per-page', () => {
-    const { visibleNfts, page } = useNftGalleryLayout(nftList(20));
+    const { visibleNfts, page, paginationData } = useNftGalleryLayout(nftList(20));
     // default first limit 8
     expect(get(visibleNfts)).toHaveLength(8);
     expect(get(visibleNfts)[0].tokenIdentifier).toBe('nft-0');
 
-    set(page, 2);
+    set(paginationData, { ...get(paginationData), page: 2 });
+    expect(get(page)).toBe(2);
     expect(get(visibleNfts)[0].tokenIdentifier).toBe('nft-8');
   });
 

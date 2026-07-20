@@ -1,4 +1,4 @@
-import type { Ref } from 'vue';
+import type { DeepReadonly, Ref } from 'vue';
 import type { TaskMeta } from '@/modules/core/tasks/types';
 import { type BigNumber, type Eth2ValidatorEntry, Eth2Validators, type EthStakingCombinedFilter, type EthStakingFilter, Zero } from '@rotki/common';
 import { omit } from 'es-toolkit';
@@ -14,7 +14,7 @@ interface UseEthValidatorManagementReturn {
   filter: Ref<EthStakingCombinedFilter | undefined>;
   selection: Ref<EthStakingFilter>;
   setTotal: (validators?: Eth2Validators['entries']) => void;
-  total: Ref<BigNumber>;
+  total: DeepReadonly<Ref<BigNumber>>;
 }
 
 export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
@@ -75,6 +75,6 @@ export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
     filter,
     selection,
     setTotal,
-    total,
+    total: readonly(total),
   };
 }

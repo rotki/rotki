@@ -4,7 +4,7 @@ interface UseRandomStepperReturn {
   onNavigate: (newStep: number) => Promise<void>;
   onPause: () => void;
   onResume: () => void;
-  step: Ref<number>;
+  step: Readonly<Ref<number>>;
   steps: number;
 }
 
@@ -37,7 +37,7 @@ export function useRandomStepper(steps: number, interval: number = 10000): UseRa
     onNavigate,
     onPause: pause,
     onResume: resume,
-    step,
+    step: readonly(step),
     steps,
   };
 }

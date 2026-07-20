@@ -66,12 +66,19 @@ describe('useNftGalleryData', () => {
     expect(nfts[0]).toMatchObject({ address: '0xabc', tokenIdentifier: 't1' });
   });
 
-  it('should apply a manually-entered price to the matching nft', () => {
+  it('should apply a manually-entered price to the matching nft', async () => {
+    spies.fetchNftsPrices.mockResolvedValue([
+      createMock<NftPrice>({
+        asset: 't1',
+        manuallyInput: true,
+        price: bigNumberify(5),
+        priceAsset: 'ETH',
+        priceInAsset: bigNumberify(2),
+      }),
+    ]);
     const data = useNftGalleryData();
     set(data.perAccount, { '0xabc': [nft('t1')] });
-    set(data.prices, {
-      t1: createMock<NftPrice>({ manuallyInput: true, price: bigNumberify(5), priceAsset: 'ETH', priceInAsset: bigNumberify(2) }),
-    });
+    await data.fetchPrices();
     const nfts = get(data.nfts);
     expect(nfts[0]).toMatchObject({ price: bigNumberify(5), priceAsset: 'ETH' });
   });

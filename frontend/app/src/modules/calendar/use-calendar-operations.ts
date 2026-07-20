@@ -11,7 +11,7 @@ interface UseCalendarOperationsReturn {
   add: (selectedDate?: Dayjs) => void;
   deleteEvent: () => void;
   edit: (event: CalendarEvent & { date?: string }) => void;
-  editMode: Ref<boolean>;
+  editMode: Readonly<Ref<boolean>>;
   emptyEventForm: (date?: Dayjs) => CalendarEvent;
   modelValue: Ref<CalendarEvent | undefined>;
 }
@@ -81,7 +81,7 @@ export function useCalendarOperations(
     add,
     deleteEvent,
     edit,
-    editMode,
+    editMode: readonly(editMode),
     emptyEventForm,
     modelValue,
   };

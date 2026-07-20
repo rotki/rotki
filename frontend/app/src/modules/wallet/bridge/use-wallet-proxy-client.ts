@@ -19,7 +19,7 @@ interface WalletProxyClientComposable {
   disconnect: () => void;
   isConnected: Readonly<Ref<boolean>>;
   isConnecting: Readonly<Ref<boolean>>;
-  lastError: Ref<string | undefined>;
+  lastError: Readonly<Ref<string | undefined>>;
   onTakeOver: (callback: () => void) => void;
 }
 
@@ -250,7 +250,7 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
     disconnect,
     isConnected: readonly(isConnected),
     isConnecting: readonly(isConnecting),
-    lastError,
+    lastError: readonly(lastError),
     onTakeOver,
   };
 }

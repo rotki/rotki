@@ -9,7 +9,7 @@ import { PriceOracle } from '@/modules/settings/types/price-oracle';
 
 interface UseHistoricPricesReturn {
   items: Ref<HistoricalPrice[]>;
-  loading: Ref<boolean>;
+  loading: Readonly<Ref<boolean>>;
   save: (data: HistoricalPriceFormPayload, update: boolean) => Promise<boolean>;
   deletePrice: (item: HistoricalPrice) => Promise<void>;
   refresh: (payload?: { modified?: boolean; additionalEntry?: HistoricalPrice }) => Promise<void>;
@@ -107,7 +107,7 @@ export function useHistoricPrices(
   return {
     deletePrice,
     items,
-    loading,
+    loading: readonly(loading),
     refresh,
     save,
   };

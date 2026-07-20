@@ -11,7 +11,7 @@ interface UseAssetMovementActionsOptions {
 
 interface UseAssetMovementActionsReturn {
   fiatMovements: ComputedRef<UnmatchedAssetMovement[]>;
-  ignoreLoading: Ref<boolean>;
+  ignoreLoading: Readonly<Ref<boolean>>;
   selectedIgnored: Ref<string[]>;
   selectedUnmatched: Ref<string[]>;
   confirmIgnoreAllFiat: () => void;
@@ -149,7 +149,7 @@ export function useAssetMovementActions(
     confirmIgnoreSelected,
     confirmRestoreSelected,
     fiatMovements,
-    ignoreLoading,
+    ignoreLoading: readonly(ignoreLoading),
     ignoreMovement,
     restoreMovement,
     selectedIgnored,
