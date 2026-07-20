@@ -41,7 +41,8 @@ export interface EventDetailRow {
   groupId: string;
   data: HistoryEventEntry;
   index: number;
-  /** True when this row is a sub-event of an expanded linked (matched) movement. */
+  /** True when this row is a sub-event of an expanded linked subgroup
+   * (a matched movement or a matched bridge transfer). */
   matchedMovement?: boolean;
 }
 
@@ -218,9 +219,10 @@ export function useVirtualRows(
             }
           }
           else {
-            // Regular swap
+            // Regular swap or matched bridge transfer
             const swapKey = `${groupId}-${i}`;
             const isSwapExpanded = incomplete || expandedSwapsSet.has(swapKey);
+            const bridge = isMatchedBridgeGroup(event);
 
             if (isSwapExpanded) {
               // Add collapse header row (skip when forced open due to incomplete subgroup)
@@ -230,18 +232,21 @@ export function useVirtualRows(
                   groupId,
                   swapKey,
                   eventCount: event.length,
-                  bridge: isMatchedBridgeGroup(event),
+                  bridge,
                 });
               }
 
               // When expanded, show individual event rows for each event in the swap.
               // subIndex is used so the first event (index 0) retains edit/delete actions.
+              // Bridge legs come from different transactions on different chains, so mark
+              // them as linked sub-events to surface per-leg chain and transaction context.
               event.forEach((subEvent, subIndex) => {
                 rows.push({
                   type: 'event-row',
                   groupId,
                   data: subEvent,
                   index: subIndex,
+                  matchedMovement: bridge,
                 });
               });
             }

@@ -9,6 +9,7 @@ import HistoryEventTypeCombination from '@/modules/history/events/HistoryEventTy
 import HistoryEventTypeCounterparty from '@/modules/history/events/HistoryEventTypeCounterparty.vue';
 import HistoryEventTypeLocationBadge from '@/modules/history/events/HistoryEventTypeLocationBadge.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
+import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const { event, groupLocationLabel, icon, label, highlight, hideStateChips, matchedMovement } = defineProps<{
   event: HistoryEventEntry;
@@ -52,6 +53,14 @@ const isExchangeMovementLeg = computed<boolean>(() =>
 
 // The on-chain leg of a linked movement: the transfer that happened on a blockchain.
 const isOnChainLeg = computed<boolean>(() => !!matchedMovement && !get(isExchangeLocation));
+
+// The legs of a linked subgroup come from different transactions (on different chains
+// for bridges), so surface each leg's own transaction hash as an explorer link.
+const legTxRef = computed<string | undefined>(() => {
+  if (!matchedMovement || !('txRef' in event) || !event.txRef)
+    return undefined;
+  return event.txRef;
+});
 
 // Surface a location icon on each leg: the exchange icon on the exchange-side asset movement,
 // and the chain icon on the on-chain leg.
@@ -124,6 +133,14 @@ const showLocationLabel = computed<boolean>(() => {
         :location="event.location"
         :location-label="event.locationLabel!"
         class="text-rui-text-secondary"
+      />
+      <HashLink
+        v-if="legTxRef"
+        :text="legTxRef"
+        type="transaction"
+        :location="event.location"
+        :truncate-length="6"
+        class="text-xs text-rui-text-secondary"
       />
       <div
         v-if="eventStates.length > 0 && !hideStateChips"
