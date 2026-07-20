@@ -3,6 +3,12 @@
 The image runs three processes: **starling**, a supervisor that is PID 1, plus
 the two backends it owns, **rotki-core** (the Python API) and **colibri**.
 
+The image is built on distroless, so there is **no shell, no package manager and
+no coreutils** inside it. `docker exec <container> /opt/rotki/starling ctl status`
+works, because that execs the binary directly, but `docker exec ... sh` does not.
+For interactive debugging, build against the `:debug` variant of the base, which
+adds busybox.
+
 starling replaces what used to be two separate pieces:
 
 - the old `entrypoint.py`, which spawned the backends; and
@@ -65,9 +71,9 @@ Two things make that drop stick, neither of which depends on you passing a flag:
 - starling sets `no_new_privs` before starting anything, so no process in the
   tree can regain privilege through a setuid binary. This is the same protection
   as `--security-opt=no-new-privileges`, applied whether or not you pass it.
-- the image has no setuid or setgid binaries at all; the ones the base image
-  ships (`su`, `mount`, `passwd` and friends) have their bits stripped at build
-  time, since rotki needs none of them.
+- the image has no setuid or setgid binaries at all. The base is distroless, so
+  it ships none to begin with, and any bits on what rotki adds are cleared at
+  build time.
 
 ## Configuration
 
