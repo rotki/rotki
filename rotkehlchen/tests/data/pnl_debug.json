@@ -204,6 +204,8 @@
     "evm_indexers_order": {"ethereum": ["etherscan", "blockscout", "routescan"], "optimism": ["etherscan", "blockscout", "routescan"], "polygon_pos": ["etherscan", "blockscout", "routescan"], "arbitrum_one": ["etherscan", "blockscout", "routescan"], "base": ["etherscan", "blockscout", "routescan"], "gnosis": ["etherscan", "blockscout", "routescan"], "scroll": ["etherscan", "blockscout", "routescan"], "binance_sc": ["etherscan", "blockscout", "routescan"]},
     "asset_movement_amount_tolerance": "0.000001",
     "asset_movement_time_range": 3600,
+    "bridge_match_amount_tolerance": "0.01",
+    "bridge_match_time_range": 14400,
     "suppress_missing_key_msg_services": [],
     "use_asset_collections_in_cost_basis": true,
     "internal_txs_to_repull": 20,
