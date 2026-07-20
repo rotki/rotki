@@ -22,7 +22,7 @@ the decision log.
 
 - gevent requires monkey patching the entire stdlib, which has produced an endless
   stream of edge cases (the sqlite progress-callback machinery, the urllib3 LifoQueue
-  workaround in `pytestgeventwrapper.py`, plugin interference in tests).
+  workaround in the former pytest wrapper, plugin interference in tests).
 - gevent and its ecosystem (`gevent-websocket` is unmaintained) are in slow decline.
 - gevent is fundamentally incompatible with free-threaded CPython. Removing it is a
   hard prerequisite for real multi-core parallelism once the GIL goes away.
@@ -347,9 +347,9 @@ greenlets keep running alongside):
 
 ### Phase 6 — The flip
 
-One small PR: remove `monkey.patch_all()` (`__main__.py`, pytest wrapper), asyncio
+One small PR: remove `monkey.patch_all()` (`__main__.py`, the pytest wrapper), asyncio
 server becomes the only server, threading DB backend becomes the only backend, delete
-gevent/geventwebsocket deps, `pytestgeventwrapper.py` (plain pytest works again) and
+gevent/geventwebsocket deps, the pytest wrapper (plain pytest works again) and
 the urllib3 hack. Validation: full suite, benchmark comparison against the
 mocked-HTTP benchmark infra, manual QA on Linux/macOS/Windows, at least one release
 cycle of nightlies before deleting fallback code.
@@ -357,7 +357,7 @@ cycle of nightlies before deleting fallback code.
 As implemented:
 
 - Entrypoints: `monkey.patch_all()` removed from `__main__.py`,
-  `rotkehlchen_mock`, the bench/assets-db tools; `pytestgeventwrapper.py` (and
+  `rotkehlchen_mock`, the bench/assets-db tools; the pytest wrapper (and
   its urllib3 LifoQueue hack) deleted — plain `uv run pytest` everywhere
   (Makefile, CI workflows, CLAUDE.md).
 - Server: the gevent `WSGIServer`/geventwebsocket path is gone from
