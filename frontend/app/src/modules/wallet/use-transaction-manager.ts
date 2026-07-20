@@ -97,7 +97,7 @@ export function useTransactionManager(): {
     addRecentTransaction,
     getRecentTransactionByTxHash,
     handleTransactionSuccess,
-    recentTransactions,
+    recentTransactions: shallowReadonly(recentTransactions),
     updateTransactionStatus,
   };
 }

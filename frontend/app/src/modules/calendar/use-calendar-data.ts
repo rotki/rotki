@@ -25,7 +25,7 @@ interface UseCalendarDataReturn {
   modelRange: Ref<[number, number]>;
   setToday: () => Dayjs;
   today: DeepReadonly<Ref<Dayjs>>;
-  upcomingEvents: Ref<CalendarEvent[]>;
+  upcomingEvents: Readonly<Ref<CalendarEvent[]>>;
 }
 
 export function useCalendarData(accounts: Ref<BlockchainAccount[]>): UseCalendarDataReturn {
@@ -149,6 +149,6 @@ export function useCalendarData(accounts: Ref<BlockchainAccount[]>): UseCalendar
     modelRange,
     setToday,
     today: readonly(today),
-    upcomingEvents,
+    upcomingEvents: shallowReadonly(upcomingEvents),
   };
 }

@@ -15,7 +15,7 @@ interface SuggestionText {
 }
 
 interface UseFilterSelectionReturn {
-  selection: Ref<Suggestion[]>;
+  selection: Readonly<Ref<Suggestion[]>>;
   suggestionBeingEdited: DeepReadonly<Ref<Suggestion | undefined>>;
   updateMatches: (pairs: Suggestion[]) => void;
   restoreSelection: (matchesData: MatchedKeywordWithBehaviour<any>) => void;
@@ -238,7 +238,7 @@ export function useFilterSelection(
     getSuggestionText,
     isSuggestionBeingEdited,
     restoreSelection,
-    selection,
+    selection: shallowReadonly(selection),
     suggestionBeingEdited: readonly(suggestionBeingEdited),
     updateEditSuggestionSearch,
     updateMatches,

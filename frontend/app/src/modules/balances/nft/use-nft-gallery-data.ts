@@ -13,7 +13,7 @@ interface UseNftGalleryDataReturn {
   loading: Readonly<Ref<boolean>>;
   nftLimited: ComputedRef<boolean>;
   nfts: ComputedRef<GalleryNft[]>;
-  perAccount: Ref<Nfts | null>;
+  perAccount: Readonly<Ref<Nfts | null>>;
   priceError: Readonly<Ref<string>>;
   prices: DeepReadonly<Ref<Record<string, NftPrice>>>;
   total: Readonly<Ref<number>>;
@@ -93,7 +93,7 @@ export function useNftGalleryData(): UseNftGalleryDataReturn {
     loading: readonly(loading),
     nftLimited,
     nfts,
-    perAccount,
+    perAccount: shallowReadonly(perAccount),
     priceError: readonly(priceError),
     prices: readonly(prices),
     total: readonly(total),

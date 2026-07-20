@@ -57,7 +57,7 @@ interface UseHistoryEventsDataReturn {
   hasIgnoredEvent: ComputedRef<boolean>;
   groups: ComputedRef<HistoryEventEntry[]>;
   events: ComputedRef<HistoryEventEntry[]>;
-  rawEvents: Ref<HistoryEventRow[]>;
+  rawEvents: Readonly<Ref<HistoryEventRow[]>>;
   fetchEvents: () => Promise<void>;
   toggleShowIgnoredAssets: (groupId: string) => void;
 
@@ -334,7 +334,7 @@ export function useHistoryEventsData(
     isSubgroupIncomplete,
     limit,
     loading,
-    rawEvents: events,
+    rawEvents: shallowReadonly(events),
     sectionLoading,
     showUpgradeRow,
     toggleShowIgnoredAssets,

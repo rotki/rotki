@@ -33,7 +33,7 @@ interface UseHistoryEventsOperationsOptions {
 interface UseHistoryEventsOperationsReturn {
   // State
   modelShowRedecodeConfirmation: Ref<boolean>;
-  redecodePayload: Ref<PullEventPayload | undefined>;
+  redecodePayload: Readonly<Ref<PullEventPayload | undefined>>;
   hasCustomEvents: Readonly<Ref<boolean>>;
   showIndexerOptions: Readonly<Ref<boolean>>;
 
@@ -293,7 +293,7 @@ export function useHistoryEventsOperations(
     unlinkGroup,
     hasCustomEvents: readonly(hasCustomEvents),
     redecode,
-    redecodePayload,
+    redecodePayload: shallowReadonly(redecodePayload),
     redecodeWithOptions,
     showIndexerOptions: readonly(showIndexerOptions),
     modelShowRedecodeConfirmation,

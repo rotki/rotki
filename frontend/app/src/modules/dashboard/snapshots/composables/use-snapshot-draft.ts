@@ -36,8 +36,8 @@ interface DraftState {
 }
 
 interface UseSnapshotDraftReturn {
-  draft: Ref<Snapshot | undefined>;
-  original: Ref<Snapshot | undefined>;
+  draft: Readonly<Ref<Snapshot | undefined>>;
+  original: Readonly<Ref<Snapshot | undefined>>;
   isDirty: ComputedRef<boolean>;
   dirtyCount: ComputedRef<number>;
   changes: ComputedRef<SnapshotChange[]>;
@@ -311,18 +311,13 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
     discard,
     dirtyCount,
     distributeLocations,
-    // exposed writable: bound via v-model in the editor and handed to the pure
-    // snapshot-math helpers, which take a plain Snapshot (not DeepReadonly).
-    // eslint-disable-next-line @rotki/composable-return-readonly
-    draft,
+    draft: shallowReadonly(draft),
     editBalance,
     editLocation,
     excludeNfts,
     isDirty,
     mismatch,
-    // exposed writable: re-seeded on load and compared/cloned by the math helpers.
-    // eslint-disable-next-line @rotki/composable-return-readonly
-    original,
+    original: shallowReadonly(original),
     reconcileLocations,
     undo,
   };

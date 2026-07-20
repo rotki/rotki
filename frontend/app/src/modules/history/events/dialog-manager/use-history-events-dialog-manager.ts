@@ -7,7 +7,7 @@ import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 
 interface UseHistoryEventsDialogManager {
   show: (options: DialogShowOptions) => Promise<void>;
-  currentDialog: Ref<DialogState>;
+  currentDialog: Readonly<Ref<DialogState>>;
   closeDialog: () => void;
 }
 
@@ -94,7 +94,7 @@ export function useHistoryEventsDialogManager(): UseHistoryEventsDialogManager {
 
   return {
     closeDialog,
-    currentDialog,
+    currentDialog: shallowReadonly(currentDialog),
     show,
   };
 }

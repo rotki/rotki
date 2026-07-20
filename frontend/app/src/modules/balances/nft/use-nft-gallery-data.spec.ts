@@ -58,9 +58,12 @@ describe('useNftGalleryData', () => {
     expect(get(data.nftLimited)).toBe(true);
   });
 
-  it('should flatten per-account nfts and attach the address', () => {
+  it('should flatten per-account nfts and attach the address', async () => {
+    spies.fetchNfts.mockResolvedValue({
+      result: { addresses: { '0xabc': [nft('t1'), nft('t2')] }, entriesFound: 2, entriesLimit: 10 },
+    });
     const data = useNftGalleryData();
-    set(data.perAccount, { '0xabc': [nft('t1'), nft('t2')] });
+    await data.fetchNfts();
     const nfts = get(data.nfts);
     expect(nfts).toHaveLength(2);
     expect(nfts[0]).toMatchObject({ address: '0xabc', tokenIdentifier: 't1' });
@@ -76,8 +79,11 @@ describe('useNftGalleryData', () => {
         priceInAsset: bigNumberify(2),
       }),
     ]);
+    spies.fetchNfts.mockResolvedValue({
+      result: { addresses: { '0xabc': [nft('t1')] }, entriesFound: 1, entriesLimit: 10 },
+    });
     const data = useNftGalleryData();
-    set(data.perAccount, { '0xabc': [nft('t1')] });
+    await data.fetchNfts();
     await data.fetchPrices();
     const nfts = get(data.nfts);
     expect(nfts[0]).toMatchObject({ price: bigNumberify(5), priceAsset: 'ETH' });

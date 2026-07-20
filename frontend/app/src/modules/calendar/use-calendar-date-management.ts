@@ -5,7 +5,7 @@ import dayjs, { type Dayjs } from 'dayjs';
 interface UseCalendarDateManagementReturn {
   modelSelectedDate: Ref<Dayjs>;
   modelVisibleDate: Ref<Dayjs>;
-  selectedDateEvents: Ref<CalendarEvent[]>;
+  selectedDateEvents: Readonly<Ref<CalendarEvent[]>>;
   setSelectedDate: (day: Dayjs) => void;
 }
 
@@ -38,7 +38,7 @@ export function useCalendarDateManagement(
 
   return {
     modelSelectedDate,
-    selectedDateEvents,
+    selectedDateEvents: shallowReadonly(selectedDateEvents),
     setSelectedDate,
     modelVisibleDate,
   };
