@@ -13,6 +13,12 @@ import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import { useSupportedChainsApi } from '@/modules/core/common/use-supported-chains-api';
 import { useSupportedChainsStore } from '@/modules/core/common/use-supported-chains-store';
 
+/**
+ * Chains whose protocol decoding coverage is still limited. The backend does
+ * not expose a maturity flag, so the set is maintained here until it does.
+ */
+const EARLY_INTEGRATION_CHAINS: ReadonlySet<string> = new Set(['avax', 'hyperliquid', 'monad']);
+
 function isEvmChain(info: ChainInfo): info is EvmChainInfo {
   return info.type === ChainType.EVM;
 }
@@ -48,6 +54,7 @@ interface UseSupportedChainsReturn {
   getNativeAsset: (chain: string) => string;
   isBtcChains: (chain: string) => boolean;
   isDecodableChains: (chain: string) => boolean;
+  isEarlyIntegrationChain: (chain: string) => boolean;
   isEvm: (chain: string) => boolean;
   isEvmCompatible: (chain: string) => boolean;
   isEvmLikeChains: (chain: string) => boolean;
@@ -148,6 +155,8 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
   const isBtcChains = (chain: string): boolean => get(btcChainSet).has(chain);
 
   const isSolanaChains = (chain: string): boolean => get(solanaChainSet).has(chain);
+
+  const isEarlyIntegrationChain = (chain: string): boolean => EARLY_INTEGRATION_CHAINS.has(chain);
 
   const isDecodableChains = (chain: string): boolean => get(decodableChainSet).has(chain);
 
@@ -299,6 +308,7 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
     getNativeAsset,
     isBtcChains,
     isDecodableChains,
+    isEarlyIntegrationChain,
     isEvm,
     isEvmCompatible,
     isEvmLikeChains,

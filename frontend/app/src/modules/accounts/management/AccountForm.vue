@@ -44,7 +44,7 @@ const form = useTemplateRef<
 
 const chain = useRefPropVModel(modelValue, 'chain');
 
-const { getChainName, isEvm, isSolanaChains, txEvmChains } = useSupportedChains();
+const { getChainName, isEarlyIntegrationChain, isEvm, isSolanaChains, txEvmChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 const { getApiKey } = useExternalApiKeys();
 
@@ -114,13 +114,11 @@ const showSolanaInitialAlert = computed<boolean>(() => {
   return currentModelValue.mode === 'add' && !!selectedChain && isSolanaChains(selectedChain);
 });
 
-const EARLY_INTEGRATION_CHAINS: string[] = ['avax', 'hyperliquid', 'monad'];
-
 const earlyIntegrationChain = computed<string | undefined>(() => {
   const selectedChain = get(chain);
   const currentModelValue = get(modelValue);
 
-  if (currentModelValue.mode === 'add' && selectedChain && EARLY_INTEGRATION_CHAINS.includes(selectedChain))
+  if (currentModelValue.mode === 'add' && selectedChain && isEarlyIntegrationChain(selectedChain))
     return selectedChain;
   return undefined;
 });

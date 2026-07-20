@@ -1,5 +1,6 @@
+import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref } from 'vue';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
@@ -50,14 +51,14 @@ async function createWrapper(): Promise<VueWrapper<InstanceType<typeof Dashboard
 
 describe('dashboardCompletenessIndicator', () => {
   beforeEach(() => {
-    setActivePinia(createPinia());
+    setActivePinia(createCustomPinia());
     state.actionableCount = 0;
     state.processing = false;
   });
 
   it('should render nothing when there are no completeness issues', async () => {
     const wrapper = await createWrapper();
-    expect(wrapper.find('[data-cy=dashboard-completeness]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=dashboard-completeness]').exists()).toBe(false);
   });
 
   it('should show a chip when assets are missing prices', async () => {
@@ -65,25 +66,25 @@ describe('dashboardCompletenessIndicator', () => {
       ETH: { isManualPrice: false, oracle: 'blockchain', priceMissing: true, usdPrice: null, value: '0' },
     } as never;
     const wrapper = await createWrapper();
-    expect(wrapper.find('[data-cy=dashboard-completeness]').text()).toContain('missing_prices');
+    expect(wrapper.find('[data-testid=dashboard-completeness]').text()).toContain('missing_prices');
   });
 
   it('should show a chip for leftover undecoded transactions', async () => {
     useDecodingStatusStore().setUndecodedTransactionsStatus({ chain: 'eth', processed: 2, total: 10 });
     const wrapper = await createWrapper();
-    expect(wrapper.find('[data-cy=dashboard-completeness]').text()).toContain('undecoded');
+    expect(wrapper.find('[data-testid=dashboard-completeness]').text()).toContain('undecoded');
   });
 
   it('should hide the undecoded chip while history is processing', async () => {
     state.processing = true;
     useDecodingStatusStore().setUndecodedTransactionsStatus({ chain: 'eth', processed: 2, total: 10 });
     const wrapper = await createWrapper();
-    expect(wrapper.find('[data-cy=dashboard-completeness]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=dashboard-completeness]').exists()).toBe(false);
   });
 
   it('should show a chip when data issues need attention', async () => {
     state.actionableCount = 3;
     const wrapper = await createWrapper();
-    expect(wrapper.find('[data-cy=dashboard-completeness]').text()).toContain('data_issues');
+    expect(wrapper.find('[data-testid=dashboard-completeness]').text()).toContain('data_issues');
   });
 });

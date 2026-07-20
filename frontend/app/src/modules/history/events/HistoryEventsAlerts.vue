@@ -2,11 +2,11 @@
 import { Section } from '@/modules/core/common/status';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
+import { useUndecodedTransactionsCount } from '@/modules/history/events/tx/use-undecoded-transactions-count';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
-import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 const show = defineModel<boolean>('show', { required: true });
@@ -54,13 +54,7 @@ const {
 } = useCustomizedEventDuplicates();
 
 const { fetchCounts, issueCount: internalConflictsCount } = useInternalTxConflicts();
-const { decodingStatus } = storeToRefs(useDecodingStatusStore());
-
-const undecodedCount = computed<number>(() => {
-  if (processing)
-    return 0;
-  return get(decodingStatus).reduce((sum, { processed, total }) => sum + Math.max(0, total - processed), 0);
-});
+const { fetchUndecodedTransactionsBreakdown, undecodedCount } = useUndecodedTransactionsCount(() => processing);
 
 const showUnmatchedMovements = computed<boolean>(() => !get(autoMatchLoading) && get(unmatchedCount) > 0);
 const showUnmatchedBridges = computed<boolean>(() => !get(bridgeAutoMatchLoading) && get(unmatchedBridgesCount) > 0);
@@ -117,6 +111,7 @@ watchImmediate(loading, async (isLoading) => {
       refreshUnmatchedBridgeTransactions(),
       fetchCustomizedEventDuplicates(),
       fetchCounts(),
+      fetchUndecodedTransactionsBreakdown(),
     ]);
   }
 });

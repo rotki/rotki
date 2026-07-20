@@ -440,14 +440,14 @@
             "is_contract": "Is ETH contract address",
             "no_activity": "No activity found on this chain yet"
           },
-          "no_activity_hint": "Chains where the address has no activity yet are skipped. This is normal for a fresh wallet — once the address has transactions, add it again, or add it now with a specific chain selected to track it anyway.",
+          "no_activity_hint": "Chains where the address has no activity yet are skipped. This is normal for a fresh wallet. Once the address has transactions, add it again, or add it now with a specific chain selected to track it anyway.",
           "non_eth": "All non ETH chains"
         },
         "no_new": {
           "description": "The selected addresses are already tracked by rotki"
         },
         "success": {
-          "description": "Address {address} is successfully added for all EVM chains. Token detection and balance queries are now running — open the History page to also fetch and decode its transactions. | Address {address} is successfully added for these chains: \n {list}\nToken detection and balance queries are now running — open the History page to also fetch and decode its transactions."
+          "description": "Address {address} is successfully added for all EVM chains. Token detection and balance queries are now running. Open the History page to also fetch and decode its transactions. | Address {address} is successfully added for these chains: \n {list}\nToken detection and balance queries are now running. Open the History page to also fetch and decode its transactions."
         },
         "task": {
           "description": "Adding {address}",
@@ -2629,7 +2629,7 @@
       "percentage_of_total_net_value": "% of net Value",
       "percentage_total": "% of total"
     },
-    "no_assets": "No assets yet. Add a blockchain address, connect an exchange, or add a manual balance above — your balances will appear here once the first query completes.",
+    "no_assets": "No assets yet. Add a blockchain address, connect an exchange, or add a manual balance above. Your balances will appear here once the first query completes.",
     "no_search_result": "Your search for \"{search}\" yielded no results.",
     "price_unknown": "No price could be found for this asset from any of your configured oracles, so it does not count towards your net worth. You can set a price manually in the price manager.",
     "select_visible_columns": "Select visible columns"
@@ -3145,10 +3145,7 @@
       "signing_key": "Signing Key"
     },
     "keys": "Keys",
-    "setup_success": {
-      "message": "Your {location} balances are being fetched now. Open the History page to also import and process its trades, deposits and withdrawals.",
-      "title": "Exchange connected"
-    },
+    "setup_hint": "Balances are being fetched. Trades, deposits and withdrawals import when you open the History page.",
     "subtitle": "rotki can connect to supported exchanges and automatically pull your balances from them. Trades, deposits and withdrawals are imported when you open the History page. See the {0} for more information.",
     "sync": {
       "messages": {
@@ -4637,7 +4634,7 @@
     }
   },
   "module_settings": {
-    "coverage_note": "These modules only control balance queries for a few specific protocols — they are not the full list of what rotki supports. Transaction decoding automatically covers 100+ DeFi protocols regardless of these settings. See the full list of supported chains, exchanges and protocols on {link}.",
+    "coverage_note": "These modules only control balance queries for a few specific protocols. They are not the full list of what rotki supports. Transaction decoding automatically covers 100+ DeFi protocols regardless of these settings. See the full list of supported chains, exchanges and protocols on {link}.",
     "hint": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled. Also, please remember that after activating a module, you need to logout and login again for the activation to take effect",
     "integrations_link_label": "rotki.com/integrations",
     "subtitle": "Manage and view your balance-query module settings.",
@@ -5584,9 +5581,12 @@
         "title": "Missing Prices ({total})",
         "total_skipped_prices": "{total} prices are skipped"
       },
-      "overview_warning": "This report has {acquisitions} disposal(s) with missing acquisition history and {prices} missing price(s). The totals below may overstate your gains — use \"Show Issues\" to review and fix them.",
+      "overview_warning": "The totals below may overstate your gains. Use \"Show Issues\" to review and fix them.",
+      "overview_warning_acquisitions": "{count} disposal(s) with missing acquisition history",
+      "overview_warning_prices": "{count} missing price(s)",
+      "overview_warning_title": "This report has incomplete data:",
       "show_issues": "Show Issues",
-      "skipped_no_rule": "{count} history events were excluded from this report because they have no accounting rule. They are marked with a warning icon in the History view — assign a rule there to include them.",
+      "skipped_no_rule": "{count} history events were excluded from this report because they have no accounting rule. They are marked with a warning icon in the History view. Assign a rule there to include them.",
       "stale_details": "Missing price and missing acquisition details are only kept for the most recently generated report. Re-generate this report to inspect them."
     },
     "binance_markets_alert": "The following Binance exchange(s) do not have market pairs configured: \n{exchanges}.\n\n Please configure market pairs before generating a report.",
@@ -5945,7 +5945,8 @@
     "decoding_label": "chains decoded",
     "decoding_progress": "{processed}/{total} txns",
     "events": "Events",
-    "explanation": "The first sync downloads and decodes your entire on-chain history locally. You can keep using rotki — results appear as they are ready. A personal (free) Etherscan API key speeds this up significantly.",
+    "explanation": "The first sync downloads and decodes your entire on-chain history locally. You can keep using rotki; results appear as they are ready.",
+    "explanation_etherscan_hint": "A personal (free) Etherscan API key speeds this up significantly.",
     "locations_label": "location | locations",
     "period": {
       "beginning": "Beginning"
@@ -6173,7 +6174,7 @@
       "clear_filters": "Clear filters",
       "no_data_with_filters": "No events match the current filters",
       "no_events": "No events found.\nAdd exchanges, track blockchain addresses, or manually add events to get started.",
-      "syncing": "Your history is being queried and decoded.\nEvents will appear here as they are processed — this can take a while on the first sync."
+      "syncing": "Your history is being queried and decoded.\nEvents will appear here as they are processed. This can take a while on the first sync."
     },
     "events": {
       "accounting_rule": {
