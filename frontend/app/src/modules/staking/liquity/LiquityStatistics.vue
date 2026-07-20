@@ -6,6 +6,9 @@ import { bigNumberSum } from '@/modules/core/common/data/calculation';
 import { Section } from '@/modules/core/common/status';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
 import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
+import LiquityAssetBalanceList from '@/modules/staking/liquity/LiquityAssetBalanceList.vue';
+import LiquityPnlRow from '@/modules/staking/liquity/LiquityPnlRow.vue';
+import LiquityStatisticRow from '@/modules/staking/liquity/LiquityStatisticRow.vue';
 
 const { pool = null, statistic = null } = defineProps<{
   statistic?: LiquityStatisticDetails | null;
@@ -211,113 +214,49 @@ const totalPnl = computed<BigNumber | null>(() => {
         >
           <div class="grid md:grid-cols-2 md:gap-12">
             <div>
-              <div>
-                <RuiDivider />
-                <div class="text-right py-4">
-                  <div class="font-medium pb-2">
-                    {{ t('liquity_statistic.total_deposited_stability_pool') }}
-                  </div>
-                  <BalanceDisplay
-                    :asset="LUSD_ID"
-                    :value="totalDepositedStabilityPoolBalance"
-                    :loading="loading"
-                  />
-                </div>
-              </div>
-              <div>
-                <RuiDivider />
-                <div class="text-right py-4">
-                  <div class="font-medium pb-2">
-                    {{ t('liquity_statistic.total_withdrawn_stability_pool') }}
-                  </div>
-                  <BalanceDisplay
-                    :asset="LUSD_ID"
-                    :value="totalWithdrawnStabilityPoolBalance"
-                    :loading="loading"
-                  />
-                </div>
-              </div>
-              <div>
-                <RuiDivider />
-                <div class="text-right py-4">
-                  <div class="font-medium pb-2">
-                    {{ t('liquity_statistic.stability_pool_gains') }}
-                  </div>
-
-                  <div v-if="statisticWithAdjustedPrice.stabilityPoolGains.length > 0">
-                    <div
-                      v-for="assetBalance in statisticWithAdjustedPrice.stabilityPoolGains"
-                      :key="assetBalance.asset"
-                    >
-                      <BalanceDisplay
-                        :asset="assetBalance.asset"
-                        :value="assetBalance"
-                        :loading="loading"
-                      />
-                    </div>
-                  </div>
-                  <div
-                    v-else
-                    class="text-rui-text-secondary pb-2"
-                  >
-                    {{ t('liquity_statistic.no_stability_pool_gains') }}
-                  </div>
-                </div>
-              </div>
-              <div v-if="totalPnl">
-                <RuiDivider />
-                <div class="text-right py-4">
-                  <div class="flex items-center justify-end gap-2 font-medium pb-2">
-                    <RuiTooltip
-                      :popper="{ placement: 'top' }"
-                      :open-delay="400"
-                      tooltip-class="max-w-[10rem]"
-                    >
-                      <template #activator>
-                        <RuiIcon name="lu-info" />
-                      </template>
-                      <span>
-                        {{ t('liquity_statistic.estimated_pnl_warning') }}
-                      </span>
-                    </RuiTooltip>
-                    {{ t('liquity_statistic.estimated_pnl') }}
-                  </div>
-                  <FiatDisplay
-                    :value="totalPnl"
-                    :loading="loading"
-                    pnl
-                  />
-                </div>
-              </div>
+              <LiquityStatisticRow
+                :label="t('liquity_statistic.total_deposited_stability_pool')"
+              >
+                <BalanceDisplay
+                  :asset="LUSD_ID"
+                  :value="totalDepositedStabilityPoolBalance"
+                  :loading="loading"
+                />
+              </LiquityStatisticRow>
+              <LiquityStatisticRow
+                :label="t('liquity_statistic.total_withdrawn_stability_pool')"
+              >
+                <BalanceDisplay
+                  :asset="LUSD_ID"
+                  :value="totalWithdrawnStabilityPoolBalance"
+                  :loading="loading"
+                />
+              </LiquityStatisticRow>
+              <LiquityStatisticRow
+                :label="t('liquity_statistic.stability_pool_gains')"
+              >
+                <LiquityAssetBalanceList
+                  :balances="statisticWithAdjustedPrice.stabilityPoolGains"
+                  :loading="loading"
+                  :empty-label="t('liquity_statistic.no_stability_pool_gains')"
+                />
+              </LiquityStatisticRow>
+              <LiquityPnlRow
+                v-if="totalPnl"
+                :value="totalPnl"
+                :loading="loading"
+              />
             </div>
             <div>
-              <div>
-                <RuiDivider />
-                <div class="text-right py-4">
-                  <div class="font-medium pb-2">
-                    {{ t('liquity_statistic.staking_gains') }}
-                  </div>
-
-                  <div v-if="statisticWithAdjustedPrice.stakingGains.length > 0">
-                    <div
-                      v-for="assetBalance in statisticWithAdjustedPrice.stakingGains"
-                      :key="assetBalance.asset"
-                    >
-                      <BalanceDisplay
-                        :asset="assetBalance.asset"
-                        :value="assetBalance"
-                        :loading="loading"
-                      />
-                    </div>
-                  </div>
-                  <div
-                    v-else
-                    class="text-rui-text-secondary pb-2"
-                  >
-                    {{ t('liquity_statistic.no_staking_gains') }}
-                  </div>
-                </div>
-              </div>
+              <LiquityStatisticRow
+                :label="t('liquity_statistic.staking_gains')"
+              >
+                <LiquityAssetBalanceList
+                  :balances="statisticWithAdjustedPrice.stakingGains"
+                  :loading="loading"
+                  :empty-label="t('liquity_statistic.no_staking_gains')"
+                />
+              </LiquityStatisticRow>
             </div>
           </div>
           <template #header="{ open }">
