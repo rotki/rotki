@@ -1,20 +1,11 @@
 <script setup lang="ts">
+import type { PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
 import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
+import { CURRENT_PRICE_ORACLE_ITEMS, HISTORICAL_PRICE_ORACLE_ITEMS } from '@/modules/settings/price-oracle-lists';
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import { PrioritizedListData, type PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
-import {
-  ALCHEMY_PRIO_LIST_ITEM,
-  COINGECKO_PRIO_LIST_ITEM,
-  CRYPTOCOMPARE_PRIO_LIST_ITEM,
-  DEFILAMA_PRIO_LIST_ITEM,
-  KRAKEN_PRIO_LIST_ITEM,
-  MORALIS_PRIO_LIST_ITEM,
-  type PrioritizedListId,
-  UNISWAP2_PRIO_LIST_ITEM,
-  UNISWAP3_PRIO_LIST_ITEM,
-} from '@/modules/settings/types/prioritized-list-id';
+import { PrioritizedListData } from '@/modules/settings/types/prioritized-list-data';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
 import PrioritizedList from '@/modules/shell/components/PrioritizedList.vue';
@@ -39,27 +30,12 @@ function updateHistoricOracles(value: PrioritizedListId[]): void {
   set(historicOracles, value.filter(isPriceOracle));
 }
 
-const historicalAvailableOraclesTyped: Array<PrioritizedListItemData<PrioritizedListId>> = [
-  CRYPTOCOMPARE_PRIO_LIST_ITEM,
-  COINGECKO_PRIO_LIST_ITEM,
-  DEFILAMA_PRIO_LIST_ITEM,
-  ALCHEMY_PRIO_LIST_ITEM,
-  MORALIS_PRIO_LIST_ITEM,
-  UNISWAP2_PRIO_LIST_ITEM,
-  UNISWAP3_PRIO_LIST_ITEM,
-];
-
-const currentAvailableOraclesTyped: Array<PrioritizedListItemData<PrioritizedListId>> = [
-  ...historicalAvailableOraclesTyped,
-  KRAKEN_PRIO_LIST_ITEM,
-];
-
 function availableCurrentOracles(): PrioritizedListData<PrioritizedListId> {
-  return new PrioritizedListData([...currentAvailableOraclesTyped]);
+  return new PrioritizedListData([...CURRENT_PRICE_ORACLE_ITEMS]);
 }
 
 function availableHistoricalOracles(): PrioritizedListData<PrioritizedListId> {
-  return new PrioritizedListData([...historicalAvailableOraclesTyped]);
+  return new PrioritizedListData([...HISTORICAL_PRICE_ORACLE_ITEMS]);
 }
 
 const { reset: resetCachedHistoricalPrices } = useHistoricPriceCache();
