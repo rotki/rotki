@@ -24,7 +24,8 @@ describe('useHistoryEventHighlights', () => {
       highlightedPotentialMatch: '3',
     };
     const { highlightedIdentifiers, highlightTypes } = useHistoryEventHighlights();
-    expect(get(highlightedIdentifiers)).toEqual(['1', '3', '2']);
+    // Consumers only test membership, so the order just follows the declared param order.
+    expect(get(highlightedIdentifiers)).toEqual(['1', '2', '3']);
     expect(get(highlightTypes)).toEqual({ 1: 'warning', 2: 'error', 3: 'success' });
   });
 

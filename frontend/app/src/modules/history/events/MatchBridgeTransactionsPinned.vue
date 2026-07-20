@@ -54,7 +54,7 @@ const {
 const flow: MatchingFlow = useBridgeMatchingFlow();
 
 function selectTransaction(transaction: UnmatchedBridgeTransaction): void {
-  const identifier = getEventEntryFromCollection(transaction.events).entry.identifier;
+  const identifier = transaction.identifier ?? getEventEntryFromCollection(transaction.events).entry.identifier;
 
   set(potentialMatchTransaction, transaction);
   set(showPotentialMatchesDrawer, true);
@@ -104,7 +104,7 @@ async function unpin(): Promise<void> {
 }
 
 function showInHistoryEvents(transaction: UnmatchedBridgeTransaction): void {
-  const identifier = getEventEntryFromCollection(transaction.events).entry.identifier;
+  const identifier = transaction.identifier ?? getEventEntryFromCollection(transaction.events).entry.identifier;
 
   set(activeGroupIdentifier, transaction.groupIdentifier);
   set(activePotentialMatchIdentifier, undefined);
@@ -150,7 +150,7 @@ function navigateToHighlightedTransaction(targetGroupIdentifier: string): boolea
   if (transaction) {
     // If potential match identifier is also provided, open the drawer and navigate to potential match
     if (highlightedPotentialMatchIdentifier && potentialMatchGroupIdentifier) {
-      const identifier = getEventEntryFromCollection(transaction.events).entry.identifier;
+      const identifier = transaction.identifier ?? getEventEntryFromCollection(transaction.events).entry.identifier;
       set(potentialMatchTransaction, transaction);
       set(showPotentialMatchesDrawer, true);
       set(activeGroupIdentifier, transaction.groupIdentifier);

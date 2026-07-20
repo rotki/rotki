@@ -9,6 +9,12 @@ export interface UnmatchedEventGroup {
   groupIdentifier: string;
   events: HistoryEventCollectionRow;
   asset: string;
+  /**
+   * Identifier of the event the matching endpoints act on. Groups that hold more
+   * than the matchable event itself (an EVM transaction group also carries the gas
+   * fee event) must set this, otherwise the first event of the group is used.
+   */
+  identifier?: number;
 }
 
 /** Suggested counterpart events for an unmatched group, best matches first. */
@@ -37,4 +43,11 @@ export interface MatchingFlow {
   ) => Promise<MatchSuggestions>;
   match: (identifier: number, matchedEventIds: number[]) => Promise<ActionStatus>;
   refresh: (skipIgnored?: boolean) => Promise<void>;
+  /**
+   * Search window the dialog pre-fills, in seconds. Falls back to the asset movement
+   * setting when the flow does not carry its own.
+   */
+  defaultTimeRangeSeconds?: number;
+  /** Amount tolerance the dialog pre-fills, as a decimal fraction (0.01 is 1%). */
+  defaultTolerance?: string;
 }

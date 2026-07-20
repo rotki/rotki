@@ -10,6 +10,7 @@ const { spies } = vi.hoisted(() => ({
       .mockResolvedValue({ message: '', success: true }),
     refreshUnmatchedBridgeTransactions: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     showConfirm: vi.fn(),
+    showErrorMessage: vi.fn(),
     getChainName: vi.fn((chain: string) => chain.toUpperCase()),
   },
 }));
@@ -49,6 +50,15 @@ vi.mock('@/modules/history/event-utils', () => ({
   getEventEntryFromCollection: <T>(events: T): T => events,
 }));
 
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
+  getErrorMessage: (error: unknown): string => error instanceof Error ? error.message : String(error),
+  useNotifications: (): object => ({
+    showErrorMessage: spies.showErrorMessage,
+  }),
+}));
+
+const GAS_FEE_EVENT_IDENTIFIER = 999;
+
 function createMockTransaction(overrides: {
   groupIdentifier?: string;
   identifier?: number;
@@ -58,8 +68,11 @@ function createMockTransaction(overrides: {
 } = {}): UnmatchedBridgeTransaction {
   return {
     groupIdentifier: overrides.groupIdentifier ?? 'group1',
+    // The first event of the group is the gas fee event, never the bridge leg, so a
+    // regression that falls back to it would send this identifier instead.
     // @ts-expect-error partial mock for testing - only identifier is needed
-    events: { entry: { identifier: overrides.identifier ?? 1 } },
+    events: { entry: { identifier: GAS_FEE_EVENT_IDENTIFIER } },
+    identifier: overrides.identifier ?? 1,
     asset: overrides.asset ?? 'ETH',
     bridge: overrides.bridge,
     direction: overrides.direction ?? 'deposit',
@@ -104,13 +117,32 @@ describe('use-bridge-transaction-actions', () => {
       expect(onActionComplete).toHaveBeenCalledOnce();
     });
 
-    it('should reset ignoreLoading on error', async () => {
+    it('should surface the error and reset ignoreLoading when the request fails', async () => {
       spies.matchBridgeTransactions.mockRejectedValueOnce(new Error('API error'));
       const composable = useBridgeTransactionActions();
 
-      await expect(composable.ignoreTransaction(createMockTransaction())).rejects.toThrow('API error');
+      await expect(composable.ignoreTransaction(createMockTransaction())).resolves.toBeUndefined();
 
+      expect(spies.showErrorMessage).toHaveBeenCalledOnce();
       expect(get(composable.ignoreLoading)).toBe(false);
+    });
+
+    it('should drop the ignored transaction from the current selection', async () => {
+      const composable = useBridgeTransactionActions();
+      set(composable.modelSelectedUnmatched, ['group1', 'group2']);
+
+      await composable.ignoreTransaction(createMockTransaction({ groupIdentifier: 'group1' }));
+
+      expect(get(composable.modelSelectedUnmatched)).toEqual(['group2']);
+    });
+
+    it('should not use the gas fee event of the group as the bridge identifier', async () => {
+      const { ignoreTransaction } = useBridgeTransactionActions();
+
+      await ignoreTransaction(createMockTransaction({ identifier: 42 }));
+
+      expect(spies.matchBridgeTransactions).toHaveBeenCalledWith(42);
+      expect(spies.matchBridgeTransactions).not.toHaveBeenCalledWith(GAS_FEE_EVENT_IDENTIFIER);
     });
   });
 

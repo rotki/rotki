@@ -1,6 +1,8 @@
 import type { Ref } from 'vue';
+import { logger } from '@/modules/core/common/logging/logging';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { type UnmatchedBridgeTransaction, useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
@@ -37,14 +39,32 @@ export function useBridgeTransactionActions(
 
   const { matchBridgeTransactions, unlinkBridgeTransaction } = useBridgeMatchingApi();
   const { show } = useConfirmStore();
+  const { showErrorMessage } = useNotifications();
   const { getChainName } = useSupportedChains();
 
   const ignoreLoading = shallowRef<boolean>(false);
   const modelSelectedUnmatched = ref<string[]>([]);
   const modelSelectedIgnored = ref<string[]>([]);
 
+  /**
+   * A row that just left the list must not stay selected, otherwise the "ignore selected"
+   * count keeps counting a transaction that is no longer actionable.
+   */
+  function deselect(groupIdentifier: string): void {
+    set(modelSelectedUnmatched, get(modelSelectedUnmatched).filter(id => id !== groupIdentifier));
+    set(modelSelectedIgnored, get(modelSelectedIgnored).filter(id => id !== groupIdentifier));
+  }
+
+  function notifyActionFailure(logMessage: string, error: unknown): void {
+    logger.error(logMessage, error);
+    showErrorMessage(
+      t('actions.bridge_matching.error.title'),
+      t('actions.bridge_matching.error.description', { error: getErrorMessage(error) }),
+    );
+  }
+
   function getTransactionIdentifier(transaction: UnmatchedBridgeTransaction): number {
-    return getEventEntryFromCollection(transaction.events).entry.identifier;
+    return transaction.identifier ?? getEventEntryFromCollection(transaction.events).entry.identifier;
   }
 
   function formatChain(chain: string | number | undefined): string | undefined {
@@ -57,8 +77,12 @@ export function useBridgeTransactionActions(
     set(ignoreLoading, true);
     try {
       await matchBridgeTransactions(getTransactionIdentifier(transaction));
+      deselect(transaction.groupIdentifier);
       await refreshUnmatchedBridgeTransactions();
       await onActionComplete?.();
+    }
+    catch (error: unknown) {
+      notifyActionFailure('Failed to ignore bridge transaction:', error);
     }
     finally {
       set(ignoreLoading, false);
@@ -69,8 +93,12 @@ export function useBridgeTransactionActions(
     set(ignoreLoading, true);
     try {
       await unlinkBridgeTransaction(getTransactionIdentifier(transaction));
+      deselect(transaction.groupIdentifier);
       await refreshUnmatchedBridgeTransactions();
       await onActionComplete?.();
+    }
+    catch (error: unknown) {
+      notifyActionFailure('Failed to restore bridge transaction:', error);
     }
     finally {
       set(ignoreLoading, false);
@@ -82,6 +110,7 @@ export function useBridgeTransactionActions(
     try {
       const result = await resolveExternal(getTransactionIdentifier(transaction));
       if (result.success) {
+        deselect(transaction.groupIdentifier);
         await refreshUnmatchedBridgeTransactions();
         await onActionComplete?.();
       }
@@ -137,6 +166,9 @@ export function useBridgeTransactionActions(
       await refreshUnmatchedBridgeTransactions();
       set(modelSelectedUnmatched, []);
     }
+    catch (error: unknown) {
+      notifyActionFailure('Failed to ignore the selected bridge transactions:', error);
+    }
     finally {
       set(ignoreLoading, false);
     }
@@ -151,6 +183,9 @@ export function useBridgeTransactionActions(
 
       await refreshUnmatchedBridgeTransactions();
       set(modelSelectedIgnored, []);
+    }
+    catch (error: unknown) {
+      notifyActionFailure('Failed to restore the selected bridge transactions:', error);
     }
     finally {
       set(ignoreLoading, false);
