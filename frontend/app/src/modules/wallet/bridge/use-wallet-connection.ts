@@ -24,7 +24,7 @@ export function useWalletConnection(): UseWalletConnectionReturn {
   const connectedAddress = ref<string>();
   const connectedChainId = ref<number>();
   const connectionError = ref<string>();
-  const isConnecting = ref<boolean>(false);
+  const isConnecting = shallowRef<boolean>(false);
 
   // Provider management
   let currentProvider: EIP1193Provider | undefined;

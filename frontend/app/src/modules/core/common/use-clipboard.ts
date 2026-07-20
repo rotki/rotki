@@ -6,7 +6,7 @@ interface UseCopyReturn {
 }
 
 export function useCopy(source: MaybeRefOrGetter<string>): UseCopyReturn {
-  const copied = ref<boolean>(false);
+  const copied = shallowRef<boolean>(false);
 
   const { copy: copyText } = useClipboard({
     source,

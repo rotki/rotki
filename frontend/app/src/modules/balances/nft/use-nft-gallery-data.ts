@@ -22,12 +22,12 @@ interface UseNftGalleryDataReturn {
 export function useNftGalleryData(): UseNftGalleryDataReturn {
   // State
   const prices = ref<Record<string, NftPrice>>({});
-  const priceError = ref<string>('');
-  const total = ref<number>(0);
-  const limit = ref<number>(0);
-  const error = ref<string>('');
-  const loading = ref<boolean>(true);
-  const perAccount = ref<Nfts | null>(null);
+  const priceError = shallowRef<string>('');
+  const total = shallowRef<number>(0);
+  const limit = shallowRef<number>(0);
+  const error = shallowRef<string>('');
+  const loading = shallowRef<boolean>(true);
+  const perAccount = shallowRef<Nfts | null>(null);
 
   // API composables
   const { fetchNfts: nftFetch } = useNfts();

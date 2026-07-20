@@ -102,7 +102,7 @@ export function usePaginationFilters<
   const itemsPerPage = useItemsPerPage();
   const router = useRouter();
   const route = useRoute();
-  const userAction = ref<boolean>(false);
+  const userAction = shallowRef<boolean>(false);
   const internalSorting = ref<Sorting<TItem>>(markRaw(applySortingDefaults(options.defaultSortBy))) as Ref<Sorting<TItem>>;
   const internalPagination = ref<TablePaginationData>(applyPaginationDefaults(get(itemsPerPage)));
 

@@ -25,7 +25,7 @@ interface UseAssetStatisticsStateReturn {
 }
 
 export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefined>): UseAssetStatisticsStateReturn {
-  const useHistoricalAssetBalances = ref<boolean>(false);
+  const useHistoricalAssetBalances = shallowRef<boolean>(false);
 
   const enabled = useSetting('useHistoricalAssetBalances');
 

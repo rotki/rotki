@@ -13,8 +13,8 @@ interface UseWrappedDateRangeReturn {
 }
 
 export function useWrappedDateRange(): UseWrappedDateRangeReturn {
-  const end = ref<number>(0);
-  const start = ref<number>(0);
+  const end = shallowRef<number>(0);
+  const start = shallowRef<number>(0);
 
   const startModel = computed<number | undefined>({
     get() {

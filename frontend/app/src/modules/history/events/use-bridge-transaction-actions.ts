@@ -39,7 +39,7 @@ export function useBridgeTransactionActions(
   const { show } = useConfirmStore();
   const { getChainName } = useSupportedChains();
 
-  const ignoreLoading = ref<boolean>(false);
+  const ignoreLoading = shallowRef<boolean>(false);
   const selectedUnmatched = ref<string[]>([]);
   const selectedIgnored = ref<string[]>([]);
 

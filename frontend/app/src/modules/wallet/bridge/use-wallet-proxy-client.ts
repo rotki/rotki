@@ -25,11 +25,11 @@ interface WalletProxyClientComposable {
 
 export function useWalletProxyClient(): WalletProxyClientComposable {
   const ws = ref<WebSocket>();
-  const isConnected = ref<boolean>(false);
-  const isConnecting = ref<boolean>(false);
-  const intentionalDisconnect = ref<boolean>(false);
+  const isConnected = shallowRef<boolean>(false);
+  const isConnecting = shallowRef<boolean>(false);
+  const intentionalDisconnect = shallowRef<boolean>(false);
   const lastError = ref<string>();
-  const preventReconnect = ref<boolean>(false);
+  const preventReconnect = shallowRef<boolean>(false);
   const onTakeOverCallback = ref<() => void>();
 
   const { handleRequest } = useBridgeMessageHandlers(sendMessage);
