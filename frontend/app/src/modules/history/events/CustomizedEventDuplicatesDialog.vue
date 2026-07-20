@@ -6,6 +6,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import CustomizedEventDuplicatesList from '@/modules/history/events/CustomizedEventDuplicatesList.vue';
+import DuplicateRowActions from '@/modules/history/events/DuplicateRowActions.vue';
 import { type DuplicateRow, useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 
@@ -242,44 +243,13 @@ onBeforeMount(async () => {
             @show-in-history="showInHistoryEvents(autoFixGroupIds, DuplicateHandlingStatus.AUTO_FIX)"
           >
             <template #actions="{ row }">
-              <div class="flex items-center gap-2">
-                <RuiButton
-                  size="sm"
-                  color="primary"
-                  :loading="fixLoading"
-                  @click="confirmFixSingle(row.groupIdentifier)"
-                >
-                  <template #prepend>
-                    <RuiIcon
-                      size="16"
-                      name="lu-wand-sparkles"
-                    />
-                  </template>
-                  {{ t('customized_event_duplicates.actions.fix') }}
-                </RuiButton>
-                <RuiTooltip
-                  :open-delay="400"
-                  :popper="{ placement: 'top' }"
-                >
-                  <template #activator>
-                    <RuiButton
-                      size="sm"
-                      variant="outlined"
-                      :loading="ignoreLoading"
-                      @click="confirmIgnoreSingle(row.groupIdentifier)"
-                    >
-                      <template #prepend>
-                        <RuiIcon
-                          size="16"
-                          name="lu-eye-off"
-                        />
-                      </template>
-                      {{ t('customized_event_duplicates.actions.mark_non_duplicated') }}
-                    </RuiButton>
-                  </template>
-                  {{ t('customized_event_duplicates.actions.mark_non_duplicated_tooltip') }}
-                </RuiTooltip>
-              </div>
+              <DuplicateRowActions
+                mode="auto-fix"
+                :fix-loading="fixLoading"
+                :ignore-loading="ignoreLoading"
+                @fix="confirmFixSingle(row.groupIdentifier)"
+                @ignore="confirmIgnoreSingle(row.groupIdentifier)"
+              />
             </template>
           </CustomizedEventDuplicatesList>
         </RuiTabItem>
@@ -293,30 +263,11 @@ onBeforeMount(async () => {
             @show-in-history="showInHistoryEvents(manualReviewGroupIds, DuplicateHandlingStatus.MANUAL_REVIEW)"
           >
             <template #actions="{ row }">
-              <div class="flex items-center gap-2">
-                <RuiTooltip
-                  :open-delay="400"
-                  :popper="{ placement: 'top' }"
-                >
-                  <template #activator>
-                    <RuiButton
-                      size="sm"
-                      variant="outlined"
-                      :loading="ignoreLoading"
-                      @click="confirmIgnoreSingle(row.groupIdentifier)"
-                    >
-                      <template #prepend>
-                        <RuiIcon
-                          size="16"
-                          name="lu-eye-off"
-                        />
-                      </template>
-                      {{ t('customized_event_duplicates.actions.mark_non_duplicated') }}
-                    </RuiButton>
-                  </template>
-                  {{ t('customized_event_duplicates.actions.mark_non_duplicated_tooltip') }}
-                </RuiTooltip>
-              </div>
+              <DuplicateRowActions
+                mode="manual-review"
+                :ignore-loading="ignoreLoading"
+                @ignore="confirmIgnoreSingle(row.groupIdentifier)"
+              />
             </template>
           </CustomizedEventDuplicatesList>
         </RuiTabItem>
@@ -330,30 +281,11 @@ onBeforeMount(async () => {
             @show-in-history="showInHistoryEvents(ignoredGroupIds, DuplicateHandlingStatus.IGNORED)"
           >
             <template #actions="{ row }">
-              <div class="flex items-center gap-2">
-                <RuiTooltip
-                  :open-delay="400"
-                  :popper="{ placement: 'top' }"
-                >
-                  <template #activator>
-                    <RuiButton
-                      size="sm"
-                      color="primary"
-                      :loading="ignoreLoading"
-                      @click="confirmRestoreSingle(row.groupIdentifier)"
-                    >
-                      <template #prepend>
-                        <RuiIcon
-                          size="16"
-                          name="lu-rotate-ccw"
-                        />
-                      </template>
-                      {{ t('customized_event_duplicates.actions.restore') }}
-                    </RuiButton>
-                  </template>
-                  {{ t('customized_event_duplicates.actions.restore_tooltip') }}
-                </RuiTooltip>
-              </div>
+              <DuplicateRowActions
+                mode="ignored"
+                :ignore-loading="ignoreLoading"
+                @restore="confirmRestoreSingle(row.groupIdentifier)"
+              />
             </template>
           </CustomizedEventDuplicatesList>
         </RuiTabItem>
