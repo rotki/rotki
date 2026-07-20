@@ -30,30 +30,32 @@ interface UseLoginRememberOptionsReturn {
 export function useLoginRememberOptions(options: UseLoginRememberOptionsOptions): UseLoginRememberOptionsReturn {
   const { isDocker } = options;
 
-  const rememberUsername = ref<boolean>(false);
-  const rememberPassword = ref<boolean>(false);
+  // `model` prefix marks these as intentionally writable: they are bound with v-model in
+  // the template, so wrapping them in readonly() would break the binding.
+  const modelRememberUsername = shallowRef<boolean>(false);
+  const modelRememberPassword = shallowRef<boolean>(false);
 
   const { savedRememberPassword, savedRememberUsername, savedUsername } = useRememberSettings();
   const { clearPassword, isPackaged, storePassword } = useInterop();
 
   function checkRememberUsername(): void {
-    set(rememberUsername, !!get(savedRememberUsername) || !!get(savedRememberPassword) || !toValue(isDocker));
+    set(modelRememberUsername, !!get(savedRememberUsername) || !!get(savedRememberPassword) || !toValue(isDocker));
   }
 
   function loadRememberSettings(): void {
-    set(rememberPassword, !!get(savedRememberPassword));
+    set(modelRememberPassword, !!get(savedRememberPassword));
     checkRememberUsername();
   }
 
   async function rememberCredentials(username: string, password: string): Promise<void> {
-    if (get(rememberUsername))
+    if (get(modelRememberUsername))
       set(savedUsername, username);
 
-    if (get(rememberPassword) && isPackaged)
+    if (get(modelRememberPassword) && isPackaged)
       await storePassword(username, password);
   }
 
-  watch(rememberUsername, (remember: boolean, previous: boolean) => {
+  watch(modelRememberUsername, (remember: boolean, previous: boolean) => {
     if (remember === previous)
       return;
 
@@ -66,7 +68,7 @@ export function useLoginRememberOptions(options: UseLoginRememberOptionsOptions)
     }
   });
 
-  watch(rememberPassword, async (remember: boolean, previous: boolean) => {
+  watch(modelRememberPassword, async (remember: boolean, previous: boolean) => {
     if (remember === previous)
       return;
 
@@ -84,8 +86,8 @@ export function useLoginRememberOptions(options: UseLoginRememberOptionsOptions)
 
   return {
     loadRememberSettings,
-    modelRememberPassword: rememberPassword,
-    modelRememberUsername: rememberUsername,
+    modelRememberPassword,
+    modelRememberUsername,
     rememberCredentials,
     storedUsername: readonly(savedUsername),
   };

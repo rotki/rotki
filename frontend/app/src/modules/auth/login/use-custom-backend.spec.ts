@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { useCustomBackend } from './use-custom-backend';
 
 const { deleteBackendUrl, getBackendUrl, saveBackendUrl } = vi.hoisted(() => ({
@@ -14,12 +14,12 @@ vi.mock('@/modules/auth/account-management', () => ({
 }));
 
 describe('modules/auth/login/useCustomBackend', () => {
-  let onChange: ReturnType<typeof vi.fn>;
+  let onChange: Mock<(url: string | null) => void>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     getBackendUrl.mockReturnValue({ sessionOnly: false, url: '' });
-    onChange = vi.fn();
+    onChange = vi.fn<(url: string | null) => void>();
   });
 
   it('should start collapsed with no override', () => {
