@@ -172,10 +172,10 @@ from rotkehlchen.premium.premium import (
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.tasks.bridges import (
     ENTRY_TYPES_TO_EXCLUDE_FROM_BRIDGE_MATCHING,
-    MATCHED_BRIDGE_KEY,
     find_bridge_transaction_matches,
     get_unmatched_bridge_events,
     process_bridge_transactions,
+    resolve_bridge_event_external,
     update_bridge_matched_event,
 )
 from rotkehlchen.tasks.events import (
@@ -4588,12 +4588,16 @@ class RestAPI:
             matched_event_identifiers: list[int],
             external: bool,
     ) -> Response:
-        """Match a bridge deposit to destination chain event(s), resolve it as a payment to
-        an external (untracked) address, or mark it as having no match.
+        """Match a bridge leg to its counterpart event(s), resolve it as involving an
+        external (untracked) counterpart, or mark it as having no match.
+
+        Resolving as external turns a deposit into a payment to an untracked address
+        and a withdrawal into income from an untracked source, keeping a record that
+        the event was a bridge leg resolved as external.
         """
         events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
         if len(matched_event_identifiers) == 0:
-            if external:  # user confirmed the destination is not tracked: it is a payment
+            if external:  # user confirmed the counterpart is not tracked
                 bridge_event = None
                 with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                     events = events_db.get_history_events_internal(
@@ -4609,16 +4613,12 @@ class RestAPI:
                         message=f'No event found in the DB for identifier {bridge_event_identifier}',  # noqa: E501
                     ), HTTPStatus.BAD_REQUEST)
 
-                if bridge_event.extra_data is None:
-                    bridge_event.extra_data = {}
-                bridge_event.extra_data[MATCHED_BRIDGE_KEY] = {'resolution': 'external'}
-                with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
-                    events_db.edit_history_event(
-                        write_cursor=write_cursor,
-                        event=bridge_event,
-                        mapping_state=HistoryMappingState.MATCHED,
-                        save_backup=True,
-                    )
+                if not resolve_bridge_event_external(events_db=events_db, event=bridge_event):
+                    return api_response(wrap_in_fail_result(
+                        message=f'Event with identifier {bridge_event_identifier} is not a bridge deposit or withdrawal',  # noqa: E501
+                    ), HTTPStatus.BAD_REQUEST)
+
+                return api_response(OK_RESULT)
 
             with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
                 write_cursor.execute(
@@ -4754,7 +4754,7 @@ class RestAPI:
                         'side of any matched bridge transaction in the DB.'
                     )), HTTPStatus.BAD_REQUEST)
 
-                # restore a possible external-payment resolution stamp
+                # restore the original bridge event if it was resolved as external
                 DBHistoryEvents.maybe_restore_history_events_from_backup(
                     write_cursor=write_cursor,
                     identifiers=[identifier],

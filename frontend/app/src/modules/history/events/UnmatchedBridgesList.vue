@@ -344,7 +344,6 @@ function getRowClass(row: UnmatchedBridgeRow): string {
                 {{ t('bridge_matching.dialog.ignore_tooltip') }}
               </RuiTooltip>
               <RuiTooltip
-                v-if="row.direction === 'deposit'"
                 :open-delay="400"
                 :popper="{ placement: 'top' }"
               >
@@ -360,7 +359,11 @@ function getRowClass(row: UnmatchedBridgeRow): string {
                     {{ t('bridge_matching.dialog.mark_external') }}
                   </RuiButton>
                 </template>
-                {{ t('bridge_matching.dialog.mark_external_tooltip') }}
+                {{
+                  row.direction === 'deposit'
+                    ? t('bridge_matching.dialog.mark_external_tooltip')
+                    : t('bridge_matching.dialog.mark_external_in_tooltip')
+                }}
               </RuiTooltip>
             </div>
           </div>

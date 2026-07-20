@@ -146,6 +146,30 @@ describe('use-unmatched-bridge-transactions', () => {
         groupIdentifier: 'group-a',
       });
     });
+
+    it('should derive the direction of an external-resolved leg from the matched bridge stamp', async () => {
+      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce(['group-b']);
+      spies.fetchHistoryEvents.mockResolvedValueOnce({
+        entries: [{
+          entry: {
+            asset: 'ETH',
+            eventType: 'receive',
+            extraData: { matchedBridge: { direction: 'withdrawal', resolution: 'external' } },
+            groupIdentifier: 'group-b',
+          },
+        }],
+      });
+      const { useUnmatchedBridgeTransactions } = await importFresh();
+      const { fetchUnmatchedBridgeTransactions, ignoredTransactions } = useUnmatchedBridgeTransactions();
+
+      await fetchUnmatchedBridgeTransactions(true);
+
+      expect(get(ignoredTransactions)).toHaveLength(1);
+      expect(get(ignoredTransactions)[0]).toMatchObject({
+        direction: 'withdrawal',
+        groupIdentifier: 'group-b',
+      });
+    });
   });
 
   describe('matchBridgeTransaction', () => {
@@ -253,6 +277,24 @@ describe('use-unmatched-bridge-transactions', () => {
       expect(getBridgeExtraData(null)).toBeUndefined();
       expect(getBridgeExtraData({ bridge: 'nope' })).toBeUndefined();
       expect(getBridgeExtraData({})).toBeUndefined();
+    });
+  });
+
+  describe('getResolvedBridgeDirection', () => {
+    it('should parse the original direction from the matched bridge stamp', async () => {
+      const { getResolvedBridgeDirection } = await importFresh();
+
+      expect(getResolvedBridgeDirection({ matchedBridge: { direction: 'deposit', resolution: 'external' } })).toBe('deposit');
+      expect(getResolvedBridgeDirection({ matchedBridge: { direction: 'withdrawal', resolution: 'external' } })).toBe('withdrawal');
+    });
+
+    it('should return undefined without a valid direction stamp', async () => {
+      const { getResolvedBridgeDirection } = await importFresh();
+
+      expect(getResolvedBridgeDirection(null)).toBeUndefined();
+      expect(getResolvedBridgeDirection({})).toBeUndefined();
+      expect(getResolvedBridgeDirection({ matchedBridge: {} })).toBeUndefined();
+      expect(getResolvedBridgeDirection({ matchedBridge: { direction: 'sideways' } })).toBeUndefined();
     });
   });
 });

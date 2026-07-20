@@ -91,22 +91,39 @@ export function useBridgeTransactionActions(
     }
   }
 
-  function confirmMarkExternal(transaction: UnmatchedBridgeTransaction): void {
-    const chain = formatChain(transaction.bridge?.toChain);
-    const address = transaction.bridge?.toAddress;
-
-    let message = t('bridge_matching.actions.mark_external_confirm');
+  function buildMarkExternalOutMessage(chain?: string, address?: string): string {
     if (chain && address)
-      message = t('bridge_matching.actions.mark_external_confirm_destination', { address, chain });
-    else if (address)
-      message = t('bridge_matching.actions.mark_external_confirm_address', { address });
-    else if (chain)
-      message = t('bridge_matching.actions.mark_external_confirm_chain', { chain });
+      return t('bridge_matching.actions.mark_external_confirm_destination', { address, chain });
+    if (address)
+      return t('bridge_matching.actions.mark_external_confirm_address', { address });
+    if (chain)
+      return t('bridge_matching.actions.mark_external_confirm_chain', { chain });
+    return t('bridge_matching.actions.mark_external_confirm');
+  }
+
+  function buildMarkExternalInMessage(chain?: string, address?: string): string {
+    if (chain && address)
+      return t('bridge_matching.actions.mark_external_in_confirm_source', { address, chain });
+    if (address)
+      return t('bridge_matching.actions.mark_external_in_confirm_address', { address });
+    if (chain)
+      return t('bridge_matching.actions.mark_external_in_confirm_chain', { chain });
+    return t('bridge_matching.actions.mark_external_in_confirm');
+  }
+
+  function confirmMarkExternal(transaction: UnmatchedBridgeTransaction): void {
+    const isDeposit = transaction.direction === 'deposit';
+    const chain = formatChain(isDeposit ? transaction.bridge?.toChain : transaction.bridge?.fromChain);
+    const address = isDeposit ? transaction.bridge?.toAddress : transaction.bridge?.fromAddress;
 
     show({
-      message,
+      message: isDeposit
+        ? buildMarkExternalOutMessage(chain, address)
+        : buildMarkExternalInMessage(chain, address),
       primaryAction: t('common.actions.confirm'),
-      title: t('bridge_matching.actions.mark_external'),
+      title: isDeposit
+        ? t('bridge_matching.actions.mark_external')
+        : t('bridge_matching.actions.mark_external_in'),
     }, async () => markExternal(transaction));
   }
 

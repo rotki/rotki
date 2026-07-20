@@ -145,6 +145,20 @@ describe('use-bridge-transaction-actions', () => {
       });
     });
 
+    it('should use the recorded source chain and address for a withdrawal confirmation', () => {
+      const transaction = createMockTransaction({
+        bridge: { fromAddress: '0xabc', fromChain: 'osmosis', toChain: 'ethereum' },
+        direction: 'withdrawal',
+      });
+      const { confirmMarkExternal } = useBridgeTransactionActions();
+
+      confirmMarkExternal(transaction);
+
+      expect(spies.showConfirm).toHaveBeenCalledOnce();
+      expect(spies.getChainName).toHaveBeenCalledWith('osmosis');
+      expect(spies.getChainName).not.toHaveBeenCalledWith('ethereum');
+    });
+
     it('should resolve the deposit as external when the user confirms', async () => {
       const transaction = createMockTransaction({ identifier: 21 });
       const { confirmMarkExternal } = useBridgeTransactionActions();

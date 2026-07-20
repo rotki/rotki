@@ -29,12 +29,30 @@ export type BridgeExtraData = z.infer<typeof BridgeExtraData>;
 
 const BridgeEventExtraData = z.object({
   bridge: BridgeExtraData.optional(),
+  matchedBridge: z.object({
+    direction: z.enum(['deposit', 'withdrawal']).optional(),
+  }).optional(),
 });
 
 /** Extracts the recorded bridge metadata from an event's raw extra data, if any. */
 export function getBridgeExtraData(extraData: unknown): BridgeExtraData | undefined {
   const parsed = BridgeEventExtraData.safeParse(extraData);
   return parsed.success ? parsed.data.bridge : undefined;
+}
+
+/**
+ * Extracts the original direction of a bridge leg that was resolved as external.
+ * The resolution turns the event into a plain spend/receive, so the direction
+ * can no longer be derived from the event type itself.
+ */
+export function getResolvedBridgeDirection(extraData: unknown): 'deposit' | 'withdrawal' | undefined {
+  const parsed = BridgeEventExtraData.safeParse(extraData);
+  return parsed.success ? parsed.data.matchedBridge?.direction : undefined;
+}
+
+/** The bridge leg direction, from the external-resolution stamp or the event type. */
+function deriveBridgeDirection(extraData: unknown, eventType?: string): 'deposit' | 'withdrawal' {
+  return getResolvedBridgeDirection(extraData) ?? (eventType === 'withdrawal' ? 'withdrawal' : 'deposit');
 }
 
 export interface UnmatchedBridgeTransaction extends UnmatchedEventGroup {
@@ -132,11 +150,12 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
           const eventRow = eventsForGroup[0];
           const events = arrayify(eventRow);
           const entry = events[0]?.entry;
+          const extraData = entry && 'extraData' in entry ? entry.extraData : undefined;
 
           transactions.push({
             asset: entry?.asset ?? '',
-            bridge: getBridgeExtraData(entry && 'extraData' in entry ? entry.extraData : undefined),
-            direction: entry?.eventType === 'withdrawal' ? 'withdrawal' : 'deposit',
+            bridge: getBridgeExtraData(extraData),
+            direction: deriveBridgeDirection(extraData, entry?.eventType),
             events: eventRow,
             groupIdentifier: groupId,
           });
