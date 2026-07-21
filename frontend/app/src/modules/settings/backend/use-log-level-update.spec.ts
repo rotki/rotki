@@ -1,4 +1,5 @@
-import type { LogLevel } from '@shared/log-level';
+import { LogLevel } from '@shared/log-level';
+import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLogLevelUpdate } from '@/modules/settings/backend/use-log-level-update';
 
@@ -40,7 +41,7 @@ describe('useLogLevelUpdate', () => {
 
   it('should propagate the level to backend, colibri, consola and the Electron LogService', async () => {
     const { applyLogLevelChange } = useLogLevelUpdate();
-    await applyLogLevelChange('warning' as LogLevel);
+    await applyLogLevelChange(LogLevel.WARNING);
 
     expect(updateBackendConfigurationMock).toHaveBeenCalledWith('warning');
     expect(updateColibriConfigurationMock).toHaveBeenCalledWith('warning');
@@ -58,20 +59,20 @@ describe('useLogLevelUpdate', () => {
     });
 
     const { applyLogLevelChange } = useLogLevelUpdate();
-    await applyLogLevelChange('debug' as LogLevel);
+    await applyLogLevelChange(LogLevel.DEBUG);
 
     expect(order).toStrictEqual(['backend', 'colibri']);
   });
 
   it('should skip the Electron LogService IPC when not running in a packaged build', async () => {
     const { useInterop } = await import('@/modules/shell/app/use-electron-interop');
-    vi.mocked(useInterop).mockReturnValueOnce({
+    vi.mocked(useInterop).mockReturnValueOnce(createMock<ReturnType<typeof useInterop>>({
       isPackaged: false,
       setLogLevel: setLogLevelMock,
-    } as unknown as ReturnType<typeof useInterop>);
+    }));
 
     const { applyLogLevelChange } = useLogLevelUpdate();
-    await applyLogLevelChange('info' as LogLevel);
+    await applyLogLevelChange(LogLevel.INFO);
 
     expect(setLevelMock).toHaveBeenCalledWith('info');
     expect(setLogLevelMock).not.toHaveBeenCalled();
