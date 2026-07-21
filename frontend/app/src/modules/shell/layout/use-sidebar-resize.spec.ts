@@ -1,24 +1,29 @@
 import { createTestingPinia } from '@pinia/testing';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { PINNED_DEFAULT_WIDTH } from '@/modules/shell/layout/sidebar-resize-constants';
 import { useSidebarResize } from '@/modules/shell/layout/use-sidebar-resize';
 
 interface MockTarget {
-  setPointerCapture: ReturnType<typeof vi.fn>;
-  releasePointerCapture: ReturnType<typeof vi.fn>;
+  setPointerCapture: Mock<(pointerId: number) => void>;
+  releasePointerCapture: Mock<(pointerId: number) => void>;
 }
 
 function createPointerEvent(overrides: { clientX?: number } = {}): { event: PointerEvent; mockTarget: MockTarget } {
   const mockTarget: MockTarget = {
-    setPointerCapture: vi.fn(),
-    releasePointerCapture: vi.fn(),
+    setPointerCapture: vi.fn<(pointerId: number) => void>(),
+    releasePointerCapture: vi.fn<(pointerId: number) => void>(),
   };
+  // Use a real element so the source's `instanceof HTMLElement` guard passes,
+  // while keeping the spies for assertions.
+  const target = document.createElement('div');
+  target.setPointerCapture = mockTarget.setPointerCapture;
+  target.releasePointerCapture = mockTarget.releasePointerCapture;
   const event = new PointerEvent('pointermove', {
     clientX: overrides.clientX ?? 0,
   });
-  // Override target and pointerId via spies since PointerEvent constructor doesn't support them
-  Object.defineProperty(event, 'target', { value: mockTarget });
+  // Override target and pointerId since the PointerEvent constructor doesn't support them
+  Object.defineProperty(event, 'target', { value: target });
   Object.defineProperty(event, 'pointerId', { value: 1 });
   vi.spyOn(event, 'preventDefault');
   return { event, mockTarget };
