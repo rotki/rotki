@@ -5,8 +5,8 @@ import { millisecondsToSeconds } from '@/modules/core/common/data/date';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import AboutDataDirectory from '@/modules/shell/components/AboutDataDirectory.vue';
 import AppUpdateIndicator from '@/modules/shell/components/AppUpdateIndicator.vue';
-import CopyButton from '@/modules/shell/components/CopyButton.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
@@ -128,52 +128,11 @@ const { copy } = useClipboard({ source: versionText });
               {{ t('about.data_directory') }}
             </td>
             <td>
-              <div class="flex items-center justify-between">
-                <RuiTooltip
-                  :popper="{ placement: 'top' }"
-                  :open-delay="400"
-                >
-                  <template #activator>
-                    <div class="truncate text-rui-text-secondary max-w-[280px]">
-                      {{ dataDirectory }}
-                    </div>
-                  </template>
-                  <span class="max-w-[280px]">
-                    {{ dataDirectory }}
-                  </span>
-                </RuiTooltip>
-                <div
-                  v-if="isPackaged"
-                  class="ml-2"
-                >
-                  <RuiTooltip
-                    :popper="{ placement: 'top' }"
-                    :open-delay="400"
-                  >
-                    <template #activator>
-                      <RuiButton
-                        icon
-                        size="sm"
-                        variant="text"
-                        @click="openPath(dataDirectory)"
-                      >
-                        <RuiIcon
-                          size="18"
-                          name="lu-folder-open"
-                        />
-                      </RuiButton>
-                    </template>
-                    <span>{{ t('about.open_data_dir_tooltip') }}</span>
-                  </RuiTooltip>
-                </div>
-                <div v-else>
-                  <CopyButton
-                    size="sm"
-                    :value="dataDirectory"
-                    :tooltip="t('about.copy_data_directory_tooltip')"
-                  />
-                </div>
-              </div>
+              <AboutDataDirectory
+                :data-directory="dataDirectory"
+                :is-packaged="isPackaged"
+                @open-path="openPath(dataDirectory)"
+              />
             </td>
           </tr>
           <tr>
