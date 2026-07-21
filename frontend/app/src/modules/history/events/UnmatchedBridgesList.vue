@@ -6,12 +6,12 @@ import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogConten
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
+import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';
 import UnmatchedRowActions, { type UnmatchedRowActionLabels } from '@/modules/history/events/UnmatchedRowActions.vue';
 import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass } from '@/modules/history/events/use-pinned-column-class';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
-import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 interface UnmatchedBridgeRow {
   groupIdentifier: string;
@@ -203,49 +203,12 @@ function actionLabels(row: UnmatchedBridgeRow): UnmatchedRowActionLabels {
         >
           <tr>
             <td :colspan="columns.length + 1">
-              <RuiAlert
-                type="warning"
-                size="sm"
-                class="whitespace-break-spaces !py-0.5 !rounded-none"
-              >
-                <i18n-t
-                  v-if="premium"
-                  scope="global"
-                  keypath="bridge_matching.premium.premium_tooltip"
-                >
-                  <template #tier>
-                    <strong>{{ matchMinimumTier }}</strong>
-                  </template>
-                  <template #currentTier>
-                    <strong>{{ currentTier }}</strong>
-                  </template>
-                  <template #link>
-                    <ExternalLink
-                      premium
-                      color="primary"
-                    >
-                      {{ t('asset_movement_matching.premium.link') }}
-                    </ExternalLink>
-                  </template>
-                </i18n-t>
-                <i18n-t
-                  v-else
-                  scope="global"
-                  keypath="bridge_matching.premium.free_tooltip"
-                >
-                  <template #tier>
-                    <strong>{{ matchMinimumTier }}</strong>
-                  </template>
-                  <template #link>
-                    <ExternalLink
-                      premium
-                      color="primary"
-                    >
-                      {{ t('asset_movement_matching.premium.link') }}
-                    </ExternalLink>
-                  </template>
-                </i18n-t>
-              </RuiAlert>
+              <UnmatchedMatchDisabledAlert
+                variant="bridge"
+                :premium="premium"
+                :current-tier="currentTier"
+                :match-minimum-tier="matchMinimumTier"
+              />
             </td>
           </tr>
         </template>
