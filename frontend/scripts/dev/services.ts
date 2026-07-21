@@ -3,14 +3,14 @@ import fs from 'node:fs';
 import { platform } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
-import consola from 'consola';
 import { buildCargoEnv, STRAWBERRY_MISSING_WARNING } from '../../app/shared/cargo-env';
 import { DEFAULT_PORTS, type InstanceRuntime } from '../dev-instance';
 import { formatPort } from '../dev-instance/format';
+import { createDevLogger } from './logger';
 import { getDebuggerPort, isUsingUvForPython, selectPort } from './prerequisites';
 import { startProcess } from './process-pool';
 
-const logger = consola.withTag('dev:services');
+const logger = createDevLogger('dev:services');
 
 const colors = {
   red: (msg: string) => `\u001B[31m${msg}\u001B[0m`,
@@ -20,7 +20,7 @@ const colors = {
 } as const;
 
 const PROXY = 'proxy';
-const ROTKI = 'rotki';
+const APP = 'app';
 const BACKEND = 'backend';
 const COLIBRI = 'colibri';
 
@@ -313,7 +313,7 @@ export function startDevServer(opts: DevServerOptions): void {
     : baseServeCmd;
 
   const env = { ...opts.backendEnv, ...opts.extraEnv };
-  const child = startProcess(`${serveCmd}${debuggerArgs}`, colors.magenta(ROTKI), ROTKI, [], {
+  const child = startProcess(`${serveCmd}${debuggerArgs}`, colors.magenta(APP), APP, [], {
     env: Object.keys(env).length > 0 ? env : undefined,
     // Electron mode only: this chain ends in an electron window, the one child
     // that can act on a polite close and quit cleanly (which is what lets starling

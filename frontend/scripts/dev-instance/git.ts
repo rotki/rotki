@@ -1,9 +1,8 @@
 import { execSync } from 'node:child_process';
-import consola from 'consola';
-
+import { createDevLogger } from '../dev/logger';
 import { errorMessage } from './format';
 
-const logger = consola.withTag('dev-instance:git');
+const logger = createDevLogger('dev-instance:git');
 
 export function getCurrentGitBranch(): string | undefined {
   try {

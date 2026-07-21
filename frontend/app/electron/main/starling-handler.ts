@@ -8,6 +8,7 @@ import readline from 'node:readline';
 import { selectPort } from '@electron/main/port-utils';
 import { resolveLogLevel } from '@electron/main/resolve-log-level';
 import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingInvocation } from '@electron/main/starling-args';
+import { forwardStarlingLine } from '@electron/main/starling-log';
 import { BackendCode, type BackendOptions } from '@shared/ipc';
 import { wait } from '@shared/utils';
 
@@ -216,7 +217,7 @@ export class StarlingHandler {
     // stderr carries starling's own logs and the inherited backend stderr, so
     // supervisor diagnostics land in the Electron log (gotcha 2).
     const errReader = readline.createInterface({ input: child.stderr });
-    errReader.on('line', line => this.logger.write(this.logger.getLogLevel(), `[starling] ${line}`));
+    errReader.on('line', line => forwardStarlingLine(this.logger, line));
 
     child.on('error', (error) => {
       this.logger.error('Failed to spawn starling', error);

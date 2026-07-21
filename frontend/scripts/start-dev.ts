@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import process from 'node:process';
 import { cac } from 'cac';
-import consola from 'consola';
 import { config } from 'dotenv';
 import {
   cleanAll,
@@ -19,6 +18,7 @@ import {
 } from './dev-instance';
 import { errorMessage, formatPort } from './dev-instance/format';
 import { getCurrentGitBranch } from './dev-instance/git';
+import { createDevLogger } from './dev/logger';
 import { ensurePrerequisites, parsePort, verifyBackendReady } from './dev/prerequisites';
 import { registerShutdownHandlers, terminateSubprocesses } from './dev/process-pool';
 import { startDevelopmentEnvironment, warmDevServices } from './dev/services';
@@ -26,7 +26,7 @@ import { startDevelopmentEnvironment, warmDevServices } from './dev/services';
 const ENV_FILE_RELATIVE = 'app/.env.development.local';
 const APP_ENV_RELATIVE = 'app/.env';
 
-const logger = consola.withTag('[36mdev[0m');
+const logger = createDevLogger('dev');
 
 interface DevCliOptions {
   web?: boolean;

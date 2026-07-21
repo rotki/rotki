@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import process from 'node:process';
-import consola from 'consola';
+import { createDevLogger } from '../dev/logger';
 import { loadEnvFile, MANAGED_ENV_KEYS, writeManagedEnv } from './env-file';
 import { formatHostPort, formatPort, humanBytes } from './format';
 import { estimateSeedSize, freeDiskBytes, seedInstance } from './fs-walk';
@@ -10,7 +10,7 @@ import { probePortsLive } from './port-probe';
 import { allocatePortSlot, type PortSet, portsForSlot } from './port-registry';
 import { type InstanceMeta, readMetadata, SIDECAR_VERSION, writeMetadata } from './sidecar';
 
-const logger = consola.withTag('dev-instance:instance');
+const logger = createDevLogger('dev-instance:instance');
 
 const SEED_BUFFER_RATIO = 1.1;
 

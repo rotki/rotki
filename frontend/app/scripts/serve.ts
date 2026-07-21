@@ -52,9 +52,7 @@ async function setupMainPackageWatcher({ config: { server } }: ViteDevServer, mo
   const urlPath = '/';
   process.env.VITE_DEV_SERVER_URL = `${protocol}//${host}:${port}${urlPath}`;
 
-  const logger = createLogger(LOG_LEVEL, {
-    prefix: '[main]',
-  });
+  const logger = createLogger(LOG_LEVEL);
 
   let spawnProcess: ChildProcessWithoutNullStreams | null = null;
 
@@ -79,7 +77,11 @@ async function setupMainPackageWatcher({ config: { server } }: ViteDevServer, mo
       spawnProcess = spawn(String(electron), args);
       childProcesses.push(spawnProcess);
 
-      spawnProcess.stdout.on('data', d => d.toString().trim() && logger.warn(d.toString(), { timestamp: true }));
+      spawnProcess.stdout.on('data', (d) => {
+        const data = d.toString().trim();
+        if (data)
+          logger.warn(data);
+      });
       spawnProcess.stderr.on('data', (d) => {
         const data = d.toString().trim();
         if (!data)
@@ -89,7 +91,7 @@ async function setupMainPackageWatcher({ config: { server } }: ViteDevServer, mo
         if (mayIgnore)
           return;
 
-        logger.error(data, { timestamp: true });
+        logger.error(data);
       });
 
       // Stops the watch script when the application has been quit

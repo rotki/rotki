@@ -1,10 +1,10 @@
 import { execSync } from 'node:child_process';
 import net from 'node:net';
 import process from 'node:process';
-import consola from 'consola';
 import { MAX_PORT } from '../dev-instance';
+import { createDevLogger } from './logger';
 
-const logger = consola.withTag('dev:prerequisites');
+const logger = createDevLogger('dev:prerequisites');
 
 let useUvForPython = false;
 
