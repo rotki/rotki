@@ -29,7 +29,8 @@ export function useSidebarResize(): {
   function onPointerDown(event: PointerEvent): void {
     event.preventDefault();
     set(dragging, true);
-    (event.target as HTMLElement).setPointerCapture(event.pointerId);
+    if (event.target instanceof HTMLElement)
+      event.target.setPointerCapture(event.pointerId);
     const body = defaultDocument?.body;
     if (body) {
       body.style.cursor = 'col-resize';
@@ -61,7 +62,8 @@ export function useSidebarResize(): {
     }
 
     set(dragging, false);
-    (event.target as HTMLElement).releasePointerCapture(event.pointerId);
+    if (event.target instanceof HTMLElement)
+      event.target.releasePointerCapture(event.pointerId);
     const body = defaultDocument?.body;
     if (body) {
       body.style.cursor = '';
