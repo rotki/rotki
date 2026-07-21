@@ -4628,7 +4628,7 @@ class RestAPI:
                 )
             return api_response(OK_RESULT)
 
-        deposit, matched_events = None, []
+        bridge_event, matched_events = None, []
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             for event in events_db.get_history_events_internal(
                 cursor=cursor,
@@ -4637,11 +4637,11 @@ class RestAPI:
                 ),
             ):
                 if event.identifier == bridge_event_identifier:
-                    deposit = event
+                    bridge_event = event
                 elif event.identifier in matched_event_identifiers:
                     matched_events.append(event)
 
-        if deposit is None:
+        if bridge_event is None:
             error_msg = f'No bridge event found in the DB for identifier {bridge_event_identifier}'
         elif len(matched_events) != len(matched_event_identifiers):
             error_msg = f'Some of the specified matched event identifiers {matched_event_identifiers} are missing from the DB.'  # noqa: E501
@@ -4649,7 +4649,7 @@ class RestAPI:
             for matched_event in matched_events:
                 update_bridge_matched_event(
                     events_db=events_db,
-                    deposit=deposit,
+                    bridge_event=bridge_event,
                     matched_event=matched_event,
                 )
             return api_response(OK_RESULT)
@@ -4663,10 +4663,11 @@ class RestAPI:
             only_expected_assets: bool,
             tolerance: FVal,
     ) -> Response:
-        """Get possible destination-leg matches for the bridge deposit in the given group,
-        within the given time range."""
+        """Get possible counterpart-leg matches for the bridge leg in the given group,
+        within the given time range. Anchors on the group's bridge deposit if there is
+        one, otherwise on its bridge withdrawal."""
         events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
-        deposit = None
+        bridge_event = None
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             for event in events_db.get_history_events_internal(
                 cursor=cursor,
@@ -4674,21 +4675,23 @@ class RestAPI:
                     group_identifiers=[bridge_group_identifier],
                     type_and_subtype_combinations=[
                         (HistoryEventType.DEPOSIT, HistoryEventSubType.BRIDGE),
+                        (HistoryEventType.WITHDRAWAL, HistoryEventSubType.BRIDGE),
                     ],
                 ),
             ):
-                deposit = event
-                break
+                bridge_event = event
+                if event.event_type == HistoryEventType.DEPOSIT:
+                    break  # prefer the deposit anchor if the group has both legs
 
-        if deposit is None:
+        if bridge_event is None:
             return api_response(wrap_in_fail_result(
-                message=f'No bridge deposit event found in the DB for group identifier {bridge_group_identifier}',  # noqa: E501
+                message=f'No bridge event found in the DB for group identifier {bridge_group_identifier}',  # noqa: E501
             ), HTTPStatus.BAD_REQUEST)
 
         assets_in_collection = GlobalDBHandler.get_assets_in_same_collection(
-            identifier=deposit.asset.identifier,
+            identifier=bridge_event.asset.identifier,
         )
-        deposit_timestamp = ts_ms_to_sec(deposit.timestamp)
+        bridge_event_timestamp = ts_ms_to_sec(bridge_event.timestamp)
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             already_matched_event_ids = get_already_matched_event_ids(
                 cursor=cursor,
@@ -4696,7 +4699,7 @@ class RestAPI:
             )
             close_match_identifiers = [x.identifier for x in find_bridge_transaction_matches(
                 events_db=events_db,
-                deposit=deposit,
+                bridge_event=bridge_event,
                 cursor=cursor,
                 assets_in_collection=assets_in_collection,
                 excluded_ids=already_matched_event_ids,
@@ -4706,10 +4709,10 @@ class RestAPI:
             other_events = events_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
-                    order_by_rules=[TimestampProximityOrder(anchor=deposit.timestamp)],
-                    from_ts=Timestamp(deposit_timestamp - time_range),
-                    to_ts=Timestamp(deposit_timestamp + time_range),
-                    ignored_ids=close_match_identifiers + [deposit.identifier],  # type: ignore[arg-type]  # ids from db will not be none
+                    order_by_rules=[TimestampProximityOrder(anchor=bridge_event.timestamp)],
+                    from_ts=Timestamp(bridge_event_timestamp - time_range),
+                    to_ts=Timestamp(bridge_event_timestamp + time_range),
+                    ignored_ids=close_match_identifiers + [bridge_event.identifier],  # type: ignore[arg-type]  # ids from db will not be none
                     assets=assets_in_collection if only_expected_assets else None,
                     entry_types=IncludeExcludeFilterData(
                         values=ENTRY_TYPES_TO_EXCLUDE_FROM_BRIDGE_MATCHING,
@@ -4723,7 +4726,7 @@ class RestAPI:
             'other_events': [
                 event.identifier for event in other_events
                 if (
-                    event.location != deposit.location and  # bridging is always cross-chain
+                    event.location != bridge_event.location and  # bridging is always cross-chain
                     event.identifier not in already_matched_event_ids
                 )
             ],

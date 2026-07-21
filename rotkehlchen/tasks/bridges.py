@@ -1,9 +1,11 @@
 """Matching of the two legs of cross-chain bridge transfers.
 
-The anchor of a match is always the source chain DEPOSIT/BRIDGE event. Its
-counterpart is the destination chain WITHDRAWAL/BRIDGE event, or a plain
-receive when the destination side is not decoded as a bridge (e.g. bridges
-without a decoder). Matching happens in tiers:
+For automatic matching the anchor is always the source chain DEPOSIT/BRIDGE
+event. Its counterpart is the destination chain WITHDRAWAL/BRIDGE event, or a
+plain receive when the destination side is not decoded as a bridge (e.g.
+bridges without a decoder). Manual matching via the API can also anchor on a
+destination chain WITHDRAWAL/BRIDGE event, searching backward in time for the
+source leg (a bridge deposit or a plain spend). Matching happens in tiers:
 
 1. Exact: same counterparty and same protocol transfer id in the structured
    ``extra_data['bridge']`` data written by the decoders.
@@ -187,46 +189,61 @@ def _events_conflict_on_bridge_data(
     )
 
 
+def _is_bridge_withdrawal(event: HistoryBaseEntry) -> bool:
+    """Check whether the event is a decoded destination-side bridge leg."""
+    return (
+        event.event_type == HistoryEventType.WITHDRAWAL and
+        event.event_subtype == HistoryEventSubType.BRIDGE
+    )
+
+
 def _bridge_candidate_tier(
-        deposit: HistoryBaseEntry,
+        bridge_event: HistoryBaseEntry,
         candidate: HistoryBaseEntry,
         tolerance: FVal,
         excluded_ids: set[int],
 ) -> str | None:
-    """Classify a candidate event for the given bridge deposit.
+    """Classify a candidate event for the given bridge leg (deposit or withdrawal).
 
-    Returns 'close' for destination bridge withdrawals, 'other' for plain
-    receives that could be an undecoded destination leg, or None if the
+    Returns 'close' for counterpart bridge legs, 'other' for plain
+    receives/spends that could be an undecoded counterpart leg, or None if the
     candidate cannot be the counterpart.
     """
+    anchor_is_withdrawal = _is_bridge_withdrawal(bridge_event)
+    deposit_side, withdrawal_side = (
+        (candidate, bridge_event) if anchor_is_withdrawal else (bridge_event, candidate)
+    )
     if (
         candidate.identifier in excluded_ids or
-        candidate.location == deposit.location or  # bridging is always cross-chain
+        candidate.location == bridge_event.location or  # bridging is always cross-chain
         not _match_amount(
-            movement_amount=deposit.amount,
+            movement_amount=bridge_event.amount,
             event_amount=candidate.amount,
             tolerance=tolerance,
         ) or
-        _events_conflict_on_bridge_data(deposit=deposit, candidate=candidate)
+        _events_conflict_on_bridge_data(deposit=deposit_side, candidate=withdrawal_side)
     ):
         return None
 
-    deposit_counterparty = getattr(deposit, 'counterparty', None)
+    anchor_counterparty = getattr(bridge_event, 'counterparty', None)
     candidate_counterparty = getattr(candidate, 'counterparty', None)
     if (
-        candidate.event_type == HistoryEventType.WITHDRAWAL and
-        candidate.event_subtype == HistoryEventSubType.BRIDGE
+        candidate.event_type == (
+            HistoryEventType.DEPOSIT if anchor_is_withdrawal else HistoryEventType.WITHDRAWAL
+        ) and candidate.event_subtype == HistoryEventSubType.BRIDGE
     ):
         if (
-            deposit_counterparty is not None and
+            anchor_counterparty is not None and
             candidate_counterparty is not None and
-            deposit_counterparty != candidate_counterparty
+            anchor_counterparty != candidate_counterparty
         ):
             return None  # different bridge protocols cannot be the two legs of one transfer
         return 'close'
 
     if (
-        candidate.event_type == HistoryEventType.RECEIVE and
+        candidate.event_type == (
+            HistoryEventType.SPEND if anchor_is_withdrawal else HistoryEventType.RECEIVE
+        ) and
         candidate.event_subtype == HistoryEventSubType.NONE and
         candidate_counterparty is None
     ):
@@ -236,31 +253,37 @@ def _bridge_candidate_tier(
 
 
 def _narrow_bridge_candidates(
-        deposit: HistoryBaseEntry,
+        bridge_event: HistoryBaseEntry,
         candidates: list[HistoryBaseEntry],
 ) -> list[HistoryBaseEntry]:
-    """Apply tie-breaking heuristics when multiple candidates match a deposit.
+    """Apply tie-breaking heuristics when multiple candidates match a bridge leg.
 
-    Prefers, in order: candidates whose recorded destination address matches,
-    exact amount matches, exact asset matches, and finally the closest in time
-    if it is strictly closer than the runner-up.
+    Prefers, in order: candidates agreeing on the recorded destination address
+    (held by the deposit-side event, whichever side that is), exact amount
+    matches, exact asset matches, and finally the closest in time if it is
+    strictly closer than the runner-up.
     """
     if len(candidates) <= 1:
         return candidates
 
-    deposit_data = get_event_bridge_data(deposit)
-    if (to_address := deposit_data.get('to_address')) is not None and len(
+    if _is_bridge_withdrawal(bridge_event):  # candidates are source legs carrying the address
+        if bridge_event.location_label is not None and len(address_matches := [
+            x for x in candidates
+            if get_event_bridge_data(x).get('to_address') == bridge_event.location_label
+        ]) > 0:
+            candidates = address_matches
+    elif (to_address := get_event_bridge_data(bridge_event).get('to_address')) is not None and len(
         address_matches := [x for x in candidates if x.location_label == to_address],
     ) > 0:
         candidates = address_matches
-    if len(amount_matches := [x for x in candidates if x.amount == deposit.amount]) > 0:
+    if len(amount_matches := [x for x in candidates if x.amount == bridge_event.amount]) > 0:
         candidates = amount_matches
-    if len(asset_matches := [x for x in candidates if x.asset == deposit.asset]) > 0:
+    if len(asset_matches := [x for x in candidates if x.asset == bridge_event.asset]) > 0:
         candidates = asset_matches
 
     if len(candidates) > 1:
-        candidates = sorted(candidates, key=lambda x: abs(x.timestamp - deposit.timestamp))
-        if abs(candidates[0].timestamp - deposit.timestamp) == abs(candidates[1].timestamp - deposit.timestamp):  # noqa: E501
+        candidates = sorted(candidates, key=lambda x: abs(x.timestamp - bridge_event.timestamp))
+        if abs(candidates[0].timestamp - bridge_event.timestamp) == abs(candidates[1].timestamp - bridge_event.timestamp):  # noqa: E501
             return candidates  # no unique closest candidate
 
         candidates = candidates[:1]
@@ -270,7 +293,7 @@ def _narrow_bridge_candidates(
 
 def find_bridge_transaction_matches(
         events_db: DBHistoryEvents,
-        deposit: HistoryBaseEntry,
+        bridge_event: HistoryBaseEntry,
         cursor: DBCursor,
         assets_in_collection: tuple[Asset, ...],
         excluded_ids: set[int],
@@ -278,14 +301,16 @@ def find_bridge_transaction_matches(
         match_window: int,
         preloaded_possible_matches: list[HistoryBaseEntry] | None = None,
 ) -> list[HistoryBaseEntry]:
-    """Find candidate destination events for the given bridge deposit.
+    """Find candidate counterpart events for the given bridge leg.
 
-    Returns close matches (destination bridge withdrawals) if any exist,
-    otherwise plain-receive candidates, after tie-breaking heuristics.
+    A deposit anchor searches for destination-side candidates and a withdrawal
+    anchor for source-side ones. Returns close matches (counterpart bridge
+    legs) if any exist, otherwise plain receive/spend candidates, after
+    tie-breaking heuristics.
     """
     if preloaded_possible_matches is None:
-        from_ts_ms, to_ts_ms = get_bridge_deposit_timestamp_range_ms(
-            deposit=deposit,
+        from_ts_ms, to_ts_ms = get_bridge_leg_timestamp_range_ms(
+            bridge_event=bridge_event,
             match_window=match_window,
         )
         possible_matches = events_db.get_history_events_internal(
@@ -302,7 +327,7 @@ def find_bridge_transaction_matches(
     other_matches: list[HistoryBaseEntry] = []
     for candidate in possible_matches:
         tier = _bridge_candidate_tier(
-            deposit=deposit,
+            bridge_event=bridge_event,
             candidate=candidate,
             tolerance=tolerance,
             excluded_ids=excluded_ids,
@@ -313,52 +338,77 @@ def find_bridge_transaction_matches(
             other_matches.append(candidate)
 
     return _narrow_bridge_candidates(
-        deposit=deposit,
+        bridge_event=bridge_event,
         candidates=close_matches if len(close_matches) > 0 else other_matches,
     )
 
 
-def get_bridge_deposit_timestamp_range_ms(
-        deposit: HistoryBaseEntry,
+def get_bridge_leg_timestamp_range_ms(
+        bridge_event: HistoryBaseEntry,
         match_window: int,
 ) -> tuple[TimestampMS, TimestampMS]:
-    """The destination leg comes after the deposit, modulo a small clock tolerance."""
+    """The destination leg comes after the deposit, modulo a small clock tolerance,
+    so a deposit anchor searches forward in time and a withdrawal anchor backward."""
+    window_ms = ts_sec_to_ms(Timestamp(match_window))
+    if _is_bridge_withdrawal(bridge_event):
+        return (
+            TimestampMS(bridge_event.timestamp - window_ms),
+            TimestampMS(bridge_event.timestamp + TIMESTAMP_TOLERANCE_MS),
+        )
     return (
-        TimestampMS(deposit.timestamp - TIMESTAMP_TOLERANCE_MS),
-        TimestampMS(deposit.timestamp + ts_sec_to_ms(Timestamp(match_window))),
+        TimestampMS(bridge_event.timestamp - TIMESTAMP_TOLERANCE_MS),
+        TimestampMS(bridge_event.timestamp + window_ms),
     )
 
 
 def update_bridge_matched_event(
         events_db: DBHistoryEvents,
-        deposit: HistoryBaseEntry,
+        bridge_event: HistoryBaseEntry,
         matched_event: HistoryBaseEntry,
 ) -> None:
-    """Persist a confirmed bridge match between the deposit and the matched event.
+    """Persist a confirmed bridge match between the given bridge leg and its counterpart.
 
-    Rewrites a plain receive into a proper bridge withdrawal, stamps both events
-    with the matched_bridge metadata (including the implied bridge fee) and links
-    them in the DB. Both edits keep backups so unlinking can restore them.
+    When the counterpart is not already decoded as the opposite bridge leg it is
+    rewritten into one: a deposit anchor turns its match (a plain receive) into
+    the destination withdrawal and a withdrawal anchor turns its match (a plain
+    spend) into the source deposit. Both events get stamped with the
+    matched_bridge metadata (including the implied bridge fee) and linked in the
+    DB. Both edits keep backups so unlinking can restore them.
     """
-    deposit_counterparty = getattr(deposit, 'counterparty', None)
+    anchor_counterparty = getattr(bridge_event, 'counterparty', None)
+    anchor_is_withdrawal = _is_bridge_withdrawal(bridge_event)
+    expected_type = (
+        HistoryEventType.DEPOSIT if anchor_is_withdrawal else HistoryEventType.WITHDRAWAL
+    )
     if not (
-        matched_event.event_type == HistoryEventType.WITHDRAWAL and
+        matched_event.event_type == expected_type and
         matched_event.event_subtype == HistoryEventSubType.BRIDGE
     ):
-        matched_event.event_type = HistoryEventType.WITHDRAWAL
+        matched_event.event_type = expected_type
         matched_event.event_subtype = HistoryEventSubType.BRIDGE
-        if isinstance(matched_event, OnchainEvent) and deposit_counterparty is not None:
-            matched_event.counterparty = deposit_counterparty
+        if isinstance(matched_event, OnchainEvent) and anchor_counterparty is not None:
+            matched_event.counterparty = anchor_counterparty
 
-        matched_event.notes = (
-            f'Receive {matched_event.amount} '
-            f'{matched_event.asset.resolve_to_asset_with_symbol().symbol} '
-            f'on {_location_chain_label(matched_event.location)} '
-            f'bridged from {_location_chain_label(deposit.location)}'
-        )
+        symbol = matched_event.asset.resolve_to_asset_with_symbol().symbol
+        if anchor_is_withdrawal:
+            matched_event.notes = (
+                f'Send {matched_event.amount} {symbol} '
+                f'from {_location_chain_label(matched_event.location)} '
+                f'bridged to {_location_chain_label(bridge_event.location)}'
+            )
+        else:
+            matched_event.notes = (
+                f'Receive {matched_event.amount} {symbol} '
+                f'on {_location_chain_label(matched_event.location)} '
+                f'bridged from {_location_chain_label(bridge_event.location)}'
+            )
 
-    fee_amount = deposit.amount - matched_event.amount
-    for event, other in ((deposit, matched_event), (matched_event, deposit)):
+    deposit, withdrawal = (
+        (matched_event, bridge_event) if anchor_is_withdrawal
+        else (bridge_event, matched_event)
+    )
+    fee_amount = deposit.amount - withdrawal.amount
+    for event, other in ((deposit, withdrawal), (withdrawal, deposit)):
         if event.extra_data is None:
             event.extra_data = {}
         matched_bridge_data = {
@@ -370,7 +420,7 @@ def update_bridge_matched_event(
         event.extra_data[MATCHED_BRIDGE_KEY] = matched_bridge_data
 
     with events_db.db.conn.write_ctx() as write_cursor:
-        for event in (deposit, matched_event):
+        for event in (deposit, withdrawal):
             events_db.edit_history_event(
                 write_cursor=write_cursor,
                 event=event,
@@ -381,16 +431,16 @@ def update_bridge_matched_event(
             'DELETE FROM history_event_link_ignores WHERE event_id IN (?, ?) AND link_type=?',
             (
                 deposit.identifier,
-                matched_event.identifier,
+                withdrawal.identifier,
                 HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(),
             ),
         )
-        write_cursor.execute(
+        write_cursor.execute(  # the source leg is always the left side of the link
             'INSERT OR REPLACE INTO history_event_links('
             'left_event_id, right_event_id, link_type) VALUES(?, ?, ?)',
             (
                 deposit.identifier,
-                matched_event.identifier,
+                withdrawal.identifier,
                 HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(),
             ),
         )
@@ -534,7 +584,7 @@ def match_bridge_transactions(
                 for deposit in pending_deposits:
                     matches = find_bridge_transaction_matches(
                         events_db=events_db,
-                        deposit=deposit,
+                        bridge_event=deposit,
                         cursor=cursor,
                         assets_in_collection=_get_deposit_assets_in_collection(
                             deposit=deposit,
@@ -561,7 +611,7 @@ def match_bridge_transactions(
         for deposit, matched_event in matched_pairs:
             update_bridge_matched_event(
                 events_db=events_db,
-                deposit=deposit,
+                bridge_event=deposit,
                 matched_event=matched_event,
             )
 
