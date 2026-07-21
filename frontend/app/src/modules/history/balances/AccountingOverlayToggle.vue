@@ -19,7 +19,9 @@ const options = computed<{ value: OverlayMode; label: string; icon: RuiIcons }[]
         v-model="modelValue"
         variant="outlined"
         color="primary"
+        active-color="primary"
         size="sm"
+        required
         data-testid="accounting-overlay-mode"
       >
         <RuiButton
