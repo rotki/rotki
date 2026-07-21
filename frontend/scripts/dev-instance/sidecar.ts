@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import consola from 'consola';
 import { z } from 'zod/v4';
+import { createDevLogger } from '../dev/logger';
 import { errorMessage } from './format';
 import { atomicWriteJson } from './port-registry';
 
@@ -9,7 +9,7 @@ const SIDECAR_FILENAME = '.rotki-instance.json';
 
 export const SIDECAR_VERSION = 1;
 
-const logger = consola.withTag('dev-instance:sidecar');
+const logger = createDevLogger('dev-instance:sidecar');
 
 const InstanceMetaSchema = z.object({
   version: z.number(),

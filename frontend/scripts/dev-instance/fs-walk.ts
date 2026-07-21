@@ -1,10 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import consola from 'consola';
-
+import { createDevLogger } from '../dev/logger';
 import { errorMessage } from './format';
 
-const logger = consola.withTag('dev-instance:fs-walk');
+const logger = createDevLogger('dev-instance:fs-walk');
 
 /**
  * Files we never carry over from a live rotki data dir: SQLite WAL/SHM

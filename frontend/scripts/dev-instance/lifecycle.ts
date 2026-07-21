@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { confirm, isCancel } from '@clack/prompts';
-import consola from 'consola';
+import { createDevLogger } from '../dev/logger';
 import { clearManagedEnvBlock, readManagedInstanceName } from './env-file';
 import { formatHostPort, formatTable, humanBytes } from './format';
 import { dirSizeBytes } from './fs-walk';
@@ -12,7 +12,7 @@ import { probePortsLive } from './port-probe';
 import { readPortIndex, releasePortSlot, writePortIndex } from './port-registry';
 import { type InstanceMeta, readMetadata } from './sidecar';
 
-const logger = consola.withTag('dev-instance:lifecycle');
+const logger = createDevLogger('dev-instance:lifecycle');
 
 export interface InstanceSummary {
   name: string;

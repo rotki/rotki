@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import consola from 'consola';
 import { z } from 'zod/v4';
+import { createDevLogger } from '../dev/logger';
 import { errorCode, errorMessage } from './format';
 import { ensureInstanceParent, resolveInstanceParent, sanitizeName } from './paths';
 
@@ -68,7 +68,7 @@ const PortIndexSchema = z.object({
 
 export type PortIndex = z.infer<typeof PortIndexSchema>;
 
-const logger = consola.withTag('dev-instance:port-registry');
+const logger = createDevLogger('dev-instance:port-registry');
 
 export function portsForSlot(slot: number): PortSet {
   if (slot === 0) {

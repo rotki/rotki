@@ -1,8 +1,8 @@
 import type { Buffer } from 'node:buffer';
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
 import process from 'node:process';
-import consola from 'consola';
 import { errorCode, errorMessage } from '../dev-instance/format';
+import { createDevLogger, formatDevLine } from './logger';
 
 const isWindows = process.platform === 'win32';
 
@@ -20,7 +20,7 @@ interface TrackedProcess {
 
 const SHUTDOWN_GRACE_MS = 5_000;
 
-const logger = consola.withTag('dev:process-pool');
+const logger = createDevLogger('dev:process-pool');
 const tracked: TrackedProcess[] = [];
 
 export interface SpawnOpts {
@@ -59,15 +59,19 @@ function shellQuoteArg(arg: string): string {
 }
 
 export function startProcess(cmd: string, tag: string, name: string, args: string[] = [], opts: SpawnOpts = {}): ChildProcess {
-  const childLogger = consola.withTag(tag);
-  const listeners: OutputListener = {
-    out: (buffer: Buffer): void => {
-      childLogger.log(buffer.toString().replace(/\n$/, ''));
-    },
-    err: (buffer: Buffer): void => {
-      childLogger.log(buffer.toString().replace(/\n$/, ''));
-    },
+  // Format each child line as `<label> <time> <line>` on the LEFT and write it
+  // straight through. consola's tagged reporter right-aligned the tag+timestamp
+  // to the terminal width, which misfired on multi-line chunks and on any line
+  // wider than the terminal (the badge wrapped in front of the next line). A plain
+  // left format is stable regardless of line length. Split per line so a chunk
+  // carrying several lines is formatted line-by-line.
+  const emit = (buffer: Buffer): void => {
+    for (const line of buffer.toString().split(/\r?\n/)) {
+      if (line.length > 0)
+        process.stdout.write(`${formatDevLine(tag, line)}\n`);
+    }
   };
+  const listeners: OutputListener = { out: emit, err: emit };
 
   const env: NodeJS.ProcessEnv = {
     FORCE_COLOR: '1',
