@@ -48,6 +48,7 @@ function describeNegativeBalance(issue: DataIssue): IssueDescription | undefined
     asset: issue.asset ?? undefined,
     eventIdentifier: payload.eventIdentifier,
     messageKey: msg.$t('data_issues.description.negative_balance'),
+    shortMessageKey: msg.$t('data_issues.description_short.negative_balance'),
   };
 }
 
@@ -68,6 +69,7 @@ function describeBalanceMismatch(issue: DataIssue): IssueDescription | undefined
       (option): number | undefined => getOr(option, undefined),
     ),
     messageKey: msg.$t('data_issues.description.current_balance_mismatch'),
+    shortMessageKey: msg.$t('data_issues.description_short.current_balance_mismatch'),
   };
 }
 
@@ -83,6 +85,9 @@ function describeUnmatchedBridge(issue: DataIssue): IssueDescription | undefined
     messageKey: payload.direction === 'deposit'
       ? msg.$t('data_issues.description.unmatched_bridge_deposit')
       : msg.$t('data_issues.description.unmatched_bridge_withdrawal'),
+    shortMessageKey: payload.direction === 'deposit'
+      ? msg.$t('data_issues.description_short.unmatched_bridge_deposit')
+      : msg.$t('data_issues.description_short.unmatched_bridge_withdrawal'),
   };
 }
 
@@ -94,7 +99,11 @@ const KIND_DESCRIBERS: Partial<Record<IssueKind, (issue: DataIssue) => IssueDesc
 
 export function describeIssue(issue: DataIssue): IssueDescription {
   const described = KIND_DESCRIBERS[issue.kind]?.(issue);
-  return described ?? { amounts: {}, messageKey: msg.$t('data_issues.description.unknown') };
+  return described ?? {
+    amounts: {},
+    messageKey: msg.$t('data_issues.description.unknown'),
+    shortMessageKey: msg.$t('data_issues.description_short.unknown'),
+  };
 }
 
 /**

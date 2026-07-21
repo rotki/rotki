@@ -31,8 +31,10 @@ export interface RemediationTimelineItem {
  * instead of embedding the raw asset identifier in the text.
  */
 export interface IssueDescription {
-  /** i18n keypath for the "what's wrong" sentence. */
+  /** i18n keypath for the full "what's wrong" sentence (detail drawer). */
   readonly messageKey: string;
+  /** i18n keypath for a condensed one-line variant used in the inbox card. */
+  readonly shortMessageKey: string;
   /** Numeric interpolation values, keyed by placeholder name, rendered with the
    * user's decimals setting (and a full-value tooltip) via `ValueDisplay`. */
   readonly amounts: Record<string, BigNumber>;
