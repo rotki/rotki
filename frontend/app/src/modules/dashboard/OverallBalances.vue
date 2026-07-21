@@ -142,13 +142,11 @@ onMounted(() => {
           class="pr-4"
           :value="percentage"
         />
-        <span>
-          (
+        <span class="whitespace-nowrap before:content-['('] after:content-[')']">
           <FiatDisplay
             v-if="!isLoading"
             :value="balanceDelta"
           />
-          )
         </span>
       </div>
     </div>
