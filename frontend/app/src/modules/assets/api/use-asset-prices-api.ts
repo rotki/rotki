@@ -18,7 +18,7 @@ import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITHOUT_SESSION_STATUS } from '@/modules/core/api/utils';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 
-interface UseAssetPriceApiReturn {
+interface UseAssetPricesApiReturn {
   fetchHistoricalPrices: (payload?: Partial<ManualPricePayload>) => Promise<HistoricalPrice[]>;
   addHistoricalPrice: (price: HistoricalPriceFormPayload) => Promise<boolean>;
   editHistoricalPrice: (price: HistoricalPriceFormPayload) => Promise<boolean>;
@@ -30,7 +30,7 @@ interface UseAssetPriceApiReturn {
   fetchNftsPrices: () => Promise<NftPriceArray>;
 }
 
-export function useAssetPricesApi(): UseAssetPriceApiReturn {
+export function useAssetPricesApi(): UseAssetPricesApiReturn {
   const fetchHistoricalPrices = async (payload?: Partial<ManualPricePayload>): Promise<HistoricalPrice[]> => {
     const response = await api.get<HistoricalPrice[]>('/assets/prices/historical', {
       filterEmptyProperties: { removeEmptyString: true },

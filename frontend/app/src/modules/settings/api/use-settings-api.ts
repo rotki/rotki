@@ -4,7 +4,7 @@ import { VALID_WITH_SESSION_STATUS } from '@/modules/core/api/utils';
 import { type SettingsUpdate, UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { BackendConfiguration, ColibriConfiguration } from '@/modules/shell/app/backend';
 
-interface UseSettingApiReturn {
+interface UseSettingsApiReturn {
   setSettings: (settings: SettingsUpdate) => Promise<UserSettingsModel>;
   getSettings: () => Promise<UserSettingsModel>;
   getRawSettings: () => Promise<SettingsUpdate>;
@@ -14,7 +14,7 @@ interface UseSettingApiReturn {
   updateColibriConfiguration: (loglevel: string) => Promise<ColibriConfiguration>;
 }
 
-export function useSettingsApi(): UseSettingApiReturn {
+export function useSettingsApi(): UseSettingsApiReturn {
   const setSettings = async (settings: SettingsUpdate): Promise<UserSettingsModel> => {
     const response = await api.put<UserSettingsModel>(
       '/settings',

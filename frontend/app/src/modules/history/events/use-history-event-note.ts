@@ -44,11 +44,11 @@ interface FormatNoteParams {
   extraData?: MaybeRefOrGetter<Record<string, any> | undefined>;
 }
 
-interface UseHistoryEventsNoteReturn {
+interface UseHistoryEventNoteReturn {
   formatNotes: (params: FormatNoteParams) => ComputedRef<NoteFormat[]>;
 }
 
-export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
+export function useHistoryEventNote(): UseHistoryEventNoteReturn {
   const { getAssetField } = useAssetInfoRetrieval();
   const { scrambleData, scrambleIdentifier } = useScramble();
 

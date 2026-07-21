@@ -1,12 +1,12 @@
 import type { ComputedRef } from 'vue';
 import { defaultDocument } from '@vueuse/core';
 
-interface UseScrollReturn {
+interface UseCoreScrollReturn {
   scrollToTop: () => void;
   shouldShowScrollToTopButton: ComputedRef<boolean>;
 }
 
-export function useCoreScroll(): UseScrollReturn {
+export function useCoreScroll(): UseCoreScrollReturn {
   const { y: scrollY } = useScroll(defaultDocument?.body);
 
   const shouldShowScrollToTopButton = computed<boolean>(() => get(scrollY) > 200);

@@ -41,14 +41,14 @@ export function getTimeRangeInDays(data: RepullingTransactionPayload): number {
   return Math.ceil((data.toTimestamp - data.fromTimestamp) / SECONDS_PER_DAY);
 }
 
-interface UseRepullingTransactionFormReturn {
+interface UseRepullingTransactionFormFnReturn {
   chainOptions: ComputedRef<string[]>;
   createDefaultFormData: () => RepullingTransactionPayload;
   getUsableChains: (chain: string | undefined) => string[];
   shouldShowConfirmation: (data: RepullingTransactionPayload) => boolean;
 }
 
-function useRepullingTransactionFormFn(): UseRepullingTransactionFormReturn {
+function useRepullingTransactionFormFn(): UseRepullingTransactionFormFnReturn {
   const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
   const { decodableTxChainsInfo, getChain } = useSupportedChains();
   const decodableTxChains = useArrayMap(decodableTxChainsInfo, x => x.id);

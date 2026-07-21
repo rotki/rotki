@@ -13,7 +13,7 @@ import { usePremium } from '@/modules/premium/use-premium';
 import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 import { useEth2Api } from '@/modules/staking/api/use-eth2-api';
 
-interface UseEthStakingReturn {
+interface UseEth2StakingReturn {
   performance: ComputedRef<EthStakingPerformance>;
   pagination: Ref<EthStakingPayload>;
   performanceLoading: Ref<boolean>;
@@ -21,7 +21,7 @@ interface UseEthStakingReturn {
   refreshPerformance: (userInitiated: boolean) => Promise<void>;
 }
 
-export function useEth2Staking(): UseEthStakingReturn {
+export function useEth2Staking(): UseEth2StakingReturn {
   const defaultPagination = (): EthStakingPayload => ({
     limit: 10,
     offset: 0,
