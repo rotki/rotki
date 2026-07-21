@@ -6,6 +6,7 @@ import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogConten
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
+import UnmatchedRowActions, { type UnmatchedRowActionLabels } from '@/modules/history/events/UnmatchedRowActions.vue';
 import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass } from '@/modules/history/events/use-pinned-column-class';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
@@ -141,6 +142,21 @@ function getRowClass(row: UnmatchedBridgeRow): string {
   }
   return classes.join(' ');
 }
+
+function actionLabels(row: UnmatchedBridgeRow): UnmatchedRowActionLabels {
+  return {
+    findMatch: t('asset_movement_matching.dialog.find_match'),
+    ignore: t('asset_movement_matching.dialog.ignore'),
+    ignoreTooltip: t('bridge_matching.dialog.ignore_tooltip'),
+    markExternal: t('bridge_matching.dialog.mark_external'),
+    markExternalTooltip: row.direction === 'deposit'
+      ? t('bridge_matching.dialog.mark_external_tooltip')
+      : t('bridge_matching.dialog.mark_external_in_tooltip'),
+    restore: t('asset_movement_matching.dialog.restore'),
+    restoreTooltip: t('bridge_matching.dialog.restore_tooltip'),
+    showInEventsTooltip: t('asset_movement_matching.dialog.show_in_events'),
+  };
+}
 </script>
 
 <template>
@@ -272,101 +288,19 @@ function getRowClass(row: UnmatchedBridgeRow): string {
           </div>
         </template>
         <template #item.actions="{ row }">
-          <div class="flex items-center gap-2">
-            <RuiTooltip
-              :open-delay="400"
-              :popper="{ placement: 'top' }"
-            >
-              <template #activator>
-                <RuiButton
-                  size="sm"
-                  variant="outlined"
-                  icon
-                  color="primary"
-                  class="!px-2 h-[30px]"
-                  @click="emit('show-in-events', row.original)"
-                >
-                  <RuiIcon
-                    size="16"
-                    name="lu-external-link"
-                  />
-                </RuiButton>
-              </template>
-              {{ t('asset_movement_matching.dialog.show_in_events') }}
-            </RuiTooltip>
-            <template v-if="showRestore">
-              <RuiTooltip
-                :open-delay="400"
-                :popper="{ placement: 'top' }"
-              >
-                <template #activator>
-                  <RuiButton
-                    size="sm"
-                    color="primary"
-                    :loading="ignoreLoading"
-                    @click="emit('restore', row.original)"
-                  >
-                    {{ t('asset_movement_matching.dialog.restore') }}
-                  </RuiButton>
-                </template>
-                {{ t('bridge_matching.dialog.restore_tooltip') }}
-              </RuiTooltip>
-            </template>
-            <div
-              v-else
-              class="flex"
-              :class="isPinned ? 'flex-wrap gap-1' : 'gap-2'"
-            >
-              <RuiButton
-                size="sm"
-                color="primary"
-                :class="{ '!py-0.5': isPinned }"
-                :disabled="matchDisabled"
-                @click="emit('select', row.original)"
-              >
-                {{ t('asset_movement_matching.dialog.find_match') }}
-              </RuiButton>
-              <RuiTooltip
-                :open-delay="400"
-                :popper="{ placement: 'top' }"
-              >
-                <template #activator>
-                  <RuiButton
-                    size="sm"
-                    variant="outlined"
-                    :class="{ '!py-0.5': isPinned }"
-                    :loading="ignoreLoading"
-                    @click="emit('ignore', row.original)"
-                  >
-                    {{ t('asset_movement_matching.dialog.ignore') }}
-                  </RuiButton>
-                </template>
-                {{ t('bridge_matching.dialog.ignore_tooltip') }}
-              </RuiTooltip>
-              <RuiTooltip
-                :open-delay="400"
-                :popper="{ placement: 'top' }"
-              >
-                <template #activator>
-                  <RuiButton
-                    size="sm"
-                    variant="outlined"
-                    color="warning"
-                    :class="{ '!py-0.5': isPinned }"
-                    :loading="ignoreLoading"
-                    @click="emit('mark-external', row.original)"
-                  >
-                    {{ t('bridge_matching.dialog.mark_external') }}
-                  </RuiButton>
-                </template>
-                {{
-                  row.direction === 'deposit'
-                    ? t('bridge_matching.dialog.mark_external_tooltip')
-                    : t('bridge_matching.dialog.mark_external_in_tooltip')
-                }}
-              </RuiTooltip>
-            </div>
-          </div>
+          <UnmatchedRowActions
+            :labels="actionLabels(row)"
+            :is-pinned="isPinned"
+            :show-restore="showRestore"
+            :ignore-loading="ignoreLoading"
+            :match-disabled="matchDisabled"
+            show-mark-external
+            @show-in-events="emit('show-in-events', row.original)"
+            @restore="emit('restore', row.original)"
+            @select="emit('select', row.original)"
+            @ignore="emit('ignore', row.original)"
+            @mark-external="emit('mark-external', row.original)"
+          />
         </template>
       </RuiDataTable>
     </ScrollableDialogContent>
