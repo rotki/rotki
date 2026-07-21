@@ -7,7 +7,7 @@ import { getFilename } from '@/modules/core/common/file/file';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 
-interface UseAssetApiReturn {
+interface UseAssetsApiReturn {
   checkForAssetUpdate: () => Promise<PendingTask>;
   performUpdate: (version: number, conflicts?: ConflictResolution) => Promise<PendingTask>;
   mergeAssets: (sourceIdentifier: string, targetAsset: string) => Promise<true>;
@@ -18,7 +18,7 @@ interface UseAssetApiReturn {
   fetchNfts: (ignoreCache: boolean) => Promise<PendingTask>;
 }
 
-export function useAssetsApi(): UseAssetApiReturn {
+export function useAssetsApi(): UseAssetsApiReturn {
   const checkForAssetUpdate = async (): Promise<PendingTask> => {
     const response = await api.get<PendingTask>('/assets/updates', {
       query: { asyncQuery: true },

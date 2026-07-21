@@ -8,12 +8,14 @@ import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useWalletStore } from './use-wallet-store';
 
-interface UseInjectedTradableAssetReturn {
+interface UseTradableAssetReturn {
   allOwnedAssets: ComputedRef<TradableAsset[]>;
   getAssetDetail: (asset: MaybeRefOrGetter<string>, chain: MaybeRefOrGetter<string>) => ComputedRef<TradableAsset | undefined>;
 }
 
-export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>): UseInjectedTradableAssetReturn {
+type UseInjectedTradableAssetReturn = UseTradableAssetReturn;
+
+export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>): UseTradableAssetReturn {
   const { balances } = storeToRefs(useBalancesStore());
   const { supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
   const { getAssetPrice } = usePriceUtils();
@@ -121,7 +123,7 @@ export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>):
   };
 }
 
-export const TradableAssetKey: InjectionKey<UseInjectedTradableAssetReturn> = Symbol('tradable-asset');
+export const TradableAssetKey: InjectionKey<UseTradableAssetReturn> = Symbol('tradable-asset');
 
 export function useInjectedTradableAsset(): UseInjectedTradableAssetReturn {
   const injected = inject(TradableAssetKey);

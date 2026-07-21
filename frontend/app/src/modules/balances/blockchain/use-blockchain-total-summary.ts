@@ -5,9 +5,9 @@ import { isEmpty } from 'es-toolkit/compat';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 
-interface UseBlockchainTotalsSummaryReturn { blockchainTotals: ComputedRef<BlockchainTotal[]> }
+interface UseBlockchainTotalSummaryReturn { blockchainTotals: ComputedRef<BlockchainTotal[]> }
 
-export function useBlockchainTotalSummary(): UseBlockchainTotalsSummaryReturn {
+export function useBlockchainTotalSummary(): UseBlockchainTotalSummaryReturn {
   const { balances } = storeToRefs(useBalancesStore());
 
   const blockchainTotals = computed<BlockchainTotal[]>(() => {

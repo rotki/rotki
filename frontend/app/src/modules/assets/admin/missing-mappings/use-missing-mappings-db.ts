@@ -18,14 +18,14 @@ export type AddMissingMapping = Omit<MissingMapping, 'id'>;
 
 type DeleteMissingMapping = Pick<MissingMapping, 'location' | 'identifier'>;
 
-interface UseMappingDBReturn {
+interface UseMissingMappingsDBReturn {
   put: (mapping: AddMissingMapping) => Promise<number>;
   remove: (mapping: DeleteMissingMapping) => Promise<void>;
   count: () => Promise<number>;
   getData: (payload: MaybeRef<PaginationRequestPayload<MissingMapping>>) => Promise<Collection<MissingMapping>>;
 }
 
-export function useMissingMappingsDB(): UseMappingDBReturn {
+export function useMissingMappingsDB(): UseMissingMappingsDBReturn {
   // This should not be destructured to avoid accessing it during the composable creation
   const { db } = useDatabase();
 

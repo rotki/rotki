@@ -16,7 +16,7 @@ enum Preference {
   EVENTS,
 }
 
-interface UseAssetStatisticsStateReturn {
+interface UseAssetStatisticStateReturn {
   getPreference: (asset: string) => Source | undefined;
   name: ComputedRef<string>;
   rememberStateForAsset: WritableComputedRef<boolean>;
@@ -24,7 +24,7 @@ interface UseAssetStatisticsStateReturn {
   modelUseHistoricalAssetBalances: Ref<boolean, boolean>;
 }
 
-export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefined>): UseAssetStatisticsStateReturn {
+export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefined>): UseAssetStatisticStateReturn {
   const modelUseHistoricalAssetBalances = shallowRef<boolean>(false);
 
   const enabled = useSetting('useHistoricalAssetBalances');

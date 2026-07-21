@@ -24,12 +24,12 @@ interface CSVRow { [key: string]: string }
 
 interface CSVImportRow { [key: string]: any }
 
-interface UseCSVImportExportReturn {
+interface UseCsvImportExportReturn {
   generateCSV: (data: Array<CSVImportRow>, params?: CSVExportParams) => string;
   parseCSV: (text: string, params?: CSVImportParams) => Array<CSVRow>;
 }
 
-export function useCsvImportExport(params: CSVImportExportParams = {}): UseCSVImportExportReturn {
+export function useCsvImportExport(params: CSVImportExportParams = {}): UseCsvImportExportReturn {
   const { columnDelimiter = ',', rowDelimiter = '\n' } = params;
 
   function parseCSV(text: string, params: CSVImportParams = {}): Array<CSVRow> {

@@ -18,7 +18,7 @@ import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-ta
 import { useAccountingApi } from '@/modules/settings/api/use-accounting-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
-interface UseAccountingSettingReturn {
+interface UseAccountingSettingsReturn {
   getAccountingRule: (payload: MaybeRef<AccountingRuleRequestPayload>, counterparty: string | null) => Promise<AccountingRuleEntry | undefined>;
   getAccountingRules: (payload: MaybeRef<AccountingRuleRequestPayload>) => Promise<Collection<AccountingRuleEntry>>;
   getAccountingRulesConflicts: (payload: MaybeRef<AccountingRuleConflictRequestPayload>) => Promise<Collection<AccountingRuleConflict>>;
@@ -28,7 +28,7 @@ interface UseAccountingSettingReturn {
   resetToDefaults: () => Promise<ActionStatus | null>;
 }
 
-export function useAccountingSettings(): UseAccountingSettingReturn {
+export function useAccountingSettings(): UseAccountingSettingsReturn {
   const {
     exportAccountingRules,
     fetchAccountingRule,
