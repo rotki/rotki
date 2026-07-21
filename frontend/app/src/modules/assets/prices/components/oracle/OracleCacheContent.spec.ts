@@ -1,4 +1,5 @@
 import type { OracleCacheMeta } from '@/modules/assets/prices/price-types';
+import { componentVm } from '@test/utils/component-vm';
 import { mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -89,7 +90,7 @@ describe('oracleCacheContent', () => {
     const wrapper = createWrapper();
     await flushPromises();
 
-    const vm = wrapper.vm as unknown as CacheContentVm;
+    const vm = componentVm<CacheContentVm>(wrapper);
     vm.newFromAsset = 'ETH';
     vm.newToAsset = 'USD';
     await vm.populateCache();
@@ -108,7 +109,7 @@ describe('oracleCacheContent', () => {
     await flushPromises();
     mockGetPriceCache.mockClear();
 
-    const vm = wrapper.vm as unknown as CacheContentVm;
+    const vm = componentVm<CacheContentVm>(wrapper);
     vm.newFromAsset = 'ETH';
     vm.newToAsset = 'USD';
     await vm.populateCache();
@@ -131,7 +132,7 @@ describe('oracleCacheContent', () => {
     const wrapper = createWrapper();
     await flushPromises();
 
-    const vm = wrapper.vm as unknown as CacheContentVm;
+    const vm = componentVm<CacheContentVm>(wrapper);
     await vm.clearCache(entries[0]);
 
     expect(mockDeletePriceCache).toHaveBeenCalledWith('cryptocompare', 'ETH', 'USD');
@@ -143,7 +144,7 @@ describe('oracleCacheContent', () => {
     const wrapper = createWrapper();
     await flushPromises();
 
-    const vm = wrapper.vm as unknown as CacheContentVm;
+    const vm = componentVm<CacheContentVm>(wrapper);
     await vm.clearCache({
       fromAsset: 'ETH',
       fromTimestamp: '1700000000',
@@ -167,7 +168,7 @@ describe('oracleCacheContent', () => {
     const wrapper = createWrapper();
     await flushPromises();
 
-    const vm = wrapper.vm as unknown as CacheContentVm;
+    const vm = componentVm<CacheContentVm>(wrapper);
     expect(vm.rows).toHaveLength(3);
 
     vm.filterFromAsset = 'ETH';
