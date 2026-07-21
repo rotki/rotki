@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 MOCK_MYSO_ZK_AIRDROP_INDEX = {
     'airdrops': {
         'myso': {
-            'file_path': 'airdrops/myso.parquet',
+            'file_path': 'airdrops/myso.csv.gz',
             'file_hash': 'b06cf1c89f1183bb22049d8625ba06fcabcaac2bbf1a106eaa107b9ddb91ff87',
             'asset_identifier': 'eip155:1/erc20:0x5fDe99e121F3aC02e7d6ACb081dB1f89c1e93C17',
             'url': 'https://app.myso.finance/airdrop',
@@ -68,7 +68,7 @@ MOCK_MYSO_ZK_AIRDROP_INDEX = {
             },
         },
         'zk': {
-            'file_path': 'airdrops/zk.parquet',
+            'file_path': 'airdrops/zk.csv.gz',
             'file_hash': '17c754bf5b051e322d2bb0a5034f4d541a5c2769ca42294d6b5c3632372debb7',
             'asset_identifier': 'eip155:324/erc20:0x5A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E',
             'url': 'https://claim.zknation.io/',
@@ -98,7 +98,7 @@ def get_airdrop_request_mock(user_address: ChecksumEvmAddress) -> Callable:
             url=url,
             mock_airdrop_index=MOCK_MYSO_ZK_AIRDROP_INDEX,
             mock_airdrop_data={
-                f'{AIRDROPS_REPO_BASE}/airdrops/myso.parquet': f'address,tokens\n{user_address},100.0\n',  # noqa: E501
+                f'{AIRDROPS_REPO_BASE}/airdrops/myso.csv.gz': f'address,tokens\n{user_address},100.0\n',  # noqa: E501
             },
         )
 
@@ -323,7 +323,7 @@ def test_airdrop_claim_calendar_reminders(
     user_address = ethereum_accounts[0]
     all_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
     assert all_calendar_entries['entries_total'] == 0
-    myso_airdrop_file = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME / 'myso.parquet'
+    myso_airdrop_file = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME / 'myso.csv.gz'
     myso_airdrop_file.unlink(missing_ok=True)
     assert myso_airdrop_file.exists() is False
     reminder_creator = CalendarReminderCreator(database=database, current_ts=ts_now())
