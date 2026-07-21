@@ -1,5 +1,6 @@
 import type { LogService } from '@electron/main/log-service';
 import process from 'node:process';
+import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { protectHtmlAssociation } from './html-mime-protection';
 
@@ -8,12 +9,7 @@ const { execFileSync } = vi.hoisted(() => ({ execFileSync: vi.fn() }));
 vi.mock('node:child_process', () => ({ default: { execFileSync }, execFileSync }));
 
 function createLogger(): LogService {
-  return {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-  } as unknown as LogService;
+  return createMock<LogService>();
 }
 
 /**

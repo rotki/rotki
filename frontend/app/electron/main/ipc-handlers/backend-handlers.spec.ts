@@ -1,9 +1,10 @@
 import type { LogService } from '@electron/main/log-service';
+import { createMock } from '@test/utils/create-mock';
 import { describe, expect, it, vi } from 'vitest';
 import { BackendHandlers } from './backend-handlers';
 
 function makeLogger(): LogService {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } as unknown as LogService;
+  return createMock<LogService>();
 }
 
 describe('backendHandlers', () => {
