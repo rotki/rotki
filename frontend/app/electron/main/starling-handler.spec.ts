@@ -3,6 +3,8 @@ import type { LogService } from '@electron/main/log-service';
 import { EventEmitter } from 'node:events';
 import { PassThrough, Writable } from 'node:stream';
 import { BackendCode } from '@shared/ipc';
+import { LogLevel } from '@shared/log-level';
+import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { StarlingHandler } from './starling-handler';
 
@@ -81,26 +83,21 @@ function emitReady(child: FakeChild): void {
 }
 
 function makeLogger(): LogService {
-  return {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-    write: vi.fn(),
-    getLogLevel: vi.fn(() => 0),
-    updateLogDirectory: vi.fn(),
+  return createMock<LogService>({
+    getLogLevel: vi.fn(() => LogLevel.INFO),
     get coreProcessLogPath(): string {
       return '/tmp/logs/rotkehlchen.log';
     },
-  } as unknown as LogService;
+  });
 }
 
 function makeConfig(): AppConfig {
   return {
     isDev: false,
+    isMac: false,
     ports: { corePort: 4242, colibriPort: 4343 },
     urls: { coreApiUrl: '', colibriApiUrl: '' },
-  } as unknown as AppConfig;
+  } satisfies AppConfig;
 }
 
 describe('starlingHandler', () => {
