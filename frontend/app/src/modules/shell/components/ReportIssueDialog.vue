@@ -5,6 +5,8 @@ import { useReportIssue } from '@/modules/core/common/use-report-issue';
 import { usePrivacyMode } from '@/modules/settings/use-privacy';
 import { useScrambleSetting } from '@/modules/settings/use-scramble-settings';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import ReportIssueDiscordTip from '@/modules/shell/components/ReportIssueDiscordTip.vue';
+import ReportIssueEmailButton from '@/modules/shell/components/ReportIssueEmailButton.vue';
 
 const { close, initialDescription: storeDescription, initialTitle: storeTitle, visible } = useReportIssue();
 
@@ -173,56 +175,13 @@ onMounted(() => {
               </template>
               {{ t('help_sidebar.report_issue.dialog.submit_options.google_form') }}
             </RuiButton>
-            <div class="flex">
-              <RuiButton
-                variant="outlined"
-                color="primary"
-                size="lg"
-                class="!rounded-r-none !border-r-0"
-                :disabled="!isFormValid"
-                @click="submitViaEmail()"
-              >
-                <template #prepend>
-                  <RuiIcon name="lu-mail" />
-                </template>
-                {{ t('help_sidebar.report_issue.dialog.submit_options.email') }}
-              </RuiButton>
-              <RuiMenu
-                :popper="{ placement: 'bottom-end' }"
-                close-on-content-click
-              >
-                <template #activator="{ attrs }">
-                  <RuiButton
-                    variant="outlined"
-                    color="primary"
-                    size="lg"
-                    class="!rounded-l-none !px-2 -ml-[1px]"
-                    v-bind="attrs"
-                  >
-                    <RuiIcon name="lu-chevron-down" />
-                  </RuiButton>
-                </template>
-                <RuiButton
-                  variant="list"
-                  @click="copyEmail()"
-                >
-                  <template #prepend>
-                    <RuiIcon name="lu-copy" />
-                  </template>
-                  {{ t('help_sidebar.report_issue.dialog.submit_options.copy_email', { email: SUPPORT_EMAIL }) }}
-                </RuiButton>
-                <RuiButton
-                  variant="list"
-                  :disabled="!isFormValid"
-                  @click="openGmail()"
-                >
-                  <template #prepend>
-                    <RuiIcon name="lu-mail" />
-                  </template>
-                  {{ t('help_sidebar.report_issue.dialog.submit_options.open_gmail') }}
-                </RuiButton>
-              </RuiMenu>
-            </div>
+            <ReportIssueEmailButton
+              :email="SUPPORT_EMAIL"
+              :is-form-valid="isFormValid"
+              @submit-email="submitViaEmail()"
+              @copy-email="copyEmail()"
+              @open-gmail="openGmail()"
+            />
           </div>
           <span class="text-xs text-rui-text-secondary flex items-center gap-1">
             <RuiIcon
@@ -244,36 +203,7 @@ onMounted(() => {
             {{ t('help_sidebar.report_issue.dialog.tips.title') }}
           </span>
 
-          <div :class="uiClasses.tipCard">
-            <RuiIcon
-              name="lu-discord"
-              :class="uiClasses.tipCardIcon"
-            />
-            <div class="flex flex-col gap-1">
-              <span class="text-sm">
-                {{ t('help_sidebar.report_issue.dialog.tips.discord.title') }}
-              </span>
-              <i18n-t
-                keypath="help_sidebar.report_issue.dialog.tips.discord.description"
-                tag="span"
-                class="text-xs text-rui-text-secondary"
-                scope="global"
-              >
-                <template #channel>
-                  <span class="font-mono">{{ t('help_sidebar.report_issue.dialog.tips.discord.channel') }}</span>
-                </template>
-              </i18n-t>
-              <RuiButton
-                variant="text"
-                color="primary"
-                size="sm"
-                class="self-start -ml-1.5 !py-0"
-                @click="openDiscord()"
-              >
-                {{ t('help_sidebar.report_issue.dialog.tips.discord.action') }}
-              </RuiButton>
-            </div>
-          </div>
+          <ReportIssueDiscordTip @open-discord="openDiscord()" />
 
           <div :class="uiClasses.tipCard">
             <RuiIcon
