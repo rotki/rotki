@@ -5,10 +5,15 @@ import type { IssueDescription } from '@/modules/history/data-issues/types';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 
-const { description, tag = 'span' } = defineProps<{
+const { description, tag = 'span', short = false } = defineProps<{
   description: IssueDescription;
   tag?: string;
+  short?: boolean;
 }>();
+
+// The inbox card uses a condensed one-liner; the detail drawer keeps the full
+// sentence. Both share the same interpolation slots below.
+const keypath = computed<string>(() => short ? description.shortMessageKey : description.messageKey);
 
 const { useAssetField } = useAssetInfoRetrieval();
 
@@ -37,7 +42,7 @@ function exact(amount: BigNumber): FormatOptions {
 
 <template>
   <i18n-t
-    :keypath="description.messageKey"
+    :keypath="keypath"
     :tag="tag"
     scope="global"
   >

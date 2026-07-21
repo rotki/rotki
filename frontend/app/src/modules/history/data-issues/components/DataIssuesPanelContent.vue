@@ -254,8 +254,8 @@ watchDebounced(panelFilters, () => {
 
 // Virtualise the loaded cards so only the visible window mounts (each card resolves an
 // asset icon/avatar and runs observers), and append the next page as the user nears the
-// end. Cards are a fixed height (the description reserves 3 lines), so the row height is
-// exact: 159px card + 8px gap.
+// end. Each card fills its row exactly (the card is `h-full` and distributes its rows
+// with flex), so the row height is fixed: 159px card + 8px gap.
 const ITEM_HEIGHT = 167;
 const { containerProps, list: visibleRows, wrapperProps } = useVirtualList(rows, {
   itemHeight: ITEM_HEIGHT,

@@ -50,18 +50,18 @@ useMutationObserver(descriptionRef, checkTruncation, { characterData: true, chil
 
 <template>
   <RuiCard
-    class="cursor-pointer transition-colors"
+    class="cursor-pointer transition-colors h-full"
     :class="active
       ? '!border-rui-primary ring-1 ring-rui-primary bg-rui-primary/5'
       : 'hover:bg-rui-grey-50 dark:hover:bg-rui-grey-900'"
     no-padding
-    content-class="overflow-hidden"
+    content-class="overflow-hidden h-full"
     data-testid="data-issues-panel-item"
     :data-active="active"
     @click="emit('open')"
   >
-    <div class="flex items-stretch">
-      <div class="flex flex-col gap-2 p-3 grow min-w-0">
+    <div class="flex items-stretch h-full">
+      <div class="flex flex-col gap-2 p-3 pb-4 grow min-w-0">
         <div class="flex items-center gap-2">
           <DataIssueKindChip :kind="issue.kind" />
           <DataIssueStateChip :state="issue.state" />
@@ -72,18 +72,22 @@ useMutationObserver(descriptionRef, checkTruncation, { characterData: true, chil
         </div>
 
         <RuiTooltip
+          class="w-full grow"
           :disabled="!descriptionTruncated"
           :open-delay="400"
         >
           <template #activator>
-            <div
-              ref="descriptionRef"
-              class="text-body-2 text-rui-text-secondary line-clamp-3 leading-relaxed h-[3lh]"
-            >
-              <DataIssueDescription
-                :description="description"
-                tag="span"
-              />
+            <div class="w-full h-full flex flex-col justify-center">
+              <div
+                ref="descriptionRef"
+                class="text-body-2 text-rui-text-secondary line-clamp-3 leading-relaxed min-w-0"
+              >
+                <DataIssueDescription
+                  :description="description"
+                  tag="span"
+                  short
+                />
+              </div>
             </div>
           </template>
           <div class="max-w-xs">

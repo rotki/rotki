@@ -50,6 +50,7 @@ describe('data-issues transforms', () => {
       const result = describeIssue(issue);
 
       expect(result.messageKey).toBe('data_issues.description.negative_balance');
+      expect(result.shortMessageKey).toBe('data_issues.description_short.negative_balance');
       expect(result.eventIdentifier).toBe(42);
       expect(result.asset).toBe('ETH');
       // amount keeps its sign; the i18n string no longer prepends a literal "-".
@@ -72,6 +73,7 @@ describe('data-issues transforms', () => {
       const result = describeIssue(issue);
 
       expect(result.messageKey).toBe('data_issues.description.current_balance_mismatch');
+      expect(result.shortMessageKey).toBe('data_issues.description_short.current_balance_mismatch');
       expect(result.eventIdentifier).toBe(7);
       expect(result.amounts.delta?.toString()).toBe('5');
     });
@@ -106,6 +108,7 @@ describe('data-issues transforms', () => {
       const result = describeIssue(issue);
 
       expect(result.messageKey).toBe('data_issues.description.unmatched_bridge_deposit');
+      expect(result.shortMessageKey).toBe('data_issues.description_short.unmatched_bridge_deposit');
       expect(result.eventIdentifier).toBe(12);
       expect(result.asset).toBe('ETH');
     });
@@ -120,7 +123,9 @@ describe('data-issues transforms', () => {
         },
       });
 
-      expect(describeIssue(issue).messageKey).toBe('data_issues.description.unmatched_bridge_withdrawal');
+      const withdrawal = describeIssue(issue);
+      expect(withdrawal.messageKey).toBe('data_issues.description.unmatched_bridge_withdrawal');
+      expect(withdrawal.shortMessageKey).toBe('data_issues.description_short.unmatched_bridge_withdrawal');
     });
 
     it('should fall back to an unknown description when the payload does not match the kind', () => {
@@ -129,6 +134,7 @@ describe('data-issues transforms', () => {
       const result = describeIssue(issue);
 
       expect(result.messageKey).toBe('data_issues.description.unknown');
+      expect(result.shortMessageKey).toBe('data_issues.description_short.unknown');
       expect(result.eventIdentifier).toBeUndefined();
       expect(result.amounts).toEqual({});
     });
