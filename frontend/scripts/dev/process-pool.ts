@@ -75,6 +75,9 @@ export function startProcess(cmd: string, tag: string, name: string, args: strin
 
   const env: NodeJS.ProcessEnv = {
     FORCE_COLOR: '1',
+    // The forwarder prepends its own `<label> <time>` to every child line, so tell
+    // child tools (Vite) to drop their own timestamp and avoid a doubled clock.
+    ROTKI_DEV_FORWARDED: '1',
     ...process.env,
     NODE_ENV: 'development',
     ...(opts.env ?? {}),

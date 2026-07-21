@@ -1,5 +1,4 @@
 import type { ComponentResolver } from 'unplugin-vue-components';
-import type { Plugin } from 'vite';
 import { builtinModules } from 'node:module';
 import { join, relative, resolve } from 'node:path';
 import process from 'node:process';
@@ -8,6 +7,7 @@ import { ruiIconsPlugin } from '@rotki/ui-library/vite-plugin';
 import vue from '@vitejs/plugin-vue';
 import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
+import { createLogger, type Logger, type LogOptions, type Plugin } from 'vite';
 import checker from 'vite-plugin-checker';
 import vueDevTools from 'vite-plugin-vue-devtools';
 import { defineConfig } from 'vitest/config';
@@ -18,6 +18,27 @@ import { backendIconsCachePlugin } from './scripts/extract-backend-icons';
 
 const PACKAGE_ROOT = __dirname;
 const PROJECT_ROOT = resolve(PACKAGE_ROOT, '../..');
+
+/**
+ * Under `pnpm dev` the process forwarder already prefixes every line with its own
+ * `<label> <time>`, so Vite's own `timestamp: true` logs (HMR/client messages)
+ * would print a second clock. When forwarded, wrap the default logger to force
+ * `timestamp: false`; standalone `vite` runs keep their timestamps.
+ */
+function createConfigLogger(): Logger | undefined {
+  if (process.env.ROTKI_DEV_FORWARDED !== '1')
+    return undefined;
+
+  const base = createLogger();
+  const noTimestamp = (options?: LogOptions): LogOptions => ({ ...options, timestamp: false });
+  return {
+    ...base,
+    error: (msg, options): void => base.error(msg, noTimestamp(options)),
+    info: (msg, options): void => base.info(msg, noTimestamp(options)),
+    warn: (msg, options): void => base.warn(msg, noTimestamp(options)),
+    warnOnce: (msg, options): void => base.warnOnce(msg, noTimestamp(options)),
+  };
+}
 
 const envPath = process.env.VITE_PUBLIC_PATH;
 const publicPath = envPath || '/';
@@ -103,6 +124,7 @@ export default defineConfig({
     dedupe: ['vue'],
   },
   base: publicPath,
+  customLogger: createConfigLogger(),
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
   },
