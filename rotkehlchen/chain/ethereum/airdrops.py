@@ -8,8 +8,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
 import requests
 from requests import Response
 from web3 import Web3
@@ -63,7 +61,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 AIRDROPS_REPO_BASE: Final = f'https://raw.githubusercontent.com/rotki/data/{"main" if is_production() else "develop"}'  # noqa: E501
-AIRDROPS_INDEX: Final = f'{AIRDROPS_REPO_BASE}/airdrops/index_v3.json'
+AIRDROPS_INDEX: Final = f'{AIRDROPS_REPO_BASE}/airdrops/index_v4.json'
 ETAG_CACHE_KEY: Final = 'ETag'
 JSON_PATH_SEPARATOR_API_AIRDROPS: Final = '/'
 AIRDROP_IDENTIFIER_KEY: Final = 'airdrop_identifier'
@@ -331,6 +329,19 @@ def _maybe_get_updated_file(
     return filename
 
 
+def _process_airdrop_csv(response: Response, filename: Path) -> None:
+    """Write and validate a downloaded compressed airdrop CSV."""
+    filename.write_bytes(response.content)
+    try:
+        if len(pd.read_csv(filename, nrows=1).columns) < 2:
+            filename.unlink()
+            raise RemoteError(f'Invalid CSV file {filename}. Removing it.')
+    except (OSError, UnicodeDecodeError, pd.errors.ParserError) as e:
+        filename.unlink()
+        log.error('Deleted invalid CSV file %s due to %s', filename, e)
+        raise RemoteError(f'Invalid CSV file {filename}. Removing it.') from e
+
+
 def get_airdrop_data(
         airdrop_data: AirdropFileMetadata,
         name: str,
@@ -342,38 +353,27 @@ def get_airdrop_data(
     and return new data."""
     airdrops_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
 
-    def _process_parquet(response: Response, filename: Path) -> None:
-        filename.write_bytes(response.content)
-        try:
-            # Validate the parquet is readable by decoding its first row group's first two
-            # columns (the address and amount columns used downstream) without loading the
-            # whole file into memory.
-            parquet_file = pq.ParquetFile(filename)  # type: ignore[no-untyped-call]
-            if parquet_file.num_row_groups > 0:
-                columns = parquet_file.schema_arrow.names
-                parquet_file.read_row_group(0, columns=columns[:2])  # type: ignore[no-untyped-call]
-        except pa.ArrowException as e:
-            filename.unlink()
-            log.error(f'Deleted invalid parquet file {filename} due to {e}')
-            raise RemoteError(f'Invalid parquet file for {name}. Removing it.') from e
-
     filename = _maybe_get_updated_file(
         data_dir=airdrops_dir,
         file_hash=airdrop_data.file_hash,
-        name=f'{name}.parquet',
+        name=f'{name}.csv.gz',
         remote_url=airdrop_data.file_path,
-        process_response=_process_parquet,
+        process_response=_process_airdrop_csv,
     )
 
-    columns = pq.read_schema(filename).names[:2]  # type: ignore[no-untyped-call]
+    columns = pd.read_csv(filename, nrows=0).columns[:2].tolist()
     if len(addresses) == 0:
         return pd.DataFrame(columns=columns)
 
-    return pd.read_parquet(
-        filename,
-        columns=columns,
-        filters=[(columns[0], 'in', list(addresses))],
-    )
+    matching_chunks = [
+        filtered_chunk
+        for chunk in pd.read_csv(filename, usecols=columns, dtype=str, chunksize=100_000)
+        if not (filtered_chunk := chunk[chunk[columns[0]].isin(addresses)]).empty
+    ]
+    if len(matching_chunks) == 0:
+        return pd.DataFrame(columns=columns)
+
+    return pd.concat(matching_chunks, ignore_index=True)
 
 
 def get_poap_airdrop_data(airdrop_data: list[str], name: str, data_dir: Path) -> dict[str, Any]:

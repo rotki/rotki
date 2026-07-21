@@ -72,7 +72,6 @@ dependencies = [
     "xxhash==3.7.2",  # enforced for free-threaded Python support
     "bitarray==3.8.2",  # pinned to check free-threaded Python support
     "pandas==3.0.3",
-    "pyarrow==24.0.0",  # parquet engine for pandas (airdrop files)
 ]
 
 [project.urls]
