@@ -372,8 +372,8 @@ watchDebounced(route, async () => {
               class="flex items-center justify-end gap-2 px-2 pt-2 mb-1"
             >
               <AccountingOverlayToggle v-model="overlayMode" />
-              <DataIssuesToggle />
               <BalanceDivergenceToggle />
+              <DataIssuesToggle />
             </div>
 
             <HistoryEventsFiltersChips
