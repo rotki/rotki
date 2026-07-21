@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 def _add_bridge_pair(
         rotkehlchen_api_server: APIServer,
         withdrawal_is_decoded_bridge: bool = True,
+        deposit_is_decoded_bridge: bool = True,
 ) -> tuple[EvmEvent, EvmEvent]:
     """Add an unmatched bridge deposit and a destination-leg candidate to the DB."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -42,12 +43,18 @@ def _add_bridge_pair(
                 sequence_index=0,
                 timestamp=TimestampMS(1700000000000),
                 location=Location.ETHEREUM,
-                event_type=HistoryEventType.DEPOSIT,
-                event_subtype=HistoryEventSubType.BRIDGE,
+                event_type=(
+                    HistoryEventType.DEPOSIT
+                    if deposit_is_decoded_bridge else HistoryEventType.SPEND
+                ),
+                event_subtype=(
+                    HistoryEventSubType.BRIDGE
+                    if deposit_is_decoded_bridge else HistoryEventSubType.NONE
+                ),
                 asset=A_ETH,
                 amount=FVal('1'),
                 location_label=user_address,
-                counterparty=CPT_ACROSS,
+                counterparty=CPT_ACROSS if deposit_is_decoded_bridge else None,
                 notes='Bridge 1 ETH from Ethereum to Arbitrum One via Across',
                 extra_data={'bridge': {
                     'from_chain': 1,
@@ -55,7 +62,7 @@ def _add_bridge_pair(
                     'from_address': user_address,
                     'to_address': user_address,
                     'transfer_id': '12345',
-                }},
+                }} if deposit_is_decoded_bridge else None,
             )), (withdrawal := EvmEvent(
                 identifier=2,
                 tx_ref=make_evm_tx_hash(),
@@ -272,6 +279,101 @@ def test_get_unmatched_and_possible_bridge_matches(rotkehlchen_api_server: APISe
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_get_possible_matches_from_withdrawal_leg(rotkehlchen_api_server: APIServer) -> None:
+    """A group holding only the withdrawal leg can anchor the search and finds
+    the source-chain deposit leg as a close match."""
+    deposit, withdrawal = _add_bridge_pair(rotkehlchen_api_server)
+    result = assert_proper_response_with_result(
+        response=requests.post(
+            url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+            json={
+                'bridge_event': withdrawal.group_identifier,
+                'time_range': 3600,
+                'tolerance': '0.01',
+            },
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+    )
+    assert result['close_matches'] == [deposit.identifier]
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_match_from_withdrawal_leg_rewrites_source(rotkehlchen_api_server: APIServer) -> None:
+    """Matching anchored on the withdrawal leg finds an undecoded source spend,
+    rewrites it into the bridge deposit and links the pair with the deposit on
+    the left side, exactly as a deposit-anchored match would. Unlinking restores
+    both sides."""
+    deposit, withdrawal = _add_bridge_pair(
+        rotkehlchen_api_server,
+        deposit_is_decoded_bridge=False,
+    )
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevents = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        original_events = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+
+    result = assert_proper_response_with_result(
+        response=requests.post(
+            url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+            json={
+                'bridge_event': withdrawal.group_identifier,
+                'time_range': 3600,
+                'tolerance': '0.01',
+            },
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+    )
+    assert result['close_matches'] == [deposit.identifier]
+
+    assert_simple_ok_response(requests.put(
+        url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+        json={'bridge_event': 2, 'matched_events': [1]},
+    ))
+    assert _get_bridge_link_rows(rotkehlchen_api_server) == [(1, 2)]
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+
+    # the plain spend got rewritten into a proper bridge deposit
+    matched = next(x for x in events if x.identifier == deposit.identifier)
+    assert matched.event_type == HistoryEventType.DEPOSIT
+    assert matched.event_subtype == HistoryEventSubType.BRIDGE
+    assert matched.notes == 'Send 1 ETH from Ethereum bridged to Arbitrum One'
+    assert isinstance(matched, EvmEvent)
+    assert matched.counterparty == CPT_ACROSS
+    assert matched.extra_data is not None
+    assert matched.extra_data['matched_bridge'] == {
+        'group_identifier': withdrawal.group_identifier,
+        'location': Location.ARBITRUM_ONE.serialize(),
+        'fee_amount': '0.001',
+    }
+    matched_withdrawal = next(x for x in events if x.identifier == withdrawal.identifier)
+    assert matched_withdrawal.extra_data is not None
+    assert matched_withdrawal.extra_data['matched_bridge'] == {
+        'group_identifier': deposit.group_identifier,
+        'location': Location.ETHEREUM.serialize(),
+        'fee_amount': '0.001',
+    }
+
+    # now unlink and check full restoration
+    assert_simple_ok_response(requests.delete(
+        url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+        json={'identifier': 2},
+    ))
+    assert _get_bridge_link_rows(rotkehlchen_api_server) == []
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        ) == original_events
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_matched_bridge_pairs_display_as_separate_groups(
         rotkehlchen_api_server: APIServer,
 ) -> None:
@@ -383,6 +485,14 @@ def test_match_bridge_transactions_errors(rotkehlchen_api_server: APIServer) -> 
         ),
         status_code=HTTPStatus.BAD_REQUEST,
         contained_in_msg='does not correspond to either side',
+    )
+    assert_error_response(
+        response=requests.post(
+            url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+            json={'bridge_event': 'no-bridge-group', 'time_range': 3600, 'tolerance': '0.01'},
+        ),
+        status_code=HTTPStatus.BAD_REQUEST,
+        contained_in_msg='No bridge event found in the DB for group identifier no-bridge-group',
     )
 
 
