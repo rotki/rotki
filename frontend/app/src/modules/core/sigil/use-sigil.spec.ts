@@ -1,16 +1,16 @@
 import type { EffectScope } from 'vue';
-import type { SigilEventMap } from '@/modules/core/sigil/types';
+import type { SigilEventMap, SigilQueueEntry } from '@/modules/core/sigil/types';
 import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
 
-const mockEnqueue = vi.fn().mockResolvedValue(undefined);
+const mockEnqueue = vi.fn<(entry: Omit<SigilQueueEntry, 'id'>) => Promise<void>>().mockResolvedValue(undefined);
 const mockStartQueue = vi.fn();
 const mockStopQueue = vi.fn();
 
 vi.mock('@/modules/core/sigil/use-sigil-queue', () => ({
   WEBSITE_ID: 'test-website-id',
-  enqueue: (...args: unknown[]): unknown => mockEnqueue(...args),
+  enqueue: async (entry: Omit<SigilQueueEntry, 'id'>): Promise<void> => mockEnqueue(entry),
   startQueue: (): void => mockStartQueue(),
   stopQueue: (): void => mockStopQueue(),
 }));
@@ -208,7 +208,7 @@ describe('useSigil', () => {
       await flushPromises();
 
       const eventNames = mockEnqueue.mock.calls.map(
-        (call: unknown[]) => (call[0] as Record<string, unknown>).name,
+        call => call[0].name,
       );
       expect(eventNames).toContain('session_config');
       expect(eventNames).toContain('exchanges_summary');
@@ -223,7 +223,7 @@ describe('useSigil', () => {
       await nextTick();
 
       const eventNames = mockEnqueue.mock.calls.map(
-        (call: unknown[]) => (call[0] as Record<string, unknown>).name,
+        call => call[0].name,
       );
       expect(eventNames).toContain('balances_summary');
     });
@@ -238,7 +238,7 @@ describe('useSigil', () => {
       await flushPromises();
 
       const eventNames = mockEnqueue.mock.calls.map(
-        (call: unknown[]) => (call[0] as Record<string, unknown>).name,
+        call => call[0].name,
       );
       expect(eventNames).toContain('history_sync');
     });
@@ -254,7 +254,7 @@ describe('useSigil', () => {
       await flushPromises();
 
       const sessionCalls = mockEnqueue.mock.calls.filter(
-        (call: unknown[]) => (call[0] as Record<string, unknown>).name === 'session_config',
+        call => call[0].name === 'session_config',
       );
       expect(sessionCalls).toHaveLength(1);
     });
@@ -280,7 +280,7 @@ describe('useSigil', () => {
       await flushPromises();
 
       const sessionCalls = mockEnqueue.mock.calls.filter(
-        (call: unknown[]) => (call[0] as Record<string, unknown>).name === 'session_config',
+        call => call[0].name === 'session_config',
       );
       expect(sessionCalls).toHaveLength(1);
     });
@@ -331,7 +331,7 @@ describe('useSigil', () => {
       });
       await nextTick();
 
-      const call = mockEnqueue.mock.calls[0] as [Record<string, unknown>];
+      const call = mockEnqueue.mock.calls[0];
       expect(call[0].url).toBe('/accounts/:address');
     });
 
@@ -348,7 +348,7 @@ describe('useSigil', () => {
       });
       await nextTick();
 
-      const call = mockEnqueue.mock.calls[0] as [Record<string, unknown>];
+      const call = mockEnqueue.mock.calls[0];
       expect(call[0].url).toBe('/balances/binance/deposits');
     });
   });
@@ -363,11 +363,11 @@ describe('useSigil', () => {
       await flushPromises();
 
       const sessionCall = mockEnqueue.mock.calls.find(
-        (call: unknown[]) => (call[0] as Record<string, unknown>).name === 'session_config',
+        call => call[0].name === 'session_config',
       );
       expect(sessionCall).toBeDefined();
 
-      const entry = sessionCall![0] as Record<string, unknown>;
+      const entry = sessionCall![0];
       expect(entry.name).toBe('session_config');
       expect(entry.data).toMatchObject({ premium: false, appVersion: '1.0' });
       expect(entry.url).toBe('/dashboard');
