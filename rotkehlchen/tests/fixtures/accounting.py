@@ -330,6 +330,7 @@ def fixture_mocked_current_prices_with_oracles():
 
 @pytest.fixture(name='current_price_oracles_order')
 def fixture_current_price_oracles_order():
+    """Use a stable test oracle order without the default Kraken oracle."""
     return (
         CurrentPriceOracle.COINGECKO,
         CurrentPriceOracle.DEFILLAMA,
