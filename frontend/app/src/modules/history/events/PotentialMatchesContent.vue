@@ -3,6 +3,7 @@ import type { MatchingFlow, PotentialMatchRow, UnmatchedEventGroup } from '@/mod
 import type { HistoryEventCollectionRow } from '@/modules/history/events/schemas';
 import { bigNumberify } from '@rotki/common';
 import { logger } from '@/modules/core/common/logging/logging';
+import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-asset-movement-matching-api';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
@@ -54,6 +55,7 @@ function getDefaultTolerancePercentage(): string {
 
 const searchLoading = ref<boolean>(false);
 const matchingLoading = ref<boolean>(false);
+const searchError = ref<string>();
 const potentialMatches = ref<PotentialMatchRow[]>([]);
 const selectedMatchIds = ref<number[]>([]);
 const searchTimeRange = ref<string>(getDefaultHourRange().toString());
@@ -76,8 +78,9 @@ function transformToMatchRow(row: HistoryEventCollectionRow, isCloseMatch: boole
 }
 
 async function searchPotentialMatches(): Promise<void> {
-  set(searchLoading, true);
+  set(searchError, undefined);
   set(potentialMatches, []);
+  set(searchLoading, true);
 
   try {
     const groupIdentifier = movement.groupIdentifier;
@@ -116,6 +119,7 @@ async function searchPotentialMatches(): Promise<void> {
   }
   catch (error) {
     logger.error('Failed to search potential matches:', error);
+    set(searchError, t('asset_movement_matching.dialog.search_error', { error: getErrorMessage(error) }));
   }
   finally {
     set(searchLoading, false);
@@ -185,6 +189,7 @@ watchImmediate(() => movement, async () => {
         :highlighted-identifier="highlightedIdentifier"
         :type-label="typeLabel"
         :location-header="locationHeader"
+        :search-error="searchError"
         @search="searchPotentialMatches()"
         @show-in-events="emit('show-in-events', $event)"
         @show-unmatched-in-events="emit('show-unmatched-in-events')"

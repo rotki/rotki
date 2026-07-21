@@ -35,6 +35,8 @@ const { movement, matches, loading, isPinned, highlightedIdentifier, typeLabel, 
   typeLabel?: string;
   /** Overrides the location column header of the unmatched entry (defaults to exchange). */
   locationHeader?: string;
+  /** When set, the last search failed; the message is shown above the results. */
+  searchError?: string;
 }>();
 
 const emit = defineEmits<{
@@ -356,6 +358,15 @@ watchDebounced(onlyExpectedAssets, () => {
     </div>
 
     <div>
+      <RuiAlert
+        v-if="searchError"
+        type="error"
+        size="sm"
+        class="mb-4"
+      >
+        {{ searchError }}
+      </RuiAlert>
+
       <p class="text-body-2 font-medium mb-2">
         {{ t('asset_movement_matching.dialog.matching_hint') }}
       </p>

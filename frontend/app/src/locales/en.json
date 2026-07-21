@@ -1386,6 +1386,7 @@
       "restore": "Restore",
       "restore_tooltip": "Restore this asset movement to the unmatched list.",
       "search_description": "Search for events within the specified criteria:",
+      "search_error": "Could not search for matches: {error}",
       "select": "Select",
       "select_match_title": "Select Matching Event",
       "selected": "Selected",
