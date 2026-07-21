@@ -1511,6 +1511,15 @@ class RestAPI:
         response_data = self.assets_service.get_asset_types()
         return make_response_from_dict(response_data)
 
+    def get_rebasing_tokens(self) -> Response:
+        return make_response_from_dict(self.assets_service.get_rebasing_tokens())
+
+    def add_rebasing_tokens(self, assets: list[Asset]) -> Response:
+        return make_response_from_dict(self.assets_service.add_rebasing_tokens(assets))
+
+    def remove_rebasing_tokens(self, assets: list[Asset]) -> Response:
+        return make_response_from_dict(self.assets_service.remove_rebasing_tokens(assets))
+
     def add_user_asset(self, asset: AssetWithOracles) -> Response:
         response_data = self.assets_service.add_user_asset(asset)
         return make_response_from_dict(response_data)
@@ -1544,6 +1553,11 @@ class RestAPI:
 
         if success:
             AssetResolver.clean_memory_cache()  # clean the cache after deleting any possible asset
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
+                DBHistoryEvents(self.rotkehlchen.data.db).sync_rebasing_tokens(
+                    write_cursor=write_cursor,
+                    identifiers=GlobalDBHandler.get_rebasing_token_ids(),
+                )
             return OK_RESULT
         return wrap_in_fail_result(msg, status_code=HTTPStatus.CONFLICT)
 

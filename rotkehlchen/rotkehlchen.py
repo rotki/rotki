@@ -67,6 +67,7 @@ from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import NFTFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings, DBSettings, ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.db.utils import replace_tag_mappings, table_exists
@@ -92,6 +93,7 @@ from rotkehlchen.externalapis.kraken import Kraken
 from rotkehlchen.externalapis.monerium import Monerium
 from rotkehlchen.externalapis.moralis import Moralis
 from rotkehlchen.externalapis.routescan import Routescan
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -426,6 +428,13 @@ class Rotkehlchen:
                 database=self.data.db,
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
+
+        if is_accounting_update_enabled() is True:
+            with self.data.db.user_write() as write_cursor:
+                DBHistoryEvents(self.data.db).sync_rebasing_tokens(
+                    write_cursor=write_cursor,
+                    identifiers=GlobalDBHandler.get_rebasing_token_ids(),
+                )
 
         self.monerium = Monerium(database=self.data.db)
 

@@ -1517,6 +1517,7 @@ DEFAULT_ADDRESS_NAME_PRIORITY: Sequence[AddressNameSource] = (
 class EventMetricKey(SerializableEnumNameMixin):
     """Keys for metrics stored in the event_metrics table."""
     BALANCE = auto()
+    REBASE_YIELD = auto()
 
 
 class HistoryEventQueryType(SerializableEnumNameMixin):

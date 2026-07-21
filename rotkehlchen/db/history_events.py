@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import re
@@ -239,6 +240,49 @@ class DBHistoryEvents:
                 DBCacheStatic.STALE_BALANCES_FROM_TS.value,
             ),
         )
+
+    def mark_all_events_modified(self, write_cursor: DBCursor) -> None:
+        """Mark historical balances stale from the first event, if any."""
+        if (first_event := write_cursor.execute(
+            'SELECT MIN(timestamp) FROM history_events',
+        ).fetchone()) is not None and first_event[0] is not None:
+            self._mark_events_modified(
+                write_cursor=write_cursor,
+                timestamp=TimestampMS(first_event[0]),
+            )
+
+    def sync_rebasing_tokens(
+            self,
+            write_cursor: DBCursor,
+            identifiers: frozenset[str],
+    ) -> TimestampMS | None:
+        """Invalidate metrics if this user's last seen rebasing registry has changed."""
+        if is_accounting_update_enabled() is False:
+            return None
+
+        fingerprint = hashlib.sha256('\0'.join(sorted(identifiers)).encode()).hexdigest()
+        if (cached_fingerprint := write_cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name = ?',
+            (DBCacheStatic.REBASING_TOKENS_FINGERPRINT.value,),
+        ).fetchone()) is not None and cached_fingerprint[0] == fingerprint:
+            return None
+
+        first_event = write_cursor.execute(
+            'SELECT MIN(timestamp) FROM history_events',
+        ).fetchone()
+        if first_event is not None and first_event[0] is not None:
+            self._mark_events_modified(
+                write_cursor=write_cursor,
+                timestamp=(first_event_ts := TimestampMS(first_event[0])),
+            )
+        else:
+            first_event_ts = None
+
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
+            (DBCacheStatic.REBASING_TOKENS_FINGERPRINT.value, fingerprint),
+        )
+        return first_event_ts
 
     def _execute_and_track_modified(
             self,

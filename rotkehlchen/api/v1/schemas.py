@@ -2757,6 +2757,10 @@ class IgnoredAssetsSchema(Schema):
     assets = fields.List(AssetField(expected_type=Asset), required=True)
 
 
+class RebasingTokensSchema(Schema):
+    assets = fields.List(AssetField(expected_type=Asset), required=True)
+
+
 class IgnoredActionsModifySchema(Schema):
     data = DelimitedOrNormalList(NonEmptyStringField(required=True), required=True)
 

@@ -12,12 +12,24 @@ from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_OP, A_SAI, A_USD, A_USDC, A_WSOL
+from rotkehlchen.constants.assets import (
+    A_BTC,
+    A_DAI,
+    A_EUR,
+    A_OP,
+    A_SAI,
+    A_STETH,
+    A_USD,
+    A_USDC,
+    A_WSOL,
+)
 from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ONE
 from rotkehlchen.constants.resolver import solana_address_to_identifier
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.feature_flags import ROTKI_ACCOUNTING_UPDATE
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_values,
@@ -216,6 +228,59 @@ def test_ignored_assets_modification(rotkehlchen_api_server: APIServer) -> None:
         )
         result = assert_proper_sync_response_with_result(response)
         assert assets_after_deletion == set(result)
+
+
+def test_rebasing_tokens_modification(
+        rotkehlchen_api_server: APIServer,
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The rebasing token list is global, editable and invalidates processed balances."""
+    monkeypatch.setenv(ROTKI_ACCOUNTING_UPDATE, 'True')
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    GlobalDBHandler.remove_rebasing_tokens([A_DAI])
+    with rotki.data.db.user_write() as write_cursor:
+        DBHistoryEvents(rotki.data.db).add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier='rebasing-token-invalidation',
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_DAI,
+                amount=ONE,
+            ),
+        )
+
+    url = api_url_for(rotkehlchen_api_server, 'rebasingtokensresource')
+    result = assert_proper_sync_response_with_result(requests.get(url))
+    assert A_STETH.identifier in result
+    assert A_DAI.identifier not in result
+
+    result = assert_proper_sync_response_with_result(requests.put(
+        url,
+        json={'assets': [A_DAI.identifier]},
+    ))
+    assert result == {'successful': [A_DAI.identifier], 'no_action': []}
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name = ?',
+            (DBCacheStatic.STALE_BALANCES_FROM_TS.value,),
+        ).fetchone()[0] == '1000'
+
+    result = assert_proper_sync_response_with_result(requests.put(
+        url,
+        json={'assets': [A_DAI.identifier]},
+    ))
+    assert result == {'successful': [], 'no_action': [A_DAI.identifier]}
+
+    result = assert_proper_sync_response_with_result(requests.delete(
+        url,
+        json={'assets': [A_DAI.identifier]},
+    ))
+    assert result == {'successful': [A_DAI.identifier], 'no_action': []}
+    assert A_DAI.identifier not in GlobalDBHandler.get_rebasing_token_ids()
 
 
 @pytest.mark.parametrize('new_db_unlock_actions', [None])

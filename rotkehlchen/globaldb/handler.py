@@ -1333,6 +1333,46 @@ class GlobalDBHandler:
             )  # should not ever happen but need to handle with informative log if it does
 
     @staticmethod
+    def get_rebasing_token_ids() -> frozenset[str]:
+        """Return the asset identifiers explicitly marked as rebasing tokens."""
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            return frozenset(row[0] for row in cursor.execute(
+                'SELECT asset_identifier FROM rebasing_tokens',
+            ))
+
+    @staticmethod
+    def add_rebasing_tokens(assets: list[Asset]) -> tuple[set[str], set[str]]:
+        """Add assets to the rebasing token list and return (added, already present)."""
+        identifiers = {asset.identifier for asset in assets}
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            existing = {row[0] for row in write_cursor.execute(
+                'SELECT asset_identifier FROM rebasing_tokens',
+            )}
+            if added := identifiers - existing:
+                write_cursor.executemany(
+                    'INSERT INTO rebasing_tokens(asset_identifier) VALUES (?)',
+                    [(identifier,) for identifier in sorted(added)],
+                )
+
+        return added, identifiers & existing
+
+    @staticmethod
+    def remove_rebasing_tokens(assets: list[Asset]) -> tuple[set[str], set[str]]:
+        """Remove assets from the rebasing token list and return (removed, absent)."""
+        identifiers = {asset.identifier for asset in assets}
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            existing = {row[0] for row in write_cursor.execute(
+                'SELECT asset_identifier FROM rebasing_tokens',
+            )}
+            if removed := identifiers & existing:
+                write_cursor.executemany(
+                    'DELETE FROM rebasing_tokens WHERE asset_identifier = ?',
+                    [(identifier,) for identifier in sorted(removed)],
+                )
+
+        return removed, identifiers - existing
+
+    @staticmethod
     def delete_asset_by_identifier(identifier: str) -> None:
         """Delete an asset by identifier EVEN if it's in the owned assets table
          May raise:
@@ -1849,6 +1889,11 @@ class GlobalDBHandler:
         # connection-level state that the nested write_ctx must see, so it cannot
         # happen on a pooled read-only connection
         with self.conn.cursor() as read_cursor:
+            rebasing_token_ids = {
+                row[0] for row in read_cursor.execute(
+                    'SELECT asset_identifier FROM rebasing_tokens',
+                )
+            }
             # First check that the operation can be made. If the difference is not the
             # empty set the operation is dangerous and the user should be notified.
             with user_db.user_write() as user_db_cursor:
@@ -1896,6 +1941,15 @@ class GlobalDBHandler:
                             write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
                             # Don't copy custom_assets as there are none in clean_db
                             write_cursor.switch_foreign_keys('ON')
+                            write_cursor.executemany(
+                                'INSERT INTO rebasing_tokens(asset_identifier) '
+                                'SELECT ? WHERE EXISTS('
+                                'SELECT 1 FROM assets WHERE identifier = ?)',
+                                [
+                                    (identifier, identifier)
+                                    for identifier in sorted(rebasing_token_ids)
+                                ],
+                            )
                             # Get ids for assets to insert them in the user db
                             write_cursor.execute('SELECT identifier from assets')
                             ids = write_cursor.fetchall()

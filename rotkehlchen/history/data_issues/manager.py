@@ -187,6 +187,27 @@ class DataIssuesManager:
                 )
         return issue_id
 
+    def resolve_negative_balance_issues(
+            self,
+            issues: list[tuple[str, str | None, str | None, str, int]],
+    ) -> None:
+        """Resolve previous negative-balance issues after reprocessing fixes their buckets."""
+        if len(issues) == 0:
+            return
+
+        resolved_at = ts_now()
+        with self.db.user_write() as write_cursor:
+            write_cursor.executemany(
+                'UPDATE data_issues SET state = ?, resolved_at = ? WHERE kind = ? '
+                'AND location = ? AND location_label = ? AND protocol = ? AND asset = ? '
+                'AND event_identifier = ? AND state NOT IN (?, ?)',
+                [(
+                    IssueState.RESOLVED, resolved_at, IssueKind.NEGATIVE_BALANCE, location,
+                    location_label or '', protocol or '', asset, event_identifier,
+                    IssueState.RESOLVED, IssueState.DISMISSED,
+                ) for location, location_label, protocol, asset, event_identifier in issues],
+            )
+
     def list_issues(
             self,
             filters: DataIssueFilters | DataIssuesFilterQuery | None = None,

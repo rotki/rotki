@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.constants.assets import A_STETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.utils.progress import perform_globaldb_upgrade_steps, progress_step
 
@@ -31,6 +32,18 @@ def migrate_to_v17(
         write_cursor.execute(
             'INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES (?, ?)',
             ('J', 10),
+        )
+
+    @progress_step('Create the rebasing tokens table.')
+    def _create_rebasing_tokens_table(write_cursor: DBCursor) -> None:
+        write_cursor.execute("""CREATE TABLE IF NOT EXISTS rebasing_tokens (
+            asset_identifier TEXT NOT NULL PRIMARY KEY,
+            FOREIGN KEY(asset_identifier) REFERENCES assets(identifier)
+                ON UPDATE CASCADE ON DELETE CASCADE
+        );""")
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO rebasing_tokens(asset_identifier) VALUES (?)',
+            (A_STETH.identifier,),
         )
 
     perform_globaldb_upgrade_steps(connection, progress_handler)

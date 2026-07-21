@@ -161,6 +161,7 @@ from rotkehlchen.api.v1.schemas import (
     QueriedAddressesSchema,
     QueryAddressbookSchema,
     QueryCalendarSchema,
+    RebasingTokensSchema,
     RefetchStakingEventsSchema,
     RefetchTransactionsSchema,
     RefreshProtocolDataSchema,
@@ -2055,6 +2056,25 @@ class IgnoredAssetsResource(BaseMethodView):
     @use_kwargs(modify_schema, location='json')
     def delete(self, assets: list[Asset]) -> Response:
         return self.rest_api.remove_ignored_assets(assets=assets)
+
+
+class RebasingTokensResource(BaseMethodView):
+
+    modify_schema = RebasingTokensSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_rebasing_tokens()
+
+    @require_loggedin_user()
+    @use_kwargs(modify_schema, location='json')
+    def put(self, assets: list[Asset]) -> Response:
+        return self.rest_api.add_rebasing_tokens(assets=assets)
+
+    @require_loggedin_user()
+    @use_kwargs(modify_schema, location='json')
+    def delete(self, assets: list[Asset]) -> Response:
+        return self.rest_api.remove_rebasing_tokens(assets=assets)
 
 
 class IgnoredActionsResource(BaseMethodView):
