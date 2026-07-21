@@ -1,4 +1,5 @@
 import type { EIP1193EventName, EIP1193Provider, EIP1193ProviderEvents, RpcRequest } from '@/types';
+import { defaultWindow } from '@vueuse/core';
 import { logger } from '@/modules/core/common/logging/logging';
 
 /**
@@ -7,7 +8,7 @@ import { logger } from '@/modules/core/common/logging/logging';
  */
 export function useProxyProvider(): EIP1193Provider | undefined {
   // Only set up if walletBridge is available
-  const walletBridge = window.walletBridge;
+  const walletBridge = defaultWindow?.walletBridge;
   if (!walletBridge) {
     return undefined;
   }

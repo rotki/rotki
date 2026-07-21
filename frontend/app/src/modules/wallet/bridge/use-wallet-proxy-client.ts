@@ -7,7 +7,7 @@ import {
   type WalletBridgeRequest,
   type WalletBridgeResponse,
 } from '@shared/wallet-bridge-types';
-import { get, isDefined, set } from '@vueuse/core';
+import { defaultWindow, get, isDefined, set } from '@vueuse/core';
 import { ref, type Ref } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useBridgeMessageHandlers } from '@/modules/wallet/bridge/use-bridge-message-handlers';
@@ -49,7 +49,7 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
     if (notification.type === BRIDGE_NOTIFICATION_TYPES.CLOSE_TAB) {
       logger.info('Received close_tab notification, attempting to close browser tab');
       try {
-        window.close();
+        defaultWindow?.close();
       }
       catch (error) {
         logger.error('Failed to close tab:', error);
@@ -113,7 +113,7 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
 
   const getWebSocketUrl = (): string => {
     // Get the current window location to determine the HTTP port
-    const currentPort = window.location.port;
+    const currentPort = defaultWindow?.location.port;
     if (currentPort) {
       // WebSocket server runs on HTTP port + 1
       const wsPort = Number.parseInt(currentPort) + 1;

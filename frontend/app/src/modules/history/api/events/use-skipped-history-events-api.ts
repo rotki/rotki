@@ -39,7 +39,7 @@ export function useSkippedHistoryEventsApi(): UseSkippedHistoryEventsApiReturn {
         method: 'PATCH',
       });
 
-      const url = window.URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
       downloadFileByUrl(url, 'skipped_external_events.csv');
       return { success: true };
     }

@@ -53,7 +53,7 @@ export function useReportsApi(): UseReportsApi {
         method: 'GET',
       });
 
-      const url = window.URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
       downloadFileByUrl(url, 'reports.zip');
       return { success: true };
     }
