@@ -1,3 +1,4 @@
+import { defaultDocument } from '@vueuse/core';
 import { type HighlightRequest, useSettingsHighlight } from '@/modules/settings/use-settings-highlight';
 
 // A brief background flash, rounded and with horizontal padding, so the highlighted row reads as a
@@ -53,7 +54,7 @@ export function useSettingsPageHighlight({ scrollToElement, isElementInViewport 
   }
 
   async function scrollAndHighlight(targetId: string): Promise<void> {
-    const element = document.getElementById(targetId);
+    const element = defaultDocument?.getElementById(targetId);
     if (!element)
       return;
 

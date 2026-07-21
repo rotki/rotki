@@ -1,4 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
+import { defaultDocument } from '@vueuse/core';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { PINNED_DEFAULT_WIDTH, PINNED_MAX_VIEWPORT_RATIO, PINNED_MAX_WIDTH } from '@/modules/shell/layout/sidebar-resize-constants';
 
@@ -11,6 +12,7 @@ export function useSidebarResize(): {
 } {
   const { pinnedDragging: dragging, pinnedWidth } = storeToRefs(useAreaVisibilityStore());
   const { isLgAndDown } = useBreakpoint();
+  const { width: windowWidth } = useWindowSize();
   let rafId = 0;
 
   const widthPx = computed<string>(() => {
@@ -20,7 +22,7 @@ export function useSidebarResize(): {
   });
 
   function clampWidth(width: number): number {
-    const max = Math.min(PINNED_MAX_WIDTH, window.innerWidth * PINNED_MAX_VIEWPORT_RATIO);
+    const max = Math.min(PINNED_MAX_WIDTH, get(windowWidth) * PINNED_MAX_VIEWPORT_RATIO);
     return Math.max(PINNED_DEFAULT_WIDTH, Math.min(width, max));
   }
 
@@ -28,8 +30,11 @@ export function useSidebarResize(): {
     event.preventDefault();
     set(dragging, true);
     (event.target as HTMLElement).setPointerCapture(event.pointerId);
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
+    const body = defaultDocument?.body;
+    if (body) {
+      body.style.cursor = 'col-resize';
+      body.style.userSelect = 'none';
+    }
   }
 
   function onPointerMove(event: PointerEvent): void {
@@ -40,7 +45,7 @@ export function useSidebarResize(): {
       cancelAnimationFrame(rafId);
 
     rafId = requestAnimationFrame(() => {
-      const newWidth = clampWidth(window.innerWidth - event.clientX);
+      const newWidth = clampWidth(get(windowWidth) - event.clientX);
       set(pinnedWidth, newWidth);
       rafId = 0;
     });
@@ -57,8 +62,11 @@ export function useSidebarResize(): {
 
     set(dragging, false);
     (event.target as HTMLElement).releasePointerCapture(event.pointerId);
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
+    const body = defaultDocument?.body;
+    if (body) {
+      body.style.cursor = '';
+      body.style.userSelect = '';
+    }
   }
 
   return {

@@ -1,4 +1,5 @@
 import type { MaybeRef, Ref, ShallowRef } from 'vue';
+import { defaultDocument } from '@vueuse/core';
 
 interface Nav {
   id: string;
@@ -58,7 +59,7 @@ export function useSettingsScrollSpy({ navigation, scroller }: UseSettingsScroll
     }
 
     for (const nav of navItems) {
-      const element = document.getElementById(nav.id);
+      const element = defaultDocument?.getElementById(nav.id);
       if (element && isElementInViewport(element)) {
         set(currentId, nav.id);
         return;
@@ -73,7 +74,7 @@ export function useSettingsScrollSpy({ navigation, scroller }: UseSettingsScroll
         resolve();
         return;
       }
-      const element = typeof el === 'string' ? document.getElementById(el) : el;
+      const element = typeof el === 'string' ? defaultDocument?.getElementById(el) : el;
       const parent = get(scroller);
       if (element && parent) {
         const parentRect = parent.getBoundingClientRect();

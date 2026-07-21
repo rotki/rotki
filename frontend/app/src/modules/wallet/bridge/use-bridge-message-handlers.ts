@@ -1,7 +1,7 @@
 import type { WalletBridgeRequest, WalletBridgeResponse } from '@shared/wallet-bridge-types';
 import type { EIP1193Provider, EIP1193ProviderEvents } from '@/types';
 import { BRIDGE_ERROR_CODES, BRIDGE_NOTIFICATION_TYPES, ROTKI_RPC_METHODS, ROTKI_RPC_RESPONSES, WALLET_EVENT_TYPES } from '@shared/proxy/constants';
-import { get, promiseTimeout } from '@vueuse/core';
+import { defaultWindow, get, promiseTimeout } from '@vueuse/core';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useBridgeLogging } from '@/modules/wallet/bridge/use-bridge-logging';
 import { useWalletConnectionState } from '@/modules/wallet/bridge/use-wallet-connection-state';
@@ -103,7 +103,7 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
     }
 
     const success = await selectProvider(uuid);
-    window.focus();
+    defaultWindow?.focus();
     return createSuccessResponse(message.id, success);
   }
 
