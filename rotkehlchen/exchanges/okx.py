@@ -66,6 +66,8 @@ class OkxEndpoint(Enum):
     CURRENCIES = '/api/v5/asset/currencies'
     TRADING_BALANCE = '/api/v5/account/balance'
     FUNDING_BALANCE = '/api/v5/asset/balances'
+    SAVINGS_BALANCE = '/api/v5/finance/savings/balance'
+    ONCHAIN_EARN_ORDERS = '/api/v5/finance/staking-defi/orders-active'
     TRADES = '/api/v5/trade/orders-history-archive'
     DEPOSITS = '/api/v5/asset/deposit-history'
     WITHDRAWALS = '/api/v5/asset/withdrawal-history'
@@ -256,12 +258,82 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             return False, 'Error validating API credentials'
         return True, ''
 
+    def _query_earn_data(self, endpoint: OkxEndpoint, product_name: str) -> list[dict]:
+        """Query an Earn endpoint without failing the whole balance query."""
+        try:
+            response = self._api_query(endpoint=endpoint)
+        except RemoteError as e:
+            log.warning(
+                f'Could not query {self.name} {product_name} balances due to {e!s}. '
+                f'Skipping {product_name} balances.',
+            )
+            return []
+
+        if response.get('code') != '0':
+            log.warning(
+                f'Could not query {self.name} {product_name} balances due to OKX API error '
+                f'{response.get("code", "unknown")}: {response.get("msg", "unknown error")}. '
+                f'Skipping {product_name} balances.',
+            )
+            return []
+
+        data = response.get('data')
+        if not isinstance(data, list):
+            log.warning(
+                f'Could not query {self.name} {product_name} balances because the response '
+                f'does not contain list `data`. Skipping {product_name} balances.',
+            )
+            return []
+
+        result: list[dict] = []
+        for entry in data:
+            if not isinstance(entry, dict):
+                log.warning(
+                    f'Could not process {self.name} {product_name} balance because an entry '
+                    'is not an object. Skipping entry.',
+                )
+                continue
+            result.append(entry)
+
+        return result
+
+    def _query_onchain_earn_balances(self) -> list[tuple[dict, tuple[str, ...]]]:
+        """Query active On-chain Earn orders without failing the whole balance query."""
+        balances: list[tuple[dict, tuple[str, ...]]] = []
+        for order in self._query_earn_data(OkxEndpoint.ONCHAIN_EARN_ORDERS, 'On-chain Earn'):
+            for entries_key, amount_key in (
+                    ('investData', 'amt'),
+                    ('earningData', 'earnings'),
+            ):
+                entries = order.get(entries_key, [])
+                if not isinstance(entries, list):
+                    log.warning(
+                        f'Could not process {self.name} On-chain Earn balance because '
+                        f'`{entries_key}` is not a list. Skipping order component.',
+                    )
+                    continue
+
+                for entry in entries:
+                    if not isinstance(entry, dict):
+                        log.warning(
+                            f'Could not process {self.name} On-chain Earn balance because an '
+                            f'`{entries_key}` entry is not an object. Skipping entry.',
+                        )
+                        continue
+                    if entries_key == 'earningData' and entry.get('earningType') != '0':
+                        continue
+                    balances.append((entry, (amount_key,)))
+
+        return balances
+
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """
         https://www.okx.com/docs-v5/en/#trading-account-rest-api-get-balance
         https://www.okx.com/docs-v5/en/#funding-account-rest-api-get-balance
+        https://www.okx.com/docs-v5/en/#financial-product-simple-earn-flexible-get-saving-balance
+        https://www.okx.com/docs-v5/en/#financial-product-on-chain-earn-get-active-orders
         """
-        currencies_data: list[dict] = []
+        currencies_data: list[tuple[dict, tuple[str, ...]]] = []
         try:
             data = self._api_query_list(endpoint=OkxEndpoint.TRADING_BALANCE)
         except RemoteError as e:
@@ -275,15 +347,29 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             return None, msg
 
         try:
-            currencies_data.extend(data[0]['details'])
+            currencies_data.extend(
+                (entry, ('availBal', 'frozenBal'))
+                for entry in data[0]['details']
+            )
         except KeyError as e:
             msg = f'Missing key: {e!s}'
             log.error(f'{self.name} API request failed due to {msg}')
             return None, msg
 
-        currencies_data.extend(self._api_query_list(endpoint=OkxEndpoint.FUNDING_BALANCE))
+        currencies_data.extend(
+            (entry, ('availBal', 'frozenBal'))
+            for entry in self._api_query_list(endpoint=OkxEndpoint.FUNDING_BALANCE)
+        )
+        # `amt` is the complete Simple Earn balance. `loanAmt`, `pendingAmt`, and
+        # `earnings` are components/information about that amount, so adding them
+        # would double count the holding.
+        currencies_data.extend(
+            (entry, ('amt',))
+            for entry in self._query_earn_data(OkxEndpoint.SAVINGS_BALANCE, 'Simple Earn')
+        )
+        currencies_data.extend(self._query_onchain_earn_balances())
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
-        for currency_data in currencies_data:
+        for currency_data, amount_keys in currencies_data:
             try:
                 asset = asset_from_okx(okx_name=currency_data['ccy'])
             except UnknownAsset as e:
@@ -294,12 +380,18 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 continue
 
             try:
-                amount = deserialize_fval(currency_data['availBal']) + deserialize_fval(currency_data['frozenBal'])  # noqa: E501
-            except DeserializationError as e:
+                amount = sum(
+                    (deserialize_fval(currency_data[key]) for key in amount_keys),
+                    start=ZERO,
+                )
+            except (DeserializationError, KeyError) as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '
                     f'to deserialize asset amount due to {e!s}. Skipping balance result.',
                 )
+                continue
+
+            if amount == ZERO:
                 continue
 
             amounts[asset] += amount

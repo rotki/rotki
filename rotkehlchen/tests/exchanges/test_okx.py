@@ -1,4 +1,6 @@
+import logging
 import warnings as test_warnings
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -7,6 +9,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.okx import Okx, OkxEndpoint
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -53,6 +56,10 @@ def test_okx_query_balances(mock_okx: Okx):
     def mock_okx_balances(method, url, **_kwargs):     # pylint: disable=unused-argument
         if '/api/v5/asset/balances' in url:
             return MockResponse(200, '{"code":"0","data":[{"availBal":"25","bal":"25","ccy":"USDT","frozenBal":"0"},{"availBal":"30","bal":"30","ccy":"USDC","frozenBal":"0"}],"msg":""}')  # noqa: E501
+        if '/api/v5/finance/savings/balance' in url:
+            return MockResponse(200, '{"code":"0","data":[],"msg":""}')
+        if '/api/v5/finance/staking-defi/orders-active' in url:
+            return MockResponse(200, '{"code":"0","data":[],"msg":""}')
 
         return MockResponse(
             200,
@@ -175,6 +182,97 @@ def test_okx_query_balances(mock_okx: Okx):
     errors = mock_okx.msg_aggregator.consume_errors()
     assert len(warnings) == 0
     assert len(errors) == 0
+
+
+def test_okx_query_balances_includes_earn_balances(mock_okx: Okx) -> None:
+    responses: dict[OkxEndpoint, dict] = {
+        OkxEndpoint.TRADING_BALANCE: {'data': [{'details': [
+            {'ccy': 'USDT', 'availBal': '2', 'frozenBal': '3'},
+        ]}]},
+        OkxEndpoint.FUNDING_BALANCE: {'data': [
+            {'ccy': 'USDT', 'availBal': '5', 'frozenBal': '7'},
+            {'ccy': 'ADA', 'availBal': '100', 'frozenBal': '0'},
+        ]},
+        OkxEndpoint.SAVINGS_BALANCE: {'code': '0', 'data': [
+            {'ccy': 'USDT', 'amt': '11.0010737453457821'},
+            {'ccy': 'ETH', 'amt': '0.5'},
+            {'ccy': 'USDC', 'amt': '0'},
+            {'ccy': 'INVALID', 'amt': '5'},
+        ]},
+        OkxEndpoint.ONCHAIN_EARN_ORDERS: {'code': '0', 'data': [
+            {
+                'investData': [{'ccy': 'ADA', 'amt': '400'}],
+                'earningData': [
+                    {'ccy': 'ADA', 'earnings': '1.604', 'earningType': '0'},
+                    {'ccy': 'ADA', 'earnings': '100', 'earningType': '1'},
+                ],
+            },
+            {
+                'investData': [{'ccy': 'ETH', 'amt': '0.25'}],
+                'earningData': [{'ccy': 'USDT', 'earnings': '2', 'earningType': '0'}],
+            },
+            {'investData': []},
+        ]},
+    }
+
+    with (
+            patch.object(mock_okx, '_api_query', side_effect=lambda endpoint, **_kwargs: responses[endpoint]),  # noqa: E501
+            patch.object(mock_okx, 'send_unknown_asset_message') as unknown_asset,
+    ):
+        balances, msg = mock_okx.query_balances()
+
+    assert msg == ''
+    assert balances is not None
+    assert balances[Asset('ADA').resolve_to_asset_with_oracles()].amount == FVal('501.604')
+    assert balances[A_ETH.resolve_to_asset_with_oracles()].amount == FVal('0.75')
+    assert balances[A_USDT.resolve_to_asset_with_oracles()].amount == FVal('30.0010737453457821')
+    assert A_USDC.resolve_to_asset_with_oracles() not in balances
+    unknown_asset.assert_called_once_with(asset_identifier='INVALID', details='balance query')
+    assert mock_okx.msg_aggregator.consume_warnings() == []
+    assert mock_okx.msg_aggregator.consume_errors() == []
+
+
+@pytest.mark.parametrize(
+    ('failing_endpoint', 'response', 'warning_text'),
+    [
+        (OkxEndpoint.SAVINGS_BALANCE, {'code': '50101', 'msg': 'Permission denied'}, '50101'),
+        (OkxEndpoint.ONCHAIN_EARN_ORDERS, RemoteError('connection reset'), 'connection reset'),
+        (OkxEndpoint.SAVINGS_BALANCE, {'code': '0', 'data': {}}, 'does not contain list'),
+    ],
+)
+def test_okx_query_balances_degrades_when_earn_query_fails(
+        mock_okx: Okx,
+        caplog: pytest.LogCaptureFixture,
+        failing_endpoint: OkxEndpoint,
+        response: dict[str, Any] | RemoteError,
+        warning_text: str,
+) -> None:
+    responses: dict[OkxEndpoint, dict[str, Any]] = {
+        OkxEndpoint.TRADING_BALANCE: {'data': [{'details': [
+            {'ccy': 'USDT', 'availBal': '1', 'frozenBal': '0'},
+        ]}]},
+        OkxEndpoint.FUNDING_BALANCE: {'data': []},
+        OkxEndpoint.SAVINGS_BALANCE: {'code': '0', 'data': []},
+        OkxEndpoint.ONCHAIN_EARN_ORDERS: {'code': '0', 'data': []},
+    }
+
+    def mock_api_query(endpoint: OkxEndpoint, **_kwargs: object) -> dict[str, Any]:
+        if endpoint == failing_endpoint:
+            if isinstance(response, RemoteError):
+                raise response
+            return response
+        return responses[endpoint]
+
+    with (
+            caplog.at_level(logging.WARNING),
+            patch.object(mock_okx, '_api_query', side_effect=mock_api_query),
+    ):
+        balances, msg = mock_okx.query_balances()
+
+    assert msg == ''
+    assert balances is not None
+    assert balances[A_USDT.resolve_to_asset_with_oracles()].amount == FVal(1)
+    assert warning_text in caplog.text
 
 
 def test_okx_query_trades(mock_okx: Okx) -> None:
