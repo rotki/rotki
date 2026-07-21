@@ -35,14 +35,13 @@ onMounted(() => {
   >
     <RouterLink
       v-if="missingPricesCount > 0"
-      class="inline-flex no-underline"
+      class="no-underline"
       :to="{ name: '/price-manager/latest/' }"
     >
-      <RuiChip
+      <RuiButton
         size="sm"
-        color="grey"
+        color="secondary"
         variant="outlined"
-        class="cursor-pointer hover:brightness-95"
       >
         <template #prepend>
           <RuiIcon
@@ -50,19 +49,18 @@ onMounted(() => {
             size="14"
           />
         </template>
-        {{ t('dashboard.completeness.missing_prices', { count: missingPricesCount }) }}
-      </RuiChip>
+        {{ t('dashboard.completeness.missing_prices', { count: missingPricesCount }, missingPricesCount) }}
+      </RuiButton>
     </RouterLink>
     <RouterLink
       v-if="undecodedCount > 0"
-      class="inline-flex no-underline"
+      class="no-underline"
       :to="{ name: '/history/events/' }"
     >
-      <RuiChip
+      <RuiButton
         size="sm"
         color="warning"
         variant="outlined"
-        class="cursor-pointer hover:brightness-95"
       >
         <template #prepend>
           <RuiIcon
@@ -70,19 +68,18 @@ onMounted(() => {
             size="14"
           />
         </template>
-        {{ t('dashboard.completeness.undecoded', { count: undecodedCount }) }}
-      </RuiChip>
+        {{ t('dashboard.completeness.undecoded', { count: undecodedCount }, undecodedCount) }}
+      </RuiButton>
     </RouterLink>
     <RouterLink
       v-if="actionableCount > 0"
-      class="inline-flex no-underline"
+      class="no-underline"
       :to="{ name: '/history/data-issues/' }"
     >
-      <RuiChip
+      <RuiButton
         size="sm"
         color="warning"
         variant="outlined"
-        class="cursor-pointer hover:brightness-95"
       >
         <template #prepend>
           <RuiIcon
@@ -90,8 +87,8 @@ onMounted(() => {
             size="14"
           />
         </template>
-        {{ t('dashboard.completeness.data_issues', { count: actionableCount }) }}
-      </RuiChip>
+        {{ t('dashboard.completeness.data_issues', { count: actionableCount }, actionableCount) }}
+      </RuiButton>
     </RouterLink>
   </div>
 </template>

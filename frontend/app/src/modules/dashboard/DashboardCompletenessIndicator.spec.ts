@@ -61,7 +61,7 @@ describe('dashboardCompletenessIndicator', () => {
     expect(wrapper.find('[data-testid=dashboard-completeness]').exists()).toBe(false);
   });
 
-  it('should show a chip when assets are missing prices', async () => {
+  it('should show a button when assets are missing prices', async () => {
     useBalancePricesStore().prices = {
       ETH: { isManualPrice: false, oracle: 'blockchain', priceMissing: true, usdPrice: null, value: '0' },
     } as never;
@@ -69,20 +69,20 @@ describe('dashboardCompletenessIndicator', () => {
     expect(wrapper.find('[data-testid=dashboard-completeness]').text()).toContain('missing_prices');
   });
 
-  it('should show a chip for leftover undecoded transactions', async () => {
+  it('should show a button for leftover undecoded transactions', async () => {
     useDecodingStatusStore().setUndecodedTransactionsStatus({ chain: 'eth', processed: 2, total: 10 });
     const wrapper = await createWrapper();
     expect(wrapper.find('[data-testid=dashboard-completeness]').text()).toContain('undecoded');
   });
 
-  it('should hide the undecoded chip while history is processing', async () => {
+  it('should hide the undecoded button while history is processing', async () => {
     state.processing = true;
     useDecodingStatusStore().setUndecodedTransactionsStatus({ chain: 'eth', processed: 2, total: 10 });
     const wrapper = await createWrapper();
     expect(wrapper.find('[data-testid=dashboard-completeness]').exists()).toBe(false);
   });
 
-  it('should show a chip when data issues need attention', async () => {
+  it('should show a button when data issues need attention', async () => {
     state.actionableCount = 3;
     const wrapper = await createWrapper();
     expect(wrapper.find('[data-testid=dashboard-completeness]').text()).toContain('data_issues');
