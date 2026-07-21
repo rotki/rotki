@@ -13,9 +13,10 @@ import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
-import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { getTokenChain } from './get-token-chain';
+import NewlyDetectedAssetRowActions from './NewlyDetectedAssetRowActions.vue';
+import NewlyDetectedAssetToolbar from './NewlyDetectedAssetToolbar.vue';
 import { type NewDetectedToken, NewDetectedTokenKind } from './types';
 import { useNewlyDetectedTokens } from './use-newly-detected-tokens';
 
@@ -206,90 +207,16 @@ onMounted(async () => {
   >
     <RuiCard>
       <template #custom-header>
-        <div class="flex flex-col gap-4 px-4 pt-4">
-          <div class="flex gap-4 justify-between grow">
-            <div class="flex gap-4 content-center">
-              <RuiTooltip
-                :popper="{ placement: 'bottom' }"
-                :open-delay="500"
-              >
-                <template #activator>
-                  <RuiCheckbox
-                    color="primary"
-                    hide-details
-                    size="sm"
-                    class="ml-2 mt-1 text-body-2"
-                    :disabled="state.found === 0"
-                    :model-value="allSelected"
-                    @update:model-value="toggleSelection()"
-                  >
-                    {{ t('asset_table.selected', { count: selected.length }) }}
-                  </RuiCheckbox>
-                </template>
-                {{ t('asset_table.newly_detected.select_deselect_all_tokens') }}
-              </RuiTooltip>
-
-              <div>
-                <RuiTooltip
-                  :popper="{ placement: 'bottom' }"
-                  :open-delay="500"
-                >
-                  <template #activator>
-                    <RuiButton
-                      :disabled="selected.length === 0"
-                      color="success"
-                      variant="text"
-                      class="w-12 h-12"
-                      @click="removeTokens()"
-                    >
-                      <RuiIcon name="lu-check" />
-                    </RuiButton>
-                  </template>
-
-                  {{ t('asset_table.newly_detected.accept_selected') }}
-                </RuiTooltip>
-
-                <RuiTooltip
-                  :popper="{ placement: 'bottom' }"
-                  :open-delay="500"
-                >
-                  <template #activator>
-                    <RuiButton
-                      :disabled="selected.length === 0"
-                      color="error"
-                      variant="text"
-                      class="w-12 h-12"
-                      @click="markAsSpam()"
-                    >
-                      <RuiIcon name="lu-octagon-alert" />
-                    </RuiButton>
-                  </template>
-
-                  {{ t('asset_table.newly_detected.mark_selected_as_spam') }}
-                </RuiTooltip>
-              </div>
-            </div>
-
-            <HintMenuIcon :popper="{ placement: 'left-start' }">
-              {{ t('asset_table.newly_detected.subtitle') }}
-            </HintMenuIcon>
-          </div>
-
-          <!-- Filters -->
-          <div class="flex gap-4 items-center">
-            <RuiMenuSelect
-              v-model="tokenKindFilter"
-              :options="tokenKindOptions"
-              :label="t('asset_table.newly_detected.token_type')"
-              key-attr="value"
-              text-attr="title"
-              variant="outlined"
-              dense
-              hide-details
-              class="max-w-[180px]"
-            />
-          </div>
-        </div>
+        <NewlyDetectedAssetToolbar
+          v-model="tokenKindFilter"
+          :all-selected="allSelected"
+          :selected-count="selected.length"
+          :found="state.found"
+          :token-kind-options="tokenKindOptions"
+          @toggle-selection="toggleSelection()"
+          @accept="removeTokens()"
+          @mark-spam="markAsSpam()"
+        />
       </template>
 
       <RuiDataTable
@@ -347,45 +274,11 @@ onMounted(async () => {
         </template>
 
         <template #item.actions="{ row }">
-          <RuiButtonGroup
+          <NewlyDetectedAssetRowActions
             :key="row.tokenIdentifier"
-            class="dark:!divide-rui-grey-800"
-          >
-            <RuiTooltip
-              :open-delay="300"
-              :close-delay="0"
-            >
-              <template #activator>
-                <RuiButton
-                  color="success"
-                  icon
-                  variant="text"
-                  class="m-auto !rounded-none"
-                  @click="removeTokens(row.tokenIdentifier)"
-                >
-                  <RuiIcon name="lu-check" />
-                </RuiButton>
-              </template>
-              {{ t('asset_table.newly_detected.accept') }}
-            </RuiTooltip>
-            <RuiTooltip
-              :open-delay="300"
-              :close-delay="0"
-            >
-              <template #activator>
-                <RuiButton
-                  color="error"
-                  icon
-                  variant="text"
-                  class="m-auto !rounded-none"
-                  @click="markAsSpam(row.tokenIdentifier)"
-                >
-                  <RuiIcon name="lu-octagon-alert" />
-                </RuiButton>
-              </template>
-              {{ t('asset_table.newly_detected.mark_as_spam') }}
-            </RuiTooltip>
-          </RuiButtonGroup>
+            @accept="removeTokens(row.tokenIdentifier)"
+            @mark-spam="markAsSpam(row.tokenIdentifier)"
+          />
         </template>
       </RuiDataTable>
     </RuiCard>
