@@ -1,6 +1,10 @@
+import json
+import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.logging import enter_exit_debug_log
+from rotkehlchen.constants.misc import AIRDROPSDIR_NAME, APPDIR_NAME
+from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
+from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
@@ -8,6 +12,9 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log(name='UserDB v52->v53 upgrade')
@@ -194,5 +201,45 @@ INSERT INTO ens_mappings(address, ens_name, last_update, last_avatar_update)
 SELECT address, ens_name, last_update, last_avatar_update FROM ens_mappings_old;
 DROP TABLE ens_mappings_old;
 """)
+
+    @progress_step(description='Add Kraken as the first current price oracle.')
+    def _add_kraken_current_price_oracle(write_cursor: DBCursor) -> None:
+        if (data := write_cursor.execute(
+            "SELECT value FROM settings WHERE name='current_price_oracles'",
+        ).fetchone()) is None:
+            return  # A missing setting uses the defaults, which already have Kraken first.
+
+        try:
+            oracles: list[str] = json.loads(data[0])
+        except json.JSONDecodeError as e:
+            log.error('Failed to read current price oracles from user db due to %s', e)
+            return
+
+        kraken = CurrentPriceOracle.KRAKEN.serialize()
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            (
+                'current_price_oracles',
+                json.dumps([
+                    kraken,
+                    *(oracle for oracle in oracles if oracle != kraken),
+                ]),
+            ),
+        )
+
+    @progress_step(description='Remove obsolete airdrop parquet files.')
+    def _remove_airdrop_parquet_files(write_cursor: DBCursor) -> None:
+        """Remove parquet airdrop files left behind now that airdrops use compressed CSV files."""
+        for parquet_file_path in (
+            db.user_data_dir.parent.parent / APPDIR_NAME / AIRDROPSDIR_NAME
+        ).glob('*.parquet'):
+            try:
+                parquet_file_path.unlink()
+            except OSError as e:
+                log.error(
+                    'Failed to remove airdrop file %s due to %s. Skipping it',
+                    parquet_file_path,
+                    e,
+                )
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)

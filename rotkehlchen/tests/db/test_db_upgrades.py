@@ -4151,7 +4151,13 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_52_to_53(user_data_dir, messages_aggregator):
+@pytest.mark.parametrize('current_price_oracles', [None, ['coingecko', 'defillama']])
+def test_upgrade_db_52_to_53(
+        user_data_dir,
+        messages_aggregator,
+        data_dir,
+        current_price_oracles,
+):
     """Test upgrading the DB from version 52 to version 53."""
     _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
     db_v52 = _init_db_with_target_version(
@@ -4285,6 +4291,16 @@ def test_upgrade_db_52_to_53(user_data_dir, messages_aggregator):
             'VALUES (?, ?, ?, ?)',
             ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'rotki.eth', 1730000000, 42),
         )
+        if current_price_oracles is not None:
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                ('current_price_oracles', json.dumps(current_price_oracles)),
+            )
+
+    airdrops_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
+    airdrops_dir.mkdir(parents=True)
+    (airdrop_parquet_path := airdrops_dir / 'obsolete.parquet').touch()
+    (airdrop_csv_path := airdrops_dir / 'current.csv.gz').touch()
 
     db_v52.logout()
     db = _init_db_with_target_version(
@@ -4398,6 +4414,15 @@ def test_upgrade_db_52_to_53(user_data_dir, messages_aggregator):
                 ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'other.gwei', 1730000000, 'gns'),
             )
 
+        oracle_setting = cursor.execute(
+            "SELECT value FROM settings WHERE name='current_price_oracles'",
+        ).fetchone()
+        if current_price_oracles is None:
+            assert oracle_setting is None
+        else:
+            assert json.loads(oracle_setting[0]) == ['kraken', *current_price_oracles]
         assert db.get_setting(cursor, 'version') == 53
 
+    assert airdrop_parquet_path.exists() is False
+    assert airdrop_csv_path.exists() is True
     db.logout()

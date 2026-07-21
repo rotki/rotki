@@ -19,6 +19,7 @@ class CurrentPriceOracle(OracleSource):
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = (
+    CurrentPriceOracle.KRAKEN,
     CurrentPriceOracle.DEFILLAMA,
     CurrentPriceOracle.COINGECKO,
     CurrentPriceOracle.UNISWAPV2,
