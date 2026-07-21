@@ -1,5 +1,6 @@
 import type { OraclePriceEntry } from '@/modules/assets/prices/price-types';
 import { bigNumberify } from '@rotki/common';
+import { componentVm } from '@test/utils/component-vm';
 import { mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -62,10 +63,7 @@ describe('oraclePriceEditDialog', () => {
     });
     await flushPromises();
 
-    const vm = wrapper.vm as unknown as {
-      editedPrice: string;
-      save: () => Promise<void>;
-    };
+    const vm = componentVm<{ editedPrice: string; save: () => Promise<void> }>(wrapper);
     vm.editedPrice = '3000';
     await vm.save();
     await flushPromises();
@@ -92,10 +90,7 @@ describe('oraclePriceEditDialog', () => {
     });
     await flushPromises();
 
-    const vm = wrapper.vm as unknown as {
-      editedPrice: string;
-      save: () => Promise<void>;
-    };
+    const vm = componentVm<{ editedPrice: string; save: () => Promise<void> }>(wrapper);
     vm.editedPrice = '3000';
     await vm.save();
     await flushPromises();
