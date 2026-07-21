@@ -6,17 +6,18 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
-import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import { useEvmNodesApi } from '@/modules/settings/api/use-evm-nodes-api';
 import BlockchainRpcNodeFormDialog from '@/modules/settings/general/rpc/BlockchainRpcNodeFormDialog.vue';
+import { NODE_STATUS, type NodeStatus } from '@/modules/settings/general/rpc/rpc-node-status';
+import RpcNodeStatusCell from '@/modules/settings/general/rpc/RpcNodeStatusCell.vue';
+import RpcReconnectButton from '@/modules/settings/general/rpc/RpcReconnectButton.vue';
 import {
   type BlockchainRpcNode,
   type BlockchainRpcNodeList,
   type BlockchainRpcNodeManageState,
   getPlaceholderNode,
 } from '@/modules/settings/types/rpc';
-import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import SimpleTable from '@/modules/shell/components/SimpleTable.vue';
 
@@ -113,15 +114,6 @@ function isNodeInDataset(dataset: Record<string, string[]>, item: BlockchainRpcN
   return nodes.includes(item.name);
 }
 
-const NODE_STATUS = {
-  CONNECTED: 'connected',
-  COOLING_DOWN: 'cooling_down',
-  FAILED: 'failed',
-  READY: 'ready',
-} as const;
-
-type NodeStatus = typeof NODE_STATUS[keyof typeof NODE_STATUS];
-
 function isNodeConnected(item: BlockchainRpcNode): boolean {
   return isEtherscan(item) || isNodeInDataset(get(connectedNodes), item);
 }
@@ -185,27 +177,12 @@ defineExpose({
         <th>
           <div class="flex items-center gap-2">
             <div class="w-6">
-              <RuiTooltip
+              <RpcReconnectButton
                 v-if="anyDisconnected"
-                :open-delay="400"
-              >
-                <template #activator>
-                  <RuiButton
-                    :disabled="reconnecting"
-                    icon
-                    color="primary"
-                    variant="text"
-                    size="sm"
-                    @click="reConnect()"
-                  >
-                    <RuiIcon
-                      name="lu-rotate-cw"
-                      size="16"
-                    />
-                  </RuiButton>
-                </template>
-                {{ t('evm_rpc_node_manager.reconnect.all') }}
-              </RuiTooltip>
+                :disabled="reconnecting"
+                :tooltip="t('evm_rpc_node_manager.reconnect.all')"
+                @reconnect="reConnect()"
+              />
             </div>
             {{ t('evm_rpc_node_manager.connectivity') }}
           </div>
@@ -283,96 +260,13 @@ defineExpose({
           </span>
         </td>
         <td>
-          <div class="flex items-center gap-2">
-            <div class="w-6">
-              <RuiTooltip
-                v-if="getNodeStatus(item) === NODE_STATUS.FAILED && item.active"
-                :open-delay="400"
-              >
-                <template #activator>
-                  <RuiButton
-                    :disabled="reconnecting"
-                    icon
-                    color="primary"
-                    variant="text"
-                    size="sm"
-                    @click="reConnect(item.identifier)"
-                  >
-                    <RuiIcon
-                      name="lu-rotate-cw"
-                      size="16"
-                    />
-                  </RuiButton>
-                </template>
-                {{ t('evm_rpc_node_manager.reconnect.single') }}
-              </RuiTooltip>
-            </div>
-            <BadgeDisplay
-              v-if="getNodeStatus(item) === NODE_STATUS.CONNECTED"
-              color="green"
-              class="items-center gap-2 !leading-6"
-            >
-              <RuiIcon
-                color="success"
-                size="16"
-                name="lu-wifi"
-              />
-              <span>
-                {{ t('evm_rpc_node_manager.connected.true') }}
-              </span>
-            </BadgeDisplay>
-            <RuiTooltip
-              v-else-if="getNodeStatus(item) === NODE_STATUS.COOLING_DOWN"
-              :open-delay="400"
-            >
-              <template #activator>
-                <BadgeDisplay
-                  color="orange"
-                  class="items-center gap-2 !leading-6"
-                >
-                  <RuiIcon
-                    size="16"
-                    name="lu-clock"
-                  />
-                  <span>
-                    {{ t('evm_rpc_node_manager.connected.cooling_down') }}
-                  </span>
-                </BadgeDisplay>
-              </template>
-              <span v-if="item.cooldownUntil">
-                {{ t('evm_rpc_node_manager.cooldown_until') }}
-                <DateDisplay :timestamp="item.cooldownUntil" />
-              </span>
-            </RuiTooltip>
-            <BadgeDisplay
-              v-else-if="getNodeStatus(item) === NODE_STATUS.FAILED"
-              color="red"
-              class="items-center gap-2 !leading-6"
-            >
-              <RuiIcon
-                color="error"
-                size="16"
-                name="lu-wifi-off"
-              />
-              <span>
-                {{ t('evm_rpc_node_manager.connected.failure') }}
-              </span>
-            </BadgeDisplay>
-            <BadgeDisplay
-              v-else
-              color="grey"
-              class="items-center gap-2 !leading-6"
-            >
-              <RuiIcon
-                color="info"
-                size="16"
-                name="lu-wifi"
-              />
-              <span>
-                {{ t('evm_rpc_node_manager.connected.false') }}
-              </span>
-            </BadgeDisplay>
-          </div>
+          <RpcNodeStatusCell
+            :status="getNodeStatus(item)"
+            :active="item.active"
+            :cooldown-until="item.cooldownUntil"
+            :reconnecting="reconnecting"
+            @reconnect="reConnect(item.identifier)"
+          />
         </td>
         <td>
           <div class="flex items-center gap-2 justify-end">
