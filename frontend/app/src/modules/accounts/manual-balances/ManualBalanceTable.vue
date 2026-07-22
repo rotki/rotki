@@ -10,8 +10,8 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';
 import { type Filters, ManualBalancesFilterSchema, type Matcher, useManualBalanceFilter } from '@/modules/core/table/filters/use-manual-balances-filter';
 import TableFilter from '@/modules/core/table/TableFilter.vue';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { useSetting } from '@/modules/settings/use-setting';
 import TagFilter from '@/modules/shell/components/inputs/TagFilter.vue';
@@ -36,36 +36,44 @@ const currencySymbol = useSetting('currencySymbol');
 const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(() => type);
 const { prepareForEdit, pricesLoading, refresh, refreshing, showDeleteConfirmation } = useManualBalanceTableActions();
 
+const filterSchema = useManualBalanceFilter(locations);
+const { matchers } = filterSchema;
+
 const {
-  fetchData,
-  filters,
+  collection: state,
+  filter: filters,
   isLoading: loading,
-  matchers,
   pagination,
+  refetch: fetchData,
   sort,
-  state,
-} = usePaginationFilters<
+} = useServerTable<
   ManualBalanceWithPrice,
   ManualBalanceRequestPayload,
   Filters,
   Matcher
->(fetch, {
-  defaultSortBy: [
-    {
-      column: 'value',
-      direction: 'desc',
+>({
+  fetch,
+  filterSchema,
+  params: [{
+    fromQuery(query): void {
+      const schema = ManualBalancesFilterSchema.parse(query);
+      if (schema.tags)
+        set(tags, schema.tags);
     },
-  ],
-  extraParams: computed(() => ({
-    tags: get(tags),
-  })),
-  filterSchema: () => useManualBalanceFilter(locations),
-  history: 'router',
-  onUpdateFilters(query) {
-    const schema = ManualBalancesFilterSchema.parse(query);
-    if (schema.tags)
-      set(tags, schema.tags);
+    to: 'both',
+    values: computed<Record<string, unknown>>(() => ({
+      tags: get(tags),
+    })),
+  }],
+  sort: {
+    default: [
+      {
+        column: 'value',
+        direction: 'desc',
+      },
+    ],
   },
+  urlState: { mode: 'route' },
 });
 
 function edit(balance: ManualBalanceWithPrice): void {

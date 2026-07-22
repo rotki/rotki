@@ -10,7 +10,7 @@ import type {
 } from '@/modules/settings/types/accounting';
 import { getCollectionData } from '@/modules/core/common/data/collection-utils';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventTypeCombination from '@/modules/history/events/HistoryEventTypeCombination.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
@@ -31,15 +31,16 @@ const { getAccountingRulesConflicts, resolveAccountingRuleConflicts } = useAccou
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { fetchData, isLoading, pagination, state } = usePaginationFilters<
+const { collection, isLoading, pagination, refetch } = useServerTable<
   AccountingRuleConflict,
   AccountingRuleConflictRequestPayload
->(getAccountingRulesConflicts, {
-  history: 'router',
+>({
+  fetch: getAccountingRulesConflicts,
+  urlState: { mode: 'route' },
 });
 
 onMounted(() => {
-  fetchData();
+  refetch();
 });
 
 const tableHeaders = computed<DataTableColumn<AccountingRuleConflict>[]>(() => [
@@ -127,7 +128,7 @@ const { setMessage } = useMessageStore();
 
 const loading = ref<boolean>(false);
 
-const { total } = getCollectionData<AccountingRuleConflict>(state);
+const { total } = getCollectionData<AccountingRuleConflict>(collection);
 
 const remaining = computed(() => {
   const resolved = get(resolutionLength);
@@ -249,7 +250,7 @@ async function save() {
         class="pb-4"
         :cols="tableHeaders"
         :loading="isLoading"
-        :rows="state.data"
+        :rows="collection.data"
         disable-floating-header
         :mobile-breakpoint="0"
         outlined

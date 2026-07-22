@@ -1,24 +1,23 @@
+import type { Account, HistoryEventEntryType } from '@rotki/common';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
-import { type Account, type HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
 import { objectOmit } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/modules/core/table/filters/use-events-filter';
-import { RouterLocationLabelsSchema } from '@/modules/core/table/route';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId } from '@/modules/core/table/use-remember-table-sorting';
+import { type ChangeSource, routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import {
   isEvmEventType,
   isOnlineHistoryEventType,
 } from '@/modules/history/event-utils';
 import { DuplicateHandlingStatus, type HighlightType } from '@/modules/history/events/action-types';
-import { isValidHistoryEventState } from '@/modules/history/events/mapping/use-history-event-state-mapping';
+import { buildHistoryEventSources } from '@/modules/history/events/history-event-query';
 import { HIGHLIGHT_FETCH_DEBOUNCE, useHistoryEventHighlights, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 
@@ -52,7 +51,7 @@ interface UseHistoryEventsFiltersReturn {
   duplicateHandlingStatus: ComputedRef<DuplicateHandlingStatus | undefined>;
   locationLabels: Readonly<Ref<string[]>>;
   groupIdentifiers: ComputedRef<string[] | undefined>;
-  fetchData: () => Promise<void>;
+  refetch: () => Promise<void>;
   filters: ComputedRef<Filters>;
   groupLoading: Ref<boolean>;
   groups: Ref<Collection<HistoryEventRow>>;
@@ -65,13 +64,12 @@ interface UseHistoryEventsFiltersReturn {
   locations: ComputedRef<string[]>;
   matchers: ComputedRef<Matcher[]>;
   onLocationLabelsChanged: (locationLabels: string[]) => void;
-  pageParams: ComputedRef<HistoryEventRequestPayload>;
+  requestPayload: ComputedRef<HistoryEventRequestPayload>;
   pagination: ComputedRef<TablePaginationData>;
-  setPage: (page: number, action?: boolean) => void;
+  setPage: (page: number, source?: ChangeSource) => void;
   sort: ComputedRef<DataTableSortData<HistoryEventRow>>;
-  updateFilter: (newFilter: Filters) => void;
+  setFilter: (newFilter: Filters) => void;
   usedLocationLabels: ComputedRef<string[]>;
-  userAction: Ref<boolean>;
 }
 
 export function useHistoryEventsFilters(
@@ -143,150 +141,78 @@ export function useHistoryEventsFilters(
     return get(locationLabels);
   });
 
+  const sources = buildHistoryEventSources({
+    duplicateHandlingStatusFromQuery,
+    entryTypes,
+    eventSubTypes,
+    eventTypes,
+    groupIdentifiersFromQuery,
+    location,
+    locationLabels,
+    missingAcquisitionFromQuery,
+    overlayMode,
+    period,
+    protocols,
+    route,
+    shouldPreserveHighlights,
+    toggles,
+    usedLocationLabels,
+    validators,
+  });
+
+  const filterSchema = useHistoryEventFilter({
+    eventSubtypes: (toValue(eventSubTypes) || []).length > 0,
+    eventTypes: (toValue(eventTypes) || []).length > 0,
+    locations: !!toValue(location),
+    period: !!toValue(period),
+    protocols: (toValue(protocols) || []).length > 0,
+    validators: !!toValue(validators),
+  }, computed<HistoryEventEntryType[] | undefined>(() => toValue(entryTypes)));
+
+  const { matchers } = filterSchema;
+
   const {
-    fetchData,
-    filters,
+    collection: groups,
+    filter: filters,
     isLoading: groupLoading,
-    matchers,
-    pageParams,
+    markUserIntent,
     pagination,
+    refetch,
+    requestPayload,
+    setFilter,
     setPage,
     sort,
-    state: groups,
-    updateFilter,
-    userAction,
-  } = usePaginationFilters<
+  } = useServerTable<
     HistoryEventRow,
     HistoryEventRequestPayload,
     Filters,
     Matcher
-  >(fetchHistoryEventsTagged, {
-    cancelTag: GROUPS_CANCEL_TAG,
-    defaultParams: computed(() => {
-      if (toValue(entryTypes) !== undefined && toValue(entryTypes)) {
-        return {
-          entryTypes: {
-            values: toValue(entryTypes) || [],
-          },
-        };
-      }
-      return {};
-    }),
-    fetchDebounce: HIGHLIGHT_FETCH_DEBOUNCE,
-    extraParams: computed(() => {
-      const stateMarkers = get(toggles, 'stateMarkers');
-      return {
-        excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
-        groupIdentifiers: get(groupIdentifiersFromQuery),
-        ...(stateMarkers.length > 0 ? { stateMarkers } : {}),
-      };
-    }),
-    filterSchema: () => useHistoryEventFilter({
-      eventSubtypes: (toValue(eventSubTypes) || []).length > 0,
-      eventTypes: (toValue(eventTypes) || []).length > 0,
-      locations: !!toValue(location),
-      period: !!toValue(period),
-      protocols: (toValue(protocols) || []).length > 0,
-      validators: !!toValue(validators),
-    }, computed<HistoryEventEntryType[] | undefined>(() => toValue(entryTypes))),
-    history: toValue(mainPage) ? 'router' : false,
-    onUpdateFilters(query) {
-      const parsedLocationLabels = RouterLocationLabelsSchema.parse(query);
-      const locationLabelsParsed = parsedLocationLabels.locationLabels;
-      if (!locationLabelsParsed || locationLabelsParsed.length === 0)
-        set(locationLabels, []);
-      else
-        set(locationLabels, locationLabelsParsed);
-
-      const stateMarkersParam = query.stateMarkers;
-      set(toggles, {
-        ...get(toggles),
-        stateMarkers: stateMarkersParam && typeof stateMarkersParam === 'string'
-          ? stateMarkersParam.split(',').filter(isValidHistoryEventState)
-          : [],
-      });
-
-      // Restore the accounting-overlay mode from the route (e.g. on back navigation); an
-      // empty/absent param resets it to 'none', so a fresh visit starts with the overlay off.
-      set(overlayMode, query.overlay === OverlayMode.BALANCE ? OverlayMode.BALANCE : OverlayMode.NONE);
-    },
-    persistFilter: computed(() => ({
-      enabled: true,
-      excludeKeys: [
-        'missingAcquisitionIdentifier',
-        'groupIdentifiers',
-        'duplicateHandlingStatus',
-        'targetGroupIdentifier',
-        'highlightedAccountingEvent',
-        'highlightedAssetMovement',
-        'highlightedInternalTxConflict',
-        'highlightedPotentialMatch',
-        'highlightedNegativeBalanceEvent',
+  >({
+    fetch: fetchHistoryEventsTagged,
+    filterSchema,
+    params: sources,
+    persist: {
+      keys: {
+        duplicateHandlingStatus: 'never',
+        groupIdentifiers: 'never',
+        highlightedAccountingEvent: 'never',
+        highlightedAssetMovement: 'never',
+        highlightedInternalTxConflict: 'never',
+        highlightedNegativeBalanceEvent: 'never',
+        highlightedPotentialMatch: 'never',
+        missingAcquisitionIdentifier: 'never',
         // Keep the overlay out of the remembered filter so it never persists across sessions.
-        'overlay',
-      ],
+        overlay: 'never',
+        targetGroupIdentifier: 'never',
+        txRefs: 'untilChanged',
+      },
       tableId: TableId.HISTORY,
-      transientKeys: ['txRefs'],
-    })),
-    // Query params that should be preserved in the URL but not used for API requests.
-    queryParamsOnly: computed(() => {
-      const duplicateHandlingStatusValue = get(duplicateHandlingStatusFromQuery);
-      const groupIdentifiersValue = get(groupIdentifiersFromQuery);
-      const preserve = get(shouldPreserveHighlights);
-      const { highlightedAccountingEvent, highlightedAssetMovement, highlightedInternalTxConflict, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
-
-      const missingAcquisitionValue = get(missingAcquisitionFromQuery);
-      const stateMarkersValue = get(toggles, 'stateMarkers');
-      return {
-        duplicateHandlingStatus: duplicateHandlingStatusValue,
-        groupIdentifiers: groupIdentifiersValue?.join(','),
-        ...(preserve
-          ? {
-              highlightedAssetMovement,
-              highlightedAccountingEvent,
-              highlightedInternalTxConflict,
-              highlightedNegativeBalanceEvent,
-              highlightedPotentialMatch,
-            }
-          : {}),
-        locationLabels: get(usedLocationLabels),
-        missingAcquisitionIdentifier: missingAcquisitionValue?.join(','),
-        // Only the 'balance' mode lands in the URL; 'none' is stripped as an empty value.
-        ...(get(overlayMode) === OverlayMode.BALANCE ? { overlay: OverlayMode.BALANCE } : {}),
-        ...(stateMarkersValue.length > 0 ? { stateMarkers: stateMarkersValue.join(',') } : {}),
-      };
-    }),
-    requestParams: computed<Partial<HistoryEventRequestPayload>>(() => {
-      const params: Writeable<Partial<HistoryEventRequestPayload>> = {
-        aggregateByGroupIds: true,
-        counterparties: toValue(protocols),
-        eventSubtypes: toValue(eventSubTypes),
-        eventTypes: toValue(eventTypes),
-        identifiers: get(missingAcquisitionFromQuery),
-      };
-
-      const accountsValue = get(usedLocationLabels);
-
-      const locationVal = toValue(location);
-      if (locationVal !== undefined)
-        params.location = toSnakeCase(locationVal);
-
-      if (accountsValue.length > 0)
-        params.locationLabels = get(usedLocationLabels);
-
-      const periodVal = toValue(period);
-      if (periodVal !== undefined) {
-        const { fromTimestamp, toTimestamp } = periodVal;
-        params.fromTimestamp = fromTimestamp;
-        params.toTimestamp = toTimestamp;
-      }
-
-      const validatorsVal = toValue(validators);
-      if (validatorsVal !== undefined && validatorsVal)
-        params.validatorIndices = validatorsVal.map(v => v.toString()) || [];
-
-      return params;
-    }),
+    },
+    request: {
+      cancelTag: GROUPS_CANCEL_TAG,
+      debounce: HIGHLIGHT_FETCH_DEBOUNCE,
+    },
+    urlState: routeWhen(mainPage),
   });
 
   const locations = computed<string[]>(() => {
@@ -321,13 +247,16 @@ export function useHistoryEventsFilters(
   const hasActiveFilters = useRefWithDebounce(hasActiveFiltersRaw, 500);
 
   function clearFilters(): void {
-    updateFilter({});
+    setFilter({});
     onLocationLabelsChanged([]);
     set(toggles, { ...getDefaultToggles() });
   }
 
   function onLocationLabelsChanged(labels: string[]): void {
-    set(userAction, true);
+    // locationLabels feeds both a request source and a url source, so the table
+    // cannot see this as an interaction on its own. Attribute it explicitly or the
+    // new labels never reach the URL.
+    markUserIntent();
     set(locationLabels, labels);
   }
 
@@ -336,7 +265,7 @@ export function useHistoryEventsFilters(
    * Sort changes (orderByAttributes, ascending) are excluded so highlights
    * persist through reordering.
    */
-  watch(pageParams, (params, oldParams) => {
+  watch(requestPayload, (params, oldParams) => {
     if (!oldParams || !get(shouldPreserveHighlights) || get(isNavigating))
       return;
 
@@ -359,7 +288,6 @@ export function useHistoryEventsFilters(
   return {
     clearFilters,
     duplicateHandlingStatus: duplicateHandlingStatusFromQuery,
-    fetchData,
     filters,
     groupIdentifiers: groupIdentifiersFromQuery,
     groupLoading,
@@ -374,12 +302,12 @@ export function useHistoryEventsFilters(
     locations,
     matchers,
     onLocationLabelsChanged,
-    pageParams,
     pagination,
+    refetch,
+    requestPayload,
+    setFilter,
     setPage,
     sort,
-    updateFilter,
     usedLocationLabels,
-    userAction,
   };
 }

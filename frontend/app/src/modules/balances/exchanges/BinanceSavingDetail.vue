@@ -6,8 +6,8 @@ import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/a
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
 import { Section } from '@/modules/core/common/status';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
@@ -26,31 +26,33 @@ const { isLoading: loading } = useSectionStatus(Section.EXCHANGE_SAVINGS);
 const { fetchExchangeSavings } = useBinanceSavings();
 const currencySymbol = useSetting('currencySymbol');
 
-const defaultParams = computed(() => ({
+const defaultParams = computed<Record<string, unknown>>(() => ({
   location: exchange.toString(),
 }));
 
 const {
-  fetchData,
+  collection,
   isLoading,
   pagination,
+  refetch: fetchData,
   sort,
-  state: collection,
-} = usePaginationFilters<
+} = useServerTable<
   ExchangeSavingsEvent,
   ExchangeSavingsRequestPayload
->(async (payload) => {
-  const { assets = [], received = [], ...collection } = await fetchExchangeSavings(payload);
-  set(savingsAssets, assets);
-  set(savingsReceived, received);
-  return collection;
-}, {
-  defaultParams,
-  defaultSortBy: {
-    direction: 'asc',
+>({
+  async fetch(payload) {
+    const { assets = [], received = [], ...collection } = await fetchExchangeSavings(payload);
+    set(savingsAssets, assets);
+    set(savingsReceived, received);
+    return collection;
   },
-  history: 'router',
-  locationOverview: () => exchange,
+  params: [{ isDefault: true, to: 'request', values: defaultParams }],
+  sort: {
+    default: {
+      direction: 'asc',
+    },
+  },
+  urlState: { mode: 'route' },
 });
 
 const receivedTableSort = ref<DataTableSortData<AssetBalance>>({

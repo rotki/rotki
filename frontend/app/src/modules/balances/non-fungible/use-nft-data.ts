@@ -9,8 +9,8 @@ import { calculatePercentage } from '@/modules/core/common/data/calculation';
 import { getCollectionData } from '@/modules/core/common/data/collection-utils';
 import { Section } from '@/modules/core/common/status';
 import { TableColumn } from '@/modules/core/table/table-column';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
@@ -50,34 +50,38 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
 
   const modelIgnoredAssetsHandling = shallowRef<IgnoredAssetsHandlingType>('exclude');
 
-  const extraParams = computed(() => ({
+  const extraParams = computed<Record<string, unknown>>(() => ({
     ignoredAssetsHandling: get(modelIgnoredAssetsHandling),
   }));
 
   const { isLoading: sectionLoading } = useSectionStatus(Section.NON_FUNGIBLE_BALANCES);
 
   const {
-    fetchData,
+    collection: balances,
     isLoading: dataLoading,
     pagination,
+    refetch: fetchData,
     setPage,
     sort,
-    state: balances,
-  } = usePaginationFilters<
+  } = useServerTable<
     NonFungibleBalance,
     NonFungibleBalancesRequestPayload
-  >(fetchNonFungibleBalances, {
-    defaultSortBy: [{
-      column: 'price',
-      direction: 'desc',
-    }],
-    extraParams,
-    history: dashboard ? 'external' : 'router',
-    ...(!dashboard && {
-      onUpdateFilters(query): void {
+  >({
+    fetch: fetchNonFungibleBalances,
+    params: [{
+      fromQuery(query): void {
         set(modelIgnoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
       },
-    }),
+      to: 'both',
+      values: extraParams,
+    }],
+    sort: {
+      default: [{
+        column: 'price',
+        direction: 'desc',
+      }],
+    },
+    urlState: routeWhen(() => !dashboard),
   });
 
   const { data, totalValue } = getCollectionData(balances);

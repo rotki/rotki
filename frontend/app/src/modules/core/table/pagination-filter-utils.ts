@@ -8,12 +8,16 @@ interface ApiSorting {
   ascending: boolean[];
 }
 
+/** The column every table falls back to when neither the state nor the defaults name one. */
+export const DEFAULT_FALLBACK_SORT_COLUMN = 'timestamp';
+
 export function getSorting<T extends NonNullable<unknown>>(
   sorting: { column?: string; direction?: 'asc' | 'desc' },
   defaults?: { column?: string; direction?: 'asc' | 'desc' },
+  fallbackColumn: string = DEFAULT_FALLBACK_SORT_COLUMN,
 ): SingleColumnSorting<T> {
   const {
-    column = defaults?.column || 'timestamp',
+    column = defaults?.column || fallbackColumn,
     direction = defaults?.direction || 'desc',
   } = sorting;
   return {
@@ -22,7 +26,11 @@ export function getSorting<T extends NonNullable<unknown>>(
   };
 }
 
-export function parseQueryHistory<T extends NonNullable<unknown>>(query: LocationQuery, defaults: Sorting<T>): Sorting<T> {
+export function parseQueryHistory<T extends NonNullable<unknown>>(
+  query: LocationQuery,
+  defaults: Sorting<T>,
+  fallbackColumn: string = DEFAULT_FALLBACK_SORT_COLUMN,
+): Sorting<T> {
   const singleSort = !Array.isArray(defaults);
   const sorting = HistorySortOrderSchema.parse(query);
 
@@ -36,7 +44,7 @@ export function parseQueryHistory<T extends NonNullable<unknown>>(query: Locatio
     return getSorting({
       column: sort?.[0],
       direction: order?.[0],
-    }, defaults);
+    }, defaults, fallbackColumn);
   }
   else {
     const length = sort?.length || order?.length || 0;
@@ -46,7 +54,7 @@ export function parseQueryHistory<T extends NonNullable<unknown>>(query: Locatio
       sorting.push(getSorting({
         column: sort?.[i],
         direction: order?.[i],
-      }));
+      }, undefined, fallbackColumn));
     }
 
     return sorting;
@@ -63,8 +71,11 @@ export function parseQueryPagination(query: LocationQuery, pagination: TablePagi
   } satisfies TablePaginationData;
 }
 
-export function applySortingDefaults<T extends NonNullable<unknown>>(sorting: DataTableSortData<T>): Sorting<T> {
-  const defaultColumn = 'timestamp' as TableRowKey<T>;
+export function applySortingDefaults<T extends NonNullable<unknown>>(
+  sorting: DataTableSortData<T>,
+  fallbackColumn: string = DEFAULT_FALLBACK_SORT_COLUMN,
+): Sorting<T> {
+  const defaultColumn = fallbackColumn as TableRowKey<T>;
   const defaultDirection = 'desc';
   if (!sorting) {
     return {

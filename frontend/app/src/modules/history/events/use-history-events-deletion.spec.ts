@@ -46,7 +46,7 @@ function txGroup(chain: string, groupIdentifier: string, events: number[]): Tran
   return { chain, events, groupIdentifier };
 }
 
-function setup(pageParams?: HistoryEventRequestPayload): {
+function setup(requestPayload?: HistoryEventRequestPayload): {
   deletion: ReturnType<typeof useHistoryEventsDeletion>;
   selectionMode: ReturnType<typeof useHistoryEventsSelectionMode>;
   refreshCallback: ReturnType<typeof vi.fn>;
@@ -58,7 +58,7 @@ function setup(pageParams?: HistoryEventRequestPayload): {
     ref<Record<string, HistoryEventRow[]>>({}),
     ref<HistoryEventRow[]>([]),
     refreshCallback,
-    pageParams ? computed<HistoryEventRequestPayload>(() => pageParams) : undefined,
+    requestPayload ? computed<HistoryEventRequestPayload>(() => requestPayload) : undefined,
   );
   return { deletion, refreshCallback, selectionMode };
 }

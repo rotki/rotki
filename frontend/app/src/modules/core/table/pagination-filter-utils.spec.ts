@@ -1,6 +1,6 @@
 import type { Sorting } from '@/modules/core/table/pagination-filter-types';
 import { describe, expect, it } from 'vitest';
-import { getApiSortingParams } from '@/modules/core/table/pagination-filter-utils';
+import { applySortingDefaults, getApiSortingParams, getSorting } from '@/modules/core/table/pagination-filter-utils';
 
 interface EventDetails {
   date: string;
@@ -62,6 +62,49 @@ describe('use-pagination-filter.utils.ts', () => {
       expect(result).toEqual({
         ascending: [true, false],
         orderByAttributes: ['date', 'name'],
+      });
+    });
+  });
+
+  describe('fallbackColumn', () => {
+    it('should fall back to timestamp when no fallback column is given', () => {
+      expect(applySortingDefaults<EventDetails>(undefined)).toEqual({
+        column: 'timestamp',
+        direction: 'desc',
+      });
+      expect(getSorting<EventDetails>({})).toEqual({
+        column: 'timestamp',
+        direction: 'desc',
+      });
+    });
+
+    it('should use the given fallback column instead of timestamp', () => {
+      expect(applySortingDefaults<EventDetails>(undefined, 'name')).toEqual({
+        column: 'name',
+        direction: 'desc',
+      });
+      expect(getSorting<EventDetails>({}, undefined, 'name')).toEqual({
+        column: 'name',
+        direction: 'desc',
+      });
+    });
+
+    it('should apply the fallback only to entries that name no column', () => {
+      const result = applySortingDefaults<EventDetails>([
+        { column: 'date', direction: 'asc' },
+        { column: undefined, direction: 'desc' },
+      ], 'name');
+
+      expect(result).toEqual([
+        { column: 'date', direction: 'asc' },
+        { column: 'name', direction: 'desc' },
+      ]);
+    });
+
+    it('should prefer explicit defaults over the fallback column', () => {
+      expect(getSorting<EventDetails>({}, { column: 'id' }, 'name')).toEqual({
+        column: 'id',
+        direction: 'desc',
       });
     });
   });

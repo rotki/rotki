@@ -10,11 +10,11 @@ import { type AssetRequestPayload, EVM_TOKEN, type IgnoredAssetsHandlingType } f
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { type Filters, type Matcher, useAssetFilter } from '@/modules/core/table/filters/use-assets-filter';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
+import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { identifier = null, mainPage = false } = defineProps<{
@@ -55,45 +55,48 @@ const router = useRouter();
 const route = useRoute();
 const { deleteAsset, queryAllAssets } = useAssetManagementApi();
 const { setMessage } = useMessageStore();
-const { show } = useConfirmStore();
 const { ignoredAssets } = storeToRefs(useAssetsStore());
 const { getAssetTypes } = useAssetManagementApi();
 
 const { deleteCacheKey } = useAssetInfoCache();
 
-async function confirmDelete(toDeleteAsset: SupportedAsset) {
-  await deleteAssetHandler(toDeleteAsset.identifier);
-}
+const filterSchema = useAssetFilter(assetTypes);
+const matchers = filterSchema.matchers;
 
 const {
-  fetchData,
-  filters,
+  collection: assets,
+  filter,
   isLoading: loading,
-  matchers,
   pagination,
+  refetch,
   setPage,
   sort,
-  state: assets,
-} = usePaginationFilters<
+} = useServerTable<
   SupportedAsset,
   AssetRequestPayload,
   Filters,
   Matcher
->(queryAllAssets, {
-  defaultSortBy: {
-    column: 'symbol',
-    direction: 'asc',
+>({
+  fetch: queryAllAssets,
+  filterSchema,
+  params: [{
+    fromQuery(query): void {
+      set(ignoredFilter, {
+        ignoredAssetsHandling: query.ignoredAssetsHandling || 'exclude',
+        onlyShowOwned: query.showUserOwnedAssetsOnly === 'true',
+        onlyShowWhitelisted: query.showWhitelistedAssetsOnly === 'true',
+      });
+    },
+    to: 'both',
+    values: extraParams,
+  }],
+  sort: {
+    default: {
+      column: 'symbol',
+      direction: 'asc',
+    },
   },
-  extraParams,
-  filterSchema: () => useAssetFilter(assetTypes),
-  history: mainPage ? 'router' : false,
-  onUpdateFilters(query) {
-    set(ignoredFilter, {
-      ignoredAssetsHandling: query.ignoredAssetsHandling || 'exclude',
-      onlyShowOwned: query.showUserOwnedAssetsOnly === 'true',
-      onlyShowWhitelisted: query.showWhitelistedAssetsOnly === 'true',
-    });
-  },
+  urlState: routeWhen(mainPage),
 });
 
 function add() {
@@ -131,23 +134,21 @@ async function editAsset(assetId: Nullable<string>) {
   }
 }
 
-async function deleteAssetHandler(identifier: string) {
-  try {
-    const success = await deleteAsset(identifier);
-    if (success) {
-      await fetchData();
-      deleteCacheKey(identifier);
-    }
-  }
-  catch (error: unknown) {
-    setMessage({
-      description: t('asset_management.delete_error', {
-        address: identifier,
-        message: getErrorMessage(error),
-      }),
-    });
-  }
-}
+const { showDeleteConfirmation } = useTableRowDeletion<SupportedAsset>({
+  confirm: item => ({
+    message: t('asset_management.confirm_delete.message', { asset: item?.symbol ?? '' }),
+    title: t('asset_management.confirm_delete.title'),
+  }),
+  deleteItem: item => deleteAsset(item.identifier),
+  errorMessage: (item, error) => t('asset_management.delete_error', {
+    address: item.identifier,
+    message: getErrorMessage(error),
+  }),
+  onDeleted: async (item) => {
+    await refetch();
+    deleteCacheKey(item.identifier);
+  },
+});
 
 const assetsMap = computed(() => keyBy(get(assets).data, item => item.identifier));
 
@@ -163,20 +164,8 @@ const selectedRows = computed({
   },
 });
 
-function showDeleteConfirmation(item: SupportedAsset) {
-  show(
-    {
-      message: t('asset_management.confirm_delete.message', {
-        asset: item?.symbol ?? '',
-      }),
-      title: t('asset_management.confirm_delete.title'),
-    },
-    async () => await confirmDelete(item),
-  );
-}
-
 onMounted(async () => {
-  await fetchData();
+  await refetch();
   const query = get(route).query;
 
   if (identifier || query.add) {
@@ -219,7 +208,7 @@ onBeforeMount(async () => {
         variant="outlined"
         size="lg"
         :loading="loading"
-        @click="fetchData()"
+        @click="refetch()"
       >
         <template #prepend>
           <RuiIcon name="lu-refresh-ccw" />
@@ -279,7 +268,7 @@ onBeforeMount(async () => {
       <MergeDialog v-model="mergeTool" />
 
       <ManagedAssetTable
-        v-model:filters="filters"
+        v-model:filters="filter"
         v-model:ignored-filter="ignoredFilter"
         v-model:expanded="expanded"
         v-model:selected="selectedRows"
@@ -290,7 +279,7 @@ onBeforeMount(async () => {
         :change="!loading"
         :matchers="matchers"
         :ignored-assets="ignoredAssets"
-        @refresh="fetchData()"
+        @refresh="refetch()"
         @edit="edit($event)"
         @delete-asset="showDeleteConfirmation($event)"
         @update:page="setPage($event)"
@@ -300,7 +289,7 @@ onBeforeMount(async () => {
         v-model="modelValue"
         :asset-types="assetTypes"
         :edit-mode="editMode"
-        @refresh="fetchData()"
+        @refresh="refetch()"
       />
     </RuiCard>
   </TablePageLayout>

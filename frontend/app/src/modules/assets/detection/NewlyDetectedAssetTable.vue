@@ -9,8 +9,8 @@ import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-a
 import { arrayify } from '@/modules/core/common/data/array';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -51,19 +51,25 @@ const { markAssetsAsSpam } = useSpamAsset();
 const { getAssetPrice } = usePriceUtils();
 
 const {
-  fetchData,
+  collection,
   isLoading,
   pagination,
+  refetch,
   sort,
-  state,
-} = usePaginationFilters<NewDetectedToken>(getData, {
-  defaultSortBy: {
-    column: 'detectedAt',
-    direction: 'desc',
+} = useServerTable<NewDetectedToken>({
+  fetch: getData,
+  params: [{
+    to: 'both',
+    values: computed(() => ({
+      tokenKind: get(tokenKindFilter),
+    })),
+  }],
+  sort: {
+    default: {
+      column: 'detectedAt',
+      direction: 'desc',
+    },
   },
-  extraParams: computed(() => ({
-    tokenKind: get(tokenKindFilter),
-  })),
 });
 
 const cols = computed<DataTableColumn<Token>[]>(() => [
@@ -114,7 +120,7 @@ useRememberTableSorting<Token>(TableId.NEWLY_DETECTED_ASSETS, sort, cols);
 
 const rows = computed<Token[]>(() => {
   const evmChains = get(allEvmChains);
-  return get(state).data.map(data => ({
+  return get(collection).data.map(data => ({
     ...data,
     address: TOKEN_KIND_MAPPING[data.tokenKind].addressFormatter(data.tokenIdentifier),
     chain: getTokenChain(data, evmChains),
@@ -124,7 +130,7 @@ const rows = computed<Token[]>(() => {
 
 const allSelected = computed<boolean>(() => {
   const selectionLength = get(selected).length;
-  const totalFiltered = get(state).found;
+  const totalFiltered = get(collection).found;
   return selectionLength > 0 && totalFiltered === selectionLength;
 });
 
@@ -168,7 +174,7 @@ function getUniqueIds(identifiers?: string | string[]): string[] {
 async function removeTokens(identifiers?: string | string[]): Promise<void> {
   await removeNewDetectedTokens(getIdentifiers(identifiers));
   set(selected, []);
-  await fetchData();
+  await refetch();
 }
 
 async function markAsSpam(identifiers?: string | string[]): Promise<void> {
@@ -182,7 +188,7 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
 
 watch(isReady, (ready) => {
   if (ready)
-    fetchData();
+    refetch();
 });
 
 watchImmediate(hasSolanaAccounts, (hasSolana) => {
@@ -195,7 +201,7 @@ watch(tokenKindFilter, () => {
 });
 
 onMounted(async () => {
-  await fetchData();
+  await refetch();
 });
 </script>
 
@@ -211,7 +217,7 @@ onMounted(async () => {
           v-model="tokenKindFilter"
           :all-selected="allSelected"
           :selected-count="selected.length"
-          :found="state.found"
+          :found="collection.found"
           :token-kind-options="tokenKindOptions"
           @toggle-selection="toggleSelection()"
           @accept="removeTokens()"

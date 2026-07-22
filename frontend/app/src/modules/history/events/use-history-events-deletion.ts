@@ -22,7 +22,7 @@ export function useHistoryEventsDeletion(
   groupedEventsByTxRef: Ref<Record<string, HistoryEventRow[]>>,
   originalGroups: Ref<HistoryEventRow[]>,
   refreshCallback: () => Promise<void>,
-  pageParams?: ComputedRef<HistoryEventRequestPayload>,
+  requestPayload?: ComputedRef<HistoryEventRequestPayload>,
 ): UseHistoryEventsDeletionReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { show: showConfirm } = useConfirmStore();
@@ -129,11 +129,11 @@ export function useHistoryEventsDeletion(
   }
 
   async function deleteByFilter(totalCount: number): Promise<void> {
-    if (!pageParams) {
+    if (!requestPayload) {
       return;
     }
 
-    const filterPayload = get(pageParams);
+    const filterPayload = get(requestPayload);
 
     const confirmation = {
       message: t('transactions.events.confirmation.delete.message_all_matching', { count: totalCount }),

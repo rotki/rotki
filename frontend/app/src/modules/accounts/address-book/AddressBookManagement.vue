@@ -15,7 +15,7 @@ import { type Filters, type Matcher, useAddressBookFilter } from '@/modules/core
 import TableFilter from '@/modules/core/table/TableFilter.vue';
 import TableStatusFilter from '@/modules/core/table/TableStatusFilter.vue';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -32,30 +32,38 @@ const { editableItem, openDialog } = useCommonTableProps<AddressBookPayload>();
 
 const { getAddressBook } = useAddressBookOperations();
 
+const filterSchema = useAddressBookFilter();
+const { matchers } = filterSchema;
+
 const {
-  fetchData,
-  filters,
+  collection: state,
+  filter: filters,
   isLoading,
-  matchers,
   pagination,
+  refetch: fetchData,
   sort,
-  state,
-} = usePaginationFilters<
+} = useServerTable<
   AddressBookEntry,
   AddressBookRequestPayload,
   Filters,
   Matcher
->(filter => getAddressBook(get(location), get(filter)), {
-  defaultSortBy: [{
-    column: 'name',
-    direction: 'asc',
+>({
+  fetch: filter => getAddressBook(get(location), get(filter)),
+  filterSchema,
+  params: [{
+    to: 'both',
+    values: computed<Record<string, unknown>>(() => ({
+      blockchain: get(selectedChain),
+      strictBlockchain: get(strictBlockchain),
+    })),
   }],
-  extraParams: computed(() => ({
-    blockchain: get(selectedChain),
-    strictBlockchain: get(strictBlockchain),
-  })),
-  filterSchema: useAddressBookFilter,
-  history: 'router',
+  sort: {
+    default: [{
+      column: 'name',
+      direction: 'asc',
+    }],
+  },
+  urlState: { mode: 'route' },
 });
 
 function add() {

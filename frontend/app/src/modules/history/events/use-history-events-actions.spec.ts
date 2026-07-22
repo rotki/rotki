@@ -92,14 +92,14 @@ describe('useHistoryEventsActions', () => {
   function createOptions(): {
     currentAction: Ref<HistoryEventAction>;
     entryTypes: Ref<undefined>;
-    fetchData: Mock<() => Promise<void>>;
+    refetch: Mock<() => Promise<void>>;
     groups: Ref<Collection<HistoryEventRow>>;
     onlyChains: Ref<Blockchain[]>;
   } {
     return {
       currentAction: ref('query'),
       entryTypes: ref(undefined),
-      fetchData: vi.fn().mockResolvedValue(undefined),
+      refetch: vi.fn().mockResolvedValue(undefined),
       groups: ref<Collection<HistoryEventRow>>({ data: [], found: 0, limit: 10, total: 0 }),
       onlyChains: ref<Blockchain[]>([]),
     };

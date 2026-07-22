@@ -107,7 +107,7 @@ const usedTitle = computed<string>(() => sectionTitle || t('transactions.title')
 const {
   clearFilters,
   duplicateHandlingStatus,
-  fetchData,
+  refetch,
   filters,
   groupIdentifiers,
   groupLoading,
@@ -121,8 +121,8 @@ const {
   locationLabels,
   matchers,
   onLocationLabelsChanged,
-  pageParams,
   pagination,
+  requestPayload,
   setPage,
   sort,
 } = useHistoryEventsFilters(
@@ -186,7 +186,7 @@ watch(syncCompleted, async () => {
 const actions = useHistoryEventsActions({
   currentAction,
   entryTypes: () => entryTypes,
-  fetchData,
+  refetch,
   groups,
   mainPage: () => mainPage,
   onlyChains: () => onlyChains,
@@ -205,7 +205,7 @@ const deletion = useHistoryEventsDeletion(
   groupedEventsByTxRef,
   originalGroups,
   () => actions.fetch.dataAndLocations(),
-  pageParams,
+  requestPayload,
 );
 
 const {
@@ -224,7 +224,7 @@ const {
 const debouncedProcessing = refDebounced(processing, 200);
 const { autoMatchLoading, autoMatchMovement, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
 const { autoMatchLoading: bridgeAutoMatchLoading, refreshUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
-useHistoryEventNavigationConsumer(pagination, pageParams, groupLoading);
+useHistoryEventNavigationConsumer(pagination, requestPayload, groupLoading);
 const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading, bridgeAutoMatchLoading);
 
 // Handle updating available event IDs from the table
@@ -357,7 +357,7 @@ watchDebounced(route, async () => {
               :location-labels="locationLabels"
               :processing="processing"
               :matchers="matchers"
-              :export-params="pageParams"
+              :export-params="requestPayload"
               :hide-redecode-buttons="!mainPage"
               :hide-account-selector="useExternalAccountFilter"
               :selection="selectionMode.state.value"
@@ -390,7 +390,7 @@ watchDebounced(route, async () => {
               :group-loading="groupLoading"
               :processing="processing || refreshing"
               :groups="groups"
-              :page-params="toggles.matchExactEvents ? pageParams : undefined"
+              :request-payload="toggles.matchExactEvents ? requestPayload : undefined"
               :exclude-ignored="!toggles.showIgnoredAssets"
               :has-active-filters="hasActiveFilters"
               :identifiers="identifiers"

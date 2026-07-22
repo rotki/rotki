@@ -25,7 +25,7 @@ const pagination = defineModel<TablePaginationData>('pagination', { required: tr
 
 const {
   groups: rawGroups,
-  pageParams,
+  requestPayload,
   excludeIgnored,
   groupLoading,
   hasActiveFilters,
@@ -40,7 +40,7 @@ const {
   duplicateHandlingStatus,
 } = defineProps<{
   groups: Collection<HistoryEventRow>;
-  pageParams: HistoryEventRequestPayload | undefined;
+  requestPayload: HistoryEventRequestPayload | undefined;
   excludeIgnored: boolean;
   groupLoading: boolean;
   hasActiveFilters?: boolean;
@@ -97,7 +97,7 @@ const {
   groupLoading: () => groupLoading,
   groups: () => rawGroups,
   identifiers: () => identifiers,
-  pageParams: () => pageParams,
+  requestPayload: () => requestPayload,
 }, emit);
 
 // Virtual rows - flatten groups into virtual row list

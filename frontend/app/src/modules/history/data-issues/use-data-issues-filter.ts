@@ -120,7 +120,7 @@ export function useDataIssuesFilter(): FilterSchema<Filters, Matcher> {
   });
 
   return {
-    // eslint-disable-next-line @rotki/composable-return-readonly -- usePaginationFilters writes back into this ref (set() on route changes and v-model)
+    // eslint-disable-next-line @rotki/composable-return-readonly -- useServerTable writes back into this ref (set() on route changes and v-model)
     filters,
     matchers,
     RouteFilterSchema,

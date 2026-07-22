@@ -2,7 +2,7 @@
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { getCollectionData, setupEntryLimit } from '@/modules/core/common/data/collection-utils';
 import { NoteLocation, type UserNote, type UserNotesRequestPayload } from '@/modules/core/common/notes';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useNotesCount } from '@/modules/notes/use-notes-count';
 import { useUserNotesApi } from '@/modules/notes/use-user-notes-api';
 import UserNotesFormDialog from '@/modules/notes/UserNotesFormDialog.vue';
@@ -43,18 +43,21 @@ const extraParams = computed(() => ({
 }));
 
 const {
-  fetchData,
+  collection: notes,
   pagination,
-  state: notes,
-} = usePaginationFilters<UserNote, UserNotesRequestPayload>(fetchUserNotes, {
-  defaultSortBy: [{
-    column: 'isPinned',
-    direction: 'desc',
-  }, {
-    column: 'lastUpdateTimestamp',
-    direction: 'desc',
-  }],
-  extraParams,
+  refetch,
+} = useServerTable<UserNote, UserNotesRequestPayload>({
+  fetch: fetchUserNotes,
+  params: [{ to: 'both', values: extraParams }],
+  sort: {
+    default: [{
+      column: 'isPinned',
+      direction: 'desc',
+    }, {
+      column: 'lastUpdateTimestamp',
+      direction: 'desc',
+    }],
+  },
 });
 
 const { data, limit } = getCollectionData(notes);
@@ -65,7 +68,7 @@ async function fetchNotes(loadingIndicator = false): Promise<void> {
   if (loadingIndicator)
     set(loading, true);
 
-  await fetchData();
+  await refetch();
   set(loading, false);
 }
 

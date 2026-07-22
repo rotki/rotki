@@ -5,9 +5,8 @@ import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/Manag
 import ManageCexMappingTable from '@/modules/assets/admin/cex-mapping/ManageCexMappingTable.vue';
 import { useAssetCexMappingApi } from '@/modules/assets/api/use-asset-cex-mapping-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
+import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -34,20 +33,24 @@ const extraParams = computed(() => {
 });
 
 const {
-  fetchData,
+  collection,
   isLoading: loading,
   pagination,
-  state,
-} = usePaginationFilters<
+  refetch,
+} = useServerTable<
   CexMapping,
   CexMappingRequestPayload
->(fetchAllCexMapping, {
-  extraParams,
-  history: 'router',
-  onUpdateFilters(query) {
-    set(selectedLocation, query.location || '');
-    set(selectedSymbol, query.locationSymbol || '');
-  },
+>({
+  fetch: fetchAllCexMapping,
+  params: [{
+    fromQuery(query): void {
+      set(selectedLocation, query.location || '');
+      set(selectedSymbol, query.locationSymbol || '');
+    },
+    to: 'both',
+    values: extraParams,
+  }],
+  urlState: { mode: 'route' },
 });
 
 onMounted(async () => {
@@ -60,7 +63,7 @@ onMounted(async () => {
     });
   }
 
-  await fetchData();
+  await refetch();
 });
 
 function add(payload?: Partial<CexMapping>) {
@@ -78,36 +81,20 @@ function edit(editMapping: CexMapping) {
   set(editMode, true);
 }
 
-const { show } = useConfirmStore();
-const { setMessage } = useMessageStore();
-
-async function confirmDelete(mapping: CexMapping) {
-  try {
-    const success = await deleteCexMapping(omit(mapping, ['asset']));
-    if (success)
-      await fetchData();
-  }
-  catch (error: unknown) {
-    setMessage({
-      description: t('asset_management.cex_mapping.delete_error', {
-        message: getErrorMessage(error),
-      }),
-    });
-  }
-}
-
-function showDeleteConfirmation(item: CexMapping) {
-  show(
-    {
-      message: t('asset_management.cex_mapping.confirm_delete.message', {
-        asset: item.locationSymbol,
-        location: item.location || t('asset_management.cex_mapping.all_exchanges'),
-      }),
-      title: t('asset_management.cex_mapping.confirm_delete.title'),
-    },
-    async () => await confirmDelete(item),
-  );
-}
+const { showDeleteConfirmation } = useTableRowDeletion<CexMapping>({
+  confirm: item => ({
+    message: t('asset_management.cex_mapping.confirm_delete.message', {
+      asset: item.locationSymbol,
+      location: item.location || t('asset_management.cex_mapping.all_exchanges'),
+    }),
+    title: t('asset_management.cex_mapping.confirm_delete.title'),
+  }),
+  deleteItem: mapping => deleteCexMapping(omit(mapping, ['asset'])),
+  errorMessage: (_item, error) => t('asset_management.cex_mapping.delete_error', {
+    message: getErrorMessage(error),
+  }),
+  onDeleted: refetch,
+});
 </script>
 
 <template>
@@ -118,7 +105,7 @@ function showDeleteConfirmation(item: CexMapping) {
         variant="outlined"
         size="lg"
         :loading="loading"
-        @click="fetchData()"
+        @click="refetch()"
       >
         <template #prepend>
           <RuiIcon name="lu-refresh-ccw" />
@@ -143,16 +130,16 @@ function showDeleteConfirmation(item: CexMapping) {
         v-model:location="selectedLocation"
         v-model:symbol="selectedSymbol"
         v-model:pagination="pagination"
-        :collection="state"
+        :collection="collection"
         :loading="loading"
-        @refresh="fetchData()"
+        @refresh="refetch()"
         @edit="edit($event)"
         @delete="showDeleteConfirmation($event)"
       />
       <ManageCexMappingFormDialog
         v-model="modelValue"
         :edit-mode="editMode"
-        @refresh="fetchData()"
+        @refresh="refetch()"
       />
     </RuiCard>
   </TablePageLayout>

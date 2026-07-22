@@ -5,11 +5,10 @@ import CustomAssetFormDialog from '@/modules/assets/admin/custom/CustomAssetForm
 import CustomAssetTable from '@/modules/assets/admin/custom/CustomAssetTable.vue';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { type Filters, type Matcher, useCustomAssetFilter } from '@/modules/core/table/filters/use-custom-assets-filter';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
+import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { identifier = null, mainPage = false } = defineProps<{
@@ -24,48 +23,48 @@ const types = ref<string[]>([]);
 const router = useRouter();
 const route = useRoute();
 
-const { setMessage } = useMessageStore();
-const { show } = useConfirmStore();
 const { deleteCustomAsset, getCustomAssetTypes, queryAllCustomAssets } = useAssetManagementApi();
 const { editableItem, expanded } = useCommonTableProps<CustomAsset>();
 const openCustomAssetDialog = ref<boolean>(false);
 
-async function deleteAsset(assetId: string) {
-  try {
-    const success = await deleteCustomAsset(assetId);
-    if (success)
-      await refresh();
-  }
-  catch (error: unknown) {
-    setMessage({
-      description: t('asset_management.delete_error', {
-        address: assetId,
-        message: getErrorMessage(error),
-      }),
-    });
-  }
-}
+const { showDeleteConfirmation } = useTableRowDeletion<CustomAsset>({
+  confirm: item => ({
+    message: t('asset_management.confirm_delete.message', { asset: item?.name ?? '' }),
+    title: t('asset_management.confirm_delete.title'),
+  }),
+  deleteItem: item => deleteCustomAsset(item.identifier),
+  errorMessage: (item, error) => t('asset_management.delete_error', {
+    address: item.identifier,
+    message: getErrorMessage(error),
+  }),
+  onDeleted: refresh,
+});
+
+const filterSchema = useCustomAssetFilter(types);
+const matchers = filterSchema.matchers;
 
 const {
-  fetchData,
-  filters,
+  collection,
+  filter,
   isLoading: loading,
-  matchers,
   pagination,
+  refetch,
   sort,
-  state,
-} = usePaginationFilters<
+} = useServerTable<
   CustomAsset,
   CustomAssetRequestPayload,
   Filters,
   Matcher
->(queryAllCustomAssets, {
-  defaultSortBy: [{
-    column: 'name',
-    direction: 'desc',
-  }],
-  filterSchema: () => useCustomAssetFilter(types),
-  history: mainPage ? 'router' : false,
+>({
+  fetch: queryAllCustomAssets,
+  filterSchema,
+  sort: {
+    default: [{
+      column: 'name',
+      direction: 'desc',
+    }],
+  },
+  urlState: routeWhen(mainPage),
 });
 
 function add() {
@@ -80,7 +79,7 @@ function edit(editAsset: CustomAsset) {
 
 function editAsset(assetId: Nullable<string>) {
   if (assetId) {
-    const asset = get(state).data.find(({ identifier: id }) => id === assetId);
+    const asset = get(collection).data.find(({ identifier: id }) => id === assetId);
     if (asset)
       edit(asset);
   }
@@ -91,19 +90,7 @@ async function refreshTypes() {
 }
 
 async function refresh() {
-  await Promise.all([fetchData(), refreshTypes()]);
-}
-
-function showDeleteConfirmation(item: CustomAsset) {
-  show(
-    {
-      message: t('asset_management.confirm_delete.message', {
-        asset: item?.name ?? '',
-      }),
-      title: t('asset_management.confirm_delete.title'),
-    },
-    async () => await deleteAsset(item.identifier),
-  );
+  await Promise.all([refetch(), refreshTypes()]);
 }
 
 onMounted(async () => {
@@ -151,13 +138,13 @@ watch(() => identifier, (assetId) => {
       </RuiButton>
     </template>
     <CustomAssetTable
-      v-model:filters="filters"
+      v-model:filters="filter"
       v-model:expanded="expanded"
       v-model:pagination="pagination"
       v-model:sort="sort"
-      :assets="state.data"
+      :assets="collection.data"
       :loading="loading"
-      :server-item-length="state.found"
+      :server-item-length="collection.found"
       :matchers="matchers"
       @edit="edit($event)"
       @delete-asset="showDeleteConfirmation($event)"

@@ -12,7 +12,7 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { type LocationQuery, RouterExpandedIdsSchema } from '@/modules/core/table/route';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 
 const query = defineModel<LocationQuery>('query', { default: () => ({}), required: false });
 const selected = defineModel<string[] | undefined>('selected', { required: true });
@@ -37,29 +37,37 @@ const { balances } = storeToRefs(useBalancesStore());
 const { accounts: accountsState } = storeToRefs(useBlockchainAccountsStore());
 
 const {
-  fetchData,
+  collection: accounts,
   pagination,
+  refetch: fetchData,
   sort,
-  state: accounts,
-} = usePaginationFilters<BlockchainAccountWithBalance, BlockchainAccountGroupRequestPayload>(fetchGroupAccounts, {
-  defaultSortBy: {
-    column: 'value',
-    direction: 'desc',
+} = useServerTable<BlockchainAccountWithBalance, BlockchainAccountGroupRequestPayload>({
+  fetch: fetchGroupAccounts,
+  params: [{
+    fromQuery(query): void {
+      const { expanded: expandedIds } = RouterExpandedIdsSchema.parse(query);
+      set(expanded, expandedIds);
+    },
+    to: 'both',
+    values: computed<Record<string, unknown>>(() => ({
+      expanded: get(expanded).join(','),
+    })),
+  }, {
+    skipEmpty: true,
+    to: 'request',
+    values: computed<Record<string, unknown>>(() => ({
+      chain: chains,
+      groupId,
+      tags,
+    })),
+  }],
+  sort: {
+    default: {
+      column: 'value',
+      direction: 'desc',
+    },
   },
-  extraParams: computed(() => ({
-    expanded: get(expanded).join(','),
-  })),
-  history: 'external',
-  onUpdateFilters(query) {
-    const { expanded: expandedIds } = RouterExpandedIdsSchema.parse(query);
-    set(expanded, expandedIds);
-  },
-  query,
-  requestParams: computed(() => ({
-    chain: chains,
-    groupId,
-    tags,
-  })),
+  urlState: { mode: 'ref', query },
 });
 useBlockchainAccountLoading(() => category);
 

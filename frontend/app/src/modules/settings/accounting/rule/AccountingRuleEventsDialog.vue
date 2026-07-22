@@ -2,7 +2,7 @@
 import type { Filters, Matcher } from '@/modules/core/table/filters/use-events-filter';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 
@@ -25,27 +25,32 @@ const { fetchHistoryEvents } = useHistoryEvents();
 const eventIdentifiers = computed<string[]>(() => eventIds.map(id => id.toString()));
 
 const {
-  fetchData,
+  collection: groups,
   isLoading: groupLoading,
-  pageParams,
   pagination,
+  refetch,
+  requestPayload,
   setPage,
   sort,
-  state: groups,
-} = usePaginationFilters<
+} = useServerTable<
   HistoryEventRow,
   HistoryEventRequestPayload,
   Filters,
   Matcher
->(fetchHistoryEvents, {
-  requestParams: computed(() => ({
-    aggregateByGroupIds: true,
-    identifiers: get(eventIdentifiers),
-  })),
+>({
+  fetch: fetchHistoryEvents,
+  params: [{
+    skipEmpty: true,
+    to: 'request',
+    values: computed(() => ({
+      aggregateByGroupIds: true,
+      identifiers: get(eventIdentifiers),
+    })),
+  }],
 });
 
 onMounted(() => {
-  fetchData();
+  refetch();
 });
 
 watch(display, (value) => {
@@ -72,7 +77,7 @@ watch(display, (value) => {
         :groups="groups"
         :exclude-ignored="false"
         :group-loading="groupLoading"
-        :page-params="pageParams"
+        :request-payload="requestPayload"
         :identifiers="eventIdentifiers"
         @set-page="setPage($event)"
       />

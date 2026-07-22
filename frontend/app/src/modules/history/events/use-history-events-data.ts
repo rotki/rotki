@@ -21,7 +21,7 @@ interface UseHistoryEventsDataOptions {
   /** Paginated group collection owned by the caller's pagination filter; its group identifiers scope the per-group event fetch and any change retriggers it. */
   groups: MaybeRefOrGetter<Collection<HistoryEventRow>>;
   /** Current filter payload, reused as the base of the event fetch so the detail query matches the group query. */
-  pageParams: MaybeRefOrGetter<HistoryEventRequestPayload | undefined>;
+  requestPayload: MaybeRefOrGetter<HistoryEventRequestPayload | undefined>;
   /** When true, events whose asset is ignored are filtered out of the displayed mapping unless the user reveals them per group. */
   excludeIgnored: MaybeRefOrGetter<boolean>;
   /** Whether the caller is fetching groups; turning true cancels the in-flight event fetch and it feeds the debounced combined `loading`. */
@@ -76,7 +76,7 @@ export function useHistoryEventsData(
   options: UseHistoryEventsDataOptions,
   emit: HistoryEventsTableEmitFn,
 ): UseHistoryEventsDataReturn {
-  const { excludeIgnored, groupLoading, groups, identifiers, pageParams } = options;
+  const { excludeIgnored, groupLoading, groups, identifiers, requestPayload } = options;
 
   const eventsLoading = shallowRef<boolean>(false);
   const events = ref<HistoryEventRow[]>([]);
@@ -114,7 +114,7 @@ export function useHistoryEventsData(
 
     try {
       const response = await fetchHistoryEvents({
-        ...toValue(pageParams),
+        ...toValue(requestPayload),
         aggregateByGroupIds: false,
         excludeIgnoredAssets: false,
         groupIdentifiers: groupIds,

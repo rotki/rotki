@@ -2,19 +2,13 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { CexMapping } from '@/modules/assets/types';
 import type { MissingMapping } from '@/modules/user-data/schemas';
-import z from 'zod';
 import ExchangeMappingFilter from '@/modules/assets/admin/cex-mapping/ExchangeMappingFilter.vue';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
 import { useMissingMappingsDB } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-db';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-
-const QuerySchema = z.object({
-  identifier: z.string().optional().default(''),
-  location: z.string().optional(),
-});
 
 const mapping = ref<CexMapping>();
 const location = ref<string>();
@@ -48,29 +42,27 @@ const cols = computed<DataTableColumn<MissingMapping>[]>(() => [{
 const { getData, remove } = useMissingMappingsDB();
 
 const {
-  fetchData,
-  filters,
-  matchers,
+  collection: mappings,
   pagination,
+  refetch,
   sort,
-  state: mappings,
-} = usePaginationFilters<MissingMapping>(getData, {
-  defaultSortBy: {
-    column: 'location',
-    direction: 'asc',
-  },
-  extraParams: computed(() => ({
-    identifier: get(symbol),
-    location: get(location),
-  })),
-  onUpdateFilters(query) {
-    const params = QuerySchema.parse(query);
-    if (params.identifier) {
-      set(symbol, params.identifier);
-    }
-    if (params.location) {
-      set(location, params.location);
-    }
+} = useServerTable<MissingMapping>({
+  fetch: getData,
+  params: [{
+    // Stays 'both' despite this table having no urlState: the page-1 reset watcher
+    // only observes 'both' sources, so narrowing this to 'request' would silently
+    // stop resetting the page when the symbol/location filter changes.
+    to: 'both',
+    values: computed(() => ({
+      identifier: get(symbol),
+      location: get(location),
+    })),
+  }],
+  sort: {
+    default: {
+      column: 'location',
+      direction: 'asc',
+    },
   },
 });
 
@@ -89,11 +81,11 @@ async function onAddComplete(item: CexMapping) {
     identifier: item.locationSymbol,
     location: item.location ?? '',
   });
-  await fetchData();
+  await refetch();
 }
 
 onMounted(async () => {
-  await fetchData();
+  await refetch();
 });
 </script>
 
@@ -112,8 +104,6 @@ onMounted(async () => {
       </div>
 
       <RuiDataTable
-        v-model:filters="filters"
-        v-model:matchers="matchers"
         v-model:pagination.external="pagination"
         v-model:sort.external="sort"
         outlined

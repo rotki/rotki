@@ -7,7 +7,7 @@ import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 
 vi.mock('vue', async (): Promise<Record<string, unknown>> => {
   const mod = await vi.importActual<typeof Vue>('vue');
@@ -22,7 +22,6 @@ describe('useNftBalances', () => {
   let fetchNonFungibleBalances: (
     payload: MaybeRef<NonFungibleBalancesRequestPayload>,
   ) => Promise<Collection<NonFungibleBalance>>;
-  const locationOverview = ref<string>('');
   const mainPage = ref<boolean>(false);
   const router = useRouter();
   const route = useRoute();
@@ -44,7 +43,6 @@ describe('useNftBalances', () => {
   });
 
   describe('components::accounts/balances/NonFungibleBalances.vue', () => {
-    set(locationOverview, '');
     const ignoredAssetsHandling = ref<string>();
     const extraParams = computed(() => ({
       includeIgnoredTrades: get(ignoredAssetsHandling),
@@ -58,30 +56,29 @@ describe('useNftBalances', () => {
       set(mainPage, true);
       // Reset shared filter state to the settled baseline (undefined) so each test
       // starts identically. A first mount with an empty route sets this from 'none'
-      // to undefined; leaving the 'none' seed leaks across tests and flips userAction.
+      // to undefined; leaving the 'none' seed leaks across tests.
       set(ignoredAssetsHandling, undefined);
     });
 
     it('should initialize composable correctly', async () => {
       const {
-        userAction,
-        filters,
+        filter: filters,
         sort,
-        state,
-        fetchData,
+        collection: state,
+        refetch: fetchData,
         isLoading,
-      } = scope.run(() => usePaginationFilters<NonFungibleBalance>(fetchNonFungibleBalances, {
-        history: get(mainPage) ? 'router' : false,
-        locationOverview,
-        onUpdateFilters,
-        extraParams,
-        defaultSortBy: [{
-          column: 'name',
-          direction: 'asc',
-        }],
+      } = scope.run(() => useServerTable<NonFungibleBalance>({
+        fetch: fetchNonFungibleBalances,
+        urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
+        params: [{ fromQuery: onUpdateFilters, to: 'both', values: extraParams }],
+        sort: {
+          default: [{
+            column: 'name',
+            direction: 'asc',
+          }],
+        },
       }))!;
 
-      expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual({});
       expect(get(sort)).toHaveLength(1);
@@ -92,7 +89,6 @@ describe('useNftBalances', () => {
       expect(get(state).data).toHaveLength(0);
       expect(get(state).total).toBe(0);
 
-      set(userAction, true);
       await nextTick();
       startPromise(fetchData());
       expect(get(isLoading)).toBe(true);
@@ -103,20 +99,20 @@ describe('useNftBalances', () => {
     it('should return correct types', () => {
       const {
         isLoading,
-        state,
-        filters,
-        matchers,
-      } = scope.run(() => usePaginationFilters<NonFungibleBalance>(fetchNonFungibleBalances, {
-        history: get(mainPage) ? 'router' : false,
-        locationOverview,
-        onUpdateFilters,
-        extraParams,
-        defaultSortBy: [
-          {
-            column: 'name',
-            direction: 'asc',
-          },
-        ],
+        collection: state,
+        filter: filters,
+      } = scope.run(() => useServerTable<NonFungibleBalance>({
+        fetch: fetchNonFungibleBalances,
+        urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
+        params: [{ fromQuery: onUpdateFilters, to: 'both', values: extraParams }],
+        sort: {
+          default: [
+            {
+              column: 'name',
+              direction: 'asc',
+            },
+          ],
+        },
       }))!;
 
       expect(get(isLoading)).toBe(false);
@@ -125,7 +121,6 @@ describe('useNftBalances', () => {
       expectTypeOf(get(state).data).toEqualTypeOf<NonFungibleBalance[]>();
       expectTypeOf(get(state).found).toEqualTypeOf<number>();
       expectTypeOf(get(filters)).toEqualTypeOf<undefined>();
-      expectTypeOf(get(matchers)).toEqualTypeOf<undefined[]>();
     });
 
     it('should modify filters and fetch data correctly', async () => {
@@ -134,17 +129,18 @@ describe('useNftBalances', () => {
 
       const {
         isLoading,
-        state,
+        collection: state,
         sort,
-      } = scope.run(() => usePaginationFilters<NonFungibleBalance>(fetchNonFungibleBalances, {
-        history: get(mainPage) ? 'router' : false,
-        locationOverview,
-        onUpdateFilters,
-        extraParams,
-        defaultSortBy: [{
-          column: 'name',
-          direction: 'desc',
-        }],
+      } = scope.run(() => useServerTable<NonFungibleBalance>({
+        fetch: fetchNonFungibleBalances,
+        urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
+        params: [{ fromQuery: onUpdateFilters, to: 'both', values: extraParams }],
+        sort: {
+          default: [{
+            column: 'name',
+            direction: 'desc',
+          }],
+        },
       }))!;
 
       expect(get(sort)).toStrictEqual([{

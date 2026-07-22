@@ -36,7 +36,7 @@ interface UseHistoryEventsActionsOptions {
   /** Tracks the current action state (e.g. querying, decoding). */
   currentAction: Ref<HistoryEventAction>;
   /** Callback to fetch the current page of history events. */
-  fetchData: () => Promise<void>;
+  refetch: () => Promise<void>;
   /** The current collection of grouped history event rows. */
   groups: Ref<Collection<HistoryEventRow>>;
   /** Marks this as the main history page; only then does an external event modification (e.g. from the pinned sidebar) trigger a refetch. */
@@ -72,7 +72,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   const {
     currentAction,
     entryTypes,
-    fetchData: fetchEventsData,
+    refetch: fetchEventsData,
     groups,
     mainPage,
     onlyChains,
