@@ -7,8 +7,8 @@ import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { getCollectionData, setupEntryLimit } from '@/modules/core/common/data/collection-utils';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import UpgradeRow from '@/modules/history/UpgradeRow.vue';
@@ -46,23 +46,29 @@ const expanded = ref<PnLItem[]>([]);
 const { fetchReportEvents } = useReportOperations();
 
 const {
-  fetchData,
+  collection: state,
   isLoading,
   pagination,
+  refetch: fetchData,
   sort,
-  state,
-} = usePaginationFilters<
+} = useServerTable<
   ProfitLossEvent,
   ProfitLossEventsPayload
->(fetchReportEvents, {
-  defaultSortBy: [{
-    column: 'timestamp',
-    direction: 'desc',
+>({
+  fetch: fetchReportEvents,
+  params: [{
+    to: 'both',
+    values: computed<Record<string, unknown>>(() => ({
+      reportId: report.identifier,
+    })),
   }],
-  extraParams: computed(() => ({
-    reportId: report.identifier,
-  })),
-  history: 'router',
+  sort: {
+    default: [{
+      column: 'timestamp',
+      direction: 'desc',
+    }],
+  },
+  urlState: { mode: 'route' },
 });
 
 const { getChain } = useSupportedChains();

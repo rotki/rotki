@@ -6,8 +6,8 @@ import type {
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
 import { type Filters, type Matcher, useEthValidatorAccountFilter } from '@/modules/core/table/filters/use-eth-validator-filter';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 
@@ -32,25 +32,30 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
   const { ethStakingValidators } = storeToRefs(blockchainValidatorsStore);
   const currencySymbol = useSetting('currencySymbol');
 
+  const filterSchema = useEthValidatorAccountFilter(t);
+  const { matchers } = filterSchema;
+
   const {
-    fetchData,
-    filters,
-    matchers,
+    collection: rows,
+    filter: filters,
     pagination,
+    refetch: fetchData,
     sort,
-    state: rows,
-  } = usePaginationFilters<
+  } = useServerTable<
     EthereumValidator,
     EthereumValidatorRequestPayload,
     Filters,
     Matcher
-  >(fetchValidators, {
-    defaultSortBy: {
-      column: 'index',
-      direction: 'desc',
+  >({
+    fetch: fetchValidators,
+    filterSchema,
+    sort: {
+      default: {
+        column: 'index',
+        direction: 'desc',
+      },
     },
-    filterSchema: () => useEthValidatorAccountFilter(t),
-    history: 'router',
+    urlState: { mode: 'route' },
   });
 
   const cols = computed<DataTableColumn<EthereumValidator>[]>(() => {

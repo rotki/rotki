@@ -15,7 +15,7 @@ import {
   type Matcher,
   useBlockchainAccountFilter,
 } from '@/modules/core/table/filters/use-blockchain-account-filter';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 
 interface UseAccountBalancesPaginationOptions {
   /**
@@ -59,8 +59,6 @@ interface UseAccountBalancesPaginationReturn {
   sort: WritableComputedRef<DataTableSortData<BlockchainAccountGroupWithBalance>>;
 }
 
-interface RequestParams { excluded: Record<string, string[]>; address?: string; label?: string }
-
 type QueryParams = Record<string, string | string[] | number>;
 
 export function useAccountBalancesPagination(
@@ -98,7 +96,7 @@ export function useAccountBalancesPagination(
     };
   });
 
-  const requestParams = computed<RequestParams>(() => ({
+  const requestParams = computed<Record<string, unknown>>(() => ({
     excluded: get(chainExclusionFilter),
     ...getAccountFilterParams(get(filterSchema.filters).account),
   }));
@@ -118,29 +116,34 @@ export function useAccountBalancesPagination(
     set(query, q ? fromUriEncoded(q) : {});
   }
 
+  const { matchers } = filterSchema;
+
   const {
-    fetchData,
-    filters,
-    matchers,
+    collection: accounts,
+    filter: filters,
     pagination,
+    refetch: fetchData,
     sort,
-    state: accounts,
-  } = usePaginationFilters<
+  } = useServerTable<
     BlockchainAccountGroupWithBalance,
     BlockchainAccountRequestPayload,
     Filters,
     Matcher
-  >(fetchAccountsPage, {
-    defaultSortBy: {
-      column: 'value',
-      direction: 'desc',
+  >({
+    fetch: fetchAccountsPage,
+    filterSchema,
+    params: [
+      { to: 'both', values: extraParams },
+      { skipEmpty: true, to: 'request', values: requestParams },
+      { fromQuery: onUpdateFilters, skipEmpty: true, to: 'url', values: queryParamsOnly },
+    ],
+    sort: {
+      default: {
+        column: 'value',
+        direction: 'desc',
+      },
     },
-    extraParams,
-    filterSchema: () => filterSchema,
-    history: 'router',
-    onUpdateFilters,
-    queryParamsOnly,
-    requestParams,
+    urlState: { mode: 'route' },
   });
 
   return {

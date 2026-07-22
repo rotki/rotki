@@ -7,7 +7,7 @@ import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 
 vi.mock('vue', async (): Promise<Record<string, unknown>> => {
   const mod = await vi.importActual<typeof Vue>('vue');
@@ -62,19 +62,20 @@ describe('useBinanceSavings', () => {
     });
 
     it('should initialize composable correctly', async () => {
-      const { userAction, filters, sort, state, fetchData, isLoading } = scope.run(() => usePaginationFilters<
+      const { filter: filters, sort, collection: state, refetch: fetchData, isLoading } = scope.run(() => useServerTable<
         ExchangeSavingsEvent,
         ExchangeSavingsRequestPayload
-      >(fetchSavings, {
-        history: get(mainPage) ? 'router' : false,
-        locationOverview: exchange,
-        defaultParams,
-        defaultSortBy: [{
-          direction: 'asc',
-        }],
+      >({
+        fetch: fetchSavings,
+        urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
+        params: [{ isDefault: true, to: 'request', values: defaultParams }],
+        sort: {
+          default: [{
+            direction: 'asc',
+          }],
+        },
       }))!;
 
-      expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual({});
       expect(get(sort)).toHaveLength(1);
@@ -89,7 +90,6 @@ describe('useBinanceSavings', () => {
       expect(get(exchangeReceived)).toHaveLength(0);
       expect(get(state).total).toBe(0);
 
-      set(userAction, true);
       await nextTick();
       startPromise(fetchData());
       expect(get(isLoading)).toBe(true);
@@ -100,16 +100,18 @@ describe('useBinanceSavings', () => {
     });
 
     it('should return correct types', () => {
-      const { isLoading, state, filters, matchers } = scope.run(() => usePaginationFilters<
+      const { isLoading, collection: state, filter: filters } = scope.run(() => useServerTable<
         ExchangeSavingsEvent,
         ExchangeSavingsRequestPayload
-      >(fetchExchangeSavings, {
-        history: get(mainPage) ? 'router' : false,
-        locationOverview: exchange,
-        defaultParams,
-        defaultSortBy: [{
-          direction: 'asc',
-        }],
+      >({
+        fetch: fetchExchangeSavings,
+        urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
+        params: [{ isDefault: true, to: 'request', values: defaultParams }],
+        sort: {
+          default: [{
+            direction: 'asc',
+          }],
+        },
       }))!;
 
       expect(get(isLoading)).toBe(false);
@@ -118,23 +120,24 @@ describe('useBinanceSavings', () => {
       expectTypeOf(get(state).data).toEqualTypeOf<ExchangeSavingsEvent[]>();
       expectTypeOf(get(state).found).toEqualTypeOf<number>();
       expectTypeOf(get(filters)).toEqualTypeOf<undefined>();
-      expectTypeOf(get(matchers)).toEqualTypeOf<undefined[]>();
     });
 
     it('should modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
       const query = { sortOrder: ['desc'] };
 
-      const { isLoading, state, sort } = scope.run(() => usePaginationFilters<
+      const { isLoading, collection: state, sort } = scope.run(() => useServerTable<
         ExchangeSavingsEvent,
         ExchangeSavingsRequestPayload
-      >(fetchSavings, {
-        history: get(mainPage) ? 'router' : false,
-        locationOverview: exchange,
-        defaultParams,
-        defaultSortBy: [{
-          direction: 'asc',
-        }],
+      >({
+        fetch: fetchSavings,
+        urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
+        params: [{ isDefault: true, to: 'request', values: defaultParams }],
+        sort: {
+          default: [{
+            direction: 'asc',
+          }],
+        },
       }))!;
 
       expect(get(sort)).toStrictEqual([{

@@ -9,7 +9,7 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { type Filters, type Matcher, useAccountingRuleFilter } from '@/modules/core/table/filters/use-accounting-rule-filter';
 import TableFilter from '@/modules/core/table/TableFilter.vue';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import AccountingRuleActionDialog, { type ActionDialogContext } from '@/modules/settings/accounting/rule/AccountingRuleActionDialog.vue';
@@ -58,25 +58,31 @@ const actionDialogHasEventSpecific = ref<boolean>(false);
 const actionDialogHasGeneral = ref<boolean>(false);
 const actionDialogEventIds = ref<number[]>();
 
+const filterSchema = useAccountingRuleFilter();
+const matchers = filterSchema.matchers;
+
 const {
-  fetchData,
-  filters,
+  collection,
+  filter,
   isLoading,
-  matchers,
   pagination,
-  state,
-  updateFilter,
-} = usePaginationFilters<
+  refetch,
+  setFilter,
+} = useServerTable<
   AccountingRuleEntry,
   AccountingRuleRequestPayload,
   Filters,
   Matcher
->(getAccountingRules, {
-  extraParams: computed(() => ({
-    customRuleHandling: get(customRuleHandling),
-  })),
-  filterSchema: useAccountingRuleFilter,
-  history: 'router',
+>({
+  fetch: getAccountingRules,
+  filterSchema,
+  params: [{
+    to: 'both',
+    values: computed(() => ({
+      customRuleHandling: get(customRuleHandling),
+    })),
+  }],
+  urlState: { mode: 'route' },
 });
 
 const conflictsNumber = ref<number>(0);
@@ -145,7 +151,7 @@ async function deleteAccountingRule(item: AccountingRuleEntry) {
   try {
     const success = await deleteAccountingRuleCaller(item.identifier);
     if (success)
-      await fetchData();
+      await refetch();
   }
   catch {
     setMessage({
@@ -155,7 +161,7 @@ async function deleteAccountingRule(item: AccountingRuleEntry) {
 }
 
 async function refresh() {
-  await fetchData();
+  await refetch();
   await checkConflicts();
 }
 
@@ -460,9 +466,9 @@ const importFileDialog = ref<boolean>(false);
 
             <div class="w-full md:w-[25rem] ml-auto">
               <TableFilter
-                :matches="filters"
+                :matches="filter"
                 :matchers="matchers"
-                @update:matches="updateFilter($event)"
+                @update:matches="setFilter($event)"
               />
             </div>
           </div>
@@ -472,7 +478,7 @@ const importFileDialog = ref<boolean>(false);
       <AccountingRuleTable
         :key="customRuleHandling"
         v-model:pagination="pagination"
-        :state="state"
+        :state="collection"
         :is-loading="isLoading"
         :is-custom="customRuleHandling === CustomRuleHandling.ONLY"
         @delete-click="showDeleteConfirmation($event)"
@@ -484,7 +490,7 @@ const importFileDialog = ref<boolean>(false);
         v-model="modelValue"
         :edit-mode="editMode"
         :event-ids="eventIdsForRule"
-        @refresh="fetchData()"
+        @refresh="refetch()"
       />
 
       <AccountingRuleActionDialog

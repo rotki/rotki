@@ -12,7 +12,7 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { useCalendarApi } from '@/modules/calendar/use-calendar-api';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { RouterAccountsSchema } from '@/modules/core/table/route';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 
 interface UseCalendarDataReturn {
   dateFormat: string;
@@ -37,57 +37,81 @@ export function useCalendarData(accounts: Ref<BlockchainAccount[]>): UseCalendar
   const rangeDebounced = refDebounced(modelRange, 300);
   const upcomingEvents = ref<CalendarEvent[]>([]);
 
-  const extraParams = computed<{ accounts: string[]; fromTimestamp: string; toTimestamp: string }>(() => {
+  /**
+   * Shareable: which accounts the calendar is filtered to. Round-trips through the
+   * URL, and the source's `fromQuery` below reads it back.
+   */
+  const accountParams = computed<{ accounts: string[] }>(() => ({
+    accounts: get(accounts).map(account => `${getAccountAddress(account)}#${account.chain}`),
+  }));
+
+  /**
+   * Request-only: the visible date range is a viewport, not a filter. It changes on
+   * every month navigation, so putting it in the URL would add a history entry per
+   * month stepped through.
+   */
+  const rangeParams = computed<{ fromTimestamp: string; toTimestamp: string }>(() => {
     const rangeVal = get(rangeDebounced);
     return {
-      accounts: get(accounts).map(account => `${getAccountAddress(account)}#${account.chain}`),
       fromTimestamp: rangeVal[0].toString(),
       toTimestamp: rangeVal[1].toString(),
     };
   });
 
+  const requestParams = computed<Record<string, unknown>>(() => {
+    const params: Writeable<Partial<CalendarEventRequestPayload>> = {};
+    const accountsVal = get(accounts);
+
+    if (accountsVal.length > 0) {
+      params.accounts = accountsVal.map((account) => {
+        const chain = account.chain;
+        return {
+          address: getAccountAddress(account),
+          ...(chain !== 'ALL' && isBlockchain(chain) ? { blockchain: chain } : {}),
+        };
+      });
+    }
+
+    return params;
+  });
+
   const {
-    fetchData,
+    collection: events,
     isLoading,
     pagination,
-    state: events,
-  } = usePaginationFilters<
+    refetch: fetchData,
+  } = useServerTable<
     CalendarEvent,
     CalendarEventRequestPayload
-  >(fetchCalendarEvents, {
-    defaultSortBy: {
-      direction: 'asc',
+  >({
+    fetch: fetchCalendarEvents,
+    params: [
+      {
+        fromQuery(query): void {
+          const parsedAccounts = RouterAccountsSchema.parse(query);
+          const accountsParsed = parsedAccounts.accounts;
+          if (!accountsParsed || accountsParsed.length === 0) {
+            set(accounts, []);
+          }
+          else {
+            set(
+              accounts,
+              accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)),
+            );
+          }
+        },
+        to: 'both',
+        values: accountParams,
+      },
+      { to: 'request', values: rangeParams },
+      { skipEmpty: true, to: 'request', values: requestParams },
+    ],
+    sort: {
+      default: {
+        direction: 'asc',
+      },
     },
-    extraParams,
-    onUpdateFilters(query) {
-      const parsedAccounts = RouterAccountsSchema.parse(query);
-      const accountsParsed = parsedAccounts.accounts;
-      if (!accountsParsed || accountsParsed.length === 0) {
-        set(accounts, []);
-      }
-      else {
-        set(
-          accounts,
-          accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)),
-        );
-      }
-    },
-    requestParams: computed<Partial<CalendarEventRequestPayload>>(() => {
-      const params: Writeable<Partial<CalendarEventRequestPayload>> = {};
-      const accountsVal = get(accounts);
-
-      if (accountsVal.length > 0) {
-        params.accounts = accountsVal.map((account) => {
-          const chain = account.chain;
-          return {
-            address: getAccountAddress(account),
-            ...(chain !== 'ALL' && isBlockchain(chain) ? { blockchain: chain } : {}),
-          };
-        });
-      }
-
-      return params;
-    }),
+    urlState: { mode: 'route' },
   });
 
   const dateFormat = 'YYYY-MM-DD';

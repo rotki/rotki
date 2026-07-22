@@ -6,9 +6,8 @@ import ManageCounterpartyMappingFormDialog
 import ManageCounterpartyMappingTable from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingTable.vue';
 import { useCounterpartyMappingApi } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
+import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -35,20 +34,24 @@ const extraParams = computed(() => {
 });
 
 const {
-  fetchData,
+  collection,
   isLoading: loading,
   pagination,
-  state,
-} = usePaginationFilters<
+  refetch,
+} = useServerTable<
   CounterpartyMapping,
   CounterpartyMappingRequestPayload
->(fetchAllCounterpartyMapping, {
-  extraParams,
-  history: 'router',
-  onUpdateFilters(query) {
-    set(selectedCounterparty, query.counterparty || '');
-    set(selectedSymbol, query.counterpartySymbol || '');
-  },
+>({
+  fetch: fetchAllCounterpartyMapping,
+  params: [{
+    fromQuery(query): void {
+      set(selectedCounterparty, query.counterparty || '');
+      set(selectedSymbol, query.counterpartySymbol || '');
+    },
+    to: 'both',
+    values: extraParams,
+  }],
+  urlState: { mode: 'route' },
 });
 
 onMounted(async () => {
@@ -61,7 +64,7 @@ onMounted(async () => {
     });
   }
 
-  await fetchData();
+  await refetch();
 });
 
 function add(payload?: Partial<CounterpartyMapping>) {
@@ -79,36 +82,20 @@ function edit(editMapping: CounterpartyMapping) {
   set(editMode, true);
 }
 
-const { show } = useConfirmStore();
-const { setMessage } = useMessageStore();
-
-async function confirmDelete(mapping: CounterpartyMapping) {
-  try {
-    const success = await deleteCounterpartyMapping(omit(mapping, ['asset']));
-    if (success)
-      await fetchData();
-  }
-  catch (error: unknown) {
-    setMessage({
-      description: t('asset_management.cex_mapping.delete_error', {
-        message: getErrorMessage(error),
-      }),
-    });
-  }
-}
-
-function showDeleteConfirmation(item: CounterpartyMapping) {
-  show(
-    {
-      message: t('asset_management.cex_mapping.confirm_delete.message', {
-        asset: item.counterpartySymbol,
-        location: item.counterparty.toUpperCase(),
-      }),
-      title: t('asset_management.counterparty_mapping.confirm_delete.title'),
-    },
-    async () => await confirmDelete(item),
-  );
-}
+const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
+  confirm: item => ({
+    message: t('asset_management.cex_mapping.confirm_delete.message', {
+      asset: item.counterpartySymbol,
+      location: item.counterparty.toUpperCase(),
+    }),
+    title: t('asset_management.counterparty_mapping.confirm_delete.title'),
+  }),
+  deleteItem: mapping => deleteCounterpartyMapping(omit(mapping, ['asset'])),
+  errorMessage: (_item, error) => t('asset_management.cex_mapping.delete_error', {
+    message: getErrorMessage(error),
+  }),
+  onDeleted: refetch,
+});
 </script>
 
 <template>
@@ -119,7 +106,7 @@ function showDeleteConfirmation(item: CounterpartyMapping) {
         variant="outlined"
         size="lg"
         :loading="loading"
-        @click="fetchData()"
+        @click="refetch()"
       >
         <template #prepend>
           <RuiIcon name="lu-refresh-ccw" />
@@ -144,16 +131,16 @@ function showDeleteConfirmation(item: CounterpartyMapping) {
         v-model:counterparty="selectedCounterparty"
         v-model:symbol="selectedSymbol"
         v-model:pagination="pagination"
-        :collection="state"
+        :collection="collection"
         :loading="loading"
-        @refresh="fetchData()"
+        @refresh="refetch()"
         @edit="edit($event)"
         @delete="showDeleteConfirmation($event)"
       />
       <ManageCounterpartyMappingFormDialog
         v-model="modelValue"
         :edit-mode="editMode"
-        @refresh="fetchData()"
+        @refresh="refetch()"
       />
     </RuiCard>
   </TablePageLayout>

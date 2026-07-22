@@ -65,7 +65,7 @@ export const useNewlyDetectedTokensDb = createSharedComposable((): UseNewlyDetec
         tokenKind,
       } = get(payload);
 
-      // Convert from snake_case (from usePaginationFilters) to camelCase for IndexedDB
+      // Convert from snake_case (from useServerTable) to camelCase for IndexedDB
       const snakeCaseOrderBy = orderByAttributes.length > 0 ? orderByAttributes[0] : 'detected_at';
       const orderBy = transformCase(snakeCaseOrderBy, true) as keyof NewDetectedTokenRecord;
       const order = ascending.length > 0 && ascending[0] ? 'asc' : 'desc';

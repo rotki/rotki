@@ -1,6 +1,6 @@
-import type { ComputedRef, EffectScope, Ref } from 'vue';
+import type { EffectScope, MaybeRefOrGetter, Ref } from 'vue';
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
-import type { CalendarEvent, CalendarEventRequestPayload } from '@/modules/calendar/types';
+import type { CalendarEvent } from '@/modules/calendar/types';
 import type { Collection } from '@/modules/core/common/collection';
 import { flushPromises } from '@vue/test-utils';
 import dayjs from 'dayjs';
@@ -8,13 +8,37 @@ import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCalendarData } from './use-calendar-data';
 
-interface PaginationOptions {
-  extraParams?: ComputedRef<Record<string, unknown>>;
-  requestParams?: ComputedRef<Partial<CalendarEventRequestPayload>>;
-  onUpdateFilters?: (query: Record<string, unknown>) => void;
+interface ParamSource {
+  values: MaybeRefOrGetter<Record<string, unknown>>;
+  to: 'request' | 'url' | 'both';
+  fromQuery?: (query: Record<string, unknown>) => void;
+  skipEmpty?: boolean;
+  isDefault?: boolean;
 }
 
-let captured: PaginationOptions = {};
+interface ServerTableOptions {
+  params?: ParamSource[];
+}
+
+let captured: ServerTableOptions = {};
+
+/** Reads the values of the first source contributing to the given destination. */
+/**
+ * Looks a source up by a key it is expected to carry, not by destination alone:
+ * there is more than one `request` source, so destination is ambiguous.
+ */
+function sourceValues(destination: 'request' | 'url' | 'both', key: string): Record<string, unknown> {
+  const source = captured.params?.find(item => item.to === destination && key in toValue(item.values));
+  expect(source).toBeDefined();
+  return toValue(source!.values);
+}
+
+/** Runs the read direction of the source that carries `key` at `destination`. */
+function applySourceRead(destination: 'request' | 'url' | 'both', key: string, query: Record<string, unknown>): void {
+  const source = captured.params?.find(item => item.to === destination && key in toValue(item.values));
+  expect(source?.fromQuery).toBeDefined();
+  source!.fromQuery!(query);
+}
 const state = ref<Collection<CalendarEvent>>({ data: [], found: 0, limit: 10, total: 0 });
 const pagination = ref({ limit: 10, limits: [10], page: 1, total: 0 });
 const isLoading = ref<boolean>(false);
@@ -22,20 +46,19 @@ const fetchData = vi.fn().mockResolvedValue(undefined);
 const fetchCalendarEvents = vi.fn();
 const getAccountByAddress = vi.fn();
 
-vi.mock('@/modules/core/table/use-pagination-filter', () => ({
-  usePaginationFilters: vi.fn((_req: unknown, options: PaginationOptions) => {
+vi.mock('@/modules/core/table/use-server-table', () => ({
+  useServerTable: vi.fn((options: ServerTableOptions) => {
     captured = options;
     return {
-      fetchData,
-      filters: computed(() => ({})),
+      collection: state,
+      filter: computed(() => ({})),
       isLoading,
       matchers: computed(() => []),
       pagination,
+      refetch: fetchData,
+      setFilter: vi.fn(),
       setPage: vi.fn(),
       sort: computed(() => ({ column: undefined, direction: 'asc' as const })),
-      state,
-      updateFilter: vi.fn(),
-      userAction: ref(false),
     };
   }),
 }));
@@ -82,7 +105,7 @@ describe('useCalendarData', () => {
     scope.stop();
   });
 
-  it('should expose state, pagination and isLoading from usePaginationFilters', () => {
+  it('should expose state, pagination and isLoading from useServerTable', () => {
     const accounts = ref<BlockchainAccount[]>([]);
     const result = createCalendarData(accounts);
 
@@ -128,7 +151,7 @@ describe('useCalendarData', () => {
     expect(fetchData).toHaveBeenCalled();
   });
 
-  describe('options to usePaginationFilters', () => {
+  describe('options to useServerTable', () => {
     it('should pass extraParams with address#chain entries', async () => {
       const accounts = ref<BlockchainAccount[]>([makeAccount('0xabc', 'eth'), makeAccount('0xdef', 'optimism')]);
       const { modelRange } = createCalendarData(accounts);
@@ -137,17 +160,33 @@ describe('useCalendarData', () => {
       // debounced by 300ms — use fake timers to flush
       await new Promise(resolve => setTimeout(resolve, 320));
 
-      const params = get(captured.extraParams!);
-      expect(params.accounts).toEqual(['0xabc#eth', '0xdef#optimism']);
-      expect(params.fromTimestamp).toBe('100');
-      expect(params.toTimestamp).toBe('200');
+      // Accounts are shareable and round-trip through the URL.
+      expect(sourceValues('both', 'accounts').accounts).toEqual(['0xabc#eth', '0xdef#optimism']);
+
+      // The visible range is request-only: it is a viewport, not a filter, and would
+      // otherwise add a history entry per month stepped through.
+      const rangeValues = sourceValues('request', 'fromTimestamp');
+      expect(rangeValues.fromTimestamp).toBe('100');
+      expect(rangeValues.toTimestamp).toBe('200');
+    });
+
+    it('should keep the date range out of the url', () => {
+      const accounts = ref<BlockchainAccount[]>([makeAccount('0xabc', 'eth')]);
+      createCalendarData(accounts);
+
+      const urlBound = (captured.params ?? []).filter(item => item.to === 'both' || item.to === 'url');
+      for (const source of urlBound) {
+        const values = toValue(source.values);
+        expect(values).not.toHaveProperty('fromTimestamp');
+        expect(values).not.toHaveProperty('toTimestamp');
+      }
     });
 
     it('should build requestParams with blockchain when chain is a known blockchain', () => {
       const accounts = ref<BlockchainAccount[]>([makeAccount('0xabc', 'eth')]);
       createCalendarData(accounts);
 
-      const params = get(captured.requestParams!);
+      const params = sourceValues('request', 'accounts');
       expect(params.accounts).toEqual([{ address: '0xabc', blockchain: 'eth' }]);
     });
 
@@ -155,7 +194,7 @@ describe('useCalendarData', () => {
       const accounts = ref<BlockchainAccount[]>([makeAccount('0xabc', 'ALL'), makeAccount('0xdef', 'banana')]);
       createCalendarData(accounts);
 
-      const params = get(captured.requestParams!);
+      const params = sourceValues('request', 'accounts');
       expect(params.accounts).toEqual([
         { address: '0xabc' },
         { address: '0xdef' },
@@ -166,25 +205,30 @@ describe('useCalendarData', () => {
       const accounts = ref<BlockchainAccount[]>([]);
       createCalendarData(accounts);
 
-      const params = get(captured.requestParams!);
-      expect(params.accounts).toBeUndefined();
+      // With no accounts selected the request source is empty, so it cannot be found
+      // by key; identify it as the request source that is not the date range.
+      const source = (captured.params ?? []).find(
+        item => item.to === 'request' && !('fromTimestamp' in toValue(item.values)),
+      );
+      expect(source).toBeDefined();
+      expect(toValue(source!.values).accounts).toBeUndefined();
     });
 
-    it('should reset accounts when onUpdateFilters receives no accounts', () => {
+    it('should reset accounts when the route carries no accounts', () => {
       const accounts = ref<BlockchainAccount[]>([makeAccount('0xabc', 'eth')]);
       createCalendarData(accounts);
 
-      captured.onUpdateFilters?.({});
+      applySourceRead('both', 'accounts', {});
       expect(get(accounts)).toEqual([]);
     });
 
-    it('should map parsed accounts via getAccountByAddress on onUpdateFilters', () => {
+    it('should map parsed accounts via getAccountByAddress on route read', () => {
       const accounts = ref<BlockchainAccount[]>([]);
       const fetched = makeAccount('0xabc', 'eth');
       getAccountByAddress.mockReturnValue(fetched);
       createCalendarData(accounts);
 
-      captured.onUpdateFilters?.({ accounts: '0xabc#eth' });
+      applySourceRead('both', 'accounts', { accounts: '0xabc#eth' });
 
       expect(getAccountByAddress).toHaveBeenCalledWith('0xabc', 'eth');
       expect(get(accounts)).toEqual([fetched]);

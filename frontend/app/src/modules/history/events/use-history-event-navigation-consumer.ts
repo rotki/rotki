@@ -24,7 +24,7 @@ const historyEventsName = '/history/events/';
  */
 export function useHistoryEventNavigationConsumer(
   pagination: ComputedRef<TablePaginationData>,
-  pageParams?: ComputedRef<HistoryEventRequestPayload>,
+  requestPayload?: ComputedRef<HistoryEventRequestPayload>,
   groupLoading?: Ref<boolean>,
 ): void {
   const { t } = useI18n({ useScope: 'global' });
@@ -131,7 +131,7 @@ export function useHistoryEventNavigationConsumer(
     try {
       while (currentRequest) {
         const basePayload =
-          currentRequest.preserveFilters && pageParams ? get(pageParams) : undefined;
+          currentRequest.preserveFilters && requestPayload ? get(requestPayload) : undefined;
         // Compute the target's position within the asset-filtered view so the page number
         // matches the filter that will be applied on arrival.
         const filterPayload = currentRequest.assetFilter

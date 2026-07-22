@@ -8,7 +8,7 @@ import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { type Filters, type Matcher, useAssetFilter } from '@/modules/core/table/filters/use-assets-filter';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 
 vi.mock('vue', async () => {
   const mod = await vi.importActual<typeof Vue>('vue');
@@ -21,7 +21,6 @@ vi.mock('vue', async () => {
 
 describe('useAssetsFilter', () => {
   let fetchAssets: (payload: MaybeRef<AssetRequestPayload>) => Promise<Collection<SupportedAsset>>;
-  const locationOverview = ref<string>('');
   const mainPage = ref<boolean>(false);
   const router = useRouter();
   const route = useRoute();
@@ -42,8 +41,6 @@ describe('useAssetsFilter', () => {
   });
 
   describe('default', () => {
-    set(locationOverview, '');
-
     beforeEach(() => {
       set(mainPage, true);
     });
@@ -51,79 +48,83 @@ describe('useAssetsFilter', () => {
     const assetTypes = ref(['evm token', 'solana token']);
 
     it('should initialize composable correctly', async () => {
-      const { userAction, filters, sort, state, fetchData, isLoading } = usePaginationFilters<
+      const { markUserIntent, filter, sort, collection, refetch, isLoading } = useServerTable<
         SupportedAsset,
         AssetRequestPayload,
         Filters,
         Matcher
-      >(fetchAssets, {
-        history: get(mainPage) ? 'router' : false,
-        filterSchema: () => useAssetFilter(assetTypes),
-        locationOverview,
-        defaultSortBy: [{
-          column: 'symbol',
-          direction: 'asc',
-        }],
+      >({
+        fetch: fetchAssets,
+        urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
+        filterSchema: useAssetFilter(assetTypes),
+        sort: {
+          default: [{
+            column: 'symbol',
+            direction: 'asc',
+          }],
+        },
       });
-
-      expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
-      expect(get(filters)).toStrictEqual({});
+      expect(get(filter)).toStrictEqual({});
       expect(get(sort)).toStrictEqual([{
         column: 'symbol',
         direction: 'asc',
       }]);
-      expect(get(state).data).toHaveLength(0);
-      expect(get(state).total).toBe(0);
-
-      set(userAction, true);
+      expect(get(collection).data).toHaveLength(0);
+      expect(get(collection).total).toBe(0);
+      markUserIntent();
       await nextTick();
-      startPromise(fetchData());
+      startPromise(refetch());
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       await flushPromises();
       expect(get(isLoading)).toBe(false);
-      expect(get(state).total).toBe(210);
+      expect(get(collection).total).toBe(210);
     });
 
     it('should return correct types', () => {
-      const { isLoading, state, filters, matchers } = usePaginationFilters<
+      // The caller holds the schema now, so `matchers` is read off it rather than
+      // re-exported by the table.
+      const schema = useAssetFilter(assetTypes);
+      const { isLoading, collection, filter } = useServerTable<
         SupportedAsset,
         AssetRequestPayload,
         Filters,
         Matcher
-      >(fetchAssets, {
-        history: get(mainPage) ? 'router' : false,
-        filterSchema: () => useAssetFilter(assetTypes),
-        locationOverview,
+      >({
+        fetch: fetchAssets,
+        urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
+        filterSchema: schema,
       });
 
       expect(get(isLoading)).toBe(false);
 
-      expectTypeOf(get(state)).toEqualTypeOf<Collection<SupportedAsset>>();
-      expectTypeOf(get(state).data).toEqualTypeOf<SupportedAsset[]>();
-      expectTypeOf(get(state).found).toEqualTypeOf<number>();
-      expectTypeOf(get(filters)).toEqualTypeOf<Filters>();
-      expectTypeOf(get(matchers)).toEqualTypeOf<Matcher[]>();
+      expectTypeOf(get(collection)).toEqualTypeOf<Collection<SupportedAsset>>();
+      expectTypeOf(get(collection).data).toEqualTypeOf<SupportedAsset[]>();
+      expectTypeOf(get(collection).found).toEqualTypeOf<number>();
+      expectTypeOf(get(filter)).toEqualTypeOf<Filters>();
+      expectTypeOf(get(schema.matchers)).toEqualTypeOf<Matcher[]>();
     });
 
     it('should modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
       const query = { sort: ['category'], sortOrder: ['desc'] };
 
-      const { isLoading, state, sort } = usePaginationFilters<
+      const { isLoading, collection, sort } = useServerTable<
         SupportedAsset,
         AssetRequestPayload,
         Filters,
         Matcher
-      >(fetchAssets, {
-        history: get(mainPage) ? 'router' : false,
-        filterSchema: () => useAssetFilter(assetTypes),
-        locationOverview,
-        defaultSortBy: [{
-          column: 'symbol',
-          direction: 'asc',
-        }],
+      >({
+        fetch: fetchAssets,
+        urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
+        filterSchema: useAssetFilter(assetTypes),
+        sort: {
+          default: [{
+            column: 'symbol',
+            direction: 'asc',
+          }],
+        },
       });
 
       expect(get(sort)).toStrictEqual([{
@@ -144,14 +145,14 @@ describe('useAssetsFilter', () => {
       await flushPromises();
       expect(get(isLoading)).toBe(false);
 
-      assertType<Collection<SupportedAsset>>(get(state));
-      assertType<SupportedAsset[]>(get(state).data);
-      assertType<number>(get(state).found);
+      assertType<Collection<SupportedAsset>>(get(collection));
+      assertType<SupportedAsset[]>(get(collection).data);
+      assertType<number>(get(collection).found);
 
-      expect(get(state).data).toHaveLength(10);
-      expect(get(state).found).toBe(210);
-      expect(get(state).limit).toBe(-1);
-      expect(get(state).total).toBe(210);
+      expect(get(collection).data).toHaveLength(10);
+      expect(get(collection).found).toBe(210);
+      expect(get(collection).limit).toBe(-1);
+      expect(get(collection).total).toBe(210);
 
       expect(get(sort)).toStrictEqual([{
         column: 'category',

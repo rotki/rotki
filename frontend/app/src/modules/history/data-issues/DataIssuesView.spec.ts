@@ -23,15 +23,16 @@ const state = vi.hoisted((): MockState => ({
   rows: [],
 }));
 
-vi.mock('@/modules/core/table/use-pagination-filter', () => ({
-  usePaginationFilters: (): Record<string, unknown> => ({
-    fetchData: vi.fn().mockResolvedValue(undefined),
-    filters: ref(state.filters),
+vi.mock('@/modules/core/table/use-server-table', () => ({
+  routeWhen: (): { mode: 'route' } => ({ mode: 'route' }),
+  useServerTable: (): Record<string, unknown> => ({
+    collection: ref({ data: state.rows, found: state.rows.length, limit: 10, total: state.rows.length }),
+    filter: ref(state.filters),
     isLoading: ref(state.isLoading),
     matchers: ref([]),
     pagination: ref({}),
-    state: ref({ data: state.rows, found: state.rows.length, limit: 10, total: state.rows.length }),
-    updateFilter: vi.fn(),
+    refetch: vi.fn().mockResolvedValue(undefined),
+    setFilter: vi.fn(),
   }),
 }));
 

@@ -8,29 +8,50 @@ import { useHistoryEventsFilters } from './use-history-events-filters';
 let capturedRequestParams: ComputedRef<Partial<HistoryEventRequestPayload>> | undefined;
 let capturedQueryParamsOnly: ComputedRef<Record<string, unknown>> | undefined;
 
-interface PaginationMockOptions {
-  requestParams?: ComputedRef<Partial<HistoryEventRequestPayload>>;
-  queryParamsOnly?: ComputedRef<Record<string, unknown>>;
+interface ServerTableMockSource {
+  values: ComputedRef<Record<string, unknown>>;
+  to: 'request' | 'url' | 'both';
+  skipEmpty?: boolean;
+  isDefault?: boolean;
 }
 
-vi.mock('@/modules/core/table/use-pagination-filter', () => ({
-  usePaginationFilters: vi.fn((_requestFn: unknown, options: PaginationMockOptions) => {
-    capturedRequestParams = options.requestParams;
-    capturedQueryParamsOnly = options.queryParamsOnly;
+interface ServerTableMockOptions {
+  params?: ServerTableMockSource[];
+}
+
+vi.mock('@/modules/core/table/use-server-table', () => ({
+  routeWhen: (): { mode: 'route' } => ({ mode: 'route' }),
+  useServerTable: vi.fn((options: ServerTableMockOptions) => {
+    const sources = options.params ?? [];
+    // The old `requestParams` bag is now the request-destination source that strips
+    // empties; `queryParamsOnly` is the url-destination one.
+    capturedRequestParams = sources.find(
+      source => source.to === 'request' && !source.isDefault,
+    )?.values;
+    capturedQueryParamsOnly = sources.find(source => source.to === 'url')?.values;
     return {
-      fetchData: vi.fn(),
-      filters: computed(() => ({})),
+      collection: ref({ data: [], found: 0, limit: 10, total: 0 }),
+      filter: computed(() => ({})),
       isLoading: ref(false),
-      matchers: computed(() => []),
-      pageParams: computed(() => ({})),
+      markUserIntent: vi.fn(),
       pagination: computed(() => ({ limit: 10, limits: [10], page: 1, total: 0 })),
+      refetch: vi.fn(),
+      requestPayload: computed(() => ({})),
+      setFilter: vi.fn(),
       setPage: vi.fn(),
       sort: computed(() => ({ column: undefined, direction: 'asc' as const })),
-      state: ref({ data: [], found: 0, limit: 10, total: 0 }),
-      updateFilter: vi.fn(),
-      userAction: ref(false),
     };
   }),
+}));
+
+// The filter schema is now built by the caller rather than by the mocked table, so
+// it has to be stubbed too: the real one reaches into the settings store.
+vi.mock('@/modules/core/table/filters/use-events-filter', () => ({
+  useHistoryEventFilter: vi.fn(() => ({
+    filters: ref({}),
+    matchers: computed(() => []),
+    RouteFilterSchema: undefined,
+  })),
 }));
 
 vi.mock('@/modules/history/events/use-history-events', () => ({

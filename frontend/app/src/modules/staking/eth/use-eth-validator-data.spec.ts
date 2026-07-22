@@ -53,14 +53,21 @@ vi.mock('@/modules/core/table/use-remember-table-sorting', async importOriginal 
   useRememberTableSorting: (...args: unknown[]): void => mockRememberSorting(...args),
 }));
 
-vi.mock('@/modules/core/table/use-pagination-filter', () => ({
-  usePaginationFilters: (): Record<string, unknown> => ({
-    fetchData: mockFetchData,
+vi.mock('@/modules/core/table/filters/use-eth-validator-filter', () => ({
+  useEthValidatorAccountFilter: (): Record<string, unknown> => ({
     filters: mockFilters,
     matchers: mockMatchers,
+    RouteFilterSchema: undefined,
+  }),
+}));
+
+vi.mock('@/modules/core/table/use-server-table', () => ({
+  useServerTable: (): Record<string, unknown> => ({
+    collection: mockRows,
+    filter: mockFilters,
     pagination: mockPagination,
+    refetch: mockFetchData,
     sort: mockSort,
-    state: mockRows,
   }),
 }));
 

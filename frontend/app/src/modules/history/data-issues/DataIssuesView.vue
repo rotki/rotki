@@ -3,7 +3,7 @@ import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
 import { startPromise } from '@shared/utils';
 import TableFilter from '@/modules/core/table/TableFilter.vue';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import DataIssueDetailDrawer from '@/modules/history/data-issues/components/DataIssueDetailDrawer.vue';
 import DataIssuesTable from '@/modules/history/data-issues/components/DataIssuesTable.vue';
 import DataIssueSummaryBar from '@/modules/history/data-issues/components/DataIssueSummaryBar.vue';
@@ -32,19 +32,27 @@ const { fetchData } = useDataIssues();
 const { baselineTotal, counts, dismissInlinePanels, refreshSummary } = useDataIssuesSummary();
 const { syncCompleted } = useSyncCompleted();
 
+const filterSchema = useDataIssuesFilter();
+
 const {
-  fetchData: refresh,
-  filters,
+  collection: state,
+  filter: filters,
   isLoading,
-  matchers,
   pagination,
-  state,
-  updateFilter,
-} = usePaginationFilters<DataIssue, DataIssuesRequestPayload, Filters, Matcher>(fetchData, {
-  defaultParams: computed(() => ({ state: [...DEFAULT_LIST_STATES] })),
-  filterSchema: useDataIssuesFilter,
-  history: mainPage ? 'router' : false,
+  refetch: refresh,
+  setFilter: updateFilter,
+} = useServerTable<DataIssue, DataIssuesRequestPayload, Filters, Matcher>({
+  fetch: fetchData,
+  filterSchema,
+  params: [{
+    isDefault: true,
+    to: 'request',
+    values: computed<Record<string, unknown>>(() => ({ state: [...DEFAULT_LIST_STATES] })),
+  }],
+  urlState: routeWhen(mainPage),
 });
+
+const matchers = filterSchema.matchers;
 
 // Tracks whether the first load has finished. The all-clear screen keys off this
 // (plus `hasAnyIssues`) instead of the list's transient `isLoading`, so a refresh

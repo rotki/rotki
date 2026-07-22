@@ -8,7 +8,7 @@ import { useOraclePrices } from '@/modules/assets/prices/use-oracle-prices';
 import { type Filters, type Matcher, useOraclePricesFilter } from '@/modules/assets/prices/use-oracle-prices-filter';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import TableFilter from '@/modules/core/table/TableFilter.vue';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -17,24 +17,29 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { deletePrice, fetchData } = useOraclePrices();
 
+const filterSchema = useOraclePricesFilter();
+const matchers = filterSchema.matchers;
+
 const {
-  fetchData: refresh,
-  filters,
+  collection,
+  filter,
   isLoading: loading,
-  matchers,
   pagination,
-  state,
-} = usePaginationFilters<
+  refetch: refresh,
+} = useServerTable<
   OraclePriceEntry,
   OraclePricesQuery,
   Filters,
   Matcher
->(fetchData, {
-  defaultSortBy: {
-    column: 'timestamp',
-    direction: 'desc',
+>({
+  fetch: fetchData,
+  filterSchema,
+  sort: {
+    default: {
+      column: 'timestamp',
+      direction: 'desc',
+    },
   },
-  filterSchema: useOraclePricesFilter,
 });
 
 const headers = computed<DataTableColumn<OraclePriceEntry>[]>(() => [
@@ -159,7 +164,7 @@ onMounted(async () => {
         </RuiTooltip>
         <div class="w-full sm:max-w-[25rem]">
           <TableFilter
-            v-model:matches="filters"
+            v-model:matches="filter"
             :matchers="matchers"
           />
         </div>
@@ -171,7 +176,7 @@ onMounted(async () => {
         dense
         :cols="headers"
         :loading="loading"
-        :rows="state.data"
+        :rows="collection.data"
         row-attr="fromAsset"
         data-testid="oracle-price-table"
       >

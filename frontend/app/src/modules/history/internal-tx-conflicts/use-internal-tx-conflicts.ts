@@ -4,7 +4,7 @@ import { startPromise } from '@shared/utils';
 import { logger } from '@/modules/core/common/logging/logging';
 import { internalTxFixedSignal } from '@/modules/core/messaging/handlers/internal-tx-fixed';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useInternalTxConflictsApi } from './internal-tx-conflicts-api';
 import { type InternalTxConflict, type InternalTxConflictsRequestPayload, type InternalTxConflictStatus, InternalTxConflictStatuses } from './types';
 import { type Filters, type Matcher, useInternalTxConflictsFilter } from './use-internal-tx-conflicts-filter';
@@ -56,26 +56,28 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
     ...getStatusFilter(get(activeFilter)),
   }));
 
+  const filterSchema = useInternalTxConflictsFilter();
+  const { matchers } = filterSchema;
+
   const {
-    fetchData,
-    filters,
+    collection: state,
+    filter: filters,
     isLoading: loading,
-    matchers,
     pagination,
+    refetch: fetchData,
     setPage,
     sort,
-    state,
-  } = usePaginationFilters<InternalTxConflict, InternalTxConflictsRequestPayload, Filters, Matcher>(
-    fetchInternalTxConflicts,
-    {
-      defaultSortBy: {
+  } = useServerTable<InternalTxConflict, InternalTxConflictsRequestPayload, Filters, Matcher>({
+    fetch: fetchInternalTxConflicts,
+    filterSchema,
+    params: [{ skipEmpty: true, to: 'request', values: requestParams }],
+    sort: {
+      default: {
         column: 'chain',
         direction: 'asc',
       },
-      filterSchema: () => useInternalTxConflictsFilter(),
-      requestParams,
     },
-  );
+  });
 
   const conflicts = computed<InternalTxConflict[]>(() => get(state).data);
   const totalFound = computed<number>(() => get(state).found);

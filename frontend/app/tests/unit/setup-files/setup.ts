@@ -129,6 +129,8 @@ vi.mock('vue-router', () => {
       beforeEach: vi.fn(),
     })),
     createWebHashHistory: vi.fn(),
+    // The mocked push always succeeds, so nothing here is ever a navigation failure.
+    isNavigationFailure: vi.fn().mockReturnValue(false),
   };
 });
 
