@@ -11,9 +11,10 @@ from eth_utils.address import to_checksum_address
 from freezegun import freeze_time
 from rsqlite import IntegrityError
 
-from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.types import AssetFlag, AssetType
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
-from rotkehlchen.constants.assets import A_PAX, A_SOL, A_USD, A_USDT
+from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
+from rotkehlchen.constants.assets import A_PAX, A_SOL, A_STETH, A_USD, A_USDT
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.constants.prices import (
     BITCOIN_GENESIS_BLOCK_TS,
@@ -1792,15 +1793,20 @@ def test_upgrade_v16_v17(
         globaldb: GlobalDBHandler,
         messages_aggregator: MessagesAggregator,
 ) -> None:
-    """Test the global DB upgrade from v16 to v17 that drops the now-unused
-    location_unsupported_assets table and adds moralis to the historical price
-    sources table."""
+    """Test the global DB upgrade from v16 to v17."""
     assert globaldb.get_setting_value('version', 0) == 14
     with globaldb.conn.read_ctx() as cursor:
         assert table_exists(cursor=cursor, name='location_unsupported_assets') is True
+        assert table_exists(cursor=cursor, name='asset_flags') is False
         assert cursor.execute(
             'SELECT COUNT(*) FROM price_history_source_types WHERE seq = 10',
         ).fetchone()[0] == 0
+        expected_rebasing_assets = {A_STETH.identifier} | {
+            row[0] for row in cursor.execute(
+                'SELECT identifier FROM evm_tokens WHERE protocol = ?',
+                (CPT_COMPOUND_V3,),
+            )
+        }
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 17)
@@ -1814,6 +1820,13 @@ def test_upgrade_v16_v17(
     assert globaldb.get_setting_value('version', 0) == 17
     with globaldb.conn.read_ctx() as cursor:
         assert table_exists(cursor=cursor, name='location_unsupported_assets') is False
+        assert [
+            (row[1], row[5]) for row in cursor.execute('PRAGMA table_info(asset_flags)')
+        ] == [('identifier', 1), ('flag', 2)]
+        assert set(cursor.execute(
+            'SELECT identifier FROM asset_flags WHERE flag = ?',
+            (AssetFlag.REBASING,),
+        )) == {(identifier,) for identifier in expected_rebasing_assets}
         assert cursor.execute(
             "SELECT seq FROM price_history_source_types WHERE type = 'J'",
         ).fetchone()[0] == 10

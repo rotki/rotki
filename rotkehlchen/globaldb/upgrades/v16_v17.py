@@ -1,6 +1,9 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.assets.types import AssetFlag
+from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
+from rotkehlchen.constants.assets import A_STETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.utils.progress import perform_globaldb_upgrade_steps, progress_step
 
@@ -31,6 +34,25 @@ def migrate_to_v17(
         write_cursor.execute(
             'INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES (?, ?)',
             ('J', 10),
+        )
+
+    @progress_step('Create and populate the asset flags table.')
+    def _create_and_populate_asset_flags(write_cursor: DBCursor) -> None:
+        write_cursor.execute("""CREATE TABLE IF NOT EXISTS asset_flags (
+            identifier TEXT NOT NULL COLLATE NOCASE,
+            flag TEXT NOT NULL,
+            PRIMARY KEY(identifier, flag),
+            FOREIGN KEY(identifier) REFERENCES assets(identifier)
+                ON UPDATE CASCADE ON DELETE CASCADE
+        );""")
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO asset_flags(identifier, flag) VALUES (?, ?)',
+            (A_STETH.identifier, AssetFlag.REBASING),
+        )
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO asset_flags(identifier, flag) '
+            'SELECT identifier, ? FROM evm_tokens WHERE protocol = ?',
+            (AssetFlag.REBASING, CPT_COMPOUND_V3),
         )
 
     perform_globaldb_upgrade_steps(connection, progress_handler)
