@@ -1,12 +1,11 @@
 import type { DeepReadonly, Ref } from 'vue';
 import type {
-  MatchedKeyword,
   MatchedKeywordWithBehaviour,
   SearchMatcher,
   Suggestion,
 } from '@/modules/core/table/filtering';
 import { assert } from '@rotki/common';
-import { arrayify } from '@/modules/core/common/data/array';
+import { useFilterModel } from '@/modules/core/table/use-filter-model';
 
 interface SuggestionText {
   text: string;
@@ -28,13 +27,21 @@ interface UseFilterSelectionReturn {
   applyFilter: (filter: Suggestion) => void;
 }
 
+/**
+ * The filter chip UI's edit layer. The state (the chip `selection`), the codec (chip
+ * <-> `matches`), and the self-echo guard now live in `useFilterModel`; this composable
+ * keeps the presentation-only concerns: the inline search text, the chip being edited,
+ * and add/edit-in-place (`applyFilter`). `restoreSelection` delegates to the model's
+ * guarded `setFromMatches`, so the round-trip echo no longer regroups or reorders chips
+ * (PR #12584), without a bolt-on guard here.
+ */
 export function useFilterSelection(
   search: Ref<string>,
   matcherForKey: (searchKey: string | undefined) => SearchMatcher<any, any> | undefined,
   matcherForKeyValue: (searchKey: string | undefined) => SearchMatcher<any, any> | undefined,
   emit: (event: 'update:matches', matches: MatchedKeywordWithBehaviour<any>) => void,
 ): UseFilterSelectionReturn {
-  const selection = ref<Suggestion[]>([]);
+  const { matches, selection, setFromMatches, setSelection } = useFilterModel(matcherForKey, matcherForKeyValue);
   const suggestionBeingEdited = ref<Suggestion>();
 
   // TODO: This is too specific for custom asset, move it!
@@ -87,58 +94,10 @@ export function useFilterSelection(
     set(search, `${beingEdited.key}${beingEdited.exclude ? '!=' : '='}${value}`);
   }
 
+  /** Commits a chip list to the model and emits the derived matches. */
   function updateMatches(pairs: Suggestion[]): void {
-    const matched: Partial<MatchedKeyword<any>> = {};
-    const validPairs: Suggestion[] = [];
-
-    for (const entry of pairs) {
-      const key = entry.key;
-      const matcher = matcherForKey(key);
-      if (!matcher)
-        continue;
-
-      const valueKey = (matcher.keyValue || matcher.key) as string;
-      let transformedKeyword: string | boolean = '';
-
-      if ('string' in matcher) {
-        if (typeof entry.value !== 'string')
-          continue;
-
-        if (matcher.validate(entry.value)) {
-          transformedKeyword = matcher.serializer?.(entry.value) || entry.value;
-
-          if (entry.exclude)
-            transformedKeyword = `!${transformedKeyword}`;
-        }
-        else {
-          continue;
-        }
-      }
-      else if ('asset' in matcher) {
-        transformedKeyword = typeof entry.value !== 'string' ? entry.value.identifier : entry.value;
-      }
-      else {
-        transformedKeyword = true;
-      }
-
-      if (!transformedKeyword)
-        continue;
-
-      validPairs.push(entry);
-
-      if (matcher.multiple) {
-        if (!matched[valueKey])
-          matched[valueKey] = [];
-
-        (matched[valueKey] as (string | boolean)[]).push(transformedKeyword);
-      }
-      else {
-        matched[valueKey] = transformedKeyword;
-      }
-    }
-
-    set(selection, validPairs);
-    emit('update:matches', matched);
+    setSelection(pairs);
+    emit('update:matches', get(matches));
   }
 
   function findBeingSelectedIndex(selectionList: Suggestion[]): number {
@@ -177,57 +136,9 @@ export function useFilterSelection(
     set(search, '');
   }
 
+  /** Rebuilds the selection from an external matches, skipping our own echo (see model). */
   function restoreSelection(matchesData: MatchedKeywordWithBehaviour<any>): void {
-    const oldSelection = get(selection);
-    const newSelection: Suggestion[] = [];
-    Object.entries(matchesData).forEach(([key, value]) => {
-      const foundMatchers = matcherForKeyValue(key);
-
-      if (!(foundMatchers && value))
-        return;
-
-      const values = arrayify(value);
-      const asset = 'asset' in foundMatchers;
-      const boolean = 'boolean' in foundMatchers;
-
-      values.forEach((val) => {
-        let deserializedValue = null;
-        if (asset) {
-          const prevAssetSelection = oldSelection.find(({ key }) => key === foundMatchers.key);
-          if (prevAssetSelection)
-            deserializedValue = prevAssetSelection.value;
-        }
-
-        let exclude = false;
-        if (!deserializedValue) {
-          if (boolean || typeof val === 'boolean') {
-            deserializedValue = true;
-          }
-          else if (typeof val === 'string') {
-            let normalizedValue = val;
-            if (!asset && val.startsWith('!')) {
-              normalizedValue = val.substring(1);
-              exclude = true;
-            }
-            deserializedValue = foundMatchers.deserializer?.(normalizedValue) || normalizedValue;
-          }
-        }
-
-        if (deserializedValue === null)
-          return;
-
-        newSelection.push({
-          asset,
-          exclude,
-          index: 0,
-          key: foundMatchers.key,
-          total: 1,
-          value: deserializedValue,
-        });
-      });
-    });
-
-    set(selection, newSelection);
+    setFromMatches(matchesData);
   }
 
   return {
@@ -238,7 +149,7 @@ export function useFilterSelection(
     getSuggestionText,
     isSuggestionBeingEdited,
     restoreSelection,
-    selection: shallowReadonly(selection),
+    selection,
     suggestionBeingEdited: readonly(suggestionBeingEdited),
     updateEditSuggestionSearch,
     updateMatches,
