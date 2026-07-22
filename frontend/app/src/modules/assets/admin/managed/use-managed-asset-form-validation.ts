@@ -15,6 +15,7 @@ interface AssetFormStates {
   decimals: Ref<number | null | undefined>;
   evmChain: Ref<string | null | undefined>;
   forked: Ref<string>;
+  isRebasing: Ref<boolean>;
   name: Ref<string>;
   protocol: Ref<string>;
   started: Ref<number | null | undefined>;

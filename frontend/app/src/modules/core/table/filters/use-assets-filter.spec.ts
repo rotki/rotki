@@ -5,7 +5,7 @@ import type { AssetRequestPayload } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
-import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { afterEach, assert, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { type Filters, type Matcher, useAssetFilter } from '@/modules/core/table/filters/use-assets-filter';
 import { useServerTable } from '@/modules/core/table/use-server-table';
@@ -14,8 +14,8 @@ type StringMatcher = Extract<Matcher, { string: true }>;
 
 function getStringMatcher(matchers: Matcher[], key: string): StringMatcher {
   const matcher = matchers.find(item => item.key === key);
-  if (!matcher || !('string' in matcher))
-    throw new Error(`Expected a string matcher for ${key}`);
+  assert(matcher, `Expected a matcher for ${key}`);
+  assert('string' in matcher, `Expected a string matcher for ${key}`);
 
   return matcher;
 }

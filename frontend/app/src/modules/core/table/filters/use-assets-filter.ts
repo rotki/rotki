@@ -62,6 +62,7 @@ export function useAssetFilter(assetTypes: MaybeRefOrGetter<string[]>): FilterSc
       : []),
     {
       description: t('assets.filter.asset_flag'),
+      hint: t('assets.filter.asset_flag_hint'),
       key: AssetFilterKeys.ASSET_FLAG,
       keyValue: AssetFilterValueKeys.ASSET_FLAG,
       strictMatching: true,

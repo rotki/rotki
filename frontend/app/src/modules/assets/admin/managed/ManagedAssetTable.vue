@@ -135,10 +135,21 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
       outlined
     >
       <template #item.symbol="{ row }">
-        <AssetDetailsBase
-          :changeable="!loading"
-          :asset="getAsset(row)"
-        />
+        <div class="flex items-center gap-2">
+          <AssetDetailsBase
+            :changeable="!loading"
+            :asset="getAsset(row)"
+          />
+          <RuiChip
+            v-if="row.isRebasing"
+            color="primary"
+            size="sm"
+            variant="outlined"
+            class="shrink-0"
+          >
+            {{ t('common.rebasing_token') }}
+          </RuiChip>
+        </div>
       </template>
       <template #item.address="{ row }">
         <HashLink

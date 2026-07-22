@@ -1512,12 +1512,12 @@ class RestAPI:
         response_data = self.assets_service.get_asset_types()
         return make_response_from_dict(response_data)
 
-    def add_user_asset(self, asset: AssetWithOracles) -> Response:
-        response_data = self.assets_service.add_user_asset(asset)
+    def add_user_asset(self, asset: AssetWithOracles, is_rebasing: bool | None) -> Response:
+        response_data = self.assets_service.add_user_asset(asset, is_rebasing)
         return make_response_from_dict(response_data)
 
-    def edit_user_asset(self, asset: AssetWithOracles) -> Response:
-        response_data = self.assets_service.edit_user_asset(asset)
+    def edit_user_asset(self, asset: AssetWithOracles, is_rebasing: bool | None) -> Response:
+        response_data = self.assets_service.edit_user_asset(asset, is_rebasing)
         return make_response_from_dict(response_data)
 
     def delete_asset(self, identifier: str) -> Response:

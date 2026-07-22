@@ -18,12 +18,16 @@ import {
 } from '@/modules/core/api/utils';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 
+export type ManagedAssetPayload = Omit<SupportedAsset, 'isRebasing'> & {
+  isRebasing?: boolean;
+};
+
 interface UseAssetManagementApiReturn {
   queryAllAssets: (payload: MaybeRef<AssetRequestPayload>) => Promise<Collection<SupportedAsset>>;
   queryAllCustomAssets: (payload: MaybeRef<CustomAssetRequestPayload>) => Promise<Collection<CustomAsset>>;
   queryOwnedAssets: () => Promise<string[]>;
-  addAsset: (asset: Omit<SupportedAsset, 'identifier'>) => Promise<AssetIdResponse>;
-  editAsset: (asset: SupportedAsset) => Promise<boolean>;
+  addAsset: (asset: Omit<ManagedAssetPayload, 'identifier'>) => Promise<AssetIdResponse>;
+  editAsset: (asset: ManagedAssetPayload) => Promise<boolean>;
   deleteAsset: (identifier: string) => Promise<boolean>;
   getAssetTypes: () => Promise<string[]>;
   getCustomAssetTypes: () => Promise<string[]>;
@@ -77,9 +81,9 @@ export function useAssetManagementApi(): UseAssetManagementApiReturn {
     validStatuses: VALID_WITHOUT_SESSION_STATUS,
   });
 
-  const addAsset = async (asset: Omit<SupportedAsset, 'identifier'>): Promise<AssetIdResponse> => api.put<AssetIdResponse>('/assets/all', asset);
+  const addAsset = async (asset: Omit<ManagedAssetPayload, 'identifier'>): Promise<AssetIdResponse> => api.put<AssetIdResponse>('/assets/all', asset);
 
-  const editAsset = async (asset: SupportedAsset): Promise<boolean> => api.patch<boolean>('/assets/all', asset);
+  const editAsset = async (asset: ManagedAssetPayload): Promise<boolean> => api.patch<boolean>('/assets/all', asset);
 
   const deleteAsset = async (identifier: string): Promise<boolean> => api.delete<boolean>('/assets/all', {
     body: { identifier },

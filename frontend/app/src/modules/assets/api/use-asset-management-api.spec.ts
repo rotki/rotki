@@ -23,12 +23,14 @@ describe('composables/api/assets/management', () => {
               entries: [
                 {
                   identifier: 'ETH',
+                  is_rebasing: false,
                   name: 'Ethereum',
                   symbol: 'ETH',
                   asset_type: 'own chain',
                 },
                 {
                   identifier: 'BTC',
+                  is_rebasing: true,
                   name: 'Bitcoin',
                   symbol: 'BTC',
                   asset_type: 'own chain',
@@ -60,6 +62,8 @@ describe('composables/api/assets/management', () => {
         ascending: [true],
       });
       expect(result.data).toHaveLength(2);
+      expect(result.data[0].isRebasing).toBe(false);
+      expect(result.data[1].isRebasing).toBe(true);
       expect(result.found).toBe(2);
       expect(result.total).toBe(50);
     });
@@ -311,6 +315,7 @@ describe('composables/api/assets/management', () => {
       const { editAsset } = useAssetManagementApi();
       const result = await editAsset({
         identifier: 'TOKEN_1',
+        isRebasing: true,
         name: 'Updated Token',
         symbol: 'UPD',
         assetType: 'evm token',
@@ -318,6 +323,7 @@ describe('composables/api/assets/management', () => {
 
       expect(capturedBody).toEqual({
         identifier: 'TOKEN_1',
+        is_rebasing: true,
         name: 'Updated Token',
         symbol: 'UPD',
         asset_type: 'evm token',

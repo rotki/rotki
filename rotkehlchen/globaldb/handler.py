@@ -23,6 +23,7 @@ from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import (
     AssetData,
+    AssetFlag,
     AssetType,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
@@ -326,6 +327,7 @@ class GlobalDBHandler:
         - DeserializationError
         """
         assets_info, offset, limit = {}, None, None
+        rebasing_asset_ids = GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING)
         if filter_query.pagination is not None and filter_query.pagination.limit is not None:
             # we don't apply pagination yet, but after skipping the ignored assets below
             limit = filter_query.pagination.limit
@@ -364,6 +366,7 @@ class GlobalDBHandler:
                 asset_type = AssetType.deserialize_from_db(entry[1])
                 data = {
                     'identifier': entry[0],
+                    'is_rebasing': entry[0] in rebasing_asset_ids,
                     'asset_type': str(asset_type),
                     'name': entry[4],
                 }
@@ -1331,6 +1334,32 @@ class GlobalDBHandler:
                 f'One of the following asset ids caused a DB IntegrityError ({e!s}): '
                 f'{",".join([x.identifier for x in assets])}',
             )  # should not ever happen but need to handle with informative log if it does
+
+    @staticmethod
+    def get_asset_ids_with_flag(flag: AssetFlag) -> frozenset[str]:
+        """Return the identifiers of all assets carrying the given flag."""
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            return frozenset(entry[0] for entry in cursor.execute(
+                'SELECT identifier FROM asset_flags WHERE flag=?',
+                (flag.value,),
+            ))
+
+    @staticmethod
+    def set_asset_flag(identifier: str, flag: AssetFlag, enabled: bool) -> bool:
+        """Enable or disable an asset flag and return whether the database changed."""
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            if enabled:
+                write_cursor.execute(
+                    'INSERT OR IGNORE INTO asset_flags(identifier, flag) VALUES (?, ?)',
+                    (identifier, flag.value),
+                )
+            else:
+                write_cursor.execute(
+                    'DELETE FROM asset_flags WHERE identifier=? AND flag=?',
+                    (identifier, flag.value),
+                )
+
+            return write_cursor.rowcount != 0
 
     @staticmethod
     def delete_asset_by_identifier(identifier: str) -> None:

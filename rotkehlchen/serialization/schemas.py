@@ -209,10 +209,11 @@ class TokenWithDecimalAndProtocolSchema(CryptoAssetFieldsSchema):
         )
 
         if is_edit is True:
-            # we allow the symbol and decimals to be None since it is a valid value in the DB
-            # when there are issues querying the token information and those are sent as None
-            # to the frontend. For consistency we allow to have them as None when editing.
+            # We allow the name, symbol and decimals to be None since these are valid values
+            # in the DB when there are issues querying the token information. Those values are
+            # sent as None to the frontend, so allow them to stay None when editing.
             # TODO: Fix as part of https://github.com/rotki/rotki/issues/9953
+            self.fields['name'].allow_none = True
             self.fields['symbol'].allow_none = True
             self.fields['decimals'].allow_none = True
 
@@ -369,6 +370,7 @@ class CustomAssetWithIdentifierSchema(BaseCustomAssetSchema):
 
 class AssetSchema(Schema):
     asset_type = AssetTypeField(required=True)
+    is_rebasing = fields.Boolean(load_default=None, allow_none=True)
 
     class Meta:
         # Set unknown = 'INCLUDE' to allow extra parameters
@@ -403,9 +405,10 @@ class AssetSchema(Schema):
             self,
             data: dict[str, Any],
             **_kwargs: Any,
-    ) -> dict[str, AssetWithNameAndType]:
+    ) -> dict[str, AssetWithNameAndType | bool | None]:
         """Returns a deserialized asset based on the given asset type"""
         asset_type = data.pop('asset_type')
+        is_rebasing = data.pop('is_rebasing')
         if self.disallowed_asset_types is not None and asset_type in self.disallowed_asset_types:
             raise ValidationError(
                 field_name='asset_type',
@@ -440,7 +443,7 @@ class AssetSchema(Schema):
                 cryptocompare=self.cryptocompare_obj,
             ).load(data)['crypto_asset']
 
-        return {'asset': asset}
+        return {'asset': asset, 'is_rebasing': is_rebasing}
 
 
 class ExportedAssetsSchema(Schema):

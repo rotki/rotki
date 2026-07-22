@@ -109,18 +109,19 @@ function add() {
     ended: null,
     forked: null,
     identifier: '',
+    isRebasing: false,
     protocol: '',
     underlyingTokens: null,
   });
   set(editMode, false);
 }
 
-function edit(editAsset: SupportedAsset) {
+function edit(editAsset: SupportedAsset): void {
   set(modelValue, editAsset);
   set(editMode, true);
 }
 
-async function editAsset(assetId: Nullable<string>) {
+async function editAsset(assetId: Nullable<string>): Promise<void> {
   if (assetId) {
     const all = await queryAllAssets({
       identifiers: [assetId],

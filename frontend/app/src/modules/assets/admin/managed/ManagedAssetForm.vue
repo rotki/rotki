@@ -15,7 +15,7 @@ import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';
 import { useManagedAssetFormValidation } from '@/modules/assets/admin/managed/use-managed-asset-form-validation';
 import UnderlyingTokenManager from '@/modules/assets/admin/UnderlyingTokenManager.vue';
-import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
+import { type ManagedAssetPayload, useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { CUSTOM_ASSET, EVM_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { evmTokenKindsData, solanaTokenKindsData } from '@/modules/core/common/chains';
@@ -54,6 +54,7 @@ const tokenKind = useRefPropVModel(modelValue, 'tokenKind');
 const protocol = refOptional(useRefPropVModel(modelValue, 'protocol'), '');
 const swappedFor = refOptional(useRefPropVModel(modelValue, 'swappedFor'), '');
 const forked = refOptional(useRefPropVModel(modelValue, 'forked'), '');
+const isRebasing = refOptional(useRefPropVModel(modelValue, 'isRebasing'), false);
 const started = useRefPropVModel(modelValue, 'started');
 const collectibleId = refOptional(useRefPropVModel(modelValue, 'collectibleId'), '');
 
@@ -96,6 +97,7 @@ const states = {
   decimals,
   evmChain,
   forked,
+  isRebasing,
   name,
   protocol,
   started,
@@ -146,17 +148,29 @@ async function saveAsset() {
     underlyingTokens: get(underlyingTokens).length > 0 ? get(underlyingTokens) : undefined,
   }, ['ended', 'active', 'customAssetType']);
 
-  let assetPayload = payload;
+  let assetPayload: ManagedAssetPayload = payload;
 
   if (!get(isEvmToken)) {
-    assetPayload = omit(assetPayload, ['underlyingTokens', 'evmChain']);
+    assetPayload = {
+      ...omit(assetPayload, [
+        'collectibleId',
+        'evmChain',
+        'underlyingTokens',
+      ]),
+      isRebasing: false,
+    };
 
     if (!get(isSolanaToken)) {
       assetPayload = omit(assetPayload, ['decimals', 'address', 'tokenKind']);
     }
   }
-
-  if (!get(isEvmToken) || !get(isNft)) {
+  else if (get(isNft)) {
+    assetPayload = {
+      ...assetPayload,
+      isRebasing: false,
+    };
+  }
+  else {
     assetPayload = omit(assetPayload, ['collectibleId']);
   }
 
@@ -539,6 +553,15 @@ defineExpose({
                   :error-messages="toMessages(v$.forked)"
                   :disabled="loading"
                 />
+                <RuiSwitch
+                  v-if="isEvmToken && !isNft"
+                  v-model="isRebasing"
+                  class="md:col-span-2"
+                  :disabled="loading"
+                  :hint="t('asset_form.labels.rebasing_hint')"
+                >
+                  {{ t('asset_form.labels.rebasing') }}
+                </RuiSwitch>
               </div>
               <UnderlyingTokenManager
                 v-if="isEvmToken"
