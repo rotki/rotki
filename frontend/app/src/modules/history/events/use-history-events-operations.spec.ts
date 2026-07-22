@@ -17,7 +17,7 @@ const { spies } = vi.hoisted(() => ({
     deleteHistoryEvent: vi.fn(),
     ignoreSingle: vi.fn(),
     toggle: vi.fn(),
-    getGroupEvents: vi.fn(() => [] as HistoryEventEntry[]),
+    getGroupEvents: vi.fn((): HistoryEventEntry[] => []),
     isAssetMovementEvent: vi.fn(() => false),
     isCustomizedEvent: vi.fn(() => false),
   },
@@ -56,7 +56,7 @@ vi.mock('@/modules/history/event-utils', async () => {
   return { ...actual, isAssetMovementEvent: spies.isAssetMovementEvent, isCustomizedEvent: spies.isCustomizedEvent };
 });
 
-const emit = vi.fn() as unknown as HistoryEventsTableEmitFn;
+const emit: HistoryEventsTableEmitFn = vi.fn();
 
 function setup(flattened: HistoryEventEntry[] = []): ReturnType<typeof useHistoryEventsOperations> {
   return useHistoryEventsOperations({

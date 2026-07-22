@@ -1,14 +1,11 @@
 import { NotificationGroup, Severity } from '@rotki/common';
+import { mockTranslate } from '@test/i18n';
 import { describe, expect, it, vi } from 'vitest';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
 import { createBeaconchainRateLimitStrategy } from './beaconchain-rate-limit';
 
-function mockT(key: string, params?: Record<string, unknown>): string {
-  return params ? `${key}::${JSON.stringify(params)}` : key;
-}
-
 describe('createBeaconchainRateLimitStrategy', () => {
-  const strategy = createBeaconchainRateLimitStrategy(mockT as any);
+  const strategy = createBeaconchainRateLimitStrategy(mockTranslate);
 
   it('should skip non-beaconchain messages', () => {
     const result = strategy.process(

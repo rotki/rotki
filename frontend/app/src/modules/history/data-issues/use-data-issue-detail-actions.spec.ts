@@ -7,7 +7,7 @@ import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-dat
 const dismiss = vi.fn();
 const retry = vi.fn();
 const resolveManually = vi.fn();
-const show = vi.fn();
+const show = vi.fn<(message: unknown, onConfirm: () => Promise<void>) => void>();
 
 vi.mock('@/modules/history/data-issues/use-data-issues', () => ({
   useDataIssues: (): Record<string, unknown> => ({
@@ -24,7 +24,9 @@ vi.mock('@/modules/core/common/use-confirm-store', () => ({
 
 /** Runs the onConfirm callback the composable handed to the confirm dialog. */
 async function confirmDismiss(): Promise<void> {
-  const onConfirm = show.mock.calls.at(-1)?.[1] as () => Promise<void>;
+  const onConfirm = show.mock.calls.at(-1)?.[1];
+  if (!onConfirm)
+    throw new Error('confirm dialog was not shown');
   await onConfirm();
 }
 

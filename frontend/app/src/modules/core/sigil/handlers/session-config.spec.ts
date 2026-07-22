@@ -1,5 +1,6 @@
 import { Theme } from '@rotki/common';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { SupportedLanguage } from '@/modules/settings/types/frontend-settings';
 
 describe('useSessionConfigHandler', () => {
   beforeEach(() => {
@@ -20,15 +21,15 @@ describe('useSessionConfigHandler', () => {
         mainCurrency: { tickerSymbol: 'EUR' },
         currentPriceOracles: ['coingecko', 'cryptocompare'],
       },
-    } as any);
+    });
 
     const frontendStore = useSettingsRepo();
     frontendStore.$patch({
       frontend: {
-        language: 'es',
+        language: SupportedLanguage.ES,
         selectedTheme: Theme.DARK,
       },
-    } as any);
+    });
 
     const { useSessionConfigHandler } = await import('@/modules/core/sigil/handlers/session-config');
     const collect = useSessionConfigHandler();

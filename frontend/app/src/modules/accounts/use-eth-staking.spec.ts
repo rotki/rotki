@@ -8,17 +8,20 @@ import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { Module } from '@/modules/core/common/modules';
 import '@test/i18n';
 
-const h = vi.hoisted(() => ({
-  addEth2Validator: vi.fn(),
-  deleteEth2Validators: vi.fn(),
-  editEth2Validator: vi.fn(),
-  fetchEthStakingValidators: vi.fn(),
-  resetStatus: vi.fn(),
-  runTask: vi.fn(),
-  showErrorMessage: vi.fn(),
-  // plain holder: the SUT only reads these, so the mocks expose them via computed()
-  state: { activeModules: [] as string[], premium: false },
-}));
+const h = vi.hoisted(() => {
+  const activeModules: string[] = [];
+  return {
+    addEth2Validator: vi.fn(),
+    deleteEth2Validators: vi.fn(),
+    editEth2Validator: vi.fn(),
+    fetchEthStakingValidators: vi.fn(),
+    resetStatus: vi.fn(),
+    runTask: vi.fn(),
+    showErrorMessage: vi.fn(),
+    // plain holder: the SUT only reads these, so the mocks expose them via computed()
+    state: { activeModules, premium: false },
+  };
+});
 
 vi.mock('@/modules/accounts/api/use-blockchain-accounts-api', () => ({
   useBlockchainAccountsApi: vi.fn(() => ({

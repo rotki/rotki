@@ -1,10 +1,10 @@
-import type { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import { type BigNumber, bigNumberify } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { useDashboardTableConfig } from '@/modules/dashboard/use-dashboard-table-config';
+import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 
-const TABLE_TYPE = 'ASSETS' as DashboardTableType;
+const TABLE_TYPE = DashboardTableType.ASSETS;
 
 const mockCurrencySymbol = ref<string>('USD');
 const mockVisibleColumns = ref<Record<string, TableColumn[]>>({ [TABLE_TYPE]: [] });

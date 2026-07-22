@@ -1,3 +1,4 @@
+import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
@@ -63,8 +64,8 @@ describe('dashboardCompletenessIndicator', () => {
 
   it('should show a button when assets are missing prices', async () => {
     useBalancePricesStore().prices = {
-      ETH: { isManualPrice: false, oracle: 'blockchain', priceMissing: true, usdPrice: null, value: '0' },
-    } as never;
+      ETH: { isManualPrice: false, oracle: 'blockchain', priceMissing: true, usdPrice: null, value: bigNumberify(0) },
+    };
     const wrapper = await createWrapper();
     expect(wrapper.find('[data-testid=dashboard-completeness]').text()).toContain('missing_prices');
   });

@@ -48,7 +48,7 @@ async function loadSingleTab(): Promise<UseSingleTabReturn> {
 }
 
 function receive(channel: FakeBroadcastChannel, data: TabMessage): void {
-  channel.onmessage?.({ data } as MessageEvent<TabMessage>);
+  channel.onmessage?.(new MessageEvent<TabMessage>('message', { data }));
 }
 
 function postedOfType(channel: FakeBroadcastChannel, type: TabMessage['type']): TabMessage[] {
@@ -65,11 +65,11 @@ describe('useSingleTab', () => {
     vi.stubGlobal('location', { reload });
     // Capture the pagehide listeners each load registers so they can be torn down per test —
     // the createGlobalState singleton never disposes, so they would otherwise accumulate.
-    vi.spyOn(window, 'addEventListener').mockImplementation(((type: string, handler: EventListener, options?: unknown): void => {
-      if (type === 'pagehide')
+    vi.spyOn(window, 'addEventListener').mockImplementation((type, handler, options) => {
+      if (type === 'pagehide' && typeof handler === 'function')
         pagehideHandlers.push(handler);
-      originalAddEventListener(type, handler, options as AddEventListenerOptions);
-    }) as typeof window.addEventListener);
+      originalAddEventListener(type, handler, options);
+    });
   });
 
   afterEach(() => {

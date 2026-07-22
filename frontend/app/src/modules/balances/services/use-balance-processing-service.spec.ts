@@ -35,6 +35,10 @@ vi.mock('@/modules/balances/api/use-blockchain-balances-api', () => ({
   }),
 }));
 
+type TaskOutcome =
+  | { success: true; result: unknown }
+  | { success: false; message: string; cancelled: boolean; backendCancelled: boolean; skipped: boolean };
+
 interface Deferred<T> {
   promise: Promise<T>;
   resolve: (value: T) => void;
@@ -48,7 +52,7 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve };
 }
 
-const pendingTasks = new Map<number, Deferred<{ success: true; result: unknown }>>();
+const pendingTasks = new Map<number, Deferred<TaskOutcome>>();
 let nextTaskId = 1;
 
 vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
@@ -56,7 +60,7 @@ vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
   useTaskHandler: vi.fn().mockReturnValue({
     runTask: vi.fn().mockImplementation(async (taskFn: () => Promise<{ taskId: number }>) => {
       const { taskId } = await taskFn();
-      const d = deferred<{ success: true; result: unknown }>();
+      const d = deferred<TaskOutcome>();
       pendingTasks.set(taskId, d);
       return d.promise;
     }),
@@ -146,7 +150,7 @@ describe('useBalanceProcessingService', () => {
       cancelled: true,
       backendCancelled: false,
       skipped: false,
-    } as never);
+    });
     await refreshPromise;
 
     expect(get(isEthRefreshing)).toBe(false);

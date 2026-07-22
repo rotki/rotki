@@ -1,5 +1,6 @@
 import type { EIP1193Provider } from '@/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createMock } from '@test/utils/create-mock';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { ref } from 'vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useUnifiedProviders } from '../providers/use-unified-providers';
@@ -33,17 +34,17 @@ vi.mock('./use-wallet-proxy', () => ({ useWalletProxy: vi.fn() }));
 
 const selectedProvider = ref<any>();
 let isPackaged: boolean;
-let disconnectProxy: ReturnType<typeof vi.fn>;
-let startConnectionHealthCheck: ReturnType<typeof vi.fn>;
-let stopConnectionHealthCheck: ReturnType<typeof vi.fn>;
+let disconnectProxy: Mock;
+let startConnectionHealthCheck: Mock;
+let stopConnectionHealthCheck: Mock;
 
-type MockProvider = EIP1193Provider & {
-  on: ReturnType<typeof vi.fn>;
-  removeListener: ReturnType<typeof vi.fn>;
-  request: ReturnType<typeof vi.fn>;
-};
+interface MockProvider extends EIP1193Provider {
+  on: Mock;
+  removeListener: Mock;
+  request: Mock;
+}
 
-function makeProvider(overrides: Partial<EIP1193Provider> = {}): MockProvider {
+function makeProvider(overrides: Partial<MockProvider> = {}): MockProvider {
   return {
     on: vi.fn(),
     removeListener: vi.fn(),
@@ -55,7 +56,7 @@ function makeProvider(overrides: Partial<EIP1193Provider> = {}): MockProvider {
       return undefined;
     }),
     ...overrides,
-  } as unknown as MockProvider;
+  };
 }
 
 function selectProvider(provider: EIP1193Provider, name = 'MetaMask'): void {
@@ -71,13 +72,13 @@ describe('modules/wallet/bridge/use-injected-wallet', () => {
     startConnectionHealthCheck = vi.fn();
     stopConnectionHealthCheck = vi.fn();
 
-    vi.mocked(useUnifiedProviders).mockReturnValue({ selectedProvider } as any);
-    vi.mocked(useInterop).mockReturnValue({ isPackaged } as any);
-    vi.mocked(useWalletProxy).mockReturnValue({
+    vi.mocked(useUnifiedProviders).mockReturnValue(createMock<ReturnType<typeof useUnifiedProviders>>({ selectedProvider }));
+    vi.mocked(useInterop).mockReturnValue(createMock<ReturnType<typeof useInterop>>({ isPackaged }));
+    vi.mocked(useWalletProxy).mockReturnValue(createMock<ReturnType<typeof useWalletProxy>>({
       disconnectProxy,
       startConnectionHealthCheck,
       stopConnectionHealthCheck,
-    } as any);
+    }));
   });
 
   describe('connectToSelectedProvider', () => {
@@ -102,7 +103,7 @@ describe('modules/wallet/bridge/use-injected-wallet', () => {
 
     it('should start a health check only when packaged', async () => {
       isPackaged = true;
-      vi.mocked(useInterop).mockReturnValue({ isPackaged: true } as any);
+      vi.mocked(useInterop).mockReturnValue(createMock<ReturnType<typeof useInterop>>({ isPackaged: true }));
       const provider = makeProvider();
       selectProvider(provider);
       const wallet = useInjectedWallet();
@@ -149,7 +150,7 @@ describe('modules/wallet/bridge/use-injected-wallet', () => {
     });
 
     it('should disconnect the proxy when packaged', async () => {
-      vi.mocked(useInterop).mockReturnValue({ isPackaged: true } as any);
+      vi.mocked(useInterop).mockReturnValue(createMock<ReturnType<typeof useInterop>>({ isPackaged: true }));
       const provider = makeProvider();
       selectProvider(provider);
       const wallet = useInjectedWallet();

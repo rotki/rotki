@@ -33,7 +33,7 @@ vi.mock('@/modules/balances/api/use-historical-balances-api', () => ({
   }),
 }));
 
-const { taskControl } = vi.hoisted(() => ({ taskControl: { failure: null as null | Record<string, unknown> } }));
+const { taskControl } = vi.hoisted<{ taskControl: { failure: Record<string, unknown> | null } }>(() => ({ taskControl: { failure: null } }));
 
 vi.mock('@/modules/core/tasks/use-task-handler', () => ({
   isActionableFailure: (outcome: { success: boolean; cancelled: boolean; skipped: boolean }): boolean =>
