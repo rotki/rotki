@@ -44,6 +44,7 @@ export const AssetMap = z.object({
 export type AssetMap = z.infer<typeof AssetMap>;
 
 export interface AssetRequestPayload extends PaginationRequestPayload<SupportedAsset> {
+  assetFlag?: AssetFlag;
   assetType?: string;
   name?: string;
   symbol?: string;
@@ -83,6 +84,12 @@ export const IgnoredAssetHandlingType = {
 } as const;
 
 export type IgnoredAssetsHandlingType = (typeof IgnoredAssetHandlingType)[keyof typeof IgnoredAssetHandlingType];
+
+export const AssetFlag = {
+  REBASING: 'rebasing',
+} as const;
+
+export type AssetFlag = (typeof AssetFlag)[keyof typeof AssetFlag];
 
 export const IgnoredAssetResponse = z.object({
   noAction: z.array(z.string()),

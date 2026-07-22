@@ -2,11 +2,14 @@ import type { MaybeRefOrGetter } from 'vue';
 import type { MatchedKeyword, SearchMatcher } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
 import { z } from 'zod';
-import { SOLANA_CHAIN } from '@/modules/assets/types';
+import { AssetFlag, SOLANA_CHAIN } from '@/modules/assets/types';
 import { arrayify } from '@/modules/core/common/data/array';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
+const assetFlags: string[] = Object.values(AssetFlag);
+
 enum AssetFilterKeys {
+  ASSET_FLAG = 'flag',
   IDENTIFIER = 'identifier',
   ASSET_TYPE = 'type',
   SYMBOL = 'symbol',
@@ -16,6 +19,7 @@ enum AssetFilterKeys {
 }
 
 enum AssetFilterValueKeys {
+  ASSET_FLAG = 'assetFlag',
   IDENTIFIER = 'identifiers',
   ASSET_TYPE = 'assetType',
   SYMBOL = 'symbol',
@@ -56,6 +60,16 @@ export function useAssetFilter(assetTypes: MaybeRefOrGetter<string[]>): FilterSc
         validate: (): true => true,
       }] satisfies Matcher[]
       : []),
+    {
+      description: t('assets.filter.asset_flag'),
+      key: AssetFilterKeys.ASSET_FLAG,
+      keyValue: AssetFilterValueKeys.ASSET_FLAG,
+      strictMatching: true,
+      string: true,
+      suggestions: (): string[] => assetFlags,
+      suggestionsToShow: -1,
+      validate: (flag: string): boolean => assetFlags.includes(flag),
+    },
     {
       description: t('assets.filter.symbol'),
       hint: t('assets.filter.symbol_hint'),
@@ -104,6 +118,7 @@ export function useAssetFilter(assetTypes: MaybeRefOrGetter<string[]>): FilterSc
 
   const RouteFilterSchema = z.object({
     [AssetFilterValueKeys.ADDRESS]: OptionalString,
+    [AssetFilterValueKeys.ASSET_FLAG]: OptionalString,
     [AssetFilterValueKeys.ASSET_TYPE]: OptionalString,
     [AssetFilterValueKeys.CHAIN]: OptionalString,
     [AssetFilterValueKeys.IDENTIFIER]: OptionalMultipleString,

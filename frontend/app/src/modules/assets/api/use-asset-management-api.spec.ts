@@ -1,6 +1,7 @@
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AssetFlag } from '@/modules/assets/types';
 import { useAssetManagementApi } from './use-asset-management-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
@@ -44,6 +45,7 @@ describe('composables/api/assets/management', () => {
 
       const { queryAllAssets } = useAssetManagementApi();
       const result = await queryAllAssets({
+        assetFlag: AssetFlag.REBASING,
         limit: 100,
         offset: 0,
         orderByAttributes: ['name'],
@@ -51,6 +53,7 @@ describe('composables/api/assets/management', () => {
       });
 
       expect(capturedBody).toEqual({
+        asset_flag: 'rebasing',
         limit: 100,
         offset: 0,
         order_by_attributes: ['name'],

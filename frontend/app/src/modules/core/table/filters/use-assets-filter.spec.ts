@@ -10,6 +10,16 @@ import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management
 import { type Filters, type Matcher, useAssetFilter } from '@/modules/core/table/filters/use-assets-filter';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 
+type StringMatcher = Extract<Matcher, { string: true }>;
+
+function getStringMatcher(matchers: Matcher[], key: string): StringMatcher {
+  const matcher = matchers.find(item => item.key === key);
+  if (!matcher || !('string' in matcher))
+    throw new Error(`Expected a string matcher for ${key}`);
+
+  return matcher;
+}
+
 vi.mock('vue', async () => {
   const mod = await vi.importActual<typeof Vue>('vue');
 
@@ -104,6 +114,17 @@ describe('useAssetsFilter', () => {
       expectTypeOf(get(collection).found).toEqualTypeOf<number>();
       expectTypeOf(get(filter)).toEqualTypeOf<Filters>();
       expectTypeOf(get(schema.matchers)).toEqualTypeOf<Matcher[]>();
+    });
+
+    it('should expose the asset flag filter', () => {
+      const schema = useAssetFilter(assetTypes);
+      const matcher = getStringMatcher(get(schema.matchers), 'flag');
+
+      expect(matcher).toMatchObject({
+        keyValue: 'assetFlag',
+        strictMatching: true,
+      });
+      expect(matcher.suggestions()).toEqual(['rebasing']);
     });
 
     it('should modify filters and fetch data correctly', async () => {

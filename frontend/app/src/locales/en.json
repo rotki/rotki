@@ -1561,6 +1561,7 @@
     "filter": {
       "address": "Filter by the address",
       "address_hint": "E.g. 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "asset_flag": "Filter by asset flag",
       "asset_type": "Filter by the asset type",
       "chain": "Filter by chain",
       "identifier": "Filter by identifier",

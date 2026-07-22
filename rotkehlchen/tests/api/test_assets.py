@@ -10,7 +10,7 @@ from polyleven import levenshtein
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.types import AssetFlag, AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_OP, A_SAI, A_USD, A_USDC, A_WSOL
 from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ONE
@@ -594,6 +594,34 @@ def test_get_all_assets(rotkehlchen_api_server: APIServer) -> None:
             json={'address': 'xxxxxxxxx'},
         ),
         contained_in_msg='Given value xxxxxxxxx is not a valid EVM or Solana address',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+def test_filter_assets_by_flag(
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
+) -> None:
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute('DELETE FROM asset_flags')
+        write_cursor.execute(
+            'INSERT INTO asset_flags(identifier, flag) VALUES (?, ?)',
+            (A_DAI.identifier, AssetFlag.REBASING),
+        )
+
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json={'asset_flag': AssetFlag.REBASING.value},
+    ))
+    assert result['entries_found'] == 1
+    assert [entry['identifier'] for entry in result['entries']] == [A_DAI.identifier]
+
+    assert_error_response(
+        response=requests.post(
+            api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+            json={'asset_flag': 'invalid'},
+        ),
+        contained_in_msg='Illegal value invalid for',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
