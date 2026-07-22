@@ -1,14 +1,11 @@
 import { NotificationGroup, Priority, Severity } from '@rotki/common';
+import { mockTranslate } from '@test/i18n';
 import { describe, expect, it, vi } from 'vitest';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
 import { createDeserializationErrorStrategy } from './deserialization-error';
 
-function mockT(key: string, params?: Record<string, unknown>): string {
-  return params ? `${key}::${JSON.stringify(params)}` : key;
-}
-
 describe('createDeserializationErrorStrategy', () => {
-  const strategy = createDeserializationErrorStrategy(mockT as any);
+  const strategy = createDeserializationErrorStrategy(mockTranslate);
 
   it('should skip non-deserialization messages', () => {
     const result = strategy.process(

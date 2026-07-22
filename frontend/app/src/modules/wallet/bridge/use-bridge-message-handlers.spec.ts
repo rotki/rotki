@@ -6,7 +6,8 @@ import {
   ROTKI_RPC_RESPONSES,
   WALLET_EVENT_TYPES,
 } from '@shared/proxy/constants';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createMock } from '@test/utils/create-mock';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { ref } from 'vue';
 import { useBridgeLogging } from '@/modules/wallet/bridge/use-bridge-logging';
 import { useWalletConnectionState } from '@/modules/wallet/bridge/use-wallet-connection-state';
@@ -21,32 +22,33 @@ vi.mock('../providers/use-unified-providers', () => ({ useUnifiedProviders: vi.f
 vi.mock('@/modules/wallet/bridge/use-bridge-logging', () => ({ useBridgeLogging: vi.fn() }));
 vi.mock('@/modules/wallet/bridge/use-wallet-connection-state', () => ({ useWalletConnectionState: vi.fn() }));
 
-function makeRequest(method: string, params?: unknown, id: string | number = 1): WalletBridgeRequest {
-  return { id, jsonrpc: '2.0', method, params } as WalletBridgeRequest;
+function makeRequest(method: string, params?: unknown[], id: string | number = 1): WalletBridgeRequest {
+  return { id, jsonrpc: '2.0', method, params };
 }
 
 const activeProvider = ref<EIP1193Provider>();
 const selectedProviderMetadata = ref<{ name: string; uuid: string }>();
 const selectedProviderUuid = ref<string>();
-let providerChangedCb: ((newProvider: any, oldProvider: any) => void) | undefined;
-let addLog: ReturnType<typeof vi.fn>;
-let trackAccountsRequest: ReturnType<typeof vi.fn>;
-let detectProviders: ReturnType<typeof vi.fn>;
-let selectProvider: ReturnType<typeof vi.fn>;
+let providerChangedCb: ((newProvider: EIP1193Provider | undefined, oldProvider: EIP1193Provider | undefined) => void) | undefined;
+let addLog: Mock;
+let trackAccountsRequest: Mock;
+let detectProviders: Mock;
+let selectProvider: Mock;
 
-type MockProvider = EIP1193Provider & {
-  on: ReturnType<typeof vi.fn>;
-  removeListener: ReturnType<typeof vi.fn>;
-  request: ReturnType<typeof vi.fn>;
-};
+interface MockProvider extends EIP1193Provider {
+  on: Mock;
+  removeListener: Mock;
+  request: Mock;
+  initialize?: Mock;
+}
 
-function makeProvider(overrides: Partial<EIP1193Provider> = {}): MockProvider {
+function makeProvider(overrides: Partial<MockProvider> = {}): MockProvider {
   return {
     on: vi.fn(),
     removeListener: vi.fn(),
     request: vi.fn(async () => '0x1'),
     ...overrides,
-  } as unknown as MockProvider;
+  };
 }
 
 describe('modules/wallet/bridge/use-bridge-message-handlers', () => {
@@ -61,16 +63,19 @@ describe('modules/wallet/bridge/use-bridge-message-handlers', () => {
     detectProviders = vi.fn(async () => []);
     selectProvider = vi.fn(async () => true);
 
-    vi.mocked(useUnifiedProviders).mockReturnValue({
+    vi.mocked(useUnifiedProviders).mockReturnValue(createMock<ReturnType<typeof useUnifiedProviders>>({
       activeProvider,
       detectProviders,
-      onProviderChanged: vi.fn((cb: any) => { providerChangedCb = cb; }),
+      onProviderChanged: vi.fn((cb): (() => void) => {
+        providerChangedCb = cb;
+        return () => {};
+      }),
       selectedProviderMetadata,
       selectedProviderUuid,
       selectProvider,
-    } as any);
-    vi.mocked(useBridgeLogging).mockReturnValue({ addLog } as any);
-    vi.mocked(useWalletConnectionState).mockReturnValue({ trackAccountsRequest } as any);
+    }));
+    vi.mocked(useBridgeLogging).mockReturnValue(createMock<ReturnType<typeof useBridgeLogging>>({ addLog }));
+    vi.mocked(useWalletConnectionState).mockReturnValue(createMock<ReturnType<typeof useWalletConnectionState>>({ trackAccountsRequest }));
   });
 
   describe('rotki rpc methods', () => {
@@ -136,7 +141,7 @@ describe('modules/wallet/bridge/use-bridge-message-handlers', () => {
     });
 
     it('should forward a standard request to the provider', async () => {
-      const provider = makeProvider({ request: vi.fn(async () => '0x89') as any });
+      const provider = makeProvider({ request: vi.fn(async () => '0x89') });
       set(activeProvider, provider);
       const { handleRequest } = useBridgeMessageHandlers();
 
@@ -147,7 +152,7 @@ describe('modules/wallet/bridge/use-bridge-message-handlers', () => {
 
     it('should initialize the provider and track eth_requestAccounts', async () => {
       const initialize = vi.fn(async () => {});
-      const provider = makeProvider({ initialize, request: vi.fn(async () => ['0xabc']) } as any);
+      const provider = makeProvider({ initialize, request: vi.fn(async () => ['0xabc']) });
       set(activeProvider, provider);
       const { handleRequest } = useBridgeMessageHandlers();
 
@@ -179,7 +184,7 @@ describe('modules/wallet/bridge/use-bridge-message-handlers', () => {
       const request = vi.fn(async () => {
         throw Object.assign(new Error('boom'), { code: -32000, data: { info: 'x' } });
       });
-      set(activeProvider, makeProvider({ request } as any));
+      set(activeProvider, makeProvider({ request }));
       const { handleRequest } = useBridgeMessageHandlers();
 
       const response = await handleRequest(makeRequest('eth_call'));

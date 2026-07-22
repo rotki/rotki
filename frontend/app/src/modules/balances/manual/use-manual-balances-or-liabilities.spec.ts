@@ -1,4 +1,4 @@
-import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
+import type { ManualBalanceRequestPayload, ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useManualBalancesOrLiabilities } from './use-manual-balances-or-liabilities';
@@ -45,7 +45,7 @@ describe('useManualBalancesOrLiabilities', () => {
   });
 
   it('should fetch balances or liabilities based on the type', async () => {
-    const payload = {} as never;
+    const payload = createMock<ManualBalanceRequestPayload>();
     await useManualBalancesOrLiabilities('balances').fetch(payload);
     expect(spies.fetchBalances).toHaveBeenCalledOnce();
     expect(spies.fetchLiabilities).not.toHaveBeenCalled();

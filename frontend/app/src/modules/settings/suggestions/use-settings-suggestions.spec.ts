@@ -10,11 +10,11 @@ import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { getSuggestionKey, type PendingSuggestion, type VersionSuggestions } from './settings-suggestions';
 import { collectPendingSuggestions, useSettingsSuggestions } from './use-settings-suggestions';
 
-const { mockRegistry } = vi.hoisted(() => ({ mockRegistry: { value: [] as VersionSuggestions[] } }));
+const { mockRegistry } = vi.hoisted<{ mockRegistry: { value: VersionSuggestions[] } }>(() => ({ mockRegistry: { value: [] } }));
 const mockUpdate = vi.fn();
 const mockUpdateFrontendSetting = vi.fn();
 const mockAppVersion = ref<string>('1.43.0');
-const mockStore = { pendingSuggestions: [] as PendingSuggestion[], showSuggestionsDialog: false };
+const mockStore: { pendingSuggestions: PendingSuggestion[]; showSuggestionsDialog: boolean } = { pendingSuggestions: [], showSuggestionsDialog: false };
 
 vi.mock('./settings-suggestions', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./settings-suggestions')>();

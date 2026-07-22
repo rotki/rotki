@@ -4,7 +4,7 @@ import { createItemCache, createItemCacheStorage } from '@/modules/core/common/u
 
 interface TestEntry {
   key: string;
-  item: string;
+  item: string | null;
 }
 
 function createMockFetch(
@@ -15,13 +15,7 @@ function createMockFetch(
     calls.push([...keys]);
     return function* (): Generator<TestEntry, void> {
       for (const key of keys) {
-        const item = results[key] ?? null;
-        if (item !== null) {
-          yield { item, key };
-        }
-        else {
-          yield { item: null as unknown as string, key };
-        }
+        yield { item: results[key] ?? null, key };
       }
     };
   };

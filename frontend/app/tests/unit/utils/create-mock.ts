@@ -31,6 +31,12 @@ function createProxy(overrides: Record<PropertyKey, unknown>): unknown {
   const cache = new Map<PropertyKey, unknown>();
 
   return new Proxy(vi.fn(), {
+    // Report overridden keys as present so `key in mock` (and destructuring
+    // guards like `'counterparty' in event`) behave as they would on a real
+    // object. Non-overridden keys fall back to the vi.fn() target.
+    has(target, prop) {
+      return prop in overrides || Reflect.has(target, prop);
+    },
     get(target, prop, receiver) {
       if (prop in overrides)
         return overrides[prop];

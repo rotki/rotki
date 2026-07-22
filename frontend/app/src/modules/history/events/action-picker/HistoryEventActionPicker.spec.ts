@@ -2,7 +2,7 @@ import type { EventActionRow } from '@/modules/history/events/action-picker/use-
 import { mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, type PropType, type VNode } from 'vue';
+import { defineComponent, type VNode } from 'vue';
 import HistoryEventActionPicker from '@/modules/history/events/action-picker/HistoryEventActionPicker.vue';
 
 function buildRow(): EventActionRow {
@@ -47,55 +47,53 @@ vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
   }),
 }));
 
-const RuiCategoryPickerStub = defineComponent({
+const RuiCategoryPickerStub = defineComponent((props: {
+  categoryOf?: (item: EventActionRow) => string;
+  items: EventActionRow[];
+  label?: string;
+  modelValue?: string;
+  search?: string;
+}, { emit, slots }) => (): VNode => {
+  const query = (props.search ?? '').trim().toLowerCase();
+  const visible = query
+    ? props.items.filter(item => item.label.toLowerCase().includes(query))
+    : props.items;
+
+  const categoryOf = props.categoryOf;
+  const categoryLabel = (item: EventActionRow): string => (categoryOf ? categoryOf(item) : '');
+  const categories: string[] = [];
+  for (const item of visible) {
+    const category = categoryLabel(item);
+    if (!categories.includes(category))
+      categories.push(category);
+  }
+
+  const renderItem = (item: EventActionRow): VNode => h(
+    'button',
+    {
+      'data-testid': `option-${item.verbKey}`,
+      'onClick': (): void => emit('update:modelValue', item.verbKey),
+    },
+    slots.item ? [slots.item({ active: false, item, selected: false })] : [item.label],
+  );
+
+  const renderCategory = (category: string): VNode => h('div', { 'data-testid': `category-${category}` }, [
+    slots.category ? slots.category({ active: false, category, count: 0, label: category }) : null,
+    ...visible.filter(item => categoryLabel(item) === category).map(renderItem),
+  ]);
+
+  return h('div', { 'data-testid': 'category-picker-stub' }, [
+    h('div', { 'data-testid': 'picker-value' }, [props.modelValue ?? '']),
+    h('div', { 'data-testid': 'picker-label' }, [props.label ?? '']),
+    ...categories.map(renderCategory),
+    visible.length === 0 && slots.empty
+      ? h('div', { 'data-testid': 'empty-slot' }, [slots.empty()])
+      : null,
+    slots.footer ? h('div', { 'data-testid': 'footer-slot' }, [slots.footer({})]) : null,
+  ]);
+}, {
   emits: ['update:modelValue', 'update:search'],
-  props: {
-    categoryOf: { default: undefined, type: Function as PropType<(item: EventActionRow) => string> },
-    items: { required: true, type: Array as () => EventActionRow[] },
-    label: { default: '', type: String },
-    modelValue: { default: undefined, type: String },
-    search: { default: '', type: String },
-  },
-  setup(props, { emit, slots }) {
-    return (): VNode => {
-      const query = props.search.trim().toLowerCase();
-      const visible = query
-        ? props.items.filter(item => item.label.toLowerCase().includes(query))
-        : props.items;
-
-      const categoryOf = props.categoryOf;
-      const categories: string[] = [];
-      for (const item of visible) {
-        const category = categoryOf ? categoryOf(item) : '';
-        if (!categories.includes(category))
-          categories.push(category);
-      }
-
-      const renderItem = (item: EventActionRow): VNode => h(
-        'button',
-        {
-          'data-testid': `option-${item.verbKey}`,
-          'onClick': (): void => emit('update:modelValue', item.verbKey),
-        },
-        slots.item ? [slots.item({ active: false, item, selected: false })] : [item.label],
-      );
-
-      const renderCategory = (category: string): VNode => h('div', { 'data-testid': `category-${category}` }, [
-        slots.category ? slots.category({ active: false, category, count: 0, label: category }) : null,
-        ...visible.filter(item => (categoryOf ? categoryOf(item) : '') === category).map(renderItem),
-      ]);
-
-      return h('div', { 'data-testid': 'category-picker-stub' }, [
-        h('div', { 'data-testid': 'picker-value' }, [props.modelValue ?? '']),
-        h('div', { 'data-testid': 'picker-label' }, [props.label ?? '']),
-        ...categories.map(renderCategory),
-        visible.length === 0 && slots.empty
-          ? h('div', { 'data-testid': 'empty-slot' }, [slots.empty()])
-          : null,
-        slots.footer ? h('div', { 'data-testid': 'footer-slot' }, [slots.footer({})]) : null,
-      ]);
-    };
-  },
+  props: ['categoryOf', 'items', 'label', 'modelValue', 'search'],
 });
 
 describe('historyEventActionPicker', () => {

@@ -1,4 +1,5 @@
-import { NotificationGroup } from '@rotki/common';
+import { type NotificationData, NotificationGroup } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { spies } = vi.hoisted(() => ({
@@ -9,7 +10,7 @@ const { spies } = vi.hoisted(() => ({
     triggerAssetMovementMatching: vi.fn(),
     getAssetMovementMatches: vi.fn(),
     unlinkAssetMovement: vi.fn(),
-    removeMatching: vi.fn(),
+    removeMatching: vi.fn<(predicate: (n: NotificationData) => boolean) => void>(),
     showErrorMessage: vi.fn(),
     showSuccessMessage: vi.fn(),
     runTask: vi.fn(),
@@ -110,9 +111,9 @@ describe('use-unmatched-asset-movements', () => {
       await fetchUnmatchedAssetMovements(false);
 
       expect(spies.removeMatching).toHaveBeenCalledTimes(1);
-      const predicate = spies.removeMatching.mock.calls[0][0] as (n: { group?: string }) => boolean;
-      expect(predicate({ group: NotificationGroup.UNMATCHED_ASSET_MOVEMENTS })).toBe(true);
-      expect(predicate({ group: 'OTHER' })).toBe(false);
+      const predicate = spies.removeMatching.mock.calls[0][0];
+      expect(predicate(createMock<NotificationData>({ group: NotificationGroup.UNMATCHED_ASSET_MOVEMENTS }))).toBe(true);
+      expect(predicate(createMock<NotificationData>())).toBe(false);
     });
 
     it('should not clear the notification when fetching the ignored list', async () => {

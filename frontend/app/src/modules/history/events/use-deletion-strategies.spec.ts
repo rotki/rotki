@@ -81,7 +81,8 @@ describe('buildDeletionConfirmationMessage', () => {
 
   it('should throw on an unknown strategy type', () => {
     expect(() => buildDeletionConfirmationMessage(
-      { type: 'nonsense' as never },
+      // @ts-expect-error deliberately passing an unknown strategy type
+      { type: 'nonsense' },
       t,
     )).toThrow('Unknown deletion strategy');
   });

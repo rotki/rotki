@@ -1,6 +1,7 @@
 import type { PairOverlayStatus, UseAccountingOverlayReturn } from '@/modules/history/balances/use-accounting-overlay';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
-import { bigNumberify } from '@rotki/common';
+import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import { type ComputedRef, defineComponent, h, type VNode } from 'vue';
@@ -30,7 +31,15 @@ const stubs = {
 };
 
 function event(locationLabel: string | null, counterparty?: string | null): HistoryEventEntry {
-  return { amount: bigNumberify('2'), asset: 'ETH', counterparty, location: 'ethereum', locationLabel, timestamp: 150_000 } as HistoryEventEntry;
+  return createMock<Extract<HistoryEventEntry, { entryType: typeof HistoryEventEntryType.EVM_EVENT }>>({
+    amount: bigNumberify('2'),
+    asset: 'ETH',
+    counterparty,
+    entryType: HistoryEventEntryType.EVM_EVENT,
+    location: 'ethereum',
+    locationLabel,
+    timestamp: 150_000,
+  });
 }
 
 function mountCell(opts: {

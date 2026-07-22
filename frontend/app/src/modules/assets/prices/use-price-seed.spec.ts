@@ -62,9 +62,9 @@ describe('usePriceSeed', () => {
       eth: {
         '0xaccount': {
           assets: {
-            ETH: { amount: bigNumberify(1), value: bigNumberify(1500) },
-            DAI: { amount: bigNumberify(100), value: bigNumberify(100) },
-          } as any,
+            ETH: { address: { amount: bigNumberify(1), value: bigNumberify(1500) } },
+            DAI: { address: { amount: bigNumberify(100), value: bigNumberify(100) } },
+          },
           liabilities: {},
         },
       },
@@ -103,13 +103,13 @@ describe('usePriceSeed', () => {
     seedBalances({
       eth: {
         '0xa': {
-          assets: { USDC: { amount: bigNumberify(10), value: bigNumberify(10) } } as any,
+          assets: { USDC: { address: { amount: bigNumberify(10), value: bigNumberify(10) } } },
           liabilities: {},
         },
       },
       optimism: {
         '0xb': {
-          assets: { USDC: { amount: bigNumberify(20), value: bigNumberify(20) } } as any,
+          assets: { USDC: { address: { amount: bigNumberify(20), value: bigNumberify(20) } } },
           liabilities: {},
         },
       },
@@ -133,7 +133,7 @@ describe('usePriceSeed', () => {
       eth: {
         '0xa': {
           assets: {},
-          liabilities: { DAI: { amount: bigNumberify(50), value: bigNumberify(50) } } as any,
+          liabilities: { DAI: { address: { amount: bigNumberify(50), value: bigNumberify(50) } } },
         },
       },
     });
@@ -155,7 +155,7 @@ describe('usePriceSeed', () => {
     seedBalances({
       eth: {
         '0xa': {
-          assets: { ETH: { amount: bigNumberify(1), value: bigNumberify(1500) } } as any,
+          assets: { ETH: { address: { amount: bigNumberify(1), value: bigNumberify(1500) } } },
           liabilities: {},
         },
       },
@@ -176,7 +176,7 @@ describe('usePriceSeed', () => {
     seedBalances({
       eth: {
         '0xa': {
-          assets: { ETH: { amount: bigNumberify(1), value: bigNumberify(1500) } } as any,
+          assets: { ETH: { address: { amount: bigNumberify(1), value: bigNumberify(1500) } } },
           liabilities: {},
         },
       },

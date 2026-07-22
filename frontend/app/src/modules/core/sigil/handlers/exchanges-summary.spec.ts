@@ -24,7 +24,7 @@ describe('useExchangesSummaryHandler', () => {
       { location: 'binance', name: 'binance1' },
       { location: 'binance', name: 'binance2' },
       { location: 'kraken', name: 'kraken1' },
-    ] as any);
+    ]);
 
     const { useExchangesSummaryHandler } = await import('@/modules/core/sigil/handlers/exchanges-summary');
     const collect = useExchangesSummaryHandler();

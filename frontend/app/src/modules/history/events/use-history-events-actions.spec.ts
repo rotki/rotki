@@ -1,9 +1,10 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventAction } from '@/modules/history/events/action-types';
-import type { HistoryEventRow } from '@/modules/history/events/schemas';
+import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
 import { type Blockchain, HistoryEventEntryType, Severity } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { ref, type Ref } from 'vue';
@@ -229,11 +230,11 @@ describe('useHistoryEventsActions', () => {
     it('should refresh location labels after page redecode with evm events', async () => {
       const options = createOptions();
       set(options.groups, {
-        data: [{
+        data: [createMock<Extract<HistoryEventEntry, { entryType: typeof HistoryEventEntryType.EVM_EVENT }>>({
           entryType: HistoryEventEntryType.EVM_EVENT,
           location: 'ethereum',
-          txHash: '0xabc',
-        } as unknown as HistoryEventRow],
+          txRef: '0xabc',
+        })],
         found: 1,
         limit: 10,
         total: 1,

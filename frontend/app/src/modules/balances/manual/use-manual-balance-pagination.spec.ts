@@ -1,6 +1,7 @@
 import type { ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
 import type { Collection } from '@/modules/core/common/collection';
 import { bigNumberify } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useManualBalancePagination } from './use-manual-balance-pagination';
 
@@ -24,7 +25,7 @@ vi.mock('@/modules/balances/manual-balances', () => ({
   sortAndFilterManualBalance: spies.sortAndFilterManualBalance,
 }));
 
-const payload = { limit: 10, offset: 0 } as unknown as ManualBalanceRequestPayload;
+const payload = createMock<ManualBalanceRequestPayload>({ limit: 10, offset: 0 });
 
 describe('useManualBalancePagination', () => {
   beforeEach(() => {

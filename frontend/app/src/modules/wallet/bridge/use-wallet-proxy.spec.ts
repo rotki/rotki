@@ -1,5 +1,6 @@
+import { createMock } from '@test/utils/create-mock';
 import { withSetup } from '@test/utils/with-setup';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { waitForCondition } from '@/modules/core/common/async/async-utilities';
 import { useWalletBridge } from '@/modules/shell/app/use-wallet-bridge';
 import { useWalletProxy } from './use-wallet-proxy';
@@ -11,7 +12,8 @@ vi.mock('@/modules/core/common/logging/logging', () => ({
 vi.mock('@/modules/shell/app/use-wallet-bridge', () => ({ useWalletBridge: vi.fn() }));
 vi.mock('@/modules/core/common/async/async-utilities', () => ({ waitForCondition: vi.fn(async () => true) }));
 
-let bridge: Record<string, ReturnType<typeof vi.fn>>;
+type BridgeMethod = 'isProxyClientConnected' | 'isProxyClientReady' | 'isProxyHttpListening' | 'isProxyWebSocketListening' | 'openProxyPageInDefaultBrowser' | 'proxyStopServers';
+let bridge: Record<BridgeMethod, Mock>;
 
 function stubWalletBridge(value: unknown): void {
   Object.defineProperty(window, 'walletBridge', { configurable: true, value });
@@ -28,7 +30,7 @@ describe('modules/wallet/bridge/use-wallet-proxy', () => {
       openProxyPageInDefaultBrowser: vi.fn(async () => {}),
       proxyStopServers: vi.fn(async () => {}),
     };
-    vi.mocked(useWalletBridge).mockReturnValue(bridge as any);
+    vi.mocked(useWalletBridge).mockReturnValue(createMock<ReturnType<typeof useWalletBridge>>(bridge));
     stubWalletBridge({ enable: vi.fn(async () => {}), isEnabled: vi.fn(() => true) });
   });
 

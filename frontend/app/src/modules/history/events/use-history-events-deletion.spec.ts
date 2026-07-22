@@ -92,12 +92,13 @@ describe('useHistoryEventsDeletion', () => {
 
   it('should delete by filter when select-all-matching is active', async () => {
     const { deletion, refreshCallback, selectionMode } = setup({
+      aggregateByGroupIds: true,
       ascending: [true],
       limit: 10,
+      notesSubstring: 'needle',
       offset: 0,
       onlyCache: true,
-      groupByEventIds: true,
-    } as unknown as HistoryEventRequestPayload);
+    });
     selectionMode.actions.toggleSelectAllMatching();
     selectionMode.setTotalMatchingCount(42);
 
@@ -106,7 +107,7 @@ describe('useHistoryEventsDeletion', () => {
 
     await drive(run);
     // pagination/sort keys are stripped before the filter delete
-    expect(spies.deleteHistoryEventApi).toHaveBeenCalledWith({ groupByEventIds: true }, true);
+    expect(spies.deleteHistoryEventApi).toHaveBeenCalledWith({ notesSubstring: 'needle' }, true);
     expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
     expect(refreshCallback).toHaveBeenCalledOnce();
     expect(get(deletion.isDeleting)).toBe(false);
