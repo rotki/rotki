@@ -2122,6 +2122,7 @@ dependencies = [
     { name = "idna" },
     { name = "marshmallow" },
     { name = "maxminddb" },
+    { name = "mcp" },
     { name = "more-itertools" },
     { name = "packaging" },
     { name = "pandas" },
@@ -2146,11 +2147,6 @@ dependencies = [
     { name = "websockets" },
     { name = "werkzeug" },
     { name = "xxhash" },
-]
-
-[package.optional-dependencies]
-mcp = [
-    { name = "mcp" },
 ]
 
 [package.dev-dependencies]
@@ -2239,7 +2235,7 @@ requires-dist = [
     { name = "idna", specifier = "==3.18" },
     { name = "marshmallow", specifier = "==4.2.2" },
     { name = "maxminddb", specifier = "==3.1.1" },
-    { name = "mcp", marker = "extra == 'mcp'", specifier = "==1.28.1" },
+    { name = "mcp", specifier = "==1.28.1" },
     { name = "more-itertools", specifier = "==10.6.0" },
     { name = "packaging", specifier = "==25.0" },
     { name = "pandas", specifier = "==3.0.3" },
@@ -2265,7 +2261,6 @@ requires-dist = [
     { name = "werkzeug", specifier = "==3.1.8" },
     { name = "xxhash", specifier = "==3.7.2" },
 ]
-provides-extras = ["mcp"]
 
 [package.metadata.requires-dev]
 ci = [{ name = "pytest-github-actions-annotate-failures", specifier = "==0.3.0" }]

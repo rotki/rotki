@@ -58,6 +58,8 @@ executable_name = 'rotki-core-{}-{}'.format(
 )
 
 hiddenimports = []
+# The MCP server is a separate module entrypoint and its tools are discovered dynamically.
+hiddenimports.extend(collect_submodules('rotkehlchen.mcp'))
 # Since the exchanges are loaded dynamically and some of them may not be detected
 # by pyinstaller (https://github.com/rotki/rotki/issues/602) make sure they are
 # all included as imports in the created executable

@@ -72,6 +72,7 @@ dependencies = [
     "xxhash==3.7.2",  # enforced for free-threaded Python support
     "bitarray==3.8.2",  # pinned to check free-threaded Python support
     "pandas==3.0.3",
+    "mcp==1.28.1",
 ]
 
 [project.urls]
@@ -79,9 +80,6 @@ homepage = "https://rotki.com"
 documentation = "https://docs.rotki.com"
 repository = "https://github.com/rotki/rotki"
 changelog = "https://github.com/rotki/rotki/blob/develop/docs/changelog.rst"
-
-[project.optional-dependencies]
-mcp = ["mcp==1.28.1"]
 
 [dependency-groups]
 dev = [
