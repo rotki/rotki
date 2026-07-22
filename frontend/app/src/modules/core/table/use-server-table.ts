@@ -11,6 +11,7 @@ import { type ChangeSource, useChangeIntent } from '@/modules/core/table/use-cha
 import { useTableData } from '@/modules/core/table/use-table-data';
 import { useTablePagination } from '@/modules/core/table/use-table-pagination';
 import { type PersistFilterSetting, useTablePersistence } from '@/modules/core/table/use-table-persistence';
+import { reduce, type TableEvent, type TableState } from '@/modules/core/table/use-table-reducer';
 import { useTableSorting } from '@/modules/core/table/use-table-sorting';
 import { routeWhen, type UrlState, useUrlStateSync } from '@/modules/core/table/use-url-state-sync';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
@@ -107,15 +108,21 @@ export function useServerTable<
     urlState = { mode: 'none' },
   } = options;
 
-  const { markSource, markUserIntent, pendingIntent, pendingUrlSource } = useChangeIntent();
+  const { markUserIntent, pendingIntent, pendingUrlSource } = useChangeIntent();
+
+  const { filters, matchers, RouteFilterSchema } = filterSchema;
+
+  // Commit callbacks feed the reducer. They are defined before the sub-composables that
+  // receive them and call the hoisted `dispatch`.
+  const commitSort = (sorting: DataTableSortData<TItem>): void => dispatch({ sorting, type: 'sort-set' });
+  const commitPage = (page: number, source: ChangeSource = 'user'): void => dispatch({ page, source, type: 'page-set' });
+  const commitLimit = (limit: number): void => dispatch({ limit, type: 'limit-set' });
 
   const { defaultSorting, internalSorting, sort } = useTableSorting<TItem>(
     defaultSortBy,
-    markUserIntent,
+    commitSort,
     fallbackColumn,
   );
-
-  const { filters, matchers, RouteFilterSchema } = filterSchema;
 
   const {
     captureTransientValues,
@@ -136,8 +143,8 @@ export function useServerTable<
   const { internalPagination, pagination, setPage } = useTablePagination<TItem>(
     itemsPerPage,
     collection,
-    markSource,
-    markUserIntent,
+    commitPage,
+    commitLimit,
   );
 
   const requestPayload = computed<TPayload>(() => {
@@ -167,8 +174,7 @@ export function useServerTable<
       return get(filters);
     },
     set(value: TFilter) {
-      markUserIntent();
-      set(filters, value);
+      dispatch({ filter: value, source: 'user', type: 'filter-set' });
     },
   });
 
@@ -194,13 +200,50 @@ export function useServerTable<
    * the URL: the old `updateFilter` in all but name.
    */
   const setFilter = (newFilter: TFilter, source: ChangeSource = 'programmatic'): void => {
-    markSource(source);
-    set(filters, newFilter);
+    dispatch({ filter: newFilter, source, type: 'filter-set' });
   };
+
+  /**
+   * Applies a table event through the pure reducer and writes the changed state slices
+   * back to their refs. The reducer's `effects` (fetch/persist/push-url) are not consumed
+   * here yet; those stay driven by the `requestPayload` and url-only watchers below.
+   * Wiring the effect side is the follow-up that turns persistence and URL sync into
+   * channels (Stage 5). The reducer already owns the transitions, which is what fixes the
+   * request-param page reset (8b) and collapses a filter change plus its page reset into
+   * one atomic state update (one fetch, no cascade).
+   */
+  function dispatch(event: TableEvent<TFilter, TItem>): void {
+    const before: TableState<TFilter, TItem> = {
+      filter: get(filters),
+      limit: get(internalPagination).limit,
+      page: get(internalPagination).page,
+      pendingIntent: get(pendingIntent),
+      sorting: get(internalSorting),
+    };
+    const { state } = reduce(before, event);
+
+    if (!isEqual(before.filter, state.filter))
+      set(filters, state.filter);
+    if (!isEqual(before.sorting, state.sorting))
+      set(internalSorting, state.sorting);
+    if (before.page !== state.page || before.limit !== state.limit)
+      set(internalPagination, { ...get(internalPagination), limit: state.limit, page: state.page });
+    if (before.pendingIntent !== state.pendingIntent)
+      set(pendingIntent, state.pendingIntent);
+  }
 
   /** Sources that reach both the request and the URL. Changing one resets to page 1. */
   const sharedSourceValues = computed<Record<string, unknown>>(
     () => collectSources(params, 'url', source => source.to === 'both'),
+  );
+
+  /**
+   * Request-only sources reach the payload but not the URL. Changing one resets to page 1
+   * (8b parity) without attributing user intent, so no URL write is earned and route
+   * filter state is never clobbered.
+   */
+  const requestSourceValues = computed<Record<string, unknown>>(
+    () => collectSources(params, 'request', source => source.to === 'request'),
   );
 
   /**
@@ -211,14 +254,14 @@ export function useServerTable<
     () => collectSources(params, 'url', source => source.to === 'url'),
   );
 
-  watch([filters, sharedSourceValues], ([filters, params], [oldFilters, oldParams]) => {
-    const filterEquals = isEqual(filters, oldFilters);
-    const paramEquals = isEqual(params, oldParams);
+  watch(sharedSourceValues, (values, oldValues) => {
+    if (!isEqual(values, oldValues))
+      dispatch({ to: 'both', type: 'param-changed' });
+  });
 
-    if (filterEquals && paramEquals)
-      return;
-
-    setPage(1, paramEquals ? 'programmatic' : 'user');
+  watch(requestSourceValues, (values, oldValues) => {
+    if (!isEqual(values, oldValues))
+      dispatch({ to: 'request', type: 'param-changed' });
   });
 
   watch(urlOnlySourceValues, async (params, oldParams) => {

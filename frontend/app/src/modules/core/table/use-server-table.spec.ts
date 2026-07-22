@@ -1656,4 +1656,30 @@ describe('page reset', () => {
 
     expect(get(pagination).page).toBe(5);
   });
+
+  it('should reset the page when a request-only param changes (8b)', async () => {
+    // Request-only values reach the api, so the result set moves under them and the
+    // current page can be invalid. Resetting carries no user intent, so no URL write is
+    // earned: this is the parity fix for filters edited outside the TableFilter bar.
+    const account = ref<string>('a');
+    const { pagination } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters, TestMatcher>({
+      fetch: mockRequestWithExtras(),
+      urlState: { mode: 'route' },
+      filterSchema: createTestFilterSchema(),
+      params: [{ skipEmpty: true, to: 'request', values: computed(() => ({ requestParam: get(account) })) }],
+    }))!;
+
+    await nextTick();
+    await flushPromises();
+    set(pagination, { ...get(pagination), page: 5 });
+    await nextTick();
+    await flushPromises();
+    expect(get(pagination).page).toBe(5);
+
+    set(account, 'b');
+    await nextTick();
+    await flushPromises();
+
+    expect(get(pagination).page).toBe(1);
+  });
 });

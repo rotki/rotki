@@ -15,12 +15,17 @@ interface UseTablePaginationReturn {
 /**
  * Owns the pagination state of a server table. The collection is needed because
  * the total row count only exists on the server response.
+ *
+ * Writes go through `commitPage`/`commitLimit`, which dispatch `page-set`/`limit-set`
+ * events; the reducer decides the transition (including whether a change resets the
+ * page) and the adapter writes `internalPagination` back. This composable no longer
+ * mutates it directly.
  */
 export function useTablePagination<TItem>(
   itemsPerPage: Ref<number>,
   collection: Ref<Collection<TItem>>,
-  markSource: (source: ChangeSource) => void,
-  markUserIntent: () => void,
+  commitPage: (page: number, source?: ChangeSource) => void,
+  commitLimit: (limit: number) => void,
 ): UseTablePaginationReturn {
   const internalPagination = ref<TablePaginationData>(applyPaginationDefaults(get(itemsPerPage)));
 
@@ -35,13 +40,14 @@ export function useTablePagination<TItem>(
       };
     },
     set(pagination) {
-      markUserIntent();
-      const currentPagination = get(internalPagination);
-      set(internalPagination, {
-        ...currentPagination,
-        limit: pagination?.limit ?? currentPagination.limit,
-        page: pagination?.page ?? currentPagination.page,
-      });
+      const current = get(internalPagination);
+      const limit = pagination?.limit ?? current.limit;
+      const page = pagination?.page ?? current.page;
+      // Emit only what actually changed; each is a user-driven change.
+      if (limit !== current.limit)
+        commitLimit(limit);
+      if (page !== current.page)
+        commitPage(page);
     },
   });
 
@@ -49,8 +55,7 @@ export function useTablePagination<TItem>(
    * Updates pagination data for just the current page
    */
   const setPage = (page: number, source: ChangeSource = 'user'): void => {
-    markSource(source);
-    set(internalPagination, { ...get(internalPagination), page });
+    commitPage(page, source);
   };
 
   return {

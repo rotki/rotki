@@ -8,16 +8,17 @@ export { useHistoryEventHighlights } from '@/modules/history/events/use-history-
 
 /**
  * Timing constants that coordinate highlight navigation with the pagination system.
- * All values are derived from a single base debounce so they stay in sync.
+ * Derived from a single base debounce so they stay in sync.
  *
- * - Filter watcher fires first so setPage() can reset the fetch timer (single fetch).
- * - Fetch debounce is 2x the filter debounce.
  * - Loading-start timeout is 5x the filter debounce, giving the loading state
  *   enough headroom to become true before we wait for it to finish.
+ *
+ * There is no longer a table-fetch debounce: the Stage 3 reducer resets the page in the
+ * same reduction as the filter change, so one user action produces one payload change
+ * and one fetch. The old `HIGHLIGHT_FETCH_DEBOUNCE` (2x the base) existed only to
+ * coalesce that cascade and is gone.
  */
 export const HIGHLIGHT_FILTER_DEBOUNCE = 100;
-
-export const HIGHLIGHT_FETCH_DEBOUNCE = HIGHLIGHT_FILTER_DEBOUNCE * 2;
 
 export const HIGHLIGHT_LOADING_START_TIMEOUT = HIGHLIGHT_FILTER_DEBOUNCE * 5;
 

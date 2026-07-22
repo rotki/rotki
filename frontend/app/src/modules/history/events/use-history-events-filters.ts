@@ -18,7 +18,7 @@ import {
 } from '@/modules/history/event-utils';
 import { DuplicateHandlingStatus, type HighlightType } from '@/modules/history/events/action-types';
 import { buildHistoryEventSources } from '@/modules/history/events/history-event-query';
-import { HIGHLIGHT_FETCH_DEBOUNCE, useHistoryEventHighlights, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
+import { useHistoryEventHighlights, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 
 export { useHistoryEventNavigationConsumer } from '@/modules/history/events/use-history-event-navigation-consumer';
@@ -210,7 +210,6 @@ export function useHistoryEventsFilters(
     },
     request: {
       cancelTag: GROUPS_CANCEL_TAG,
-      debounce: HIGHLIGHT_FETCH_DEBOUNCE,
     },
     urlState: routeWhen(mainPage),
   });
