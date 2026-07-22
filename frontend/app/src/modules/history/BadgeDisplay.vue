@@ -6,6 +6,10 @@ const {
   color?: Color;
 }>();
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const colorVariants: Record<Color, string> = {
   green: 'text-rui-green-700 bg-rui-green-100',
   grey: 'text-rui-grey-700 bg-rui-grey-100 dark:text-rui-grey-400 dark:bg-rui-grey-800',

@@ -15,6 +15,10 @@ const emit = defineEmits<{
   'delete-click': [];
 }>();
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const editClick = (): void => emit('edit-click');
 const deleteClick = (): void => emit('delete-click');
 

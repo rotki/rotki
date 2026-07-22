@@ -13,6 +13,10 @@ const emit = defineEmits<{
   'click-step': [stepNumber: number];
 }>();
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const shouldShowContent = computed<boolean>(() => isCurrent || isComplete);
 const isHeaderClickable = computed<boolean>(() => isComplete && isClickable);
 const stepBadgeClass = computed<string>(() => isComplete ? 'bg-rui-success' : 'bg-rui-primary');

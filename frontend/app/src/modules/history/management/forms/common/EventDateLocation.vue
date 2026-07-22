@@ -19,6 +19,10 @@ const emit = defineEmits<{
   blur: [source: 'location' | 'timestamp'];
 }>();
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 </script>
 

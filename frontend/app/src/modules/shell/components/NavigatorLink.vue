@@ -11,6 +11,10 @@ const { enabled = true, tag = 'span', to } = defineProps<{
   to: RouteLocationRaw | undefined;
 }>();
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const router = useRouter();
 
 async function navigate(): Promise<void> {

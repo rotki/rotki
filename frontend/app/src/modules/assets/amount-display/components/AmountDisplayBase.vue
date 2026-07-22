@@ -43,6 +43,10 @@ defineOptions({
 
 const { value, format, symbol = '' } = defineProps<Props>();
 
+defineSlots<{
+  tooltip: () => any;
+}>();
+
 // Extract format options
 const isInteger = computed<boolean>(() => format?.integer ?? false);
 

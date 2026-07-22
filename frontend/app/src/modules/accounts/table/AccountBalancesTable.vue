@@ -40,6 +40,10 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
+defineSlots<{
+  details: (props: { row: T }) => any;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 // Use composables

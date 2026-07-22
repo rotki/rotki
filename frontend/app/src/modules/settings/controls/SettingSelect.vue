@@ -48,6 +48,12 @@ const emit = defineEmits<{
   updated: [value: string];
 }>();
 
+defineSlots<{
+  option: (props: { option: TOption }) => any;
+  item: (props: { item: TOption }) => any;
+  selection: (props: { item: TOption }) => any;
+}>();
+
 const { error: writeError, model, success: writeSuccess } = useSettingModel(setting, { debounce });
 const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
 

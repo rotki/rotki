@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
+
+defineSlots<{
+  title: () => any;
+  subtitle: () => any;
+  default: () => any;
+}>();
 </script>
 
 <template>

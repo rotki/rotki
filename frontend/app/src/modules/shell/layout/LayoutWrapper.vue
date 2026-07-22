@@ -1,4 +1,8 @@
 <script setup lang="ts">
+defineSlots<{
+  default: () => any;
+}>();
+
 const AuthLayout = defineAsyncComponent(() => import('@/layouts/auth.vue'));
 const DefaultLayout = defineAsyncComponent(() => import('@/layouts/default.vue'));
 const PlainLayout = defineAsyncComponent(() => import('@/layouts/plain.vue'));

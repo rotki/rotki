@@ -30,6 +30,10 @@ const emit = defineEmits<{
   cancel: [];
 }>();
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const color = computed(() => themes[confirmType].color);

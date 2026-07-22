@@ -38,6 +38,11 @@ const {
   debounce?: number;
 }>();
 
+defineSlots<{
+  selection: (props: { item: TOption }) => any;
+  item: (props: { item: TOption }) => any;
+}>();
+
 const { error: writeError, model, pending, success: writeSuccess } = useSettingModel(setting, { debounce });
 const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
 

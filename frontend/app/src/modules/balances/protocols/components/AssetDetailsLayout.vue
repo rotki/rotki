@@ -6,6 +6,11 @@ const { row } = defineProps<{
   row: AssetBalanceWithPrice;
 }>();
 
+defineSlots<{
+  breakdown: () => any;
+  perprotocol: () => any;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const tab = ref(0);

@@ -22,6 +22,10 @@ defineProps<{
   id?: string;
 }>();
 
+defineSlots<{
+  footer: () => any;
+}>();
+
 interface ChainItem {
   id: string;
   name: string;

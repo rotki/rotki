@@ -3,6 +3,10 @@ import type { RouteLocationRaw } from 'vue-router';
 
 const { to } = defineProps<{ to?: RouteLocationRaw }>();
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const router = useRouter();
 
 function navigate() {

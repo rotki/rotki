@@ -11,6 +11,12 @@ const { full = false, icon, variant = 'default' } = defineProps<{
   variant?: 'default' | 'success';
 }>();
 
+defineSlots<{
+  logo: () => any;
+  title: () => any;
+  default: () => any;
+}>();
+
 const { isMdAndUp } = useBreakpoint();
 
 const circleClasses = computed<string>(() => {

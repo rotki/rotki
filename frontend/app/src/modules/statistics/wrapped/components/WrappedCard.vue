@@ -5,6 +5,13 @@ const { items } = defineProps<{
   items: T[];
 }>();
 
+defineSlots<{
+  'header-icon': () => any;
+  'header': () => any;
+  'label': (props: { item: T; index: number }) => any;
+  'value': (props: { item: T; index: number }) => any;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const INITIAL_LENGTH = 5;
