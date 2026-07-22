@@ -1,22 +1,14 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
-import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import { useUndecodedTransactionsCount } from '@/modules/history/events/tx/use-undecoded-transactions-count';
+import { useMissingPrices } from './use-missing-prices';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { prices } = storeToRefs(useBalancePricesStore());
-const { isAssetIgnored } = useAssetsStore();
+const { missingPricesCount } = useMissingPrices();
 const { actionableCount, refreshSummary } = useDataIssuesSummary();
 const { fetchUndecodedTransactionsBreakdown, undecodedCount } = useUndecodedTransactionsCount();
-
-// Ignored assets (spam/dust) are hidden from the balances table, so they must
-// not inflate the count either — only count assets the user actually sees.
-const missingPricesCount = computed<number>(() =>
-  Object.entries(get(prices)).filter(([asset, price]) => price.priceMissing && !isAssetIgnored(asset)).length,
-);
 
 const hasIssues = computed<boolean>(() =>
   get(missingPricesCount) > 0 || get(undecodedCount) > 0 || get(actionableCount) > 0,

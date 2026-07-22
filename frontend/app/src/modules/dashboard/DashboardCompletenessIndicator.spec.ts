@@ -12,11 +12,20 @@ import '@test/i18n';
 interface MockState {
   actionableCount: number;
   processing: boolean;
+  assetsWithoutOracleHistory: Set<string>;
 }
 
 const state = vi.hoisted((): MockState => ({
   actionableCount: 0,
+  assetsWithoutOracleHistory: new Set<string>(),
   processing: false,
+}));
+
+vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
+  useAssetPricesApi: (): Record<string, unknown> => ({
+    assetsHadOraclePrice: vi.fn(async (identifiers: string[]): Promise<Record<string, boolean>> =>
+      Object.fromEntries(identifiers.map(id => [id, !state.assetsWithoutOracleHistory.has(id)]))),
+  }),
 }));
 
 vi.mock('@/modules/history/data-issues/use-data-issues-summary', () => ({
@@ -55,6 +64,7 @@ describe('dashboardCompletenessIndicator', () => {
     setActivePinia(createCustomPinia());
     state.actionableCount = 0;
     state.processing = false;
+    state.assetsWithoutOracleHistory = new Set<string>();
   });
 
   it('should render nothing when there are no completeness issues', async () => {
@@ -68,6 +78,15 @@ describe('dashboardCompletenessIndicator', () => {
     };
     const wrapper = await createWrapper();
     expect(wrapper.find('[data-testid=dashboard-completeness]').text()).toContain('missing_prices');
+  });
+
+  it('should not count a missing price for an asset the oracles never supported', async () => {
+    state.assetsWithoutOracleHistory = new Set(['FOO']);
+    useBalancePricesStore().prices = {
+      FOO: { isManualPrice: false, oracle: 'blockchain', priceMissing: true, usdPrice: null, value: bigNumberify(0) },
+    };
+    const wrapper = await createWrapper();
+    expect(wrapper.find('[data-testid=dashboard-completeness]').exists()).toBe(false);
   });
 
   it('should show a button for leftover undecoded transactions', async () => {
