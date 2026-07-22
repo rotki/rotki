@@ -13,11 +13,14 @@ interface UseTableSortingReturn<TItem extends NonNullable<unknown>> {
 }
 
 /**
- * Owns the sorting state of a server table.
+ * Owns the sorting state of a server table. Writing the `sort` model dispatches a
+ * `sort-set` event through `commitSort`; the reducer decides the transition and the
+ * adapter writes `internalSorting` back, so this composable no longer mutates it
+ * directly.
  */
 export function useTableSorting<TItem extends NonNullable<unknown>>(
   defaultSortBy: DataTableSortData<TItem> | undefined,
-  markUserIntent: () => void,
+  commitSort: (sorting: DataTableSortData<TItem>) => void,
   fallbackColumn?: string,
 ): UseTableSortingReturn<TItem> {
   const internalSorting = ref<Sorting<TItem>>(
@@ -32,7 +35,6 @@ export function useTableSorting<TItem extends NonNullable<unknown>>(
     },
     set(sort) {
       const defaults = defaultSorting();
-      markUserIntent();
       let newSort = sort;
       if (newSort && defaults && !Array.isArray(newSort) && !Array.isArray(defaults)) {
         newSort = getSorting({
@@ -41,7 +43,7 @@ export function useTableSorting<TItem extends NonNullable<unknown>>(
         }, defaults, fallbackColumn);
       }
 
-      set(internalSorting, newSort);
+      commitSort(newSort);
     },
   });
 
