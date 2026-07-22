@@ -8,6 +8,10 @@ const { items, identifier } = defineProps<{
   identifier: GetKey;
 }>();
 
+defineSlots<{
+  item: (props: { item: any }) => any;
+}>();
+
 const { isXlAndDown, isXs } = useBreakpoint();
 const page = ref(1);
 const itemsPerPage = ref(8);

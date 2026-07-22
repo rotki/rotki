@@ -9,6 +9,10 @@ import { useSetting } from '@/modules/settings/use-setting';
 import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
 import { useThemeChecker } from '@/modules/shell/theme/use-theme-checker';
 
+defineSlots<{
+  default: () => any;
+}>();
+
 useThemeChecker();
 useSigil();
 

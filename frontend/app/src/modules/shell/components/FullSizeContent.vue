@@ -1,4 +1,8 @@
 <script setup lang="ts">
+defineSlots<{
+  default: () => any;
+}>();
+
 const wrapper = useTemplateRef<HTMLDivElement>('wrapper');
 const topOffset = ref<number>(0);
 

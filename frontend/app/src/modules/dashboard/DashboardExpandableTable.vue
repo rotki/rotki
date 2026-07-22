@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 
+defineSlots<{
+  title: () => any;
+  details: () => any;
+  shortDetails: () => any;
+  default: () => any;
+}>();
+
 const expanded = ref<boolean>(true);
 
 const panel = computed<number>(() => (get(expanded) ? 0 : -1));

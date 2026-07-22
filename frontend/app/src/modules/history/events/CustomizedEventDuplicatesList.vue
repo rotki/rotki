@@ -23,6 +23,10 @@ const emit = defineEmits<{
   'show-in-history': [];
 }>();
 
+defineSlots<{
+  actions: (props: { row: DuplicateRow }) => any;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const columns = computed<DataTableColumn<DuplicateRow>[]>(() => [

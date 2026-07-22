@@ -14,6 +14,10 @@ const { tooltip, retainFocusOnClick = false, className = '', href, variant = 'te
   size?: ButtonProps['size'];
   customColor?: boolean;
 }>();
+
+defineSlots<{
+  default: () => any;
+}>();
 </script>
 
 <template>

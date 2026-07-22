@@ -15,6 +15,12 @@ const {
   isMobile?: boolean;
 }>();
 
+defineSlots<{
+  'label': () => any;
+  'custom-columns': () => any;
+  'default': () => any;
+}>();
+
 const formattedClassName = computed(() => {
   const propClassName
     = typeof className === 'object'

@@ -2,6 +2,10 @@
 defineOptions({
   inheritAttrs: false,
 });
+
+defineSlots<{
+  default: () => any;
+}>();
 </script>
 
 <template>

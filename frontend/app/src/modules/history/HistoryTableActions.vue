@@ -1,5 +1,10 @@
 <script lang="ts" setup>
 const { hideDivider = false } = defineProps<{ hideDivider?: boolean }>();
+
+defineSlots<{
+  default: () => any;
+  filter: () => any;
+}>();
 </script>
 
 <template>

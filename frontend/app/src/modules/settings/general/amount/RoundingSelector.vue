@@ -14,6 +14,10 @@ defineProps<{
   hint: string;
 }>();
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const selections: { value: RoundingMode; text: string; description: string }[] = [
