@@ -1726,9 +1726,12 @@ def test_unmatched_bridge_data_issues(
     issues = issues_manager.list_issues(
         filters=DataIssueFilters(kind=IssueKind.UNMATCHED_BRIDGE.value),
     )
-    assert {(issue.payload['direction'], issue.state) for issue in issues} == {
-        ('deposit', IssueState.OPEN.value),
-        ('withdrawal', IssueState.OPEN.value),
+    assert {
+        (issue.payload['direction'], Location.deserialize_from_db(issue.location), issue.state)
+        for issue in issues
+    } == {
+        ('deposit', Location.ETHEREUM, IssueState.OPEN.value),
+        ('withdrawal', Location.ARBITRUM_ONE, IssueState.OPEN.value),
     }
 
     # linking the pair resolves both issues on the next run
