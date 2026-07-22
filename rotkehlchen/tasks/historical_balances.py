@@ -420,7 +420,7 @@ def _detect_unmatched_bridge_issues(database: DBHandler) -> None:
                 payload['bridge'] = bridge_data
             issues_manager.write_issue(
                 kind=IssueKind.UNMATCHED_BRIDGE,
-                location=event.location.serialize(),
+                location=event.location.serialize_for_db(),
                 location_label=event.location_label,
                 protocol=counterparty,
                 asset=event.asset.identifier,
