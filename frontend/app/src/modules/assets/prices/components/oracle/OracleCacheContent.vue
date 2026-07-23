@@ -3,6 +3,7 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import type { OracleCacheMeta } from '@/modules/assets/prices/price-types';
 import { Severity } from '@rotki/common';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import OracleCacheActionsCell from '@/modules/assets/prices/components/oracle/OracleCacheActionsCell.vue';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
@@ -294,26 +295,10 @@ defineExpose({
             <DateDisplay :timestamp="Number(row.toTimestamp)" />
           </template>
           <template #item.actions="{ row }">
-            <RuiTooltip
-              :popper="{ placement: 'top' }"
-              :open-delay="400"
-            >
-              <template #activator>
-                <RuiButton
-                  color="primary"
-                  variant="text"
-                  icon
-                  :disabled="cachePending"
-                  @click="showDeleteConfirmation(row)"
-                >
-                  <RuiIcon
-                    size="16"
-                    name="lu-trash-2"
-                  />
-                </RuiButton>
-              </template>
-              {{ t('oracle_prices.cache.delete.tooltip') }}
-            </RuiTooltip>
+            <OracleCacheActionsCell
+              :disabled="cachePending"
+              @click="showDeleteConfirmation(row)"
+            />
           </template>
         </RuiDataTable>
       </div>

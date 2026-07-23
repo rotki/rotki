@@ -2,6 +2,7 @@
 import { EvmTokenKind, isValidEthAddress, type UnderlyingToken } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, numeric, required } from '@vuelidate/validators';
+import UnderlyingTokenWeightHint from '@/modules/assets/admin/UnderlyingTokenWeightHint.vue';
 import { evmTokenKindsData } from '@/modules/core/common/chains';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -121,25 +122,7 @@ function resetForm() {
           :label="t('underlying_token_manager.labels.weight')"
         >
           <template #append>
-            <RuiTooltip
-              :popper="{ placement: 'top' }"
-              :open-delay="400"
-            >
-              <template #activator>
-                <RuiButton
-                  type="button"
-                  variant="text"
-                  icon
-                  size="sm"
-                >
-                  <RuiIcon
-                    :size="20"
-                    name="lu-circle-question-mark"
-                  />
-                </RuiButton>
-              </template>
-              {{ t('underlying_token_manager.hint') }}
-            </RuiTooltip>
+            <UnderlyingTokenWeightHint />
           </template>
         </RuiTextField>
       </div>

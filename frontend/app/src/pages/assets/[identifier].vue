@@ -1,20 +1,17 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
-import { externalLinks } from '@shared/external-links';
 import { msg } from '@/message-key';
 import ManagedAssetIgnoreSwitch from '@/modules/assets/admin/managed/ManagedAssetIgnoreSwitch.vue';
+import AssetExternalLinks from '@/modules/assets/AssetExternalLinks.vue';
 import AssetLocations from '@/modules/assets/AssetLocations.vue';
 import AssetValueRow from '@/modules/assets/AssetValueRow.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
-import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { AssetAmountAndValueOverTime } from '@/modules/premium/premium';
 import { usePremium } from '@/modules/premium/use-premium';
-import AppImage from '@/modules/shell/components/AppImage.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
-import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import AssetAmountAndValuePlaceholder from '@/modules/statistics/AssetAmountAndValuePlaceholder.vue';
@@ -41,8 +38,6 @@ const { identifier } = defineProps<{
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute();
-
-const { coingeckoAsset, cryptocompareAsset } = externalLinks;
 
 const { refetchAssetInfo, useAssetContractInfo, useAssetInfo } = useAssetInfoRetrieval();
 const premium = usePremium();
@@ -167,42 +162,11 @@ function goToEdit(): void {
             class="[&_a]:!p-2.5"
           />
 
-          <template v-if="asset">
-            <ExternalLink
-              v-if="asset.coingecko"
-              custom
-              :url="coingeckoAsset.replace('$symbol', asset.coingecko)"
-            >
-              <RuiButton
-                size="sm"
-                icon
-              >
-                <template #prepend>
-                  <AppImage
-                    size="30px"
-                    :src="getPublicServiceImagePath('coingecko.svg')"
-                  />
-                </template>
-              </RuiButton>
-            </ExternalLink>
-            <ExternalLink
-              v-if="asset.cryptocompare"
-              custom
-              :url="cryptocompareAsset.replace('$symbol', asset.cryptocompare)"
-            >
-              <RuiButton
-                size="sm"
-                icon
-              >
-                <template #prepend>
-                  <AppImage
-                    size="30px"
-                    :src="getPublicServiceImagePath('cryptocompare.svg')"
-                  />
-                </template>
-              </RuiButton>
-            </ExternalLink>
-          </template>
+          <AssetExternalLinks
+            v-if="asset"
+            :coingecko="asset.coingecko"
+            :cryptocompare="asset.cryptocompare"
+          />
         </div>
       </div>
       <div class="flex items-center gap-2">
