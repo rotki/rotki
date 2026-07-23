@@ -244,6 +244,38 @@ def test_rotkehlchen_main_should_report_mcp_startup_errors(monkeypatch, capsys) 
     )
 
 
+def test_rotkehlchen_main_should_report_mcp_server_exit(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(rotkehlchen_main, 'is_mcp_command', True)
+    monkeypatch.setattr(
+        rotkehlchen_main,
+        'mcp_main',
+        MagicMock(side_effect=SystemExit(1)),
+        raising=False,
+    )
+
+    with pytest.raises(SystemExit) as error:
+        rotkehlchen_main.main()
+
+    assert error.value.code == 1
+    assert capsys.readouterr().err.endswith('Failed to start rotki MCP server\n')
+
+
+def test_rotkehlchen_main_should_preserve_mcp_argument_errors(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(rotkehlchen_main, 'is_mcp_command', True)
+    monkeypatch.setattr(
+        rotkehlchen_main,
+        'mcp_main',
+        MagicMock(side_effect=SystemExit(2)),
+        raising=False,
+    )
+
+    with pytest.raises(SystemExit) as error:
+        rotkehlchen_main.main()
+
+    assert error.value.code == 2
+    assert 'Failed to start rotki MCP server' not in capsys.readouterr().err
+
+
 def test_rotkehlchen_main_should_dispatch_mcp_arguments(monkeypatch) -> None:
     mcp_main_mock = MagicMock()
     monkeypatch.setattr(rotkehlchen_main, 'is_mcp_command', True)
