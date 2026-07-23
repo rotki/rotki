@@ -229,6 +229,9 @@ pub struct ServiceSpec {
     /// Whether this service participates in the supervisor's normal tree
     /// bring-up. Optional services remain idle until explicitly started.
     pub autostart: bool,
+    /// Whether startService/stopService may manage this service independently.
+    /// Core tree services remain protected even on trusted control transports.
+    pub allow_manual_control: bool,
 }
 
 impl ServiceSpec {
@@ -249,6 +252,7 @@ impl ServiceSpec {
             run_as: None,
             stdio: StdioMode::default(),
             autostart: true,
+            allow_manual_control: false,
         }
     }
 
@@ -293,6 +297,11 @@ impl ServiceSpec {
 
     pub fn autostart(mut self, autostart: bool) -> Self {
         self.autostart = autostart;
+        self
+    }
+
+    pub fn allow_manual_control(mut self) -> Self {
+        self.allow_manual_control = true;
         self
     }
 }
@@ -487,6 +496,7 @@ pub fn build_services(layout: &ServiceLayout) -> Vec<ServiceSpec> {
             on_crash: OnCrash::ReportOnly,
             ..Default::default()
         })
+        .allow_manual_control()
         .autostart(layout.mcp_autostart);
 
     vec![core, colibri, mcp]

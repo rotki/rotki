@@ -35,6 +35,10 @@ pub enum SupervisorError {
     #[error("service '{0}' is already running")]
     AlreadyRunning(String),
 
+    /// Independent lifecycle operations are not allowed for a core tree service.
+    #[error("service '{0}' cannot be controlled independently")]
+    ManualControlNotAllowed(String),
+
     /// A service cannot start until one of its declared dependencies is ready.
     #[error("service '{service}' requires dependency '{dependency}' to be ready")]
     DependencyNotReady { service: String, dependency: String },

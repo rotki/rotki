@@ -173,6 +173,9 @@ impl<S: Spawner> Supervisor<S> {
             .services
             .get(name)
             .ok_or_else(|| SupervisorError::NotFound(name.to_string()))?;
+        if !rt.spec.allow_manual_control {
+            return Err(SupervisorError::ManualControlNotAllowed(name.to_string()));
+        }
         if !matches!(
             rt.state,
             ServiceState::Idle | ServiceState::Stopped | ServiceState::Failed
@@ -357,8 +360,12 @@ impl<S: Spawner> Supervisor<S> {
     /// Stop one service without affecting independent siblings. Refuses to stop
     /// a dependency while one of its active dependents still needs it.
     pub async fn stop_service(&mut self, name: &str, grace: Duration) -> Result<()> {
-        if !self.services.contains_key(name) {
-            return Err(SupervisorError::NotFound(name.to_string()));
+        let service = self
+            .services
+            .get(name)
+            .ok_or_else(|| SupervisorError::NotFound(name.to_string()))?;
+        if !service.spec.allow_manual_control {
+            return Err(SupervisorError::ManualControlNotAllowed(name.to_string()));
         }
         if let Some(dependent) = self.order.iter().find(|candidate| {
             let rt = &self.services[*candidate];
@@ -710,7 +717,9 @@ mod tests {
         let specs = vec![
             spec("core", &[]),
             spec("colibri", &["core"]),
-            spec("mcp", &["core"]).autostart(false),
+            spec("mcp", &["core"])
+                .allow_manual_control()
+                .autostart(false),
         ];
         let mut sup = Supervisor::new(MockSpawner::new(log.clone()), specs).unwrap();
 
@@ -749,13 +758,36 @@ mod tests {
 
     #[tokio::test]
     async fn optional_service_requires_ready_dependency() {
-        let specs = vec![spec("core", &[]), spec("mcp", &["core"]).autostart(false)];
+        let specs = vec![
+            spec("core", &[]),
+            spec("mcp", &["core"])
+                .allow_manual_control()
+                .autostart(false),
+        ];
         let mut sup =
             Supervisor::new(MockSpawner::new(Arc::new(Mutex::new(Vec::new()))), specs).unwrap();
 
         assert!(matches!(
             sup.start_service("mcp").await,
             Err(SupervisorError::DependencyNotReady { .. }),
+        ));
+    }
+
+    #[tokio::test]
+    async fn core_service_cannot_be_controlled_independently() {
+        let mut sup = Supervisor::new(
+            MockSpawner::new(Arc::new(Mutex::new(Vec::new()))),
+            vec![spec("core", &[])],
+        )
+        .unwrap();
+
+        assert!(matches!(
+            sup.start_service("core").await,
+            Err(SupervisorError::ManualControlNotAllowed(service)) if service == "core",
+        ));
+        assert!(matches!(
+            sup.stop_service("core", Duration::from_millis(50)).await,
+            Err(SupervisorError::ManualControlNotAllowed(service)) if service == "core",
         ));
     }
 

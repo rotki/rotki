@@ -954,6 +954,7 @@ mod tests {
                     on_crash: OnCrash::ReportOnly,
                     ..Default::default()
                 })
+                .allow_manual_control()
                 .autostart(false),
         );
         services
