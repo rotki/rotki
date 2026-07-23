@@ -6,6 +6,7 @@ import { getErrorMessage, useNotifications } from '@/modules/core/notifications/
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { type UnmatchedBridgeTransaction, useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
+import { useUntrackedBridgeCounterpart } from '@/modules/history/events/use-untracked-bridge-counterpart';
 
 interface UseBridgeTransactionActionsOptions {
   /** Invoked after an ignore/restore/external action succeeds, e.g. to clear highlights. */
@@ -41,6 +42,7 @@ export function useBridgeTransactionActions(
   const { show } = useConfirmStore();
   const { showErrorMessage } = useNotifications();
   const { getChainName } = useSupportedChains();
+  const { isCounterpartUntracked } = useUntrackedBridgeCounterpart();
 
   const ignoreLoading = shallowRef<boolean>(false);
   const modelSelectedUnmatched = ref<string[]>([]);
@@ -120,7 +122,12 @@ export function useBridgeTransactionActions(
     }
   }
 
-  function buildMarkExternalOutMessage(chain?: string, address?: string): string {
+  function buildMarkExternalOutMessage(untracked: boolean, chain?: string, address?: string): string {
+    if (untracked && address) {
+      return chain
+        ? t('bridge_matching.actions.mark_external_confirm_untracked_chain', { address, chain })
+        : t('bridge_matching.actions.mark_external_confirm_untracked', { address });
+    }
     if (chain && address)
       return t('bridge_matching.actions.mark_external_confirm_destination', { address, chain });
     if (address)
@@ -130,7 +137,12 @@ export function useBridgeTransactionActions(
     return t('bridge_matching.actions.mark_external_confirm');
   }
 
-  function buildMarkExternalInMessage(chain?: string, address?: string): string {
+  function buildMarkExternalInMessage(untracked: boolean, chain?: string, address?: string): string {
+    if (untracked && address) {
+      return chain
+        ? t('bridge_matching.actions.mark_external_in_confirm_untracked_chain', { address, chain })
+        : t('bridge_matching.actions.mark_external_in_confirm_untracked', { address });
+    }
     if (chain && address)
       return t('bridge_matching.actions.mark_external_in_confirm_source', { address, chain });
     if (address)
@@ -144,11 +156,14 @@ export function useBridgeTransactionActions(
     const isDeposit = transaction.direction === 'deposit';
     const chain = formatChain(isDeposit ? transaction.bridge?.toChain : transaction.bridge?.fromChain);
     const address = isDeposit ? transaction.bridge?.toAddress : transaction.bridge?.fromAddress;
+    // A verified-untracked counterpart turns the "are you sure" warning into guidance:
+    // the counterpart event cannot exist, so resolving as external is the correct action.
+    const untracked = isCounterpartUntracked(transaction);
 
     show({
       message: isDeposit
-        ? buildMarkExternalOutMessage(chain, address)
-        : buildMarkExternalInMessage(chain, address),
+        ? buildMarkExternalOutMessage(untracked, chain, address)
+        : buildMarkExternalInMessage(untracked, chain, address),
       primaryAction: t('common.actions.confirm'),
       title: isDeposit
         ? t('bridge_matching.actions.mark_external')

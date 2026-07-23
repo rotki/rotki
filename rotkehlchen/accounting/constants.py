@@ -49,6 +49,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.CASHBACK: {DEFAULT: EventCategory.CASHBACK},
         HistoryEventSubType.REFUND: {DEFAULT: EventCategory.REFUND},
         HistoryEventSubType.SPAM: {DEFAULT: EventCategory.SPAM},
+        HistoryEventSubType.BRIDGE: {DEFAULT: EventCategory.BRIDGE_RECEIVE},
     },
     HistoryEventType.DEPOSIT: {
         HistoryEventSubType.DEPOSIT_ASSET: {
@@ -71,6 +72,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.CLAWBACK: {DEFAULT: EventCategory.CLAWBACK},
         HistoryEventSubType.BURN: {DEFAULT: EventCategory.BURN},
         HistoryEventSubType.REFUND: {DEFAULT: EventCategory.REFUND},
+        HistoryEventSubType.BRIDGE: {DEFAULT: EventCategory.BRIDGE_SPEND},
     },
     HistoryEventType.LOSS: {
         HistoryEventSubType.LIQUIDATE: {DEFAULT: EventCategory.LIQUIDATION_LOSS},
@@ -252,6 +254,14 @@ EVENT_CATEGORY_DETAILS = {
         color='error',
     )}, EventCategory.BRIDGE_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
         label='bridge in',
+        icon='lu-download',
+        color='success',
+    )}, EventCategory.BRIDGE_SPEND: {DEFAULT: EventCategoryDetails(
+        label='bridge send',
+        icon='lu-upload',
+        color='error',
+    )}, EventCategory.BRIDGE_RECEIVE: {DEFAULT: EventCategoryDetails(
+        label='bridge receive',
         icon='lu-download',
         color='success',
     )}, EventCategory.GOVERNANCE: {DEFAULT: EventCategoryDetails(

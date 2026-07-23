@@ -39,6 +39,8 @@ const { movement, matches, loading, isPinned, highlightedIdentifier, typeLabel, 
   locationHeader?: string;
   /** When set, the last search failed; the message is shown above the results. */
   searchError?: string;
+  /** Shown when a search returns no matches, explaining why none can be found. */
+  emptyExplanation?: string;
 }>();
 
 const emit = defineEmits<{
@@ -317,6 +319,15 @@ watchDebounced(onlyExpectedAssets, () => {
         class="mb-4"
       >
         {{ searchError }}
+      </RuiAlert>
+
+      <RuiAlert
+        v-else-if="emptyExplanation && !loading && matches.length === 0"
+        type="warning"
+        size="sm"
+        class="mb-4"
+      >
+        {{ emptyExplanation }}
       </RuiAlert>
 
       <p class="text-body-2 font-medium mb-2">

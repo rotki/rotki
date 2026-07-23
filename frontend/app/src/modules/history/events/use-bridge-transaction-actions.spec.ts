@@ -12,6 +12,7 @@ const { spies } = vi.hoisted(() => ({
     showConfirm: vi.fn(),
     showErrorMessage: vi.fn(),
     getChainName: vi.fn((chain: string) => chain.toUpperCase()),
+    isCounterpartUntracked: vi.fn<() => boolean>(() => false),
   },
 }));
 
@@ -43,6 +44,12 @@ vi.mock('@/modules/core/common/use-confirm-store', () => ({
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): object => ({
     getChainName: spies.getChainName,
+  }),
+}));
+
+vi.mock('@/modules/history/events/use-untracked-bridge-counterpart', () => ({
+  useUntrackedBridgeCounterpart: (): object => ({
+    isCounterpartUntracked: spies.isCounterpartUntracked,
   }),
 }));
 
@@ -189,6 +196,66 @@ describe('use-bridge-transaction-actions', () => {
       expect(spies.showConfirm).toHaveBeenCalledOnce();
       expect(spies.getChainName).toHaveBeenCalledWith('osmosis');
       expect(spies.getChainName).not.toHaveBeenCalledWith('ethereum');
+    });
+
+    it('should use guidance copy when the destination address is not tracked', () => {
+      spies.isCounterpartUntracked.mockReturnValueOnce(true);
+      const transaction = createMockTransaction({
+        bridge: { toAddress: '0xdef', toChain: 'optimism' },
+      });
+      const { confirmMarkExternal } = useBridgeTransactionActions();
+
+      confirmMarkExternal(transaction);
+
+      const [message] = spies.showConfirm.mock.calls[0];
+      expect(message).toMatchObject({
+        message: 'bridge_matching.actions.mark_external_confirm_untracked_chain::0xdef, OPTIMISM',
+      });
+    });
+
+    it('should use the chainless guidance copy for an untracked destination without a recorded chain', () => {
+      spies.isCounterpartUntracked.mockReturnValueOnce(true);
+      const transaction = createMockTransaction({
+        bridge: { toAddress: '0xdef' },
+      });
+      const { confirmMarkExternal } = useBridgeTransactionActions();
+
+      confirmMarkExternal(transaction);
+
+      const [message] = spies.showConfirm.mock.calls[0];
+      expect(message).toMatchObject({
+        message: 'bridge_matching.actions.mark_external_confirm_untracked::0xdef',
+      });
+    });
+
+    it('should use guidance copy when the source address of a withdrawal is not tracked', () => {
+      spies.isCounterpartUntracked.mockReturnValueOnce(true);
+      const transaction = createMockTransaction({
+        bridge: { fromAddress: '0xabc', fromChain: 'osmosis' },
+        direction: 'withdrawal',
+      });
+      const { confirmMarkExternal } = useBridgeTransactionActions();
+
+      confirmMarkExternal(transaction);
+
+      const [message] = spies.showConfirm.mock.calls[0];
+      expect(message).toMatchObject({
+        message: 'bridge_matching.actions.mark_external_in_confirm_untracked_chain::0xabc, OSMOSIS',
+      });
+    });
+
+    it('should keep the are-you-sure copy when the counterpart address is tracked', () => {
+      const transaction = createMockTransaction({
+        bridge: { toAddress: '0xdef', toChain: 'optimism' },
+      });
+      const { confirmMarkExternal } = useBridgeTransactionActions();
+
+      confirmMarkExternal(transaction);
+
+      const [message] = spies.showConfirm.mock.calls[0];
+      expect(message).toMatchObject({
+        message: 'bridge_matching.actions.mark_external_confirm_destination::0xdef, OPTIMISM',
+      });
     });
 
     it('should resolve the deposit as external when the user confirms', async () => {

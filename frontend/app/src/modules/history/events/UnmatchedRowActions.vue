@@ -19,6 +19,7 @@ const {
   ignoreLoading = false,
   matchDisabled = false,
   showMarkExternal = false,
+  emphasizeMarkExternal = false,
 } = defineProps<{
   labels: UnmatchedRowActionLabels;
   isPinned?: boolean;
@@ -26,6 +27,8 @@ const {
   ignoreLoading?: boolean;
   matchDisabled?: boolean;
   showMarkExternal?: boolean;
+  /** Renders the mark-external button filled, as the suggested resolution for the row. */
+  emphasizeMarkExternal?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -117,7 +120,7 @@ const emit = defineEmits<{
         <template #activator>
           <RuiButton
             size="sm"
-            variant="outlined"
+            :variant="emphasizeMarkExternal ? 'default' : 'outlined'"
             color="warning"
             :class="{ '!py-0.5': isPinned }"
             :loading="ignoreLoading"

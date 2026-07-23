@@ -10,6 +10,7 @@ import {
   useBridgeMatchingFlow,
   useUnmatchedBridgeTransactions,
 } from '@/modules/history/events/use-unmatched-bridge-transactions';
+import { useBridgeUnmatchableExplanation } from '@/modules/history/events/use-untracked-bridge-counterpart';
 import { PinnedNames } from '@/modules/session/types';
 import PinnedDetailSheet from '@/modules/shell/pinned/PinnedDetailSheet.vue';
 import { usePinnedHighlightNavigation } from '@/modules/shell/pinned/use-pinned-highlight-navigation';
@@ -52,6 +53,12 @@ const {
 } = useUnmatchedBridgeTransactions();
 
 const flow: MatchingFlow = useBridgeMatchingFlow();
+const { getUnmatchableExplanation } = useBridgeUnmatchableExplanation();
+
+const emptyExplanation = computed<string | undefined>(() => {
+  const transaction = get(potentialMatchTransaction);
+  return transaction ? getUnmatchableExplanation(transaction) : undefined;
+});
 
 function selectTransaction(transaction: UnmatchedBridgeTransaction): void {
   const identifier = transaction.identifier ?? getEventEntryFromCollection(transaction.events).entry.identifier;
@@ -234,6 +241,7 @@ watch(() => highlightedGroupIdentifier, (newHighlight, oldHighlight) => {
             :type-label="potentialMatchTransaction.direction"
             :location-header="t('common.location')"
             :highlighted-identifier="activePotentialMatchIdentifier"
+            :empty-explanation="emptyExplanation"
             is-pinned
             @close="closePotentialMatchesDrawer()"
             @matched="onPinnedMatched()"

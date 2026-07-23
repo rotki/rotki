@@ -9,6 +9,7 @@ import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';
 import UnmatchedRowActions, { type UnmatchedRowActionLabels } from '@/modules/history/events/UnmatchedRowActions.vue';
 import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass } from '@/modules/history/events/use-pinned-column-class';
+import { getBridgeCounterpartAddress, useUntrackedBridgeCounterpart } from '@/modules/history/events/use-untracked-bridge-counterpart';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -20,6 +21,8 @@ interface UnmatchedBridgeRow {
   location: string;
   timestamp: number;
   original: UnmatchedBridgeTransaction;
+  counterpartAddress?: string;
+  untrackedCounterpart: boolean;
 }
 
 const selected = defineModel<string[]>('selected', { required: true });
@@ -56,9 +59,25 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { currentTier, premium } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
+const { isCounterpartUntracked } = useUntrackedBridgeCounterpart();
 
 const pinnedColumnClass = usePinnedColumnClass(() => isPinned);
 const pinnedAssetColumnClass = usePinnedAssetColumnClass(() => isPinned);
+
+const [DefineUntrackedBadge, ReuseUntrackedBadge] = createReusableTemplate<{ row: UnmatchedBridgeRow }>();
+
+function untrackedBadgeLabel(row: UnmatchedBridgeRow): string {
+  return row.direction === 'deposit'
+    ? t('bridge_matching.dialog.untracked_destination')
+    : t('bridge_matching.dialog.untracked_source');
+}
+
+function untrackedBadgeTooltip(row: UnmatchedBridgeRow): string {
+  const address = row.counterpartAddress ?? '';
+  return row.direction === 'deposit'
+    ? t('bridge_matching.dialog.untracked_destination_tooltip', { address })
+    : t('bridge_matching.dialog.untracked_source_tooltip', { address });
+}
 
 function createColumns(isPinned: boolean, baseClass: ColumnClassConfig, assetClass: ColumnClassConfig): DataTableColumn<UnmatchedBridgeRow>[] {
   const columns: DataTableColumn<UnmatchedBridgeRow>[] = [
@@ -110,12 +129,14 @@ const rows = computed<UnmatchedBridgeRow[]>(() =>
     const { entry, ...meta } = getEventEntryFromCollection(transaction.events);
     const eventEntry = { ...entry, ...meta };
     return {
+      counterpartAddress: getBridgeCounterpartAddress(transaction),
       direction: transaction.direction,
       entry: eventEntry,
       groupIdentifier: transaction.groupIdentifier,
       location: entry.location,
       original: transaction,
       timestamp: entry.timestamp,
+      untrackedCounterpart: !showRestore && isCounterpartUntracked(transaction),
     };
   }),
 );
@@ -160,6 +181,31 @@ function actionLabels(row: UnmatchedBridgeRow): UnmatchedRowActionLabels {
 </script>
 
 <template>
+  <DefineUntrackedBadge #default="{ row }">
+    <RuiTooltip
+      :open-delay="200"
+      :popper="{ placement: 'top' }"
+      tooltip-class="max-w-80"
+    >
+      <template #activator>
+        <RuiChip
+          size="sm"
+          color="warning"
+          class="!py-0"
+        >
+          <span class="flex items-center gap-1">
+            <RuiIcon
+              size="14"
+              name="lu-triangle-alert"
+            />
+            {{ untrackedBadgeLabel(row) }}
+          </span>
+        </RuiChip>
+      </template>
+      {{ untrackedBadgeTooltip(row) }}
+    </RuiTooltip>
+  </DefineUntrackedBadge>
+
   <div>
     <div class="flex items-center justify-between gap-2 mb-4">
       <p
@@ -220,9 +266,15 @@ function actionLabels(row: UnmatchedBridgeRow): UnmatchedRowActionLabels {
           />
         </template>
         <template #item.direction="{ row }">
-          <BadgeDisplay>
-            {{ row.direction }}
-          </BadgeDisplay>
+          <div class="flex flex-col items-start gap-1">
+            <BadgeDisplay>
+              {{ row.direction }}
+            </BadgeDisplay>
+            <ReuseUntrackedBadge
+              v-if="row.untrackedCounterpart"
+              :row="row"
+            />
+          </div>
         </template>
         <template #item.location="{ row }">
           <LocationDisplay
@@ -248,6 +300,10 @@ function actionLabels(row: UnmatchedBridgeRow): UnmatchedRowActionLabels {
               :identifier="row.location"
               horizontal
             />
+            <ReuseUntrackedBadge
+              v-if="row.untrackedCounterpart"
+              :row="row"
+            />
           </div>
         </template>
         <template #item.actions="{ row }">
@@ -258,6 +314,7 @@ function actionLabels(row: UnmatchedBridgeRow): UnmatchedRowActionLabels {
             :ignore-loading="ignoreLoading"
             :match-disabled="matchDisabled"
             show-mark-external
+            :emphasize-mark-external="row.untrackedCounterpart"
             @show-in-events="emit('show-in-events', row.original)"
             @restore="emit('restore', row.original)"
             @select="emit('select', row.original)"

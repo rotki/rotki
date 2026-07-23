@@ -62,20 +62,43 @@ export interface UnmatchedBridgeTransaction extends UnmatchedEventGroup {
   bridge?: BridgeExtraData;
 }
 
+/** A raw (not yet resolved) bridge leg: a deposit/withdrawal with the `bridge` subtype. */
+function isRawBridgeLeg(entry: HistoryEventEntryWithMeta['entry']): boolean {
+  return entry.eventSubtype === 'bridge' && (entry.eventType === 'deposit' || entry.eventType === 'withdrawal');
+}
+
+/** A leg already resolved as external: turned into a bridge spend/receive but stamped. */
+function isResolvedBridgeLeg(entry: HistoryEventEntryWithMeta['entry']): boolean {
+  return getResolvedBridgeDirection('extraData' in entry ? entry.extraData : undefined) !== undefined;
+}
+
+interface BridgeEntryMatch {
+  event: HistoryEventEntryWithMeta;
+  row: HistoryEventCollectionRow;
+}
+
 /**
- * Picks the bridge leg out of a group. A bridge group is keyed by the EVM transaction
- * hash, so it also contains the gas fee event (and possibly others). Only the bridge leg
- * is the one the matching endpoints accept, so it has to be selected explicitly instead
- * of taking the first event of the group. A raw leg is a deposit/withdrawal with the
- * `bridge` subtype; a leg resolved as external is turned into a plain spend/receive but
- * keeps the `matchedBridge` stamp, which is what tells it apart from the gas fee event.
+ * Picks the bridge leg out of a group's rows. A bridge group is keyed by the EVM
+ * transaction hash, so it also contains the gas fee event (and possibly others). Only
+ * the bridge leg is the one the matching endpoints accept, so it has to be selected
+ * explicitly instead of taking the first event of the group.
+ *
+ * Raw legs are preferred over legs already resolved as external across ALL rows: a
+ * transaction can carry more than one bridge leg (e.g. token + gas refuel), and once
+ * one of them is resolved, acting on the resolved leg again would send the backend an
+ * event that is no longer a bridge deposit/withdrawal. Resolved legs (recognized by
+ * their `matchedBridge` stamp) are only picked when the group has no raw leg left,
+ * which is what the ignored list needs to restore them.
  */
-function findBridgeEntry(events: HistoryEventEntryWithMeta[]): HistoryEventEntryWithMeta | undefined {
-  return events.find(({ entry }) => {
-    if (entry.eventSubtype === 'bridge' && (entry.eventType === 'deposit' || entry.eventType === 'withdrawal'))
-      return true;
-    return getResolvedBridgeDirection('extraData' in entry ? entry.extraData : undefined) !== undefined;
-  });
+function findBridgeEntry(rows: HistoryEventCollectionRow[]): BridgeEntryMatch | undefined {
+  for (const matcher of [isRawBridgeLeg, isResolvedBridgeLeg]) {
+    for (const row of rows) {
+      const event = arrayify(row).find(({ entry }) => matcher(entry));
+      if (event)
+        return { event, row };
+    }
+  }
+  return undefined;
 }
 
 interface UseUnmatchedBridgeTransactionsReturn {
@@ -167,9 +190,7 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
         if (eventsForGroup.length > 0) {
           // The events of a group come back as separate rows, so the bridge leg has to be looked
           // for across all of them: the first row is the gas fee event, not the bridge event.
-          const bridgeMatch = eventsForGroup
-            .map(row => ({ event: findBridgeEntry(arrayify(row)), row }))
-            .find((candidate): candidate is { event: HistoryEventEntryWithMeta; row: HistoryEventCollectionRow } => !!candidate.event);
+          const bridgeMatch = findBridgeEntry(eventsForGroup);
 
           if (!bridgeMatch) {
             logger.warn(`No bridge event found in group ${groupId}, skipping it`);

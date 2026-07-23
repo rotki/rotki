@@ -232,6 +232,8 @@ class EventCategory(Enum):
     PROTOCOL_DEPOSIT = 61, EventDirection.NEUTRAL, EventCategoryGroup.DEFI_DEPOSIT_WITHDRAW
     PROTOCOL_WITHDRAWAL = 62, EventDirection.NEUTRAL, EventCategoryGroup.DEFI_DEPOSIT_WITHDRAW
     SPAM = 63, EventDirection.IN, EventCategoryGroup.OTHER
+    BRIDGE_SPEND = 64, EventDirection.OUT, EventCategoryGroup.BRIDGE
+    BRIDGE_RECEIVE = 65, EventDirection.IN, EventCategoryGroup.BRIDGE
 
     @property
     def direction(self) -> EventDirection:
