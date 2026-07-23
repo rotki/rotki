@@ -57,17 +57,20 @@ export interface BalanceMaps {
  * Checks whether an eth_call targets a given contract address.
  */
 function isCallTo(params: unknown[] | undefined, address: string): boolean {
-  if (!params || !params[0])
+  const call = params?.[0];
+  if (typeof call !== 'object' || call === null || !('to' in call) || typeof call.to !== 'string')
     return false;
-  const call = params[0] as { to?: string };
-  return call.to?.toLowerCase() === address.toLowerCase();
+  return call.to.toLowerCase() === address.toLowerCase();
 }
 
 /**
  * Gets the calldata hex string from eth_call params.
  */
 function getCalldata(params: unknown[]): string {
-  return (params[0] as { data: string }).data;
+  const call = params[0];
+  if (typeof call === 'object' && call !== null && 'data' in call && typeof call.data === 'string')
+    return call.data;
+  return '0x';
 }
 
 /**
@@ -107,44 +110,73 @@ function hasBalanceScannerSubCalls(calldata: string): boolean {
  * parsing. At resolve time we always return success with the correct
  * balances — this is more deterministic than replaying transient errors.
  */
-export function buildBalanceMaps(cassette: Record<string, { method: string; params?: unknown[]; result?: unknown; error?: unknown }>): BalanceMaps {
-  const tokenBalances: TokenBalanceMap = new Map();
-  const etherBalances: EtherBalanceMap = new Map();
-  const subCallResults: SubCallResultMap = new Map();
-  let blockNumber = 0n;
+interface CassetteEntry {
+  method: string;
+  params?: unknown[];
+  result?: unknown;
+  error?: unknown;
+}
+
+interface ParseTargets {
+  tokenBalances: TokenBalanceMap;
+  etherBalances: EtherBalanceMap;
+  subCallResults: SubCallResultMap;
+}
+
+/**
+ * Parses a single cassette entry into the balance maps. Returns the aggregate
+ * block number when the entry is a multicall with balance-scanner sub-calls,
+ * otherwise `undefined`.
+ */
+function parseCassetteEntry(entry: CassetteEntry, targets: ParseTargets): bigint | undefined {
+  if (entry.method !== 'eth_call' || !entry.params || !isHex(entry.result))
+    return undefined;
+
+  const result = entry.result;
+  const calldata = getCalldata(entry.params);
+  const selector = getSelector(calldata);
+
+  if (isCallTo(entry.params, BALANCE_SCANNER)) {
+    if (selector === SEL_TOKENS_BALANCE)
+      parseTokensBalance(calldata, result, targets.tokenBalances);
+    else if (selector === SEL_ETHER_BALANCES)
+      parseEtherBalances(calldata, result, targets.etherBalances);
+    return undefined;
+  }
+
+  if (isCallTo(entry.params, MULTICALL) && selector === SEL_AGGREGATE) {
+    const aggBlockNumber = parseAggregate(calldata, result, targets.tokenBalances, targets.etherBalances, targets.subCallResults);
+    if (hasBalanceScannerSubCalls(calldata))
+      return aggBlockNumber;
+  }
+
+  return undefined;
+}
+
+function findBlockNumber(cassette: Record<string, CassetteEntry>): bigint {
+  for (const entry of Object.values(cassette)) {
+    if (entry.method === 'eth_blockNumber' && typeof entry.result === 'string')
+      return BigInt(entry.result);
+  }
+  return 0n;
+}
+
+export function buildBalanceMaps(cassette: Record<string, CassetteEntry>): BalanceMaps {
+  const targets: ParseTargets = {
+    tokenBalances: new Map(),
+    etherBalances: new Map(),
+    subCallResults: new Map(),
+  };
   let aggregateBlockNumber = 0n;
 
   for (const entry of Object.values(cassette)) {
-    if (entry.method !== 'eth_call' || !entry.params || !isHex(entry.result))
-      continue;
-
-    const result = entry.result;
-    const calldata = getCalldata(entry.params);
-    const selector = getSelector(calldata);
-
-    if (isCallTo(entry.params, BALANCE_SCANNER)) {
-      if (selector === SEL_TOKENS_BALANCE) {
-        parseTokensBalance(calldata, result, tokenBalances);
-      }
-      else if (selector === SEL_ETHER_BALANCES) {
-        parseEtherBalances(calldata, result, etherBalances);
-      }
-    }
-    else if (isCallTo(entry.params, MULTICALL) && selector === SEL_AGGREGATE) {
-      const aggBlockNumber = parseAggregate(calldata, result, tokenBalances, etherBalances, subCallResults);
-      if (hasBalanceScannerSubCalls(calldata)) {
-        aggregateBlockNumber = aggBlockNumber;
-      }
-    }
+    const aggBlockNumber = parseCassetteEntry(entry, targets);
+    if (aggBlockNumber !== undefined)
+      aggregateBlockNumber = aggBlockNumber;
   }
 
-  // Try to get block number from eth_blockNumber entry
-  for (const entry of Object.values(cassette)) {
-    if (entry.method === 'eth_blockNumber' && entry.result) {
-      blockNumber = BigInt(entry.result as string);
-      break;
-    }
-  }
+  const { tokenBalances, etherBalances, subCallResults } = targets;
+  const blockNumber = findBlockNumber(cassette);
 
   logger.info(`Built balance maps: ${countTokenEntries(tokenBalances)} token balances, ${etherBalances.size} ether balances, ${subCallResults.size} sub-call results`);
   return { tokenBalances, etherBalances, subCallResults, blockNumber, aggregateBlockNumber };
