@@ -2,6 +2,7 @@
 import { toCapitalCase } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
+import IndexerTabLabel from '@/modules/settings/evm/IndexerTabLabel.vue';
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { PrioritizedListData } from '@/modules/settings/types/prioritized-list-data';
@@ -302,43 +303,10 @@ watch(chainWriteError, (message) => {
             :value="tab.id"
             :data-cy="`indexer-tab-${tab.id}`"
           >
-            <div class="flex items-center gap-2">
-              <template v-if="tab.isDefault">
-                <RuiIcon
-                  name="lu-globe"
-                  size="16"
-                />
-                <span>{{ t('evm_settings.indexer.default_tab') }}</span>
-              </template>
-              <template v-else>
-                <ChainIcon
-                  :chain="tab.id"
-                  size="16px"
-                />
-                <span>{{ tab.name }}</span>
-                <RuiTooltip
-                  :popper="{ placement: 'top' }"
-                  :open-delay="400"
-                >
-                  <template #activator>
-                    <RuiButton
-                      variant="text"
-                      icon
-                      size="sm"
-                      class="!p-0.5"
-                      :data-cy="`remove-chain-${tab.id}`"
-                      @click.stop="removeChain(tab.id)"
-                    >
-                      <RuiIcon
-                        name="lu-x"
-                        size="14"
-                      />
-                    </RuiButton>
-                  </template>
-                  {{ t('evm_settings.indexer.remove_chain') }}
-                </RuiTooltip>
-              </template>
-            </div>
+            <IndexerTabLabel
+              :tab="tab"
+              @remove="removeChain($event)"
+            />
           </RuiTab>
         </RuiTabs>
 
