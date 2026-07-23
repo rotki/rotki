@@ -1,4 +1,5 @@
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
+import { assert } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRouter } from 'vue-router';
@@ -27,8 +28,8 @@ describe('useHistoryEventsDialogManager', () => {
     await show({ data, type: DIALOG_TYPES.EVENT_FORM });
     const dialog = get(currentDialog);
     expect(dialog.type).toBe(DIALOG_TYPES.EVENT_FORM);
-    if (dialog.type === DIALOG_TYPES.EVENT_FORM)
-      expect(dialog.data).toBe(data);
+    assert(dialog.type === DIALOG_TYPES.EVENT_FORM);
+    expect(dialog.data).toBe(data);
   });
 
   it('should default the transaction form data when none is given', async () => {
