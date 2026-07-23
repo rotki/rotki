@@ -22,7 +22,6 @@ const error = ref<string>();
 const loading = ref<boolean>(isPackaged);
 const mcpServerState = useMcpServerState();
 
-const failedStates: ReadonlySet<McpServiceState> = new Set(['Degraded', 'Failed']);
 const transitioningStates: ReadonlySet<McpServiceState> = new Set([
   'Restarting',
   'Spawning',
@@ -31,31 +30,27 @@ const transitioningStates: ReadonlySet<McpServiceState> = new Set([
 ]);
 
 const isRunning = computed<boolean>(() => get(status)?.state === 'Ready');
-const isTransitioning = computed<boolean>(() => {
+const statusLabels = computed<Record<McpServiceState, string>>(() => ({
+  Degraded: t('backend_settings.settings.mcp_server.status.failed'),
+  Failed: t('backend_settings.settings.mcp_server.status.failed'),
+  Idle: t('backend_settings.settings.mcp_server.status.stopped'),
+  Ready: t('backend_settings.settings.mcp_server.status.running'),
+  Restarting: t('backend_settings.settings.mcp_server.status.starting'),
+  Spawning: t('backend_settings.settings.mcp_server.status.starting'),
+  Stopped: t('backend_settings.settings.mcp_server.status.stopped'),
+  Stopping: t('backend_settings.settings.mcp_server.status.stopping'),
+  Unavailable: t('backend_settings.settings.mcp_server.status.unavailable'),
+  WaitingReady: t('backend_settings.settings.mcp_server.status.starting'),
+}));
+const isLifecycleDisabled = computed<boolean>(() => {
   const state = get(status)?.state;
-  return state !== undefined && transitioningStates.has(state);
+  return state === undefined || state === 'Unavailable' || transitioningStates.has(state);
 });
 
 function statusLabel(state: McpServiceState | undefined): string {
   if (!state && get(loading))
     return t('backend_settings.settings.mcp_server.status.loading');
-  if (state && failedStates.has(state))
-    return t('backend_settings.settings.mcp_server.status.failed');
-  if (state === 'Stopping')
-    return t('backend_settings.settings.mcp_server.status.stopping');
-  if (state && transitioningStates.has(state))
-    return t('backend_settings.settings.mcp_server.status.starting');
-
-  switch (state) {
-    case 'Ready':
-      return t('backend_settings.settings.mcp_server.status.running');
-    case 'Idle':
-    case 'Stopped':
-      return t('backend_settings.settings.mcp_server.status.stopped');
-    case 'Unavailable':
-    default:
-      return t('backend_settings.settings.mcp_server.status.unavailable');
-  }
+  return get(statusLabels)[state ?? 'Unavailable'];
 }
 
 async function loadStatus(): Promise<void> {
@@ -193,7 +188,7 @@ onBeforeMount(() => {
         <RuiButton
           data-testid="mcp-lifecycle"
           color="primary"
-          :disabled="!status || isTransitioning"
+          :disabled="isLifecycleDisabled"
           :loading="loading"
           @click="toggleServer()"
         >

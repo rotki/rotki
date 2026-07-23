@@ -105,6 +105,19 @@ describe('mcpServerSetting', () => {
     expect(mocks.stopMcpServer).toHaveBeenCalledOnce();
   });
 
+  it('should disable lifecycle control when MCP is unavailable', async () => {
+    mocks.getMcpServerStatus.mockResolvedValueOnce({ ...stoppedStatus, state: 'Unavailable' });
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    const lifecycleButton = wrapper.find('[data-testid="mcp-lifecycle"]');
+    expect(lifecycleButton.attributes('disabled')).toBeDefined();
+    await lifecycleButton.trigger('click');
+
+    expect(mocks.startMcpServer).not.toHaveBeenCalled();
+    expect(mocks.stopMcpServer).not.toHaveBeenCalled();
+  });
+
   it('should show a failed state when the managed MCP service crashes', async () => {
     const wrapper = createWrapper();
     await flushPromises();
