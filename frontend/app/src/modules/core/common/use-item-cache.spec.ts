@@ -1,5 +1,6 @@
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { watchSyncEffect } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { createItemCache, createItemCacheStorage } from '@/modules/core/common/use-item-cache';
 
@@ -548,6 +549,85 @@ describe('createItemCache', () => {
       vi.advanceTimersByTime(1000);
       await flushPromises();
       expect(calls).toHaveLength(2);
+    });
+  });
+
+  describe('fine-grained reactivity', () => {
+    it('should re-run a reader when its own key resolves', async () => {
+      const { fetch } = createMockFetch({ KEY: 'value' });
+      const { resolve } = createItemCache(fetch);
+
+      let runs = 0;
+      let last: string | null = null;
+      const stop = watchSyncEffect(() => {
+        runs++;
+        last = resolve('KEY');
+      });
+
+      const runsBefore = runs;
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      expect(runs).toBeGreaterThan(runsBefore);
+      expect(last).toBe('value');
+      stop();
+    });
+
+    it('should not re-run a reader of one key when an unrelated key resolves', async () => {
+      const { fetch } = createMockFetch({ A: 'a', B: 'b' });
+      const { resolve } = createItemCache(fetch);
+
+      let aRuns = 0;
+      const stopA = watchSyncEffect(() => {
+        aRuns++;
+        resolve('A');
+      });
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      // A has resolved; snapshot its run count.
+      const aRunsAfterA = aRuns;
+      expect(resolve('A')).toBe('a');
+
+      // Now resolve B through a separate reader.
+      let bRuns = 0;
+      const stopB = watchSyncEffect(() => {
+        bRuns++;
+        resolve('B');
+      });
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      // B's reader re-ran for B's own resolution...
+      expect(bRuns).toBeGreaterThan(1);
+      expect(resolve('B')).toBe('b');
+      // ...but A's reader must NOT have re-run: with a single coarse ref it would have.
+      expect(aRuns).toBe(aRunsAfterA);
+      stopA();
+      stopB();
+    });
+
+    it('should re-run a reader that early-returns on pending once the value arrives', async () => {
+      const { fetch } = createMockFetch({ KEY: 'value' });
+      const { getIsPending, resolve } = createItemCache(fetch);
+
+      const seen: (string | null)[] = [];
+      const stop = watchSyncEffect(() => {
+        // A consumer that never reads the value while pending (like getHistoricPrice)
+        // must still be subscribed so it re-runs when the value lands.
+        if (getIsPending('KEY')) {
+          seen.push('PENDING');
+          return;
+        }
+        seen.push(resolve('KEY'));
+      });
+
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      expect(seen).toContain('PENDING');
+      expect(seen.at(-1)).toBe('value');
+      stop();
     });
   });
 });

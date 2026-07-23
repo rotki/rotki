@@ -19,9 +19,8 @@ interface CacheEntry<T> {
 }
 
 /**
- * The persistent storage of an item cache: the resolved values plus the
- * bookkeeping required to decide validity. Decoupled from the cache logic so it
- * can live in an app-lifetime Pinia store and survive composable teardown.
+ * The persistent storage of an item cache (values + bookkeeping), decoupled from
+ * the cache logic so it can live in a Pinia store and survive composable teardown.
  */
 export interface ItemCacheStorage<T> {
   /** Resolved values keyed by identifier. */
@@ -33,16 +32,11 @@ export interface ItemCacheStorage<T> {
 }
 
 /**
- * Creates a fresh {@link ItemCacheStorage} container.
- *
- * `markRaw` keeps it usable as plain state inside a Pinia store: the `cache` ref
- * and the `Map`s are returned untouched (no reactive proxy that would unwrap the
- * ref or wrap the maps). Reactivity for consumers flows through the `shallowRef`.
+ * Creates a fresh {@link ItemCacheStorage} container. `markRaw` keeps it usable
+ * as plain Pinia state (no reactive proxy unwrapping the ref or wrapping the maps).
  */
 export function createItemCacheStorage<T>(): Raw<ItemCacheStorage<T>> {
-  // Return the markRaw-branded type so a Pinia store holding this does not
-  // deeply unwrap `cache` (Ref) into a plain value — annotating it as the bare
-  // ItemCacheStorage<T> would strip the brand and reintroduce the unwrap.
+  // The markRaw brand stops Pinia deeply unwrapping `cache` (Ref) into a plain value.
   return markRaw<ItemCacheStorage<T>>({
     cache: shallowRef<Record<string, T | null>>({}),
     recent: new Map<string, number>(),
@@ -50,11 +44,7 @@ export function createItemCacheStorage<T>(): Raw<ItemCacheStorage<T>> {
   });
 }
 
-/**
- * A batch-fetch function that resolves multiple keys at once.
- * Returns a factory that yields {@link CacheEntry} items via an iterator,
- * allowing lazy consumption of potentially large result sets.
- */
+/** A batch-fetch resolving many keys at once, yielding {@link CacheEntry} items via a lazy iterator. */
 type CacheFetch<T> = (keys: string[]) => Promise<() => IterableIterator<CacheEntry<T>>>;
 
 interface CacheOptions<T = unknown> {
@@ -62,30 +52,17 @@ interface CacheOptions<T = unknown> {
   debounceInMs?: number;
   /** Time-to-live (ms) for cached entries before they become stale. @default 600_000 (10 min) */
   expiry?: number;
-  /**
-   * Soft cap: the intended working set. The cache grows freely below it; at or
-   * above it, an insert first reclaims expired (off-screen) entries. @default 500
-   */
+  /** Soft cap: the intended working set. Grows freely below it; at/above it an insert reclaims expired entries. @default 500 */
   size?: number;
   /**
-   * Hard cap: the resilient ceiling. The cache may grow up to here to fit a
-   * legitimately large but bounded working set. Only when it is full of *live*
-   * entries at this size does an insert force-evict the oldest and emit a
-   * throttled warning. Size this from the value's memory weight — light values
-   * (numbers, small objects) can be in the thousands, heavy ones (images, long
-   * strings) in the hundreds. Clamped up to `size` if set lower. @default 5000
+   * Hard cap: the resilient ceiling. Grows to here to fit a large but bounded working set; only when
+   * full of *live* entries does an insert force-evict + warn. Size by value weight — light values in the
+   * thousands, heavy ones (images, long strings) in the hundreds. Clamped up to `size`. @default 5000
    */
   maxSize?: number;
-  /**
-   * Identifier used in the hard-cap warning so the offending cache is named in
-   * logs (e.g. `'historic-price'`).
-   */
+  /** Identifier used in the hard-cap warning so the offending cache is named in logs (e.g. `'historic-price'`). */
   label?: string;
-  /**
-   * Persistent storage to bind to. When omitted a fresh in-scope storage is
-   * created (legacy behaviour). Pass a store-owned {@link ItemCacheStorage} to
-   * keep the cache alive across composable teardown.
-   */
+  /** Store-owned storage to bind to, to keep the cache alive across composable teardown; omitted = fresh in-scope. */
   storage?: ItemCacheStorage<T>;
 }
 
@@ -101,10 +78,8 @@ interface ItemCacheReturn<T> {
   /** Synchronously returns the cached value for `key`, queueing a fetch if missing. */
   resolve: (key: string) => T | null;
   /**
-   * Synchronously returns the cached value for `key` WITHOUT queueing a fetch.
-   * Use this to read a value that some other code is responsible for requesting
-   * (e.g. an off-page neighbour) so a read over a large collection can't trigger
-   * an unbounded fetch storm.
+   * Returns the cached value for `key` WITHOUT queueing a fetch — for reading a value some other code
+   * is responsible for requesting (e.g. an off-page neighbour), so a wide read can't storm the backend.
    */
   peek: (key: string) => T | null;
   /** Clears all cached data, pending state, and unknown entries. */
@@ -124,21 +99,16 @@ interface ItemCacheReturn<T> {
 /**
  * Creates a debounced, reactive item cache backed by a batch-fetch function.
  *
- * Keys requested via {@link ItemCacheReturn.resolve resolve} or
- * {@link ItemCacheReturn.queueIdentifier queueIdentifier} are accumulated into a batch and fetched
- * together after a debounce interval. Unresolvable keys are tracked in an `unknown` map to avoid
- * repeated lookups.
+ * Keys requested via `resolve`/`queueIdentifier` are batched and fetched after a debounce; failures
+ * and misses are tracked in `unknown` to avoid repeated lookups.
  *
- * ## Resilient capacity
- * The cache grows freely below the soft cap (`size`); above it an insert first reclaims *expired*
- * entries — and since {@link ItemCacheReturn.resolve resolve} refreshes a key's expiry on every read,
- * an entry is "expired" exactly when nothing on screen has read it for `expiry` ms, so the working set
- * tracks what is in use. Only when full of *live* entries at the hard cap (`maxSize`) does it
- * force-evict the oldest and emit a throttled warning — the sign of an unbounded read to fix.
- * Uses `shallowRef` + `triggerRef` so a batch triggers one reactive notification per ref.
+ * Resilient capacity: grows freely below the soft cap (`size`); above it an insert reclaims *expired*
+ * entries first — and since a read refreshes a key's expiry, "expired" means nothing on screen has
+ * read it for `expiry` ms, so the set tracks what is in use. Only when full of *live* entries at the
+ * hard cap (`maxSize`) does it force-evict the oldest and emit a throttled warning (an unbounded read).
  *
- * @param fetch - Batch-fetch function that resolves an array of keys into cache entries.
- * @param options - Optional configuration for debounce timing, expiry, capacity and label.
+ * Fine-grained reactivity: each key has its own version signal — a read subscribes to just its key and
+ * a write bumps just that key, so resolving A never re-runs a computed that reads only B.
  */
 export function createItemCache<T>(
   fetch: CacheFetch<T>,
@@ -152,22 +122,44 @@ export function createItemCache<T>(
     size: softSize = CACHE_SOFT_SIZE,
     storage,
   } = options;
-  // The hard cap can never sit below the soft cap.
-  const hardSize = Math.max(softSize, maxSize);
-  // Persistent storage is injected so it can outlive this factory instance
-  // (e.g. a Pinia store); when absent it falls back to in-scope storage.
+  const hardSize = Math.max(softSize, maxSize); // hard cap can never sit below the soft cap
+  // Injected storage outlives this factory (e.g. a Pinia store); else in-scope.
   const { cache, recent, unknown } = storage ?? createItemCacheStorage<T>();
+  // Fine-grained reactivity: each key gets its own version signal (read subscribes
+  // to just its key, write bumps just that key). `values` is the stable record
+  // behind `cache` (never reassigned — `reset` clears in place) so reads skip the
+  // coarse ref; `cache` is still triggered on structural change for enumeration.
+  const values = get(cache);
+  const versions = new Map<string, Ref<number>>();
   // Transient in-flight state — intentionally factory-local, reset on re-init.
-  const pending = shallowRef<Record<string, boolean>>({});
+  const pendingKeys = new Set<string>();
   const batch = new Set<string>();
   let lastWarn = 0;
 
-  /** Removes a key from every store (recent + cache + unknown). Does not notify. */
+  /** Subscribes the current reactive effect (if any) to `key`'s changes. */
+  const track = (key: string): void => {
+    let version = versions.get(key);
+    if (!version) {
+      version = shallowRef(0);
+      versions.set(key, version);
+    }
+    get(version); // reading the ref registers the dependency
+  };
+
+  /** Notifies every effect that read `key` that its value or pending state changed. */
+  const bump = (key: string): void => {
+    const version = versions.get(key);
+    if (version)
+      triggerRef(version);
+  };
+
+  /** Removes a key from every store (recent + cache + unknown) and notifies its readers. */
   const removeEntry = (key: string): void => {
     recent.delete(key);
-    delete get(cache)[key];
+    delete values[key];
     if (unknown.has(key))
       unknown.delete(key);
+    bump(key);
   };
 
   const warnHardCap = (forced: number): void => {
@@ -184,11 +176,9 @@ export function createItemCache<T>(
     );
   };
 
-  /**
-   * Makes room for one more entry. No-op below the soft cap. At/above it, drops
-   * expired entries first (they are the off-screen ones); only if the cache is
-   * still full of live entries at the hard cap does it force-evict + warn.
-   */
+  // Makes room for one more entry: no-op below the soft cap; at/above it drops
+  // expired (off-screen) entries first, and only force-evicts + warns when still
+  // full of live entries at the hard cap.
   const evictToFit = (): void => {
     if (recent.size < softSize)
       return;
@@ -241,17 +231,10 @@ export function createItemCache<T>(
     if (keys.length === 0)
       return;
 
-    const pendingObj = get(pending);
-    let pendingChanged = false;
     for (const key of keys) {
-      if (pendingObj[key]) {
-        delete pendingObj[key];
-        pendingChanged = true;
-      }
-      removeEntry(key);
+      pendingKeys.delete(key);
+      removeEntry(key); // clears value + recent + unknown and bumps the key
     }
-    if (pendingChanged)
-      triggerRef(pending);
     triggerRef(cache);
   };
 
@@ -260,8 +243,8 @@ export function createItemCache<T>(
   };
 
   const setPending = (key: string): void => {
-    get(pending)[key] = true;
-    triggerRef(pending);
+    pendingKeys.add(key);
+    bump(key);
 
     batch.add(key);
   };
@@ -270,7 +253,8 @@ export function createItemCache<T>(
     recent.delete(key);
     evictToFit();
     recent.set(key, Date.now() + expiry);
-    get(cache)[key] = item;
+    values[key] = item;
+    bump(key);
   };
 
   const fetchBatch = useDebounceFn(() => {
@@ -294,7 +278,7 @@ export function createItemCache<T>(
             logger.debug(`unknown key: ${key}`);
 
           recent.delete(key);
-          delete get(cache)[key];
+          delete values[key];
           markUnknown(key, Date.now() + expiry);
         }
       }
@@ -307,9 +291,11 @@ export function createItemCache<T>(
       for (const key of keys) markUnknown(key, retryAt);
     }
     finally {
-      const pendingObj = get(pending);
-      for (const key of keys) delete pendingObj[key];
-      triggerRef(pending);
+      // Clear pending and notify each key's readers (its resolved state changed).
+      for (const key of keys) {
+        pendingKeys.delete(key);
+        bump(key);
+      }
     }
     triggerRef(cache);
   }
@@ -331,7 +317,8 @@ export function createItemCache<T>(
    * Refreshes the cache expiry for entries that haven't expired yet.
    */
   const ensureQueued = (key: string): void => {
-    const cached = get(cache)[key];
+    // Non-reactive reads (plain record / Set) so `resolve` only depends via `track`.
+    const cached = values[key];
     const now = Date.now();
     let valid = false;
     if (recent.has(key) && cached) {
@@ -344,16 +331,20 @@ export function createItemCache<T>(
       }
     }
 
-    if (!get(pending)[key] && !valid)
+    if (!pendingKeys.has(key) && !valid)
       queueIdentifier(key);
   };
 
   const resolve = (key: string): T | null => {
     ensureQueued(key);
-    return get(cache)[key] ?? null;
+    track(key);
+    return values[key] ?? null;
   };
 
-  const peek = (key: string): T | null => get(cache)[key] ?? null;
+  const peek = (key: string): T | null => {
+    track(key);
+    return values[key] ?? null;
+  };
 
   const refresh = (key: string): void => {
     // delete-before-set keeps the key at the most-recent end and preserves the
@@ -366,7 +357,13 @@ export function createItemCache<T>(
     queueIdentifier(key);
   };
 
-  const getIsPending = (identifier: string): boolean => get(pending)[identifier] ?? false;
+  // Tracks `key` so a caller that early-returns on pending before reading the
+  // value (e.g. `getHistoricPrice`) still re-runs when pending flips — otherwise
+  // it would subscribe to nothing. Outside an effect, `track` is a no-op.
+  const getIsPending = (identifier: string): boolean => {
+    track(identifier);
+    return pendingKeys.has(identifier);
+  };
 
   const isPending = (
     identifier: MaybeRefOrGetter<string>,
@@ -375,12 +372,15 @@ export function createItemCache<T>(
   const size = (): number => recent.size;
 
   const reset = (): void => {
-    set(pending, {});
-    set(cache, {});
+    // Clear the record in place so `values` keeps its identity, then wipe the rest.
+    for (const key of Object.keys(values)) delete values[key];
+    triggerRef(cache);
+    pendingKeys.clear();
     batch.clear();
     recent.clear();
     unknown.clear();
     lastWarn = 0;
+    for (const version of versions.values()) triggerRef(version); // notify all readers
   };
 
   return {
