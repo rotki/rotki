@@ -82,7 +82,7 @@ function collapse(): void {
     :temporary="isLgAndDown"
     :width="widthPx"
     position="right"
-    class="border-l border-rui-grey-300 dark:border-rui-grey-800 z-[6]"
+    class="border-l border-rui-grey-300 dark:border-rui-grey-800 !z-[6]"
     :class="{ '!transition-none': dragging }"
   >
     <div class="relative h-full">
