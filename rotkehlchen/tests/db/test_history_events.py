@@ -1864,3 +1864,47 @@ def test_history_events_count_does_not_cache_precommit_reader_snapshot(
     assert writer.is_alive() is False
     with database.conn.read_ctx() as cursor:
         assert database.get_entries_count(cursor, entries_table='history_events') == 4
+
+
+def test_delete_events_and_track_removes_backups(database: DBHandler) -> None:
+    """Deleting events must drop their backup rows too: identifiers (rowids) get
+    reused after deletion and save_history_event_backup keeps the earliest row per
+    identifier, so a surviving stale backup could later be restored over an
+    unrelated event that took over the identifier."""
+    events_db = DBHistoryEvents(database)
+    with database.conn.write_ctx() as write_cursor:
+        identifiers = [events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier=group_identifier,
+                sequence_index=0,
+                timestamp=TimestampMS(1700000000000),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            ),
+        ) for group_identifier in ('backup_delete_test_1', 'backup_delete_test_2')]
+        for identifier in identifiers:
+            events_db.save_history_event_backup(
+                write_cursor=write_cursor,
+                identifier=identifier,
+            )
+
+        events_db.delete_events_and_track(
+            write_cursor=write_cursor,
+            where_clause='WHERE identifier=?',
+            where_bindings=(identifiers[0],),
+        )
+
+    with database.conn.read_ctx() as cursor:
+        remaining_backups = [row[0] for row in cursor.execute(
+            'SELECT identifier FROM history_events_backup WHERE identifier IN (?, ?)',
+            identifiers,
+        )]
+        assert remaining_backups == [identifiers[1]]  # deleted event's backup is gone
+        assert cursor.execute(  # the other event itself is untouched
+            'SELECT COUNT(*) FROM history_events WHERE identifier=?',
+            (identifiers[1],),
+        ).fetchone()[0] == 1
