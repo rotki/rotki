@@ -17,7 +17,7 @@ if (includeDebPackage)
 
 async function afterSign(context: AfterPackContext): Promise<void> {
   config();
-  const { electronPlatformName, appOutDir } = context;
+  const { appOutDir, electronPlatformName, packager } = context;
   if (electronPlatformName !== 'darwin') {
     consola.info('Notarization is only supported on macOS');
     return;
@@ -28,7 +28,7 @@ async function afterSign(context: AfterPackContext): Promise<void> {
     return;
   }
 
-  const appName = context.packager.appInfo.productFilename;
+  const appName = packager.appInfo.productFilename;
   const appPath = `${appOutDir}/${appName}.app`;
 
   consola.info(`\nPreparing to notarize the application: ${appPath}\n`);

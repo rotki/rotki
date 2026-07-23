@@ -14,8 +14,6 @@ defineOptions({
 });
 
 const { useLocalSetting = false } = defineProps<{
-  dense?: boolean;
-  showLabel?: boolean;
   useLocalSetting?: boolean;
 }>();
 

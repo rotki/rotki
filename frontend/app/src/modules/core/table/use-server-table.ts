@@ -47,16 +47,20 @@ interface UseServerTableOptions<
 > {
   /** The request function. `TPayload` is inferred from its parameter. */
   fetch: (payload: MaybeRef<TPayload>) => Promise<Collection<TItem>>;
+  /** URL query sync mode; defaults to `{ mode: 'none' }` (no URL binding). */
   urlState?: UrlState;
   /**
    * The filter schema itself, not a factory: the caller holds it and reads
    * `matchers` off it. Named `filterSchema` because `filter` is the returned value.
    */
   filterSchema?: FilterSchema<TFilter, TSuggestionMatcher>;
+  /** External parameter sources merged into the request payload and/or URL. */
   params?: ParamSource[];
+  /** Default sort column and fallback column applied when none is persisted. */
   sort?: TableSortOptions<TItem>;
   /** Absent means no persistence at all. */
   persist?: PersistFilterSetting;
+  /** Request-level behaviour: cancellation tag and fetch debounce. */
   request?: TableRequestOptions;
 }
 
@@ -136,6 +140,7 @@ export function useServerTable<
     requestData,
     // Annotated because `requestPayload` is declared below: without it TypeScript walks
     // the cycle (data -> pagination -> requestPayload -> data) and gives up with `any`.
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define -- lazy thunk; only invoked after requestPayload is defined below
     (): ComputedRef<TPayload> => requestPayload,
     cancelTag,
   );
