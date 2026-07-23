@@ -25,9 +25,7 @@ const { t } = useI18n({ useScope: 'global' });
 const { pin } = usePinnedPanel(PinnedNames.MATCH_BRIDGE_TRANSACTIONS);
 
 const flow: MatchingFlow = useBridgeMatchingFlow();
-const { getUnmatchableExplanation } = useBridgeUnmatchableExplanation();
-
-const emptyExplanation = computed<string | undefined>(() => getUnmatchableExplanation(transaction));
+const { unmatchableExplanation: emptyExplanation } = useBridgeUnmatchableExplanation(() => transaction);
 
 function closeDialog(): void {
   set(modelValue, false);

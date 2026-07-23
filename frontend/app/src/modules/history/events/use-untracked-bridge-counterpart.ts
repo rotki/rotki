@@ -1,8 +1,8 @@
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 
 interface UseUntrackedBridgeCounterpartReturn {
-  getCounterpartAddress: (transaction: UnmatchedBridgeTransaction) => string | undefined;
   isCounterpartUntracked: (transaction: UnmatchedBridgeTransaction) => boolean;
 }
 
@@ -21,7 +21,7 @@ export function getBridgeCounterpartAddress(transaction: UnmatchedBridgeTransact
  * correct action. The check is across all chains: an address tracked anywhere is
  * considered tracked, so the guidance only appears when a match is truly impossible.
  */
-export function useUntrackedBridgeCounterpart(): UseUntrackedBridgeCounterpartReturn {
+export const useUntrackedBridgeCounterpart = createSharedComposable((): UseUntrackedBridgeCounterpartReturn => {
   const { addresses } = useAccountAddresses();
 
   const trackedAddresses = computed<Set<string>>(() => {
@@ -39,33 +39,36 @@ export function useUntrackedBridgeCounterpart(): UseUntrackedBridgeCounterpartRe
   }
 
   return {
-    getCounterpartAddress: getBridgeCounterpartAddress,
     isCounterpartUntracked,
   };
-}
+});
 
 interface UseBridgeUnmatchableExplanationReturn {
-  getUnmatchableExplanation: (transaction: UnmatchedBridgeTransaction) => string | undefined;
+  unmatchableExplanation: ComputedRef<string | undefined>;
 }
 
 /**
  * Explanation for the potential-matches search when a bridge leg cannot be matched
  * because its counterpart address is untracked, pointing the user to the external
- * resolution instead. Returns undefined when a match is still possible.
+ * resolution instead. The explanation is undefined when no transaction is selected or a
+ * match is still possible.
  */
-export function useBridgeUnmatchableExplanation(): UseBridgeUnmatchableExplanationReturn {
+export function useBridgeUnmatchableExplanation(
+  transaction: MaybeRefOrGetter<UnmatchedBridgeTransaction | undefined>,
+): UseBridgeUnmatchableExplanationReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { getCounterpartAddress, isCounterpartUntracked } = useUntrackedBridgeCounterpart();
+  const { isCounterpartUntracked } = useUntrackedBridgeCounterpart();
 
-  function getUnmatchableExplanation(transaction: UnmatchedBridgeTransaction): string | undefined {
-    if (!isCounterpartUntracked(transaction))
+  const unmatchableExplanation = computed<string | undefined>(() => {
+    const value = toValue(transaction);
+    if (!value || !isCounterpartUntracked(value))
       return undefined;
 
-    const address = getCounterpartAddress(transaction) ?? '';
-    return transaction.direction === 'deposit'
+    const address = getBridgeCounterpartAddress(value) ?? '';
+    return value.direction === 'deposit'
       ? t('bridge_matching.dialog.no_match_untracked_destination', { address })
       : t('bridge_matching.dialog.no_match_untracked_source', { address });
-  }
+  });
 
-  return { getUnmatchableExplanation };
+  return { unmatchableExplanation };
 }

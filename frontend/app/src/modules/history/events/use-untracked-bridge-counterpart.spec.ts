@@ -75,22 +75,25 @@ describe('use-untracked-bridge-counterpart', () => {
 
   describe('useBridgeUnmatchableExplanation', () => {
     it('should explain an unmatchable deposit via its untracked destination', () => {
-      const { getUnmatchableExplanation } = useBridgeUnmatchableExplanation();
-      expect(getUnmatchableExplanation(createTransaction({ bridge: { toAddress: '0xdef' } })))
-        .toBe('bridge_matching.dialog.no_match_untracked_destination::0xdef');
+      const { unmatchableExplanation } = useBridgeUnmatchableExplanation(createTransaction({ bridge: { toAddress: '0xdef' } }));
+      expect(get(unmatchableExplanation)).toBe('bridge_matching.dialog.no_match_untracked_destination::0xdef');
     });
 
     it('should explain an unmatchable withdrawal via its untracked source', () => {
-      const { getUnmatchableExplanation } = useBridgeUnmatchableExplanation();
       const transaction = createTransaction({ bridge: { fromAddress: '0xabc' }, direction: 'withdrawal' });
-      expect(getUnmatchableExplanation(transaction))
-        .toBe('bridge_matching.dialog.no_match_untracked_source::0xabc');
+      const { unmatchableExplanation } = useBridgeUnmatchableExplanation(transaction);
+      expect(get(unmatchableExplanation)).toBe('bridge_matching.dialog.no_match_untracked_source::0xabc');
     });
 
     it('should return undefined when the counterpart address is tracked', () => {
-      const { getUnmatchableExplanation } = useBridgeUnmatchableExplanation();
       const transaction = createTransaction({ bridge: { toAddress: '0xTracked' } });
-      expect(getUnmatchableExplanation(transaction)).toBeUndefined();
+      const { unmatchableExplanation } = useBridgeUnmatchableExplanation(transaction);
+      expect(get(unmatchableExplanation)).toBeUndefined();
+    });
+
+    it('should return undefined when no transaction is selected', () => {
+      const { unmatchableExplanation } = useBridgeUnmatchableExplanation(undefined);
+      expect(get(unmatchableExplanation)).toBeUndefined();
     });
   });
 });
