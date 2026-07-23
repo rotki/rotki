@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import logging
 from typing import TYPE_CHECKING, Any, Literal
 
 from mcp.server.fastmcp import FastMCP
@@ -70,6 +71,11 @@ def run_server(
         host: str = '127.0.0.1',
         port: int = 4445,
 ) -> None:
+    if transport == 'streamable-http':
+        # sse-starlette logs every serialized SSE payload (and ping body) at DEBUG.
+        # Keep MCP debug logs useful without leaking protocol payloads into Electron logs.
+        logging.getLogger('sse_starlette.sse').setLevel(logging.INFO)
+
     server = setup_server(
         backend_url=backend_url,
         timeout=timeout,

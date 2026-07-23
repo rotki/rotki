@@ -70,8 +70,8 @@ export const settingsActions = {
   },
   mcpServer: {
     anchor: SettingsHighlightIds.MCP_SERVER,
-    category: SettingsCategoryIds.BACKEND,
     keywords: [msg.$t('backend_settings.settings.mcp_server.hint')],
+    tab: '/settings/mcp/',
     titleKey: msg.$t('backend_settings.settings.mcp_server.label'),
   },
   modules: {

@@ -4766,6 +4766,7 @@
       "evm": "EVM",
       "general": "General",
       "interface": "Interface-only",
+      "mcp": "MCP",
       "modules": "Modules",
       "oracles": "Oracles",
       "rpc_nodes": "RPC Nodes"

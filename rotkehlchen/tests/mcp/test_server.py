@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import selectors
 from typing import Any
 
@@ -116,15 +117,21 @@ def test_run_server_should_use_streamable_http_transport(monkeypatch) -> None:
 
     monkeypatch.setattr(server, 'setup_server', mock_setup_server)
 
-    server.run_server(
-        backend_url='http://127.0.0.1:4242/api/1',
-        timeout=5,
-        log_level='INFO',
-        privacy_mode='balanced',
-        transport='streamable-http',
-        host='127.0.0.1',
-        port=4445,
-    )
+    sse_logger = logging.getLogger('sse_starlette.sse')
+    previous_level = sse_logger.level
+    try:
+        server.run_server(
+            backend_url='http://127.0.0.1:4242/api/1',
+            timeout=5,
+            log_level='INFO',
+            privacy_mode='balanced',
+            transport='streamable-http',
+            host='127.0.0.1',
+            port=4445,
+        )
+        assert sse_logger.level == logging.INFO
+    finally:
+        sse_logger.setLevel(previous_level)
 
     assert setup_kwargs['host'] == '127.0.0.1'
     assert setup_kwargs['port'] == 4445
