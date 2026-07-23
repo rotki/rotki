@@ -40,8 +40,10 @@ use crate::process::Spawner;
 /// How many recent push events a freshly-subscribed transport can still receive.
 const EVENT_CHANNEL_CAPACITY: usize = 64;
 
-/// Minimum spacing between mutating ops (§S10); a `restart`/`stop` issued sooner
-/// than this after the previous mutation is rejected with [`ControlError::RateLimited`].
+/// Minimum spacing between repeatable mutating ops (§S10); a start, restart, or
+/// per-service mutation issued sooner than this after the previous one is rejected
+/// with [`ControlError::RateLimited`]. Whole-supervisor stop remains immediately
+/// available so rate limiting can never prevent shutdown.
 pub const DEFAULT_MIN_MUTATION_INTERVAL: Duration = Duration::from_secs(2);
 
 /// A cheap, cloneable snapshot of service state the run loop publishes after
@@ -566,14 +568,7 @@ impl<S: Spawner> Controller<S> {
             return Err(ControlError::AlreadyStarted);
         }
 
-        let now = Instant::now();
-        if let Some(prev) = self.last_mutation {
-            if now.duration_since(prev) < self.min_mutation_interval {
-                self.audit("start", transport, "rate-limited");
-                return Err(ControlError::RateLimited);
-            }
-        }
-        self.last_mutation = Some(now);
+        self.enforce_mutation_interval("start", transport)?;
         self.audit("start", transport, "begin");
 
         // A start carries the renderer's persisted data directory. Move the
@@ -631,14 +626,7 @@ impl<S: Spawner> Controller<S> {
         transport: Transport,
         options: BackendOptions,
     ) -> Result<OkResult, ControlError> {
-        let now = Instant::now();
-        if let Some(prev) = self.last_mutation {
-            if now.duration_since(prev) < self.min_mutation_interval {
-                self.audit("restart", transport, "rate-limited");
-                return Err(ControlError::RateLimited);
-            }
-        }
-        self.last_mutation = Some(now);
+        self.enforce_mutation_interval("restart", transport)?;
         self.audit("restart", transport, "begin");
 
         // A runtime data-dir switch must move the single-instance lock with it,
@@ -700,6 +688,7 @@ impl<S: Spawner> Controller<S> {
         transport: Transport,
         service: &str,
     ) -> Result<OkResult, ControlError> {
+        self.enforce_mutation_interval("start-service", transport)?;
         self.audit("start-service", transport, "begin");
         self.supervisor
             .start_service(service)
@@ -715,6 +704,7 @@ impl<S: Spawner> Controller<S> {
         transport: Transport,
         service: &str,
     ) -> Result<OkResult, ControlError> {
+        self.enforce_mutation_interval("stop-service", transport)?;
         self.audit("stop-service", transport, "begin");
         self.supervisor
             .stop_service(service, self.grace)
@@ -723,6 +713,23 @@ impl<S: Spawner> Controller<S> {
         self.publish();
         self.audit("stop-service", transport, "stopped");
         Ok(OkResult::OK)
+    }
+
+    fn enforce_mutation_interval(
+        &mut self,
+        operation: &str,
+        transport: Transport,
+    ) -> Result<(), ControlError> {
+        let now = Instant::now();
+        if self
+            .last_mutation
+            .is_some_and(|previous| now.duration_since(previous) < self.min_mutation_interval)
+        {
+            self.audit(operation, transport, "rate-limited");
+            return Err(ControlError::RateLimited);
+        }
+        self.last_mutation = Some(now);
+        Ok(())
     }
 
     /// Apply the (already sanitized) restart options onto the layout, so the next
@@ -990,6 +997,7 @@ mod tests {
             Duration::from_millis(50),
             Some(1_700_000_000),
         );
+        controller.min_mutation_interval = Duration::ZERO;
         let handle = controller.handle();
         assert!(handle.health(Transport::Stdio).unwrap().ok);
         assert_eq!(spawner.spawns.load(Ordering::SeqCst), 2);
@@ -1321,6 +1329,40 @@ mod tests {
                 .restart(Transport::Stdio, BackendOptions::default())
                 .await;
             assert!(matches!(second, Err(ControlError::RateLimited)));
+        });
+
+        controller
+            .run(async move {
+                driver.await.unwrap();
+            })
+            .await;
+    }
+
+    #[tokio::test]
+    async fn rapid_service_mutation_is_rate_limited() {
+        let spawner = TestSpawner::new();
+        let mut supervisor = Supervisor::new(spawner, specs_with_optional_mcp()).unwrap();
+        supervisor.start_all().await.unwrap();
+        let mut controller = Controller::new(
+            supervisor,
+            layout(),
+            Box::new(|_| specs_with_optional_mcp()),
+            Duration::from_millis(50),
+            Some(1_700_000_000),
+        );
+        let handle = controller.handle();
+
+        let driver = tokio::spawn(async move {
+            assert!(handle
+                .start_service(Transport::Stdio, "mcp".to_string())
+                .await
+                .is_ok());
+            assert!(matches!(
+                handle
+                    .stop_service(Transport::Stdio, "mcp".to_string())
+                    .await,
+                Err(ControlError::RateLimited),
+            ));
         });
 
         controller
