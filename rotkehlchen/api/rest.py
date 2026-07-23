@@ -4815,19 +4815,12 @@ class RestAPI:
                 )}
                 if len(synthetic_ids) != 0:
                     # synthetic counterparts only exist as the manufactured mirror of
-                    # the link, so unlinking deletes them instead of restoring them
+                    # the link, so unlinking deletes them (and their backups, handled
+                    # by delete_events_and_track) instead of restoring them
                     events_db.delete_events_and_track(
                         write_cursor=write_cursor,
                         where_clause=f'WHERE identifier IN({",".join("?" * len(synthetic_ids))})',
                         where_bindings=tuple(synthetic_ids),
-                    )
-                    # also drop their backups: history_events rowids can be reused after
-                    # deletion and save_history_event_backup keeps the earliest row, so a
-                    # stale backup could later be restored over an unrelated event
-                    write_cursor.execute(
-                        'DELETE FROM history_events_backup '
-                        f'WHERE identifier IN({",".join("?" * len(synthetic_ids))})',
-                        tuple(synthetic_ids),
                     )
 
                 restore_ids = [x for x in all_ids if x not in synthetic_ids]

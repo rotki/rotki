@@ -276,17 +276,27 @@ class DBHistoryEvents:
         ).fetchall()) > 0:
             for row in rows:
                 timestamps.append((row[0],))
-                deleted_ids.append(str(row[1]))
+                deleted_ids.append(row[1])
                 group_ids.add(row[2])
             write_cursor.execute(
                 "DELETE FROM key_value_cache WHERE name LIKE 'customized_event_original_%' "
                 f"AND value IN ({','.join('?' * len(deleted_ids))})",
-                deleted_ids,
+                [str(x) for x in deleted_ids],
             )
             write_cursor.execute(
                 f"DELETE FROM key_value_cache WHERE name LIKE '{IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX}%' "  # noqa: E501
                 f"AND value IN ({','.join('?' * len(group_ids))})",
                 list(group_ids),
+            )
+            # Also drop the deleted events' backups: identifiers (rowids) get reused
+            # after deletion and save_history_event_backup keeps the earliest row per
+            # identifier, so a surviving backup could later be restored over an
+            # unrelated event. A backup for a deleted event is unrestorable anyway --
+            # every restore flow finds its targets via history_event_links, which
+            # cascade away with the event.
+            write_cursor.execute(
+                f"DELETE FROM history_events_backup WHERE identifier IN ({','.join('?' * len(deleted_ids))})",  # noqa: E501
+                deleted_ids,
             )
         return self._execute_and_track_modified(
             write_cursor=write_cursor,

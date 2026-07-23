@@ -227,6 +227,19 @@ DROP TABLE ens_mappings_old;
             ),
         )
 
+    @progress_step(description='Removing orphaned history event backups.')
+    def _remove_orphaned_event_backups(write_cursor: DBCursor) -> None:
+        """Remove backup rows whose event no longer exists. Such backups can never be
+        legitimately restored (restore flows find their targets via history_event_links,
+        which cascade away with the event), but identifiers (rowids) get reused after
+        deletion and save_history_event_backup keeps the earliest row per identifier,
+        so a stale backup could later be restored over an unrelated event.
+        """
+        write_cursor.execute(
+            'DELETE FROM history_events_backup WHERE identifier NOT IN '
+            '(SELECT identifier FROM history_events)',
+        )
+
     @progress_step(description='Marking exchange adjustment events as synthetic.')
     def _mark_exchange_adjustments_synthetic(write_cursor: DBCursor) -> None:
         """Stamp the auto-created exchange adjustment events with the new SYNTHETIC

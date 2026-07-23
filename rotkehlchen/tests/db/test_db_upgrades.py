@@ -4322,6 +4322,28 @@ def test_upgrade_db_52_to_53(
                 "SELECT identifier, 'state', ? FROM history_events WHERE group_identifier=?",
                 (state_value, group_identifier),
             )
+        # A backup of a live event must survive the upgrade while an orphaned backup
+        # (its event no longer exists) must be removed
+        write_cursor.execute(
+            'INSERT INTO history_events_backup SELECT * FROM history_events '
+            'WHERE group_identifier=?',
+            ('SYNTHETIC_ADJUSTMENT_MATCHED',),
+        )
+        write_cursor.execute(
+            'INSERT INTO history_events_backup(identifier, entry_type, group_identifier, '
+            'sequence_index, timestamp, location, location_label, asset, amount, notes, '
+            'type, subtype, extra_data, ignored) '
+            'VALUES (999999, ?, ?, 0, 1730000002000, ?, NULL, ?, ?, NULL, ?, ?, NULL, 0)',
+            (
+                HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db(),
+                'ORPHANED_BACKUP',
+                Location.KRAKEN.serialize_for_db(),
+                'ETH',
+                '1',
+                HistoryEventType.RECEIVE.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ),
+        )
         if current_price_oracles is not None:
             write_cursor.execute(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -4372,6 +4394,16 @@ def test_upgrade_db_52_to_53(
                 'SELECT COUNT(*) FROM history_events_mappings M '
                 'INNER JOIN history_events H ON H.identifier=M.parent_identifier '
                 "WHERE M.name='state' AND M.value=5 AND H.group_identifier=?",
+                (group_identifier,),
+            ).fetchone()[0] == expected_count
+
+        # the orphaned backup got removed while the live event's backup survived
+        for group_identifier, expected_count in (
+            ('ORPHANED_BACKUP', 0),
+            ('SYNTHETIC_ADJUSTMENT_MATCHED', 1),
+        ):
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM history_events_backup WHERE group_identifier=?',
                 (group_identifier,),
             ).fetchone()[0] == expected_count
         metric_entry = (
