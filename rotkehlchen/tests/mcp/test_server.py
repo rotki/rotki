@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 from mcp.server.transport_security import TransportSecuritySettings
 
+from rotkehlchen import __main__ as rotkehlchen_main
 from rotkehlchen.mcp import __main__ as mcp_main, server
 from rotkehlchen.mcp.constants import SERVICE_NAME
 
@@ -182,3 +183,21 @@ def test_main_should_reject_non_loopback_http_host(monkeypatch) -> None:
 
     assert error.value.code == 2
     run_server_mock.assert_not_called()
+
+
+def test_rotkehlchen_main_should_report_mcp_startup_errors(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(rotkehlchen_main, 'is_mcp_command', True)
+    monkeypatch.setattr(
+        rotkehlchen_main,
+        'mcp_main',
+        MagicMock(side_effect=OSError('address already in use')),
+        raising=False,
+    )
+
+    with pytest.raises(SystemExit) as error:
+        rotkehlchen_main.main()
+
+    assert error.value.code == 1
+    assert capsys.readouterr().err.endswith(
+        'Failed to start rotki MCP server: address already in use\n',
+    )

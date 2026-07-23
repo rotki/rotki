@@ -15,7 +15,12 @@ else:
 
 def main() -> None:
     if is_mcp_command:
-        mcp_main(sys.argv[2:])
+        try:
+            mcp_main(sys.argv[2:])
+        except (OSError, RuntimeError, ValueError) as e:
+            logging.getLogger(__name__).critical(traceback.format_exc())
+            print(f'Failed to start rotki MCP server: {e!s}', file=sys.stderr)
+            sys.exit(1)
         return
 
     try:
