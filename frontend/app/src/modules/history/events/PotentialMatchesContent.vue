@@ -24,6 +24,8 @@ const { flow, isPinned, movement } = defineProps<{
   typeLabel?: string;
   /** Optional header for the unmatched entry's location column in the summary table. */
   locationHeader?: string;
+  /** Shown when a search returns no matches, explaining why none can be found. */
+  emptyExplanation?: string;
 }>();
 
 const emit = defineEmits<{
@@ -190,6 +192,7 @@ watchImmediate(() => movement, async () => {
         :type-label="typeLabel"
         :location-header="locationHeader"
         :search-error="searchError"
+        :empty-explanation="emptyExplanation"
         @search="searchPotentialMatches()"
         @show-in-events="emit('show-in-events', $event)"
         @show-unmatched-in-events="emit('show-unmatched-in-events')"

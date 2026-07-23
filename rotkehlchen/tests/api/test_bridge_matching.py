@@ -176,8 +176,9 @@ def test_resolve_bridge_leg_as_external(
         expected_direction: str,
         expected_notes: str,
 ) -> None:
-    """Resolving a bridge leg as external transforms it into a plain spend/receive
-    so accounting treats it as a payment/income, stamps the resolution and the
+    """Resolving a bridge leg as external transforms it into a bridge spend/receive
+    (SPEND/BRIDGE, RECEIVE/BRIDGE) so accounting treats it as a payment/income while
+    it stays recognizable as a bridging event, stamps the resolution and the
     original direction, and ignores it; unlink restores the original event."""
     events = _add_bridge_pair(rotkehlchen_api_server)
     original_event = events[event_identifier - 1]
@@ -197,7 +198,7 @@ def test_resolve_bridge_leg_as_external(
             filter_query=HistoryEventFilterQuery.make(identifiers=[event_identifier]),
         ))
         assert resolved.event_type == expected_type
-        assert resolved.event_subtype == HistoryEventSubType.NONE
+        assert resolved.event_subtype == HistoryEventSubType.BRIDGE
         assert resolved.notes == expected_notes
         assert isinstance(resolved, EvmEvent)
         assert resolved.counterparty == CPT_ACROSS

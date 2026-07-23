@@ -5,6 +5,7 @@ import {
   type UnmatchedBridgeTransaction,
   useBridgeMatchingFlow,
 } from '@/modules/history/events/use-unmatched-bridge-transactions';
+import { useBridgeUnmatchableExplanation } from '@/modules/history/events/use-untracked-bridge-counterpart';
 import { PinnedNames } from '@/modules/session/types';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
@@ -24,6 +25,9 @@ const { t } = useI18n({ useScope: 'global' });
 const { pin } = usePinnedPanel(PinnedNames.MATCH_BRIDGE_TRANSACTIONS);
 
 const flow: MatchingFlow = useBridgeMatchingFlow();
+const { getUnmatchableExplanation } = useBridgeUnmatchableExplanation();
+
+const emptyExplanation = computed<string | undefined>(() => getUnmatchableExplanation(transaction));
 
 function closeDialog(): void {
   set(modelValue, false);
@@ -77,6 +81,7 @@ function showPotentialMatchInEvents(data: { identifier: number; groupIdentifier:
         :flow="flow"
         :type-label="transaction.direction"
         :location-header="t('common.location')"
+        :empty-explanation="emptyExplanation"
         @close="closeDialog()"
         @matched="onMatched()"
         @show-in-events="showPotentialMatchInEvents($event)"

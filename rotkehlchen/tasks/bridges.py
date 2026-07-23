@@ -452,10 +452,12 @@ def resolve_bridge_event_external(
 ) -> bool:
     """Resolve an unmatched bridge leg as involving an external (untracked) counterpart.
 
-    A deposit becomes a plain spend (a payment to an untracked address) and a
-    withdrawal becomes a plain receive (income from an untracked source), so the
-    default accounting treatment of the corresponding direction applies. The event
-    keeps its bridge extra_data and is stamped with the external resolution and its
+    A deposit becomes a bridge spend (SPEND/BRIDGE, a payment to an untracked
+    address) and a withdrawal becomes a bridge receive (RECEIVE/BRIDGE, income
+    from an untracked source). The bridge subtype is kept so the event remains
+    recognizable and filterable as a bridging event, while the spend/receive type
+    makes the plain outgoing/incoming accounting treatment apply. The event keeps
+    its bridge extra_data and is stamped with the external resolution and its
     original direction, and the edit saves a backup so unlinking restores the
     original bridge event. Returns False when the event is not a bridge leg.
     """
@@ -475,7 +477,6 @@ def resolve_bridge_event_external(
     else:
         return False
 
-    event.event_subtype = HistoryEventSubType.NONE
     if event.extra_data is None:
         event.extra_data = {}
     event.extra_data[MATCHED_BRIDGE_KEY] = {'resolution': 'external', 'direction': direction}
@@ -495,8 +496,13 @@ def resolve_bridge_event_external(
     return True
 
 
-def _should_auto_resolve_external(deposit: HistoryBaseEntry) -> bool:
-    """Bridges to chains rotki cannot query will never find a destination leg."""
+def _should_auto_ignore_external(deposit: HistoryBaseEntry) -> bool:
+    """Bridges to chains rotki cannot query will never find a destination leg.
+
+    Such deposits are only removed from the unmatched pool (ignored); the event
+    itself is deliberately not rewritten -- resolving a leg as external changes
+    its accounting treatment, so that rewrite stays an explicit user action.
+    """
     to_chain = get_event_bridge_data(deposit).get('to_chain')
     if isinstance(to_chain, int):
         return to_chain not in {chain_id.value for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS}
@@ -569,7 +575,7 @@ def match_bridge_transactions(
                     excluded_ids.update((deposit.identifier, matched_event.identifier))  # type: ignore[arg-type]  # events from the db have identifiers
                     continue
 
-                if _should_auto_resolve_external(deposit=deposit):
+                if _should_auto_ignore_external(deposit=deposit):
                     if deposit.identifier is not None:
                         ignore_ids.append(deposit.identifier)
                     continue
