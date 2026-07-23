@@ -12,7 +12,7 @@ import { createResponseParser, createStatusError, tryParseJson } from '@/modules
 import { queryTransformer } from '@/modules/core/api/transformers';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { HTTPStatus } from '@/modules/core/api/types/http';
-import { VALID_STATUS_CODES } from '@/modules/core/api/utils';
+import { VALID_STATUS_CODES, type ValidStatuses } from '@/modules/core/api/utils';
 import { withRetry } from '@/modules/core/api/with-retry';
 
 export class RotkiApi {
@@ -170,6 +170,61 @@ export class RotkiApi {
     });
   }
 
+  /**
+   * Rejects 401 (after running the auth-failure handler unless skipped) and any
+   * status outside the allowed set, mirroring the raw fetch error handling.
+   */
+  private checkResponseStatus<T>(
+    response: { status: number; _data?: ActionResult<T> },
+    flags: { validStatuses?: ValidStatuses; skipAuthHandler?: boolean },
+  ): void {
+    const status = response.status;
+
+    if (status === HTTPStatus.UNAUTHORIZED) {
+      if (!flags.skipAuthHandler)
+        this.handleAuthFailure();
+
+      throw createStatusError(status, response._data?.message, response._data);
+    }
+
+    const allowedStatuses: readonly number[] = flags.validStatuses ?? VALID_STATUS_CODES;
+    if (!allowedStatuses.includes(status))
+      throw createStatusError(status, response._data?.message, response._data);
+  }
+
+  /**
+   * Unwraps an ActionResult: returns its result, falls back to defaultValue, or
+   * throws (ApiValidationError on 400, plain Error otherwise) when it is an error.
+   */
+  private unwrapResult<T>(data: ActionResult<T> | undefined, status: number, defaultValue?: T): T {
+    if (!data)
+      throw createStatusError(status);
+
+    const { result, message } = data;
+    const isError = result === null || result === undefined || (!result && message);
+
+    if (!isError)
+      return result;
+
+    if (defaultValue !== undefined)
+      return defaultValue;
+
+    if (status === HTTPStatus.BAD_REQUEST)
+      throw new ApiValidationError(message);
+
+    throw new Error(message);
+  }
+
+  /**
+   * The single sanctioned generic-boundary escape. Some options
+   * (`skipResultUnwrap`, `treat409AsSuccess`) intentionally resolve to a value
+   * the wrapper cannot type as `T` — the caller opted into that shape — so this
+   * is the one place that asserts it, keeping the assertion contained.
+   */
+  private asResult<T>(value: unknown): T {
+    return value as T;
+  }
+
   private async fetchDirect<T>(url: string, options: Omit<RotkiFetchOptions<'json', T>, 'skipQueue' | 'priority' | 'tags' | 'dedupe' | 'maxQueueTime' | 'queueRetries'> = {}): Promise<T> {
     const {
       validStatuses,
@@ -200,43 +255,18 @@ export class RotkiApi {
         parseResponse: createResponseParser({ skipCamelCase, skipRootCamelCase }),
       });
 
+      this.checkResponseStatus<T>(response, { validStatuses, skipAuthHandler });
+
       const status = response.status;
-
-      if (status === HTTPStatus.UNAUTHORIZED) {
-        if (!skipAuthHandler)
-          this.handleAuthFailure();
-
-        const responseData = response._data;
-        throw createStatusError(status, responseData?.message, responseData);
-      }
-
-      const allowedStatuses = validStatuses ?? VALID_STATUS_CODES;
-      if (!allowedStatuses.includes(status)) {
-        const responseData = response._data;
-        throw createStatusError(status, responseData?.message, responseData);
-      }
-
       const data = response._data;
 
       if (treat409AsSuccess && status === HTTPStatus.CONFLICT)
-        return true as unknown as T;
+        return this.asResult<T>(true);
 
       if (skipResultUnwrap)
-        return data as unknown as T;
+        return this.asResult<T>(data);
 
-      const { result, message } = data as ActionResult<T>;
-      const isError = result === null || result === undefined || (!result && message);
-
-      if (!isError)
-        return result;
-
-      if (defaultValue !== undefined)
-        return defaultValue;
-
-      if (status === HTTPStatus.BAD_REQUEST)
-        throw new ApiValidationError(message);
-
-      throw new Error(message);
+      return this.unwrapResult<T>(data, status, defaultValue);
     };
 
     if (retry) {
@@ -309,7 +339,7 @@ export class RotkiApi {
     const body = transformRequestBody(fetchOptions.body, { skipSnakeCase });
     const query = transformRequestQuery(fetchOptions.query as Record<string, unknown> | undefined, { skipSnakeCase });
 
-    const response = await ofetch.raw(url, {
+    const response = await ofetch.raw<Blob, 'blob'>(url, {
       method: fetchOptions.method,
       baseURL: fetchOptions.baseURL ?? this._baseURL,
       timeout: fetchOptions.timeout ?? DEFAULT_TIMEOUT,
@@ -320,16 +350,31 @@ export class RotkiApi {
       query,
     });
 
+    const blob = response._data;
+    if (!blob)
+      throw createStatusError(response.status);
+
+    await this.assertBlobSuccess(response, blob, validStatuses);
+    return blob;
+  }
+
+  /**
+   * Validates a blob response: runs the auth-failure handler on 401, surfaces a
+   * JSON error payload as an Error (or TypeError when it cannot be parsed), and
+   * rejects any status outside the allowed set.
+   */
+  private async assertBlobSuccess(
+    response: { status: number; headers: Headers },
+    blob: Blob,
+    validStatuses?: ValidStatuses,
+  ): Promise<void> {
     const status = response.status;
 
     if (status === HTTPStatus.UNAUTHORIZED)
       this.handleAuthFailure();
 
-    const blob = response._data as Blob;
     const contentType = response.headers.get('content-type');
-    const isJsonError = contentType?.includes('application/json');
-
-    if (isJsonError) {
+    if (contentType?.includes('application/json')) {
       const text = await blob.text();
       const json = tryParseJson<ActionResult<unknown>>(text);
       if (json)
@@ -337,11 +382,9 @@ export class RotkiApi {
       throw new TypeError(`Request failed with status ${status}`);
     }
 
-    const allowedStatuses = validStatuses ?? VALID_STATUS_CODES;
+    const allowedStatuses: readonly number[] = validStatuses ?? VALID_STATUS_CODES;
     if (!allowedStatuses.includes(status))
       throw new Error(`Request failed with status ${status}`);
-
-    return blob;
   }
 }
 

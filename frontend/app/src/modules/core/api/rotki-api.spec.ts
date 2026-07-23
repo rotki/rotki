@@ -460,6 +460,27 @@ describe('modules/api/rotki-api', () => {
       expect(window.location.href).toBe('/#/');
     });
 
+    it('should not call the auth failure handler on 401 when skipAuthHandler is set', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/test`, () =>
+          HttpResponse.json(
+            {
+              result: null,
+              message: 'Unauthorized',
+            },
+            { status: HTTPStatus.UNAUTHORIZED },
+          )),
+      );
+
+      const authFailureAction = vi.fn();
+      api.setOnAuthFailure(authFailureAction);
+
+      // Still throws, but the auth-failure handler is skipped
+      await expect(api.get('test', { skipAuthHandler: true })).rejects.toThrow();
+
+      expect(authFailureAction).not.toHaveBeenCalled();
+    });
+
     it('should throw ApiValidationError for 400 status with message', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
@@ -699,6 +720,20 @@ describe('modules/api/rotki-api', () => {
 
       expect(authFailureAction).toHaveBeenCalled();
       expect(window.location.href).toBe('/#/');
+    });
+
+    it('should throw a generic error for a non-json error response', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/download`, () =>
+          new HttpResponse('boom', {
+            status: HTTPStatus.INTERNAL_SERVER_ERROR,
+            headers: {
+              'Content-Type': 'application/octet-stream',
+            },
+          })),
+      );
+
+      await expect(api.fetchBlob('download')).rejects.toThrow('Request failed with status 500');
     });
 
     it('should transform body in blob request', async () => {
