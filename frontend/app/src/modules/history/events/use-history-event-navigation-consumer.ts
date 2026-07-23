@@ -121,6 +121,83 @@ export function useHistoryEventNavigationConsumer(
     return query;
   }
 
+  /**
+   * Resolve the target group's position within the (possibly asset-filtered)
+   * view, so the computed page matches the filter applied on arrival.
+   */
+  async function resolveGroupPosition(request: HistoryEventNavigationRequest): Promise<number> {
+    const basePayload = request.preserveFilters && requestPayload ? get(requestPayload) : undefined;
+    const filterPayload = request.assetFilter
+      ? { ...basePayload, asset: request.assetFilter }
+      : basePayload;
+    return getHistoryEventGroupPosition(request.targetGroupIdentifier, filterPayload);
+  }
+
+  /**
+   * Pop the next fallback request, carrying any remaining fallbacks forward.
+   * Returns undefined when none are left.
+   */
+  function selectNextRequest(request: HistoryEventNavigationRequest): HistoryEventNavigationRequest | undefined {
+    if (!request.fallbacks?.length)
+      return undefined;
+
+    const [next, ...remaining]: HistoryEventNavigationRequest[] = request.fallbacks;
+    return { ...next, fallbacks: remaining.length > 0 ? remaining : undefined };
+  }
+
+  /**
+   * Wait for the pagination system's loading cycle to complete. The loading may
+   * not have started yet (fetchDebounce), so wait for it to start first.
+   */
+  async function waitForFilterLoad(loading: Ref<boolean>): Promise<void> {
+    if (!get(loading)) {
+      await until(loading).toBe(true, {
+        timeout: HIGHLIGHT_LOADING_START_TIMEOUT,
+        throwOnTimeout: false,
+      });
+    }
+    if (get(loading)) {
+      await until(loading).toBe(false);
+    }
+  }
+
+  /**
+   * Push the highlight route for a resolved position. An asset-filter or
+   * preserveFilters navigation changes a real filter, so it waits for the
+   * pagination refetch to settle first (otherwise the push races the refetch
+   * and the "clear highlights on filter change" watcher wipes the highlight).
+   * Returns false when the request became stale while waiting.
+   */
+  async function pushHighlight(
+    request: HistoryEventNavigationRequest,
+    activeRequest: HistoryEventNavigationRequest,
+    highlightQuery: Record<string, string>,
+  ): Promise<boolean> {
+    if ((request.preserveFilters || request.assetFilter) && groupLoading) {
+      await waitForFilterLoad(groupLoading);
+
+      // Check if this request is still current after waiting
+      if (get(pendingNavigation) !== activeRequest)
+        return false;
+
+      // Route now has the correct filter/limit values from the pagination system
+      await router.push({
+        force: true,
+        name: historyEventsName,
+        query: { ...get(route).query, ...highlightQuery },
+      });
+      return true;
+    }
+
+    const limit = get(pagination).limit;
+    await router.push({
+      force: true,
+      name: historyEventsName,
+      query: { limit: limit.toString(), ...highlightQuery },
+    });
+    return true;
+  }
+
   // Watch for composable-based navigation requests
   watchImmediate(pendingNavigation, async (request) => {
     if (!request)
@@ -130,27 +207,17 @@ export function useHistoryEventNavigationConsumer(
 
     try {
       while (currentRequest) {
-        const basePayload =
-          currentRequest.preserveFilters && requestPayload ? get(requestPayload) : undefined;
-        // Compute the target's position within the asset-filtered view so the page number
-        // matches the filter that will be applied on arrival.
-        const filterPayload = currentRequest.assetFilter
-          ? { ...basePayload, asset: currentRequest.assetFilter }
-          : basePayload;
-        const position = await getHistoryEventGroupPosition(
-          currentRequest.targetGroupIdentifier,
-          filterPayload,
-        );
+        const position = await resolveGroupPosition(currentRequest);
 
         // Check if this request is still current after the await
         if (get(pendingNavigation) !== request)
           return;
 
         if (position < 0) {
-          // Target not in filtered results, try fallback
-          if (currentRequest.fallbacks?.length) {
-            const [next, ...remaining]: HistoryEventNavigationRequest[] = currentRequest.fallbacks;
-            currentRequest = { ...next, fallbacks: remaining.length > 0 ? remaining : undefined };
+          // Target not in filtered results, try the next fallback
+          const next = selectNextRequest(currentRequest);
+          if (next) {
+            currentRequest = next;
             continue;
           }
           // No fallbacks left, clear highlights
@@ -158,48 +225,10 @@ export function useHistoryEventNavigationConsumer(
           break;
         }
 
-        const limit = get(pagination).limit;
-        const page = Math.floor(position / limit) + 1;
-        const highlightQuery = buildHighlightQuery(currentRequest, page);
-
-        // An asset filter navigation changes a real filter, so it must wait for the
-        // pagination system's refetch to settle before pushing (the same coordination
-        // preserveFilters uses). Without this the highlight push races the filter refetch
-        // and the "clear highlights on filter change" watcher can wipe the highlight.
-        if ((currentRequest.preserveFilters || currentRequest.assetFilter) && groupLoading) {
-          /**
-           * Wait for the pagination system's loading cycle to complete.
-           * The loading may not have started yet (fetchDebounce), so wait for it to start first.
-           */
-          if (!get(groupLoading)) {
-            await until(groupLoading).toBe(true, {
-              timeout: HIGHLIGHT_LOADING_START_TIMEOUT,
-              throwOnTimeout: false,
-            });
-          }
-          // Now wait for loading to finish
-          if (get(groupLoading)) {
-            await until(groupLoading).toBe(false);
-          }
-
-          // Check if this request is still current after waiting
-          if (get(pendingNavigation) !== request)
-            return;
-
-          // Route now has the correct filter/limit values from the pagination system
-          await router.push({
-            force: true,
-            name: historyEventsName,
-            query: { ...get(route).query, ...highlightQuery },
-          });
-        }
-        else {
-          await router.push({
-            force: true,
-            name: historyEventsName,
-            query: { limit: limit.toString(), ...highlightQuery },
-          });
-        }
+        const page = Math.floor(position / get(pagination).limit) + 1;
+        const stillCurrent = await pushHighlight(currentRequest, request, buildHighlightQuery(currentRequest, page));
+        if (!stillCurrent)
+          return;
         break;
       }
     }

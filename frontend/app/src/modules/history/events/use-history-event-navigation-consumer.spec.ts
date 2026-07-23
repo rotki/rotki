@@ -454,7 +454,7 @@ describe('use-history-event-navigation-consumer', () => {
 
       // Simulate pagination system loading cycle
       set(loading, true);
-      await nextTick();
+      await flushPromises();
       set(loading, false);
       await flushPromises();
 
@@ -547,7 +547,7 @@ describe('use-history-event-navigation-consumer', () => {
         useHistoryEventNavigationConsumer(pagination, undefined, loading);
       });
 
-      await nextTick();
+      await flushPromises();
       // Position is computed within the asset-filtered view.
       expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-route', { asset: 'ETH' });
       // The push is deferred until the pagination refetch settles.
@@ -555,7 +555,7 @@ describe('use-history-event-navigation-consumer', () => {
 
       // Simulate the pagination system loading cycle.
       set(loading, true);
-      await nextTick();
+      await flushPromises();
       set(loading, false);
       await flushPromises();
 
