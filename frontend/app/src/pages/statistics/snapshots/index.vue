@@ -101,13 +101,12 @@ function open(timestamp: number): void {
   startPromise(router.push(`/statistics/snapshots/${timestamp}`));
 }
 
-// Resolve the export dialog's balance reactively from the selected row, so a
-// still-loading historic rate keeps showing a skeleton (and updates in place once
-// it resolves) instead of freezing a placeholder Zero at open time.
+// The export dialog shows the selected snapshot's stored USD net worth; the dialog
+// converts it at the snapshot's historic rate itself (#12277), lazily, so opening
+// it never triggers a whole-series conversion.
 const selectedRow = computed<SnapshotListRow | undefined>(() =>
   get(rows).find(item => item.timestamp === get(selectedTimestamp)));
-const selectedBalance = computed<BigNumber>(() => get(selectedRow)?.fiatValue ?? Zero);
-const selectedBalanceLoading = computed<boolean>(() => get(selectedRow)?.fiatPending ?? false);
+const selectedBalance = computed<BigNumber>(() => get(selectedRow)?.usdValue ?? Zero);
 
 function openExport(timestamp: number): void {
   set(selectedTimestamp, timestamp);
@@ -232,7 +231,6 @@ function confirmTakeSnapshot(): void {
       v-model="exportDialog"
       :timestamp="selectedTimestamp"
       :balance="selectedBalance"
-      :loading="selectedBalanceLoading"
     />
   </TablePageLayout>
 </template>

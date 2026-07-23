@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { SnapshotListRow } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
-import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import SnapshotDeltaDisplay from '@/modules/dashboard/snapshots/components/SnapshotDeltaDisplay.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -28,9 +28,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-/** Placeholder for an unavailable value / no change (avoids a raw text node). */
-const placeholder = '—';
-
 const currencySymbol = useSetting('currencySymbol');
 
 const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
@@ -41,7 +38,10 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
   },
   {
     align: 'end',
-    key: 'fiatValue',
+    // Sorting is by the stored USD value: the display fiat value is resolved
+    // lazily per visible cell, so it is not available to sort the full set. USD
+    // order is a faithful approximation (historic FX varies only mildly day-to-day).
+    key: 'usdValue',
     label: t('common.value_in_symbol', { symbol: get(currencySymbol) }),
     sortable: true,
   },
@@ -78,26 +78,20 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
       </span>
     </template>
 
-    <template #item.fiatValue="{ row }">
-      <RuiSkeletonLoader
-        v-if="row.fiatPending"
-        class="w-20 ml-auto"
-      />
-      <span v-else-if="!row.ready">{{ placeholder }}</span>
+    <template #item.usdValue="{ row }">
       <SnapshotFiatDisplay
-        v-else
         :value="row.usdValue"
         :timestamp="row.timestamp"
       />
     </template>
 
     <template #item.delta="{ row }">
-      <FiatDisplay
-        v-if="row.delta"
-        :value="row.delta"
-        pnl
+      <SnapshotDeltaDisplay
+        :value="row.usdValue"
+        :timestamp="row.timestamp"
+        :previous-value="row.previousUsdValue"
+        :previous-timestamp="row.previousTimestamp"
       />
-      <span v-else>{{ placeholder }}</span>
     </template>
 
     <template #item.actions="{ row }">

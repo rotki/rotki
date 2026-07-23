@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import type { BigNumber, Message } from '@rotki/common';
 import dayjs from 'dayjs';
-import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { downloadFileByBlob } from '@/modules/core/common/file/download';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
+import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import { useSnapshotApi } from '@/modules/settings/api/use-snapshot-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const display = defineModel<boolean>({ default: false, required: true });
 
-const { balance, loading = false, timestamp = 0 } = defineProps<{
+const { balance, timestamp = 0 } = defineProps<{
+  /** The snapshot's net worth, denominated in USD (converted for display here). */
   balance: BigNumber;
-  loading?: boolean;
+  /** The snapshot timestamp in seconds, used for the historic USD->fiat rate. */
   timestamp?: number;
 }>();
 
@@ -105,13 +106,10 @@ async function exportSnapshot() {
         <div class="text-rui-text-secondary">
           {{ t('common.balance') }}
         </div>
-        <RuiSkeletonLoader
-          v-if="loading"
-          class="w-24 h-5"
-        />
-        <FiatDisplay
-          v-else-if="balance"
+        <SnapshotFiatDisplay
+          v-if="balance"
           :value="balance"
+          :timestamp="timestamp"
           class="font-bold"
         />
       </div>
