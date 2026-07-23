@@ -22,35 +22,33 @@ const error = ref<string>();
 const loading = ref<boolean>(isPackaged);
 const mcpServerState = useMcpServerState();
 
-const failedStates: ReadonlySet<McpServiceState | undefined> = new Set(['Degraded', 'Failed']);
-const startingStates: ReadonlySet<McpServiceState | undefined> = new Set([
+const failedStates: ReadonlySet<McpServiceState> = new Set(['Degraded', 'Failed']);
+const transitioningStates: ReadonlySet<McpServiceState> = new Set([
   'Restarting',
   'Spawning',
+  'Stopping',
   'WaitingReady',
 ]);
 
 const isRunning = computed<boolean>(() => get(status)?.state === 'Ready');
 const isTransitioning = computed<boolean>(() => {
   const state = get(status)?.state;
-  return state === 'Restarting'
-    || state === 'Spawning'
-    || state === 'Stopping'
-    || state === 'WaitingReady';
+  return state !== undefined && transitioningStates.has(state);
 });
 
 function statusLabel(state: McpServiceState | undefined): string {
   if (!state && get(loading))
     return t('backend_settings.settings.mcp_server.status.loading');
-  if (failedStates.has(state))
+  if (state && failedStates.has(state))
     return t('backend_settings.settings.mcp_server.status.failed');
-  if (startingStates.has(state))
+  if (state === 'Stopping')
+    return t('backend_settings.settings.mcp_server.status.stopping');
+  if (state && transitioningStates.has(state))
     return t('backend_settings.settings.mcp_server.status.starting');
 
   switch (state) {
     case 'Ready':
       return t('backend_settings.settings.mcp_server.status.running');
-    case 'Stopping':
-      return t('backend_settings.settings.mcp_server.status.stopping');
     case 'Idle':
     case 'Stopped':
       return t('backend_settings.settings.mcp_server.status.stopped');
