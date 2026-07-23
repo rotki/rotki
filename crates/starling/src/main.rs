@@ -44,9 +44,9 @@ mod control;
 mod datadir_lock;
 mod healthcheck;
 
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 mod privsep;
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 mod reaper;
 
 /// Default core log level when Electron passes none (matches the core backend).
@@ -475,7 +475,7 @@ async fn main() -> std::process::ExitCode {
         }
     };
 
-    // Privilege separation (docker + unix): when started as root, adopt the
+    // Privilege separation (docker + Linux): when started as root, adopt the
     // volumes so the unprivileged backends can write to them, spawn the backends
     // under a fixed uid, and drop starling's own privileges later, once the
     // privileged port is bound. If already non-root (`docker run --user`), every
@@ -483,7 +483,7 @@ async fn main() -> std::process::ExitCode {
     //
     // Adoption happens here, before the data-directory lock, so the lock file is
     // created inside a directory the target uid already owns.
-    #[cfg(unix)]
+    #[cfg(target_os = "linux")]
     let (privsep_plan, run_as_for_build) = if docker {
         // Before anything is spawned, so both backends inherit it: no process in
         // this tree can gain privilege through execve from here on. Without it,
@@ -510,7 +510,7 @@ async fn main() -> std::process::ExitCode {
         (None, None)
     };
 
-    #[cfg(not(unix))]
+    #[cfg(not(target_os = "linux"))]
     let run_as_for_build: Option<starling_core::RunAs> = None;
 
     // Single-instance guard: take an exclusive lock on the data directory before
@@ -741,7 +741,7 @@ async fn main() -> std::process::ExitCode {
     // unprivileged uid), drop starling's own root privileges. After this the whole
     // tree runs unprivileged. Fatal on failure, continuing as root would silently
     // defeat the separation.
-    #[cfg(unix)]
+    #[cfg(target_os = "linux")]
     if let Some(privsep::Plan::Separate(run_as)) = privsep_plan {
         if let Err(err) = privsep::drop_to(run_as) {
             error!(%err, "failed to drop privileges");
@@ -759,7 +759,7 @@ async fn main() -> std::process::ExitCode {
     // keeps it current across restarts, a static set would misfire the moment a
     // restart changes the backends' pids. Attach before spawning the reaper so it
     // never observes an empty set and mistakes a live backend for an orphan.
-    #[cfg(unix)]
+    #[cfg(target_os = "linux")]
     let reaper = if docker {
         let managed_pids = Arc::new(std::sync::Mutex::new(std::collections::HashSet::new()));
         controller.track_managed_pids(managed_pids.clone());
@@ -864,7 +864,7 @@ async fn main() -> std::process::ExitCode {
         .await;
 
     info!("shutting down");
-    #[cfg(unix)]
+    #[cfg(target_os = "linux")]
     if let Some(reaper) = reaper {
         reaper.abort();
     }
