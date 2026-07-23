@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { type AssetBalanceWithPrice, type BigNumber, toHumanReadable, toSentenceCase, Zero } from '@rotki/common';
+import { type AssetBalanceWithPrice, type BigNumber, Zero } from '@rotki/common';
 import { msg } from '@/message-key';
 import ExchangeAmountRow from '@/modules/accounts/exchanges/ExchangeAmountRow.vue';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import AssetBalances from '@/modules/balances/AssetBalances.vue';
-import BinanceSavingDetail from '@/modules/balances/exchanges/BinanceSavingDetail.vue';
+import ExchangeDetailPanel from '@/modules/balances/exchanges/ExchangeDetailPanel.vue';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
@@ -221,52 +220,14 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
           </RuiTabs>
         </div>
         <div class="flex-1">
-          <div v-if="exchange">
-            <div class="flex items-center justify-between gap-4 mb-2">
-              <RuiTabs
-                v-model="exchangeDetailTabs"
-                color="primary"
-              >
-                <RuiTab>{{ t('exchange_balances.tabs.balances') }}</RuiTab>
-                <RuiTab v-if="isBinance(exchange)">
-                  {{ t('exchange_balances.tabs.savings_interest_history') }}
-                </RuiTab>
-              </RuiTabs>
-
-              <RuiButton
-                color="primary"
-                variant="outlined"
-                class="exchange-balances__refresh shrink-0"
-                :disabled="exchangeDetailTabs !== 0"
-                :loading="isExchangeLoading"
-                @click="refreshSelectedExchangeBalances(exchange)"
-              >
-                <template #prepend>
-                  <RuiIcon name="lu-refresh-ccw" />
-                </template>
-                {{ t('dashboard.exchange_balances.refresh', { exchange: toSentenceCase(toHumanReadable(exchange)) }) }}
-              </RuiButton>
-            </div>
-
-            <RuiDivider />
-
-            <RuiTabItems v-model="exchangeDetailTabs">
-              <RuiTabItem class="pt-4 md:pl-4">
-                <AssetBalances
-                  hide-breakdown
-                  :loading="isExchangeLoading"
-                  :balances="balances"
-                  sticky-header
-                />
-              </RuiTabItem>
-              <RuiTabItem
-                v-if="isBinance(exchange)"
-                class="md:pl-4"
-              >
-                <BinanceSavingDetail :exchange="exchange" />
-              </RuiTabItem>
-            </RuiTabItems>
-          </div>
+          <ExchangeDetailPanel
+            v-if="exchange"
+            v-model="exchangeDetailTabs"
+            :exchange="exchange"
+            :loading="isExchangeLoading"
+            :balances="balances"
+            @refresh="refreshSelectedExchangeBalances($event)"
+          />
 
           <div
             v-else
