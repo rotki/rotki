@@ -1,38 +1,31 @@
 import type { ComputedRef, Ref } from 'vue';
 import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
-import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
-import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
-/** A single row in the snapshot list, derived from the net-value series. */
+/**
+ * A single row in the snapshot list, derived from the net-value series.
+ *
+ * Rows are intentionally USD-only: the historic USD->fiat conversion (#12277)
+ * happens lazily in the display layer (`SnapshotFiatDisplay` /
+ * `SnapshotDeltaDisplay`), which is rendered only for the visible page. Eagerly
+ * converting the whole series here used to hammer the historic-rate endpoint —
+ * thousands of timestamps thrashing the shared 500-entry LRU on every mount.
+ * Keeping this derivation pure collapses the working set to one page.
+ */
 export interface SnapshotListRow {
   /** Snapshot timestamp in SECONDS (net-value series / historic-cache unit). */
   timestamp: number;
   /** The stored net worth at this snapshot, denominated in USD. */
   usdValue: BigNumber;
   /**
-   * The net worth converted to the user's display currency at the *historic*
-   * rate of this snapshot's timestamp (#12277). Equals `usdValue` when the
-   * display currency is USD, or `Zero` while the rate is not yet `ready`.
+   * The timestamp (seconds) of the chronologically previous snapshot, used by
+   * the display layer to compute the per-row Δ. `undefined` for the oldest.
    */
-  fiatValue: BigNumber;
-  /**
-   * The change in `fiatValue` versus the chronologically previous snapshot.
-   * `undefined` for the oldest snapshot, or whenever either side's historic
-   * rate is not yet resolved (so a placeholder zero never produces a bogus Δ).
-   */
-  delta?: BigNumber;
-  /** Whether the historic USD->fiat rate for this row is still loading. */
-  fiatPending: boolean;
-  /**
-   * Whether `fiatValue` is usable. `false` while pending, or when the historic
-   * rate is permanently missing (lets the table distinguish a skeleton from a
-   * "no price" dash).
-   */
-  ready: boolean;
+  previousTimestamp?: number;
+  /** The USD net worth of the chronologically previous snapshot (for the Δ). */
+  previousUsdValue?: BigNumber;
 }
 
 export interface SnapshotListFilters {
@@ -66,43 +59,26 @@ interface UseSnapshotListReturn {
 export function useSnapshotList(filters: Ref<SnapshotListFilters> = ref({})): UseSnapshotListReturn {
   const { netValue } = storeToRefs(useStatisticsStore());
   const { fetchNetValue } = useStatisticsDataFetching();
-  const currencySymbol = useSetting('currencySymbol');
-  const { createKey, getHistoricPrice, getIsPending } = useHistoricPriceCache();
 
   const loading = shallowRef<boolean>(false);
 
-  const isUsd = computed<boolean>(() => get(currencySymbol) === CURRENCY_USD);
-
-  /** Converts a single USD net worth to display currency at its historic rate. */
-  function convert(timestamp: number, usdValue: BigNumber): Pick<SnapshotListRow, 'fiatPending' | 'fiatValue' | 'ready'> {
-    if (get(isUsd))
-      return { fiatPending: false, fiatValue: usdValue, ready: true };
-
-    const rate = getHistoricPrice(CURRENCY_USD, timestamp);
-    const fiatPending = getIsPending(createKey(CURRENCY_USD, timestamp));
-    const ready = rate.isPositive();
-    return { fiatPending, fiatValue: ready ? usdValue.multipliedBy(rate) : Zero, ready };
-  }
-
+  // Pure USD-only derivation: no historic-rate lookups here. Each row carries
+  // its chronological predecessor (from the full series, before any range
+  // filter) so the display layer can compute the Δ for just the visible rows.
   const baseRows = computed<SnapshotListRow[]>(() => {
     const { data, times } = get(netValue);
     const rows: SnapshotListRow[] = [];
 
-    let prevFiat: BigNumber | undefined;
-    let prevReady = false;
+    let previousTimestamp: number | undefined;
+    let previousUsdValue: BigNumber | undefined;
 
     for (const [index, timestamp] of times.entries()) {
       const usdValue = data[index] ?? Zero;
-      const { fiatPending, fiatValue, ready } = convert(timestamp, usdValue);
 
-      const delta = index > 0 && ready && prevReady && prevFiat !== undefined
-        ? fiatValue.minus(prevFiat)
-        : undefined;
+      rows.push({ previousTimestamp, previousUsdValue, timestamp, usdValue });
 
-      rows.push({ delta, fiatPending, fiatValue, ready, timestamp, usdValue });
-
-      prevFiat = fiatValue;
-      prevReady = ready;
+      previousTimestamp = timestamp;
+      previousUsdValue = usdValue;
     }
 
     return rows;

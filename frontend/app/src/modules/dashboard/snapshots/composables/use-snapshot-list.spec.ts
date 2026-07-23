@@ -1,4 +1,4 @@
-import { bigNumberify, type NetValue, NoPrice } from '@rotki/common';
+import { bigNumberify, type NetValue } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { withSetup } from '@test/utils/with-setup';
 import flushPromises from 'flush-promises';
@@ -12,6 +12,10 @@ const getIsPending = vi.fn();
 const fetchNetValue = vi.fn();
 const netValue = ref<NetValue>({ data: [], times: [] });
 
+// The historic-price cache is mocked purely as a regression guard: the list
+// derivation must stay pure (USD-only) so it never hammers the forex endpoint.
+// If eager conversion is ever reintroduced, these spies would be called and the
+// "does not touch the historic-price cache" assertions would fail.
 vi.mock('@/modules/assets/prices/use-historic-price-cache', () => ({
   useHistoricPriceCache: vi.fn(() => ({
     createKey: (fromAsset: string, timestamp: number): string => `${fromAsset}#${timestamp}`,
@@ -37,8 +41,6 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-list', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    getHistoricPrice.mockReturnValue(NoPrice);
-    getIsPending.mockReturnValue(false);
     set(netValue, { data: [], times: [] });
   });
 
@@ -47,7 +49,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-list', () => {
     updateGeneralSettings({ mainCurrency: findCurrency(symbol) });
   }
 
-  it('should pass USD values through unchanged when the display currency is USD', () => {
+  it('should expose the stored USD value for each snapshot', () => {
     setCurrency('USD');
     set(netValue, { data: [bigNumberify(100), bigNumberify(150)], times: [day1, day2] });
 
@@ -55,41 +57,42 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-list', () => {
     const result = get(rows);
 
     expect(result).toHaveLength(2);
-    expect(result[0].fiatValue.toNumber()).toBe(100);
-    expect(result[0].delta).toBeUndefined();
-    expect(result[1].fiatValue.toNumber()).toBe(150);
-    expect(result[1].delta?.toNumber()).toBe(50);
+    expect(result[0].timestamp).toBe(day1);
+    expect(result[0].usdValue.toNumber()).toBe(100);
+    expect(result[1].timestamp).toBe(day2);
+    expect(result[1].usdValue.toNumber()).toBe(150);
+  });
+
+  it('should attach the chronological predecessor for the delta', () => {
+    setCurrency('EUR');
+    set(netValue, { data: [bigNumberify(100), bigNumberify(200), bigNumberify(250)], times: [day1, day2, day3] });
+
+    const { rows } = withSetup(() => useSnapshotList()).result;
+    const result = get(rows);
+
+    // The oldest snapshot has no predecessor.
+    expect(result[0].previousTimestamp).toBeUndefined();
+    expect(result[0].previousUsdValue).toBeUndefined();
+    // Every later row points at the immediately preceding snapshot.
+    expect(result[1].previousTimestamp).toBe(day1);
+    expect(result[1].previousUsdValue?.toNumber()).toBe(100);
+    expect(result[2].previousTimestamp).toBe(day2);
+    expect(result[2].previousUsdValue?.toNumber()).toBe(200);
+  });
+
+  it('should never touch the historic-price cache, even for a large series', () => {
+    setCurrency('EUR');
+    const size = 3000;
+    const data = Array.from({ length: size }, (_, i) => bigNumberify(i + 1));
+    const times = Array.from({ length: size }, (_, i) => day1 + i * 86_400);
+    set(netValue, { data, times });
+
+    const { rows } = withSetup(() => useSnapshotList()).result;
+
+    // The derivation is pure: reading every row triggers no forex lookups.
+    expect(get(rows)).toHaveLength(size);
     expect(getHistoricPrice).not.toHaveBeenCalled();
-  });
-
-  it('should convert each row at its own historic rate for a non-USD currency', () => {
-    setCurrency('EUR');
-    getHistoricPrice.mockImplementation((_asset: string, ts: number) =>
-      ts === day1 ? bigNumberify(0.8) : bigNumberify(0.9));
-    set(netValue, { data: [bigNumberify(100), bigNumberify(200)], times: [day1, day2] });
-
-    const { rows } = withSetup(() => useSnapshotList()).result;
-    const result = get(rows);
-
-    expect(result[0].fiatValue.toNumber()).toBe(80); // 100 * 0.8
-    expect(result[1].fiatValue.toNumber()).toBe(180); // 200 * 0.9
-    expect(result[1].delta?.toNumber()).toBe(100); // 180 - 80
-  });
-
-  it('should mark a row pending and skip its delta while the rate is loading', () => {
-    setCurrency('EUR');
-    getHistoricPrice.mockImplementation((_asset: string, ts: number) =>
-      ts === day2 ? NoPrice : bigNumberify(0.8));
-    getIsPending.mockImplementation((key: string) => key === `USD#${day2}`);
-    set(netValue, { data: [bigNumberify(100), bigNumberify(200)], times: [day1, day2] });
-
-    const { rows } = withSetup(() => useSnapshotList()).result;
-    const result = get(rows);
-
-    expect(result[1].fiatPending).toBe(true);
-    expect(result[1].ready).toBe(false);
-    expect(result[1].fiatValue.toNumber()).toBe(0);
-    expect(result[1].delta).toBeUndefined();
+    expect(getIsPending).not.toHaveBeenCalled();
   });
 
   it('should filter by inclusive timestamp range', () => {
@@ -102,6 +105,20 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-list', () => {
     const result = get(rows);
     expect(result).toHaveLength(1);
     expect(result[0].timestamp).toBe(day2);
+  });
+
+  it('should keep the full-series predecessor on a row excluded by the filter', () => {
+    setCurrency('EUR');
+    set(netValue, { data: [bigNumberify(100), bigNumberify(200), bigNumberify(300)], times: [day1, day2, day3] });
+
+    const { filters, rows } = withSetup(() => useSnapshotList()).result;
+    // Exclude day1, so day2 becomes the first visible row but keeps its day1 predecessor.
+    set(filters, { fromTimestamp: day2 });
+
+    const result = get(rows);
+    expect(result[0].timestamp).toBe(day2);
+    expect(result[0].previousTimestamp).toBe(day1);
+    expect(result[0].previousUsdValue?.toNumber()).toBe(100);
   });
 
   it('should report whether any snapshot exists regardless of the range filter', () => {

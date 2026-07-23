@@ -8,10 +8,8 @@ import SnapshotListTable from '@/modules/dashboard/snapshots/components/Snapshot
 
 function createRow(overrides: Partial<SnapshotListRow> = {}): SnapshotListRow {
   return {
-    delta: bigNumberify(10),
-    fiatPending: false,
-    fiatValue: bigNumberify(100),
-    ready: true,
+    previousTimestamp: 1_599_913_600,
+    previousUsdValue: bigNumberify(90),
     timestamp: 1_600_000_000,
     usdValue: bigNumberify(100),
     ...overrides,
@@ -57,14 +55,10 @@ describe('modules/dashboard/snapshots/components/SnapshotListTable', () => {
     expect(wrapper.emitted('delete')).toEqual([[1_600_000_000]]);
   });
 
-  it('should render a skeleton while the historic rate is pending', () => {
-    wrapper = createWrapper([createRow({ fiatPending: true, ready: false })]);
-
-    expect(wrapper.find('.animate-pulse').exists()).toBe(true);
-  });
-
-  it('should render a dash when there is no delta', () => {
-    wrapper = createWrapper([createRow({ delta: undefined })]);
+  it('should render a dash in the delta column for the oldest snapshot', () => {
+    // No predecessor => no delta to show (currency defaults to USD in the test
+    // harness, so no historic lookup is involved).
+    wrapper = createWrapper([createRow({ previousTimestamp: undefined, previousUsdValue: undefined })]);
 
     expect(wrapper.text()).toContain('—');
   });
