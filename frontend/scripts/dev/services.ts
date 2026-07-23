@@ -41,15 +41,16 @@ export interface BackendSpawnOptions {
   profilingCmd?: string;
 }
 
-async function startPythonBackend(opts: BackendSpawnOptions): Promise<number> {
-  const chosenPort = opts.strictPort ? opts.webPort : await selectPort(opts.webPort);
-  logger.info(`Starting python backend on port ${formatPort(chosenPort)}`);
-  const pythonInterpreterArgs = process.env.ROTKI_GIL === 'false' ? ['-X', 'gil=0'] : [];
+function resolvePythonPrefix(opts: BackendSpawnOptions, pythonInterpreterArgs: string[]): string[] {
+  const profilingArgs = opts.profilingArgs?.split(' ') ?? [];
+  return opts.profilingCmd
+    ? [...profilingArgs, 'python', ...pythonInterpreterArgs]
+    : [...pythonInterpreterArgs, ...profilingArgs];
+}
 
-  const args = [
-    ...(opts.profilingCmd
-      ? [...(opts.profilingArgs?.split(' ') ?? []), 'python', ...pythonInterpreterArgs]
-      : [...pythonInterpreterArgs, ...(opts.profilingArgs?.split(' ') ?? [])]),
+function buildBackendArgs(opts: BackendSpawnOptions, chosenPort: number, pythonInterpreterArgs: string[]): string[] {
+  return [
+    ...resolvePythonPrefix(opts, pythonInterpreterArgs),
     '-m',
     'rotkehlchen',
     '--rest-api-port',
@@ -60,6 +61,14 @@ async function startPythonBackend(opts: BackendSpawnOptions): Promise<number> {
     `${path.join(opts.logDir, 'backend.log')}`,
     ...(opts.dataDir ? ['--data-dir', opts.dataDir] : []),
   ];
+}
+
+async function startPythonBackend(opts: BackendSpawnOptions): Promise<number> {
+  const chosenPort = opts.strictPort ? opts.webPort : await selectPort(opts.webPort);
+  logger.info(`Starting python backend on port ${formatPort(chosenPort)}`);
+  const pythonInterpreterArgs = process.env.ROTKI_GIL === 'false' ? ['-X', 'gil=0'] : [];
+
+  const args = buildBackendArgs(opts, chosenPort, pythonInterpreterArgs);
 
   // `uv run --locked` honours uv.lock and errors if it's out of date,
   // matching `cargo run --locked` semantics — no silent dep drift in dev.

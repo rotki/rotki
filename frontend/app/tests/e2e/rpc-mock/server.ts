@@ -10,7 +10,7 @@ import { type BalanceMaps, buildBalanceMaps, tryResolveBalanceCall } from './bal
 const logger = createConsola({ defaults: { tag: 'mock-rpc' } });
 
 const PORT = Number(process.env.MOCK_RPC_PORT) || 30304;
-const MODE = (process.env.MOCK_RPC_MODE || 'replay') as 'record' | 'replay';
+const MODE: 'record' | 'replay' = process.env.MOCK_RPC_MODE === 'record' ? 'record' : 'replay';
 const TARGET_URL = process.env.MOCK_RPC_TARGET || '';
 const CASSETTE_DIR = path.resolve(import.meta.dirname, '..', 'cassettes', 'rpc');
 
@@ -141,7 +141,7 @@ async function forwardRequest(rpcRequest: JsonRpcRequest): Promise<ForwardResult
 
     if (response.ok) {
       try {
-        const parsed = JSON.parse(text) as { result?: unknown; error?: unknown };
+        const parsed: { result?: unknown; error?: unknown } = JSON.parse(text);
         return { body: text, result: parsed.result, error: parsed.error };
       }
       catch {
@@ -191,43 +191,40 @@ function buildResponseBody(id: number | string, fields: Record<string, unknown>)
   return JSON.stringify({ jsonrpc: '2.0', id, ...fields });
 }
 
-async function handleSingleRequest(req: JsonRpcRequest): Promise<string> {
-  const hash = hashRequest(req.method, req.params);
-
-  if (MODE === 'replay') {
-    // Try semantic balance scanner resolution first (order-independent)
-    if (balanceMaps) {
-      const resolved = tryResolveBalanceCall(req.method, req.params, balanceMaps);
-      if (resolved !== null) {
-        logger.debug(`BALANCE HIT: ${req.method}`);
-        return buildResponseBody(req.id, { result: resolved });
-      }
+function handleReplayRequest(req: JsonRpcRequest, hash: string): string {
+  // Try semantic balance scanner resolution first (order-independent)
+  if (balanceMaps) {
+    const resolved = tryResolveBalanceCall(req.method, req.params, balanceMaps);
+    if (resolved !== null) {
+      logger.debug(`BALANCE HIT: ${req.method}`);
+      return buildResponseBody(req.id, { result: resolved });
     }
+  }
 
-    const entry = cassette[hash];
-    if (entry) {
-      logger.debug(`HIT: ${req.method} (hash: ${hash})`);
-      if (entry.body !== undefined) {
-        return patchResponseId(entry.body, req.id);
-      }
-      // Legacy cassette entries without the raw body — reconstruct from
-      // parsed result/error. May lose precision on huge integers.
-      return buildResponseBody(req.id, {
-        ...(entry.result !== undefined && { result: entry.result }),
-        ...(entry.error !== undefined && { error: entry.error }),
-      });
+  const entry = cassette[hash];
+  if (entry) {
+    logger.debug(`HIT: ${req.method} (hash: ${hash})`);
+    if (entry.body !== undefined) {
+      return patchResponseId(entry.body, req.id);
     }
-
-    logger.warn(`MISS: ${req.method} (hash: ${hash}) params: ${JSON.stringify(req.params).slice(0, 200)}`);
+    // Legacy cassette entries without the raw body — reconstruct from
+    // parsed result/error. May lose precision on huge integers.
     return buildResponseBody(req.id, {
-      error: {
-        code: -32603,
-        message: `No recorded response for ${req.method} (hash: ${hash})`,
-      },
+      ...(entry.result !== undefined && { result: entry.result }),
+      ...(entry.error !== undefined && { error: entry.error }),
     });
   }
 
-  // Record mode
+  logger.warn(`MISS: ${req.method} (hash: ${hash}) params: ${JSON.stringify(req.params).slice(0, 200)}`);
+  return buildResponseBody(req.id, {
+    error: {
+      code: -32603,
+      message: `No recorded response for ${req.method} (hash: ${hash})`,
+    },
+  });
+}
+
+async function handleRecordRequest(req: JsonRpcRequest, hash: string): Promise<string> {
   logger.info(`RECORD: ${req.method} (hash: ${hash})`);
   const { body, result, error, transient } = await forwardRequest(req);
 
@@ -250,6 +247,11 @@ async function handleSingleRequest(req: JsonRpcRequest): Promise<string> {
     ...(result !== undefined && { result }),
     ...(error !== undefined && { error }),
   });
+}
+
+async function handleSingleRequest(req: JsonRpcRequest): Promise<string> {
+  const hash = hashRequest(req.method, req.params);
+  return MODE === 'replay' ? handleReplayRequest(req, hash) : handleRecordRequest(req, hash);
 }
 
 async function readBody(req: IncomingMessage): Promise<string> {
@@ -280,24 +282,28 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
   });
 });
 
-async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+/**
+ * Handles the server's control endpoints (health/cassette/save/stats).
+ * Returns `true` when the request was one of them and a response was sent.
+ */
+async function handleControlEndpoint(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
   // Health check endpoint for Playwright
   if (req.url === '/health') {
     sendJson(res, 200, { status: 'ok', mode: MODE, cassette: cassetteName, entries: Object.keys(cassette).length });
-    return;
+    return true;
   }
 
   // Switch cassette: POST /cassette { name: "blockchain-balances" }
   if (req.url === '/cassette' && req.method === 'POST') {
-    const body = JSON.parse(await readBody(req)) as { name?: string };
+    const body: { name?: string } = JSON.parse(await readBody(req));
     const name = body.name;
     if (!name) {
       sendJson(res, 400, { error: 'Missing "name" in request body' });
-      return;
+      return true;
     }
     switchCassette(name);
     sendJson(res, 200, { cassette: cassetteName, entries: Object.keys(cassette).length });
-    return;
+    return true;
   }
 
   // Save current cassette: POST /save
@@ -307,7 +313,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       dirty = false;
     }
     sendJson(res, 200, { saved: true, cassette: cassetteName, entries: Object.keys(cassette).length });
-    return;
+    return true;
   }
 
   // Stats endpoint
@@ -319,10 +325,13 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       dirty,
       cassetteFile: getCassettePath(),
     });
-    return;
+    return true;
   }
 
-  // Handle JSON-RPC requests
+  return false;
+}
+
+async function handleJsonRpc(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (req.method !== 'POST') {
     logger.debug(`Non-POST request: ${req.method} ${req.url}`);
     sendJson(res, 405, { error: 'Method not allowed' });
@@ -333,7 +342,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
   try {
     const body = await readBody(req);
-    const parsed = JSON.parse(body);
+    const parsed: JsonRpcRequest | JsonRpcRequest[] = JSON.parse(body);
 
     // Handle batch requests
     if (Array.isArray(parsed)) {
@@ -343,7 +352,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       sendRaw(res, 200, `[${bodies.join(',')}]`);
     }
     else {
-      const body = await handleSingleRequest(parsed as JsonRpcRequest);
+      const body = await handleSingleRequest(parsed);
       sendRaw(res, 200, body);
     }
   }
@@ -355,6 +364,13 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       error: { code: -32603, message: `Internal error: ${String(error)}` },
     });
   }
+}
+
+async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (await handleControlEndpoint(req, res))
+    return;
+
+  await handleJsonRpc(req, res);
 }
 
 // Save cassette on shutdown
