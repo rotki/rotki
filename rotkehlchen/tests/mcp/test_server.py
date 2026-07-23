@@ -163,6 +163,47 @@ def test_run_server_should_use_streamable_http_transport(monkeypatch) -> None:
     assert transports == ['streamable-http']
 
 
+def test_run_server_should_use_stdio_transport(monkeypatch) -> None:
+    server_mock = MagicMock()
+    monkeypatch.setattr(server, 'setup_server', MagicMock(return_value=server_mock))
+
+    server.run_server(
+        backend_url='http://127.0.0.1:4242/api/1',
+        timeout=5,
+        log_level='INFO',
+        privacy_mode='balanced',
+    )
+
+    server_mock.run.assert_called_once_with(transport='stdio')
+
+
+def test_main_should_forward_cli_arguments(monkeypatch) -> None:
+    run_server_mock = MagicMock()
+    monkeypatch.setattr(mcp_main, 'run_server', run_server_mock)
+
+    mcp_main.main([
+        '--backend-url', 'http://127.0.0.1:4243/api/1',
+        '--host', '127.0.0.2',
+        '--log-level', 'DEBUG',
+        '--max-events', '42',
+        '--port', '4450',
+        '--privacy-mode', 'strict',
+        '--timeout', '10',
+        '--transport', 'streamable-http',
+    ])
+
+    run_server_mock.assert_called_once_with(
+        backend_url='http://127.0.0.1:4243/api/1',
+        host='127.0.0.2',
+        log_level='DEBUG',
+        max_events=42,
+        port=4450,
+        privacy_mode='strict',
+        timeout=10,
+        transport='streamable-http',
+    )
+
+
 @pytest.mark.parametrize('host', ['127.0.0.1', '127.1.2.3', '::1', 'localhost'])
 def test_validate_loopback_host_should_allow_only_loopback(host: str) -> None:
     assert server.validate_loopback_host(host) == host
@@ -201,3 +242,18 @@ def test_rotkehlchen_main_should_report_mcp_startup_errors(monkeypatch, capsys) 
     assert capsys.readouterr().err.endswith(
         'Failed to start rotki MCP server: address already in use\n',
     )
+
+
+def test_rotkehlchen_main_should_dispatch_mcp_arguments(monkeypatch) -> None:
+    mcp_main_mock = MagicMock()
+    monkeypatch.setattr(rotkehlchen_main, 'is_mcp_command', True)
+    monkeypatch.setattr(rotkehlchen_main, 'mcp_main', mcp_main_mock, raising=False)
+    monkeypatch.setattr(
+        rotkehlchen_main.sys,
+        'argv',
+        ['rotkehlchen', 'mcp', '--transport', 'stdio'],
+    )
+
+    rotkehlchen_main.main()
+
+    mcp_main_mock.assert_called_once_with(['--transport', 'stdio'])
