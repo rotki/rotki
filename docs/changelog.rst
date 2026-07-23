@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Searching for zksync lite assets should now show you ethereum mainnet assets and you should be able to easily select relevant assets when adding/editing events.
 * :bug:`-` Omnibridge events containing fee payments will now be properly decoded.
 * :feature:`-` The rotki Docker image is now smaller, shuts down cleanly and immediately on ``docker stop`` instead of risking a forced kill in the middle of a database write, and can be run fully locked down as a read-only, unprivileged container. Internally a single supervisor now starts rotki and colibri, serves the frontend and proxies to them, replacing the previous nginx and Python entrypoint. Your existing setup keeps working unchanged: the published port, the ``/data``, ``/logs`` and ``/config`` volumes and every environment variable behave exactly as before.
 * :bug:`-` The Docker image now ships without a shell, package manager or coreutils (it is built on a distroless base), so there is far less inside it for an attacker to use and the image is smaller. The only thing that changes for you is that ``docker exec <container> sh`` no longer works; inspect a running container with ``docker exec <container> /opt/rotki/starling ctl status`` (also ``health`` and ``restart``) instead.

@@ -224,7 +224,15 @@ pub async fn search_assets_levenshtein(
         )
     };
 
-    let filter_chain = payload.evm_chain.as_deref().and_then(ChainID::from_name);
+    let filter_chain = payload.evm_chain.as_deref().and_then(|name| {
+        // Evmlike chains (zksync lite) have no tokens of their own since they
+        // use the L1 tokens, so search as if on ethereum
+        if name == "zksync_lite" {
+            Some(ChainID::Ethereum)
+        } else {
+            ChainID::from_name(name)
+        }
+    });
     let asset_type_db = payload
         .asset_type
         .as_deref()
@@ -704,6 +712,39 @@ mod tests {
         assert!(result
             .iter()
             .any(|entry| entry.get("identifier").and_then(|v| v.as_str()) == Some("ETH2")));
+    }
+
+    #[tokio::test]
+    async fn test_search_assets_evmlike_chain_searches_ethereum() {
+        // Evmlike chains (zksync lite) have no tokens of their own since they use
+        // the L1 tokens, so filtering by them should search as if on ethereum
+        let state = create_test_state().await;
+        normalize_eth_assets(&state).await;
+
+        let (status, body) = call_search(
+            state,
+            AssetsLevenshteinSearch {
+                value: Some("eth".to_string()),
+                evm_chain: Some("zksync_lite".to_string()),
+                asset_type: Some("evm token".to_string()),
+                address: None,
+                limit: 50,
+                search_nfts: false,
+            },
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK);
+        let result = body.get("result").and_then(|v| v.as_array()).unwrap();
+        // native ETH is included despite the evm token type filter
+        assert!(result
+            .iter()
+            .any(|entry| entry.get("identifier").and_then(|v| v.as_str()) == Some("ETH")));
+        // all token results are ethereum ones
+        assert!(result.iter().all(|entry| entry
+            .get("evm_chain")
+            .and_then(|v| v.as_str())
+            .is_none_or(|chain| chain == "ethereum")));
     }
 
     #[tokio::test]
