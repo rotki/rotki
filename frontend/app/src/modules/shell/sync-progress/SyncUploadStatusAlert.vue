@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  message?: string;
+  message?: string | null;
 }>();
 
 const emit = defineEmits<{
