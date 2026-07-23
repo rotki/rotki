@@ -3,6 +3,7 @@ import type { SavedFilterLocation, SearchMatcher, Suggestion } from '@/modules/c
 import { isEqual } from 'es-toolkit';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useSavedFilter } from '@/modules/core/table/filters/use-saved-filters';
+import SavedFilterRowActions from '@/modules/core/table/SavedFilterRowActions.vue';
 import SuggestedItem from '@/modules/core/table/SuggestedItem.vue';
 
 const { disabled, location, matchers, selection } = defineProps<{
@@ -181,55 +182,10 @@ async function addToSavedFilter() {
                 />
               </RuiChip>
             </div>
-            <div class="flex items-center gap-1">
-              <RuiTooltip
-                :popper="{ placement: 'top' }"
-                :open-delay="400"
-              >
-                <template #activator>
-                  <RuiButton
-                    color="primary"
-                    variant="text"
-                    size="sm"
-                    class="!p-2"
-                    icon
-                    @click="applyFilter(filters)"
-                  >
-                    <RuiIcon
-                      size="16"
-                      name="lu-corner-left-up"
-                    />
-                  </RuiButton>
-                </template>
-                <span>
-                  {{ t('table_filter.saved_filters.actions.apply') }}
-                </span>
-              </RuiTooltip>
-
-              <RuiTooltip
-                :popper="{ placement: 'top' }"
-                :open-delay="400"
-              >
-                <template #activator>
-                  <RuiButton
-                    color="primary"
-                    variant="text"
-                    size="sm"
-                    class="!p-2"
-                    icon
-                    @click="deleteFilter(index)"
-                  >
-                    <RuiIcon
-                      size="16"
-                      name="lu-trash-2"
-                    />
-                  </RuiButton>
-                </template>
-                <span>
-                  {{ t('table_filter.saved_filters.actions.remove') }}
-                </span>
-              </RuiTooltip>
-            </div>
+            <SavedFilterRowActions
+              @apply="applyFilter(filters)"
+              @remove="deleteFilter(index)"
+            />
           </div>
         </div>
       </div>
