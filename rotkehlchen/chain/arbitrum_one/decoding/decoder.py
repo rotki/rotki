@@ -59,7 +59,8 @@ class ArbitrumOneTransactionDecoder(EVMTransactionDecoder):
             self,
             transaction: ArbitrumOneTransaction,  # type: ignore[override]
     ) -> list[tuple[int, Callable]]:
-        return self.transaction_type_mappings.get(transaction.tx_type, [])
+        # return a copy since the caller extends and sorts the returned list
+        return list(self.transaction_type_mappings.get(transaction.tx_type, []))
 
     def _chain_specific_decoder_initialization(
             self,

@@ -787,6 +787,7 @@ def deserialize_evm_transaction(
                 input_data=input_data,
                 nonce=nonce,
                 l1_fee=l1_fee,
+                tx_type=deserialize_int_from_hex_or_int(data.get('type', '0x0'), location='l2 transaction deserialization'),  # noqa: E501
                 authorization_list=authorization_list,
             ), raw_receipt_data
     except KeyError as e:
