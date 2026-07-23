@@ -36,6 +36,7 @@ use crate::control::protocol::{
 };
 use crate::lifecycle::{ServiceState, ServiceStatus, Supervisor};
 use crate::process::Spawner;
+use crate::SupervisorError;
 
 /// How many recent push events a freshly-subscribed transport can still receive.
 const EVENT_CHANNEL_CAPACITY: usize = 64;
@@ -693,7 +694,7 @@ impl<S: Spawner> Controller<S> {
         self.supervisor
             .start_service(service)
             .await
-            .map_err(|error| ControlError::ServiceOperationFailed(error.to_string()))?;
+            .map_err(Self::map_service_operation_error)?;
         self.publish();
         self.audit("start-service", transport, "ready");
         Ok(OkResult::OK)
@@ -709,10 +710,19 @@ impl<S: Spawner> Controller<S> {
         self.supervisor
             .stop_service(service, self.grace)
             .await
-            .map_err(|error| ControlError::ServiceOperationFailed(error.to_string()))?;
+            .map_err(Self::map_service_operation_error)?;
         self.publish();
         self.audit("stop-service", transport, "stopped");
         Ok(OkResult::OK)
+    }
+
+    fn map_service_operation_error(error: SupervisorError) -> ControlError {
+        match error {
+            SupervisorError::NotFound(_) | SupervisorError::ManualControlNotAllowed(_) => {
+                ControlError::InvalidService(error.to_string())
+            }
+            _ => ControlError::ServiceOperationFailed(error.to_string()),
+        }
     }
 
     fn enforce_mutation_interval(

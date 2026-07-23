@@ -66,7 +66,9 @@ struct Notification {
 fn error_code(err: &ControlError) -> i64 {
     match err {
         ControlError::Unauthorized { .. } => ERR_UNAUTHORIZED,
-        ControlError::InvalidLogLevel(_) | ControlError::OptionsNotAllowed { .. } => INVALID_PARAMS,
+        ControlError::InvalidLogLevel(_)
+        | ControlError::InvalidService(_)
+        | ControlError::OptionsNotAllowed { .. } => INVALID_PARAMS,
         ControlError::RateLimited => ERR_RATE_LIMITED,
         // A precondition failure, not a malformed request: the caller asked for a
         // valid thing at a moment it does not apply.
@@ -395,7 +397,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn unknown_service_returns_an_operation_error() {
+    async fn unknown_service_returns_invalid_params() {
         let handle = handle_with_loop().await;
         let line = json!({
             "jsonrpc":"2.0","id":1,"method":"startService",
@@ -403,7 +405,7 @@ mod tests {
         })
         .to_string();
         let out = parse(&handle_line(&handle, Transport::Stdio, &line).await);
-        assert_eq!(out["error"]["code"], ERR_RESTART_FAILED);
+        assert_eq!(out["error"]["code"], INVALID_PARAMS);
         assert!(out["error"]["message"]
             .as_str()
             .unwrap()

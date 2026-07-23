@@ -305,6 +305,9 @@ pub enum ControlError {
     /// Starting or stopping one optional service failed.
     #[error("service operation failed: {0}")]
     ServiceOperationFailed(String),
+    /// The requested service does not exist or does not allow independent control.
+    #[error("invalid service: {0}")]
+    InvalidService(String),
     /// The controller is no longer running (its task has exited), so the request
     /// could not be delivered or answered.
     #[error("control plane is not available")]
