@@ -318,7 +318,9 @@ export class StarlingHandler {
   }
 
   async setMcpServerRunning(running: boolean): Promise<McpServiceState> {
-    return setMcpServerRunning(async (method, params) => this.request(method, params), running);
+    return this.child
+      ? setMcpServerRunning(async (method, params) => this.request(method, params), running)
+      : 'Unavailable';
   }
 
   /** Send a JSON-RPC request over the child's stdin and await its response. */

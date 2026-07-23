@@ -201,6 +201,14 @@ describe('starlingHandler', () => {
     expect(methods).toContain('stopService');
   });
 
+  it('should report MCP as unavailable when starling is not running', async () => {
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+
+    expect(await handler.getMcpServerState()).toBe('Unavailable');
+    expect(await handler.setMcpServerRunning(true)).toBe('Unavailable');
+    expect(await handler.setMcpServerRunning(false)).toBe('Unavailable');
+  });
+
   it('should map an unsupported macOS version to MACOS_VERSION', async () => {
     osState.platform = 'darwin';
     osState.release = '16.0.0'; // darwin 17 == High Sierra; 16 is too old
