@@ -19,7 +19,7 @@ const {
 
 const status = ref<McpServerStatus>();
 const error = ref<string>();
-const loading = ref<boolean>(false);
+const loading = ref<boolean>(isPackaged);
 const mcpServerState = useMcpServerState();
 
 const failedStates: ReadonlySet<McpServiceState | undefined> = new Set(['Degraded', 'Failed']);
@@ -39,6 +39,8 @@ const isTransitioning = computed<boolean>(() => {
 });
 
 function statusLabel(state: McpServiceState | undefined): string {
+  if (!state && get(loading))
+    return t('backend_settings.settings.mcp_server.status.loading');
   if (failedStates.has(state))
     return t('backend_settings.settings.mcp_server.status.failed');
   if (startingStates.has(state))
@@ -62,12 +64,16 @@ async function loadStatus(): Promise<void> {
   if (!isPackaged)
     return;
 
+  set(loading, true);
   set(error, undefined);
   try {
     set(status, await getMcpServerStatus());
   }
   catch (error_: unknown) {
     set(error, getErrorMessage(error_));
+  }
+  finally {
+    set(loading, false);
   }
 }
 

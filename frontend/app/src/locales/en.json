@@ -1774,6 +1774,7 @@
         "status": {
           "failed": "Failed",
           "label": "Status",
+          "loading": "Loading",
           "running": "Running",
           "starting": "Starting",
           "stopped": "Stopped",

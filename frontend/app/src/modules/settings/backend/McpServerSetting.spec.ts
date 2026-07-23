@@ -6,6 +6,7 @@ import { setMcpServerState } from '@/modules/settings/backend/use-mcp-server-sta
 
 const mocks = vi.hoisted(() => ({
   getMcpServerStatus: vi.fn(),
+  isPackaged: true,
   setMcpAutoStart: vi.fn(),
   startMcpServer: vi.fn(),
   stopMcpServer: vi.fn(),
@@ -14,7 +15,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
   useInterop: (): Record<string, unknown> => ({
     ...mocks,
-    isPackaged: true,
   }),
 }));
 
@@ -37,7 +37,8 @@ function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
         },
         RuiButton: {
           emits: ['click'],
-          template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot /></button>',
+          props: ['disabled'],
+          template: '<button v-bind="$attrs" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
         },
         RuiChip: {
           template: '<span class="rui-chip"><slot /></span>',
@@ -45,8 +46,8 @@ function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
         RuiIcon: true,
         RuiSwitch: {
           emits: ['update:modelValue'],
-          props: ['modelValue'],
-          template: '<button v-bind="$attrs" class="rui-switch" @click="$emit(\'update:modelValue\', !modelValue)" />',
+          props: ['disabled', 'modelValue'],
+          template: '<button v-bind="$attrs" class="rui-switch" :disabled="disabled" @click="$emit(\'update:modelValue\', !modelValue)" />',
         },
         SettingsItem: {
           template: '<section><slot name="title" /><slot name="subtitle" /><slot /></section>',
@@ -59,6 +60,7 @@ function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
 describe('mcpServerSetting', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.isPackaged = true;
     setMcpServerState(undefined);
     mocks.getMcpServerStatus.mockResolvedValue(stoppedStatus);
     mocks.setMcpAutoStart.mockImplementation(async (enabled: boolean) => ({
@@ -111,5 +113,36 @@ describe('mcpServerSetting', () => {
     await nextTick();
 
     expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.status.failed');
+  });
+
+  it('should show lifecycle errors and refresh the service state', async () => {
+    mocks.startMcpServer.mockRejectedValueOnce(new Error('start failed'));
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    await wrapper.find('[data-testid="mcp-lifecycle"]').trigger('click');
+    await flushPromises();
+
+    expect(mocks.getMcpServerStatus).toHaveBeenCalledTimes(2);
+    expect(wrapper.text()).toContain('start failed');
+  });
+
+  it('should show a loading state before the initial status resolves', async () => {
+    mocks.getMcpServerStatus.mockReturnValueOnce(new Promise(() => {}));
+
+    const wrapper = createWrapper();
+    await nextTick();
+
+    expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.status.loading');
+  });
+
+  it('should show the desktop-only message outside Electron', async () => {
+    mocks.isPackaged = false;
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.desktop_only');
+    expect(mocks.getMcpServerStatus).not.toHaveBeenCalled();
   });
 });
