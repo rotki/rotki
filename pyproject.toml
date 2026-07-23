@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==78.1.1", "setuptools-scm==7.1.0", "wheel==0.45.1"]
+requires = ["setuptools==83.0.0", "setuptools-scm==7.1.0", "wheel==0.45.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -127,7 +127,7 @@ lint = [
 docs = [
     # sphinxcontrib-httpexample imports pkg_resources, which no longer comes
     # with the venv by default (gevent's zope deps used to pull setuptools in)
-    "setuptools==80.9.0",
+    "setuptools==83.0.0",
     "sphinx==8.2.3",
     "sphinx-autobuild==2025.8.25",
     "sphinx_inline_tabs==2025.12.21.14",
