@@ -5,6 +5,7 @@ import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
+import GlobalSearchItemTexts from '@/modules/shell/components/GlobalSearchItemTexts.vue';
 import { type SearchItem, useGlobalSearch } from '@/modules/shell/layout/use-global-search';
 
 const { isMini = false } = defineProps<{
@@ -169,33 +170,10 @@ onBeforeMount(async () => {
                 size="26px"
               />
             </template>
-            <div class="ml-3 flex items-center">
-              <template v-if="item.texts">
-                <div
-                  v-for="(text, index) in item.texts"
-                  :key="text + index"
-                  class="flex items-center"
-                >
-                  <div v-if="index === item.texts.length - 1">
-                    {{ text }}
-                  </div>
-                  <div
-                    v-else
-                    class="flex items-center text-rui-text-secondary"
-                  >
-                    {{ text }}
-                    <RuiIcon
-                      class="d-inline mx-2"
-                      size="16"
-                      name="lu-chevron-right"
-                    />
-                  </div>
-                </div>
-              </template>
-              <template v-else>
-                {{ item.text }}
-              </template>
-            </div>
+            <GlobalSearchItemTexts
+              :texts="item.texts"
+              :text="item.text"
+            />
             <div class="grow" />
             <div
               v-if="item.price"

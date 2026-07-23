@@ -5,6 +5,7 @@ import { assert, type Nullable, pluralize } from '@rotki/common';
 import { EmptyListId, type PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
 import ActionStatusIndicator from '@/modules/shell/components/error/ActionStatusIndicator.vue';
 import PrioritizedListEntry from '@/modules/shell/components/PrioritizedListEntry.vue';
+import PrioritizedListRow from '@/modules/shell/components/PrioritizedListRow.vue';
 import SimpleTable from '@/modules/shell/components/SimpleTable.vue';
 
 const modelValue = defineModel<PrioritizedListId[]>({ required: true });
@@ -180,77 +181,22 @@ const autoCompleteHint = computed<string>(() => {
           move-class="transition-all"
           tag="tbody"
         >
-          <tr
+          <PrioritizedListRow
             v-for="(identifier, index) in modelValue"
             :key="identifier"
-            class="odd:bg-rui-grey-50 odd:dark:bg-rui-grey-900 group"
-          >
-            <td class="!pr-0 !pl-2">
-              <div class="flex flex-col gap-1 transition-all opacity-0 invisible group-hover:opacity-100 group-hover:visible">
-                <RuiButton
-                  :id="`move-up-${identifier}`"
-                  size="sm"
-                  class="!px-1"
-                  :class="{ '!py-0.5': dense }"
-                  :disabled="isFirst(identifier)"
-                  @click="move(identifier, false)"
-                >
-                  <RuiIcon
-                    name="lu-arrow-up"
-                    size="16"
-                  />
-                </RuiButton>
-                <RuiButton
-                  :id="`move-down-${identifier}`"
-                  size="sm"
-                  class="!px-1"
-                  :class="{ '!py-0.5': dense }"
-                  :disabled="isLast(identifier)"
-                  @click="move(identifier, true)"
-                >
-                  <RuiIcon
-                    name="lu-arrow-down"
-                    size="16"
-                  />
-                </RuiButton>
-              </div>
-            </td>
-            <td class="text-center px-0">
-              {{ index + 1 }}
-            </td>
-            <td>
-              <PrioritizedListEntry
-                :data="itemData(identifier)"
-                size="28px"
-              />
-            </td>
-            <td class="text-end !pl-0">
-              <RuiTooltip
-                v-if="!disableDelete"
-                :popper="{ placement: 'top' }"
-                :open-delay="400"
-              >
-                <template #activator>
-                  <RuiButton
-                    :id="`delete-${identifier}`"
-                    class="transition-all opacity-0 invisible group-hover:opacity-100 group-hover:visible"
-                    icon
-                    :class="{ '!p-2': dense }"
-                    variant="text"
-                    @click="remove(identifier)"
-                  >
-                    <RuiIcon
-                      name="lu-x"
-                      :size="dense ? 16 : 20"
-                    />
-                  </RuiButton>
-                </template>
-                <span>
-                  {{ t('prioritized_list.item.delete', itemNameTr) }}
-                </span>
-              </RuiTooltip>
-            </td>
-          </tr>
+            :item="{
+              identifier,
+              index,
+              data: itemData(identifier),
+              first: isFirst(identifier),
+              last: isLast(identifier),
+            }"
+            :dense="dense"
+            :disable-delete="disableDelete"
+            :delete-label="t('prioritized_list.item.delete', itemNameTr)"
+            @move="move(identifier, $event)"
+            @remove="remove(identifier)"
+          />
         </TransitionGroup>
       </SimpleTable>
     </RuiCard>
