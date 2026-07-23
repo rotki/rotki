@@ -46,6 +46,7 @@ class HistoryMappingState(DBIntEnumMixIn):
     PROFIT_ADJUSTMENT = 2  # events auto-created during historical balances processing when withdrawals exceed deposits  # noqa: E501
     MATCHED = 3  # events matched with asset movements and adjustments created during matching.
     IMPORTED_FROM_CSV = 4
+    SYNTHETIC = 5  # events manufactured by rotki from other events' data, e.g. exchange adjustments or the counterpart leg of a bridge whose chain can no longer be queried  # noqa: E501
 
 
 class HistoryEventLinkType(DBIntEnumMixIn):

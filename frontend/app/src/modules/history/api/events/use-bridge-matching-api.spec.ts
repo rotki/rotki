@@ -68,7 +68,7 @@ describe('use-bridge-matching-api', () => {
     });
   });
 
-  it('should link matched events without the external flag', async () => {
+  it('should link matched events without a resolution flag', async () => {
     spies.put.mockResolvedValueOnce(true);
     const { matchBridgeTransactions } = useBridgeMatchingApi();
 
@@ -76,6 +76,7 @@ describe('use-bridge-matching-api', () => {
 
     expect(spies.put).toHaveBeenCalledWith('/history/events/match/bridges', {
       bridgeEvent: 42,
+      createCounterpart: false,
       external: false,
       matchedEvents: [1, 2],
     });
@@ -89,19 +90,34 @@ describe('use-bridge-matching-api', () => {
 
     expect(spies.put).toHaveBeenCalledWith('/history/events/match/bridges', {
       bridgeEvent: 42,
+      createCounterpart: false,
       external: false,
     });
   });
 
-  it('should resolve a deposit as external via the external flag', async () => {
+  it('should resolve a deposit as external via the external resolution', async () => {
     spies.put.mockResolvedValueOnce(true);
     const { matchBridgeTransactions } = useBridgeMatchingApi();
 
-    await matchBridgeTransactions(42, undefined, true);
+    await matchBridgeTransactions(42, undefined, 'external');
 
     expect(spies.put).toHaveBeenCalledWith('/history/events/match/bridges', {
       bridgeEvent: 42,
+      createCounterpart: false,
       external: true,
+    });
+  });
+
+  it('should request a synthetic counterpart via the createCounterpart resolution', async () => {
+    spies.put.mockResolvedValueOnce(true);
+    const { matchBridgeTransactions } = useBridgeMatchingApi();
+
+    await matchBridgeTransactions(42, undefined, 'createCounterpart');
+
+    expect(spies.put).toHaveBeenCalledWith('/history/events/match/bridges', {
+      bridgeEvent: 42,
+      createCounterpart: true,
+      external: false,
     });
   });
 

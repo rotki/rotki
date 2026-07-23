@@ -6963,7 +6963,7 @@ Match the two legs of cross-chain bridge transfers
 
 .. http:put:: /api/(version)/history/events/match/bridges
 
-   Matches a source chain bridge deposit event with its destination chain event(s), resolves a bridge leg as involving an external (untracked) counterpart, or marks it as having no match. Resolving as external turns a deposit into a bridge spend (spend/bridge, a payment to an untracked address) and a withdrawal into a bridge receive (receive/bridge, income from an untracked source), so the events stay recognizable and filterable as bridging events while accounted as plain outgoing/incoming transfers. The original bridge leg and its direction are recorded in the event extra data. Unlinking restores the original event.
+   Matches a source chain bridge deposit event with its destination chain event(s), resolves a bridge leg as involving an external (untracked) counterpart, creates a synthetic counterpart event for it, or marks it as having no match. Resolving as external turns a deposit into a bridge spend (spend/bridge, a payment to an untracked address) and a withdrawal into a bridge receive (receive/bridge, income from an untracked source), so the events stay recognizable and filterable as bridging events while accounted as plain outgoing/incoming transfers. The original bridge leg and its direction are recorded in the event extra data. Unlinking restores the original event. Creating a counterpart manufactures the missing mirror leg on the other chain from the leg's own bridge data — for counterparts that can never be pulled, e.g. a chain whose API shut down — marks it with the ``synthetic`` state and links the two like a normal match. Unlinking such a pair deletes the synthetic event instead of restoring it.
 
    .. note::
       This endpoint is only available for premium users
@@ -6983,7 +6983,8 @@ Match the two legs of cross-chain bridge transfers
 
    :reqjson int bridge_event: DB identifier of the bridge deposit event to match
    :reqjson list[int][optional] matched_events: List of DB identifiers of destination chain events to match with the deposit. When omitted or empty the deposit is marked as having no match.
-   :reqjson bool[optional] external: When true (and matched_events is empty) the bridge leg is resolved as involving an external (untracked) counterpart: a deposit becomes a bridge spend (spend/bridge) accounted as a payment and a withdrawal becomes a bridge receive (receive/bridge) accounted as income. False by default.
+   :reqjson bool[optional] external: When true (and matched_events is empty) the bridge leg is resolved as involving an external (untracked) counterpart: a deposit becomes a bridge spend (spend/bridge) accounted as a payment and a withdrawal becomes a bridge receive (receive/bridge) accounted as income. False by default. Cannot be combined with create_counterpart.
+   :reqjson bool[optional] create_counterpart: When true (and matched_events is empty) a synthetic counterpart event mirroring the bridge leg is created on the other chain and linked to it. The counterpart chain is derived from the leg's bridge extra data, so the call fails if that data has no usable chain. False by default. Cannot be combined with external.
 
    **Example Response**:
 

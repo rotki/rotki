@@ -8,6 +8,8 @@ const { spies } = vi.hoisted(() => ({
     unlinkBridgeTransaction: vi.fn<(id: number) => Promise<boolean>>().mockResolvedValue(true),
     resolveExternal: vi.fn<(id: number) => Promise<{ message: string; success: boolean }>>()
       .mockResolvedValue({ message: '', success: true }),
+    resolveCreateCounterpart: vi.fn<(id: number) => Promise<{ message: string; success: boolean }>>()
+      .mockResolvedValue({ message: '', success: true }),
     refreshUnmatchedBridgeTransactions: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     showConfirm: vi.fn(),
     showErrorMessage: vi.fn(),
@@ -31,6 +33,7 @@ vi.mock('@/modules/history/events/use-unmatched-bridge-transactions', () => ({
     unmatchedTransactions: computed<UnmatchedBridgeTransaction[]>(() => get(unmatchedTransactionsRef)),
     ignoredTransactions: computed<UnmatchedBridgeTransaction[]>(() => get(ignoredTransactionsRef)),
     refreshUnmatchedBridgeTransactions: spies.refreshUnmatchedBridgeTransactions,
+    resolveCreateCounterpart: spies.resolveCreateCounterpart,
     resolveExternal: spies.resolveExternal,
   }),
 }));
@@ -274,6 +277,70 @@ describe('use-bridge-transaction-actions', () => {
       const { confirmMarkExternal } = useBridgeTransactionActions();
 
       confirmMarkExternal(createMockTransaction());
+      await extractAndCallConfirmCallback();
+
+      expect(spies.refreshUnmatchedBridgeTransactions).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('confirmCreateCounterpart', () => {
+    it('should show the counterpart chain of a deposit in the confirmation', () => {
+      const transaction = createMockTransaction({
+        bridge: { toChain: 'optimism' },
+      });
+      const { confirmCreateCounterpart } = useBridgeTransactionActions();
+
+      confirmCreateCounterpart(transaction);
+
+      expect(spies.showConfirm).toHaveBeenCalledOnce();
+      const [message] = spies.showConfirm.mock.calls[0];
+      expect(message).toMatchObject({
+        message: 'bridge_matching.actions.create_counterpart_confirm_out_chain::OPTIMISM',
+      });
+    });
+
+    it('should use the source chain copy for a withdrawal confirmation', () => {
+      const transaction = createMockTransaction({
+        bridge: { fromChain: 'zksync lite', toChain: 'ethereum' },
+        direction: 'withdrawal',
+      });
+      const { confirmCreateCounterpart } = useBridgeTransactionActions();
+
+      confirmCreateCounterpart(transaction);
+
+      const [message] = spies.showConfirm.mock.calls[0];
+      expect(message).toMatchObject({
+        message: 'bridge_matching.actions.create_counterpart_confirm_in_chain::ZKSYNC LITE',
+      });
+    });
+
+    it('should fall back to the chainless copy when no counterpart chain is recorded', () => {
+      const { confirmCreateCounterpart } = useBridgeTransactionActions();
+
+      confirmCreateCounterpart(createMockTransaction());
+
+      const [message] = spies.showConfirm.mock.calls[0];
+      expect(message).toMatchObject({
+        message: 'bridge_matching.actions.create_counterpart_confirm_out',
+      });
+    });
+
+    it('should create the counterpart when the user confirms', async () => {
+      const transaction = createMockTransaction({ identifier: 33 });
+      const { confirmCreateCounterpart } = useBridgeTransactionActions();
+
+      confirmCreateCounterpart(transaction);
+      await extractAndCallConfirmCallback();
+
+      expect(spies.resolveCreateCounterpart).toHaveBeenCalledWith(33);
+      expect(spies.refreshUnmatchedBridgeTransactions).toHaveBeenCalledOnce();
+    });
+
+    it('should not refresh when creating the counterpart fails', async () => {
+      spies.resolveCreateCounterpart.mockResolvedValueOnce({ message: 'nope', success: false });
+      const { confirmCreateCounterpart } = useBridgeTransactionActions();
+
+      confirmCreateCounterpart(createMockTransaction());
       await extractAndCallConfirmCallback();
 
       expect(spies.refreshUnmatchedBridgeTransactions).not.toHaveBeenCalled();

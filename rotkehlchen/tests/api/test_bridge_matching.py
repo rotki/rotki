@@ -6,12 +6,17 @@ import requests
 
 from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.db.constants import HistoryEventLinkType
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    HistoryEventLinkType,
+    HistoryMappingState,
+)
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tasks.bridges import SYNTHETIC_BRIDGE_GROUP_PREFIX
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -225,6 +230,129 @@ def test_resolve_bridge_leg_as_external(
             filter_query=HistoryEventFilterQuery.make(identifiers=[event_identifier]),
         ))
         assert restored == original_event
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_create_counterpart_and_unlink(rotkehlchen_api_server: APIServer) -> None:
+    """Creating a counterpart for a bridge leg manufactures the mirror event on the
+    other chain, marks it synthetic and links the two; unlinking deletes the
+    synthetic event instead of restoring it and restores the original leg."""
+    deposit, _ = _add_bridge_pair(rotkehlchen_api_server, withdrawal_is_decoded_bridge=False)
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevents = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        original_deposit = next(x for x in dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(identifiers=[1]),
+        ))
+
+    assert_simple_ok_response(requests.put(
+        url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+        json={'bridge_event': 1, 'matched_events': [], 'create_counterpart': True},
+    ))
+    assert _get_bridge_link_rows(rotkehlchen_api_server) == [(1, 3)]
+    with rotki.data.db.conn.read_ctx() as cursor:
+        synthetic = next(x for x in dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(identifiers=[3]),
+        ))
+        assert synthetic.group_identifier == f'{SYNTHETIC_BRIDGE_GROUP_PREFIX}{deposit.group_identifier}'  # noqa: E501
+        assert synthetic.location == Location.ARBITRUM_ONE
+        assert synthetic.event_type == HistoryEventType.WITHDRAWAL
+        assert synthetic.event_subtype == HistoryEventSubType.BRIDGE
+        assert synthetic.asset == A_ETH
+        assert synthetic.amount == FVal('1')
+        assert synthetic.timestamp == deposit.timestamp
+        assert synthetic.location_label == deposit.location_label
+        assert synthetic.notes == 'Receive 1 ETH on Arbitrum One bridged from Ethereum'
+        assert synthetic.extra_data is not None
+        assert deposit.extra_data is not None
+        assert synthetic.extra_data['bridge'] == deposit.extra_data['bridge']
+        assert synthetic.extra_data['matched_bridge'] == {
+            'group_identifier': deposit.group_identifier,
+            'location': Location.ETHEREUM.serialize(),
+        }
+        states = {(row[0], row[1]) for row in cursor.execute(
+            'SELECT parent_identifier, value FROM history_events_mappings WHERE name=?',
+            (HISTORY_MAPPING_KEY_STATE,),
+        )}
+
+    assert states == {
+        (3, HistoryMappingState.SYNTHETIC.serialize_for_db()),
+        (3, HistoryMappingState.MATCHED.serialize_for_db()),
+        (1, HistoryMappingState.MATCHED.serialize_for_db()),
+    }
+
+    # unlinking deletes the synthetic counterpart and restores the original leg
+    assert_simple_ok_response(requests.delete(
+        url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+        json={'identifier': 1},
+    ))
+    assert _get_bridge_link_rows(rotkehlchen_api_server) == []
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE identifier=3',
+        ).fetchone()[0] == 0
+        assert cursor.execute(  # rowids get reused, so no stale backup may survive
+            'SELECT COUNT(*) FROM history_events_backup WHERE identifier=3',
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events_mappings WHERE name=?',
+            (HISTORY_MAPPING_KEY_STATE,),
+        ).fetchone()[0] == 0
+        restored = next(x for x in dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(identifiers=[1]),
+        ))
+        assert restored == original_deposit
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_create_counterpart_for_matched_leg_fails(rotkehlchen_api_server: APIServer) -> None:
+    """A bridge leg that already has a linked counterpart must not get a second,
+    synthetic one — that would double count the transfer."""
+    _add_bridge_pair(rotkehlchen_api_server)
+    assert_simple_ok_response(requests.put(
+        url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+        json={'bridge_event': 1, 'matched_events': [2]},
+    ))
+    assert_error_response(
+        response=requests.put(
+            url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+            json={'bridge_event': 1, 'matched_events': [], 'create_counterpart': True},
+        ),
+        contained_in_msg='is already matched to a counterpart event',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_create_counterpart_without_chain_data_fails(rotkehlchen_api_server: APIServer) -> None:
+    """A bridge leg with no usable counterpart chain in its bridge data cannot get a
+    synthetic counterpart, and a non-bridge event cannot get one either."""
+    _add_bridge_pair(rotkehlchen_api_server, withdrawal_is_decoded_bridge=False)
+    assert_error_response(
+        response=requests.put(
+            url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+            json={'bridge_event': 2, 'matched_events': [], 'create_counterpart': True},
+        ),
+        contained_in_msg='is not a bridge deposit or withdrawal',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_create_counterpart_without_bridge_data_fails(rotkehlchen_api_server: APIServer) -> None:
+    """A bridge leg whose bridge extra data has no counterpart chain fails cleanly."""
+    _add_bridge_pair(rotkehlchen_api_server, withdrawal_is_decoded_bridge=True)
+    assert_error_response(
+        response=requests.put(  # the withdrawal leg carries no bridge extra data
+            url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+            json={'bridge_event': 2, 'matched_events': [], 'create_counterpart': True},
+        ),
+        contained_in_msg='does not contain a known counterpart chain',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -470,6 +598,22 @@ def test_match_bridge_transactions_errors(rotkehlchen_api_server: APIServer) -> 
         ),
         status_code=HTTPStatus.BAD_REQUEST,
         contained_in_msg='external cannot be combined with matched_events',
+    )
+    assert_error_response(
+        response=requests.put(
+            url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+            json={'bridge_event': 1, 'matched_events': [2], 'create_counterpart': True},
+        ),
+        status_code=HTTPStatus.BAD_REQUEST,
+        contained_in_msg='create_counterpart cannot be combined with matched_events',
+    )
+    assert_error_response(
+        response=requests.put(
+            url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+            json={'bridge_event': 1, 'external': True, 'create_counterpart': True},
+        ),
+        status_code=HTTPStatus.BAD_REQUEST,
+        contained_in_msg='external cannot be combined with create_counterpart',
     )
     assert_error_response(
         response=requests.put(

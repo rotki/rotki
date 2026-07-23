@@ -804,6 +804,16 @@ def test_match_asset_movements_settings(database: DBHandler) -> None:
     assert all_events[1].amount == movement_event.amount - matched_event.amount
     assert all_events[2].group_identifier == matched_event.group_identifier
 
+    # the manufactured adjustment carries both the matched and synthetic states
+    with database.conn.read_ctx() as cursor:
+        assert {row[0] for row in cursor.execute(
+            'SELECT value FROM history_events_mappings WHERE parent_identifier=? AND name=?',
+            (all_events[1].identifier, HISTORY_MAPPING_KEY_STATE),
+        )} == {
+            HistoryMappingState.MATCHED.serialize_for_db(),
+            HistoryMappingState.SYNTHETIC.serialize_for_db(),
+        }
+
 
 def test_auto_ignore_by_asset(database: DBHandler) -> None:
     """Test that movements are auto-ignored if their asset is for an unsupported chain."""

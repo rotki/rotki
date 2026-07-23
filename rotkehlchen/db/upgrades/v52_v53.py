@@ -227,6 +227,22 @@ DROP TABLE ens_mappings_old;
             ),
         )
 
+    @progress_step(description='Marking exchange adjustment events as synthetic.')
+    def _mark_exchange_adjustments_synthetic(write_cursor: DBCursor) -> None:
+        """Stamp the auto-created exchange adjustment events with the new SYNTHETIC
+        mapping state (5) so they are shown as events manufactured by rotki.
+
+        Scoped to adjustments carrying the MATCHED state (3), which only the asset
+        movement matching machinery sets — user-created events of the same type are
+        left alone. Hardcoded values to keep the upgrade immune to future changes.
+        """
+        write_cursor.execute(
+            "INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) "
+            "SELECT M.parent_identifier, 'state', 5 FROM history_events_mappings M "
+            "INNER JOIN history_events H ON H.identifier=M.parent_identifier "
+            "WHERE M.name='state' AND M.value=3 AND H.type='exchange adjustment'",
+        )
+
     @progress_step(description='Remove obsolete airdrop parquet files.')
     def _remove_airdrop_parquet_files(write_cursor: DBCursor) -> None:
         """Remove parquet airdrop files left behind now that airdrops use compressed CSV files."""

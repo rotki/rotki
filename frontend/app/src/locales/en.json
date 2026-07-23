@@ -548,6 +548,10 @@
       }
     },
     "bridge_matching": {
+      "create_counterpart_success": {
+        "description": "A synthetic counterpart event was created on the other chain and linked to the bridge transaction.",
+        "title": "Bridge Counterpart Created"
+      },
       "error": {
         "description": "Failed to match bridge transaction: {error}",
         "title": "Bridge Transaction Matching"
@@ -1869,6 +1873,11 @@
   "bridge_matching": {
     "actions": {
       "auto_match_tooltip": "Automatically match bridge transactions with their counterpart events on the other chain based on amount, asset, and timestamp.",
+      "create_counterpart": "Create Counterpart Event",
+      "create_counterpart_confirm_in": "Are you sure you want to create the missing source event of this bridge withdrawal? A synthetic event mirroring it (same asset, amount and time) will be created on the source chain and linked, so the transfer is accounted for as a movement of your own funds. Use this when the source chain can no longer be queried. The synthetic event is clearly marked and is deleted again if you unlink the pair.",
+      "create_counterpart_confirm_in_chain": "Are you sure you want to create the missing source event of this bridge withdrawal on {chain}? A synthetic event mirroring it (same asset, amount and time) will be created there and linked, so the transfer is accounted for as a movement of your own funds. Use this when {chain} can no longer be queried. The synthetic event is clearly marked and is deleted again if you unlink the pair.",
+      "create_counterpart_confirm_out": "Are you sure you want to create the missing destination event of this bridge deposit? A synthetic event mirroring it (same asset, amount and time) will be created on the destination chain and linked, so the transfer is accounted for as a movement of your own funds. Use this when the destination chain can no longer be queried. The synthetic event is clearly marked and is deleted again if you unlink the pair.",
+      "create_counterpart_confirm_out_chain": "Are you sure you want to create the missing destination event of this bridge deposit on {chain}? A synthetic event mirroring it (same asset, amount and time) will be created there and linked, so the transfer is accounted for as a movement of your own funds. Use this when {chain} can no longer be queried. The synthetic event is clearly marked and is deleted again if you unlink the pair.",
       "ignore_selected": "Ignore Selected",
       "ignore_selected_confirm": "Are you sure you want to ignore {count} selected bridge transaction(s)? This action marks them as having no corresponding event.",
       "mark_external": "Mark as External Payment",
@@ -1897,6 +1906,9 @@
       "message": "There are {count} unmatched bridge transactions that require manual matching."
     },
     "dialog": {
+      "create_counterpart": "Create Counterpart",
+      "create_counterpart_in_tooltip": "Create a synthetic mirror event on the source chain and link it to this bridge withdrawal. Use this when the source chain can no longer be queried, so the transfer stays a movement of your own funds.",
+      "create_counterpart_tooltip": "Create a synthetic mirror event on the destination chain and link it to this bridge deposit. Use this when the destination chain can no longer be queried, so the transfer stays a movement of your own funds.",
       "description": "Select an unmatched bridge transaction and find the counterpart event on the other chain to link them together.",
       "ignore_tooltip": "Mark this bridge transaction as having no corresponding event.",
       "ignored_description": "These bridge transactions have been marked as having no corresponding event. Restore them to retry matching.",
@@ -6265,7 +6277,8 @@
         "customized": "Customized",
         "imported_from_csv": "Imported from CSV",
         "matched": "Matched",
-        "profit_adjustment": "Profit adjustment"
+        "profit_adjustment": "Profit adjustment",
+        "synthetic": "Synthetic"
       },
       "export": {
         "confirmation_message": "Are you sure you want to export the list of events with the selected filters applied?"

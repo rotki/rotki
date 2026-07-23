@@ -34,6 +34,7 @@ const {
 } = useUnmatchedBridgeTransactions();
 
 const {
+  confirmCreateCounterpart,
   confirmIgnoreSelected,
   confirmMarkExternal,
   confirmRestoreSelected,
@@ -96,6 +97,7 @@ onBeforeMount(async () => {
         :loading="loading"
         :match-disabled="!isAutoMatchAllowed"
         :match-minimum-tier="autoMatchMinimumTier"
+        @create-counterpart="confirmCreateCounterpart($event)"
         @ignore="ignoreTransaction($event)"
         @mark-external="confirmMarkExternal($event)"
         @pin="emit('pin')"

@@ -315,6 +315,7 @@ export enum HistoryEventState {
   CUSTOMIZED = 'customized',
   IMPORTED_FROM_CSV = 'imported from csv',
   PROFIT_ADJUSTMENT = 'profit adjustment',
+  SYNTHETIC = 'synthetic',
 }
 
 const HistoryEventStateEnum = z.enum(HistoryEventState);
