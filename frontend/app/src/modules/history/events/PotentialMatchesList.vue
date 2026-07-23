@@ -8,6 +8,8 @@ import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
+import RecommendedMatchIcon from '@/modules/history/events/RecommendedMatchIcon.vue';
+import ShowInEventsButton from '@/modules/history/events/ShowInEventsButton.vue';
 import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass, usePinnedSimpleTableClass } from '@/modules/history/events/use-pinned-column-class';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { getAssetMovementsType } from '@/modules/history/management/forms/utils';
@@ -145,40 +147,10 @@ watchDebounced(onlyExpectedAssets, () => {
       class="flex items-center gap-2"
       :class="isPinned ? 'justify-start' : 'justify-end'"
     >
-      <RuiTooltip
-        v-if="row.isCloseMatch && !isPinned"
-        :open-delay="200"
-      >
-        <template #activator>
-          <RuiIcon
-            name="lu-thumbs-up"
-            size="16"
-            color="success"
-          />
-        </template>
-        {{ t('asset_movement_matching.dialog.recommended') }}
-      </RuiTooltip>
-      <RuiTooltip
-        :open-delay="400"
-        :popper="{ placement: 'top' }"
-      >
-        <template #activator>
-          <RuiButton
-            size="sm"
-            variant="outlined"
-            icon
-            color="primary"
-            class="!px-2 h-[30px]"
-            @click="emit('show-in-events', { identifier: row.entry.identifier, groupIdentifier: row.entry.groupIdentifier })"
-          >
-            <RuiIcon
-              size="16"
-              name="lu-external-link"
-            />
-          </RuiButton>
-        </template>
-        {{ t('asset_movement_matching.dialog.show_in_events') }}
-      </RuiTooltip>
+      <RecommendedMatchIcon v-if="row.isCloseMatch && !isPinned" />
+      <ShowInEventsButton
+        @click="emit('show-in-events', { identifier: row.entry.identifier, groupIdentifier: row.entry.groupIdentifier })"
+      />
       <RuiButton
         size="sm"
         :color="isSelected(row) ? 'success' : 'primary'"
@@ -260,27 +232,7 @@ watchDebounced(onlyExpectedAssets, () => {
               />
             </td>
             <td class="text-right">
-              <RuiTooltip
-                :open-delay="400"
-                :popper="{ placement: 'top' }"
-              >
-                <template #activator>
-                  <RuiButton
-                    size="sm"
-                    variant="outlined"
-                    icon
-                    color="primary"
-                    class="!px-2 h-[30px]"
-                    @click="emit('show-unmatched-in-events')"
-                  >
-                    <RuiIcon
-                      size="16"
-                      name="lu-external-link"
-                    />
-                  </RuiButton>
-                </template>
-                {{ t('asset_movement_matching.dialog.show_in_events') }}
-              </RuiTooltip>
+              <ShowInEventsButton @click="emit('show-unmatched-in-events')" />
             </td>
           </tr>
         </tbody>
@@ -439,19 +391,7 @@ watchDebounced(onlyExpectedAssets, () => {
                 disable-options
                 :event="row.entry"
               />
-              <RuiTooltip
-                v-if="row.isCloseMatch && isPinned"
-                :open-delay="200"
-              >
-                <template #activator>
-                  <RuiIcon
-                    name="lu-thumbs-up"
-                    size="16"
-                    color="success"
-                  />
-                </template>
-                {{ t('asset_movement_matching.dialog.recommended') }}
-              </RuiTooltip>
+              <RecommendedMatchIcon v-if="row.isCloseMatch && isPinned" />
             </div>
             <ReuseRowActions
               v-if="isPinned"

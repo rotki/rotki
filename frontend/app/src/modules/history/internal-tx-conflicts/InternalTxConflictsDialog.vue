@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { InternalTxConflict } from './types';
+import InternalTxConflictsDialogHeaderActions from '@/modules/history/internal-tx-conflicts/InternalTxConflictsDialogHeaderActions.vue';
 import { PinnedNames } from '@/modules/session/types';
 import InternalTxConflictRepullSettings from '@/modules/settings/general/InternalTxConflictRepullSettings.vue';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
@@ -50,45 +51,11 @@ function showInEvents(conflict: InternalTxConflict): void {
               {{ t('internal_tx_conflicts.dialog.description') }}
             </p>
           </div>
-          <div class="flex items-center gap-1">
-            <RuiTooltip
-              :popper="{ placement: 'bottom' }"
-              :open-delay="400"
-            >
-              <template #activator>
-                <RuiButton
-                  variant="text"
-                  icon
-                  @click="showSettings = !showSettings"
-                >
-                  <RuiIcon name="lu-settings" />
-                </RuiButton>
-              </template>
-              {{ t('internal_tx_conflicts.actions.settings') }}
-            </RuiTooltip>
-            <RuiTooltip
-              :popper="{ placement: 'bottom' }"
-              :open-delay="400"
-            >
-              <template #activator>
-                <RuiButton
-                  variant="text"
-                  icon
-                  @click="pinSection()"
-                >
-                  <RuiIcon name="lu-pin" />
-                </RuiButton>
-              </template>
-              {{ t('internal_tx_conflicts.actions.pin') }}
-            </RuiTooltip>
-            <RuiButton
-              variant="text"
-              icon
-              @click="closeDialog()"
-            >
-              <RuiIcon name="lu-x" />
-            </RuiButton>
-          </div>
+          <InternalTxConflictsDialogHeaderActions
+            @toggle-settings="showSettings = !showSettings"
+            @pin="pinSection()"
+            @close="closeDialog()"
+          />
         </div>
       </template>
 

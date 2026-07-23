@@ -3,6 +3,7 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import TableFilter from '@/modules/core/table/TableFilter.vue';
+import InternalTxConflictRowActions from '@/modules/history/internal-tx-conflicts/InternalTxConflictRowActions.vue';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
@@ -341,54 +342,15 @@ defineExpose({
           <span v-else>—</span>
         </template>
         <template #item.actions="{ row }">
-          <div class="flex items-center">
-            <RuiTooltip
-              :popper="{ placement: 'top' }"
-              :open-delay="400"
-            >
-              <template #activator>
-                <RuiButton
-                  variant="text"
-                  icon
-                  size="sm"
-                  :color="row.action === InternalTxConflictActions.REPULL ? 'primary' : 'warning'"
-                  :loading="isResolving(row)"
-                  :disabled="isRunning || isResolving(row)"
-                  @click="onResolveOne(row)"
-                >
-                  <RuiIcon
-                    :name="row.action === InternalTxConflictActions.REPULL ? 'lu-refresh-cw' : 'lu-wrench'"
-                    size="16"
-                  />
-                </RuiButton>
-              </template>
-              {{ t('internal_tx_conflicts.resolution.resolve') }} ({{ getActionLabel(row.action) }})
-            </RuiTooltip>
-            <RuiTooltip
-              :popper="{ placement: 'top' }"
-              :open-delay="400"
-            >
-              <template #activator>
-                <RuiButton
-                  variant="text"
-                  icon
-                  size="sm"
-                  :disabled="!row.groupIdentifier"
-                  :color="highlightedTxHash === row.txHash ? 'warning' : undefined"
-                  @click="emit('show-in-events', row)"
-                >
-                  <RuiIcon
-                    :name="highlightedTxHash === row.txHash ? 'lu-eye-off' : 'lu-external-link'"
-                    size="16"
-                  />
-                </RuiButton>
-              </template>
-              {{ highlightedTxHash === row.txHash
-                ? t('internal_tx_conflicts.actions.clear_highlight')
-                : t('internal_tx_conflicts.actions.show_in_events')
-              }}
-            </RuiTooltip>
-          </div>
+          <InternalTxConflictRowActions
+            :row="row"
+            :resolving="isResolving(row)"
+            :disabled="isRunning"
+            :action-label="getActionLabel(row.action)"
+            :highlighted="highlightedTxHash === row.txHash"
+            @resolve="onResolveOne(row)"
+            @show-in-events="emit('show-in-events', row)"
+          />
         </template>
       </RuiDataTable>
     </ScrollableDialogContent>
