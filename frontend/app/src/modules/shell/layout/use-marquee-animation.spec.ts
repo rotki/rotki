@@ -1,25 +1,29 @@
 import { createMock } from '@test/utils/create-mock';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { useMarqueeAnimation } from '@/modules/shell/layout/use-marquee-animation';
 
 function makeMarquee(scrollWidth: number, clientWidth: number, withChild = true): {
   wrapper: HTMLElement;
   inner: HTMLElement | undefined;
   animation: Animation;
+  animateSpy: Mock;
+  cancelSpy: Mock;
 } {
   const wrapper = document.createElement('div');
   Object.defineProperty(wrapper, 'clientWidth', { configurable: true, value: clientWidth });
 
-  const animation = createMock<Animation>({ cancel: vi.fn() });
+  const cancelSpy = vi.fn();
+  const animation = createMock<Animation>({ cancel: cancelSpy });
+  const animateSpy = vi.fn(() => animation);
   let inner: HTMLElement | undefined;
   if (withChild) {
     inner = document.createElement('div');
     Object.defineProperty(inner, 'scrollWidth', { configurable: true, value: scrollWidth });
-    inner.animate = vi.fn(() => animation);
+    inner.animate = animateSpy;
     wrapper.appendChild(inner);
   }
 
-  return { animation, inner, wrapper };
+  return { animateSpy, animation, cancelSpy, inner, wrapper };
 }
 
 describe('useMarqueeAnimation', () => {
@@ -43,26 +47,25 @@ describe('useMarqueeAnimation', () => {
 
   describe('onMarqueeEnter', () => {
     it('should animate the inner element when it overflows', () => {
-      const { inner, wrapper } = makeMarquee(300, 200);
+      const { animateSpy, wrapper } = makeMarquee(300, 200);
       fireEnter(wrapper);
 
-      expect(inner?.animate).toHaveBeenCalledOnce();
+      expect(animateSpy).toHaveBeenCalledOnce();
     });
 
     it('should run the animation forever with the computed duration', () => {
-      const { inner, wrapper } = makeMarquee(300, 200);
+      const { animateSpy, wrapper } = makeMarquee(300, 200);
       fireEnter(wrapper);
 
       // distance 100 → scrollDuration max(1000, 1500)=1500, +2*500 pause = 2500
-      const animateMock = vi.mocked(inner!.animate);
-      expect(animateMock.mock.calls[0][1]).toMatchObject({ duration: 2500, iterations: Infinity });
+      expect(animateSpy.mock.calls[0][1]).toMatchObject({ duration: 2500, iterations: Infinity });
     });
 
     it('should not animate when the inner element does not overflow', () => {
-      const { inner, wrapper } = makeMarquee(150, 200);
+      const { animateSpy, wrapper } = makeMarquee(150, 200);
       fireEnter(wrapper);
 
-      expect(inner?.animate).not.toHaveBeenCalled();
+      expect(animateSpy).not.toHaveBeenCalled();
     });
 
     it('should do nothing when there is no inner element', () => {
@@ -74,18 +77,18 @@ describe('useMarqueeAnimation', () => {
 
   describe('onMarqueeLeave', () => {
     it('should cancel a running animation', () => {
-      const { animation, wrapper } = makeMarquee(300, 200);
+      const { cancelSpy, wrapper } = makeMarquee(300, 200);
       fireEnter(wrapper);
       fireLeave(wrapper);
 
-      expect(animation.cancel).toHaveBeenCalledOnce();
+      expect(cancelSpy).toHaveBeenCalledOnce();
     });
 
     it('should do nothing when there is no animation for the element', () => {
-      const { animation, wrapper } = makeMarquee(300, 200);
+      const { cancelSpy, wrapper } = makeMarquee(300, 200);
       fireLeave(wrapper);
 
-      expect(animation.cancel).not.toHaveBeenCalled();
+      expect(cancelSpy).not.toHaveBeenCalled();
     });
 
     it('should do nothing when there is no inner element', () => {

@@ -2,7 +2,7 @@ import type { HighlightRequest } from '@/modules/settings/use-settings-highlight
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { defineComponent, h, type VNode } from 'vue';
 import { SettingsCategoryIds, SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import { useSettingsPageHighlight } from '@/modules/settings/use-settings-page-highlight';
@@ -22,15 +22,17 @@ const BAR = SettingsHighlightIds.AMOUNT_FORMAT;
 const CATEGORY = SettingsCategoryIds.AMOUNT;
 const MISSING = SettingsHighlightIds.CSV_EXPORT;
 
-function addTarget(id: string): { element: HTMLElement; animation: Animation } {
+function addTarget(id: string): { element: HTMLElement; animation: Animation; animateSpy: Mock; cancelSpy: Mock } {
   const element = document.createElement('div');
   element.id = id;
   document.body.appendChild(element);
   // createMock supplies an `Animation`-typed stub; the SUT only reads `cancel`
   // and assigns `onfinish`, which lands on the underlying mock and reads back.
-  const animation = createMock<Animation>({ cancel: vi.fn() });
-  element.animate = vi.fn(() => animation);
-  return { animation, element };
+  const cancelSpy = vi.fn();
+  const animation = createMock<Animation>({ cancel: cancelSpy });
+  const animateSpy = vi.fn(() => animation);
+  element.animate = animateSpy;
+  return { animateSpy, animation, cancelSpy, element };
 }
 
 interface HarnessOptions {
@@ -68,7 +70,7 @@ describe('useSettingsPageHighlight', () => {
 
   describe('same-page highlighting', () => {
     it('should scroll and highlight when the target enters the DOM', async () => {
-      const { animation, element } = addTarget(FOO);
+      const { animation, animateSpy, element } = addTarget(FOO);
       const { scrollToElement } = mountHighlight({ isElementInViewport: () => false });
 
       set(mockHighlightTarget, { categoryId: CATEGORY, highlightId: FOO });
@@ -76,7 +78,7 @@ describe('useSettingsPageHighlight', () => {
 
       expect(scrollToElement).toHaveBeenCalledWith(element);
       expect(element.classList.contains('rounded-lg')).toBe(true);
-      expect(element.animate).toHaveBeenCalledOnce();
+      expect(animateSpy).toHaveBeenCalledOnce();
       expect(animation.onfinish).toBeTypeOf('function');
     });
 
@@ -147,7 +149,7 @@ describe('useSettingsPageHighlight', () => {
       set(mockHighlightTarget, { categoryId: CATEGORY, highlightId: BAR });
       await flushPromises();
 
-      expect(first.animation.cancel).toHaveBeenCalledOnce();
+      expect(first.cancelSpy).toHaveBeenCalledOnce();
       expect(first.element.classList.contains('rounded-lg')).toBe(false);
       expect(second.element.classList.contains('rounded-lg')).toBe(true);
     });

@@ -4,13 +4,14 @@ import { none, ok, some } from 'plainfp';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { api } from '@/modules/core/api/rotki-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { UnlockErrorKind, UnlockPhase } from './use-unlock-flow';
 import { createUnlockFlowController, type UseUnlockFlowControllerReturn } from './use-unlock-flow-controller';
 
+const authApi = vi.hoisted(() => ({ setOnAuthFailure: vi.fn() }));
+
 vi.mock('@/modules/core/api/rotki-api', () => ({
-  api: { setOnAuthFailure: vi.fn() },
+  api: authApi,
 }));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
@@ -271,8 +272,8 @@ describe('useUnlockFlowController', () => {
   });
 
   it('should wire a session-gated 401 handler on the api', () => {
-    expect(api.setOnAuthFailure).toHaveBeenCalled();
-    const [action, isSessionActive] = vi.mocked(api.setOnAuthFailure).mock.calls.at(-1)!;
+    expect(authApi.setOnAuthFailure).toHaveBeenCalled();
+    const [action, isSessionActive] = authApi.setOnAuthFailure.mock.calls.at(-1)!;
     const { logged } = storeToRefs(useSessionAuthStore());
 
     set(logged, true);
