@@ -9,6 +9,7 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
+import { resolveInitialBackendOptions } from '@/modules/settings/backend/backend-initial-options';
 import LogLevelInput from '@/modules/settings/backend/LogLevelInput.vue';
 import { useLogLevelUpdate } from '@/modules/settings/backend/use-log-level-update';
 import LanguageSetting from '@/modules/settings/general/language/LanguageSetting.vue';
@@ -71,21 +72,16 @@ const {
   saveOptions,
 } = useBackendManagement(loaded);
 
-const initialOptions = computed<Partial<BackendOptions>>(() => {
-  const config = get(configuration);
-  const opts = get(options);
-  const defaults = get(defaultBackendArguments);
-
-  return {
-    dataDirectory: opts.dataDirectory ?? get(dataDirectory),
-    logDirectory: opts.logDirectory ?? get(defaultLogDirectory),
-    logFromOtherModules: opts.logFromOtherModules ?? false,
-    loglevel: opts.loglevel ?? config?.loglevel?.value ?? get(defaultLogLevel),
-    maxLogfilesNum: opts.maxLogfilesNum ?? config?.maxLogfilesNum?.value ?? defaults.maxLogfilesNum,
-    maxSizeInMbAllLogs: opts.maxSizeInMbAllLogs ?? config?.maxSizeInMbAllLogs?.value ?? defaults.maxSizeInMbAllLogs,
-    sqliteInstructions: opts.sqliteInstructions ?? config?.sqliteInstructions?.value ?? defaults.sqliteInstructions,
-  };
-});
+const initialOptions = computed<Partial<BackendOptions>>(() => resolveInitialBackendOptions(
+  get(options),
+  get(configuration),
+  {
+    dataDirectory: get(dataDirectory),
+    logDirectory: get(defaultLogDirectory),
+    defaultLogLevel: get(defaultLogLevel),
+    defaults: get(defaultBackendArguments),
+  },
+));
 
 async function loaded() {
   // Wait for the backend configuration before snapshotting initial values,
