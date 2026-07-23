@@ -7,6 +7,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.types import (
+    EvmAccount,
     EvmIndexer,
     NodeName,
     SerializableChainIndexerOrder,
@@ -509,6 +510,139 @@ def test_shared_transaction_is_redecoded_for_new_address(
         notes='Receive 4292.336430016873387617 EURe from 0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE to 0xCDF16E42b6740D906858f37e9be495A59DAadE9E',  # noqa: E501
         address=string_to_evm_address('0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE'),
     )
+
+
+@pytest.mark.parametrize('discovery_type', ['erc20', 'internal'])
+def test_cached_transaction_is_mapped_to_discovering_address(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+        discovery_type: str,
+) -> None:
+    """Cached transactions should remain associated with every tracked address."""
+    dbevmtx = DBEvmTx(database)
+    transaction = make_ethereum_transaction()
+    first_address, second_address, unrelated_address = (
+        make_evm_address(),
+        make_evm_address(),
+        make_evm_address(),
+    )
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[transaction],
+            relevant_address=first_address,
+        )
+        dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.ETHEREUM,
+            data=_make_receipt_data(transaction.tx_hash),
+        )
+
+    if discovery_type == 'erc20':
+        with (
+            patch.object(
+                ethereum_manager.node_inquirer,
+                'get_blocknumber_by_time',
+                side_effect=[0, 1, 0, 1],
+            ),
+            patch.object(
+                ethereum_manager.node_inquirer,
+                'get_token_transaction_hashes',
+                side_effect=[iter([[transaction.tx_hash]]), iter([[transaction.tx_hash]])],
+            ),
+        ):
+            for _ in range(2):
+                ethereum_manager.transactions._query_and_save_erc20_transfers_for_range(
+                    address=second_address,
+                    period=TimestampOrBlockRange(
+                        range_type='timestamps',
+                        from_value=Timestamp(0),
+                        to_value=Timestamp(1),
+                    ),
+                    location_string=f'eth_tokentxs_{second_address}',
+                    update_ranges=False,
+                )
+    else:
+        internal_transaction = EvmInternalTransaction(
+            parent_tx_hash=transaction.tx_hash,
+            chain_id=ChainID.ETHEREUM,
+            trace_id=1,
+            from_address=first_address,
+            to_address=second_address,
+            value=1,
+            gas=1,
+            gas_used=1,
+        )
+        with patch.object(
+            ethereum_manager.node_inquirer,
+            'get_transactions_with_source',
+            side_effect=[
+                (iter([[internal_transaction]]), EvmIndexer.ETHERSCAN),
+                (iter([[internal_transaction]]), EvmIndexer.ETHERSCAN),
+            ],
+        ):
+            for _ in range(2):
+                ethereum_manager.transactions._query_and_save_internal_transactions_for_range(
+                    address=second_address,
+                    period=TimestampOrBlockRange(
+                        range_type='blocks',
+                        from_value=0,
+                        to_value=1,
+                    ),
+                )
+
+    with database.user_write() as write_cursor:
+        tx_id = transaction.get_or_query_db_id(write_cursor)
+        assert write_cursor.execute(
+            'SELECT address FROM evmtx_address_mappings WHERE tx_id=? ORDER BY address',
+            (tx_id,),
+        ).fetchall() == sorted([(first_address,), (second_address,)])
+        assert dbevmtx.get_transactions(
+            cursor=write_cursor,
+            filter_=EvmTransactionsFilterQuery.make(
+                accounts=[EvmAccount(address=second_address, chain_id=ChainID.ETHEREUM)],
+                chain_id=ChainID.ETHEREUM,
+            ),
+        ) == [transaction]
+        assert dbevmtx.get_transactions(
+            cursor=write_cursor,
+            filter_=EvmTransactionsFilterQuery.make(
+                accounts=[EvmAccount(address=unrelated_address, chain_id=ChainID.ETHEREUM)],
+                chain_id=ChainID.ETHEREUM,
+            ),
+        ) == []
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=transaction.tx_hash,
+                sequence_index=0,
+                timestamp=TimestampMS(transaction.timestamp * 1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+                location_label=second_address,
+            ),
+        )
+        dbevmtx.delete_transactions(
+            write_cursor=write_cursor,
+            address=first_address,
+            chain=SupportedBlockchain.ETHEREUM,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert dbevmtx.get_transactions(
+            cursor=cursor,
+            filter_=EvmTransactionsFilterQuery.make(
+                accounts=[EvmAccount(address=second_address, chain_id=ChainID.ETHEREUM)],
+                chain_id=ChainID.ETHEREUM,
+            ),
+        ) == [transaction]
+        assert len(DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(tx_hashes=[transaction.tx_hash]),
+        )) == 1
 
 
 def test_query_and_save_internal_transactions_returns_only_new_hashes(
