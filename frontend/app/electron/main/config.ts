@@ -13,6 +13,34 @@ const MAX_LOG_SIZE = 'max_size_in_mb_all_logs';
 const MAX_LOG_NUMBER = 'max_logfiles_num';
 const SQLITE_INSTRUCTIONS = 'sqlite_instructions';
 
+// `config` is an untrusted JSON blob; each field is validated/coerced the same
+// way the caller always has, so the values are read as `any` by design.
+function applyConfig(config: Record<string, any>, options: Writeable<Partial<BackendOptions>>): void {
+  if (LOGLEVEL in config) {
+    const configLogLevel = config[LOGLEVEL];
+    if (Object.values(LogLevel).includes(configLogLevel))
+      options.loglevel = configLogLevel;
+  }
+
+  if (LOG_FROM_OTHER_MODULES in config)
+    options.logFromOtherModules = config[LOG_FROM_OTHER_MODULES] === true;
+
+  if (LOGDIR in config)
+    options.logDirectory = config[LOGDIR];
+
+  if (DATA_DIR in config)
+    options.dataDirectory = config[DATA_DIR];
+
+  if (MAX_LOG_SIZE in config)
+    options.maxSizeInMbAllLogs = Number.parseInt(config[MAX_LOG_SIZE]);
+
+  if (MAX_LOG_NUMBER in config)
+    options.maxLogfilesNum = Number.parseInt(config[MAX_LOG_NUMBER]);
+
+  if (SQLITE_INSTRUCTIONS in config)
+    options.sqliteInstructions = Number.parseInt(config[SQLITE_INSTRUCTIONS]);
+}
+
 export function loadConfig(): Partial<BackendOptions> {
   const options: Writeable<Partial<BackendOptions>> = {};
   const filePath = CONFIG_FILE;
@@ -23,31 +51,7 @@ export function loadConfig(): Partial<BackendOptions> {
   try {
     const configFile = fs.readFileSync(filePath);
     const config = JSON.parse(configFile.toString());
-
-    if (LOGLEVEL in config) {
-      const configLogLevel = config[LOGLEVEL];
-      if (Object.values(LogLevel).includes(configLogLevel))
-        options.loglevel = configLogLevel;
-    }
-
-    if (LOG_FROM_OTHER_MODULES in config)
-      options.logFromOtherModules = config[LOG_FROM_OTHER_MODULES] === true;
-
-    if (LOGDIR in config)
-      options.logDirectory = config[LOGDIR];
-
-    if (DATA_DIR in config)
-      options.dataDirectory = config[DATA_DIR];
-
-    if (MAX_LOG_SIZE in config)
-      options.maxSizeInMbAllLogs = Number.parseInt(config[MAX_LOG_SIZE]);
-
-    if (MAX_LOG_NUMBER in config)
-      options.maxLogfilesNum = Number.parseInt(config[MAX_LOG_NUMBER]);
-
-    if (SQLITE_INSTRUCTIONS in config)
-      options.sqliteInstructions = Number.parseInt(config[SQLITE_INSTRUCTIONS]);
-
+    applyConfig(config, options);
     return options;
   }
   catch {
