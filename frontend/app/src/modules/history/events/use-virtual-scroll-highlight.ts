@@ -8,6 +8,13 @@ import { useMediaQuery, useVirtualList, type UseVirtualListReturn } from '@vueus
 
 const OVERSCAN_COUNT = 15;
 
+interface HighlightScrollTarget {
+  /** Whether a highlight target was located; drives whether we mark as scrolled. */
+  found: boolean;
+  /** Row index to scroll to; `undefined` means "found, but no scroll needed". */
+  index?: number;
+}
+
 interface UseVirtualScrollHighlightOptions {
   /** The fully flattened row list (group headers, event rows, swap rows) that backs the virtual list; row indices used for scrolling refer to this array. */
   flattenedRows: ComputedRef<VirtualRow[]>;
@@ -217,59 +224,68 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
     }
   });
 
-  watchDebounced([flattenedRows, (): string[] | undefined => toValue(highlightedIdentifiers), (): string | undefined => toValue(highlightedGroupIdentifier), loading], ([rows, identifiers, groupId, isLoading]) => {
-    if (isLoading || rows.length === 0 || get(hasScrolledToHighlight))
-      return;
+  /**
+   * Locate the group-header row for a whole-group highlight (used when no
+   * individual identifiers are given).
+   */
+  function resolveGroupScroll(rows: VirtualRow[], groupId: string | undefined): HighlightScrollTarget {
+    if (!groupId)
+      return { found: false };
 
-    const hasIdentifiers = identifiers && identifiers.length > 0;
-    if (!hasIdentifiers && !groupId)
-      return;
+    const groupIndex = rows.findIndex(row => row.type === 'group-header' && row.groupId === groupId);
+    if (groupIndex < 0)
+      return { found: false };
 
-    // For group-based highlights (no identifiers), find the group header row
-    if (!hasIdentifiers && groupId) {
-      const groupIndex = rows.findIndex(row => row.type === 'group-header' && row.groupId === groupId);
-      if (groupIndex < 0)
-        return;
+    return { found: true, index: groupIndex };
+  }
 
-      set(hasScrolledToHighlight, true);
-      set(pendingHighlightScroll, false);
-      startPromise(nextTick(() => {
-        scrollTo(groupIndex);
-      }));
-      return;
-    }
-
+  /**
+   * Locate the scroll target for individual identifier highlights, positioning
+   * to show as many as possible: a single target directly, two via
+   * calculateScrollPosition, and three or more only when the last is offscreen.
+   */
+  function resolveIdentifierScroll(rows: VirtualRow[], identifiers: string[] | undefined): HighlightScrollTarget {
     if (!identifiers || identifiers.length === 0)
-      return;
+      return { found: false };
 
     const indices = identifiers
       .map(id => ({ id, index: findRowIndexForIdentifier(rows, id) }))
       .filter(item => item.index >= 0);
 
     if (indices.length === 0)
-      return;
-
-    let scrollIndex: number | undefined;
+      return { found: false };
 
     if (indices.length === 1) {
       const targetIndex = indices[0].index;
-      scrollIndex = get(isCardLayout) && targetIndex > 0 ? targetIndex + 2 : targetIndex;
+      return { found: true, index: get(isCardLayout) && targetIndex > 0 ? targetIndex + 2 : targetIndex };
     }
-    else if (indices.length === 2) {
-      const primaryIndex = indices[0].index;
-      const secondaryIndex = indices[1].index;
-      scrollIndex = calculateScrollPosition(primaryIndex, secondaryIndex);
-    }
-    else {
-      const lastIndex = indices.at(-1)!.index;
-      if (!isRowVisible(lastIndex)) {
-        scrollIndex = lastIndex;
-      }
-    }
+
+    if (indices.length === 2)
+      return { found: true, index: calculateScrollPosition(indices[0].index, indices[1].index) };
+
+    const lastIndex = indices.at(-1)!.index;
+    return { found: true, index: isRowVisible(lastIndex) ? undefined : lastIndex };
+  }
+
+  watchDebounced([flattenedRows, (): string[] | undefined => toValue(highlightedIdentifiers), (): string | undefined => toValue(highlightedGroupIdentifier), loading], ([rows, identifiers, groupId, isLoading]) => {
+    if (isLoading || rows.length === 0 || get(hasScrolledToHighlight))
+      return;
+
+    const hasIdentifiers = !!identifiers && identifiers.length > 0;
+    if (!hasIdentifiers && !groupId)
+      return;
+
+    const target = hasIdentifiers
+      ? resolveIdentifierScroll(rows, identifiers)
+      : resolveGroupScroll(rows, groupId);
+
+    if (!target.found)
+      return;
 
     set(hasScrolledToHighlight, true);
     set(pendingHighlightScroll, false);
 
+    const scrollIndex = target.index;
     if (scrollIndex !== undefined) {
       startPromise(nextTick(() => {
         scrollTo(scrollIndex);
