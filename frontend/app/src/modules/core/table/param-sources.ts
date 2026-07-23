@@ -1,7 +1,9 @@
 import type { MaybeRefOrGetter } from 'vue';
 import type { LocationQuery } from '@/modules/core/table/route';
 import { nonEmptyProperties } from '@/modules/core/common/data/data';
-import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/modules/core/table/filtering';
+import { FilterBehaviour, type FilterObjectWithBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher, type StringSuggestionMatcher } from '@/modules/core/table/filtering';
+
+type FilterValue = string | string[] | boolean | FilterObjectWithBehaviour<string | string[] | boolean>;
 
 /** Where a param source contributes its values. */
 export type ParamDestination = 'request' | 'url' | 'both';
@@ -101,6 +103,51 @@ export function mergeParams(
 }
 
 /**
+ * Resolves a leading `!` into an EXCLUDE behaviour when the matcher allows
+ * exclusion, stripping the `!` from the string or every array element.
+ */
+function resolveExclusion(
+  matcher: StringSuggestionMatcher<string, string>,
+  data: string | string[] | boolean,
+): { exclude: boolean; values: string | string[] | boolean } {
+  if (!matcher.allowExclusion)
+    return { exclude: false, values: data };
+
+  if (typeof data === 'string' && data.startsWith('!'))
+    return { exclude: true, values: data.substring(1) };
+
+  if (Array.isArray(data) && data.length > 0 && data[0].startsWith('!'))
+    return { exclude: true, values: data.map(item => (item.startsWith('!') ? item.substring(1) : item)) };
+
+  return { exclude: false, values: data };
+}
+
+/**
+ * Builds the `{ behaviour, values }` pair for one matcher's value: an
+ * already-wrapped value keeps (or defaults) its behaviour, a plain value is
+ * wrapped and resolved for exclusion. Returns undefined when there is nothing
+ * to rewrite.
+ */
+function toBehaviourValue(
+  matcher: StringSuggestionMatcher<string, string>,
+  data: FilterValue,
+  keyPresent: boolean,
+): FilterObjectWithBehaviour<string | string[] | boolean> | undefined {
+  if (typeof data === 'object' && !Array.isArray(data)) {
+    if (data.values && keyPresent)
+      return { behaviour: data.behaviour ?? FilterBehaviour.INCLUDE, values: data.values };
+
+    return undefined;
+  }
+
+  const { exclude, values } = resolveExclusion(matcher, data);
+  return {
+    behaviour: exclude ? FilterBehaviour.EXCLUDE : FilterBehaviour.INCLUDE,
+    values,
+  };
+}
+
+/**
  * Rewrites plain filter values into `{ behaviour, values }` pairs for matchers that
  * require it, resolving a leading `!` into an EXCLUDE behaviour.
  */
@@ -126,34 +173,9 @@ export function transformFilters<TFilter extends MatchedKeywordWithBehaviour<str
     if (!data)
       return;
 
-    if (typeof data === 'object' && !Array.isArray(data)) {
-      if (data.values && usedKey in newFilters) {
-        newFilters[usedKey] = {
-          behaviour: data.behaviour ?? FilterBehaviour.INCLUDE,
-          values: data.values,
-        };
-      }
-      return;
-    }
-
-    let formattedData: string | string[] | boolean = data;
-    let exclude = false;
-
-    if (matcher.allowExclusion) {
-      if (typeof data === 'string' && data.startsWith('!')) {
-        exclude = true;
-        formattedData = data.substring(1);
-      }
-      else if (Array.isArray(data) && data.length > 0 && data[0].startsWith('!')) {
-        exclude = true;
-        formattedData = data.map(item => (item.startsWith('!') ? item.substring(1) : item));
-      }
-    }
-
-    newFilters[usedKey] = {
-      behaviour: exclude ? FilterBehaviour.EXCLUDE : FilterBehaviour.INCLUDE,
-      values: formattedData,
-    };
+    const value = toBehaviourValue(matcher, data, usedKey in newFilters);
+    if (value !== undefined)
+      newFilters[usedKey] = value;
   });
 
   return newFilters;
