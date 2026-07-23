@@ -11,9 +11,11 @@ def test_setup_server_should_register_discovered_tools(monkeypatch) -> None:
     init_args = {}
 
     class MockFastMCP:
-        def __init__(self, name: str, log_level: str) -> None:
+        def __init__(self, name: str, log_level: str, host: str, port: int) -> None:
             init_args['name'] = name
             init_args['log_level'] = log_level
+            init_args['host'] = host
+            init_args['port'] = port
 
         def add_tool(
                 self,
@@ -40,7 +42,12 @@ def test_setup_server_should_register_discovered_tools(monkeypatch) -> None:
         privacy_mode='balanced',
     )
 
-    assert init_args == {'name': SERVICE_NAME, 'log_level': 'DEBUG'}
+    assert init_args == {
+        'name': SERVICE_NAME,
+        'log_level': 'DEBUG',
+        'host': '127.0.0.1',
+        'port': 4445,
+    }
     assert tools == [('fake_tool', None, fake_tool)]
 
 
@@ -49,7 +56,7 @@ def test_setup_server_should_gate_premium_tools(monkeypatch) -> None:
     tools = []
 
     class MockFastMCP:
-        def __init__(self, name: str, log_level: str) -> None:
+        def __init__(self, name: str, log_level: str, host: str, port: int) -> None:
             pass
 
         def add_tool(self, fn: Any, name: str, description: str | None = None) -> None:
@@ -93,3 +100,32 @@ def test_setup_server_should_gate_premium_tools(monkeypatch) -> None:
         assert calls == ['ran']
     finally:
         loop.close()
+
+
+def test_run_server_should_use_streamable_http_transport(monkeypatch) -> None:
+    setup_kwargs = {}
+    transports = []
+
+    class MockServer:
+        def run(self, transport: str) -> None:
+            transports.append(transport)
+
+    def mock_setup_server(**kwargs: Any) -> MockServer:
+        setup_kwargs.update(kwargs)
+        return MockServer()
+
+    monkeypatch.setattr(server, 'setup_server', mock_setup_server)
+
+    server.run_server(
+        backend_url='http://127.0.0.1:4242/api/1',
+        timeout=5,
+        log_level='INFO',
+        privacy_mode='balanced',
+        transport='streamable-http',
+        host='127.0.0.1',
+        port=4445,
+    )
+
+    assert setup_kwargs['host'] == '127.0.0.1'
+    assert setup_kwargs['port'] == 4445
+    assert transports == ['streamable-http']

@@ -29,7 +29,7 @@ use tokio::sync::{broadcast, mpsc, oneshot, watch};
 use tokio::time::{Duration, Instant};
 use tracing::{error, info};
 
-use crate::config::{ServiceLayout, ServiceSpec};
+use crate::config::{OnCrash, ServiceLayout, ServiceSpec};
 use crate::control::protocol::{
     authorize, sanitize_restart_options, BackendOptions, ControlError, ControlEvent, HealthResult,
     Method, OkResult, RestartReason, StatusResult, Transport, PROTOCOL_VERSION,
@@ -59,11 +59,15 @@ impl ControllerSnapshot {
     /// every service is `Ready`, `degraded` if any has failed or degraded while
     /// the supervisor is still alive to answer.
     pub fn health(&self) -> HealthResult {
-        let ok = !self.services.is_empty()
-            && self.services.iter().all(|s| s.state == ServiceState::Ready);
+        let autostart_services = self.services.iter().filter(|service| service.autostart);
+        let ok = autostart_services.clone().next().is_some()
+            && autostart_services
+                .clone()
+                .all(|service| service.state == ServiceState::Ready);
         let degraded = self
             .services
             .iter()
+            .filter(|service| service.autostart)
             .any(|s| matches!(s.state, ServiceState::Failed | ServiceState::Degraded));
         HealthResult { ok, degraded }
     }
@@ -117,6 +121,16 @@ enum Command {
     },
     Stop {
         transport: Transport,
+        reply: oneshot::Sender<Result<OkResult, ControlError>>,
+    },
+    StartService {
+        transport: Transport,
+        service: String,
+        reply: oneshot::Sender<Result<OkResult, ControlError>>,
+    },
+    StopService {
+        transport: Transport,
+        service: String,
         reply: oneshot::Sender<Result<OkResult, ControlError>>,
     },
 }
@@ -206,6 +220,44 @@ impl ControlHandle {
         let (reply, rx) = oneshot::channel();
         self.commands
             .send(Command::Stop { transport, reply })
+            .await
+            .map_err(|_| ControlError::ControllerStopped)?;
+        rx.await.map_err(|_| ControlError::ControllerStopped)?
+    }
+
+    /// Start one optional service without disturbing the backend tree.
+    pub async fn start_service(
+        &self,
+        transport: Transport,
+        service: String,
+    ) -> Result<OkResult, ControlError> {
+        authorize(transport, Method::StartService)?;
+        let (reply, rx) = oneshot::channel();
+        self.commands
+            .send(Command::StartService {
+                transport,
+                service,
+                reply,
+            })
+            .await
+            .map_err(|_| ControlError::ControllerStopped)?;
+        rx.await.map_err(|_| ControlError::ControllerStopped)?
+    }
+
+    /// Stop one optional service without stopping the supervisor.
+    pub async fn stop_service(
+        &self,
+        transport: Transport,
+        service: String,
+    ) -> Result<OkResult, ControlError> {
+        authorize(transport, Method::StopService)?;
+        let (reply, rx) = oneshot::channel();
+        self.commands
+            .send(Command::StopService {
+                transport,
+                service,
+                reply,
+            })
             .await
             .map_err(|_| ControlError::ControllerStopped)?;
         rx.await.map_err(|_| ControlError::ControllerStopped)?
@@ -356,6 +408,7 @@ impl<S: Spawner> Controller<S> {
                         .supervisor
                         .status()
                         .into_iter()
+                        .filter(|service| service.state == ServiceState::Ready)
                         .map(|s| s.name)
                         .collect();
                     self.emit(ControlEvent::Ready { services });
@@ -441,6 +494,14 @@ impl<S: Spawner> Controller<S> {
                             self.emit(ControlEvent::Stopped {});
                             return Outcome::Stopped;
                         }
+                        Some(Command::StartService { transport, service, reply }) => {
+                            let result = self.handle_start_service(transport, &service).await;
+                            let _ = reply.send(result);
+                        }
+                        Some(Command::StopService { transport, service, reply }) => {
+                            let result = self.handle_stop_service(transport, &service).await;
+                            let _ = reply.send(result);
+                        }
                         None => commands_open = false,
                     }
                 }
@@ -450,7 +511,12 @@ impl<S: Spawner> Controller<S> {
                             error!(services = ?dead, "service(s) exited unexpectedly");
                             self.publish();
                             self.emit_crashes(&dead);
-                            return Outcome::Crashed;
+                            if dead.iter().any(|service| {
+                                self.supervisor.on_crash(service).ok()
+                                    == Some(OnCrash::ExitSupervisor)
+                            }) {
+                                return Outcome::Crashed;
+                            }
                         }
                         Ok(_) => self.publish(),
                         Err(err) => {
@@ -542,6 +608,7 @@ impl<S: Spawner> Controller<S> {
                     .supervisor
                     .status()
                     .into_iter()
+                    .filter(|service| service.state == ServiceState::Ready)
                     .map(|s| s.name)
                     .collect();
                 self.emit(ControlEvent::Ready { services });
@@ -613,6 +680,7 @@ impl<S: Spawner> Controller<S> {
                     .supervisor
                     .status()
                     .into_iter()
+                    .filter(|service| service.state == ServiceState::Ready)
                     .map(|s| s.name)
                     .collect();
                 self.emit(ControlEvent::Ready { services });
@@ -625,6 +693,36 @@ impl<S: Spawner> Controller<S> {
                 Err(ControlError::RestartFailed(err.to_string()))
             }
         }
+    }
+
+    async fn handle_start_service(
+        &mut self,
+        transport: Transport,
+        service: &str,
+    ) -> Result<OkResult, ControlError> {
+        self.audit("start-service", transport, "begin");
+        self.supervisor
+            .start_service(service)
+            .await
+            .map_err(|error| ControlError::ServiceOperationFailed(error.to_string()))?;
+        self.publish();
+        self.audit("start-service", transport, "ready");
+        Ok(OkResult::OK)
+    }
+
+    async fn handle_stop_service(
+        &mut self,
+        transport: Transport,
+        service: &str,
+    ) -> Result<OkResult, ControlError> {
+        self.audit("stop-service", transport, "begin");
+        self.supervisor
+            .stop_service(service, self.grace)
+            .await
+            .map_err(|error| ControlError::ServiceOperationFailed(error.to_string()))?;
+        self.publish();
+        self.audit("stop-service", transport, "stopped");
+        Ok(OkResult::OK)
     }
 
     /// Apply the (already sanitized) restart options onto the layout, so the next
@@ -653,6 +751,9 @@ impl<S: Spawner> Controller<S> {
         }
         if let Some(n) = options.sleep_seconds {
             self.layout.sleep_secs = Some(n);
+        }
+        if let Some(auto_start) = options.mcp_auto_start {
+            self.layout.mcp_autostart = auto_start;
         }
     }
 
@@ -813,6 +914,8 @@ mod tests {
             logs_dir: PathBuf::from("/logs"),
             core_port: 4242,
             colibri_port: 4343,
+            mcp_port: 4445,
+            mcp_autostart: false,
             api_host: "127.0.0.1".to_string(),
             api_cors: "http://localhost:*/*".to_string(),
             log_level: "critical".to_string(),
@@ -832,6 +935,21 @@ mod tests {
                 .depends_on("core")
                 .readiness(Readiness::Immediate),
         ]
+    }
+
+    fn specs_with_optional_mcp() -> Vec<ServiceSpec> {
+        let mut services = specs();
+        services.push(
+            ServiceSpec::new("mcp", "/bin/true")
+                .depends_on("core")
+                .readiness(Readiness::Immediate)
+                .restart(crate::config::RestartPolicy {
+                    on_crash: OnCrash::ReportOnly,
+                    ..Default::default()
+                })
+                .autostart(false),
+        );
+        services
     }
 
     async fn started_controller(spawner: TestSpawner) -> Controller<TestSpawner> {
@@ -858,6 +976,52 @@ mod tests {
         assert_eq!(status.control_version, PROTOCOL_VERSION);
         assert_eq!(status.services.len(), 2);
         assert_eq!(status.started_at, Some(1_700_000_000));
+    }
+
+    #[tokio::test]
+    async fn optional_mcp_does_not_degrade_health_and_can_be_toggled() {
+        let spawner = TestSpawner::new();
+        let mut sup = Supervisor::new(spawner.clone(), specs_with_optional_mcp()).unwrap();
+        sup.start_all().await.unwrap();
+        let mut controller = Controller::new(
+            sup,
+            layout(),
+            Box::new(|_| specs_with_optional_mcp()),
+            Duration::from_millis(50),
+            Some(1_700_000_000),
+        );
+        let handle = controller.handle();
+        assert!(handle.health(Transport::Stdio).unwrap().ok);
+        assert_eq!(spawner.spawns.load(Ordering::SeqCst), 2);
+
+        let calls = tokio::spawn(async move {
+            handle
+                .start_service(Transport::Stdio, "mcp".to_string())
+                .await
+                .unwrap();
+            let running = handle.status(Transport::Stdio).unwrap();
+            assert_eq!(
+                running
+                    .services
+                    .iter()
+                    .find(|service| service.name == "mcp")
+                    .unwrap()
+                    .state,
+                ServiceState::Ready,
+            );
+            handle
+                .stop_service(Transport::Stdio, "mcp".to_string())
+                .await
+                .unwrap();
+        });
+
+        controller
+            .run(async move {
+                calls.await.unwrap();
+            })
+            .await;
+        assert_eq!(spawner.spawns.load(Ordering::SeqCst), 3);
+        assert!(controller.handle().health(Transport::Stdio).unwrap().ok);
     }
 
     #[tokio::test]
@@ -1330,6 +1494,47 @@ mod tests {
             }
         }
         assert!(crashed, "expected a crashed event");
+    }
+
+    #[tokio::test]
+    async fn optional_mcp_crash_is_reported_without_stopping_backend() {
+        let spawner = TestSpawner::new();
+        let mut services = specs_with_optional_mcp();
+        services
+            .iter_mut()
+            .find(|service| service.name == "mcp")
+            .unwrap()
+            .autostart = true;
+        let mut sup = Supervisor::new(spawner.clone(), services.clone()).unwrap();
+        sup.start_all().await.unwrap();
+        let mcp_pid = sup
+            .status()
+            .into_iter()
+            .find(|service| service.name == "mcp")
+            .and_then(|service| service.pid)
+            .unwrap();
+        let mut controller = Controller::new(
+            sup,
+            layout(),
+            Box::new(move |_| services.clone()),
+            Duration::from_millis(50),
+            Some(1_700_000_000),
+        );
+        controller.poll_interval = Duration::from_millis(5);
+        let mut events = controller.handle().subscribe();
+        spawner.live.lock().unwrap().remove(&mcp_pid);
+
+        let outcome = controller
+            .run(async {
+                tokio::time::sleep(Duration::from_millis(30)).await;
+            })
+            .await;
+
+        assert_eq!(outcome, Outcome::Shutdown);
+        assert!(spawner.live.lock().unwrap().len() >= 2);
+        assert!(events.try_recv().is_ok_and(
+            |event| matches!(event, ControlEvent::Crashed { service, .. } if service == "mcp"),
+        ));
     }
 
     #[tokio::test]

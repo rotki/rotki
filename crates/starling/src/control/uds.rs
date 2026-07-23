@@ -207,6 +207,8 @@ mod tests {
             logs_dir: PathBuf::from("/logs"),
             core_port: 4242,
             colibri_port: 4343,
+            mcp_port: 4445,
+            mcp_autostart: false,
             api_host: "127.0.0.1".to_string(),
             api_cors: "http://localhost:*/*".to_string(),
             log_level: "critical".to_string(),

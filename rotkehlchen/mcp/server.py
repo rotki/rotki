@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from mcp.server.fastmcp import FastMCP
 
@@ -36,6 +36,8 @@ def setup_server(
         log_level: LogLevel,
         privacy_mode: PrivacyMode,
         max_events: int | None = None,
+        host: str = '127.0.0.1',
+        port: int = 4445,
 ) -> FastMCP:
     configure_backend(
         base_url=backend_url,
@@ -43,7 +45,7 @@ def setup_server(
         privacy_mode=privacy_mode,
         max_events=max_events,
     )
-    server = FastMCP(name=SERVICE_NAME, log_level=log_level)
+    server = FastMCP(name=SERVICE_NAME, log_level=log_level, host=host, port=port)
 
     for tool_function in discover_tools():
         default_name = getattr(tool_function, '__name__', 'unknown')
@@ -64,11 +66,17 @@ def run_server(
         log_level: LogLevel,
         privacy_mode: PrivacyMode,
         max_events: int | None = None,
+        transport: Literal['stdio', 'streamable-http'] = 'stdio',
+        host: str = '127.0.0.1',
+        port: int = 4445,
 ) -> None:
-    setup_server(
+    server = setup_server(
         backend_url=backend_url,
         timeout=timeout,
         log_level=log_level,
         privacy_mode=privacy_mode,
         max_events=max_events,
-    ).run(transport='stdio')
+        host=host,
+        port=port,
+    )
+    server.run(transport=transport)

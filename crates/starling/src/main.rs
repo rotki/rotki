@@ -217,6 +217,9 @@ struct Cli {
     #[arg(long, default_value_t = starling_core::config::DEFAULT_COLIBRI_PORT)]
     colibri_port: u16,
 
+    #[arg(long, default_value_t = starling_core::config::DEFAULT_MCP_PORT)]
+    mcp_port: u16,
+
     /// Host the core REST API binds to. Loopback in both runtimes: in docker only
     /// starling's proxy is externally bound, and the backends stay unreachable
     /// from outside the container.
@@ -555,6 +558,8 @@ async fn main() -> std::process::ExitCode {
         logs_dir,
         core_port: cli.core_port,
         colibri_port: cli.colibri_port,
+        mcp_port: cli.mcp_port,
+        mcp_autostart: false,
         api_host: cli.api_host,
         api_cors: cli.api_cors,
         // Docker resolved these from file+env above. Embedded defaults them here;
