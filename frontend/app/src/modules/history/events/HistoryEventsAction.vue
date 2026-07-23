@@ -25,6 +25,7 @@ import {
   toLocationAndTxRef,
 } from '@/modules/history/event-utils';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
+import RedecodeEventsButton from '@/modules/history/events/RedecodeEventsButton.vue';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import {
@@ -302,40 +303,12 @@ function confirmIgnoreDuplicate(): void {
         </RuiButton>
       </template>
       <template v-else-if="eventWithDecoding">
-        <RuiButton
-          variant="list"
-          :class="{ '!py-2': decodableEvmEvent }"
+        <RedecodeEventsButton
           :disabled="loading || txEventsDecoding"
-          @click="redecode(eventWithDecoding)"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-rotate-ccw" />
-          </template>
-          {{ t('transactions.actions.redecode_events') }}
-          <template #append>
-            <RuiTooltip
-              v-if="decodableEvmEvent"
-              :popper="{ placement: 'top', scroll: false, resize: false }"
-            >
-              <template #activator>
-                <RuiButton
-                  icon
-                  variant="text"
-                  size="sm"
-                  class="!p-2"
-                  :disabled="loading || txEventsDecoding"
-                  @click.stop="redecodeWithOptions(decodableEvmEvent)"
-                >
-                  <RuiIcon
-                    name="lu-settings-2"
-                    size="16"
-                  />
-                </RuiButton>
-              </template>
-              {{ t('transactions.actions.redecode_with_options') }}
-            </RuiTooltip>
-          </template>
-        </RuiButton>
+          :has-options="!!decodableEvmEvent"
+          @redecode="redecode(eventWithDecoding)"
+          @redecode-with-options="decodableEvmEvent && redecodeWithOptions(decodableEvmEvent)"
+        />
       </template>
       <RuiButton
         v-if="eventWithTxRef"
