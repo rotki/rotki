@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useFormErrorScroll } from '@/modules/core/common/use-form-error-scroll';
+import BigDialogConfirmButton from '@/modules/shell/components/dialogs/BigDialogConfirmButton.vue';
 
 defineOptions({
   inheritAttrs: false,
@@ -178,27 +179,13 @@ function promptClose() {
               tooltip-class="max-w-80"
             >
               <template #activator>
-                <RuiButton
-                  data-cy="confirm"
-                  :color="hasErrors ? 'error' : 'primary'"
-                  :disabled="actionDisabled || loading"
+                <BigDialogConfirmButton
+                  :primary="primary"
+                  :has-errors="hasErrors"
+                  :action-disabled="actionDisabled"
                   :loading="loading"
-                  type="submit"
-                >
-                  {{ primary }}
-                  <template
-                    v-if="hasErrors"
-                    #append
-                  >
-                    <RuiChip
-                      size="sm"
-                      class="!py-0 !px-0.5 !bg-rui-error-darker"
-                      color="error"
-                    >
-                      {{ errorCount }}
-                    </RuiChip>
-                  </template>
-                </RuiButton>
+                  :error-count="errorCount"
+                />
               </template>
               {{ actionTooltip }}
             </RuiTooltip>
