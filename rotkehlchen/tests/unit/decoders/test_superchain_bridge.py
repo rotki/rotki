@@ -676,6 +676,66 @@ def test_receive_eth_ethereum_to_base_bridge(base_inquirer, base_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0x7593BDffF57f71ab718184a2E9c9a3dAaa535557']])
+def test_receive_eth_on_base_via_portal_deposit(base_inquirer, base_accounts):
+    """Test decoding the L2 side of bridging ETH deposited directly to the OptimismPortal.
+
+    The ETH is minted on Base via a system deposit transaction (type 126) that emits
+    no logs, so the bridging is only recognized by the transaction type.
+    """
+    tx_hash = deserialize_evm_tx_hash('0x5b97c69211cda5d0ac192302f478a7046da72004438beae14164550e2722d380')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=TimestampMS(1706432239000),
+        location=Location.BASE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_ETH,
+        amount=FVal(amount := '38'),
+        location_label=(user_address := base_accounts[0]),
+        notes=f'Bridge {amount} ETH from Ethereum to Base via Base bridge',
+        counterparty=CPT_BASE,
+        address=user_address,
+        extra_data={'bridge': {
+            'from_chain': 1,
+            'to_chain': 8453,
+            'from_address': user_address,
+            'to_address': user_address,
+        }},
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0x22732C901C0C46128b418AE30b7b53FB95D18B38']])
+def test_receive_eth_on_base_via_portal_deposit_to_other_address(base_inquirer, base_accounts):
+    """Test decoding a type 126 deposit transaction minting ETH to a different recipient"""
+    tx_hash = deserialize_evm_tx_hash('0x79f10d432937928fe696434c79374a87b11eb17a75157d617877fef63a14fbf3')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1784064055000),
+        location=Location.BASE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_ETH,
+        amount=FVal(amount := '8.950285956308752'),
+        location_label=(user_address := base_accounts[0]),
+        notes=f'Bridge {amount} ETH from Ethereum address {(from_address := string_to_evm_address("0x4B34F943181408eac424116Af7b7790C94cba8B6"))} to Base via Base bridge',  # noqa: E501
+        counterparty=CPT_BASE,
+        address=from_address,
+        extra_data={'bridge': {
+            'from_chain': 1,
+            'to_chain': 8453,
+            'from_address': from_address,
+            'to_address': user_address,
+        }},
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x1218d6396dC67eC0FFBEBDF049C865B83636EddA']])
 def test_receive_erc20_ethereum_to_base_bridge(base_inquirer, base_accounts):

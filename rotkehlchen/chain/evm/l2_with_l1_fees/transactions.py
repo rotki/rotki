@@ -85,6 +85,7 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
             input_data=transaction.input_data,
             nonce=transaction.nonce,
             l1_fee=transaction.l1_fee,
+            tx_type=transaction.tx_type,
             db_id=tx_id,
             authorization_list=transaction.authorization_list,
         ), tx_receipt
