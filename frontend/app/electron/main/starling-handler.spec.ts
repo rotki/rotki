@@ -141,6 +141,9 @@ describe('starlingHandler', () => {
     expect(config.urls.coreApiUrl).toBe('http://127.0.0.1:4242');
     expect(config.urls.colibriApiUrl).toBe('http://127.0.0.1:4343');
     expect(handler.getMcpServerEndpoint()).toBe('http://127.0.0.1:4445/mcp');
+    expect(selectPortMock).toHaveBeenCalledWith(4242, '127.0.0.1');
+    expect(selectPortMock).toHaveBeenCalledWith(4343, '127.0.0.1');
+    expect(selectPortMock).toHaveBeenCalledWith(4445, '127.0.0.1');
     expect(buildStarlingInvocationMock).toHaveBeenCalledWith(
       expect.objectContaining({ mcpPort: 4445 }),
     );

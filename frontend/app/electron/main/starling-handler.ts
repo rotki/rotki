@@ -1,5 +1,6 @@
 import type { AppConfig } from '@electron/main/app-config';
 import type { LogService } from '@electron/main/log-service';
+import type { JsonRpcResponse, StarlingErrorListener } from '@electron/main/starling-handler-types';
 import { type ChildProcess, spawn } from 'node:child_process';
 import * as os from 'node:os';
 import path from 'node:path';
@@ -26,20 +27,6 @@ const STOP_REQUEST_TIMEOUT = SHUTDOWN_GRACE_SECS * 1000;
 
 /** Time starling gets to exit itself once the grace elapsed, before SIGKILL. */
 const EXIT_MARGIN = 5_000;
-
-interface StarlingErrorListener {
-  onMcpState?: (state: McpServiceState) => void;
-  onProcessError: (message: string | Error, code: BackendCode) => void;
-}
-
-interface JsonRpcResponse {
-  jsonrpc: '2.0';
-  id?: number;
-  result?: unknown;
-  error?: { code: number; message: string };
-  method?: string;
-  params?: unknown;
-}
 
 /**
  * Owns the single `starling` supervisor child and the control RPC over its
@@ -398,7 +385,7 @@ export class StarlingHandler {
    */
   private async resolvePort(name: 'core' | 'colibri' | 'mcp'): Promise<number> {
     const defaultPort = this.config.ports[`${name}Port`];
-    const port = await selectPort(defaultPort);
+    const port = await selectPort(defaultPort, API_HOST);
     if (port !== defaultPort)
       this.logger.warn(`Using non-default port ${port} for ${name}`);
     const url = `http://${API_HOST}:${port}`;
