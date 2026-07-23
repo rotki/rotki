@@ -2,8 +2,12 @@ import asyncio
 import logging
 import selectors
 from typing import Any
+from unittest.mock import MagicMock
 
-from rotkehlchen.mcp import server
+import pytest
+from mcp.server.transport_security import TransportSecuritySettings
+
+from rotkehlchen.mcp import __main__ as mcp_main, server
 from rotkehlchen.mcp.constants import SERVICE_NAME
 
 
@@ -12,11 +16,19 @@ def test_setup_server_should_register_discovered_tools(monkeypatch) -> None:
     init_args: dict[str, object] = {}
 
     class MockFastMCP:
-        def __init__(self, name: str, log_level: str, host: str, port: int) -> None:
+        def __init__(
+                self,
+                name: str,
+                log_level: str,
+                host: str,
+                port: int,
+                transport_security: TransportSecuritySettings,
+        ) -> None:
             init_args['name'] = name
             init_args['log_level'] = log_level
             init_args['host'] = host
             init_args['port'] = port
+            init_args['transport_security'] = transport_security
 
         def add_tool(
                 self,
@@ -43,12 +55,17 @@ def test_setup_server_should_register_discovered_tools(monkeypatch) -> None:
         privacy_mode='balanced',
     )
 
-    assert init_args == {
-        'name': SERVICE_NAME,
-        'log_level': 'DEBUG',
-        'host': '127.0.0.1',
-        'port': 4445,
-    }
+    assert init_args['name'] == SERVICE_NAME
+    assert init_args['log_level'] == 'DEBUG'
+    assert init_args['host'] == '127.0.0.1'
+    assert init_args['port'] == 4445
+    assert isinstance(
+        transport_security := init_args['transport_security'],
+        TransportSecuritySettings,
+    )
+    assert transport_security.enable_dns_rebinding_protection is True
+    assert transport_security.allowed_hosts == ['127.0.0.1:4445']
+    assert transport_security.allowed_origins == ['http://127.0.0.1:4445']
     assert tools == [('fake_tool', None, fake_tool)]
 
 
@@ -57,7 +74,14 @@ def test_setup_server_should_gate_premium_tools(monkeypatch) -> None:
     tools = []
 
     class MockFastMCP:
-        def __init__(self, name: str, log_level: str, host: str, port: int) -> None:
+        def __init__(
+                self,
+                name: str,
+                log_level: str,
+                host: str,
+                port: int,
+                transport_security: TransportSecuritySettings,
+        ) -> None:
             pass
 
         def add_tool(self, fn: Any, name: str, description: str | None = None) -> None:
@@ -136,3 +160,25 @@ def test_run_server_should_use_streamable_http_transport(monkeypatch) -> None:
     assert setup_kwargs['host'] == '127.0.0.1'
     assert setup_kwargs['port'] == 4445
     assert transports == ['streamable-http']
+
+
+@pytest.mark.parametrize('host', ['127.0.0.1', '127.1.2.3', '::1', 'localhost'])
+def test_validate_loopback_host_should_allow_only_loopback(host: str) -> None:
+    assert server.validate_loopback_host(host) == host
+
+
+@pytest.mark.parametrize('host', ['0.0.0.0', '192.168.1.2', 'example.com'])  # noqa: S104
+def test_validate_loopback_host_should_reject_network_exposure(host: str) -> None:
+    with pytest.raises(ValueError, match='must bind to a loopback host'):
+        server.validate_loopback_host(host)
+
+
+def test_main_should_reject_non_loopback_http_host(monkeypatch) -> None:
+    run_server_mock = MagicMock()
+    monkeypatch.setattr(mcp_main, 'run_server', run_server_mock)
+
+    with pytest.raises(SystemExit) as error:
+        mcp_main.main(['--transport', 'streamable-http', '--host', '0.0.0.0'])  # noqa: S104
+
+    assert error.value.code == 2
+    run_server_mock.assert_not_called()

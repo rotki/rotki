@@ -5,10 +5,18 @@ import os
 from typing import TYPE_CHECKING
 
 from rotkehlchen.mcp.backend import DEFAULT_BACKEND_URL
-from rotkehlchen.mcp.server import run_server
+from rotkehlchen.mcp.server import run_server, validate_loopback_host
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+
+def loopback_host(value: str) -> str:
+    """Argparse converter that rejects exposing the unauthenticated MCP server."""
+    try:
+        return validate_loopback_host(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from error
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -59,6 +67,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument(
         '--host',
         default='127.0.0.1',
+        type=loopback_host,
         help='Host for the streamable HTTP transport. Defaults to %(default)s',
     )
     parser.add_argument(
