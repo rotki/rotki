@@ -41,7 +41,7 @@ export interface UseChangeIntentReturn {
  * write, and whether a pending write is our own echo.
  */
 export function useChangeIntent(): UseChangeIntentReturn {
-  const pendingIntent = ref<ChangeSource>('programmatic');
+  const pendingIntent = shallowRef<ChangeSource>('programmatic');
   const pendingUrlSource = ref<ChangeSource>();
 
   /**

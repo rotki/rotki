@@ -39,7 +39,7 @@ export function useWalletHelper(): UseWalletHelperReturn {
     if (!tx)
       return;
 
-    const { chain, initiatorAddress: address } = tx;
+    const { chain, hash, initiatorAddress: address } = tx;
 
     await Promise.all([
       refreshBlockchainBalances({
@@ -48,7 +48,7 @@ export function useWalletHelper(): UseWalletHelperReturn {
       addTransactionHash({
         associatedAddress: address,
         blockchain: chain,
-        txRef: tx.hash,
+        txRef: hash,
       }),
     ]);
   };

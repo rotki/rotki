@@ -35,6 +35,7 @@ const {
 
 const router = useRouter();
 const { show } = useConfirmStore();
+const { t } = useI18n({ useScope: 'global' });
 
 const pickerValue = computed<{ eventType: string; eventSubtype: string } | undefined>({
   get: () => {
@@ -103,8 +104,6 @@ function viewAccountingRule(): void {
 
   navigateToAccountingRule();
 }
-
-const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

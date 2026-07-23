@@ -149,10 +149,10 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     if (!asset)
       return undefined;
 
-    const { assetType, identifier: usedId } = asset;
+    const { assetType, evmChain, identifier: usedId } = asset;
 
     if (assetType === EVM_TOKEN) {
-      const location = asset.evmChain ?? undefined;
+      const location = evmChain ?? undefined;
       if (isEvmIdentifier(usedId)) {
         return {
           address: getAddressFromEvmIdentifier(usedId),
