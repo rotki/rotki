@@ -103,13 +103,18 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
 
   const {
     cache,
-    deleteCacheKey,
+    deleteCacheKeys,
     getIsPending,
     isPending,
     reset,
     resolve,
     unknown,
-  } = createItemCache<BigNumber>(async keys => fetchHistoricPrices(keys), { storage: historicStorage });
+  } = createItemCache<BigNumber>(async keys => fetchHistoricPrices(keys), {
+    label: 'historic-price',
+    maxSize: 5000,
+    size: 500,
+    storage: historicStorage,
+  });
 
   function getHistoricPrice(fromAsset: string, timestamp: number): BigNumber {
     const key = createKey(fromAsset, timestamp);
@@ -146,9 +151,7 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
       });
     });
 
-    keysToBeDeleted.forEach((key) => {
-      deleteCacheKey(key);
-    });
+    deleteCacheKeys([...keysToBeDeleted]);
   }
 
   watch(currencySymbol, async () => {

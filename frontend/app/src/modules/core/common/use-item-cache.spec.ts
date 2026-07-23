@@ -1,5 +1,6 @@
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { logger } from '@/modules/core/common/logging/logging';
 import { createItemCache, createItemCacheStorage } from '@/modules/core/common/use-item-cache';
 
 interface TestEntry {
@@ -47,39 +48,29 @@ describe('createItemCache', () => {
     });
   });
 
-  describe('useResolve', () => {
-    it('should return a reactive computed that updates after fetch', async () => {
+  describe('peek', () => {
+    it('should return a cached value without queueing a fetch', async () => {
       const { fetch } = createMockFetch({ KEY: 'value' });
-      const { useResolve } = createItemCache(fetch);
+      const { peek, resolve } = createItemCache(fetch);
 
-      const result = useResolve('KEY');
-      expect(get(result)).toBeNull();
-
+      resolve('KEY');
       vi.advanceTimersByTime(1000);
       await flushPromises();
 
-      expect(get(result)).toBe('value');
+      expect(peek('KEY')).toBe('value');
     });
 
-    it('should accept a reactive key and track the computed value', async () => {
-      const { fetch } = createMockFetch({ A: 'alpha', B: 'beta' });
-      const { resolve, useResolve } = createItemCache(fetch);
-      const key = ref<string>('A');
+    it('should return null and never trigger a fetch for an unknown key', async () => {
+      const { calls, fetch } = createMockFetch({ KEY: 'value' });
+      const { peek } = createItemCache(fetch);
 
-      const result = useResolve(key);
+      expect(peek('KEY')).toBeNull();
 
       vi.advanceTimersByTime(1000);
       await flushPromises();
 
-      expect(get(result)).toBe('alpha');
-
-      // Queue B separately since useResolve only queues the initial key
-      resolve('B');
-      set(key, 'B');
-      vi.advanceTimersByTime(1000);
-      await flushPromises();
-
-      expect(get(result)).toBe('beta');
+      expect(calls).toHaveLength(0);
+      expect(peek('KEY')).toBeNull();
     });
   });
 
@@ -367,6 +358,195 @@ describe('createItemCache', () => {
       vi.advanceTimersByTime(1000);
       await flushPromises();
 
+      expect(calls).toHaveLength(2);
+    });
+  });
+
+  describe('deleteCacheKey LRU index', () => {
+    it('should not leak the key in the LRU index (recent)', async () => {
+      const storage = createItemCacheStorage<string>();
+      const { fetch } = createMockFetch({ KEY: 'value' });
+      const { deleteCacheKey, resolve, size } = createItemCache(fetch, { storage });
+
+      resolve('KEY');
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      expect(size()).toBe(1);
+      expect(storage.recent.has('KEY')).toBe(true);
+
+      deleteCacheKey('KEY');
+
+      // The LRU index must shrink too, otherwise phantom entries inflate the
+      // size and trigger premature eviction of live keys.
+      expect(size()).toBe(0);
+      expect(storage.recent.has('KEY')).toBe(false);
+    });
+  });
+
+  describe('deleteCacheKeys', () => {
+    it('should remove many keys with a single reactive notification', async () => {
+      const { fetch } = createMockFetch({ A: 'alpha', B: 'beta', C: 'gamma' });
+      const { cache, deleteCacheKeys, resolve, size } = createItemCache(fetch);
+
+      resolve('A');
+      resolve('B');
+      resolve('C');
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      expect(size()).toBe(3);
+
+      deleteCacheKeys(['A', 'B']);
+
+      expect(size()).toBe(1);
+      expect(get(cache).A).toBeUndefined();
+      expect(get(cache).B).toBeUndefined();
+      expect(get(cache).C).toBe('gamma');
+    });
+
+    it('should be a no-op for an empty list', () => {
+      const { fetch } = createMockFetch({});
+      const { deleteCacheKeys, size } = createItemCache(fetch);
+
+      expect(() => deleteCacheKeys([])).not.toThrow();
+      expect(size()).toBe(0);
+    });
+  });
+
+  describe('resilient capacity', () => {
+    it('should grow past the soft cap without evicting', async () => {
+      const { fetch } = createMockFetch({ A: 'a', B: 'b', C: 'c', D: 'd', E: 'e' });
+      const { cache, resolve, size } = createItemCache(fetch, { maxSize: 10, size: 2 });
+
+      for (const key of ['A', 'B', 'C', 'D', 'E']) resolve(key);
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      // Soft cap is 2 but the working set of 5 fits under the hard cap of 10.
+      expect(size()).toBe(5);
+      expect(get(cache).A).toBe('a');
+      expect(get(cache).E).toBe('e');
+    });
+
+    it('should reclaim expired entries before growing further', async () => {
+      const { fetch } = createMockFetch({ A: 'a', B: 'b', C: 'c' });
+      const { cache, resolve, size } = createItemCache(fetch, { expiry: 1000, maxSize: 10, size: 2 });
+
+      resolve('A');
+      resolve('B');
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+      expect(size()).toBe(2);
+
+      // Let A and B age out (nothing reads them, so their expiry lapses).
+      vi.advanceTimersByTime(5000);
+
+      resolve('C');
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      // Inserting C at the soft cap reclaims the two expired entries first.
+      expect(size()).toBe(1);
+      expect(get(cache).C).toBe('c');
+      expect(get(cache).A).toBeUndefined();
+      expect(get(cache).B).toBeUndefined();
+    });
+
+    it('should force-evict the oldest live entry and warn at the hard cap', async () => {
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      const { fetch } = createMockFetch({ A: 'a', B: 'b', C: 'c', D: 'd', E: 'e' });
+      // expiry huge so nothing is reclaimable — every entry stays live.
+      const { cache, resolve, size } = createItemCache(fetch, { expiry: 1_000_000, label: 'test', maxSize: 3, size: 2 });
+
+      for (const key of ['A', 'B', 'C', 'D', 'E']) resolve(key);
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      // Held at the hard cap; the two oldest (A, B) were force-evicted.
+      expect(size()).toBe(3);
+      expect(get(cache).A).toBeUndefined();
+      expect(get(cache).B).toBeUndefined();
+      expect(get(cache).E).toBe('e');
+      // The warning is throttled to once per window even across multiple evictions.
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('test');
+      warnSpy.mockRestore();
+    });
+
+    it('should keep maxSize at least the soft cap when configured lower', async () => {
+      const { fetch } = createMockFetch({ A: 'a', B: 'b', C: 'c' });
+      const { resolve, size } = createItemCache(fetch, { expiry: 1_000_000, maxSize: 1, size: 3 });
+
+      for (const key of ['A', 'B', 'C']) resolve(key);
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      // maxSize (1) is clamped up to size (3), so all three fit.
+      expect(size()).toBe(3);
+    });
+  });
+
+  describe('refresh ordering', () => {
+    it('should move the refreshed key to the most-recent end of the LRU', async () => {
+      const storage = createItemCacheStorage<string>();
+      const { fetch } = createMockFetch({ A: 'a', B: 'b' });
+      const { refresh, resolve } = createItemCache(fetch, { storage });
+
+      resolve('A');
+      resolve('B');
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      expect([...storage.recent.keys()]).toEqual(['A', 'B']);
+
+      refresh('A');
+
+      // A must jump to the end; an in-place set would leave it stale at the front
+      // and break both LRU recency and the expiry-ordering the sweep relies on.
+      expect([...storage.recent.keys()]).toEqual(['B', 'A']);
+    });
+  });
+
+  describe('unknown map bounding', () => {
+    it('should keep the negative cache under the hard cap', async () => {
+      const { fetch } = createMockFetch({});
+      const { resolve, unknown } = createItemCache(fetch, { maxSize: 2, size: 1 });
+
+      for (const key of ['A', 'B', 'C', 'D']) resolve(key);
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      expect(unknown.size).toBeLessThanOrEqual(2);
+    });
+  });
+
+  describe('error backoff', () => {
+    it('should hold failed keys back before retrying', async () => {
+      vi.spyOn(logger, 'error').mockImplementation(() => {});
+      const calls: string[][] = [];
+      const fetch = async (keys: string[]): Promise<() => IterableIterator<{ key: string; item: string }>> => {
+        calls.push([...keys]);
+        throw new Error('backend down');
+      };
+      const { resolve } = createItemCache(fetch);
+
+      resolve('KEY');
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+      expect(calls).toHaveLength(1);
+
+      // Within the backoff window a re-request must not fire another fetch.
+      resolve('KEY');
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+      expect(calls).toHaveLength(1);
+
+      // After the backoff window it retries.
+      vi.advanceTimersByTime(5000);
+      resolve('KEY');
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
       expect(calls).toHaveLength(2);
     });
   });
