@@ -2,6 +2,7 @@ import type { McpServerStatus } from '@shared/ipc';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import McpServerSetting from '@/modules/settings/backend/McpServerSetting.vue';
+import { setMcpServerState } from '@/modules/settings/backend/use-mcp-server-state';
 
 const mocks = vi.hoisted(() => ({
   getMcpServerStatus: vi.fn(),
@@ -58,6 +59,7 @@ function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
 describe('mcpServerSetting', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setMcpServerState(undefined);
     mocks.getMcpServerStatus.mockResolvedValue(stoppedStatus);
     mocks.setMcpAutoStart.mockImplementation(async (enabled: boolean) => ({
       ...stoppedStatus,
@@ -99,5 +101,15 @@ describe('mcpServerSetting', () => {
     await wrapper.find('[data-testid="mcp-lifecycle"]').trigger('click');
     await flushPromises();
     expect(mocks.stopMcpServer).toHaveBeenCalledOnce();
+  });
+
+  it('should show a failed state when the managed MCP service crashes', async () => {
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    setMcpServerState('Failed');
+    await nextTick();
+
+    expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.status.failed');
   });
 });

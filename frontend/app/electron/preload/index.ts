@@ -34,6 +34,10 @@ contextBridge.exposeInMainWorld('interop', {
       listeners.onRestart();
     });
 
+    ipcRenderer.on(IpcCommands.MCP_STATE, (_event, state) => {
+      listeners.onMcpState?.(state);
+    });
+
     ipcRenderer.on(IpcCommands.ABOUT, () => {
       listeners.onAbout();
     });

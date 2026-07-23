@@ -28,6 +28,7 @@ const STOP_REQUEST_TIMEOUT = SHUTDOWN_GRACE_SECS * 1000;
 const EXIT_MARGIN = 5_000;
 
 interface StarlingErrorListener {
+  onMcpState?: (state: McpServiceState) => void;
   onProcessError: (message: string | Error, code: BackendCode) => void;
 }
 
@@ -294,7 +295,9 @@ export class StarlingHandler {
       case 'event.crashed': {
         const lastError = eventLastError(params);
         this.logger.error(`Backend service crashed: ${lastError}`);
-        if (!this.exiting && !isMcpCrash(params))
+        if (isMcpCrash(params))
+          listener.onMcpState?.('Failed');
+        else if (!this.exiting)
           listener.onProcessError(lastError, BackendCode.TERMINATED);
         break;
       }

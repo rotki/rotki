@@ -252,15 +252,17 @@ describe('starlingHandler', () => {
     const child = makeFakeChild(nullResponder);
     spawnMock.mockImplementation(() => child);
     const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onMcpState = vi.fn();
     const onProcessError = vi.fn();
 
-    await handler.restartBackend({}, { onProcessError });
+    await handler.restartBackend({}, { onMcpState, onProcessError });
     writeMessage(child.stdout, {
       method: 'event.crashed',
       params: { lastError: 'mcp died', service: 'mcp' },
     });
     await new Promise<void>(resolve => queueMicrotask(() => resolve()));
 
+    expect(onMcpState).toHaveBeenCalledWith('Failed');
     expect(onProcessError).not.toHaveBeenCalled();
   });
 

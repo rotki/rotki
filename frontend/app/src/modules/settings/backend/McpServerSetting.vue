@@ -5,6 +5,7 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import CopyTooltip from '@/modules/shell/components/CopyTooltip.vue';
+import { useMcpServerState } from './use-mcp-server-state';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -19,6 +20,7 @@ const {
 const status = ref<McpServerStatus>();
 const error = ref<string>();
 const loading = ref<boolean>(false);
+const mcpServerState = useMcpServerState();
 
 const failedStates: ReadonlySet<McpServiceState | undefined> = new Set(['Degraded', 'Failed']);
 const startingStates: ReadonlySet<McpServiceState | undefined> = new Set([
@@ -98,6 +100,12 @@ async function toggleServer(): Promise<void> {
     set(loading, false);
   }
 }
+
+watch(mcpServerState, (state) => {
+  const currentStatus = get(status);
+  if (state && currentStatus)
+    set(status, { ...currentStatus, state });
+});
 
 onBeforeMount(() => {
   startPromise(loadStatus());

@@ -121,6 +121,7 @@ export interface Listeners {
   onError: (backendOutput: string, code: BackendCode) => void;
   onAbout: () => void;
   onRestart: () => void;
+  onMcpState?: (state: McpServiceState) => void;
   onOAuthCallback?: (oAuthResult: OAuthResult) => void;
   /**
    * Invoked when the main process is about to quit, before the backend

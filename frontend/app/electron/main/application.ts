@@ -2,6 +2,7 @@ import type { AppConfig } from '@electron/main/app-config';
 import type { McpServerStatus, McpServiceState } from '@shared/ipc';
 import process from 'node:process';
 import { protectHtmlAssociation } from '@electron/main/html-mime-protection';
+import { IpcCommands } from '@electron/ipc-commands';
 import { IpcManager } from '@electron/main/ipc-setup';
 import { LogService } from '@electron/main/log-service';
 import { MenuManager } from '@electron/main/menu';
@@ -174,6 +175,7 @@ export class Application {
           ...options,
           mcpAutoStart: this.settings.appSettings.mcpAutoStart,
         }, {
+          onMcpState: state => this.window.sendIpcMessage(IpcCommands.MCP_STATE, state),
           onProcessError: (message, code) => this.window.setStartupError(message, code),
         });
       },
