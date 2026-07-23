@@ -103,21 +103,34 @@ class Kraken(CurrentPriceOracleInterface):
 
     @staticmethod
     def _asset_to_kraken_symbols(asset: AssetWithOracles) -> set[str]:
-        """Return possible Kraken symbols for an asset.
+        """Return possible Kraken symbols for an explicitly mapped asset.
 
-        Only Kraken-specific location asset mappings are consulted. Generic
-        mappings (NULL location) are intentionally ignored since they come
-        from other exchanges and would let an unrelated Kraken market match
-        the asset.
+        Mappings belonging to any member of the asset's collection are used,
+        since an exchange mapping is not guaranteed to point to the collection's
+        main asset. Both Kraken-specific and common mappings are accepted, but
+        the asset's symbol alone is never enough to match a Kraken market.
         """
-        symbols = {'BTC' if asset.symbol == 'XBT' else asset.symbol}
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            symbols.update(row[0] for row in cursor.execute(
-                'SELECT exchange_symbol FROM location_asset_mappings '
-                'WHERE local_id=? AND location=?',
-                (asset.identifier, Location.KRAKEN.serialize_for_db()),
-            ))
+            mappings = cursor.execute(
+                'WITH related_assets(identifier) AS ('
+                'SELECT ? UNION SELECT related.asset FROM multiasset_mappings AS requested '
+                'JOIN multiasset_mappings AS related '
+                'ON related.collection_id=requested.collection_id WHERE requested.asset=?'
+                ') SELECT DISTINCT LM.exchange_symbol, CAD.symbol '
+                'FROM related_assets AS RA '
+                'JOIN location_asset_mappings AS LM ON LM.local_id=RA.identifier '
+                'JOIN common_asset_details AS CAD ON CAD.identifier=LM.local_id '
+                'WHERE LM.location=? OR LM.location IS NULL',
+                (
+                    asset.identifier,
+                    asset.identifier,
+                    Location.KRAKEN.serialize_for_db(),
+                ),
+            ).fetchall()
 
+        symbols: set[str] = set()
+        for exchange_symbol, asset_symbol in mappings:
+            symbols.update((exchange_symbol, 'BTC' if asset_symbol == 'XBT' else asset_symbol))
         return symbols
 
     @staticmethod

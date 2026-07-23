@@ -2,11 +2,22 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.constants.assets import A_3CRV, A_BTC, A_ETH, A_EUR, A_GNO, A_USD
+from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.assets import (
+    A_3CRV,
+    A_BTC,
+    A_DAI,
+    A_ETH,
+    A_EUR,
+    A_GNO,
+    A_USD,
+    A_USDC,
+)
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.externalapis.kraken import Kraken
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Price
+from rotkehlchen.types import ChainID, Price, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -84,6 +95,42 @@ def test_kraken_unsupported_asset_returns_zero_price():
         to_asset=A_USD.resolve_to_asset_with_oracles(),
     )
     assert price == ZERO_PRICE
+
+
+@pytest.mark.vcr
+def test_kraken_only_prices_mapped_assets_and_their_collections(globaldb):
+    """A token cannot impersonate a Kraken-listed asset by copying its symbol."""
+    optimism_dai = EvmToken('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1')
+    fake_dai = EvmToken.initialize(
+        address=string_to_evm_address('0x0000000000000000000000000000000000000001'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        name='Fake Dai',
+        symbol='DAI',
+        decimals=18,
+    )
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'UPDATE location_asset_mappings SET local_id=? '
+            'WHERE location IS NULL AND exchange_symbol=?',
+            (optimism_dai.identifier, 'DAI'),
+        )
+
+    prices = Kraken().query_multiple_current_prices(
+        from_assets=[
+            A_DAI.resolve_to_asset_with_oracles(),
+            optimism_dai,
+            fake_dai,
+            A_USDC.resolve_to_asset_with_oracles(),
+        ],
+        to_asset=A_USD.resolve_to_asset_with_oracles(),
+    )
+
+    assert A_DAI in prices
+    assert optimism_dai in prices
+    assert prices[A_DAI] == prices[optimism_dai]
+    assert fake_dai not in prices
+    assert prices[A_USDC] != ZERO_PRICE
 
 
 @pytest.mark.vcr
