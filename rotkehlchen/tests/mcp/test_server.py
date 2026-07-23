@@ -9,7 +9,7 @@ from rotkehlchen.mcp.constants import SERVICE_NAME
 
 def test_setup_server_should_register_discovered_tools(monkeypatch) -> None:
     tools = []
-    init_args = {}
+    init_args: dict[str, object] = {}
 
     class MockFastMCP:
         def __init__(self, name: str, log_level: str, host: str, port: int) -> None:
