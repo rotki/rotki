@@ -53,12 +53,7 @@ const {
 } = useUnmatchedBridgeTransactions();
 
 const flow: MatchingFlow = useBridgeMatchingFlow();
-const { getUnmatchableExplanation } = useBridgeUnmatchableExplanation();
-
-const emptyExplanation = computed<string | undefined>(() => {
-  const transaction = get(potentialMatchTransaction);
-  return transaction ? getUnmatchableExplanation(transaction) : undefined;
-});
+const { unmatchableExplanation: emptyExplanation } = useBridgeUnmatchableExplanation(potentialMatchTransaction);
 
 function selectTransaction(transaction: UnmatchedBridgeTransaction): void {
   const identifier = transaction.identifier ?? getEventEntryFromCollection(transaction.events).entry.identifier;
