@@ -78,6 +78,7 @@ interface SetupResult {
 function setupComposable(overrides: {
   rows?: VirtualRow[];
   identifiers?: string[];
+  groupId?: string;
   types?: Record<string, HighlightType>;
   loading?: boolean;
   pagination?: TablePaginationData;
@@ -88,7 +89,7 @@ function setupComposable(overrides: {
   const loading = ref<boolean>(overrides.loading ?? false);
   const pagination = ref<TablePaginationData>(overrides.pagination ?? { page: 1, total: 0, limit: 10 });
 
-  const highlightedGroupIdentifier = ref<string | undefined>(undefined);
+  const highlightedGroupIdentifier = ref<string | undefined>(overrides.groupId);
 
   const composable = useVirtualScrollHighlight({
     flattenedRows: computed<VirtualRow[]>(() => get(flattenedRows)),
@@ -329,6 +330,43 @@ describe('use-virtual-scroll-highlight', () => {
       const { loading } = setupComposable({
         rows,
         identifiers: ['1'],
+        loading: true,
+      });
+
+      set(loading, false);
+      await triggerDebouncedWatch();
+
+      expect(scrollToSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('group highlight via auto-scroll', () => {
+    it('should scroll to the group header when a group is highlighted without identifiers', async () => {
+      const rows: VirtualRow[] = [
+        createEventRow(createMockEvent({ identifier: 1 }), 0),
+        createGroupHeaderRow(createMockEvent({ groupIdentifier: 'target-group', identifier: 10 })),
+      ];
+
+      const { loading } = setupComposable({
+        rows,
+        groupId: 'target-group',
+        loading: true,
+      });
+
+      set(loading, false);
+      await triggerDebouncedWatch();
+
+      expect(scrollToSpy).toHaveBeenCalledWith(1);
+    });
+
+    it('should not scroll when the highlighted group is not present in the rows', async () => {
+      const rows: VirtualRow[] = [
+        createEventRow(createMockEvent({ identifier: 1 }), 0),
+      ];
+
+      const { loading } = setupComposable({
+        rows,
+        groupId: 'missing-group',
         loading: true,
       });
 
