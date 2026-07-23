@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import LogLevelSetting from '@/modules/settings/backend/LogLevelSetting.vue';
+import McpServerSetting from '@/modules/settings/backend/McpServerSetting.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -14,5 +15,6 @@ const { t } = useI18n({ useScope: 'global' });
       {{ t('backend_settings.subtitle') }}
     </template>
     <LogLevelSetting />
+    <McpServerSetting />
   </SettingCategory>
 </template>

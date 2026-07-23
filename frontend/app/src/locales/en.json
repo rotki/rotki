@@ -1760,6 +1760,26 @@
       "log_level": {
         "hint": "Specify minimum severity level for recorded log messages.",
         "label": "Log Level"
+      },
+      "mcp_server": {
+        "actions": {
+          "start": "Start server",
+          "stop": "Stop server"
+        },
+        "auto_start": "Start MCP automatically with rotki",
+        "desktop_only": "MCP lifecycle controls are available in the rotki desktop app.",
+        "error": "Failed to update the MCP server: {message}",
+        "hint": "Manage the local MCP server used by AI assistants.",
+        "label": "MCP Server",
+        "status": {
+          "failed": "Failed",
+          "label": "Status",
+          "running": "Running",
+          "starting": "Starting",
+          "stopped": "Stopped",
+          "stopping": "Stopping",
+          "unavailable": "Unavailable"
+        }
       }
     },
     "sqlite_instructions": {

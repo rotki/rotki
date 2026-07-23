@@ -1,4 +1,5 @@
 import type { AppConfig } from '@electron/main/app-config';
+import type { McpServerStatus, McpServiceState } from '@shared/ipc';
 import process from 'node:process';
 import { protectHtmlAssociation } from '@electron/main/html-mime-protection';
 import { IpcManager } from '@electron/main/ipc-setup';
@@ -9,6 +10,7 @@ import { DEFAULT_COLIBRI_PORT, DEFAULT_PORT } from '@electron/main/port-utils';
 import { resolveLogLevel } from '@electron/main/resolve-log-level';
 import { SettingsManager } from '@electron/main/settings-manager';
 import { StarlingHandler } from '@electron/main/starling-handler';
+import { MCP_ENDPOINT } from '@electron/main/starling-mcp';
 import { TrayManager } from '@electron/main/tray-manager';
 import { WindowManager } from '@electron/main/window-manager';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
@@ -168,7 +170,10 @@ export class Application {
       updatePremiumMenu: isPremium => this.menu.updatePremiumStatus(isPremium),
       restartSubprocesses: async (options) => {
         this.logger.setLogLevel(resolveLogLevel(options.loglevel, this.appConfig.isDev));
-        await this.processHandler.restartBackend(options, {
+        await this.processHandler.restartBackend({
+          ...options,
+          mcpAutoStart: this.settings.appSettings.mcpAutoStart,
+        }, {
           onProcessError: (message, code) => this.window.setStartupError(message, code),
         });
       },
@@ -183,6 +188,13 @@ export class Application {
       getProtocolRegistrationFailed: () => this.protocolRegistrationFailed,
       openOAuthInWindow: async (url: string) => this.window.openOAuthWindow(url),
       sendIpcMessage: (channel: string, ...args: any[]) => this.window.sendIpcMessage(channel, ...args),
+      getMcpServerStatus: async () => this.getMcpServerStatus(),
+      setMcpAutoStart: async (enabled: boolean) => {
+        this.settings.setMcpAutoStart(enabled);
+        return this.getMcpServerStatus();
+      },
+      startMcpServer: async () => this.getMcpServerStatus(await this.processHandler.setMcpServerRunning(true)),
+      stopMcpServer: async () => this.getMcpServerStatus(await this.processHandler.setMcpServerRunning(false)),
     });
     await this.window.create();
     this.window.setListener({
@@ -193,6 +205,14 @@ export class Application {
       quit: () => startPromise(this.quit()),
       toggleWindowVisibility: () => this.window.toggleVisibility(),
     });
+  }
+
+  private async getMcpServerStatus(state?: McpServiceState): Promise<McpServerStatus> {
+    return {
+      autoStart: this.settings.appSettings.mcpAutoStart,
+      endpoint: MCP_ENDPOINT,
+      state: state ?? await this.processHandler.getMcpServerState(),
+    };
   }
 
   private setupAppEvents() {

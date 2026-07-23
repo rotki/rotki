@@ -9,7 +9,8 @@ import { selectPort } from '@electron/main/port-utils';
 import { resolveLogLevel } from '@electron/main/resolve-log-level';
 import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingInvocation } from '@electron/main/starling-args';
 import { forwardStarlingLine } from '@electron/main/starling-log';
-import { BackendCode, type BackendOptions } from '@shared/ipc';
+import { eventLastError, getMcpServerState, isMcpCrash, setMcpServerRunning } from '@electron/main/starling-mcp';
+import { BackendCode, type BackendOptions, type McpServiceState } from '@shared/ipc';
 import { wait } from '@shared/utils';
 
 /** starling exits with this code when the data dir is already locked (main.rs). */
@@ -44,8 +45,7 @@ interface JsonRpcResponse {
  * stdio. Replaces the old SubprocessHandler + two ProcessManagers: starling now
  * spawns/supervises/tree-kills core + colibri, and this class drives it.
  *
- * The renderer keeps talking directly to core and colibri on two loopback URLs
- * (`config.urls.coreApiUrl` / `colibriApiUrl`), which this handler fills in from
+ * The renderer talks directly to the loopback URLs this handler fills in from
  * the ports it allocates before spawning. No reverse proxy is involved.
  */
 export class StarlingHandler {
@@ -290,9 +290,9 @@ export class StarlingHandler {
         this.logger.info('Backend event: event.ready');
         break;
       case 'event.crashed': {
-        const lastError = this.eventLastError(params);
+        const lastError = eventLastError(params);
         this.logger.error(`Backend service crashed: ${lastError}`);
-        if (!this.exiting)
+        if (!this.exiting && !isMcpCrash(params))
           listener.onProcessError(lastError, BackendCode.TERMINATED);
         break;
       }
@@ -305,13 +305,14 @@ export class StarlingHandler {
     }
   }
 
-  private eventLastError(params: unknown): string {
-    if (params && typeof params === 'object' && 'lastError' in params) {
-      const value = (params).lastError;
-      if (typeof value === 'string' && value.length > 0)
-        return value;
-    }
-    return 'The rotki backend stopped unexpectedly. Please check the logs for more details.';
+  async getMcpServerState(): Promise<McpServiceState> {
+    return this.child
+      ? getMcpServerState(async (method, params) => this.request(method, params))
+      : 'Unavailable';
+  }
+
+  async setMcpServerRunning(running: boolean): Promise<McpServiceState> {
+    return setMcpServerRunning(async (method, params) => this.request(method, params), running);
   }
 
   /** Send a JSON-RPC request over the child's stdin and await its response. */

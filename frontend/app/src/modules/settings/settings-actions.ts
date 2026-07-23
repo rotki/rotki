@@ -68,6 +68,12 @@ export const settingsActions = {
     keywords: [msg.$t('backend_settings.settings.log_level.hint')],
     titleKey: msg.$t('backend_settings.settings.log_level.label'),
   },
+  mcpServer: {
+    anchor: SettingsHighlightIds.MCP_SERVER,
+    category: SettingsCategoryIds.BACKEND,
+    keywords: [msg.$t('backend_settings.settings.mcp_server.hint')],
+    titleKey: msg.$t('backend_settings.settings.mcp_server.label'),
+  },
   modules: {
     anchor: SettingsHighlightIds.MODULES,
     keywords: [msg.$t('module_settings.subtitle')],

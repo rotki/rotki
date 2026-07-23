@@ -17,6 +17,24 @@ export interface StartupError {
 
 export interface ApiUrls { coreApiUrl: string; colibriApiUrl: string }
 
+export type McpServiceState =
+  | 'Degraded'
+  | 'Failed'
+  | 'Idle'
+  | 'Ready'
+  | 'Restarting'
+  | 'Spawning'
+  | 'Stopped'
+  | 'Stopping'
+  | 'Unavailable'
+  | 'WaitingReady';
+
+export interface McpServerStatus {
+  autoStart: boolean;
+  endpoint: string;
+  state: McpServiceState;
+}
+
 interface MetamaskImportError {
   readonly error: string;
 }
@@ -53,6 +71,7 @@ export const BackendOptions = z.object({
   maxSizeInMbAllLogs: z.number().int().positive().optional(),
   sqliteInstructions: z.number().int().positive().optional(),
   maxLogfilesNum: z.number().int().positive().optional(),
+  mcpAutoStart: z.boolean().optional(),
 });
 
 type StoredBackendOptions = z.infer<typeof BackendOptions>;
@@ -135,6 +154,10 @@ export interface Interop {
   storePassword: (credentials: Credentials) => Promise<boolean>;
   getPassword: (username: string) => Promise<string>;
   clearPassword: () => Promise<void>;
+  getMcpServerStatus: () => Promise<McpServerStatus>;
+  setMcpAutoStart: (enabled: boolean) => Promise<McpServerStatus>;
+  startMcpServer: () => Promise<McpServerStatus>;
+  stopMcpServer: () => Promise<McpServerStatus>;
   openWalletConnectBridge: () => Promise<void>;
   notifyUserLogout: () => void;
   /** Synchronously get any startup error that occurred before the renderer was ready */

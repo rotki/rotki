@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 const AppSettingsSchema = z.object({
   displayTray: z.boolean().default(true),
+  mcpAutoStart: z.boolean().default(false),
   persistStore: z.boolean().optional(),
   showNetWorthOnTray: z.boolean().default(false),
 });
@@ -14,6 +15,7 @@ type AppSettings = z.infer<typeof AppSettingsSchema>;
 export class SettingsManager {
   private readonly _appSettings: AppSettings = {
     displayTray: true,
+    mcpAutoStart: false,
     showNetWorthOnTray: false,
   };
 
@@ -58,5 +60,10 @@ export class SettingsManager {
 
   save() {
     this.writeAppSettings(this._appSettings);
+  }
+
+  setMcpAutoStart(enabled: boolean): void {
+    this._appSettings.mcpAutoStart = enabled;
+    this.save();
   }
 }

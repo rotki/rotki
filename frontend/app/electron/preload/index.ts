@@ -80,6 +80,10 @@ contextBridge.exposeInMainWorld('interop', {
   storePassword: async (credentials: Credentials) => ipcRenderer.invoke(IpcCommands.INVOKE_STORE_PASSWORD, credentials),
   getPassword: async (username: string) => ipcRenderer.invoke(IpcCommands.INVOKE_GET_PASSWORD, username),
   clearPassword: async () => ipcRenderer.invoke(IpcCommands.INVOKE_CLEAR_PASSWORD),
+  getMcpServerStatus: async () => ipcRenderer.invoke(IpcCommands.INVOKE_MCP_STATUS),
+  setMcpAutoStart: async (enabled: boolean) => ipcRenderer.invoke(IpcCommands.INVOKE_MCP_AUTOSTART, enabled),
+  startMcpServer: async () => ipcRenderer.invoke(IpcCommands.INVOKE_MCP_START),
+  stopMcpServer: async () => ipcRenderer.invoke(IpcCommands.INVOKE_MCP_STOP),
   notifyUserLogout: () => ipcRenderer.send(IpcCommands.USER_LOGOUT),
   // Synchronously get any startup error that occurred before renderer was ready
   getStartupError: (): StartupError | null => ipcRenderer.sendSync(IpcCommands.SYNC_GET_STARTUP_ERROR),
