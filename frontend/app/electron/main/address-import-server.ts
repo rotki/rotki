@@ -147,48 +147,70 @@ export class AddressImportServer {
     }
   }
 
+  /**
+   * Rejects the request when its declared content length exceeds the limit.
+   * Returns `true` when a response was already sent and handling should stop.
+   */
+  private exceedsContentLength(req: IncomingMessage, res: ServerResponse): boolean {
+    const contentLengthHeader = req.headers['content-length'];
+    if (!contentLengthHeader)
+      return false;
+
+    try {
+      const contentLength = Number.parseInt(contentLengthHeader);
+      if (contentLength > this.maxContentLength) {
+        const limitMB = (this.maxContentLength / 1024 / 1024).toFixed(1);
+        this.invalidRequest(res, `Only requests up to ${limitMB}MB are allowed`, HttpStatus.BAD_REQUEST);
+        return true;
+      }
+      return false;
+    }
+    catch {
+      this.invalidRequest(res, HttpErrorMessage.INVALID_CONTENT_LENGTH, HttpStatus.CONTENT_LENGTH_REQUIRED);
+      return true;
+    }
+  }
+
+  private resolveBasePath(): string {
+    const dirname = import.meta.dirname;
+    return checkIfDevelopment() ? path.join(dirname, '..', 'public') : dirname;
+  }
+
+  private async serveImportPage(res: ServerResponse, basePath: string): Promise<void> {
+    try {
+      const htmlContent = await fs.readFile(path.join(basePath, 'address-import/import.html'));
+      this.okResponse(res, htmlContent, AddressImportServer.headersHtml);
+    }
+    catch (error) {
+      this.logger.error('Failed to read import.html:', error);
+      this.invalidRequest(res, HttpErrorMessage.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+  }
+
+  private async route(req: IncomingMessage, res: ServerResponse, cb: AddressImportCallback, basePath: string): Promise<void> {
+    const url = req.url ?? '';
+
+    if (url === '/') {
+      await this.serveImportPage(res, basePath);
+    }
+    else if (url === '/import' && req.method === 'POST') {
+      this.handleAddresses(req, res, cb);
+      this.stop();
+    }
+    else if (await this.isAllowed(basePath, url)) {
+      await this.serveFile(res, basePath, url);
+    }
+    else {
+      this.invalidRequest(res, HttpErrorMessage.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+  }
+
   private async handleRequests(req: IncomingMessage, res: ServerResponse, cb: AddressImportCallback): Promise<void> {
     try {
-      const contentLengthHeader = req.headers['content-length'];
-      if (contentLengthHeader) {
-        try {
-          const contentLength = Number.parseInt(contentLengthHeader);
-          if (contentLength > this.maxContentLength) {
-            const limitMB = (this.maxContentLength / 1024 / 1024).toFixed(1);
-            this.invalidRequest(res, `Only requests up to ${limitMB}MB are allowed`, HttpStatus.BAD_REQUEST);
-            return;
-          }
-        }
-        catch {
-          this.invalidRequest(res, HttpErrorMessage.INVALID_CONTENT_LENGTH, HttpStatus.CONTENT_LENGTH_REQUIRED);
-          return;
-        }
-      }
+      if (this.exceedsContentLength(req, res))
+        return;
 
-      const dirname = import.meta.dirname;
-      const basePath = checkIfDevelopment() ? path.join(dirname, '..', 'public') : dirname;
-      const url = req.url ?? '';
-
-      if (url === '/') {
-        try {
-          const htmlContent = await fs.readFile(path.join(basePath, 'address-import/import.html'));
-          this.okResponse(res, htmlContent, AddressImportServer.headersHtml);
-        }
-        catch (error) {
-          this.logger.error('Failed to read import.html:', error);
-          this.invalidRequest(res, HttpErrorMessage.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND);
-        }
-      }
-      else if (url === '/import' && req.method === 'POST') {
-        this.handleAddresses(req, res, cb);
-        this.stop();
-      }
-      else if (await this.isAllowed(basePath, url)) {
-        await this.serveFile(res, basePath, url);
-      }
-      else {
-        this.invalidRequest(res, HttpErrorMessage.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND);
-      }
+      await this.route(req, res, cb, this.resolveBasePath());
     }
     catch (error) {
       this.logger.error('Error handling request:', error);

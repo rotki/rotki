@@ -5,27 +5,22 @@ import { type Protocol, protocol } from 'electron';
 
 const currentDir = import.meta.dirname;
 
+const MIME_TYPES_BY_EXTENSION: Record<string, string> = {
+  '.js': 'application/javascript',
+  '.html': 'text/html',
+  '.css': 'text/css',
+  '.svg': 'image/svg+xml',
+  '.svgz': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.json': 'application/json',
+  '.wasm': 'application/wasm',
+};
+
 export function getMimeType(pathName: string): string {
   const extension = path.extname(pathName).toLowerCase();
-
-  if (extension === '.js')
-    return 'application/javascript';
-  else if (extension === '.html')
-    return 'text/html';
-  else if (extension === '.css')
-    return 'text/css';
-  else if (extension === '.svg' || extension === '.svgz')
-    return 'image/svg+xml';
-  else if (extension === '.png')
-    return 'image/png';
-  else if (extension === '.jpg' || extension === '.jpeg')
-    return 'image/jpeg';
-  else if (extension === '.json')
-    return 'application/json';
-  else if (extension === '.wasm')
-    return 'application/wasm';
-
-  return 'application/octet-stream';
+  return MIME_TYPES_BY_EXTENSION[extension] ?? 'application/octet-stream';
 }
 
 export function createProtocol(scheme: string, customProtocol?: Protocol) {
