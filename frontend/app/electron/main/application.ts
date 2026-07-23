@@ -6,11 +6,10 @@ import { IpcManager } from '@electron/main/ipc-setup';
 import { LogService } from '@electron/main/log-service';
 import { MenuManager } from '@electron/main/menu';
 import { parseToken } from '@electron/main/oauth-utils';
-import { DEFAULT_COLIBRI_PORT, DEFAULT_PORT } from '@electron/main/port-utils';
+import { DEFAULT_COLIBRI_PORT, DEFAULT_MCP_PORT, DEFAULT_PORT } from '@electron/main/port-utils';
 import { resolveLogLevel } from '@electron/main/resolve-log-level';
 import { SettingsManager } from '@electron/main/settings-manager';
 import { StarlingHandler } from '@electron/main/starling-handler';
-import { MCP_ENDPOINT } from '@electron/main/starling-mcp';
 import { TrayManager } from '@electron/main/tray-manager';
 import { WindowManager } from '@electron/main/window-manager';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
@@ -49,6 +48,7 @@ export class Application {
     ports: {
       colibriPort: instancePort('ROTKI_INSTANCE_COLIBRI_PORT', DEFAULT_COLIBRI_PORT),
       corePort: instancePort('ROTKI_INSTANCE_CORE_PORT', DEFAULT_PORT),
+      mcpPort: instancePort('ROTKI_INSTANCE_MCP_PORT', DEFAULT_MCP_PORT),
     },
   };
 
@@ -210,7 +210,7 @@ export class Application {
   private async getMcpServerStatus(state?: McpServiceState): Promise<McpServerStatus> {
     return {
       autoStart: this.settings.appSettings.mcpAutoStart,
-      endpoint: MCP_ENDPOINT,
+      endpoint: this.processHandler.getMcpServerEndpoint(),
       state: state ?? await this.processHandler.getMcpServerState(),
     };
   }

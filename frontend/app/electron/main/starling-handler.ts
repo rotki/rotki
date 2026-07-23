@@ -146,12 +146,14 @@ export class StarlingHandler {
 
     const corePort = await this.resolvePort('core');
     const colibriPort = await this.resolvePort('colibri');
+    const mcpPort = await this.resolvePort('mcp');
     const logsDir = this.logsDirectory();
 
     const invocation = buildStarlingInvocation({
       isDev: this.config.isDev,
       corePort,
       colibriPort,
+      mcpPort,
       apiHost: API_HOST,
       logsDir,
       options,
@@ -311,6 +313,10 @@ export class StarlingHandler {
       : 'Unavailable';
   }
 
+  getMcpServerEndpoint(): string {
+    return `http://${API_HOST}:${this.config.ports.mcpPort}/mcp`;
+  }
+
   async setMcpServerRunning(running: boolean): Promise<McpServiceState> {
     return setMcpServerRunning(async (method, params) => this.request(method, params), running);
   }
@@ -385,7 +391,7 @@ export class StarlingHandler {
    * Allocate a free loopback port for a service from its configured default and
    * publish the resulting origin the renderer dials directly.
    */
-  private async resolvePort(name: 'core' | 'colibri'): Promise<number> {
+  private async resolvePort(name: 'core' | 'colibri' | 'mcp'): Promise<number> {
     const defaultPort = this.config.ports[`${name}Port`];
     const port = await selectPort(defaultPort);
     if (port !== defaultPort)
@@ -393,8 +399,10 @@ export class StarlingHandler {
     const url = `http://${API_HOST}:${port}`;
     if (name === 'core')
       this.config.urls.coreApiUrl = url;
-    else
+    else if (name === 'colibri')
       this.config.urls.colibriApiUrl = url;
+    else
+      this.config.ports.mcpPort = port;
     return port;
   }
 }

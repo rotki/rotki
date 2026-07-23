@@ -5,6 +5,8 @@ export const DEFAULT_PORT = 4242;
 
 export const DEFAULT_COLIBRI_PORT = 4343;
 
+export const DEFAULT_MCP_PORT = 4445;
+
 async function checkAvailability(port: number): Promise<number> {
   return new Promise<number>((resolve, reject) => {
     const server = net.createServer();

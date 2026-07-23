@@ -42,6 +42,8 @@ export interface StarlingLaunchInput {
   corePort: number;
   /** Port allocated for colibri. */
   colibriPort: number;
+  /** Port allocated for the MCP streamable HTTP server. */
+  mcpPort: number;
   /** Loopback host the backends bind (always 127.0.0.1 in embedded mode). */
   apiHost: string;
   /** Directory starling writes service logs to (owned by LogService). */
@@ -182,13 +184,15 @@ function corsOrigins(isDev: boolean): string {
  * mirrored on both CLI and RPC.
  */
 function commonStarlingArgs(input: StarlingLaunchInput): string[] {
-  const { options, corePort, colibriPort, apiHost, logsDir, isDev } = input;
+  const { options, corePort, colibriPort, mcpPort, apiHost, logsDir, isDev } = input;
 
   const args = [
     '--core-port',
     corePort.toString(),
     '--colibri-port',
     colibriPort.toString(),
+    '--mcp-port',
+    mcpPort.toString(),
     '--api-host',
     apiHost,
     '--api-cors',

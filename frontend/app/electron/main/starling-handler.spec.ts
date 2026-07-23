@@ -24,7 +24,11 @@ vi.mock('node:os', async (importOriginal) => {
 // `spawn` hands back whatever fake child the test installs; the rest of the
 // builtin stays real (other modules in the graph rely on it). `vi.hoisted` keeps
 // the mock fn defined before the hoisted vi.mock factory references it.
-const { spawnMock } = vi.hoisted(() => ({ spawnMock: vi.fn() }));
+const { buildStarlingInvocationMock, selectPortMock, spawnMock } = vi.hoisted(() => ({
+  buildStarlingInvocationMock: vi.fn(),
+  selectPortMock: vi.fn(),
+  spawnMock: vi.fn(),
+}));
 vi.mock('node:child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:child_process')>();
   return { ...actual, default: { ...actual, spawn: spawnMock }, spawn: spawnMock };
@@ -36,11 +40,11 @@ vi.mock('node:child_process', async (importOriginal) => {
 // stop timeouts from, and a stubbed-away value would make those NaN.
 vi.mock('@electron/main/starling-args', async importOriginal => ({
   ...await importOriginal<typeof import('@electron/main/starling-args')>(),
-  buildStarlingInvocation: (): { command: string; args: string[] } => ({ command: 'starling', args: [] }),
+  buildStarlingInvocation: buildStarlingInvocationMock,
 }));
 
 vi.mock('@electron/main/port-utils', () => ({
-  selectPort: vi.fn(async (port: number) => port),
+  selectPort: selectPortMock,
 }));
 
 interface FakeChild extends EventEmitter {
@@ -98,7 +102,7 @@ function makeConfig(): AppConfig {
   return {
     isDev: false,
     isMac: false,
-    ports: { corePort: 4242, colibriPort: 4343 },
+    ports: { corePort: 4242, colibriPort: 4343, mcpPort: 4445 },
     urls: { coreApiUrl: '', colibriApiUrl: '' },
   } satisfies AppConfig;
 }
@@ -107,6 +111,10 @@ describe('starlingHandler', () => {
   beforeEach(() => {
     osState.platform = 'linux';
     osState.release = '5.0.0';
+    buildStarlingInvocationMock.mockReset();
+    buildStarlingInvocationMock.mockReturnValue({ command: 'starling', args: [] });
+    selectPortMock.mockReset();
+    selectPortMock.mockImplementation(async (port: number) => port);
     spawnMock.mockReset();
   });
 
@@ -132,6 +140,24 @@ describe('starlingHandler', () => {
     // Two-URL posture: the renderer dials the allocated loopback ports directly.
     expect(config.urls.coreApiUrl).toBe('http://127.0.0.1:4242');
     expect(config.urls.colibriApiUrl).toBe('http://127.0.0.1:4343');
+    expect(handler.getMcpServerEndpoint()).toBe('http://127.0.0.1:4445/mcp');
+    expect(buildStarlingInvocationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ mcpPort: 4445 }),
+    );
+  });
+
+  it('should publish and launch MCP on an available port', async () => {
+    selectPortMock.mockImplementation(async (port: number) => port === 4445 ? 4450 : port);
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => child);
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+
+    await handler.restartBackend({}, { onProcessError: vi.fn() });
+
+    expect(handler.getMcpServerEndpoint()).toBe('http://127.0.0.1:4450/mcp');
+    expect(buildStarlingInvocationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ mcpPort: 4450 }),
+    );
   });
 
   it('should forward the MCP auto-start option during initial bring-up', async () => {

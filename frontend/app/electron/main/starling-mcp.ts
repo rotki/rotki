@@ -1,7 +1,5 @@
 import type { McpServiceState } from '@shared/ipc';
 
-export const MCP_ENDPOINT = 'http://127.0.0.1:4445/mcp';
-
 type StarlingRequest = (
   method: string,
   params?: Record<string, unknown>,
