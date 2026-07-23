@@ -223,7 +223,7 @@ mod tests {
     /// A ready controller + its handle. Reads (health/status) are served from the
     /// snapshot, so no run loop is needed for those.
     async fn ready_handle() -> ControlHandle {
-        let specs = vec![ServiceSpec::new("svc", "/bin/true")];
+        let specs = vec![ServiceSpec::new("svc", "/usr/bin/true")];
         let mut sup = Supervisor::new(OsSpawner, specs).unwrap();
         sup.start_all().await.unwrap();
         let controller = Controller::new(
