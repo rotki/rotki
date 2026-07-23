@@ -4,6 +4,7 @@ import type { DialogType } from '@/modules/core/common/dialogs';
 import type { EditableMissingPrice, MissingAcquisition, MissingPrice, Report } from '@/modules/reports/report-types';
 import { toSentenceCase } from '@rotki/common';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import ReportActionableCardActions from '@/modules/reports/ReportActionableCardActions.vue';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
 import { PinnedNames } from '@/modules/session/types';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
@@ -260,54 +261,17 @@ function close() {
           @pin="pinSection()"
         >
           <template #actions="{ items }">
-            <div
-              class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4"
-              :class="isPinned ? 'py-2' : 'p-4'"
-            >
-              <div
-                v-if="content.hint"
-                class="text-caption"
-              >
-                {{ content.hint }}
-              </div>
-
-              <div class="flex gap-2">
-                <RuiButton
-                  v-if="step > 1"
-                  :size="isPinned ? 'sm' : undefined"
-                  variant="text"
-                  @click="step = step - 1"
-                >
-                  {{ t('common.actions.back') }}
-                </RuiButton>
-                <RuiButton
-                  v-if="step < stepperContents.length"
-                  color="primary"
-                  :size="isPinned ? 'sm' : undefined"
-                  @click="step = step + 1"
-                >
-                  {{ t('common.actions.next') }}
-                </RuiButton>
-                <template v-if="step === stepperContents.length">
-                  <RuiButton
-                    v-if="!isPinned && content.key === 'missingAcquisitions'"
-                    color="primary"
-                    :size="isPinned ? 'sm' : undefined"
-                    @click="setDialog(false)"
-                  >
-                    {{ t('common.actions.close') }}
-                  </RuiButton>
-                  <RuiButton
-                    v-else-if="content.key !== 'missingAcquisitions'"
-                    color="primary"
-                    :size="isPinned ? 'sm' : undefined"
-                    @click="submitActionableItems(items)"
-                  >
-                    {{ t('common.actions.finish') }}
-                  </RuiButton>
-                </template>
-              </div>
-            </div>
+            <ReportActionableCardActions
+              :is-pinned="isPinned"
+              :hint="content.hint"
+              :step="step"
+              :total-steps="stepperContents.length"
+              :is-missing-acquisitions="content.key === 'missingAcquisitions'"
+              @back="step = step - 1"
+              @next="step = step + 1"
+              @close="setDialog(false)"
+              @finish="submitActionableItems(items)"
+            />
           </template>
         </Component>
       </template>

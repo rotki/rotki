@@ -7,6 +7,7 @@ import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-con
 import { useTransactionStatusCheck } from '@/modules/dashboard/progress/use-transaction-status-check';
 import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
 import RangeSelector from '@/modules/reports/RangeSelector.vue';
+import ReportDebugMenu from '@/modules/reports/ReportDebugMenu.vue';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import { useSyncProgress } from '@/modules/shell/sync-progress/use-sync-progress';
 
@@ -172,41 +173,10 @@ onMounted(async () => {
           </RuiButton>
         </div>
         <div>
-          <RuiMenu
-            close-on-content-click
-            :popper="{ placement: 'bottom-end' }"
-          >
-            <template #activator="{ attrs }">
-              <RuiButton
-                variant="outlined"
-                size="xl"
-                v-bind="attrs"
-              >
-                <template #prepend>
-                  <RuiIcon name="lu-bug" />
-                </template>
-                {{ t('profit_loss_reports.debug.title') }}
-              </RuiButton>
-            </template>
-            <RuiButton
-              variant="list"
-              @click="exportReportData()"
-            >
-              <template #prepend>
-                <RuiIcon name="lu-file-down" />
-              </template>
-              {{ t('profit_loss_reports.debug.export_data') }}
-            </RuiButton>
-            <RuiButton
-              variant="list"
-              @click="importReportData()"
-            >
-              <template #prepend>
-                <RuiIcon name="lu-file-up" />
-              </template>
-              {{ t('profit_loss_reports.debug.import_data') }}
-            </RuiButton>
-          </RuiMenu>
+          <ReportDebugMenu
+            @export-data="exportReportData()"
+            @import-data="importReportData()"
+          />
         </div>
       </div>
     </template>

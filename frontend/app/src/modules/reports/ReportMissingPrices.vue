@@ -11,6 +11,7 @@ import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import MissingPriceRefreshButton from '@/modules/reports/MissingPriceRefreshButton.vue';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
@@ -233,41 +234,12 @@ onMounted(async () => {
           @blur="updatePrice(row)"
         >
           <template #append>
-            <div
+            <MissingPriceRefreshButton
               v-if="row.rateLimited"
-              class="flex items-center gap-1"
-            >
-              <RuiTooltip
-                :popper="{ placement: 'right' }"
-                :open-delay="700"
-                tooltip-class="max-w-[16rem]"
-              >
-                <template #activator>
-                  <RuiIcon
-                    class="mr-1"
-                    size="20"
-                    name="lu-triangle-alert"
-                    color="warning"
-                  />
-                </template>
-                <span>
-                  {{ t('profit_loss_report.actionable.missing_prices.refresh_price_hint') }}
-                </span>
-              </RuiTooltip>
-              <RuiButton
-                :disabled="!!row.price || refreshing"
-                :loading="refreshing"
-                class="-mr-3 !py-[0.625rem] rounded-l-none"
-                size="sm"
-                color="primary"
-                @click="refreshHistoricalPrice(row)"
-              >
-                <RuiIcon
-                  size="20"
-                  name="lu-refresh-ccw"
-                />
-              </RuiButton>
-            </div>
+              :disabled="!!row.price || refreshing"
+              :loading="refreshing"
+              @refresh="refreshHistoricalPrice(row)"
+            />
           </template>
         </AmountInput>
       </template>
