@@ -37,6 +37,11 @@ export const useHistoryEventStateMapping = createSharedComposable(() => {
       color: 'warning',
       label: t('transactions.events.event_states.profit_adjustment'),
     },
+    [HistoryEventState.SYNTHETIC]: {
+      icon: 'lu-sparkles',
+      color: 'secondary',
+      label: t('transactions.events.event_states.synthetic'),
+    },
   };
 
   return {

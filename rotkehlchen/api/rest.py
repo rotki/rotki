@@ -172,6 +172,7 @@ from rotkehlchen.premium.premium import (
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.tasks.bridges import (
     ENTRY_TYPES_TO_EXCLUDE_FROM_BRIDGE_MATCHING,
+    create_bridge_counterpart_event,
     find_bridge_transaction_matches,
     get_unmatched_bridge_events,
     process_bridge_transactions,
@@ -4587,17 +4588,22 @@ class RestAPI:
             bridge_event_identifier: int,
             matched_event_identifiers: list[int],
             external: bool,
+            create_counterpart: bool,
     ) -> Response:
         """Match a bridge leg to its counterpart event(s), resolve it as involving an
-        external (untracked) counterpart, or mark it as having no match.
+        external (untracked) counterpart, create a synthetic counterpart event for it,
+        or mark it as having no match.
 
         Resolving as external turns a deposit into a payment to an untracked address
         and a withdrawal into income from an untracked source, keeping a record that
-        the event was a bridge leg resolved as external.
+        the event was a bridge leg resolved as external. Creating a counterpart
+        manufactures the missing mirror leg on the other chain — marked as synthetic —
+        and links the two, for counterparts that can no longer be pulled (e.g. a chain
+        whose API has shut down).
         """
         events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
         if len(matched_event_identifiers) == 0:
-            if external:  # user confirmed the counterpart is not tracked
+            if external or create_counterpart:
                 bridge_event = None
                 with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                     events = events_db.get_history_events_internal(
@@ -4613,7 +4619,18 @@ class RestAPI:
                         message=f'No event found in the DB for identifier {bridge_event_identifier}',  # noqa: E501
                     ), HTTPStatus.BAD_REQUEST)
 
-                if not resolve_bridge_event_external(events_db=events_db, event=bridge_event):
+                if create_counterpart:
+                    try:
+                        create_bridge_counterpart_event(
+                            events_db=events_db,
+                            bridge_event=bridge_event,
+                        )
+                    except InputError as e:
+                        return api_response(
+                            wrap_in_fail_result(message=str(e)),
+                            HTTPStatus.BAD_REQUEST,
+                        )
+                elif not resolve_bridge_event_external(events_db=events_db, event=bridge_event):
                     return api_response(wrap_in_fail_result(
                         message=f'Event with identifier {bridge_event_identifier} is not a bridge deposit or withdrawal',  # noqa: E501
                     ), HTTPStatus.BAD_REQUEST)
@@ -4773,6 +4790,7 @@ class RestAPI:
                 )
                 return api_response(OK_RESULT)
 
+        events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
             for deposit_identifier, matched_event_identifiers in linked_ids.items():
                 write_cursor.executemany(
@@ -4784,17 +4802,45 @@ class RestAPI:
                         HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(),
                     ) for matched_event_identifier in matched_event_identifiers],
                 )
+                all_ids = [*matched_event_identifiers, deposit_identifier]
+                placeholders = ','.join(['?'] * len(all_ids))
+                synthetic_ids = {row[0] for row in write_cursor.execute(
+                    'SELECT parent_identifier FROM history_events_mappings '
+                    f'WHERE parent_identifier IN({placeholders}) AND name=? AND value=?',
+                    (
+                        *all_ids,
+                        HISTORY_MAPPING_KEY_STATE,
+                        HistoryMappingState.SYNTHETIC.serialize_for_db(),
+                    ),
+                )}
+                if len(synthetic_ids) != 0:
+                    # synthetic counterparts only exist as the manufactured mirror of
+                    # the link, so unlinking deletes them instead of restoring them
+                    events_db.delete_events_and_track(
+                        write_cursor=write_cursor,
+                        where_clause=f'WHERE identifier IN({",".join("?" * len(synthetic_ids))})',
+                        where_bindings=tuple(synthetic_ids),
+                    )
+                    # also drop their backups: history_events rowids can be reused after
+                    # deletion and save_history_event_backup keeps the earliest row, so a
+                    # stale backup could later be restored over an unrelated event
+                    write_cursor.execute(
+                        'DELETE FROM history_events_backup '
+                        f'WHERE identifier IN({",".join("?" * len(synthetic_ids))})',
+                        tuple(synthetic_ids),
+                    )
+
+                restore_ids = [x for x in all_ids if x not in synthetic_ids]
                 DBHistoryEvents.maybe_restore_history_events_from_backup(
                     write_cursor=write_cursor,
-                    identifiers=[*matched_event_identifiers, deposit_identifier],
+                    identifiers=restore_ids,
                 )
-                placeholders = ','.join(['?'] * (len(matched_event_identifiers) + 1))
+                placeholders = ','.join(['?'] * len(restore_ids))
                 write_cursor.execute(
                     'DELETE FROM history_events_mappings '
                     f'WHERE parent_identifier IN({placeholders}) AND name=? AND value=?',
                     (
-                        *matched_event_identifiers,
-                        deposit_identifier,
+                        *restore_ids,
                         HISTORY_MAPPING_KEY_STATE,
                         HistoryMappingState.MATCHED.serialize_for_db(),
                     ),

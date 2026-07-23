@@ -17,6 +17,7 @@ interface UseBridgeTransactionActionsReturn {
   ignoreLoading: Readonly<Ref<boolean>>;
   modelSelectedIgnored: Ref<string[]>;
   modelSelectedUnmatched: Ref<string[]>;
+  confirmCreateCounterpart: (transaction: UnmatchedBridgeTransaction) => void;
   confirmIgnoreSelected: () => void;
   confirmMarkExternal: (transaction: UnmatchedBridgeTransaction) => void;
   confirmRestoreSelected: () => void;
@@ -34,6 +35,7 @@ export function useBridgeTransactionActions(
   const {
     ignoredTransactions,
     refreshUnmatchedBridgeTransactions,
+    resolveCreateCounterpart,
     resolveExternal,
     unmatchedTransactions,
   } = useUnmatchedBridgeTransactions();
@@ -152,6 +154,43 @@ export function useBridgeTransactionActions(
     return t('bridge_matching.actions.mark_external_in_confirm');
   }
 
+  async function createCounterpart(transaction: UnmatchedBridgeTransaction): Promise<void> {
+    set(ignoreLoading, true);
+    try {
+      const result = await resolveCreateCounterpart(getTransactionIdentifier(transaction));
+      if (result.success) {
+        deselect(transaction.groupIdentifier);
+        await refreshUnmatchedBridgeTransactions();
+        await onActionComplete?.();
+      }
+    }
+    finally {
+      set(ignoreLoading, false);
+    }
+  }
+
+  function buildCreateCounterpartMessage(isDeposit: boolean, chain?: string): string {
+    if (isDeposit) {
+      return chain
+        ? t('bridge_matching.actions.create_counterpart_confirm_out_chain', { chain })
+        : t('bridge_matching.actions.create_counterpart_confirm_out');
+    }
+    return chain
+      ? t('bridge_matching.actions.create_counterpart_confirm_in_chain', { chain })
+      : t('bridge_matching.actions.create_counterpart_confirm_in');
+  }
+
+  function confirmCreateCounterpart(transaction: UnmatchedBridgeTransaction): void {
+    const isDeposit = transaction.direction === 'deposit';
+    const chain = formatChain(isDeposit ? transaction.bridge?.toChain : transaction.bridge?.fromChain);
+
+    show({
+      message: buildCreateCounterpartMessage(isDeposit, chain),
+      primaryAction: t('common.actions.confirm'),
+      title: t('bridge_matching.actions.create_counterpart'),
+    }, async () => createCounterpart(transaction));
+  }
+
   function confirmMarkExternal(transaction: UnmatchedBridgeTransaction): void {
     const isDeposit = transaction.direction === 'deposit';
     const chain = formatChain(isDeposit ? transaction.bridge?.toChain : transaction.bridge?.fromChain);
@@ -226,6 +265,7 @@ export function useBridgeTransactionActions(
   }
 
   return {
+    confirmCreateCounterpart,
     confirmIgnoreSelected,
     confirmMarkExternal,
     confirmRestoreSelected,

@@ -4291,6 +4291,37 @@ def test_upgrade_db_52_to_53(
             'VALUES (?, ?, ?, ?)',
             ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'rotki.eth', 1730000000, 42),
         )
+        # An auto-created (MATCHED) exchange adjustment that must gain the SYNTHETIC
+        # state in the upgrade, and a user-customized one that must be left alone.
+        write_cursor.executemany(
+            'INSERT INTO history_events('
+            'entry_type, group_identifier, sequence_index, timestamp, location, '
+            'asset, amount, notes, type, subtype'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [(
+                HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db(),
+                group_identifier,
+                1,
+                1730000001000,
+                Location.KRAKEN.serialize_for_db(),
+                'ETH',
+                '0.01',
+                'Adjustment of 0.01 ETH to account for the difference between exchange and onchain amounts.',  # noqa: E501
+                HistoryEventType.EXCHANGE_ADJUSTMENT.serialize(),
+                HistoryEventSubType.SPEND.serialize(),
+            ) for group_identifier in (
+                'SYNTHETIC_ADJUSTMENT_MATCHED', 'SYNTHETIC_ADJUSTMENT_CUSTOM',
+            )],
+        )
+        for group_identifier, state_value in (
+            ('SYNTHETIC_ADJUSTMENT_MATCHED', 3),  # matched
+            ('SYNTHETIC_ADJUSTMENT_CUSTOM', 1),  # customized
+        ):
+            write_cursor.execute(
+                'INSERT INTO history_events_mappings(parent_identifier, name, value) '
+                "SELECT identifier, 'state', ? FROM history_events WHERE group_identifier=?",
+                (state_value, group_identifier),
+            )
         if current_price_oracles is not None:
             write_cursor.execute(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -4330,6 +4361,19 @@ def test_upgrade_db_52_to_53(
             'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
             ('EVENT_METRICS_TEST_1',),
         ).fetchone()[0] == 1
+
+        # the matched exchange adjustment gained the synthetic state (5); the
+        # user-customized one was left alone
+        for group_identifier, expected_count in (
+            ('SYNTHETIC_ADJUSTMENT_MATCHED', 1),
+            ('SYNTHETIC_ADJUSTMENT_CUSTOM', 0),
+        ):
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM history_events_mappings M '
+                'INNER JOIN history_events H ON H.identifier=M.parent_identifier '
+                "WHERE M.name='state' AND M.value=5 AND H.group_identifier=?",
+                (group_identifier,),
+            ).fetchone()[0] == expected_count
         metric_entry = (
             cursor.execute(
                 'SELECT identifier FROM history_events WHERE group_identifier=?',

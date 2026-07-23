@@ -5304,6 +5304,7 @@ class MatchBridgeTransactionsSchema(Schema):
     bridge_event = fields.Integer(required=True)
     matched_events = fields.List(fields.Integer(required=True), required=False, load_default=list)
     external = fields.Boolean(required=False, load_default=False)
+    create_counterpart = fields.Boolean(required=False, load_default=False)
 
     @validates_schema
     def validate_schema(
@@ -5311,10 +5312,16 @@ class MatchBridgeTransactionsSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        if data['external'] and len(data['matched_events']) != 0:
+        for resolution in ('external', 'create_counterpart'):
+            if data[resolution] and len(data['matched_events']) != 0:
+                raise ValidationError(
+                    message=f'{resolution} cannot be combined with matched_events',
+                    field_name=resolution,
+                )
+        if data['external'] and data['create_counterpart']:
             raise ValidationError(
-                message='external cannot be combined with matched_events',
-                field_name='external',
+                message='external cannot be combined with create_counterpart',
+                field_name='create_counterpart',
             )
 
 

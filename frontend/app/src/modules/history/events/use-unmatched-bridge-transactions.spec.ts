@@ -345,7 +345,7 @@ describe('use-unmatched-bridge-transactions', () => {
       const result = await resolveExternal(9);
 
       expect(result.success).toBe(true);
-      expect(spies.matchBridgeTransactions).toHaveBeenCalledWith(9, undefined, true);
+      expect(spies.matchBridgeTransactions).toHaveBeenCalledWith(9, undefined, 'external');
       expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
       expect(spies.signalEventsModified).toHaveBeenCalledOnce();
     });
@@ -356,6 +356,32 @@ describe('use-unmatched-bridge-transactions', () => {
       const { resolveExternal } = useUnmatchedBridgeTransactions();
 
       const result = await resolveExternal(9);
+
+      expect(result.success).toBe(false);
+      expect(spies.showErrorMessage).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('resolveCreateCounterpart', () => {
+    it('should create the synthetic counterpart and signal modified events', async () => {
+      spies.matchBridgeTransactions.mockResolvedValueOnce(true);
+      const { useUnmatchedBridgeTransactions } = await importFresh();
+      const { resolveCreateCounterpart } = useUnmatchedBridgeTransactions();
+
+      const result = await resolveCreateCounterpart(9);
+
+      expect(result.success).toBe(true);
+      expect(spies.matchBridgeTransactions).toHaveBeenCalledWith(9, undefined, 'createCounterpart');
+      expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
+      expect(spies.signalEventsModified).toHaveBeenCalledOnce();
+    });
+
+    it('should report failure when creating the counterpart throws', async () => {
+      spies.matchBridgeTransactions.mockRejectedValueOnce(new Error('boom'));
+      const { useUnmatchedBridgeTransactions } = await importFresh();
+      const { resolveCreateCounterpart } = useUnmatchedBridgeTransactions();
+
+      const result = await resolveCreateCounterpart(9);
 
       expect(result.success).toBe(false);
       expect(spies.showErrorMessage).toHaveBeenCalledOnce();

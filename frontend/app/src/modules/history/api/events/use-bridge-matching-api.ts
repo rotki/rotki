@@ -4,10 +4,18 @@ import { api } from '@/modules/core/api/rotki-api';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 
+/**
+ * How to resolve a bridge leg that has no counterpart event to match with:
+ * `external` treats it as a payment to / income from an untracked address, while
+ * `createCounterpart` manufactures the missing mirror leg on the other chain as a
+ * synthetic event and links the two.
+ */
+export type BridgeLegResolution = 'external' | 'createCounterpart';
+
 interface UseBridgeMatchingApiReturn {
   getUnmatchedBridgeTransactions: (onlyIgnored?: boolean) => Promise<string[]>;
   getBridgeMatches: (bridgeEvent: string, timeRange: number, onlyExpectedAssets: boolean, tolerance: string) => Promise<MatchSuggestions>;
-  matchBridgeTransactions: (bridgeEvent: number, matchedEvents?: number[], external?: boolean) => Promise<boolean>;
+  matchBridgeTransactions: (bridgeEvent: number, matchedEvents?: number[], resolution?: BridgeLegResolution) => Promise<boolean>;
   unlinkBridgeTransaction: (identifier: number) => Promise<boolean>;
   triggerBridgeMatching: () => Promise<PendingTask>;
 }
@@ -28,10 +36,11 @@ export function useBridgeMatchingApi(): UseBridgeMatchingApiReturn {
       tolerance,
     });
 
-  const matchBridgeTransactions = async (bridgeEvent: number, matchedEvents?: number[], external = false): Promise<boolean> =>
+  const matchBridgeTransactions = async (bridgeEvent: number, matchedEvents?: number[], resolution?: BridgeLegResolution): Promise<boolean> =>
     api.put<boolean>('/history/events/match/bridges', {
       bridgeEvent,
-      external,
+      createCounterpart: resolution === 'createCounterpart',
+      external: resolution === 'external',
       ...(matchedEvents && matchedEvents.length > 0 && { matchedEvents }),
     });
 

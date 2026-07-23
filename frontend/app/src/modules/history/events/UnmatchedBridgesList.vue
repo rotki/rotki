@@ -9,7 +9,7 @@ import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';
 import UnmatchedRowActions, { type UnmatchedRowActionLabels } from '@/modules/history/events/UnmatchedRowActions.vue';
 import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass } from '@/modules/history/events/use-pinned-column-class';
-import { getBridgeCounterpartAddress, useUntrackedBridgeCounterpart } from '@/modules/history/events/use-untracked-bridge-counterpart';
+import { getBridgeCounterpartAddress, getBridgeCounterpartChain, isCounterpartUnqueryable, useUntrackedBridgeCounterpart } from '@/modules/history/events/use-untracked-bridge-counterpart';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -23,6 +23,8 @@ interface UnmatchedBridgeRow {
   original: UnmatchedBridgeTransaction;
   counterpartAddress?: string;
   untrackedCounterpart: boolean;
+  canCreateCounterpart: boolean;
+  unqueryableCounterpart: boolean;
 }
 
 const selected = defineModel<string[]>('selected', { required: true });
@@ -48,6 +50,7 @@ const {
 }>();
 
 const emit = defineEmits<{
+  'create-counterpart': [transaction: UnmatchedBridgeTransaction];
   'ignore': [transaction: UnmatchedBridgeTransaction];
   'mark-external': [transaction: UnmatchedBridgeTransaction];
   'pin': [];
@@ -129,6 +132,7 @@ const rows = computed<UnmatchedBridgeRow[]>(() =>
     const { entry, ...meta } = getEventEntryFromCollection(transaction.events);
     const eventEntry = { ...entry, ...meta };
     return {
+      canCreateCounterpart: !showRestore && getBridgeCounterpartChain(transaction) !== undefined,
       counterpartAddress: getBridgeCounterpartAddress(transaction),
       direction: transaction.direction,
       entry: eventEntry,
@@ -136,6 +140,7 @@ const rows = computed<UnmatchedBridgeRow[]>(() =>
       location: entry.location,
       original: transaction,
       timestamp: entry.timestamp,
+      unqueryableCounterpart: !showRestore && isCounterpartUnqueryable(transaction),
       untrackedCounterpart: !showRestore && isCounterpartUntracked(transaction),
     };
   }),
@@ -166,6 +171,10 @@ function getRowClass(row: UnmatchedBridgeRow): string {
 
 function actionLabels(row: UnmatchedBridgeRow): UnmatchedRowActionLabels {
   return {
+    createCounterpart: t('bridge_matching.dialog.create_counterpart'),
+    createCounterpartTooltip: row.direction === 'deposit'
+      ? t('bridge_matching.dialog.create_counterpart_tooltip')
+      : t('bridge_matching.dialog.create_counterpart_in_tooltip'),
     findMatch: t('asset_movement_matching.dialog.find_match'),
     ignore: t('asset_movement_matching.dialog.ignore'),
     ignoreTooltip: t('bridge_matching.dialog.ignore_tooltip'),
@@ -314,12 +323,15 @@ function actionLabels(row: UnmatchedBridgeRow): UnmatchedRowActionLabels {
             :ignore-loading="ignoreLoading"
             :match-disabled="matchDisabled"
             show-mark-external
-            :emphasize-mark-external="row.untrackedCounterpart"
+            :emphasize-mark-external="row.untrackedCounterpart && !row.unqueryableCounterpart"
+            :show-create-counterpart="row.canCreateCounterpart"
+            :emphasize-create-counterpart="row.unqueryableCounterpart"
             @show-in-events="emit('show-in-events', row.original)"
             @restore="emit('restore', row.original)"
             @select="emit('select', row.original)"
             @ignore="emit('ignore', row.original)"
             @mark-external="emit('mark-external', row.original)"
+            @create-counterpart="emit('create-counterpart', row.original)"
           />
         </template>
       </RuiDataTable>

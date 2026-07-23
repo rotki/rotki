@@ -8,6 +8,8 @@ export interface UnmatchedRowActionLabels {
   ignoreTooltip: string;
   markExternal?: string;
   markExternalTooltip?: string;
+  createCounterpart?: string;
+  createCounterpartTooltip?: string;
 }
 </script>
 
@@ -20,6 +22,8 @@ const {
   matchDisabled = false,
   showMarkExternal = false,
   emphasizeMarkExternal = false,
+  showCreateCounterpart = false,
+  emphasizeCreateCounterpart = false,
 } = defineProps<{
   labels: UnmatchedRowActionLabels;
   isPinned?: boolean;
@@ -29,6 +33,9 @@ const {
   showMarkExternal?: boolean;
   /** Renders the mark-external button filled, as the suggested resolution for the row. */
   emphasizeMarkExternal?: boolean;
+  showCreateCounterpart?: boolean;
+  /** Renders the create-counterpart button filled, as the suggested resolution for the row. */
+  emphasizeCreateCounterpart?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -37,6 +44,7 @@ const emit = defineEmits<{
   'select': [];
   'ignore': [];
   'mark-external': [];
+  'create-counterpart': [];
 }>();
 </script>
 
@@ -130,6 +138,25 @@ const emit = defineEmits<{
           </RuiButton>
         </template>
         {{ labels.markExternalTooltip }}
+      </RuiTooltip>
+      <RuiTooltip
+        v-if="showCreateCounterpart"
+        :open-delay="400"
+        :popper="{ placement: 'top' }"
+      >
+        <template #activator>
+          <RuiButton
+            size="sm"
+            :variant="emphasizeCreateCounterpart ? 'default' : 'outlined'"
+            color="info"
+            :class="{ '!py-0.5': isPinned }"
+            :loading="ignoreLoading"
+            @click="emit('create-counterpart')"
+          >
+            {{ labels.createCounterpart }}
+          </RuiButton>
+        </template>
+        {{ labels.createCounterpartTooltip }}
       </RuiTooltip>
     </div>
   </div>

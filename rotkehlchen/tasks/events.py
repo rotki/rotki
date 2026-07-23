@@ -993,9 +993,9 @@ def _maybe_add_adjustment_event(
 
     # Create the movement's adjustment event
     with events_db.db.conn.write_ctx() as write_cursor:
-        events_db.add_history_event(
+        identifier = events_db.add_history_event(
             write_cursor=write_cursor,
-            event=HistoryEvent(
+            event=(adjustment_event := HistoryEvent(
                 group_identifier=asset_movement.group_identifier,
                 sequence_index=next_sequence_index,
                 timestamp=asset_movement.timestamp,
@@ -1012,9 +1012,16 @@ def _maybe_add_adjustment_event(
                     f'Adjustment of {amount_diff} {asset_movement.asset.resolve_to_asset_with_symbol().symbol} '  # noqa: E501
                     f'to account for the difference between exchange and onchain amounts.'
                 ),
-            ),
+            )),
             mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.MATCHED},
         )
+        if identifier is not None:  # also mark it as an event manufactured by rotki
+            adjustment_event.identifier = identifier
+            events_db.set_event_mapping_state(
+                write_cursor=write_cursor,
+                event=adjustment_event,
+                mapping_state=HistoryMappingState.SYNTHETIC,
+            )
 
 
 def update_asset_movement_matched_event(

@@ -4,20 +4,33 @@ import pytest
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
+from rotkehlchen.chain.ethereum.modules.zksync.constants import (
+    CPT_ZKSYNC,
+    ZKSYNC_LITE_SUNSET_CLAIM,
+)
 from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
 from rotkehlchen.chain.evm.decoding.stakedao.v2.constants import CPT_STAKEDAO_V2
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
-from rotkehlchen.db.constants import HistoryEventLinkType
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    HistoryEventLinkType,
+    HistoryMappingState,
+)
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import DEFAULT_BRIDGE_MATCH_TIME_RANGE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tasks.bridges import match_bridge_transactions
+from rotkehlchen.tasks.bridges import (
+    SYNTHETIC_BRIDGE_GROUP_PREFIX,
+    get_unmatched_bridge_events,
+    match_bridge_transactions,
+)
 from rotkehlchen.tests.fixtures import MockedWsMessage
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Location, SupportedBlockchain, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -363,3 +376,145 @@ def test_match_bridge_transactions_unsupported_destination(database: DBHandler) 
             (HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(),),
         ).fetchall() == [(_event_id(database, deposit),)]
     assert database.msg_aggregator.rotki_notifier.pop_message() is None  # type: ignore  # pop_message exists on MockRotkiNotifier
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_sunset_claim_synthesizes_zksync_lite_counterpart(database: DBHandler) -> None:
+    """A ZKsync Lite sunset claim gets its L2 exit leg synthesized and linked, since
+    the zksync lite API shutdown makes pulling the real counterpart impossible. The
+    synthesized leg is marked with the synthetic (and matched) mapping states."""
+    events_db = DBHistoryEvents(database)
+    user_address = make_evm_address()
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(claim := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700000000000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_ETH,
+                amount=FVal('0.05'),
+                location_label=user_address,
+                counterparty=CPT_ZKSYNC,
+                address=ZKSYNC_LITE_SUNSET_CLAIM,
+                notes='Claim 0.05 ETH from the ZKsync Lite sunset',
+                extra_data={'bridge': {
+                    'from_chain': SupportedBlockchain.ZKSYNC_LITE.serialize(),
+                    'to_chain': 1,
+                    'to_address': user_address,
+                }},
+            ))],
+        )
+
+    match_bridge_transactions(database=database)
+    claim_id = _event_id(database, claim)
+    with database.conn.read_ctx() as cursor:
+        synthetic = next(
+            x for x in events_db.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(),
+            ) if x.group_identifier == f'{SYNTHETIC_BRIDGE_GROUP_PREFIX}{claim.group_identifier}'
+        )
+        assert synthetic.identifier is not None
+        assert synthetic.location == Location.ZKSYNC_LITE
+        assert synthetic.event_type == HistoryEventType.DEPOSIT
+        assert synthetic.event_subtype == HistoryEventSubType.BRIDGE
+        assert synthetic.asset == A_ETH
+        assert synthetic.amount == FVal('0.05')
+        assert synthetic.timestamp == claim.timestamp
+        assert synthetic.location_label == user_address
+        assert synthetic.notes == 'Send 0.05 ETH from zksync lite bridged to Ethereum'
+        assert synthetic.extra_data is not None
+        assert synthetic.extra_data['matched_bridge'] == {
+            'group_identifier': claim.group_identifier,
+            'location': Location.ETHEREUM.serialize(),
+        }
+        states = {(row[0], row[1]) for row in cursor.execute(
+            'SELECT parent_identifier, value FROM history_events_mappings WHERE name=?',
+            (HISTORY_MAPPING_KEY_STATE,),
+        )}
+
+    assert states == {
+        (synthetic.identifier, HistoryMappingState.SYNTHETIC.serialize_for_db()),
+        (synthetic.identifier, HistoryMappingState.MATCHED.serialize_for_db()),
+        (claim_id, HistoryMappingState.MATCHED.serialize_for_db()),
+    }
+    assert _get_bridge_links(database) == {(synthetic.identifier, claim_id)}
+    deposits, withdrawals = get_unmatched_bridge_events(database=database)
+    assert len(deposits) == len(withdrawals) == 0
+
+    # a second run must not synthesize another counterpart or create further links
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {(synthetic.identifier, claim_id)}
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
+            (synthetic.group_identifier,),
+        ).fetchone()[0] == 1
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_sunset_claim_resynthesis_reuses_orphaned_counterpart(database: DBHandler) -> None:
+    """Redecoding the claim transaction (or the DB upgrade decoded-events reset)
+    deletes the anchor — cascading the link away — while the synthetic zksync lite
+    counterpart survives as an orphan. Re-running the matcher must reuse that orphan
+    instead of failing on the unique (group_identifier, sequence_index) constraint."""
+    events_db = DBHistoryEvents(database)
+    user_address = make_evm_address()
+
+    def make_claim() -> EvmEvent:
+        return EvmEvent(
+            tx_ref=claim_tx,
+            sequence_index=0,
+            timestamp=TimestampMS(1700000000000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=A_ETH,
+            amount=FVal('0.05'),
+            location_label=user_address,
+            counterparty=CPT_ZKSYNC,
+            address=ZKSYNC_LITE_SUNSET_CLAIM,
+            notes='Claim 0.05 ETH from the ZKsync Lite sunset',
+            extra_data={'bridge': {
+                'from_chain': SupportedBlockchain.ZKSYNC_LITE.serialize(),
+                'to_chain': 1,
+                'to_address': user_address,
+            }},
+        )
+
+    claim_tx = make_evm_tx_hash()
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(write_cursor=write_cursor, history=[(claim := make_claim())])
+
+    match_bridge_transactions(database=database)
+    old_claim_id = _event_id(database, claim)
+    with database.conn.read_ctx() as cursor:
+        synthetic_id = cursor.execute(
+            'SELECT identifier FROM history_events WHERE group_identifier=?',
+            (synthetic_group := f'{SYNTHETIC_BRIDGE_GROUP_PREFIX}{claim.group_identifier}',),
+        ).fetchone()[0]
+    assert _get_bridge_links(database) == {(synthetic_id, old_claim_id)}
+
+    # simulate a redecode that does not preserve matched events: the anchor is
+    # deleted (the link cascades away) and re-decoded from scratch
+    with database.conn.write_ctx() as write_cursor:
+        write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (old_claim_id,))
+        events_db.add_history_events(write_cursor=write_cursor, history=[make_claim()])
+    assert _get_bridge_links(database) == set()
+
+    match_bridge_transactions(database=database)
+    new_claim_id = _event_id(database, claim)
+    assert new_claim_id != old_claim_id
+    assert _get_bridge_links(database) == {(synthetic_id, new_claim_id)}  # same synthetic reused
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
+            (synthetic_group,),
+        ).fetchone()[0] == 1
+
+    deposits, withdrawals = get_unmatched_bridge_events(database=database)
+    assert len(deposits) == len(withdrawals) == 0

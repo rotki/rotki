@@ -115,6 +115,7 @@ interface UseUnmatchedBridgeTransactionsReturn {
   fetchUnmatchedBridgeTransactions: (onlyIgnored?: boolean) => Promise<void>;
   matchBridgeTransaction: (bridgeEventId: number, matchedEventIds: number[]) => Promise<ActionStatus>;
   resolveExternal: (bridgeEventId: number) => Promise<ActionStatus>;
+  resolveCreateCounterpart: (bridgeEventId: number) => Promise<ActionStatus>;
   refreshUnmatchedBridgeTransactions: (skipIgnored?: boolean) => Promise<void>;
   triggerBridgeAutoMatching: () => Promise<void>;
 }
@@ -246,7 +247,7 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
 
   const resolveExternal = async (bridgeEventId: number): Promise<ActionStatus> => {
     try {
-      const success = await matchBridgeTransactionsApi(bridgeEventId, undefined, true);
+      const success = await matchBridgeTransactionsApi(bridgeEventId, undefined, 'external');
 
       if (success) {
         showSuccessMessage(t('actions.bridge_matching.external_success.title'), t('actions.bridge_matching.external_success.description'));
@@ -258,6 +259,25 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
     catch (error: unknown) {
       const message = getErrorMessage(error);
       logger.error('Failed to resolve bridge transaction as external:', error);
+      showErrorMessage(t('actions.bridge_matching.error.title'), t('actions.bridge_matching.error.description', { error: message }));
+      return { message, success: false };
+    }
+  };
+
+  const resolveCreateCounterpart = async (bridgeEventId: number): Promise<ActionStatus> => {
+    try {
+      const success = await matchBridgeTransactionsApi(bridgeEventId, undefined, 'createCounterpart');
+
+      if (success) {
+        showSuccessMessage(t('actions.bridge_matching.create_counterpart_success.title'), t('actions.bridge_matching.create_counterpart_success.description'));
+        signalEventsModified();
+      }
+
+      return { message: '', success };
+    }
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
+      logger.error('Failed to create the counterpart of a bridge transaction:', error);
       showErrorMessage(t('actions.bridge_matching.error.title'), t('actions.bridge_matching.error.description', { error: message }));
       return { message, success: false };
     }
@@ -315,6 +335,7 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
     loading,
     matchBridgeTransaction,
     refreshUnmatchedBridgeTransactions,
+    resolveCreateCounterpart,
     resolveExternal,
     triggerBridgeAutoMatching,
     unmatchedCount,

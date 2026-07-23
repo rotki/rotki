@@ -4048,11 +4048,18 @@ class MatchBridgeTransactionsResource(BaseMethodView):
     @require_loggedin_user()
     @require_premium_user(active_check=False)
     @use_kwargs(put_schema, location='json')
-    def put(self, bridge_event: int, matched_events: list[int], external: bool) -> Response:
+    def put(
+            self,
+            bridge_event: int,
+            matched_events: list[int],
+            external: bool,
+            create_counterpart: bool,
+    ) -> Response:
         return self.rest_api.match_bridge_transactions(
             bridge_event_identifier=bridge_event,
             matched_event_identifiers=matched_events,
             external=external,
+            create_counterpart=create_counterpart,
         )
 
     @require_loggedin_user()

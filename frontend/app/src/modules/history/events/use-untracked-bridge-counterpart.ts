@@ -15,6 +15,26 @@ export function getBridgeCounterpartAddress(transaction: UnmatchedBridgeTransact
 }
 
 /**
+ * The chain on the other side of an unmatched bridge leg, as recorded by the decoder:
+ * the destination chain for a deposit, the source chain for a withdrawal. EVM chains
+ * are recorded as numeric chain ids and other chains as name strings.
+ */
+export function getBridgeCounterpartChain(transaction: UnmatchedBridgeTransaction): string | number | undefined {
+  return transaction.direction === 'deposit' ? transaction.bridge?.toChain : transaction.bridge?.fromChain;
+}
+
+/**
+ * Detects bridge legs whose counterpart chain can no longer be queried, so the
+ * counterpart event can never be pulled. Decoders record EVM chains as numeric chain
+ * ids; a string chain is a non-EVM chain, which today means ZKsync Lite — whose API
+ * has shut down. For such legs creating a synthetic counterpart event is the
+ * suggested resolution.
+ */
+export function isCounterpartUnqueryable(transaction: UnmatchedBridgeTransaction): boolean {
+  return typeof getBridgeCounterpartChain(transaction) === 'string';
+}
+
+/**
  * Detects bridge legs whose counterpart address is not tracked by rotki. Such a leg can
  * never be matched -- rotki only decodes transactions of tracked addresses, so the
  * counterpart event cannot exist in the database -- and resolving it as external is the

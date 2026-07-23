@@ -19,6 +19,13 @@ A confirmed match links the two events via ``history_event_links`` with
 ``matched_bridge`` extra_data entry. No adjustment events are created: both
 legs are real onchain flows so the amount difference between them simply IS the
 bridge fee, recorded as ``fee_amount`` in the link metadata.
+
+The one exception is legs whose counterpart can never be pulled because the
+counterpart chain is no longer queryable (e.g. zksync lite after its API shut
+down). For those a mirror counterpart event is manufactured from the leg's own
+data — marked with the SYNTHETIC mapping state so the user can tell it apart —
+and linked like any other match. This happens automatically for ZKsync Lite
+sunset claims and on demand via the create-counterpart resolution of the API.
 """
 import logging
 from collections import defaultdict
@@ -28,18 +35,31 @@ from typing import TYPE_CHECKING, Any, Final
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
-from rotkehlchen.chain.ethereum.modules.zksync.constants import CPT_ZKSYNC
+from rotkehlchen.chain.ethereum.modules.zksync.constants import (
+    CPT_ZKSYNC,
+    ZKSYNC_LITE_SUNSET_CLAIM,
+)
 from rotkehlchen.chain.evm.decoding.constants import CPT_BASE
 from rotkehlchen.chain.evm.decoding.polygon.constants import CPT_POLYGON
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.chain.scroll.constants import CPT_SCROLL
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
-from rotkehlchen.db.constants import HistoryEventLinkType, HistoryMappingState
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    HistoryEventLinkType,
+    HistoryMappingState,
+)
 from rotkehlchen.db.filtering import AssetMovementMatchFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
+from rotkehlchen.history.events.structures.base import (
+    HistoryBaseEntry,
+    HistoryBaseEntryType,
+    HistoryEvent,
+)
 from rotkehlchen.history.events.structures.evm_event import BRIDGE_EXTRA_DATA_KEY
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -69,6 +89,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 MATCHED_BRIDGE_KEY: Final = 'matched_bridge'
+SYNTHETIC_BRIDGE_GROUP_PREFIX: Final = 'synthbridge_'
 # Entry types that can never be the destination leg of a bridge
 ENTRY_TYPES_TO_EXCLUDE_FROM_BRIDGE_MATCHING: Final = [
     HistoryBaseEntryType.ETH_BLOCK_EVENT,
@@ -496,6 +517,170 @@ def resolve_bridge_event_external(
     return True
 
 
+def _bridge_counterpart_location(bridge_event: HistoryBaseEntry) -> Location | None:
+    """Derive the chain of the missing counterpart leg from the event's bridge data.
+
+    Returns None when the bridge data has no chain entry or the chain does not
+    correspond to a location rotki knows.
+    """
+    chain_value = get_event_bridge_data(bridge_event).get(
+        'from_chain' if _is_bridge_withdrawal(bridge_event) else 'to_chain',
+    )
+    if isinstance(chain_value, int):
+        try:
+            chain_id = ChainID(chain_value)
+        except ValueError:
+            return None
+        if chain_id not in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
+            return None  # from_chain_id silently falls back to polygon for other chains
+
+        return Location.from_chain_id(chain_id)
+
+    if isinstance(chain_value, str):
+        try:
+            return Location.deserialize(chain_value)
+        except DeserializationError:
+            return None
+
+    return None
+
+
+def create_bridge_counterpart_event(
+        events_db: DBHistoryEvents,
+        bridge_event: HistoryBaseEntry,
+) -> HistoryBaseEntry:
+    """Create a synthetic counterpart leg for a bridge event whose real counterpart
+    cannot exist in the DB (e.g. a chain whose API has shut down) and link the two.
+
+    The counterpart is a plain history event on the other chain mirroring the leg:
+    same asset, amount and timestamp, opposite bridge direction. It is marked with
+    the SYNTHETIC mapping state so it is clearly shown as an event manufactured by
+    rotki rather than pulled from a chain, and linked to the leg like any other
+    bridge match. Returns the created event.
+
+    Idempotent under redecoding: when the anchor is deleted and re-decoded (single
+    transaction redecode and the DB upgrade decoded-events reset preserve only
+    customized events) the link dies with it while the synthetic counterpart
+    survives as an orphan. Re-synthesis then reuses that orphan — refreshing its
+    mirrored fields — instead of colliding with it.
+
+    May raise:
+        - InputError if the event is not a bridge leg, is already matched, its bridge
+          data contains no usable counterpart chain, or the counterpart slot is
+          occupied by an event that is not a synthetic counterpart.
+    """
+    if not (
+        bridge_event.event_subtype == HistoryEventSubType.BRIDGE and
+        bridge_event.event_type in (HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL)
+    ):
+        raise InputError(
+            f'Event with identifier {bridge_event.identifier} is not a bridge deposit or withdrawal',  # noqa: E501
+        )
+
+    with events_db.db.conn.read_ctx() as cursor:
+        if cursor.execute(
+            'SELECT COUNT(*) FROM history_event_links WHERE link_type=? AND '
+            '(left_event_id=? OR right_event_id=?)',
+            (
+                HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(),
+                bridge_event.identifier,
+                bridge_event.identifier,
+            ),
+        ).fetchone()[0] != 0:
+            raise InputError(
+                f'Event with identifier {bridge_event.identifier} is already matched '
+                'to a counterpart event',
+            )
+
+    if (location := _bridge_counterpart_location(bridge_event)) is None:
+        raise InputError(
+            f'The bridge data of event with identifier {bridge_event.identifier} does not '
+            'contain a known counterpart chain to create the counterpart event on',
+        )
+
+    bridge_data = get_event_bridge_data(bridge_event)
+    symbol = bridge_event.asset.resolve_to_asset_with_symbol().symbol
+    if _is_bridge_withdrawal(bridge_event):
+        event_type = HistoryEventType.DEPOSIT
+        location_label = bridge_data.get('from_address', bridge_event.location_label)
+        notes = (
+            f'Send {bridge_event.amount} {symbol} from {_location_chain_label(location)} '
+            f'bridged to {_location_chain_label(bridge_event.location)}'
+        )
+    else:
+        event_type = HistoryEventType.WITHDRAWAL
+        location_label = bridge_data.get('to_address', bridge_event.location_label)
+        notes = (
+            f'Receive {bridge_event.amount} {symbol} on {_location_chain_label(location)} '
+            f'bridged from {_location_chain_label(bridge_event.location)}'
+        )
+
+    counterpart = HistoryEvent(
+        group_identifier=f'{SYNTHETIC_BRIDGE_GROUP_PREFIX}{bridge_event.group_identifier}',
+        sequence_index=bridge_event.sequence_index,
+        timestamp=bridge_event.timestamp,
+        location=location,
+        event_type=event_type,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=bridge_event.asset,
+        amount=bridge_event.amount,
+        location_label=location_label,
+        notes=notes,
+        extra_data={BRIDGE_EXTRA_DATA_KEY: dict(bridge_data)} if len(bridge_data) != 0 else None,
+    )
+    with events_db.db.conn.write_ctx() as write_cursor:
+        identifier = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=counterpart,
+            mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.SYNTHETIC},
+        )
+        if identifier is None:  # reuse an orphaned counterpart from a previous synthesis
+            existing = write_cursor.execute(
+                'SELECT identifier FROM history_events WHERE group_identifier=? AND '
+                'sequence_index=? AND identifier IN (SELECT parent_identifier FROM '
+                'history_events_mappings WHERE name=? AND value=?)',
+                (
+                    counterpart.group_identifier,
+                    counterpart.sequence_index,
+                    HISTORY_MAPPING_KEY_STATE,
+                    HistoryMappingState.SYNTHETIC.serialize_for_db(),
+                ),
+            ).fetchone()
+            if existing is None:
+                raise InputError(
+                    f'A non-synthetic event already occupies the counterpart slot of '
+                    f'bridge event with group identifier {bridge_event.group_identifier}',
+                )
+
+            identifier = existing[0]
+            counterpart.identifier = identifier
+            events_db.edit_history_event(  # refresh the mirrored fields from the anchor
+                write_cursor=write_cursor,
+                event=counterpart,
+                mapping_state=HistoryMappingState.SYNTHETIC,
+            )
+
+    counterpart.identifier = identifier
+    update_bridge_matched_event(
+        events_db=events_db,
+        bridge_event=bridge_event,
+        matched_event=counterpart,
+    )
+    return counterpart
+
+
+def _is_zksync_lite_sunset_claim(event: HistoryBaseEntry) -> bool:
+    """Check whether the event is a decoded ZKsync Lite sunset claim leg.
+
+    Such a leg can never find a counterpart: the claim exists only on Ethereum and
+    the zksync lite API is shut down, so no L2 exit event can ever be pulled."""
+    return (
+        _is_bridge_withdrawal(event) and
+        getattr(event, 'counterparty', None) == CPT_ZKSYNC and
+        getattr(event, 'address', None) == ZKSYNC_LITE_SUNSET_CLAIM
+    )
+
+
 def _should_auto_ignore_external(deposit: HistoryBaseEntry) -> bool:
     """Bridges to chains rotki cannot query will never find a destination leg.
 
@@ -506,7 +691,10 @@ def _should_auto_ignore_external(deposit: HistoryBaseEntry) -> bool:
     to_chain = get_event_bridge_data(deposit).get('to_chain')
     if isinstance(to_chain, int):
         return to_chain not in {chain_id.value for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS}
-    return False  # str chains (zksync lite) are queryable; unknown destinations stay unmatched
+    # str chains (zksync lite) stay unmatched: their history may have been pulled before
+    # the API shut down, and legs without a counterpart can be resolved manually (e.g.
+    # by creating a synthetic counterpart event).
+    return False
 
 
 def _get_deposit_assets_in_collection(
@@ -543,6 +731,23 @@ def match_bridge_transactions(
                 data={'count': unmatched_count},
             )
         return
+
+    remaining_withdrawals = []
+    for withdrawal in withdrawals:  # sunset claims get their L2 exit leg synthesized
+        if not _is_zksync_lite_sunset_claim(withdrawal):
+            remaining_withdrawals.append(withdrawal)
+            continue
+
+        try:
+            create_bridge_counterpart_event(events_db=events_db, bridge_event=withdrawal)
+        except InputError as e:
+            log.error(
+                'Failed to synthesize the zksync lite counterpart of sunset claim %s due to %s',
+                withdrawal.group_identifier,
+                e,
+            )
+            remaining_withdrawals.append(withdrawal)
+    withdrawals = remaining_withdrawals
 
     settings = CachedSettings().get_settings()
     assets_in_collection_cache: dict[str, tuple[Asset, ...]] = {}

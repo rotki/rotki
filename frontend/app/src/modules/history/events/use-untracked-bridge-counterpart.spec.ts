@@ -2,6 +2,8 @@ import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-un
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getBridgeCounterpartAddress,
+  getBridgeCounterpartChain,
+  isCounterpartUnqueryable,
   useBridgeUnmatchableExplanation,
   useUntrackedBridgeCounterpart,
 } from '@/modules/history/events/use-untracked-bridge-counterpart';
@@ -53,6 +55,44 @@ describe('use-untracked-bridge-counterpart', () => {
 
     it('should return undefined without recorded bridge data', () => {
       expect(getBridgeCounterpartAddress(createTransaction())).toBeUndefined();
+    });
+  });
+
+  describe('getBridgeCounterpartChain', () => {
+    it('should return the destination chain for a deposit', () => {
+      const transaction = createTransaction({ bridge: { fromChain: 1, toChain: 'zksync lite' } });
+      expect(getBridgeCounterpartChain(transaction)).toBe('zksync lite');
+    });
+
+    it('should return the source chain for a withdrawal', () => {
+      const transaction = createTransaction({
+        bridge: { fromChain: 'zksync lite', toChain: 1 },
+        direction: 'withdrawal',
+      });
+      expect(getBridgeCounterpartChain(transaction)).toBe('zksync lite');
+    });
+
+    it('should return undefined without recorded bridge data', () => {
+      expect(getBridgeCounterpartChain(createTransaction())).toBeUndefined();
+    });
+  });
+
+  describe('isCounterpartUnqueryable', () => {
+    it('should flag a leg whose counterpart chain is a non-EVM name string', () => {
+      const transaction = createTransaction({
+        bridge: { fromChain: 'zksync lite', toChain: 1 },
+        direction: 'withdrawal',
+      });
+      expect(isCounterpartUnqueryable(transaction)).toBe(true);
+    });
+
+    it('should not flag a leg whose counterpart chain is an EVM chain id', () => {
+      const transaction = createTransaction({ bridge: { fromChain: 1, toChain: 42161 } });
+      expect(isCounterpartUnqueryable(transaction)).toBe(false);
+    });
+
+    it('should not flag a leg without a recorded counterpart chain', () => {
+      expect(isCounterpartUnqueryable(createTransaction())).toBe(false);
     });
   });
 
