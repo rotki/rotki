@@ -133,7 +133,12 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
     reset: resetAddressesNames,
     resolve,
     unknown,
-  } = createItemCache<AddressBookEntry | undefined>(async keys => fetchAddressesNames(keys), { storage: addressNameStorage });
+  } = createItemCache<AddressBookEntry | undefined>(async keys => fetchAddressesNames(keys), {
+    label: 'address-name',
+    maxSize: 5000,
+    size: 500,
+    storage: addressNameStorage,
+  });
 
   // Address name selectors
 

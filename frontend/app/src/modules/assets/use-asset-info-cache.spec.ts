@@ -129,7 +129,7 @@ describe('modules/assets/use-asset-info-cache', () => {
     expect(cache.resolve('KEY')).toEqual(asset);
   });
 
-  it('should stop caching assets after cache limit is reached', async () => {
+  it('should grow past the soft cap to fit the working set', async () => {
     const cache = await getCache();
     vi.mocked(useAssetInfoApi().assetMapping).mockImplementation(async (identifier): Promise<AssetMap> => {
       const mapping: AssetMap = { assetCollections: {}, assets: {} };
@@ -156,14 +156,17 @@ describe('modules/assets/use-asset-info-cache', () => {
     vi.advanceTimersByTime(4000);
     await flushPromises();
 
+    // 504 distinct assets (AST-0, AST-1..49, AST-51..504) — well past the old
+    // hard 500 cap and under the 5000 resilient ceiling, so none are evicted.
     for (let i = 51; i < 505; i++) cache.resolve(`AST-${i}`);
 
     vi.advanceTimersByTime(4000);
     await flushPromises();
 
     const entries = Object.entries(get(cache.cache));
-    expect(entries).toHaveLength(500);
+    expect(entries).toHaveLength(504);
     expect(entries.map(([id]) => id)).toContain('AST-0');
+    expect(entries.map(([id]) => id)).toContain('AST-504');
   });
 
   it('should not delete cache if the request after expiry hits any error', async () => {

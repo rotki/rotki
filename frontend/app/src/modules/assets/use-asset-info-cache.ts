@@ -68,6 +68,9 @@ export const useAssetInfoCache = createSharedComposable((): UseAssetInfoCacheRet
     },
     {
       debounceInMs: 100,
+      label: 'asset-info',
+      maxSize: 5000,
+      size: 500,
       storage,
     },
   );
