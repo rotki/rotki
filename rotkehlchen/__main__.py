@@ -2,19 +2,13 @@ import logging
 import sys
 import traceback
 
-if is_mcp_command := len(sys.argv) > 1 and sys.argv[1] == 'mcp':
-    from rotkehlchen.mcp.__main__ import main as mcp_main
-else:
-    from rotkehlchen.errors.misc import DBSchemaError, SystemPermissionError
-    from rotkehlchen.logging import RotkehlchenLogsAdapter
-    from rotkehlchen.server import RotkehlchenServer
-
-    logger = logging.getLogger(__name__)
-    log = RotkehlchenLogsAdapter(logger)
+is_mcp_command = len(sys.argv) > 1 and sys.argv[1] == 'mcp'
 
 
 def main() -> None:
     if is_mcp_command:
+        from rotkehlchen.mcp.__main__ import main as mcp_main
+
         try:
             mcp_main(sys.argv[2:])
         except SystemExit as e:
@@ -29,6 +23,11 @@ def main() -> None:
             sys.exit(1)
         return
 
+    from rotkehlchen.errors.misc import DBSchemaError, SystemPermissionError
+    from rotkehlchen.logging import RotkehlchenLogsAdapter
+    from rotkehlchen.server import RotkehlchenServer
+
+    log = RotkehlchenLogsAdapter(logging.getLogger(__name__))
     try:
         rotkehlchen_server = RotkehlchenServer()
     except (SystemPermissionError, DBSchemaError) as e:

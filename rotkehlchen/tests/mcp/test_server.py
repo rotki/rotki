@@ -228,12 +228,7 @@ def test_main_should_reject_non_loopback_http_host(monkeypatch) -> None:
 
 def test_rotkehlchen_main_should_report_mcp_startup_errors(monkeypatch, capsys) -> None:
     monkeypatch.setattr(rotkehlchen_main, 'is_mcp_command', True)
-    monkeypatch.setattr(
-        rotkehlchen_main,
-        'mcp_main',
-        MagicMock(side_effect=OSError('address already in use')),
-        raising=False,
-    )
+    monkeypatch.setattr(mcp_main, 'main', MagicMock(side_effect=OSError('address already in use')))
 
     with pytest.raises(SystemExit) as error:
         rotkehlchen_main.main()
@@ -246,12 +241,7 @@ def test_rotkehlchen_main_should_report_mcp_startup_errors(monkeypatch, capsys) 
 
 def test_rotkehlchen_main_should_report_mcp_server_exit(monkeypatch, capsys) -> None:
     monkeypatch.setattr(rotkehlchen_main, 'is_mcp_command', True)
-    monkeypatch.setattr(
-        rotkehlchen_main,
-        'mcp_main',
-        MagicMock(side_effect=SystemExit(1)),
-        raising=False,
-    )
+    monkeypatch.setattr(mcp_main, 'main', MagicMock(side_effect=SystemExit(1)))
 
     with pytest.raises(SystemExit) as error:
         rotkehlchen_main.main()
@@ -262,12 +252,7 @@ def test_rotkehlchen_main_should_report_mcp_server_exit(monkeypatch, capsys) -> 
 
 def test_rotkehlchen_main_should_preserve_mcp_argument_errors(monkeypatch, capsys) -> None:
     monkeypatch.setattr(rotkehlchen_main, 'is_mcp_command', True)
-    monkeypatch.setattr(
-        rotkehlchen_main,
-        'mcp_main',
-        MagicMock(side_effect=SystemExit(2)),
-        raising=False,
-    )
+    monkeypatch.setattr(mcp_main, 'main', MagicMock(side_effect=SystemExit(2)))
 
     with pytest.raises(SystemExit) as error:
         rotkehlchen_main.main()
@@ -279,7 +264,7 @@ def test_rotkehlchen_main_should_preserve_mcp_argument_errors(monkeypatch, capsy
 def test_rotkehlchen_main_should_dispatch_mcp_arguments(monkeypatch) -> None:
     mcp_main_mock = MagicMock()
     monkeypatch.setattr(rotkehlchen_main, 'is_mcp_command', True)
-    monkeypatch.setattr(rotkehlchen_main, 'mcp_main', mcp_main_mock, raising=False)
+    monkeypatch.setattr(mcp_main, 'main', mcp_main_mock)
     monkeypatch.setattr(
         rotkehlchen_main.sys,
         'argv',
