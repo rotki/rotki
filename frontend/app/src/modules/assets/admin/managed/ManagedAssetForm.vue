@@ -293,7 +293,7 @@ defineExpose({
             :options="allEvmChains"
             :disabled="editMode"
             :error-messages="toMessages(v$.evmChain)"
-            :auto-select-first="true"
+            auto-select-first
             key-attr="name"
             text-attr="label"
             variant="outlined"

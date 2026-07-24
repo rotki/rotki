@@ -173,7 +173,7 @@ onBeforeUnmount(() => {
         <RuiButton
           variant="text"
           size="sm"
-          :icon="true"
+          icon
           @click="resetError()"
         >
           <RuiIcon

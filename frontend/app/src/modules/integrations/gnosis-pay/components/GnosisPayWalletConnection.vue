@@ -37,7 +37,7 @@ const { isWalletConnect, waitingForWalletConfirmation, walletMode } = storeToRef
         v-model="walletMode"
         variant="outlined"
         color="primary"
-        :required="true"
+        required
         size="sm"
       >
         <RuiButton :model-value="WALLET_MODES.LOCAL_BRIDGE">
@@ -74,7 +74,7 @@ const { isWalletConnect, waitingForWalletConfirmation, walletMode } = storeToRef
       v-if="connectionErrorMessage"
       type="error"
       variant="default"
-      :closeable="true"
+      closeable
       @close="emit('clear-error')"
     >
       <div class="whitespace-pre-line">

@@ -36,7 +36,7 @@ function handleCancel(): void {
   <RuiDialog
     v-model="modelValue"
     max-width="500"
-    :persistent="true"
+    persistent
   >
     <RuiCard>
       <template #header>

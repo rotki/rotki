@@ -193,7 +193,7 @@ onMounted(async () => {
     <template v-if="showUpdateDialog">
       <RuiDialog
         v-if="!headless"
-        :model-value="true"
+        model-value
         max-width="500"
         persistent
       >

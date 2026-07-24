@@ -367,7 +367,7 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
           :title="t('external_services.gnosispay.siwe.step1_title')"
           :is-complete="isStepComplete(AuthStep.CONNECT_WALLET)"
           :is-current="isStepCurrent(AuthStep.CONNECT_WALLET)"
-          :is-clickable="true"
+          is-clickable
           @click-step="goToStep($event)"
         >
           <GnosisPayWalletConnection
@@ -389,7 +389,7 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
           :title="t('external_services.gnosispay.siwe.step2_title')"
           :is-complete="isStepComplete(AuthStep.VALIDATE_ADDRESS)"
           :is-current="isStepCurrent(AuthStep.VALIDATE_ADDRESS)"
-          :is-clickable="true"
+          is-clickable
           @click-step="goToStep($event)"
         >
           <GnosisPayAddressValidation

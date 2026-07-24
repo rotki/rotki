@@ -115,7 +115,7 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
     <template #selection="{ item }">
       <ReuseLocationItem
         :item="item"
-        :dense="true"
+        dense
       />
     </template>
 

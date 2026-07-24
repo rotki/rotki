@@ -198,7 +198,7 @@ watchDebounced(
         <div v-if="row.tags">
           <TagDisplay
             :tags="row.tags"
-            :small="true"
+            small
           />
         </div>
       </template>

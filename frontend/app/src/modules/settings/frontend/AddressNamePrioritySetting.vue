@@ -75,8 +75,8 @@ watch(writeError, (message) => {
       variant="flat"
       :model-value="model"
       :all-items="availableCurrentAddressNamePriorities()"
-      :disable-add="true"
-      :disable-delete="true"
+      disable-add
+      disable-delete
       @update:model-value="updatePriorities($event)"
     />
   </RuiCard>

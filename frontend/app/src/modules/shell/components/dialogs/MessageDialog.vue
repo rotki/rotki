@@ -17,7 +17,7 @@ const icon = computed<RuiIcons>(() => (message.success ? 'lu-circle-check' : 'lu
 
 <template>
   <RuiDialog
-    :model-value="true"
+    model-value
     max-width="500"
     persistent
     z-index="10000"

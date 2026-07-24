@@ -141,7 +141,7 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
             variant="outlined"
             key-attr="key"
             text-attr="label"
-            :hide-details="true"
+            hide-details
             @update:model-value="selectTab($event)"
           >
             <template #item="{ item }">

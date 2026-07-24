@@ -395,7 +395,7 @@ watch([estimatedGasFee, assetBalance], () => {
               v-model="walletMode"
               variant="outlined"
               color="primary"
-              :required="true"
+              required
               size="sm"
             >
               <RuiButton :model-value="WALLET_MODES.LOCAL_BRIDGE">

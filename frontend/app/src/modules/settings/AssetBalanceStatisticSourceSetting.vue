@@ -81,7 +81,7 @@ watchImmediate(() => asset, (asset) => {
         />
         <RuiRadio
           :label="t('statistics_graph_settings.source.historical_events_processing')"
-          :value="true"
+          value
         />
       </RuiRadioGroup>
       <RuiCheckbox
