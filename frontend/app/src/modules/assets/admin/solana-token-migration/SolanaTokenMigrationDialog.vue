@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { isSolanaTokenIdentifier } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import { useTemplateRef } from 'vue';
+import { extractTargetAssetFromError, isUniqueConstraintError } from '@/modules/assets/admin/solana-token-migration/solana-migration-error';
 import { useSolanaTokenMigrationApi } from '@/modules/assets/admin/solana-token-migration/solana-token-migration';
 import { useSolanaTokenMigrationStore } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
@@ -90,51 +90,49 @@ async function save(): Promise<boolean> {
     }
   }
   catch (error: unknown) {
-    let errors: ValidationErrors | string = getErrorMessage(error);
-    if (error instanceof ApiValidationError) {
-      errors = error.getValidationErrors({});
-    }
-
-    if (typeof errors === 'string') {
-      // Check if this is a unique constraint error and suggest merge
-      if (isUniqueConstraintError(errors)) {
-        const targetAsset = extractTargetAssetFromError(errors);
-        if (targetAsset && assetToMigrate) {
-          emit('suggest-merge', { sourceAsset: assetToMigrate, targetAsset });
-          set(modelValue, undefined);
-          set(oldAsset, undefined);
-          return false;
-        }
-      }
-
-      setMessage({
-        description: errors,
-        title: t('asset_management.solana_token_migration.migration_error'),
-      });
-    }
-    else {
-      set(errorMessages, errors);
-      formRef?.validate();
-    }
-    return false;
+    return handleSaveException(error, assetToMigrate, formRef);
   }
   finally {
     set(loading, false);
   }
 }
 
-function extractTargetAssetFromError(errorMessage: string): string | null {
-  const words = errorMessage.split(/\s+/);
-  for (const word of words) {
-    if (isSolanaTokenIdentifier(word)) {
-      return word;
-    }
-  }
-  return null;
+type MigrationFormRef = InstanceType<typeof SolanaTokenMigrationForm> | null | undefined;
+
+// Suggests a merge for a unique-constraint conflict; returns true when handled.
+function suggestMergeOnConflict(message: string, assetToMigrate: string): boolean {
+  if (!isUniqueConstraintError(message))
+    return false;
+
+  const targetAsset = extractTargetAssetFromError(message);
+  if (!targetAsset)
+    return false;
+
+  emit('suggest-merge', { sourceAsset: assetToMigrate, targetAsset });
+  set(modelValue, undefined);
+  set(oldAsset, undefined);
+  return true;
 }
 
-function isUniqueConstraintError(errorMessage: string): boolean {
-  return errorMessage.includes('UNIQUE constraint failed: assets.identifier');
+function handleSaveException(error: unknown, assetToMigrate: string, formRef: MigrationFormRef): boolean {
+  let errors: ValidationErrors | string = getErrorMessage(error);
+  if (error instanceof ApiValidationError)
+    errors = error.getValidationErrors({});
+
+  if (typeof errors === 'string') {
+    if (suggestMergeOnConflict(errors, assetToMigrate))
+      return false;
+
+    setMessage({
+      description: errors,
+      title: t('asset_management.solana_token_migration.migration_error'),
+    });
+  }
+  else {
+    set(errorMessages, errors);
+    formRef?.validate();
+  }
+  return false;
 }
 </script>
 
