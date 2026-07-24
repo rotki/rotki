@@ -229,6 +229,7 @@ def test_curve_locked_crv_balances(
         )
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xe5e2Baf96198c56380dDD5E992D7d1ADa0e989c0']])
 def test_yearn_vesting_balances(
         ethereum_inquirer: EthereumInquirer,
