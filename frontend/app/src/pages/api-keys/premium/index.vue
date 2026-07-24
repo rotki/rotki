@@ -264,7 +264,7 @@ onMounted(() => {
       </RuiAlert>
 
       <template #footer>
-        <div class="flex flex-row gap-2">
+        <div class="flex gap-2">
           <template v-if="premium">
             <RuiButton
               v-if="edit"

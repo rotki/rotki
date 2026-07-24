@@ -8,8 +8,8 @@ describe('getErrorMessage', () => {
 
   it('should return the message from a subclass of Error', () => {
     class ApiValidationError extends Error {
-      constructor(message: string) {
-        super(message);
+      constructor(message: string, options?: ErrorOptions) {
+        super(message, options);
         this.name = 'ApiValidationError';
       }
     }

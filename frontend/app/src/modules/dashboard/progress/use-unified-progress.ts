@@ -82,7 +82,7 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
   const processingMessage = computed<string>(() => {
     // Prioritize balance/token detection over history events
     const balanceProgressData = get(balanceProgress);
-    if (balanceProgressData && balanceProgressData.currentOperation) {
+    if (balanceProgressData?.currentOperation) {
       return balanceProgressData.currentOperation;
     }
 

@@ -59,8 +59,8 @@ defineExpose({
 
 <template>
   <RuiCard>
-    <div class="flex flex-row flex-wrap items-center gap-2">
-      <div class="flex flex-row gap-3">
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="flex gap-3">
         <RuiButton
           :disabled="modelSelected.length === 0"
           class="h-10"

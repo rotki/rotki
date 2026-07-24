@@ -1,4 +1,4 @@
-export * from './account';
+export type * from './account';
 
 export * from './assertions';
 
@@ -20,7 +20,7 @@ export * from './messages';
 
 export * from './numbers';
 
-export * from './premium';
+export type * from './premium';
 
 export * from './settings';
 

@@ -1,7 +1,7 @@
 import { assert } from '../assertions';
 
 export function invertColor(color: string, bw = true): string {
-  if (color.indexOf('#') === 0)
+  if (color.startsWith('#'))
     color = color.slice(1);
 
   if (color.length === 3)

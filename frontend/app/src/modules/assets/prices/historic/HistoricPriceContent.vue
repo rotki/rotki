@@ -160,7 +160,7 @@ onMounted(async () => {
       </RuiButton>
     </template>
     <RuiCard>
-      <div class="flex flex-row flex-wrap mb-4 gap-2">
+      <div class="flex flex-wrap mb-4 gap-2">
         <AssetSelect
           v-model="fromAsset"
           outlined

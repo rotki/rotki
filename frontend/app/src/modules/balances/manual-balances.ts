@@ -70,7 +70,7 @@ export function sortAndFilterManualBalance(
       );
 
   const sorted
-    = orderByAttributes.length <= 0
+    = orderByAttributes.length === 0
       ? filtered
       : filtered.sort((a, b) => {
           for (const [i, attr] of orderByAttributes.entries()) {
@@ -86,7 +86,7 @@ export function sortAndFilterManualBalance(
 
   const total = filtered.reduce((acc, item) => {
     const price = resolvers.resolveAssetPrice(item.asset);
-    if (price && price.gt(0))
+    if (price?.gt(0))
       return acc.plus(price.times(item.amount));
 
     return acc;

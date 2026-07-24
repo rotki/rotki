@@ -9,11 +9,11 @@ export type QueueFetchFn = <T>(url: string, options?: BaseFetchOptions) => Promi
 
 export class RequestQueue {
   private queue: QueuedRequest[] = [];
-  private activeRequests = new Map<string, QueuedRequest>();
-  private pendingByKey = new Map<string, QueuedRequest>();
+  private readonly activeRequests = new Map<string, QueuedRequest>();
+  private readonly pendingByKey = new Map<string, QueuedRequest>();
   private requestTimestamps: number[] = [];
-  private options: Required<QueueOptions>;
-  private fetchFn: QueueFetchFn;
+  private readonly options: Required<QueueOptions>;
+  private readonly fetchFn: QueueFetchFn;
   private isProcessing = false;
   private queueTimeoutCheckInterval: ReturnType<typeof setInterval> | null = null;
   private rateLimitRecoveryTimeout: ReturnType<typeof setTimeout> | null = null;

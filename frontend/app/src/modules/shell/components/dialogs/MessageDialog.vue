@@ -35,7 +35,7 @@ const icon = computed<RuiIcons>(() => (message.success ? 'lu-circle-check' : 'lu
         </h5>
       </template>
 
-      <div class="flex flex-row items-center gap-2">
+      <div class="flex items-center gap-2">
         <div>
           <RuiIcon
             size="40"

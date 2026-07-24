@@ -229,7 +229,7 @@ export class WalletBridgeIpcHandlers {
     }
   };
 
-  private resetSelectedProvider = async (): Promise<void> => {
+  private readonly resetSelectedProvider = async (): Promise<void> => {
     try {
       this.logger.debug('Resetting selected provider in bridge');
 

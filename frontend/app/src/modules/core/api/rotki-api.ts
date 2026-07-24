@@ -21,8 +21,8 @@ export class RotkiApi {
   private abortController: AbortController;
   private authFailureAction?: () => void;
   private isSessionActive?: () => boolean;
-  private _requestQueue: RequestQueue;
-  private _colibriRequestQueue: RequestQueue;
+  private readonly _requestQueue: RequestQueue;
+  private readonly _colibriRequestQueue: RequestQueue;
   private _stopped: boolean = false;
 
   constructor() {

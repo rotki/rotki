@@ -38,8 +38,8 @@ class AsyncLock {
 }
 
 class ComponentLoadFailedError extends Error {
-  constructor(component: string) {
-    super(component);
+  constructor(component: string, options?: ErrorOptions) {
+    super(component, options);
     this.name = 'ComponentLoadFailedError';
   }
 }

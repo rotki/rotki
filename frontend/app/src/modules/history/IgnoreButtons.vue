@@ -12,7 +12,7 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div class="flex flex-row gap-2">
+  <div class="flex gap-2">
     <RuiTooltip
       :popper="{ placement: 'top' }"
       :open-delay="400"

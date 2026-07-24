@@ -9,8 +9,8 @@ type OnCompletion = (() => void) | undefined;
  * ensure that only a specific number of them will run in parallel.
  */
 export class LimitedParallelizationQueue {
-  private runningTasks: Map<string, Fn> = new Map();
-  private pendingTasks: Map<string, Fn> = new Map();
+  private readonly runningTasks: Map<string, Fn> = new Map();
+  private readonly pendingTasks: Map<string, Fn> = new Map();
   private onCompletion: OnCompletion = undefined;
 
   /**
@@ -19,7 +19,7 @@ export class LimitedParallelizationQueue {
    *
    * @param parallelization the number of tasks to run in parallel
    */
-  constructor(private parallelization: number = 5) {}
+  constructor(private readonly parallelization: number = 5) {}
 
   /**
    * The number of pending tasks

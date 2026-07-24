@@ -34,7 +34,7 @@ const justify = computed<string>(() => {
 
 <template>
   <div
-    class="flex flex-row flex-nowrap items-center gap-1"
+    class="flex flex-nowrap items-center gap-1"
     :class="justify"
   >
     <RuiButton

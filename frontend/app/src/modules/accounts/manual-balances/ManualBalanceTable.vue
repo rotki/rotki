@@ -149,7 +149,7 @@ watchDebounced(
   <RuiCard data-cy="manual-balances">
     <template #custom-header>
       <div class="px-4 pt-4">
-        <div class="flex flex-row items-center flex-wrap gap-3">
+        <div class="flex items-center flex-wrap gap-3">
           <RefreshButton
             :loading="refreshing"
             :tooltip="t('manual_balances_table.refresh.tooltip')"

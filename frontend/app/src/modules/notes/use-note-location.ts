@@ -6,7 +6,7 @@ export function useNoteLocation(): ComputedRef<string> {
   return computed<string>(() => {
     const meta = route.meta;
 
-    if (meta && meta.noteLocation)
+    if (meta?.noteLocation)
       return meta.noteLocation.toString();
 
     let noteLocation = '';

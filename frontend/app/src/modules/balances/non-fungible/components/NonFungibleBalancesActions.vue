@@ -20,7 +20,7 @@ function onRefresh(): void {
 </script>
 
 <template>
-  <div class="flex flex-row items-center justify-end gap-2">
+  <div class="flex items-center justify-end gap-2">
     <RuiTooltip>
       <template #activator>
         <RuiButton

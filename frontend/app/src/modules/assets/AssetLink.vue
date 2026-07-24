@@ -20,7 +20,7 @@ const { navigateToDetails } = useAssetPageNavigation(() => asset);
 </script>
 
 <template>
-  <div class="flex flex-row gap-1">
+  <div class="flex gap-1">
     <RuiButton
       size="sm"
       icon

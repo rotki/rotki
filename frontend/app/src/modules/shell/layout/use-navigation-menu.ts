@@ -78,7 +78,7 @@ export function useNavigationMenu(): UseNavigationMenuReturn {
 
     for (const route of router.getRoutes()) {
       const nav = route.meta.nav;
-      if (!nav || nav.drawer === undefined || !isRouteName(route.name))
+      if (nav?.drawer === undefined || !isRouteName(route.name))
         continue;
       if (route.name === HISTORY_DATA_ISSUES_ROUTE && !dataIssuesEnabled)
         continue;

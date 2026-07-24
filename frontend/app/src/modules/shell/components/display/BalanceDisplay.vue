@@ -51,7 +51,7 @@ const valueInCurrency = computed<BigNumber>(() => {
 
 <template>
   <div
-    class="flex flex-row shrink py-1 gap-4 items-center"
+    class="flex shrink py-1 gap-4 items-center"
     :class="{
       'justify-end': !noJustify,
       'text-rui-success': mode === 'gain',

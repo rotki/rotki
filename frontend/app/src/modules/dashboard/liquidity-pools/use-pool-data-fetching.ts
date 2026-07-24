@@ -97,7 +97,7 @@ export function usePoolDataFetching(): UsePoolDataFetchingReturn {
   }
 
   async function fetch(refresh = false): Promise<void> {
-    if (get(ethAddresses).length <= 0)
+    if (get(ethAddresses).length === 0)
       return;
 
     await retrieveUniswapV2Balances(refresh);

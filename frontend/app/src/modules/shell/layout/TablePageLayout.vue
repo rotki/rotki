@@ -16,7 +16,7 @@ const hasTabs = computed<boolean>(() => Boolean(slots.tabs));
     <div class="flex flex-col gap-4">
       <div
         v-if="!hideHeader"
-        class="flex flex-row flex-wrap items-center gap-2 lg:gap-4 min-h-[2.25rem]"
+        class="flex flex-wrap items-center gap-2 lg:gap-4 min-h-[2.25rem]"
       >
         <div
           v-if="title"

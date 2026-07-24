@@ -120,7 +120,7 @@ watch(whitelistWriteError, (message) => {
   </div>
 
   <div>
-    <div class="flex flex-row gap-3.5 items-start">
+    <div class="flex gap-3.5 items-start">
       <RuiTextField
         v-model.trim="whitelistedDomains"
         color="primary"

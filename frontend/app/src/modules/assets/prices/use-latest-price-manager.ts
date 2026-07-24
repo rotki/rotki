@@ -54,12 +54,12 @@ export function useLatestPrices(
       let priceInCurrency: BigNumber | undefined;
       if (isNft(fromAsset)) {
         const toPrice = getAssetPrice(toAsset);
-        if (toPrice && toPrice.gt(0))
+        if (toPrice?.gt(0))
           priceInCurrency = toPrice.multipliedBy(price);
       }
       else {
         const fromPrice = getAssetPrice(fromAsset);
-        if (fromPrice && fromPrice.gt(0))
+        if (fromPrice?.gt(0))
           priceInCurrency = fromPrice;
       }
 

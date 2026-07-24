@@ -36,8 +36,8 @@ export interface TaskStatus {
 export type TaskMap<T extends TaskMeta> = Record<number, Task<T>>;
 
 export class TaskNotFoundError extends Error {
-  constructor(msg: string) {
-    super(msg);
+  constructor(msg: string, options?: ErrorOptions) {
+    super(msg, options);
     this.name = 'TaskNotFoundError';
   }
 }

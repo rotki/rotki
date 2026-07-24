@@ -147,7 +147,7 @@ function handleSaveException(error: unknown, assetToMigrate: string, formRef: Mi
     @cancel="modelValue = undefined; oldAsset = undefined"
   >
     <template #header="{ title }">
-      <div class="flex flex-row items-center -mt-1 -mb-1 text-black dark:text-white">
+      <div class="flex items-center -mt-1 -mb-1 text-black dark:text-white">
         <div class="grow font-medium text-xl">
           {{ title }}
         </div>

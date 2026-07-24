@@ -156,7 +156,7 @@ async function removeSummary(s: InstanceSummary, envFile?: string): Promise<void
 
 async function confirmedYes(message: string): Promise<boolean> {
   const answer = await confirm({ message, initialValue: false });
-  return !isCancel(answer) && answer === true;
+  return !isCancel(answer) && answer;
 }
 
 function describeCleanAllPlan(parent: string, summaries: InstanceSummary[]): void {

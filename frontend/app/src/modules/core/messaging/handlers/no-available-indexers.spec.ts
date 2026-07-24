@@ -67,7 +67,7 @@ describe('createNoAvailableIndexersHandler', () => {
   function getSuppressAction(notification: Notification | null | void): NotificationAction {
     assert(notification);
     const actions = Array.isArray(notification.action) ? notification.action : [notification.action];
-    const suppressAction = actions.find(a => a && a.label.includes('do_not_show_again'));
+    const suppressAction = actions.find(a => a?.label.includes('do_not_show_again'));
     assert(suppressAction);
     return suppressAction;
   }

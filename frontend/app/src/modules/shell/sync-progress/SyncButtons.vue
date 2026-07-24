@@ -28,7 +28,7 @@ const { loadingBalancesAndDetection: loading } = useBalancesLoading();
 </script>
 
 <template>
-  <div class="flex flex-row justify-between gap-1">
+  <div class="flex justify-between gap-1">
     <RuiTooltip
       :open-delay="400"
       class="w-full"

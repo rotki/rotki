@@ -36,15 +36,15 @@ export class BalanceQueueService<T extends QueueItemMetadata = QueueItemMetadata
   private static instance: BalanceQueueService<any>;
 
   private queue: QueueItem<T>[] = [];
-  private runningItems = new Map<string, QueueItem<T>>();
-  private completedItems = new Map<string, QueueItem<T>>();
-  private failedItems = new Map<string, QueueItem<T>>();
+  private readonly runningItems = new Map<string, QueueItem<T>>();
+  private readonly completedItems = new Map<string, QueueItem<T>>();
+  private readonly failedItems = new Map<string, QueueItem<T>>();
 
-  private maxConcurrency: number;
+  private readonly maxConcurrency: number;
 
-  private batches = new Map<string, Set<string>>();
-  private batchPromises = new Map<string, BatchInfo>();
-  private itemPromises = new Map<string, { resolve: () => void; reject: (error: Error) => void }>();
+  private readonly batches = new Map<string, Set<string>>();
+  private readonly batchPromises = new Map<string, BatchInfo>();
+  private readonly itemPromises = new Map<string, { resolve: () => void; reject: (error: Error) => void }>();
 
   private onCompletionCallback?: () => void;
   private onProgressCallback?: (stats: QueueStats) => void;

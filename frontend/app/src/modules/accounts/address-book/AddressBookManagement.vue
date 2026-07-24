@@ -137,7 +137,7 @@ watchImmediate(location, async () => {
         </div>
       </div>
 
-      <div class="flex flex-row items-center gap-2 my-3">
+      <div class="flex items-center gap-2 my-3">
         <RuiTabs
           v-model="tab"
           color="primary"

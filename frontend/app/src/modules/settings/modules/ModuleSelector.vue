@@ -179,7 +179,7 @@ onMounted(async () => {
       dense
     >
       <template #item.name="{ row }">
-        <div class="flex flex-row items-center gap-2">
+        <div class="flex items-center gap-2">
           <AppImage
             class="icon-bg"
             size="1.5rem"

@@ -3,12 +3,12 @@ import { type ConsolaInstance, createConsola, LogLevels } from 'consola';
 const ROWLIMIT = 50000;
 
 export class IndexedDb {
-  private logger: ConsolaInstance;
+  private readonly logger: ConsolaInstance;
 
   constructor(
-    private dbName: string,
-    private dbVersion: number,
-    private store: string,
+    private readonly dbName: string,
+    private readonly dbVersion: number,
+    private readonly store: string,
   ) {
     this.logger = createConsola({
       level: LogLevels.error,

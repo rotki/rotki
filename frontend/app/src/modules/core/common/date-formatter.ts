@@ -1,6 +1,6 @@
 export class DateFormatter {
-  private regex = /%-?[A-Za-z]/gm;
-  private translations: Record<string, (date: Date, locale?: string) => string> = {
+  private readonly regex = /%-?[A-Za-z]/gm;
+  private readonly translations: Record<string, (date: Date, locale?: string) => string> = {
     '-d': (date, locale) => date.toLocaleDateString(locale, { day: 'numeric' }),
     '-H': date => date.getHours().toString(),
     '-I': date => DateFormatter.twelveHours(date),

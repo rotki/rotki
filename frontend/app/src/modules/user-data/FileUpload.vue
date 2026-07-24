@@ -185,7 +185,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-row overflow-hidden">
+  <div class="flex overflow-hidden">
     <div
       ref="wrapper"
       class="p-4 border border-rui-grey-300 dark:border-rui-grey-800 rounded-md w-full relative border-dashed transition"

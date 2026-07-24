@@ -19,16 +19,16 @@ function deserializeApiErrorMessage(message: string): Record<string, string[]> |
 export type ValidationErrors = Record<string, string[] | string>;
 
 export class ApiKeyMissingError extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
     this.name = 'ApiKeyMissingError';
   }
 }
 
 export class ApiValidationError extends Error {
   readonly errors: ValidationErrors;
-  constructor(message: string) {
-    super(message);
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
     this.name = 'ApiValidationError';
     this.errors = camelCaseTransformer(deserializeApiErrorMessage(message)) ?? {};
   }

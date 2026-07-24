@@ -13,7 +13,7 @@ const location = useLocationData(() => exchange);
 </script>
 
 <template>
-  <div class="flex flex-row gap-2 items-center shrink">
+  <div class="flex gap-2 items-center shrink">
     <AppImage
       class="icon-bg"
       :width="size"

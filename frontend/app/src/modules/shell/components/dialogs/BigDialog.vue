@@ -161,7 +161,7 @@ function promptClose() {
         <RuiDivider class="mb-4 -mx-4" />
 
         <slot name="footer">
-          <div class="flex flex-row gap-2 w-full">
+          <div class="flex gap-2 w-full">
             <slot name="left-buttons" />
             <div class="grow" />
             <RuiButton

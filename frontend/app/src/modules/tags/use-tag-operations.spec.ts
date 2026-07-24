@@ -111,7 +111,7 @@ describe('useTagOperations', () => {
       const result: ActionStatus = await addTag(makeTag('fail'));
 
       expect(result.success).toBe(false);
-      expect(result.success === false && result.message).toBe('Add failed');
+      expect(!result.success && result.message).toBe('Add failed');
       expect(mockShowErrorMessage).toHaveBeenCalledOnce();
     });
   });

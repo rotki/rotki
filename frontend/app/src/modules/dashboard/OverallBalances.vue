@@ -131,7 +131,7 @@ onMounted(() => {
       <div
         v-else
         :class="balanceClass"
-        class="flex flex-row items-center gap-2 rounded-full font-medium"
+        class="flex items-center gap-2 rounded-full font-medium"
       >
         <RuiIcon
           :name="indicator"

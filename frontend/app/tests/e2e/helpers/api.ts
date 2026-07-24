@@ -99,8 +99,7 @@ async function checkForTaskCompletion(
     const body = await response.json();
 
     if (
-      body.result
-      && body.result.completed
+      body.result?.completed
       && Array.isArray(body.result.completed)
       && body.result.completed.includes(taskId)
     ) {

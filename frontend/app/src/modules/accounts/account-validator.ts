@@ -58,7 +58,7 @@ export function sortAndFilterValidators(
         status,
       }));
 
-  const sorted = orderByAttributes.length <= 0
+  const sorted = orderByAttributes.length === 0
     ? filtered
     : filtered.sort((a, b) => {
         for (const [i, attr] of orderByAttributes.entries()) {

@@ -28,7 +28,7 @@ const { t } = useI18n({ useScope: 'global' });
         v-for="(proxies, key, index) in proxyInformation"
         :key="key"
       >
-        <div class="flex flex-row items-center gap-2">
+        <div class="flex items-center gap-2">
           <HashLink
             :text="key"
             class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 rounded-full m-0.5"

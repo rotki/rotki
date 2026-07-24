@@ -59,7 +59,7 @@ async function forceSaveAndClose(): Promise<void> {
 
       <RuiDivider class="my-4" />
 
-      <div class="flex flex-row items-center gap-4">
+      <div class="flex items-center gap-4">
         <RuiButton
           color="primary"
           variant="outlined"

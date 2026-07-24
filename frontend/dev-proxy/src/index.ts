@@ -104,11 +104,11 @@ function createResult(result: unknown): Record<string, unknown> {
 function handleTasksStatus(res: Response): void {
   manipulateResponse(res, (data) => {
     const result = data.result;
-    if (result && result.pending)
+    if (result?.pending)
       result.pending.push(...mockAsync.pending);
     else result.pending = mockAsync.pending;
 
-    if (result && result.completed)
+    if (result?.completed)
       result.completed.push(...mockAsync.completed);
     else result.completed = mockAsync.completed;
 

@@ -25,8 +25,8 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div class="flex flex-row items-center justify-between flex-wrap gap-2">
-    <div class="flex flex-row gap-2">
+  <div class="flex items-center justify-between flex-wrap gap-2">
+    <div class="flex gap-2">
       <IgnoreButtons
         :disabled="selected.length === 0"
         :disabled-actions="disabledIgnoreActions"
@@ -34,7 +34,7 @@ const { t } = useI18n({ useScope: 'global' });
       />
       <div
         v-if="selected.length > 0"
-        class="flex flex-row items-center gap-2"
+        class="flex items-center gap-2"
       >
         <span class="text-body-2 text-rui-text-secondary">
           {{ t('asset_table.selected', { count: selected.length }) }}

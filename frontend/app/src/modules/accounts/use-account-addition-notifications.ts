@@ -72,7 +72,7 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
     if (!isSingleBinanceScFailure)
       addFailureMessage(failed);
 
-    if (listOfFailureText.length <= 0)
+    if (listOfFailureText.length === 0)
       return;
 
     notifyWarning(

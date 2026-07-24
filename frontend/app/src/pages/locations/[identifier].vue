@@ -37,7 +37,7 @@ const location = useLocationData(() => identifier);
     <div class="flex flex-col gap-4 w-full">
       <div
         v-if="location"
-        class="flex flex-row items-center mb-4 gap-2"
+        class="flex items-center mb-4 gap-2"
       >
         <LocationIcon
           :item="identifier"

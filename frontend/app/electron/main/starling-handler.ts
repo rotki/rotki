@@ -317,7 +317,7 @@ export class StarlingHandler {
   private async request<T = unknown>(method: string, params?: Record<string, unknown>): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       const child = this.child;
-      if (!child || !child.stdin) {
+      if (!child?.stdin) {
         reject(new Error('starling is not running'));
         return;
       }

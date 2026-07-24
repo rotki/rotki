@@ -115,7 +115,7 @@ const BATCH_SIZE = 5; // Process 5 links at a time
 
 consola.info(`Starting to check ${linksWithKeys.length} external links in batches of ${BATCH_SIZE}...`);
 
-// eslint-disable-next-line no-void,unicorn/prefer-top-level-await
+// eslint-disable-next-line no-void
 void checkLinksInBatches(linksWithKeys, BATCH_SIZE).then(async (linkResults) => {
   const failures = linkResults.filter(result => !result.success);
 

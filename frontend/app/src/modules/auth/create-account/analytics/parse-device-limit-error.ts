@@ -16,7 +16,7 @@ const DEVICE_LIMIT_PLACEHOLDER = '_DEVICE_LIMIT_LINK_';
  * @returns whether a link should be rendered, and the message parts to render around it
  */
 export function parseDeviceLimitError(error: string): ParsedDeviceLimitError {
-  if (!error || !error.includes(DEVICE_LIMIT_PLACEHOLDER)) {
+  if (!error?.includes(DEVICE_LIMIT_PLACEHOLDER)) {
     return {
       hasLink: false,
       parts: [error],

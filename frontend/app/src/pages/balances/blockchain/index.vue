@@ -78,7 +78,7 @@ onMounted(() => {
     <div class="flex flex-col gap-8">
       <RuiCard>
         <div class="pb-6 flex flex-wrap xl:flex-nowrap justify-between gap-2 items-center">
-          <div class="flex flex-row items-center gap-2">
+          <div class="flex items-center gap-2">
             <SummaryCardRefreshMenu
               data-cy="blockchain-balances-refresh-menu"
               :disabled="refreshDisabled"

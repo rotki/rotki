@@ -1,5 +1,5 @@
 export class PrioritizedListData<T = string> {
-  constructor(private itemData: Array<PrioritizedListItemData<T>>) {}
+  constructor(private readonly itemData: Array<PrioritizedListItemData<T>>) {}
 
   itemIdsNotIn(itemIds: T[]): T[] {
     return this.itemData.filter(item => !itemIds.includes(item.identifier)).map(itemData => itemData.identifier);

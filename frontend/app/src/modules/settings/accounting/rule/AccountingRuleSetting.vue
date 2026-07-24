@@ -343,7 +343,7 @@ const importFileDialog = ref<boolean>(false);
           {{ t('accounting_settings.rule.subtitle') }}
         </template>
       </SettingCategoryHeader>
-      <div class="flex flex-row items-center justify-end gap-2">
+      <div class="flex items-center justify-end gap-2">
         <RuiTooltip :open-delay="400">
           <template #activator>
             <RuiButton

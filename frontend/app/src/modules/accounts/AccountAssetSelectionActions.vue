@@ -24,7 +24,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <div
     v-if="showSelectionToggle"
-    class="flex flex-row gap-3"
+    class="flex gap-3"
   >
     <RuiTooltip
       :popper="{ placement: 'top' }"

@@ -8,7 +8,7 @@ defineSlots<{
 </script>
 
 <template>
-  <div class="flex flex-row items-center flex-wrap gap-2 mb-4">
+  <div class="flex items-center flex-wrap gap-2 mb-4">
     <slot />
     <div
       v-if="!hideDivider"

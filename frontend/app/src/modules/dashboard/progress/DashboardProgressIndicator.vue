@@ -169,7 +169,7 @@ onMounted(async () => {
         />
       </div>
 
-      <div class="flex flex-row gap-2">
+      <div class="flex gap-2">
         <RuiButton
           v-if="!balanceProgress"
           variant="text"

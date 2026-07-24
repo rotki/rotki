@@ -178,8 +178,8 @@ export async function withRegistryLock<T>(fn: () => Promise<T> | T): Promise<T> 
  * without a stack trace.
  */
 export class PortSlotAllocationError extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
     this.name = 'PortSlotAllocationError';
   }
 }
