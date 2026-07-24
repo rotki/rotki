@@ -34,7 +34,7 @@ export function createResponseParser(
  * Creates and throws a FetchError with status information.
  */
 export function createStatusError(status: number, message?: string, data?: unknown): FetchError {
-  const error = new FetchError(message || defaultMessageForStatus(status));
+  const error = new FetchError(message ?? defaultMessageForStatus(status));
   error.status = status;
   error.statusCode = status;
   error.data = data;

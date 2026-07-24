@@ -11,7 +11,7 @@ const logger = createConsola({ defaults: { tag: 'mock-rpc' } });
 
 const PORT = Number(process.env.MOCK_RPC_PORT) || 30304;
 const MODE: 'record' | 'replay' = process.env.MOCK_RPC_MODE === 'record' ? 'record' : 'replay';
-const TARGET_URL = process.env.MOCK_RPC_TARGET || '';
+const TARGET_URL = process.env.MOCK_RPC_TARGET ?? '';
 const CASSETTE_DIR = path.resolve(import.meta.dirname, '..', 'cassettes', 'rpc');
 
 interface JsonRpcRequest {

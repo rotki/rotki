@@ -47,7 +47,7 @@ export function useProxyProvider(): EIP1193Provider | undefined {
 
         // Set up bridge event forwarding for this event type
         walletBridge.addEventListener(event, (data: any) => {
-          const listeners = eventListeners.get(event) || [];
+          const listeners = eventListeners.get(event) ?? [];
           listeners.forEach((listener) => {
             try {
               if (event === 'disconnect' && !data) {

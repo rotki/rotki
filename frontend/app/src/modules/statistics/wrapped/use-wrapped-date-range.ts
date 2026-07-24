@@ -21,7 +21,7 @@ export function useWrappedDateRange(): UseWrappedDateRangeReturn {
       return get(start) || undefined;
     },
     set(value: number | undefined) {
-      set(start, value || 0);
+      set(start, value ?? 0);
     },
   });
 

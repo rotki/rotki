@@ -70,7 +70,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
     fetch: fetchNonFungibleBalances,
     params: [{
       fromQuery(query): void {
-        set(modelIgnoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
+        set(modelIgnoredAssetsHandling, query.ignoredAssetsHandling ?? 'exclude');
       },
       to: 'both',
       values: extraParams,

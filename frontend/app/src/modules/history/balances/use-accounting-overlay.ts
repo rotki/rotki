@@ -158,7 +158,7 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
       location: entry.location,
       // The backend tags plain-wallet series as either null or '' (empty string) — normalise
       // both to null so they share a scope key (and render consistently as "Wallet").
-      protocol: entry.protocol || null,
+      protocol: entry.protocol ?? null,
       times: entry.times,
       values: entry.values,
     })));

@@ -116,7 +116,7 @@ export function useHistoryEventFilter(
     if (Object.keys(globalMapping).length === 0)
       return [];
 
-    let selectedEventTypes = get(filters)?.eventTypes || [];
+    let selectedEventTypes = get(filters)?.eventTypes ?? [];
     if (!Array.isArray(selectedEventTypes))
       selectedEventTypes = [selectedEventTypes.toString()];
 
@@ -140,7 +140,7 @@ export function useHistoryEventFilter(
     if (keys.length === 0)
       return;
 
-    let selectedEventSubtypes = get(filters)?.eventSubtypes || [];
+    let selectedEventSubtypes = get(filters)?.eventSubtypes ?? [];
     if (!Array.isArray(selectedEventSubtypes))
       selectedEventSubtypes = [selectedEventSubtypes.toString()];
 

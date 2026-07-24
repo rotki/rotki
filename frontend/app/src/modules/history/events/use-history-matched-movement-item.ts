@@ -73,7 +73,7 @@ export function useHistoryMatchedMovementItem(
   const chain = computed<Blockchain>(() => {
     const primary = get(primaryEvent);
     const secondary = get(secondaryEvent);
-    return getChain(secondary?.location || primary.location);
+    return getChain(secondary?.location ?? primary.location);
   });
 
   const showCheckbox = computed<boolean>(() => {
@@ -111,7 +111,7 @@ export function useHistoryMatchedMovementItem(
   function resolveEventLabel(event?: HistoryEventEntry): string {
     if (!event)
       return '';
-    return event.locationLabel || getLocationData(event.location)?.name || '';
+    return (event.locationLabel ?? getLocationData(event.location)?.name) ?? '';
   }
 
   function appendFeeNotes(notes: string): string {

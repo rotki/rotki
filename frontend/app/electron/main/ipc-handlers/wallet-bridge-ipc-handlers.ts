@@ -177,7 +177,7 @@ export class WalletBridgeIpcHandlers {
 
       this.logger.debug('Received available EIP-6963 providers from bridge:', result);
 
-      return result || [];
+      return result ?? [];
     }
     catch (error: any) {
       this.logger.error('Failed to get available providers:', error);
@@ -221,7 +221,7 @@ export class WalletBridgeIpcHandlers {
         params: [],
       });
 
-      return result || null;
+      return result ?? null;
     }
     catch (error: any) {
       this.logger.error('Failed to get selected provider:', error);

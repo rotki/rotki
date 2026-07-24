@@ -173,7 +173,7 @@ if (process.argv[1] === import.meta.filename) {
     consola.warn(`\nFound ${result.invalidIcons.length} invalid icon(s):`);
     const byIcon = new Map<string, IconLocation[]>();
     for (const loc of result.invalidIcons) {
-      const existing = byIcon.get(loc.icon) || [];
+      const existing = byIcon.get(loc.icon) ?? [];
       existing.push(loc);
       byIcon.set(loc.icon, existing);
     }

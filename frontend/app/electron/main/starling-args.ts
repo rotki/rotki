@@ -170,7 +170,7 @@ function resolveStarlingBinary(): string {
 function corsOrigins(isDev: boolean): string {
   if (!isDev)
     return 'app://*,http://localhost:*';
-  const devServerUrl: string = import.meta.env.VITE_DEV_SERVER_URL || 'http://localhost:*';
+  const devServerUrl: string = import.meta.env.VITE_DEV_SERVER_URL ?? 'http://localhost:*';
   const trimmed = devServerUrl.endsWith('/') ? devServerUrl.slice(0, -1) : devServerUrl;
   return `${trimmed},http://localhost:*`;
 }

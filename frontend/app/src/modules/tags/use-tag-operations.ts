@@ -76,7 +76,7 @@ export function useTagOperations(): UseTagOperationsReturn {
     if (tagExists(tag))
       return true;
 
-    const bgColor = backgroundColor || randomColor();
+    const bgColor = backgroundColor ?? randomColor();
     const fgColor = invertColor(bgColor);
 
     const newTag: Tag = {

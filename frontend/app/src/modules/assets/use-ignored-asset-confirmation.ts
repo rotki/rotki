@@ -13,7 +13,7 @@ export function useIgnoredAssetConfirmation(): UseIgnoredAssetConfirmationReturn
   async function ignoreAssetWithConfirmation(assets: string[] | string, assetName?: string | null, onSuccess?: () => any): Promise<void> {
     show({
       message: t('ignore.confirm.message', {
-        asset: assetName || (typeof assets === 'string' ? assets : t('ignore.confirm.these_assets')),
+        asset: assetName ?? (typeof assets === 'string' ? assets : t('ignore.confirm.these_assets')),
       }),
       title: t('ignore.confirm.title'),
       type: 'warning',

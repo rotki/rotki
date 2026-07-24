@@ -57,7 +57,7 @@ export function useTaskApi(): UseTaskApiReturn {
     const data = response._data;
 
     if (!data?.result)
-      throw new Error(data?.message || 'No result');
+      throw new Error(data?.message ?? 'No result');
 
     const { outcome, statusCode } = data.result;
 
@@ -111,7 +111,7 @@ export function useTaskApi(): UseTaskApiReturn {
     const data = response._data;
 
     if (!data?.result)
-      throw new Error(data?.message || 'Failed to cancel task');
+      throw new Error(data?.message ?? 'Failed to cancel task');
 
     return data.result;
   };

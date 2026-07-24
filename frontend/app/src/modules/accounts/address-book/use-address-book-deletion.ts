@@ -29,7 +29,7 @@ export function useAddressBookDeletion(
         t('address_book.actions.delete.error.title'),
         t('address_book.actions.delete.error.description', {
           address,
-          chain: blockchain || t('common.multi_chain'),
+          chain: blockchain ?? t('common.multi_chain'),
           message: getErrorMessage(error),
         }),
       );
@@ -41,7 +41,7 @@ export function useAddressBookDeletion(
       {
         message: t('address_book.actions.delete.dialog.message', {
           address: item.address,
-          chain: item.blockchain || t('common.multi_chain'),
+          chain: item.blockchain ?? t('common.multi_chain'),
         }),
         title: t('address_book.actions.delete.dialog.title'),
       },

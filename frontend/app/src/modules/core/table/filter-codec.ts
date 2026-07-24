@@ -33,7 +33,7 @@ function serializeChip(entry: Suggestion, matcher: AnyMatcher): string | boolean
   if ('string' in matcher) {
     if (typeof entry.value !== 'string' || !matcher.validate(entry.value))
       return undefined;
-    const serialized = matcher.serializer?.(entry.value) || entry.value;
+    const serialized = matcher.serializer?.(entry.value) ?? entry.value;
     return entry.exclude ? `!${serialized}` : serialized;
   }
   if ('asset' in matcher)
@@ -64,7 +64,7 @@ export function matchesFromSelection(
 
     validSelection.push(entry);
 
-    const valueKey = matcher.keyValue || matcher.key;
+    const valueKey = matcher.keyValue ?? matcher.key;
     if (matcher.multiple) {
       // `multiple` matchers are string/asset, so their serialized value is always a string.
       const existing = matches[valueKey];
@@ -93,7 +93,7 @@ function deserializeValue(
       return { exclude: false, value: prev.value };
     if (typeof value !== 'string')
       return undefined;
-    return { exclude: false, value: matcher.deserializer?.(value) || value };
+    return { exclude: false, value: matcher.deserializer?.(value) ?? value };
   }
 
   if ('boolean' in matcher || typeof value === 'boolean')
@@ -104,7 +104,7 @@ function deserializeValue(
 
   const excluded = value.startsWith('!');
   const normalized = excluded ? value.substring(1) : value;
-  return { exclude: excluded, value: matcher.deserializer?.(normalized) || normalized };
+  return { exclude: excluded, value: matcher.deserializer?.(normalized) ?? normalized };
 }
 
 /**

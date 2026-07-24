@@ -14,8 +14,8 @@ consola.level = LogLevels.debug;
 
 const server = express();
 
-const port = process.env.PORT || 4243;
-const backend = process.env.BACKEND || 'http://127.0.0.1:4242';
+const port = process.env.PORT ?? 4243;
+const backend = process.env.BACKEND ?? 'http://127.0.0.1:4242';
 const componentsDir = process.env.PREMIUM_COMPONENT_DIR;
 
 enableCors(server);

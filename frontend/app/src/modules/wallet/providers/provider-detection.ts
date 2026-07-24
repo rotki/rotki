@@ -52,7 +52,7 @@ async function detectLegacyProviders(): Promise<EnhancedProviderDetail[]> {
 
   if (typeof window !== 'undefined' && window.ethereum) {
     // Check if this provider already announced via EIP-6963
-    const isEIP6963Provider = window.ethereum.isRotkiBridge ||
+    const isEIP6963Provider = window.ethereum.isRotkiBridge ??
       (await detectEIP6963Providers(100)).length > 0;
 
     if (!isEIP6963Provider) {

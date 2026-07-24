@@ -76,7 +76,7 @@ export const AssetInfo = z.object({
 
 export const AssetInfoWithTransformer = AssetInfo.transform(data => ({
   ...data,
-  isCustomAsset: data.isCustomAsset || data.assetType === 'custom asset',
+  isCustomAsset: data.isCustomAsset ?? data.assetType === 'custom asset',
 }));
 
 export type AssetInfo = z.infer<typeof AssetInfo>;
@@ -94,7 +94,7 @@ export const AssetInfoWithId = z.object({
   identifier: z.string().min(1),
 }).transform((data: any) => ({
   ...data,
-  isCustomAsset: data.isCustomAsset || data.assetType === 'custom asset',
+  isCustomAsset: data.isCustomAsset ?? data.assetType === 'custom asset',
 }));
 
 export type AssetInfoWithId = z.infer<typeof AssetInfoWithId>;

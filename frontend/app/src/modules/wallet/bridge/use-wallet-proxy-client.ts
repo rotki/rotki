@@ -71,7 +71,7 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
       sendResponse({
         error: {
           code: -32601,
-          message: error.message || 'Internal error',
+          message: error.message ?? 'Internal error',
         },
         id: message.id,
         jsonrpc: '2.0',

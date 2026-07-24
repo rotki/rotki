@@ -22,7 +22,7 @@ export function useSavedFilter(
   const allSavedFilters = useSetting('savedFilters');
 
   const savedFilters = computed<Suggestion[][]>(() => {
-    const baseSuggestions = get(allSavedFilters)[toValue(location)] || [];
+    const baseSuggestions = get(allSavedFilters)[toValue(location)] ?? [];
 
     return baseSuggestions.map(suggestions =>
       suggestions.map(suggestion => ({
@@ -45,7 +45,7 @@ export function useSavedFilter(
   };
 
   const addFilter = async (newFilter: Suggestion[]): Promise<ActionStatus> => {
-    const currentFilters = get(allSavedFilters)[toValue(location)] || [];
+    const currentFilters = get(allSavedFilters)[toValue(location)] ?? [];
 
     if (currentFilters.length >= LIMIT_PER_LOCATION) {
       return {

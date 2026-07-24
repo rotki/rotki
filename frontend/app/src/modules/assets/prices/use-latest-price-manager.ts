@@ -66,7 +66,7 @@ export function useLatestPrices(
       return {
         id: index + 1,
         ...item,
-        usdPrice: priceInCurrency || Zero,
+        usdPrice: priceInCurrency ?? Zero,
       } satisfies ManualPriceWithUsd;
     });
   });

@@ -24,7 +24,7 @@ export function getMimeType(pathName: string): string {
 }
 
 export function createProtocol(scheme: string, customProtocol?: Protocol) {
-  const protocolToUse = customProtocol || protocol;
+  const protocolToUse = customProtocol ?? protocol;
 
   protocolToUse.handle(scheme, async (request) => {
     try {

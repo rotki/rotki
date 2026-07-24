@@ -151,7 +151,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     if (!isExchange)
       return mapping.default;
 
-    return mapping.exchange || mapping.default;
+    return mapping.exchange ?? mapping.default;
   }
 
   const getEventType = (event: Event): ComputedRef<string | undefined> => computed<string | undefined>(() => findEventType(toValue(event)));
@@ -180,7 +180,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     const defaultKey = 'default';
     const type = findEventType(event);
     const { counterparty, eventSubtype, eventType } = event;
-    const counterpartyVal = counterparty || defaultKey;
+    const counterpartyVal = counterparty ?? defaultKey;
     const data = type && get(transactionEventTypesData)[type];
 
     if (type && data) {
@@ -208,7 +208,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   const getAccountingEventTypeData = (type: MaybeRefOrGetter<string>): ComputedRef<ActionDataEntry> => computed(() => {
     const typeVal = toValue(type);
     return (
-      get(accountingEventsTypeData).find(({ identifier }) => identifier === typeVal) || {
+      get(accountingEventsTypeData).find(({ identifier }) => identifier === typeVal) ?? {
         icon: 'lu-circle-question-mark',
         identifier: typeVal,
         label: toCapitalCase(typeVal),

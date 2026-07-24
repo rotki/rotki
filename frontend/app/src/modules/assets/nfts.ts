@@ -24,7 +24,7 @@ const Nft = z.object({
   externalLink: z
     .string()
     .nullable()
-    .transform(item => item || undefined),
+    .transform(item => item ?? undefined),
   imageUrl: z.string().nullable(),
   name: z.string().nullable(),
   permalink: z.string().nullable(),

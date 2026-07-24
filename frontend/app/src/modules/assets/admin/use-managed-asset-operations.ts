@@ -8,7 +8,7 @@ import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
-import { uniqueStrings } from '@/modules/core/common/data/data';
+import { nonEmptyOr, uniqueStrings } from '@/modules/core/common/data/data';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
 interface IgnoredFilter {
@@ -65,7 +65,7 @@ export function useManagedAssetOperations(
         refreshAssetsConditionally();
       }
       else {
-        await ignoreAssetWithConfirmation(identifier, symbol || name, refreshAssetsConditionally);
+        await ignoreAssetWithConfirmation(identifier, nonEmptyOr(symbol, name), refreshAssetsConditionally);
       }
     }
     finally {

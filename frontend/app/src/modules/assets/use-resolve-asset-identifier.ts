@@ -38,7 +38,7 @@ export function processAssetInfo(
     };
   }
 
-  const isCustomAsset = data.isCustomAsset || data.assetType === CUSTOM_ASSET;
+  const isCustomAsset = data.isCustomAsset ?? data.assetType === CUSTOM_ASSET;
 
   if (isCustomAsset) {
     return {
@@ -49,8 +49,8 @@ export function processAssetInfo(
   }
 
   const fallback = getAssetNameFallback(id);
-  const name = collectionData?.name || data.name || fallback;
-  const symbol = collectionData?.symbol || data.symbol || fallback;
+  const name = (collectionData?.name ?? data.name) ?? fallback;
+  const symbol = (collectionData?.symbol ?? data.symbol) ?? fallback;
 
   return {
     ...data,

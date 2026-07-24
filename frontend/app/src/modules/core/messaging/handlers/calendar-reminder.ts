@@ -32,7 +32,7 @@ export function createCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']
 
     let message = '';
     if (dataAddress && blockchain) {
-      const address = getAddressName(dataAddress, blockchain) || dataAddress;
+      const address = getAddressName(dataAddress, blockchain) ?? dataAddress;
       message += `${t('common.account')}: ${address} (${getChainName(blockchain)}) \n`;
     }
 

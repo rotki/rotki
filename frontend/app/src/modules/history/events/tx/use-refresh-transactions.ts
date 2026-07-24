@@ -120,7 +120,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     else if (hasNovelty)
       resolved = resolveForNovelItems(novelty);
     else
-      resolved = { accounts: payload.accounts || [], exchanges: payload.exchanges || [] };
+      resolved = { accounts: payload.accounts ?? [], exchanges: payload.exchanges ?? [] };
 
     const accounts = filterDisabledChainAccounts(resolved.accounts);
 
@@ -162,7 +162,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   ): OnlineHistoryEventsQueryType[] {
     if (targets.fullRefresh || disableEvmEvents)
       return [OnlineHistoryEventsQueryType.ETH_WITHDRAWALS, OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS];
-    return queries || [];
+    return queries ?? [];
   }
 
   async function executeOperations(

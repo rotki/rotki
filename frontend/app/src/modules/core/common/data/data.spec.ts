@@ -1,6 +1,6 @@
 import { bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { nonEmptyProperties, toRem } from '@/modules/core/common/data/data';
+import { nonEmptyOr, nonEmptyProperties, toRem } from '@/modules/core/common/data/data';
 
 describe('data-utils', () => {
   it('should return a partial object without the null properties', () => {
@@ -95,5 +95,25 @@ describe('data-utils', () => {
     expect(toRem('10rem')).toBe('10rem');
     expect(toRem('10%')).toBe('10%');
     expect(toRem('auto')).toBe('auto');
+  });
+
+  describe('nonEmptyOr', () => {
+    it('should return the value when it is a non-empty string', () => {
+      expect(nonEmptyOr('value', 'fallback')).toBe('value');
+    });
+
+    it('should return the fallback for an empty string', () => {
+      expect(nonEmptyOr('', 'fallback')).toBe('fallback');
+    });
+
+    it('should return the fallback for nullish values', () => {
+      expect(nonEmptyOr(undefined, 'fallback')).toBe('fallback');
+      expect(nonEmptyOr(null, 'fallback')).toBe('fallback');
+    });
+
+    it('should support a non-string fallback', () => {
+      expect(nonEmptyOr('', null)).toBeNull();
+      expect(nonEmptyOr('kept', null)).toBe('kept');
+    });
   });
 });

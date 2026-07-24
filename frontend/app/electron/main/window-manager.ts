@@ -168,7 +168,7 @@ export class WindowManager {
     }
 
     this.logger.error(`Failed to load URL after ${maxRetries} attempts. Last error:`, lastError);
-    throw new Error(`Failed to load dev server URL after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
+    throw new Error(`Failed to load dev server URL after ${maxRetries} attempts: ${lastError?.message ?? 'Unknown error'}`);
   }
 
   private createWindowState() {

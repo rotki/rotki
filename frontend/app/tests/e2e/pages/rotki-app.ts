@@ -23,7 +23,7 @@ export class RotkiApp {
       return;
     }
 
-    const apiKey = process.env.ETHERSCAN_API_KEY || TK.join('');
+    const apiKey = process.env.ETHERSCAN_API_KEY ?? TK.join('');
     if (apiKey) {
       await apiAddEtherscanKey(this.request, apiKey);
     }

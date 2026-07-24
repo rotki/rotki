@@ -84,9 +84,9 @@ function updateSharedState(): void {
   const itemsMap = new Map<string, BalanceQueryQueueItem>();
 
   for (const item of allItems) {
-    const status = item.status === 'failed' ? 'completed' : (item.status || 'pending');
+    const status = item.status === 'failed' ? 'completed' : (item.status ?? 'pending');
     const queueItem: BalanceQueryQueueItem = {
-      addedAt: item.addedAt || Date.now(),
+      addedAt: item.addedAt ?? Date.now(),
       chain: item.metadata.chain,
       id: item.id,
       status,

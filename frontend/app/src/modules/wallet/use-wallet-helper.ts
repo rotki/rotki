@@ -21,7 +21,7 @@ export function useWalletHelper(): UseWalletHelperReturn {
 
   function getEvmChainNameFromChainId(chainId: number | bigint): string {
     const id = typeof chainId === 'bigint' ? Number(chainId) : chainId;
-    return get(allEvmChains).find(item => item.id === id)?.name || 'ethereum';
+    return get(allEvmChains).find(item => item.id === id)?.name ?? 'ethereum';
   }
 
   function getChainFromChainId(chainId: number | bigint): Blockchain {
@@ -29,7 +29,7 @@ export function useWalletHelper(): UseWalletHelperReturn {
     return getChain(name);
   }
 
-  const getChainIdFromChain = (chain: string): number => get(allEvmChains).find(item => item.name === chain)?.id || 1;
+  const getChainIdFromChain = (chain: string): number => get(allEvmChains).find(item => item.name === chain)?.id ?? 1;
 
   const getEip155ChainId = (chainId: string | number): string => `${EIP155}:${chainId}`;
 

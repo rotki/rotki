@@ -489,7 +489,7 @@ describe('useAggregatedBalances', () => {
       // Should have breakdown with both assets, no duplicate ETH created
       expect(collectionResult.breakdown).toHaveLength(2);
 
-      const ethItems = collectionResult.breakdown?.filter(item => item.asset === 'ETH') || [];
+      const ethItems = collectionResult.breakdown?.filter(item => item.asset === 'ETH') ?? [];
       expect(ethItems).toHaveLength(1); // Only one ETH entry
 
       // ETH should have its original balance

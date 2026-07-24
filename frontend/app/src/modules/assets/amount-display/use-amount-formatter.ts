@@ -160,8 +160,8 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
       return 0;
     }
 
-    const decimalPart = val.toFormat(val.decimalPlaces() || 0).split(get(decimalSeparator))[1] ?? '';
-    return decimalPart.match(/^0+/)?.[0]?.length || 0;
+    const decimalPart = val.toFormat(val.decimalPlaces() ?? 0).split(get(decimalSeparator))[1] ?? '';
+    return decimalPart.match(/^0+/)?.[0]?.length ?? 0;
   });
 
   const shouldUseSubscript = computed<boolean>(() =>
@@ -178,7 +178,7 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
 
     const val = get(displayValue);
     const precision = toValue(integer) ? 0 : get(floatingPrecision);
-    const [wholePart, decimalPart = ''] = val.toFormat(val.decimalPlaces() || 0).split(get(decimalSeparator));
+    const [wholePart, decimalPart = ''] = val.toFormat(val.decimalPlaces() ?? 0).split(get(decimalSeparator));
 
     if (!decimalPart || wholePart !== '0') {
       return { full: get(renderedValue) };

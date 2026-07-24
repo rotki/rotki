@@ -70,7 +70,7 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
     const validators = [...get(accounts)[Blockchain.ETH2]?.filter(isValidatorAccount) ?? []];
     const validatorIndex = validators.findIndex(validator => validator.data.publicKey === publicKey);
     const [validator] = validators.splice(validatorIndex, 1);
-    const oldOwnershipPercentage = bigNumberify(validator.data.ownershipPercentage || 100);
+    const oldOwnershipPercentage = bigNumberify(validator.data.ownershipPercentage ?? 100);
     validators.push({
       ...validator,
       data: {

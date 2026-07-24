@@ -17,8 +17,8 @@ export function getSorting<T extends NonNullable<unknown>>(
   fallbackColumn: string = DEFAULT_FALLBACK_SORT_COLUMN,
 ): SingleColumnSorting<T> {
   const {
-    column = defaults?.column || fallbackColumn,
-    direction = defaults?.direction || 'desc',
+    column = defaults?.column ?? fallbackColumn,
+    direction = defaults?.direction ?? 'desc',
   } = sorting;
   return {
     column: column as TableRowKey<T>,
@@ -31,7 +31,7 @@ function parseMultiSort<T extends NonNullable<unknown>>(
   order: ('asc' | 'desc')[] | undefined,
   fallbackColumn: string,
 ): SingleColumnSorting<T>[] {
-  const length = sort?.length || order?.length || 0;
+  const length = (sort?.length ?? order?.length) ?? 0;
   const sorting: SingleColumnSorting<T>[] = [];
 
   for (let i = 0; i < length; i++) {

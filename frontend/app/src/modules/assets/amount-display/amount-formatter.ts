@@ -22,7 +22,7 @@ export class AmountFormatter {
     roundingMode?: BigNumber.RoundingMode,
     abbreviateNumber?: boolean,
   ): string {
-    const usedRoundingMode = roundingMode === undefined ? BigNumber.ROUND_DOWN : roundingMode;
+    const usedRoundingMode = roundingMode ?? BigNumber.ROUND_DOWN;
 
     if (abbreviateNumber) {
       const usedAbbreviation = abbreviationList.find(([digitNum, _]) => amount.abs().gte(10 ** digitNum));

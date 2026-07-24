@@ -43,7 +43,7 @@ export function useAssetInfoApi(): UseAssetInfoApiReturn {
     const response = await api.post<AssetsWithId>(
       '/assets/search/levenshtein',
       {
-        limit: limit || 25,
+        limit: limit ?? 25,
         ...payload,
       },
       {

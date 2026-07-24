@@ -192,7 +192,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const getTokenAddress = (
     identifier: string,
     options?: AssetResolutionOptions,
-  ): string => getAssetContractInfo(identifier, options)?.address || '';
+  ): string => getAssetContractInfo(identifier, options)?.address ?? '';
 
   const useTokenAddress = (
     identifier: MaybeRefOrGetter<string>,

@@ -40,7 +40,7 @@ export const useLocationStore = defineStore('locations', () => {
     const locations = get(allLocations);
     return Object.keys(locations).filter((key) => {
       const location = locations[key];
-      return location.isExchange || location.exchangeDetails;
+      return location.isExchange ?? location.exchangeDetails;
     });
   });
 

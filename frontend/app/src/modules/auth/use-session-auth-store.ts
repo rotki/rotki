@@ -35,7 +35,7 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
     set(dbUpgradeStatus, null);
   };
 
-  const conflictExist = computed<boolean>(() => !!(get(syncConflict) || get(incompleteUpgradeConflict)));
+  const conflictExist = computed<boolean>(() => !!(get(syncConflict) ?? get(incompleteUpgradeConflict)));
 
   return {
     canRequestData,

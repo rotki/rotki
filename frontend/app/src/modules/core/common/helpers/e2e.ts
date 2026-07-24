@@ -44,14 +44,12 @@ export function attemptPolyfillResizeObserver(): void {
       // put a new one
       queue.push({ args: entries, cb: this.callback });
       // trigger update
-      if (!queueFlushTimeout) {
-        queueFlushTimeout = requestAnimationFrame(() => {
-          queueFlushTimeout = undefined;
-          const q = queue;
-          queue = [];
-          q.forEach(({ args, cb }) => cb(args, this.observer));
-        });
-      }
+      queueFlushTimeout ??= requestAnimationFrame(() => {
+        queueFlushTimeout = undefined;
+        const q = queue;
+        queue = [];
+        q.forEach(({ args, cb }) => cb(args, this.observer));
+      });
     }
   }
 

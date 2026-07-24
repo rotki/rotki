@@ -24,7 +24,7 @@ export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () 
           accounts.push({
             ...account,
             label,
-            tags: tags || [],
+            tags: tags ?? [],
           });
         }
       }

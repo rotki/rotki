@@ -64,7 +64,7 @@ export function useLocationLabels(options: MaybeRefOrGetter<LocationLabel[] | un
     if (registeredAccounts.length === 0)
       return [];
 
-    return registeredAccounts[0].tags || [];
+    return registeredAccounts[0].tags ?? [];
   }
 
   function getTrackedAccountLabel(item: LocationLabel): string | undefined {

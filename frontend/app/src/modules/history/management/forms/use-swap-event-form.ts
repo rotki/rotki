@@ -57,7 +57,7 @@ export function useSwapEventForm(): UseSwapEventFormReturn {
       for (const subEvent of subEvents) {
         const result = await subEvent.submitPrice();
         if (result && !result.success) {
-          handleValidationErrors(result.message || t('transactions.events.form.asset_price.failed'));
+          handleValidationErrors(result.message ?? t('transactions.events.form.asset_price.failed'));
           return false;
         }
       }

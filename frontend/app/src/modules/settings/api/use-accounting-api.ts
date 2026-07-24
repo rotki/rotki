@@ -53,7 +53,7 @@ export function useAccountingApi(): UseAccountingApiReturn {
       return data.entries[0];
 
     if (data.entries.length > 1)
-      return data.entries.find(item => item.counterparty === counterparty) || null;
+      return data.entries.find(item => item.counterparty === counterparty) ?? null;
 
     return null;
   };

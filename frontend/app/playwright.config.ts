@@ -124,7 +124,7 @@ export default defineConfig({
       timeout: 10_000,
       env: {
         MOCK_RPC_PORT: String(MOCK_RPC_PORT),
-        MOCK_RPC_MODE: process.env.MOCK_RPC_MODE || 'replay',
+        MOCK_RPC_MODE: process.env.MOCK_RPC_MODE ?? 'replay',
         ...(process.env.MOCK_RPC_TARGET && { MOCK_RPC_TARGET: process.env.MOCK_RPC_TARGET }),
       },
     },

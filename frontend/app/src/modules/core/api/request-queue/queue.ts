@@ -57,8 +57,7 @@ export class RequestQueue {
       const existing = this.pendingByKey.get(dedupeKey);
       if (existing) {
         return new Promise<T>((resolve, reject) => {
-          if (!existing.dedupeSubscribers)
-            existing.dedupeSubscribers = [];
+          existing.dedupeSubscribers ??= [];
           existing.dedupeSubscribers.push({ resolve: resolve as (value: unknown) => void, reject });
         });
       }
@@ -316,7 +315,7 @@ export class RequestQueue {
   }
 
   private createDedupeKey(url: string, options: BaseFetchOptions): string {
-    const method = options.method || 'GET';
+    const method = options.method ?? 'GET';
     const body = options.body ? this.safeStringify(options.body) : '';
     const query = options.query ? this.safeStringify(options.query) : '';
     return `${method}:${url}:${query}:${body}`;

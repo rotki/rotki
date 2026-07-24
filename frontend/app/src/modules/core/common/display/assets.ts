@@ -66,7 +66,7 @@ export function getSanitizedChain(
     return undefined;
   }
 
-  return getEvmChainName(matchedChain) || matchedChain;
+  return getEvmChainName(matchedChain) ?? matchedChain;
 }
 
 /**
@@ -171,8 +171,8 @@ export function getSortItems<T extends AssetBalance>(getInfo: (identifier: strin
       if (sortByElement === 'asset') {
         const aAsset = getInfo(a.asset);
         const bAsset = getInfo(b.asset);
-        const bSymbol = bAsset?.symbol || b.asset;
-        const aSymbol = aAsset?.symbol || a.asset;
+        const bSymbol = bAsset?.symbol ?? b.asset;
+        const aSymbol = aAsset?.symbol ?? a.asset;
         return sortByDesc ? bSymbol.toLowerCase().localeCompare(aSymbol) : aSymbol.toLowerCase().localeCompare(bSymbol);
       }
 

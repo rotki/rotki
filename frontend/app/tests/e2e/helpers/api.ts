@@ -261,7 +261,7 @@ export async function apiGetIgnoredAssets(request: APIRequestContext): Promise<s
 
   if (response.ok()) {
     const body = await response.json();
-    return body.result || [];
+    return body.result ?? [];
   }
   return [];
 }

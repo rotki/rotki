@@ -114,7 +114,7 @@ const interop: UseInteropReturn = {
 
   installUpdate: async (): Promise<boolean | Error> => (await window.interop?.installUpdate()) ?? false,
 
-  isMac: async (): Promise<boolean> => Promise.resolve(window.interop?.isMac() || navigator.platform?.startsWith?.('Mac')),
+  isMac: async (): Promise<boolean> => Promise.resolve(window.interop?.isMac() ?? navigator.platform?.startsWith?.('Mac')),
 
   get isPackaged(): boolean {
     return electronApp;

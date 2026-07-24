@@ -107,7 +107,7 @@ export function useHistoryEventsOperations(
     }
 
     return {
-      groupIdentifier: movementEvent.actualGroupIdentifier || movementEvent.groupIdentifier,
+      groupIdentifier: movementEvent.actualGroupIdentifier ?? movementEvent.groupIdentifier,
       identifier: movementEvent.identifier,
       timeRange,
       tolerance,

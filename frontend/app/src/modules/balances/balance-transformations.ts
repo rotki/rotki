@@ -55,7 +55,7 @@ function updateExistingBalance(
   chainId?: string,
 ): BalanceWithChains {
   if (location === 'address' && chainId) {
-    const chains = existing.chains || {};
+    const chains = existing.chains ?? {};
     chains[chainId] = chains[chainId] ? balanceSum(chains[chainId], balance) : balance;
     return {
       ...balanceSum(existing, balance),

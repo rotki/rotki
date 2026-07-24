@@ -1,14 +1,15 @@
 import { groupBy, omit } from 'es-toolkit';
 import { z } from 'zod';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
+import { nonEmptyOr } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/modules/core/common/use-csv-import-export';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
 const CSVRow = z.object({
   address: z.string().min(1),
-  blockchain: z.string().nullish().transform(item => item || null),
-  location: z.string().optional().transform(item => item || 'private'),
+  blockchain: z.string().nullish().transform(item => nonEmptyOr(item, null)),
+  location: z.string().optional().transform(item => nonEmptyOr(item, 'private')),
   name: z.string().min(1),
 });
 

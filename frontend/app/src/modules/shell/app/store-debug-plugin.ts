@@ -70,7 +70,7 @@ function shouldPersistStore(): any {
   const menuEnabled = debugSettings?.persistStore;
   const envEnabled = import.meta.env.VITE_PERSIST_STORE;
   const isTest = import.meta.env.VITE_TEST;
-  return (menuEnabled || envEnabled) && !isTest;
+  return (menuEnabled ?? envEnabled) && !isTest;
 }
 
 export function StoreStatePersistsPlugin(context: PiniaPluginContext): void {

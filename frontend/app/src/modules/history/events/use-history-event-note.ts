@@ -103,7 +103,7 @@ export function useHistoryEventNote(): UseHistoryEventNoteReturn {
 
   function getCleanWord(wordWithPunctuation: string): string {
     const split = separateByPunctuation(wordWithPunctuation);
-    return split.find(part => !/^[().]+$/.test(part)) || '';
+    return split.find(part => !/^[().]+$/.test(part)) ?? '';
   }
 
   function findAndScrambleIBAN(notes: string): string {
@@ -130,7 +130,7 @@ export function useHistoryEventNote(): UseHistoryEventNoteReturn {
       return formats;
     }
     if (current.type === NoteType.WORD && lastFormatEntry.type === NoteType.WORD) {
-      const isClosingPunctuation = /^[!),.:;?]+$/.test(current.word || '');
+      const isClosingPunctuation = /^[!),.:;?]+$/.test(current.word ?? '');
       const separator = isClosingPunctuation ? '' : ' ';
       lastFormatEntry.word += `${separator}${current.word}`;
       return formats;

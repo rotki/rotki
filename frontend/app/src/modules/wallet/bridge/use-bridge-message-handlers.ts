@@ -156,7 +156,7 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
 
       return provider.request<unknown>({
         method: message.method,
-        params: message.params || [],
+        params: message.params ?? [],
       });
     };
 
@@ -201,7 +201,7 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
           // Return the retry error
           return createErrorResponse(
             message.id,
-            retryErr.code || BRIDGE_ERROR_CODES.INTERNAL_ERROR,
+            retryErr.code ?? BRIDGE_ERROR_CODES.INTERNAL_ERROR,
             retryErr.message || 'Internal error',
             retryErr.data,
           );
@@ -212,7 +212,7 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
       logger.error('Error handling request:', err);
       return createErrorResponse(
         message.id,
-        err.code || BRIDGE_ERROR_CODES.INTERNAL_ERROR,
+        err.code ?? BRIDGE_ERROR_CODES.INTERNAL_ERROR,
         err.message || 'Internal error',
         err.data,
       );
@@ -234,7 +234,7 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
       const err = error as Error & { code?: number };
       return createErrorResponse(
         message.id,
-        err.code || BRIDGE_ERROR_CODES.INTERNAL_ERROR,
+        err.code ?? BRIDGE_ERROR_CODES.INTERNAL_ERROR,
         err.message || 'Unexpected error occurred',
       );
     }

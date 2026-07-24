@@ -119,7 +119,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
       startPromise(fetchDataAndLocations());
 
     set(currentAction, HISTORY_EVENT_ACTIONS.QUERY);
-    const entryTypesVal = toValue(entryTypes) || [];
+    const entryTypesVal = toValue(entryTypes) ?? [];
     const disableEvmEvents = entryTypesVal.length > 0 && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
     await refreshTransactions({
       chains: toValue(onlyChains),

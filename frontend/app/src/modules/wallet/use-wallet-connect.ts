@@ -19,8 +19,7 @@ const ROTKI_DAPP_METADATA = {
 let walletNetworksPromise: Promise<readonly Chain[]> | undefined;
 
 async function loadWalletNetworks(): Promise<readonly Chain[]> {
-  if (!walletNetworksPromise)
-    walletNetworksPromise = import('./chains-viem').then(mod => mod.SUPPORTED_WALLET_NETWORKS);
+  walletNetworksPromise ??= import('./chains-viem').then(mod => mod.SUPPORTED_WALLET_NETWORKS);
 
   return walletNetworksPromise;
 }

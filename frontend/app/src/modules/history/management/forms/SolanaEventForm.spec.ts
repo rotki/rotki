@@ -302,7 +302,7 @@ describe('forms/SolanaEventForm.vue', () => {
     expect(editHistoryEventMock).toHaveBeenCalledTimes(1);
 
     expect(editHistoryEventMock).toHaveBeenCalledWith({
-      address: group.address || null,
+      address: group.address ?? null,
       amount: bigNumberify('150'),
       asset: group.asset,
       counterparty: '',
@@ -312,7 +312,7 @@ describe('forms/SolanaEventForm.vue', () => {
       extraData: {},
       groupIdentifier: group.groupIdentifier,
       identifier: group.identifier,
-      locationLabel: group.locationLabel || null,
+      locationLabel: group.locationLabel ?? null,
       sequenceIndex: '2111',
       timestamp: group.timestamp,
       txRef: group.txRef,

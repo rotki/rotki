@@ -22,7 +22,7 @@ import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types'
 function payloadToData({ address, label, tags }: Omit<BlockchainAccountPayload, 'blockchain'>, isAdd = false): {
   accounts: GeneralAccountData[];
 } {
-  const usedLabel = isAdd ? (label || null) : (label ?? null);
+  const usedLabel = isAdd ? (label ?? null) : (label ?? null);
 
   return {
     accounts: [
@@ -109,7 +109,7 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
       const { derivationPath, xpub } = payload.xpub;
       data = {
         derivationPath: onlyIfTruthy(derivationPath),
-        label: label || null,
+        label: label ?? null,
         tags,
         xpub,
       };
@@ -175,7 +175,7 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
     const response = await api.delete<PendingTask>(`/blockchains/${chain}/xpub`, {
       body: {
         asyncQuery: true,
-        derivationPath: derivationPath || undefined,
+        derivationPath: derivationPath ?? undefined,
         xpub,
       },
       validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,

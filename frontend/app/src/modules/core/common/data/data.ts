@@ -18,6 +18,14 @@ export function uniqueObjects<T>(arr: T[], getUniqueId: (item: T) => string): T[
 }
 
 /**
+ * Returns `value` unless it is nullish or an empty string, in which case `fallback` is returned.
+ * Preserves the `value || fallback` semantics (an empty string falls through) without a `||`.
+ */
+export function nonEmptyOr<T>(value: string | undefined | null, fallback: T): string | T {
+  return value !== undefined && value !== null && value !== '' ? value : fallback;
+}
+
+/**
  * Takes an object and returns the same object without any null values
  * or empty array properties.
  * @param object - Any object to process

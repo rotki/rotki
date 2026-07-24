@@ -43,7 +43,7 @@ export function useAssetPageActions(options: UseAssetPageActionsOptions): UseAss
 
   const isIgnored = useIsAssetIgnored(identifier);
   const isWhitelisted = useIsAssetWhitelisted(identifier);
-  const isSpam = computed<boolean>(() => get(asset)?.isSpam || false);
+  const isSpam = computed<boolean>(() => get(asset)?.isSpam ?? false);
 
   const loadingIgnore = shallowRef<boolean>(false);
   const loadingWhitelist = shallowRef<boolean>(false);
@@ -74,7 +74,7 @@ export function useAssetPageActions(options: UseAssetPageActionsOptions): UseAss
       }
       else {
         const info = get(asset);
-        await ignoreAssetWithConfirmation(id, info?.symbol || info?.name);
+        await ignoreAssetWithConfirmation(id, info?.symbol ?? info?.name);
       }
     }
     finally {

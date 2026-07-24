@@ -41,7 +41,7 @@ function createConfigLogger(): Logger | undefined {
 }
 
 const envPath = process.env.VITE_PUBLIC_PATH;
-const publicPath = envPath || '/';
+const publicPath = envPath ?? '/';
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isTest = !!process.env.VITE_TEST;
 const isCoverage = !!process.env.VITE_COVERAGE;
@@ -103,7 +103,7 @@ if (envPath)
 if (!hmrEnabled)
   console.info('HMR is disabled');
 
-const enableChecker = !(process.env.CI || isTest || process.env.VITEST);
+const enableChecker = !((process.env.CI ?? isTest) || process.env.VITEST);
 
 /**
  * These modules are required by walletconnect

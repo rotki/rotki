@@ -52,7 +52,7 @@ export function useEthStaking(): UseEthStakingReturn {
         success: false,
       };
     }
-    const id = payload.publicKey || payload.validatorIndex;
+    const id = payload.publicKey ?? payload.validatorIndex;
     const outcome = await runTask<boolean, TaskMeta>(
       async () => addEth2ValidatorCaller(payload),
       {

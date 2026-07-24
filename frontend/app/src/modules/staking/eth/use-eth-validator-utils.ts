@@ -3,6 +3,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
 import { type BigNumber, Zero } from '@rotki/common';
+import { nonEmptyOr } from '@/modules/core/common/data/data';
 
 interface UseEthValidatorUtilsReturn {
   getColor: (status: string) => ContextColorsType | undefined;
@@ -25,11 +26,11 @@ export function useEthValidatorUtils(): UseEthValidatorUtilsReturn {
   }
 
   function getOwnershipPercentage(row: EthereumValidator): string {
-    return row.ownershipPercentage || '100';
+    return nonEmptyOr(row.ownershipPercentage, '100');
   }
 
-  const useTotal = (rows: Ref<Collection<EthereumValidator>>): ComputedRef<BigNumber> => computed(() => get(rows).totalValue || Zero);
-  const useTotalAmount = (rows: Ref<Collection<EthereumValidator>>): ComputedRef<BigNumber> => computed(() => get(rows).totalAmount || Zero);
+  const useTotal = (rows: Ref<Collection<EthereumValidator>>): ComputedRef<BigNumber> => computed(() => get(rows).totalValue ?? Zero);
+  const useTotalAmount = (rows: Ref<Collection<EthereumValidator>>): ComputedRef<BigNumber> => computed(() => get(rows).totalAmount ?? Zero);
 
   return {
     getColor,

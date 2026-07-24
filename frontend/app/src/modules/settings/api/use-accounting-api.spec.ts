@@ -645,7 +645,7 @@ describe('useAccountingApi', () => {
 
       server.use(
         http.patch(`${backendUrl}/api/1/accounting/rules/import`, async ({ request }) => {
-          contentTypeHeader = request.headers.get('content-type') || '';
+          contentTypeHeader = request.headers.get('content-type') ?? '';
           formData = await request.formData();
           return HttpResponse.json({
             result: {

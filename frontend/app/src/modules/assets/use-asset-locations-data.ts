@@ -68,8 +68,8 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
     const locations = get(assetLocations).map(item => ({
       ...item,
       label:
-        (isBlockchain(item.location) ? getAddressName(item.address, item.location) : null)
-        || item.label
+        ((isBlockchain(item.location) ? getAddressName(item.address, item.location) : null)
+          ?? item.label)
         || item.address,
     }));
 

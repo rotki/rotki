@@ -29,7 +29,7 @@ export function createPremiumStatusHandler(t: ReturnType<typeof useI18n>['t']): 
         return {
           category: NotificationCategory.DEFAULT,
           display: true,
-          message: reason || (expired
+          message: reason ?? (expired
             ? t('notification_messages.premium.inactive.expired_message')
             : t('notification_messages.premium.inactive.network_problem_message')),
           severity: Severity.ERROR,

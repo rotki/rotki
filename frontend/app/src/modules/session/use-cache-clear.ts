@@ -29,7 +29,7 @@ export function useCacheClear<T>(
   const confirm = shallowRef<boolean>(false);
   const pending = shallowRef<boolean>(false);
 
-  const text = (source: T): string => get(clearable).find(({ id }) => id === source)?.text || '';
+  const text = (source: T): string => get(clearable).find(({ id }) => id === source)?.text ?? '';
 
   const clear = async (source: T): Promise<void> => {
     set(confirm, false);

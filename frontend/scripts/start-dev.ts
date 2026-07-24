@@ -145,7 +145,7 @@ function pickInstanceName(option: DevCliOptions['instance']): string | undefined
     );
     process.exit(1);
   }
-  return process.env.INSTANCE_NAME || undefined;
+  return process.env.INSTANCE_NAME ?? undefined;
 }
 
 function readSlotHint(resolvedName: string): number | undefined {

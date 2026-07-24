@@ -19,7 +19,7 @@ export function createNewTokenDetectedHandler(
         ({ group }) => group === NotificationGroup.NEW_DETECTED_TOKENS,
       );
       const countAdded = await addNewDetectedToken(data);
-      return (existingNotification?.groupCount || 0) + +countAdded;
+      return (existingNotification?.groupCount ?? 0) + +countAdded;
     },
     async (data: NewDetectedToken, count: number) => {
       if (count === 0)

@@ -83,7 +83,7 @@ export function useHistoryEventItem(
     const ev = toValue(event);
     const autoNotes = 'autoNotes' in ev ? ev.autoNotes : undefined;
     const userNotes = 'userNotes' in ev ? ev.userNotes : undefined;
-    return userNotes || autoNotes || undefined;
+    return (userNotes ?? autoNotes) ?? undefined;
   });
 
   const counterparty = computed<string | undefined>(() => {

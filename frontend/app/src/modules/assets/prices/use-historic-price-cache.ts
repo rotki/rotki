@@ -122,7 +122,7 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
     if (getIsPending(key))
       return NoPrice;
 
-    return resolve(key) || NoPrice;
+    return resolve(key) ?? NoPrice;
   }
 
   function historicPriceInCurrentCurrency(fromAsset: string, timestamp: number): ComputedRef<BigNumber> {

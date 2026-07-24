@@ -119,8 +119,8 @@ export function useHistoryEventsDeletion(
       : t('transactions.events.ignore.error.title');
 
     const errorMessage = type === 'delete'
-      ? message || t('transactions.events.delete.error.message')
-      : message || t('transactions.events.ignore.error.message');
+      ? message ?? t('transactions.events.delete.error.message')
+      : message ?? t('transactions.events.ignore.error.message');
 
     if (success)
       showSuccessMessage(title, successMessage);
@@ -240,7 +240,7 @@ export function useHistoryEventsDeletion(
           const eventsResult = await deletePartialEvents(remainingEventIds);
 
           const success = txResult.success && eventsResult.success;
-          const message = txResult.message || eventsResult.message;
+          const message = txResult.message ?? eventsResult.message;
           showDeletionResult(success, totalCount, 'delete', message);
 
           if (success) {
@@ -310,7 +310,7 @@ export function useHistoryEventsDeletion(
           const deleteResult = await deletePartialEvents(remainingEventIds);
 
           const success = ignoreResult.success && deleteResult.success;
-          const message = ignoreResult.message || deleteResult.message;
+          const message = ignoreResult.message ?? deleteResult.message;
           showDeletionResult(success, transactions.size, 'ignore', message);
 
           if (success) {
@@ -356,7 +356,7 @@ export function useHistoryEventsDeletion(
           const eventsResult = await deletePartialEvents(allEventIds);
 
           const success = txResult.success && eventsResult.success;
-          const message = txResult.message || eventsResult.message;
+          const message = txResult.message ?? eventsResult.message;
           showDeletionResult(success, allEventIds.length, 'delete', message);
 
           if (success) {
