@@ -47,6 +47,7 @@ from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.pendle.balances import PendleBalances
 from rotkehlchen.chain.ethereum.modules.pickle_finance.constants import CPT_PICKLE
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
+from rotkehlchen.chain.ethereum.modules.yearn_vesting.balances import YearnVestingBalances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
@@ -207,6 +208,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         PendleBalances,
         CurveCrvusdBalances,
         WoofiBalances,
+        YearnVestingBalances,
     ),
     ChainID.OPTIMISM: (
         VelodromeBalances,

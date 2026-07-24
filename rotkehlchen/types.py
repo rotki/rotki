@@ -1386,6 +1386,7 @@ class CacheType(Enum):
     STAKEDAO_V2_VAULTS = auto()
     SUPERFLUID_TOKEN_LIST_VERSION = auto()
     SUPERFLUID_SUPER_TOKENS = auto()
+    YEARN_VESTING_ESCROWS = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1487,6 +1488,7 @@ GeneralCacheType = Literal[
     CacheType.PENDLE_SY_TOKENS,
     CacheType.SUPERFLUID_SUPER_TOKENS,
     CacheType.BEEFY_VAULTS,
+    CacheType.YEARN_VESTING_ESCROWS,
 ]
 
 
