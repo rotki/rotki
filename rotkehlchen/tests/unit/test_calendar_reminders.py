@@ -544,6 +544,7 @@ def test_delete_calendar_entry_preserves_unrelated_reminders(
     assert calendar_db.count_reminder_entries(event_id=entry_a_id) == 1  # unrelated reminder kept
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2026-01-01 00:00:00 GMT')
 @pytest.mark.parametrize('ethereum_accounts', [['0xe07d9C9cF00F9d6a4fD595A31cbb7BC0953a41A0']])
 def test_yearn_vesting_calendar_reminders(
