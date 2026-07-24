@@ -10,6 +10,12 @@ from rotkehlchen.chain.base.modules.basenames.constants import CPT_BASENAMES
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.ethereum.modules.gwei_names.constants import CPT_GNS
+from rotkehlchen.chain.ethereum.modules.yearn.vesting.constants import (
+    CPT_YEARN_VESTING,
+    VESTING_ESCROW_ABI,
+    VYPER_DONATION_ADDRESS,
+)
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -26,10 +32,13 @@ from rotkehlchen.db.calendar import (
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_hex_color_code
+from rotkehlchen.serialization.deserialize import (
+    deserialize_evm_address,
+    deserialize_hex_color_code,
+)
 from rotkehlchen.types import (
     ChainID,
     Location,
@@ -48,10 +57,13 @@ CRV_CALENDAR_COLOR: Final = deserialize_hex_color_code('5bf054')
 AERO_VELO_CALENDAR_COLOR: Final = deserialize_hex_color_code('36cfc9')
 AIRDROP_CALENDAR_COLOR: Final = deserialize_hex_color_code('ffd966')
 BRIDGE_CALENDAR_COLOR: Final = deserialize_hex_color_code('fcceee')
+YEARN_VESTING_CALENDAR_COLOR: Final = deserialize_hex_color_code('0657f9')
+VESTING_SCHEDULE_METHODS: Final = ('recipient', 'start_time', 'end_time', 'cliff_length', 'disabled_at')  # noqa: E501
 
 if TYPE_CHECKING:
     from eth_typing import ChecksumAddress
 
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import HexColorCode
@@ -117,9 +129,15 @@ def delete_past_calendar_entries(database: DBHandler) -> None:
 class CalendarReminderCreator(CustomizableDateMixin):
     """Short-lived object used to create calendar reminders"""
 
-    def __init__(self, database: DBHandler, current_ts: Timestamp):
+    def __init__(
+            self,
+            database: DBHandler,
+            current_ts: Timestamp,
+            ethereum_inquirer: EthereumInquirer | None = None,
+    ):
         super().__init__(database=database)
         self.current_ts = current_ts
+        self.ethereum_inquirer = ethereum_inquirer
         self.db_calendar = DBCalendar(database=self.database)
 
         with self.database.conn.read_ctx() as cursor:
@@ -415,6 +433,97 @@ class CalendarReminderCreator(CustomizableDateMixin):
             error_msg='Failed to create reminders for VELO/AERO vote escrow lock expirations.',
         )
 
+    def maybe_create_yearn_vesting_reminders(self) -> None:
+        """Create cliff and fully vested reminders for tracked yearn vesting escrow recipients.
+
+        The escrows are discovered from the decoded vesting events and their schedule is
+        queried from the chain since the decoded events don't carry it. Milestones of
+        revoked escrows are removed.
+        """
+        if self.ethereum_inquirer is None or len(events := self.get_history_events(
+            event_types=[
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
+                (HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL),
+            ],
+            counterparties=[CPT_YEARN_VESTING],
+        )) == 0:
+            return
+
+        escrows = sorted({
+            event.address for event in events
+            if event.address is not None and event.address != VYPER_DONATION_ADDRESS
+        })
+        escrow_contract = EvmContract(  # only used to encode/decode, the calls carry the address
+            address=escrows[0],
+            abi=VESTING_ESCROW_ABI,
+            deployed_block=0,
+        )
+        try:
+            results = self.ethereum_inquirer.multicall(calls=[
+                (escrow, escrow_contract.encode(method_name=method))
+                for escrow in escrows
+                for method in VESTING_SCHEDULE_METHODS
+            ])
+        except RemoteError as e:
+            log.error('Failed to query yearn vesting escrow schedules for calendar reminders due to %s', e)  # noqa: E501
+            return
+
+        tracked_accounts = self.blockchain_accounts.get(blockchain := SupportedBlockchain.ETHEREUM)
+        calendar_entries: list[int] = []
+        for idx, escrow in enumerate(escrows):
+            decoded = [escrow_contract.decode(
+                result=results[idx * len(VESTING_SCHEDULE_METHODS) + method_idx],
+                method_name=method,
+            )[0] for method_idx, method in enumerate(VESTING_SCHEDULE_METHODS)]
+            if (recipient := deserialize_evm_address(decoded[0])) not in tracked_accounts:
+                continue  # only the tracked funder interacted with this escrow
+
+            _, start_time, end_time, cliff_length, disabled_at = decoded
+            cliff_name = f'Yearn vesting cliff for {escrow}'
+            end_name = f'Yearn vesting ends for {escrow}'
+            if disabled_at not in (0, end_time):  # revoked. Active escrows hold 0 (v0.4.0) or end_time (older versions) there  # noqa: E501
+                for name in (cliff_name, end_name):
+                    self.delete_calendar_entry(
+                        name=name,
+                        counterparty=CPT_YEARN_VESTING,
+                        address=recipient,
+                        blockchain=blockchain,
+                    )
+                continue
+
+            milestones = [(
+                end_name,
+                Timestamp(end_time),
+                f'Yearn vesting escrow {escrow} is fully vested on {self.timestamp_to_date(Timestamp(end_time))}',  # noqa: E501
+            )]
+            if cliff_length > 0 and (cliff_time := Timestamp(start_time + cliff_length)) < end_time:  # noqa: E501
+                milestones.append((
+                    cliff_name,
+                    cliff_time,
+                    f'Yearn vesting escrow {escrow} reaches its cliff on {self.timestamp_to_date(cliff_time)}',  # noqa: E501
+                ))
+
+            for name, timestamp, description in milestones:
+                if timestamp <= self.current_ts:
+                    continue  # milestone already reached
+
+                if (entry_id := self.create_or_update_calendar_entry(
+                    name=name,
+                    timestamp=timestamp,
+                    description=description,
+                    counterparty=CPT_YEARN_VESTING,
+                    address=recipient,
+                    blockchain=blockchain,
+                    color=YEARN_VESTING_CALENDAR_COLOR,
+                )) is not None:
+                    calendar_entries.append(entry_id)
+
+        self.maybe_create_reminders(
+            calendar_identifiers=calendar_entries,
+            secs_before=[0],
+            error_msg='Failed to create the yearn vesting milestone reminders',
+        )
+
     def maybe_create_airdrop_claim_reminder(self) -> None:
         """Create reminders for airdrop claim deadlines."""
         with self.database.conn.read_ctx() as read_cursor:
@@ -528,13 +637,21 @@ class CalendarReminderCreator(CustomizableDateMixin):
         )
 
 
-def maybe_create_calendar_reminders(database: DBHandler) -> None:
+def maybe_create_calendar_reminders(
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+) -> None:
     """Create all needed calendar reminders"""
     current_ts = ts_now()
-    reminder_creator = CalendarReminderCreator(database=database, current_ts=current_ts)
+    reminder_creator = CalendarReminderCreator(
+        database=database,
+        current_ts=current_ts,
+        ethereum_inquirer=ethereum_inquirer,
+    )
     reminder_creator.maybe_create_ens_reminders()
     reminder_creator.maybe_create_locked_crv_reminders()
     reminder_creator.maybe_create_locked_aero_vero_reminders()
+    reminder_creator.maybe_create_yearn_vesting_reminders()
     reminder_creator.maybe_create_airdrop_claim_reminder()
     reminder_creator.maybe_create_l2_bridging_reminder()
 

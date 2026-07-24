@@ -929,6 +929,7 @@ class TaskManager:
             exception_is_error=True,
             method=maybe_create_calendar_reminders,
             database=self.database,
+            ethereum_inquirer=self.chains_aggregator.ethereum.node_inquirer,
         )]
 
     def _maybe_trigger_calendar_reminder(self) -> list[Task] | None:
