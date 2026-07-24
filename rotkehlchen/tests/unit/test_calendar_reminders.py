@@ -13,7 +13,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.constants import AIRDROPSDIR_NAME, APPDIR_NAME
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
-from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
+from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
 from rotkehlchen.tasks.calendar import (
     AERO_VELO_CALENDAR_COLOR,
     AIRDROP_CALENDAR_COLOR,
@@ -487,3 +487,48 @@ def test_locked_velo_calendar_reminders(
     assert len(reminders) == 1
     assert reminders[0].event_id == calendar_entry.identifier
     assert reminders[0].secs_before == 0
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_delete_calendar_entry_preserves_unrelated_reminders(
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Regression test for the calendar entry deletion also removing the reminder whose
+    own primary key matched the deleted entry's calendar identifier. Since reminders and
+    calendar entries have separate identifier spaces this deleted the reminder of an
+    unrelated calendar entry, while the deleted entry's own reminders are already
+    removed by the foreign key cascade.
+    """
+    user_address = ethereum_accounts[0]
+    calendar_db = DBCalendar(database)
+    entry_a_id, entry_b_id = (calendar_db.create_calendar_entry(CalendarEntry(
+        name=name,
+        timestamp=Timestamp(ts_now() + WEEK_IN_SECONDS),
+        description=None,
+        counterparty=CPT_ENS,
+        address=user_address,
+        blockchain=SupportedBlockchain.ETHEREUM,
+        color=None,
+        auto_delete=False,
+    )) for name in ('Entry A', 'Entry B'))
+    for event_id in (entry_b_id, entry_a_id):  # create B's reminder first so that A's reminder gets a primary key equal to entry B's calendar identifier  # noqa: E501
+        calendar_db.create_reminder_entries(reminders=[ReminderEntry(
+            identifier=0,  # ignored, auto-generated in the db
+            event_id=event_id,
+            secs_before=0,
+            acknowledged=False,
+        )])
+
+    reminder_a = calendar_db.query_reminder_entry(event_id=entry_a_id)['entries'][0]
+    assert reminder_a.identifier == entry_b_id  # precondition for the regression scenario
+
+    CalendarReminderCreator(database=database, current_ts=ts_now()).delete_calendar_entry(
+        name='Entry B',
+        counterparty=CPT_ENS,
+        address=user_address,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )
+    assert calendar_db.query_calendar_entry(CalendarFilterQuery.make())['entries_found'] == 1
+    assert calendar_db.count_reminder_entries(event_id=entry_b_id) == 0  # removed by the cascade
+    assert calendar_db.count_reminder_entries(event_id=entry_a_id) == 1  # unrelated reminder kept

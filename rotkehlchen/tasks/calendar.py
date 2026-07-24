@@ -263,13 +263,11 @@ class CalendarReminderCreator(CustomizableDateMixin):
             return  # nothing to do if calendar entry doesn't exist
 
         try:
+            # associated reminders are removed by the calendar_reminders
+            # event_id foreign key ON DELETE CASCADE
             self.db_calendar.delete_entry(
                 identifier=calendar_entry.identifier,
                 entry_type='calendar',
-            )
-            self.db_calendar.delete_entry(
-                identifier=calendar_entry.identifier,
-                entry_type='calendar_reminders',
             )
         except InputError as e:
             log.warning(f'Failed to remove calendar entry and reminders for {calendar_entry.name} due to {e!s}')  # noqa: E501
