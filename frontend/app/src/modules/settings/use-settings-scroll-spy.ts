@@ -45,15 +45,20 @@ export function useSettingsScrollSpy({ navigation, scroller }: UseSettingsScroll
     );
   }
 
+  function resolveEdgeId(parent: HTMLDivElement): string | undefined {
+    if (parent.scrollTop === 0)
+      return navItems.at(0)?.id ?? '';
+    if (parent.scrollTop + parent.clientHeight >= parent.scrollHeight - 10)
+      return navItems.at(-1)?.id ?? '';
+    return undefined;
+  }
+
   function checkVisibility(): void {
     const parent = get(scroller);
     if (parent) {
-      if (parent.scrollTop === 0) {
-        set(currentId, navItems.at(0)?.id ?? '');
-        return;
-      }
-      if (parent.scrollTop + parent.clientHeight >= parent.scrollHeight - 10) {
-        set(currentId, navItems.at(-1)?.id ?? '');
+      const edgeId = resolveEdgeId(parent);
+      if (edgeId !== undefined) {
+        set(currentId, edgeId);
         return;
       }
     }
