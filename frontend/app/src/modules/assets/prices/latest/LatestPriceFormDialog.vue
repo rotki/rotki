@@ -11,10 +11,12 @@ const {
   disableFromAsset = false,
   editableItem = null,
   editMode,
+  prefill = null,
 } = defineProps<{
   editableItem?: ManualPriceFormPayload | null;
   editMode?: boolean;
   disableFromAsset?: boolean;
+  prefill?: ManualPriceFormPayload | null;
 }>();
 
 const emit = defineEmits<{
@@ -65,13 +67,16 @@ const dialogTitle = computed<string>(() =>
     : t('price_management.dialog.add_title'),
 );
 
-watchImmediate([open, () => editableItem], ([open, editableItemVal]) => {
+watchImmediate([open, () => editableItem, () => prefill], ([open, editableItemVal, prefillVal]) => {
   if (!open) {
     set(modelValue, undefined);
   }
   else {
     if (editableItemVal) {
       set(modelValue, editableItemVal);
+    }
+    else if (prefillVal) {
+      set(modelValue, { ...prefillVal });
     }
     else {
       set(modelValue, emptyPrice());

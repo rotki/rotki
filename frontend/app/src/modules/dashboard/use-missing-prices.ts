@@ -5,6 +5,7 @@ import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-sto
 import { logger } from '@/modules/core/common/logging/logging';
 
 interface UseMissingPricesReturn {
+  missingPriceIdentifiers: ComputedRef<string[]>;
   missingPricesCount: ComputedRef<number>;
 }
 
@@ -33,10 +34,14 @@ export function useMissingPrices(): UseMissingPricesReturn {
       .map(([asset]) => asset),
   );
 
-  const missingPricesCount = computed<number>(() => {
+  // The assets that are genuinely missing a price: visible, zero-priced, and priced by an
+  // oracle at least once before. These are the ones worth surfacing and fixing.
+  const missingPriceIdentifiers = computed<string[]>(() => {
     const history = get(oraclePriceHistory);
-    return get(missingPriceAssets).filter(asset => history[asset]).length;
+    return get(missingPriceAssets).filter(asset => history[asset]);
   });
+
+  const missingPricesCount = computed<number>(() => get(missingPriceIdentifiers).length);
 
   watchImmediate(missingPriceAssets, async (assets) => {
     const unknown = assets.filter(asset => !requested.has(asset));
@@ -56,6 +61,7 @@ export function useMissingPrices(): UseMissingPricesReturn {
   });
 
   return {
+    missingPriceIdentifiers,
     missingPricesCount,
   };
 }

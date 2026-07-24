@@ -37,6 +37,16 @@ describe('useMissingPrices', () => {
     expect(get(missingPricesCount)).toBe(1);
   });
 
+  it('should expose the identifiers of the genuinely missing prices', async () => {
+    assetsHadOraclePrice.mockResolvedValue({ ETH: true, FOO: false });
+    useBalancePricesStore().prices = { ETH: missing(), FOO: missing() };
+
+    const { missingPriceIdentifiers } = useMissingPrices();
+    await flushPromises();
+
+    expect(get(missingPriceIdentifiers)).toEqual(['ETH']);
+  });
+
   it('should exclude ignored assets from the count', async () => {
     useAssetsStore().addIgnoredAsset('ETH');
     useBalancePricesStore().prices = { ETH: missing() };

@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref } from 'vue';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import DashboardCompletenessIndicator from '@/modules/dashboard/DashboardCompletenessIndicator.vue';
+import DashboardMissingPricesDialog from '@/modules/dashboard/DashboardMissingPricesDialog.vue';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import '@test/i18n';
 
@@ -51,6 +52,7 @@ async function createWrapper(): Promise<VueWrapper<InstanceType<typeof Dashboard
   const wrapper = mount(DashboardCompletenessIndicator, {
     global: {
       stubs: {
+        DashboardMissingPricesDialog: true,
         RouterLink: { template: '<div><slot /></div>' },
       },
     },
@@ -78,6 +80,20 @@ describe('dashboardCompletenessIndicator', () => {
     };
     const wrapper = await createWrapper();
     expect(wrapper.find('[data-testid=dashboard-completeness]').text()).toContain('missing_prices');
+  });
+
+  it('should open the missing-prices dialog with the affected assets', async () => {
+    useBalancePricesStore().prices = {
+      ETH: { isManualPrice: false, oracle: 'blockchain', priceMissing: true, usdPrice: null, value: bigNumberify(0) },
+    };
+    const wrapper = await createWrapper();
+
+    const dialog = wrapper.findComponent(DashboardMissingPricesDialog);
+    expect(dialog.props('open')).toBe(false);
+    expect(dialog.props('identifiers')).toEqual(['ETH']);
+
+    await wrapper.find('[data-testid=missing-prices-trigger]').trigger('click');
+    expect(dialog.props('open')).toBe(true);
   });
 
   it('should not count a missing price for an asset the oracles never supported', async () => {

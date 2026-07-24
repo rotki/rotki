@@ -2,11 +2,14 @@
 import { startPromise } from '@shared/utils';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import { useUndecodedTransactionsCount } from '@/modules/history/events/tx/use-undecoded-transactions-count';
+import DashboardMissingPricesDialog from './DashboardMissingPricesDialog.vue';
 import { useMissingPrices } from './use-missing-prices';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { missingPricesCount } = useMissingPrices();
+const missingPricesDialog = ref<boolean>(false);
+
+const { missingPriceIdentifiers, missingPricesCount } = useMissingPrices();
 const { actionableCount, refreshSummary } = useDataIssuesSummary();
 const { fetchUndecodedTransactionsBreakdown, undecodedCount } = useUndecodedTransactionsCount();
 
@@ -25,25 +28,22 @@ onMounted(() => {
     class="flex flex-wrap items-center gap-2"
     data-testid="dashboard-completeness"
   >
-    <RouterLink
+    <RuiButton
       v-if="missingPricesCount > 0"
-      class="no-underline"
-      :to="{ name: '/price-manager/latest/' }"
+      size="sm"
+      color="secondary"
+      variant="outlined"
+      data-testid="missing-prices-trigger"
+      @click="missingPricesDialog = true"
     >
-      <RuiButton
-        size="sm"
-        color="secondary"
-        variant="outlined"
-      >
-        <template #prepend>
-          <RuiIcon
-            name="lu-banknote-x"
-            size="14"
-          />
-        </template>
-        {{ t('dashboard.completeness.missing_prices', { count: missingPricesCount }, missingPricesCount) }}
-      </RuiButton>
-    </RouterLink>
+      <template #prepend>
+        <RuiIcon
+          name="lu-banknote-x"
+          size="14"
+        />
+      </template>
+      {{ t('dashboard.completeness.missing_prices', { count: missingPricesCount }, missingPricesCount) }}
+    </RuiButton>
     <RouterLink
       v-if="undecodedCount > 0"
       class="no-underline"
@@ -83,4 +83,9 @@ onMounted(() => {
       </RuiButton>
     </RouterLink>
   </div>
+
+  <DashboardMissingPricesDialog
+    v-model:open="missingPricesDialog"
+    :identifiers="missingPriceIdentifiers"
+  />
 </template>
