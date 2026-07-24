@@ -250,33 +250,48 @@ export function isValidBchAddress(address?: string): boolean {
   return /^[pq][02-9ac-hj-np-z]{41,}$/.test(address);
 }
 
+const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+const BASE58_BASE = 58;
+
+function createBase58Map(alphabet: string): Uint8Array {
+  const map = new Uint8Array(256).fill(255);
+  for (let i = 0; i < alphabet.length; i++)
+    map[alphabet.charCodeAt(i)] = i;
+  return map;
+}
+
+function countLeadingChars(str: string, leader: string): number {
+  let count = 0;
+  while (str[count] === leader)
+    count++;
+  return count;
+}
+
+// Trim leading zero bytes from the base256 buffer, then prepend the counted zeros.
+function buildDecodedResult(b256: Uint8Array, length: number, zeroes: number): Uint8Array {
+  const size = b256.length;
+  let it = size - length;
+  while (it !== size && b256[it] === 0)
+    it++;
+  const vch = new Uint8Array(zeroes + (size - it));
+  let j = zeroes;
+  while (it !== size)
+    vch[j++] = b256[it++];
+  return vch;
+}
+
 // Logic taken from https://github.com/cryptocoinjs/base-x/blob/master/src/esm/index.js
 function decodeBase58(str: string): Uint8Array {
-  const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-  const BASE = 58;
-  const LEADER = ALPHABET.charAt(0);
-  const FACTOR = Math.log(BASE) / Math.log(256);
-
-  // Create lookup map indexed by character code
-  const BASE_MAP = new Uint8Array(256);
-  for (let j = 0; j < BASE_MAP.length; j++) {
-    BASE_MAP[j] = 255;
-  }
-  for (let i = 0; i < ALPHABET.length; i++) {
-    BASE_MAP[ALPHABET.charCodeAt(i)] = i;
-  }
-
   if (str.length === 0)
     return new Uint8Array();
 
+  const BASE_MAP = createBase58Map(BASE58_ALPHABET);
+  const FACTOR = Math.log(BASE58_BASE) / Math.log(256);
+
   // Skip and count leading '1's (zeros)
-  let psz = 0;
-  let zeroes = 0;
+  const zeroes = countLeadingChars(str, BASE58_ALPHABET.charAt(0));
+  let psz = zeroes;
   let length = 0;
-  while (str[psz] === LEADER) {
-    zeroes++;
-    psz++;
-  }
 
   // Allocate enough space in big-endian base256 representation
   const size = (((str.length - psz) * FACTOR) + 1) >>> 0;
@@ -299,7 +314,7 @@ function decodeBase58(str: string): Uint8Array {
 
     let i = 0;
     for (let it = size - 1; (carry !== 0 || i < length) && (it !== -1); it--, i++) {
-      carry += (BASE * b256[it]) >>> 0;
+      carry += (BASE58_BASE * b256[it]) >>> 0;
       b256[it] = (carry % 256) >>> 0;
       carry = (carry / 256) >>> 0;
     }
@@ -311,20 +326,7 @@ function decodeBase58(str: string): Uint8Array {
     psz++;
   }
 
-  // Skip leading zeroes in b256
-  let it = size - length;
-  while (it !== size && b256[it] === 0) {
-    it++;
-  }
-
-  // Construct result with leading zeros
-  const vch = new Uint8Array(zeroes + (size - it));
-  let j = zeroes;
-  while (it !== size) {
-    vch[j++] = b256[it++];
-  }
-
-  return vch;
+  return buildDecodedResult(b256, length, zeroes);
 }
 
 export function isValidSolanaAddress(address?: string): boolean {
