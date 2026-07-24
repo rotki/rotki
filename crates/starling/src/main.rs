@@ -247,6 +247,15 @@ struct Cli {
     #[arg(long)]
     port: Option<u16>,
 
+    /// Loopback port for the in-process reverse proxy in embedded mode. When set,
+    /// starling binds the proxy on `127.0.0.1:<port>` and the renderer talks to
+    /// this single origin instead of hitting core and colibri directly. Unset
+    /// keeps the pre-proxy two-URL path (no proxy is started). Docker resolves its
+    /// externally-bound port via `--port`/`ROTKI_HTTP_PORT` instead, so this flag
+    /// is ignored there.
+    #[arg(long)]
+    proxy_port: Option<u16>,
+
     /// Directory holding the built SPA, served by the in-process HTTP server
     /// (docker mode only; defaults to `/opt/rotki/frontend`). Unused in embedded
     /// mode, where Electron loads the SPA itself.
@@ -288,14 +297,19 @@ struct Cli {
 /// which interface it binds:
 ///   - **docker**: always, it replaces nginx and *is* the published port, bound
 ///     on all interfaces (`0.0.0.0`) on the resolved external port.
-///   - **embedded**: never in this slice. E1 deliberately ships the renderer
-///     two-URL with no proxy; collapsing it to a single origin is a later slice.
+///   - **embedded**: only when `--proxy-port` is given, bound on loopback
+///     (`127.0.0.1`) so the renderer can talk to a single origin. Unset keeps the
+///     pre-proxy two-URL path alive as a fallback.
 ///
 /// `None` means no proxy is started.
-fn proxy_bind_addr(mode: Mode, docker_http_port: u16) -> Option<(IpAddr, u16)> {
+fn proxy_bind_addr(
+    mode: Mode,
+    docker_http_port: u16,
+    embedded_proxy_port: Option<u16>,
+) -> Option<(IpAddr, u16)> {
     match mode {
         Mode::Docker => Some((IpAddr::V4(Ipv4Addr::UNSPECIFIED), docker_http_port)),
-        Mode::Embedded => None,
+        Mode::Embedded => embedded_proxy_port.map(|port| (IpAddr::V4(Ipv4Addr::LOCALHOST), port)),
     }
 }
 
@@ -428,12 +442,12 @@ async fn main() -> std::process::ExitCode {
             return std::process::ExitCode::FAILURE;
         }
     };
-    let proxy_target = proxy_bind_addr(cli.mode, http_port);
+    let proxy_target = proxy_bind_addr(cli.mode, http_port, cli.proxy_port);
 
-    // The proxy, privilege separation and the control socket are docker-only, so
-    // their flags do nothing in embedded mode. Silently ignoring them sends anyone
-    // who passes `--port` in embedded hunting through the source for why no proxy
-    // appeared, so name them instead.
+    // Some flags belong to only one mode; ignoring the others silently sends
+    // anyone who passed them hunting through the source for why nothing happened,
+    // so name them instead. `--port`, `--frontend-dir`, `--trusted-proxy` and
+    // privilege separation are docker-only; `--proxy-port` is embedded-only.
     if !docker {
         let ignored: Vec<&str> = [
             ("--port", cli.port.is_some()),
@@ -449,6 +463,8 @@ async fn main() -> std::process::ExitCode {
                 "ignoring docker-only flags in embedded mode",
             );
         }
+    } else if cli.proxy_port.is_some() {
+        warn!("ignoring embedded-only flag --proxy-port in docker mode");
     }
 
     // Guard the MiB -> bytes conversion: clap accepts any usize, and an
@@ -791,11 +807,14 @@ async fn main() -> std::process::ExitCode {
             colibri_port: cli.colibri_port,
             mcp_port: cli.mcp_port,
             mcp_enabled: authenticated_mcp,
-            frontend_dir: Some(
+            // Docker serves the built SPA from disk; embedded loads it from
+            // `app://localhost` in Electron, so the proxy is data-plane only there
+            // (no `ServeDir`).
+            frontend_dir: docker.then(|| {
                 cli.frontend_dir
                     .clone()
-                    .unwrap_or_else(|| PathBuf::from(DEFAULT_FRONTEND_DIR)),
-            ),
+                    .unwrap_or_else(|| PathBuf::from(DEFAULT_FRONTEND_DIR))
+            }),
             max_body_bytes,
             // Core and colibri validate the session cookie themselves. MCP validates
             // its bearer token itself too, while `mcp_enabled` ensures the external
@@ -1036,4 +1055,35 @@ async fn shutdown_signal(os_deadline: Arc<AtomicBool>) {
 #[cfg(not(any(unix, windows)))]
 async fn shutdown_signal() {
     let _ = tokio::signal::ctrl_c().await;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn docker_binds_all_interfaces_on_the_external_port() {
+        assert_eq!(
+            proxy_bind_addr(Mode::Docker, 80, None),
+            Some((IpAddr::V4(Ipv4Addr::UNSPECIFIED), 80)),
+        );
+        // The embedded proxy port is irrelevant in docker mode.
+        assert_eq!(
+            proxy_bind_addr(Mode::Docker, 8080, Some(41234)),
+            Some((IpAddr::V4(Ipv4Addr::UNSPECIFIED), 8080)),
+        );
+    }
+
+    #[test]
+    fn embedded_binds_loopback_only_when_a_proxy_port_is_given() {
+        assert_eq!(
+            proxy_bind_addr(Mode::Embedded, 80, Some(41234)),
+            Some((IpAddr::V4(Ipv4Addr::LOCALHOST), 41234)),
+        );
+    }
+
+    #[test]
+    fn embedded_without_a_proxy_port_starts_no_proxy() {
+        assert_eq!(proxy_bind_addr(Mode::Embedded, 80, None), None);
+    }
 }
