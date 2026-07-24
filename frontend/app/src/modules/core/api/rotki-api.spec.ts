@@ -1,7 +1,7 @@
 import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defaultApiUrls } from '@/modules/core/api/api-urls';
+import { apiUrls, defaultApiUrls } from '@/modules/core/api/api-urls';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { RotkiApi } from '@/modules/core/api/rotki-api';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
@@ -48,6 +48,31 @@ describe('modules/api/rotki-api', () => {
       expect(api.serverUrl).toBe(customUrl);
       expect(api.baseURL).toBe(`${customUrl}/api/1/`);
       expect(api.defaultBackend).toBe(false);
+    });
+  });
+
+  describe('colibri request routing', () => {
+    it('should route by the IPC-updated colibri url, not the frozen default', async () => {
+      // In embedded the proxy origin arrives via IPC after startup, so the
+      // frozen `defaultApiUrls.colibriApiUrl` stays '' and would never match.
+      // The router must read the mutable `apiUrls` the asset-* APIs also use.
+      const previous = apiUrls.colibriApiUrl;
+      apiUrls.colibriApiUrl = 'http://127.0.0.1:4141/colibri';
+      try {
+        server.use(
+          http.get('http://127.0.0.1:4141/colibri/all', () =>
+            HttpResponse.json({ result: [], message: '' })),
+        );
+
+        await api.get('/all', { baseURL: apiUrls.colibriApiUrl });
+
+        // The request landed on the colibri queue, not the core one.
+        expect(api.getColibriQueueMetrics().requestsThisSecond).toBe(1);
+        expect(api.getQueueMetrics().requestsThisSecond).toBe(0);
+      }
+      finally {
+        apiUrls.colibriApiUrl = previous;
+      }
     });
   });
 

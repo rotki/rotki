@@ -14,7 +14,7 @@ import {
   OraclePricesCollectionResponse,
   type OraclePricesQuery,
 } from '@/modules/assets/prices/price-types';
-import { defaultApiUrls } from '@/modules/core/api/api-urls';
+import { apiUrls } from '@/modules/core/api/api-urls';
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITHOUT_SESSION_STATUS } from '@/modules/core/api/utils';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
@@ -66,7 +66,7 @@ export function useAssetPricesApi(): UseAssetPricesApiReturn {
 
   const fetchOraclePrices = async (query?: OraclePricesQuery): Promise<Collection<OraclePriceEntry>> => {
     const response = await api.get<OraclePricesCollectionResponse>('/prices/oracle', {
-      baseURL: defaultApiUrls.colibriApiUrl,
+      baseURL: apiUrls.colibriApiUrl,
       filterEmptyProperties: { removeEmptyString: true },
       query,
       retry: true,
@@ -80,7 +80,7 @@ export function useAssetPricesApi(): UseAssetPricesApiReturn {
       '/prices/oracle/existence',
       { identifiers },
       {
-        baseURL: defaultApiUrls.colibriApiUrl,
+        baseURL: apiUrls.colibriApiUrl,
         retry: true,
       },
     );

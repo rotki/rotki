@@ -1,5 +1,5 @@
 import { IgnoredAssetResponse } from '@/modules/assets/types';
-import { defaultApiUrls } from '@/modules/core/api/api-urls';
+import { apiUrls } from '@/modules/core/api/api-urls';
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITHOUT_SESSION_STATUS } from '@/modules/core/api/utils';
 
@@ -11,7 +11,7 @@ interface UseAssetIgnoreApiReturn {
 
 export function useAssetIgnoreApi(): UseAssetIgnoreApiReturn {
   const getIgnoredAssets = async (): Promise<string[]> => api.get<string[]>('/assets/ignored', {
-    baseURL: defaultApiUrls.colibriApiUrl,
+    baseURL: apiUrls.colibriApiUrl,
     validStatuses: VALID_WITHOUT_SESSION_STATUS,
   });
 
