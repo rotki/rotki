@@ -2,7 +2,9 @@ import type { Ref } from 'vue';
 import type {
   AccountPayload,
   BlockchainAccountBalance,
+  ValidatorData,
   XpubAccountPayload,
+  XpubData,
 } from '@/modules/accounts/blockchain-accounts';
 import type { Eth2Validator } from '@/modules/balances/types/balances';
 import type { Module } from '@/modules/core/common/modules';
@@ -79,69 +81,83 @@ export function createNewBlockchainAccount(): AccountManageAdd {
   };
 }
 
+function buildValidatorManage(data: ValidatorData): StakingValidatorManage {
+  const { index, ownershipPercentage = '100', publicKey } = data;
+  return {
+    chain: Blockchain.ETH2,
+    data: {
+      ownershipPercentage: ownershipPercentage || '100',
+      publicKey,
+      validatorIndex: index.toString(),
+    },
+    mode: 'edit',
+    type: 'validator',
+  };
+}
+
+function buildXpubManage(account: BlockchainAccountBalance, data: XpubData): XpubManage {
+  const chain = getChain(account);
+  assert(chain && isBtcChain(chain));
+  const prefix = guessPrefix(data.xpub);
+  return {
+    chain,
+    data: {
+      label: account.label,
+      tags: account.tags ?? null,
+      xpub: {
+        derivationPath: data.derivationPath ?? '',
+        xpub: data.xpub,
+        xpubType: getKeyType(prefix),
+      },
+    },
+    mode: 'edit',
+    type: 'xpub',
+  };
+}
+
+function buildGroupManage(account: BlockchainAccountBalance): AccountAgnosticManage {
+  assert(account.category);
+  const address = getAccountAddress(account);
+  return {
+    category: account.category,
+    chain: undefined,
+    data: {
+      address,
+      label: account.label === address ? undefined : account.label,
+      tags: account.tags ?? null,
+    },
+    mode: 'edit',
+    type: 'group',
+  };
+}
+
+function buildAddressManage(account: BlockchainAccountBalance): AccountManageEdit {
+  const chain = getChain(account);
+  assert(chain);
+  const address = getAccountAddress(account);
+  return {
+    chain,
+    data: {
+      address,
+      label: account.label === address ? undefined : account.label,
+      tags: account.tags ?? null,
+    },
+    mode: 'edit',
+    type: 'account',
+  };
+}
+
 export function editBlockchainAccount(account: BlockchainAccountBalance): AccountManageState {
-  if ('publicKey' in account.data) {
-    const { index, ownershipPercentage = '100', publicKey } = account.data;
-    return {
-      chain: Blockchain.ETH2,
-      data: {
-        ownershipPercentage: ownershipPercentage || '100',
-        publicKey,
-        validatorIndex: index.toString(),
-      },
-      mode: 'edit',
-      type: 'validator',
-    } satisfies StakingValidatorManage;
-  }
-  else if ('xpub' in account.data) {
-    const chain = getChain(account);
-    assert(chain && isBtcChain(chain));
-    const prefix = guessPrefix(account.data.xpub);
-    return {
-      chain,
-      data: {
-        label: account.label,
-        tags: account.tags ?? null,
-        xpub: {
-          derivationPath: account.data.derivationPath ?? '',
-          xpub: account.data.xpub,
-          xpubType: getKeyType(prefix),
-        },
-      },
-      mode: 'edit',
-      type: 'xpub',
-    } satisfies XpubManage;
-  }
-  else if (account.type === 'group' && account.chains.length > 1) {
-    assert(account.category);
-    const address = getAccountAddress(account);
-    return {
-      category: account.category,
-      chain: undefined,
-      data: {
-        address,
-        label: account.label === address ? undefined : account.label,
-        tags: account.tags ?? null,
-      },
-      mode: 'edit',
-      type: 'group',
-    } satisfies AccountAgnosticManage;
-  }
-  else {
-    const chain = getChain(account);
-    assert(chain);
-    const address = getAccountAddress(account);
-    return {
-      chain,
-      data: {
-        address,
-        label: account.label === address ? undefined : account.label,
-        tags: account.tags ?? null,
-      },
-      mode: 'edit',
-      type: 'account',
-    } satisfies AccountManageEdit;
-  }
+  if ('publicKey' in account.data)
+    return buildValidatorManage(account.data);
+
+  if ('xpub' in account.data)
+    return buildXpubManage(account, account.data);
+
+  if (account.type === 'group' && account.chains.length > 1)
+    return buildGroupManage(account);
+
+  return buildAddressManage(account);
 }
 
 interface UseAccountManageReturn {

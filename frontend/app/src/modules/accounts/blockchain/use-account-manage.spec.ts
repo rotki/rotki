@@ -1,8 +1,9 @@
 import type { AccountManage, StakingValidatorManage } from './use-account-manage';
 import type { ActionStatus } from '@/modules/core/common/action';
-import { Blockchain } from '@rotki/common';
+import { Blockchain, Zero } from '@rotki/common';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type BlockchainAccountBalance, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 
 const mockAddAccounts = vi.fn();
@@ -63,7 +64,7 @@ vi.mock('@/modules/accounts/use-eth-staking', () => ({
   })),
 }));
 
-const { useAccountManage } = await import('./use-account-manage');
+const { editBlockchainAccount, useAccountManage } = await import('./use-account-manage');
 
 function createValidatorState(mode: 'add' | 'edit' = 'add'): StakingValidatorManage {
   return {
@@ -287,6 +288,106 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       expect(result).toBe(false);
       expect(get(modelErrorMessages)).toEqual({ address: ['already typed'] });
       expect(mockShowErrorMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('editBlockchainAccount', () => {
+    it('should build a validator edit state from validator data', () => {
+      const account: BlockchainAccountBalance = {
+        amount: Zero,
+        chain: Blockchain.ETH2,
+        data: { index: 12345, ownershipPercentage: '50', publicKey: '0xabc', status: 'active', type: 'validator' },
+        label: 'My validator',
+        nativeAsset: 'ETH',
+        type: 'account',
+        value: Zero,
+      };
+
+      expect(editBlockchainAccount(account)).toEqual({
+        chain: Blockchain.ETH2,
+        data: { ownershipPercentage: '50', publicKey: '0xabc', validatorIndex: '12345' },
+        mode: 'edit',
+        type: 'validator',
+      });
+    });
+
+    it('should default the validator ownership to 100 when missing', () => {
+      const account: BlockchainAccountBalance = {
+        amount: Zero,
+        chain: Blockchain.ETH2,
+        data: { index: 7, publicKey: '0xdef', status: 'active', type: 'validator' },
+        nativeAsset: 'ETH',
+        type: 'account',
+        value: Zero,
+      };
+
+      expect(editBlockchainAccount(account)).toMatchObject({
+        data: { ownershipPercentage: '100', validatorIndex: '7' },
+        type: 'validator',
+      });
+    });
+
+    it('should build an xpub edit state from xpub data', () => {
+      const account: BlockchainAccountBalance = {
+        amount: Zero,
+        chain: Blockchain.BTC,
+        data: { derivationPath: 'm/0', type: 'xpub', xpub: 'xpubSomeKey' },
+        label: 'My xpub',
+        nativeAsset: 'BTC',
+        tags: ['cold'],
+        type: 'account',
+        value: Zero,
+      };
+
+      expect(editBlockchainAccount(account)).toEqual({
+        chain: Blockchain.BTC,
+        data: {
+          label: 'My xpub',
+          tags: ['cold'],
+          xpub: { derivationPath: 'm/0', xpub: 'xpubSomeKey', xpubType: XpubKeyType.XPUB },
+        },
+        mode: 'edit',
+        type: 'xpub',
+      });
+    });
+
+    it('should build an agnostic group edit state for multi-chain groups', () => {
+      const account: BlockchainAccountBalance = {
+        category: 'evm',
+        chains: [Blockchain.ETH, Blockchain.OPTIMISM],
+        data: { address: '0xADDRESS', type: 'address' },
+        label: '0xADDRESS',
+        type: 'group',
+        value: Zero,
+      };
+
+      expect(editBlockchainAccount(account)).toEqual({
+        category: 'evm',
+        chain: undefined,
+        data: { address: '0xADDRESS', label: undefined, tags: null },
+        mode: 'edit',
+        type: 'group',
+      });
+    });
+
+    it('should build a single-account edit state and keep a distinct label', () => {
+      const account: BlockchainAccountBalance = {
+        amount: Zero,
+        chain: Blockchain.ETH,
+        data: { address: '0xABC', type: 'address' },
+        label: 'Main wallet',
+        nativeAsset: 'ETH',
+        tags: ['hot'],
+        type: 'account',
+        value: Zero,
+      };
+
+      expect(editBlockchainAccount(account)).toEqual({
+        chain: Blockchain.ETH,
+        data: { address: '0xABC', label: 'Main wallet', tags: ['hot'] },
+        mode: 'edit',
+        type: 'account',
+      });
     });
   });
 });
