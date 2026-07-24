@@ -30,6 +30,14 @@ RUG_PULL_TOPIC: Final = b'&\xc3\x92\x10\xac\x9c\xda$jl\xc6\xe3=\xa6|\x19q\xd5\xf
 REVOKED_V3_TOPIC: Final = b'BZ\x9dQ\xf6W5W\x00\xbaAjN\x9e`j#\xb8\xc5\x83\x1a\x99$A\xdd\xf4%Den:\x8e'  # noqa: E501
 # Revoked(address indexed recipient, address indexed revoker, address indexed receiver, uint256 unvested_amount, uint256 ts) emitted by the v0.4.0 escrows  # noqa: E501
 REVOKED_V4_TOPIC: Final = b'\xf1\r\xb8\xb5O\x9b \x04\x00~\x7fcL\x90p\xfe\xb6g\xaf\x03\x04A\xda\x00\x07\xb8\x83\x90u\x8a\xc5['  # noqa: E501
+# Disowned(address owner) emitted by the v0.3.0 escrows
+DISOWNED_TOPIC: Final = b'\xcf V\x06rZutN(I19u\x95\x07\xff\xff!\x97\xfe\xc2\xea\xfa\xb0\xc7\x0c\x8f\x12m\x81\x9d'  # noqa: E501
+# SetOpenClaim(bool state) emitted by the v0.3.0 escrows
+SET_OPEN_CLAIM_TOPIC: Final = b"N'\xd9*l\x1b\xcaN\xae\xb23\xe0[\xac\x94\xda\x82\x90r\xd2\xaf.E\x06\xab\x98h4\xd0\xbe\x08\xf8"  # noqa: E501
+# RevocationRenounced(address indexed revoker) emitted by the v0.4.0 escrows
+REVOCATION_RENOUNCED_TOPIC: Final = b'W1\xcd\xe2\xd6\xden\xa1\xdc\xb1\x9e\x0f\x17\x0e\xc8\xf7\x11\x9a\xe8\xbd\xfc\xe2X\xd1\xc0\xbd,7;ta_'  # noqa: E501
+# PermissionlessClaimsSet(bool enabled) emitted by the v0.4.0 escrows
+PERMISSIONLESS_CLAIMS_SET_TOPIC: Final = b'\xb6\x8d\x8a\r65\x1d\x08S*\x12\xeaVl\x98@\xe7\x88\x1d\xe1\x14\xbe>V;\xbdO\x06\x8a,\x158'  # noqa: E501
 
 # The escrows are deployed by the factories as proxies to a per-version implementation,
 # so the exact runtime bytecode identifies an address as a yearn vesting escrow.
