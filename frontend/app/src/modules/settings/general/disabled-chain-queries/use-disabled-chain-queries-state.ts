@@ -67,7 +67,7 @@ function payloadsEqual(a: DisabledChainQueries, b: DisabledChainQueries): boolea
   for (const key of aKeys) {
     const av = a[key];
     const bv = b[key];
-    if (bv === undefined || av.length !== bv.length)
+    if (av.length !== bv?.length)
       return false;
     const sortedA = [...av].sort();
     const sortedB = [...bv].sort();

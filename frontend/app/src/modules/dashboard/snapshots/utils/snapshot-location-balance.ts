@@ -105,7 +105,7 @@ export function overdrawnLocationIds(
     .filter(item => item.location !== TOTAL_LOCATION)
     .filter((item) => {
       const result = after(item.location);
-      return result !== null && result.isNegative();
+      return result?.isNegative();
     })
     .map(item => item.location);
 }

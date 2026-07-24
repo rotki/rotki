@@ -40,7 +40,7 @@ export async function getPortAndUrl(defaultPort: number, apiUrl: string): Promis
 
   const regExp = /(.*):\/\/(.*):(.*)/;
   const match = apiUrl.match(regExp);
-  assert(match && match.length === 4);
+  assert(match?.length === 4);
   const [, scheme, host, oldPort] = match;
   assert(host);
 

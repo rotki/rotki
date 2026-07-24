@@ -238,13 +238,13 @@ async function main(profile: string): Promise<void> {
       status = 1;
   }
   finally {
-    if (backend && backend.exitCode === null) {
+    if (backend?.exitCode === null) {
       backend.kill('SIGTERM');
       await new Promise(resolve => setTimeout(resolve, 2000));
       if (backend.exitCode === null)
         backend.kill('SIGKILL');
     }
-    if (mock && mock.process.exitCode === null)
+    if (mock?.process.exitCode === null)
       mock.process.kill('SIGTERM');
     if (status !== 0 && fs.existsSync(logDir)) {
       // keep the backend logs out of the doomed tmpdir so CI can upload them

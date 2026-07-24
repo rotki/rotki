@@ -205,8 +205,7 @@ function isAsyncQuery(req: Request): boolean {
   return (
     req.method !== 'GET'
     && req.rawHeaders.findIndex(h => h.toLocaleLowerCase().includes('application/json'))
-    && req.body
-    && req.body.async_query === true
+    && req.body?.async_query === true
   );
 }
 

@@ -259,7 +259,7 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
 
   function balanceAfter(locationLabel: string, asset: string, timestampMs: number): BigNumber | undefined {
     const entry = get(cache).get(pairKey(locationLabel, asset));
-    if (!entry || entry.status !== PairOverlayStatus.READY)
+    if (entry?.status !== PairOverlayStatus.READY)
       return undefined;
 
     const tsSec = Math.floor(timestampMs / 1000);
@@ -281,7 +281,7 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
 
   function seriesUpTo(locationLabel: string, asset: string, timestampMs: number): SparklinePoint[] {
     const entry = get(cache).get(pairKey(locationLabel, asset));
-    if (!entry || entry.status !== PairOverlayStatus.READY)
+    if (entry?.status !== PairOverlayStatus.READY)
       return [];
 
     const end = Math.floor(timestampMs / 1000);

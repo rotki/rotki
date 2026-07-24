@@ -107,7 +107,7 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
 
       const rate = rates[selectedCurrency];
 
-      if (rate && rate.eq(0)) {
+      if (rate?.eq(0)) {
         notifyError(t('missing_exchange_rate.title'), t('missing_exchange_rate.message'));
       }
     }
