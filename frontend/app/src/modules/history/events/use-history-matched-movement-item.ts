@@ -108,6 +108,21 @@ export function useHistoryMatchedMovementItem(
     return !!ev.actualGroupIdentifier;
   });
 
+  function resolveEventLabel(event?: HistoryEventEntry): string {
+    if (!event)
+      return '';
+    return event.locationLabel || getLocationData(event.location)?.name || '';
+  }
+
+  function appendFeeNotes(notes: string): string {
+    const fee = get(events).filter(item => item.eventSubtype === 'fee');
+    if (fee.length === 0)
+      return notes;
+
+    const feeText = fee.map(item => `${item.amount.toFixed()} ${getAssetField(item.asset, 'symbol', ASSET_RESOLUTION_OPTIONS)}`).join('; ');
+    return t('history_events_list_swap.fee_description', { feeText, notes });
+  }
+
   // Build compact notes for asset movements with fee
   const compactNotes = computed<string | undefined>(() => {
     const primary = get(primaryEvent);
@@ -115,8 +130,8 @@ export function useHistoryMatchedMovementItem(
 
     const amount = primary.amount;
     const asset = getAssetField(primary.asset, 'symbol', ASSET_RESOLUTION_OPTIONS);
-    const exchangeLabel = primary.locationLabel || getLocationData(primary.location)?.name || '';
-    const addressLabel = secondary?.locationLabel || (secondary && getLocationData(secondary.location)?.name) || '';
+    const exchangeLabel = resolveEventLabel(primary);
+    const addressLabel = resolveEventLabel(secondary);
 
     const isDeposit = primary.eventSubtype === 'receive';
     // For deposits: to = exchange, from = address
@@ -131,13 +146,7 @@ export function useHistoryMatchedMovementItem(
       ? t('asset_movement_matching.compact_notes.deposit', { amount, asset, to, from })
       : t('asset_movement_matching.compact_notes.withdraw', { amount, asset, from, to });
 
-    // Append fee if exists
-    const fee = get(events).filter(item => item.eventSubtype === 'fee');
-    if (fee.length === 0)
-      return notes;
-
-    const feeText = fee.map(item => `${item.amount.toFixed()} ${getAssetField(item.asset, 'symbol', ASSET_RESOLUTION_OPTIONS)}`).join('; ');
-    return t('history_events_list_swap.fee_description', { feeText, notes });
+    return appendFeeNotes(notes);
   });
 
   const eventTypeLabel = computed<string>(() => {
