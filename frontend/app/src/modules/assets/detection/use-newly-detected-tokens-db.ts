@@ -29,6 +29,24 @@ interface UseNewlyDetectedTokensDbReturn {
 
 const PRUNE_DEBOUNCE_MS = 20000; // 20 seconds debounce for auto-prune
 
+interface ResolvedTokenQuery {
+  orderBy: keyof NewDetectedTokenRecord;
+  order: 'asc' | 'desc';
+  filter?: ItemFilter<NewDetectedTokenRecord>;
+}
+
+function resolveTokenQuery(payload: NewDetectedTokensRequestPayload): ResolvedTokenQuery {
+  const { ascending = [], orderByAttributes = [], tokenKind } = payload;
+
+  // Convert from snake_case (from useServerTable) to camelCase for IndexedDB
+  const snakeCaseOrderBy = orderByAttributes.length > 0 ? orderByAttributes[0] : 'detected_at';
+  const orderBy = transformCase(snakeCaseOrderBy, true) as keyof NewDetectedTokenRecord;
+  const order = ascending.length > 0 && ascending[0] ? 'asc' : 'desc';
+  const filter = tokenKind ? (t: NewDetectedTokenRecord): boolean => t.tokenKind === tokenKind : undefined;
+
+  return { filter, order, orderBy };
+}
+
 export const useNewlyDetectedTokensDb = createSharedComposable((): UseNewlyDetectedTokensDbReturn => {
   const isPruning = ref<boolean>(false);
 
@@ -57,24 +75,9 @@ export const useNewlyDetectedTokensDb = createSharedComposable((): UseNewlyDetec
       return emptyResult;
 
     try {
-      const {
-        ascending = [],
-        limit,
-        offset,
-        orderByAttributes = [],
-        tokenKind,
-      } = get(payload);
-
-      // Convert from snake_case (from useServerTable) to camelCase for IndexedDB
-      const snakeCaseOrderBy = orderByAttributes.length > 0 ? orderByAttributes[0] : 'detected_at';
-      const orderBy = transformCase(snakeCaseOrderBy, true) as keyof NewDetectedTokenRecord;
-      const order = ascending.length > 0 && ascending[0] ? 'asc' : 'desc';
-
-      // Build filter function if needed
-      let filter: ItemFilter<NewDetectedTokenRecord> | undefined;
-      if (tokenKind) {
-        filter = (t): boolean => t.tokenKind === tokenKind;
-      }
+      const payloadValue = get(payload);
+      const { limit, offset } = payloadValue;
+      const { filter, order, orderBy } = resolveTokenQuery(payloadValue);
 
       // Get total count (unfiltered)
       const total = await db().newlyDetectedTokens.count();
