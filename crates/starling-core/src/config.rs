@@ -39,6 +39,8 @@ pub const DEFAULT_PORT_INTERVAL: Duration = Duration::from_secs(1);
 pub const DEFAULT_CORE_PORT: u16 = 4242;
 /// Default port colibri binds to.
 pub const DEFAULT_COLIBRI_PORT: u16 = 4343;
+/// Default loopback port for the managed MCP streamable HTTP server.
+pub const DEFAULT_MCP_PORT: u16 = 4445;
 
 /// How a service is determined to be "ready" so its dependents may start.
 #[derive(Clone, Debug)]
@@ -224,6 +226,12 @@ pub struct ServiceSpec {
     pub run_as: Option<RunAs>,
     /// How the child connects to the supervisor's standard streams (§S7).
     pub stdio: StdioMode,
+    /// Whether this service participates in the supervisor's normal tree
+    /// bring-up. Optional services remain idle until explicitly started.
+    pub autostart: bool,
+    /// Whether startService/stopService may manage this service independently.
+    /// Core tree services remain protected even on trusted control transports.
+    pub allow_manual_control: bool,
 }
 
 impl ServiceSpec {
@@ -243,6 +251,8 @@ impl ServiceSpec {
             restart: RestartPolicy::default(),
             run_as: None,
             stdio: StdioMode::default(),
+            autostart: true,
+            allow_manual_control: false,
         }
     }
 
@@ -284,6 +294,16 @@ impl ServiceSpec {
         self.stdio = stdio;
         self
     }
+
+    pub fn autostart(mut self, autostart: bool) -> Self {
+        self.autostart = autostart;
+        self
+    }
+
+    pub fn allow_manual_control(mut self) -> Self {
+        self.allow_manual_control = true;
+        self
+    }
 }
 
 /// Resolved paths/ports/options used to build the default rotki service graph.
@@ -305,6 +325,8 @@ pub struct ServiceLayout {
     pub logs_dir: PathBuf,
     pub core_port: u16,
     pub colibri_port: u16,
+    pub mcp_port: u16,
+    pub mcp_autostart: bool,
     pub api_host: String,
     pub api_cors: String,
     pub log_level: String,
@@ -397,7 +419,28 @@ pub fn colibri_args(layout: &ServiceLayout) -> Vec<String> {
     args
 }
 
-/// Build the canonical `[core, colibri]` service graph from a [`ServiceLayout`].
+/// The mode-independent argument vector for the managed MCP server.
+pub fn mcp_args(layout: &ServiceLayout) -> Vec<String> {
+    vec![
+        "mcp".to_string(),
+        "--backend-url".to_string(),
+        format!("http://127.0.0.1:{}/api/1", layout.core_port),
+        "--transport".to_string(),
+        "streamable-http".to_string(),
+        "--host".to_string(),
+        "127.0.0.1".to_string(),
+        "--port".to_string(),
+        layout.mcp_port.to_string(),
+        "--log-level".to_string(),
+        if layout.log_level.eq_ignore_ascii_case("trace") {
+            "DEBUG".to_string()
+        } else {
+            layout.log_level.to_uppercase()
+        },
+    ]
+}
+
+/// Build the canonical `[core, colibri, mcp]` service graph from a [`ServiceLayout`].
 ///
 /// `colibri` depends on `core@Ready` because colibri needs `global.db`, which the
 /// core backend initializes — the invariant the whole supervisor exists to hold.
@@ -439,7 +482,24 @@ pub fn build_services(layout: &ServiceLayout) -> Vec<ServiceSpec> {
             timeout: DEFAULT_PING_TIMEOUT,
         });
 
-    vec![core, colibri]
+    let mcp = ServiceSpec::new("mcp", layout.core_launcher.clone())
+        .args(mcp_args(layout))
+        .cwd(layout.core_cwd.clone())
+        .depends_on("core")
+        .readiness(Readiness::PortOpen {
+            host: "127.0.0.1".to_string(),
+            port: layout.mcp_port,
+            retries: DEFAULT_PORT_RETRIES,
+            interval: DEFAULT_PORT_INTERVAL,
+        })
+        .restart(RestartPolicy {
+            on_crash: OnCrash::ReportOnly,
+            ..Default::default()
+        })
+        .allow_manual_control()
+        .autostart(layout.mcp_autostart);
+
+    vec![core, colibri, mcp]
 }
 
 #[cfg(test)]
@@ -456,6 +516,8 @@ mod tests {
             logs_dir: PathBuf::from("/logs"),
             core_port: DEFAULT_CORE_PORT,
             colibri_port: DEFAULT_COLIBRI_PORT,
+            mcp_port: DEFAULT_MCP_PORT,
+            mcp_autostart: false,
             api_host: "127.0.0.1".to_string(),
             api_cors: "http://localhost:*/*".to_string(),
             log_level: "critical".to_string(),
@@ -523,6 +585,34 @@ mod tests {
             }
             other => panic!("expected HttpPing /health, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn mcp_is_optional_and_uses_streamable_http() {
+        let mut layout = sample_layout(
+            Launcher::binary("/usr/sbin/rotki"),
+            Launcher::binary("/usr/sbin/colibri"),
+        );
+        let specs = build_services(&layout);
+        let mcp = specs.iter().find(|service| service.name == "mcp").unwrap();
+
+        assert!(!mcp.autostart);
+        assert_eq!(mcp.deps, vec!["core"]);
+        assert_eq!(mcp.launcher.program, layout.core_launcher.program);
+        assert_eq!(mcp.args, mcp_args(&layout));
+        assert_eq!(
+            flag_value(&mcp.args, "--backend-url"),
+            Some("http://127.0.0.1:4242/api/1"),
+        );
+        assert_eq!(
+            flag_value(&mcp.args, "--transport"),
+            Some("streamable-http"),
+        );
+        assert_eq!(flag_value(&mcp.args, "--port"), Some("4445"));
+        assert_eq!(mcp.restart.on_crash, OnCrash::ReportOnly);
+
+        layout.log_level = "trace".to_string();
+        assert_eq!(flag_value(&mcp_args(&layout), "--log-level"), Some("DEBUG"));
     }
 
     #[test]

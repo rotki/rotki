@@ -7,5 +7,6 @@ export interface AppConfig {
   readonly ports: {
     colibriPort: number;
     corePort: number;
+    mcpPort: number;
   };
 }

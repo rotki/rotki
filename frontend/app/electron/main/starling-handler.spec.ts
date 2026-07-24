@@ -24,7 +24,11 @@ vi.mock('node:os', async (importOriginal) => {
 // `spawn` hands back whatever fake child the test installs; the rest of the
 // builtin stays real (other modules in the graph rely on it). `vi.hoisted` keeps
 // the mock fn defined before the hoisted vi.mock factory references it.
-const { spawnMock } = vi.hoisted(() => ({ spawnMock: vi.fn() }));
+const { buildStarlingInvocationMock, selectPortMock, spawnMock } = vi.hoisted(() => ({
+  buildStarlingInvocationMock: vi.fn(),
+  selectPortMock: vi.fn(),
+  spawnMock: vi.fn(),
+}));
 vi.mock('node:child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:child_process')>();
   return { ...actual, default: { ...actual, spawn: spawnMock }, spawn: spawnMock };
@@ -36,11 +40,11 @@ vi.mock('node:child_process', async (importOriginal) => {
 // stop timeouts from, and a stubbed-away value would make those NaN.
 vi.mock('@electron/main/starling-args', async importOriginal => ({
   ...await importOriginal<typeof import('@electron/main/starling-args')>(),
-  buildStarlingInvocation: (): { command: string; args: string[] } => ({ command: 'starling', args: [] }),
+  buildStarlingInvocation: buildStarlingInvocationMock,
 }));
 
 vi.mock('@electron/main/port-utils', () => ({
-  selectPort: vi.fn(async (port: number) => port),
+  selectPort: selectPortMock,
 }));
 
 interface FakeChild extends EventEmitter {
@@ -50,7 +54,10 @@ interface FakeChild extends EventEmitter {
   kill: ReturnType<typeof vi.fn>;
 }
 
-type RequestHandler = (message: { id?: number; method?: string }, stdout: PassThrough) => void;
+type RequestHandler = (
+  message: { id?: number; method?: string; params?: Record<string, unknown> },
+  stdout: PassThrough,
+) => void;
 
 /** A starling stand-in: stdin parses JSON-RPC, the responder answers on stdout. */
 function makeFakeChild(onRequest: RequestHandler): FakeChild {
@@ -95,7 +102,7 @@ function makeConfig(): AppConfig {
   return {
     isDev: false,
     isMac: false,
-    ports: { corePort: 4242, colibriPort: 4343 },
+    ports: { corePort: 4242, colibriPort: 4343, mcpPort: 4445 },
     urls: { coreApiUrl: '', colibriApiUrl: '' },
   } satisfies AppConfig;
 }
@@ -104,6 +111,10 @@ describe('starlingHandler', () => {
   beforeEach(() => {
     osState.platform = 'linux';
     osState.release = '5.0.0';
+    buildStarlingInvocationMock.mockReset();
+    buildStarlingInvocationMock.mockReturnValue({ command: 'starling', args: [] });
+    selectPortMock.mockReset();
+    selectPortMock.mockImplementation(async (port: number) => port);
     spawnMock.mockReset();
   });
 
@@ -129,6 +140,76 @@ describe('starlingHandler', () => {
     // Two-URL posture: the renderer dials the allocated loopback ports directly.
     expect(config.urls.coreApiUrl).toBe('http://127.0.0.1:4242');
     expect(config.urls.colibriApiUrl).toBe('http://127.0.0.1:4343');
+    expect(handler.getMcpServerEndpoint()).toBe('http://127.0.0.1:4445/mcp');
+    expect(selectPortMock).toHaveBeenCalledWith(4242, '127.0.0.1');
+    expect(selectPortMock).toHaveBeenCalledWith(4343, '127.0.0.1');
+    expect(selectPortMock).toHaveBeenCalledWith(4445, '127.0.0.1');
+    expect(buildStarlingInvocationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ mcpPort: 4445 }),
+    );
+  });
+
+  it('should publish and launch MCP on an available port', async () => {
+    selectPortMock.mockImplementation(async (port: number) => port === 4445 ? 4450 : port);
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => child);
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+
+    await handler.restartBackend({}, { onProcessError: vi.fn() });
+
+    expect(handler.getMcpServerEndpoint()).toBe('http://127.0.0.1:4450/mcp');
+    expect(buildStarlingInvocationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ mcpPort: 4450 }),
+    );
+  });
+
+  it('should forward the MCP auto-start option during initial bring-up', async () => {
+    let startParams: Record<string, unknown> | undefined;
+    const child = makeFakeChild((message, stdout) => {
+      if (message.method === 'start')
+        startParams = message.params;
+      writeMessage(stdout, { id: message.id, result: null });
+    });
+    spawnMock.mockImplementation(() => child);
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+
+    await handler.restartBackend({ mcpAutoStart: true }, { onProcessError: vi.fn() });
+
+    expect(startParams).toMatchObject({ mcpAutoStart: true });
+  });
+
+  it('should start and stop MCP independently through starling', async () => {
+    let mcpState = 'Idle';
+    const methods: string[] = [];
+    const child = makeFakeChild((message, stdout) => {
+      if (message.method)
+        methods.push(message.method);
+      if (message.method === 'startService')
+        mcpState = 'Ready';
+      else if (message.method === 'stopService')
+        mcpState = 'Stopped';
+
+      const result = message.method === 'status'
+        ? { services: [{ name: 'core', state: 'Ready' }, { name: 'mcp', state: mcpState }] }
+        : null;
+      writeMessage(stdout, { id: message.id, result });
+    });
+    spawnMock.mockImplementation(() => child);
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    await handler.restartBackend({}, { onProcessError: vi.fn() });
+
+    expect(await handler.setMcpServerRunning(true)).toBe('Ready');
+    expect(await handler.setMcpServerRunning(false)).toBe('Stopped');
+    expect(methods).toContain('startService');
+    expect(methods).toContain('stopService');
+  });
+
+  it('should report MCP as unavailable when starling is not running', async () => {
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+
+    expect(await handler.getMcpServerState()).toBe('Unavailable');
+    expect(await handler.setMcpServerRunning(true)).toBe('Unavailable');
+    expect(await handler.setMcpServerRunning(false)).toBe('Unavailable');
   });
 
   it('should map an unsupported macOS version to MACOS_VERSION', async () => {
@@ -168,6 +249,24 @@ describe('starlingHandler', () => {
     writeMessage(child.stdout, { method: 'event.crashed', params: { lastError: 'core died' } });
 
     await vi.waitFor(() => expect(onProcessError).toHaveBeenCalledWith('core died', BackendCode.TERMINATED));
+  });
+
+  it('should not treat an MCP crash as a backend crash', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => child);
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onMcpState = vi.fn();
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({}, { onMcpState, onProcessError });
+    writeMessage(child.stdout, {
+      method: 'event.crashed',
+      params: { lastError: 'mcp died', service: 'mcp' },
+    });
+    await new Promise<void>(resolve => queueMicrotask(() => resolve()));
+
+    expect(onMcpState).toHaveBeenCalledWith('Failed');
+    expect(onProcessError).not.toHaveBeenCalled();
   });
 
   it('should surface the data-dir-in-use exit code as a TERMINATED error', async () => {

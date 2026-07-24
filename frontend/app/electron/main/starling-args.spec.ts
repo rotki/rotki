@@ -33,6 +33,7 @@ const devInput = {
   isDev: true,
   corePort: 4242,
   colibriPort: 4343,
+  mcpPort: 4445,
   apiHost: '127.0.0.1',
   logsDir: '/tmp/logs',
   options: {},
@@ -125,6 +126,12 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     const { args } = await buildDevInvocation();
     const { SHUTDOWN_GRACE_SECS } = await import('./starling-args');
     expect(flagValue(args, '--shutdown-grace-secs')).toBe(SHUTDOWN_GRACE_SECS.toString());
+  });
+
+  it('should tell starling which MCP port Electron allocated', async () => {
+    existsSyncMock.mockReturnValue(true);
+    const { args } = await buildDevInvocation();
+    expect(flagValue(args, '--mcp-port')).toBe(devInput.mcpPort.toString());
   });
 
   describe('when the warm-up builds are missing', () => {

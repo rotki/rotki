@@ -18,13 +18,13 @@ pub mod process;
 pub mod readiness;
 
 pub use config::{
-    build_services, colibri_args, core_args, Launcher, OnCrash, Readiness, RestartPolicy, RunAs,
-    ServiceLayout, ServiceSpec, StdioMode,
+    build_services, colibri_args, core_args, mcp_args, Launcher, OnCrash, Readiness, RestartPolicy,
+    RunAs, ServiceLayout, ServiceSpec, StdioMode,
 };
 pub use control::{
     BackendOptions, ControlError, ControlEvent, ControlHandle, Controller, DataDirGuard,
-    HealthResult, Method, OkResult, Outcome, RestartReason, SpecBuilder, Startup, StatusResult,
-    Transport, PROTOCOL_VERSION,
+    HealthResult, Method, OkResult, Outcome, RestartReason, ServiceParams, SpecBuilder, Startup,
+    StatusResult, Transport, PROTOCOL_VERSION,
 };
 pub use datadir::{build_version, default_data_dir, is_production_build, resolve_data_dir};
 pub use error::{Result, SupervisorError};

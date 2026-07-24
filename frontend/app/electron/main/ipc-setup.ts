@@ -1,7 +1,7 @@
 import type { AppConfig } from '@electron/main/app-config';
 import type { LogService } from '@electron/main/log-service';
 import type { SettingsManager } from '@electron/main/settings-manager';
-import type { BackendOptions, Credentials, TrayUpdate } from '@shared/ipc';
+import type { BackendOptions, Credentials, McpServerStatus, TrayUpdate } from '@shared/ipc';
 import type { LogLevel } from '@shared/log-level';
 import { IpcCommands } from '@electron/ipc-commands';
 import {
@@ -28,6 +28,10 @@ interface Callbacks {
   getProtocolRegistrationFailed: () => boolean;
   openOAuthInWindow: (url: string) => Promise<void>;
   sendIpcMessage: (channel: string, ...args: any[]) => void;
+  getMcpServerStatus: () => Promise<McpServerStatus>;
+  setMcpAutoStart: (enabled: boolean) => Promise<McpServerStatus>;
+  startMcpServer: () => Promise<McpServerStatus>;
+  stopMcpServer: () => Promise<McpServerStatus>;
 }
 
 export class IpcManager {
@@ -165,6 +169,10 @@ export class IpcManager {
     this.handle(IpcCommands.INVOKE_STORE_PASSWORD, async (_, credentials: Credentials) => this.securityHandlers.storePassword(credentials));
     this.handle(IpcCommands.INVOKE_GET_PASSWORD, async (_, username: string) => this.securityHandlers.getPassword(username));
     this.handle(IpcCommands.INVOKE_CLEAR_PASSWORD, async () => this.securityHandlers.clearPassword());
+    this.handle(IpcCommands.INVOKE_MCP_STATUS, callbacks.getMcpServerStatus);
+    this.handle(IpcCommands.INVOKE_MCP_AUTOSTART, async (_event, enabled: boolean) => callbacks.setMcpAutoStart(enabled));
+    this.handle(IpcCommands.INVOKE_MCP_START, callbacks.startMcpServer);
+    this.handle(IpcCommands.INVOKE_MCP_STOP, callbacks.stopMcpServer);
 
     // Wallet import handlers
     this.handle(IpcCommands.INVOKE_WALLET_IMPORT, this.walletImportHandlers.importFromWallet);

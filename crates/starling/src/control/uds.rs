@@ -207,6 +207,8 @@ mod tests {
             logs_dir: PathBuf::from("/logs"),
             core_port: 4242,
             colibri_port: 4343,
+            mcp_port: 4445,
+            mcp_autostart: false,
             api_host: "127.0.0.1".to_string(),
             api_cors: "http://localhost:*/*".to_string(),
             log_level: "critical".to_string(),
@@ -221,7 +223,7 @@ mod tests {
     /// A ready controller + its handle. Reads (health/status) are served from the
     /// snapshot, so no run loop is needed for those.
     async fn ready_handle() -> ControlHandle {
-        let specs = vec![ServiceSpec::new("svc", "/bin/true")];
+        let specs = vec![ServiceSpec::new("svc", "/usr/bin/true")];
         let mut sup = Supervisor::new(OsSpawner, specs).unwrap();
         sup.start_all().await.unwrap();
         let controller = Controller::new(

@@ -8,7 +8,9 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use starling_core::{BackendOptions, ControlError, ControlEvent, ControlHandle, Method, Transport};
+use starling_core::{
+    BackendOptions, ControlError, ControlEvent, ControlHandle, Method, ServiceParams, Transport,
+};
 
 const JSONRPC_VERSION: &str = "2.0";
 
@@ -64,12 +66,16 @@ struct Notification {
 fn error_code(err: &ControlError) -> i64 {
     match err {
         ControlError::Unauthorized { .. } => ERR_UNAUTHORIZED,
-        ControlError::InvalidLogLevel(_) | ControlError::OptionsNotAllowed { .. } => INVALID_PARAMS,
+        ControlError::InvalidLogLevel(_)
+        | ControlError::InvalidService(_)
+        | ControlError::OptionsNotAllowed { .. } => INVALID_PARAMS,
         ControlError::RateLimited => ERR_RATE_LIMITED,
         // A precondition failure, not a malformed request: the caller asked for a
         // valid thing at a moment it does not apply.
         ControlError::AlreadyStarted => ERR_RESTART_FAILED,
-        ControlError::RestartFailed(_) => ERR_RESTART_FAILED,
+        ControlError::RestartFailed(_) | ControlError::ServiceOperationFailed(_) => {
+            ERR_RESTART_FAILED
+        }
         ControlError::ControllerStopped => INTERNAL_ERROR,
     }
 }
@@ -166,12 +172,45 @@ pub async fn handle_line(handle: &ControlHandle, transport: Transport, line: &st
             }
         },
         Method::Stop => handle.stop(transport).await.map(to_value),
+        Method::StartService => match parse_service(request.params) {
+            Ok(params) => handle
+                .start_service(transport, params.service)
+                .await
+                .map(to_value),
+            Err(message) => {
+                return render(err(
+                    id,
+                    INVALID_PARAMS,
+                    format!("invalid params: {message}"),
+                ))
+            }
+        },
+        Method::StopService => match parse_service(request.params) {
+            Ok(params) => handle
+                .stop_service(transport, params.service)
+                .await
+                .map(to_value),
+            Err(message) => {
+                return render(err(
+                    id,
+                    INVALID_PARAMS,
+                    format!("invalid params: {message}"),
+                ))
+            }
+        },
     };
 
     render(match result {
         Ok(value) => ok(id, value),
         Err(error) => err(id, error_code(&error), error.to_string()),
     })
+}
+
+fn parse_service(params: Option<Value>) -> Result<ServiceParams, String> {
+    match params {
+        Some(value) => serde_json::from_value(value).map_err(|error| error.to_string()),
+        None => Err("missing service params".to_string()),
+    }
 }
 
 /// A standalone parse-error response line (null id) — for input the transport
@@ -223,6 +262,8 @@ mod tests {
             logs_dir: PathBuf::from("/logs"),
             core_port: 4242,
             colibri_port: 4343,
+            mcp_port: 4445,
+            mcp_autostart: false,
             api_host: "127.0.0.1".to_string(),
             api_cors: "http://localhost:*/*".to_string(),
             log_level: "critical".to_string(),
@@ -345,6 +386,30 @@ mod tests {
         let line = json!({"jsonrpc":"2.0","id":1,"method":"start"}).to_string();
         let out = parse(&handle_line(&handle, Transport::PublicHealth, &line).await);
         assert_eq!(out["error"]["code"], ERR_UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn service_control_requires_a_named_service() {
+        let handle = handle_with_loop().await;
+        let line = json!({"jsonrpc":"2.0","id":1,"method":"startService"}).to_string();
+        let out = parse(&handle_line(&handle, Transport::Stdio, &line).await);
+        assert_eq!(out["error"]["code"], INVALID_PARAMS);
+    }
+
+    #[tokio::test]
+    async fn unknown_service_returns_invalid_params() {
+        let handle = handle_with_loop().await;
+        let line = json!({
+            "jsonrpc":"2.0","id":1,"method":"startService",
+            "params":{"service":"mcp"}
+        })
+        .to_string();
+        let out = parse(&handle_line(&handle, Transport::Stdio, &line).await);
+        assert_eq!(out["error"]["code"], INVALID_PARAMS);
+        assert!(out["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("not found"));
     }
 
     #[test]

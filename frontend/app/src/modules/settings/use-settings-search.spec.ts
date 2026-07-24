@@ -21,6 +21,7 @@ const settingsRoutes = [
   { name: '/settings/oracle/', meta: { nav: { icon: 'lu-activity', labelKey: 'Oracles' } } },
   { name: '/settings/rpc/', meta: { nav: { icon: 'lu-server', labelKey: 'RPC Nodes' } } },
   { name: '/settings/modules/', meta: { nav: { icon: 'lu-boxes', labelKey: 'Modules' } } },
+  { name: '/settings/mcp/', meta: { nav: { icon: 'lu-bot', labelKey: 'MCP' } } },
   { name: '/settings/interface/', meta: { nav: { icon: 'lu-monitor', labelKey: 'Interface' } } },
 ];
 
@@ -168,6 +169,10 @@ describe('useSettingsSearch', () => {
       const rpc = allEntries.find(entry => entry.highlightId === SettingsHighlightIds.RPC_NODES);
       expect(rpc?.categoryId).toBeUndefined();
       expect(rpc?.texts).toEqual(['RPC Nodes', 'general_settings.rpc_node_setting.title']);
+
+      const mcp = allEntries.find(entry => entry.highlightId === SettingsHighlightIds.MCP_SERVER);
+      expect(mcp?.categoryId).toBeUndefined();
+      expect(mcp?.texts).toEqual(['MCP', 'backend_settings.settings.mcp_server.label']);
     });
 
     it('should find settings by their derived enum-value keywords', () => {

@@ -6,6 +6,7 @@ import { api } from '@/modules/core/api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
+import { setMcpServerState } from '@/modules/settings/backend/use-mcp-server-state';
 import { useAppQuitting } from '@/modules/shell/app/use-app-quitting';
 import { useBackendConnection } from '@/modules/shell/app/use-backend-connection';
 import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
@@ -102,6 +103,7 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
       onError: (message: string, code: BackendCode) => {
         handleStartupError(message, code);
       },
+      onMcpState: setMcpServerState,
       onOAuthCallback: (oAuthResult: OAuthResult) => {
         const handlers = get(oauthCallbackHandlers);
         handlers.forEach((handler) => {

@@ -5,10 +5,18 @@ import os
 from typing import TYPE_CHECKING
 
 from rotkehlchen.mcp.backend import DEFAULT_BACKEND_URL
-from rotkehlchen.mcp.server import run_server
+from rotkehlchen.mcp.server import run_server, validate_loopback_host
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+
+def loopback_host(value: str) -> str:
+    """Argparse converter that rejects exposing the unauthenticated MCP server."""
+    try:
+        return validate_loopback_host(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from error
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -50,6 +58,24 @@ def main(argv: Sequence[str] | None = None) -> None:
             'to bound load time on a very large history.'
         ),
     )
+    parser.add_argument(
+        '--transport',
+        default='stdio',
+        choices=('stdio', 'streamable-http'),
+        help='MCP transport. Defaults to %(default)s',
+    )
+    parser.add_argument(
+        '--host',
+        default='127.0.0.1',
+        type=loopback_host,
+        help='Host for the streamable HTTP transport. Defaults to %(default)s',
+    )
+    parser.add_argument(
+        '--port',
+        default=4445,
+        type=int,
+        help='Port for the streamable HTTP transport. Defaults to %(default)s',
+    )
     args = parser.parse_args(argv)
     run_server(
         backend_url=args.backend_url,
@@ -57,6 +83,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         log_level=args.log_level,
         privacy_mode=args.privacy_mode,
         max_events=args.max_events,
+        transport=args.transport,
+        host=args.host,
+        port=args.port,
     )
 
 

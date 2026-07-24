@@ -49,6 +49,7 @@ pub struct ServiceStatus {
     pub pid: Option<u32>,
     pub restarts: u32,
     pub last_error: Option<String>,
+    pub autostart: bool,
 }
 
 struct Runtime {
@@ -147,6 +148,7 @@ impl<S: Spawner> Supervisor<S> {
                     pid: rt.process.as_ref().and_then(|p| p.pid()),
                     restarts: rt.restarts,
                     last_error: rt.last_error.clone(),
+                    autostart: rt.spec.autostart,
                 }
             })
             .collect()
@@ -157,9 +159,38 @@ impl<S: Spawner> Supervisor<S> {
     pub async fn start_all(&mut self) -> Result<()> {
         let order = self.order.clone();
         for name in order {
-            self.start_one(&name).await?;
+            if self.services[&name].spec.autostart {
+                self.start_one(&name).await?;
+            }
         }
         Ok(())
+    }
+
+    /// Start one optional service after verifying that all its dependencies are
+    /// already ready. Dependencies are never started implicitly.
+    pub async fn start_service(&mut self, name: &str) -> Result<()> {
+        let rt = self
+            .services
+            .get(name)
+            .ok_or_else(|| SupervisorError::NotFound(name.to_string()))?;
+        if !rt.spec.allow_manual_control {
+            return Err(SupervisorError::ManualControlNotAllowed(name.to_string()));
+        }
+        if !matches!(
+            rt.state,
+            ServiceState::Idle | ServiceState::Stopped | ServiceState::Failed
+        ) {
+            return Err(SupervisorError::AlreadyRunning(name.to_string()));
+        }
+        for dependency in &rt.spec.deps {
+            if self.services[dependency].state != ServiceState::Ready {
+                return Err(SupervisorError::DependencyNotReady {
+                    service: name.to_string(),
+                    dependency: dependency.clone(),
+                });
+            }
+        }
+        self.start_one(name).await
     }
 
     async fn start_one(&mut self, name: &str) -> Result<()> {
@@ -322,27 +353,70 @@ impl<S: Spawner> Supervisor<S> {
         let deadline = Instant::now() + grace;
         let order: Vec<String> = self.order.iter().rev().cloned().collect();
         for name in order {
-            let Some(rt) = self.services.get_mut(&name) else {
-                continue;
-            };
-            let Some(process) = rt.process.take() else {
-                rt.state = ServiceState::Stopped;
-                continue;
-            };
-            rt.state = ServiceState::Stopping;
-
-            let _ = process.terminate().await;
-            // Zero once the budget is spent, so `timeout` fires at once and the
-            // straggler is killed instead of extending the teardown further.
-            let remaining = deadline.saturating_duration_since(Instant::now());
-            if timeout(remaining, drained(process.as_ref())).await.is_err() {
-                let _ = process.kill().await;
-                let _ = process.wait().await;
-            }
-
-            let rt = self.services.get_mut(&name).expect("service exists");
-            rt.state = ServiceState::Stopped;
+            let _ = self.stop_one(&name, deadline).await;
         }
+    }
+
+    /// Stop one service without affecting independent siblings. Refuses to stop
+    /// a dependency while one of its active dependents still needs it.
+    pub async fn stop_service(&mut self, name: &str, grace: Duration) -> Result<()> {
+        let service = self
+            .services
+            .get(name)
+            .ok_or_else(|| SupervisorError::NotFound(name.to_string()))?;
+        if !service.spec.allow_manual_control {
+            return Err(SupervisorError::ManualControlNotAllowed(name.to_string()));
+        }
+        if let Some(dependent) = self.order.iter().find(|candidate| {
+            let rt = &self.services[*candidate];
+            rt.spec.deps.iter().any(|dependency| dependency == name)
+                && matches!(
+                    rt.state,
+                    ServiceState::Spawning
+                        | ServiceState::WaitingReady
+                        | ServiceState::Ready
+                        | ServiceState::Degraded
+                        | ServiceState::Restarting
+                )
+        }) {
+            return Err(SupervisorError::RequiredByRunningService {
+                service: name.to_string(),
+                dependent: dependent.clone(),
+            });
+        }
+        self.stop_one(name, Instant::now() + grace).await
+    }
+
+    async fn stop_one(&mut self, name: &str, deadline: Instant) -> Result<()> {
+        let rt = self
+            .services
+            .get_mut(name)
+            .ok_or_else(|| SupervisorError::NotFound(name.to_string()))?;
+        let Some(process) = rt.process.take() else {
+            rt.state = ServiceState::Stopped;
+            return Ok(());
+        };
+        rt.state = ServiceState::Stopping;
+
+        let _ = process.terminate().await;
+        // Zero once the budget is spent, so `timeout` fires at once and the
+        // straggler is killed instead of extending the teardown further.
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if timeout(remaining, drained(process.as_ref())).await.is_err() {
+            let _ = process.kill().await;
+            let _ = process.wait().await;
+        }
+
+        self.services.get_mut(name).expect("service exists").state = ServiceState::Stopped;
+        Ok(())
+    }
+
+    /// Crash policy for a managed service.
+    pub fn on_crash(&self, name: &str) -> Result<crate::config::OnCrash> {
+        self.services
+            .get(name)
+            .map(|rt| rt.spec.restart.on_crash)
+            .ok_or_else(|| SupervisorError::NotFound(name.to_string()))
     }
 }
 
@@ -635,6 +709,86 @@ mod tests {
                 status.name
             );
         }
+    }
+
+    #[tokio::test]
+    async fn optional_service_starts_and_stops_independently() {
+        let log: EventLog = Arc::new(Mutex::new(Vec::new()));
+        let specs = vec![
+            spec("core", &[]),
+            spec("colibri", &["core"]),
+            spec("mcp", &["core"])
+                .allow_manual_control()
+                .autostart(false),
+        ];
+        let mut sup = Supervisor::new(MockSpawner::new(log.clone()), specs).unwrap();
+
+        sup.start_all().await.unwrap();
+        assert_eq!(*log.lock().unwrap(), vec!["spawn:core", "spawn:colibri"]);
+        assert_eq!(
+            sup.status()
+                .into_iter()
+                .find(|status| status.name == "mcp")
+                .unwrap()
+                .state,
+            ServiceState::Idle,
+        );
+
+        sup.start_service("mcp").await.unwrap();
+        assert_eq!(
+            log.lock().unwrap().last().map(String::as_str),
+            Some("spawn:mcp"),
+        );
+        sup.stop_service("mcp", Duration::from_millis(50))
+            .await
+            .unwrap();
+        assert_eq!(
+            log.lock().unwrap().last().map(String::as_str),
+            Some("terminate:mcp"),
+        );
+        assert_eq!(
+            sup.status()
+                .into_iter()
+                .find(|status| status.name == "core")
+                .unwrap()
+                .state,
+            ServiceState::Ready,
+        );
+    }
+
+    #[tokio::test]
+    async fn optional_service_requires_ready_dependency() {
+        let specs = vec![
+            spec("core", &[]),
+            spec("mcp", &["core"])
+                .allow_manual_control()
+                .autostart(false),
+        ];
+        let mut sup =
+            Supervisor::new(MockSpawner::new(Arc::new(Mutex::new(Vec::new()))), specs).unwrap();
+
+        assert!(matches!(
+            sup.start_service("mcp").await,
+            Err(SupervisorError::DependencyNotReady { .. }),
+        ));
+    }
+
+    #[tokio::test]
+    async fn core_service_cannot_be_controlled_independently() {
+        let mut sup = Supervisor::new(
+            MockSpawner::new(Arc::new(Mutex::new(Vec::new()))),
+            vec![spec("core", &[])],
+        )
+        .unwrap();
+
+        assert!(matches!(
+            sup.start_service("core").await,
+            Err(SupervisorError::ManualControlNotAllowed(service)) if service == "core",
+        ));
+        assert!(matches!(
+            sup.stop_service("core", Duration::from_millis(50)).await,
+            Err(SupervisorError::ManualControlNotAllowed(service)) if service == "core",
+        ));
     }
 
     #[tokio::test]

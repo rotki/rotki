@@ -30,6 +30,22 @@ pub enum SupervisorError {
     /// A lookup referenced a service that does not exist.
     #[error("service '{0}' not found")]
     NotFound(String),
+
+    /// A start was requested for a service that is already active.
+    #[error("service '{0}' is already running")]
+    AlreadyRunning(String),
+
+    /// Independent lifecycle operations are not allowed for a core tree service.
+    #[error("service '{0}' cannot be controlled independently")]
+    ManualControlNotAllowed(String),
+
+    /// A service cannot start until one of its declared dependencies is ready.
+    #[error("service '{service}' requires dependency '{dependency}' to be ready")]
+    DependencyNotReady { service: String, dependency: String },
+
+    /// A service cannot stop while an active dependent still needs it.
+    #[error("service '{service}' is required by running service '{dependent}'")]
+    RequiredByRunningService { service: String, dependent: String },
 }
 
 pub type Result<T> = std::result::Result<T, SupervisorError>;

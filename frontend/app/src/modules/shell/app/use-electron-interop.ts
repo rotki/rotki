@@ -1,4 +1,4 @@
-import type { BackendOptions, Listeners, StartupError, SystemVersion, TrayUpdate } from '@shared/ipc';
+import type { BackendOptions, Listeners, McpServerStatus, StartupError, SystemVersion, TrayUpdate } from '@shared/ipc';
 import type { LogLevel } from '@shared/log-level';
 import type { WebVersion } from '@/types';
 import { assert, type Theme } from '@rotki/common';
@@ -28,6 +28,7 @@ interface UseInteropReturn {
   storePassword: (username: string, password: string) => Promise<boolean | undefined>;
   getPassword: (username: string) => Promise<string | undefined>;
   clearPassword: () => Promise<void>;
+  getMcpServerStatus: () => Promise<McpServerStatus>;
   checkForUpdates: () => Promise<any>;
   downloadUpdate: (progress: (percentage: number) => void) => Promise<boolean>;
   installUpdate: () => Promise<boolean | Error>;
@@ -41,6 +42,9 @@ interface UseInteropReturn {
    */
   getPath: (file: File) => string | undefined;
   setSelectedTheme: (selectedTheme: Theme) => Promise<void>;
+  setMcpAutoStart: (enabled: boolean) => Promise<McpServerStatus>;
+  startMcpServer: () => Promise<McpServerStatus>;
+  stopMcpServer: () => Promise<McpServerStatus>;
   /**
    * Synchronously get any startup error that occurred before the renderer was ready.
    * This should be called before setupListeners to catch errors that occurred during app startup.
@@ -84,6 +88,11 @@ const interop: UseInteropReturn = {
     }
     assert(window.interop);
     return window.interop.getPassword(username);
+  },
+
+  getMcpServerStatus: async (): Promise<McpServerStatus> => {
+    assert(window.interop);
+    return window.interop.getMcpServerStatus();
   },
 
   /**
@@ -176,6 +185,11 @@ const interop: UseInteropReturn = {
     await window.interop?.setSelectedTheme(selectedTheme);
   },
 
+  setMcpAutoStart: async (enabled: boolean): Promise<McpServerStatus> => {
+    assert(window.interop);
+    return window.interop.setMcpAutoStart(enabled);
+  },
+
   setupListeners: (listeners: Listeners): void => {
     window.interop?.setListeners(listeners);
   },
@@ -183,6 +197,16 @@ const interop: UseInteropReturn = {
   storePassword: async (username: string, password: string): Promise<boolean | undefined> => {
     assert(window.interop);
     return window.interop.storePassword({ password, username });
+  },
+
+  startMcpServer: async (): Promise<McpServerStatus> => {
+    assert(window.interop);
+    return window.interop.startMcpServer();
+  },
+
+  stopMcpServer: async (): Promise<McpServerStatus> => {
+    assert(window.interop);
+    return window.interop.stopMcpServer();
   },
 
   updateTray: (update: TrayUpdate): void => {

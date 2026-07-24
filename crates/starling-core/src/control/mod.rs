@@ -16,6 +16,6 @@ pub use controller::{
 };
 pub use protocol::{
     authorize, is_authorized, sanitize_restart_options, BackendOptions, ControlError, ControlEvent,
-    HealthResult, Method, OkResult, RestartReason, StatusResult, Transport, PROTOCOL_VERSION,
-    VALID_LOG_LEVELS,
+    HealthResult, Method, OkResult, RestartReason, ServiceParams, StatusResult, Transport,
+    PROTOCOL_VERSION, VALID_LOG_LEVELS,
 };

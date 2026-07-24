@@ -1,5 +1,6 @@
 import type { AppConfig } from '@electron/main/app-config';
 import type { LogService } from '@electron/main/log-service';
+import type { JsonRpcResponse, StarlingErrorListener } from '@electron/main/starling-handler-types';
 import { type ChildProcess, spawn } from 'node:child_process';
 import * as os from 'node:os';
 import path from 'node:path';
@@ -9,7 +10,8 @@ import { selectPort } from '@electron/main/port-utils';
 import { resolveLogLevel } from '@electron/main/resolve-log-level';
 import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingInvocation } from '@electron/main/starling-args';
 import { forwardStarlingLine } from '@electron/main/starling-log';
-import { BackendCode, type BackendOptions } from '@shared/ipc';
+import { eventLastError, getMcpServerState, isMcpCrash, setMcpServerRunning } from '@electron/main/starling-mcp';
+import { BackendCode, type BackendOptions, type McpServiceState } from '@shared/ipc';
 import { wait } from '@shared/utils';
 
 /** starling exits with this code when the data dir is already locked (main.rs). */
@@ -26,26 +28,12 @@ const STOP_REQUEST_TIMEOUT = SHUTDOWN_GRACE_SECS * 1000;
 /** Time starling gets to exit itself once the grace elapsed, before SIGKILL. */
 const EXIT_MARGIN = 5_000;
 
-interface StarlingErrorListener {
-  onProcessError: (message: string | Error, code: BackendCode) => void;
-}
-
-interface JsonRpcResponse {
-  jsonrpc: '2.0';
-  id?: number;
-  result?: unknown;
-  error?: { code: number; message: string };
-  method?: string;
-  params?: unknown;
-}
-
 /**
  * Owns the single `starling` supervisor child and the control RPC over its
  * stdio. Replaces the old SubprocessHandler + two ProcessManagers: starling now
  * spawns/supervises/tree-kills core + colibri, and this class drives it.
  *
- * The renderer keeps talking directly to core and colibri on two loopback URLs
- * (`config.urls.coreApiUrl` / `colibriApiUrl`), which this handler fills in from
+ * The renderer talks directly to the loopback URLs this handler fills in from
  * the ports it allocates before spawning. No reverse proxy is involved.
  */
 export class StarlingHandler {
@@ -146,12 +134,14 @@ export class StarlingHandler {
 
     const corePort = await this.resolvePort('core');
     const colibriPort = await this.resolvePort('colibri');
+    const mcpPort = await this.resolvePort('mcp');
     const logsDir = this.logsDirectory();
 
     const invocation = buildStarlingInvocation({
       isDev: this.config.isDev,
       corePort,
       colibriPort,
+      mcpPort,
       apiHost: API_HOST,
       logsDir,
       options,
@@ -290,9 +280,11 @@ export class StarlingHandler {
         this.logger.info('Backend event: event.ready');
         break;
       case 'event.crashed': {
-        const lastError = this.eventLastError(params);
+        const lastError = eventLastError(params);
         this.logger.error(`Backend service crashed: ${lastError}`);
-        if (!this.exiting)
+        if (isMcpCrash(params))
+          listener.onMcpState?.('Failed');
+        else if (!this.exiting)
           listener.onProcessError(lastError, BackendCode.TERMINATED);
         break;
       }
@@ -305,13 +297,20 @@ export class StarlingHandler {
     }
   }
 
-  private eventLastError(params: unknown): string {
-    if (params && typeof params === 'object' && 'lastError' in params) {
-      const value = (params).lastError;
-      if (typeof value === 'string' && value.length > 0)
-        return value;
-    }
-    return 'The rotki backend stopped unexpectedly. Please check the logs for more details.';
+  async getMcpServerState(): Promise<McpServiceState> {
+    return this.child
+      ? getMcpServerState(async (method, params) => this.request(method, params))
+      : 'Unavailable';
+  }
+
+  getMcpServerEndpoint(): string {
+    return `http://${API_HOST}:${this.config.ports.mcpPort}/mcp`;
+  }
+
+  async setMcpServerRunning(running: boolean): Promise<McpServiceState> {
+    return this.child
+      ? setMcpServerRunning(async (method, params) => this.request(method, params), running)
+      : 'Unavailable';
   }
 
   /** Send a JSON-RPC request over the child's stdin and await its response. */
@@ -384,16 +383,18 @@ export class StarlingHandler {
    * Allocate a free loopback port for a service from its configured default and
    * publish the resulting origin the renderer dials directly.
    */
-  private async resolvePort(name: 'core' | 'colibri'): Promise<number> {
+  private async resolvePort(name: 'core' | 'colibri' | 'mcp'): Promise<number> {
     const defaultPort = this.config.ports[`${name}Port`];
-    const port = await selectPort(defaultPort);
+    const port = await selectPort(defaultPort, API_HOST);
     if (port !== defaultPort)
       this.logger.warn(`Using non-default port ${port} for ${name}`);
     const url = `http://${API_HOST}:${port}`;
     if (name === 'core')
       this.config.urls.coreApiUrl = url;
-    else
+    else if (name === 'colibri')
       this.config.urls.colibriApiUrl = url;
+    else
+      this.config.ports.mcpPort = port;
     return port;
   }
 }

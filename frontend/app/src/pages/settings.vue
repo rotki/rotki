@@ -22,6 +22,7 @@ const tabs = useNavTabs([
   '/settings/oracle/',
   '/settings/rpc/',
   '/settings/modules/',
+  '/settings/mcp/',
   '/settings/interface/',
 ]);
 </script>

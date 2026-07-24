@@ -23,7 +23,7 @@ use std::io;
 use std::path::Path;
 
 use nix::fcntl::AtFlags;
-use nix::unistd::{fchownat, geteuid, setgid, setgroups, setuid, Gid, Uid};
+use nix::unistd::{fchownat, geteuid, setgid, setuid, Gid, Uid};
 use starling_core::RunAs;
 use tracing::info;
 
@@ -153,7 +153,13 @@ pub fn drop_to(run_as: RunAs) -> io::Result<()> {
     let gid = Gid::from_raw(run_as.gid);
     let uid = Uid::from_raw(run_as.uid);
 
-    setgroups(&[]).map_err(errno_to_io)?;
+    // `nix::unistd::setgroups` is configured out on Apple targets, so use the
+    // equivalent libc call directly to keep the embedded binary cross-platform.
+    // SAFETY: a zero-length group list clears supplementary groups and does not
+    // dereference the null pointer.
+    if unsafe { nix::libc::setgroups(0, std::ptr::null()) } != 0 {
+        return Err(io::Error::last_os_error());
+    }
     setgid(gid).map_err(errno_to_io)?;
     setuid(uid).map_err(errno_to_io)?;
 

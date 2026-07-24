@@ -368,6 +368,7 @@ declare module 'vue-router/auto-routes' {
       | '/settings/evm/'
       | '/settings/general/'
       | '/settings/interface/'
+      | '/settings/mcp/'
       | '/settings/modules/'
       | '/settings/oracle/'
       | '/settings/rpc/'
@@ -410,6 +411,13 @@ declare module 'vue-router/auto-routes' {
     '/settings/interface/': RouteRecordInfo<
       '/settings/interface/',
       '/settings/interface',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/settings/mcp/': RouteRecordInfo<
+      '/settings/mcp/',
+      '/settings/mcp',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -907,6 +915,7 @@ declare module 'vue-router/auto-routes' {
         | '/settings/evm/'
         | '/settings/general/'
         | '/settings/interface/'
+        | '/settings/mcp/'
         | '/settings/modules/'
         | '/settings/oracle/'
         | '/settings/rpc/'
@@ -958,6 +967,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/settings/interface/index.vue': {
       routes:
         | '/settings/interface/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/settings/mcp/index.vue': {
+      routes:
+        | '/settings/mcp/'
       views:
         | never
       pathParamNames:

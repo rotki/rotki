@@ -66,6 +66,10 @@ pub enum Method {
     Restart,
     /// Graceful teardown then supervisor exit. Mutating.
     Stop,
+    /// Start one optional managed service without restarting the backend tree.
+    StartService,
+    /// Stop one optional managed service without stopping the supervisor.
+    StopService,
 }
 
 impl Method {
@@ -77,6 +81,8 @@ impl Method {
             Method::Start => "start",
             Method::Restart => "restart",
             Method::Stop => "stop",
+            Method::StartService => "startService",
+            Method::StopService => "stopService",
         }
     }
 
@@ -89,6 +95,8 @@ impl Method {
             "start" => Some(Method::Start),
             "restart" => Some(Method::Restart),
             "stop" => Some(Method::Stop),
+            "startService" => Some(Method::StartService),
+            "stopService" => Some(Method::StopService),
             _ => None,
         }
     }
@@ -96,7 +104,14 @@ impl Method {
     /// Whether this method changes state. Mutating methods are the ones the
     /// controller serializes, rate-limits, and audit-logs.
     pub fn is_mutating(self) -> bool {
-        matches!(self, Method::Start | Method::Restart | Method::Stop)
+        matches!(
+            self,
+            Method::Start
+                | Method::Restart
+                | Method::Stop
+                | Method::StartService
+                | Method::StopService
+        )
     }
 }
 
@@ -109,19 +124,27 @@ impl Method {
 /// this in the transport layer; this gate is the orthogonal "is this method
 /// even reachable on this surface" check.
 pub fn is_authorized(transport: Transport, method: Method) -> bool {
-    use Method::{Health, Restart, Start, Status, Stop};
+    use Method::{Health, Restart, Start, StartService, Status, Stop, StopService};
     use Transport::{HttpControl, PublicHealth, Stdio, Uds};
     match (transport, method) {
         // Trusted private pipe: the whole surface.
-        (Stdio, Health | Status | Start | Restart | Stop) => true,
+        (Stdio, Health | Status | Start | Restart | Stop | StartService | StopService) => true,
         // Docker admin socket (uid-0 gated): the whole surface.
-        (Uds, Health | Status | Start | Restart | Stop) => true,
+        (Uds, Health | Status | Start | Restart | Stop | StartService | StopService) => true,
         // Opt-in authenticated HTTP control bind: reads + mutations.
-        (HttpControl, Health | Status | Start | Restart | Stop) => true,
+        (HttpControl, Health | Status | Start | Restart | Stop | StartService | StopService) => {
+            true
+        }
         // Public unauthenticated surface: boolean health ONLY (§S3).
         (PublicHealth, Health) => true,
-        (PublicHealth, Status | Start | Restart | Stop) => false,
+        (PublicHealth, Status | Start | Restart | Stop | StartService | StopService) => false,
     }
+}
+
+/// Parameters for an operation targeting one named managed service.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ServiceParams {
+    pub service: String,
 }
 
 /// Options accepted by `restart`, matching the desktop `BackendOptions` wire
@@ -148,6 +171,8 @@ pub struct BackendOptions {
     /// Seconds core sleeps before starting (`--sleep-secs`); a desktop debug knob.
     /// Wire name `sleepSeconds` (camelCase of this field).
     pub sleep_seconds: Option<u32>,
+    /// Whether the optional MCP service starts with the backend tree.
+    pub mcp_auto_start: Option<bool>,
 }
 
 impl BackendOptions {
@@ -163,6 +188,7 @@ impl BackendOptions {
             || self.max_size_in_mb_all_logs.is_some()
             || self.sqlite_instructions.is_some()
             || self.sleep_seconds.is_some()
+            || self.mcp_auto_start.is_some()
     }
 }
 
@@ -276,6 +302,12 @@ pub enum ControlError {
     /// A `restart` tore down the backend but failed to bring it back up.
     #[error("restart failed: {0}")]
     RestartFailed(String),
+    /// Starting or stopping one optional service failed.
+    #[error("service operation failed: {0}")]
+    ServiceOperationFailed(String),
+    /// The requested service does not exist or does not allow independent control.
+    #[error("invalid service: {0}")]
+    InvalidService(String),
     /// The controller is no longer running (its task has exited), so the request
     /// could not be delivered or answered.
     #[error("control plane is not available")]
@@ -359,8 +391,11 @@ mod tests {
         for method in [
             Method::Health,
             Method::Status,
+            Method::Start,
             Method::Restart,
             Method::Stop,
+            Method::StartService,
+            Method::StopService,
         ] {
             assert_eq!(Method::from_wire(method.wire()), Some(method));
         }
@@ -368,9 +403,12 @@ mod tests {
     }
 
     #[test]
-    fn mutating_methods_are_restart_and_stop() {
+    fn mutating_methods_are_explicit() {
+        assert!(Method::Start.is_mutating());
         assert!(Method::Restart.is_mutating());
         assert!(Method::Stop.is_mutating());
+        assert!(Method::StartService.is_mutating());
+        assert!(Method::StopService.is_mutating());
         assert!(!Method::Status.is_mutating());
         assert!(!Method::Health.is_mutating());
     }
@@ -379,7 +417,14 @@ mod tests {
     fn authorize_matrix_is_fail_closed_for_public_health() {
         // Public surface: boolean health only.
         assert!(is_authorized(Transport::PublicHealth, Method::Health));
-        for method in [Method::Status, Method::Restart, Method::Stop] {
+        for method in [
+            Method::Status,
+            Method::Start,
+            Method::Restart,
+            Method::Stop,
+            Method::StartService,
+            Method::StopService,
+        ] {
             assert!(
                 !is_authorized(Transport::PublicHealth, method),
                 "public surface must deny {}",
@@ -394,8 +439,11 @@ mod tests {
             for method in [
                 Method::Health,
                 Method::Status,
+                Method::Start,
                 Method::Restart,
                 Method::Stop,
+                Method::StartService,
+                Method::StopService,
             ] {
                 assert!(
                     is_authorized(transport, method),
@@ -427,6 +475,7 @@ mod tests {
             max_size_in_mb_all_logs: Some(300),
             sqlite_instructions: Some(10000),
             sleep_seconds: Some(2),
+            mcp_auto_start: Some(true),
         };
         let json = serde_json::to_value(&opts).unwrap();
         assert_eq!(json["loglevel"], "debug");
@@ -437,8 +486,9 @@ mod tests {
         assert_eq!(json["maxSizeInMbAllLogs"], 300);
         assert_eq!(json["sqliteInstructions"], 10000);
         assert_eq!(json["sleepSeconds"], 2);
+        assert_eq!(json["mcpAutoStart"], true);
 
-        // The desktop wire shape parses straight back into all eight fields.
+        // The desktop wire shape parses straight back into every field.
         let parsed: BackendOptions = serde_json::from_value(json).unwrap();
         assert_eq!(parsed, opts);
     }
@@ -543,6 +593,10 @@ mod tests {
                 sleep_seconds: Some(2),
                 ..Default::default()
             },
+            BackendOptions {
+                mcp_auto_start: Some(true),
+                ..Default::default()
+            },
         ];
         for opts in one_option_each {
             let err = sanitize_restart_options(Transport::Uds, opts).unwrap_err();
@@ -612,6 +666,11 @@ mod tests {
         .any_set());
         assert!(BackendOptions {
             sleep_seconds: Some(0),
+            ..Default::default()
+        }
+        .any_set());
+        assert!(BackendOptions {
+            mcp_auto_start: Some(false),
             ..Default::default()
         }
         .any_set());
