@@ -133,7 +133,7 @@ onBeforeMount(async () => {
         :size="buttonSize"
         class="rounded-r-none"
         :class="{ 'h-[30px]': isPinned }"
-        :disabled="modelSelectedUnmatched.length === 0 || ignoreLoading"
+        :disabled="!isAutoMatchAllowed || modelSelectedUnmatched.length === 0 || ignoreLoading"
         :loading="ignoreLoading"
         @click="confirmIgnoreSelected()"
       >
@@ -159,7 +159,7 @@ onBeforeMount(async () => {
             :size="buttonSize"
             class="rounded-l-none -ml-[1px]"
             :class="{ 'h-[30px]': isPinned }"
-            :disabled="fiatMovements.length === 0 || ignoreLoading"
+            :disabled="!isAutoMatchAllowed || fiatMovements.length === 0 || ignoreLoading"
             :loading="ignoreLoading"
             @click="confirmIgnoreAllFiat()"
           >
@@ -208,7 +208,7 @@ onBeforeMount(async () => {
         variant="outlined"
         color="primary"
         :size="buttonSize"
-        :disabled="modelSelectedIgnored.length === 0 || ignoreLoading"
+        :disabled="!isAutoMatchAllowed || modelSelectedIgnored.length === 0 || ignoreLoading"
         :loading="ignoreLoading"
         @click="confirmRestoreSelected()"
       >

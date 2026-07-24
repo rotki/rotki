@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Without a premium subscription, the asset movement matching actions (Ignore Selected, Ignore All Fiat and Restore Selected) no longer appear available. Previously these buttons looked clickable but did nothing, since asset movement matching is a premium feature.
 * :bug:`-` Searching for zksync lite assets should now show you ethereum mainnet assets and you should be able to easily select relevant assets when adding/editing events.
 * :bug:`-` Omnibridge events containing fee payments will now be properly decoded.
 * :bug:`12526` EVM transactions discovered through more than one tracked address now remain associated with every relevant address, even when the transaction was already cached.
