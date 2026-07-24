@@ -31,6 +31,7 @@ from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_SUPPORTED_C
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
 from rotkehlchen.chain.evm.decoding.erc4337.decoder import Erc4337Decoder
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.lifi.decoder import LifiDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
 from rotkehlchen.chain.evm.decoding.oneinch.v6.decoder import Oneinchv6Decoder
 from rotkehlchen.chain.evm.decoding.open_ocean.decoder import OpenOceanDecoder
@@ -260,6 +261,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         self._add_single_decoder(class_name='Oneinchv5', decoder_class=Oneinchv5Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Oneinchv6', decoder_class=Oneinchv6Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='SocketBridgeDecoder', decoder_class=SocketBridgeDecoder, rules=rules)  # noqa: E501
+        self._add_single_decoder(class_name='Lifi', decoder_class=LifiDecoder, rules=rules)
         if self.evm_inquirer.chain_id in SUPPORTED_BEEFY_CHAINS:
             self._add_single_decoder(class_name='BeefyFinance', decoder_class=BeefyFinanceCommonDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Merkl', decoder_class=MerklDecoder, rules=rules)

@@ -27,6 +27,7 @@ Changelog
 * :feature:`12277` The balance snapshot manager has been redesigned: snapshots now open in a dedicated editor reached from the net worth chart, with a clearer balances table, a locations drawer, sum-mismatch reconciliation, per-date exchange-rate overrides and undoable edits.
 * :feature:`4963` Across Protocol activity is now decoded, including bridging, liquidity deposits and withdrawals, and LP staking. Staked Across LP deposits on Ethereum are also included in your on-chain balances.
 * :feature:`-` Add support for Bit2me exchange.
+* :feature:`7618` Li.fi activity in the supported EVM chains is now properly decoded.
 * :feature:`9316` Searching for an asset in the asset manager now shows the closest matches first, so the asset you are looking for appears at the top instead of being buried under similarly-named or spam tokens.
 * :feature:`12219` Add Moralis as a price Oracle.
 * :bug:`12277` If your main currency is not USD, editing a balance snapshot now shows and saves each value converted at the exchange rate from that snapshot's own date. Previously it used today's exchange rate, so the values you saw and saved were off, especially for assets pegged to a fiat currency such as EUR stablecoins.
