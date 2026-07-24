@@ -808,13 +808,16 @@ def test_compound_v3_token_balances_liabilities(
             ethereum_accounts[1]: {c_usdc_v3: FVal('0.32795')},
         }, {c_usdc_v3: Price(CURRENT_PRICE_MOCK)}) if len(addresses) != 0 else ({}, {})
 
-    with patch(
-        target='rotkehlchen.chain.evm.decoding.compound.v3.balances.Compoundv3Balances._extract_unique_borrowed_tokens',
-        new=mock_extract_unique_borrowed_tokens,
-    ), patch(
-        target='rotkehlchen.chain.evm.tokens.EvmTokens.query_tokens_for_addresses',
-        side_effect=mock_query_tokens,
-    ):
+    with ExitStack() as stack:
+        patch_decoder_should_update_protocol_caches(stack)
+        stack.enter_context(patch(
+            target='rotkehlchen.chain.evm.decoding.compound.v3.balances.Compoundv3Balances._extract_unique_borrowed_tokens',
+            new=mock_extract_unique_borrowed_tokens,
+        ))
+        stack.enter_context(patch(
+            target='rotkehlchen.chain.evm.tokens.EvmTokens.query_tokens_for_addresses',
+            side_effect=mock_query_tokens,
+        ))
         blockchain._query_chain_balances(blockchain=SupportedBlockchain.ETHEREUM)
 
     def get_balance(amount: str):
