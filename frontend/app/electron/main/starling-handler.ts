@@ -34,8 +34,9 @@ const EXIT_MARGIN = 5_000;
  * stdio. Replaces the old SubprocessHandler + two ProcessManagers: starling now
  * spawns/supervises/tree-kills core + colibri, and this class drives it.
  *
- * The renderer talks directly to the loopback URLs this handler fills in from
- * the ports it allocates before spawning. No reverse proxy is involved.
+ * The renderer talks to a single loopback origin: starling's in-process reverse
+ * proxy, which this handler binds on an allocated port and forwards to the core
+ * and colibri ports it also allocated.
  */
 export class StarlingHandler {
   private child: ChildProcess | undefined;
@@ -139,13 +140,23 @@ export class StarlingHandler {
     const corePort = await this.resolvePort('core');
     const colibriPort = await this.resolvePort('colibri');
     const mcpPort = await this.resolvePort('mcp');
+    const proxyPort = await this.resolvePort('proxy');
     const logsDir = this.logsDirectory();
+
+    // Collapse the renderer onto the single proxy origin: `/api/1/*` and `/ws/`
+    // reach core, `/colibri/*` reaches colibri (the proxy strips the prefix). The
+    // direct core/colibri ports stay the proxy's upstream targets, passed to
+    // starling above; the renderer never dials them.
+    const proxyOrigin = `http://${API_HOST}:${proxyPort}`;
+    this.config.urls.coreApiUrl = proxyOrigin;
+    this.config.urls.colibriApiUrl = `${proxyOrigin}/colibri`;
 
     const invocation = buildStarlingInvocation({
       isDev: this.config.isDev,
       corePort,
       colibriPort,
       mcpPort,
+      proxyPort,
       apiHost: API_HOST,
       logsDir,
       options,
@@ -334,20 +345,16 @@ export class StarlingHandler {
   }
 
   /**
-   * Allocate a free loopback port for a service from its configured default and
-   * publish the resulting origin the renderer dials directly.
+   * Allocate a free loopback port for a service from its configured default.
+   * The renderer-facing origins are set from the proxy port by the caller; here
+   * only `mcp` records its resolved port, which `mcpServerUrl()` reads back.
    */
-  private async resolvePort(name: 'core' | 'colibri' | 'mcp'): Promise<number> {
+  private async resolvePort(name: 'core' | 'colibri' | 'mcp' | 'proxy'): Promise<number> {
     const defaultPort = this.config.ports[`${name}Port`];
     const port = await selectPort(defaultPort, API_HOST);
     if (port !== defaultPort)
       this.logger.warn(`Using non-default port ${port} for ${name}`);
-    const url = `http://${API_HOST}:${port}`;
-    if (name === 'core')
-      this.config.urls.coreApiUrl = url;
-    else if (name === 'colibri')
-      this.config.urls.colibriApiUrl = url;
-    else
+    if (name === 'mcp')
       this.config.ports.mcpPort = port;
     return port;
   }

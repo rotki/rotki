@@ -102,7 +102,7 @@ function makeConfig(): AppConfig {
   return {
     isDev: false,
     isMac: false,
-    ports: { corePort: 4242, colibriPort: 4343, mcpPort: 4445 },
+    ports: { corePort: 4242, colibriPort: 4343, mcpPort: 4445, proxyPort: 4141 },
     urls: { coreApiUrl: '', colibriApiUrl: '' },
   } satisfies AppConfig;
 }
@@ -118,7 +118,7 @@ describe('starlingHandler', () => {
     spawnMock.mockReset();
   });
 
-  it('should drive the initial bring-up via the start request and publish both loopback URLs', async () => {
+  it('should drive the initial bring-up via the start request and collapse the renderer onto the proxy origin', async () => {
     // starling boots idle; the handler drives the first start and resolves on
     // its reply (not on an event), so record which control methods it sends.
     const methods: string[] = [];
@@ -137,15 +137,17 @@ describe('starlingHandler', () => {
     expect(spawnMock).toHaveBeenCalledTimes(1);
     expect(methods).toContain('start'); // renderer drives the first bring-up
     expect(onProcessError).not.toHaveBeenCalled();
-    // Two-URL posture: the renderer dials the allocated loopback ports directly.
-    expect(config.urls.coreApiUrl).toBe('http://127.0.0.1:4242');
-    expect(config.urls.colibriApiUrl).toBe('http://127.0.0.1:4343');
+    // Single-origin posture: both URLs point at the proxy port; colibri sits
+    // under /colibri. The direct core/colibri ports are the proxy's upstreams.
+    expect(config.urls.coreApiUrl).toBe('http://127.0.0.1:4141');
+    expect(config.urls.colibriApiUrl).toBe('http://127.0.0.1:4141/colibri');
     expect(handler.getMcpServerEndpoint()).toBe('http://127.0.0.1:4445/mcp');
     expect(selectPortMock).toHaveBeenCalledWith(4242, '127.0.0.1');
     expect(selectPortMock).toHaveBeenCalledWith(4343, '127.0.0.1');
     expect(selectPortMock).toHaveBeenCalledWith(4445, '127.0.0.1');
+    expect(selectPortMock).toHaveBeenCalledWith(4141, '127.0.0.1');
     expect(buildStarlingInvocationMock).toHaveBeenCalledWith(
-      expect.objectContaining({ mcpPort: 4445 }),
+      expect.objectContaining({ mcpPort: 4445, proxyPort: 4141 }),
     );
   });
 

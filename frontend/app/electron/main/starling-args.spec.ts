@@ -34,6 +34,7 @@ const devInput = {
   corePort: 4242,
   colibriPort: 4343,
   mcpPort: 4445,
+  proxyPort: 4141,
   apiHost: '127.0.0.1',
   logsDir: '/tmp/logs',
   options: {},
@@ -132,6 +133,12 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     existsSyncMock.mockReturnValue(true);
     const { args } = await buildDevInvocation();
     expect(flagValue(args, '--mcp-port')).toBe(devInput.mcpPort.toString());
+  });
+
+  it('should tell starling which proxy port to bind', async () => {
+    existsSyncMock.mockReturnValue(true);
+    const { args } = await buildDevInvocation();
+    expect(flagValue(args, '--proxy-port')).toBe(devInput.proxyPort.toString());
   });
 
   describe('when the warm-up builds are missing', () => {

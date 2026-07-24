@@ -44,6 +44,8 @@ export interface StarlingLaunchInput {
   colibriPort: number;
   /** Port allocated for the MCP streamable HTTP server. */
   mcpPort: number;
+  /** Loopback port the in-process reverse proxy binds; the single renderer origin. */
+  proxyPort: number;
   /** Loopback host the backends bind (always 127.0.0.1 in embedded mode). */
   apiHost: string;
   /** Directory starling writes service logs to (owned by LogService). */
@@ -184,7 +186,7 @@ function corsOrigins(isDev: boolean): string {
  * mirrored on both CLI and RPC.
  */
 function commonStarlingArgs(input: StarlingLaunchInput): string[] {
-  const { options, corePort, colibriPort, mcpPort, apiHost, logsDir, isDev } = input;
+  const { options, corePort, colibriPort, mcpPort, proxyPort, apiHost, logsDir, isDev } = input;
 
   const args = [
     '--core-port',
@@ -193,6 +195,10 @@ function commonStarlingArgs(input: StarlingLaunchInput): string[] {
     colibriPort.toString(),
     '--mcp-port',
     mcpPort.toString(),
+    // Bind the reverse proxy on this loopback port; core and colibri (above) are
+    // its upstream targets. The renderer talks to this single origin.
+    '--proxy-port',
+    proxyPort.toString(),
     '--api-host',
     apiHost,
     '--api-cors',
