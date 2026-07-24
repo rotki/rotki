@@ -5,6 +5,8 @@ import json
 import re
 import secrets
 import sqlite3
+import threading
+from contextlib import closing
 from dataclasses import dataclass
 from hashlib import sha256
 from typing import TYPE_CHECKING, Any, Final
@@ -361,14 +363,16 @@ def _summary(table: str, table_data: TableData) -> dict[str, Any]:
 
 class AnalyticsSession:
     """In-memory, privacy-filtered table store queried with SQL (sqlite over pandas
-    DataFrames). One instance lives
-    for the lifetime of the MCP server process and is shared across tool calls.
+    DataFrames). One instance lives for the lifetime of the MCP server process and is
+    shared across tool calls running in worker threads.
     """
 
     def __init__(self) -> None:
         self._tables: dict[str, TableData] = {}
-        self._last_scope: AnalyticsScope | None = None
-        self._connection = sqlite3.connect(':memory:')
+        # asyncio.to_thread() may use a different worker for every tool call. The lock
+        # serializes all connection and matching metadata access when thread affinity is off.
+        self._lock = threading.Lock()
+        self._connection = sqlite3.connect(':memory:', check_same_thread=False)
 
     def _current_scope(
             self,
@@ -393,78 +397,93 @@ class AnalyticsSession:
         scope = self._current_scope(from_timestamp, to_timestamp, include_ignored_assets)
         loaded: dict[str, Any] = {}
         errors: dict[str, str] = {}
+        pending: dict[str, TableData] = {}
+        # Backend loading can be slow. Keep it outside the lock so queries continue using
+        # the previous complete snapshot until the refreshed frames are ready to publish.
         for table in _normalize_tables(tables):
             if (loader := TABLE_LOADERS.get(table)) is None:
                 errors[table] = f'Unknown table {table!r}. Available: {list(AVAILABLE_TABLES)}'
                 continue
             try:
-                self._tables[table] = (table_data := loader(scope))
-                table_data.frame.to_sql(
-                    table,
-                    self._connection,
-                    if_exists='replace',
-                    index=False,
-                )
+                table_data = loader(scope)
             except BackendQueryError as e:
                 errors[table] = str(e)
             except (KeyError, TypeError, ValueError, sqlite3.Error) as e:
                 errors[table] = str(e)
             else:
-                loaded[table] = _summary(table, table_data)
+                pending[table] = table_data
 
-        self._last_scope = scope
+        with self._lock:
+            for table, table_data in pending.items():
+                try:
+                    table_data.frame.to_sql(
+                        table,
+                        self._connection,
+                        if_exists='replace',
+                        index=False,
+                    )
+                except (KeyError, TypeError, ValueError, sqlite3.Error) as e:
+                    errors[table] = str(e)
+                else:
+                    self._tables[table] = table_data
+                    loaded[table] = _summary(table, table_data)
+
         return {'tables': loaded, 'errors': errors, 'privacy_mode': scope.privacy_mode}
 
     def list_tables(self) -> dict[str, Any]:
-        return {
-            'loaded': {t: _summary(t, d) for t, d in sorted(self._tables.items())},
-            'default_tables': list(DEFAULT_TABLES),
-            'available_tables': list(AVAILABLE_TABLES),
-            'privacy_mode': get_backend_config().privacy_mode,
-        }
+        with self._lock:
+            return {
+                'loaded': {t: _summary(t, d) for t, d in sorted(self._tables.items())},
+                'default_tables': list(DEFAULT_TABLES),
+                'available_tables': list(AVAILABLE_TABLES),
+                'privacy_mode': get_backend_config().privacy_mode,
+            }
 
     def describe_table(self, table: str) -> dict[str, Any]:
-        if (table_data := self._tables.get(table)) is None:
-            return _error(
-                'unknown_table',
-                f'Table {table!r} is not loaded. Call refresh_analytics_data first.',
-                available_tables=list(AVAILABLE_TABLES),
-            )
-        return {
-            'table': table,
-            'columns': [
-                {'name': name, 'dtype': str(dtype)}
-                for name, dtype in table_data.frame.dtypes.items()
-            ],
-            'rows': len(table_data.frame),
-            'source': table_data.source,
-        }
+        with self._lock:
+            if (table_data := self._tables.get(table)) is None:
+                return _error(
+                    'unknown_table',
+                    f'Table {table!r} is not loaded. Call refresh_analytics_data first.',
+                    available_tables=list(AVAILABLE_TABLES),
+                )
+            return {
+                'table': table,
+                'columns': [
+                    {'name': name, 'dtype': str(dtype)}
+                    for name, dtype in table_data.frame.dtypes.items()
+                ],
+                'rows': len(table_data.frame),
+                'source': table_data.source,
+            }
 
     def query_sql(self, sql: str, max_rows: int) -> dict[str, Any]:
         if (error := _validate_sql(sql)) is not None:
             return _error('validation_error', error)
-        if len(self._tables) == 0:
-            return _error(
-                'no_tables_loaded',
-                'No analytics tables are loaded yet. Call refresh_analytics_data first.',
-            )
 
-        try:
-            cursor = self._connection.cursor()
-            cursor.execute(sql)
-        except sqlite3.Error as e:
-            return _error(
-                'sql_execution_error',
-                str(e),
-                available_columns={t: list(d.frame.columns) for t, d in self._tables.items()},
-            )
-        try:
-            result_frame = pd.DataFrame(
-                cursor.fetchall(),
-                columns=[desc[0] for desc in cursor.description],
-            )
-        finally:
-            cursor.close()
+        with self._lock:
+            if len(self._tables) == 0:
+                return _error(
+                    'no_tables_loaded',
+                    'No analytics tables are loaded yet. Call refresh_analytics_data first.',
+                )
+
+            try:
+                with closing(self._connection.cursor()) as cursor:
+                    cursor.execute(sql)
+                    result_frame = pd.DataFrame(
+                        cursor.fetchall(),
+                        columns=[desc[0] for desc in cursor.description],
+                    )
+            except sqlite3.Error as e:
+                return _error(
+                    'sql_execution_error',
+                    str(e),
+                    available_columns={
+                        table: list(data.frame.columns)
+                        for table, data in self._tables.items()
+                    },
+                )
 
         bounded = min(max(max_rows, 1), MAX_RESULT_ROWS)
         result_rows = result_frame.head(bounded).to_dict('records')
@@ -478,8 +497,10 @@ class AnalyticsSession:
         }
 
     def clear(self) -> None:
-        self._tables.clear()
-        self._last_scope = None
+        with self._lock:
+            self._tables.clear()
+            self._connection.close()
+            self._connection = sqlite3.connect(':memory:', check_same_thread=False)
 
 
 _analytics_session = AnalyticsSession()
