@@ -85,4 +85,16 @@ VESTING_ESCROW_ABI: Final[ABI] = [{
     'outputs': [{'name': '', 'type': 'uint256'}],
     'stateMutability': 'view',
     'type': 'function',
+}, {
+    'inputs': [],
+    'name': 'total_locked',
+    'outputs': [{'name': '', 'type': 'uint256'}],
+    'stateMutability': 'view',
+    'type': 'function',
+}, {
+    'inputs': [],
+    'name': 'total_claimed',
+    'outputs': [{'name': '', 'type': 'uint256'}],
+    'stateMutability': 'view',
+    'type': 'function',
 }]

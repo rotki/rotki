@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.assets.utils import token_normalized_value
@@ -21,14 +21,34 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+VESTING_BALANCE_METHODS: Final = ('recipient', 'start_time', 'end_time', 'cliff_length', 'disabled_at', 'total_locked', 'total_claimed')  # noqa: E501
+
+
+def vested_amount_at(
+        timestamp: int,
+        start_time: int,
+        end_time: int,
+        cliff_length: int,
+        total_locked: int,
+) -> int:
+    """Calculate the raw token amount vested at the given timestamp
+    following the linear vesting schedule of the escrows.
+    """
+    if timestamp < start_time + cliff_length:
+        return 0
+    if timestamp >= end_time:
+        return total_locked
+
+    return total_locked * (timestamp - start_time) // (end_time - start_time)
 
 
 class YearnVestingBalances(ProtocolWithBalance):
-    """Query tokens still held by yearn vesting escrows for tracked recipients.
+    """Query the tokens still owed by yearn vesting escrows to tracked recipients.
 
     The escrows are discovered from the already decoded vesting events (either the
     funding deposit or a claim), and the remaining balance (locked + unclaimed) is
-    the escrow's token balance since the escrows only ever hold the vesting token.
+    computed from the escrow's vesting schedule instead of its token balance, so
+    that tokens donated to an escrow by a third party are not counted.
     """
 
     def __init__(
@@ -63,45 +83,48 @@ class YearnVestingBalances(ProtocolWithBalance):
                 blockchain=self.evm_inquirer.blockchain,
             )
 
-        escrow_contract = EvmContract(  # only used to encode/decode the escrow calls
+        escrow_contract = EvmContract(  # only used to encode/decode, the calls carry the address
             address=(escrows := list(escrow_to_token))[0],
             abi=VESTING_ESCROW_ABI,
             deployed_block=0,
         )
-        erc20_contract = EvmContract(  # same here, the encoded call carries the token address
-            address=escrows[0],
-            abi=self.evm_inquirer.contracts.abi('ERC20_TOKEN'),
-            deployed_block=0,
-        )
         try:
-            results = self.evm_inquirer.multicall(
-                calls=[(escrow, escrow_contract.encode(method_name='recipient')) for escrow in escrows] +  # noqa: E501
-                [(
-                    escrow_to_token[escrow].evm_address,
-                    erc20_contract.encode(method_name='balanceOf', arguments=[escrow]),
-                ) for escrow in escrows],
-            )
+            results = self.evm_inquirer.multicall(calls=[
+                (escrow, escrow_contract.encode(method_name=method))
+                for escrow in escrows
+                for method in VESTING_BALANCE_METHODS
+            ])
         except RemoteError as e:
             log.error('Failed to query yearn vesting escrow balances via multicall due to %s', e)
             return balances
 
         amounts = []
         for idx, escrow in enumerate(escrows):
-            recipient = deserialize_evm_address(escrow_contract.decode(
-                result=results[idx],
-                method_name='recipient',
-            )[0])
-            if recipient not in tracked_accounts:
+            decoded = [escrow_contract.decode(
+                result=results[idx * len(VESTING_BALANCE_METHODS) + method_idx],
+                method_name=method,
+            )[0] for method_idx, method in enumerate(VESTING_BALANCE_METHODS)]
+            if (recipient := deserialize_evm_address(decoded[0])) not in tracked_accounts:
                 continue  # the tracked address only funded the escrow of an untracked recipient
 
-            token = escrow_to_token[escrow]
-            if (amount := token_normalized_value(
-                token_amount=int.from_bytes(results[len(escrows) + idx]),
-                token=token,
-            )) == 0:
+            _, start_time, end_time, cliff_length, disabled_at, total_locked, total_claimed = decoded  # noqa: E501
+            raw_remaining = vested_amount_at(
+                # a revocation stops vesting at disabled_at. Active escrows hold
+                # 0 (v0.4.0) or end_time (older versions) there
+                timestamp=end_time if disabled_at in (0, end_time) else disabled_at,
+                start_time=start_time,
+                end_time=end_time,
+                cliff_length=cliff_length,
+                total_locked=total_locked,
+            ) - total_claimed
+            if raw_remaining <= 0:
                 continue  # fully claimed or revoked escrow
 
-            amounts.append((recipient, token, amount))
+            token = escrow_to_token[escrow]
+            amounts.append((recipient, token, token_normalized_value(
+                token_amount=raw_remaining,
+                token=token,
+            )))
 
         self._add_priced_balances(balances=balances, amounts=amounts)
         return balances

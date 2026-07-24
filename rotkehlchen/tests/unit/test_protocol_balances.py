@@ -48,7 +48,10 @@ from rotkehlchen.chain.ethereum.modules.pendle.constants import PENDLE_TOKEN
 from rotkehlchen.chain.ethereum.modules.pickle_finance.main import PickleFinance
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.safe.constants import CPT_SAFE, SAFE_TOKEN_ID
-from rotkehlchen.chain.ethereum.modules.yearn.vesting.balances import YearnVestingBalances
+from rotkehlchen.chain.ethereum.modules.yearn.vesting.balances import (
+    YearnVestingBalances,
+    vested_amount_at,
+)
 from rotkehlchen.chain.ethereum.modules.yearn.vesting.constants import CPT_YEARN_VESTING
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.contracts import WEB3
@@ -269,6 +272,25 @@ def test_yearn_vesting_balances(
         amount=vesting_amount,
         value=vesting_amount * CURRENT_PRICE_MOCK,
     )
+
+
+@pytest.mark.parametrize(('timestamp', 'expected'), [
+    (999, 0),  # before the vesting start
+    (1249, 0),  # after the start but before the cliff
+    (1250, 250),  # cliff reached, vests linearly from the start
+    (1500, 500),
+    (2000, 1000),  # fully vested
+    (2500, 1000),  # capped after the vesting end
+])
+def test_yearn_vesting_vested_amount(timestamp: int, expected: int) -> None:
+    """Test the linear vesting schedule computation of the yearn vesting escrows"""
+    assert vested_amount_at(
+        timestamp=timestamp,
+        start_time=1000,
+        end_time=2000,
+        cliff_length=250,
+        total_locked=1000,
+    ) == expected
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xfBe970e455a52acCa2A86265202da711Ac7A99dd']])
