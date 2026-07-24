@@ -34,6 +34,24 @@ class BlockingTableLoader:
         )
 
 
+class OrderedTableLoader:
+    def __init__(self, started: Event, proceed: Event) -> None:
+        self.started = started
+        self.proceed = proceed
+
+    def __call__(self, scope: AnalyticsScope) -> TableData:
+        if scope.from_timestamp == 1:
+            self.started.set()
+            assert self.proceed.wait(timeout=5)
+            asset = 'OLD'
+        else:
+            asset = 'NEW'
+        return TableData(
+            frame=pd.DataFrame([{'asset': asset}]),
+            source={'privacy_mode': scope.privacy_mode},
+        )
+
+
 def test_flatten_should_recurse_and_add_float_companions() -> None:
     row = _flatten({
         'identifier': 1,
@@ -241,6 +259,43 @@ def test_refresh_should_load_without_blocking_queries(monkeypatch) -> None:
         'select asset, amount_float from history_events',
         max_rows=10,
     )['rows'] == [{'asset': 'BTC', 'amount_float': 2.0}]
+
+
+def test_overlapping_refreshes_should_not_publish_out_of_order(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    started = Event()
+    proceed = Event()
+    monkeypatch.setitem(
+        analytics.TABLE_LOADERS,
+        'history_events',
+        OrderedTableLoader(started=started, proceed=proceed),
+    )
+    session = AnalyticsSession()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        old_refresh = executor.submit(
+            session.refresh,
+            tables=None,
+            from_timestamp=1,
+            to_timestamp=0,
+            include_ignored_assets=False,
+        )
+        assert started.wait(timeout=5)
+        new_refresh = executor.submit(
+            session.refresh,
+            tables=None,
+            from_timestamp=2,
+            to_timestamp=0,
+            include_ignored_assets=False,
+        )
+        proceed.set()
+        assert old_refresh.result(timeout=5)['errors'] == {}
+        assert new_refresh.result(timeout=5)['errors'] == {}
+
+    assert session.query_sql(
+        'select asset from history_events',
+        max_rows=10,
+    )['rows'] == [{'asset': 'NEW'}]
 
 
 def test_history_events_promote_entry_and_redact_auto_notes(monkeypatch) -> None:

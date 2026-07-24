@@ -369,6 +369,8 @@ class AnalyticsSession:
 
     def __init__(self) -> None:
         self._tables: dict[str, TableData] = {}
+        # Refreshes must not overtake each other, but should not block queries while loading.
+        self._refresh_lock = threading.Lock()
         # asyncio.to_thread() may use a different worker for every tool call. The lock
         # serializes all connection and matching metadata access when thread affinity is off.
         self._lock = threading.Lock()
@@ -394,41 +396,42 @@ class AnalyticsSession:
             to_timestamp: int,
             include_ignored_assets: bool,
     ) -> dict[str, Any]:
-        scope = self._current_scope(from_timestamp, to_timestamp, include_ignored_assets)
-        loaded: dict[str, Any] = {}
-        errors: dict[str, str] = {}
-        pending: dict[str, TableData] = {}
-        # Backend loading can be slow. Keep it outside the lock so queries continue using
-        # the previous complete snapshot until the refreshed frames are ready to publish.
-        for table in _normalize_tables(tables):
-            if (loader := TABLE_LOADERS.get(table)) is None:
-                errors[table] = f'Unknown table {table!r}. Available: {list(AVAILABLE_TABLES)}'
-                continue
-            try:
-                table_data = loader(scope)
-            except BackendQueryError as e:
-                errors[table] = str(e)
-            except (KeyError, TypeError, ValueError, sqlite3.Error) as e:
-                errors[table] = str(e)
-            else:
-                pending[table] = table_data
-
-        with self._lock:
-            for table, table_data in pending.items():
+        with self._refresh_lock:
+            scope = self._current_scope(from_timestamp, to_timestamp, include_ignored_assets)
+            loaded: dict[str, Any] = {}
+            errors: dict[str, str] = {}
+            pending: dict[str, TableData] = {}
+            # Backend loading can be slow. Keep it outside the connection lock so queries
+            # continue using the previous complete snapshot until the frames are ready.
+            for table in _normalize_tables(tables):
+                if (loader := TABLE_LOADERS.get(table)) is None:
+                    errors[table] = f'Unknown table {table!r}. Available: {list(AVAILABLE_TABLES)}'
+                    continue
                 try:
-                    table_data.frame.to_sql(
-                        table,
-                        self._connection,
-                        if_exists='replace',
-                        index=False,
-                    )
+                    table_data = loader(scope)
+                except BackendQueryError as e:
+                    errors[table] = str(e)
                 except (KeyError, TypeError, ValueError, sqlite3.Error) as e:
                     errors[table] = str(e)
                 else:
-                    self._tables[table] = table_data
-                    loaded[table] = _summary(table, table_data)
+                    pending[table] = table_data
 
-        return {'tables': loaded, 'errors': errors, 'privacy_mode': scope.privacy_mode}
+            with self._lock:
+                for table, table_data in pending.items():
+                    try:
+                        table_data.frame.to_sql(
+                            table,
+                            self._connection,
+                            if_exists='replace',
+                            index=False,
+                        )
+                    except (KeyError, TypeError, ValueError, sqlite3.Error) as e:
+                        errors[table] = str(e)
+                    else:
+                        self._tables[table] = table_data
+                        loaded[table] = _summary(table, table_data)
+
+            return {'tables': loaded, 'errors': errors, 'privacy_mode': scope.privacy_mode}
 
     def list_tables(self) -> dict[str, Any]:
         with self._lock:
@@ -497,7 +500,7 @@ class AnalyticsSession:
         }
 
     def clear(self) -> None:
-        with self._lock:
+        with self._refresh_lock, self._lock:
             self._tables.clear()
             self._connection.close()
             self._connection = sqlite3.connect(':memory:', check_same_thread=False)
