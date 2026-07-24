@@ -7,8 +7,13 @@ lint:
 	double-indent --dry-run $(ALL_LINT_PATHS)
 	./tools/find-duplicate-constants/run.sh
 	mypy $(COMMON_LINT_PATHS) --install-types --non-interactive
-	PYRIGHT_PYTHON_IGNORE_WARNINGS=1 pyright $(COMMON_LINT_PATHS)
-	pylint --rcfile .pylint.rc $(ALL_LINT_PATHS)
+	@set -e; \
+	(PYRIGHT_PYTHON_IGNORE_WARNINGS=1 pyright $(COMMON_LINT_PATHS)) & pyright_pid=$$!; \
+	(pylint --rcfile .pylint.rc $(ALL_LINT_PATHS)) & pylint_pid=$$!; \
+	pyright_status=0; pylint_status=0; \
+	wait $$pyright_pid || pyright_status=$$?; \
+	wait $$pylint_pid || pylint_status=$$?; \
+	if [ $$pyright_status -ne 0 ] || [ $$pylint_status -ne 0 ]; then exit 1; fi
 	python tools/lint_checksum_addresses.py
 	python tools/lint_new_logging_fstrings.py
 
