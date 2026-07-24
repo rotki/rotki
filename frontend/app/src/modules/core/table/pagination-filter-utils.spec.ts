@@ -1,6 +1,6 @@
 import type { Sorting } from '@/modules/core/table/pagination-filter-types';
 import { describe, expect, it } from 'vitest';
-import { applySortingDefaults, getApiSortingParams, getSorting } from '@/modules/core/table/pagination-filter-utils';
+import { applySortingDefaults, getApiSortingParams, getSorting, parseQueryHistory } from '@/modules/core/table/pagination-filter-utils';
 
 interface EventDetails {
   date: string;
@@ -106,6 +106,37 @@ describe('use-pagination-filter.utils.ts', () => {
         column: 'id',
         direction: 'desc',
       });
+    });
+  });
+
+  describe('parseQueryHistory', () => {
+    it('should return the defaults when the query has no sort or order', () => {
+      const defaults: Sorting<EventDetails> = { column: 'name', direction: 'asc' };
+      expect(parseQueryHistory<EventDetails>({}, defaults)).toBe(defaults);
+    });
+
+    it('should parse a single-column sort from the query when the default is not an array', () => {
+      const defaults: Sorting<EventDetails> = { column: 'name', direction: 'asc' };
+      expect(parseQueryHistory<EventDetails>({ sort: 'date', sortOrder: 'desc' }, defaults)).toEqual({
+        column: 'date',
+        direction: 'desc',
+      });
+    });
+
+    it('should parse multiple sort columns when the default is an array', () => {
+      const defaults: Sorting<EventDetails> = [{ column: 'name', direction: 'asc' }];
+      expect(parseQueryHistory<EventDetails>({ sort: ['date', 'name'], sortOrder: ['asc', 'desc'] }, defaults)).toEqual([
+        { column: 'date', direction: 'asc' },
+        { column: 'name', direction: 'desc' },
+      ]);
+    });
+
+    it('should apply the fallback column to multi-sort entries missing a column', () => {
+      const defaults: Sorting<EventDetails> = [{ column: 'name', direction: 'asc' }];
+      expect(parseQueryHistory<EventDetails>({ sortOrder: ['asc', 'desc'] }, defaults, 'id')).toEqual([
+        { column: 'id', direction: 'asc' },
+        { column: 'id', direction: 'desc' },
+      ]);
     });
   });
 });

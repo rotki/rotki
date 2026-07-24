@@ -26,39 +26,42 @@ export function getSorting<T extends NonNullable<unknown>>(
   };
 }
 
+function parseMultiSort<T extends NonNullable<unknown>>(
+  sort: string[] | undefined,
+  order: ('asc' | 'desc')[] | undefined,
+  fallbackColumn: string,
+): SingleColumnSorting<T>[] {
+  const length = sort?.length || order?.length || 0;
+  const sorting: SingleColumnSorting<T>[] = [];
+
+  for (let i = 0; i < length; i++) {
+    sorting.push(getSorting({
+      column: sort?.[i],
+      direction: order?.[i],
+    }, undefined, fallbackColumn));
+  }
+
+  return sorting;
+}
+
 export function parseQueryHistory<T extends NonNullable<unknown>>(
   query: LocationQuery,
   defaults: Sorting<T>,
   fallbackColumn: string = DEFAULT_FALLBACK_SORT_COLUMN,
 ): Sorting<T> {
-  const singleSort = !Array.isArray(defaults);
-  const sorting = HistorySortOrderSchema.parse(query);
+  const { sort, sortOrder: order } = HistorySortOrderSchema.parse(query);
 
-  const sort = sorting.sort;
-  const order = sorting.sortOrder;
-  if (!sort && !order) {
+  if (!sort && !order)
     return defaults;
-  }
 
-  if (singleSort) {
+  if (!Array.isArray(defaults)) {
     return getSorting({
       column: sort?.[0],
       direction: order?.[0],
     }, defaults, fallbackColumn);
   }
-  else {
-    const length = sort?.length || order?.length || 0;
-    const sorting: SingleColumnSorting<T>[] = [];
 
-    for (let i = 0; i < length; i++) {
-      sorting.push(getSorting({
-        column: sort?.[i],
-        direction: order?.[i],
-      }, undefined, fallbackColumn));
-    }
-
-    return sorting;
-  }
+  return parseMultiSort<T>(sort, order, fallbackColumn);
 }
 
 export function parseQueryPagination(query: LocationQuery, pagination: TablePaginationData): TablePaginationData {
