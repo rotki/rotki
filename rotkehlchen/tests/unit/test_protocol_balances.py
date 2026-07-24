@@ -48,6 +48,8 @@ from rotkehlchen.chain.ethereum.modules.pendle.constants import PENDLE_TOKEN
 from rotkehlchen.chain.ethereum.modules.pickle_finance.main import PickleFinance
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.safe.constants import CPT_SAFE, SAFE_TOKEN_ID
+from rotkehlchen.chain.ethereum.modules.yearn.vesting.balances import YearnVestingBalances
+from rotkehlchen.chain.ethereum.modules.yearn.vesting.constants import CPT_YEARN_VESTING
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.contracts import WEB3
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE, CPT_AAVE_V3
@@ -222,6 +224,51 @@ def test_curve_locked_crv_balances(
             amount=locked_crv_amount,
             value=locked_crv_amount * CURRENT_PRICE_MOCK,
         )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xe5e2Baf96198c56380dDD5E992D7d1ADa0e989c0']])
+def test_yearn_vesting_balances(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """Ensure tokens still vesting in a yearn vesting escrow are detected as balances
+    of the escrow's recipient. The escrow is discovered from a decoded claim event.
+    """
+    token = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=string_to_evm_address('0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        symbol='yvUSDC-1',
+        decimals=6,
+    )
+    events_db = DBHistoryEvents(ethereum_inquirer.database)
+    with ethereum_inquirer.database.conn.write_ctx() as write_cursor:
+        events_db.add_history_event(write_cursor=write_cursor, event=EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=TimestampMS(0),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+            asset=token,
+            amount=ONE,
+            location_label=(user_address := ethereum_accounts[0]),
+            counterparty=CPT_YEARN_VESTING,
+            address=string_to_evm_address('0x0d2b3AE5432c53580b462f04e6365a1955C8bbD4'),
+        ))
+
+    vesting_balances = YearnVestingBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=ethereum_transaction_decoder,
+    ).query_balances()
+    vesting_amount = FVal('22623.100898')  # locked + unclaimed at recording time
+    assert vesting_balances[user_address].assets[token][CPT_YEARN_VESTING] == Balance(
+        amount=vesting_amount,
+        value=vesting_amount * CURRENT_PRICE_MOCK,
+    )
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xfBe970e455a52acCa2A86265202da711Ac7A99dd']])

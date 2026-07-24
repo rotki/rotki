@@ -63,6 +63,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'lido-csm',
     'woo-fi',
     'morpho_blue',
+    'yearn-vesting',
 ]
 BalancesSheetType = dict[ChecksumEvmAddress, BalanceSheet]
 
