@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`-` Yearn vesting escrows are now supported. All related transactions are understood and decoded and balances in escrow automatically detected. Calendar entries with reminders are also created for the cliff and full vesting dates of your escrows.
 * :bug:`-` Automatically removing a calendar entry, like an airdrop claim deadline after the airdrop is claimed, no longer also deletes the reminder of an unrelated calendar entry. 
+* :feature:`-` Solana native staking program events should now be properly decoded and appear under rotki's events.
 * :bug:`-` Without a premium subscription, the asset movement matching actions (Ignore Selected, Ignore All Fiat and Restore Selected) no longer appear available. Previously these buttons looked clickable but did nothing, since asset movement matching is a premium feature.
 * :bug:`-` Searching for zksync lite assets should now show you ethereum mainnet assets and you should be able to easily select relevant assets when adding/editing events.
 * :bug:`-` Omnibridge events containing fee payments will now be properly decoded.
