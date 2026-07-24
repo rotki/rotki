@@ -1,5 +1,6 @@
 import type { ComputedRef } from 'vue';
-import type { Accounts, AssetBreakdown, Balances } from '@/modules/accounts/blockchain-accounts';
+import type { Accounts, AssetBreakdown, Balances, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { EthBalance } from '@/modules/balances/types/blockchain-balances';
 import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import { Zero } from '@rotki/common';
@@ -78,11 +79,40 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
     return breakdown;
   }
 
+  function collectAddressBreakdown(
+    chain: string,
+    address: string,
+    balance: EthBalance,
+    chainAccounts: BlockchainAccount[],
+    asset: string,
+    isLiability: boolean,
+  ): AssetBreakdown[] {
+    const result: AssetBreakdown[] = [];
+    const resolved = resolveAssetIdentifier(asset);
+    const identifiers = resolved !== asset ? [asset, resolved] : [asset];
+
+    for (const identifier of identifiers) {
+      const assetBalance = balance[isLiability ? 'liabilities' : 'assets'][identifier];
+      if (!assetBalance)
+        continue;
+
+      const summedBalance = perProtocolBalanceSum({ amount: Zero, value: Zero }, assetBalance);
+      result.push({
+        address,
+        location: getEvmChainName(chain) ?? chain,
+        ...summedBalance,
+        tags: chainAccounts.find(account => getAccountAddress(account) === address && account.chain === chain)?.tags,
+      });
+    }
+
+    return result;
+  }
+
   function getBlockchainAssetBreakdown(
     data: BreakdownData,
     asset: string,
-    isLiability: boolean = false,
-    filters: BreakdownFilters = {},
+    isLiability: boolean,
+    filters: BreakdownFilters,
   ): AssetBreakdown[] {
     const breakdown: AssetBreakdown[] = [];
     const { chains = [], groupId } = filters;
@@ -91,36 +121,23 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
     const chainList = chains.length > 0 ? chains : Object.keys(accountData);
 
     for (const chain of chainList) {
-      const chainAccounts = accountData[chain] ?? {};
       const chainBalanceData = balanceData[chain];
       if (!chainBalanceData)
         continue;
 
+      const chainAccounts = accountData[chain] ?? [];
       for (const address in chainBalanceData) {
         if (groupId && address !== groupId)
           continue;
 
-        const balance = chainBalanceData[address];
-        const resolved = resolveAssetIdentifier(asset);
-        const identifiers = resolved !== asset ? [asset, resolved] : [asset];
-        for (const identifier of identifiers) {
-          const assetBalance = balance[isLiability ? 'liabilities' : 'assets'][identifier];
-          if (!assetBalance)
-            continue;
-
-          const summedBalance = perProtocolBalanceSum({
-            amount: Zero,
-            value: Zero,
-          }, assetBalance);
-
-          breakdown.push({
-            address,
-            location: getEvmChainName(chain) ?? chain,
-            ...summedBalance,
-            tags: chainAccounts.find(account => getAccountAddress(account) === address && account.chain === chain)
-              ?.tags,
-          });
-        }
+        breakdown.push(...collectAddressBreakdown(
+          chain,
+          address,
+          chainBalanceData[address],
+          chainAccounts,
+          asset,
+          isLiability,
+        ));
       }
     }
 
