@@ -5,6 +5,33 @@ import { assert, BigNumber } from '@rotki/common';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 
+type NftSortKey = 'name' | 'price' | 'collection';
+
+type NftSortValue = string | BigNumber | null;
+
+function getSortValue(nft: GalleryNft, sortProp: NftSortKey): NftSortValue {
+  return sortProp === 'collection' ? nft.collection.name : nft[sortProp];
+}
+
+function compareNullableNft(a: NftSortValue, b: NftSortValue, desc: boolean): number {
+  if (a && !b)
+    return desc ? 1 : -1;
+  if (!a && b)
+    return desc ? -1 : 1;
+  return 0;
+}
+
+function compareNftValues(a: NftSortValue, b: NftSortValue, desc: boolean): number {
+  if (typeof a === 'string' && typeof b === 'string') {
+    return desc
+      ? b.localeCompare(a, 'en', { sensitivity: 'base' })
+      : a.localeCompare(b, 'en', { sensitivity: 'base' });
+  }
+  if (a instanceof BigNumber && b instanceof BigNumber)
+    return (desc ? b.minus(a) : a.minus(b)).toNumber();
+  return compareNullableNft(a, b, desc);
+}
+
 interface UseNftGalleryFiltersReturn {
   availableAddresses: ComputedRef<string[]>;
   collections: ComputedRef<string[]>;
@@ -64,35 +91,14 @@ export function useNftGalleryFilters(
   }
 
   function sortNfts(
-    sortProperty: Ref<'name' | 'price' | 'collection'>,
+    sortProperty: Ref<NftSortKey>,
     sortDesc: Ref<boolean>,
     a: GalleryNft,
     b: GalleryNft,
   ): number {
     const sortProp = get(sortProperty);
     const desc = get(sortDesc);
-    const isCollection = sortProp === 'collection';
-    const aElement = isCollection ? a.collection.name : a[sortProp];
-    const bElement = isCollection ? b.collection.name : b[sortProp];
-
-    if (typeof aElement === 'string' && typeof bElement === 'string') {
-      return desc
-        ? bElement.localeCompare(aElement, 'en', { sensitivity: 'base' })
-        : aElement.localeCompare(bElement, 'en', { sensitivity: 'base' });
-    }
-    else if (aElement instanceof BigNumber && bElement instanceof BigNumber) {
-      return (desc ? bElement.minus(aElement) : aElement.minus(bElement)).toNumber();
-    }
-    else if (aElement === null && bElement === null) {
-      return 0;
-    }
-    else if (aElement && !bElement) {
-      return desc ? 1 : -1;
-    }
-    else if (!aElement && bElement) {
-      return desc ? -1 : 1;
-    }
-    return 0;
+    return compareNftValues(getSortValue(a, sortProp), getSortValue(b, sortProp), desc);
   }
 
   return {
