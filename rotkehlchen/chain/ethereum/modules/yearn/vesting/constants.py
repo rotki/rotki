@@ -41,12 +41,34 @@ VESTING_ESCROW_PROXY_CODES: Final = frozenset({
     '0x363d3d373d3d3d363d734cae5c8d3fae0f1e7f005975cbfc0df1d4c323885af43d82803e903d91602b57fd5bf3',  # v0.4.0  # noqa: E501
 })
 
-VESTING_ESCROW_ABI: Final[ABI] = [
-    {
-        'inputs': [],
-        'name': 'recipient',
-        'outputs': [{'name': '', 'type': 'address'}],
-        'stateMutability': 'view',
-        'type': 'function',
-    },
-]
+VESTING_ESCROW_ABI: Final[ABI] = [{
+    'inputs': [],
+    'name': 'recipient',
+    'outputs': [{'name': '', 'type': 'address'}],
+    'stateMutability': 'view',
+    'type': 'function',
+}, {
+    'inputs': [],
+    'name': 'start_time',
+    'outputs': [{'name': '', 'type': 'uint256'}],
+    'stateMutability': 'view',
+    'type': 'function',
+}, {
+    'inputs': [],
+    'name': 'end_time',
+    'outputs': [{'name': '', 'type': 'uint256'}],
+    'stateMutability': 'view',
+    'type': 'function',
+}, {
+    'inputs': [],
+    'name': 'cliff_length',
+    'outputs': [{'name': '', 'type': 'uint256'}],
+    'stateMutability': 'view',
+    'type': 'function',
+}, {
+    'inputs': [],
+    'name': 'disabled_at',
+    'outputs': [{'name': '', 'type': 'uint256'}],
+    'stateMutability': 'view',
+    'type': 'function',
+}]
