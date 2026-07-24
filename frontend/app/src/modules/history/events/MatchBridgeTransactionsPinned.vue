@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { MatchingFlow } from '@/modules/history/events/matching/types';
 import { startPromise } from '@shared/utils';
-import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import MatchBridgeTransactionsContent from '@/modules/history/events/MatchBridgeTransactionsContent.vue';
 import PotentialMatchesContent from '@/modules/history/events/PotentialMatchesContent.vue';
 import { HighlightTargetTypes, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
@@ -56,7 +55,7 @@ const flow: MatchingFlow = useBridgeMatchingFlow();
 const { unmatchableExplanation: emptyExplanation } = useBridgeUnmatchableExplanation(potentialMatchTransaction);
 
 function selectTransaction(transaction: UnmatchedBridgeTransaction): void {
-  const identifier = transaction.identifier ?? getEventEntryFromCollection(transaction.events).entry.identifier;
+  const identifier = transaction.identifier;
 
   set(potentialMatchTransaction, transaction);
   set(showPotentialMatchesDrawer, true);
@@ -106,7 +105,7 @@ async function unpin(): Promise<void> {
 }
 
 function showInHistoryEvents(transaction: UnmatchedBridgeTransaction): void {
-  const identifier = transaction.identifier ?? getEventEntryFromCollection(transaction.events).entry.identifier;
+  const identifier = transaction.identifier;
 
   set(activeGroupIdentifier, transaction.groupIdentifier);
   set(activePotentialMatchIdentifier, undefined);
@@ -152,7 +151,7 @@ function navigateToHighlightedTransaction(targetGroupIdentifier: string): boolea
   if (transaction) {
     // If potential match identifier is also provided, open the drawer and navigate to potential match
     if (highlightedPotentialMatchIdentifier && potentialMatchGroupIdentifier) {
-      const identifier = transaction.identifier ?? getEventEntryFromCollection(transaction.events).entry.identifier;
+      const identifier = transaction.identifier;
       set(potentialMatchTransaction, transaction);
       set(showPotentialMatchesDrawer, true);
       set(activeGroupIdentifier, transaction.groupIdentifier);

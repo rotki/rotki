@@ -4560,15 +4560,17 @@ class RestAPI:
         }))
 
     def get_unmatched_bridge_transactions(self, only_ignored: bool) -> Response:
-        """Get the group identifiers of unmatched bridge events (both legs).
-        Gets the events marked as having no match if only_ignored is True, otherwise
-        all bridge events that have not been matched or ignored yet.
+        """Get the unresolved bridge legs as identifier/group identifier pairs.
+        Gets the legs marked as having no match if only_ignored is True, otherwise
+        all bridge legs that have not been matched or ignored yet. Legs are reported
+        individually since a single transaction group can carry several bridge legs
+        that are matched or ignored independently.
         """
         if only_ignored:
             with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                group_ids = [x[0] for x in cursor.execute(
-                    'SELECT DISTINCT history_events.group_identifier FROM history_events '
-                    'JOIN history_event_link_ignores ON '
+                legs = [{'identifier': x[0], 'group_identifier': x[1]} for x in cursor.execute(
+                    'SELECT history_events.identifier, history_events.group_identifier '
+                    'FROM history_events JOIN history_event_link_ignores ON '
                     'history_events.identifier=history_event_link_ignores.event_id '
                     'WHERE history_event_link_ignores.link_type=? '
                     'ORDER BY timestamp, sequence_index',
@@ -4577,11 +4579,12 @@ class RestAPI:
         else:
             deposits, withdrawals = get_unmatched_bridge_events(database=self.rotkehlchen.data.db)
             # deposits first (they are actionable anchors), then orphan withdrawals
-            group_ids = list(dict.fromkeys(
-                event.group_identifier for event in deposits + withdrawals
-            ))
+            legs = [
+                {'identifier': event.identifier, 'group_identifier': event.group_identifier}
+                for event in deposits + withdrawals
+            ]
 
-        return api_response(_wrap_in_ok_result(result=group_ids))
+        return api_response(_wrap_in_ok_result(result=legs))
 
     def match_bridge_transactions(
             self,
@@ -4675,35 +4678,33 @@ class RestAPI:
 
     def get_matches_for_bridge_transaction(
             self,
-            bridge_group_identifier: str,
+            bridge_event_identifier: int,
             time_range: int,
             only_expected_assets: bool,
             tolerance: FVal,
     ) -> Response:
-        """Get possible counterpart-leg matches for the bridge leg in the given group,
-        within the given time range. Anchors on the group's bridge deposit if there is
-        one, otherwise on its bridge withdrawal."""
+        """Get possible counterpart-leg matches for the given bridge leg within the
+        given time range. Anchors on the exact leg since a transaction group can
+        carry several independently-matched bridge legs."""
         events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
-        bridge_event = None
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            for event in events_db.get_history_events_internal(
+            events = events_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
-                    group_identifiers=[bridge_group_identifier],
+                    identifiers=[bridge_event_identifier],
                     type_and_subtype_combinations=[
                         (HistoryEventType.DEPOSIT, HistoryEventSubType.BRIDGE),
                         (HistoryEventType.WITHDRAWAL, HistoryEventSubType.BRIDGE),
                     ],
                 ),
-            ):
-                bridge_event = event
-                if event.event_type == HistoryEventType.DEPOSIT:
-                    break  # prefer the deposit anchor if the group has both legs
+            )
 
-        if bridge_event is None:
+        if len(events) != 1:
             return api_response(wrap_in_fail_result(
-                message=f'No bridge event found in the DB for group identifier {bridge_group_identifier}',  # noqa: E501
+                message=f'No bridge event found in the DB for identifier {bridge_event_identifier}',  # noqa: E501
             ), HTTPStatus.BAD_REQUEST)
+
+        bridge_event = events[0]
 
         assets_in_collection = GlobalDBHandler.get_assets_in_same_collection(
             identifier=bridge_event.asset.identifier,

@@ -4067,13 +4067,13 @@ class MatchBridgeTransactionsResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            bridge_event: str,
+            bridge_event: int,
             time_range: int,
             only_expected_assets: bool,
             tolerance: FVal,
     ) -> Response:
         return self.rest_api.get_matches_for_bridge_transaction(
-            bridge_group_identifier=bridge_event,
+            bridge_event_identifier=bridge_event,
             time_range=time_range,
             only_expected_assets=only_expected_assets,
             tolerance=tolerance,

@@ -14,6 +14,7 @@ import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-ta
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useBridgeMatchSettings } from '@/modules/settings/use-bridge-match-settings';
@@ -58,18 +59,9 @@ function deriveBridgeDirection(extraData: unknown, eventType?: string): 'deposit
 }
 
 export interface UnmatchedBridgeTransaction extends UnmatchedEventGroup {
+  identifier: number;
   direction: 'deposit' | 'withdrawal';
   bridge?: BridgeExtraData;
-}
-
-/** A raw (not yet resolved) bridge leg: a deposit/withdrawal with the `bridge` subtype. */
-function isRawBridgeLeg(entry: HistoryEventEntryWithMeta['entry']): boolean {
-  return entry.eventSubtype === 'bridge' && (entry.eventType === 'deposit' || entry.eventType === 'withdrawal');
-}
-
-/** A leg already resolved as external: turned into a bridge spend/receive but stamped. */
-function isResolvedBridgeLeg(entry: HistoryEventEntryWithMeta['entry']): boolean {
-  return getResolvedBridgeDirection('extraData' in entry ? entry.extraData : undefined) !== undefined;
 }
 
 interface BridgeEntryMatch {
@@ -78,25 +70,17 @@ interface BridgeEntryMatch {
 }
 
 /**
- * Picks the bridge leg out of a group's rows. A bridge group is keyed by the EVM
- * transaction hash, so it also contains the gas fee event (and possibly others). Only
- * the bridge leg is the one the matching endpoints accept, so it has to be selected
- * explicitly instead of taking the first event of the group.
- *
- * Raw legs are preferred over legs already resolved as external across ALL rows: a
- * transaction can carry more than one bridge leg (e.g. token + gas refuel), and once
- * one of them is resolved, acting on the resolved leg again would send the backend an
- * event that is no longer a bridge deposit/withdrawal. Resolved legs (recognized by
- * their `matchedBridge` stamp) are only picked when the group has no raw leg left,
- * which is what the ignored list needs to restore them.
+ * Locates a bridge leg's event across the fetched rows by its identifier. The backend
+ * reports unresolved legs per event, and the exact event has to be acted on: a
+ * transaction can carry more than one bridge leg (e.g. several bridged assets in one
+ * transaction), so picking a leg positionally or by type heuristics would act on the
+ * wrong — possibly already ignored — leg.
  */
-function findBridgeEntry(rows: HistoryEventCollectionRow[]): BridgeEntryMatch | undefined {
-  for (const matcher of [isRawBridgeLeg, isResolvedBridgeLeg]) {
-    for (const row of rows) {
-      const event = arrayify(row).find(({ entry }) => matcher(entry));
-      if (event)
-        return { event, row };
-    }
+function findBridgeEntry(rows: HistoryEventCollectionRow[], identifier: number): BridgeEntryMatch | undefined {
+  for (const row of rows) {
+    const event = arrayify(row).find(({ entry }) => entry.identifier === identifier);
+    if (event)
+      return { event, row };
   }
   return undefined;
 }
@@ -162,9 +146,9 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
 
     set(loadingRef, true);
     try {
-      const groupIdentifiers = await getUnmatchedBridgeTransactions(onlyIgnored);
+      const legs = await getUnmatchedBridgeTransactions(onlyIgnored);
 
-      if (groupIdentifiers.length === 0) {
+      if (legs.length === 0) {
         set(transactionsRef, []);
         if (!isIgnored)
           clearUnmatchedBridgeTransactionsNotification();
@@ -173,7 +157,7 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
 
       const response = await fetchHistoryEvents({
         aggregateByGroupIds: false,
-        groupIdentifiers,
+        groupIdentifiers: [...new Set(legs.map(leg => leg.groupIdentifier))],
         limit: -1,
         offset: 0,
         orderByAttributes: ['timestamp'],
@@ -182,34 +166,27 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
 
       const transactions: UnmatchedBridgeTransaction[] = [];
 
-      for (const groupId of groupIdentifiers) {
-        const eventsForGroup = response.entries.filter((row) => {
-          const events = arrayify(row);
-          return events.some(event => event.entry.groupIdentifier === groupId);
-        });
+      for (const leg of legs) {
+        // The events of a group come back as separate rows, so the leg's event has to
+        // be looked for across all of them by its identifier.
+        const bridgeMatch = findBridgeEntry(response.entries, leg.identifier);
 
-        if (eventsForGroup.length > 0) {
-          // The events of a group come back as separate rows, so the bridge leg has to be looked
-          // for across all of them: the first row is the gas fee event, not the bridge event.
-          const bridgeMatch = findBridgeEntry(eventsForGroup);
-
-          if (!bridgeMatch) {
-            logger.warn(`No bridge event found in group ${groupId}, skipping it`);
-            continue;
-          }
-
-          const entry = bridgeMatch.event.entry;
-          const extraData = 'extraData' in entry ? entry.extraData : undefined;
-
-          transactions.push({
-            asset: entry.asset,
-            bridge: getBridgeExtraData(extraData),
-            direction: deriveBridgeDirection(extraData, entry.eventType),
-            events: bridgeMatch.row,
-            groupIdentifier: groupId,
-            identifier: entry.identifier,
-          });
+        if (!bridgeMatch) {
+          logger.warn(`No event found for bridge leg ${leg.identifier} in group ${leg.groupIdentifier}, skipping it`);
+          continue;
         }
+
+        const entry = bridgeMatch.event.entry;
+        const extraData = 'extraData' in entry ? entry.extraData : undefined;
+
+        transactions.push({
+          asset: entry.asset,
+          bridge: getBridgeExtraData(extraData),
+          direction: deriveBridgeDirection(extraData, entry.eventType),
+          events: bridgeMatch.row,
+          groupIdentifier: leg.groupIdentifier,
+          identifier: leg.identifier,
+        });
       }
 
       set(transactionsRef, transactions);
@@ -314,8 +291,8 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
   };
 
   async function autoMatchBridgeTransaction(linkedTransaction: LinkedMovementMatch): Promise<boolean> {
-    const { groupIdentifier, identifier, timeRange, tolerance } = linkedTransaction;
-    const suggestions = await getBridgeMatches(groupIdentifier, timeRange, false, tolerance);
+    const { identifier, timeRange, tolerance } = linkedTransaction;
+    const suggestions = await getBridgeMatches(identifier, timeRange, false, tolerance);
     if (suggestions.closeMatches.length > 0) {
       await matchBridgeTransactionsApi(identifier, suggestions.closeMatches);
       return true;
@@ -355,7 +332,12 @@ export function useBridgeMatchingFlow(): MatchingFlow {
   return {
     defaultTimeRangeSeconds: get(bridgeMatchTimeRange),
     defaultTolerance: get(bridgeMatchAmountTolerance),
-    getSuggestions: getBridgeMatches,
+    getSuggestions: async (movement, timeRangeSeconds, onlyExpectedAssets, tolerance) => getBridgeMatches(
+      movement.identifier ?? getEventEntryFromCollection(movement.events).entry.identifier,
+      timeRangeSeconds,
+      onlyExpectedAssets,
+      tolerance,
+    ),
     match: matchBridgeTransaction,
     refresh: refreshUnmatchedBridgeTransactions,
   };

@@ -56,10 +56,6 @@ vi.mock('@/modules/history/events/use-untracked-bridge-counterpart', () => ({
   }),
 }));
 
-vi.mock('@/modules/history/event-utils', () => ({
-  getEventEntryFromCollection: <T>(events: T): T => events,
-}));
-
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: (error: unknown): string => error instanceof Error ? error.message : String(error),
   useNotifications: (): object => ({
@@ -137,13 +133,13 @@ describe('use-bridge-transaction-actions', () => {
       expect(get(composable.ignoreLoading)).toBe(false);
     });
 
-    it('should drop the ignored transaction from the current selection', async () => {
+    it('should drop the ignored leg from the current selection', async () => {
       const composable = useBridgeTransactionActions();
-      set(composable.modelSelectedUnmatched, ['group1', 'group2']);
+      set(composable.modelSelectedUnmatched, ['42', '55']);
 
-      await composable.ignoreTransaction(createMockTransaction({ groupIdentifier: 'group1' }));
+      await composable.ignoreTransaction(createMockTransaction({ identifier: 42 }));
 
-      expect(get(composable.modelSelectedUnmatched)).toEqual(['group2']);
+      expect(get(composable.modelSelectedUnmatched)).toEqual(['55']);
     });
 
     it('should not use the gas fee event of the group as the bridge identifier', async () => {
@@ -356,7 +352,7 @@ describe('use-bridge-transaction-actions', () => {
       ]);
 
       const composable = useBridgeTransactionActions();
-      set(composable.modelSelectedUnmatched, ['g1', 'g3']);
+      set(composable.modelSelectedUnmatched, ['10', '30']);
       composable.confirmIgnoreSelected();
       await extractAndCallConfirmCallback();
 
@@ -375,7 +371,7 @@ describe('use-bridge-transaction-actions', () => {
       ]);
 
       const composable = useBridgeTransactionActions();
-      set(composable.modelSelectedIgnored, ['g2']);
+      set(composable.modelSelectedIgnored, ['20']);
       composable.confirmRestoreSelected();
       await extractAndCallConfirmCallback();
 

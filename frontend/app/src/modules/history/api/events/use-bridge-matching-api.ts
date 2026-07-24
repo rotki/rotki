@@ -12,9 +12,19 @@ import { useTaskApi } from '@/modules/core/tasks/use-task-api';
  */
 export type BridgeLegResolution = 'external' | 'createCounterpart';
 
+/**
+ * An unresolved bridge leg as reported by the backend. Legs are reported individually
+ * since a single transaction group can carry several bridge legs that are matched or
+ * ignored independently.
+ */
+export interface UnmatchedBridgeLeg {
+  identifier: number;
+  groupIdentifier: string;
+}
+
 interface UseBridgeMatchingApiReturn {
-  getUnmatchedBridgeTransactions: (onlyIgnored?: boolean) => Promise<string[]>;
-  getBridgeMatches: (bridgeEvent: string, timeRange: number, onlyExpectedAssets: boolean, tolerance: string) => Promise<MatchSuggestions>;
+  getUnmatchedBridgeTransactions: (onlyIgnored?: boolean) => Promise<UnmatchedBridgeLeg[]>;
+  getBridgeMatches: (bridgeEvent: number, timeRange: number, onlyExpectedAssets: boolean, tolerance: string) => Promise<MatchSuggestions>;
   matchBridgeTransactions: (bridgeEvent: number, matchedEvents?: number[], resolution?: BridgeLegResolution) => Promise<boolean>;
   unlinkBridgeTransaction: (identifier: number) => Promise<boolean>;
   triggerBridgeMatching: () => Promise<PendingTask>;
@@ -23,12 +33,12 @@ interface UseBridgeMatchingApiReturn {
 export function useBridgeMatchingApi(): UseBridgeMatchingApiReturn {
   const { triggerTask } = useTaskApi();
 
-  const getUnmatchedBridgeTransactions = async (onlyIgnored?: boolean): Promise<string[]> =>
-    api.get<string[]>('/history/events/match/bridges', {
+  const getUnmatchedBridgeTransactions = async (onlyIgnored?: boolean): Promise<UnmatchedBridgeLeg[]> =>
+    api.get<UnmatchedBridgeLeg[]>('/history/events/match/bridges', {
       params: onlyIgnored !== undefined ? snakeCaseTransformer({ onlyIgnored }) : undefined,
     });
 
-  const getBridgeMatches = async (bridgeEvent: string, timeRange: number, onlyExpectedAssets: boolean, tolerance: string): Promise<MatchSuggestions> =>
+  const getBridgeMatches = async (bridgeEvent: number, timeRange: number, onlyExpectedAssets: boolean, tolerance: string): Promise<MatchSuggestions> =>
     api.post<MatchSuggestions>('/history/events/match/bridges', {
       bridgeEvent,
       onlyExpectedAssets,

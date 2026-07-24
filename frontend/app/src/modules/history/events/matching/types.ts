@@ -36,7 +36,7 @@ export interface PotentialMatchRow {
  */
 export interface MatchingFlow {
   getSuggestions: (
-    groupIdentifier: string,
+    movement: UnmatchedEventGroup,
     timeRangeSeconds: number,
     onlyExpectedAssets: boolean,
     tolerance: string,

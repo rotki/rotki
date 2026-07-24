@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
-    getUnmatchedBridgeTransactions: vi.fn<(onlyIgnored?: boolean) => Promise<string[]>>(),
+    getUnmatchedBridgeTransactions: vi.fn<(onlyIgnored?: boolean) => Promise<{ identifier: number; groupIdentifier: string }[]>>(),
     fetchHistoryEvents: vi.fn(),
     matchBridgeTransactions: vi.fn(),
     triggerBridgeMatching: vi.fn(),
@@ -120,8 +120,8 @@ describe('use-unmatched-bridge-transactions', () => {
       expect(spies.removeMatching).not.toHaveBeenCalled();
     });
 
-    it('should expand group identifiers to events with direction and bridge extra data', async () => {
-      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce(['group-a']);
+    it('should expand reported legs to events with direction and bridge extra data', async () => {
+      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce([{ groupIdentifier: 'group-a', identifier: 7 }]);
       spies.fetchHistoryEvents.mockResolvedValueOnce({
         entries: [{
           entry: {
@@ -154,7 +154,7 @@ describe('use-unmatched-bridge-transactions', () => {
     // real unmatched bridge group), so the gas fee event arrives as a separate row before the
     // bridge leg rather than alongside it in one array.
     it('should pick the bridge leg and not the gas fee event of the transaction group', async () => {
-      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce(['group-a']);
+      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce([{ groupIdentifier: 'group-a', identifier: 2 }]);
       spies.fetchHistoryEvents.mockResolvedValueOnce({
         entries: [{
           entry: {
@@ -191,7 +191,7 @@ describe('use-unmatched-bridge-transactions', () => {
     });
 
     it('should keep the withdrawal direction for an orphan withdrawal leg', async () => {
-      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce(['group-b']);
+      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce([{ groupIdentifier: 'group-b', identifier: 4 }]);
       spies.fetchHistoryEvents.mockResolvedValueOnce({
         entries: [{
           entry: {
@@ -225,7 +225,7 @@ describe('use-unmatched-bridge-transactions', () => {
     // A leg resolved as external is turned into a bridge spend/receive, so its direction can
     // no longer come from the event type and has to come from the recorded matchedBridge stamp.
     it('should derive the direction of an external-resolved leg from the matched bridge stamp', async () => {
-      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce(['group-d']);
+      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce([{ groupIdentifier: 'group-d', identifier: 6 }]);
       spies.fetchHistoryEvents.mockResolvedValueOnce({
         entries: [{
           entry: {
@@ -250,18 +250,20 @@ describe('use-unmatched-bridge-transactions', () => {
       });
     });
 
-    // A transaction can carry more than one bridge leg. Acting on a leg that was already
-    // resolved as external would send the backend an event that is no longer a bridge
-    // deposit/withdrawal, so the raw leg must win regardless of row order.
-    it('should prefer the raw bridge leg over a leg already resolved as external', async () => {
-      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce(['group-e']);
+    // A transaction can carry more than one bridge leg, each matched or ignored
+    // independently. Every reported leg must get its own row — collapsing them into one
+    // made ignoring a leg look like a no-op while the group as a whole stayed listed.
+    it('should create one row per reported leg of a multi-leg transaction', async () => {
+      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce([
+        { groupIdentifier: 'group-e', identifier: 7 },
+        { groupIdentifier: 'group-e', identifier: 8 },
+      ]);
       spies.fetchHistoryEvents.mockResolvedValueOnce({
         entries: [{
           entry: {
             asset: 'ETH',
             eventSubtype: 'bridge',
-            eventType: 'spend',
-            extraData: { matchedBridge: { direction: 'deposit', resolution: 'external' } },
+            eventType: 'deposit',
             groupIdentifier: 'group-e',
             identifier: 7,
           },
@@ -280,15 +282,19 @@ describe('use-unmatched-bridge-transactions', () => {
 
       await fetchUnmatchedBridgeTransactions(false);
 
-      expect(get(unmatchedTransactions)).toHaveLength(1);
-      expect(get(unmatchedTransactions)[0]).toMatchObject({
-        direction: 'deposit',
+      expect(spies.fetchHistoryEvents).toHaveBeenCalledWith(expect.objectContaining({
+        groupIdentifiers: ['group-e'],
+      }));
+      expect(get(unmatchedTransactions)).toHaveLength(2);
+      expect(get(unmatchedTransactions)[0]).toMatchObject({ asset: 'ETH', identifier: 7 });
+      expect(get(unmatchedTransactions)[1]).toMatchObject({
+        asset: 'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
         identifier: 8,
       });
     });
 
-    it('should skip a group that contains no bridge event', async () => {
-      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce(['group-c']);
+    it('should skip a leg whose event is missing from the fetched rows', async () => {
+      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce([{ groupIdentifier: 'group-c', identifier: 5 }]);
       spies.fetchHistoryEvents.mockResolvedValueOnce({
         entries: [{
           entry: {
@@ -296,7 +302,7 @@ describe('use-unmatched-bridge-transactions', () => {
             eventSubtype: 'fee',
             eventType: 'spend',
             groupIdentifier: 'group-c',
-            identifier: 5,
+            identifier: 4,
           },
         }],
       });
@@ -403,7 +409,7 @@ describe('use-unmatched-bridge-transactions', () => {
       });
 
       expect(matched).toBe(true);
-      expect(spies.getBridgeMatches).toHaveBeenCalledWith('group-a', 3600, false, '0.01');
+      expect(spies.getBridgeMatches).toHaveBeenCalledWith(5, 3600, false, '0.01');
       expect(spies.matchBridgeTransactions).toHaveBeenCalledWith(5, [11, 12]);
     });
 
