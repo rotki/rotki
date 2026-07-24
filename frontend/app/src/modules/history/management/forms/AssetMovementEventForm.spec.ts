@@ -129,6 +129,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     vi.mocked(useAssetPricesApi).mockReturnValue({
       addHistoricalPrice: addHistoricalPriceMock,
       addLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['addLatestPrice']>(),
+      assetsHadOraclePrice: vi.fn<ReturnType<typeof useAssetPricesApi>['assetsHadOraclePrice']>(),
       deleteHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteHistoricalPrice']>(),
       deleteLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteLatestPrice']>(),
       editHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['editHistoricalPrice']>(),

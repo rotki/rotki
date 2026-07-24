@@ -1,3 +1,4 @@
+use crate::api::schemas::assets::AssetsIdentifier;
 use crate::api::schemas::prices::OraclePricesQuery;
 use crate::api::{utils::ApiResponse, AppState};
 use crate::globaldb::{OraclePricesQueryFilters, OraclePricesQueryResult};
@@ -8,6 +9,7 @@ use axum::{
     Json,
 };
 use reqwest::StatusCode;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 fn normalize_source_type_for_db(source_type: Option<String>) -> Result<Option<String>, String> {
@@ -62,6 +64,35 @@ pub async fn get_oracle_prices(
                 Json(ApiResponse::<OraclePricesQueryResult> {
                     result: None,
                     message: "Failed to query oracle prices".to_string(),
+                }),
+            )
+        }
+    }
+}
+
+pub async fn oracle_price_existence(
+    State(state): State<Arc<AppState>>,
+    Json(payload): Json<AssetsIdentifier>,
+) -> impl IntoResponse {
+    match state
+        .globaldb
+        .assets_have_oracle_price(&payload.identifiers)
+        .await
+    {
+        Ok(existence) => (
+            StatusCode::OK,
+            Json(ApiResponse::<HashMap<String, bool>> {
+                result: Some(existence),
+                message: "".to_string(),
+            }),
+        ),
+        Err(error) => {
+            log::error!("Failed to query oracle price existence due to {}", error);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<HashMap<String, bool>> {
+                    result: None,
+                    message: "Failed to query oracle price existence".to_string(),
                 }),
             )
         }
@@ -233,6 +264,55 @@ mod tests {
                 .get("source_type")
                 .and_then(|value| value.as_str()),
             Some("defillama")
+        );
+    }
+
+    async fn call_oracle_price_existence(
+        state: Arc<AppState>,
+        payload: AssetsIdentifier,
+    ) -> (StatusCode, JsonValue) {
+        let response = oracle_price_existence(State(state), Json(payload))
+            .await
+            .into_response();
+        let status = response.status();
+        let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        (status, serde_json::from_slice(&bytes).unwrap())
+    }
+
+    #[tokio::test]
+    async fn test_oracle_price_existence_reports_oracle_rows_only() {
+        let state = create_test_state().await;
+        {
+            let conn = state.globaldb.conn.lock().await;
+            // ETH has a coingecko (oracle) row -> true.
+            conn.execute(
+                "INSERT OR REPLACE INTO price_history(from_asset, to_asset, source_type, timestamp, price) VALUES(?, ?, ?, ?, ?)",
+                rusqlite::params!["ETH", "USD", "B", 4102445800_i64, "1111.1"],
+            )
+            .unwrap();
+            // BTC has only a manual (A) row -> false (user-entered, not the oracle).
+            conn.execute(
+                "INSERT OR REPLACE INTO price_history(from_asset, to_asset, source_type, timestamp, price) VALUES(?, ?, ?, ?, ?)",
+                rusqlite::params!["BTC", "USD", "A", 4102445800_i64, "1.0"],
+            )
+            .unwrap();
+        }
+
+        let (status, body) = call_oracle_price_existence(
+            state,
+            AssetsIdentifier {
+                identifiers: vec!["ETH".to_string(), "BTC".to_string(), "UNKNOWN".to_string()],
+            },
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK);
+        let result = body.get("result").unwrap();
+        assert_eq!(result.get("ETH").and_then(|value| value.as_bool()), Some(true));
+        assert_eq!(result.get("BTC").and_then(|value| value.as_bool()), Some(false));
+        assert_eq!(
+            result.get("UNKNOWN").and_then(|value| value.as_bool()),
+            Some(false)
         );
     }
 

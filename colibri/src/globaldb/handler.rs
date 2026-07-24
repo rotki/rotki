@@ -1,10 +1,14 @@
 use crate::blockchain::{RpcNode, SupportedBlockchain};
-use crate::types::PriceOracle;
+use crate::types::{PriceOracle, SerializableDBEnum};
 use rusqlite::{types::Type, types::Value, Connection, Result};
 use serde::Serialize;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+
+/// SQLite bind-parameter ceiling we stay under when chunking `IN (...)` lists.
+const SQLITE_SAFE_VARIABLE_LIMIT: usize = 900;
 
 #[derive(Clone)]
 pub struct GlobalDB {
@@ -262,6 +266,57 @@ impl GlobalDB {
             entries_total,
             entries_limit: -1,
         })
+    }
+
+    /// For each identifier, reports whether an oracle ever recorded a price for it.
+    ///
+    /// Oracle rows in `price_history` are only written after a successful non-zero
+    /// oracle response, so any such row means the oracle genuinely priced the asset at
+    /// some point. Manual (`A`) and manual-current (`E`) rows are user-entered and do
+    /// not count as the oracle having worked. An asset with no oracle row is
+    /// "unsupported" rather than "missing", which lets the caller drop it from a
+    /// missing-price count.
+    pub async fn assets_have_oracle_price(
+        &self,
+        identifiers: &[String],
+    ) -> Result<HashMap<String, bool>> {
+        let mut result: HashMap<String, bool> =
+            identifiers.iter().map(|id| (id.clone(), false)).collect();
+        if identifiers.is_empty() {
+            return Ok(result);
+        }
+
+        let excluded = [
+            PriceOracle::Manual.serialize_for_db(),
+            PriceOracle::ManualCurrent.serialize_for_db(),
+        ];
+
+        let conn = self.conn.lock().await;
+        let chunk_size = SQLITE_SAFE_VARIABLE_LIMIT
+            .saturating_sub(excluded.len())
+            .max(1);
+        for chunk in identifiers.chunks(chunk_size) {
+            let placeholders: String = std::iter::repeat_n("?", chunk.len())
+                .collect::<Vec<_>>()
+                .join(",");
+            let query = format!(
+                "SELECT DISTINCT from_asset FROM price_history
+                WHERE from_asset IN ({placeholders})
+                AND source_type NOT IN (?, ?)"
+            );
+            let mut params: Vec<Value> =
+                chunk.iter().map(|id| Value::Text(id.clone())).collect();
+            params.extend(excluded.iter().map(|code| Value::Text(code.clone())));
+
+            let mut stmt = conn.prepare(&query)?;
+            let mut rows = stmt.query(rusqlite::params_from_iter(params.iter()))?;
+            while let Some(row) = rows.next()? {
+                let identifier: String = row.get(0)?;
+                result.insert(identifier, true);
+            }
+        }
+
+        Ok(result)
     }
 }
 
