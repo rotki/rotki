@@ -1,10 +1,15 @@
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 from typing import Any
 
+import pandas as pd
 import pytest
 
 from rotkehlchen.mcp import analytics
 from rotkehlchen.mcp.analytics import (
+    AnalyticsScope,
     AnalyticsSession,
+    TableData,
     _flatten,
     _sanitize_row,
     _validate_sql,
@@ -13,6 +18,38 @@ from rotkehlchen.mcp.backend import configure_backend
 
 ADDRESS = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'
 TX_HASH = '0x' + 'ab' * 32
+
+
+class BlockingTableLoader:
+    def __init__(self, started: Event, proceed: Event) -> None:
+        self.started = started
+        self.proceed = proceed
+
+    def __call__(self, scope: AnalyticsScope) -> TableData:
+        self.started.set()
+        assert self.proceed.wait(timeout=5)
+        return TableData(
+            frame=pd.DataFrame([{'asset': 'BTC', 'amount_float': 2.0}]),
+            source={'privacy_mode': scope.privacy_mode},
+        )
+
+
+class OrderedTableLoader:
+    def __init__(self, started: Event, proceed: Event) -> None:
+        self.started = started
+        self.proceed = proceed
+
+    def __call__(self, scope: AnalyticsScope) -> TableData:
+        if scope.from_timestamp == 1:
+            self.started.set()
+            assert self.proceed.wait(timeout=5)
+            asset = 'OLD'
+        else:
+            asset = 'NEW'
+        return TableData(
+            frame=pd.DataFrame([{'asset': asset}]),
+            source={'privacy_mode': scope.privacy_mode},
+        )
 
 
 def test_flatten_should_recurse_and_add_float_companions() -> None:
@@ -148,6 +185,117 @@ def test_session_refresh_then_query_sql_roundtrip(monkeypatch) -> None:
         {'asset': 'ETH', 'total': 5.0},
     ]
     assert result['result_truncated'] is False
+
+
+def test_session_should_support_cross_thread_refresh_and_query(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        {'identifier': 1, 'asset': 'ETH', 'amount': '2', 'event_type': 'spend'},
+    ])
+    session = AnalyticsSession()
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        refreshed = executor.submit(
+            session.refresh,
+            tables=None,
+            from_timestamp=0,
+            to_timestamp=0,
+            include_ignored_assets=False,
+        ).result()
+        result = executor.submit(
+            session.query_sql,
+            'select count(*) as count from history_events',
+            10,
+        ).result()
+
+    assert refreshed['errors'] == {}
+    assert result['rows'] == [{'count': 1}]
+
+
+def test_refresh_should_load_without_blocking_queries(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        {'identifier': 1, 'asset': 'ETH', 'amount': '1', 'event_type': 'receive'},
+    ])
+    session = AnalyticsSession()
+    assert session.refresh(
+        tables=None,
+        from_timestamp=0,
+        to_timestamp=0,
+        include_ignored_assets=False,
+    )['errors'] == {}
+
+    started = Event()
+    proceed = Event()
+    monkeypatch.setitem(
+        analytics.TABLE_LOADERS,
+        'history_events',
+        BlockingTableLoader(started=started, proceed=proceed),
+    )
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        refresh_future = executor.submit(
+            session.refresh,
+            tables=None,
+            from_timestamp=0,
+            to_timestamp=0,
+            include_ignored_assets=False,
+        )
+        assert started.wait(timeout=5)
+        query_future = executor.submit(
+            session.query_sql,
+            'select asset, amount_float from history_events',
+            10,
+        )
+        try:
+            assert query_future.result(timeout=5)['rows'] == [
+                {'asset': 'ETH', 'amount_float': 1.0},
+            ]
+        finally:
+            proceed.set()
+
+        assert refresh_future.result(timeout=5)['errors'] == {}
+
+    assert session.query_sql(
+        'select asset, amount_float from history_events',
+        max_rows=10,
+    )['rows'] == [{'asset': 'BTC', 'amount_float': 2.0}]
+
+
+def test_overlapping_refreshes_should_not_publish_out_of_order(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    started = Event()
+    proceed = Event()
+    monkeypatch.setitem(
+        analytics.TABLE_LOADERS,
+        'history_events',
+        OrderedTableLoader(started=started, proceed=proceed),
+    )
+    session = AnalyticsSession()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        old_refresh = executor.submit(
+            session.refresh,
+            tables=None,
+            from_timestamp=1,
+            to_timestamp=0,
+            include_ignored_assets=False,
+        )
+        assert started.wait(timeout=5)
+        new_refresh = executor.submit(
+            session.refresh,
+            tables=None,
+            from_timestamp=2,
+            to_timestamp=0,
+            include_ignored_assets=False,
+        )
+        proceed.set()
+        assert old_refresh.result(timeout=5)['errors'] == {}
+        assert new_refresh.result(timeout=5)['errors'] == {}
+
+    assert session.query_sql(
+        'select asset from history_events',
+        max_rows=10,
+    )['rows'] == [{'asset': 'NEW'}]
 
 
 def test_history_events_promote_entry_and_redact_auto_notes(monkeypatch) -> None:
