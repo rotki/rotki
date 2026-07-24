@@ -272,3 +272,128 @@ def test_vesting_escrow_revoked(
             address=string_to_evm_address('0x7DAE0a882bd4511fa6918e6A35B21aD31a89E3Ab'),
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x4444AAAACDBa5580282365e25b16309Bd770ce4a']])
+def test_vesting_escrow_set_open_claim(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+):
+    """Test decoding a v0.3.0 escrow open claim toggle along a claim in the same
+    transaction, by a recipient that is a safe multisig.
+    """
+    tx_hash = deserialize_evm_tx_hash('0x7a7f0053db287feff90628bb041f0e10a6d01b34168c97c1a2af9a13cf7620e9')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    user_address, timestamp = ethereum_accounts[0], TimestampMS(1720832411000)
+    assert events == [
+        EvmEvent(
+            sequence_index=161,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.UPDATE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            notes='Disable permissionless claims of a Yearn vesting escrow',
+            tx_ref=tx_hash,
+            counterparty=CPT_YEARN_VESTING,
+            address=string_to_evm_address('0x29d0E623738fd93E60254c0D629f8dDeBD92aF40'),
+        ), EvmEvent(
+            sequence_index=164,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label='0x2C2dc95F8C8060a7e3B354c1B9540881AEa1613C',
+            notes=f'Successfully executed safe transaction 0x69a246b6d118f760b79e7d422307fd8ef2bccb8c82cdf664ac287917d05fd687 for multisig {user_address}',  # noqa: E501
+            tx_ref=tx_hash,
+            counterparty=CPT_SAFE_MULTISIG,
+            address=user_address,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xFE11a5009f2121622271e7dd0FD470264e076af6']])
+def test_vesting_escrow_disown(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+):
+    """Test decoding a standalone renouncement of the revocation right of a v0.3.0
+    escrow, done in the same transaction that deploys its replacement escrow.
+    """
+    tx_hash = deserialize_evm_tx_hash('0xaade17bb5fcb9d15867d8a8573b72e5306034da9ba6ffe866d86dc61c0c5c6e5')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    rsup = Asset('eip155:1/erc20:0x419905009e4656fdC02418C7Df35B1E61Ed5F726')
+    user_address, timestamp = ethereum_accounts[0], TimestampMS(1745610971000)
+    assert events == [
+        EvmEvent(
+            sequence_index=145,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=rsup,
+            amount=FVal(received_amount := '4549.5808845204568156'),
+            location_label=user_address,
+            notes=f'Receive {received_amount} RSUP from 0x4444444455bF42de586A88426E5412971eA48324 to {user_address}',  # noqa: E501
+            tx_ref=tx_hash,
+            address=string_to_evm_address('0x4444444455bF42de586A88426E5412971eA48324'),
+        ), EvmEvent(
+            sequence_index=148,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=rsup,
+            amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039457.584007913129639935'),  # noqa: E501
+            location_label=user_address,
+            notes=f'Set RSUP spending approval of {user_address} by 0x200C92Dd85730872Ab6A1e7d5E40A067066257cF to {approval_amount}',  # noqa: E501
+            tx_ref=tx_hash,
+            address=string_to_evm_address('0x200C92Dd85730872Ab6A1e7d5E40A067066257cF'),
+        ), EvmEvent(
+            sequence_index=149,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+            asset=rsup,
+            amount=FVal(deposit_amount := '4549.5808845204568156'),
+            location_label=user_address,
+            notes=f'Deposit {deposit_amount} RSUP in a Yearn vesting escrow for 0x80c9aC867b2D36B7e8D74646E074c460a008C0cb vesting until 30/07/2025 04:00:00',  # noqa: E501
+            tx_ref=tx_hash,
+            counterparty=CPT_YEARN_VESTING,
+            address=string_to_evm_address('0x4aa944DfF7aadC4587C7c31Ad8b1867E5F43757b'),
+            extra_data={'recipient': '0x80c9aC867b2D36B7e8D74646E074c460a008C0cb'},
+        ), EvmEvent(
+            sequence_index=151,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.UPDATE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            notes='Renounce the right to revoke a Yearn vesting escrow',
+            tx_ref=tx_hash,
+            counterparty=CPT_YEARN_VESTING,
+            address=string_to_evm_address('0x3c89008Ae23fCF293DE3815A0a1e8E67e294e0CB'),
+        ), EvmEvent(
+            sequence_index=152,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label='0x49e5097f627e400F2a377D5FD7E712d1E0e16FC2',
+            notes=f'Successfully executed safe transaction 0x713bf823a8671f297fd98b4cecc408a7942185ed0330ed13f481dcfc4b59466e for multisig {user_address}',  # noqa: E501
+            tx_ref=tx_hash,
+            counterparty=CPT_SAFE_MULTISIG,
+            address=user_address,
+        ),
+    ]

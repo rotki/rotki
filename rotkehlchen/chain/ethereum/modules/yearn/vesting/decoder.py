@@ -11,19 +11,27 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
 from .constants import (
     CPT_YEARN_VESTING,
+    DISOWNED_TOPIC,
+    PERMISSIONLESS_CLAIMS_SET_TOPIC,
+    REVOCATION_RENOUNCED_TOPIC,
     REVOKED_V3_TOPIC,
     REVOKED_V4_TOPIC,
     RUG_PULL_TOPIC,
+    SET_OPEN_CLAIM_TOPIC,
     TOKEN_VESTING_ESCROW_CREATED_V4_TOPIC,
+    VESTING_ESCROW_ABI,
     VESTING_ESCROW_CREATED_TOPIC,
     VESTING_ESCROW_CREATED_V3_TOPIC,
     VESTING_ESCROW_PROXY_CODES,
@@ -72,6 +80,7 @@ class YearnvestingDecoder(EvmDecoderInterface):
             msg_aggregator=msg_aggregator,
         )
         self.escrow_check_cache: dict[ChecksumEvmAddress, bool] = {}
+        self.escrow_recipients: dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
 
     def _is_vesting_escrow(self, address: ChecksumEvmAddress) -> bool:
         """Check if the given address is a yearn vesting escrow by comparing its
@@ -220,6 +229,64 @@ class YearnvestingDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _get_escrow_recipient(self, escrow: ChecksumEvmAddress) -> ChecksumEvmAddress | None:
+        """Query and cache the recipient of the given vesting escrow"""
+        if (recipient := self.escrow_recipients.get(escrow)) is not None:
+            return recipient
+
+        try:
+            recipient = deserialize_evm_address(self.node_inquirer.call_contract(
+                contract_address=escrow,
+                abi=VESTING_ESCROW_ABI,
+                method_name='recipient',
+            ))
+        except (RemoteError, DeserializationError) as e:
+            log.error('Failed to query the recipient of yearn vesting escrow %s due to %s', escrow, e)  # noqa: E501
+            return None
+
+        self.escrow_recipients[escrow] = recipient
+        return recipient
+
+    def _decode_admin_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode the escrow administrative events: renouncing the right to revoke and
+        toggling permissionless (open) claiming.
+        """
+        actor: ChecksumEvmAddress | None
+        if context.tx_log.topics[0] in (DISOWNED_TOPIC, REVOCATION_RENOUNCED_TOPIC):
+            if context.tx_log.topics[0] == DISOWNED_TOPIC:
+                if any(  # a v0.3.0 revocation also disowns the escrow, so it is not a standalone renouncement  # noqa: E501
+                    tx_log.address == context.tx_log.address and tx_log.topics[0] == REVOKED_V3_TOPIC  # noqa: E501
+                    for tx_log in context.all_logs
+                ):
+                    return DEFAULT_EVM_DECODING_OUTPUT
+
+                actor = bytes_to_address(context.tx_log.data[:32])
+            else:
+                actor = bytes_to_address(context.tx_log.topics[1])
+
+            notes = 'Renounce the right to revoke a Yearn vesting escrow'
+        else:  # SET_OPEN_CLAIM_TOPIC or PERMISSIONLESS_CLAIMS_SET_TOPIC
+            # only the recipient can toggle it, but the log doesn't carry it
+            actor = self._get_escrow_recipient(context.tx_log.address)
+            action = 'Enable' if int.from_bytes(context.tx_log.data[:32]) != 0 else 'Disable'
+            notes = f'{action} permissionless claims of a Yearn vesting escrow'
+
+        if actor is None or not self.base.is_tracked(actor):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.UPDATE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=actor,
+            notes=notes,
+            counterparty=CPT_YEARN_VESTING,
+            address=context.tx_log.address,
+        )])
+
     def _decode_escrow_events_by_topic(
             self,
             token: EvmToken | None,  # pylint: disable=unused-argument
@@ -232,7 +299,16 @@ class YearnvestingDecoder(EvmDecoderInterface):
         """Match escrow events by topic since the escrow addresses are not known
         statically, verifying the emitting address is a yearn vesting escrow.
         """
-        if tx_log.topics[0] not in (SIMPLE_CLAIM, RUG_PULL_TOPIC, REVOKED_V3_TOPIC, REVOKED_V4_TOPIC):  # noqa: E501
+        if tx_log.topics[0] not in (
+            SIMPLE_CLAIM,
+            RUG_PULL_TOPIC,
+            REVOKED_V3_TOPIC,
+            REVOKED_V4_TOPIC,
+            DISOWNED_TOPIC,
+            SET_OPEN_CLAIM_TOPIC,
+            REVOCATION_RENOUNCED_TOPIC,
+            PERMISSIONLESS_CLAIMS_SET_TOPIC,
+        ):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self._is_vesting_escrow(tx_log.address):
@@ -247,8 +323,10 @@ class YearnvestingDecoder(EvmDecoderInterface):
         )
         if tx_log.topics[0] == SIMPLE_CLAIM:
             return self._decode_claim(context)
+        if tx_log.topics[0] in (RUG_PULL_TOPIC, REVOKED_V3_TOPIC, REVOKED_V4_TOPIC):
+            return self._decode_revocation(context)
 
-        return self._decode_revocation(context)
+        return self._decode_admin_events(context)
 
     # -- DecoderInterface methods
 
