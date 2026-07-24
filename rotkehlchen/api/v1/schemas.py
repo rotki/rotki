@@ -5326,7 +5326,7 @@ class MatchBridgeTransactionsSchema(Schema):
 
 
 class FindPossibleBridgeMatchesSchema(Schema):
-    bridge_event = fields.String(required=True)
+    bridge_event = fields.Integer(required=True)
     time_range = fields.Integer(required=True, validate=validate.Range(min=0, min_inclusive=False))
     only_expected_assets = fields.Boolean(required=False, load_default=True)
     tolerance = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))

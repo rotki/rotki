@@ -29,11 +29,11 @@ describe('use-bridge-matching-api', () => {
     vi.clearAllMocks();
   });
 
-  it('should fetch unmatched bridge transactions with the only-ignored flag', async () => {
-    spies.get.mockResolvedValueOnce(['group-a']);
+  it('should fetch unmatched bridge legs with the only-ignored flag', async () => {
+    spies.get.mockResolvedValueOnce([{ groupIdentifier: 'group-a', identifier: 7 }]);
     const { getUnmatchedBridgeTransactions } = useBridgeMatchingApi();
 
-    await expect(getUnmatchedBridgeTransactions(true)).resolves.toEqual(['group-a']);
+    await expect(getUnmatchedBridgeTransactions(true)).resolves.toEqual([{ groupIdentifier: 'group-a', identifier: 7 }]);
 
     expect(spies.get).toHaveBeenCalledWith('/history/events/match/bridges', {
       params: { only_ignored: true },
@@ -55,13 +55,13 @@ describe('use-bridge-matching-api', () => {
     spies.post.mockResolvedValueOnce({ closeMatches: [1], otherEvents: [2] });
     const { getBridgeMatches } = useBridgeMatchingApi();
 
-    await expect(getBridgeMatches('group-a', 3600, true, '0.01')).resolves.toEqual({
+    await expect(getBridgeMatches(7, 3600, true, '0.01')).resolves.toEqual({
       closeMatches: [1],
       otherEvents: [2],
     });
 
     expect(spies.post).toHaveBeenCalledWith('/history/events/match/bridges', {
-      bridgeEvent: 'group-a',
+      bridgeEvent: 7,
       onlyExpectedAssets: true,
       timeRange: 3600,
       tolerance: '0.01',

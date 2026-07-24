@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MatchingFlow, PotentialMatchRow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
+import type { MatchingFlow, MatchSuggestions, PotentialMatchRow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventCollectionRow } from '@/modules/history/events/schemas';
 import { bigNumberify } from '@rotki/common';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -85,13 +85,13 @@ async function searchPotentialMatches(): Promise<void> {
   set(searchLoading, true);
 
   try {
-    const groupIdentifier = movement.groupIdentifier;
-
     const hours = Number.parseInt(get(searchTimeRange), 10) || getDefaultHourRange();
     const timeRangeInSeconds = hours * 60 * 60;
 
-    const getSuggestions = flow?.getSuggestions ?? getAssetMovementMatches;
-    const suggestions = await getSuggestions(groupIdentifier, timeRangeInSeconds, get(onlyExpectedAssets), percentageToDecimal(get(tolerancePercentage)));
+    const getSuggestions = flow?.getSuggestions
+      ?? (async (m: UnmatchedEventGroup, timeRange: number, onlyExpected: boolean, tolerance: string): Promise<MatchSuggestions> =>
+        getAssetMovementMatches(m.groupIdentifier, timeRange, onlyExpected, tolerance));
+    const suggestions = await getSuggestions(movement, timeRangeInSeconds, get(onlyExpectedAssets), percentageToDecimal(get(tolerancePercentage)));
     const allIdentifiers = [...suggestions.closeMatches, ...suggestions.otherEvents];
 
     if (allIdentifiers.length === 0) {

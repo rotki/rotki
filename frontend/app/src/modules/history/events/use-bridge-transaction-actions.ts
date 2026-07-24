@@ -4,7 +4,6 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
-import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { type UnmatchedBridgeTransaction, useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useUntrackedBridgeCounterpart } from '@/modules/history/events/use-untracked-bridge-counterpart';
 
@@ -52,11 +51,13 @@ export function useBridgeTransactionActions(
 
   /**
    * A row that just left the list must not stay selected, otherwise the "ignore selected"
-   * count keeps counting a transaction that is no longer actionable.
+   * count keeps counting a leg that is no longer actionable. Rows are keyed by the leg
+   * event identifier, since a transaction group can carry several bridge legs.
    */
-  function deselect(groupIdentifier: string): void {
-    set(modelSelectedUnmatched, get(modelSelectedUnmatched).filter(id => id !== groupIdentifier));
-    set(modelSelectedIgnored, get(modelSelectedIgnored).filter(id => id !== groupIdentifier));
+  function deselect(transaction: UnmatchedBridgeTransaction): void {
+    const rowId = transaction.identifier.toString();
+    set(modelSelectedUnmatched, get(modelSelectedUnmatched).filter(id => id !== rowId));
+    set(modelSelectedIgnored, get(modelSelectedIgnored).filter(id => id !== rowId));
   }
 
   function notifyActionFailure(logMessage: string, error: unknown): void {
@@ -65,10 +66,6 @@ export function useBridgeTransactionActions(
       t('actions.bridge_matching.error.title'),
       t('actions.bridge_matching.error.description', { error: getErrorMessage(error) }),
     );
-  }
-
-  function getTransactionIdentifier(transaction: UnmatchedBridgeTransaction): number {
-    return transaction.identifier ?? getEventEntryFromCollection(transaction.events).entry.identifier;
   }
 
   function formatChain(chain: string | number | undefined): string | undefined {
@@ -80,8 +77,8 @@ export function useBridgeTransactionActions(
   async function ignoreTransaction(transaction: UnmatchedBridgeTransaction): Promise<void> {
     set(ignoreLoading, true);
     try {
-      await matchBridgeTransactions(getTransactionIdentifier(transaction));
-      deselect(transaction.groupIdentifier);
+      await matchBridgeTransactions(transaction.identifier);
+      deselect(transaction);
       await refreshUnmatchedBridgeTransactions();
       await onActionComplete?.();
     }
@@ -96,8 +93,8 @@ export function useBridgeTransactionActions(
   async function restoreTransaction(transaction: UnmatchedBridgeTransaction): Promise<void> {
     set(ignoreLoading, true);
     try {
-      await unlinkBridgeTransaction(getTransactionIdentifier(transaction));
-      deselect(transaction.groupIdentifier);
+      await unlinkBridgeTransaction(transaction.identifier);
+      deselect(transaction);
       await refreshUnmatchedBridgeTransactions();
       await onActionComplete?.();
     }
@@ -112,9 +109,9 @@ export function useBridgeTransactionActions(
   async function markExternal(transaction: UnmatchedBridgeTransaction): Promise<void> {
     set(ignoreLoading, true);
     try {
-      const result = await resolveExternal(getTransactionIdentifier(transaction));
+      const result = await resolveExternal(transaction.identifier);
       if (result.success) {
-        deselect(transaction.groupIdentifier);
+        deselect(transaction);
         await refreshUnmatchedBridgeTransactions();
         await onActionComplete?.();
       }
@@ -157,9 +154,9 @@ export function useBridgeTransactionActions(
   async function createCounterpart(transaction: UnmatchedBridgeTransaction): Promise<void> {
     set(ignoreLoading, true);
     try {
-      const result = await resolveCreateCounterpart(getTransactionIdentifier(transaction));
+      const result = await resolveCreateCounterpart(transaction.identifier);
       if (result.success) {
-        deselect(transaction.groupIdentifier);
+        deselect(transaction);
         await refreshUnmatchedBridgeTransactions();
         await onActionComplete?.();
       }
@@ -210,12 +207,12 @@ export function useBridgeTransactionActions(
     }, async () => markExternal(transaction));
   }
 
-  async function ignoreSelectedTransactions(groupIdentifiers: string[]): Promise<void> {
+  async function ignoreSelectedTransactions(rowIds: string[]): Promise<void> {
     set(ignoreLoading, true);
     try {
-      const transactions = get(unmatchedTransactions).filter(tx => groupIdentifiers.includes(tx.groupIdentifier));
+      const transactions = get(unmatchedTransactions).filter(tx => rowIds.includes(tx.identifier.toString()));
       for (const transaction of transactions)
-        await matchBridgeTransactions(getTransactionIdentifier(transaction));
+        await matchBridgeTransactions(transaction.identifier);
 
       await refreshUnmatchedBridgeTransactions();
       set(modelSelectedUnmatched, []);
@@ -228,12 +225,12 @@ export function useBridgeTransactionActions(
     }
   }
 
-  async function unignoreSelectedTransactions(groupIdentifiers: string[]): Promise<void> {
+  async function unignoreSelectedTransactions(rowIds: string[]): Promise<void> {
     set(ignoreLoading, true);
     try {
-      const transactions = get(ignoredTransactions).filter(tx => groupIdentifiers.includes(tx.groupIdentifier));
+      const transactions = get(ignoredTransactions).filter(tx => rowIds.includes(tx.identifier.toString()));
       for (const transaction of transactions)
-        await unlinkBridgeTransaction(getTransactionIdentifier(transaction));
+        await unlinkBridgeTransaction(transaction.identifier);
 
       await refreshUnmatchedBridgeTransactions();
       set(modelSelectedIgnored, []);

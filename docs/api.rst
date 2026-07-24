@@ -7008,9 +7008,10 @@ Match the two legs of cross-chain bridge transfers
 
 .. http:get:: /api/(version)/history/events/match/bridges
 
-   Get a list of group identifiers of unmatched bridge events. Contains both source chain
+   Get a list of unmatched bridge legs as event identifier / group identifier pairs. Contains both source chain
    deposits awaiting their destination leg and destination chain withdrawals whose source
-   leg is unknown. This endpoint does not require premium.
+   leg is unknown. Legs are reported individually since a single transaction group can carry
+   several bridge legs that are matched or ignored independently. This endpoint does not require premium.
 
    **Example Request**:
 
@@ -7019,7 +7020,7 @@ Match the two legs of cross-chain bridge transfers
       GET /api/1/history/events/match/bridges?only_ignored=false HTTP/1.1
       Host: localhost:5042
 
-   :reqquery bool[optional] only_ignored: Flag indicating whether to return a list of the ignored bridge events, or the list of all bridge events that have not been matched or ignored yet.
+   :reqquery bool[optional] only_ignored: Flag indicating whether to return a list of the ignored bridge legs, or the list of all bridge legs that have not been matched or ignored yet.
 
    **Example Response**:
 
@@ -7030,13 +7031,13 @@ Match the two legs of cross-chain bridge transfers
 
       {
           "result": [
-              "10x0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8",
-              "421610x9f8e7d6c5b4a30219f8e7d6c5b4a30219f8e7d6c5b4a30219f8e7d6c5b4a3021"
+              {"identifier": 123, "group_identifier": "10x0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8"},
+              {"identifier": 456, "group_identifier": "421610x9f8e7d6c5b4a30219f8e7d6c5b4a30219f8e7d6c5b4a30219f8e7d6c5b4a3021"}
           ],
           "message": ""
       }
 
-   :resjson list result: A list of group identifiers for the unmatched bridge events.
+   :resjson list result: A list of entries, one per unmatched bridge leg, each holding the leg event's DB identifier and its group identifier.
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: List of group identifiers returned successfully
    :statuscode 400: Provided JSON is in some way malformed
@@ -7059,13 +7060,13 @@ Match the two legs of cross-chain bridge transfers
       Content-Type: application/json;charset=UTF-8
 
       {
-          "bridge_event": "10x0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8",
+          "bridge_event": 123,
           "time_range": 7200,
           "only_expected_assets": true,
           "tolerance": "0.01"
       }
 
-   :reqjson string bridge_event: Group identifier of the bridge deposit to find matches for.
+   :reqjson int bridge_event: DB identifier of the bridge leg (deposit or withdrawal) to find matches for.
    :reqjson int time_range: Time range in seconds to search for matches.
    :reqjson bool[optional] only_expected_assets: Flag indicating whether to limit the possible matches to only events with assets in the same collection as the deposit's asset. True by default.
    :reqjson string tolerance: The tolerance value used when matching amounts. Must be a positive decimal number.

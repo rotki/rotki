@@ -2,6 +2,7 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
+import { arrayify } from '@/modules/core/common/data/array';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
@@ -15,6 +16,8 @@ import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 interface UnmatchedBridgeRow {
+  /** Row key: the leg event identifier, since a group can carry several bridge legs. */
+  id: string;
   groupIdentifier: string;
   entry: HistoryEventEntry;
   direction: 'deposit' | 'withdrawal';
@@ -129,9 +132,13 @@ const columns = computed<DataTableColumn<UnmatchedBridgeRow>[]>(() => createColu
 
 const rows = computed<UnmatchedBridgeRow[]>(() =>
   transactions.map((transaction) => {
-    const { entry, ...meta } = getEventEntryFromCollection(transaction.events);
+    // Show the leg's own event: the row's collection can hold several events and the
+    // first one is not necessarily the leg this row acts on.
+    const { entry, ...meta } = arrayify(transaction.events).find(event => event.entry.identifier === transaction.identifier)
+      ?? getEventEntryFromCollection(transaction.events);
     const eventEntry = { ...entry, ...meta };
     return {
+      id: transaction.identifier.toString(),
       canCreateCounterpart: !showRestore && getBridgeCounterpartChain(transaction) !== undefined,
       counterpartAddress: getBridgeCounterpartAddress(transaction),
       direction: transaction.direction,
@@ -244,7 +251,7 @@ function actionLabels(row: UnmatchedBridgeRow): UnmatchedRowActionLabels {
         v-model="selected"
         :cols="columns"
         :rows="rows"
-        row-attr="groupIdentifier"
+        row-attr="id"
         :item-class="getRowClass"
         outlined
         dense
