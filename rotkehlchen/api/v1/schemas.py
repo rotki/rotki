@@ -144,6 +144,7 @@ from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAINS_WITH_TRANSACTIONS,
     EVM_EVMLIKE_LOCATIONS,
+    EVMLIKE_CHAIN_NAMES,
     NON_EVM_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS_TYPE,
     AddressbookEntry,
@@ -2852,6 +2853,18 @@ class AssetsSearchLevenshteinSchema(Schema):
     def __init__(self, db: DBHandler) -> None:
         super().__init__()
         self.db = db
+
+    @pre_load
+    def maybe_replace_evmlike_chain(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        """Evmlike chains (zksync lite) have no tokens of their own since they
+        use the L1 tokens, so search as if on ethereum"""
+        if isinstance(data, dict) and data.get('evm_chain') in EVMLIKE_CHAIN_NAMES:
+            data['evm_chain'] = ChainID.ETHEREUM.to_name()
+        return data
 
     @validates_schema
     def validate_schema(

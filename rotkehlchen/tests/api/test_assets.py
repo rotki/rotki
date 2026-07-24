@@ -1096,6 +1096,18 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server: APIServer) -> No
     result = assert_proper_sync_response_with_result(response)
     assert 'ETH' in {x['identifier'] for x in result}
 
+    # check that filtering by an evmlike chain (zksync lite) searches as if on ethereum
+    # since evmlike chains have no tokens of their own
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'ETH', 'limit': 50, 'evm_chain': 'zksync_lite', 'asset_type': 'evm token'},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    identifiers = {x['identifier'] for x in result}
+    assert 'ETH' in identifiers  # native ETH is included despite the evm token type filter
+    assert 'eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' in identifiers  # WETH
+    assert all(entry.get('evm_chain', 'ethereum') == 'ethereum' for entry in result)
+
 
 def test_search_nfts_with_levenshtein(rotkehlchen_api_server: APIServer) -> None:
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as cursor:

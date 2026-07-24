@@ -330,6 +330,9 @@ class EvmlikeChain(StrEnum):
     ZKSYNC_LITE = auto()
 
 
+EVMLIKE_CHAIN_NAMES: Final = frozenset(chain.value for chain in EvmlikeChain)
+
+
 class EvmTransactionAuthorization(NamedTuple):
     """EIP-7702 authorization to delegate EOA execution to a contract.
 

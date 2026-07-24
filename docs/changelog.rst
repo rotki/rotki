@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Searching for zksync lite assets should now show you ethereum mainnet assets and you should be able to easily select relevant assets when adding/editing events.
 * :bug:`-` Omnibridge events containing fee payments will now be properly decoded.
 * :bug:`12526` EVM transactions discovered through more than one tracked address now remain associated with every relevant address, even when the transaction was already cached.
 * :feature:`-` The rotki Docker image is now smaller, shuts down cleanly and immediately on ``docker stop`` instead of risking a forced kill in the middle of a database write, and can be run fully locked down as a read-only, unprivileged container. Internally a single supervisor now starts rotki and colibri, serves the frontend and proxies to them, replacing the previous nginx and Python entrypoint. Your existing setup keeps working unchanged: the published port, the ``/data``, ``/logs`` and ``/config`` volumes and every environment variable behave exactly as before.
