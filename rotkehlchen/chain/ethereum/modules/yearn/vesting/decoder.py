@@ -81,6 +81,7 @@ class YearnvestingDecoder(EvmDecoderInterface):
         )
         self.escrow_check_cache: dict[ChecksumEvmAddress, bool] = {}
         self.escrow_recipients: dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
+        self.escrow_tokens: dict[ChecksumEvmAddress, EvmToken] = {}
 
     def _is_vesting_escrow(self, address: ChecksumEvmAddress) -> bool:
         """Check if the given address is a yearn vesting escrow by comparing its
@@ -149,10 +150,11 @@ class YearnvestingDecoder(EvmDecoderInterface):
                 event.counterparty = CPT_YEARN_VESTING
                 event.notes = f'Donate {event.amount} {token.symbol} to the Vyper project'
 
+        events = []
         if deposit_found is False and self.base.is_tracked(funder):
             # in the v0.1.0/v0.2.0 factories the tokens move from the pre-funded factory
             # to the escrow, so there is no transfer from the funder to turn into a deposit
-            return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
+            events.append(self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
@@ -164,9 +166,23 @@ class YearnvestingDecoder(EvmDecoderInterface):
                 counterparty=CPT_YEARN_VESTING,
                 address=escrow,
                 extra_data={'recipient': recipient},
-            )])
+            ))
 
-        return DEFAULT_EVM_DECODING_OUTPUT
+        if self.base.is_tracked(recipient):
+            events.append(self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.GRANT,
+                asset=token,
+                amount=amount,
+                location_label=recipient,
+                notes=f'Receive a grant of {amount} {token.symbol} in a Yearn vesting escrow vesting until {end_date}',  # noqa: E501
+                counterparty=CPT_YEARN_VESTING,
+                address=escrow,
+            ))
+
+        return EvmDecodingOutput(events=events)
 
     def _decode_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a claim of vested tokens from an escrow. The token transfer to the
@@ -196,9 +212,10 @@ class YearnvestingDecoder(EvmDecoderInterface):
 
     def _decode_revocation(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a revocation (rug pull) of an escrow, clawing back the unvested
-        tokens. Only the receiver of the clawed back tokens sees an event since the
-        transaction is not queried for the vesting recipient.
+        tokens. The receiver of the clawed back tokens sees a withdrawal and the
+        vesting recipient a clawback loss, if tracked.
         """
+        receiver: str | None = None
         if context.tx_log.topics[0] == RUG_PULL_TOPIC:
             recipient = bytes_to_address(context.tx_log.data[:32])
             raw_amount = int.from_bytes(context.tx_log.data[32:64])
@@ -207,8 +224,10 @@ class YearnvestingDecoder(EvmDecoderInterface):
             raw_amount = int.from_bytes(context.tx_log.data[64:96])
         else:  # REVOKED_V4_TOPIC
             recipient = bytes_to_address(context.tx_log.topics[1])
+            receiver = bytes_to_address(context.tx_log.topics[3])
             raw_amount = int.from_bytes(context.tx_log.data[:32])
 
+        transfer_found = False
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.RECEIVE and
@@ -223,11 +242,53 @@ class YearnvestingDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                 event.counterparty = CPT_YEARN_VESTING
                 event.notes = f'Revoke the Yearn vesting escrow of {recipient} clawing back {event.amount} {crypto_asset.symbol}'  # noqa: E501
+                transfer_found = True
+                if event.location_label is not None:
+                    receiver = event.location_label
                 break
-        else:
+
+        clawback_events = []
+        if (
+                raw_amount != 0 and
+                recipient != receiver and
+                self.base.is_tracked(recipient) and
+                (token := self._get_escrow_token(context.tx_log.address)) is not None
+        ):
+            amount = token_normalized_value(token_amount=raw_amount, token=token)
+            clawback_events.append(self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.CLAWBACK,
+                asset=token,
+                amount=amount,
+                location_label=recipient,
+                notes=f'Lose {amount} {token.symbol} unvested from a revoked Yearn vesting escrow',
+                counterparty=CPT_YEARN_VESTING,
+                address=context.tx_log.address,
+            ))
+        elif transfer_found is False:
             log.error('Yearn vesting escrow revocation transfer was not found for %s', context.transaction.tx_hash)  # noqa: E501
 
-        return DEFAULT_EVM_DECODING_OUTPUT
+        return EvmDecodingOutput(events=clawback_events)
+
+    def _get_escrow_token(self, escrow: ChecksumEvmAddress) -> EvmToken | None:
+        """Query and cache the vesting token of the given escrow"""
+        if (token := self.escrow_tokens.get(escrow)) is not None:
+            return token
+
+        try:
+            token_address = deserialize_evm_address(self.node_inquirer.call_contract(
+                contract_address=escrow,
+                abi=VESTING_ESCROW_ABI,
+                method_name='token',
+            ))
+        except (RemoteError, DeserializationError) as e:
+            log.error('Failed to query the token of yearn vesting escrow %s due to %s', escrow, e)
+            return None
+
+        self.escrow_tokens[escrow] = (token := self.base.get_or_create_evm_token(token_address))
+        return token
 
     def _get_escrow_recipient(self, escrow: ChecksumEvmAddress) -> ChecksumEvmAddress | None:
         """Query and cache the recipient of the given vesting escrow"""

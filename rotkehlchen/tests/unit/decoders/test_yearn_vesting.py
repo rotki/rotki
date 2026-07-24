@@ -397,3 +397,57 @@ def test_vesting_escrow_disown(
             address=user_address,
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x28eD70032Adc7575d45A0869CfDcCEcdE88C1a74']])
+def test_vesting_escrow_grant(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+):
+    """Test that the recipient of a newly deployed vesting escrow gets a grant event"""
+    tx_hash = deserialize_evm_tx_hash('0x4a95c820e82f7677a33298c1ecba4079e8a94ce8ad2f260e8fba5708dd1cdf83')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            sequence_index=100,
+            timestamp=TimestampMS(1730212319000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.GRANT,
+            asset=Asset('eip155:1/erc20:0x028eC7330ff87667b6dfb0D94b954c820195336c'),
+            amount=FVal(grant_amount := '60744.726493694530905846'),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive a grant of {grant_amount} yvDAI-1 in a Yearn vesting escrow vesting until 30/11/2024 00:00:00',  # noqa: E501
+            tx_ref=tx_hash,
+            counterparty=CPT_YEARN_VESTING,
+            address=string_to_evm_address('0x9b1B5ddE32cDE7a53D1c70A9f30130547424d781'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x74fEa3FB0eD030e9228026E7F413D66186d3D107']])
+def test_vesting_escrow_clawback(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+):
+    """Test that the recipient of a revoked vesting escrow gets a clawback loss event"""
+    tx_hash = deserialize_evm_tx_hash('0xf3d7b596a889aa93f4f0b06ea5875a9022441a7b6de9a3e211ee865fdfd19aee')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            sequence_index=153,
+            timestamp=TimestampMS(1746294215000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.CLAWBACK,
+            asset=Asset('eip155:1/erc20:0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'),
+            amount=FVal(clawed_amount := '1128350.753900304414003045'),
+            location_label=ethereum_accounts[0],
+            notes=f'Lose {clawed_amount} GTC unvested from a revoked Yearn vesting escrow',
+            tx_ref=tx_hash,
+            counterparty=CPT_YEARN_VESTING,
+            address=string_to_evm_address('0x7DAE0a882bd4511fa6918e6A35B21aD31a89E3Ab'),
+        ),
+    ]

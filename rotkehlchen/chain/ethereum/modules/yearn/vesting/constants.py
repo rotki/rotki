@@ -57,6 +57,12 @@ VESTING_ESCROW_ABI: Final[ABI] = [{
     'type': 'function',
 }, {
     'inputs': [],
+    'name': 'token',
+    'outputs': [{'name': '', 'type': 'address'}],
+    'stateMutability': 'view',
+    'type': 'function',
+}, {
+    'inputs': [],
     'name': 'start_time',
     'outputs': [{'name': '', 'type': 'uint256'}],
     'stateMutability': 'view',
