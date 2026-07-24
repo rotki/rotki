@@ -109,6 +109,18 @@ RUN APP=$(find "/opt/rotki" -name "rotki-core-*-linux" | head -n 1) && \
     mv "${APP}" /opt/rotki/rotki-core/rotki && \
     find /opt/rotki -perm /6000 -type f -exec chmod a-s {} + || true
 
+# Stage libz into a rootfs tree at its real multiarch path, so the runtime can
+# pull it with a single arch-agnostic COPY. Hardcoding /usr/lib/x86_64-linux-gnu
+# breaks the arm64 build, where zlib lives under aarch64-linux-gnu; the exact
+# patch version in the SONAME symlink target also varies. Resolve the real
+# directory here (a shell exists) and copy the SONAME plus its target,
+# preserving the symlink with `cp -a`.
+RUN set -eux; \
+    libz=$(find /usr/lib /lib -name 'libz.so.1' 2>/dev/null | head -n 1); \
+    libdir=$(dirname "${libz}"); \
+    mkdir -p "/rootfs${libdir}"; \
+    cp -a "${libdir}"/libz.so.1* "/rootfs${libdir}/"
+
 # Runtime. nginx is gone, starling is the only externally-bound listener and
 # serves the SPA + proxies to the loopback backends. This drops the entire nginx
 # userland, python3 (entrypoint.py), and curl (the old healthcheck).
@@ -146,8 +158,7 @@ ARG ROTKI_VERSION
 ENV REVISION=$REVISION
 ENV ROTKI_VERSION=$ROTKI_VERSION
 
-COPY --from=layout-stage /usr/lib/x86_64-linux-gnu/libz.so.1.2.13 /usr/lib/x86_64-linux-gnu/libz.so.1.2.13
-COPY --from=layout-stage /usr/lib/x86_64-linux-gnu/libz.so.1 /usr/lib/x86_64-linux-gnu/libz.so.1
+COPY --from=layout-stage /rootfs/ /
 COPY --from=backend-build-stage /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=layout-stage /opt/rotki /opt/rotki
 
