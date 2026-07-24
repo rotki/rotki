@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -9,17 +9,25 @@ from rotkehlchen.chain.base.modules.basenames.constants import CPT_BASENAMES
 from rotkehlchen.chain.ethereum.airdrops import AIRDROPS_REPO_BASE
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.ethereum.modules.gwei_names.constants import CPT_GNS
+from rotkehlchen.chain.ethereum.modules.yearn_vesting.constants import (
+    CPT_YEARN_VESTING,
+    V4_FACTORY,
+)
+from rotkehlchen.chain.ethereum.modules.yearn_vesting.structures import VestingEscrowData
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.constants import AIRDROPSDIR_NAME, APPDIR_NAME
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tasks.calendar import (
     AERO_VELO_CALENDAR_COLOR,
     AIRDROP_CALENDAR_COLOR,
     BRIDGE_CALENDAR_COLOR,
     CRV_CALENDAR_COLOR,
     ENS_CALENDAR_COLOR,
+    YEARN_VESTING_CALENDAR_COLOR,
     CalendarReminderCreator,
 )
 from rotkehlchen.tests.unit.test_ethereum_airdrops import prepare_airdrop_mock_response
@@ -304,6 +312,91 @@ def test_locked_crv_calendar_reminders(
         assert len(reminders) == 1
         assert reminders[0].event_id == calendar_entry.identifier
         assert reminders[0].secs_before == 0
+
+
+@pytest.mark.freeze_time('2026-01-01 00:00:00 GMT')
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x510B0068C0756bBEFCBaffB6567e467d661291FE',
+]])
+def test_yearn_vesting_calendar_reminders(
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Test creating cliff/end reminders and removing them after revocation."""
+    recipient = ethereum_accounts[0]
+    escrow = deserialize_evm_address('0x1234567890123456789012345678901234567890')
+    start_time = Timestamp(1800000000)
+    cliff_length = DAY_IN_SECONDS
+    end_time = Timestamp(start_time + 30 * DAY_IN_SECONDS)
+    position = VestingEscrowData(
+        escrow=escrow,
+        factory=V4_FACTORY,
+        version='v0.4.0',
+        kind='token',
+        token=deserialize_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+        recipient=recipient,
+        funder=deserialize_evm_address('0x1111111111111111111111111111111111111111'),
+        amount=10**18,
+        funded_amount=10**18,
+        start_time=start_time,
+        end_time=end_time,
+        cliff_length=cliff_length,
+    )
+    reminder_creator = CalendarReminderCreator(database=database, current_ts=ts_now())
+    calendar_db = DBCalendar(database)
+
+    with (
+        patch(
+            'rotkehlchen.tasks.calendar.read_yearn_vesting_data_from_cache',
+            return_value={escrow: position},
+        ),
+        patch.object(reminder_creator, 'get_history_events', return_value=[]) as history_mock,
+    ):
+        reminder_creator.maybe_create_yearn_vesting_reminders()
+        reminder_creator.maybe_create_yearn_vesting_reminders()  # no duplicate entries/reminders
+
+        entries = calendar_db.query_calendar_entry(
+            CalendarFilterQuery.make(),
+        )['entries']
+        assert len(entries) == 2
+        entry_ids = [entry.identifier for entry in entries]
+        expected_timestamps = {
+            f'Yearn vesting cliff for {escrow}': Timestamp(start_time + cliff_length),
+            f'Yearn vesting ends for {escrow}': end_time,
+        }
+        for entry in entries:
+            timestamp = expected_timestamps[entry.name]
+            assert entry == CalendarEntry(
+                identifier=entry.identifier,
+                name=entry.name,
+                timestamp=timestamp,
+                description=(
+                    f'Yearn vesting escrow {escrow} '
+                    f'{"reaches its cliff" if "cliff" in entry.name else "is fully vested"} on '
+                    f'{reminder_creator.timestamp_to_date(timestamp)}'
+                ),
+                counterparty=CPT_YEARN_VESTING,
+                address=recipient,
+                blockchain=SupportedBlockchain.ETHEREUM,
+                color=YEARN_VESTING_CALENDAR_COLOR,
+                auto_delete=True,
+            )
+            reminders = calendar_db.query_reminder_entry(event_id=entry.identifier)['entries']
+            assert len(reminders) == 1
+            assert reminders[0].event_id == entry.identifier
+            assert reminders[0].secs_before == 0
+
+        history_mock.return_value = [MagicMock(
+            address=escrow,
+            event_subtype=HistoryEventSubType.CLAWBACK,
+        )]
+        reminder_creator.maybe_create_yearn_vesting_reminders()
+
+    assert calendar_db.query_calendar_entry(
+        CalendarFilterQuery.make(),
+    )['entries_found'] == 0
+    for entry_id in entry_ids:
+        assert calendar_db.query_reminder_entry(event_id=entry_id)['entries'] == []
 
 
 @pytest.mark.freeze_time('2024-01-01 00:00:00 GMT')

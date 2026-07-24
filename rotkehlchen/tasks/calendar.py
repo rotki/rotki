@@ -10,6 +10,10 @@ from rotkehlchen.chain.base.modules.basenames.constants import CPT_BASENAMES
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.ethereum.modules.gwei_names.constants import CPT_GNS
+from rotkehlchen.chain.ethereum.modules.yearn_vesting.cache import (
+    read_yearn_vesting_data_from_cache,
+)
+from rotkehlchen.chain.ethereum.modules.yearn_vesting.constants import CPT_YEARN_VESTING
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -48,6 +52,7 @@ CRV_CALENDAR_COLOR: Final = deserialize_hex_color_code('5bf054')
 AERO_VELO_CALENDAR_COLOR: Final = deserialize_hex_color_code('36cfc9')
 AIRDROP_CALENDAR_COLOR: Final = deserialize_hex_color_code('ffd966')
 BRIDGE_CALENDAR_COLOR: Final = deserialize_hex_color_code('fcceee')
+YEARN_VESTING_CALENDAR_COLOR: Final = deserialize_hex_color_code('0657f9')
 
 if TYPE_CHECKING:
     from eth_typing import ChecksumAddress
@@ -267,10 +272,6 @@ class CalendarReminderCreator(CustomizableDateMixin):
                 identifier=calendar_entry.identifier,
                 entry_type='calendar',
             )
-            self.db_calendar.delete_entry(
-                identifier=calendar_entry.identifier,
-                entry_type='calendar_reminders',
-            )
         except InputError as e:
             log.warning(f'Failed to remove calendar entry and reminders for {calendar_entry.name} due to {e!s}')  # noqa: E501
 
@@ -417,6 +418,86 @@ class CalendarReminderCreator(CustomizableDateMixin):
             error_msg='Failed to create reminders for VELO/AERO vote escrow lock expirations.',
         )
 
+    def maybe_create_yearn_vesting_reminders(self) -> None:
+        """Create cliff and fully vested reminders for tracked Yearn vesting recipients."""
+        if len(positions := read_yearn_vesting_data_from_cache()) == 0:
+            return
+
+        blockchain = SupportedBlockchain.ETHEREUM
+        tracked_accounts = self.blockchain_accounts.get(blockchain)
+        revoked_escrows = {
+            event.address
+            for event in self.get_history_events(
+                event_types=[
+                    (HistoryEventType.SPEND, HistoryEventSubType.CLAWBACK),
+                    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL),
+                ],
+                counterparties=[CPT_YEARN_VESTING],
+            )
+            if (
+                event.address is not None and (
+                    event.event_subtype == HistoryEventSubType.CLAWBACK or
+                    'after revoking' in (event.notes or '')
+                )
+            )
+        }
+        calendar_entries: list[int] = []
+        for position in positions.values():
+            if position.recipient not in tracked_accounts:
+                continue
+
+            cliff_name = f'Yearn vesting cliff for {position.escrow}'
+            end_name = f'Yearn vesting ends for {position.escrow}'
+            if position.escrow in revoked_escrows:
+                for name in (cliff_name, end_name):
+                    self.delete_calendar_entry(
+                        name=name,
+                        counterparty=CPT_YEARN_VESTING,
+                        address=position.recipient,
+                        blockchain=blockchain,
+                    )
+                continue
+
+            cliff_time = Timestamp(position.start_time + position.cliff_length)
+            end_time = Timestamp(position.end_time)
+            milestones = [(
+                end_name,
+                end_time,
+                (
+                    f'Yearn vesting escrow {position.escrow} is fully vested on '
+                    f'{self.timestamp_to_date(end_time)}'
+                ),
+            )]
+            if position.cliff_length > 0 and cliff_time < end_time:
+                milestones.insert(0, (
+                    cliff_name,
+                    cliff_time,
+                    (
+                        f'Yearn vesting escrow {position.escrow} reaches its cliff on '
+                        f'{self.timestamp_to_date(cliff_time)}'
+                    ),
+                ))
+
+            for name, timestamp, description in milestones:
+                if timestamp <= self.current_ts:
+                    continue
+                if (entry_id := self.create_or_update_calendar_entry(
+                    name=name,
+                    timestamp=Timestamp(timestamp),
+                    description=description,
+                    counterparty=CPT_YEARN_VESTING,
+                    address=position.recipient,
+                    blockchain=blockchain,
+                    color=YEARN_VESTING_CALENDAR_COLOR,
+                )) is not None:
+                    calendar_entries.append(entry_id)
+
+        self.maybe_create_reminders(
+            calendar_identifiers=calendar_entries,
+            secs_before=[0],
+            error_msg='Failed to create Yearn vesting milestone reminders',
+        )
+
     def maybe_create_airdrop_claim_reminder(self) -> None:
         """Create reminders for airdrop claim deadlines."""
         with self.database.conn.read_ctx() as read_cursor:
@@ -537,6 +618,7 @@ def maybe_create_calendar_reminders(database: DBHandler) -> None:
     reminder_creator.maybe_create_ens_reminders()
     reminder_creator.maybe_create_locked_crv_reminders()
     reminder_creator.maybe_create_locked_aero_vero_reminders()
+    reminder_creator.maybe_create_yearn_vesting_reminders()
     reminder_creator.maybe_create_airdrop_claim_reminder()
     reminder_creator.maybe_create_l2_bridging_reminder()
 
