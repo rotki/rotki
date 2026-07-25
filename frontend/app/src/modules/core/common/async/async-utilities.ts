@@ -10,22 +10,28 @@ interface WaitForConditionOptions {
 }
 
 class AsyncUtilityError extends Error {
-  constructor(message: string, public code: string, public cause?: Error) {
-    super(message);
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
     this.name = 'AsyncUtilityError';
   }
 }
 
+// The code lives on each subclass rather than travelling through the constructor, so `options` can be
+// forwarded to `super()` untouched and a native `cause` survives.
 class TimeoutError extends AsyncUtilityError {
-  constructor(operation: string, timeout: number, cause?: Error) {
-    super(`Timeout waiting for ${operation} (${timeout}ms)`, 'TIMEOUT', cause);
+  readonly code = 'TIMEOUT';
+
+  constructor(operation: string, options: ErrorOptions & { timeout: number }) {
+    super(`Timeout waiting for ${operation} (${options.timeout}ms)`, options);
     this.name = 'TimeoutError';
   }
 }
 
 class AbortedError extends AsyncUtilityError {
-  constructor(operation: string, cause?: Error) {
-    super(`Operation ${operation} was aborted`, 'ABORTED', cause);
+  readonly code = 'ABORTED';
+
+  constructor(operation: string, options?: ErrorOptions) {
+    super(`Operation ${operation} was aborted`, options);
     this.name = 'AbortedError';
   }
 }
@@ -46,6 +52,25 @@ export async function delay(ms: number, signal?: AbortSignal): Promise<void> {
 
     signal?.addEventListener('abort', onAbort, { once: true });
   });
+}
+
+/**
+ * Races `promise` against a timeout, rejecting with a `TimeoutError` named after `operation` if the
+ * timeout wins. The timer is cleared on every exit path, so a fast promise leaves nothing pending.
+ *
+ * Note the loser of the race is not cancelled: this only bounds how long the caller waits.
+ */
+export async function withTimeout<T>(promise: Promise<T>, timeout: number, operation: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new TimeoutError(operation, { timeout })), timeout);
+    });
+    return await Promise.race([promise, timeoutPromise]);
+  }
+  finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function waitForCondition<T>(checkFn: () => Promise<T>, condition: (result: T) => boolean, options: WaitForConditionOptions): Promise<T> {
@@ -87,7 +112,7 @@ export async function waitForCondition<T>(checkFn: () => Promise<T>, condition: 
     // and reject with an AbortedError instead).
     timeoutId = setTimeout(() => {
       cleanup();
-      reject(new TimeoutError(name, timeout));
+      reject(new TimeoutError(name, { timeout }));
     }, timeout);
 
     combinedSignal.addEventListener('abort', onAbort, { once: true });

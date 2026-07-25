@@ -18,6 +18,16 @@ export function useProxyProvider(): EIP1193Provider | undefined {
   // Event listeners managed purely in renderer context - no context bridge issues
   const eventListeners = new Map<EIP1193EventName, ((...args: any[]) => void)[]>();
 
+  // Bridge forwarding is registered lazily per event type in `on` and released in `removeListener`
+  // once an event's last listener goes. If the owning scope dies while listeners are still attached
+  // nothing would call that path, so the bridge would keep forwarding into a dead provider.
+  onScopeDispose(() => {
+    for (const event of eventListeners.keys())
+      walletBridge.removeEventListener(event);
+
+    eventListeners.clear();
+  }, true);
+
   // Create EIP1193Provider implementation
   const proxyProvider: EIP1193Provider = {
     get connected(): boolean {

@@ -1,5 +1,6 @@
 import type UniversalProvider from '@walletconnect/universal-provider';
 import type { Ref } from 'vue';
+import { withTimeout } from '@/modules/core/common/async/async-utilities';
 import { logger } from '@/modules/core/common/logging/logging';
 import { EIP155, EIP155_EVENTS, EIP155_METHODS } from './constants';
 import { type Chain, createViemWalletClient, getAddress, type ViemWalletClient } from './viem-client';
@@ -23,6 +24,8 @@ async function loadWalletNetworks(): Promise<readonly Chain[]> {
 
   return walletNetworksPromise;
 }
+
+const PING_TIMEOUT = 5000;
 
 // Module-level singletons: the provider and the connection state are shared by
 // every caller of `useWalletConnect()` (the store, gnosis-pay, the QR dialog),
@@ -262,22 +265,14 @@ export function useWalletConnect(): UseWalletConnectReturn {
     if (!provider?.session || !provider.isWalletConnect)
       return;
 
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
       set(preparing, true);
-      const pingPromise = provider.client.ping({ topic: provider.session.topic });
-      const timeoutPromise = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => reject(new Error('Ping timeout after 5s')), 5000);
-      });
-
-      await Promise.race([pingPromise, timeoutPromise]);
+      await withTimeout(provider.client.ping({ topic: provider.session.topic }), PING_TIMEOUT, 'wallet ping');
     }
     catch {
       throw new Error('It seems that your wallet is inactive. If you are using browser wallet bridge, make sure the page is open.');
     }
     finally {
-      if (timeoutId)
-        clearTimeout(timeoutId);
       set(preparing, false);
     }
   };

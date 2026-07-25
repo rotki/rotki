@@ -1,6 +1,7 @@
 import { type ActionResult, assert } from '@rotki/common';
 import dayjs from 'dayjs';
 import { isTimeoutError } from '@/modules/core/api/with-retry';
+import { delay } from '@/modules/core/common/async/async-utilities';
 import { logger } from '@/modules/core/common/logging/logging';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { type Task, type TaskMeta, TaskNotFoundError } from '@/modules/core/tasks/types';
@@ -59,7 +60,7 @@ function useTaskMonitorInternal(): {
         store.setTimeoutCount(task.id, count + 1);
         const backoffMs = computeBackoff(count);
         logger.debug(`[TaskMonitor] Timeout for task ${task.id} (${TaskType[task.type]}), retry in ${backoffMs}ms`);
-        await new Promise<void>(resolve => setTimeout(resolve, backoffMs));
+        await delay(backoffMs);
       }
       else {
         store.remove(task.id);

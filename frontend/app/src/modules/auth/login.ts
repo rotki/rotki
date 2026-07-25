@@ -47,9 +47,9 @@ export interface IncompleteUpgradeConflict {
 export class SyncConflictError extends Error {
   readonly payload: SyncConflictPayload;
 
-  constructor(message: string, payload: SyncConflictPayload) {
-    super(message);
-    this.payload = payload;
+  constructor(message: string, options: ErrorOptions & { payload: SyncConflictPayload }) {
+    super(message, options);
+    this.payload = options.payload;
     this.name = 'SyncConflictError';
   }
 }

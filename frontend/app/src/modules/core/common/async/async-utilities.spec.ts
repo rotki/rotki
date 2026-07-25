@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { delay, waitForCondition } from './async-utilities';
+import { delay, waitForCondition, withTimeout } from './async-utilities';
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: { debug: vi.fn(), error: vi.fn() },
@@ -90,5 +90,70 @@ describe('waitForCondition', () => {
     await expect(
       waitForCondition(vi.fn().mockResolvedValue('x'), () => true, { name: 'op', signal: controller.signal }),
     ).rejects.toThrow('aborted');
+  });
+});
+
+describe('withTimeout', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should resolve with the promise value when it settles first', async () => {
+    await expect(withTimeout(Promise.resolve('value'), 1000, 'op')).resolves.toBe('value');
+  });
+
+  it('should propagate a rejection from the promise rather than timing out', async () => {
+    await expect(withTimeout(Promise.reject(new Error('inner')), 1000, 'op')).rejects.toThrow('inner');
+  });
+
+  it('should reject with a timeout error naming the operation when the timeout wins', async () => {
+    const promise = withTimeout(new Promise(() => {}), 1000, 'ping');
+    const assertion = expect(promise).rejects.toThrow('Timeout waiting for ping (1000ms)');
+    await vi.advanceTimersByTimeAsync(1000);
+    await assertion;
+  });
+
+  it('should tag the timeout rejection with the TIMEOUT code', async () => {
+    const promise = withTimeout(new Promise(() => {}), 500, 'ping');
+    const assertion = expect(promise).rejects.toMatchObject({ code: 'TIMEOUT', name: 'TimeoutError' });
+    await vi.advanceTimersByTimeAsync(500);
+    await assertion;
+  });
+
+  it('should clear the timer once the promise wins, leaving nothing pending', async () => {
+    await expect(withTimeout(Promise.resolve('fast'), 1000, 'op')).resolves.toBe('fast');
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe('async utility errors', () => {
+  it('should expose the abort code and the operation in the message', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    await expect(delay(10, controller.signal)).rejects.toMatchObject({
+      code: 'ABORTED',
+      message: 'Operation delay was aborted',
+      name: 'AbortedError',
+    });
+  });
+
+  it('should report the timeout code and operation together', async () => {
+    vi.useFakeTimers();
+    try {
+      const promise = withTimeout(new Promise(() => {}), 100, 'refresh');
+      const assertion = expect(promise).rejects.toMatchObject({
+        code: 'TIMEOUT',
+        message: 'Timeout waiting for refresh (100ms)',
+      });
+      await vi.advanceTimersByTimeAsync(100);
+      await assertion;
+    }
+    finally {
+      vi.useRealTimers();
+    }
   });
 });

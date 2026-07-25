@@ -5,9 +5,10 @@ import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 import { useEth2Staking } from '@/modules/staking/eth2/use-eth2';
 
 describe('useEth2Staking', () => {
-  setActivePinia(createPinia());
-
   beforeEach(() => {
+    // Per-test instance: created in the describe body it would be shared, letting store state leak
+    // between cases.
+    setActivePinia(createPinia());
     const premium = usePremium();
     set(premium, true);
     vi.clearAllMocks();

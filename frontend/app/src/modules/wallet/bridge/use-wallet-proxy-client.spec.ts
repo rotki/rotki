@@ -141,6 +141,21 @@ describe('modules/wallet/bridge/use-wallet-proxy-client', () => {
     expect(FakeWebSocket.instances.length).toBeGreaterThan(1);
   });
 
+  it('should cancel an already-scheduled reconnect when disconnect is called', async () => {
+    vi.useFakeTimers();
+    const client = useWalletProxyClient();
+    await client.connect();
+    const socket = lastSocket();
+    socket.open();
+
+    socket.onclose?.({}); // unexpected close, so a retry is now pending
+    client.disconnect();
+    await vi.advanceTimersByTimeAsync(600);
+
+    // Without cancelling, the pending timer would have opened a second socket.
+    expect(FakeWebSocket.instances).toHaveLength(1);
+  });
+
   it('should record the error message on socket error', async () => {
     vi.useFakeTimers();
     const client = useWalletProxyClient();

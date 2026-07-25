@@ -195,7 +195,7 @@ describe('useUnlockSteps', () => {
       const store = setupStore();
       const { syncConflict } = storeToRefs(store);
       const payload = { localLastModified: 1, remoteLastModified: 2 };
-      getRawSettings.mockRejectedValueOnce(new SyncConflictError('conflict!', payload));
+      getRawSettings.mockRejectedValueOnce(new SyncConflictError('conflict!', { payload }));
 
       const { loginSteps } = useUnlockSteps();
       const result = await loginSteps.resume(credentials);
@@ -271,7 +271,7 @@ describe('useUnlockSteps', () => {
       const { syncConflict } = storeToRefs(store);
       const payload = { localLastModified: 1, remoteLastModified: 2 };
       // the task monitor forwards the original error on the failed outcome
-      runTask.mockResolvedValue({ error: new SyncConflictError('conflict!', payload), message: 'conflict!', success: false });
+      runTask.mockResolvedValue({ error: new SyncConflictError('conflict!', { payload }), message: 'conflict!', success: false });
 
       const { loginSteps } = useUnlockSteps();
       const result = await loginSteps.login({ password: 'p', username: 'bob' });

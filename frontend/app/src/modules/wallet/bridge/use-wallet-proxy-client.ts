@@ -31,6 +31,7 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
   const lastError = ref<string>();
   const preventReconnect = shallowRef<boolean>(false);
   const onTakeOverCallback = ref<() => void>();
+  let retryTimeout: ReturnType<typeof setTimeout> | undefined;
 
   const { handleRequest } = useBridgeMessageHandlers(sendMessage);
 
@@ -124,9 +125,15 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
     return `ws://localhost:${CLIENT_CONFIG.DEFAULT_BASE_PORT}/wallet-bridge`;
   };
 
+  const cancelRetry = (): void => {
+    clearTimeout(retryTimeout);
+    retryTimeout = undefined;
+  };
+
   const scheduleRetry = (retryCount: number): void => {
     if (retryCount < CLIENT_CONFIG.MAX_RETRIES && !get(preventReconnect)) {
-      setTimeout(() => {
+      retryTimeout = setTimeout(() => {
+        retryTimeout = undefined;
         connect(retryCount + 1).catch((error) => {
           logger.error('Failed to reconnect:', error);
         });
@@ -134,7 +141,11 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
     }
   };
 
+  // A pending retry would otherwise outlive its owner and reopen the socket after teardown.
+  onScopeDispose(cancelRetry, true);
+
   const disconnect = (): void => {
+    cancelRetry();
     if (!ws.value) {
       return;
     }

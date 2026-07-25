@@ -11,6 +11,13 @@ defineOptions({
 
 const modelValue = defineModel<string | undefined>({ required: true });
 
+/**
+ * The resolved asset behind the selected identifier. The component only ever writes it, so it is a
+ * `defineModel` rather than a prop plus a matching emit; `v-model:asset` and the explicit
+ * `:asset` + `@update:asset` pair both keep working unchanged.
+ */
+const asset = defineModel<AssetInfoWithId | NftAsset | undefined>('asset');
+
 const {
   chain,
   clearable = false,
@@ -40,12 +47,7 @@ const {
   showIgnored?: boolean;
   hideDetails?: boolean;
   includeNfts?: boolean;
-  asset?: AssetInfoWithId | NftAsset;
   chain?: string;
-}>();
-
-const emit = defineEmits<{
-  'update:asset': [value?: AssetInfoWithId | NftAsset];
 }>();
 
 defineSlots<{
@@ -74,7 +76,7 @@ const errors = computed<string[]>(() => {
 
 function onUpdateModelValue(value: string): void {
   set(modelValue, value);
-  emit('update:asset', getVisibleAsset(value));
+  set(asset, getVisibleAsset(value));
 }
 
 watch(visibleAssets, (_, oldVisibleAssets) => {

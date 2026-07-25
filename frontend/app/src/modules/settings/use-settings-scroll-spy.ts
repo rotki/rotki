@@ -1,5 +1,40 @@
 import type { MaybeRef, Ref, ShallowRef } from 'vue';
+import { startPromise } from '@shared/utils';
 import { defaultDocument } from '@vueuse/core';
+
+const SCROLL_SETTLE_TIMEOUT = 1500;
+const SCROLL_TOP_MARGIN = 20;
+
+/**
+ * Smooth-scrolls `parent` so `element` sits just below its top edge, resolving once the scroll settles
+ * or the safety timeout fires, whichever comes first.
+ *
+ * Deliberately outside the composable: it owns its own teardown. Both the safety timer and the one-shot
+ * `scrollend` listener are released by whichever path finishes first, so there is nothing for a scope
+ * hook to clean up, and the DOM maths is testable on its own.
+ */
+async function scrollIntoContainer(parent: HTMLElement, element: Element): Promise<void> {
+  const parentRect = parent.getBoundingClientRect();
+  const elementRect = element.getBoundingClientRect();
+  const targetTop = parent.scrollTop + elementRect.top - parentRect.top - SCROLL_TOP_MARGIN;
+
+  if (Math.abs(parent.scrollTop - targetTop) < 1)
+    return;
+
+  return new Promise<void>((resolve) => {
+    let safetyTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    function finish(): void {
+      clearTimeout(safetyTimeout);
+      parent.removeEventListener('scrollend', finish);
+      resolve();
+    }
+
+    safetyTimeout = setTimeout(finish, SCROLL_SETTLE_TIMEOUT);
+    parent.addEventListener('scrollend', finish, { once: true });
+    parent.scrollTo({ behavior: 'smooth', top: targetTop });
+  });
+}
 
 interface Nav {
   id: string;
@@ -74,40 +109,25 @@ export function useSettingsScrollSpy({ navigation, scroller }: UseSettingsScroll
   }
 
   async function scrollToElement(el?: string | Element): Promise<void> {
-    return new Promise((resolve) => {
-      if (!el) {
-        resolve();
-        return;
-      }
-      const element = typeof el === 'string' ? defaultDocument?.getElementById(el) : el;
-      const parent = get(scroller);
-      if (element && parent) {
-        const parentRect = parent.getBoundingClientRect();
-        const elementRect = element.getBoundingClientRect();
-        const targetTop = parent.scrollTop + elementRect.top - parentRect.top - 20;
+    if (!el)
+      return;
 
-        if (Math.abs(parent.scrollTop - targetTop) < 1) {
-          resolve();
-          return;
-        }
-
-        const safetyTimeout: ReturnType<typeof setTimeout> = setTimeout(resolve, 1500);
-        parent.addEventListener('scrollend', () => {
-          clearTimeout(safetyTimeout);
-          resolve();
-        }, { once: true });
-        parent.scrollTo({ behavior: 'smooth', top: targetTop });
-      }
-      else {
-        resolve();
-      }
-    });
+    const element = typeof el === 'string' ? defaultDocument?.getElementById(el) : el;
+    const parent = get(scroller);
+    if (element && parent)
+      await scrollIntoContainer(parent, element);
   }
 
   const throttledCheckVisibility = useThrottleFn(checkVisibility, 100);
 
-  useEventListener(scroller, 'scroll', throttledCheckVisibility);
-  useEventListener(window, 'resize', throttledCheckVisibility);
+  // The throttled wrapper returns a promise even though checkVisibility is synchronous, so the result
+  // is handed to startPromise rather than left floating in a void listener.
+  function onViewportChange(): void {
+    startPromise(throttledCheckVisibility());
+  }
+
+  useEventListener(scroller, 'scroll', onViewportChange);
+  useEventListener(window, 'resize', onViewportChange);
 
   onMounted(() => {
     checkVisibility();

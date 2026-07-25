@@ -70,7 +70,7 @@ export function useTaskApi(): UseTaskApiReturn {
           if (isEmpty(result))
             throw new IncompleteUpgradeError(message);
 
-          throw new SyncConflictError(message, SyncConflictPayload.parse(result));
+          throw new SyncConflictError(message, { payload: SyncConflictPayload.parse(result) });
         }
       }
       else if (statusCode === HTTPStatus.BAD_REQUEST) {
