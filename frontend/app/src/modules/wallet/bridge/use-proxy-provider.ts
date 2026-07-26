@@ -76,7 +76,7 @@ export function useProxyProvider(): EIP1193Provider | undefined {
       }
 
       const listeners = eventListeners.get(event)!;
-      listeners.push(callback as (...args: any[]) => void);
+      listeners.push(callback);
     },
 
     removeListener: <K extends EIP1193EventName>(
@@ -85,7 +85,7 @@ export function useProxyProvider(): EIP1193Provider | undefined {
     ) => {
       const listeners = eventListeners.get(event);
       if (listeners) {
-        const index = listeners.indexOf(callback as (...args: any[]) => void);
+        const index = listeners.indexOf(callback);
         if (index !== -1) {
           listeners.splice(index, 1);
 
@@ -98,7 +98,7 @@ export function useProxyProvider(): EIP1193Provider | undefined {
       }
     },
 
-    request: async <T = unknown>(request: RpcRequest): Promise<T> => await walletBridge.request(request) as Promise<T>,
+    request: async <T = unknown>(request: RpcRequest): Promise<T> => walletBridge.request(request),
   };
 
   logger.debug('Proxy provider created successfully');

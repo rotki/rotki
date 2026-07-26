@@ -33,7 +33,8 @@ interface QueryConfig {
   tooltip?: string;
 }
 
-const queryConfigs = computed<Record<OnlineHistoryEventsQueryType, QueryConfig>>(() => {
+// Only the two gated protocols have a config; every reader already treats a missing one as enabled.
+const queryConfigs = computed<Partial<Record<OnlineHistoryEventsQueryType, QueryConfig>>>(() => {
   const gnosisPayEnabled = get(gnosisPayAllowed) && !!getApiKey('gnosis_pay');
   const moneriumEnabled = get(moneriumAllowed) && get(moneriumAuthenticated);
 
@@ -46,7 +47,7 @@ const queryConfigs = computed<Record<OnlineHistoryEventsQueryType, QueryConfig>>
       enabled: moneriumEnabled,
       tooltip: moneriumEnabled ? undefined : t('history_refresh_selection.refresh_disabled', { service: toHumanReadable(OnlineHistoryEventsQueryType.MONERIUM) }),
     },
-  } as Record<OnlineHistoryEventsQueryType, QueryConfig>;
+  };
 });
 
 const enabledQueries = computed<OnlineHistoryEventsQueryType[]>(() =>

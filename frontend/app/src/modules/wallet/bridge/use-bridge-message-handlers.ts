@@ -1,5 +1,5 @@
 import type { WalletBridgeRequest, WalletBridgeResponse } from '@shared/wallet-bridge-types';
-import type { EIP1193Provider, EIP1193ProviderEvents } from '@/types';
+import type { EIP1193EventName, EIP1193Provider } from '@/types';
 import { BRIDGE_ERROR_CODES, BRIDGE_NOTIFICATION_TYPES, ROTKI_RPC_METHODS, ROTKI_RPC_RESPONSES, WALLET_EVENT_TYPES } from '@shared/proxy/constants';
 import { defaultWindow, get, promiseTimeout } from '@vueuse/core';
 import { type RpcError, toRpcError } from '@/modules/core/api/types/errors';
@@ -39,7 +39,7 @@ const REQUEST_CONFIG = {
 } as const;
 
 export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): BridgeMessageHandlersComposable {
-  const providerEventListeners = new Map<string, (...args: any[]) => void>();
+  const providerEventListeners = new Map<EIP1193EventName, (...args: any[]) => void>();
   let hasSuccessfulAccountsRequest = false;
 
   const {
@@ -97,9 +97,10 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
   }
 
   async function rpcSelectProvider(message: WalletBridgeRequest): Promise<WalletBridgeResponse> {
-    const [uuid] = (message.params as [string]) || [];
-    addLog(`The user select the following provider: ${uuid || 'none (clearing selection)'}`, 'info');
-    if (uuid === undefined || uuid === null) {
+    const [firstParam] = message.params ?? [];
+    const uuid = typeof firstParam === 'string' && firstParam.length > 0 ? firstParam : undefined;
+    addLog(`The user select the following provider: ${uuid ?? 'none (clearing selection)'}`, 'info');
+    if (uuid === undefined) {
       return createErrorResponse(message.id, BRIDGE_ERROR_CODES.INVALID_PARAMS, 'Invalid params: uuid required');
     }
 
@@ -311,7 +312,7 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
       return;
     }
     for (const [eventName, listener] of providerEventListeners) {
-      provider.removeListener(eventName as keyof EIP1193ProviderEvents, listener);
+      provider.removeListener(eventName, listener);
     }
     providerEventListeners.clear();
     logger.info('Wallet provider event listeners cleaned up');

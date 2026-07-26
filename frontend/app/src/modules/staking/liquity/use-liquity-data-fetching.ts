@@ -52,7 +52,7 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
     return { proceed: true, setStatus };
   }
 
-  function handleFailure(taskType: TaskType, outcome: { message: string; error?: unknown }, errorTitle: string, errorMessage: string): void {
+  function handleFailure(taskType: TaskType, outcome: { error?: unknown }, errorTitle: string, errorMessage: string): void {
     logger.error(`action failure for task ${TaskType[taskType]}:`, outcome.error);
     const { notifyError } = useNotifications();
     notifyError(errorTitle, errorMessage);

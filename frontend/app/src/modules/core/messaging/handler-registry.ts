@@ -16,5 +16,5 @@ export function createHandlerRegistry(
     statusRegistry,
     notificationRegistry,
     businessRegistry,
-  ) as MessageHandlerRegistry;
+  );
 }

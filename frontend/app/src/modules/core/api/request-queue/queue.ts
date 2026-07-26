@@ -65,7 +65,7 @@ export class RequestQueue {
 
     return new Promise<T>((resolve, reject) => {
       existing.dedupeSubscribers ??= [];
-      existing.dedupeSubscribers.push({ resolve: resolve as (value: unknown) => void, reject });
+      existing.dedupeSubscribers.push({ resolve, reject });
     });
   }
 
@@ -111,8 +111,8 @@ export class RequestQueue {
         url,
       };
       if (dedupeKey)
-        this.pendingByKey.set(dedupeKey, request as QueuedRequest);
-      this.insertByPriority(request as QueuedRequest);
+        this.pendingByKey.set(dedupeKey, request);
+      this.insertByPriority(request);
       this.updateState();
       this.processQueue().catch(error => logger.error(error));
     });
@@ -272,7 +272,7 @@ export class RequestQueue {
         const delay = this.options.retryDelay * (2 ** (request.retries - 1));
         setTimeout(() => {
           this.activeRequests.delete(request.id);
-          this.insertByPriority(request as QueuedRequest);
+          this.insertByPriority(request);
           this.updateState();
           this.processQueue().catch(catchError => logger.error(catchError));
         }, delay);

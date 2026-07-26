@@ -10,7 +10,16 @@ import { SocketMessageType } from '../types/base';
 export function createBusinessRegistry(
   t: ReturnType<typeof useI18n>['t'],
   router: ReturnType<typeof useRouter>,
-): Partial<MessageHandlerRegistry> {
+): Pick<
+  MessageHandlerRegistry,
+  | typeof SocketMessageType.ACCOUNTING_RULE_CONFLICT
+  | typeof SocketMessageType.CALENDAR_REMINDER
+  | typeof SocketMessageType.DATABASE_UPLOAD_PROGRESS
+  | typeof SocketMessageType.DB_UPLOAD_RESULT
+  | typeof SocketMessageType.EXCHANGE_UNKNOWN_ASSET
+  | typeof SocketMessageType.NEW_TOKEN_DETECTED
+  | typeof SocketMessageType.REFRESH_BALANCES
+> {
   const newTokenDetectedHandler = createNewTokenDetectedHandler(t, router);
   const accountingRuleConflictHandler = createAccountingRuleConflictHandler(t, router);
   const calendarReminderHandler = createCalendarReminderHandler(t, router);

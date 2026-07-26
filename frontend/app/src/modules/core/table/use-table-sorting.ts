@@ -23,15 +23,13 @@ export function useTableSorting<TItem extends NonNullable<unknown>>(
   commitSort: (sorting: DataTableSortData<TItem>) => void,
   fallbackColumn?: string,
 ): UseTableSortingReturn<TItem> {
-  const internalSorting = ref<Sorting<TItem>>(
-    markRaw(applySortingDefaults(defaultSortBy, fallbackColumn)),
-  ) as Ref<Sorting<TItem>>;
+  const modelInternalSorting = ref(markRaw(applySortingDefaults(defaultSortBy, fallbackColumn)));
 
   const defaultSorting = (): Sorting<TItem> => applySortingDefaults(defaultSortBy, fallbackColumn);
 
   const sort = computed<DataTableSortData<TItem>>({
     get() {
-      return get(internalSorting);
+      return get(modelInternalSorting);
     },
     set(sort) {
       const defaults = defaultSorting();
@@ -49,7 +47,7 @@ export function useTableSorting<TItem extends NonNullable<unknown>>(
 
   return {
     defaultSorting,
-    internalSorting,
+    internalSorting: modelInternalSorting,
     sort,
   };
 }

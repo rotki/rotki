@@ -52,6 +52,12 @@ const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(item
 function getEmittedEvent(item: HistoryEvent): HistoryEventEditData {
   if (isSwapTypeEvent(item.entryType)) {
     return {
+      // The whole group is handed to the form, which needs every leg of the swap.
+      // isGroupEditableHistoryEvent cannot narrow this: it declares GroupEditableHistoryEvents but
+      // only matches ASSET_MOVEMENT_EVENT and SWAP_EVENT, so filtering with it empties an evm or
+      // solana swap group and the form renders no fields. Widening that guard would change the four
+      // other decision points that rely on its current, narrower answer.
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
       eventsInGroup: completeGroupEvents as GroupEditableHistoryEvents[],
       type: 'edit-group',
     };

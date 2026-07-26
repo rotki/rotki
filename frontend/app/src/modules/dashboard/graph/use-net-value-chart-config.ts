@@ -121,7 +121,7 @@ export function useNetValueChartConfig(
     },
     yAxis: {
       axisLabel: { show: false },
-      max: (value: { min: number; max: number }) =>
+      max: (value: { max: number }) =>
         value.max,
       min: (value: { min: number; max: number }): number => {
         if (get(graphZeroBased) || value.min === 0) {

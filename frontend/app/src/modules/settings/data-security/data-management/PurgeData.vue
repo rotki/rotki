@@ -4,6 +4,7 @@ import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
+import { isOfEnum } from '@/modules/core/common/helpers/is-of-enum';
 import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/modules/core/common/modules';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -14,6 +15,8 @@ import { useSessionPurge } from '@/modules/session/use-purge';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import DefiModuleSelector from '@/modules/settings/modules/DefiModuleSelector.vue';
 import ActionStatusIndicator from '@/modules/shell/components/error/ActionStatusIndicator.vue';
+
+const isModule = isOfEnum(Module);
 
 const purgeableOnlyModules = Object.values(PurgeableOnlyModule);
 const purgeableModules = [...Object.values(Module), ...purgeableOnlyModules];
@@ -82,7 +85,7 @@ async function deleteSourceData(source: Purgeable, value: string): Promise<void>
   }
 
   if (source === Purgeable.DEFI_MODULES) {
-    await deleteModuleData((value as Module) || null);
+    await deleteModuleData(isModule(value) ? value : null);
     return;
   }
 
@@ -97,7 +100,8 @@ async function deleteSourceData(source: Purgeable, value: string): Promise<void>
       await Promise.all(DECENTRALIZED_EXCHANGES.map(deleteModuleData));
       return;
     }
-    await deleteModuleData(value as Module);
+    if (isModule(value))
+      await deleteModuleData(value);
     return;
   }
 

@@ -143,7 +143,7 @@ function mergeChains(
 
 function aggregateAddressProtocol(
   existingBalance: BalanceWithManual,
-  newBalance: Balance,
+  newBalance: BalanceWithManual,
   summedBalance: Balance,
   shouldMarkAsManual: boolean,
 ): BalanceWithManual {
@@ -151,7 +151,7 @@ function aggregateAddressProtocol(
     ? { ...summedBalance, chains: existingBalance.chains, containsManual: true }
     : { ...summedBalance, chains: existingBalance.chains };
 
-  const newBalanceChains = (newBalance as BalanceWithManual).chains;
+  const newBalanceChains = newBalance.chains;
   if (newBalanceChains && existingBalance.chains) {
     result.chains = mergeChains(existingBalance.chains, newBalanceChains);
   }

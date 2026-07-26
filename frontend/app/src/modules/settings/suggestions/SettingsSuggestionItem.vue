@@ -29,8 +29,8 @@ const isMerge = computed<boolean>(() => !!suggestion.merge);
 const addedItems = computed<string[]>(() => {
   if (!get(isMerge) || !Array.isArray(suggestion.currentValue) || !Array.isArray(suggestion.suggestedValue))
     return [];
-  const current = suggestion.currentValue as string[];
-  return (suggestion.suggestedValue as string[]).filter(v => !current.includes(v));
+  const current = suggestion.currentValue.map(String);
+  return suggestion.suggestedValue.map(String).filter(v => !current.includes(v));
 });
 
 function formatValue(value: unknown): string {

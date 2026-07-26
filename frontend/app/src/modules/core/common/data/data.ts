@@ -62,15 +62,26 @@ function isEmptyValue(val: unknown, removeEmptyString: boolean): boolean {
   return Array.isArray(val) && val.length === 0;
 }
 
-/** Nested objects are pruned too, including those inside arrays. */
-function pruneValue<V>(val: V): V {
+/**
+ * Nested objects are pruned too, including those inside arrays.
+ *
+ * The result is a deep partial of what came in, so it cannot be typed as the input type. Declaring
+ * it as one was tried and needs a recursive conditional with its own array branch, which changes the
+ * public return type of nonEmptyProperties and every caller that feeds it a request body. The
+ * assertion is therefore left at the single assignment below rather than spread over this helper.
+ */
+function pruneValue(val: unknown): unknown {
   if (Array.isArray(val))
-    return val.map(entry => typeof entry === 'object' ? nonEmptyProperties(entry) : entry) as V;
+    return val.map(entry => isPrunable(entry) ? nonEmptyProperties(entry) : entry);
 
-  if (typeof val === 'object')
-    return nonEmptyProperties(val as object) as V;
+  if (isPrunable(val))
+    return nonEmptyProperties(val);
 
   return val;
+}
+
+function isPrunable(value: unknown): value is object {
+  return typeof value === 'object' && value !== null;
 }
 
 export function nonEmptyProperties<T extends object>(
@@ -93,7 +104,8 @@ export function nonEmptyProperties<T extends object>(
     if (isEmptyValue(val, removeEmptyString))
       continue;
 
-    partial[key] = pruneValue(val);
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see pruneValue
+    partial[key] = pruneValue(val) as T[keyof T];
   }
 
   return partial;

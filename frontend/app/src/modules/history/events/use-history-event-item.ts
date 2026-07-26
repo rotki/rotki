@@ -39,6 +39,11 @@ export interface UseHistoryEventItemReturn {
   extraData: ComputedRef<Record<string, any> | undefined>;
 }
 
+/** `extraData` is declared loosely on the event schemas, so confirm it is indexable before use. */
+function isExtraData(value: unknown): value is Record<string, any> {
+  return typeof value === 'object' && value !== null;
+}
+
 export function useHistoryEventItem(
   props: UseHistoryEventItemProps,
 ): UseHistoryEventItemReturn {
@@ -111,7 +116,7 @@ export function useHistoryEventItem(
 
   const extraData = computed<Record<string, any> | undefined>(() => {
     const ev = toValue(event);
-    return 'extraData' in ev ? (ev.extraData as Record<string, any> | undefined) : undefined;
+    return 'extraData' in ev && isExtraData(ev.extraData) ? ev.extraData : undefined;
   });
 
   return {

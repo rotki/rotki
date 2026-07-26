@@ -6,8 +6,15 @@ import {
   BalanceValueThresholdV0,
   deserializeFrontendSettings,
   FRONTEND_SETTINGS_SCHEMA_VERSION,
-  type FrontendSettings,
 } from '@/modules/settings/types/frontend-settings';
+
+/**
+ * A settings blob as it came out of storage. Which fields it carries depends on the schema version
+ * that wrote it, so it is deliberately not typed as the current FrontendSettings: that is what the
+ * migrations are here to produce, and claiming it up front is what forced this file to override the
+ * compiler at every field it touches.
+ */
+type SettingsBlob = Record<string, unknown> & { schemaVersion?: unknown };
 
 export function migrateSettingsIfNeeded(settings?: string): string | undefined {
   if (settings === undefined || settings === '') {
@@ -19,11 +26,11 @@ export function migrateSettingsIfNeeded(settings?: string): string | undefined {
     return undefined;
   }
 
-  const migratedSettings = applyMigrations(deserializedSettings as any);
+  const migratedSettings = applyMigrations(deserializedSettings);
   return migratedSettings === undefined ? settings : JSON.stringify(migratedSettings);
 }
 
-export function applyMigrations(settings: FrontendSettings): FrontendSettings | undefined {
+export function applyMigrations(settings: SettingsBlob): SettingsBlob | undefined {
   const schemaVersion = settings.schemaVersion;
   if (schemaVersion === FRONTEND_SETTINGS_SCHEMA_VERSION) {
     return undefined;
@@ -38,7 +45,6 @@ export function applyMigrations(settings: FrontendSettings): FrontendSettings | 
   }
 
   // V1 → V2: Rename balanceUsdValueThreshold to balanceValueThreshold
-  // @ts-expect-error schemaVersion is typed as literal 2, but we're checking for v1
   if (migratedSettings.schemaVersion === 1) {
     migratedSettings = applyV2Migrations(migratedSettings);
   }
@@ -46,9 +52,8 @@ export function applyMigrations(settings: FrontendSettings): FrontendSettings | 
   return migratedSettings;
 }
 
-function applyV1Migrations(settings: FrontendSettings): FrontendSettings {
+function applyV1Migrations(settings: SettingsBlob): SettingsBlob {
   logger.info('migrating from v0 to v1');
-  // @ts-expect-error v0 settings have balanceUsdValueThreshold instead of balanceValueThreshold
   const v0Threshold = BalanceValueThresholdV0.parse(settings.balanceUsdValueThreshold);
   const v1Threshold = BalanceValueThreshold.parse({});
   for (const key of objectKeys(v0Threshold ?? {})) {
@@ -57,18 +62,14 @@ function applyV1Migrations(settings: FrontendSettings): FrontendSettings {
       v1Threshold[key] = value;
     }
   }
-  // @ts-expect-error setting v1 schema version and balanceUsdValueThreshold
   settings.schemaVersion = 1;
-  // @ts-expect-error v1 settings have balanceUsdValueThreshold
   settings.balanceUsdValueThreshold = v1Threshold;
   return settings;
 }
 
-function applyV2Migrations(settings: FrontendSettings): FrontendSettings {
+function applyV2Migrations(settings: SettingsBlob): SettingsBlob {
   logger.info('migrating from v1 to v2');
-  // @ts-expect-error v1 settings have balanceUsdValueThreshold instead of balanceValueThreshold
   settings.balanceValueThreshold = BalanceValueThreshold.parse(settings.balanceUsdValueThreshold ?? {});
-  // @ts-expect-error remove old field
   delete settings.balanceUsdValueThreshold;
   settings.schemaVersion = FRONTEND_SETTINGS_SCHEMA_VERSION;
   return settings;

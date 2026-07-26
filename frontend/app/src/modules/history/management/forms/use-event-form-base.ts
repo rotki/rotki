@@ -55,8 +55,8 @@ interface UseEventFormBaseReturn {
  * @param options.formStates - Optional: states to use for form state watcher (defaults to states if not provided)
  */
 export function useEventFormBase<
-  TState extends object,
-  TRules extends ValidationArgs,
+  TState extends { [K in keyof TRules]: any },
+  TRules extends ValidationArgs = ValidationArgs,
 >(options: UseEventFormBaseOptions<TState, TRules>): UseEventFormBaseReturn {
   const { rules: rulesOption, states, errorMessages, stateUpdated, formStates } = options;
 
@@ -72,10 +72,9 @@ export function useEventFormBase<
 
   const rules = typeof rulesOption === 'function' ? rulesOption(commonRules) : rulesOption;
 
-  // Type assertion needed due to complex vuelidate generics
   const v$ = useVuelidate(
-    rules as Parameters<typeof useVuelidate>[0],
-    states as Parameters<typeof useVuelidate>[1],
+    rules,
+    states,
     {
       $autoDirty: true,
       $externalResults: errorMessages,

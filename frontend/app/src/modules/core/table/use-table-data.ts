@@ -1,8 +1,9 @@
-import type { FetchError } from 'ofetch';
 import type { MaybeRef, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
+import { FetchError } from 'ofetch';
 import { api, RequestCancelledError } from '@/modules/core/api';
 import { defaultCollectionState } from '@/modules/core/common/data/collection-utils';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
@@ -21,6 +22,31 @@ interface UseTableDataReturn<TItem> {
  * `requestPayload` is taken as a getter so the payload can be assembled after this
  * composable is created; it is only read when a fetch actually happens.
  */
+interface FetchFailure {
+  code: string;
+  message: string;
+  path: string;
+}
+
+/** The message the backend put in the response body, which reads better than the error's own. */
+function responseMessage(data: unknown): string | undefined {
+  if (typeof data !== 'object' || data === null || !('message' in data))
+    return undefined;
+
+  return typeof data.message === 'string' ? data.message : undefined;
+}
+
+/** The parts of a failed request the generic error notification needs. */
+function describeFetchFailure(error: unknown): FetchFailure {
+  const fetchError = error instanceof FetchError ? error : undefined;
+
+  return {
+    code: fetchError?.statusCode?.toString() ?? '',
+    message: responseMessage(fetchError?.data) ?? getErrorMessage(error),
+    path: fetchError?.request?.toString() ?? '',
+  };
+}
+
 export function useTableData<TItem extends NonNullable<unknown>, TPayload>(
   requestData: (payload: MaybeRef<TPayload>) => Promise<Collection<TItem>>,
   requestPayload: () => MaybeRef<TPayload>,
@@ -39,12 +65,9 @@ export function useTableData<TItem extends NonNullable<unknown>, TPayload>(
         if (e instanceof RequestCancelledError)
           return;
 
-        const error = e as FetchError<{ message: string }>;
-        const path = error.request?.toString() ?? '';
-        const code = error.statusCode?.toString() ?? '';
-        const message = (error.data as { message?: string } | undefined)?.message ?? error.message ?? '';
+        const { code, message, path } = describeFetchFailure(e);
 
-        logger.error(error);
+        logger.error(e);
         if (Number(code) >= 400) {
           notifyError(t('error.generic.title'), t('error.generic.message', { code, message, path }));
         }

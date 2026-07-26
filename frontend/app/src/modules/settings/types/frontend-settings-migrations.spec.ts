@@ -14,7 +14,6 @@ describe('frontend-settings-migrations', () => {
   });
 
   it('should apply the frontend schema migration from v0 to v2', () => {
-    // @ts-expect-error intentionally passing v0 settings to test migration
     expect(FrontendSettings.parse(applyMigrations({ ...frontendSettingsV0 }))).toEqual(getDefaultFrontendSettings());
   });
 
@@ -28,7 +27,6 @@ describe('frontend-settings-migrations', () => {
       },
     };
 
-    // @ts-expect-error intentionally passing v0 settings to test migration
     expect(FrontendSettings.parse(applyMigrations(settings))).toEqual(getDefaultFrontendSettings({
       balanceValueThreshold: {
         BLOCKCHAIN: '10',
@@ -46,7 +44,6 @@ describe('frontend-settings-migrations', () => {
       },
     };
 
-    // @ts-expect-error intentionally passing v1 settings to test migration
     expect(FrontendSettings.parse(applyMigrations(v1Settings))).toEqual(getDefaultFrontendSettings({
       balanceValueThreshold: {
         BLOCKCHAIN: '15',

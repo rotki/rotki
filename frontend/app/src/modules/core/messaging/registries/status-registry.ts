@@ -10,7 +10,17 @@ import { SocketMessageType } from '../types/base';
 
 export function createStatusRegistry(
   t: ReturnType<typeof useI18n>['t'],
-): Partial<MessageHandlerRegistry> {
+): Pick<
+  MessageHandlerRegistry,
+  | typeof SocketMessageType.DATA_MIGRATION_STATUS
+  | typeof SocketMessageType.DB_UPGRADE_STATUS
+  | typeof SocketMessageType.EVM_ACCOUNTS_DETECTION
+  | typeof SocketMessageType.HISTORY_EVENTS_STATUS
+  | typeof SocketMessageType.INTERNAL_TX_FIXED
+  | typeof SocketMessageType.NEGATIVE_BALANCE_DETECTED
+  | typeof SocketMessageType.PROGRESS_UPDATES
+  | typeof SocketMessageType.TRANSACTION_STATUS
+> {
   return {
     [SocketMessageType.DATA_MIGRATION_STATUS]: createDataMigrationHandler(),
     [SocketMessageType.DB_UPGRADE_STATUS]: createDbUpgradeHandler(),

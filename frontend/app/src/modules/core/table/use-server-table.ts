@@ -101,6 +101,10 @@ export function useServerTable<
   const {
     fetch: requestData,
     filterSchema = {
+      // The fallback for a table with no filter schema. An empty bag is not provably a TFilter,
+      // and neither is undefined, so this is the same filter-bag debt the two suppressions in
+      // requestPayload below carry, and it dies with them in Stage 4.
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       filters: ref({}) as Ref<TFilter>,
       matchers: computed<TSuggestionMatcher[]>(() => []),
       RouteFilterSchema: undefined,

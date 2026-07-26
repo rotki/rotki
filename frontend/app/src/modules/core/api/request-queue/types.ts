@@ -1,7 +1,14 @@
 import type { FetchOptions } from 'ofetch';
 
 /** FetchOptions without the 'priority' field to avoid conflict with our queue priority */
-export type BaseFetchOptions = Omit<FetchOptions<'json'>, 'priority'>;
+/**
+ * Options the queue carries but never reads: they are handed back to the fetch function untouched.
+ * `retry` is excluded from ofetch's shape because the caller's own retry contract travels under that
+ * name, and the queue is in no position to say which one it is.
+ */
+export type BaseFetchOptions = Omit<FetchOptions<'json'>, 'priority' | 'retry'> & {
+  retry?: unknown;
+};
 
 export interface QueueState {
   /** Number of requests waiting in queue */
@@ -17,11 +24,14 @@ export interface QueueState {
 }
 
 export interface DedupeSubscriber {
-  resolve: (value: unknown) => void;
+  // The queue holds requests whose result types are unrelated, which TypeScript cannot express.
+  // `any` in the parameter position is what makes a QueuedRequest<T> storable next to the others;
+  // with `unknown` every caller has to assert the request back into the queue's element type.
+  resolve: (value: any) => void;
   reject: (error: unknown) => void;
 }
 
-export interface QueuedRequest<T = unknown> {
+export interface QueuedRequest<T = any> {
   id: string;
   url: string;
   options: BaseFetchOptions;

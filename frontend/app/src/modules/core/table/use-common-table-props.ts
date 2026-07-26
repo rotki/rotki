@@ -10,19 +10,19 @@ interface UseCommonTablePropsReturn<V extends NonNullable<unknown>> {
 }
 
 export function useCommonTableProps<V extends NonNullable<unknown>>(): UseCommonTablePropsReturn<V> {
-  const selected = ref<V[]>([]) as Ref<V[]>;
+  const modelSelected = shallowRef<V[]>([]);
   const modelOpenDialog = shallowRef<boolean>(false);
   const modelEditableItem = ref<V>();
-  const itemsToDelete = ref<V[]>([]) as Ref<V[]>;
+  const modelItemsToDelete = shallowRef<V[]>([]);
   const modelConfirmationMessage = shallowRef<string>('');
-  const expanded = ref<V[]>([]) as Ref<V[]>;
+  const modelExpanded = shallowRef<V[]>([]);
 
   return {
     confirmationMessage: modelConfirmationMessage,
     editableItem: modelEditableItem,
-    expanded,
-    itemsToDelete,
+    expanded: modelExpanded,
+    itemsToDelete: modelItemsToDelete,
     openDialog: modelOpenDialog,
-    selected,
+    selected: modelSelected,
   };
 }

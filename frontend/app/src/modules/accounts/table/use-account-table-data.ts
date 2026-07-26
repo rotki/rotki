@@ -25,7 +25,7 @@ export function useAccountTableData<T extends BlockchainAccountBalance>(
   expandedIds: Ref<string[]>,
   chainFilter: MaybeRefOrGetter<Record<string, string[]>>,
 ): UseAccountTableDataReturn<T> {
-  const collapsed = ref<AccountDataRow<T>[]>([]) as Ref<AccountDataRow<T>[]>;
+  const modelCollapsed = shallowRef<AccountDataRow<T>[]>([]);
 
   const rows = computed<AccountDataRow<T>[]>(() => {
     const data = toValue(accounts).data;
@@ -51,7 +51,7 @@ export function useAccountTableData<T extends BlockchainAccountBalance>(
     if (!totalVal)
       return undefined;
 
-    return totalVal.minus(sum(get(collapsed)));
+    return totalVal.minus(sum(get(modelCollapsed)));
   });
 
   function getCategoryTotal(category: string): BigNumber {
@@ -89,7 +89,7 @@ export function useAccountTableData<T extends BlockchainAccountBalance>(
 
   return {
     anyExpansion,
-    collapsed,
+    collapsed: modelCollapsed,
     expand,
     expanded,
     getCategoryTotal,

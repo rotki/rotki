@@ -97,7 +97,7 @@ describe('useTokenDetectionOrchestrator', () => {
     });
 
     it('should filter out addresses already being detected', async () => {
-      mockIsTaskRunning.mockImplementation((_type: unknown, meta: { chain: string; address?: string }): boolean =>
+      mockIsTaskRunning.mockImplementation((_type: unknown, meta: { address?: string }): boolean =>
         meta.address === '0xaddr1',
       );
 
@@ -206,7 +206,7 @@ describe('useTokenDetectionOrchestrator', () => {
     });
 
     it('should check specific address when provided', async () => {
-      mockIsTaskRunning.mockImplementation((_type: unknown, meta: { chain: string; address?: string }): boolean =>
+      mockIsTaskRunning.mockImplementation((_type: unknown, meta: { address?: string }): boolean =>
         meta.address === '0xaddr1',
       );
 

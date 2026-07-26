@@ -362,7 +362,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
 
   return {
     activeProvider,
-    availableProviders: readonly(availableProviders) as Readonly<Ref<EnhancedProviderDetail[]>>,
+    availableProviders: computed<EnhancedProviderDetail[]>(() => get(availableProviders)),
     checkIfSelectedProvider,
     cleanup,
     clearProvider,

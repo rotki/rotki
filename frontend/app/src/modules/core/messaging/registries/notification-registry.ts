@@ -15,7 +15,20 @@ import { SocketMessageType } from '../types/base';
 export function createNotificationRegistry(
   t: ReturnType<typeof useI18n>['t'],
   router: ReturnType<typeof useRouter>,
-): Partial<MessageHandlerRegistry> {
+): Pick<
+  MessageHandlerRegistry,
+  | typeof SocketMessageType.BALANCES_SNAPSHOT_ERROR
+  | typeof SocketMessageType.BINANCE_PAIRS_MISSING
+  | typeof SocketMessageType.GNOSISPAY_SESSIONKEY_EXPIRED
+  | typeof SocketMessageType.LEGACY
+  | typeof SocketMessageType.MISSING_API_KEY
+  | typeof SocketMessageType.MONERIUM_SESSIONKEY_EXPIRED
+  | typeof SocketMessageType.NO_AVAILABLE_INDEXERS
+  | typeof SocketMessageType.PREMIUM_STATUS_UPDATE
+  | typeof SocketMessageType.SOLANA_TOKENS_MIGRATION
+  | typeof SocketMessageType.UNMATCHED_ASSET_MOVEMENTS
+  | typeof SocketMessageType.UNMATCHED_BRIDGE_TRANSACTIONS
+> {
   const missingApiKeyHandler = createMissingApiKeyHandler(t, router);
   const binancePairsMissingHandler = createBinancePairsMissingHandler(t, router);
 

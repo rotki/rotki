@@ -1,5 +1,6 @@
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { SettingKey, SettingValue } from '@/modules/settings/use-setting';
+import { objectKeys } from '@/modules/core/common/data/array';
 import { Channel, type RegistryEntry } from '@/modules/settings/settings-channels';
 import { settingsRegistry } from '@/modules/settings/settings-registry';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
@@ -50,8 +51,7 @@ function partitionByChannel(patch: SettingsPatch): ChannelPartition {
   const frontend: Record<string, unknown> = {};
   const session: Record<string, unknown> = {};
 
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Object.keys widens to string[]; the patch owns exactly WritableSettingKey entries
-  for (const key of Object.keys(patch) as WritableSettingKey[]) {
+  for (const key of objectKeys(patch)) {
     const value = patch[key];
     if (value === undefined)
       continue;

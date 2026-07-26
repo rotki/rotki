@@ -91,9 +91,12 @@ export function useTablePersistence(
     const currentQuery = getQuery();
     const captured: Record<string, string | string[]> = {};
     for (const key of transientKeys) {
+      // A query entry can be null or hold nulls; only the actual strings are worth capturing.
       const value = currentQuery[key];
-      if (value)
-        captured[key] = value as string | string[];
+      if (typeof value === 'string')
+        captured[key] = value;
+      else if (Array.isArray(value))
+        captured[key] = value.filter(entry => entry !== null);
     }
     set(navigationTransientValues, Object.keys(captured).length > 0 ? captured : undefined);
   };

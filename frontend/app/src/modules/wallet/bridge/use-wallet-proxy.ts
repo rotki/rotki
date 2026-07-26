@@ -166,7 +166,7 @@ export function useWalletProxy(): UseWalletProxyReturn {
 
   // Initialize wallet bridge
   async function initializeProxy(): Promise<void> {
-    const walletBridge = (window as any).walletBridge;
+    const { walletBridge } = window;
     if (!walletBridge) {
       throw new Error('Wallet bridge not available in window object');
     }

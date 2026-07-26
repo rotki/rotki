@@ -8,6 +8,17 @@ interface ApiSorting {
   ascending: boolean[];
 }
 
+/**
+ * A column name that reached us as a plain string: from the URL, from persisted state, or from the
+ * caller's fallback. Nothing at runtime ties it to the row type, and a table sorting on a column its
+ * rows do not have is a caller bug rather than something this module can resolve, so the key is
+ * widened here in one place instead of at both boundaries.
+ */
+function asRowKey<T extends NonNullable<unknown>>(column: string): TableRowKey<T> {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
+  return column as TableRowKey<T>;
+}
+
 /** The column every table falls back to when neither the state nor the defaults name one. */
 export const DEFAULT_FALLBACK_SORT_COLUMN = 'timestamp';
 
@@ -21,7 +32,7 @@ export function getSorting<T extends NonNullable<unknown>>(
     direction = defaults?.direction ?? 'desc',
   } = sorting;
   return {
-    column: column as TableRowKey<T>,
+    column: asRowKey<T>(column),
     direction,
   };
 }
@@ -78,7 +89,7 @@ export function applySortingDefaults<T extends NonNullable<unknown>>(
   sorting: DataTableSortData<T>,
   fallbackColumn: string = DEFAULT_FALLBACK_SORT_COLUMN,
 ): Sorting<T> {
-  const defaultColumn = fallbackColumn as TableRowKey<T>;
+  const defaultColumn = asRowKey<T>(fallbackColumn);
   const defaultDirection = 'desc';
   if (!sorting) {
     return {

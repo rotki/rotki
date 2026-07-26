@@ -161,7 +161,7 @@ export class RotkiApi {
       : this._requestQueue;
 
     return queue.enqueue<T>(url, {
-      ...restOptions as Record<string, unknown>,
+      ...restOptions,
       priority: priority ?? RequestPriority.NORMAL,
       tags,
       dedupe,
@@ -220,8 +220,12 @@ export class RotkiApi {
    * (`skipResultUnwrap`, `treat409AsSuccess`) intentionally resolve to a value
    * the wrapper cannot type as `T` — the caller opted into that shape — so this
    * is the one place that asserts it, keeping the assertion contained.
+   *
+   * Carrying the type instead was considered and does not work here: there is no schema and no
+   * caller-supplied validator at this boundary, only the caller's own declared T.
    */
   private asResult<T>(value: unknown): T {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
     return value as T;
   }
 
@@ -242,7 +246,7 @@ export class RotkiApi {
 
     const doFetch = async (): Promise<T> => {
       const body = transformRequestBody(fetchOptions.body, { skipSnakeCase, filterEmptyProperties });
-      const query = transformRequestQuery(fetchOptions.query as Record<string, unknown> | undefined, { skipSnakeCase, filterEmptyProperties });
+      const query = transformRequestQuery(fetchOptions.query, { skipSnakeCase, filterEmptyProperties });
 
       const response = await ofetch.raw<ActionResult<T>>(url, {
         ...fetchOptions,
@@ -305,7 +309,7 @@ export class RotkiApi {
       throw new RequestCancelledError('Application is quitting');
 
     const { validStatuses, skipSnakeCase, query: rawQuery, baseURL, timeout } = options;
-    const query = transformRequestQuery(rawQuery as Record<string, unknown> | undefined, { skipSnakeCase });
+    const query = transformRequestQuery(rawQuery, { skipSnakeCase });
 
     const response = await ofetch.raw(url, {
       method: 'HEAD',
@@ -337,7 +341,7 @@ export class RotkiApi {
 
     const { validStatuses, skipSnakeCase, ...fetchOptions } = options;
     const body = transformRequestBody(fetchOptions.body, { skipSnakeCase });
-    const query = transformRequestQuery(fetchOptions.query as Record<string, unknown> | undefined, { skipSnakeCase });
+    const query = transformRequestQuery(fetchOptions.query, { skipSnakeCase });
 
     const response = await ofetch.raw<Blob, 'blob'>(url, {
       method: fetchOptions.method,
