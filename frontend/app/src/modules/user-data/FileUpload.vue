@@ -60,8 +60,8 @@ const { isOverDropZone } = useDropZone(wrapper, {
 });
 
 function onSelect(event: Event) {
-  const target = event.target as HTMLInputElement;
-  if (!target || !target.files)
+  const { target } = event;
+  if (!(target instanceof HTMLInputElement) || !target.files)
     return;
 
   if (!['icon', 'zip', 'csv', 'json'].includes(source))

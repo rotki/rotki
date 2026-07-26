@@ -11,7 +11,7 @@ const BlockchainRpcNode = z.object({
   name: z.string().min(1),
   owned: z.boolean(),
   runtimeStatus: z.enum(['ready', 'cooling_down']).optional(),
-  weight: z.preprocess(weight => Number.parseFloat(weight as string), z.number().nonnegative().max(100)),
+  weight: z.preprocess(weight => Number.parseFloat(String(weight)), z.number().nonnegative().max(100)),
 });
 
 export type BlockchainRpcNode = z.infer<typeof BlockchainRpcNode>;

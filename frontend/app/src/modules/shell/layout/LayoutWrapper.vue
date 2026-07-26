@@ -13,12 +13,16 @@ const layouts = {
   plain: PlainLayout,
 };
 
+function isLayoutName(value: unknown): value is keyof typeof layouts {
+  return typeof value === 'string' && value in layouts;
+}
+
 const route = useRoute();
 
 const layout = computed(() => {
   const defaultLayout: keyof typeof layouts = route.path === '/' ? 'plain' : 'default';
-  const layoutName = route.meta.layout || defaultLayout;
-  return layouts[layoutName as keyof typeof layouts] || layouts[defaultLayout];
+  const { layout: layoutName } = route.meta;
+  return isLayoutName(layoutName) ? layouts[layoutName] : layouts[defaultLayout];
 });
 </script>
 

@@ -58,11 +58,11 @@ function onPasteMulti(event: ClipboardEvent): void {
     return;
   }
 
-  const target = event.target as HTMLTextAreaElement | null;
+  const { target } = event;
   const current = get(userAddresses);
   const replacement = paste.replace(/,(0x)/g, ',\n0x');
 
-  if (target && target.selectionStart !== target.selectionEnd) {
+  if (target instanceof HTMLTextAreaElement && target.selectionStart !== target.selectionEnd) {
     const before = current.slice(0, target.selectionStart);
     const after = current.slice(target.selectionEnd);
     set(userAddresses, before + replacement + after);

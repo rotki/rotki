@@ -36,7 +36,7 @@ const {
   selectionMode = false,
   showPerProtocol = false,
   stickyHeader = false,
-  visibleColumns = [] as TableColumn[],
+  visibleColumns = [],
 } = defineProps<{
   balances: AssetBalanceWithPrice[];
   details?: {

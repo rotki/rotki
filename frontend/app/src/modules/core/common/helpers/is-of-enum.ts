@@ -1,5 +1,5 @@
-export function isOfEnum<T extends { [s: string]: unknown }>(e: T) {
-  return (token: any): token is T[keyof T] => Object.values(e).includes(token as T[keyof T]);
+export function isOfEnum<T extends Record<string, unknown>>(e: T) {
+  return (token: unknown): token is T[keyof T] => Object.values(e).includes(token);
 }
 
 /**

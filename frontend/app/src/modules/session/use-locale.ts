@@ -1,8 +1,11 @@
 import type { MaybeRef } from 'vue';
 import { loadLocaleMessages } from '@/i18n';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { isOfEnum } from '@/modules/core/common/helpers/is-of-enum';
 import { SupportedLanguage } from '@/modules/settings/types/frontend-settings';
 import { useSetting } from '@/modules/settings/use-setting';
+
+const isSupportedLanguage = isOfEnum(SupportedLanguage);
 
 export const useLocale = createSharedComposable(() => {
   const { logged } = storeToRefs(useSessionAuthStore());
@@ -15,8 +18,8 @@ export const useLocale = createSharedComposable(() => {
 
   const adaptiveLanguage = computed<SupportedLanguage>(() => {
     const selectedLanguageVal = get(lastLanguage);
-    return !get(logged) && selectedLanguageVal !== 'undefined'
-      ? (selectedLanguageVal as SupportedLanguage)
+    return !get(logged) && isSupportedLanguage(selectedLanguageVal)
+      ? selectedLanguageVal
       : get(language);
   });
 

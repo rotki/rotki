@@ -52,7 +52,7 @@ const GeneralSettings = z.object({
   autoDeleteCalendarEntries: z.boolean(),
   autoDetectTokens: z.boolean(),
   balanceSaveFrequency: z.preprocess(
-    balanceSaveFrequency => Math.min(Number.parseInt(balanceSaveFrequency as string), Constraints.MAX_HOURS_DELAY),
+    balanceSaveFrequency => Math.min(Number.parseInt(String(balanceSaveFrequency)), Constraints.MAX_HOURS_DELAY),
     z.number().int().max(Constraints.MAX_HOURS_DELAY),
   ),
   beaconRpcEndpoint: z.string(),

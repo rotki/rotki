@@ -6,6 +6,7 @@ import ManageCounterpartyMappingFormDialog
 import ManageCounterpartyMappingTable from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingTable.vue';
 import { useCounterpartyMappingApi } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { firstQueryValue } from '@/modules/core/table/route';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -59,8 +60,8 @@ onMounted(async () => {
   if (query.add) {
     await router.replace({ query: {} });
     add({
-      counterparty: (query.counterparty as string) || '',
-      counterpartySymbol: (query.counterpartySymbol as string) || '',
+      counterparty: firstQueryValue(query.counterparty),
+      counterpartySymbol: firstQueryValue(query.counterpartySymbol),
     });
   }
 

@@ -25,7 +25,9 @@ test.describe.serial('blockchain balances', () => {
         [Blockchain.BTC]: testEnv.BTC_ADDRESS,
       };
       const address = addressMap[account.blockchain] ?? '';
-      const blockchain = account.blockchain as Blockchain;
+      const blockchain = Object.values(Blockchain).find(value => value === account.blockchain);
+      if (!blockchain)
+        throw new Error(`Unknown blockchain in fixture: ${account.blockchain}`);
 
       return { ...account, blockchain, address };
     });

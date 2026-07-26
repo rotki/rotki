@@ -1,5 +1,12 @@
 import { type ConsolaInstance, createConsola, LogLevels } from 'consola';
 
+declare global {
+  interface Window {
+    mozIndexedDB?: IDBFactory;
+    webkitIndexedDB?: IDBFactory;
+  }
+}
+
 const ROWLIMIT = 50000;
 
 export class IndexedDb {
@@ -17,22 +24,22 @@ export class IndexedDb {
 
   get db(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-      if (!window.indexedDB)
+      const indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
+      if (!indexedDB) {
         reject(new Error('Unsupported indexedDB'));
+        return;
+      }
 
-      const request = (window.indexedDB || (window as any).mozIndexedDB || (window as any).webkitIndexedDB).open(
-        this.dbName,
-        this.dbVersion,
-      );
+      const request = indexedDB.open(this.dbName, this.dbVersion);
 
-      request.onsuccess = (e): void => {
-        resolve((e.target as any).result);
+      request.onsuccess = (): void => {
+        resolve(request.result);
       };
       request.onerror = (e): void => {
         reject(e);
       };
-      request.onupgradeneeded = (e): void => {
-        const db = (e.target as any).result;
+      request.onupgradeneeded = (): void => {
+        const db = request.result;
         if (!db.objectStoreNames.contains(this.store)) {
           db.createObjectStore(this.store, {
             autoIncrement: true,

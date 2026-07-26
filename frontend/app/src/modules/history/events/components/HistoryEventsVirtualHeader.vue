@@ -27,7 +27,7 @@ const sortColumn = computed<'timestamp' | undefined>({
     const sortArray = getSortArray();
     if (sortArray.length === 0)
       return undefined;
-    return sortArray[0]?.column as 'timestamp' | undefined;
+    return sortArray[0]?.column === 'timestamp' ? 'timestamp' : undefined;
   },
   set(column: 'timestamp' | undefined) {
     if (!column) {

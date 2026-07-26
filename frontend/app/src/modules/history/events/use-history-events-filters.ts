@@ -112,12 +112,14 @@ export function useHistoryEventsFilters(
   // Define these early since they're used in extraParams / requestParams
   const missingAcquisitionFromQuery = computed<string[] | undefined>(() => {
     const { missingAcquisitionIdentifier } = get(route).query;
-    return missingAcquisitionIdentifier ? [missingAcquisitionIdentifier as string] : undefined;
+    return typeof missingAcquisitionIdentifier === 'string' && missingAcquisitionIdentifier.length > 0
+      ? [missingAcquisitionIdentifier]
+      : undefined;
   });
 
   const groupIdentifiersRaw = computed<string | undefined>(() => {
     const { groupIdentifiers } = get(route).query;
-    return groupIdentifiers ? (groupIdentifiers as string) : undefined;
+    return typeof groupIdentifiers === 'string' && groupIdentifiers.length > 0 ? groupIdentifiers : undefined;
   });
 
   const groupIdentifiersFromQuery = computed<string[] | undefined>(() => {

@@ -1,4 +1,4 @@
-import { nextTick } from 'vue';
+import { isVNode, nextTick } from 'vue';
 import { createI18n } from 'vue-i18n';
 import en from './locales/en.json';
 
@@ -12,8 +12,8 @@ export const i18n = createI18n({
     quote(val, type) {
       if (type === 'text' && typeof val === 'string')
         return `"${val}"`;
-      if (type === 'vnode' && typeof val === 'object' && '__v_isVNode' in val)
-        return `"${(val as any).children}"`;
+      if (type === 'vnode' && isVNode(val))
+        return `"${String(val.children)}"`;
       return `"${val.toString()}"`;
     },
   },

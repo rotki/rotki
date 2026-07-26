@@ -2,6 +2,7 @@ import { startPromise } from '@shared/utils';
 import { get, isDefined, set } from '@vueuse/core';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { waitForCondition } from '@/modules/core/common/async/async-utilities';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useWalletBridge } from '@/modules/shell/app/use-wallet-bridge';
 import { PROXY_CONFIG } from './bridge-config';
@@ -177,7 +178,7 @@ export function useWalletProxy(): UseWalletProxyReturn {
         logger.debug('Wallet bridge enabled successfully');
       }
       catch (error) {
-        throw new Error(`Failed to enable wallet bridge: ${(error as Error).message}`);
+        throw new Error(`Failed to enable wallet bridge: ${getErrorMessage(error)}`);
       }
     }
     else {
@@ -200,9 +201,8 @@ export function useWalletProxy(): UseWalletProxyReturn {
       logger.debug('Bridge client ready for API calls');
     }
     catch (error) {
-      const err = error as Error;
-      logger.error('Bridge setup failed:', err);
-      throw new Error(`Failed to establish bridge connection during bridge setup: ${err.message}`);
+      logger.error('Bridge setup failed:', error);
+      throw new Error(`Failed to establish bridge connection during bridge setup: ${getErrorMessage(error)}`);
     }
   };
 
@@ -281,7 +281,7 @@ export function useWalletProxy(): UseWalletProxyReturn {
     }
     catch (error) {
       logger.error('Failed to stop bridge servers:', error);
-      throw new Error(`Failed to stop bridge servers: ${(error as Error).message}`);
+      throw new Error(`Failed to stop bridge servers: ${getErrorMessage(error)}`);
     }
   };
 

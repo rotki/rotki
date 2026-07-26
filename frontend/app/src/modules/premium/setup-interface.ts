@@ -6,16 +6,19 @@ import type {
   Themes,
   TimeUnit,
 } from '@rotki/common';
-import type { DateFormat } from '@/modules/core/common/date-format';
 import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import dayjs from 'dayjs';
 import { convertToTimestamp } from '@/modules/core/common/data/date';
+import { DateFormat } from '@/modules/core/common/date-format';
+import { isOfEnum } from '@/modules/core/common/helpers/is-of-enum';
 import { logger } from '@/modules/core/common/logging/logging';
 import { assetsApi, balancesApi, statisticsApi, userSettings, utilsApi } from '@/modules/premium/premium-apis';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useThemeSettings } from '@/modules/shell/theme/use-theme-settings';
 import { useGraph } from '@/modules/statistics/use-graph';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
+
+const isDateFormat = isOfEnum(DateFormat);
 
 /**
  * Creates the PremiumApi instance.
@@ -25,7 +28,7 @@ import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 export function createPremiumApi(): PremiumApi {
   const date: DateUtilities = {
     convertToTimestamp(date: string, dateFormat?: string): number {
-      return convertToTimestamp(date, dateFormat as DateFormat | undefined);
+      return convertToTimestamp(date, isDateFormat(dateFormat) ? dateFormat : undefined);
     },
     epoch(): number {
       return dayjs().unix();

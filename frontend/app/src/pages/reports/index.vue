@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
+import { firstQueryValue } from '@/modules/core/table/route';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import ReportGenerator from '@/modules/reports/ReportGenerator.vue';
@@ -60,8 +61,8 @@ onMounted(async () => {
     return;
   }
 
-  const start: string = (query.start as string) || '';
-  const end: string = (query.end as string) || '';
+  const start = firstQueryValue(query.start);
+  const end = firstQueryValue(query.end);
   if (!(start && end)) {
     return;
   }

@@ -118,6 +118,8 @@ const timeframePeriods = [
   TimeFramePeriod.WEEK,
 ] as const;
 
+const knownTimeframePeriods = new Set<string>(timeframePeriods);
+
 const timeframeMap: Record<TimeFramePeriod, [TimeUnit, number?]> = {
   [TimeFramePeriod.ALL]: [TimeUnit.MONTH],
   [TimeFramePeriod.MONTH]: [TimeUnit.WEEK],
@@ -131,9 +133,7 @@ const timeframeMap: Record<TimeFramePeriod, [TimeUnit, number?]> = {
 
 function isComplete(timeframes: Partial<Record<TimeFramePeriod, Timeframe>>): timeframes is Timeframes {
   const hasAllRequiredKeys = timeframePeriods.every(period => period in timeframes);
-  const hasNoExtraKeys = Object.keys(timeframes).every(key =>
-    timeframePeriods.includes(key as TimeFramePeriod),
-  );
+  const hasNoExtraKeys = Object.keys(timeframes).every(key => knownTimeframePeriods.has(key));
 
   return hasAllRequiredKeys && hasNoExtraKeys;
 }

@@ -185,7 +185,7 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
 
       websocket.onmessage = (event): void => {
         try {
-          const rawMessage = JSON.parse(event.data) as unknown;
+          const rawMessage: unknown = JSON.parse(event.data);
           handleMessage(rawMessage);
         }
         catch (error) {

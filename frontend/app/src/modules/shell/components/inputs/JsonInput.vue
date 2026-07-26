@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Content, JSONContent, JsonEditor, TextContent } from 'vanilla-jsoneditor';
+import type { Content, JsonEditor } from 'vanilla-jsoneditor';
 import { debounce } from 'es-toolkit';
 
 const modelValue = defineModel<Record<string, any>>({ required: true });
@@ -26,12 +26,11 @@ onMounted(async () => {
   if (!container)
     return;
 
-  const { createJSONEditor } = await import('vanilla-jsoneditor');
+  // Pulled from the dynamic import so the editor stays out of the eager bundle.
+  const { createJSONEditor, isTextContent } = await import('vanilla-jsoneditor');
 
   const onChange = debounce((updatedContent: Content) => {
-    set(modelValue, (updatedContent as TextContent).text === undefined
-      ? (updatedContent as JSONContent).json
-      : (updatedContent as TextContent).text);
+    set(modelValue, isTextContent(updatedContent) ? updatedContent.text : updatedContent.json);
   }, 100);
 
   const newJsonEditor = createJSONEditor({

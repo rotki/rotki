@@ -41,7 +41,7 @@ function getMessage(logObj: LogObject): string {
 }
 
 function getElectronMessage(logObj: LogObject): { level: LogLevel; message: string } {
-  const levelMap = {
+  const levelMap: Record<string, LogLevel> = {
     debug: LogLevel.DEBUG,
     error: LogLevel.ERROR,
     fatal: LogLevel.CRITICAL,
@@ -51,9 +51,9 @@ function getElectronMessage(logObj: LogObject): { level: LogLevel; message: stri
     trace: LogLevel.TRACE,
     warn: LogLevel.WARNING,
     warning: LogLevel.WARNING,
-  } as const;
+  };
 
-  const level = levelMap[logObj.type as keyof typeof levelMap] ?? LogLevel.INFO;
+  const level = levelMap[logObj.type] ?? LogLevel.INFO;
   const tag = logObj.tag ? `[${logObj.tag}] ` : '';
   const message = `[vue] ${tag}${logObj.args.join(' ')}`;
 

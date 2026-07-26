@@ -5,7 +5,9 @@ import { assert, BigNumber } from '@rotki/common';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 
-type NftSortKey = 'name' | 'price' | 'collection';
+const NFT_SORT_KEYS = ['name', 'price', 'collection'] as const;
+
+type NftSortKey = (typeof NFT_SORT_KEYS)[number];
 
 type NftSortValue = string | BigNumber | null;
 
@@ -89,8 +91,9 @@ export function useNftGalleryFilters(
 
   // Methods
   function updateSortBy(value: string): void {
-    assert(['name', 'price', 'collection'].includes(value));
-    set(modelSortBy, value as 'name' | 'price' | 'collection');
+    const sortKey = NFT_SORT_KEYS.find(key => key === value);
+    assert(sortKey);
+    set(modelSortBy, sortKey);
   }
 
   function sortNfts(

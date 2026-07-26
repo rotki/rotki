@@ -9,9 +9,7 @@ import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelec
 import AirdropDisplay from '@/modules/airdrops/AirdropDisplay.vue';
 import {
   type Airdrop,
-  AIRDROP_POAP,
   Airdrops,
-  type PoapDelivery,
   type PoapDeliveryDetails,
 } from '@/modules/airdrops/airdrops';
 import PoapDeliveryAirdrops from '@/modules/airdrops/PoapDeliveryAirdrops.vue';
@@ -134,11 +132,11 @@ function filterByAddress(data: Airdrops, addresses: string[]): Airdrop[] {
     const airdrop = data[address];
     for (const source in airdrop) {
       const element = airdrop[source];
-      if (source === AIRDROP_POAP) {
-        const details = element as PoapDelivery[];
+      // Only poap deliveries are stored as an array, so this is also the poap branch.
+      if (Array.isArray(element)) {
         result.push({
           address,
-          details: details.map(detail => ({
+          details: element.map(detail => ({
             ...detail,
           })),
           source,

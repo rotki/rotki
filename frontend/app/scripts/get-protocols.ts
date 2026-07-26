@@ -259,14 +259,14 @@ function getCounterparties(counterparties: Counterparty[]) {
     .sort((a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
   // Group protocols by their base name (part before any dash)
-  const protocolGroups = filteredCounterparties.reduce((groups: Record<string, string[]>, item: string) => {
+  const protocolGroups = filteredCounterparties.reduce<Record<string, string[]>>((groups, item: string) => {
     const baseProtocol = item.split('-')[0];
     if (!groups[baseProtocol]) {
       groups[baseProtocol] = [];
     }
     groups[baseProtocol].push(item);
     return groups;
-  }, {} as Record<string, string[]>);
+  }, {});
 
   const selectedProtocols: string[] = [];
 

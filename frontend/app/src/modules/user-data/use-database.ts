@@ -10,25 +10,27 @@ import { createDatabaseIdentifier } from '@/modules/user-data/utils/hash';
 
 const NEWLY_DETECTED_TOKENS_MIGRATION_KEY_PREFIX = 'rotki.newly_detected_tokens.';
 
-export interface RotkiDB extends Dexie {
-  missingMappings: EntityTable<MissingMapping, 'id'>;
-  newlyDetectedTokens: EntityTable<NewDetectedTokenRecord, 'id'>;
+/**
+ * Dexie attaches the stores declared below at runtime, so they are declared with definite
+ * assignment. This is Dexie's own subclass pattern; the alternative is asserting a plain
+ * Dexie instance into the table-bearing shape.
+ */
+export class RotkiDB extends Dexie {
+  missingMappings!: EntityTable<MissingMapping, 'id'>;
+  newlyDetectedTokens!: EntityTable<NewDetectedTokenRecord, 'id'>;
+
+  constructor(identifier: string) {
+    super(`rotki.data.${identifier}`);
+    this.version(1).stores({
+      missingMappings: '++id, [identifier], name, [location], &[identifier+location], details',
+      newlyDetectedTokens: '++id, tokenIdentifier, tokenKind, detectedAt',
+    });
+  }
 }
 
 interface UseDatabaseReturn {
   readonly db: () => RotkiDB;
   readonly isReady: Ref<boolean>;
-}
-
-function createRotkiDb(identifier: string): RotkiDB {
-  const db = new Dexie(`rotki.data.${identifier}`);
-
-  db.version(1).stores({
-    missingMappings: '++id, [identifier], name, [location], &[identifier+location], details',
-    newlyDetectedTokens: '++id, tokenIdentifier, tokenKind, detectedAt',
-  });
-
-  return db as RotkiDB;
 }
 
 async function migrateFromOldMissingMappingsDb(newDb: RotkiDB, username: string): Promise<void> {
@@ -127,7 +129,7 @@ export const useDatabase = createSharedComposable((): UseDatabaseReturn => {
 
     try {
       const identifier = createDatabaseIdentifier(directory, user);
-      const database = createRotkiDb(identifier);
+      const database = new RotkiDB(identifier);
       set(dbInstance, database);
 
       // Run migrations

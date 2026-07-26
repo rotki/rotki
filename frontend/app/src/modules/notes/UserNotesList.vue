@@ -145,9 +145,11 @@ async function confirmDelete(): Promise<void> {
 }
 
 function onBeforeLeave(el: Element): void {
-  const element = el as HTMLElement;
-  element.style.height = `${element.offsetHeight}px`;
-  element.style.width = `${element.offsetWidth}px`;
+  if (!(el instanceof HTMLElement))
+    return;
+
+  el.style.height = `${el.offsetHeight}px`;
+  el.style.width = `${el.offsetWidth}px`;
 }
 
 const premium = usePremium();

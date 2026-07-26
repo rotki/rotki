@@ -5,6 +5,7 @@ import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/Manag
 import ManageCexMappingTable from '@/modules/assets/admin/cex-mapping/ManageCexMappingTable.vue';
 import { useAssetCexMappingApi } from '@/modules/assets/api/use-asset-cex-mapping-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { firstQueryValue } from '@/modules/core/table/route';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -58,8 +59,8 @@ onMounted(async () => {
   if (query.add) {
     await router.replace({ query: {} });
     add({
-      location: (query.location as string) || '',
-      locationSymbol: (query.locationSymbol as string) || '',
+      location: firstQueryValue(query.location),
+      locationSymbol: firstQueryValue(query.locationSymbol),
     });
   }
 

@@ -39,7 +39,7 @@ onClickOutside(
   panelRef,
   (event) => {
     const details = get(detailsRef);
-    if (details && details.contains(event.target as Node))
+    if (details && event.target instanceof Node && details.contains(event.target))
       return;
     collapse();
   },

@@ -7,6 +7,14 @@ export type LocationQuery = Record<string, LocationQueryValue | LocationQueryVal
 
 export type RawLocationQuery = Record<string, LocationQueryValueRaw | LocationQueryValueRaw[] | boolean>;
 
+/**
+ * Reads a single string out of a route query entry. A query key can be absent, null, or repeated,
+ * so callers that want one value get the first one, or an empty string when there is none.
+ */
+export function firstQueryValue(value: LocationQueryValue | LocationQueryValue[] | undefined): string {
+  return arrayify(value)[0] ?? '';
+}
+
 export const CommaSeparatedStringSchema = z.string()
   .optional()
   .transform(val => (val ? val.split(',') : []));

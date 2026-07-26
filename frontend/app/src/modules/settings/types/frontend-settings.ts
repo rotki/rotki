@@ -48,12 +48,9 @@ const ExplorerEndpoints = z.object({
 
 const ExplorersSettings = z.record(z.string(), ExplorerEndpoints.optional());
 
-const RoundingMode = z
-  .number()
-  .int()
-  .min(0)
-  .max(8)
-  .transform(arg => arg as BigNumber.RoundingMode);
+// Spelled out as literals so the inferred type is BigNumber.RoundingMode itself
+// rather than a number that has to be asserted into it.
+const RoundingMode = z.literal([0, 1, 2, 3, 4, 5, 6, 7, 8]);
 
 export type RoundingMode = z.infer<typeof RoundingMode>;
 
@@ -233,14 +230,14 @@ export const FrontendSettings = z.object({
   queryPeriod: z.preprocess(
     queryPeriod =>
       Math.min(
-        Number.parseInt(queryPeriod as string) || Defaults.DEFAULT_QUERY_PERIOD,
+        Number.parseInt(String(queryPeriod)) || Defaults.DEFAULT_QUERY_PERIOD,
         Constraints.MAX_SECONDS_DELAY,
       ),
     QueryPeriod.default(Defaults.DEFAULT_QUERY_PERIOD),
   ),
   refreshPeriod: z.preprocess(
     refreshPeriod =>
-      Math.min(Number.parseInt(refreshPeriod as string) || -1, Constraints.MAX_MINUTES_DELAY),
+      Math.min(Number.parseInt(String(refreshPeriod)) || -1, Constraints.MAX_MINUTES_DELAY),
     RefreshPeriod.default(-1),
   ),
   renderAllNftImages: z.boolean().default(true),
@@ -263,7 +260,7 @@ export const FrontendSettings = z.object({
   versionUpdateCheckFrequency: z.preprocess(
     versionUpdateCheckFrequency =>
       Math.min(
-        Number.parseInt(versionUpdateCheckFrequency as string) ||
+        Number.parseInt(String(versionUpdateCheckFrequency)) ||
         Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
         Constraints.MAX_HOURS_DELAY,
       ),

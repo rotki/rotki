@@ -40,7 +40,7 @@ export async function switchMockRpcCassette(name: string): Promise<void> {
   });
 
   if (response.ok) {
-    const body = await response.json() as { entries: number };
+    const body: { entries: number } = await response.json();
     logger.info(`Switched to cassette "${name}" (${body.entries} entries)`);
   }
   else {

@@ -1,15 +1,19 @@
 import { Blockchain, EvmTokenKind, SolanaTokenKind } from '@rotki/common';
+import { isOfEnum } from '@/modules/core/common/helpers/is-of-enum';
 
 const BtcChains = [Blockchain.BTC, Blockchain.BCH] as const;
 
 export type BtcChains = (typeof BtcChains)[number];
 
+const btcChains = new Set<string>(BtcChains);
+const isBlockchainValue = isOfEnum(Blockchain);
+
 export function isBtcChain(chain: string): chain is BtcChains {
-  return BtcChains.includes(chain as any);
+  return btcChains.has(chain);
 }
 
 export function isBlockchain(chain: string): chain is Blockchain {
-  return Object.values(Blockchain).includes(chain as any);
+  return isBlockchainValue(chain);
 }
 
 interface EvmTokenData {

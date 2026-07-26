@@ -3,15 +3,32 @@ interface UseMarqueeAnimationReturn {
   onMarqueeLeave: (event: MouseEvent) => void;
 }
 
+interface MarqueeElements {
+  wrapper: HTMLElement;
+  inner: HTMLElement;
+}
+
+function resolveMarqueeElements(event: MouseEvent): MarqueeElements | undefined {
+  const wrapper = event.currentTarget;
+  if (!(wrapper instanceof HTMLElement))
+    return undefined;
+
+  const inner = wrapper.firstElementChild;
+  if (!(inner instanceof HTMLElement))
+    return undefined;
+
+  return { inner, wrapper };
+}
+
 export function useMarqueeAnimation(): UseMarqueeAnimationReturn {
   const animations = new WeakMap<HTMLElement, Animation>();
 
   function onMarqueeEnter(event: MouseEvent): void {
-    const wrapper = event.currentTarget as HTMLElement;
-    const inner = wrapper.firstElementChild as HTMLElement | null;
-    if (!inner)
+    const elements = resolveMarqueeElements(event);
+    if (!elements)
       return;
 
+    const { inner, wrapper } = elements;
     const distance: number = inner.scrollWidth - wrapper.clientWidth;
     if (distance <= 0)
       return;
@@ -34,8 +51,7 @@ export function useMarqueeAnimation(): UseMarqueeAnimationReturn {
   }
 
   function onMarqueeLeave(event: MouseEvent): void {
-    const wrapper = event.currentTarget as HTMLElement;
-    const inner = wrapper.firstElementChild as HTMLElement | null;
+    const inner = resolveMarqueeElements(event)?.inner;
     if (!inner)
       return;
 

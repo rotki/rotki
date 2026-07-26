@@ -1,5 +1,6 @@
 import { isValidBchAddress, isValidBtcAddress } from '@rotki/common';
 import { XpubKeyType } from '@/modules/accounts/blockchain-accounts';
+import { isOfEnum } from '@/modules/core/common/helpers/is-of-enum';
 
 export enum XpubPrefix {
   P2TR = 'p2tr',
@@ -7,6 +8,8 @@ export enum XpubPrefix {
   YPUB = 'ypub',
   ZPUB = 'zpub',
 }
+
+const isXpubPrefix = isOfEnum(XpubPrefix);
 
 export const getKeyType: (key: XpubPrefix) => XpubKeyType = (key) => {
   if (key === XpubPrefix.XPUB)
@@ -18,7 +21,7 @@ export const getKeyType: (key: XpubPrefix) => XpubKeyType = (key) => {
   else if (key === XpubPrefix.P2TR)
     return XpubKeyType.P2TR;
 
-  throw new Error(`${key as any} is invalid`);
+  throw new Error(`${String(key)} is invalid`);
 };
 
 export const getPrefix: (type?: XpubKeyType) => XpubPrefix = (type) => {
@@ -41,8 +44,8 @@ export function guessPrefix(key: string): XpubPrefix {
   if (!match) {
     throw new Error('Invalid key, key should be prefixed with xpub, ypub or zpub');
   }
-  const prefix = match?.[1] ?? XpubPrefix.XPUB;
-  return prefix as XpubPrefix;
+  const prefix = match?.[1];
+  return isXpubPrefix(prefix) ? prefix : XpubPrefix.XPUB;
 }
 
 /**

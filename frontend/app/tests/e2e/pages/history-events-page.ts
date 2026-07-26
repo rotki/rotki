@@ -41,9 +41,8 @@ export class HistoryEventsPage {
     // by scrolling the internal scroller to the top before clicking.
     await menu.evaluate((el) => {
       const scrollers = el.querySelectorAll('*');
-      for (const node of scrollers) {
-        const element = node as HTMLElement;
-        if (element.scrollHeight > element.clientHeight) {
+      for (const element of scrollers) {
+        if (element instanceof HTMLElement && element.scrollHeight > element.clientHeight) {
           element.scrollTop = 0;
           return;
         }

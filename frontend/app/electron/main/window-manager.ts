@@ -152,7 +152,7 @@ export class WindowManager {
         return;
       }
       catch (error) {
-        lastError = error as Error;
+        lastError = error instanceof Error ? error : new Error(String(error));
         this.logger.warn(`Failed to load URL on attempt ${attempt}/${maxRetries}:`, error);
 
         // Don't retry on the last attempt
