@@ -57,28 +57,36 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
     return t('actions.online_events.warning.missing_api_key.default', { queryType: label });
   };
 
-  const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType): Promise<void> => {
+  /**
+   * Each online source is gated on its own precondition: eth2 on the module being enabled, gnosis pay
+   * on being allowed and holding a key, monerium on being allowed and currently authenticated.
+   */
+  const canQueryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType): Promise<boolean> => {
     const eth2QueryTypes: OnlineHistoryEventsQueryType[] = [
       OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
       OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
     ];
 
     if (!get(isEth2Enabled) && eth2QueryTypes.includes(queryType))
-      return;
+      return false;
 
-    if (queryType === OnlineHistoryEventsQueryType.GNOSIS_PAY && (!get(gnosisPayAllowed) || !getApiKey('gnosis_pay'))) {
-      return;
-    }
+    if (queryType === OnlineHistoryEventsQueryType.GNOSIS_PAY)
+      return get(gnosisPayAllowed) && !!getApiKey('gnosis_pay');
 
     if (queryType === OnlineHistoryEventsQueryType.MONERIUM) {
       if (!get(moneriumAllowed))
-        return;
+        return false;
 
       await refreshStatus();
-      if (!get(moneriumAuthenticated)) {
-        return;
-      }
+      return get(moneriumAuthenticated);
     }
+
+    return true;
+  };
+
+  const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType): Promise<void> => {
+    if (!(await canQueryOnlineEvent(queryType)))
+      return;
 
     logger.debug(`querying for ${queryType} events`);
 

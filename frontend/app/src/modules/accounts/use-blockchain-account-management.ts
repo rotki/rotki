@@ -51,6 +51,25 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
     }
   };
 
+  /**
+   * An xpub is added as a single unit, so it has no per-account payload to filter against the existing
+   * accounts and enables no modules.
+   */
+  const resolveAdditionPayload = (chain: string, payload: AddAccountsPayload | XpubAccountPayload): {
+    filteredPayload: ReturnType<typeof accountAdditionService.getNewAccountPayload>;
+    isXpub: boolean;
+    modules: AddAccountsPayload['modules'];
+  } => {
+    if ('xpub' in payload)
+      return { filteredPayload: [], isXpub: true, modules: [] };
+
+    return {
+      filteredPayload: accountAdditionService.getNewAccountPayload(chain, payload.payload),
+      isXpub: false,
+      modules: payload.modules,
+    };
+  };
+
   const addAccounts = async (chain: string, payload: AddAccountsPayload | XpubAccountPayload, options?: AddAccountsOption): Promise<void> => {
     const taskType = TaskType.ADD_ACCOUNT;
     if (isTaskRunning(taskType)) {
@@ -58,10 +77,7 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
       return;
     }
 
-    const isXpub = 'xpub' in payload;
-    const modules = isXpub ? [] : payload.modules;
-
-    const filteredPayload = isXpub ? [] : accountAdditionService.getNewAccountPayload(chain, payload.payload);
+    const { filteredPayload, isXpub, modules } = resolveAdditionPayload(chain, payload);
     if (filteredPayload.length === 0 && !isXpub) {
       const title = t('actions.balances.blockchain_accounts_add.task.title', {
         blockchain: getChainName(chain),
@@ -75,26 +91,26 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
       accountAdditionService.completeAccountAddition(params, refreshAccounts, fetchAccounts);
 
     if (filteredPayload.length === 1 || isXpub) {
-      const addResult = await accountAdditionService.addSingleAccount(isXpub ? payload : filteredPayload[0], chain);
+      // The `in` check rather than `isXpub`, so `payload` narrows to the xpub variant here.
+      const addResult = await accountAdditionService.addSingleAccount('xpub' in payload ? payload : filteredPayload[0], chain);
       if (addResult.type === 'error')
         throw addResult.error;
 
       startPromise(onComplete({
-        addedAccounts: [{
-          address: addResult.address,
-          chain,
-        }],
+        addedAccounts: [{ address: addResult.address, chain }],
         chain,
         isXpub,
         modulesToEnable: modules,
       }));
+      return;
     }
-    else {
-      if (options?.wait)
-        await accountAdditionService.addMultipleAccounts(filteredPayload, chain, modules, onComplete);
-      else
-        startPromise(accountAdditionService.addMultipleAccounts(filteredPayload, chain, modules, onComplete));
-    }
+
+    const addition = accountAdditionService.addMultipleAccounts(filteredPayload, chain, modules, onComplete);
+    // Only an explicit wait blocks the caller; otherwise the additions run in the background.
+    if (options?.wait)
+      await addition;
+    else
+      startPromise(addition);
   };
 
   return {

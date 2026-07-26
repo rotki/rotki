@@ -127,31 +127,36 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       };
     }));
 
+  /** Withdrawals are mapped per entry type, and split further by whether they are a full exit. */
+  function findWithdrawalEventType(
+    entryType: string | undefined,
+    eventType: string,
+    eventSubtype: string,
+    isExit: boolean | undefined,
+  ): string | undefined {
+    if (entryType !== HistoryEventEntryType.ETH_WITHDRAWAL_EVENT)
+      return undefined;
+
+    return get(historyEventTypeByEntryTypeMapping)[entryType]
+      ?.[eventType]
+      ?.[eventSubtype]
+      ?.[isExit ? 'isExit' : 'notExit'];
+  }
+
   function findEventType(event: { entryType?: string; eventSubtype: string; eventType: string; isExit?: boolean; location?: string | null }): string | undefined {
     const { entryType, eventSubtype, eventType, isExit, location } = event;
 
-    if (entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT) {
-      const withdrawalEntryType = get(historyEventTypeByEntryTypeMapping)[entryType]
-        ?.[eventType]
-        ?.[eventSubtype]
-        ?.[isExit ? 'isExit' : 'notExit'];
+    const withdrawalEntryType = findWithdrawalEventType(entryType, eventType, eventSubtype, isExit);
+    if (withdrawalEntryType)
+      return withdrawalEntryType;
 
-      if (withdrawalEntryType)
-        return withdrawalEntryType;
-    }
-
-    const isExchange = !!location && get(allExchanges).includes(location);
-
-    const mapping = get(historyEventTypeGlobalMapping)[eventType]
-      ?.[eventSubtype];
-
+    const mapping = get(historyEventTypeGlobalMapping)[eventType]?.[eventSubtype];
     if (!mapping)
       return undefined;
 
-    if (!isExchange)
-      return mapping.default;
-
-    return mapping.exchange ?? mapping.default;
+    // An exchange may name the same type/subtype pair differently from on-chain activity.
+    const isExchange = !!location && get(allExchanges).includes(location);
+    return isExchange ? mapping.exchange ?? mapping.default : mapping.default;
   }
 
   const getEventType = (event: Event): ComputedRef<string | undefined> => computed<string | undefined>(() => findEventType(toValue(event)));

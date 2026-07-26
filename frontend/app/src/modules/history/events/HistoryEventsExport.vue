@@ -48,8 +48,37 @@ async function createCsv(directoryPath?: string): Promise<{ result: boolean | { 
   };
 }
 
+type ExportMessage = SemiPartial<NotificationPayload, 'title' | 'message'>;
+
+function exportOutcomeMessage(succeeded: boolean, taskMessage?: string): ExportMessage {
+  return {
+    display: true,
+    message: succeeded
+      ? t('actions.history_events_export.message.success')
+      : t('actions.history_events_export.message.failure', { description: taskMessage }),
+    severity: succeeded ? Severity.INFO : Severity.ERROR,
+    title: t('actions.history_events_export.title'),
+  };
+}
+
+/**
+ * In an app session the file was written where the user chose, so the outcome is only reported. A
+ * browser session instead gets the generated file streamed back, and only a failure is reported.
+ */
+async function reportExport(response: Awaited<ReturnType<typeof createCsv>> & object): Promise<ExportMessage | null> {
+  const { message: taskMessage, result } = response;
+
+  if (appSession || !result)
+    return exportOutcomeMessage(!!result, taskMessage);
+
+  if (result !== true && 'filePath' in result)
+    await downloadHistoryEventsCSV(result.filePath);
+
+  return null;
+}
+
 async function exportCSV(): Promise<void> {
-  let message: SemiPartial<NotificationPayload, 'title' | 'message'> | null = null;
+  let message: ExportMessage | null = null;
 
   try {
     let directoryPath;
@@ -63,23 +92,7 @@ async function exportCSV(): Promise<void> {
     if (response === null)
       return;
 
-    const { message: taskMessage, result } = response;
-
-    if (appSession || !result) {
-      message = {
-        display: true,
-        message: result
-          ? t('actions.history_events_export.message.success')
-          : t('actions.history_events_export.message.failure', {
-              description: taskMessage,
-            }),
-        severity: result ? Severity.INFO : Severity.ERROR,
-        title: t('actions.history_events_export.title'),
-      };
-    }
-    else if (result !== true && 'filePath' in result) {
-      await downloadHistoryEventsCSV(result.filePath);
-    }
+    message = await reportExport(response);
   }
   catch (error: unknown) {
     message = {

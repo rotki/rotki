@@ -66,6 +66,27 @@ export function noRootCamelCaseTransformer<T>(data: T): T {
  * - Joins arrays with commas (e.g., ['USD', 'EUR'] -> 'USD,EUR')
  * - Removes null/undefined values
  */
+/**
+ * A query string carries scalars, so arrays are joined and objects stringified. Anything else has no
+ * query representation and is reported as undefined so the caller drops the key.
+ */
+function toQueryValue(
+  value: unknown,
+  skipNested: boolean,
+  skipKeys?: string[],
+): string | number | boolean | undefined {
+  if (Array.isArray(value))
+    return value.join(',');
+
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
+    return value;
+
+  if (typeof value === 'object')
+    return skipNested ? JSON.stringify(value) : JSON.stringify(snakeCaseTransformer(value, skipKeys));
+
+  return undefined;
+}
+
 export function queryTransformer(data: Record<string, unknown>, skipKeys?: string[]): Record<string, string | number | boolean> {
   const result: Record<string, string | number | boolean> = {};
 
@@ -73,19 +94,9 @@ export function queryTransformer(data: Record<string, unknown>, skipKeys?: strin
     if (value === null || value === undefined)
       continue;
 
-    const snakeKey = transformCase(key, false);
-    const shouldSkipNested = skipKeys?.includes(key) ?? false;
-
-    if (Array.isArray(value)) {
-      result[snakeKey] = value.join(',');
-    }
-    else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      result[snakeKey] = value;
-    }
-    else if (typeof value === 'object') {
-      // For nested objects, stringify them
-      result[snakeKey] = shouldSkipNested ? JSON.stringify(value) : JSON.stringify(snakeCaseTransformer(value, skipKeys));
-    }
+    const queryValue = toQueryValue(value, skipKeys?.includes(key) ?? false, skipKeys);
+    if (queryValue !== undefined)
+      result[transformCase(key, false)] = queryValue;
   }
 
   return result;

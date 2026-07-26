@@ -1,4 +1,4 @@
-import dayjs from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isToday from 'dayjs/plugin/isToday';
@@ -48,30 +48,29 @@ export function convertToTimestamp(
   return dayjs(date, format).unix();
 }
 
+/**
+ * The time part of the format, carrying only the precision the timestamp actually has: nothing for a
+ * date on midnight, minutes once there is a time of day, and seconds or milliseconds below that.
+ */
+function timeFormatSuffix(time: Dayjs, enableMillisecond: boolean): string {
+  const milliseconds = time.millisecond();
+  const hasSubMinute = time.second() > 0 || milliseconds > 0;
+
+  if (!hasSubMinute) {
+    return time.hour() > 0 || time.minute() > 0 ? ' HH:mm' : '';
+  }
+
+  return enableMillisecond && milliseconds > 0 ? ' HH:mm:ss.SSS' : ' HH:mm:ss';
+}
+
 export function convertFromTimestamp(
   timestamp: number,
   dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond,
   enableMillisecond: boolean = false,
 ): string {
   const time = dayjs(enableMillisecond ? timestamp : timestamp * 1000);
-  let format: string = getDateInputISOFormat(dateFormat);
-  const seconds = time.second();
-  const hours = time.hour();
-  const minutes = time.minute();
-  const milliseconds = time.millisecond();
 
-  if (hours > 0 || minutes > 0 || seconds > 0 || milliseconds > 0) {
-    format += ' HH:mm';
-
-    if (seconds > 0 || milliseconds > 0) {
-      format += ':ss';
-
-      if (enableMillisecond && milliseconds > 0)
-        format += '.SSS';
-    }
-  }
-
-  return time.format(format);
+  return time.format(getDateInputISOFormat(dateFormat) + timeFormatSuffix(time, enableMillisecond));
 }
 
 export function getDayNames(locale = 'en'): string[] {

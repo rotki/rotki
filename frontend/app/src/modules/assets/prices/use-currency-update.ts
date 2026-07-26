@@ -11,6 +11,8 @@ import { useSettingsOperations } from '@/modules/settings/use-settings-operation
 
 interface UseCurrencyUpdateReturn { onCurrencyUpdate: () => Promise<void> }
 
+type Currency = ReturnType<typeof useSetting<'currencySymbol'>>['value'];
+
 export function useCurrencyUpdate(): UseCurrencyUpdateReturn {
   const { updateFrontendSetting } = useSettingsOperations();
   const { adjustPrices, refreshPrices } = usePriceRefresh();
@@ -44,41 +46,51 @@ export function useCurrencyUpdate(): UseCurrencyUpdateReturn {
       startPromise(updateFrontendSetting({ balanceValueThreshold: converted }));
   }
 
+  /**
+   * The two rates the conversion needs. Only the new currency's rate may be missing, since the old one
+   * was in use a moment ago, so that is the only one worth fetching.
+   */
+  async function conversionRates(oldCurrency: Currency, newCurrency: Currency): Promise<{
+    oldRate?: BigNumber;
+    newRate?: BigNumber;
+  }> {
+    let rates = get(exchangeRates);
+    const oldRate = oldCurrency === CURRENCY_USD ? One : rates[oldCurrency];
+
+    if (newCurrency !== CURRENCY_USD && !rates[newCurrency]) {
+      await fetchExchangeRates(newCurrency);
+      rates = get(exchangeRates);
+    }
+
+    return { newRate: newCurrency === CURRENCY_USD ? One : rates[newCurrency], oldRate };
+  }
+
+  /** Approximates every held price in the new currency so the UI has something until real prices load. */
+  function scalePrices(ratio: BigNumber): void {
+    const scaledPrices: AssetPrices = {};
+
+    for (const [asset, priceData] of Object.entries(get(prices))) {
+      scaledPrices[asset] = {
+        ...priceData,
+        value: priceData.value.gt(0) ? priceData.value.multipliedBy(ratio) : priceData.value,
+      };
+    }
+
+    set(prices, scaledPrices);
+    adjustPrices(scaledPrices);
+    convertValueThresholds(ratio);
+  }
+
   async function onCurrencyUpdate(): Promise<void> {
     const oldCurrency = get(previousCurrency)!;
     const newCurrency = get(currencySymbol);
     set(previousCurrency, newCurrency);
 
-    // Approximate prices using exchange rate ratio while real prices load
     if (oldCurrency !== newCurrency) {
-      let rates = get(exchangeRates);
-      const oldRate = oldCurrency === CURRENCY_USD ? One : rates[oldCurrency];
+      const { newRate, oldRate } = await conversionRates(oldCurrency, newCurrency);
 
-      // Ensure the new currency's exchange rate is available
-      if (newCurrency !== CURRENCY_USD && !rates[newCurrency]) {
-        await fetchExchangeRates(newCurrency);
-        rates = get(exchangeRates);
-      }
-
-      const newRate = newCurrency === CURRENCY_USD ? One : rates[newCurrency];
-
-      if (oldRate && newRate && !oldRate.isZero()) {
-        const ratio = newRate.div(oldRate);
-        const currentPrices = get(prices);
-        const scaledPrices: AssetPrices = {};
-
-        for (const [asset, priceData] of Object.entries(currentPrices)) {
-          scaledPrices[asset] = {
-            ...priceData,
-            value: priceData.value.gt(0) ? priceData.value.multipliedBy(ratio) : priceData.value,
-          };
-        }
-
-        set(prices, scaledPrices);
-        adjustPrices(scaledPrices);
-
-        convertValueThresholds(ratio);
-      }
+      if (oldRate && newRate && !oldRate.isZero())
+        scalePrices(newRate.div(oldRate));
     }
 
     startPromise(refreshPrices(true));

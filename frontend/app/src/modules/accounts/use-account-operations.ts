@@ -72,10 +72,21 @@ export function useAccountOperations(): UseAccountOperationsReturn {
       startPromise(fetchEnsNames(namesPayload, refreshEns));
   };
 
+  /**
+   * Chains that support transactions are refreshed wholesale, so only the others narrow to the given
+   * addresses.
+   */
+  const targetAddresses = (addresses: string[] | undefined, chain: string | undefined): string[] | undefined => {
+    if (!addresses?.length || !chain || supportsTransactions(chain))
+      return undefined;
+
+    return addresses.filter(uniqueStrings);
+  };
+
   const refreshAccounts = async (params: RefreshAccountsParams = {}): Promise<void> => {
     const { addresses, blockchain, isXpub = false, periodic = false } = params;
     const chain = get(blockchain);
-    const uniqueAddresses = addresses && addresses.length > 0 && chain && !supportsTransactions(chain) ? addresses.filter(uniqueStrings) : undefined;
+    const uniqueAddresses = targetAddresses(addresses, chain);
     await fetchAccounts(chain, true);
 
     const isEth = chain === Blockchain.ETH;

@@ -9,24 +9,25 @@ import {
   type AssetBalanceWithPriceAndChains,
   type Balance,
   type BigNumber,
-  type ProtocolBalance,
-  type ProtocolBalanceWithChains,
   Zero,
 } from '@rotki/common';
 import { omit } from 'es-toolkit';
-import { isEvmNativeToken } from '@/modules/assets/types';
-import { sortDesc, zeroBalance } from '@/modules/core/common/data/bignumbers';
+import {
+  type BalanceWithManual,
+  getSortedProtocolBalances,
+  type IntermediateGroupRepresentation,
+  type ProtocolBalancesWithManual,
+  protocolBreakdown,
+  singleAssetEntry,
+} from '@/modules/balances/balance-grouping';
+import { zeroBalance } from '@/modules/core/common/data/bignumbers';
 import { balanceSum, perProtocolBalanceSum } from '@/modules/core/common/data/calculation';
 
 type BalanceWithChains = Balance & { chains?: Record<string, Balance> };
 
-type BalanceWithManual = Balance & { containsManual?: boolean; chains?: Record<string, Balance> };
-
 type ProtocolBalancesWithChains = Record<string, BalanceWithChains>;
 
 export type AssetProtocolBalancesWithChains = Record<string, ProtocolBalancesWithChains>;
-
-type ProtocolBalancesWithManual = Record<string, BalanceWithManual>;
 
 type AssetProtocolBalancesWithManual = Record<string, ProtocolBalancesWithManual>;
 
@@ -224,35 +225,6 @@ export function aggregateSourceBalances(
 /**
  * Gets sorted protocol balances
  */
-function getSortedProtocolBalances(protocolBalances: ProtocolBalancesWithManual): ProtocolBalanceWithChains[] {
-  return Object.entries(protocolBalances)
-    .filter(([, balance]) => balance.amount.gt(0))
-    .map(([protocol, balance]) => {
-      // Use conditional logic to determine the correct type without casting
-      if (protocol === 'address' && balance.chains) {
-        const result: ProtocolBalanceWithChains = {
-          protocol,
-          ...balance,
-          chains: balance.chains,
-        };
-        return result;
-      }
-
-      const result: ProtocolBalance = {
-        protocol,
-        ...balance,
-      };
-      return result;
-    })
-    .sort((a, b) => {
-      const valueComparison = sortDesc(a.value, b.value);
-      if (valueComparison === 0) {
-        return a.protocol.localeCompare(b.protocol);
-      }
-      return valueComparison;
-    });
-}
-
 /**
  * Creates an asset balance from aggregated protocol balances
  */
@@ -270,18 +242,32 @@ export function createAssetBalanceFromAggregated(
   };
 }
 
-interface IntermediateGroupRepresentation {
-  asset: string;
-  isMain?: boolean;
-  perProtocol: ProtocolBalancesWithManual;
-  value: BigNumber;
-  amount: BigNumber;
-  price: BigNumber;
-}
-
 /**
  * Processes collection grouping
  */
+/** A collection's own asset may hold no balance, so it is added to the group to act as its header. */
+function addCollectionMainAsset(
+  groupId: string,
+  groupAssets: IntermediateGroupRepresentation[],
+  collectionCache: Map<string, string | undefined>,
+  priceOf: (asset: string) => BigNumber,
+): void {
+  if (!groupId.startsWith('collection-'))
+    return;
+
+  const mainAsset = collectionCache.get(groupId.replace('collection-', ''));
+  if (!mainAsset || groupAssets.some(value => value.asset === mainAsset))
+    return;
+
+  groupAssets.push({
+    asset: mainAsset,
+    isMain: true,
+    perProtocol: {},
+    ...zeroBalance(),
+    price: priceOf(mainAsset),
+  });
+}
+
 export function processCollectionGrouping(
   aggregatedBalances: AssetProtocolBalancesWithManual,
   getCollectionId: (asset: string) => string | undefined,
@@ -317,39 +303,11 @@ export function processCollectionGrouping(
   }
 
   return Object.entries(grouped).map(([groupId, groupAssets]) => {
-    // Handle collections that need main asset creation
-    if (groupId.startsWith('collection-')) {
-      const collectionId = groupId.replace('collection-', '');
-      const mainAsset = collectionCache.get(collectionId);
-
-      if (mainAsset && !groupAssets.some(value => value.asset === mainAsset)) {
-        groupAssets.push({
-          asset: mainAsset,
-          isMain: true,
-          perProtocol: {},
-          ...zeroBalance(),
-          price: getAssetPrice(mainAsset, noPrice),
-        });
-      }
-    }
+    addCollectionMainAsset(groupId, groupAssets, collectionCache, asset => getAssetPrice(asset, noPrice));
 
     // Early return for single assets to avoid unnecessary processing
-    if (groupAssets.length === 1) {
-      const asset = groupAssets[0];
-      const filteredAsset = omit(asset, ['isMain']);
-      return {
-        ...filteredAsset,
-        ...(isEvmNativeToken(asset.asset)
-          ? { breakdown: groupAssets
-              .filter(value => value.amount.gt(0))
-              .map(value => ({
-                ...omit(value, ['isMain']),
-                perProtocol: getSortedProtocolBalances(value.perProtocol),
-              })) }
-          : {}),
-        perProtocol: getSortedProtocolBalances(filteredAsset.perProtocol),
-      };
-    }
+    if (groupAssets.length === 1)
+      return singleAssetEntry(groupAssets);
 
     const main = groupAssets.find(value => value.isMain);
     if (!main) {
@@ -387,12 +345,7 @@ export function processCollectionGrouping(
     return {
       ...filteredAsset,
       amount: groupAmount,
-      breakdown: groupAssets
-        .filter(value => value.amount.gt(0))
-        .map(value => ({
-          ...omit(value, ['isMain']),
-          perProtocol: getSortedProtocolBalances(value.perProtocol),
-        })),
+      breakdown: protocolBreakdown(groupAssets),
       perProtocol: getSortedProtocolBalances(groupProtocolBalances),
       value: groupValue,
     };

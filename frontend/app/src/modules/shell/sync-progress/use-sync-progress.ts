@@ -80,6 +80,20 @@ const PROGRESS_WEIGHTS = {
   transactions: 0.5,
 } as const;
 
+/** Zero rather than NaN before the total is known. */
+function completionRatio(completed: number, total: number): number {
+  return total > 0 ? completed / total : 0;
+}
+
+/** A cancelled decode counts as finished, since nothing more will happen to it. */
+function decodingRatio(items: { cancelled: boolean; progress: number }[]): number {
+  if (items.length === 0)
+    return 0;
+
+  const total = items.reduce((sum, item) => sum + (item.cancelled ? 100 : item.progress), 0);
+  return total / items.length / 100;
+}
+
 export function useSyncProgress(): UseSyncProgressReturn {
   const txStore = useTxQueryStatusStore();
   const eventsStore = useEventsQueryStatusStore();
@@ -163,43 +177,32 @@ export function useSyncProgress(): UseSyncProgressReturn {
   const hasEventsActivity = computed<boolean>(() => get(totalLocations) > 0);
   const hasDecodingActivity = computed<boolean>(() => get(decoding).length > 0);
 
+  /** Only the running phases count, so the bar reflects the work actually in flight. */
   const overallProgress = computed<number>(() => {
-    const hasTx = get(hasTxActivity);
-    const hasEvents = get(hasEventsActivity);
-    const hasDecoding = get(hasDecodingActivity);
+    const running = [
+      {
+        active: get(hasTxActivity),
+        progress: completionRatio(get(completedAccounts), get(totalAccounts)),
+        weight: PROGRESS_WEIGHTS.transactions,
+      },
+      {
+        active: get(hasEventsActivity),
+        progress: completionRatio(get(completedLocations), get(totalLocations)),
+        weight: PROGRESS_WEIGHTS.events,
+      },
+      {
+        active: get(hasDecodingActivity),
+        progress: decodingRatio(get(decoding)),
+        weight: PROGRESS_WEIGHTS.decoding,
+      },
+    ].filter(phase => phase.active);
 
-    if (!hasTx && !hasEvents && !hasDecoding)
+    const totalWeight = running.reduce((sum, phase) => sum + phase.weight, 0);
+    if (totalWeight === 0)
       return 0;
 
-    let totalWeight = 0;
-    let weightedProgress = 0;
-
-    if (hasTx) {
-      const txProgress = get(totalAccounts) > 0
-        ? get(completedAccounts) / get(totalAccounts)
-        : 0;
-      weightedProgress += txProgress * PROGRESS_WEIGHTS.transactions;
-      totalWeight += PROGRESS_WEIGHTS.transactions;
-    }
-
-    if (hasEvents) {
-      const eventsProgress = get(totalLocations) > 0
-        ? get(completedLocations) / get(totalLocations)
-        : 0;
-      weightedProgress += eventsProgress * PROGRESS_WEIGHTS.events;
-      totalWeight += PROGRESS_WEIGHTS.events;
-    }
-
-    if (hasDecoding) {
-      const decodingItems = get(decoding);
-      const avgDecodingProgress = decodingItems.length > 0
-        ? decodingItems.reduce((sum, d) => sum + (d.cancelled ? 100 : d.progress), 0) / decodingItems.length / 100
-        : 0;
-      weightedProgress += avgDecodingProgress * PROGRESS_WEIGHTS.decoding;
-      totalWeight += PROGRESS_WEIGHTS.decoding;
-    }
-
-    return totalWeight > 0 ? Math.round((weightedProgress / totalWeight) * 100) : 0;
+    const weighted = running.reduce((sum, phase) => sum + phase.progress * phase.weight, 0);
+    return Math.round((weighted / totalWeight) * 100);
   });
 
   const isActive = computed<boolean>(() =>

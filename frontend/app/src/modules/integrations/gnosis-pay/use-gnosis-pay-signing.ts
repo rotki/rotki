@@ -4,7 +4,7 @@ import type { TaskMeta } from '@/modules/core/tasks/types';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionableFailure, type TaskFailure, type TaskResult, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { useInjectedWallet } from '@/modules/wallet/bridge/use-injected-wallet';
 import { isUserRejectedError, WALLET_MODES } from '@/modules/wallet/constants';
 import { useWalletConnect } from '@/modules/wallet/use-wallet-connect';
@@ -84,6 +84,22 @@ Issued At: ${issuedAt}`;
     return walletConnect.getWalletClient();
   }
 
+  /**
+   * Reports a failed sign-in step and tells the caller to stop. A non-actionable failure (a cancelled
+   * or superseded task) stops the flow silently, since there is nothing for the user to act on.
+   */
+  function reportSignInFailure<T>(outcome: TaskResult<T>): outcome is TaskFailure {
+    if (outcome.success)
+      return false;
+
+    if (isActionableFailure(outcome)) {
+      showErrorMessage(t('external_services.gnosispay.siwe.failed'), outcome.message);
+      logger.error('Sign-in with Ethereum failed:', outcome.message);
+    }
+
+    return true;
+  }
+
   async function signInWithEthereum(): Promise<void> {
     try {
       // Preserve INVALID_ADDRESS warning during sign-in
@@ -105,13 +121,8 @@ Issued At: ${issuedAt}`;
         { type: TaskType.GNOSISPAY_FETCH_NONCE, meta: { title: t('external_services.gnosispay.siwe.fetching_nonce') } },
       );
 
-      if (!nonceOutcome.success) {
-        if (isActionableFailure(nonceOutcome)) {
-          showErrorMessage(t('external_services.gnosispay.siwe.failed'), nonceOutcome.message);
-          logger.error('Sign-in with Ethereum failed:', nonceOutcome.message);
-        }
+      if (reportSignInFailure(nonceOutcome))
         return;
-      }
 
       const message = createSiweMessage(address, nonceOutcome.result);
       const client = getWalletClient();
@@ -123,13 +134,8 @@ Issued At: ${issuedAt}`;
         { type: TaskType.GNOSISPAY_VERIFY_SIGNATURE, meta: { title: t('external_services.gnosispay.siwe.verifying_signature') } },
       );
 
-      if (!verifyOutcome.success) {
-        if (isActionableFailure(verifyOutcome)) {
-          showErrorMessage(t('external_services.gnosispay.siwe.failed'), verifyOutcome.message);
-          logger.error('Sign-in with Ethereum failed:', verifyOutcome.message);
-        }
+      if (reportSignInFailure(verifyOutcome))
         return;
-      }
 
       if (verifyOutcome.result) {
         set(signInSuccess, true);

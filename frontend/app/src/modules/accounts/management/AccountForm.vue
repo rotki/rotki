@@ -80,6 +80,25 @@ function shouldShowEtherscanWarning(selectedChain: string): boolean {
   return isEtherscanTopPriority(selectedChain);
 }
 
+/** Without a beaconchain key, validators fall back to a consensus RPC, which needs its own endpoint. */
+function validatorKeyService(): 'beaconchain' | 'consensusRpc' | undefined {
+  if (getApiKey('beaconchain'))
+    return undefined;
+
+  return get(beaconRpcEndpoint) ? 'beaconchain' : 'consensusRpc';
+}
+
+/** Both indexers are only worth warning about on chains that actually use them. */
+function indexerKeyService(chain: string): 'etherscan' | 'blockscout' | undefined {
+  if (!shouldShowEtherscanWarning(chain))
+    return undefined;
+
+  if (!getApiKey('etherscan'))
+    return 'etherscan';
+
+  return getApiKey('blockscout') ? undefined : 'blockscout';
+}
+
 const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc' | 'blockscout' | undefined>(() => {
   const selectedChain = get(chain);
   const currentModelValue = get(modelValue);
@@ -87,24 +106,13 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | '
   if (currentModelValue.mode !== 'add' || !selectedChain)
     return undefined;
 
-  if (currentModelValue.type === 'validator' && !getApiKey('beaconchain')) {
-    if (!get(beaconRpcEndpoint)) {
-      return 'consensusRpc';
-    }
+  if (currentModelValue.type === 'validator')
+    return validatorKeyService();
 
-    return 'beaconchain';
-  }
+  if (isSolanaChains(selectedChain))
+    return getApiKey('helius') ? undefined : 'helius';
 
-  if (!getApiKey('etherscan') && shouldShowEtherscanWarning(selectedChain))
-    return 'etherscan';
-
-  if (!getApiKey('blockscout') && shouldShowEtherscanWarning(selectedChain))
-    return 'blockscout';
-
-  if (isSolanaChains(selectedChain) && !getApiKey('helius'))
-    return 'helius';
-
-  return undefined;
+  return indexerKeyService(selectedChain);
 });
 
 const showSolanaInitialAlert = computed<boolean>(() => {

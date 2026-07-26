@@ -21,22 +21,39 @@ function getAssetNameFallback(id: string): string {
   return '';
 }
 
+/** With nothing resolved, the identifier itself is the only name available. */
+function fallbackAssetInfo(id: string): AssetInfo | null {
+  const fallback = getAssetNameFallback(id);
+  if (!fallback)
+    return null;
+
+  return {
+    name: fallback,
+    symbol: fallback,
+  };
+}
+
+/** A collection parent names its members, so its name wins over the asset's own. */
+function resolveDisplayNames(
+  data: AssetInfo,
+  id: string,
+  collectionData: AssetInfo | null,
+): { name?: string; symbol?: string } {
+  const fallback = getAssetNameFallback(id);
+
+  return {
+    name: (collectionData?.name ?? data.name) ?? fallback,
+    symbol: (collectionData?.symbol ?? data.symbol) ?? fallback,
+  };
+}
+
 export function processAssetInfo(
   data: AssetInfo | null,
   id: string,
   collectionData: AssetInfo | null,
 ): AssetInfo | null {
-  if (!data) {
-    const fallback = getAssetNameFallback(id);
-    if (!fallback) {
-      return null;
-    }
-
-    return {
-      name: fallback,
-      symbol: fallback,
-    };
-  }
+  if (!data)
+    return fallbackAssetInfo(id);
 
   const isCustomAsset = data.isCustomAsset ?? data.assetType === CUSTOM_ASSET;
 
@@ -48,14 +65,9 @@ export function processAssetInfo(
     };
   }
 
-  const fallback = getAssetNameFallback(id);
-  const name = (collectionData?.name ?? data.name) ?? fallback;
-  const symbol = (collectionData?.symbol ?? data.symbol) ?? fallback;
-
   return {
     ...data,
     isCustomAsset,
-    name,
-    symbol,
+    ...resolveDisplayNames(data, id, collectionData),
   };
 }

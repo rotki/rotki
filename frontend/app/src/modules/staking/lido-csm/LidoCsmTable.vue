@@ -42,26 +42,35 @@ interface LidoCsmTableRow {
   rewardsPending?: BigNumber;
 }
 
-const tableRows = computed<LidoCsmTableRow[]>(() => rows.map((entry) => {
-  const metrics = entry.metrics;
-  const operatorType = metrics?.operatorType;
-  const bond = metrics?.bond;
-  const keys = metrics?.keys;
-  const rewards = metrics?.rewards;
+type LidoCsmMetrics = LidoCsmNodeOperator['metrics'];
 
+function bondFields(bond: NonNullable<LidoCsmMetrics>['bond'] | undefined): Pick<LidoCsmTableRow, 'bondClaimable' | 'bondCurrent' | 'bondRequired'> {
   return {
-    address: entry.address,
     bondClaimable: bond?.claimable,
     bondCurrent: bond?.current,
     bondRequired: bond?.required,
-    key: `${entry.address}-${entry.nodeOperatorId}`,
-    nodeOperatorId: entry.nodeOperatorId,
+  };
+}
+
+/** Flattens the optional metric groups onto the row; a group the backend omitted leaves them unset. */
+function metricFields(metrics: LidoCsmMetrics): Omit<LidoCsmTableRow, 'address' | 'key' | 'nodeOperatorId'> {
+  const { bond, keys, operatorType, rewards } = metrics ?? {};
+
+  return {
+    ...bondFields(bond),
     operatorTypeId: operatorType?.id,
     operatorTypeLabel: operatorType?.label,
     rewardsPending: rewards?.pending,
     totalDeposited: keys?.totalDeposited,
   };
-}));
+}
+
+const tableRows = computed<LidoCsmTableRow[]>(() => rows.map(entry => ({
+  address: entry.address,
+  key: `${entry.address}-${entry.nodeOperatorId}`,
+  nodeOperatorId: entry.nodeOperatorId,
+  ...metricFields(entry.metrics),
+})));
 
 const tableColumns = computed<DataTableColumn<LidoCsmTableRow>[]>(() => [{
   key: 'address',

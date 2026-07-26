@@ -80,21 +80,35 @@ export function matchesFromSelection(
   return { matches, validSelection };
 }
 
+/**
+ * A resolved asset value cannot be rebuilt from its identifier, so the prior selection is reused when
+ * one exists. Takes the key and deserializer rather than the matcher, since the caller has already
+ * narrowed it to the asset variant.
+ */
+function deserializeAssetValue(
+  value: string | boolean,
+  key: string,
+  deserializer: ((value: string) => Suggestion['value']) | undefined,
+  previous: Suggestion[],
+): { value: Suggestion['value']; exclude: boolean } | undefined {
+  const prev = previous.find(item => item.key === key);
+  if (prev)
+    return { exclude: false, value: prev.value };
+
+  if (typeof value !== 'string')
+    return undefined;
+
+  return { exclude: false, value: deserializer?.(value) ?? value };
+}
+
 /** One wire value -> a decoded chip value + exclusion, or `undefined` to skip it. */
 function deserializeValue(
   value: string | boolean,
   matcher: AnyMatcher,
   previous: Suggestion[],
 ): { value: Suggestion['value']; exclude: boolean } | undefined {
-  if ('asset' in matcher) {
-    // A resolved asset value cannot be rebuilt from its identifier, so reuse the prior one.
-    const prev = previous.find(item => item.key === matcher.key);
-    if (prev)
-      return { exclude: false, value: prev.value };
-    if (typeof value !== 'string')
-      return undefined;
-    return { exclude: false, value: matcher.deserializer?.(value) ?? value };
-  }
+  if ('asset' in matcher)
+    return deserializeAssetValue(value, matcher.key, matcher.deserializer, previous);
 
   if ('boolean' in matcher || typeof value === 'boolean')
     return { exclude: false, value: true };

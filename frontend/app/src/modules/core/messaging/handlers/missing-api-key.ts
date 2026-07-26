@@ -1,3 +1,4 @@
+import type { RouteLocationRaw } from 'vue-router';
 import type { NotificationHandler } from '../interfaces';
 import type { MissingApiKey } from '@/modules/core/messaging/types';
 import { type NotificationAction, NotificationCategory, Priority, Severity, toHumanReadable } from '@rotki/common';
@@ -21,10 +22,11 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
   const suppressMissingKeyMsgServices = useSetting('suppressMissingKeyMsgServices');
   const { show } = useConfirmStore();
 
-  return createNotificationHandler<MissingApiKey>((data) => {
-    const { service } = data;
-    const { external, route } = getServiceRegisterUrl(service) ?? { external: undefined, route: undefined };
-
+  /**
+   * The offers that apply to this service: opening the settings page that holds the key, reordering
+   * the transaction indexers, fetching a key, and suppressing the message for good.
+   */
+  function buildActions(service: MissingApiKey['service'], route?: RouteLocationRaw, external?: string): NotificationAction[] {
     const actions: NotificationAction[] = [];
 
     const isEtherscan = service === SuppressibleMissingKeyService.ETHERSCAN;
@@ -82,6 +84,15 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
         label: t('notification_messages.missing_api_key.do_not_show_again'),
       });
     }
+
+    return actions;
+  }
+
+  return createNotificationHandler<MissingApiKey>((data) => {
+    const { service } = data;
+    const { external, route } = getServiceRegisterUrl(service) ?? { external: undefined, route: undefined };
+
+    const actions = buildActions(service, route, external);
 
     const metadata = {
       ...data,

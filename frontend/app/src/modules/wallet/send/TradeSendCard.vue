@@ -299,12 +299,17 @@ watch([assetChain, asset, connectedAddress], async () => {
 });
 
 // calculate the gas fee estimation
+/** Gas can only be estimated once a wallet is connected and a resolvable asset is selected. */
+function canEstimateGas(chain: string | undefined, currentAsset: string | undefined): boolean {
+  return get(connected) && !!chain && !!currentAsset && !!get(assetDetail);
+}
+
 watchImmediate([
   asset,
   assetChain,
   connectedChainId,
 ], async ([currentAsset, chain, connectedChainId]) => {
-  if (!get(connected) || !chain || !currentAsset || !get(assetDetail)) {
+  if (!canEstimateGas(chain, currentAsset)) {
     resetMax();
     return;
   }

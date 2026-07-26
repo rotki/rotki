@@ -8,7 +8,7 @@ import { CurrencyLocation } from '@/modules/assets/amount-display/currency-locat
 import { type SettingsCategoryId, type SettingsHighlightId, SettingsHighlightIds, type SettingsSearchEntry } from '@/modules/settings/setting-highlight-ids';
 import { actionEntries } from '@/modules/settings/settings-actions';
 import { registryEntries } from '@/modules/settings/settings-registry';
-import { SEARCH_CATEGORIES } from '@/modules/settings/settings-search-catalog';
+import { SEARCH_CATEGORIES, type SearchCategory } from '@/modules/settings/settings-search-catalog';
 import { CostBasisMethod } from '@/modules/settings/types/user-settings';
 
 /**
@@ -77,6 +77,11 @@ function collectRows(): DerivedRow[] {
  * `tab > [category unless flat] > [group] > title`. Anything the interface `getXTab` no longer owns
  * comes from here, so the two sources never overlap.
  */
+/** A row's optional group heading, as the zero or one text segment it contributes. */
+function rowGroup(row: DerivedRow, t: T): string[] {
+  return row.group ? [t(row.group)] : [];
+}
+
 function derivedSearchEntries(tabInfo: (name: RouteName) => TabInfo | undefined, t: T): SettingsSearchEntry[] {
   const rows = collectRows();
   const placed = rows.filter((row): row is DerivedRow & { category: SettingsCategoryId } => row.category !== undefined);
@@ -92,35 +97,39 @@ function derivedSearchEntries(tabInfo: (name: RouteName) => TabInfo | undefined,
     texts,
   });
 
-  const entries: SettingsSearchEntry[] = [];
-
-  for (const category of SEARCH_CATEGORIES) {
-    const info = tabInfo(category.tab);
-    if (!info)
-      continue;
+  // The category header itself is searchable, then each row nested under it. A flat category has no
+  // header text to prefix its rows with.
+  const categoryEntries = (category: SearchCategory, info: TabInfo): SettingsSearchEntry[] => {
     const categoryTitle = t(category.titleKey);
-    entries.push({
+    const header: SettingsSearchEntry = {
       categoryId: category.id,
       icon: info.icon,
       keywords: category.keywords?.map(key => t(key)),
       route: info.route,
       texts: [info.text, categoryTitle],
-    });
-    for (const row of byCategory[category.id] ?? []) {
-      const prefix = category.flat ? [] : [categoryTitle];
-      const group = row.group ? [t(row.group)] : [];
-      entries.push(toEntry(info, row, [info.text, ...prefix, ...group, t(row.titleKey)]));
-    }
+    };
+
+    const prefix = category.flat ? [] : [categoryTitle];
+    const rows = (byCategory[category.id] ?? []).map(row =>
+      toEntry(info, row, [info.text, ...prefix, ...rowGroup(row, t), t(row.titleKey)]),
+    );
+
+    return [header, ...rows];
+  };
+
+  const entries: SettingsSearchEntry[] = [];
+
+  for (const category of SEARCH_CATEGORIES) {
+    const info = tabInfo(category.tab);
+    if (info)
+      entries.push(...categoryEntries(category, info));
   }
 
+  // Rows that name a tab but sit under no category heading.
   for (const row of looseRows) {
-    if (!row.tab)
-      continue;
-    const info = tabInfo(row.tab);
-    if (!info)
-      continue;
-    const group = row.group ? [t(row.group)] : [];
-    entries.push(toEntry(info, row, [info.text, ...group, t(row.titleKey)]));
+    const info = row.tab ? tabInfo(row.tab) : undefined;
+    if (info)
+      entries.push(toEntry(info, row, [info.text, ...rowGroup(row, t), t(row.titleKey)]));
   }
 
   return entries;

@@ -74,27 +74,42 @@ const purgeable = [
   },
 ];
 
+/** Each purgeable source has its own deletion endpoint; an unrecognised one deletes nothing. */
+async function deleteSourceData(source: Purgeable, value: string): Promise<void> {
+  if (source === Purgeable.TRANSACTIONS) {
+    await deleteTransactions(value);
+    return;
+  }
+
+  if (source === Purgeable.DEFI_MODULES) {
+    await deleteModuleData((value as Module) || null);
+    return;
+  }
+
+  if (source === Purgeable.CENTRALIZED_EXCHANGES) {
+    await deleteExchangeData(value, get(centralizedExchangeDataType));
+    return;
+  }
+
+  if (source === Purgeable.DECENTRALIZED_EXCHANGES) {
+    // Without a specific exchange, every decentralized one is purged.
+    if (!value) {
+      await Promise.all(DECENTRALIZED_EXCHANGES.map(deleteModuleData));
+      return;
+    }
+    await deleteModuleData(value as Module);
+    return;
+  }
+
+  if ([Purgeable.ETH_WITHDRAWAL_EVENT, Purgeable.ETH_BLOCK_EVENT].includes(source))
+    await deleteStakeEvents(source);
+}
+
 async function purgeSource(source: Purgeable) {
   const valueRef = purgeable.find(({ id }) => id === source)?.value;
   const value = valueRef ? get(valueRef) : '';
-  if (source === Purgeable.TRANSACTIONS) {
-    await deleteTransactions(value);
-  }
-  else if (source === Purgeable.DEFI_MODULES) {
-    await deleteModuleData((value as Module) || null);
-  }
-  else if (source === Purgeable.CENTRALIZED_EXCHANGES) {
-    await deleteExchangeData(value, get(centralizedExchangeDataType));
-  }
-  else if (source === Purgeable.DECENTRALIZED_EXCHANGES) {
-    if (value)
-      await deleteModuleData(value as Module);
-    else
-      await Promise.all(DECENTRALIZED_EXCHANGES.map(deleteModuleData));
-  }
-  else if ([Purgeable.ETH_WITHDRAWAL_EVENT, Purgeable.ETH_BLOCK_EVENT].includes(source)) {
-    await deleteStakeEvents(source);
-  }
+
+  await deleteSourceData(source, value);
 
   // Purgeable only modules don't have some cache that needs reset.
   if (Array.prototype.includes.call(purgeableOnlyModules, value))

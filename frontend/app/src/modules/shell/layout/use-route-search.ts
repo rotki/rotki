@@ -1,6 +1,6 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { ComputedRef } from 'vue';
-import type { RouteRecordNameGeneric } from 'vue-router';
+import type { RouteRecordNameGeneric, RouteRecordNormalized } from 'vue-router';
 import type { RouteName } from '@/types/router';
 
 export interface RouteSearchEntry {
@@ -43,33 +43,38 @@ export function useRouteSearch(): UseRouteSearchReturn {
   const isRouteName = (name: RouteRecordNameGeneric): name is RouteName =>
     name !== undefined && router.hasRoute(name);
 
-  const searchEntries = computed<RouteSearchEntry[]>(() => {
-    const routes = router.getRoutes();
-    // Resolve breadcrumb labels: nav.parent is a route name; look up its label.
-    const labelByName = new Map<string, string>();
+  /** nav.parent names a route, so its label has to be looked up to build a breadcrumb. */
+  function labelsByRouteName(routes: RouteRecordNormalized[]): Map<string, string> {
+    const labels = new Map<string, string>();
     for (const route of routes) {
       if (route.meta.nav && isRouteName(route.name))
-        labelByName.set(route.name, route.meta.nav.labelKey);
+        labels.set(route.name, route.meta.nav.labelKey);
     }
+    return labels;
+  }
 
-    const entries: RouteSearchEntry[] = [];
-    for (const route of routes) {
-      const nav = route.meta.nav;
-      if (!nav || nav.searchable === false || !isRouteName(route.name))
-        continue;
-      if (route.name === HISTORY_DATA_ISSUES_ROUTE && !dataIssuesEnabled)
-        continue;
+  function isSearchable(route: RouteRecordNormalized): route is RouteRecordNormalized & { name: RouteName } {
+    const nav = route.meta.nav;
+    if (!nav || nav.searchable === false || !isRouteName(route.name))
+      return false;
 
-      entries.push({
+    return route.name !== HISTORY_DATA_ISSUES_ROUTE || dataIssuesEnabled;
+  }
+
+  const searchEntries = computed<RouteSearchEntry[]>(() => {
+    const routes = router.getRoutes();
+    const labelByName = labelsByRouteName(routes);
+
+    return routes.filter(isSearchable).map((route) => {
+      const nav = route.meta.nav!;
+      return {
         path: router.resolve({ name: route.name }).path,
         icon: nav.icon,
         labelKey: nav.labelKey,
         parentLabelKey: nav.parent ? labelByName.get(nav.parent) : undefined,
         keywordKeys: nav.keywords ?? [],
-      });
-    }
-
-    return entries;
+      };
+    });
   });
 
   // "Quick add" actions: any route declaring nav.addAction, targeting the route with ?add=true.
