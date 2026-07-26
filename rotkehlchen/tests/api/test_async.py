@@ -117,38 +117,39 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges: APISe
 
     binance_patch = patch.object(binance.session, 'request', side_effect=mock_binance_asset_return)
 
-    # Create an async task
+    # Create an async task. The patch has to stay installed for the entire lifetime of the
+    # task since the response returns as soon as its thread is spawned -- letting it expire
+    # earlier makes the task run unpatched and hit the live binance API.
     with binance_patch:
         response = requests.get(api_url_for(
             server,
             'named_exchanges_balances_resource',
             location='binance',
         ), json={'async_query': True})
-    task_id = assert_ok_async_response(response)
+        task_id = assert_ok_async_response(response)
 
-    # now check that there is a task, waiting out the moment it is still running
-    deadline = time.monotonic() + 10
-    while True:
-        response = requests.get(api_url_for(server, 'asynctasksresource'))
-        result = assert_proper_sync_response_with_result(response)
-        if result == {'completed': [task_id], 'pending': []}:
-            break
-        assert time.monotonic() < deadline, f'the task did not complete in time. Last state: {result}'  # noqa: E501
-        time.sleep(0.1)
+        # now check that there is a task, waiting out the moment it is still running
+        deadline = time.monotonic() + 10
+        while True:
+            response = requests.get(api_url_for(server, 'asynctasksresource'))
+            result = assert_proper_sync_response_with_result(response)
+            if result == {'completed': [task_id], 'pending': []}:
+                break
+            assert time.monotonic() < deadline, f'the task did not complete in time. Last state: {result}'  # noqa: E501
+            time.sleep(0.1)
 
-    while True:
-        # and now query for the task result and assert on it
-        response = requests.get(
-            api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
-        )
-        result = assert_proper_sync_response_with_result(response)
-        if result['status'] == 'pending':
-            # context switch so that the greenlet to query balances can operate
-            time.sleep(1)
-        elif result['status'] == 'completed':
-            break
-        else:
-            raise AssertionError(f"Unexpected status: {result['status']}")
+        while True:
+            # and now query for the task result and assert on it
+            response = requests.get(
+                api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
+            )
+            result = assert_proper_sync_response_with_result(response)
+            if result['status'] == 'pending':
+                time.sleep(1)
+            elif result['status'] == 'completed':
+                break
+            else:
+                raise AssertionError(f"Unexpected status: {result['status']}")
 
     assert result['status'] == 'completed'
     # assert that the backend task query died and we detect it
@@ -171,28 +172,30 @@ def test_cancel_async_task(rotkehlchen_api_server_with_exchanges: APIServer) -> 
 
     binance_patch = patch.object(binance.session, 'request', side_effect=mock_binance_asset_return)
 
-    # Create an async task
+    # Create an async task. The patch has to stay installed until the task is cancelled: the
+    # response returns as soon as its thread is spawned, and if the patch expires before the
+    # thread reaches it the query completes instead of parking in the infinite loop.
     with binance_patch:
         response = requests.get(api_url_for(
             server,
             'named_exchanges_balances_resource',
             location='binance',
         ), json={'async_query': True})
-    task_id = assert_ok_async_response(response)
+        task_id = assert_ok_async_response(response)
 
-    # now check that there is a task
-    response = requests.get(api_url_for(server, 'asynctasksresource'))
-    result = assert_proper_sync_response_with_result(response)
-    assert result == {'completed': [], 'pending': [task_id]}
+        # now check that there is a task
+        response = requests.get(api_url_for(server, 'asynctasksresource'))
+        result = assert_proper_sync_response_with_result(response)
+        assert result == {'completed': [], 'pending': [task_id]}
 
-    response = requests.delete(api_url_for(server, 'specific_async_tasks_resource', task_id=666))
-    assert_error_response(
-        response=response,
-        contained_in_msg='Did not cancel task with id 666',
-        status_code=HTTPStatus.NOT_FOUND,
-    )
-    response = requests.delete(api_url_for(server, 'specific_async_tasks_resource', task_id=task_id))  # noqa: E501
-    assert_simple_ok_response(response)
+        response = requests.delete(api_url_for(server, 'specific_async_tasks_resource', task_id=666))  # noqa: E501
+        assert_error_response(
+            response=response,
+            contained_in_msg='Did not cancel task with id 666',
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+        response = requests.delete(api_url_for(server, 'specific_async_tasks_resource', task_id=task_id))  # noqa: E501
+        assert_simple_ok_response(response)
 
     # now check that there is no task left
     response = requests.get(api_url_for(server, 'asynctasksresource'))

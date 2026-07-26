@@ -23,9 +23,12 @@ def test_async_task_death_traceback(
             api_url_for(rotkehlchen_api_server, 'exchangeratesresource'),
             json={'async_query': True, 'currencies': ['ETH']},
         )
+        # the response returns as soon as the task thread is spawned, so the patch has to
+        # stay installed until the task has actually reached the mocked call and died
+        assert_proper_response(response)
+        wait(api_tasks := rotkehlchen_api_server.rest_api.rotkehlchen.api_tasks, timeout=10)
 
-    assert_proper_response(response)
-    wait(rotkehlchen_api_server.rest_api.rotkehlchen.api_tasks, timeout=10)
+    assert all(task.dead for task in api_tasks), 'the async task did not finish in time'
     assert ' Task 0 dies with exception: Boom' in caplog.text
     assert "Exception Name: <class 'ValueError'>" in caplog.text
     assert 'Exception Info: Boom' in caplog.text
