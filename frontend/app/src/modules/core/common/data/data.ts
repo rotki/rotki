@@ -1,5 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { isString, isUndefined } from 'es-toolkit';
+import { objectKeys } from '@/modules/core/common/data/array';
 
 export function chunkArray<T>(myArray: T[], size: number): T[][] {
   const results: T[][] = [];
@@ -82,8 +83,7 @@ export function nonEmptyProperties<T extends object>(
   const { alwaysPickKeys, removeEmptyString } = withNonEmptyDefaults(options);
   const partial: Partial<T> = {};
 
-  for (const obKey of Object.keys(object)) {
-    const key = obKey as keyof T;
+  for (const key of objectKeys(object)) {
     const val = object[key];
 
     // An always-picked key is written first and then still pruned below, as it was before.

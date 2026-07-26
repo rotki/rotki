@@ -23,11 +23,21 @@ interface ConvertKeysOptions {
   skipRoot?: boolean;
 }
 
-function convertKeys(data: unknown, options: ConvertKeysOptions): unknown {
+/**
+ * Renames every key in the payload, so the result is structurally a different type than the input.
+ * Callers nevertheless treat it as the same shape, because the renamed shape is exactly what their
+ * own type describes: the snake_case wire form on the way out, the camelCase model on the way in.
+ *
+ * Expressing that in the type system was attempted and rejected: a mapped type over CamelCase would
+ * change the public signature of every transformer, and it would still be wrong, since conversion is
+ * skipped for EVM identifiers and capitalised keys. The generic is therefore asserted once here
+ * rather than at each of the three call sites below.
+ */
+function convertKeysRecursively(data: unknown, options: ConvertKeysOptions): unknown {
   const { camelCase, skipKeys = [], skipRoot = false } = options;
 
   if (Array.isArray(data))
-    return data.map(entry => convertKeys(entry, { camelCase, skipKeys, skipRoot: false }));
+    return data.map(entry => convertKeysRecursively(entry, { camelCase, skipKeys, skipRoot: false }));
 
   if (!isObject(data))
     return data;
@@ -40,7 +50,7 @@ function convertKeys(data: unknown, options: ConvertKeysOptions): unknown {
     const shouldSkipNested = skipKeys.includes(key);
 
     converted[updatedKey] = isObject(datum) && !shouldSkipNested
-      ? convertKeys(datum, { camelCase, skipKeys, skipRoot: skipRoot && key === 'result' })
+      ? convertKeysRecursively(datum, { camelCase, skipKeys, skipRoot: skipRoot && key === 'result' })
       : datum;
     return key;
   });
@@ -48,16 +58,22 @@ function convertKeys(data: unknown, options: ConvertKeysOptions): unknown {
   return converted;
 }
 
+function convertKeys<T>(data: T, options: ConvertKeysOptions): T {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see the note above; the
+  // one unavoidable assertion for the whole transformer family lives here rather than at each caller.
+  return convertKeysRecursively(data, options) as T;
+}
+
 export function snakeCaseTransformer<T>(data: T, skipKeys?: string[]): T {
-  return convertKeys(data, { camelCase: false, skipKeys }) as T;
+  return convertKeys(data, { camelCase: false, skipKeys });
 }
 
 export function camelCaseTransformer<T>(data: T): T {
-  return convertKeys(data, { camelCase: true }) as T;
+  return convertKeys(data, { camelCase: true });
 }
 
 export function noRootCamelCaseTransformer<T>(data: T): T {
-  return convertKeys(data, { camelCase: true, skipRoot: true }) as T;
+  return convertKeys(data, { camelCase: true, skipRoot: true });
 }
 
 /**

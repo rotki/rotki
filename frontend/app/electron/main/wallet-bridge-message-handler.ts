@@ -66,9 +66,7 @@ export class WalletBridgeMessageHandler {
       this.pendingRequests.delete(requestId);
 
       if (response.error) {
-        const error = new Error(response.error.message) as Error & { code?: number };
-        error.code = response.error.code;
-        reject(error);
+        reject(Object.assign(new Error(response.error.message), { code: response.error.code }));
       }
       else {
         resolve(response.result);

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { CamelCase } from '@/modules/core/common/common-types';
 import { transformCase } from '@rotki/common';
 import { useAccountLoading } from '@/modules/accounts/use-account-loading';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
@@ -22,7 +21,7 @@ function updateSelection(modules: Module[]) {
 }
 
 function hasAddresses(module: Module) {
-  const index = transformCase(module, true) as CamelCase<Module>;
+  const index = transformCase(module, true);
   const addresses = get(queriedAddresses)[index];
   if (addresses)
     return addresses.length > 0;

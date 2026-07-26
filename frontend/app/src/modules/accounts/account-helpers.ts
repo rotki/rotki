@@ -24,6 +24,7 @@ import { isEmpty } from 'es-toolkit/compat';
 import { includes, isFilterEnabled, sortBy } from '@/modules/accounts/account-common';
 import { getAccountAddress, getChain, getGroupId } from '@/modules/accounts/account-utils';
 import { createAccount, createXpubAccount } from '@/modules/accounts/create-account';
+import { objectKeys } from '@/modules/core/common/data/array';
 import { assetSum, balanceSum } from '@/modules/core/common/data/calculation';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { sum } from '@/modules/core/common/display/balances';
@@ -229,9 +230,14 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
     ? filtered
     : filtered.sort((a, b) => {
         for (const [i, attr] of orderByAttributes.entries()) {
-          const key = camelCase(attr) as keyof T;
-          const asc = ascending[i];
+          // The payload types the attributes as camelCase keys, but the table sends snake_case,
+          // so the converted name is matched against the row's own keys before indexing with it.
+          const converted = camelCase(attr);
+          const key = objectKeys(a).find(candidate => candidate === converted);
+          if (!key)
+            continue;
 
+          const asc = ascending[i];
           const order = sortBy(getSortElement(key, a), getSortElement(key, b), asc);
           if (order)
             return order;

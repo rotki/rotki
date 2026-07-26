@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
-import type { CamelCase } from '@/modules/core/common/common-types';
 import { transformCase, Zero } from '@rotki/common';
 import QueriedAddressDialog from '@/modules/accounts/QueriedAddressDialog.vue';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
@@ -116,7 +115,7 @@ async function disableAll() {
 }
 
 function selected(identifier: Module) {
-  const index = transformCase(identifier, true) as CamelCase<Module>;
+  const index = transformCase(identifier, true);
   const addresses = get(queriedAddresses)[index];
   if (!addresses || addresses.length === 0)
     return t('module_selector.all_accounts');

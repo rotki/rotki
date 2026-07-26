@@ -8,6 +8,7 @@ import type { Collection } from '@/modules/core/common/collection';
 import { type BigNumber, Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 import { includes } from '@/modules/accounts/account-common';
+import { objectKeys } from '@/modules/core/common/data/array';
 
 interface Filters {
   readonly tags?: string[];
@@ -74,9 +75,13 @@ export function sortAndFilterManualBalance(
       ? filtered
       : filtered.sort((a, b) => {
           for (const [i, attr] of orderByAttributes.entries()) {
-            const key = camelCase(attr) as keyof ManualBalanceWithValue;
-            const asc = ascending[i];
+            // The table sends snake_case attributes, so match the converted name against the row's keys.
+            const converted = camelCase(attr);
+            const key = objectKeys(a).find(candidate => candidate === converted);
+            if (!key)
+              continue;
 
+            const asc = ascending[i];
             const order = sortBy(a[key], b[key], asc);
             if (order)
               return order;

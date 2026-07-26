@@ -3,6 +3,7 @@ import type { SupportedAsset, Writeable } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { AssetUpdateConflictResult, ConflictResolution } from '@/modules/assets/types';
 import type { ConflictResolutionStrategy } from '@/modules/core/common/common-types';
+import { objectKeys } from '@/modules/core/common/data/array';
 import { uniqueObjects, uniqueStrings } from '@/modules/core/common/data/data';
 import AssetConflictRow from '@/modules/shell/app/AssetConflictRow.vue';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
@@ -74,9 +75,9 @@ function getConflictFields(conflict: AssetUpdateConflictResult): AssetKey[] {
   function nonNull(key: AssetKey, asset: SupportedAsset): boolean {
     return asset[key] !== null;
   }
-  const remote = Object.keys(conflict.remote).filter(value => nonNull(value as AssetKey, conflict.remote));
-  const local = Object.keys(conflict.local).filter(value => nonNull(value as AssetKey, conflict.local));
-  return [...remote, ...local].filter(uniqueStrings) as AssetKey[];
+  const remote = objectKeys(conflict.remote).filter(key => nonNull(key, conflict.remote));
+  const local = objectKeys(conflict.local).filter(key => nonNull(key, conflict.local));
+  return [...remote, ...local].filter(uniqueStrings);
 }
 
 function isDiff(conflict: AssetUpdateConflictResult, field: AssetKey) {

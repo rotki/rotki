@@ -167,10 +167,10 @@ export function initializeWalletBridge(): void {
       });
 
       if (response.error) {
-        const error = new Error(response.error.message);
-        (error as any).code = response.error.code;
-        (error as any).data = response.error.data;
-        throw error;
+        throw Object.assign(new Error(response.error.message), {
+          code: response.error.code,
+          data: response.error.data,
+        });
       }
 
       return response.result;

@@ -2,6 +2,7 @@ import type { WalletBridgeRequest, WalletBridgeResponse } from '@shared/wallet-b
 import type { EIP1193Provider, EIP1193ProviderEvents } from '@/types';
 import { BRIDGE_ERROR_CODES, BRIDGE_NOTIFICATION_TYPES, ROTKI_RPC_METHODS, ROTKI_RPC_RESPONSES, WALLET_EVENT_TYPES } from '@shared/proxy/constants';
 import { defaultWindow, get, promiseTimeout } from '@vueuse/core';
+import { type RpcError, toRpcError } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useBridgeLogging } from '@/modules/wallet/bridge/use-bridge-logging';
 import { useWalletConnectionState } from '@/modules/wallet/bridge/use-wallet-connection-state';
@@ -132,9 +133,7 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
     }
   };
 
-  type BridgeError = Error & { code?: number; data?: unknown };
-
-  function errorResponseFor(id: string | number, error: BridgeError): WalletBridgeResponse {
+  function errorResponseFor(id: string | number, error: RpcError): WalletBridgeResponse {
     return createErrorResponse(
       id,
       error.code ?? BRIDGE_ERROR_CODES.INTERNAL_ERROR,
@@ -148,7 +147,7 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
    * real user rejection, so that single case is worth one retry. Later rejections are taken at face
    * value.
    */
-  function shouldRetryAccountsRequest(message: WalletBridgeRequest, error: BridgeError): boolean {
+  function shouldRetryAccountsRequest(message: WalletBridgeRequest, error: RpcError): boolean {
     return message.method === 'eth_requestAccounts'
       && error.code === 4001
       && !hasSuccessfulAccountsRequest;
@@ -171,7 +170,7 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
       return createSuccessResponse(message.id, result);
     }
     catch (retryError: unknown) {
-      const retryErr = retryError as BridgeError;
+      const retryErr = toRpcError(retryError);
       logger.error('eth_requestAccounts retry failed:', retryErr);
       return errorResponseFor(message.id, retryErr);
     }
@@ -220,7 +219,7 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
       return createSuccessResponse(message.id, result);
     }
     catch (error: unknown) {
-      const err = error as Error & { code?: number; data?: unknown };
+      const err = toRpcError(error);
 
       // Only retry first eth_requestAccounts with 4001 error (proxy initialization issue)
       if (shouldRetryAccountsRequest(message, err))
@@ -244,7 +243,7 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
     }
     catch (error: unknown) {
       logger.error('Error handling bridge request:', error);
-      const err = error as Error & { code?: number };
+      const err = toRpcError(error);
       return createErrorResponse(
         message.id,
         err.code ?? BRIDGE_ERROR_CODES.INTERNAL_ERROR,

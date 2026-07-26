@@ -1,7 +1,7 @@
 import { isEmpty } from 'es-toolkit/compat';
+import { objectKeys } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
 import {
-  type BalanceSource,
   BalanceValueThreshold,
   BalanceValueThresholdV0,
   deserializeFrontendSettings,
@@ -51,10 +51,10 @@ function applyV1Migrations(settings: FrontendSettings): FrontendSettings {
   // @ts-expect-error v0 settings have balanceUsdValueThreshold instead of balanceValueThreshold
   const v0Threshold = BalanceValueThresholdV0.parse(settings.balanceUsdValueThreshold);
   const v1Threshold = BalanceValueThreshold.parse({});
-  for (const key in v0Threshold) {
-    const value = v0Threshold[key as BalanceSource];
+  for (const key of objectKeys(v0Threshold ?? {})) {
+    const value = v0Threshold?.[key];
     if (value !== undefined && value !== '0') {
-      v1Threshold[key as BalanceSource] = value;
+      v1Threshold[key] = value;
     }
   }
   // @ts-expect-error setting v1 schema version and balanceUsdValueThreshold

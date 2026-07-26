@@ -40,7 +40,7 @@ function resolveTokenQuery(payload: NewDetectedTokensRequestPayload): ResolvedTo
 
   // Convert from snake_case (from useServerTable) to camelCase for IndexedDB
   const snakeCaseOrderBy = orderByAttributes.length > 0 ? orderByAttributes[0] : 'detected_at';
-  const orderBy = transformCase(snakeCaseOrderBy, true) as keyof NewDetectedTokenRecord;
+  const orderBy = transformCase(snakeCaseOrderBy, true);
   const order = ascending.length > 0 && ascending[0] ? 'asc' : 'desc';
   const filter = tokenKind ? (t: NewDetectedTokenRecord): boolean => t.tokenKind === tokenKind : undefined;
 

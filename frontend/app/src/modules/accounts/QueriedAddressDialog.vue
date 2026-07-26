@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
-import type { CamelCase } from '@/modules/core/common/common-types';
 import { assert, Blockchain, transformCase } from '@rotki/common';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
@@ -41,7 +40,7 @@ const addresses = computed<string[]>(() => {
     return [];
 
   const addresses = get(queriedAddresses);
-  const index = transformCase(module, true) as CamelCase<Module>;
+  const index = transformCase(module, true);
   return addresses[index] ?? [];
 });
 
