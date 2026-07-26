@@ -29,7 +29,6 @@ const {
   successMessage = '',
   errorMessage = '',
   debounce = 1500,
-  // eslint-disable-next-line vue/max-props -- a generic owning control needs the full setting/label/validation/message surface
 } = defineProps<{
   setting: WritableSettingKeyOf<number>;
   label?: string;

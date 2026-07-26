@@ -26,7 +26,6 @@ const {
   successMessage = '',
   errorMessage = '',
   debounce = 0,
-  // eslint-disable-next-line vue/max-props -- a generic owning control needs the full setting/options/label/message surface
 } = defineProps<{
   setting: WritableSettingKeyOf<string>;
   options: readonly TOption[];
