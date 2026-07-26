@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { ofetch } from 'ofetch';
 import { useNfts } from '@/modules/assets/use-asset-nft';
 import { getPublicPlaceholderImagePath } from '@/modules/core/common/file/file';
@@ -9,7 +9,7 @@ interface UseNftImageReturnType {
   renderedMedia: ComputedRef<string>;
 }
 
-export function useNftImage(mediaUrl: Ref<string | null>): UseNftImageReturnType {
+export function useNftImage(mediaUrl: MaybeRefOrGetter<string | null>): UseNftImageReturnType {
   const { shouldRenderImage } = useNfts();
 
   const isMediaVideo = async (url: string): Promise<boolean> => {
@@ -26,7 +26,7 @@ export function useNftImage(mediaUrl: Ref<string | null>): UseNftImageReturnType
   const placeholder = getPublicPlaceholderImagePath('image.svg');
 
   const shouldRender = computed<boolean>(() => {
-    const media = get(mediaUrl);
+    const media = toValue(mediaUrl);
 
     if (!media)
       return true;
@@ -38,7 +38,7 @@ export function useNftImage(mediaUrl: Ref<string | null>): UseNftImageReturnType
 
   const isVideo = shallowRef<boolean>(false);
 
-  watch([mediaUrl, shouldRender], async ([media, shouldRender], [prevMedia, prevShouldRender]) => {
+  watch([(): string | null => toValue(mediaUrl), shouldRender], async ([media, shouldRender], [prevMedia, prevShouldRender]) => {
     if (media === prevMedia && shouldRender === prevShouldRender)
       return;
 
@@ -53,7 +53,7 @@ export function useNftImage(mediaUrl: Ref<string | null>): UseNftImageReturnType
   });
 
   const renderedMedia = computed(() => {
-    const media = get(mediaUrl);
+    const media = toValue(mediaUrl);
     if (get(checkingType) || !media || !get(shouldRender))
       return placeholder;
 

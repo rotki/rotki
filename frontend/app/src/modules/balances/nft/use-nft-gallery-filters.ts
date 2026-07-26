@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { GalleryNft, Nfts } from '@/modules/assets/nfts';
 import { assert, BigNumber } from '@rotki/common';
@@ -45,7 +45,7 @@ interface UseNftGalleryFiltersReturn {
 
 export function useNftGalleryFilters(
   nfts: ComputedRef<GalleryNft[]>,
-  perAccount: Ref<Nfts | null>,
+  perAccount: MaybeRefOrGetter<Nfts | null>,
 ): UseNftGalleryFiltersReturn {
   // State
   const modelSelectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
@@ -54,7 +54,10 @@ export function useNftGalleryFilters(
   const modelSortDescending = shallowRef<boolean>(false);
 
   // Computed properties
-  const availableAddresses = computed<string[]>(() => get(perAccount) ? Object.keys(get(perAccount)!) : []);
+  const availableAddresses = computed<string[]>(() => {
+    const accounts = toValue(perAccount);
+    return accounts ? Object.keys(accounts) : [];
+  });
 
   const collections = computed<string[]>(() => {
     if (!get(nfts))

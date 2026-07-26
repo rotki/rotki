@@ -1,5 +1,5 @@
 import { startPromise } from '@shared/utils';
-import { type Ref, shallowRef } from 'vue';
+import { type MaybeRefOrGetter, shallowRef } from 'vue';
 
 /**
  * The refresh interval between the calls to fetch events and data.
@@ -10,7 +10,7 @@ import { type Ref, shallowRef } from 'vue';
  */
 const REFRESH_INTERVAL = 60_000;
 
-export function useHistoryEventsAutoFetch(shouldFetch: Ref<boolean>, fetchFunction: () => Promise<void>): void {
+export function useHistoryEventsAutoFetch(shouldFetch: MaybeRefOrGetter<boolean>, fetchFunction: () => Promise<void>): void {
   const isFetching = shallowRef(false);
 
   const { isActive, pause, resume } = useIntervalFn(() => {
@@ -24,7 +24,7 @@ export function useHistoryEventsAutoFetch(shouldFetch: Ref<boolean>, fetchFuncti
     }));
   }, REFRESH_INTERVAL);
 
-  watch(shouldFetch, (shouldFetch) => {
+  watch(() => toValue(shouldFetch), (shouldFetch) => {
     const active = get(isActive);
     if (shouldFetch && !active)
       resume();

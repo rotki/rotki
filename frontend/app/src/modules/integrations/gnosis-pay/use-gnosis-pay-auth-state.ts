@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { AuthStep, type GnosisPayAdminsMapping, GnosisPayError, type GnosisPayErrorContext } from './types';
 
 interface UseGnosisPayAuthStateReturn {
@@ -32,14 +32,14 @@ interface UseGnosisPayAuthStepsReturn {
 export function useGnosisPayAuthState(): UseGnosisPayAuthStateReturn {
   const errorType = shallowRef<GnosisPayError | null>(null);
   const errorContext = ref<GnosisPayErrorContext>({});
-  const signingInProgress = shallowRef<boolean>(false);
-  const validatingAddress = shallowRef<boolean>(false);
-  const isAddressValid = shallowRef<boolean>(false);
-  const gnosisPayAdminsMapping = ref<GnosisPayAdminsMapping>({});
-  const controlledSafeAddresses = ref<string[]>([]);
-  const checkingRegisteredAccounts = shallowRef<boolean>(false);
-  const hasRegisteredAccounts = shallowRef<boolean>(false);
-  const signInSuccess = shallowRef<boolean>(false);
+  const modelSigningInProgress = shallowRef<boolean>(false);
+  const modelValidatingAddress = shallowRef<boolean>(false);
+  const modelIsAddressValid = shallowRef<boolean>(false);
+  const modelGnosisPayAdminsMapping = ref<GnosisPayAdminsMapping>({});
+  const modelControlledSafeAddresses = ref<string[]>([]);
+  const modelCheckingRegisteredAccounts = shallowRef<boolean>(false);
+  const modelHasRegisteredAccounts = shallowRef<boolean>(false);
+  const modelSignInSuccess = shallowRef<boolean>(false);
 
   const errorCloseable = computed<boolean>(() => {
     const type = get(errorType);
@@ -63,8 +63,8 @@ export function useGnosisPayAuthState(): UseGnosisPayAuthStateReturn {
   }
 
   function clearValidation(): void {
-    set(isAddressValid, false);
-    set(controlledSafeAddresses, []);
+    set(modelIsAddressValid, false);
+    set(modelControlledSafeAddresses, []);
   }
 
   function setError(type: GnosisPayError, context: GnosisPayErrorContext = {}): void {
@@ -75,28 +75,28 @@ export function useGnosisPayAuthState(): UseGnosisPayAuthStateReturn {
   function resetAuthState(): void {
     clearError();
     clearValidation();
-    set(signInSuccess, false);
-    set(signingInProgress, false);
-    set(validatingAddress, false);
+    set(modelSignInSuccess, false);
+    set(modelSigningInProgress, false);
+    set(modelValidatingAddress, false);
   }
 
   return {
-    checkingRegisteredAccounts,
+    checkingRegisteredAccounts: modelCheckingRegisteredAccounts,
     clearError,
     clearValidation,
-    controlledSafeAddresses,
+    controlledSafeAddresses: modelControlledSafeAddresses,
     errorCloseable,
     errorContext: shallowReadonly(errorContext),
     errorType: readonly(errorType),
-    gnosisPayAdminsMapping,
-    hasRegisteredAccounts,
-    isAddressValid,
+    gnosisPayAdminsMapping: modelGnosisPayAdminsMapping,
+    hasRegisteredAccounts: modelHasRegisteredAccounts,
+    isAddressValid: modelIsAddressValid,
     resetAuthState,
     setError,
     showNoRegisteredAccountsError,
-    signingInProgress,
-    signInSuccess,
-    validatingAddress,
+    signingInProgress: modelSigningInProgress,
+    signInSuccess: modelSignInSuccess,
+    validatingAddress: modelValidatingAddress,
   };
 }
 
@@ -104,20 +104,20 @@ export function useGnosisPayAuthState(): UseGnosisPayAuthStateReturn {
  * Composable for computing the current authentication step
  */
 export function useGnosisPayAuthSteps(
-  hasRegisteredAccounts: Ref<boolean>,
-  isWalletConnected: Ref<boolean>,
-  validatingAddress: Ref<boolean>,
-  signInSuccess: Ref<boolean>,
+  hasRegisteredAccounts: MaybeRefOrGetter<boolean>,
+  isWalletConnected: MaybeRefOrGetter<boolean>,
+  validatingAddress: MaybeRefOrGetter<boolean>,
+  signInSuccess: MaybeRefOrGetter<boolean>,
 ): UseGnosisPayAuthStepsReturn {
   const currentStep = computed<number>(() => {
     // Skip showing the account verification step - it happens in background
-    if (!get(hasRegisteredAccounts))
+    if (!toValue(hasRegisteredAccounts))
       return AuthStep.NOT_READY;
-    if (!get(isWalletConnected))
+    if (!toValue(isWalletConnected))
       return AuthStep.CONNECT_WALLET;
-    if (get(validatingAddress))
+    if (toValue(validatingAddress))
       return AuthStep.VALIDATE_ADDRESS;
-    if (!get(signInSuccess))
+    if (!toValue(signInSuccess))
       return AuthStep.SIGN_MESSAGE;
     return AuthStep.COMPLETE;
   });

@@ -24,7 +24,7 @@ export type Matcher = SearchMatcher<BlockchainAccountFilterKeys, BlockchainAccou
 export type Filters = MatchedKeywordWithBehaviour<BlockchainAccountFilterValueKeys>;
 
 export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], category: MaybeRefOrGetter<string>): FilterSchema<Filters, Matcher> {
-  const filters = ref<Filters>({});
+  const modelFilters = ref<Filters>({});
 
   const { chainIds } = useAccountCategoryHelper(category);
   const { getAddressName } = useAddressNameResolution();
@@ -90,7 +90,7 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
   });
 
   return {
-    filters,
+    filters: modelFilters,
     matchers,
     RouteFilterSchema,
   };

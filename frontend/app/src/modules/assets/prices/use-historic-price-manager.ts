@@ -1,4 +1,4 @@
-import type { Ref } from 'vue';
+import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/modules/assets/prices/price-types';
 import { startPromise } from '@shared/utils';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
@@ -17,7 +17,7 @@ interface UseHistoricPricesReturn {
 
 export function useHistoricPrices(
   t: ReturnType<typeof useI18n>['t'],
-  filter?: Ref<{ fromAsset?: string; toAsset?: string }>,
+  filter?: MaybeRefOrGetter<{ fromAsset?: string; toAsset?: string }>,
 ): UseHistoricPricesReturn {
   const loading = shallowRef(false);
   const items = ref<HistoricalPrice[]>([]);
@@ -43,7 +43,7 @@ export function useHistoricPrices(
   };
 
   const refresh = async (payload?: { modified?: boolean; additionalEntry?: HistoricalPrice }): Promise<void> => {
-    await fetchPrices(get(filter));
+    await fetchPrices(toValue(filter));
 
     if (payload?.modified) {
       const entries: HistoricalPrice[] = [...get(items)];
@@ -92,7 +92,7 @@ export function useHistoricPrices(
 
   if (filter) {
     watch(
-      filter,
+      () => toValue(filter),
       async () => {
         await refresh();
       },

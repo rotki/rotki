@@ -18,7 +18,7 @@ export type Matcher = SearchMatcher<AddressBookFilterKeys, AddressBookFilterValu
 export type Filters = MatchedKeyword<AddressBookFilterValueKeys>;
 
 export function useAddressBookFilter(): FilterSchema<Filters, Matcher> {
-  const filters = ref<Filters>({});
+  const modelFilters = ref<Filters>({});
 
   const { t } = useI18n({ useScope: 'global' });
 
@@ -53,7 +53,7 @@ export function useAddressBookFilter(): FilterSchema<Filters, Matcher> {
   });
 
   return {
-    filters,
+    filters: modelFilters,
     matchers,
     RouteFilterSchema,
   };

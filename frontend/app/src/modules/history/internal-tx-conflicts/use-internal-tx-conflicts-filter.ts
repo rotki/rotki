@@ -26,7 +26,7 @@ export type Filters = MatchedKeywordWithBehaviour<InternalTxConflictFilterValueK
 
 export function useInternalTxConflictsFilter(): FilterSchema<Filters, Matcher> {
   const { t } = useI18n({ useScope: 'global' });
-  const filters = ref<Filters>({});
+  const modelFilters = ref<Filters>({});
   const { evmChainsData } = useSupportedChains();
   const dateInputFormat = useSetting('dateInputFormat');
 
@@ -50,7 +50,7 @@ export function useInternalTxConflictsFilter(): FilterSchema<Filters, Matcher> {
       serializer: dateSerializer(dateInputFormat),
       string: true,
       suggestions: (): string[] => [],
-      validate: dateRangeValidator(dateInputFormat, () => get(filters)?.toTimestamp?.toString(), 'start'),
+      validate: dateRangeValidator(dateInputFormat, () => get(modelFilters)?.toTimestamp?.toString(), 'start'),
     },
     {
       description: t('transactions.filter.end_date'),
@@ -63,12 +63,12 @@ export function useInternalTxConflictsFilter(): FilterSchema<Filters, Matcher> {
       serializer: dateSerializer(dateInputFormat),
       string: true,
       suggestions: (): string[] => [],
-      validate: dateRangeValidator(dateInputFormat, () => get(filters)?.fromTimestamp?.toString(), 'end'),
+      validate: dateRangeValidator(dateInputFormat, () => get(modelFilters)?.fromTimestamp?.toString(), 'end'),
     },
   ]);
 
   return {
-    filters,
+    filters: modelFilters,
     matchers,
   };
 }

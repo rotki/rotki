@@ -1,3 +1,14 @@
+import type { Ref } from 'vue';
+
+/**
+ * A composable parameter that must stay a writable `Ref`, because something other than the
+ * composable itself writes to it (a callee, or the caller through a `v-model`). Identical to
+ * `Ref<T>`; the distinct name documents the contract and tells
+ * `@rotki/composable-input-flexibility` not to suggest `MaybeRefOrGetter<T>`, which cannot be
+ * written to. Do NOT use it merely to silence the rule: if the ref is only read, widen it instead.
+ */
+export type WritableRef<T> = Ref<T>;
+
 export interface PaginationRequestPayload<T> {
   readonly limit: number;
   readonly offset: number;

@@ -13,22 +13,22 @@ interface UseWrappedDateRangeReturn {
 }
 
 export function useWrappedDateRange(): UseWrappedDateRangeReturn {
-  const end = shallowRef<number>(0);
-  const start = shallowRef<number>(0);
+  const modelEnd = shallowRef<number>(0);
+  const modelStart = shallowRef<number>(0);
 
   const startModel = computed<number | undefined>({
     get() {
-      return get(start) || undefined;
+      return get(modelStart) || undefined;
     },
     set(value: number | undefined) {
-      set(start, value ?? 0);
+      set(modelStart, value ?? 0);
     },
   });
 
   const invalidRange = computed<boolean>(
     () =>
-      !!get(start)
-      && !!get(end) && get(start) > get(end),
+      !!get(modelStart)
+      && !!get(modelEnd) && get(modelStart) > get(modelEnd),
   );
 
   function getYearRange(year: number): { start: number; end: number } {
@@ -40,23 +40,23 @@ export function useWrappedDateRange(): UseWrappedDateRangeReturn {
 
   function setYearRange(year: number): void {
     const range = getYearRange(year);
-    set(start, range.start);
-    set(end, range.end);
+    set(modelStart, range.start);
+    set(modelEnd, range.end);
   }
 
   function initializeEndDate(): void {
-    if (!get(end)) {
-      set(end, dayjs().unix());
+    if (!get(modelEnd)) {
+      set(modelEnd, dayjs().unix());
     }
   }
 
   return {
-    end,
+    end: modelEnd,
     getYearRange,
     initializeEndDate,
     invalidRange,
     setYearRange,
-    start,
+    start: modelStart,
     startModel,
   };
 }

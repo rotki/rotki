@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { SearchMatcher, Suggestion } from '@/modules/core/table/filtering';
 import { getTextToken } from '@rotki/common';
 import { compareTextByKeyword } from '@/modules/core/common/display/assets';
@@ -10,15 +10,15 @@ interface UseFilterMatchersReturn {
 
 export function useFilterMatchers(
   matchers: MaybeRefOrGetter<SearchMatcher<any, any>[]>,
-  selection: Ref<Suggestion[]>,
-  search: Ref<string>,
+  selection: MaybeRefOrGetter<Suggestion[]>,
+  search: MaybeRefOrGetter<string>,
 ): UseFilterMatchersReturn {
-  const usedKeys = computed<string[]>(() => get(selection).map(entry => entry.key));
+  const usedKeys = computed<string[]>(() => toValue(selection).map(entry => entry.key));
 
   const filteredMatchers = computed<SearchMatcher<any>[]>(() => {
     const filteredByUsedKeys = toValue(matchers).filter(({ key, multiple }) => !get(usedKeys).includes(key) || multiple);
 
-    const searchVal = get(search);
+    const searchVal = toValue(search);
     if (!searchVal)
       return filteredByUsedKeys;
 

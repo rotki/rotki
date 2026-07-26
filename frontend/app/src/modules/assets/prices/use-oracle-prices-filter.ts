@@ -45,7 +45,7 @@ const ORACLE_SOURCES: string[] = [
 ];
 
 export function useOraclePricesFilter(): FilterSchema<Filters, Matcher> {
-  const filters = ref<Filters>({});
+  const modelFilters = ref<Filters>({});
 
   const { t } = useI18n({ useScope: 'global' });
   const { assetSearch, getAssetInfo } = useAssetInfoRetrieval();
@@ -89,7 +89,7 @@ export function useOraclePricesFilter(): FilterSchema<Filters, Matcher> {
       serializer: dateSerializer(dateInputFormat),
       string: true,
       suggestions: (): string[] => [],
-      validate: dateRangeValidator(dateInputFormat, () => get(filters)?.toTimestamp?.toString(), 'start'),
+      validate: dateRangeValidator(dateInputFormat, () => get(modelFilters)?.toTimestamp?.toString(), 'start'),
     },
     {
       description: t('oracle_prices.filter.to_date'),
@@ -102,7 +102,7 @@ export function useOraclePricesFilter(): FilterSchema<Filters, Matcher> {
       serializer: dateSerializer(dateInputFormat),
       string: true,
       suggestions: (): string[] => [],
-      validate: dateRangeValidator(dateInputFormat, () => get(filters)?.fromTimestamp?.toString(), 'end'),
+      validate: dateRangeValidator(dateInputFormat, () => get(modelFilters)?.fromTimestamp?.toString(), 'end'),
     },
   ]);
 
@@ -117,7 +117,7 @@ export function useOraclePricesFilter(): FilterSchema<Filters, Matcher> {
   });
 
   return {
-    filters,
+    filters: modelFilters,
     matchers,
     RouteFilterSchema,
   };

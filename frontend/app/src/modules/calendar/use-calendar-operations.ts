@@ -1,5 +1,5 @@
 import type { Dayjs } from 'dayjs';
-import type { Ref } from 'vue';
+import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { CalendarEvent } from '@/modules/calendar/types';
 import { omit } from 'es-toolkit';
 import { useCalendarApi } from '@/modules/calendar/use-calendar-api';
@@ -17,7 +17,7 @@ interface UseCalendarOperationsReturn {
 }
 
 export function useCalendarOperations(
-  selectedDate: Ref<Dayjs>,
+  selectedDate: MaybeRefOrGetter<Dayjs>,
   fetchData: () => void,
 ): UseCalendarOperationsReturn {
   const { t } = useI18n({ useScope: 'global' });
@@ -30,7 +30,7 @@ export function useCalendarOperations(
   const editMode = shallowRef<boolean>(false);
 
   function emptyEventForm(date?: Dayjs): CalendarEvent {
-    const startOfTheDate = (date ?? get(selectedDate)).set('hours', 0).set('minutes', 0).set('seconds', 0);
+    const startOfTheDate = (date ?? toValue(selectedDate)).set('hours', 0).set('minutes', 0).set('seconds', 0);
     const timestamp = startOfTheDate.unix();
 
     return {

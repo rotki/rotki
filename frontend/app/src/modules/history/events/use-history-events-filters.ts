@@ -2,6 +2,7 @@ import type { Account, HistoryEventEntryType } from '@rotki/common';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
+import type { WritableRef } from '@/modules/core/common/common-types';
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
@@ -75,7 +76,9 @@ interface UseHistoryEventsFiltersReturn {
 export function useHistoryEventsFilters(
   options: HistoryEventsFiltersOptions,
   toggles: Ref<HistoryEventsToggles>,
-  overlayMode: Ref<OverlayMode> = ref<OverlayMode>(OverlayMode.NONE),
+  // Written back by applyHistoryEventRouteQuery (history-event-query.ts) when the overlay is
+  // restored from the route, so it cannot be widened to MaybeRefOrGetter.
+  overlayMode: WritableRef<OverlayMode> = ref<OverlayMode>(OverlayMode.NONE),
 ): UseHistoryEventsFiltersReturn {
   const {
     entryTypes,

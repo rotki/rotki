@@ -23,7 +23,7 @@ interface UseAccountTableDataReturn<T extends BlockchainAccountBalance> {
 export function useAccountTableData<T extends BlockchainAccountBalance>(
   accounts: MaybeRefOrGetter<Collection<T>>,
   expandedIds: Ref<string[]>,
-  chainFilter: Ref<Record<string, string[]>>,
+  chainFilter: MaybeRefOrGetter<Record<string, string[]>>,
 ): UseAccountTableDataReturn<T> {
   const collapsed = ref<AccountDataRow<T>[]>([]) as Ref<AccountDataRow<T>[]>;
 
@@ -63,7 +63,7 @@ export function useAccountTableData<T extends BlockchainAccountBalance>(
       return [row.chain];
 
     const groupId = getGroupId(row);
-    const excluded = get(chainFilter)[groupId] ?? [];
+    const excluded = toValue(chainFilter)[groupId] ?? [];
 
     return isEmpty(excluded)
       ? row.chains

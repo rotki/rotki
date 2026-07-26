@@ -1,4 +1,4 @@
-import type { Ref } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import type { MatchedKeyword, SearchMatcher } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
 import { z } from 'zod';
@@ -28,8 +28,8 @@ export type Matcher = SearchMatcher<AssetFilterKeys, AssetFilterValueKeys>;
 
 export type Filters = MatchedKeyword<AssetFilterValueKeys>;
 
-export function useAssetFilter(assetTypes: Ref<string[]>): FilterSchema<Filters, Matcher> {
-  const filters = ref<Filters>({});
+export function useAssetFilter(assetTypes: MaybeRefOrGetter<string[]>): FilterSchema<Filters, Matcher> {
+  const modelFilters = ref<Filters>({});
 
   const { allEvmChains } = useSupportedChains();
   const { t } = useI18n({ useScope: 'global' });
@@ -45,13 +45,13 @@ export function useAssetFilter(assetTypes: Ref<string[]>): FilterSchema<Filters,
       suggestions: (): string[] => [],
       validate: (): true => true,
     },
-    ...(!get(filters).evmChain
+    ...(!get(modelFilters).evmChain
       ? [{
         description: t('assets.filter.asset_type'),
         key: AssetFilterKeys.ASSET_TYPE,
         keyValue: AssetFilterValueKeys.ASSET_TYPE,
         string: true,
-        suggestions: (): string[] => get(assetTypes),
+        suggestions: (): string[] => toValue(assetTypes),
         suggestionsToShow: -1,
         validate: (): true => true,
       }] satisfies Matcher[]
@@ -74,7 +74,7 @@ export function useAssetFilter(assetTypes: Ref<string[]>): FilterSchema<Filters,
       suggestions: (): string[] => [],
       validate: (): true => true,
     },
-    ...(!get(filters).assetType
+    ...(!get(modelFilters).assetType
       ? [{
         description: t('assets.filter.chain'),
         key: AssetFilterKeys.CHAIN,
@@ -112,7 +112,7 @@ export function useAssetFilter(assetTypes: Ref<string[]>): FilterSchema<Filters,
   });
 
   return {
-    filters,
+    filters: modelFilters,
     matchers,
     RouteFilterSchema,
   };

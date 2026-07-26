@@ -1,4 +1,4 @@
-import type { Ref } from 'vue';
+import type { MaybeRefOrGetter, Ref } from 'vue';
 import { get, set } from '@vueuse/shared';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useWrapStatisticsApi, type WrapStatisticsResult } from '@/modules/statistics/api/use-wrap-statistics-api';
@@ -10,9 +10,9 @@ interface UseWrappedStatisticsReturn {
 }
 
 export function useWrappedStatistics(
-  start: Ref<number>,
-  end: Ref<number>,
-  refreshing: Ref<boolean>,
+  start: MaybeRefOrGetter<number>,
+  end: MaybeRefOrGetter<number>,
+  refreshing: MaybeRefOrGetter<boolean>,
 ): UseWrappedStatisticsReturn {
   const { fetchWrapStatistics } = useWrapStatisticsApi();
 
@@ -24,8 +24,8 @@ export function useWrappedStatistics(
       return;
 
     try {
-      const endVal = get(end);
-      const startVal = get(start);
+      const endVal = toValue(end);
+      const startVal = toValue(start);
 
       set(loading, true);
       const response = await fetchWrapStatistics({
@@ -43,7 +43,7 @@ export function useWrappedStatistics(
     }
   }
 
-  watch(refreshing, async (curr, old) => {
+  watch(() => toValue(refreshing), async (curr, old) => {
     if (old && !curr) {
       await fetchData();
     }

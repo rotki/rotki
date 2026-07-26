@@ -27,7 +27,7 @@ export function useEth2Staking(): UseEth2StakingReturn {
     offset: 0,
   });
 
-  const pagination = ref<EthStakingPayload>(defaultPagination());
+  const modelPagination = ref<EthStakingPayload>(defaultPagination());
 
   const premium = usePremium();
   const { runTask } = useTaskHandler();
@@ -135,20 +135,20 @@ export function useEth2Staking(): UseEth2StakingReturn {
   };
 
   async function refreshPerformance(userInitiated: boolean): Promise<void> {
-    await fetchPerformance(get(pagination));
+    await fetchPerformance(get(modelPagination));
 
     const success = await syncEthStakingPerformance(userInitiated);
     if (success) {
-      // We unref here to make sure that we use the latest pagination
-      await fetchPerformance(get(pagination));
+      // We unref here to make sure that we use the latest modelPagination
+      await fetchPerformance(get(modelPagination));
     }
   }
 
-  watch(pagination, async pagination => fetchPerformance(pagination));
+  watch(modelPagination, async modelPagination => fetchPerformance(modelPagination));
 
   return {
     fetchPerformance,
-    pagination,
+    pagination: modelPagination,
     performance,
     performanceLoading,
     refreshPerformance,

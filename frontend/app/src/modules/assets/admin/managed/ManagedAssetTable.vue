@@ -12,6 +12,7 @@ import { useManagedAssetTable } from '@/modules/assets/admin/use-managed-asset-t
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { EVM_TOKEN, type IgnoredAssetsHandlingType, isSpammableAssetType, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
+import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
@@ -65,11 +66,12 @@ const {
 } = useManagedAssetOperations(() => emit('refresh'), ignoredFilter, selected);
 
 const { cols, data, expand, isExpanded } = useManagedAssetTable(
-  sortModel,
   paginationModel,
   expanded,
   () => collection,
 );
+
+useRememberTableSorting<SupportedAsset>(TableId.SUPPORTED_ASSET, sortModel, cols);
 
 const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset } = useAssetDisplayHelpers(
   () => collection,

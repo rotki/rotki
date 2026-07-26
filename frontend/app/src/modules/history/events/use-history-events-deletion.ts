@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
@@ -19,8 +19,8 @@ interface UseHistoryEventsDeletionReturn {
 
 export function useHistoryEventsDeletion(
   selectionMode: UseHistoryEventsSelectionModeReturn,
-  groupedEventsByTxRef: Ref<Record<string, HistoryEventRow[]>>,
-  originalGroups: Ref<HistoryEventRow[]>,
+  groupedEventsByTxRef: MaybeRefOrGetter<Record<string, HistoryEventRow[]>>,
+  originalGroups: MaybeRefOrGetter<HistoryEventRow[]>,
   refreshCallback: () => Promise<void>,
   requestPayload?: ComputedRef<HistoryEventRequestPayload>,
 ): UseHistoryEventsDeletionReturn {
@@ -71,7 +71,7 @@ export function useHistoryEventsDeletion(
     try {
       for (const [, { events: eventIds, groupIdentifier }] of transactions) {
         // Use groupIdentifier to look up the events
-        const txEvents = groupIdentifier ? get(groupedEventsByTxRef)[groupIdentifier] || [] : [];
+        const txEvents = groupIdentifier ? toValue(groupedEventsByTxRef)[groupIdentifier] || [] : [];
 
         // Flatten the events array
         const allEvents = txEvents.flat().filter((e: any) => !Array.isArray(e));
@@ -198,8 +198,8 @@ export function useHistoryEventsDeletion(
     try {
       const { completeTransactions, partialEventIds, partialSwapGroups } = analyzeSelectedEvents(
         selectedIds,
-        get(originalGroups),
-        get(groupedEventsByTxRef),
+        toValue(originalGroups),
+        toValue(groupedEventsByTxRef),
       );
 
       // Handle partial swap selection first

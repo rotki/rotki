@@ -23,13 +23,13 @@ export type Matcher = SearchMatcher<ManualBalanceFilterKeys, ManualBalanceFilter
 export type Filters = MatchedKeyword<ManualBalanceFilterValueKeys>;
 
 export function useManualBalanceFilter(locations: MaybeRef<string[]>): FilterSchema<Filters, Matcher> {
-  const filters = ref<Filters>({});
+  const modelFilters = ref<Filters>({});
 
   const { t } = useI18n({ useScope: 'global' });
   const { assetSearch, getAssetInfo } = useAssetInfoRetrieval();
 
   const matchers = computed<Matcher[]>(() => {
-    const selectedLocation = get(filters)?.location;
+    const selectedLocation = get(modelFilters)?.location;
     const locationString = (Array.isArray(selectedLocation) ? selectedLocation[0] : selectedLocation)?.toString();
 
     return [
@@ -67,7 +67,7 @@ export function useManualBalanceFilter(locations: MaybeRef<string[]>): FilterSch
   });
 
   return {
-    filters,
+    filters: modelFilters,
     matchers,
     RouteFilterSchema,
   };

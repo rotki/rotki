@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { TaskType } from '@/modules/core/tasks/task-type';
@@ -9,7 +9,7 @@ interface UseBalanceQueriesReturn {
   warnUntrackedAddress: ComputedRef<boolean>;
 }
 
-export function useBalanceQueries(connected: Ref<boolean>, connectedAddress: Ref<string | undefined>): UseBalanceQueriesReturn {
+export function useBalanceQueries(connected: MaybeRefOrGetter<boolean>, connectedAddress: MaybeRefOrGetter<string | undefined>): UseBalanceQueriesReturn {
   const { useIsTaskRunning } = useTaskStore();
   const { addresses } = useAccountAddresses();
 
@@ -17,8 +17,8 @@ export function useBalanceQueries(connected: Ref<boolean>, connectedAddress: Ref
   const useQueryingBalances = useRefWithDebounce(queryingBalances, 200);
 
   const warnUntrackedAddress = computed<boolean>(() => {
-    const address = get(connectedAddress);
-    const connectedVal = get(connected);
+    const address = toValue(connectedAddress);
+    const connectedVal = toValue(connected);
 
     // Only warn if connected, has an address, and address is not tracked
     if (!connectedVal || !address || address.length === 0) {

@@ -1,9 +1,8 @@
 import type { SupportedAsset } from '@rotki/common';
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import { some } from 'es-toolkit/compat';
-import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseManagedAssetTableReturn {
@@ -14,7 +13,6 @@ interface UseManagedAssetTableReturn {
 }
 
 export function useManagedAssetTable(
-  sortModel: Ref<DataTableSortData<SupportedAsset>>,
   paginationModel: Ref<TablePaginationData>,
   expanded: Ref<SupportedAsset[]>,
   collection: MaybeRefOrGetter<Collection<SupportedAsset>>,
@@ -57,8 +55,6 @@ export function useManagedAssetTable(
   // Collection handler logic integration
   const data = computed<SupportedAsset[]>(() => toValue(collection).data ?? []);
   const found = computed<number>(() => toValue(collection).found ?? 0);
-
-  useRememberTableSorting<SupportedAsset>(TableId.SUPPORTED_ASSET, sortModel, cols);
 
   const setPage = (page: number): void => {
     set(paginationModel, {

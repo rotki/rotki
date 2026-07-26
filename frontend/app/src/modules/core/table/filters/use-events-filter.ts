@@ -99,7 +99,7 @@ export function useHistoryEventFilter(
   },
   entryTypes?: MaybeRef<HistoryEventEntryType[] | undefined>,
 ): FilterSchema<Filters, Matcher> {
-  const filters = ref<Filters>({});
+  const modelFilters = ref<Filters>({});
 
   const dateInputFormat = useSetting('dateInputFormat');
   const { historyEventTypeGlobalMapping, historyEventTypes } = useHistoryEventMappings();
@@ -116,7 +116,7 @@ export function useHistoryEventFilter(
     if (Object.keys(globalMapping).length === 0)
       return [];
 
-    let selectedEventTypes = get(filters)?.eventTypes ?? [];
+    let selectedEventTypes = get(modelFilters)?.eventTypes ?? [];
     if (!Array.isArray(selectedEventTypes))
       selectedEventTypes = [selectedEventTypes.toString()];
 
@@ -140,7 +140,7 @@ export function useHistoryEventFilter(
     if (keys.length === 0)
       return;
 
-    let selectedEventSubtypes = get(filters)?.eventSubtypes ?? [];
+    let selectedEventSubtypes = get(modelFilters)?.eventSubtypes ?? [];
     if (!Array.isArray(selectedEventSubtypes))
       selectedEventSubtypes = [selectedEventSubtypes.toString()];
 
@@ -150,15 +150,15 @@ export function useHistoryEventFilter(
     const filteredEventSubtypes = selectedEventSubtypes.filter(item => keys.includes(item));
 
     if (!isEqual(filteredEventSubtypes, selectedEventSubtypes)) {
-      set(filters, {
-        ...get(filters),
+      set(modelFilters, {
+        ...get(modelFilters),
         eventSubtypes: filteredEventSubtypes.length > 0 ? filteredEventSubtypes : undefined,
       });
     }
   });
 
   const matchers = computed<Matcher[]>(() => {
-    const selectedLocation = get(filters)?.location;
+    const selectedLocation = get(modelFilters)?.location;
     const locationString = (Array.isArray(selectedLocation) ? selectedLocation[0] : selectedLocation)?.toString();
 
     const data: Matcher[] = [
@@ -176,7 +176,7 @@ export function useHistoryEventFilter(
               serializer: dateSerializer(dateInputFormat),
               string: true,
               suggestions: () => [],
-              validate: dateRangeValidator(dateInputFormat, () => get(filters)?.toTimestamp?.toString(), 'start'),
+              validate: dateRangeValidator(dateInputFormat, () => get(modelFilters)?.toTimestamp?.toString(), 'start'),
             },
             {
               description: t('transactions.filter.end_date'),
@@ -189,7 +189,7 @@ export function useHistoryEventFilter(
               serializer: dateSerializer(dateInputFormat),
               string: true,
               suggestions: () => [],
-              validate: dateRangeValidator(dateInputFormat, () => get(filters)?.fromTimestamp?.toString(), 'end'),
+              validate: dateRangeValidator(dateInputFormat, () => get(modelFilters)?.fromTimestamp?.toString(), 'end'),
             },
           ] satisfies Matcher[])),
       {
@@ -214,7 +214,7 @@ export function useHistoryEventFilter(
         keyValue: HistoryEventFilterValueKeys.MIN_AMOUNT,
         string: true,
         suggestions: () => [],
-        validate: amountRangeValidator(() => get(filters)?.maxAmount?.toString(), 'min'),
+        validate: amountRangeValidator(() => get(modelFilters)?.maxAmount?.toString(), 'min'),
       },
       {
         description: t('transactions.filter.max_amount'),
@@ -222,7 +222,7 @@ export function useHistoryEventFilter(
         keyValue: HistoryEventFilterValueKeys.MAX_AMOUNT,
         string: true,
         suggestions: () => [],
-        validate: amountRangeValidator(() => get(filters)?.minAmount?.toString(), 'max'),
+        validate: amountRangeValidator(() => get(modelFilters)?.minAmount?.toString(), 'max'),
       },
     ];
 
@@ -369,7 +369,7 @@ export function useHistoryEventFilter(
   });
 
   return {
-    filters,
+    filters: modelFilters,
     matchers,
     RouteFilterSchema,
   };

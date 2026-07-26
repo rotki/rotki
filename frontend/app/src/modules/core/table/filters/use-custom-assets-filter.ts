@@ -18,7 +18,7 @@ export type Matcher = SearchMatcher<CustomAssetFilterKeys, CustomAssetFilterValu
 export type Filters = MatchedKeyword<CustomAssetFilterValueKeys>;
 
 export function useCustomAssetFilter(suggestions: MaybeRef<string[]>): FilterSchema<Filters, Matcher> {
-  const filters = ref<Filters>({});
+  const modelFilters = ref<Filters>({});
 
   const { t } = useI18n({ useScope: 'global' });
 
@@ -47,7 +47,7 @@ export function useCustomAssetFilter(suggestions: MaybeRef<string[]>): FilterSch
   });
 
   return {
-    filters,
+    filters: modelFilters,
     matchers,
     RouteFilterSchema,
   };

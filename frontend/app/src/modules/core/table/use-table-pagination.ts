@@ -1,5 +1,5 @@
 import type { TablePaginationData } from '@rotki/ui-library';
-import type { Ref, WritableComputedRef } from 'vue';
+import type { MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { ChangeSource } from '@/modules/core/table/use-change-intent';
 import { applyPaginationDefaults } from '@/modules/core/table/pagination-filter-utils';
@@ -22,17 +22,17 @@ interface UseTablePaginationReturn {
  * mutates it directly.
  */
 export function useTablePagination<TItem>(
-  itemsPerPage: Ref<number>,
-  collection: Ref<Collection<TItem>>,
+  itemsPerPage: MaybeRefOrGetter<number>,
+  collection: MaybeRefOrGetter<Collection<TItem>>,
   commitPage: (page: number, source?: ChangeSource) => void,
   commitLimit: (limit: number) => void,
 ): UseTablePaginationReturn {
-  const internalPagination = ref<TablePaginationData>(applyPaginationDefaults(get(itemsPerPage)));
+  const modelInternalPagination = ref<TablePaginationData>(applyPaginationDefaults(toValue(itemsPerPage)));
 
   const pagination = computed<TablePaginationData>({
     get() {
-      const { limit, page } = get(internalPagination);
-      const { found: total, limit: entriesLimit } = get(collection);
+      const { limit, page } = get(modelInternalPagination);
+      const { found: total, limit: entriesLimit } = toValue(collection);
       return {
         limit,
         page,
@@ -40,7 +40,7 @@ export function useTablePagination<TItem>(
       };
     },
     set(pagination) {
-      const current = get(internalPagination);
+      const current = get(modelInternalPagination);
       const limit = pagination?.limit ?? current.limit;
       const page = pagination?.page ?? current.page;
       // Emit only what actually changed; each is a user-driven change.
@@ -59,7 +59,7 @@ export function useTablePagination<TItem>(
   };
 
   return {
-    internalPagination,
+    internalPagination: modelInternalPagination,
     pagination,
     setPage,
   };

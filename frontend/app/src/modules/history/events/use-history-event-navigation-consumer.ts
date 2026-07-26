@@ -1,5 +1,5 @@
 import type { TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -25,7 +25,7 @@ const historyEventsName = '/history/events/';
 export function useHistoryEventNavigationConsumer(
   pagination: ComputedRef<TablePaginationData>,
   requestPayload?: ComputedRef<HistoryEventRequestPayload>,
-  groupLoading?: Ref<boolean>,
+  groupLoading?: MaybeRefOrGetter<boolean>,
 ): void {
   const { t } = useI18n({ useScope: 'global' });
   const router = useRouter();
@@ -174,7 +174,8 @@ export function useHistoryEventNavigationConsumer(
     highlightQuery: Record<string, string>,
   ): Promise<boolean> {
     if ((request.preserveFilters || request.assetFilter) && groupLoading) {
-      await waitForFilterLoad(groupLoading);
+      // until() needs a real ref, so normalize the widened input once.
+      await waitForFilterLoad(toRef(groupLoading));
 
       // Check if this request is still current after waiting
       if (get(pendingNavigation) !== activeRequest)

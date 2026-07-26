@@ -26,7 +26,7 @@ export function isValidStatus(status: string): status is (typeof validStatuses)[
 }
 
 export function useEthValidatorAccountFilter(t: ReturnType<typeof useI18n>['t']): FilterSchema<Filters, Matcher> {
-  const filters = ref<Filters>({});
+  const modelFilters = ref<Filters>({});
 
   const matchers = computed<Matcher[]>(() => [{
     description: t('common.validator_index'),
@@ -67,7 +67,7 @@ export function useEthValidatorAccountFilter(t: ReturnType<typeof useI18n>['t'])
   });
 
   return {
-    filters,
+    filters: modelFilters,
     matchers,
     RouteFilterSchema,
   };

@@ -1,5 +1,5 @@
 import type { SupportedAsset } from '@rotki/common';
-import type { ComputedRef, DeepReadonly, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import type { ActionStatus } from '@/modules/core/common/action';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
@@ -32,7 +32,7 @@ interface UseManagedAssetOperationsReturn {
 
 export function useManagedAssetOperations(
   onRefresh: () => void,
-  ignoredFilter: Ref<IgnoredFilter>,
+  ignoredFilter: MaybeRefOrGetter<IgnoredFilter>,
   selected: Ref<string[]>,
 ): UseManagedAssetOperationsReturn {
   const { t } = useI18n({ useScope: 'global' });
@@ -52,7 +52,7 @@ export function useManagedAssetOperations(
   const loadingSpam = ref<string | undefined>(undefined);
 
   function refreshAssetsConditionally(): void {
-    if (get(ignoredFilter).ignoredAssetsHandling !== 'none')
+    if (toValue(ignoredFilter).ignoredAssetsHandling !== 'none')
       onRefresh();
   }
 
@@ -144,7 +144,7 @@ export function useManagedAssetOperations(
 
     if (status.success) {
       set(selected, []);
-      if (get(ignoredFilter).ignoredAssetsHandling !== 'none')
+      if (toValue(ignoredFilter).ignoredAssetsHandling !== 'none')
         onRefresh();
     }
   };

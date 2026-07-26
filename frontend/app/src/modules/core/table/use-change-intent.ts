@@ -41,8 +41,8 @@ export interface UseChangeIntentReturn {
  * write, and whether a pending write is our own echo.
  */
 export function useChangeIntent(): UseChangeIntentReturn {
-  const pendingIntent = shallowRef<ChangeSource>('programmatic');
-  const pendingUrlSource = ref<ChangeSource>();
+  const modelPendingIntent = shallowRef<ChangeSource>('programmatic');
+  const modelPendingUrlSource = ref<ChangeSource>();
 
   /**
    * Records the provenance of a state change.
@@ -56,7 +56,7 @@ export function useChangeIntent(): UseChangeIntentReturn {
   const markSource = (source: ChangeSource): void => {
     if (source === 'programmatic')
       return;
-    set(pendingIntent, source);
+    set(modelPendingIntent, source);
   };
 
   /**
@@ -67,13 +67,13 @@ export function useChangeIntent(): UseChangeIntentReturn {
    * writable `userAction` ref, which any caller could also set back to false.
    */
   const markUserIntent = (): void => {
-    set(pendingIntent, 'user');
+    set(modelPendingIntent, 'user');
   };
 
   return {
     markSource,
     markUserIntent,
-    pendingIntent,
-    pendingUrlSource,
+    pendingIntent: modelPendingIntent,
+    pendingUrlSource: modelPendingUrlSource,
   };
 }

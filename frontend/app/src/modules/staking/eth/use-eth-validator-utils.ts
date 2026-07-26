@@ -1,5 +1,5 @@
 import type { ContextColorsType } from '@rotki/ui-library';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
 import { type BigNumber, Zero } from '@rotki/common';
@@ -8,8 +8,8 @@ import { nonEmptyOr } from '@/modules/core/common/data/data';
 interface UseEthValidatorUtilsReturn {
   getColor: (status: string) => ContextColorsType | undefined;
   getOwnershipPercentage: (row: EthereumValidator) => string;
-  useTotal: (rows: Ref<Collection<EthereumValidator>>) => ComputedRef<BigNumber>;
-  useTotalAmount: (rows: Ref<Collection<EthereumValidator>>) => ComputedRef<BigNumber>;
+  useTotal: (rows: MaybeRefOrGetter<Collection<EthereumValidator>>) => ComputedRef<BigNumber>;
+  useTotalAmount: (rows: MaybeRefOrGetter<Collection<EthereumValidator>>) => ComputedRef<BigNumber>;
 }
 
 export function useEthValidatorUtils(): UseEthValidatorUtilsReturn {
@@ -29,8 +29,8 @@ export function useEthValidatorUtils(): UseEthValidatorUtilsReturn {
     return nonEmptyOr(row.ownershipPercentage, '100');
   }
 
-  const useTotal = (rows: Ref<Collection<EthereumValidator>>): ComputedRef<BigNumber> => computed(() => get(rows).totalValue ?? Zero);
-  const useTotalAmount = (rows: Ref<Collection<EthereumValidator>>): ComputedRef<BigNumber> => computed(() => get(rows).totalAmount ?? Zero);
+  const useTotal = (rows: MaybeRefOrGetter<Collection<EthereumValidator>>): ComputedRef<BigNumber> => computed(() => toValue(rows).totalValue ?? Zero);
+  const useTotalAmount = (rows: MaybeRefOrGetter<Collection<EthereumValidator>>): ComputedRef<BigNumber> => computed(() => toValue(rows).totalAmount ?? Zero);
 
   return {
     getColor,

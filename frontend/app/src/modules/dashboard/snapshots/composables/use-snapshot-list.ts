@@ -1,4 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
+import type { WritableRef } from '@/modules/core/common/common-types';
 import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
@@ -52,11 +53,10 @@ interface UseSnapshotListReturn {
  *
  * @param filters the filter state to apply. The list page owns this ref and syncs
  *   it to the URL query; the detail page omits it (its own unfiltered ref) so its
- *   prev/next navigation spans every snapshot. Must be a writable ref — it is
+ *   prev/next navigation spans every snapshot. Must be a writable ref: it is
  *   returned and two-way bound by the filter controls.
  */
-// eslint-disable-next-line @rotki/composable-input-flexibility
-export function useSnapshotList(filters: Ref<SnapshotListFilters> = ref({})): UseSnapshotListReturn {
+export function useSnapshotList(filters: WritableRef<SnapshotListFilters> = ref({})): UseSnapshotListReturn {
   const { netValue } = storeToRefs(useStatisticsStore());
   const { fetchNetValue } = useStatisticsDataFetching();
 

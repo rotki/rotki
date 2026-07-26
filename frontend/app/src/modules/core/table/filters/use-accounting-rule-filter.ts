@@ -22,7 +22,7 @@ export type Matcher = SearchMatcher<AccountingRuleFilterKeys, AccountingRuleFilt
 export type Filters = MatchedKeywordWithBehaviour<AccountingRuleFilterValueKeys>;
 
 export function useAccountingRuleFilter(): FilterSchema<Filters, Matcher> {
-  const filters = ref<Filters>({});
+  const modelFilters = ref<Filters>({});
 
   const { historyEventSubTypes, historyEventTypes } = useHistoryEventMappings();
   const { counterparties } = useHistoryEventCounterpartyMappings();
@@ -67,7 +67,7 @@ export function useAccountingRuleFilter(): FilterSchema<Filters, Matcher> {
   });
 
   return {
-    filters,
+    filters: modelFilters,
     matchers,
     RouteFilterSchema,
   };

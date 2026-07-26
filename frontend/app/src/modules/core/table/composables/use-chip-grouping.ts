@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { Suggestion } from '@/modules/core/table/filtering';
 import { isEqual } from 'es-toolkit';
 
@@ -20,14 +20,14 @@ interface UseChipGroupingReturn {
 }
 
 export function useChipGrouping(
-  selection: Ref<Suggestion[]>,
+  selection: MaybeRefOrGetter<Suggestion[]>,
   updateMatches: (pairs: Suggestion[]) => void,
 ): UseChipGroupingReturn {
   const modelExpandedGroupKey = ref<string>();
 
   const groupedKeysCounts = computed<Record<string, number>>(() => {
     const counts: Record<string, number> = {};
-    for (const item of get(selection)) {
+    for (const item of toValue(selection)) {
       counts[item.key] = (counts[item.key] || 0) + 1;
     }
     return counts;
@@ -48,7 +48,7 @@ export function useChipGrouping(
   }
 
   function getGroupedItemsForKey(item: Suggestion): Suggestion[] {
-    return get(selection).filter(s => s.key === item.key);
+    return toValue(selection).filter(s => s.key === item.key);
   }
 
   function getChipDisplayType(item: Suggestion): ChipDisplayType {
@@ -81,12 +81,12 @@ export function useChipGrouping(
   }
 
   function removeGroupedItem(item: Suggestion): void {
-    const newSelection = get(selection).filter(s => s.key !== item.key || s.value !== item.value);
+    const newSelection = toValue(selection).filter(s => s.key !== item.key || s.value !== item.value);
     updateMatches(newSelection);
   }
 
   function removeAllItemsForKey(key: string): void {
-    const newSelection = get(selection).filter(s => s.key !== key);
+    const newSelection = toValue(selection).filter(s => s.key !== key);
     updateMatches(newSelection);
     set(modelExpandedGroupKey, undefined);
   }
