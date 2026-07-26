@@ -5,16 +5,19 @@ import { usePremium } from '@/modules/premium/use-premium';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
-const { events, entriesFoundTotal, found, total, limit } = defineProps<{
+const { range } = defineProps<{
   colspan: number;
   label: string;
-  total: number;
+  /** How many entries are shown, i.e. the premium limit. Rendered as `{limit}`. */
   limit: number;
-  events?: boolean;
-  timeStart?: number;
-  timeEnd?: number;
-  found?: number;
-  entriesFoundTotal?: number;
+  /** How many entries exist in total. Rendered as `{total}`. */
+  total: number;
+  /**
+   * The processed time range. Its presence selects the `upgrade_row.events` wording, which is the
+   * only message that interpolates `{from}`/`{to}`, so the variant and the timestamps it needs
+   * cannot disagree.
+   */
+  range?: { timeStart: number; timeEnd: number };
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -24,7 +27,7 @@ const premium = usePremium();
 // Keys are branded via `msg.$t` so the i18n key-usage lint counts them despite the dynamic keypath.
 const messageKey = computed<string>(() => {
   const isPremium = get(premium);
-  if (events)
+  if (range)
     return isPremium ? msg.$t('upgrade_row.events_premium') : msg.$t('upgrade_row.events');
 
   return isPremium ? msg.$t('upgrade_row.upgrade_premium') : msg.$t('upgrade_row.upgrade');
@@ -41,9 +44,6 @@ const linkUrl = computed<string | undefined>(() => {
   const isPremium = get(premium);
   return isPremium ? externalLinks.manageSubscriptions : undefined;
 });
-
-const displayTotal = computed<number>(() => entriesFoundTotal ?? total);
-const displayLimit = computed<number>(() => found ?? limit);
 </script>
 
 <template>
@@ -59,10 +59,10 @@ const displayLimit = computed<number>(() => found ?? limit);
         class="md:text-center"
       >
         <template #total>
-          {{ displayTotal }}
+          {{ total }}
         </template>
         <template #limit>
-          {{ displayLimit }}
+          {{ limit }}
         </template>
         <template #label>
           {{ label }}
@@ -76,21 +76,21 @@ const displayLimit = computed<number>(() => found ?? limit);
           />
         </template>
         <template
-          v-if="events"
+          v-if="range"
           #from
         >
           <DateDisplay
             class="mx-1"
-            :timestamp="timeStart || 0"
+            :timestamp="range.timeStart"
           />
         </template>
         <template
-          v-if="events"
+          v-if="range"
           #to
         >
           <DateDisplay
             class="ml-1"
-            :timestamp="timeEnd || 0"
+            :timestamp="range.timeEnd"
           />
         </template>
       </i18n-t>

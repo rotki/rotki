@@ -232,8 +232,7 @@ watch(() => highlightedGroupIdentifier, (newHighlight, oldHighlight) => {
           <PotentialMatchesContent
             :movement="potentialMatchTransaction"
             :flow="flow"
-            :type-label="potentialMatchTransaction.direction"
-            :location-header="t('common.location')"
+            :entry-labels="{ locationHeader: t('common.location'), type: potentialMatchTransaction.direction }"
             :highlighted-identifier="activePotentialMatchIdentifier"
             :empty-explanation="emptyExplanation"
             is-pinned

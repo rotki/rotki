@@ -86,7 +86,6 @@ const {
   groupsShowingIgnoredAssets,
   groupsWithHiddenIgnoredAssets,
   isSubgroupIncomplete,
-  limit,
   loading,
   rawEvents,
   showUpgradeRow,
@@ -194,14 +193,15 @@ function handleMissingRuleAction(data: Parameters<typeof addMissingRule>[0], gro
     addMissingRule(data, group);
 }
 
-// Helper to check if a group has hidden events due to ignored assets
-function hasHiddenIgnoredAssets(groupId: string): boolean {
-  return get(groupsWithHiddenIgnoredAssets).has(groupId);
-}
+/**
+ * The group's ignored-asset state, or undefined when it has none to reveal and none revealed, in
+ * which case the group row shows no indicator.
+ */
+function ignoredAssetsState(groupId: string): 'hidden' | 'showing' | undefined {
+  if (get(groupsShowingIgnoredAssets).has(groupId))
+    return 'showing';
 
-// Helper to check if a group is currently showing ignored assets
-function isShowingIgnoredAssets(groupId: string): boolean {
-  return get(groupsShowingIgnoredAssets).has(groupId);
+  return get(groupsWithHiddenIgnoredAssets).has(groupId) ? 'hidden' : undefined;
 }
 </script>
 
@@ -219,11 +219,9 @@ function isShowingIgnoredAssets(groupId: string): boolean {
     <!-- Upgrade Row (premium limit warning) -->
     <UpgradeRow
       v-if="showUpgradeRow"
-      :limit="limit"
-      :total="total"
-      :found="found"
+      :limit="found"
+      :total="entriesFoundTotal ?? total"
       class="px-2"
-      :entries-found-total="entriesFoundTotal"
       :colspan="5"
       :label="t('common.events')"
     />
@@ -299,9 +297,7 @@ function isShowingIgnoredAssets(groupId: string): boolean {
             :hide-actions="hideActions"
             :loading="eventsLoading"
             :duplicate-handling-status="duplicateHandlingStatus"
-            :has-hidden-ignored-assets="hasHiddenIgnoredAssets(row.groupId)"
-            :showing-ignored-assets="isShowingIgnoredAssets(row.groupId)"
-            :highlight="isGroupHighlighted(row.groupId)"
+            :ignored-assets="ignoredAssetsState(row.groupId)"
             :highlight-type="isGroupHighlighted(row.groupId) ? getHighlightType(row.data) : undefined"
             :variant="itemVariant"
             @add-event="addEvent($event, row.data)"
@@ -373,8 +369,7 @@ function isShowingIgnoredAssets(groupId: string): boolean {
             :group-location-label="findGroup(row.groupId)?.locationLabel ?? undefined"
             :matched-movement="row.matchedMovement"
             :hide-actions="hideActions"
-            :highlight="isHighlighted(row.data)"
-            :highlight-type="getHighlightType(row.data)"
+            :highlight-type="isHighlighted(row.data) ? getHighlightType(row.data) : undefined"
             :selection="selection"
             :variant="itemVariant"
             @edit-event="handleEditEvent($event, row.groupId)"

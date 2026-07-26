@@ -6,10 +6,17 @@ export interface UnmatchedRowActionLabels {
   findMatch: string;
   ignore: string;
   ignoreTooltip: string;
-  markExternal?: string;
-  markExternalTooltip?: string;
-  createCounterpart?: string;
-  createCounterpartTooltip?: string;
+}
+
+/**
+ * An action that only some flows offer. Passing it is what renders the button, so its label can no
+ * longer go missing the way a separate `show` flag plus an optional label allowed.
+ */
+export interface UnmatchedRowOptionalAction {
+  label: string;
+  tooltip: string;
+  /** Renders the button filled, as the suggested resolution for the row. */
+  emphasize?: boolean;
 }
 </script>
 
@@ -20,22 +27,18 @@ const {
   showRestore = false,
   ignoreLoading = false,
   matchDisabled = false,
-  showMarkExternal = false,
-  emphasizeMarkExternal = false,
-  showCreateCounterpart = false,
-  emphasizeCreateCounterpart = false,
+  markExternal,
+  createCounterpart,
 } = defineProps<{
   labels: UnmatchedRowActionLabels;
   isPinned?: boolean;
   showRestore?: boolean;
   ignoreLoading?: boolean;
   matchDisabled?: boolean;
-  showMarkExternal?: boolean;
-  /** Renders the mark-external button filled, as the suggested resolution for the row. */
-  emphasizeMarkExternal?: boolean;
-  showCreateCounterpart?: boolean;
-  /** Renders the create-counterpart button filled, as the suggested resolution for the row. */
-  emphasizeCreateCounterpart?: boolean;
+  /** When given, renders the mark-external action. */
+  markExternal?: UnmatchedRowOptionalAction;
+  /** When given, renders the create-counterpart action. */
+  createCounterpart?: UnmatchedRowOptionalAction;
 }>();
 
 const emit = defineEmits<{
@@ -121,42 +124,42 @@ const emit = defineEmits<{
         {{ labels.ignoreTooltip }}
       </RuiTooltip>
       <RuiTooltip
-        v-if="showMarkExternal"
+        v-if="markExternal"
         :open-delay="400"
         :popper="{ placement: 'top' }"
       >
         <template #activator>
           <RuiButton
             size="sm"
-            :variant="emphasizeMarkExternal ? 'default' : 'outlined'"
+            :variant="markExternal.emphasize ? 'default' : 'outlined'"
             color="warning"
             :class="{ '!py-0.5': isPinned }"
             :loading="ignoreLoading"
             @click="emit('mark-external')"
           >
-            {{ labels.markExternal }}
+            {{ markExternal.label }}
           </RuiButton>
         </template>
-        {{ labels.markExternalTooltip }}
+        {{ markExternal.tooltip }}
       </RuiTooltip>
       <RuiTooltip
-        v-if="showCreateCounterpart"
+        v-if="createCounterpart"
         :open-delay="400"
         :popper="{ placement: 'top' }"
       >
         <template #activator>
           <RuiButton
             size="sm"
-            :variant="emphasizeCreateCounterpart ? 'default' : 'outlined'"
+            :variant="createCounterpart.emphasize ? 'default' : 'outlined'"
             color="info"
             :class="{ '!py-0.5': isPinned }"
             :loading="ignoreLoading"
             @click="emit('create-counterpart')"
           >
-            {{ labels.createCounterpart }}
+            {{ createCounterpart.label }}
           </RuiButton>
         </template>
-        {{ labels.createCounterpartTooltip }}
+        {{ createCounterpart.tooltip }}
       </RuiTooltip>
     </div>
   </div>

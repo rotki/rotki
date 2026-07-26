@@ -1,16 +1,22 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import UnmatchedRowActions, { type UnmatchedRowActionLabels } from '@/modules/history/events/UnmatchedRowActions.vue';
+import UnmatchedRowActions, {
+  type UnmatchedRowActionLabels,
+  type UnmatchedRowOptionalAction,
+} from '@/modules/history/events/UnmatchedRowActions.vue';
 
 const labels: UnmatchedRowActionLabels = {
   findMatch: 'Find match',
   ignore: 'Ignore',
   ignoreTooltip: 'Ignore tooltip',
-  markExternal: 'Mark external',
-  markExternalTooltip: 'Mark external tooltip',
   restore: 'Restore',
   restoreTooltip: 'Restore tooltip',
   showInEventsTooltip: 'Show in events',
+};
+
+const markExternal: UnmatchedRowOptionalAction = {
+  label: 'Mark external',
+  tooltip: 'Mark external tooltip',
 };
 
 interface Props {
@@ -18,7 +24,8 @@ interface Props {
   showRestore?: boolean;
   ignoreLoading?: boolean;
   matchDisabled?: boolean;
-  showMarkExternal?: boolean;
+  markExternal?: UnmatchedRowOptionalAction;
+  createCounterpart?: UnmatchedRowOptionalAction;
 }
 
 function mountActions(props: Props = {}): VueWrapper<InstanceType<typeof UnmatchedRowActions>> {
@@ -71,14 +78,41 @@ describe('modules/history/events/UnmatchedRowActions', () => {
     expect(wrapper.emitted('restore')).toHaveLength(1);
   });
 
-  it('should render the mark-external action only when enabled', async () => {
+  it('should render the mark-external action only when one is given', async () => {
     const hidden = mountActions();
     expect(hidden.findAll('button').some(button => button.text() === 'Mark external')).toBe(false);
 
-    const wrapper = mountActions({ showMarkExternal: true });
-    const markExternal = wrapper.findAll('button').find(button => button.text() === 'Mark external');
-    expect(markExternal).toBeDefined();
-    await markExternal?.trigger('click');
+    const wrapper = mountActions({ markExternal });
+    const button = wrapper.findAll('button').find(item => item.text() === 'Mark external');
+    expect(button).toBeDefined();
+    await button?.trigger('click');
     expect(wrapper.emitted('mark-external')).toHaveLength(1);
+  });
+
+  it('should render the create-counterpart action only when one is given', async () => {
+    const hidden = mountActions();
+    expect(hidden.findAll('button').some(button => button.text() === 'Create counterpart')).toBe(false);
+
+    const wrapper = mountActions({
+      createCounterpart: { label: 'Create counterpart', tooltip: 'Create counterpart tooltip' },
+    });
+    const button = wrapper.findAll('button').find(item => item.text() === 'Create counterpart');
+    await button?.trigger('click');
+    expect(wrapper.emitted('create-counterpart')).toHaveLength(1);
+  });
+
+  it('should fill an emphasized optional action and outline a plain one', () => {
+    function variantOf(wrapper: VueWrapper, label: string): unknown {
+      const button = wrapper
+        .findAllComponents({ name: 'RuiButton' })
+        .find(item => item.text() === label);
+      return button?.props('variant');
+    }
+
+    expect(variantOf(mountActions({ markExternal }), 'Mark external')).toBe('outlined');
+    expect(variantOf(
+      mountActions({ markExternal: { ...markExternal, emphasize: true } }),
+      'Mark external',
+    )).toBe('default');
   });
 });

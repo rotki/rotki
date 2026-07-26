@@ -27,16 +27,18 @@ const onlyExpectedAssets = defineModel<boolean>('onlyExpectedAssets', { required
 
 const tolerancePercentage = defineModel<string>('tolerancePercentage', { required: true });
 
-const { movement, matches, loading, isPinned, highlightedIdentifier, typeLabel, locationHeader } = defineProps<{
+const { movement, matches, loading, isPinned, highlightedIdentifier, entryLabels } = defineProps<{
   movement: UnmatchedEventGroup;
   matches: PotentialMatchRow[];
   loading: boolean;
   isPinned?: boolean;
   highlightedIdentifier?: number;
-  /** Overrides the type badge of the unmatched entry (defaults to the asset-movement type). */
-  typeLabel?: string;
-  /** Overrides the location column header of the unmatched entry (defaults to exchange). */
-  locationHeader?: string;
+  /**
+   * How the unmatched entry is described in the summary table. Flows that are not asset movements
+   * relabel the type badge and the location column together, so the two travel as one unit; omitting
+   * it falls back to the asset-movement type and the exchange header.
+   */
+  entryLabels?: { type: string; locationHeader: string };
   /** When set, the last search failed; the message is shown above the results. */
   searchError?: string;
   /** Shown when a search returns no matches, explaining why none can be found. */
@@ -126,8 +128,8 @@ const movementEntry = computed<HistoryEventEntry>(() => {
   return { ...entry, ...meta };
 });
 
-const usedTypeLabel = computed<string>(() => typeLabel ?? getAssetMovementsType(get(movementEntry).eventSubtype));
-const usedLocationHeader = computed<string>(() => locationHeader ?? t('common.exchange'));
+const usedTypeLabel = computed<string>(() => entryLabels?.type ?? getAssetMovementsType(get(movementEntry).eventSubtype));
+const usedLocationHeader = computed<string>(() => entryLabels?.locationHeader ?? t('common.exchange'));
 
 const searchControlsEl = useTemplateRef<HTMLElement>('searchControls');
 const { height: searchControlsHeight } = useElementSize(searchControlsEl);

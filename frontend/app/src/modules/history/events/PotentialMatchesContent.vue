@@ -20,10 +20,8 @@ const { flow, isPinned, movement } = defineProps<{
    * content component can drive other matching flows (e.g. bridge transactions).
    */
   flow?: MatchingFlow;
-  /** Optional label describing the unmatched entry's type in the summary table. */
-  typeLabel?: string;
-  /** Optional header for the unmatched entry's location column in the summary table. */
-  locationHeader?: string;
+  /** How the unmatched entry is described in the summary table; see `PotentialMatchesList`. */
+  entryLabels?: { type: string; locationHeader: string };
   /** Shown when a search returns no matches, explaining why none can be found. */
   emptyExplanation?: string;
 }>();
@@ -189,8 +187,7 @@ watchImmediate(() => movement, async () => {
         :loading="searchLoading"
         :is-pinned="isPinned"
         :highlighted-identifier="highlightedIdentifier"
-        :type-label="typeLabel"
-        :location-header="locationHeader"
+        :entry-labels="entryLabels"
         :search-error="searchError"
         :empty-explanation="emptyExplanation"
         @search="searchPotentialMatches()"

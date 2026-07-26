@@ -281,12 +281,9 @@ onMounted(async () => {
         #body.prepend="{ colspan }"
       >
         <UpgradeRow
-          events
-          :limit="limit"
+          :limit="found"
           :total="total"
-          :found="found"
-          :time-end="report.lastProcessedTimestamp"
-          :time-start="report.firstProcessedTimestamp"
+          :range="{ timeEnd: report.lastProcessedTimestamp, timeStart: report.firstProcessedTimestamp }"
           :colspan="colspan"
           :label="t('common.events')"
         />

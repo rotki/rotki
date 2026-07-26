@@ -8,7 +8,7 @@ import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';
-import UnmatchedRowActions, { type UnmatchedRowActionLabels } from '@/modules/history/events/UnmatchedRowActions.vue';
+import UnmatchedRowActions, { type UnmatchedRowActionLabels, type UnmatchedRowOptionalAction } from '@/modules/history/events/UnmatchedRowActions.vue';
 import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass } from '@/modules/history/events/use-pinned-column-class';
 import { getBridgeCounterpartAddress, getBridgeCounterpartChain, isCounterpartUnqueryable, useUntrackedBridgeCounterpart } from '@/modules/history/events/use-untracked-bridge-counterpart';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
@@ -176,22 +176,35 @@ function getRowClass(row: UnmatchedBridgeRow): string {
   return classes.join(' ');
 }
 
-function actionLabels(row: UnmatchedBridgeRow): UnmatchedRowActionLabels {
+const actionLabels = computed<UnmatchedRowActionLabels>(() => ({
+  findMatch: t('asset_movement_matching.dialog.find_match'),
+  ignore: t('asset_movement_matching.dialog.ignore'),
+  ignoreTooltip: t('bridge_matching.dialog.ignore_tooltip'),
+  restore: t('asset_movement_matching.dialog.restore'),
+  restoreTooltip: t('bridge_matching.dialog.restore_tooltip'),
+  showInEventsTooltip: t('asset_movement_matching.dialog.show_in_events'),
+}));
+
+function markExternalAction(row: UnmatchedBridgeRow): UnmatchedRowOptionalAction {
   return {
-    createCounterpart: t('bridge_matching.dialog.create_counterpart'),
-    createCounterpartTooltip: row.direction === 'deposit'
-      ? t('bridge_matching.dialog.create_counterpart_tooltip')
-      : t('bridge_matching.dialog.create_counterpart_in_tooltip'),
-    findMatch: t('asset_movement_matching.dialog.find_match'),
-    ignore: t('asset_movement_matching.dialog.ignore'),
-    ignoreTooltip: t('bridge_matching.dialog.ignore_tooltip'),
-    markExternal: t('bridge_matching.dialog.mark_external'),
-    markExternalTooltip: row.direction === 'deposit'
+    emphasize: row.untrackedCounterpart && !row.unqueryableCounterpart,
+    label: t('bridge_matching.dialog.mark_external'),
+    tooltip: row.direction === 'deposit'
       ? t('bridge_matching.dialog.mark_external_tooltip')
       : t('bridge_matching.dialog.mark_external_in_tooltip'),
-    restore: t('asset_movement_matching.dialog.restore'),
-    restoreTooltip: t('bridge_matching.dialog.restore_tooltip'),
-    showInEventsTooltip: t('asset_movement_matching.dialog.show_in_events'),
+  };
+}
+
+function createCounterpartAction(row: UnmatchedBridgeRow): UnmatchedRowOptionalAction | undefined {
+  if (!row.canCreateCounterpart)
+    return undefined;
+
+  return {
+    emphasize: row.unqueryableCounterpart,
+    label: t('bridge_matching.dialog.create_counterpart'),
+    tooltip: row.direction === 'deposit'
+      ? t('bridge_matching.dialog.create_counterpart_tooltip')
+      : t('bridge_matching.dialog.create_counterpart_in_tooltip'),
   };
 }
 </script>
@@ -324,15 +337,13 @@ function actionLabels(row: UnmatchedBridgeRow): UnmatchedRowActionLabels {
         </template>
         <template #item.actions="{ row }">
           <UnmatchedRowActions
-            :labels="actionLabels(row)"
+            :labels="actionLabels"
             :is-pinned="isPinned"
             :show-restore="showRestore"
             :ignore-loading="ignoreLoading"
             :match-disabled="matchDisabled"
-            show-mark-external
-            :emphasize-mark-external="row.untrackedCounterpart && !row.unqueryableCounterpart"
-            :show-create-counterpart="row.canCreateCounterpart"
-            :emphasize-create-counterpart="row.unqueryableCounterpart"
+            :mark-external="markExternalAction(row)"
+            :create-counterpart="createCounterpartAction(row)"
             @show-in-events="emit('show-in-events', row.original)"
             @restore="emit('restore', row.original)"
             @select="emit('select', row.original)"

@@ -15,8 +15,7 @@ const {
   hideActions,
   loading,
   duplicateHandlingStatus,
-  hasHiddenIgnoredAssets,
-  showingIgnoredAssets,
+  ignoredAssets,
   variant = 'row',
 } = defineProps<{
   group: HistoryEventEntry;
@@ -24,9 +23,13 @@ const {
   hideActions?: boolean;
   loading?: boolean;
   duplicateHandlingStatus?: DuplicateHandlingStatus;
-  hasHiddenIgnoredAssets?: boolean;
-  showingIgnoredAssets?: boolean;
-  highlight?: boolean;
+  /**
+   * The group's ignored-asset state. Its presence renders the indicator, and the value picks whether
+   * the ignored assets are currently revealed, which is all the two former booleans could express
+   * between them.
+   */
+  ignoredAssets?: 'hidden' | 'showing';
+  /** The highlight colour. Its presence is what highlights the row. */
   highlightType?: HighlightType;
   variant?: 'row' | 'card';
 }>();
@@ -45,10 +48,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Show indicator if group has hidden ignored assets OR is currently showing them
-const showIgnoredAssetsIndicator = computed<boolean>(() =>
-  hasHiddenIgnoredAssets || showingIgnoredAssets,
-);
+const showingIgnoredAssets = computed<boolean>(() => ignoredAssets === 'showing');
 
 const isCard = computed<boolean>(() => variant === 'card');
 </script>
@@ -59,7 +59,7 @@ const isCard = computed<boolean>(() => variant === 'card');
     v-if="isCard"
     data-cy="history-event-group"
     class="pt-1 pb-2 px-3 border-b border-rui-grey-200 dark:border-rui-grey-800 bg-rui-grey-100 dark:bg-dark-elevated"
-    :class="highlight && getHighlightClass(highlightType)"
+    :class="getHighlightClass(highlightType)"
   >
     <!-- Top row: Location + Identifier + Actions -->
     <div class="flex items-center justify-between gap-2 mb-0.5">
@@ -70,7 +70,7 @@ const isCard = computed<boolean>(() => variant === 'card');
         />
 
         <RuiTooltip
-          v-if="showIgnoredAssetsIndicator"
+          v-if="ignoredAssets"
           :popper="{ placement: 'top', scroll: false, resize: false }"
           :open-delay="400"
           tooltip-class="max-w-60"
@@ -149,7 +149,7 @@ const isCard = computed<boolean>(() => variant === 'card');
     v-else
     data-cy="history-event-group"
     class="h-12 flex items-center gap-2.5 border-b border-default !border-t-rui-grey-400 dark:!border-t-rui-grey-600 pl-2 pr-4 bg-white dark:bg-dark-elevated contain-content"
-    :class="highlight && getHighlightClass(highlightType)"
+    :class="getHighlightClass(highlightType)"
   >
     <IgnoredInAccountingIcon
       v-if="group.ignoredInAccounting"
@@ -161,7 +161,7 @@ const isCard = computed<boolean>(() => variant === 'card');
     />
 
     <RuiTooltip
-      v-if="showIgnoredAssetsIndicator"
+      v-if="ignoredAssets"
       :popper="{ placement: 'top', scroll: false, resize: false }"
       :open-delay="400"
       tooltip-class="max-w-60"

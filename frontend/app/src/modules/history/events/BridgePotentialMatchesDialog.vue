@@ -77,8 +77,7 @@ function showPotentialMatchInEvents(data: { identifier: number; groupIdentifier:
       <PotentialMatchesContent
         :movement="transaction"
         :flow="flow"
-        :type-label="transaction.direction"
-        :location-header="t('common.location')"
+        :entry-labels="{ locationHeader: t('common.location'), type: transaction.direction }"
         :empty-explanation="emptyExplanation"
         @close="closeDialog()"
         @matched="onMatched()"

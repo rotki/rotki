@@ -18,7 +18,6 @@ const {
   groupLocationLabel,
   matchedMovement,
   hideActions,
-  highlight,
   highlightType,
   selection,
   variant = 'row',
@@ -34,7 +33,7 @@ const {
   /** Set when this row is a sub-event of an expanded linked (matched) movement. */
   matchedMovement?: boolean;
   hideActions?: boolean;
-  highlight?: boolean;
+  /** The highlight colour. Its presence is what highlights the row. */
   highlightType?: HighlightType;
   selection?: UseHistoryEventsSelectionModeReturn;
   variant?: 'row' | 'card';
@@ -85,7 +84,7 @@ const isCard = computed<boolean>(() => variant === 'card');
     class="p-3 border-b border-default bg-white dark:bg-dark-surface contain-content transition-all"
     :class="[
       { 'opacity-50': hiddenEvent },
-      highlight && getHighlightClass(highlightType),
+      getHighlightClass(highlightType),
     ]"
   >
     <!-- Top row: Checkbox, Location + Event Type + Timestamp -->
@@ -105,7 +104,7 @@ const isCard = computed<boolean>(() => variant === 'card');
           :chain="chain"
           :group-location-label="groupLocationLabel"
           :matched-movement="matchedMovement"
-          :highlight="highlight"
+          :highlight="!!highlightType"
           class="min-w-0 flex-1"
         />
       </div>
@@ -153,7 +152,7 @@ const isCard = computed<boolean>(() => variant === 'card');
     class="h-[72px] flex items-center gap-4 border-b border-default px-4 pl-6 group/row contain-content"
     :class="[
       { 'opacity-50': hiddenEvent },
-      highlight && getHighlightClass(highlightType),
+      getHighlightClass(highlightType),
     ]"
   >
     <RuiCheckbox
@@ -170,7 +169,7 @@ const isCard = computed<boolean>(() => variant === 'card');
       :chain="chain"
       :group-location-label="groupLocationLabel"
       :matched-movement="matchedMovement"
-      :highlight="highlight"
+      :highlight="!!highlightType"
       class="w-56 shrink-0"
     />
 
