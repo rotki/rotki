@@ -35,6 +35,41 @@ const dialogTitle = computed<string>(() => editMode
 const { addAccountingRule, editAccountingRule } = useAccountingApi();
 const { setMessage } = useMessageStore();
 
+async function persistRule(data: AccountingRuleEntry): Promise<boolean> {
+  if (editMode)
+    return editAccountingRule(data);
+
+  const ruleData = omit(data, ['identifier']);
+  // Include eventIds if provided (for custom accounting rules)
+  if (eventIds)
+    ruleData.eventIds = eventIds;
+
+  return addAccountingRule(ruleData);
+}
+
+/**
+ * Field-level errors go back to the form so it can mark the offending inputs; anything else has no
+ * field to attach to and is surfaced as a message.
+ */
+function reportSaveFailure(error: unknown, data: AccountingRuleEntry): void {
+  const errors: string | ValidationErrors = error instanceof ApiValidationError
+    ? error.getValidationErrors(data)
+    : getErrorMessage(error);
+
+  if (typeof errors !== 'string') {
+    set(errorMessages, errors);
+    return;
+  }
+
+  setMessage({
+    description: errors,
+    success: false,
+    title: editMode
+      ? t('accounting_settings.rule.edit_error')
+      : t('accounting_settings.rule.add_error'),
+  });
+}
+
 async function save(): Promise<boolean> {
   if (!isDefined(modelValue))
     return false;
@@ -45,47 +80,23 @@ async function save(): Promise<boolean> {
     return false;
 
   const data = get(modelValue);
-  let success;
+  let success = true;
+
   set(submitting, true);
   try {
-    if (editMode) {
-      success = await editAccountingRule(data);
-    }
-    else {
-      const ruleData = omit(data, ['identifier']);
-      // Include eventIds if provided (for custom accounting rules)
-      if (eventIds) {
-        ruleData.eventIds = eventIds;
-      }
-      success = await addAccountingRule(ruleData);
-    }
+    success = await persistRule(data);
   }
   catch (error: unknown) {
     success = false;
-    const errorTitle = editMode
-      ? t('accounting_settings.rule.edit_error')
-      : t('accounting_settings.rule.add_error');
-
-    let errors: string | ValidationErrors = getErrorMessage(error);
-    if (error instanceof ApiValidationError)
-      errors = error.getValidationErrors(data);
-
-    if (typeof errors === 'string') {
-      setMessage({
-        description: errors,
-        success: false,
-        title: errorTitle,
-      });
-    }
-    else {
-      set(errorMessages, errors);
-    }
+    reportSaveFailure(error, data);
   }
   set(submitting, false);
+
   if (success) {
     set(modelValue, undefined);
     emit('refresh');
   }
+
   return success;
 }
 </script>

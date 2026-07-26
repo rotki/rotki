@@ -1,8 +1,9 @@
-import type { BaseFetchOptions, EnqueueOptions, QueuedRequest, QueueOptions, QueueState } from './types';
+import type { BaseFetchOptions, EnqueueOptions, QueuedRequest, QueueOptions, QueueState, ResolvedEnqueueSettings } from './types';
 import { FetchError } from 'ofetch';
 import { reactive } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { QueueOverflowError, QueueTimeoutError, RequestCancelledError } from './errors';
+import { createDedupeKey, generateId } from './request-identity';
 import { RequestPriority } from './request-priority';
 
 export type QueueFetchFn = <T>(url: string, options?: BaseFetchOptions) => Promise<T>;
@@ -42,7 +43,8 @@ export class RequestQueue {
     this.startQueueTimeoutCheck();
   }
 
-  async enqueue<T>(url: string, options: EnqueueOptions = {}): Promise<T> {
+  /** Resolved separately so the per-field defaults stay out of enqueue's own complexity budget. */
+  private resolveEnqueueSettings(options: EnqueueOptions): ResolvedEnqueueSettings {
     const {
       dedupe = false,
       maxQueueTime = this.options.maxQueueTime,
@@ -51,26 +53,45 @@ export class RequestQueue {
       tags = [],
       ...fetchOptions
     } = options;
-    const dedupeKey = dedupe ? this.createDedupeKey(url, fetchOptions) : null;
+
+    return { dedupe, fetchOptions, maxQueueTime, maxRetries, priority, tags };
+  }
+
+  /** Attaches to an identical in-flight request, so both callers settle from the one response. */
+  private subscribeToPending<T>(dedupeKey: string): Promise<T> | undefined {
+    const existing = this.pendingByKey.get(dedupeKey);
+    if (!existing)
+      return undefined;
+
+    return new Promise<T>((resolve, reject) => {
+      existing.dedupeSubscribers ??= [];
+      existing.dedupeSubscribers.push({ resolve: resolve as (value: unknown) => void, reject });
+    });
+  }
+
+  private makeRoomIfFull(): void {
+    if (this.queue.length < this.options.maxQueueSize)
+      return;
+
+    if (this.options.overflowStrategy === 'reject')
+      throw new QueueOverflowError(`Queue is full (${this.options.maxQueueSize} requests)`);
+
+    this.dropLowestPriority();
+  }
+
+  async enqueue<T>(url: string, options: EnqueueOptions = {}): Promise<T> {
+    const { dedupe, fetchOptions, maxQueueTime, maxRetries, priority, tags } = this.resolveEnqueueSettings(options);
+    const dedupeKey = dedupe ? createDedupeKey(url, fetchOptions) : null;
 
     if (dedupeKey) {
-      const existing = this.pendingByKey.get(dedupeKey);
-      if (existing) {
-        return new Promise<T>((resolve, reject) => {
-          existing.dedupeSubscribers ??= [];
-          existing.dedupeSubscribers.push({ resolve: resolve as (value: unknown) => void, reject });
-        });
-      }
+      const pending = this.subscribeToPending<T>(dedupeKey);
+      if (pending)
+        return pending;
     }
 
-    if (this.queue.length >= this.options.maxQueueSize) {
-      if (this.options.overflowStrategy === 'reject')
-        throw new QueueOverflowError(`Queue is full (${this.options.maxQueueSize} requests)`);
-      else
-        this.dropLowestPriority();
-    }
+    this.makeRoomIfFull();
 
-    const id = this.generateId();
+    const id = generateId();
     const abortController = new AbortController();
 
     return new Promise<T>((resolve, reject) => {
@@ -283,6 +304,14 @@ export class RequestQueue {
     }
   }
 
+  /** Rate limiting, unavailability and any server-side failure are all worth another attempt. */
+  private isRetryableStatus(status: number | undefined): boolean {
+    if (status === undefined)
+      return false;
+
+    return status === 429 || status === 503 || status >= 500;
+  }
+
   private shouldRetry<T>(error: unknown, request: QueuedRequest<T>): boolean {
     if (request.retries >= request.maxRetries || request.abortController.signal.aborted)
       return false;
@@ -290,12 +319,8 @@ export class RequestQueue {
       return true;
     if (error instanceof DOMException && error.name === 'AbortError')
       return false;
-    if (error instanceof FetchError) {
-      const status = error.statusCode;
-      if (status === 429 || status === 503 || (status !== undefined && status >= 500))
-        return true;
-    }
-    return false;
+
+    return error instanceof FetchError && this.isRetryableStatus(error.statusCode);
   }
 
   private cleanupRequest<T>(request: QueuedRequest<T>): void {
@@ -312,26 +337,6 @@ export class RequestQueue {
 
   private recordRequestTimestamp(): void {
     this.requestTimestamps.push(Date.now());
-  }
-
-  private createDedupeKey(url: string, options: BaseFetchOptions): string {
-    const method = options.method ?? 'GET';
-    const body = options.body ? this.safeStringify(options.body) : '';
-    const query = options.query ? this.safeStringify(options.query) : '';
-    return `${method}:${url}:${query}:${body}`;
-  }
-
-  private safeStringify(value: unknown): string {
-    try {
-      return JSON.stringify(value);
-    }
-    catch {
-      return `[unstringifiable:${typeof value}]`;
-    }
-  }
-
-  private generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private updateState(): void {

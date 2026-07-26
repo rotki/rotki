@@ -31,6 +31,42 @@ const stateUpdated = ref(false);
 const { setMessage } = useMessageStore();
 const { addCalendarEvent, editCalendarEvent } = useCalendarApi();
 
+type CalendarFormInstance = InstanceType<typeof CalendarForm> | null | undefined;
+
+async function persistEvent(payload: CalendarEvent, formRef: CalendarFormInstance): Promise<void> {
+  const result = editMode
+    ? await editCalendarEvent(payload)
+    : await addCalendarEvent(omit(payload, ['identifier']));
+
+  // A reminder can only be attached once the event has an id.
+  const eventId = result.entryId;
+  if (isDefined(eventId)) {
+    formRef?.reset();
+    await formRef?.saveTemporaryReminder(eventId);
+  }
+}
+
+/**
+ * Field-level errors go back to the form so it can mark the offending inputs; anything else has no
+ * field to attach to and is surfaced as a message.
+ */
+function reportSaveFailure(error: unknown, payload: CalendarEvent): void {
+  const errors: string | ValidationErrors = error instanceof ApiValidationError
+    ? error.getValidationErrors(payload)
+    : getErrorMessage(error);
+
+  if (typeof errors !== 'string') {
+    set(errorMessages, errors);
+    return;
+  }
+
+  setMessage({
+    description: errors,
+    success: false,
+    title: editMode ? t('calendar.edit_error') : t('calendar.add_error'),
+  });
+}
+
 async function save() {
   if (!isDefined(modelValue))
     return false;
@@ -40,51 +76,24 @@ async function save() {
   if (!valid)
     return false;
 
-  const data = get(modelValue);
-  const payload = {
-    ...data,
-  };
+  const payload = { ...get(modelValue) };
 
   set(submitting, true);
-  let success;
+  let success = true;
   try {
-    const result = !editMode
-      ? await addCalendarEvent(omit(payload, ['identifier']))
-      : await editCalendarEvent(payload);
-
-    const eventId = result.entryId;
-    if (isDefined(eventId)) {
-      formRef?.reset();
-      await formRef?.saveTemporaryReminder(eventId);
-    }
-
-    success = true;
+    await persistEvent(payload, formRef);
   }
   catch (error: unknown) {
     success = false;
-    const errorTitle = editMode ? t('calendar.edit_error') : t('calendar.add_error');
-
-    let errors: string | ValidationErrors = getErrorMessage(error);
-    if (error instanceof ApiValidationError)
-      errors = error.getValidationErrors(payload);
-
-    if (typeof errors === 'string') {
-      setMessage({
-        description: errors,
-        success: false,
-        title: errorTitle,
-      });
-    }
-    else {
-      set(errorMessages, errors);
-    }
+    reportSaveFailure(error, payload);
   }
-
   set(submitting, false);
+
   if (success) {
     set(modelValue, undefined);
     emit('refresh');
   }
+
   return success;
 }
 

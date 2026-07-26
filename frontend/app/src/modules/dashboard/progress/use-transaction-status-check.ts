@@ -38,6 +38,32 @@ interface UseTransactionStatusCheckReturn {
   hasTxAccounts: ComputedRef<boolean>;
 }
 
+/**
+ * The last-queried timestamps of the account families the user actually has and that have been queried
+ * at least once, in seconds. Both families are shaped the same way, so every caller can treat them as
+ * one list instead of repeating the EVM and exchange checks side by side.
+ */
+function queriedTimestamps(status: {
+  evmLastQueriedTs?: number;
+  exchangesLastQueriedTs?: number;
+  hasEvmAccounts?: boolean;
+  hasExchangesAccounts?: boolean;
+}): number[] {
+  const {
+    evmLastQueriedTs = 0,
+    exchangesLastQueriedTs = 0,
+    hasEvmAccounts = false,
+    hasExchangesAccounts = false,
+  } = status;
+
+  return [
+    { hasAccounts: hasEvmAccounts, lastQueriedTs: evmLastQueriedTs },
+    { hasAccounts: hasExchangesAccounts, lastQueriedTs: exchangesLastQueriedTs },
+  ]
+    .filter(source => source.hasAccounts && source.lastQueriedTs > 0)
+    .map(source => source.lastQueriedTs);
+}
+
 export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
   const router = useRouter();
   const historyStore = useHistoryStore();
@@ -61,24 +87,8 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
     if (!get(hasTxAccounts)) {
       return 0;
     }
-    const status = get(transactionStatusSummary)!;
 
-    const {
-      evmLastQueriedTs = 0,
-      exchangesLastQueriedTs = 0,
-      hasEvmAccounts = false,
-      hasExchangesAccounts = false,
-    } = status;
-
-    // Only consider timestamps for account types the user has
-    const timestamps: number[] = [];
-    if (hasEvmAccounts && evmLastQueriedTs > 0) {
-      timestamps.push(evmLastQueriedTs);
-    }
-    if (hasExchangesAccounts && exchangesLastQueriedTs > 0) {
-      timestamps.push(exchangesLastQueriedTs);
-    }
-
+    const timestamps = queriedTimestamps(get(transactionStatusSummary)!);
     if (timestamps.length === 0) {
       return 0;
     }
@@ -101,35 +111,14 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
       return false;
     }
 
-    const status = get(transactionStatusSummary)!;
-
-    const {
-      evmLastQueriedTs = 0,
-      exchangesLastQueriedTs = 0,
-      hasEvmAccounts = false,
-      hasExchangesAccounts = false,
-    } = status;
-
     const now = Date.now();
     const minOutOfSyncMs = get(minOutOfSyncPeriodMs);
 
-    // Check EVM if user has EVM accounts
-    if (hasEvmAccounts && evmLastQueriedTs > 0) {
-      const evmLastQueriedMs = evmLastQueriedTs * 1000;
-      if (now - evmLastQueriedMs >= minOutOfSyncMs) {
-        return true;
-      }
-    }
+    // Any account family left unqueried for longer than the period puts the whole status out of sync.
+    const staleFamily = queriedTimestamps(get(transactionStatusSummary)!)
+      .some(lastQueriedTs => now - lastQueriedTs * 1000 >= minOutOfSyncMs);
 
-    // Check exchanges if user has exchange accounts
-    if (hasExchangesAccounts && exchangesLastQueriedTs > 0) {
-      const exchangesLastQueriedMs = exchangesLastQueriedTs * 1000;
-      if (now - exchangesLastQueriedMs >= minOutOfSyncMs) {
-        return true;
-      }
-    }
-
-    return get(isNeverQueried);
+    return staleFamily || get(isNeverQueried);
   });
 
   async function navigateToHistory(): Promise<void> {

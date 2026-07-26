@@ -160,15 +160,11 @@ watch(errorMessages, (errors) => {
     get(v$).$validate();
 });
 
-async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate())) {
-    return false;
-  }
-
-  const editable = data.type === 'edit' ? data.event : undefined;
+/** Empty form fields are normalised to the nulls and defaults the backend expects. */
+function buildPayload(): NewSolanaEventPayload {
   const userNotes = get(notes).trim();
 
-  const payload: NewSolanaEventPayload = {
+  return {
     address: get(address) || null,
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     asset: get(asset),
@@ -184,6 +180,15 @@ async function save(): Promise<boolean> {
     txRef: get(txRef),
     userNotes: userNotes.length > 0 ? userNotes : undefined,
   };
+}
+
+async function save(): Promise<boolean> {
+  if (!(await get(v$).$validate())) {
+    return false;
+  }
+
+  const editable = data.type === 'edit' ? data.event : undefined;
+  const payload = buildPayload();
 
   return await saveHistoryEventHandler(
     editable ? { ...payload, identifier: editable.identifier } : payload,

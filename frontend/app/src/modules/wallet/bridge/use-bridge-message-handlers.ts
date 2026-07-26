@@ -132,6 +132,51 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
     }
   };
 
+  type BridgeError = Error & { code?: number; data?: unknown };
+
+  function errorResponseFor(id: string | number, error: BridgeError): WalletBridgeResponse {
+    return createErrorResponse(
+      id,
+      error.code ?? BRIDGE_ERROR_CODES.INTERNAL_ERROR,
+      error.message || 'Internal error',
+      error.data,
+    );
+  }
+
+  /**
+   * A 4001 on the very first eth_requestAccounts is usually the proxy still initialising rather than a
+   * real user rejection, so that single case is worth one retry. Later rejections are taken at face
+   * value.
+   */
+  function shouldRetryAccountsRequest(message: WalletBridgeRequest, error: BridgeError): boolean {
+    return message.method === 'eth_requestAccounts'
+      && error.code === 4001
+      && !hasSuccessfulAccountsRequest;
+  }
+
+  async function retryAccountsRequest(
+    message: WalletBridgeRequest,
+    executeRequest: () => Promise<unknown>,
+  ): Promise<WalletBridgeResponse> {
+    logger.info('First eth_requestAccounts failed with 4001 (proxy initialization), retrying once...');
+
+    try {
+      // Add a small delay before retry to let proxy settle
+      await promiseTimeout(REQUEST_CONFIG.RETRY_DELAY);
+      const result = await trackAccountsRequest(executeRequest());
+
+      hasSuccessfulAccountsRequest = true;
+      logger.info('eth_requestAccounts retry succeeded');
+
+      return createSuccessResponse(message.id, result);
+    }
+    catch (retryError: unknown) {
+      const retryErr = retryError as BridgeError;
+      logger.error('eth_requestAccounts retry failed:', retryErr);
+      return errorResponseFor(message.id, retryErr);
+    }
+  }
+
   const handleStandardRpcRequest = async (message: WalletBridgeRequest): Promise<WalletBridgeResponse> => {
     const provider = getSelectedProvider();
 
@@ -178,44 +223,12 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
       const err = error as Error & { code?: number; data?: unknown };
 
       // Only retry first eth_requestAccounts with 4001 error (proxy initialization issue)
-      if (message.method === 'eth_requestAccounts' && err.code === 4001 && !hasSuccessfulAccountsRequest) {
-        logger.info('First eth_requestAccounts failed with 4001 (proxy initialization), retrying once...');
-
-        try {
-          // Add a small delay before retry to let proxy settle
-          await promiseTimeout(REQUEST_CONFIG.RETRY_DELAY);
-
-          // Retry the request - also track this retry attempt
-          const result = await trackAccountsRequest(executeRequest());
-
-          // Mark successful on retry
-          hasSuccessfulAccountsRequest = true;
-          logger.info('eth_requestAccounts retry succeeded');
-
-          return createSuccessResponse(message.id, result);
-        }
-        catch (retryError: unknown) {
-          const retryErr = retryError as Error & { code?: number; data?: unknown };
-          logger.error('eth_requestAccounts retry failed:', retryErr);
-
-          // Return the retry error
-          return createErrorResponse(
-            message.id,
-            retryErr.code ?? BRIDGE_ERROR_CODES.INTERNAL_ERROR,
-            retryErr.message || 'Internal error',
-            retryErr.data,
-          );
-        }
-      }
+      if (shouldRetryAccountsRequest(message, err))
+        return retryAccountsRequest(message, executeRequest);
 
       // For all other errors, subsequent eth_requestAccounts with 4001, or non-4001 errors
       logger.error('Error handling request:', err);
-      return createErrorResponse(
-        message.id,
-        err.code ?? BRIDGE_ERROR_CODES.INTERNAL_ERROR,
-        err.message || 'Internal error',
-        err.data,
-      );
+      return errorResponseFor(message.id, err);
     }
   };
 

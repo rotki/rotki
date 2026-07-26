@@ -189,6 +189,35 @@ export function useHistoryEventNote(): UseHistoryEventNoteReturn {
     return undefined;
   }
 
+  /**
+   * Appends the formats for one word, keeping any punctuation that surrounded it as its own plain words.
+   *
+   * Returns whether the next word was consumed as part of this one, which the caller uses to skip it.
+   */
+  function appendWordFormats(
+    formats: NoteFormat[],
+    ctx: Omit<WordProcessorContext, 'word' | 'index'>,
+    wordItem: string,
+    index: number,
+  ): boolean {
+    const split = separateByPunctuation(wordItem);
+    if (split.length === 0)
+      return false;
+
+    const { leading, trailing, word } = parsePunctuation(split);
+    const result = processWord(ctx, word, index);
+
+    if (leading)
+      formats.push({ type: NoteType.WORD, word: leading });
+
+    formats.push(result ? result.format : { type: NoteType.WORD, word });
+
+    if (trailing)
+      formats.push({ type: NoteType.WORD, word: trailing });
+
+    return result?.skipNext ?? false;
+  }
+
   const formatNotes = ({
     amount,
     assetId,
@@ -238,27 +267,7 @@ export function useHistoryEventNote(): UseHistoryEventNoteReturn {
         continue;
       }
 
-      const split = separateByPunctuation(wordItem);
-      if (split.length === 0)
-        continue;
-
-      const { leading, trailing, word } = parsePunctuation(split);
-      const result = processWord(ctx, word, index);
-
-      if (leading)
-        formats.push({ type: NoteType.WORD, word: leading });
-
-      if (result) {
-        formats.push(result.format);
-        if (result.skipNext)
-          skip = true;
-      }
-      else {
-        formats.push({ type: NoteType.WORD, word });
-      }
-
-      if (trailing)
-        formats.push({ type: NoteType.WORD, word: trailing });
+      skip = appendWordFormats(formats, ctx, wordItem, index);
     }
 
     return formats.reduce(mergeSequentialWords, new Array<NoteFormat>());

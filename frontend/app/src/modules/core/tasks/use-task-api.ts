@@ -24,6 +24,35 @@ interface UseTaskApiReturn {
   setSchedulerState: (enabled: boolean) => Promise<SchedulerStateResponse>;
 }
 
+/**
+ * Translates the status code the backend reports inside a task outcome into the matching error.
+ *
+ * A 300 with a non-object result is deliberately not an error: the caller then treats the outcome as a
+ * normal result, which is the behaviour the nested checks here preserve.
+ */
+function raiseForOutcomeStatus<T>(statusCode: number | undefined, outcome: ActionResult<T>): void {
+  const { message, result } = outcome;
+
+  if (statusCode === HTTPStatus.MULTIPLE_CHOICES) {
+    if (typeof result !== 'object')
+      return;
+
+    if (isEmpty(result))
+      throw new IncompleteUpgradeError(message);
+
+    throw new SyncConflictError(message, { payload: SyncConflictPayload.parse(result) });
+  }
+
+  if (statusCode === HTTPStatus.BAD_REQUEST)
+    throw new ApiValidationError(message);
+
+  if (statusCode === HTTPStatus.FAILED_DEPENDENCY)
+    throw new ApiKeyMissingError(message);
+
+  if (statusCode === HTTPStatus.BAD_GATEWAY)
+    throw new Error(message);
+}
+
 export function useTaskApi(): UseTaskApiReturn {
   const queryTasks = async (): Promise<TaskStatus> => api.get<TaskStatus>('/tasks', {
     timeout: TASKS_TIMEOUT,
@@ -62,26 +91,7 @@ export function useTaskApi(): UseTaskApiReturn {
     const { outcome, statusCode } = data.result;
 
     if (outcome) {
-      const { message, result } = outcome;
-
-      // Handle special status codes from the backend
-      if (statusCode === HTTPStatus.MULTIPLE_CHOICES) {
-        if (typeof result === 'object') {
-          if (isEmpty(result))
-            throw new IncompleteUpgradeError(message);
-
-          throw new SyncConflictError(message, { payload: SyncConflictPayload.parse(result) });
-        }
-      }
-      else if (statusCode === HTTPStatus.BAD_REQUEST) {
-        throw new ApiValidationError(message);
-      }
-      else if (statusCode === HTTPStatus.FAILED_DEPENDENCY) {
-        throw new ApiKeyMissingError(message);
-      }
-      else if (statusCode === HTTPStatus.BAD_GATEWAY) {
-        throw new Error(message);
-      }
+      raiseForOutcomeStatus(statusCode, outcome);
       return outcome;
     }
 

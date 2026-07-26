@@ -127,6 +127,20 @@ async function submitAllPrices(): Promise<boolean> {
   return true;
 }
 
+function buildPayload(model: ReturnType<typeof emptyEvent>, isEditMode: boolean): AddSwapEventPayload {
+  const fees = get(hasFee) ? model.fees.filter(fee => fee.amount && fee.asset) : undefined;
+  const feeCount = fees?.length ?? 0;
+
+  return {
+    ...omit(model, ['fees', 'userNotes', 'uniqueId']),
+    fees,
+    // Generate UUID for uniqueId if not present and not in edit mode
+    uniqueId: !isEditMode && !model.uniqueId ? generateUUID() : model.uniqueId,
+    // Only include userNotes for spend, receive, and actual fees (2 + fee count)
+    userNotes: createUserNotes(model.userNotes[0], model.userNotes[1], ...model.userNotes.slice(2, 2 + feeCount)),
+  };
+}
+
 async function save(): Promise<boolean> {
   if (!(await get(v$).$validate())) {
     return false;
@@ -144,22 +158,7 @@ async function save(): Promise<boolean> {
     return true;
   }
 
-  const model = get(states);
-  const fees = get(hasFee) ? model.fees.filter(fee => fee.amount && fee.asset) : undefined;
-  const feeCount = fees?.length ?? 0;
-  // Only include userNotes for spend, receive, and actual fees (2 + fee count)
-  const userNotes = createUserNotes(model.userNotes[0], model.userNotes[1], ...model.userNotes.slice(2, 2 + feeCount));
-
-  // Generate UUID for uniqueId if not present and not in edit mode
-  const uniqueId = !isEditMode && !model.uniqueId ? generateUUID() : model.uniqueId;
-
-  const payload: AddSwapEventPayload = {
-    ...omit(model, ['fees', 'userNotes', 'uniqueId']),
-    fees,
-    uniqueId,
-    userNotes,
-  };
-
+  const payload = buildPayload(get(states), isEditMode);
   const eventIdentifiers = get(identifiers);
   const result = isEditMode
     ? await editHistoryEvent({

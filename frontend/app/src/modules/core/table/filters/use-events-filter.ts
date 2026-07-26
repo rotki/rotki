@@ -9,13 +9,13 @@ import {
   isValidAddress,
   isValidTxHashOrSignature,
 } from '@rotki/common';
-import { isEqual } from 'es-toolkit';
 import { z } from 'zod';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { arrayify } from '@/modules/core/common/data/array';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/core/common/data/date';
 import { assetSuggestions } from '@/modules/core/common/display/assets';
+import { useEventSubtypeKeys } from '@/modules/core/table/filters/use-event-subtype-keys';
 import {
   isEthBlockEventType,
   isEthDepositEventType,
@@ -108,90 +108,69 @@ export function useHistoryEventFilter(
   const { associatedLocations } = storeToRefs(useHistoryStore());
   const { t } = useI18n({ useScope: 'global' });
 
-  const validSubtypeKeys = computed<string[]>(() => {
-    if (disabled.eventSubtypes)
-      return [];
-
-    const globalMapping = get(historyEventTypeGlobalMapping);
-    if (Object.keys(globalMapping).length === 0)
-      return [];
-
-    let selectedEventTypes = get(modelFilters)?.eventTypes ?? [];
-    if (!Array.isArray(selectedEventTypes))
-      selectedEventTypes = [selectedEventTypes.toString()];
-
-    const keys: string[] = [];
-    if (selectedEventTypes.length > 0) {
-      selectedEventTypes.forEach((selectedEventType) => {
-        const globalMappingFound = globalMapping[selectedEventType];
-        if (globalMappingFound)
-          keys.push(...Object.keys(globalMappingFound));
-      });
-    }
-    else {
-      for (const key in globalMapping)
-        keys.push(...Object.keys(globalMapping[key]));
-    }
-
-    return keys;
+  const validSubtypeKeys = useEventSubtypeKeys({
+    disabled: () => disabled.eventSubtypes,
+    globalMapping: historyEventTypeGlobalMapping,
+    modelFilters,
   });
 
-  watch(validSubtypeKeys, (keys) => {
-    if (keys.length === 0)
-      return;
+  /**
+   * Which families of event the current entry-type restriction admits. An absent restriction means
+   * every family is in play, so each flag defaults to true.
+   */
+  interface IncludedEventKinds {
+    transactions: boolean;
+    evmOrOnline: boolean;
+    validatorIndex: boolean;
+  }
 
-    let selectedEventSubtypes = get(modelFilters)?.eventSubtypes ?? [];
-    if (!Array.isArray(selectedEventSubtypes))
-      selectedEventSubtypes = [selectedEventSubtypes.toString()];
+  function resolveIncludedKinds(entryTypesVal: HistoryEventEntryType[] | undefined): IncludedEventKinds {
+    if (!entryTypesVal)
+      return { evmOrOnline: true, transactions: true, validatorIndex: true };
 
-    if (selectedEventSubtypes.length === 0)
-      return;
+    return {
+      evmOrOnline: entryTypesVal.some(type => isEvmEventType(type) || isOnlineHistoryEventType(type)),
+      transactions: entryTypesVal.some(type => isEvmEventType(type) || isEthDepositEventType(type) || isSolanaEventType(type)),
+      validatorIndex: entryTypesVal.some(type => isWithdrawalEventType(type) || isEthBlockEventType(type) || isEthDepositEventType(type)),
+    };
+  }
 
-    const filteredEventSubtypes = selectedEventSubtypes.filter(item => keys.includes(item));
+  function dateMatchers(): Matcher[] {
+    if (disabled?.period)
+      return [];
 
-    if (!isEqual(filteredEventSubtypes, selectedEventSubtypes)) {
-      set(modelFilters, {
-        ...get(modelFilters),
-        eventSubtypes: filteredEventSubtypes.length > 0 ? filteredEventSubtypes : undefined,
-      });
-    }
-  });
+    const hint = t('transactions.filter.date_hint', {
+      format: getDateInputISOFormat(get(dateInputFormat)),
+    });
 
-  const matchers = computed<Matcher[]>(() => {
-    const selectedLocation = get(modelFilters)?.location;
-    const locationString = (Array.isArray(selectedLocation) ? selectedLocation[0] : selectedLocation)?.toString();
+    return [
+      {
+        description: t('transactions.filter.start_date'),
+        deserializer: dateDeserializer(dateInputFormat),
+        hint,
+        key: HistoryEventFilterKeys.START,
+        keyValue: HistoryEventFilterValueKeys.START,
+        serializer: dateSerializer(dateInputFormat),
+        string: true,
+        suggestions: () => [],
+        validate: dateRangeValidator(dateInputFormat, () => get(modelFilters)?.toTimestamp?.toString(), 'start'),
+      },
+      {
+        description: t('transactions.filter.end_date'),
+        deserializer: dateDeserializer(dateInputFormat),
+        hint,
+        key: HistoryEventFilterKeys.END,
+        keyValue: HistoryEventFilterValueKeys.END,
+        serializer: dateSerializer(dateInputFormat),
+        string: true,
+        suggestions: () => [],
+        validate: dateRangeValidator(dateInputFormat, () => get(modelFilters)?.fromTimestamp?.toString(), 'end'),
+      },
+    ];
+  }
 
-    const data: Matcher[] = [
-      ...(disabled?.period
-        ? []
-        : ([
-            {
-              description: t('transactions.filter.start_date'),
-              deserializer: dateDeserializer(dateInputFormat),
-              hint: t('transactions.filter.date_hint', {
-                format: getDateInputISOFormat(get(dateInputFormat)),
-              }),
-              key: HistoryEventFilterKeys.START,
-              keyValue: HistoryEventFilterValueKeys.START,
-              serializer: dateSerializer(dateInputFormat),
-              string: true,
-              suggestions: () => [],
-              validate: dateRangeValidator(dateInputFormat, () => get(modelFilters)?.toTimestamp?.toString(), 'start'),
-            },
-            {
-              description: t('transactions.filter.end_date'),
-              deserializer: dateDeserializer(dateInputFormat),
-              hint: t('transactions.filter.date_hint', {
-                format: getDateInputISOFormat(get(dateInputFormat)),
-              }),
-              key: HistoryEventFilterKeys.END,
-              keyValue: HistoryEventFilterValueKeys.END,
-              serializer: dateSerializer(dateInputFormat),
-              string: true,
-              suggestions: () => [],
-              validate: dateRangeValidator(dateInputFormat, () => get(modelFilters)?.fromTimestamp?.toString(), 'end'),
-            },
-          ] satisfies Matcher[])),
+  function coreMatchers(locationString: string | undefined): Matcher[] {
+    return [
       {
         asset: true,
         description: t('transactions.filter.asset'),
@@ -225,123 +204,151 @@ export function useHistoryEventFilter(
         validate: amountRangeValidator(() => get(modelFilters)?.minAmount?.toString(), 'max'),
       },
     ];
+  }
 
-    const entryTypesVal = get(entryTypes);
-    const transactionEventsIncluded
-      = !entryTypesVal || entryTypesVal.some(type => isEvmEventType(type) || isEthDepositEventType(type) || isSolanaEventType(type));
+  function protocolMatchers(included: IncludedEventKinds): Matcher[] {
+    if (disabled?.protocols || !included.transactions)
+      return [];
 
-    const evmOrOnlineEventsIncluded
-      = !entryTypesVal || entryTypesVal.some(type => isEvmEventType(type) || isOnlineHistoryEventType(type));
+    const counterpartiesVal = get(counterparties);
+    return [{
+      description: t('transactions.filter.protocol'),
+      key: HistoryEventFilterKeys.PROTOCOL,
+      keyValue: HistoryEventFilterValueKeys.PROTOCOL,
+      multiple: true,
+      string: true,
+      suggestions: () => counterpartiesVal,
+      validate: (protocol: string) => !!protocol,
+    }];
+  }
 
-    const eventsWithValidatorIndexIncluded
-      = !entryTypesVal
-        || entryTypesVal.some(
-          type => isWithdrawalEventType(type) || isEthBlockEventType(type) || isEthDepositEventType(type),
-        );
+  function locationMatchers(): Matcher[] {
+    if (disabled?.locations)
+      return [];
 
-    if (!disabled?.protocols && transactionEventsIncluded) {
-      const counterpartiesVal = get(counterparties);
+    return [{
+      description: t('transactions.filter.location'),
+      key: HistoryEventFilterKeys.LOCATION,
+      keyValue: HistoryEventFilterValueKeys.LOCATION,
+      string: true,
+      suggestions: () => get(associatedLocations),
+      validate: location => !!location,
+    }];
+  }
+
+  function entryTypeMatchers(entryTypesVal: HistoryEventEntryType[] | undefined): Matcher[] {
+    // With the choice already narrowed to a single type there is nothing to filter by.
+    if (entryTypesVal && entryTypesVal.length <= 1)
+      return [];
+
+    return [{
+      allowExclusion: true,
+      behaviourRequired: true,
+      description: t('transactions.filter.entry_type'),
+      key: HistoryEventFilterKeys.ENTRY_TYPE,
+      keyValue: HistoryEventFilterValueKeys.ENTRY_TYPE,
+      multiple: true,
+      string: true,
+      suggestions: () => entryTypesVal ?? Object.values(HistoryEventEntryType),
+      validate: (type: string) => !!type,
+    }];
+  }
+
+  function eventTypeMatchers(included: IncludedEventKinds): Matcher[] {
+    if (!included.evmOrOnline)
+      return [];
+
+    const data: Matcher[] = [];
+
+    if (!disabled.eventTypes) {
       data.push({
-        description: t('transactions.filter.protocol'),
-        key: HistoryEventFilterKeys.PROTOCOL,
-        keyValue: HistoryEventFilterValueKeys.PROTOCOL,
+        description: t('transactions.filter.event_type'),
+        key: HistoryEventFilterKeys.EVENT_TYPE,
+        keyValue: HistoryEventFilterValueKeys.EVENT_TYPE,
         multiple: true,
         string: true,
-        suggestions: () => counterpartiesVal,
-        validate: (protocol: string) => !!protocol,
-      });
-    }
-
-    if (!disabled?.locations) {
-      data.push({
-        description: t('transactions.filter.location'),
-        key: HistoryEventFilterKeys.LOCATION,
-        keyValue: HistoryEventFilterValueKeys.LOCATION,
-        string: true,
-        suggestions: () => get(associatedLocations),
-        validate: location => !!location,
-      });
-    }
-
-    if (!entryTypesVal || entryTypesVal.length > 1) {
-      data.push({
-        allowExclusion: true,
-        behaviourRequired: true,
-        description: t('transactions.filter.entry_type'),
-        key: HistoryEventFilterKeys.ENTRY_TYPE,
-        keyValue: HistoryEventFilterValueKeys.ENTRY_TYPE,
-        multiple: true,
-        string: true,
-        suggestions: () => entryTypesVal ?? Object.values(HistoryEventEntryType),
+        suggestions: () => get(historyEventTypes),
+        suggestionsToShow: -1,
         validate: (type: string) => !!type,
       });
     }
 
-    if (evmOrOnlineEventsIncluded) {
-      if (!disabled.eventTypes) {
-        data.push({
-          description: t('transactions.filter.event_type'),
-          key: HistoryEventFilterKeys.EVENT_TYPE,
-          keyValue: HistoryEventFilterValueKeys.EVENT_TYPE,
-          multiple: true,
-          string: true,
-          suggestions: () => get(historyEventTypes),
-          suggestionsToShow: -1,
-          validate: (type: string) => !!type,
-        });
-      }
-
-      if (!disabled.eventSubtypes) {
-        const subtypeKeys = get(validSubtypeKeys);
-        data.push({
-          description: t('transactions.filter.event_subtype'),
-          key: HistoryEventFilterKeys.EVENT_SUBTYPE,
-          keyValue: HistoryEventFilterValueKeys.EVENT_SUBTYPE,
-          multiple: true,
-          string: true,
-          suggestions: () => subtypeKeys.filter(uniqueStrings),
-          suggestionsToShow: -1,
-          validate: (type: string) => subtypeKeys.includes(type),
-        });
-      }
-    }
-
-    if (transactionEventsIncluded) {
-      data.push(
-        {
-          description: t('transactions.filter.tx_hash'),
-          key: HistoryEventFilterKeys.TX_HASHES,
-          keyValue: HistoryEventFilterValueKeys.TX_HASHES,
-          multiple: true,
-          string: true,
-          suggestions: () => [],
-          validate: (txHash: string) => isValidTxHashOrSignature(txHash),
-        },
-        {
-          description: t('transactions.filter.address'),
-          key: HistoryEventFilterKeys.ADDRESSES,
-          keyValue: HistoryEventFilterValueKeys.ADDRESSES,
-          multiple: true,
-          string: true,
-          suggestions: () => [],
-          validate: (address: string) => isValidAddress(address),
-        },
-      );
-    }
-
-    if (eventsWithValidatorIndexIncluded && !disabled?.validators) {
+    if (!disabled.eventSubtypes) {
+      const subtypeKeys = get(validSubtypeKeys);
       data.push({
-        description: t('transactions.filter.validator_index'),
-        key: HistoryEventFilterKeys.VALIDATOR_INDICES,
-        keyValue: HistoryEventFilterValueKeys.VALIDATOR_INDICES,
+        description: t('transactions.filter.event_subtype'),
+        key: HistoryEventFilterKeys.EVENT_SUBTYPE,
+        keyValue: HistoryEventFilterValueKeys.EVENT_SUBTYPE,
         multiple: true,
         string: true,
-        suggestions: () => [],
-        validate: (validatorIndex: string) => !!validatorIndex,
+        suggestions: () => subtypeKeys.filter(uniqueStrings),
+        suggestionsToShow: -1,
+        validate: (type: string) => subtypeKeys.includes(type),
       });
     }
 
     return data;
+  }
+
+  function transactionMatchers(included: IncludedEventKinds): Matcher[] {
+    if (!included.transactions)
+      return [];
+
+    return [
+      {
+        description: t('transactions.filter.tx_hash'),
+        key: HistoryEventFilterKeys.TX_HASHES,
+        keyValue: HistoryEventFilterValueKeys.TX_HASHES,
+        multiple: true,
+        string: true,
+        suggestions: () => [],
+        validate: (txHash: string) => isValidTxHashOrSignature(txHash),
+      },
+      {
+        description: t('transactions.filter.address'),
+        key: HistoryEventFilterKeys.ADDRESSES,
+        keyValue: HistoryEventFilterValueKeys.ADDRESSES,
+        multiple: true,
+        string: true,
+        suggestions: () => [],
+        validate: (address: string) => isValidAddress(address),
+      },
+    ];
+  }
+
+  function validatorMatchers(included: IncludedEventKinds): Matcher[] {
+    if (!included.validatorIndex || disabled?.validators)
+      return [];
+
+    return [{
+      description: t('transactions.filter.validator_index'),
+      key: HistoryEventFilterKeys.VALIDATOR_INDICES,
+      keyValue: HistoryEventFilterValueKeys.VALIDATOR_INDICES,
+      multiple: true,
+      string: true,
+      suggestions: () => [],
+      validate: (validatorIndex: string) => !!validatorIndex,
+    }];
+  }
+
+  // Each builder owns its own gate and returns nothing when it does not apply, so the order here is
+  // the display order and this stays a plain concatenation.
+  const matchers = computed<Matcher[]>(() => {
+    const selectedLocation = get(modelFilters)?.location;
+    const locationString = (Array.isArray(selectedLocation) ? selectedLocation[0] : selectedLocation)?.toString();
+    const entryTypesVal = get(entryTypes);
+    const included = resolveIncludedKinds(entryTypesVal);
+
+    return [
+      ...dateMatchers(),
+      ...coreMatchers(locationString),
+      ...protocolMatchers(included),
+      ...locationMatchers(),
+      ...entryTypeMatchers(entryTypesVal),
+      ...eventTypeMatchers(included),
+      ...transactionMatchers(included),
+      ...validatorMatchers(included),
+    ];
   });
 
   const OptionalString = z.string().optional();

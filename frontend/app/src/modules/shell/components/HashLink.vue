@@ -4,7 +4,7 @@ import { Blockchain, consistOfNumbers } from '@rotki/common';
 import AddressDeleteButton from '@/modules/accounts/address-book/AddressDeleteButton.vue';
 import AddressEditButton from '@/modules/accounts/address-book/AddressEditButton.vue';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
-import { type ExplorerUrls, explorerUrls, isChains } from '@/modules/assets/asset-urls';
+import { type Chains, type ExplorerUrls, explorerUrls, isChains } from '@/modules/assets/asset-urls';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
@@ -168,26 +168,35 @@ const finalDisplayText = computed<string>(() => {
   return truncateAddress(get(displayText), truncateLength);
 });
 
-const base = computed<string>(() => {
-  const selectedChain = get(blockchain);
+/** The explorer URL for the current link type, preferring the user's setting over the built-in one. */
+function explorerUrlFor(chain: Chains): string | undefined {
+  const defaultExplorer: ExplorerUrls = explorerUrls[chain];
+  const explorerSetting = get(explorers)[chain];
+
   let base: string | undefined;
+  if (explorerSetting || defaultExplorer)
+    base = explorerSetting?.[type] ?? defaultExplorer[type];
 
-  if (selectedChain && isChains(selectedChain)) {
-    const defaultExplorer: ExplorerUrls = explorerUrls[selectedChain];
+  // for token missing fallback to address
+  if (!base && type === 'token')
+    return explorerSetting?.address ?? defaultExplorer.address;
 
-    const explorerSetting = get(explorers)[selectedChain];
+  return base;
+}
 
-    if (explorerSetting || defaultExplorer)
-      base = explorerSetting?.[type] ?? defaultExplorer[type];
+function resolveExplorerBase(selectedChain: string | undefined): string | undefined {
+  if (!selectedChain || !isChains(selectedChain))
+    return undefined;
 
-    // for token missing fallback to address
-    if (!base && type === 'token')
-      base = explorerSetting?.address ?? defaultExplorer.address;
-  }
+  return explorerUrlFor(selectedChain);
+}
 
-  if (!base)
+const base = computed<string>(() => {
+  const resolved = resolveExplorerBase(get(blockchain));
+  if (!resolved)
     return '';
-  return base.endsWith('/') ? base : `${base}/`;
+
+  return resolved.endsWith('/') ? resolved : `${resolved}/`;
 });
 
 const tags = useAccountTags(() => text);

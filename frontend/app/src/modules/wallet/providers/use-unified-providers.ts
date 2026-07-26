@@ -18,6 +18,13 @@ interface UnifiedDetectionOptions extends ProviderDetectionOptions {
   retryDelay?: number;
 }
 
+const DETECTION_DEFAULTS: Required<UnifiedDetectionOptions> = {
+  includeLegacy: true,
+  maxRetries: 3,
+  retryDelay: 500,
+  timeout: 2000,
+};
+
 type OnProviderChangedCallback = (provider: EIP1193Provider | undefined, oldProvider: EIP1193Provider | undefined) => void;
 
 // Comprehensive return interface combining both systems
@@ -114,14 +121,55 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
     });
   };
 
+  /**
+   * Polls for providers until some appear or the retries run out. A round that finds nothing is not an
+   * error, so it waits and tries again; a throwing round is only propagated on the final attempt.
+   */
+  async function detectWithRetry(
+    settings: Required<UnifiedDetectionOptions>,
+  ): Promise<EnhancedProviderDetail[]> {
+    const { includeLegacy, maxRetries, retryDelay, timeout } = settings;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      logger.debug(`[UnifiedProviders] Detection attempt ${attempt + 1}/${maxRetries + 1}`);
+
+      try {
+        const detected = await getAllWalletProviders({ includeLegacy, timeout });
+        if (detected.length > 0)
+          return detected;
+      }
+      catch (error) {
+        logger.warn(`[UnifiedProviders] Detection attempt ${attempt + 1} failed:`, error);
+
+        if (attempt === maxRetries)
+          throw error;
+      }
+
+      if (attempt < maxRetries)
+        await wait(retryDelay);
+    }
+
+    return [];
+  }
+
+  function indexProviders(detected: EnhancedProviderDetail[]): void {
+    providerMap.clear();
+    for (const provider of detected)
+      providerMap.set(provider.info.uuid, provider.provider);
+  }
+
+  function countBySource(detected: EnhancedProviderDetail[]): Record<string, number> {
+    const breakdown: Record<string, number> = {};
+    for (const { source } of detected)
+      breakdown[source] = (breakdown[source] ?? 0) + 1;
+
+    return breakdown;
+  }
+
   // Detect available providers with retry logic (combining both approaches)
   async function detectProviders(options: UnifiedDetectionOptions = {}): Promise<EnhancedProviderDetail[]> {
-    const {
-      includeLegacy = true,
-      maxRetries = 3,
-      retryDelay = 500,
-      timeout = 2000,
-    } = options;
+    // Spread rather than per-field defaults: the rule counts each defaulted field as a branch.
+    const settings = { ...DETECTION_DEFAULTS, ...options };
 
     set(isDetecting, true);
     set(detectionError, undefined);
@@ -130,47 +178,15 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
       logger.debug('[UnifiedProviders] Starting provider detection with options:', options);
       logger.debug(`[UnifiedProviders] Environment: ${get(isElectronMode) ? 'Electron' : 'Browser'} mode`);
 
-      let detectedProviders: EnhancedProviderDetail[] = [];
+      const detectedProviders = await detectWithRetry(settings);
 
-      // Retry logic for detection (from EIP6963 system)
-      for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        logger.debug(`[UnifiedProviders] Detection attempt ${attempt + 1}/${maxRetries + 1}`);
-
-        try {
-          detectedProviders = await getAllWalletProviders({ includeLegacy, timeout });
-
-          if (detectedProviders.length > 0) {
-            break; // Success, no need to retry
-          }
-        }
-        catch (error) {
-          logger.warn(`[UnifiedProviders] Detection attempt ${attempt + 1} failed:`, error);
-
-          if (attempt === maxRetries) {
-            throw error; // Last attempt, propagate error
-          }
-        }
-
-        // Wait before retry (except on last attempt)
-        if (attempt < maxRetries) {
-          await wait(retryDelay);
-        }
-      }
-
-      // Update provider map for quick access
-      providerMap.clear();
-      detectedProviders.forEach((provider) => {
-        providerMap.set(provider.info.uuid, provider.provider);
-      });
-
+      indexProviders(detectedProviders);
       set(availableProviders, detectedProviders);
 
-      const sourceBreakdown = detectedProviders.reduce((acc, p) => {
-        acc[p.source] = (acc[p.source] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-
-      logger.info(`[UnifiedProviders] Detected ${detectedProviders.length} providers:`, sourceBreakdown);
+      logger.info(
+        `[UnifiedProviders] Detected ${detectedProviders.length} providers:`,
+        countBySource(detectedProviders),
+      );
 
       // Auto-select based on preferences and detected source
       await handleAutoSelection();

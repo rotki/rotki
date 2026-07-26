@@ -181,16 +181,11 @@ function applyGroupHeaderData(entry: EvmHistoryEvent) {
   set(timestamp, entry.timestamp);
 }
 
-async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate())) {
-    return false;
-  }
-
-  const eventData = data;
-  const editable = eventData.type === 'edit' ? eventData.event : undefined;
+/** Empty form fields are normalised to the nulls and defaults the backend expects. */
+function buildPayload(): NewEvmHistoryEventPayload {
   const userNotes = get(notes).trim();
 
-  const payload: NewEvmHistoryEventPayload = {
+  return {
     address: get(address) || null,
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     asset: get(asset),
@@ -207,6 +202,16 @@ async function save(): Promise<boolean> {
     txRef: get(txRef),
     userNotes: userNotes.length > 0 ? userNotes : undefined,
   };
+}
+
+async function save(): Promise<boolean> {
+  if (!(await get(v$).$validate())) {
+    return false;
+  }
+
+  const eventData = data;
+  const editable = eventData.type === 'edit' ? eventData.event : undefined;
+  const payload = buildPayload();
 
   return await saveHistoryEventHandler(
     editable ? { ...payload, identifier: editable.identifier } : payload,

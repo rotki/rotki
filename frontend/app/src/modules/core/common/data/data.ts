@@ -34,50 +34,68 @@ export function nonEmptyOr<T>(value: string | undefined | null, fallback: T): st
  * @param options.alwaysPickKeys - Array of keys that will always be included in the returned value
  * @returns A new object with non-empty properties
  */
+interface NonEmptyPropertiesOptions<T> {
+  removeEmptyString?: boolean;
+  alwaysPickKeys?: (keyof T)[];
+}
+
+/**
+ * Resolving the defaults here rather than in the parameter list keeps them out of the caller's
+ * complexity budget, which counts every defaulted field as a branch.
+ */
+function withNonEmptyDefaults<T>(options: NonEmptyPropertiesOptions<T>): Required<NonEmptyPropertiesOptions<T>> {
+  return {
+    alwaysPickKeys: options.alwaysPickKeys ?? [],
+    removeEmptyString: options.removeEmptyString ?? false,
+  };
+}
+
+/** An empty array carries no information, and null is dropped whatever the options say. */
+function isEmptyValue(val: unknown, removeEmptyString: boolean): boolean {
+  if (val === null)
+    return true;
+
+  if (removeEmptyString && val === '')
+    return true;
+
+  return Array.isArray(val) && val.length === 0;
+}
+
+/** Nested objects are pruned too, including those inside arrays. */
+function pruneValue<V>(val: V): V {
+  if (Array.isArray(val))
+    return val.map(entry => typeof entry === 'object' ? nonEmptyProperties(entry) : entry) as V;
+
+  if (typeof val === 'object')
+    return nonEmptyProperties(val as object) as V;
+
+  return val;
+}
+
 export function nonEmptyProperties<T extends object>(
   object: T,
-  { alwaysPickKeys = [], removeEmptyString = false }: {
-    removeEmptyString?: boolean;
-    alwaysPickKeys?: (keyof T)[];
-  } = {},
+  options: NonEmptyPropertiesOptions<T> = {},
 ): Partial<NonNullable<T>> {
-  const partial: Partial<T> = {};
-  const keys = Object.keys(object);
   if (object instanceof BigNumber)
     return object;
 
-  for (const obKey of keys) {
+  const { alwaysPickKeys, removeEmptyString } = withNonEmptyDefaults(options);
+  const partial: Partial<T> = {};
+
+  for (const obKey of Object.keys(object)) {
     const key = obKey as keyof T;
     const val = object[key];
 
-    if (alwaysPickKeys.includes(key)) {
+    // An always-picked key is written first and then still pruned below, as it was before.
+    if (alwaysPickKeys.includes(key))
       partial[key] = val;
-    }
 
-    if (removeEmptyString && val === '')
+    if (isEmptyValue(val, removeEmptyString))
       continue;
 
-    if (val === null)
-      continue;
-
-    if (Array.isArray(val)) {
-      if (val.length === 0)
-        continue;
-
-      partial[key] = val.map((v) => {
-        if (typeof v === 'object')
-          return nonEmptyProperties(v);
-
-        return v;
-      }) as T[keyof T];
-    }
-    else if (typeof val === 'object') {
-      partial[key] = nonEmptyProperties(val) as T[keyof T];
-    }
-    else {
-      partial[key] = val;
-    }
+    partial[key] = pruneValue(val);
   }
+
   return partial;
 }
 

@@ -73,6 +73,59 @@ export function useHistoryEventsSelectionActions(
     selectionMode.actions.exit();
   }
 
+  /** An acknowledgement-only dialog: there is nothing to confirm, so the callback does nothing. */
+  function notify(title: string, message: string): void {
+    showConfirm({
+      message,
+      primaryAction: t('common.actions.ok'),
+      singleAction: true,
+      title,
+    }, () => {});
+  }
+
+  /**
+   * An accounting rule keys off one event type and subtype pair, so a mixed selection cannot seed one
+   * and is rejected rather than silently using the first event's pair.
+   */
+  function startRuleCreation(selectedIds: number[]): void {
+    const selectedEvents = get(originalGroups).flat().filter(event =>
+      !Array.isArray(event) && selectedIds.includes(event.identifier),
+    );
+
+    if (selectedEvents.length === 0) {
+      notify(
+        t('transactions.events.accounting_rule.error'),
+        t('transactions.events.accounting_rule.no_events_found'),
+      );
+      return;
+    }
+
+    const { eventSubtype, eventType } = selectedEvents[0];
+    const allSameType = selectedEvents.every(event =>
+      event.eventType === eventType && event.eventSubtype === eventSubtype,
+    );
+
+    if (!allSameType) {
+      notify(
+        t('transactions.events.accounting_rule.incompatible_selection'),
+        t('transactions.events.accounting_rule.different_types_error'),
+      );
+      return;
+    }
+
+    set(selectedEventIds, selectedIds);
+    set(modelAccountingRuleToEdit, {
+      accountingTreatment: null,
+      countCostBasisPnl: { value: false },
+      countEntireAmountSpend: { value: false },
+      counterparty: null,
+      eventSubtype: eventSubtype || '',
+      eventType: eventType || '',
+      identifier: 0,
+      taxable: { value: false },
+    });
+  }
+
   async function handleSelectionAction(action: string): Promise<void> {
     const selectedIds = Array.from(get(selectionMode.state).selectedIds);
 
@@ -80,64 +133,9 @@ export function useHistoryEventsSelectionActions(
       case 'delete':
         await deletion.deleteSelected();
         break;
-      case 'create-rule': {
-        // Get all selected events to validate they have the same type/subtype
-        const allEvents = get(originalGroups).flat();
-        const selectedEvents = allEvents.filter(event =>
-          !Array.isArray(event) && selectedIds.includes(event.identifier),
-        );
-
-        if (selectedEvents.length === 0) {
-          // Show confirmation dialog about no events found
-          showConfirm({
-            message: t('transactions.events.accounting_rule.no_events_found'),
-            primaryAction: t('common.actions.ok'),
-            singleAction: true,
-            title: t('transactions.events.accounting_rule.error'),
-          }, () => {
-            // User acknowledged the message
-          });
-          break;
-        }
-
-        // Check if all selected events have the same eventType and eventSubtype
-        const firstEvent = selectedEvents[0];
-        const firstEventType = firstEvent.eventType;
-        const firstEventSubtype = firstEvent.eventSubtype;
-
-        const allSameType = selectedEvents.every(event =>
-          event.eventType === firstEventType
-          && event.eventSubtype === firstEventSubtype,
-        );
-
-        if (!allSameType) {
-          // Show confirmation dialog about incompatible selection
-          showConfirm({
-            message: t('transactions.events.accounting_rule.different_types_error'),
-            primaryAction: t('common.actions.ok'),
-            singleAction: true,
-            title: t('transactions.events.accounting_rule.incompatible_selection'),
-          }, () => {
-            // User acknowledged the message
-          });
-          break;
-        }
-
-        // All events have the same type/subtype, proceed with rule creation
-        set(selectedEventIds, selectedIds);
-        // Initialize with the common event type and subtype
-        set(modelAccountingRuleToEdit, {
-          accountingTreatment: null,
-          countCostBasisPnl: { value: false },
-          countEntireAmountSpend: { value: false },
-          counterparty: null,
-          eventSubtype: firstEventSubtype || '',
-          eventType: firstEventType || '',
-          identifier: 0,
-          taxable: { value: false },
-        });
+      case 'create-rule':
+        startRuleCreation(selectedIds);
         break;
-      }
       case 'ignore': {
         const selectedEvents = getSelectedEvents();
         set(selectedEventsForIgnore, selectedEvents);

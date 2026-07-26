@@ -61,6 +61,72 @@ describe('useHistoryEventFilter', () => {
     vi.clearAllMocks();
   });
 
+  it('should omit the date matchers when the period is disabled', () => {
+    const { matchers } = useHistoryEventFilter({ period: true }, ref([HistoryEventEntryType.EVM_EVENT]));
+    const keys = get(matchers).map(matcher => matcher.key);
+
+    expect(keys).not.toContain('start');
+    expect(keys).not.toContain('end');
+  });
+
+  it('should include the date matchers when the period is not disabled', () => {
+    const { matchers } = useHistoryEventFilter({ period: false }, ref([HistoryEventEntryType.EVM_EVENT]));
+    const keys = get(matchers).map(matcher => matcher.key);
+
+    expect(keys).toContain('start');
+    expect(keys).toContain('end');
+  });
+
+  it('should offer the entry-type matcher only when more than one entry type is in play', () => {
+    const single = useHistoryEventFilter({}, ref([HistoryEventEntryType.EVM_EVENT]));
+    expect(get(single.matchers).find(matcher => matcher.key === 'type')).toBeUndefined();
+
+    const multiple = useHistoryEventFilter(
+      {},
+      ref([HistoryEventEntryType.EVM_EVENT, HistoryEventEntryType.HISTORY_EVENT]),
+    );
+    expect(get(multiple.matchers).find(matcher => matcher.key === 'type')).toBeDefined();
+
+    const unrestricted = useHistoryEventFilter({}, ref(undefined));
+    expect(get(unrestricted.matchers).find(matcher => matcher.key === 'type')).toBeDefined();
+  });
+
+  it('should include the transaction matchers only for transaction-bearing entry types', () => {
+    const included = useHistoryEventFilter({}, ref([HistoryEventEntryType.EVM_EVENT]));
+    const includedKeys = get(included.matchers).map(matcher => matcher.key);
+    expect(includedKeys).toContain('tx_hash');
+    expect(includedKeys).toContain('address');
+
+    const excluded = useHistoryEventFilter({}, ref([HistoryEventEntryType.ASSET_MOVEMENT_EVENT]));
+    const excludedKeys = get(excluded.matchers).map(matcher => matcher.key);
+    expect(excludedKeys).not.toContain('tx_hash');
+    expect(excludedKeys).not.toContain('address');
+  });
+
+  it('should keep the matchers in a stable display order', () => {
+    const { matchers } = useHistoryEventFilter(
+      {},
+      ref([HistoryEventEntryType.EVM_EVENT, HistoryEventEntryType.ETH_WITHDRAWAL_EVENT]),
+    );
+
+    expect(get(matchers).map(matcher => matcher.key)).toEqual([
+      'start',
+      'end',
+      'asset',
+      'notes',
+      'min_amount',
+      'max_amount',
+      'protocol',
+      'location',
+      'type',
+      'event_type',
+      'event_subtype',
+      'tx_hash',
+      'address',
+      'validator_index',
+    ]);
+  });
+
   it('should include protocol matcher if protocols is not disabled and EVM events are included', () => {
     const { matchers } = useHistoryEventFilter(
       { protocols: false }, // Not disabled

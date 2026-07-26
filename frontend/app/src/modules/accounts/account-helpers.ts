@@ -58,28 +58,42 @@ function filterAccount<T extends BlockchainAccountBalance>(
     tags: tagFilter,
   } = filters;
 
-  const matches: { name: keyof typeof filters; matches: boolean }[] = [];
-  if (addressFilter)
-    matches.push({ matches: includes(getAccountAddress(account), addressFilter), name: 'address' });
+  // undefined means "this filter is not active", which is different from "active and did not match":
+  // an account passes only when every active filter matches, and passes trivially when none are.
+  function matchesLabel(): boolean | undefined {
+    if (!labelFilter)
+      return undefined;
 
-  if (labelFilter) {
     const resolvedLabel = getLabel(account, getChain(account))
       ?? account.label
       ?? getAccountAddress(account);
-    if (resolvedLabel)
-      matches.push({ matches: includes(resolvedLabel, labelFilter), name: 'label' });
+
+    return resolvedLabel ? includes(resolvedLabel, labelFilter) : undefined;
   }
 
-  if (chainFilter && chainFilter.length > 0)
-    matches.push({ matches: chains.some(chain => chainFilter.includes(chain)), name: 'chain' });
+  function matchesChain(): boolean | undefined {
+    if (!chainFilter?.length)
+      return undefined;
 
-  if (tagFilter && tagFilter.length > 0)
-    matches.push({ matches: tagFilter.every(tag => account.tags?.includes(tag) ?? false), name: 'tags' });
+    return chains.some(chain => chainFilter.includes(chain));
+  }
 
-  if (categoryFilter)
-    matches.push({ matches: account.category === categoryFilter, name: 'category' });
+  function matchesTags(): boolean | undefined {
+    if (!tagFilter?.length)
+      return undefined;
 
-  return matches.length === 0 || matches.every(match => match.matches);
+    return tagFilter.every(tag => account.tags?.includes(tag) ?? false);
+  }
+
+  const results = [
+    addressFilter ? includes(getAccountAddress(account), addressFilter) : undefined,
+    matchesLabel(),
+    matchesChain(),
+    matchesTags(),
+    categoryFilter ? account.category === categoryFilter : undefined,
+  ].filter(result => result !== undefined);
+
+  return results.length === 0 || results.every(result => result);
 }
 
 function applyExclusionFilter<T extends BlockchainAccountBalance>(
@@ -136,6 +150,58 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
 
   const nonNull = <U extends BlockchainAccountBalance>(x: U | null): x is U => x !== null;
 
+  /**
+   * Only a tag or chain filter can match on different member accounts and so misrepresent a group;
+   * the others apply to the group itself.
+   */
+  function hasGroupSensitiveFilter(): boolean {
+    return isFilterEnabled(tags) || isFilterEnabled(chain);
+  }
+
+  /**
+   * Second stage filtering for groups. Let's say that we have a group that has a tag `Public`
+   * on an account that is on optimism. If I filter by `chain=optimism` and `tag=Public` only this
+   * account will appear. If the group includes another account with `tag=Public` and a different one
+   * with `chain=optimism` this will skipped (see return)
+   *
+   * Returns undefined when the group does not need refining, so the caller falls back to the plain
+   * exclusion path, and null when no member survives and the group should be dropped.
+   */
+  function refineGroup<T extends BlockchainAccountBalance>(account: T): T | null | undefined {
+    // The group check stays here so `account` narrows to the group variant for `data` and `chains`.
+    if (account.type !== 'group' || !hasGroupSensitiveFilter())
+      return undefined;
+
+    const groupAccounts = getAccounts?.(getGroupId(account));
+    if (!groupAccounts)
+      return undefined;
+
+    // Address and label apply to the group itself, so they are deliberately dropped here.
+    const matchesWithoutChains = groupAccounts.filter(item => filterAccount(item, {
+      address: undefined,
+      label: undefined,
+      tags,
+    }, { getLabel }));
+
+    const matches = matchesWithoutChains.filter(item => filterAccount(item, { chain }, { getLabel }));
+    if (matches.length === 0)
+      return null;
+
+    const chains = matches.map(match => match.chain).filter(uniqueStrings);
+    const groupId = getGroupId({ chains, data: account.data });
+    const exclusion = excluded[groupId];
+
+    return {
+      ...account,
+      allChains: groupAccounts.map(item => item.chain),
+      chains,
+      expansion: matches.length === 1 ? matches[0].expansion : 'accounts',
+      includedValue: exclusion ? sum(matches.filter(match => !exclusion.includes(match.chain))) : undefined,
+      tags: matches.flatMap(match => match.tags ?? []).filter(uniqueStrings),
+      value: sum(matches),
+    };
+  }
+
   const filtered = !hasFilter
     ? accounts.map(account => applyExclusionFilter(account, excluded, groupId => getAccounts?.(groupId) ?? []))
     : accounts.filter(account => filterAccount(account, {
@@ -145,45 +211,9 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
         label,
         tags,
       }, { getLabel })).map((account) => {
-      /**
-       * Second stage filtering for groups. Let's say that we have a group that has a tag `Public`
-       * on an account that is on optimism. If I filter by `chain=optimism` and `tag=Public` only this
-       * account will appear. If the group includes another account with `tag=Public` and a different one
-       * with `chain=optimism` this will skipped (see return)
-       */
-        if (account.type === 'group' && ((tags && tags.length > 0) || (chain && chain.length > 0))) {
-          const groupAccounts = getAccounts?.(getGroupId(account));
-          if (groupAccounts) {
-            const matchesWithoutChains = groupAccounts.filter(account => filterAccount(account, {
-              address: undefined, // we only this to the group
-              label: undefined, // we only this to the group
-              tags,
-            }, { getLabel }));
-
-            const matches = matchesWithoutChains.filter(account => filterAccount(account, {
-              chain,
-            }, { getLabel }));
-
-            if (matches.length === 0)
-              return null;
-
-            const chains = matches.map(match => match.chain).filter(uniqueStrings);
-            const groupId = getGroupId({ chains, data: account.data });
-            const exclusion = excluded[groupId];
-            const value = sum(matches);
-            const includedValue = exclusion ? sum(matches.filter(match => !exclusion.includes(match.chain))) : undefined;
-
-            return {
-              ...account,
-              allChains: groupAccounts.map(item => item.chain),
-              chains,
-              expansion: matches.length === 1 ? matches[0].expansion : 'accounts',
-              includedValue,
-              tags: matches.flatMap(match => match.tags ?? []).filter(uniqueStrings),
-              value,
-            };
-          }
-        }
+        const refined = refineGroup(account);
+        if (refined !== undefined)
+          return refined;
 
         return applyExclusionFilter(account, excluded, groupId => getAccounts?.(groupId) ?? []);
       }).filter(nonNull);
@@ -269,23 +299,37 @@ interface GeneratorFilters {
   resolveIdentifier?: (id: string) => string;
 }
 
+const GENERATOR_FILTER_DEFAULTS: Required<GeneratorFilters> = {
+  chains: [],
+  resolveIdentifier: (id: string): string => id,
+  skipIdentifier: (): boolean => false,
+};
+
+/** An empty chain list means every chain, rather than none. */
+function includesChain(chains: string[], chain: string): boolean {
+  return chains.length === 0 || chains.includes(chain);
+}
+
+function sumProtocolBalances(protocolBalances: Record<string, Balance>): Balance {
+  return Object.values(protocolBalances).reduce<Balance>((sum, current) => ({
+    amount: sum.amount.plus(current.amount),
+    value: sum.value.plus(current.value),
+  }), { amount: Zero, value: Zero });
+}
+
 function* iterateAssets(
   balances: Balances,
-  key: keyof EthBalance = 'assets',
-  filters: GeneratorFilters = {},
+  key: keyof EthBalance,
+  filters: GeneratorFilters,
 ): Generator<[string, Balance]> {
-  const {
-    chains = [],
-    resolveIdentifier = (id: string): string => id,
-    skipIdentifier = (): boolean => false,
-  } = filters;
-  for (const chain of Object.keys(balances)) {
-    const chainBalances = balances[chain];
-    if (!(chains.length === 0 || chains.includes(chain))) {
-      continue;
-    }
+  // Spread rather than per-field defaults, each of which the complexity rule counts as a branch.
+  const { chains, resolveIdentifier, skipIdentifier } = { ...GENERATOR_FILTER_DEFAULTS, ...filters };
 
-    for (const account of Object.values(chainBalances)) {
+  for (const chain of Object.keys(balances)) {
+    if (!includesChain(chains, chain))
+      continue;
+
+    for (const account of Object.values(balances[chain])) {
       if (!account[key])
         continue;
 
@@ -293,15 +337,7 @@ function* iterateAssets(
         if (skipIdentifier(identifier))
           continue;
 
-        const assetIdentifier = resolveIdentifier(identifier);
-        const balance = Object.values(protocolBalances).reduce((previousValue, currentValue) => ({
-          amount: previousValue.amount.plus(currentValue.amount),
-          value: previousValue.value.plus(currentValue.value),
-        }), {
-          amount: Zero,
-          value: Zero,
-        });
-        yield [assetIdentifier, balance] as const;
+        yield [resolveIdentifier(identifier), sumProtocolBalances(protocolBalances)] as const;
       }
     }
   }

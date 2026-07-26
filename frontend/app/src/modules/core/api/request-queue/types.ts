@@ -71,3 +71,13 @@ export interface EnqueueOptions extends BaseFetchOptions {
   /** Deduplicate identical pending requests */
   dedupe?: boolean;
 }
+
+/** The enqueue options with every default applied, split from the options passed on to fetch. */
+export interface ResolvedEnqueueSettings {
+  dedupe: boolean;
+  fetchOptions: BaseFetchOptions;
+  maxQueueTime: number;
+  maxRetries: number;
+  priority: number;
+  tags: string[];
+}

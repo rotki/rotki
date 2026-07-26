@@ -130,9 +130,7 @@ function reset() {
   get(assetPriceForm)?.reset();
 }
 
-function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEvent) {
-  const eventNotes = entry.userNotes ?? '';
-
+function applyCoreFields(entry: AssetMovementEvent): void {
   // Use actualGroupIdentifier if it exists (linked event), otherwise use groupIdentifier
   const hasActual = !!entry.actualGroupIdentifier;
   set(hasActualGroupIdentifier, hasActual);
@@ -143,29 +141,39 @@ function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEv
   set(eventSubtype, entry.eventSubtype);
   set(asset, entry.asset ?? '');
   set(amount, entry.amount.toFixed());
+}
 
-  if (feeEvent) {
-    set(fee, feeEvent.amount.toFixed());
-    set(feeAsset, feeEvent.asset ?? '');
-    set(hasFee, true);
-    set(notes, [eventNotes, feeEvent.userNotes ?? '']);
-  }
-  else {
+/** The fee is a sibling event, so its presence is what decides whether the form shows a fee at all. */
+function applyFeeFields(entry: AssetMovementEvent, feeEvent?: AssetMovementEvent): void {
+  const eventNotes = entry.userNotes ?? '';
+
+  if (!feeEvent) {
     set(hasFee, false);
     set(notes, [eventNotes]);
+    return;
   }
 
-  if (entry.extraData?.reference) {
-    set(uniqueId, entry.extraData.reference);
-  }
+  set(fee, feeEvent.amount.toFixed());
+  set(feeAsset, feeEvent.asset ?? '');
+  set(hasFee, true);
+  set(notes, [eventNotes, feeEvent.userNotes ?? '']);
+}
 
-  if (entry.extraData?.transactionId) {
-    set(transactionId, entry.extraData.transactionId);
-  }
+function applyExtraData(extraData: AssetMovementEvent['extraData']): void {
+  if (extraData?.reference)
+    set(uniqueId, extraData.reference);
 
-  if (entry.extraData?.blockchain) {
-    set(blockchain, entry.extraData.blockchain);
-  }
+  if (extraData?.transactionId)
+    set(transactionId, extraData.transactionId);
+
+  if (extraData?.blockchain)
+    set(blockchain, extraData.blockchain);
+}
+
+function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEvent) {
+  applyCoreFields(entry);
+  applyFeeFields(entry, feeEvent);
+  applyExtraData(entry.extraData);
 
   // Capture state snapshot for edit mode comparison
   captureEditModeStateFromRefs(states);
