@@ -70,13 +70,6 @@ export default rotki({
     }],
   },
 }, {
-  files: ['**/*.ts', '**/*.vue'],
-  rules: {
-    '@typescript-eslint/consistent-type-assertions': ['warn', {
-      assertionStyle: 'never',
-    }],
-  },
-}, {
   files: ['**/src/**/*.ts'],
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'error',
