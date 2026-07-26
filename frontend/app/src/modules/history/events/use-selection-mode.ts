@@ -1,5 +1,4 @@
 import type { ComputedRef, DeepReadonly, Ref } from 'vue';
-import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { get, set } from '@vueuse/shared';
 
 export interface SelectionState {
@@ -26,7 +25,7 @@ interface SelectionActions {
 export interface UseHistoryEventsSelectionModeReturn {
   actions: SelectionActions;
   getSelectedIds: () => number[];
-  setAvailableIds: (events: HistoryEventEntry[]) => void;
+  setAvailableIds: (ids: number[]) => void;
   setTotalMatchingCount: (count: number) => void;
   state: ComputedRef<SelectionState>;
   isEventSelected: (eventId: number) => boolean;
@@ -130,8 +129,7 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
   // Public API
   const getSelectedIds = (): number[] => Array.from(get(selectedIds));
 
-  const setAvailableIds = (events: HistoryEventEntry[]): void => {
-    const ids = events.map(event => event.identifier);
+  const setAvailableIds = (ids: number[]): void => {
     set(availableIds, ids);
   };
 

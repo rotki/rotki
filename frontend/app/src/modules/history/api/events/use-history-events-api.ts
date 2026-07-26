@@ -251,7 +251,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
 
   const getHistoryEventCounterpartiesData = async (): Promise<ActionDataEntry[]> => {
     const response = await api.get<ActionDataEntry[]>('/history/events/counterparties');
-    return ActionDataEntryArraySchema.parse(response) as ActionDataEntry[];
+    return ActionDataEntryArraySchema.parse(response);
   };
 
   const fetchHistoryEvents = async (

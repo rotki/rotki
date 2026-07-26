@@ -1,12 +1,5 @@
-import type { HistoryEventEntry } from '@/modules/history/events/schemas';
-import { createMock } from '@test/utils/create-mock';
 import { describe, expect, it } from 'vitest';
 import { useHistoryEventsSelectionMode } from './use-selection-mode';
-
-// selection mode only reads `identifier`, so a minimal stub is enough here.
-function event(identifier: number): HistoryEventEntry {
-  return createMock<HistoryEventEntry>({ identifier });
-}
 
 describe('useHistoryEventsSelectionMode', () => {
   it('should start inactive with an empty selection', () => {
@@ -50,7 +43,7 @@ describe('useHistoryEventsSelectionMode', () => {
 
   it('should report all/partial selection against the available ids', () => {
     const { actions, setAvailableIds, state } = useHistoryEventsSelectionMode();
-    setAvailableIds([event(1), event(2), event(3)]);
+    setAvailableIds([1, 2, 3]);
     expect(get(state).hasAvailableEvents).toBe(true);
 
     actions.toggleEvent(1);
@@ -111,7 +104,7 @@ describe('useHistoryEventsSelectionMode', () => {
 
   it('should exit and reset every piece of state', () => {
     const { actions, setAvailableIds, isSelectionMode, state } = useHistoryEventsSelectionMode();
-    setAvailableIds([event(1)]);
+    setAvailableIds([1]);
     actions.toggle();
     actions.toggleEvent(1);
     actions.exit();

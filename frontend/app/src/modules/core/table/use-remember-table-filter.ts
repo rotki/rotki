@@ -12,10 +12,10 @@ interface UseRememberTableFilterOptions {
    */
   enabled: Ref<boolean>;
   /**
-   * Storage key of the table within the per-user localStorage entry. An empty value is possible when the
-   * caller did not configure persistence, and simply keys an unused slot.
+   * Storage key of the table within the per-user localStorage entry. Undefined when the caller did not
+   * configure persistence, in which case nothing is restored or saved.
    */
-  tableId: Ref<TableId>;
+  tableId: Ref<TableId | undefined>;
   /**
    * Filter target used when `history` is `external`: the restored filter is written into this ref instead
    * of the route. Ignored for the other history modes.
@@ -54,7 +54,7 @@ export function useRememberTableFilter(
   const restorePersistedFilter = async (): Promise<void> => {
     const tableIdValue = get(tableId);
 
-    if (!get(enabled))
+    if (!get(enabled) || !tableIdValue)
       return;
 
     const savedFilter = get<Record<string, LocationQuery>>(persistedFiltersRaw)[tableIdValue];
@@ -79,6 +79,9 @@ export function useRememberTableFilter(
    */
   const savePersistedFilter = (query: LocationQuery): void => {
     const tableIdValue = get(tableId);
+
+    if (!tableIdValue)
+      return;
 
     const current = get<Record<string, LocationQuery>>(persistedFiltersRaw);
     set(persistedFiltersRaw, {

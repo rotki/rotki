@@ -65,7 +65,7 @@ export function useTablePersistence(
     enabled: ref<boolean>(!!persist),
     history: persistHistoryMode,
     query: urlState.mode === 'ref' ? urlState.query : ref<LocationQuery>({}),
-    tableId: ref<TableId>(persist?.tableId ?? '' as TableId),
+    tableId: ref<TableId | undefined>(persist?.tableId),
   });
 
   // Tracks the initial values of transient keys from external navigation.

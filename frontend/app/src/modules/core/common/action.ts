@@ -36,13 +36,17 @@ export interface ActionDataEntry<T = string> {
   readonly detailPath?: string;
 }
 
+// The backend sends icon/color as free-form strings; only their runtime shape can be
+// validated, so `z.custom` keeps the parsed type aligned with ActionDataEntry.
+const isString = (value: unknown): boolean => typeof value === 'string';
+
 const ActionDataEntrySchema = z.object({
   identifier: z.string(),
   label: z.string(),
-  icon: z.string().optional(),
+  icon: z.custom<RuiIcons>(isString).optional(),
   image: z.string().optional(),
   darkmodeImage: z.string().optional(),
-  color: z.string().optional(),
+  color: z.custom<ContextColorsType>(isString).optional(),
   detailPath: z.string().optional(),
 });
 

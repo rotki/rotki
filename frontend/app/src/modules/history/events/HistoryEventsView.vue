@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import type { PullLocationTransactionPayload } from '@/modules/history/events/event-payloads';
-import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
+import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import { AccountingOverlayToggle, BalanceDivergenceToggle } from '@/modules/history/balances/components';
 import { OverlayMode, type OverlayPair, useAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay';
 import { provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
@@ -229,9 +229,7 @@ const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading, bridgeA
 
 // Handle updating available event IDs from the table
 function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]>; rawEvents?: HistoryEventRow[] }): void {
-  // Create mock event entries with just the identifiers
-  const events: HistoryEventEntry[] = eventIds.map(id => ({ identifier: id } as HistoryEventEntry));
-  selectionMode.setAvailableIds(events);
+  selectionMode.setAvailableIds(eventIds);
 
   // Store the grouped events for checking complete transactions
   set(groupedEventsByTxRef, groupedEvents);

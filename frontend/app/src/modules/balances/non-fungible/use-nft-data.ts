@@ -1,9 +1,9 @@
-import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/modules/balances/types/nfbalances';
 import type { Collection } from '@/modules/core/common/collection';
+import { type BigNumber, Zero } from '@rotki/common';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
 import { calculatePercentage } from '@/modules/core/common/data/calculation';
 import { getCollectionData } from '@/modules/core/common/data/collection-utils';
@@ -103,7 +103,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
   }
 
   function percentageOfCurrentGroup(value: BigNumber): string {
-    return calculatePercentage(value, get(totalValue) as BigNumber);
+    return calculatePercentage(value, get(totalValue) ?? Zero);
   }
 
   // Columns configuration
