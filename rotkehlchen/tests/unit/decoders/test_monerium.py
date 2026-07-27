@@ -8,6 +8,7 @@ from rotkehlchen.chain.arbitrum_one.modules.monerium.constants import ARBITRUM_M
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.monerium.decoder import MoneriumCommonDecoder
 from rotkehlchen.constants.assets import A_ETH_EURE
+from rotkehlchen.db.constants import TX_DECODED
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -315,11 +316,19 @@ def test_burn_eure_on_arbitrum(
 @pytest.mark.parametrize('gnosis_accounts', [['0x4A551b4ADddB4CDBA24612bCbb543c9aD4DAE4B6']])
 def test_monerium_token_migration(gnosis_inquirer: GnosisInquirer):
     """Test that mints on the v1 to v2 migration are skipped correctly"""
+    tx_hash = deserialize_evm_tx_hash('0x6241b6ef81b50e87585741362247852e6b325eb4401e5bde83e6c52ef9f2f097')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=deserialize_evm_tx_hash('0x6241b6ef81b50e87585741362247852e6b325eb4401e5bde83e6c52ef9f2f097'),
+        tx_hash=tx_hash,
     )
     assert events == []
+    with gnosis_inquirer.database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id IN ('
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?) '
+            'AND value=?',
+            (tx_hash, gnosis_inquirer.chain_id.serialize_for_db(), TX_DECODED),
+        ).fetchone()[0] == 1
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

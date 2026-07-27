@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`-` Yearn vesting escrows are now supported. All related transactions are understood and decoded and balances in escrow automatically detected. Calendar entries with reminders are also created for the cliff and full vesting dates of your escrows.
+* :bug:`-` Monerium v1-to-v2 migration transactions are no longer repeatedly processed as undecoded, allowing history decoding to finish normally.
 * :bug:`-` Automatically removing a calendar entry, like an airdrop claim deadline after the airdrop is claimed, no longer also deletes the reminder of an unrelated calendar entry. 
 * :feature:`-` Solana native staking program events should now be properly decoded and appear under rotki's events.
 * :bug:`-` Without a premium subscription, the asset movement matching actions (Ignore Selected, Ignore All Fiat and Restore Selected) no longer appear available. Previously these buttons looked clickable but did nothing, since asset movement matching is a premium feature.
