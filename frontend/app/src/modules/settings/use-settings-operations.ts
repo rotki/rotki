@@ -3,9 +3,7 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import type { Module } from '@/modules/core/common/modules';
 import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import type { SettingsUpdate } from '@/modules/settings/types/user-settings';
-import { assert } from '@rotki/common';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
-import { snakeCaseTransformer } from '@/modules/core/api/transformers';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -14,6 +12,7 @@ import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
+import { useFrontendSettingsWriter } from '@/modules/settings/use-frontend-settings-writer';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -49,6 +48,7 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
 
   const api = useSettingsApi();
   const globalItemsPerPage = useItemsPerPage();
+  const { updateFrontendSetting } = useFrontendSettingsWriter();
 
   function handleErrors(error: unknown, keys: string[]): string {
     if (!(error instanceof ApiValidationError)) {
@@ -117,32 +117,6 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
 
   function applyFrontendSettingLocal(payload: FrontendSettingsPayload): void {
     repo.updateFrontend(payload);
-  }
-
-  async function updateFrontendSetting(payload: FrontendSettingsPayload): Promise<ActionStatus> {
-    const props = Object.keys(payload);
-    assert(props.length > 0, 'Payload must be not-empty');
-    try {
-      const updatedSettings = { ...repo.frontend, ...payload };
-      await api.setSettings({
-        frontendSettings: JSON.stringify(snakeCaseTransformer(updatedSettings)),
-      });
-
-      // Merge only the patch: the repo runs the registry's post-persist effects (BigNumber format)
-      // and mirror syncs for the keys that actually changed.
-      repo.updateFrontend(payload);
-
-      return {
-        success: true,
-      };
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      return {
-        message: getErrorMessage(error),
-        success: false,
-      };
-    }
   }
 
   watchDebounced(globalItemsPerPage, async (value, oldValue): Promise<void> => {

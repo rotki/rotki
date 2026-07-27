@@ -10,7 +10,8 @@ vi.mock('@/modules/balances/api/use-exchange-api', (): Record<string, unknown> =
   useExchangeApi: vi.fn(),
 }));
 
-vi.mock('@shared/utils', (): Record<string, unknown> => ({
+vi.mock('@shared/utils', async (importOriginal): Promise<Record<string, unknown>> => ({
+  ...await importOriginal<Record<string, unknown>>(),
   backoff: vi.fn(async (_retries: number, fn: () => Promise<string[]>) => fn()),
 }));
 

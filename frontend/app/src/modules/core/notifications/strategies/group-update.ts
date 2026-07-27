@@ -11,9 +11,15 @@ export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownRetur
 
       const notifications = [...context.notifications];
       const existingIndex = notifications.findIndex(({ group }) => group === groupToFind);
+      const suppressed = cooldown.shouldSuppress(groupToFind);
 
       if (existingIndex === -1) {
-        const notification = createNotification(context.getNextId(), payload);
+        // Having no entry yet does not make this new to the user: the list starts empty on every
+        // login, which is why an unresolved condition used to interrupt again at each one.
+        const notification = createNotification(context.getNextId(), {
+          ...payload,
+          display: (payload.display ?? false) && !suppressed,
+        });
 
         if (notification.display)
           cooldown.recordDisplay(groupToFind);
@@ -26,7 +32,7 @@ export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownRetur
       let date = new Date();
       let display = payload.display ?? false;
 
-      if (cooldown.shouldSuppress(groupToFind)) {
+      if (suppressed) {
         date = existing.date;
         display = false;
       }

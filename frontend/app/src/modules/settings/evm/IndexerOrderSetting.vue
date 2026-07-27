@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { toCapitalCase } from '@rotki/common';
+import { NotificationGroup, notificationGroupOf, toCapitalCase } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useNotificationCooldown } from '@/modules/core/notifications/use-notification-cooldown';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import IndexerTabLabel from '@/modules/settings/evm/IndexerTabLabel.vue';
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
@@ -47,6 +48,7 @@ const { getChain, getChainName, getEvmChainName, txEvmChains } = useSupportedCha
 const { defaultEvmIndexerOrder, evmIndexersOrder } = useEvmIndexerSettings();
 const { update: updateSettings } = useSettingsOperations();
 const { getApiKey, useApiKey } = useExternalApiKeys();
+const { resetSchedule } = useNotificationCooldown();
 
 const { error: defaultWriteError, model: defaultOrderModel, success: defaultWriteSuccess } = useSettingModel('defaultEvmIndexerOrder', { debounce: 0 });
 const { error: chainWriteError, model: chainOrdersModel, success: chainWriteSuccess } = useSettingModel('evmIndexersOrder', { debounce: 0 });
@@ -159,6 +161,7 @@ async function addChain(chain: ChainItem): Promise<void> {
   set(activeTab, chain.id);
   set(showChainMenu, false);
   await updateSettings({ evmIndexersOrder: toEvmChainNameKeys(orders) });
+  forgetNoIndexerSchedule();
 }
 
 async function removeChain(chain: string): Promise<void> {
@@ -169,6 +172,7 @@ async function removeChain(chain: string): Promise<void> {
     set(activeTab, DEFAULT_TAB);
   }
   await updateSettings({ evmIndexersOrder: toEvmChainNameKeys(orders) });
+  forgetNoIndexerSchedule();
 }
 
 const currentOrder = computed<PrioritizedListId[]>(() => {
@@ -228,9 +232,19 @@ function navigateToApiKeys(): void {
   }
 }
 
+/**
+ * Let the no-indexer warnings interrupt again after the user reorders indexers. Every entry is
+ * cleared rather than just the edited chain's, because the default order applies to each chain
+ * that has no override of its own.
+ */
+function forgetNoIndexerSchedule(): void {
+  resetSchedule(group => notificationGroupOf(group) === NotificationGroup.NO_AVAILABLE_INDEXERS);
+}
+
 function updateDefaultOrder(value: PrioritizedListId[]): void {
   set(localDefaultOrder, value);
   set(defaultOrderModel, value.filter(isEvmIndexer));
+  forgetNoIndexerSchedule();
 }
 
 function updateChainOrder(chainId: string, value: PrioritizedListId[]): void {
@@ -239,6 +253,7 @@ function updateChainOrder(chainId: string, value: PrioritizedListId[]): void {
   set(localChainOrders, orders);
   set(pendingChainName, getChainName(chainId));
   set(chainOrdersModel, toEvmChainNameKeys(orders));
+  forgetNoIndexerSchedule();
 }
 
 watchImmediate([evmIndexersOrder, defaultEvmIndexerOrder], () => {

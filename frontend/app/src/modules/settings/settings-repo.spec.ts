@@ -75,6 +75,7 @@ describe('useSettingsRepo frontend channel', () => {
       thousandSeparator: '|',
       decimalSeparator: '-',
       refreshPeriod: 120,
+      notificationSchedule: {},
       notifyNewNfts: false,
       explorers: {
         [Blockchain.ETH]: {
