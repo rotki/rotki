@@ -973,6 +973,7 @@ def test_update_lending_protocol_underlying_assets_task(
         task_manager: TaskManager,
         globaldb: GlobalDBHandler,
         vcr_cassette_name,  # pylint: disable=unused-argument
+        allow_gnosis_etherscan: None,
 ) -> None:
     """Test that the periodic task that updates underlying assets
     for lending protocols (Aave V3 and Spark) in globaldb works

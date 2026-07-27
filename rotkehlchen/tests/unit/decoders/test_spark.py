@@ -198,7 +198,7 @@ def test_deposit_to_spark(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x9a921f8edEC50423831aE33c1062113DBB80061f']])
-def test_withdraw_from_spark(gnosis_inquirer, gnosis_accounts):
+def test_withdraw_from_spark(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     get_or_create_evm_token(
         evm_inquirer=gnosis_inquirer,
         userdb=gnosis_inquirer.database,
@@ -578,7 +578,7 @@ def test_deposit_dai_to_sdai(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x78E87757861185Ec5e8C0EF6BF0C69Fa7832df6C']])
-def test_deposit_xdai_to_sdai(gnosis_inquirer, gnosis_accounts):
+def test_deposit_xdai_to_sdai(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     actual_events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x1342646cab122d58f0b7dfae404dad5235d42224de881099dc05e59477bb93aa')),  # noqa: E501
@@ -629,7 +629,7 @@ def test_deposit_xdai_to_sdai(gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x4fFAD6ac852c0Af0AA301376F4C5Dea3a928b120']])
-def test_withdraw_xdai_from_sdai(gnosis_inquirer, gnosis_accounts):
+def test_withdraw_xdai_from_sdai(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     actual_events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe23ee1ac52b8981723c737b01781691b965c5819cccccdb98e7c8cb5894dddbb')),  # noqa: E501
@@ -680,7 +680,7 @@ def test_withdraw_xdai_from_sdai(gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x5938852FE18Ad6963322FB98D1fDDA5c24DD8a0E']])
-def test_deposit_wxdai_to_sdai(gnosis_inquirer, gnosis_accounts):
+def test_deposit_wxdai_to_sdai(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     user_address = gnosis_accounts[0]
     actual_events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
@@ -732,7 +732,7 @@ def test_deposit_wxdai_to_sdai(gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x23727b54163F63CffdD8B7769e0eCb13Df253b4e']])
-def test_withdraw_wxdai_from_sdai(gnosis_inquirer, gnosis_accounts):
+def test_withdraw_wxdai_from_sdai(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     user_address = gnosis_accounts[0]
     actual_events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,

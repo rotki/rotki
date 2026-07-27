@@ -144,7 +144,7 @@ def test_burning_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x9566E3e6F55D4378243E55DE8e037Ee8E6e4de7E']])
-def test_minting_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
+def test_minting_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(val='0x31183d757f530f799872600e6fe8644e3c20a1f90d02de9e89d0463454b400fa')),  # noqa: E501
@@ -168,7 +168,7 @@ def test_minting_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0xAf31992307AcBb6Ad8795261EeA31494e62A8e40']])
-def test_burning_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
+def test_burning_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     tx_hash = deserialize_evm_tx_hash(val='0xae087f309231e4dc1fa84927888deb6c56b9980e63f9cc049cbe2d7d2bc503e6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -190,7 +190,7 @@ def test_burning_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x39c185721fbe8b350363e6B49801305d32485A45']])
-def test_burnfrom_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
+def test_burnfrom_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     tx_hash = deserialize_evm_tx_hash(val='0xf04a5d84e6749828ff63991fb3323944472346c3b2c421e51d9999283d18f1fd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -215,6 +215,7 @@ def test_burnfrom_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
 def test_mint_v2_eure(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
@@ -240,6 +241,7 @@ def test_mint_v2_eure(
 def test_burn_v2_eure_gnosis(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
@@ -314,7 +316,7 @@ def test_burn_eure_on_arbitrum(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x4A551b4ADddB4CDBA24612bCbb543c9aD4DAE4B6']])
-def test_monerium_token_migration(gnosis_inquirer: GnosisInquirer):
+def test_monerium_token_migration(gnosis_inquirer: GnosisInquirer, allow_gnosis_etherscan: None):
     """Test that mints on the v1 to v2 migration are skipped correctly"""
     tx_hash = deserialize_evm_tx_hash('0x6241b6ef81b50e87585741362247852e6b325eb4401e5bde83e6c52ef9f2f097')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(

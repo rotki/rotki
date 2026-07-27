@@ -403,6 +403,7 @@ def test_detect_evm_accounts(
         rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
         websocket_connection: WebsocketReader,
+        allow_gnosis_etherscan: None,
 ) -> None:
     """
     Test that the endpoint to detect new evm addresses works properly
@@ -653,7 +654,11 @@ def test_argent_names(rotkehlchen_api_server: APIServer) -> None:
 @pytest.mark.parametrize('optimism_manager_connect_at_start', [(OPTIMISM_MAINNET_NODE,)])
 @pytest.mark.parametrize('binance_sc_manager_connect_at_start', BSC_NODES_TO_CONNECT)
 @pytest.mark.parametrize('base_manager_connect_at_start', [(BASE_MAINNET_NODE,)])
-def test_adding_safe(rotkehlchen_api_server: APIServer, allow_base_routescan: None) -> None:
+def test_adding_safe(
+        rotkehlchen_api_server: APIServer,
+        allow_base_routescan: None,
+        allow_gnosis_etherscan: None,
+) -> None:
     """Test adding a safe proxy. The address is deployed on arb and base only"""
     safe_address = string_to_evm_address('0x9d25AdBcffE28923E619f4Af88ECDe732c985b63')
     request_data = {'accounts': [{'address': safe_address}]}

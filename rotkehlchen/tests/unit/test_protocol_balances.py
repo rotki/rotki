@@ -1354,6 +1354,7 @@ def test_gnosis_giveth_staked_balances(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
         inquirer: Inquirer,  # pylint: disable=unused-argument
+        allow_gnosis_etherscan: None,
 ) -> None:
     """Check that staked balances in Giveth Gnosis are properly detected"""
     _, tx_decoder = get_decoded_events_of_transaction(

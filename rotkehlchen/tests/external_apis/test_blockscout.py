@@ -382,3 +382,28 @@ def test_missing_api_key_warns_once(blockscout: Blockscout) -> None:
     # querying again must not re-warn, as the warning is given only once per session
     assert blockscout._get_api_key_for_chain(ChainID.ETHEREUM) is None
     assert notifier.pop_message() is None
+
+
+@pytest.mark.parametrize('include_blockscout_key', [False])
+def test_keyless_pro_query_is_skipped_without_a_request(blockscout: Blockscout) -> None:
+    """The PRO endpoints reject keyless queries, so we must not spend a request on one.
+
+    Bailing out with a RemoteError is what lets _try_indexers move on to the next indexer, so
+    a user holding only a paid etherscan key can still query the chains blockscout leads on.
+    """
+    with patch.object(blockscout.session, 'request') as request_mock:
+        with pytest.raises(RemoteError, match='no API key configured'):
+            blockscout._get_url(chain_id=ChainID.GNOSIS)
+
+        with pytest.raises(RemoteError, match='no API key configured'):
+            blockscout._get_url(chain_id=ChainID.GNOSIS, endpoint='rpc')
+
+        request_mock.assert_not_called()
+
+    # the self-hosted instances need no key, so they must stay queryable
+    assert blockscout._get_url(chain_id=ChainID.HYPERLIQUID) == 'https://www.hyperscan.com/api'
+
+
+def test_keyed_pro_query_is_allowed(blockscout: Blockscout) -> None:
+    """With a key present the PRO url is returned as normal (the fixtures add one by default)"""
+    assert blockscout._get_url(chain_id=ChainID.GNOSIS) == 'https://api.blockscout.com/100/api'

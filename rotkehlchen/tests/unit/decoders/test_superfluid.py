@@ -230,6 +230,7 @@ def test_token_downgrade(
 def test_wrapped_native_downgrade(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ) -> None:
     _setup_super_token_cache(
         chain_id=gnosis_inquirer.chain_id,

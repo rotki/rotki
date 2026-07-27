@@ -272,7 +272,7 @@ def test_remove_liquidity_imbalanced(base_inquirer: BaseInquirer, base_accounts:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x4B5Bed4b42a629Fd6bFF77e6e4444A071f404862']])
-def test_remove_liquidity_proportionally(gnosis_inquirer: GnosisInquirer, gnosis_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
+def test_remove_liquidity_proportionally(gnosis_inquirer: GnosisInquirer, gnosis_accounts: list[ChecksumEvmAddress], allow_gnosis_etherscan: None) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x6dc9174eb7a4cf8c39bc65b5166359c1de6da8e19c160d896bf4db588496e82a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(

@@ -51,6 +51,9 @@ BLOCKSCOUT_PRO_API_BASE_URL = 'https://api.blockscout.com'
 # DoS our own backend.
 BLOCKSCOUT_RATE_LIMIT_RPS: Final = 10.0
 BLOCKSCOUT_RATE_LIMIT_BURST: Final = 20
+# The PRO endpoints reject keyless queries with 401, or with 402 asking for a key or an
+# x402 payment. Both mean the same thing for us: no usable API key.
+KEY_REQUIRED_STATUS_CODES: Final = (401, 402)
 AUTOSCOUT_INSTANCES: Final[dict[ChainID, str]] = {  # self launched instances by chains. Not in the PRO apis  # noqa: E501
     ChainID.HYPERLIQUID: 'https://www.hyperscan.com',
 }
@@ -106,6 +109,16 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         url_map = self.api_urls if endpoint == 'api' else self.rpc_urls
         if (url := url_map.get(chain_id)) is None:
             raise ChainNotSupported(f'Blockscout does not support {chain_id.name}')
+
+        if chain_id not in AUTOSCOUT_INSTANCES and self._get_api_key() is None:
+            # The PRO endpoints reject keyless queries, so a request without a key can only
+            # fail. Bail out before spending it (and a rate limiter slot) so the node inquirer
+            # moves straight on to the next indexer. This is what lets a user who only has a
+            # paid etherscan key keep querying the chains where we put blockscout first.
+            raise RemoteError(
+                f'Blockscout has no API key configured, which its endpoint for '
+                f'{chain_id.name} requires. Skipping it.',
+            )
 
         return url
 
@@ -181,6 +194,19 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 )
                 cancellable_sleep(sleep_seconds)
                 continue
+
+            if response.status_code in KEY_REQUIRED_STATUS_CODES:
+                # Keyless queries never get this far (_get_url bails out first), so reaching
+                # here means the configured key was rejected as invalid, expired or out of
+                # quota. Flag it as a key problem rather than a generic request failure, since
+                # on a chain where blockscout leads it is otherwise unqueryable with no
+                # explanation of why.
+                self.maybe_warn_missing_key()
+                raise RemoteError(
+                    f'Blockscout API request {response.url} requires an API key. '
+                    f'It failed with HTTP status code {response.status_code} and text '
+                    f'{response.text}',
+                )
 
             if response.status_code != 200:
                 raise RemoteError(

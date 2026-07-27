@@ -576,7 +576,11 @@ def test_find_aerodrome_lp_token_price(inquirer, base_manager):
 @pytest.mark.vcr(filter_query_parameters=['apikey'], match_on=['uri', 'method', 'body'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_curve_lp_token_price(inquirer: Inquirer, blockchain: ChainsAggregator):
+def test_find_curve_lp_token_price(
+        inquirer: Inquirer,
+        blockchain: ChainsAggregator,
+        allow_gnosis_etherscan: None,
+):
     tested_tokens: dict[ChainID, tuple[str, FVal]] = {
         ChainID.ETHEREUM: ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('954.52')),
         # 3CRV-OP-gauge

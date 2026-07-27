@@ -95,6 +95,7 @@ def test_duplicate_balances(
         rotkehlchen_api_server: APIServer,
         ethereum_accounts,
         gnosis_accounts,
+        allow_gnosis_etherscan: None,
 ):
     """Checks that we don't have duplicate balances for NFTs in balances.
 

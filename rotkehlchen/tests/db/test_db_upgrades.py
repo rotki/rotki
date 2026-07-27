@@ -4350,6 +4350,14 @@ def test_upgrade_db_52_to_53(
                 ('current_price_oracles', json.dumps(current_price_oracles)),
             )
 
+        write_cursor.execute(  # a gnosis order pinned to the now paid-only etherscan
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('evm_indexers_order', json.dumps({
+                'gnosis': ['etherscan'],
+                'optimism': ['blockscout', 'etherscan'],
+            })),
+        )
+
     airdrops_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
     airdrops_dir.mkdir(parents=True)
     (airdrop_parquet_path := airdrops_dir / 'obsolete.parquet').touch()
@@ -4363,6 +4371,12 @@ def test_upgrade_db_52_to_53(
         resume_from_backup=False,
     )
     with db.conn.write_ctx() as cursor:
+        assert json.loads(cursor.execute(  # blockscout prepended for gnosis, other chains as is
+            "SELECT value FROM settings WHERE name='evm_indexers_order'",
+        ).fetchone()[0]) == {
+            'gnosis': ['blockscout', 'etherscan'],
+            'optimism': ['blockscout', 'etherscan'],
+        }
         assert table_exists(cursor=cursor, name='event_metrics')
         assert table_exists(cursor=cursor, name='data_issues')
         for index_name in (

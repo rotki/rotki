@@ -256,7 +256,11 @@ def test_hop_eth_bridge_optimism(optimism_inquirer, optimism_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc5DE997A4809c15b64560b04E1141416B1a2A71e']])
-def test_hop_eth_bridge_gnosis(gnosis_inquirer: GnosisInquirer, gnosis_accounts):
+def test_hop_eth_bridge_gnosis(
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts,
+        allow_gnosis_etherscan: None,
+):
     tx_hash = deserialize_evm_tx_hash('0x8765cf6596ff1794679509fcc0ecd5adf921464859f08992944f6d6a7e905d98')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address = gnosis_accounts[0]
@@ -285,7 +289,11 @@ def test_hop_eth_bridge_gnosis(gnosis_inquirer: GnosisInquirer, gnosis_accounts)
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x0B8B3648060b97447C023E9EE227BB92E35B30FE']])
-def test_hop_usdc_bridge_gnosis(gnosis_inquirer: GnosisInquirer, gnosis_accounts):
+def test_hop_usdc_bridge_gnosis(
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts,
+        allow_gnosis_etherscan: None,
+):
     tx_hash = deserialize_evm_tx_hash('0xd00e4cd1223d962ef841c16977142856c1f54d4e87fae417c58520270e3a9420')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address = gnosis_accounts[0]
@@ -314,7 +322,11 @@ def test_hop_usdc_bridge_gnosis(gnosis_inquirer: GnosisInquirer, gnosis_accounts
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x3b6a814bFbfdae6649Bc3753018e746B8e605342']])
-def test_hop_hop_bridge_gnosis(gnosis_inquirer: GnosisInquirer, gnosis_accounts):
+def test_hop_hop_bridge_gnosis(
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts,
+        allow_gnosis_etherscan: None,
+):
     tx_hash = deserialize_evm_tx_hash('0x93a644818341e6ac22e499ac1ab73c11b6d8e55ff52ecc529125dc28790d7df1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address = gnosis_accounts[0]
@@ -593,7 +605,11 @@ def test_hop_usdc_bridge_l2_to_l1_ethereum(ethereum_inquirer: EthereumInquirer, 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xebe61c49901a46c954e37B8945Bfb87D238F8f45']])
-def test_hop_usdc_bridge_l2_to_l1_gnosis(gnosis_inquirer: GnosisInquirer, gnosis_accounts):
+def test_hop_usdc_bridge_l2_to_l1_gnosis(
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts,
+        allow_gnosis_etherscan: None,
+):
     tx_hash = deserialize_evm_tx_hash('0x0c6084399c873b06407f073acec89ffd9693ac0c7df4befd9e45e4178b5ae869')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address = gnosis_accounts[0]
@@ -996,6 +1012,7 @@ def test_hop_remove_liquidity_2(
 def test_hop_remove_liquidity_usdc_gnosis(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ):
     tx_hash = deserialize_evm_tx_hash('0x5833d34d7f20ee4e71b902dac85a025f40739a1d646091553104a3e345a38f81')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -1359,6 +1376,7 @@ def test_hop_unstake(
 def test_hop_stake_gnosis(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ):
     tx_hash = deserialize_evm_tx_hash('0xf3b00cb365594bf9b2894af0edf852d04411db49b5fe9c07708186f75bce5385')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -1409,6 +1427,7 @@ def test_hop_stake_gnosis(
 def test_hop_claim_rewards_gnosis(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ):
     tx_hash = deserialize_evm_tx_hash('0x5ad3d5050d43ec08883c76116d9328b6bf61dd8478c082bfe21bd97eb237c4b1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -1447,6 +1466,7 @@ def test_hop_claim_rewards_gnosis(
 def test_hop_unstake_gnosis(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ):
     tx_hash = deserialize_evm_tx_hash('0x10e32923be7fd7beda4551badb4fb3ca1a708268884e540d92c73b88596f3ac4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)

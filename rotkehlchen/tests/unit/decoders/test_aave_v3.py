@@ -358,7 +358,7 @@ def test_aave_v3_withdraw(ethereum_inquirer, ethereum_accounts) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xa37478676A7A86a6Fb9e8D57D3e543EAc8140A95']])
-def test_aave_v3_monerium_order(gnosis_inquirer, gnosis_accounts) -> None:
+def test_aave_v3_monerium_order(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan) -> None:
     """Regression test for https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=129465997
 
     The reason this happened was that the matching logic was comparing assets and monerium has
@@ -823,7 +823,7 @@ def test_aave_v3_borrow_base(base_inquirer, base_accounts) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x91ed7A7fd3072885c1ec905C932717Df6A8aE2cA']])
-def test_aave_v3_withdraw_gnosis(gnosis_inquirer, gnosis_accounts) -> None:
+def test_aave_v3_withdraw_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1f3cae37be928563d154c534c98f41eefe9201eb3d0129c99c1ecb51f83e5596')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     withdraw_amount, gas_fees = '4300', '0.000876816'
@@ -1431,7 +1431,7 @@ def test_aave_v3_withdraw_matic(polygon_pos_inquirer, polygon_pos_accounts) -> N
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x44ddBB35CfeBbafE98e402970517b33d8e925eB3']])
-def test_aave_v3_withdraw_xdai(gnosis_inquirer, gnosis_accounts) -> None:
+def test_aave_v3_withdraw_xdai(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan) -> None:
     tx_hash = deserialize_evm_tx_hash('0x0154ef3042e93a632d654c86bff99f7d452681dba72f4f773806c9c26470f678')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     gateway_address = string_to_evm_address('0xfE76366A986B72c3f2923e05E6ba07b7de5401e4')
@@ -1917,7 +1917,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x56a1A34F0d33788ebA53e2706854A37A5F275536']])
-def test_gnosis_xdai_deposit(gnosis_inquirer, gnosis_accounts) -> None:
+def test_gnosis_xdai_deposit(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan) -> None:
     tx_hash = deserialize_evm_tx_hash('0xbdc74d91e713209a666daf25a97da7c73aca646a7e7c0e126954e6a4c644eb72')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(

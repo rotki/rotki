@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 def test_gnosis_nodes_prune_and_archive_status(
         gnosis_manager_connect_at_start: list[tuple],
         gnosis_inquirer: GnosisInquirer,
+        allow_gnosis_etherscan: None,
 ):
     """Checks that connecting to a set of gnosis nodes, the capabilities of those nodes are
     known and stored. It tests the nodes one by one to avoid the randomness of the connections to
@@ -67,6 +68,7 @@ def test_gnosis_pay_safe_admins_recovers_frozen_safe(
         gnosis_manager_connect_at_start: list[tuple],
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[str],
+        allow_gnosis_etherscan: None,
 ) -> None:
     """Both a new Gnosis Pay safe and an old one whose singleton was frozen by Gnosis Pay's
     post-hack migration must be recognized. The frozen old safe's getOwners()/

@@ -525,6 +525,7 @@ def test_migration_13(
         rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
         websocket_connection: WebsocketReader,
+        allow_gnosis_etherscan: None,
 ) -> None:
     """
     Test migration 13

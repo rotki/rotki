@@ -282,7 +282,10 @@ def test_detect_evm_accounts_spam_tx(polygon_pos_manager: PolygonPOSManager) -> 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2024-05-03 10:45:00 GMT')
 @pytest.mark.parametrize('gnosis_accounts', [[make_evm_address()]])  # to connect to nodes
-def test_detect_evm_accounts_spam_tx_gnosis(gnosis_manager: GnosisManager) -> None:
+def test_detect_evm_accounts_spam_tx_gnosis(
+        gnosis_manager: GnosisManager,
+        allow_gnosis_etherscan: None,
+) -> None:
     """
     Test that an account with only erc20 transfers of spam tokens gets marked as spam
     and does not get detected as a tracked account in the EVM chain.

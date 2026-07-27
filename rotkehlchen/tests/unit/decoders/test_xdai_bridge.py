@@ -198,7 +198,7 @@ def test_withdraw_dai_to_ethereum(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x07AD02e0C1FA0b09fC945ff197E18e9C256838c6']])
-def test_withdraw_dai_from_gnosis(gnosis_inquirer, gnosis_accounts):
+def test_withdraw_dai_from_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x1a7014cbc1e6af2558c3a3cafd7fe87d8d67d27242b5abe8af0d4bf51a5230f6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -242,7 +242,7 @@ def test_withdraw_dai_from_gnosis(gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x7DA9A33d15413F499299687cC9d81DE84684E28E']])
-def test_deposit_dai_to_gnosis(gnosis_inquirer, gnosis_accounts):
+def test_deposit_dai_to_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x5892a695860f6087a2d93140f05e6365142ff77fd7128e39dbc03128d5797ac4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)

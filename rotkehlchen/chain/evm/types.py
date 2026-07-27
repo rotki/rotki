@@ -189,6 +189,10 @@ DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(
             EvmIndexer.BLOCKSCOUT,
         ),  # Routescan does not support Hyperliquid
         ChainID.SCROLL: (EvmIndexer.BLOCKSCOUT,),  # Etherscan removed scroll support. Routescan does not support it  # noqa: E501
+        ChainID.GNOSIS: (
+            EvmIndexer.BLOCKSCOUT,
+            EvmIndexer.ETHERSCAN,
+        ),  # Etherscan only serves gnosis to paid api keys now, so blockscout goes first and etherscan stays as a fallback. Routescan does not support gnosis  # noqa: E501
         ChainID.MONAD: (EvmIndexer.ETHERSCAN,),  # Only etherscan (monadscan) is available for Monad  # noqa: E501
     },
 )

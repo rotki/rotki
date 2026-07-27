@@ -123,6 +123,7 @@ def test_is_safe_proxy(blockchain: ChainsAggregator):
 def test_multicall_error_retry(
         gnosis_inquirer: GnosisInquirer,
         gnosis_manager_connect_at_start: list[tuple],
+        allow_gnosis_etherscan: None,
 ):
     """Test multicall retries with smaller chunks on errors."""
     wait_until_all_nodes_connected(gnosis_manager_connect_at_start, gnosis_inquirer)

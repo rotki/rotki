@@ -77,6 +77,7 @@ def test_delete_transactions_by_chain(
         gnosis_accounts,
         ethereum_inquirer,
         gnosis_inquirer,
+        allow_gnosis_etherscan: None,
 ) -> None:
     """
     Test that deleting transactions by chain doesn't delete events
@@ -436,6 +437,7 @@ def test_shared_transaction_is_redecoded_for_new_address(
         database: DBHandler,
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ) -> None:
     first_address = gnosis_accounts[0]
     new_address = string_to_evm_address('0xCDF16E42b6740D906858f37e9be495A59DAadE9E')

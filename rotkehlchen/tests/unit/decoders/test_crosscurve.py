@@ -166,7 +166,7 @@ def test_crosscurve_bridge_receive_via_curve(arbitrum_one_inquirer: ArbitrumOneI
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_crosscurve_bridge_receive(gnosis_inquirer: GnosisInquirer, gnosis_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
+def test_crosscurve_bridge_receive(gnosis_inquirer: GnosisInquirer, gnosis_accounts: list[ChecksumEvmAddress], allow_gnosis_etherscan: None) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xd2c1698e07e82e0d0b61c5d22fb2c5f993f21a515322ba890678e772a13d0e08')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     assert events == [

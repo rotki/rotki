@@ -3117,6 +3117,7 @@
       "chain_updated": "{chain} indexer order updated",
       "chain_warnings": {
         "base_limited_indexers": "Blockscout is the only freely available indexer for Base. Consider setting it as your first priority. Blockscout is currently reindexing Base, so data may be temporarily incomplete.",
+        "gnosis_key_required": "Gnosis needs an API key for one of these two indexers: a Blockscout key, or a paid Etherscan plan (Etherscan no longer serves Gnosis on the free tier). Either one on its own is enough, and an indexer with no usable key is skipped so the other one is used.",
         "optimism_blockscout": "Blockscout does not have properly indexed transactions for Optimism before the Bedrock upgrade. Pre-Bedrock transaction history may be incomplete when using Blockscout."
       },
       "data_name": "indexer",
