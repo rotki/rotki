@@ -50,7 +50,9 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
       action: actions,
       category: NotificationCategory.DEFAULT,
       display: true,
-      group: NotificationGroup.NO_AVAILABLE_INDEXERS,
+      // Per chain: each chain has its own missing indexers and its own suppression entry, so they
+      // must not collapse into one notification that only ever shows the chain that arrived last.
+      group: `${NotificationGroup.NO_AVAILABLE_INDEXERS}:${chain}`,
       message: t('notification_messages.no_available_indexers.message', { chain: chainName }),
       priority: Priority.ACTION,
       severity: Severity.WARNING,

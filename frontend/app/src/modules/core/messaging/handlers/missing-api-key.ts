@@ -1,7 +1,7 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type { NotificationHandler } from '../interfaces';
 import type { MissingApiKey } from '@/modules/core/messaging/types';
-import { type NotificationAction, NotificationCategory, Priority, Severity, toHumanReadable } from '@rotki/common';
+import { type NotificationAction, NotificationCategory, NotificationGroup, Priority, Severity, toHumanReadable } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
@@ -141,6 +141,10 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
       action: actions,
       category,
       display: !isBeaconchain,
+      // Per service, so repeated warnings for the same service collapse into one entry while two
+      // different services stay separate. Without a group these stack up unbounded, which the
+      // callers with no once-per-session guard (gnosis pay, monerium) hit on every request.
+      group: `${NotificationGroup.MISSING_API_KEY}:${service}`,
       i18nParam: {
         choice: 0,
         message: messageKey,
