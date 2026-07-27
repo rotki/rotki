@@ -56,6 +56,17 @@ export type RoundingMode = z.infer<typeof RoundingMode>;
 
 const RefreshPeriod = z.number().min(-1).max(Constraints.MAX_MINUTES_DELAY).int();
 
+/**
+ * How often a notification group has interrupted the user, so the nag schedule can back off
+ * instead of re-toasting the same unresolved condition on every login.
+ */
+export const NotificationScheduleEntry = z.object({
+  lastShown: z.number().int().nonnegative(),
+  shownCount: z.number().int().nonnegative(),
+});
+
+export type NotificationScheduleEntry = z.infer<typeof NotificationScheduleEntry>;
+
 const QueryPeriod = z.number().int().max(Constraints.MAX_SECONDS_DELAY).nonnegative();
 
 export enum DashboardTableType {
@@ -216,6 +227,7 @@ export const FrontendSettings = z.object({
     Defaults.DEFAULT_NEWLY_DETECTED_TOKENS_TTL_DAYS,
   ),
   nftsInNetValue: z.boolean().default(true),
+  notificationSchedule: z.record(z.string(), NotificationScheduleEntry).default({}).catch({}),
   notifyNewNfts: z.boolean().optional().default(false),
   passwordConfirmationInterval: PasswordConfirmationInterval.default(
     Defaults.DEFAULT_PASSWORD_CONFIRMATION_INTERVAL,

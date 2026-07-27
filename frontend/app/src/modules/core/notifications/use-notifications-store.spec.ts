@@ -1,7 +1,17 @@
-import { NotificationCategory, type NotificationData, type NotificationPayload, Priority, Severity } from '@rotki/common';
+import { NotificationCategory, type NotificationData, NotificationGroup, type NotificationPayload, Priority, Severity } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
+
+const { mockRecordDisplay } = vi.hoisted(() => ({ mockRecordDisplay: vi.fn() }));
+
+vi.mock('@/modules/core/notifications/use-notification-cooldown', () => ({
+  useNotificationCooldown: vi.fn(() => ({
+    recordDisplay: mockRecordDisplay,
+    resetSchedule: vi.fn(),
+    shouldSuppress: vi.fn(() => false),
+  })),
+}));
 
 function testPayload(overrides: Partial<NotificationPayload> & { message: string; title: string }): NotificationPayload {
   return {
@@ -15,6 +25,7 @@ describe('useNotificationsStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.useFakeTimers();
+    mockRecordDisplay.mockReset();
   });
 
   afterEach(() => {
@@ -133,5 +144,67 @@ describe('useNotificationsStore', () => {
     store.displayed([id]);
 
     expect(get(data)[0].display).toBe(false);
+  });
+
+  it('should record the display of a grouped notification against its schedule', () => {
+    const store = useNotificationsStore();
+    const { data } = storeToRefs(store);
+    const group = `${NotificationGroup.NO_AVAILABLE_INDEXERS}:optimism`;
+
+    store.add([
+      createNotification(store.getNextId(), testPayload({ display: true, group, message: 'msg', title: 'title' })),
+    ]);
+    store.displayed([get(data)[0].id]);
+
+    // The schedule advances when the user actually sees the popup, not when it is created.
+    expect(mockRecordDisplay).toHaveBeenCalledWith(group);
+  });
+
+  it('should not record a display for a notification that belongs to no group', () => {
+    const store = useNotificationsStore();
+    const { data } = storeToRefs(store);
+
+    store.add([
+      createNotification(store.getNextId(), testPayload({ display: true, message: 'msg', title: 'title' })),
+    ]);
+    store.displayed([get(data)[0].id]);
+
+    expect(mockRecordDisplay).not.toHaveBeenCalled();
+  });
+
+  it('should ignore ids that no longer match a notification', () => {
+    const store = useNotificationsStore();
+    const { data } = storeToRefs(store);
+
+    store.add([
+      createNotification(store.getNextId(), testPayload({
+        display: true,
+        group: NotificationGroup.NEW_DETECTED_TOKENS,
+        message: 'msg',
+        title: 'title',
+      })),
+    ]);
+    store.displayed([9999]);
+
+    expect(mockRecordDisplay).not.toHaveBeenCalled();
+    expect(get(data)[0].display).toBe(true);
+  });
+
+  it('should do nothing when no ids were displayed', () => {
+    const store = useNotificationsStore();
+    const { data } = storeToRefs(store);
+
+    store.add([
+      createNotification(store.getNextId(), testPayload({
+        display: true,
+        group: NotificationGroup.NEW_DETECTED_TOKENS,
+        message: 'msg',
+        title: 'title',
+      })),
+    ]);
+    store.displayed([]);
+
+    expect(mockRecordDisplay).not.toHaveBeenCalled();
+    expect(get(data)[0].display).toBe(true);
   });
 });

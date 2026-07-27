@@ -65,6 +65,7 @@ describe('user-types', () => {
       graphZeroBased: true,
       ignoreSnapshotError: false,
       showGraphRangeSelector: true,
+      notificationSchedule: {},
       notifyNewNfts: false,
       nftsInNetValue: true,
       persistTableSorting: false,
