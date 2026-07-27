@@ -1,16 +1,10 @@
 <script setup lang="ts">
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
+import HistoryEventsActionsCenter from '@/modules/history/events/actions-center/HistoryEventsActionsCenter.vue';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/dialog-types';
-import HistoryEventsIssueCheckButton from '@/modules/history/events/HistoryEventsIssueCheckButton.vue';
-import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
-import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
-import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
-import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
 import HistoryRefreshButton from '@/modules/history/refresh/HistoryRefreshButton.vue';
 
-const showAlerts = defineModel<boolean>('showAlerts', { default: false });
-
-const { processing } = defineProps<{
+defineProps<{
   processing: boolean;
   loading: boolean;
   includeEvmEvents: boolean;
@@ -23,93 +17,11 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-type IssueCheckType = 'unmatched' | 'bridges' | 'duplicates';
-
 const menuOpen = ref<boolean>(false);
-const checkingType = ref<IssueCheckType>();
-const noIssuesFeedback = ref<IssueCheckType>();
-
-const { refreshUnmatchedAssetMovements, unmatchedCount, ignoredCount } = useUnmatchedAssetMovements();
-const {
-  ignoredCount: ignoredBridgesCount,
-  refreshUnmatchedBridgeTransactions,
-  unmatchedCount: unmatchedBridgesCount,
-} = useUnmatchedBridgeTransactions();
-const { fetchCustomizedEventDuplicates, totalCount: duplicatesCount } = useCustomizedEventDuplicates();
-const { issueCount: internalConflictsCount } = useInternalTxConflicts();
-
-const { start: startFeedbackTimeout, stop: stopFeedbackTimeout } = useTimeoutFn(() => {
-  set(noIssuesFeedback, undefined);
-}, 2000, { immediate: false });
-
-function showNoIssuesFeedback(type: IssueCheckType): void {
-  stopFeedbackTimeout();
-  set(noIssuesFeedback, type);
-  startFeedbackTimeout();
-}
-
-async function checkUnmatched(): Promise<void> {
-  set(checkingType, 'unmatched');
-  try {
-    await refreshUnmatchedAssetMovements();
-    if (get(unmatchedCount) > 0 || get(ignoredCount) > 0) {
-      set(menuOpen, false);
-      emit('show:dialog', { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
-    }
-    else {
-      showNoIssuesFeedback('unmatched');
-    }
-  }
-  finally {
-    set(checkingType, undefined);
-  }
-}
-
-async function checkUnmatchedBridges(): Promise<void> {
-  set(checkingType, 'bridges');
-  try {
-    await refreshUnmatchedBridgeTransactions();
-    if (get(unmatchedBridgesCount) > 0 || get(ignoredBridgesCount) > 0) {
-      set(menuOpen, false);
-      emit('show:dialog', { type: DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS });
-    }
-    else {
-      showNoIssuesFeedback('bridges');
-    }
-  }
-  finally {
-    set(checkingType, undefined);
-  }
-}
-
-async function checkDuplicates(): Promise<void> {
-  set(checkingType, 'duplicates');
-  try {
-    await fetchCustomizedEventDuplicates();
-    if (get(duplicatesCount) > 0) {
-      set(menuOpen, false);
-      emit('show:dialog', { type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
-    }
-    else {
-      showNoIssuesFeedback('duplicates');
-    }
-  }
-  finally {
-    set(checkingType, undefined);
-  }
-}
-
-function checkInternalConflicts(): void {
-  set(menuOpen, false);
-  emit('show:dialog', { type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS });
-}
 </script>
 
 <template>
-  <HistoryEventsIssueCheckButton
-    v-model:show-alerts="showAlerts"
-    @show:dialog="emit('show:dialog', $event)"
-  />
+  <HistoryEventsActionsCenter @show:dialog="emit('show:dialog', $event)" />
 
   <HistoryRefreshButton
     :processing="processing"
@@ -199,67 +111,6 @@ function checkInternalConflicts(): void {
         <RuiIcon name="lu-clock-arrow-up" />
       </template>
       {{ t('transactions.repulling.action') }}
-    </RuiButton>
-
-    <RuiDivider class="my-1" />
-
-    <RuiButton
-      variant="list"
-      :disabled="processing || !!checkingType"
-      :loading="checkingType === 'unmatched'"
-      :color="noIssuesFeedback === 'unmatched' ? 'success' : undefined"
-      @click.stop="checkUnmatched()"
-    >
-      <template #prepend>
-        <RuiIcon :name="noIssuesFeedback === 'unmatched' ? 'lu-circle-check' : 'lu-git-compare-arrows'" />
-      </template>
-      {{ noIssuesFeedback === 'unmatched' ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_unmatched_movements') }}
-    </RuiButton>
-
-    <RuiButton
-      variant="list"
-      :disabled="processing || !!checkingType"
-      :loading="checkingType === 'bridges'"
-      :color="noIssuesFeedback === 'bridges' ? 'success' : undefined"
-      @click.stop="checkUnmatchedBridges()"
-    >
-      <template #prepend>
-        <RuiIcon :name="noIssuesFeedback === 'bridges' ? 'lu-circle-check' : 'lu-git-compare-arrows'" />
-      </template>
-      {{ noIssuesFeedback === 'bridges' ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_unmatched_bridges') }}
-    </RuiButton>
-
-    <RuiButton
-      variant="list"
-      :disabled="processing || !!checkingType"
-      :loading="checkingType === 'duplicates'"
-      :color="noIssuesFeedback === 'duplicates' ? 'success' : undefined"
-      @click.stop="checkDuplicates()"
-    >
-      <template #prepend>
-        <RuiIcon :name="noIssuesFeedback === 'duplicates' ? 'lu-circle-check' : 'lu-copy'" />
-      </template>
-      {{ noIssuesFeedback === 'duplicates' ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_duplicate_events') }}
-    </RuiButton>
-
-    <RuiButton
-      variant="list"
-      :disabled="processing || !!checkingType"
-      @click.stop="checkInternalConflicts()"
-    >
-      <template #prepend>
-        <RuiBadge
-          :model-value="internalConflictsCount > 0"
-          color="warning"
-          dot
-          placement="top"
-          offset-y="4"
-          offset-x="-4"
-        >
-          <RuiIcon name="lu-git-merge" />
-        </RuiBadge>
-      </template>
-      {{ t('transactions.alerts.check_internal_conflicts') }}
     </RuiButton>
   </RuiMenu>
 </template>

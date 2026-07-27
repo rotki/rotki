@@ -21,7 +21,6 @@ import {
   useUnmatchedBridgeTransactions,
 } from '@/modules/history/events/composables';
 import { DIALOG_TYPES, type DialogShowOptions, type HistoryEventsToggles } from '@/modules/history/events/dialog-types';
-import HistoryEventsAlerts from '@/modules/history/events/HistoryEventsAlerts.vue';
 import HistoryEventsDialogContainer from '@/modules/history/events/HistoryEventsDialogContainer.vue';
 import HistoryEventsFiltersChips from '@/modules/history/events/HistoryEventsFiltersChips.vue';
 import HistoryEventsTableActions from '@/modules/history/events/HistoryEventsTableActions.vue';
@@ -77,7 +76,6 @@ const toggles = ref<HistoryEventsToggles>(getDefaultToggles());
 // Synced through the router query by useHistoryEventsFilters' queryParamsOnly (see below).
 const overlayMode = ref<OverlayMode>(OverlayMode.NONE);
 
-const showAlerts = ref<boolean>(false);
 const currentAction = ref<HistoryEventAction>(HISTORY_EVENT_ACTIONS.QUERY);
 const eventPriceUpdatePayload = ref<EventPriceUpdatePayload>();
 
@@ -312,7 +310,6 @@ watchDebounced(route, async () => {
     >
       <template #buttons>
         <HistoryEventsViewButtons
-          v-model:show-alerts="showAlerts"
           :processing="processing"
           :loading="anyEventsDecoding"
           :include-evm-events="includes.evmEvents"
@@ -322,16 +319,6 @@ watchDebounced(route, async () => {
       </template>
 
       <div>
-        <HistoryEventsAlerts
-          v-model:show="showAlerts"
-          :processing="processing"
-          :main-page="mainPage"
-          @open:match-asset-movements="dialogContainer?.show({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS })"
-          @open:match-bridge-transactions="dialogContainer?.show({ type: DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS })"
-          @open:internal-tx-conflicts="dialogContainer?.show({ type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS })"
-          @open:decoding-status="dialogContainer?.show({ type: DIALOG_TYPES.DECODING_STATUS })"
-        />
-
         <div class="flex gap-4 items-start">
           <RuiCard class="flex-1 min-w-0">
             <template

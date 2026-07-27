@@ -1359,10 +1359,6 @@
       "error_title": "Auto Match Failed",
       "task_title": "Matching asset movements"
     },
-    "banner": {
-      "action": "Match Now",
-      "message": "There are {count} unmatched asset movements that require manual matching."
-    },
     "compact_notes": {
       "deposit": "Deposit {amount} {asset}{to}{from}",
       "from_part": " from {address}",
@@ -1923,9 +1919,6 @@
       "error_title": "Bridge Auto Match Failed",
       "task_title": "Matching bridge transactions"
     },
-    "banner": {
-      "message": "There are {count} unmatched bridge transactions that require manual matching."
-    },
     "dialog": {
       "create_counterpart": "Create Counterpart",
       "create_counterpart_in_tooltip": "Create a synthetic mirror event on the source chain and link it to this bridge withdrawal. Use this when the source chain can no longer be queried, so the transfer stays a movement of your own funds.",
@@ -2348,11 +2341,6 @@
       "restore_selected_confirm": "Are you sure you want to restore {count} ignored duplicate event(s)?",
       "restore_tooltip": "Restore this ignored duplicate so it appears in the review list again.",
       "show_in_history": "Show in History Events"
-    },
-    "banner": {
-      "auto_fix_message": "{count} duplicate event(s) can be auto-fixed.",
-      "manual_review_message": "{count} duplicate event(s) need manual review.",
-      "view_action": "View"
     },
     "chips": {
       "added_count": "{count} new duplicate(s) detected.",
@@ -4375,10 +4363,6 @@
       "settings": "Toggle settings",
       "show_in_events": "Show in history events"
     },
-    "banner": {
-      "action": "Review",
-      "message": "{count} internal transaction conflict(s) need attention"
-    },
     "columns": {
       "chain": "Chain",
       "last_error": "Last Error",
@@ -5032,12 +5016,8 @@
       "subtitle": "Penalty settings for misbehaving oracle(s) in runtime.",
       "title": "Oracle penalty settings",
       "validation": {
-        "oracle_penalty_duration": {
-
-        },
-        "oracle_penalty_threshold_count": {
-
-        }
+        "oracle_penalty_duration": {},
+        "oracle_penalty_threshold_count": {}
       }
     }
   },
@@ -6217,12 +6197,53 @@
     },
     "alerts": {
       "button": "Actions needed",
-      "check_duplicate_events": "Check duplicate events",
-      "check_internal_conflicts": "Check internal tx conflicts",
-      "check_unmatched_bridges": "Check unmatched bridge transactions",
-      "check_unmatched_movements": "Check unmatched movements",
-      "no_issues_found": "No issues found",
-      "title": "There are actions needed for your events"
+      "button_checking": "Checking for actions",
+      "button_clear": "All clear",
+      "cleared": "Checked:",
+      "ignored_description": "Nothing left to match. Open to restore anything you ignored.",
+      "issues": {
+        "auto_fix_duplicates": {
+          "action": "Review",
+          "description": "Duplicated customized events that rotki can remove for you.",
+          "title": "Duplicate events"
+        },
+        "internal_conflicts": {
+          "action": "Review",
+          "description": "rotki retries these automatically. Review only if they keep failing.",
+          "title": "Internal transaction conflicts"
+        },
+        "manual_review_duplicates": {
+          "action": "Review",
+          "description": "Duplicated customized events that need your decision.",
+          "title": "Duplicates needing review"
+        },
+        "undecoded": {
+          "action": "View status",
+          "description": "Missing from your history and reports until they are decoded.",
+          "title": "Undecoded transactions"
+        },
+        "unmatched_bridges": {
+          "action": "Match",
+          "description": "Bridge transfers without their counterpart on the other chain.",
+          "title": "Unmatched bridge transactions"
+        },
+        "unmatched_movements": {
+          "action": "Match",
+          "description": "Deposits and withdrawals not paired with an on-chain transaction.",
+          "title": "Unmatched asset movements"
+        }
+      },
+      "locked": "Premium",
+      "locked_hint": "Matching these requires the {tier} tier.",
+      "locked_hint_generic": "Matching these requires a premium subscription.",
+      "rescan": "Re-scan",
+      "review_ignored": "Review ignored",
+      "subtitle": "{count} category needs your attention | {count} categories need your attention",
+      "subtitle_checking": "Waiting for the history sync to finish.",
+      "subtitle_clear": "Everything in your history has been checked.",
+      "title": "Actions needed",
+      "title_checking": "Checking for actions",
+      "title_clear": "No actions needed"
     },
     "dialog": {
       "add_tx": "Add transaction by tx hash",
@@ -6541,9 +6562,7 @@
         "not_started": "The decoding process will continue after transaction querying is done.",
         "true": "All transactions have been processed."
       },
-      "decoding": {
-
-      },
+      "decoding": {},
       "fetching": "Checking transaction decoding status",
       "preparing": "Decoding transactions, please wait...",
       "progress": "Progress",
@@ -6551,10 +6570,6 @@
       "redecode_all": "Redecode All Transactions",
       "title": "Transaction decoding status",
       "transactions_processed": "{processed} / {total} transactions processed",
-      "undecoded_banner": {
-        "action": "View status",
-        "message": "{count} transactions have not been decoded into events yet. They are missing from your history and reports until they are processed."
-      },
       "undecoded_transactions": "Undecoded transactions"
     },
     "filter": {
