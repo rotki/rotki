@@ -4,6 +4,7 @@ import logging
 import operator
 from collections import defaultdict
 from contextlib import suppress
+from functools import partial
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
@@ -29,6 +30,7 @@ from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
     ExchangeQueryBalances,
     ExchangeWithExtras,
+    HistoryEventQueue,
 )
 from rotkehlchen.exchanges.utils import (
     SignatureGeneratorMixin,
@@ -1048,6 +1050,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[SwapEvent]:
         """
         For trades coming from api/myTrades this function won't respect the provided range and
@@ -1069,12 +1072,18 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             )
             raise InputError(f'Cannot query {self.name} trade history with no market pairs selected.')  # noqa: E501
 
-        iter_markets = list(set(self.selected_pairs).intersection(set(self._symbols_to_pair.keys())))  # noqa: E501
+        iter_markets = [
+            symbol
+            for symbol in dict.fromkeys(self.selected_pairs)
+            if symbol in self._symbols_to_pair
+        ]
         log.debug(f'Will query the following binance markets: {iter_markets}')
-        raw_data = []
+        events: list[SwapEvent] = []
+        pending_pair_cursors: dict[str, str] = {}
         # Limit of results to return. 1000 is max limit according to docs
         limit = 1000
         for symbol in iter_markets:
+            raw_data = []
             if force_refresh:
                 last_trade_id = 0  # Bypass cache when force_refresh is True
             else:
@@ -1118,46 +1127,62 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 raw_data.extend(result)
 
             raw_data.sort(key=operator.itemgetter('time'))
+            pair_events: list[SwapEvent] = []
+            last_unique_id = None
+            for raw_trade in raw_data:
+                try:
+                    last_unique_id, swap_events = trade_from_binance(
+                        binance_trade=raw_trade,
+                        binance_symbols_to_pair=self.symbols_to_pair,
+                        exchange_name=self.name,
+                        location=self.location,
+                    )
+                except UnknownAsset as e:
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='trade',
+                    )
+                    continue
+                except (DeserializationError, KeyError) as e:
+                    msg = str(e)
+                    if isinstance(e, KeyError):
+                        msg = f'Missing key entry for {msg}.'
+                    self.msg_aggregator.add_error(
+                        f'Error processing a {self.name} trade. Check logs '
+                        f'for details. Ignoring it.',
+                    )
+                    log.error(
+                        'Error processing a %s trade',
+                        self.name,
+                        trade=raw_trade,
+                        error=msg,
+                    )
+                    continue
 
-        events: list[SwapEvent] = []
-        last_pair_to_tradeid: dict[str, str] = {}
-        for raw_trade in raw_data:
-            try:
-                trade_pair = raw_trade['symbol']
-                unique_id, swap_events = trade_from_binance(
-                    binance_trade=raw_trade,
-                    binance_symbols_to_pair=self.symbols_to_pair,
-                    exchange_name=self.name,
-                    location=self.location,
-                )
-            except UnknownAsset as e:
-                self.send_unknown_asset_message(
-                    asset_identifier=e.identifier,
-                    details='trade',
-                )
+                pair_events.extend(swap_events)
+
+            if force_refresh or last_unique_id is None:
+                events.extend(pair_events)
                 continue
-            except (DeserializationError, KeyError) as e:
-                msg = str(e)
-                if isinstance(e, KeyError):
-                    msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
-                    f'Error processing a {self.name} trade. Check logs '
-                    f'for details. Ignoring it.',
-                )
-                log.error(
-                    f'Error processing a {self.name} trade',
-                    trade=raw_trade,
-                    error=msg,
-                )
-                continue
 
-            # trades are ordered in asc order by us
-            last_pair_to_tradeid[trade_pair] = unique_id
-            events.extend(swap_events)
+            update = partial(
+                self.db.set_dynamic_cache,
+                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                value=int(last_unique_id),
+                location=self.location.serialize(),
+                location_name=self.name,
+                queried_pair=symbol,
+            )
+            if event_queue is None:
+                events.extend(pair_events)
+                pending_pair_cursors[symbol] = last_unique_id
+            else:
+                event_queue.events.extend(pair_events)
+                event_queue.flush(cursor_update=update)
 
-        if not force_refresh:  # Only update cache when not forcing refresh
-            with self.db.conn.write_ctx() as write_cursor:
-                for symbol, unique_id in last_pair_to_tradeid.items():
+        if len(pending_pair_cursors) != 0:
+            with self.db.user_write() as write_cursor:
+                for symbol, unique_id in pending_pair_cursors.items():
                     self.db.set_dynamic_cache(
                         write_cursor=write_cursor,
                         name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
@@ -1173,8 +1198,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         if len(convert_trades := self._query_online_convert_trades(start_ts=start_ts, end_ts=end_ts)) != 0:  # noqa: E501
             events.extend(convert_trades)
 
-        if len(fiat_payments) != 0 or len(convert_trades) != 0:
-            events.sort(key=lambda x: x.timestamp)
+        events.sort(key=lambda event: event.timestamp)
 
         return events
 
@@ -1477,32 +1501,80 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         return results
 
+    def _query_online_history_events(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            force_refresh: bool,
+            event_queue: HistoryEventQueue | None,
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
+        events: list[HistoryBaseEntry] = []
+        with_errors = False
+        try:
+            events.extend(self._query_online_asset_movements(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                force_refresh=force_refresh,
+            ))
+        except (RemoteError, BinancePermissionError) as e:
+            with_errors = True
+            log.error(
+                'Failed to call %s _query_online_asset_movements between %s and %s due to %s',
+                self.name,
+                start_ts,
+                end_ts,
+                e,
+            )
+
+        try:
+            events.extend(self._query_online_trade_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                force_refresh=force_refresh,
+                event_queue=event_queue,
+            ))
+        except (RemoteError, BinancePermissionError) as e:
+            with_errors = True
+            log.error(
+                'Failed to call %s _query_online_trade_history between %s and %s due to %s',
+                self.name,
+                start_ts,
+                end_ts,
+                e,
+            )
+
+        # Don't claim the range as queried if any sub-query failed, otherwise the base class
+        # marks it as done and the failed window's events are never fetched again. Mirrors
+        # kraken's behavior and the query_online_history_events contract.
+        return events, start_ts if with_errors else end_ts
+
     def query_online_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
-        events: list[HistoryBaseEntry] = []
-        with_errors = False
-        for query_func in (
-            self._query_online_asset_movements,
-            self._query_online_trade_history,
-        ):
-            try:
-                events.extend(query_func(start_ts=start_ts, end_ts=end_ts, force_refresh=force_refresh))  # noqa: E501
-            except (RemoteError, BinancePermissionError) as e:
-                with_errors = True
-                log.error(
-                    f'Failed to call {self.name} {query_func.__name__} '
-                    f'between {start_ts} and {end_ts} due to {e!s}',
-                )
-                continue
+        return self._query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            force_refresh=force_refresh,
+            event_queue=None,
+        )
 
-        # Don't claim the range as queried if any sub-query failed, otherwise the base class
-        # marks it as done and the failed window's events are never fetched again. Mirrors
-        # kraken's behavior and the query_online_history_events contract.
-        return events, start_ts if with_errors else end_ts
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        events, actual_end_ts = self._query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            force_refresh=False,
+            event_queue=event_queue,
+        )
+        event_queue.events.extend(events)
+        return actual_end_ts
 
     def _query_online_asset_movements(
             self,

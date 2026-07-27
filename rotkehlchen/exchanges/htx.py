@@ -14,7 +14,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin, get_key_if_has_val
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
@@ -276,7 +280,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
             )
         except RemoteError as e:
             log.error(f'Failed to query HTX api for deposits and withdrawals due to {e!s}')
-            return []
+            raise
 
         movements = []
         movement_subtype: Final = (
@@ -332,6 +336,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Query deposits and withdrawals sequentially
 
@@ -343,17 +348,37 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
         """
         events: list[AssetMovement | SwapEvent] = []
         for query_for in ('deposit', 'withdraw'):
-            events.extend(self._query_deposits_withdrawals(
+            new_events = self._query_deposits_withdrawals(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 query_for=query_for,
-            ))
+            )
+            if event_queue is None:
+                events.extend(new_events)
+            else:
+                event_queue.events.extend(new_events)
+                event_queue.flush()
 
         events.extend(self._query_trades(
             start_ts=start_ts,
             end_ts=end_ts,
+            event_queue=event_queue,
         ))
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        events, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        event_queue.events.extend(events)
+        return actual_end_ts
 
     def query_online_margin_history(
             self,
@@ -366,6 +391,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[SwapEvent]:
         """
         Query trades from HTX in the spot category.
@@ -399,6 +425,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
                     'size': PAGINATION_LIMIT,
                 },
             )
+            page_events: list[SwapEvent] = []
             for raw_trade in raw_data:
                 try:
                     symbol, fee_currency = raw_trade['symbol'], raw_trade['fee-currency']
@@ -436,7 +463,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
                         amount=deserialize_fval(raw_trade['filled-amount']),
                         rate=deserialize_price(raw_trade['price']),
                     )
-                    events.extend(create_swap_events(
+                    page_events.extend(create_swap_events(
                         timestamp=deserialize_timestamp_ms_from_intms(raw_trade['created-at']),
                         location=self.location,
                         spend=spend,
@@ -458,6 +485,12 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
                         f'Failed to deserialize HTX trade {raw_trade} due to missing key {e}. '
                         'Skipping...',
                     )
+
+            if event_queue is None:
+                events.extend(page_events)
+            else:
+                event_queue.events.extend(page_events)
+                event_queue.flush()
 
             upper_ts = Timestamp(upper_ts - DAY_IN_SECONDS * 2)
             lower_ts = Timestamp(lower_ts - DAY_IN_SECONDS * 2)

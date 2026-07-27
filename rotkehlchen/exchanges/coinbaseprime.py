@@ -15,7 +15,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -400,6 +404,7 @@ class Coinbaseprime(ExchangeInterface):
             portfolio_id: str,
             method: Literal['orders', 'transactions'],
             decoding_logic: Callable[[dict[str, Any]], Sequence[HistoryEvent | AssetMovement | SwapEvent]],  # noqa: E501
+            event_queue: HistoryEventQueue | None = None,
     ) -> Sequence[HistoryEvent | AssetMovement | SwapEvent]:
         """Abstraction to consume all the events in the selected queries.
         It uses the `decoding_logic` to process the different events and returns a list
@@ -416,6 +421,7 @@ class Coinbaseprime(ExchangeInterface):
                 params=query_params,
             )
 
+            page_events: list[HistoryEvent | AssetMovement | SwapEvent] = []
             for raw_event in response[method]:
                 try:
                     if len(events := decoding_logic(raw_event)) == 0:
@@ -423,11 +429,15 @@ class Coinbaseprime(ExchangeInterface):
                             f'Wont process event {raw_event} from coinbase prime. Skipping',
                         )
                     else:
-                        result.extend(events)
+                        page_events.extend(events)
                 except DeserializationError as e:
                     self.msg_aggregator.add_error(
                         f'Failed to process coinbase prime event due to {e}. Skipping entry...',
                     )
+
+            result.extend(page_events)
+            if event_queue is not None:
+                event_queue.flush(page_events)
 
             if (
                 response['pagination']['has_next'] is True and
@@ -523,6 +533,7 @@ class Coinbaseprime(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         events: list[HistoryEvent | AssetMovement | SwapEvent] = []
         for portfolio_id in self._get_portfolio_ids():
@@ -536,6 +547,7 @@ class Coinbaseprime(ExchangeInterface):
                 portfolio_id=portfolio_id,
                 method='transactions',
                 decoding_logic=self._decode_history_events,
+                event_queue=event_queue,
             ))
             events.extend(self._query_paginated_endpoint(
                 query_params={
@@ -547,9 +559,23 @@ class Coinbaseprime(ExchangeInterface):
                 portfolio_id=portfolio_id,
                 method='orders',
                 decoding_logic=lambda data: _process_trade(exchange_name=self.name, trade_data=data),  # noqa: E501
+                event_queue=event_queue,
             ))
 
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        _, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        return actual_end_ts
 
     def query_online_margin_history(
             self,

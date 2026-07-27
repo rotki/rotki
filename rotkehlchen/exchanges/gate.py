@@ -18,7 +18,6 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.constants import GATE_LOCATION_KEY
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
@@ -28,6 +27,7 @@ from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
     ExchangeQueryBalances,
     ExchangeWithExtras,
+    HistoryEventQueue,
 )
 from rotkehlchen.exchanges.utils import (
     SignatureGeneratorMixin,
@@ -277,6 +277,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[SwapEvent]:
         """Query spot trades from Gate.
 
@@ -299,15 +300,15 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 )
             except RemoteError as e:
                 log.error('Failed to query Gate trades due to %s', e)
-                break
+                raise
 
             if not isinstance(raw_data, list):
-                log.error('Gate trades response is not a list: %s', raw_data)
-                break
+                raise RemoteError(f'Gate trades response is not a list: {raw_data}')
 
             if len(raw_data) == 0:
                 break
 
+            page_events: list[SwapEvent] = []
             for raw_trade in raw_data:
                 try:
                     currency_pair = raw_trade['currency_pair']
@@ -376,7 +377,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     continue
 
                 try:
-                    events.extend(create_swap_events_multi_fee(
+                    page_events.extend(create_swap_events_multi_fee(
                         timestamp=timestamp,
                         location=self.location,
                         spend=spend,
@@ -393,6 +394,12 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         'Failed to deserialize Gate trade %s due to missing key %s. Skipping...',
                         raw_trade, e,
                     )
+
+            if event_queue is None:
+                events.extend(page_events)
+            else:
+                event_queue.events.extend(page_events)
+                event_queue.flush()
 
             if len(raw_data) < PAGINATION_LIMIT:
                 break
@@ -440,11 +447,10 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     )
                 except RemoteError as e:
                     log.error('Failed to query Gate %s due to %s', query_for, e)
-                    break
+                    raise
 
                 if not isinstance(result, list):
-                    log.error('Gate %s response is not a list: %s', query_for, result)
-                    break
+                    raise RemoteError(f'Gate {query_for!s} response is not a list: {result}')
 
                 raw_data.extend(result)
                 if len(result) < GATE_MOVEMENTS_PAGINATION_LIMIT:
@@ -521,10 +527,9 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         chunk avoids re-querying already processed chunks if a later chunk fails.
         """
         self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_STARTED)
-        db = DBHistoryEvents(self.db)
         location_string = f'{self.location!s}_history_events_{self.name}'
         with self.db.conn.read_ctx() as cursor:
-            ranges_to_query = (ranges := DBQueryRanges(self.db)).get_location_query_ranges(
+            ranges_to_query = DBQueryRanges(self.db).get_location_query_ranges(
                 cursor=cursor,
                 location_string=location_string,
                 start_ts=GATE_MOVEMENTS_QUERY_START_TS,
@@ -544,32 +549,33 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
                     period=[chunk_start, chunk_end],
                 )
-                new_events, actual_end_ts = self.query_online_history_events(
+                event_queue = HistoryEventQueue(
+                    database=self.db,
+                    location_string=location_string,
+                    query_start_ts=chunk_start,
+                )
+                _, actual_end_ts = self.query_online_history_events(
                     start_ts=chunk_start,
                     end_ts=chunk_end,
+                    event_queue=event_queue,
                 )
-                with self.db.user_write() as write_cursor:
-                    if len(new_events) != 0:
-                        db.add_history_events(write_cursor=write_cursor, history=new_events)
-                    ranges.update_used_query_range(
-                        write_cursor=write_cursor,
-                        location_string=location_string,
-                        queried_ranges=[(chunk_start, actual_end_ts)],
-                    )
-                log.debug(
-                    'Finished querying Gate history events chunk for %s with '
-                    'chunk_start=%s, actual_end_ts=%s, events_num=%s',
-                    self.name, chunk_start, actual_end_ts, len(new_events),
-                )
-
+                event_queue.flush(queried_until_ts=actual_end_ts)
                 if actual_end_ts != chunk_end:
                     log.error(
                         'Failed to query all %s history events between %s '
                         'and %s. Last successfully queried timestamp: %s',
                         self.name, chunk_start, chunk_end, actual_end_ts,
                     )
-                    self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
+                    self.send_history_events_status_msg(
+                        step=HistoryEventsStep.QUERYING_EVENTS_FINISHED,
+                    )
                     return
+
+                log.debug(
+                    'Finished querying Gate history events chunk for %s with '
+                    'chunk_start=%s, actual_end_ts=%s',
+                    self.name, chunk_start, actual_end_ts,
+                )
 
                 chunk_start = chunk_end
 
@@ -580,22 +586,36 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Query deposits, withdrawals, and trades from Gate."""
         events: list[AssetMovement | SwapEvent] = []
-        movement_tasks = [
-            spawn(
-                self._query_deposits_withdrawals,
-                start_ts=start_ts,
-                end_ts=end_ts,
-                query_for=event_type,
-            ) for event_type in (HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL)
-        ]
-        wait(movement_tasks)
-        for task in movement_tasks:
-            events.extend(result_of(task))
+        if event_queue is None:
+            movement_tasks = [
+                spawn(
+                    self._query_deposits_withdrawals,
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    query_for=event_type,
+                ) for event_type in (HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL)
+            ]
+            wait(movement_tasks)
+            for task in movement_tasks:
+                events.extend(result_of(task))
+        else:
+            for event_type in (HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL):
+                event_queue.events.extend(self._query_deposits_withdrawals(
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    query_for=event_type,
+                ))
+                event_queue.flush()
 
-        events.extend(self._query_trades(start_ts=start_ts, end_ts=end_ts))
+        events.extend(self._query_trades(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        ))
         return events, end_ts
 
     def query_online_margin_history(

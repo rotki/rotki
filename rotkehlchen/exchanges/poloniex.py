@@ -18,7 +18,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import (
     SignatureGeneratorMixin,
     deserialize_asset_movement_address,
@@ -312,25 +316,43 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start: Timestamp,
             end: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[dict[str, Any]]:
         """Returns poloniex trade history"""
         data: list[dict[str, Any]] = []
         start_ms = start * 1000
         end_ms = end * 1000
         current_start_ms = start_ms
+        seen_trade_ids: set[int | str] = set()
         while current_start_ms < end_ms:
             new_data = self.api_query_list('/trades', {
                 'startTime': current_start_ms,
                 'endTime': (current_end_ms := min(current_start_ms + self.TRADES_MAX_INTERVAL, end_ms)),  # noqa: E501
                 'limit': self.TRADES_LIMIT,
             })
+            page_data: list[dict[str, Any]] = []
+            for trade in new_data:
+                if (trade_id := trade['id']) not in seen_trade_ids:
+                    page_data.append(trade)
+                    seen_trade_ids.add(trade_id)
+
+            if event_queue is not None:
+                page_events: list[SwapEvent] = []
+                for trade in page_data:
+                    page_events.extend(self._deserialize_trade(
+                        trade_data=trade,
+                        start_ts=start,
+                        end_ts=end,
+                    ))
+                if len(page_events) != 0:
+                    event_queue.flush(page_events)
+
             results_length = len(new_data)
-            existing_ids = {x['id'] for x in data}
             if results_length < self.TRADES_LIMIT:
                 # got all the trades for this 180 day chunk. Accumulate them (deduplicating
                 # against previous chunks) and move on to the next chunk. Note we extend
                 # instead of overwriting since data may hold trades from previous chunks.
-                data.extend(trade for trade in new_data if trade['id'] not in existing_ids)
+                data.extend(page_data)
                 current_start_ms = current_end_ms
                 continue
 
@@ -340,9 +362,6 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                 try:
                     timestamp_ms = trade['createTime']
                     latest_ts_ms = max(latest_ts_ms, timestamp_ms)
-                    # since we query again from last ts seen make sure no duplicates make it in
-                    if trade['id'] not in existing_ids:
-                        data.append(trade)
                 except (DeserializationError, KeyError) as e:
                     msg = str(e)
                     if isinstance(e, KeyError):
@@ -357,11 +376,12 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                     )
                     continue
 
+            data.extend(page_data)
             # the chunk returned TRADES_LIMIT results so it may have more. Query again
             # from the last ts seen in the last result.
             current_start_ms = latest_ts_ms
 
-        return data
+        return [] if event_queue is not None else data
 
     # ---- General exchanges interface ----
     @protect_with_lock()
@@ -536,6 +556,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         result = self.api_query_dict(
             '/wallets/activity',
@@ -559,9 +580,14 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                 movement_data=deposit,
             ))
 
+        if event_queue is not None:
+            event_queue.flush(events)
+            events = []
+
         raw_trade_history = self.return_trade_history(
             start=start_ts,
             end=end_ts,
+            event_queue=event_queue,
         )
         log.debug('Poloniex trade history query', results_num=len(raw_trade_history))
         for trade in raw_trade_history:
@@ -572,6 +598,19 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             ))
 
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        _, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        return actual_end_ts
 
     def query_online_margin_history(
             self,

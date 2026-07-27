@@ -14,7 +14,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
@@ -197,6 +201,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Return deposits/withdrawals history on Woo in a range of time."""
         events: list[AssetMovement | SwapEvent] = []
@@ -212,6 +217,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             },
             deserialization_method=self._deserialize_asset_movement,
             entries_key='rows',
+            event_queue=event_queue,
         ))
         events.extend(self._api_query_paginated(
             endpoint='v1/client/hist_trades',
@@ -223,8 +229,23 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             },
             deserialization_method=self._deserialize_trade,
             entries_key='data',
+            event_queue=event_queue,
         ))
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        events, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        event_queue.events.extend(events)
+        return actual_end_ts
 
     def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Woo API key is good for usage in rotki"""
@@ -292,6 +313,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             options: dict[str, Any],
             deserialization_method: Callable[[dict[str, Any]], Any],
             entries_key: Literal['data'],
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[SwapEvent]:
         ...
 
@@ -302,6 +324,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             options: dict[str, Any],
             deserialization_method: Callable[[dict[str, Any]], Any],
             entries_key: Literal['rows'],
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[AssetMovement]:
         ...
 
@@ -311,6 +334,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             options: dict[str, Any],
             deserialization_method: Callable[[dict[str, Any]], Any],
             entries_key: Literal['data', 'rows'],
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[SwapEvent] | (list[AssetMovement] | list):
         """Request a Woo API endpoint paginating via an options attribute."""
         assert list(options.keys()) == sorted(options.keys())  # options need to be in alphabetic order as stated in their api: https://docs.woo.org/#example  # noqa: E501
@@ -329,17 +353,18 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
                     options=call_options,
                 )
                 self.msg_aggregator.add_error(f'Got remote error while querying Woo: {e}')
-                return []
+                raise
             try:
                 entries: list[dict[str, Any]] = response[entries_key]
-            except KeyError:
+            except KeyError as e:
                 msg = f'Woo {endpoint} missing key {entries_key} in response'
                 self.msg_aggregator.add_error(msg)
                 log.error(f'{msg}: {response}', options=call_options)
-                return []
+                raise RemoteError(msg) from e
+            page_results = []
             for entry in entries:
                 try:
-                    results.extend(deserialization_method(entry))
+                    page_results.extend(deserialization_method(entry))
                 except (DeserializationError, KeyError) as e:
                     msg = f'Missing key {e}' if isinstance(e, KeyError) else str(e)
                     log.error(f'Woo {endpoint} {msg}: {entry}')
@@ -349,6 +374,12 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
                         asset_identifier=e.identifier,
                         details=f'{endpoint} query',
                     )
+
+            if event_queue is None:
+                results.extend(page_results)
+            else:
+                event_queue.events.extend(page_results)
+                event_queue.flush()
 
             if len(entries) < API_MAX_LIMIT:
                 break
@@ -373,7 +404,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
                 self.msg_aggregator.add_error(
                     f'Failed to load all Woo {endpoint}. Check logs for details.',
                 )
-                break
+                raise RemoteError(msg) from e
 
         return results
 

@@ -14,7 +14,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import (
@@ -367,6 +371,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             query_type: Literal['deposit', 'withdrawal'],
             success_status: Literal['1', '5'],
             event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND],
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[HistoryBaseEntry]:
         """Query deposits and withdrawals from the API."""
         return self._query_paginated(
@@ -386,12 +391,14 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                 raw_result=raw_result,
                 event_subtype=event_subtype,
             ),
+            event_queue=event_queue,
         )
 
     def _query_trades(
             self,
             start_ts: TimestampMS,
             end_ts: TimestampMS,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[HistoryBaseEntry]:
         """Query trade history from the API.
         Note that according to the docs, this can only get the history for the last 6 months.
@@ -423,6 +430,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                 page_size=TRADES_LIMIT,
                 result_key='data',
                 deserialize_fn=self._deserialize_trade,
+                event_queue=event_queue,
             ))
             if to_ts >= end_ts:
                 log.debug(f'Finished querying {self.name} trades from {start_ts} to {end_ts}')
@@ -443,6 +451,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             page_size: int,
             result_key: Literal['data', 'deposit_list', 'withdrawal_list'],
             deserialize_fn: Callable[[dict[str, Any]], list[AssetMovement]] | Callable[[dict[str, Any]], list[SwapEvent]],  # noqa: E501
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[HistoryBaseEntry]:
         """Query the paginated deposits, withdrawals, or trades from the API.
         https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-get-deposit-history
@@ -455,12 +464,14 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             try:
                 result = self._process_response(self._api_query(method=method, options=options))
                 if result.code != API_SUCCESS_CODE or result.result is None:
-                    log.error(f'Failed to query {self.name} {query_type}s: {result.message}')
-                    break
+                    msg = f'Failed to query {self.name} {query_type}s: {result.message}'
+                    log.error(msg)
+                    raise RemoteError(msg)
 
+                page_events: list[HistoryBaseEntry] = []
                 for raw_asset_movement in (raw_list := result.result.get(result_key, [])):
                     try:
-                        events.extend(deserialize_fn(raw_asset_movement))
+                        page_events.extend(deserialize_fn(raw_asset_movement))
                     except (DeserializationError, UnknownAsset, KeyError) as e:
                         msg = f'missing key: {e!s}' if isinstance(e, KeyError) else str(e)
                         log.error(
@@ -472,6 +483,12 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                             f'Check the logs for details.',
                         )
 
+                if event_queue is None:
+                    events.extend(page_events)
+                else:
+                    event_queue.events.extend(page_events)
+                    event_queue.flush()
+
                 if len(raw_list) < page_size:
                     break
 
@@ -481,7 +498,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                     options[page_key] = raw_list[-1]['create_time_ns']
             except RemoteError as e:
                 self.msg_aggregator.add_error(f'Failed to query {self.name} {query_type}s: {e!s}')
-                break
+                raise
 
         return events
 
@@ -511,6 +528,38 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
         ))
         events.extend(self._query_trades(start_ts=start_ts_ms, end_ts=end_ts_ms))
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        self.first_connection()
+        self._query_deposits_withdrawals(
+            start_ts=(start_ts_ms := ts_sec_to_ms(start_ts)),
+            end_ts=(end_ts_ms := ts_sec_to_ms(end_ts)),
+            query_type='deposit',
+            method='private/get-deposit-history',
+            success_status=DEPOSIT_ARRIVED_STATUS,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            event_queue=event_queue,
+        )
+        self._query_deposits_withdrawals(
+            start_ts=start_ts_ms,
+            end_ts=end_ts_ms,
+            query_type='withdrawal',
+            method='private/get-withdrawal-history',
+            success_status=WITHDRAWAL_COMPLETED_STATUS,
+            event_subtype=HistoryEventSubType.SPEND,
+            event_queue=event_queue,
+        )
+        self._query_trades(
+            start_ts=start_ts_ms,
+            end_ts=end_ts_ms,
+            event_queue=event_queue,
+        )
+        return end_ts
 
     def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Crypto.com API key is good for usage in rotki"""

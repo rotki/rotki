@@ -14,7 +14,11 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
@@ -248,62 +252,62 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
-
         page = 1
-        resp_trades = []
+        events: list[SwapEvent] = []
 
         while True:
             resp = self._api_query('get', 'trades', {'state': 1, 'page': page})
-            resp_trades.extend(resp['trades'])
+            page_events: list[SwapEvent] = []
+            for tx in resp['trades']:
+                log.debug('Processing raw Bitcoin.de trade: %s', tx)
+                try:
+                    timestamp = iso8601ts_to_timestamp(tx['successfully_finished_at'])
+                except KeyError:
+                    timestamp = iso8601ts_to_timestamp(tx['trade_marked_as_paid_at'])
 
-            if 'page' not in resp:
+                if tx['state'] != 1 or not start_ts <= timestamp <= end_ts:
+                    continue
+                try:
+                    page_events.extend(swap_events := self._deserialize_trade(raw_trade=tx))
+                    log.debug('Deserialized swap events from Bitcoin.de: %s', swap_events)
+                except UnknownAsset as e:
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='trade',
+                    )
+                except (DeserializationError, KeyError) as e:
+                    msg = f'Missing key entry for {e}.' if isinstance(e, KeyError) else str(e)
+                    self.msg_aggregator.add_error(
+                        'Error processing a Bitcoin.de trade. '
+                        'Check logs for details. Ignoring it.',
+                    )
+                    log.error('Error processing a Bitcoin.de trade', trade=tx, error=msg)
+
+            if event_queue is None:
+                events.extend(page_events)
+            else:
+                event_queue.flush(page_events)
+
+            if 'page' not in resp or resp['page']['current'] >= resp['page']['last']:
                 break
-
-            if resp['page']['current'] >= resp['page']['last']:
-                break
-
             page = resp['page']['current'] + 1
 
-        log.debug('Bitcoin.de trade history query', results_num=len(resp_trades))
-        events = []
-        for tx in resp_trades:
-            log.debug(f'Processing raw Bitcoin.de trade: {tx}')
-            try:
-                timestamp = iso8601ts_to_timestamp(tx['successfully_finished_at'])
-            except KeyError:
-                # For very old trades (2013) bitcoin.de does not return 'successfully_finished_at'
-                timestamp = iso8601ts_to_timestamp(tx['trade_marked_as_paid_at'])
-
-            if tx['state'] != 1:
-                continue
-            if timestamp < start_ts or timestamp > end_ts:
-                continue
-            try:
-                events.extend(swap_events := self._deserialize_trade(raw_trade=tx))
-                log.debug(f'Deserialized swap events from Bitcoin.de: {swap_events}')
-            except UnknownAsset as e:
-                self.send_unknown_asset_message(
-                    asset_identifier=e.identifier,
-                    details='trade',
-                )
-                continue
-            except (DeserializationError, KeyError) as e:
-                msg = str(e)
-                if isinstance(e, KeyError):
-                    msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
-                    'Error processing a Bitcoin.de trade. Check logs '
-                    'for details. Ignoring it.',
-                )
-                log.error(
-                    'Error processing a Bitcoin.de trade',
-                    trade=tx,
-                    error=msg,
-                )
-                continue
-
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        _, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        return actual_end_ts
 
     def query_online_margin_history(
             self,

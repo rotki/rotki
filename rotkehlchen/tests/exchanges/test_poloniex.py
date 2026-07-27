@@ -1,7 +1,7 @@
 import json
 import warnings as test_warnings
 from typing import TYPE_CHECKING, cast
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from urllib.parse import parse_qs, urlparse
 
 import pytest
@@ -12,6 +12,7 @@ from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.exchanges.poloniex import Poloniex, trade_from_poloniex
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -259,6 +260,21 @@ def test_query_trade_history_multiple_chunks(poloniex: Poloniex) -> None:
         raw_trades = poloniex.return_trade_history(start=start_ts, end=end_ts)
 
     assert {trade['id'] for trade in raw_trades} == {1, 2, 3}
+
+
+def test_incremental_trade_history_deduplicates_pages(poloniex: Poloniex) -> None:
+    """Each trade is deserialized and queued only once when adjacent pages overlap."""
+    event_queue = MagicMock(spec=HistoryEventQueue)
+    start_ts = Timestamp(1500000000)
+    with patch.object(poloniex, 'api_query_list', return_value=[TEST_POLO_TRADE]):
+        assert poloniex.return_trade_history(
+            start=start_ts,
+            end=Timestamp(start_ts + Poloniex.TRADES_MAX_INTERVAL * 2 // 1000),
+            event_queue=event_queue,
+        ) == []
+
+    assert event_queue.flush.call_count == 1
+    assert len(event_queue.flush.call_args.args[0]) == 3
 
 
 def test_query_trade_history_unexpected_data(poloniex):

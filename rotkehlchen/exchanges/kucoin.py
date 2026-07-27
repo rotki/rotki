@@ -19,7 +19,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
@@ -282,6 +286,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             case: Literal[KucoinCase.OLD_TRADES, KucoinCase.TRADES],
             start_ts: Timestamp,
             end_ts: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[SwapEvent]:
         ...
 
@@ -292,6 +297,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             case: Literal[KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
             start_ts: Timestamp,
             end_ts: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[AssetMovement]:
         ...
 
@@ -306,12 +312,13 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             ],
             start_ts: Timestamp,
             end_ts: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[SwapEvent] | list[AssetMovement]:
         """Request endpoints paginating via an options attribute
 
         May raise RemoteError
         """
-        results = []
+        results: list[Any] = []
         deserialization_method: DeserializationMethod
         if case == KucoinCase.TRADES:
             if start_ts < API_V2_TIMESTART:
@@ -321,6 +328,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                     case=KucoinCase.OLD_TRADES,
                     start_ts=start_ts,
                     end_ts=API_V2_TIMESTART,
+                    event_queue=event_queue,
                 ))
                 if end_ts <= API_V2_TIMESTART:
                     return results
@@ -387,6 +395,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                     continue
                 raise RemoteError(msg) from e
 
+            page_events: list[Any] = []
             for raw_result in raw_results:
                 try:
                     if (
@@ -396,7 +405,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                         log.debug(f'Found an inner kucoin {case}. Skipping it.')
                         continue
 
-                    results.extend(deserialization_method(raw_result=raw_result))  # type: ignore[arg-type]  # deserialization_method return value will be correct for the specified case
+                    page_events.extend(deserialization_method(raw_result=raw_result))
                 except (
                     DeserializationError,
                     KeyError,
@@ -416,6 +425,10 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                         asset_identifier=e.identifier,
                         details=str(case),
                     )
+
+            results.extend(page_events)
+            if event_queue is not None:
+                event_queue.flush(page_events)
 
             is_last_page = total_page in (0, current_page)
             if is_last_page:
@@ -722,6 +735,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Return the account deposits and withdrawals
 
@@ -739,6 +753,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                 case=case,
                 start_ts=start_ts,
                 end_ts=end_ts,
+                event_queue=event_queue,
             ))
 
         events.extend(self._api_query_paginated(
@@ -751,9 +766,23 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             case=KucoinCase.TRADES,
             start_ts=start_ts,
             end_ts=end_ts,
+            event_queue=event_queue,
         ))
 
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        _, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        return actual_end_ts
 
     def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the KuCoin API key is good for usage in rotki

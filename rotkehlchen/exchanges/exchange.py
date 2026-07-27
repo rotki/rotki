@@ -2,6 +2,7 @@ import logging
 from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass, field
 from http.client import RemoteDisconnected
 from threading import Event, RLock, Semaphore
 from typing import TYPE_CHECKING, Any
@@ -38,6 +39,7 @@ from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -51,6 +53,45 @@ ExchangeQueryBalances = tuple[dict[AssetWithOracles, Balance] | None, str]
 
 ExchangeHistoryFailCallback = Callable[[str], None]
 ExchangeHistoryNewStepCallback = Callable[[str], None]
+HistoryQueryProgressUpdate = Callable[['DBCursor'], None]
+
+
+@dataclass
+class HistoryEventQueue:
+    database: DBHandler
+    location_string: str
+    query_start_ts: Timestamp
+    events: list[HistoryBaseEntry] = field(default_factory=list)
+
+    def flush(
+            self,
+            events: Sequence[HistoryBaseEntry] = (),
+            cursor_update: HistoryQueryProgressUpdate | None = None,
+            queried_until_ts: Timestamp | None = None,
+    ) -> None:
+        """Atomically persist queued events, cursor progress and a safe range boundary."""
+        self.events.extend(events)
+        if len(self.events) == 0 and cursor_update is None and queried_until_ts is None:
+            return
+
+        with self.database.user_write() as write_cursor:
+            if len(self.events) != 0:
+                DBHistoryEvents(self.database).add_history_events(
+                    write_cursor=write_cursor,
+                    history=self.events,
+                )
+            if cursor_update is not None:
+                cursor_update(write_cursor)
+            if queried_until_ts is not None and queried_until_ts > self.query_start_ts:
+                DBQueryRanges(self.database).update_used_query_range(
+                    write_cursor=write_cursor,
+                    location_string=self.location_string,
+                    queried_ranges=[(self.query_start_ts, queried_until_ts)],
+                )
+
+        self.events.clear()
+        if queried_until_ts is not None:
+            self.query_start_ts = queried_until_ts
 
 
 class RecoveringExchangeSession(requests.Session):
@@ -341,6 +382,20 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         """
         return [], end_ts
 
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        """Query events into the explicit queue and return the safely covered timestamp."""
+        events, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
+        event_queue.events.extend(events)
+        return actual_end_ts
+
     def query_margin_history(
             self,
             start_ts: Timestamp,
@@ -423,10 +478,9 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
     def query_history_events(self) -> None:
         """Queries the exchange for new history events and saves them to the database."""
         self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_STARTED)
-        db = DBHistoryEvents(self.db)
         location_string = f'{self.location!s}_history_events_{self.name}'
         with self.db.conn.read_ctx() as cursor:
-            ranges_to_query = (ranges := DBQueryRanges(self.db)).get_location_query_ranges(
+            ranges_to_query = DBQueryRanges(self.db).get_location_query_ranges(
                 cursor=cursor,
                 location_string=location_string,
                 start_ts=Timestamp(0),
@@ -438,25 +492,27 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
                 step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
                 period=[query_start_ts, query_end_ts],
             )
-            new_events, actual_end_ts = self.query_online_history_events(
+            event_queue = HistoryEventQueue(
+                database=self.db,
+                location_string=location_string,
+                query_start_ts=query_start_ts,
+            )
+            actual_end_ts = self.query_online_history_events_into_queue(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
+                event_queue=event_queue,
             )
-            with self.db.user_write() as write_cursor:
-                if len(new_events) != 0:
-                    db.add_history_events(write_cursor=write_cursor, history=new_events)
-                ranges.update_used_query_range(
-                    write_cursor=write_cursor,
-                    location_string=location_string,
-                    queried_ranges=[(query_start_ts, actual_end_ts)],
-                )
-
+            event_queue.flush(queried_until_ts=actual_end_ts)
             if actual_end_ts != query_end_ts:
                 log.error(
-                    f'Failed to query all {self.name} history events between {query_start_ts} '
-                    f'and {query_end_ts}. Last successfully queried timestamp: {actual_end_ts}',
+                    'Failed to query all %s history events between %s and %s. '
+                    'Last successfully queried timestamp: %s',
+                    self.name,
+                    query_start_ts,
+                    query_end_ts,
+                    actual_end_ts,
                 )
-                break  # There were errors preventing the full range from being queried. Stop any further queries.  # noqa: E501
+                break
 
         self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
 

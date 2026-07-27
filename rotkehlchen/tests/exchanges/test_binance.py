@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import hmac
+import json
 import os
 import warnings as test_warnings
 from typing import TYPE_CHECKING, cast
@@ -498,6 +499,100 @@ def test_binance_query_history_events_failure_keeps_range(function_scope_binance
             end_ts=end_ts,
         )
     assert actual_end_ts == end_ts
+
+
+def test_binance_history_query_persists_completed_pairs_on_rate_limit(
+        function_scope_binance: Binance,
+) -> None:
+    """Completed pairs remain committed when a later pair repeatedly exhausts its 429 retries."""
+    binance = function_scope_binance
+    binance.selected_pairs = ['BNBBTC', 'BNBBTC', 'ETHBTC']
+    first_trade = json.loads(BINANCE_MYTRADES_RESPONSE)[0] | {'id': 1, 'commission': '0'}
+    second_trade = first_trade | {
+        'symbol': 'ETHBTC',
+        'id': 2,
+        'commissionAsset': 'ETH',
+        'time': 1609459201000,
+    }
+    with (
+        patch.object(binance, '_query_online_asset_movements', return_value=[]),
+        patch.object(binance, '_query_online_fiat_payments', return_value=[]),
+        patch.object(binance, '_query_online_convert_trades', return_value=[]),
+        patch.object(
+            binance,
+            'api_query_list',
+            side_effect=(
+                [first_trade],
+                RemoteError('HTTP status code: 429 after exhausting the retries'),
+                [],
+                RemoteError('HTTP status code: 429 after exhausting the retries'),
+                [],
+                [second_trade],
+            ),
+        ) as mock_api_query,
+    ):
+        binance.query_history_events()
+        binance.query_history_events()
+
+        assert [
+            (entry.kwargs['options']['symbol'], entry.kwargs['options']['fromId'])
+            for entry in mock_api_query.call_args_list
+        ] == [('BNBBTC', 0), ('ETHBTC', 0), ('BNBBTC', 1), ('ETHBTC', 0)]
+
+        with binance.db.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
+                (create_group_identifier_from_unique_id(
+                    location=Location.BINANCE,
+                    unique_id='1',
+                ),),
+            ).fetchone()[0] == 2
+            assert binance.db.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                location=binance.location.serialize(),
+                location_name=binance.name,
+                queried_pair='BNBBTC',
+            ) == 1
+            assert binance.db.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                location=binance.location.serialize(),
+                location_name=binance.name,
+                queried_pair='ETHBTC',
+            ) is None
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
+                (f'{Location.BINANCE!s}_history_events_{binance.name}',),
+            ).fetchone()[0] == 0
+
+        binance.query_history_events()
+
+    with binance.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier IN (?, ?)',
+            (
+                create_group_identifier_from_unique_id(
+                    location=Location.BINANCE,
+                    unique_id='1',
+                ),
+                create_group_identifier_from_unique_id(
+                    location=Location.BINANCE,
+                    unique_id='2',
+                ),
+            ),
+        ).fetchone()[0] == 4
+        assert binance.db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+            location=binance.location.serialize(),
+            location_name=binance.name,
+            queried_pair='ETHBTC',
+        ) == 2
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
+            (f'{Location.BINANCE!s}_history_events_{binance.name}',),
+        ).fetchone()[0] == 1
 
 
 def test_binance_query_trade_history_unexpected_data(function_scope_binance):

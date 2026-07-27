@@ -104,10 +104,11 @@ def test_validate_api_key_err_auth_nonce(mock_bitstamp):
         assert result is False
         assert msg == API_ERR_AUTH_NONCE_MESSAGE
 
-        movements, _ = mock_bitstamp.query_online_history_events(0, 1)
-        assert movements == []
+        with pytest.raises(RemoteError):
+            mock_bitstamp.query_online_history_events(0, 1)
+
         errors = mock_bitstamp.msg_aggregator.consume_errors()
-        assert len(errors) == 3  # since we do 2 queries for movements and 1 for trades
+        assert len(errors) == 1
         assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
 
 
@@ -533,8 +534,7 @@ def test_api_query_paginated_user_transactions_required_options_values(mock_bits
 
 
 def test_api_query_paginated_invalid_json(mock_bitstamp):
-    """Test an invalid JSON response returns empty list.
-    """
+    """Test an invalid JSON response aborts the incomplete query."""
     options = {
         'since_id': USER_TRANSACTION_MIN_SINCE_ID,
         'limit': API_MAX_LIMIT,
@@ -545,13 +545,15 @@ def test_api_query_paginated_invalid_json(mock_bitstamp):
     def mock_api_query_response(endpoint, method, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, '[{"key"}]')
 
-    with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        result = mock_bitstamp._api_query_paginated(
+    with (
+        patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response),
+        pytest.raises(RemoteError),
+    ):
+        mock_bitstamp._api_query_paginated(
             end_ts=Timestamp(1),
             options=options,
             case='trades',
         )
-        assert result == []
 
 
 @pytest.mark.parametrize('response', [
@@ -559,9 +561,7 @@ def test_api_query_paginated_invalid_json(mock_bitstamp):
     '{"code": "APIXXX", "text": "has text"}',
 ])
 def test_api_query_paginated_non_related_error_code(mock_bitstamp, response):
-    """Test an error code unrelated with the system clock not synced one
-    returns an empty list.
-    """
+    """Test an unrelated API error aborts the incomplete query."""
     options = {
         'since_id': USER_TRANSACTION_MIN_SINCE_ID,
         'limit': API_MAX_LIMIT,
@@ -572,14 +572,15 @@ def test_api_query_paginated_non_related_error_code(mock_bitstamp, response):
     def mock_api_query_response(endpoint, method, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.FORBIDDEN, response)
 
-    with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        result = mock_bitstamp._api_query_paginated(
+    with (
+        patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response),
+        pytest.raises(RemoteError),
+    ):
+        mock_bitstamp._api_query_paginated(
             end_ts=Timestamp(1),
             options=options,
             case='trades',
         )
-
-    assert result == []
 
 
 def test_api_query_paginated_skips_different_type_result(mock_bitstamp):
@@ -1219,6 +1220,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
     )
     with (
         patch.object(mock_bitstamp, '_api_query_paginated') as mock_api_query_paginated,
+        patch.object(mock_bitstamp, '_query_crypto_transactions', return_value=([], None)),
         patch.object(mock_bitstamp, '_query_trades'),
     ):
         mock_bitstamp.query_online_history_events(
