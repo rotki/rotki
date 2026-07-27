@@ -1,5 +1,5 @@
 import type { Router } from 'vue-router';
-import { assert, type Notification, type NotificationAction, NotificationCategory, Severity } from '@rotki/common';
+import { assert, type Notification, type NotificationAction, NotificationCategory, NotificationGroup, Severity } from '@rotki/common';
 import { mockT } from '@test/i18n';
 import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -55,6 +55,21 @@ describe('createMissingApiKeyHandler', () => {
     expect(result.category).toBe(NotificationCategory.ETHERSCAN);
     expect(result.severity).toBe(Severity.WARNING);
     expect(result.display).toBe(true);
+  });
+
+  it('should group per service so repeats collapse but different services stay separate', async () => {
+    const handler = createMissingApiKeyHandler(mockT, router);
+
+    const etherscan = await handler.handle({ service: 'etherscan' });
+    const blockscout = await handler.handle({ service: 'blockscout' });
+    const etherscanAgain = await handler.handle({ service: 'etherscan' });
+
+    assert(etherscan);
+    assert(blockscout);
+    assert(etherscanAgain);
+    expect(etherscan.group).toBe(`${NotificationGroup.MISSING_API_KEY}:etherscan`);
+    expect(etherscanAgain.group).toBe(etherscan.group);
+    expect(blockscout.group).not.toBe(etherscan.group);
   });
 
   it('should route to the external service settings from the primary action', async () => {

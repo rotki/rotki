@@ -36,7 +36,29 @@ describe('createNoAvailableIndexersHandler', () => {
     const result = await handler.handle({ chain: 'optimism' });
 
     expect(result).toMatchObject({
-      group: NotificationGroup.NO_AVAILABLE_INDEXERS,
+      group: `${NotificationGroup.NO_AVAILABLE_INDEXERS}:optimism`,
+    });
+  });
+
+  it('should give each chain its own group so they do not collapse into one notification', async () => {
+    const handler = createNoAvailableIndexersHandler(mockT, router);
+
+    const optimism = await handler.handle({ chain: 'optimism' });
+    const binance = await handler.handle({ chain: 'binance_sc' });
+
+    assert(optimism);
+    assert(binance);
+    expect(optimism.group).not.toBe(binance.group);
+  });
+
+  it('should keep notifying other chains when one chain is suppressed', async () => {
+    const handler = createNoAvailableIndexersHandler(mockT, router);
+    const store = useSettingsRepo();
+    store.updateFrontend({ suppressNoIndexerChains: ['binance_sc'] });
+
+    expect(await handler.handle({ chain: 'binance_sc' })).toBeNull();
+    expect(await handler.handle({ chain: 'optimism' })).toMatchObject({
+      group: `${NotificationGroup.NO_AVAILABLE_INDEXERS}:optimism`,
     });
   });
 
