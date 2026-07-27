@@ -1,6 +1,6 @@
 import type { ComponentResolver } from 'unplugin-vue-components';
 import { builtinModules } from 'node:module';
-import { join, relative, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import process from 'node:process';
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
 import { ruiIconsPlugin } from '@rotki/ui-library/vite-plugin';
@@ -56,25 +56,33 @@ if (process.env.ROTKI_ACCOUNTING_UPDATE === 'True')
   process.env.VITE_ACCOUNTING_UPDATE = 'true';
 
 /**
- * Force a full page reload when a locale JSON changes. @intlify/unplugin-vue-i18n
- * precompiles the messages and self-accepts the compiled module, so edits to
- * src/locales are silently swallowed (no reload, stale text) and an
- * `import.meta.hot.accept` + `setLocaleMessage` fallback no-ops. A full reload
- * re-fetches the recompiled messages and re-initialises i18n from scratch.
+ * Hot-swap locale messages instead of losing the app state on every en.json edit.
+ *
+ * Vite 8 no longer ships a JS `vite:json` plugin, so @intlify/unplugin-vue-i18n falls
+ * back to its virtual-module path and serves each locale as `virtual:intlify-i18n-N`.
+ * That path has no HMR wiring: the compiled module is cached and never invalidated, so
+ * locale edits are invisible even across a full page reload until the dev server is
+ * restarted. Invalidating those virtual modules here re-runs the message compiler and
+ * lets the `import.meta.hot.accept` handler in src/i18n.ts swap the messages in place.
  */
-function reloadOnLocaleChange(): Plugin {
+function hmrLocaleMessages(): Plugin {
   const localeDir = resolve(PACKAGE_ROOT, './src/locales');
+  const virtualPrefix = 'virtual:intlify-i18n-';
   return {
-    name: 'rotki:reload-on-locale-change',
-    handleHotUpdate({ file, server }) {
-      if (file.startsWith(localeDir) && file.endsWith('.json')) {
-        server.config.logger.info(
-          `[locale] ${relative(PACKAGE_ROOT, file)} changed, reloading page...`,
-          { clear: true, timestamp: true },
-        );
-        server.ws.send({ path: '*', type: 'full-reload' });
-        return [];
-      }
+    name: 'rotki:hmr-locale-messages',
+    hotUpdate({ file, modules }) {
+      if (!file.startsWith(localeDir) || !file.endsWith('.json'))
+        return;
+
+      const graph = this.environment.moduleGraph;
+      const virtualModules = [...graph.idToModuleMap.entries()]
+        .filter(([id]) => id.startsWith(virtualPrefix))
+        .map(([, mod]) => mod);
+
+      for (const mod of virtualModules)
+        graph.invalidateModule(mod);
+
+      return [...modules, ...virtualModules];
     },
   };
 }
@@ -218,7 +226,7 @@ export default defineConfig({
     VueI18nPlugin({
       include: [resolve(PACKAGE_ROOT, './src/locales/**')],
     }),
-    reloadOnLocaleChange(),
+    hmrLocaleMessages(),
     ...(!isTest && process.env.ENABLE_DEV_TOOLS ? [vueDevTools()] : []),
   ],
   server: {
