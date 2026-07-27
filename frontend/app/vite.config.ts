@@ -227,7 +227,11 @@ export default defineConfig({
       include: [resolve(PACKAGE_ROOT, './src/locales/**')],
     }),
     hmrLocaleMessages(),
-    ...(!isTest && process.env.ENABLE_DEV_TOOLS ? [vueDevTools()] : []),
+    // Opt-in and deliberately NOT tied to ENABLE_DEV_TOOLS (which only opens Electron's
+    // Chrome DevTools, see electron/main/window-manager.ts): vite-plugin-vue-devtools
+    // breaks Vue SFC hot reload, so every .vue edit needs a manual page reload while it
+    // is installed. Enable it only when you actually need the Vue DevTools panel.
+    ...(!isTest && process.env.ENABLE_VUE_DEVTOOLS ? [vueDevTools()] : []),
   ],
   server: {
     port: 8080,
