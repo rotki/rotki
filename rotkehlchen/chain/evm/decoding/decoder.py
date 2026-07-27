@@ -626,6 +626,12 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
             decoding_output = self.decode_by_address_rules(context)
             if decoding_output.stop_processing is True:
+                self._write_new_tx_events_to_the_db(
+                    events=[],
+                    action_id=transaction.identifier,
+                    db_id=tx_id,
+                    write_buffer=write_buffer,
+                )
                 return [], False, None  # We determined this transaction is full of unnecessary log events and should all be skipped. Saves processing time.  # noqa: E501
             if decoding_output.refresh_balances is True:
                 refresh_balances = True
