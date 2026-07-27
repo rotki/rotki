@@ -19,6 +19,7 @@ from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
     ExchangeQueryBalances,
     ExchangeWithExtras,
+    HistoryEventQueue,
 )
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin, deserialize_asset_movement_address
 from rotkehlchen.fval import FVal
@@ -227,6 +228,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             endpoint: OkxEndpoint,
             pagination_key: str,
             options: dict | None = None,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list:
         """
         Makes subsequent API queries until response list length is less than MAX_RESULTS.
@@ -241,7 +243,25 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         while True:
             data = self._api_query_list(endpoint=endpoint, options=options)
-            all_items.extend(data)
+            if event_queue is None:
+                all_items.extend(data)
+            else:
+                page_events: list[AssetMovement | SwapEvent] = []
+                for raw_event in data:
+                    if endpoint == OkxEndpoint.DEPOSITS:
+                        page_events.extend(self.asset_movement_from_okx(
+                            raw_movement=raw_event,
+                            event_subtype=HistoryEventSubType.RECEIVE,
+                        ))
+                    elif endpoint == OkxEndpoint.WITHDRAWALS:
+                        page_events.extend(self.asset_movement_from_okx(
+                            raw_movement=raw_event,
+                            event_subtype=HistoryEventSubType.SPEND,
+                        ))
+                    else:
+                        page_events.extend(self.swap_events_from_okx(raw_event))
+                event_queue.flush(page_events)
+
             if len(data) < self.MAX_RESULTS:
                 break
 
@@ -318,6 +338,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """
         https://www.okx.com/docs-v5/en/#rest-api-funding-get-deposit-history
@@ -334,6 +355,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 'start_ts': start_ts,
                 'end_ts': end_ts,
             },
+            event_queue=event_queue,
         )
         withdrawals = self._api_query_list_paginated(
             endpoint=OkxEndpoint.WITHDRAWALS,
@@ -342,6 +364,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 'start_ts': start_ts,
                 'end_ts': end_ts,
             },
+            event_queue=event_queue,
         )
         trades = self._api_query_list_paginated(
             endpoint=OkxEndpoint.TRADES,
@@ -350,6 +373,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 'start_ts': start_ts,
                 'end_ts': end_ts,
             },
+            event_queue=event_queue,
         )
 
         events: list[AssetMovement | SwapEvent] = []
@@ -367,6 +391,19 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             events.extend(self.swap_events_from_okx(raw_trade))
 
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        _, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        return actual_end_ts
 
     def swap_events_from_okx(self, raw_trade: dict[str, Any]) -> list[SwapEvent]:
         """Converts a raw trade from OKX into SwapEvents.

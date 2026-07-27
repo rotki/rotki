@@ -17,7 +17,11 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import create_swap_events
@@ -240,62 +244,77 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
-        page, all_transactions, events = 0, [], []
+        page, events = 0, []
         while True:
             resp = self._api_query('get', 'user/activity', {'pageNumber': str(page)})
-            if len(resp['transactions']) == 0:
+            if len(transactions := resp['transactions']) == 0:
                 break
 
-            all_transactions.extend(resp['transactions'])
+            page_events = []
+            for tx in transactions:
+                try:
+                    if (
+                        tx['type'] not in {'buy_asset', 'sell_asset'} or
+                        not (start_ts <= (timestamp := tx['timestamp']) <= end_ts)
+                    ):
+                        continue
+
+                    page_events.extend(create_swap_events(
+                        timestamp=ts_sec_to_ms(timestamp),
+                        location=self.location,
+                        spend=AssetAmount(
+                            asset=asset_from_iconomi(tx['source_ticker']),
+                            amount=deserialize_fval(tx['source_amount']),
+                        ),
+                        receive=AssetAmount(
+                            asset=asset_from_iconomi(tx['target_ticker']),
+                            amount=deserialize_fval(tx['target_amount']),
+                        ),
+                        fee=AssetAmount(
+                            asset=asset_from_iconomi(tx['fee_ticker']),
+                            amount=deserialize_fval_or_zero(tx['fee_amount']),
+                        ),
+                        location_label=self.name,
+                        group_identifier=create_group_identifier_from_unique_id(
+                            location=self.location,
+                            unique_id=str(tx['transactionId']),
+                        ),
+                    ))
+                except UnknownAsset as e:
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='transaction',
+                    )
+                except (DeserializationError, KeyError) as e:
+                    msg = f'Missing key entry for {e}.' if isinstance(e, KeyError) else str(e)
+                    self.msg_aggregator.add_error(
+                        'Error processing an iconomi transaction. Check logs '
+                        'for details. Ignoring it.',
+                    )
+                    log.error(msg='Error processing an iconomi transaction', error=msg, trade=tx)
+
+            if event_queue is None:
+                events.extend(page_events)
+            else:
+                event_queue.flush(page_events)
             page += 1
 
-        log.debug('ICONOMI trade history query', results_num=len(all_transactions))
-        for tx in all_transactions:
-            try:
-                if (
-                    tx['type'] not in {'buy_asset', 'sell_asset'} or
-                    not (start_ts <= (timestamp := tx['timestamp']) <= end_ts)
-                ):
-                    continue
-
-                events.extend(create_swap_events(
-                    timestamp=ts_sec_to_ms(timestamp),
-                    location=self.location,
-                    spend=AssetAmount(
-                        asset=asset_from_iconomi(tx['source_ticker']),
-                        amount=deserialize_fval(tx['source_amount']),
-                    ),
-                    receive=AssetAmount(
-                        asset=asset_from_iconomi(tx['target_ticker']),
-                        amount=deserialize_fval(tx['target_amount']),
-                    ),
-                    fee=AssetAmount(
-                        asset=asset_from_iconomi(tx['fee_ticker']),
-                        amount=deserialize_fval_or_zero(tx['fee_amount']),
-                    ),
-                    location_label=self.name,
-                    group_identifier=create_group_identifier_from_unique_id(
-                        location=self.location,
-                        unique_id=str(tx['transactionId']),
-                    ),
-                ))
-            except UnknownAsset as e:
-                self.send_unknown_asset_message(
-                    asset_identifier=e.identifier,
-                    details='transaction',
-                )
-            except (DeserializationError, KeyError) as e:
-                msg = str(e)
-                if isinstance(e, KeyError):
-                    msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
-                    'Error processing an iconomi transaction. Check logs '
-                    'for details. Ignoring it.',
-                )
-                log.error(msg='Error processing an iconomi transaction', error=msg, trade=tx)
-
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        _, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        return actual_end_ts
 
     def query_online_margin_history(
             self,

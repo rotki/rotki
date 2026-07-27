@@ -14,7 +14,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin, get_key_if_has_val
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
@@ -268,7 +272,7 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
         except RemoteError as e:
             log.error('Failed to query CoinEx markets due to %s', e)
             self.msg_aggregator.add_error(f'Got remote error while querying CoinEx markets: {e!s}')
-            return []
+            raise
 
         for entry in raw_markets:
             try:
@@ -395,6 +399,7 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
             ],
             options: dict[str, Any],
             deserialization_method: Callable[[dict[str, Any]], list[T]],
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[T]:
         results: list[T] = []
         page = 1
@@ -407,18 +412,18 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
             except RemoteError as e:
                 log.error('CoinEx %s query failed due to a remote error: %s', endpoint, e)
                 self.msg_aggregator.add_error(f'Got remote error while querying CoinEx: {e!s}')
-                return results
+                raise
 
             if not isinstance(data := response['data'], list):
-                log.error('CoinEx %s returned unexpected data: %s', endpoint, data)
-                self.msg_aggregator.add_error(
-                    f'Failed to load CoinEx {endpoint}. Check logs for details.',
-                )
-                return results
+                msg = f'CoinEx {endpoint} returned unexpected data: {data}'
+                log.error(msg)
+                self.msg_aggregator.add_error(f'{msg}. Check logs for details.')
+                raise RemoteError(msg)
 
+            page_results: list[T] = []
             for entry in data:
                 try:
-                    results.extend(deserialization_method(entry))
+                    page_results.extend(deserialization_method(entry))
                 except (DeserializationError, KeyError) as e:
                     msg = f'Missing key {e}' if isinstance(e, KeyError) else str(e)
                     log.error('CoinEx %s %s: %s', endpoint, msg, entry)
@@ -428,6 +433,12 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
                         asset_identifier=e.identifier,
                         details=f'{endpoint} query',
                     )
+
+            if event_queue is None:
+                results.extend(page_results)
+            else:
+                event_queue.events.extend(page_results)
+                event_queue.flush()
 
             has_next = response.get('pagination', {}).get('has_next')
             if (
@@ -446,6 +457,7 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
             movement_type: Literal['deposit', 'withdrawal'],
             start_ts: Timestamp,
             end_ts: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[AssetMovement]:
         endpoint: Literal['/assets/deposit-history', '/assets/withdraw'] = (
             '/assets/deposit-history' if movement_type == 'deposit' else '/assets/withdraw'
@@ -459,9 +471,15 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
                 if start_ts_ms <= deserialize_coinex_timestamp(entry['created_at']) <= end_ts_ms
                 else []
             ),
+            event_queue=event_queue,
         )
 
-    def _query_trades(self, start_ts: Timestamp, end_ts: Timestamp) -> list[SwapEvent]:
+    def _query_trades(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
+    ) -> list[SwapEvent]:
         markets = self._get_markets()
         start_ts_ms, end_ts_ms = ts_sec_to_ms(start_ts), ts_sec_to_ms(end_ts)
         missing_markets: set[str] = set()
@@ -491,6 +509,7 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
             endpoint='/spot/finished-order',
             options={'market_type': 'SPOT'},
             deserialization_method=deserialize_trade,
+            event_queue=event_queue,
         )
         if len(missing_markets) != 0:  # markets that are delisted or have unknown assets
             log.error(
@@ -508,20 +527,48 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         events: list[AssetMovement | SwapEvent] = []
-        events.extend(self._query_asset_movements(
-            movement_type='deposit',
+        for movement_type in ('deposit', 'withdrawal'):
+            new_events = self._query_asset_movements(
+                movement_type=movement_type,
+                start_ts=start_ts,
+                end_ts=end_ts,
+                event_queue=event_queue,
+            )
+            if event_queue is None:
+                events.extend(new_events)
+            else:
+                event_queue.events.extend(new_events)
+                event_queue.flush()
+
+        trade_events = self._query_trades(
             start_ts=start_ts,
             end_ts=end_ts,
-        ))
-        events.extend(self._query_asset_movements(
-            movement_type='withdrawal',
-            start_ts=start_ts,
-            end_ts=end_ts,
-        ))
-        events.extend(self._query_trades(start_ts=start_ts, end_ts=end_ts))
+            event_queue=event_queue,
+        )
+        if event_queue is None:
+            events.extend(trade_events)
+        else:
+            event_queue.events.extend(trade_events)
+            event_queue.flush()
+
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        events, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        event_queue.events.extend(events)
+        return actual_end_ts
 
     def query_online_margin_history(
             self,

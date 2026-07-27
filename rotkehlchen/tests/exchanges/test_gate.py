@@ -102,7 +102,9 @@ def test_gate_history_query_commits_30_day_chunks(gate_exchange: Gate) -> None:
     def mock_query_online_history_events(
             start_ts: Timestamp,
             end_ts: Timestamp,
+            event_queue: object,
     ) -> tuple[list, Timestamp]:
+        assert event_queue is not None
         calls.append((start_ts, end_ts))
         return [], end_ts
 

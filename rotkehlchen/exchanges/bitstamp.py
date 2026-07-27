@@ -1,6 +1,7 @@
 import logging
 import uuid
 from collections import defaultdict
+from functools import partial
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
@@ -17,7 +18,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
@@ -247,6 +252,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[HistoryBaseEntry]:
         """Return the account asset movements on Bitstamp.
 
@@ -285,7 +291,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             )) is not None:
                 offset = result
 
-        crypto_asset_movements = self._query_crypto_transactions(
+        crypto_asset_movements, new_offset = self._query_crypto_transactions(
             offset=offset,
             force_refresh=force_refresh,
         )
@@ -347,13 +353,29 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             del crypto_asset_movements[idx]  # remove the crypto asset movements whose data we matched in the DB  # noqa: E501
 
         log.debug(f'Remaining Bitstamp unmatched {crypto_asset_movements=}')
+        if new_offset is not None:
+            cursor_update = partial(
+                self.db.set_dynamic_cache,
+                name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
+                value=new_offset,
+                location=self.location.serialize(),
+                location_name=self.name,
+            )
+            if event_queue is None:
+                with self.db.user_write() as write_cursor:
+                    cursor_update(write_cursor)
+            else:
+                event_queue.events.extend(asset_movements)
+                event_queue.flush(cursor_update=cursor_update)
+                return []
+
         return asset_movements
 
     def _query_crypto_transactions(
             self,
             offset: int,
             force_refresh: bool,
-    ) -> list[HistoryBaseEntry]:
+    ) -> tuple[list[HistoryBaseEntry], int | None]:
         """Query crypto transactions to get address and transaction id.
 
         Pagination here is unfortunately primitive. Can only use offset, so we rememmber the
@@ -376,20 +398,23 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 options=options,
             )
             if response.status_code != HTTPStatus.OK:
-                return self._process_unsuccessful_response(
+                self._process_unsuccessful_response(
                     response=response,
                     case='crypto-transactions',
+                )
+                raise RemoteError(
+                    f'Bitstamp crypto transactions query failed: {response.text}',
                 )
 
             try:
                 response_dict = jsonloads_dict(response.text)
-            except JSONDecodeError:
+            except JSONDecodeError as e:
                 msg = f'Bitstamp returned invalid JSON response: {response.text}.'
                 log.error(msg)
                 self.msg_aggregator.add_error(
                     f'Got remote error while querying Bistamp crypto transactions: {msg}',
                 )
-                return []
+                raise RemoteError(msg) from e
 
             asset_movements = [
                 self._deserialize_asset_movement_from_crypto_transaction(
@@ -411,18 +436,10 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             if len(asset_movements) < API_MAX_LIMIT:
                 break
 
-        if not force_refresh and options['offset'] != offset:
-            # write the new offset
-            with self.db.user_write() as write_cursor:
-                self.db.set_dynamic_cache(
-                    write_cursor=write_cursor,
-                    name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
-                    value=options['offset'],
-                    location=self.location.serialize(),
-                    location_name=self.name,
-                )
-
-        return total_asset_movements
+        new_offset = (
+            options['offset'] if not force_refresh and options['offset'] != offset else None
+        )
+        return total_asset_movements, new_offset
 
     def _query_trades(
             self,
@@ -470,6 +487,21 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             end_ts=end_ts,
         ))
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        events = self._query_asset_movements(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        event_queue.events.extend(events)
+        event_queue.events.extend(self._query_trades(start_ts=start_ts, end_ts=end_ts))
+        return end_ts
 
     def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Bitstamp API key is good for usage in rotki
@@ -600,19 +632,20 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 options=call_options,
             )
             if response.status_code != HTTPStatus.OK:
-                return self._process_unsuccessful_response(
+                self._process_unsuccessful_response(
                     response=response,
                     case=response_case,
                 )
+                raise RemoteError(f'Bitstamp {response_case} query failed: {response.text}')
             try:
                 response_list = jsonloads_list(response.text)
-            except JSONDecodeError:
+            except JSONDecodeError as e:
                 msg = f'Bitstamp returned invalid JSON response: {response.text}.'
                 log.error(msg)
                 self.msg_aggregator.add_error(
                     f'Got remote error while querying Bistamp trades: {msg}',
                 )
-                return []
+                raise RemoteError(msg) from e
 
             has_results = False
             is_result_timestamp_gt_end_ts = False

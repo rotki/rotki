@@ -17,7 +17,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
@@ -317,6 +321,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[SwapEvent]:
         """
         Query trades from bybit in the spot category.
@@ -357,6 +362,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                     'limit': PAGINATION_LIMIT,
                 },
             )
+            page_events: list[SwapEvent] = []
             for raw_trade in raw_data:
                 if (order_status := raw_trade.get('orderStatus')) != 'Filled':
                     log.debug(f'Skipping entry {raw_trade} with status {order_status}')
@@ -376,7 +382,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                         amount=deserialize_fval(raw_trade['qty']),
                         rate=deserialize_price(raw_trade['avgPrice' if raw_trade['orderType'] == 'Market' else 'price']),  # noqa: E501
                     )
-                    events.extend(create_swap_events(
+                    page_events.extend(create_swap_events(
                         timestamp=TimestampMS(int(raw_trade['updatedTime'])),
                         location=self.location,
                         spend=spend,
@@ -394,6 +400,11 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                         f'Failed to deserialize bybit trade {raw_trade} due to missing key {e}. '
                         'Skipping...',
                     )
+
+            if event_queue is None:
+                events.extend(page_events)
+            else:
+                event_queue.flush(page_events)
 
             lower_ts = Timestamp(lower_ts + WEEK_IN_SECONDS)
             upper_ts = Timestamp(upper_ts + WEEK_IN_SECONDS)
@@ -634,18 +645,40 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Query deposits and withdrawals sequentially"""
         events: list[AssetMovement | SwapEvent] = []
         for event_type in (HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL):
-            events.extend(self._query_deposits_withdrawals(
+            source_events = self._query_deposits_withdrawals(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 query_for=event_type,
-            ))
+            )
+            if event_queue is None:
+                events.extend(source_events)
+            else:
+                event_queue.flush(source_events)
 
-        events.extend(self._query_trades(start_ts=start_ts, end_ts=end_ts))
+        events.extend(self._query_trades(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        ))
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        _, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        return actual_end_ts
 
     def query_online_margin_history(
             self,

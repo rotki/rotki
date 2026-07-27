@@ -110,6 +110,36 @@ def test_name():
     assert exchange.name == 'kraken1'
 
 
+def test_partial_history_query_saves_events_without_advancing_range(kraken: Kraken) -> None:
+    event = HistoryEvent(
+        group_identifier='partial-kraken-query',
+        sequence_index=0,
+        timestamp=TimestampMS(1000),
+        location=Location.KRAKEN,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ONE,
+        location_label=kraken.name,
+        notes='Saved from an incomplete Kraken ledger query',
+    )
+    with (
+        patch.object(kraken, 'query_until_finished', return_value=([{}], True)),
+        patch.object(kraken, 'process_kraken_raw_events', return_value=([event], set())),
+    ):
+        kraken.query_history_events()
+
+    with kraken.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
+            (event.group_identifier,),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
+            (f'{Location.KRAKEN!s}_history_events_{kraken.name}',),
+        ).fetchone()[0] == 0
+
+
 @pytest.mark.asset_test
 def test_coverage_of_kraken_balances():
     response = requests.get('https://api.kraken.com/0/public/Assets')
@@ -250,10 +280,10 @@ def test_querying_rate_limit_exhaustion(kraken, database):
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
         )) == 4  # spend, receive, fee, and kfee
-        from_ts, to_ts = database.get_used_query_range(cursor, 'kraken_history_events_mockkraken')
-
-    assert from_ts == 0
-    assert to_ts == 1609950165, 'should have saved only until the last trades timestamp'
+        assert database.get_used_query_range(
+            cursor,
+            'kraken_history_events_mockkraken',
+        ) is None  # pages are newest-first, so a partial response has no safe range boundary
 
 
 def test_kraken_retries_after_remote_disconnect(kraken) -> None:

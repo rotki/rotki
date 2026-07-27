@@ -18,7 +18,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import (
     SignatureGeneratorMixin,
     deserialize_asset_movement_address,
@@ -426,18 +430,19 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             self.msg_aggregator.add_error(
                 f'Got permission error while querying Gemini for trades: {e!s}',
             )
-            return []
+            raise
         except RemoteError as e:
             self.msg_aggregator.add_error(
                 f'Got remote error while querying Gemini for trades: {e!s}',
             )
-            return []
+            raise
         return trades
 
     def _query_trades(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[SwapEvent]:
         """Queries gemini for trades. Returns a list of SwapEvents."""
         log.debug('Query gemini trade history', start_ts=start_ts, end_ts=end_ts)
@@ -449,6 +454,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
+            symbol_events: list[SwapEvent] = []
             for entry in gemini_trades:
                 try:
                     timestamp = deserialize_timestamp(entry['timestamp'])
@@ -466,7 +472,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
                         amount=deserialize_fval(entry['amount']),
                         rate=deserialize_price(entry['price']),
                     )
-                    swap_events.extend(create_swap_events(
+                    symbol_events.extend(create_swap_events(
                         timestamp=ts_sec_to_ms(timestamp),
                         location=self.location,
                         spend=spend,
@@ -507,6 +513,12 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
                         error=msg,
                     )
                     continue
+
+            if event_queue is None:
+                swap_events.extend(symbol_events)
+            else:
+                event_queue.events.extend(symbol_events)
+                event_queue.flush()
 
         return swap_events
 
@@ -571,18 +583,37 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         events: list[AssetMovement | SwapEvent] = []
-        for query_func in (
-            self._query_asset_movements,
-            self._query_trades,
-        ):
-            events.extend(query_func(
-                start_ts=start_ts,
-                end_ts=end_ts,
-            ))
+        movements = self._query_asset_movements(start_ts=start_ts, end_ts=end_ts)
+        if event_queue is None:
+            events.extend(movements)
+        else:
+            event_queue.events.extend(movements)
+            event_queue.flush()
+
+        events.extend(self._query_trades(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        ))
 
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        events, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        event_queue.events.extend(events)
+        return actual_end_ts
 
     def query_online_margin_history(
             self,

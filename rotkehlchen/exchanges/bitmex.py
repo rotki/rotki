@@ -16,7 +16,11 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import (
     SignatureGeneratorMixin,
     deserialize_asset_movement_address,
@@ -343,6 +347,7 @@ class Bitmex(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         self.first_connection()
         resp = self._api_query('user/walletHistory', {'currency': 'all'})
@@ -420,4 +425,20 @@ class Bitmex(ExchangeInterface, SignatureGeneratorMixin):
                     f'asset_movement {movement}. Error was: {msg}',
                 )
                 continue
+        if event_queue is not None:
+            event_queue.flush(movements)
+            return [], end_ts
         return movements, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        _, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        return actual_end_ts

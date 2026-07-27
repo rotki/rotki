@@ -455,15 +455,12 @@ class ExchangeManager:
         if (total_events := len(events_list)) == 0:
             return 0, 0, 0, actual_end_ts
 
-        saved_events_amount = 0
         with self.database.user_write() as write_cursor:
             db_manager = DBHistoryEvents(self.database)
-            for event in events_list:
-                if db_manager.add_history_event(
-                    write_cursor=write_cursor,
-                    event=event,
-                ) is not None:
-                    saved_events_amount += 1
+            saved_events_amount = (
+                db_manager.add_history_events(write_cursor=write_cursor, history=events_list)
+                if total_events != 0 else 0
+            )
 
         skipped_events = total_events - saved_events_amount
         return total_events, saved_events_amount, skipped_events, actual_end_ts

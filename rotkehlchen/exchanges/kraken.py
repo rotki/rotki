@@ -39,6 +39,7 @@ from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
     ExchangeQueryBalances,
     ExchangeWithExtras,
+    HistoryEventQueue,
 )
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
@@ -930,12 +931,25 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             else:
                 final_events.append(event)
 
-        swap_events, max_ts = self.process_kraken_trades(
+        swap_events, _ = self.process_kraken_trades(
             trade_events=trade_events,
             adjustments=adjustment_events,
         )
         final_events.extend(swap_events)
-        return final_events, Timestamp(max_ts) if with_errors else end_ts
+        return final_events, start_ts if with_errors else end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        events, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
+        event_queue.flush(events)
+        return actual_end_ts
 
     def history_event_from_kraken(
             self,

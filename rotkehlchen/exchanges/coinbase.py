@@ -5,6 +5,7 @@ import secrets
 import time
 from collections import defaultdict
 from enum import Enum
+from functools import partial
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
@@ -24,7 +25,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import (
@@ -66,6 +71,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.types import Asset, TimestampMS
@@ -401,7 +407,11 @@ class Coinbase(ExchangeInterface):
         return dict(self.balances_from_amounts(amounts)), ''
 
     @protect_with_lock()
-    def _query_transactions(self, force_refresh: bool = False) -> list[HistoryBaseEntry]:
+    def _query_transactions(
+            self,
+            force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
+    ) -> list[HistoryBaseEntry]:
         """Queries transactions for all active accounts of this coinbase instance
 
         If an account has been queried within X seconds it's not queried again.
@@ -465,27 +475,41 @@ class Coinbase(ExchangeInterface):
             ))
 
         if not force_refresh:
-            # Only persist the per-account cursors now that all accounts have been
-            # queried successfully. The caller saves the returned events only after
-            # this function returns, so persisting a cursor earlier would permanently
-            # lose the in-memory events of the already queried accounts (and break
-            # cross-wallet conversion pairing) if a later account's query raises.
-            with self.db.user_write() as write_cursor:
-                write_cursor.executemany(
-                    'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
-                    cursor_updates,
-                )
-                for account_id in queried_account_ids:
-                    self.db.set_dynamic_cache(
-                        write_cursor=write_cursor,
-                        name=DBCacheDynamic.LAST_QUERY_TS,
-                        value=ts_now(),
-                        location=self.location.serialize(),
-                        location_name=self.name,
-                        account_id=account_id,
-                    )
+            cursor_update = partial(
+                self._update_transaction_query_cursors,
+                cursor_updates=cursor_updates,
+                queried_account_ids=queried_account_ids,
+            )
+            if event_queue is None:
+                with self.db.user_write() as write_cursor:
+                    cursor_update(write_cursor)
+            else:
+                event_queue.events.extend(all_events)
+                event_queue.flush(cursor_update=cursor_update)
+                return []
 
         return all_events
+
+    def _update_transaction_query_cursors(
+            self,
+            write_cursor: DBCursor,
+            cursor_updates: list[tuple[str, str]],
+            queried_account_ids: list[str],
+    ) -> None:
+        """Persist transaction cursors in the same transaction as their history events."""
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
+            cursor_updates,
+        )
+        for account_id in queried_account_ids:
+            self.db.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_QUERY_TS,
+                value=ts_now(),
+                location=self.location.serialize(),
+                location_name=self.name,
+                account_id=account_id,
+            )
 
     def _query_single_account_transactions(
             self,
@@ -1028,6 +1052,15 @@ class Coinbase(ExchangeInterface):
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         events = self._query_transactions(force_refresh=force_refresh)
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        self._query_transactions(event_queue=event_queue)
+        return end_ts
 
     def _deserialize_history_event(self, raw_data: dict[str, Any]) -> HistoryEvent | None:
         """Processes a single transaction from coinbase and deserializes it

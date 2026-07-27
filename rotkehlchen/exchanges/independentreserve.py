@@ -17,7 +17,11 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -312,11 +316,9 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
         try:
             resp_trades = self._gather_paginated_data(path='GetTrades')
         except KeyError as e:
-            self.msg_aggregator.add_error(
-                f'Error processing independentreserve trades response. '
-                f'Missing key: {e!s}.',
-            )
-            return []
+            msg = f'Error processing independentreserve trades response. Missing key: {e!s}.'
+            self.msg_aggregator.add_error(msg)
+            raise RemoteError(msg) from e
 
         events = []
         for raw_trade in resp_trades:
@@ -373,6 +375,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[AssetMovement]:
         if self.account_guids is None:
             self.query_balances()  # do a balance query to populate the account guids
@@ -390,12 +393,14 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                     },
                 )
             except KeyError as e:
-                self.msg_aggregator.add_error(
+                msg = (
                     f'Error processing IndependentReserve transactions response. '
-                    f'Missing key: {e!s}.',
+                    f'Missing key: {e!s}.'
                 )
-                return []
+                self.msg_aggregator.add_error(msg)
+                raise RemoteError(msg) from e
 
+            account_movements: list[AssetMovement] = []
             for entry in resp:
                 entry_type = entry.get('Type')
                 if entry_type is None or entry_type not in {'Deposit', 'Withdrawal'}:
@@ -404,7 +409,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                 try:
                     movement = _asset_movement_from_independentreserve(entry)
                     if movement:
-                        movements.append(movement)
+                        account_movements.append(movement)
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
@@ -426,6 +431,12 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                     )
                     continue
 
+            if event_queue is None:
+                movements.extend(account_movements)
+            else:
+                event_queue.events.extend(account_movements)
+                event_queue.flush()
+
         return movements
 
     def query_online_history_events(
@@ -433,12 +444,42 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         events: list[AssetMovement | SwapEvent] = []
-        for query_func in (self._query_asset_movements, self._query_trades):
-            events.extend(query_func(start_ts=start_ts, end_ts=end_ts))
+        movements = self._query_asset_movements(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        if event_queue is None:
+            events.extend(movements)
+        else:
+            event_queue.events.extend(movements)
+            event_queue.flush()
+
+        trades = self._query_trades(start_ts=start_ts, end_ts=end_ts)
+        if event_queue is None:
+            events.extend(trades)
+        else:
+            event_queue.events.extend(trades)
+            event_queue.flush()
 
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        events, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        event_queue.events.extend(events)
+        return actual_end_ts
 
     def query_online_margin_history(
             self,

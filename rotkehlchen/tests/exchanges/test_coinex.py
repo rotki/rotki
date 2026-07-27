@@ -8,13 +8,16 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.coinex import API_MAX_LIMIT, Coinex, CoinexMarket
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.types import Location, LocationAssetMappingUpdateEntry, Timestamp, TimestampMS
 
@@ -25,6 +28,72 @@ if TYPE_CHECKING:
 def test_name(coinex_exchange: Coinex) -> None:
     assert coinex_exchange.location == Location.COINEX
     assert coinex_exchange.name == 'coinex'
+
+
+def test_failed_history_query_saves_completed_source(coinex_exchange: Coinex) -> None:
+    """Events from a completed source survive a later source failure."""
+    event = HistoryEvent(
+        group_identifier='incomplete-coinex-query',
+        sequence_index=0,
+        timestamp=TimestampMS(1000),
+        location=Location.COINEX,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=ONE,
+        location_label=coinex_exchange.name,
+        notes='Saved when a later endpoint fails',
+    )
+    with (
+        patch.object(
+            coinex_exchange,
+            '_query_asset_movements',
+            side_effect=([event], RemoteError('withdrawals failed')),
+        ),
+        pytest.raises(RemoteError, match='withdrawals failed'),
+    ):
+        coinex_exchange.query_history_events()
+
+    with coinex_exchange.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
+            (event.group_identifier,),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
+            (f'{Location.COINEX!s}_history_events_{coinex_exchange.name}',),
+        ).fetchone()[0] == 0
+
+
+def test_history_query_without_full_progress_saves_events(coinex_exchange: Coinex) -> None:
+    event = HistoryEvent(
+        group_identifier='no-coinex-progress',
+        sequence_index=0,
+        timestamp=TimestampMS(1000),
+        location=Location.COINEX,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=ONE,
+        location_label=coinex_exchange.name,
+        notes='Saved while the incomplete range remains open',
+    )
+    with patch.object(
+        coinex_exchange,
+        'query_online_history_events',
+        return_value=([event], Timestamp(0)),
+    ):
+        coinex_exchange.query_history_events()
+
+    with coinex_exchange.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
+            (event.group_identifier,),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
+            (f'{Location.COINEX!s}_history_events_{coinex_exchange.name}',),
+        ).fetchone()[0] == 0
 
 
 def test_signature(coinex_exchange: Coinex) -> None:

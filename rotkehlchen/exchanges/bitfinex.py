@@ -21,7 +21,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -224,6 +228,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             self,
             options: dict[str, Any],
             case: Literal['trades', 'asset_movements'],
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[list[HistoryBaseEntry], bool]:
         """Request a Bitfinex API v2 endpoint paginating via an options
         attribute.
@@ -319,12 +324,15 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 )
                 return results, True
 
-            results.extend(self._deserialize_api_query_paginated_results(
+            page_events = self._deserialize_api_query_paginated_results(
                 case=case_,
                 options=call_options,
                 raw_results=response_list,
                 processed_result_ids=processed_result_ids,
-            ))
+            )
+            results.extend(page_events)
+            if event_queue is not None:
+                event_queue.flush(page_events)
 
             if len(response_list) < limit or len(results) == 0:
                 break
@@ -890,6 +898,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Return the Bitfinex asset movements and swap events.
 
@@ -911,6 +920,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         events, with_errors = self._api_query_paginated(
             options=options,
             case='asset_movements',
+            event_queue=event_queue,
         )
         if with_errors:  # Movements are not sorted by timestamp so fail the entire range on error.
             return [], start_ts
@@ -924,6 +934,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         swap_events, with_errors = self._api_query_paginated(
             options=options,
             case='trades',
+            event_queue=event_queue,
         )
         events.extend(swap_events)
         if with_errors and len(swap_events) != 0:
@@ -932,6 +943,19 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             actual_end_ts = ts_ms_to_sec(swap_events[-1].timestamp)
 
         return events, actual_end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        _, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        return actual_end_ts
 
     def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Bitfinex API key is good for usage in rotki.

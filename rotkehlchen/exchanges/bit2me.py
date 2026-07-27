@@ -18,7 +18,11 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    HistoryEventQueue,
+)
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
@@ -292,7 +296,12 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
 
         return dict(assets_balance), ''
 
-    def _query_transactions(self) -> list[dict[str, Any]]:
+    def _query_transactions(
+            self,
+            event_queue: HistoryEventQueue | None = None,
+            start_ts: Timestamp | None = None,
+            end_ts: Timestamp | None = None,
+    ) -> list[dict[str, Any]]:
         """Query all transactions from /v2/wallet/transaction, paginating through every page.
 
         The endpoint has no time-range filter, so the full history is fetched once and the
@@ -316,7 +325,15 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 ) from e
 
             page = response_data.get('data', [])
-            all_transactions.extend(page)
+            if event_queue is None:
+                all_transactions.extend(page)
+            else:
+                assert start_ts is not None and end_ts is not None
+                event_queue.events.extend(self._build_asset_movements(page, start_ts, end_ts))
+                event_queue.events.extend(self._build_brokerage_trades(page, start_ts, end_ts))
+                event_queue.events.extend(self._build_earn_movements(page, start_ts, end_ts))
+                event_queue.events.extend(self._build_airdrops(page, start_ts, end_ts))
+                event_queue.flush()
             offset += len(page)
             total = response_data.get('total')
             if (
@@ -332,6 +349,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,  # pylint: disable=unused-argument
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Query all history events from Bit2me.
 
@@ -340,18 +358,36 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         with spot trades from /v1/trading/trade.
         """
         events: list[HistoryBaseEntry] = []
-        try:
-            transactions = self._query_transactions()
-        except RemoteError as e:
-            self.msg_aggregator.add_error(f'Failed to query {self.name} transactions. {e!s}')
-            transactions = []
-
-        events.extend(self._build_asset_movements(transactions, start_ts, end_ts))
-        events.extend(self._build_brokerage_trades(transactions, start_ts, end_ts))
-        events.extend(self._build_earn_movements(transactions, start_ts, end_ts))
-        events.extend(self._build_airdrops(transactions, start_ts, end_ts))
-        events.extend(self.query_online_trade_history(start_ts, end_ts)[0])
+        transactions = self._query_transactions(
+            event_queue=event_queue,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
+        if event_queue is None:
+            events.extend(self._build_asset_movements(transactions, start_ts, end_ts))
+            events.extend(self._build_brokerage_trades(transactions, start_ts, end_ts))
+            events.extend(self._build_earn_movements(transactions, start_ts, end_ts))
+            events.extend(self._build_airdrops(transactions, start_ts, end_ts))
+        events.extend(self.query_online_trade_history(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )[0])
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        events, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        event_queue.events.extend(events)
+        return actual_end_ts
 
     def query_online_deposits_withdrawals(
             self,
@@ -513,6 +549,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[list[SwapEvent], tuple[Timestamp, Timestamp]]:
         """Query Bit2me spot trade history within a time range.
 
@@ -533,22 +570,29 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 response_data = jsonloads_dict(response.text)
             except RemoteError as e:
                 self.msg_aggregator.add_error(f'Failed to query {self.name} trade history. {e!s}')
-                break
+                raise
             except JSONDecodeError as e:
                 self.msg_aggregator.add_error(
                     f'{self.name} returned invalid JSON for trades. {e!s}',
                 )
-                break
+                raise RemoteError(f'{self.name} returned invalid JSON for trades') from e
 
             trades_list = response_data.get('data', [])
+            page_events: list[SwapEvent] = []
             for raw_trade in trades_list:
                 try:
-                    swap_events.extend(self._deserialize_trade(raw_trade))
+                    page_events.extend(self._deserialize_trade(raw_trade))
                 except (DeserializationError, UnknownAsset, UnsupportedAsset) as e:
                     log.error('Failed to deserialize Bit2me trade', error=str(e), raw_trade=raw_trade)  # noqa: E501
                     self.msg_aggregator.add_error(
                         f'Failed to process a {self.name} trade. Check logs for details.',
                     )
+
+            if event_queue is None:
+                swap_events.extend(page_events)
+            else:
+                event_queue.events.extend(page_events)
+                event_queue.flush()
 
             offset += len(trades_list)
             total = response_data.get('count')
