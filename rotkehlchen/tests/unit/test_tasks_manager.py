@@ -142,11 +142,15 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
     timeout = 8
     deadline = time.monotonic() + timeout
     with tx_query_patch as tx_mock:
-        # First two calls to schedule should handle the addresses
+        # The task is spawned for a single address at a time, and the next one is only
+        # scheduled once the previous task is out of running_tasks. Since the mock call
+        # count goes up before the task thread actually finishes, a single schedule() per
+        # address races the task's death, so keep ticking the scheduler -- as the real one
+        # does -- until each address has been queried.
         for i in range(2):
-            task_manager.schedule()
             while tx_mock.call_count != i + 1:
                 assert time.monotonic() < deadline, f'The transaction query was not scheduled within {timeout} seconds'  # noqa: E501
+                task_manager.schedule()
                 time.sleep(.2)
 
         task_manager.schedule()
