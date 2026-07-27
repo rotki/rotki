@@ -32,7 +32,17 @@ const {
   locationLabelOptions,
 } = useLocationLabels(() => options);
 
-const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: LocationLabel; dense: boolean }>();
+// The props declaration is required: without it the reuse component forwards raw attrs, so a
+// boolean shorthand (`dense`) arrives as an empty string instead of `true`.
+const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: LocationLabel; dense: boolean }>({
+  props: {
+    dense: Boolean,
+    item: {
+      required: true,
+      type: Object,
+    },
+  },
+});
 </script>
 
 <template>
