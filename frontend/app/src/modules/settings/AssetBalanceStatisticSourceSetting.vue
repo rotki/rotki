@@ -79,10 +79,12 @@ watchImmediate(() => asset, (asset) => {
           :label="t('statistics_graph_settings.source.snapshot')"
           :value="false"
         />
+        <!-- eslint-disable vue/prefer-true-attribute-shorthand -- `value` is the radio payload, not a boolean prop, so the shorthand would pass an empty string -->
         <RuiRadio
           :label="t('statistics_graph_settings.source.historical_events_processing')"
-          value
+          :value="true"
         />
+        <!-- eslint-enable vue/prefer-true-attribute-shorthand -->
       </RuiRadioGroup>
       <RuiCheckbox
         v-if="asset"
