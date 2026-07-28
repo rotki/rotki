@@ -49,10 +49,19 @@ PRICE_TOLERANCE_SECONDS: Final = HOUR_IN_SECONDS
 DEFAULT_VALUE_CURRENCY: Final = 'USD'
 
 # --- privacy classification -------------------------------------------------------------
-# Free-text columns: never emitted verbatim outside ``raw`` mode (only a ``has_<col>``
-# flag). ``auto_notes`` is rotki's decoded description and routinely embeds addresses, so
-# it is treated as free text rather than a safe value.
-TEXT_COLUMN_NAMES: Final = frozenset({'notes', 'user_notes', 'auto_notes'})
+# User-authored / decoder-written free text: never emitted verbatim outside ``raw`` mode
+# (only a ``has_<col>`` flag). Despite its name ``user_notes`` is the one that carries
+# decoder output with addresses in it ("Burn 0.0001 XDAI for gas") *and* is user-editable,
+# so its provenance is mixed and it stays redacted.
+USER_TEXT_COLUMN_NAMES: Final = frozenset({'notes', 'user_notes'})
+# Text rotki generates at serialization time from a fixed set of templates over amount,
+# asset symbol and location name -- no identifier is ever interpolated into one. Redacting
+# these threw away readable descriptions for no privacy gain, so in ``balanced`` they pass
+# through scrubbed (an asset *name* is attacker-controlled on a scam token, so the scrub is
+# what keeps the no-identifier property true rather than merely likely). ``strict`` still
+# redacts them outright.
+GENERATED_TEXT_COLUMN_NAMES: Final = frozenset({'auto_notes'})
+TEXT_COLUMN_NAMES: Final = USER_TEXT_COLUMN_NAMES | GENERATED_TEXT_COLUMN_NAMES
 # Identifier columns that are always personally identifying: hashed (never raw) outside
 # ``raw`` mode. ``location_label`` is special-cased in ``balanced`` (see _sanitize_identifier).
 PII_COLUMN_NAMES: Final = frozenset({
@@ -138,6 +147,13 @@ def _hash_identifier(value: Any) -> str | None:
     return f'anon_{hmac.new(_session_seed, str(value).encode(), sha256).hexdigest()[:16]}'
 
 
+def _scrub_identifiers(value: str) -> str:
+    """Replace any identifier embedded in otherwise-safe text with the same hash the column
+    level hashing would produce, so the text stays cross-referenceable with hashed columns.
+    """
+    return SENSITIVE_IDENTIFIER_RE.sub(lambda match: str(_hash_identifier(match.group())), value)
+
+
 _KNOWN_COLUMN_NAMES: Final = tuple(sorted(
     TEXT_COLUMN_NAMES | STRICT_IDENTIFIER_COLUMN_NAMES | SAFE_PASSTHROUGH_COLUMN_NAMES,
     key=len,
@@ -209,7 +225,12 @@ def _sanitize_row(row: dict[str, Any], privacy_mode: PrivacyMode) -> dict[str, A
         if base in TEXT_COLUMN_NAMES:
             has_value = value not in (None, '')
             sanitized[f'has_{column}'] = has_value
-            sanitized[column] = REDACTED_TEXT if has_value else None
+            if not has_value:
+                sanitized[column] = None
+            elif base in GENERATED_TEXT_COLUMN_NAMES and privacy_mode == 'balanced':
+                sanitized[column] = _scrub_identifiers(str(value))
+            else:
+                sanitized[column] = REDACTED_TEXT
         elif base in identifier_columns:
             sanitized[f'{column}_hash'] = _hash_identifier(value)
             # In balanced mode a human-friendly account label (e.g. "Kraken main") that is
