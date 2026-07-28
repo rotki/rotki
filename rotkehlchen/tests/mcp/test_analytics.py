@@ -124,6 +124,57 @@ def test_sanitize_balanced_keeps_named_label_but_strict_hashes_it() -> None:
     assert 'label' not in strict  # user-authored label is an identifier in strict mode
 
 
+@pytest.mark.parametrize('identifier', [
+    ADDRESS,                                        # EVM address
+    TX_HASH,                                        # EVM tx hash
+    'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',   # bech32 BTC
+    '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2',           # base58 BTC
+    '7EYnhQoR9YM3N7UoaKRoA44Uy8JeaZV3qyouov87awMs',  # base58 Solana
+])
+def test_generated_notes_should_never_carry_an_identifier(identifier: str) -> None:
+    """The templates interpolate no address today, but an asset *name* is attacker
+    controlled on a scam token, so the scrub is what keeps that true rather than assumed.
+    """
+    balanced = _sanitize_row(
+        {'auto_notes': f'Receive 1.0 {identifier} after a swap in kraken'},
+        privacy_mode='balanced',
+    )
+    assert identifier not in balanced['auto_notes']
+    assert 'anon_' in balanced['auto_notes']
+    assert balanced['auto_notes'].startswith('Receive 1.0 ')  # still readable
+    # strict keeps redacting outright
+    assert _sanitize_row(
+        {'auto_notes': f'Receive 1.0 {identifier} after a swap in kraken'},
+        privacy_mode='strict',
+    )['auto_notes'] == analytics.REDACTED_TEXT
+
+
+def test_generated_notes_readable_but_user_notes_still_redacted() -> None:
+    """``auto_notes`` is template-generated and safe; ``user_notes`` is decoder-written *and*
+    user-editable, so its mixed provenance keeps it redacted in every non-raw mode.
+    """
+    row = {
+        'auto_notes': 'Deposit 5 ETH to kraken',
+        'user_notes': f'Burn 0.00013 XDAI for gas at {ADDRESS}',
+        'notes': 'my private note',
+    }
+    for privacy_mode in ('balanced', 'strict'):
+        sanitized = _sanitize_row(row, privacy_mode=privacy_mode)
+        assert sanitized['user_notes'] == analytics.REDACTED_TEXT
+        assert sanitized['notes'] == analytics.REDACTED_TEXT
+        assert sanitized['has_auto_notes'] is True
+        assert ADDRESS not in str(sanitized)
+
+    assert _sanitize_row(row, 'balanced')['auto_notes'] == 'Deposit 5 ETH to kraken'
+    assert _sanitize_row(row, 'strict')['auto_notes'] == analytics.REDACTED_TEXT
+
+
+def test_empty_generated_notes_stay_null() -> None:
+    sanitized = _sanitize_row({'auto_notes': ''}, privacy_mode='balanced')
+    assert sanitized['auto_notes'] is None
+    assert sanitized['has_auto_notes'] is False
+
+
 def test_sanitize_raw_passes_everything_through() -> None:
     row = {'address': ADDRESS, 'notes': 'secret', 'ens_name': 'vitalik.eth'}
     assert _sanitize_row(row, privacy_mode='raw') == row
@@ -299,9 +350,10 @@ def test_overlapping_refreshes_should_not_publish_out_of_order(monkeypatch) -> N
     )['rows'] == [{'asset': 'NEW'}]
 
 
-def test_history_events_promote_entry_and_redact_auto_notes(monkeypatch) -> None:
+def test_history_events_promote_entry_and_scrub_auto_notes(monkeypatch) -> None:
     """The API wraps fields in an ``entry`` envelope; columns must read as ``timestamp``/
-    ``location`` (not ``entry_timestamp``), and ``auto_notes`` must be redacted, not raw.
+    ``location`` (not ``entry_timestamp``), and ``auto_notes`` stays readable in balanced
+    mode with any embedded identifier scrubbed.
     """
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [
@@ -329,8 +381,8 @@ def test_history_events_promote_entry_and_redact_auto_notes(monkeypatch) -> None
     row = session.query_sql('select * from history_events', max_rows=10)['rows'][0]
     assert row['year'] == 2021  # 1614556800000 ms -> 2021-03-01
     assert row['datetime'] == '2021-03-01T00:00:00Z'
-    # the address embedded in auto_notes never leaks
-    assert row['auto_notes'] == analytics.REDACTED_TEXT
+    # the description stays readable, but the address embedded in it never leaks
+    assert row['auto_notes'].startswith('Send 1.5 ETH to anon_')
     assert ADDRESS not in str(row)
 
 
