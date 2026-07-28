@@ -1,8 +1,12 @@
 import inspect
 from importlib import import_module
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.exchanges.manager import ExchangeManager
+from rotkehlchen.types import Location, Timestamp
 
 EXCHANGE_METHODS_TO_CHECK = (
     'query_balances',
@@ -31,3 +35,37 @@ def test_all_methods_implemented():
             code = inspect.getsource(method)
             msg = f'{method_name} for exchange {name} is not implemented'
             assert 'raise NotImplementedError' not in code, msg
+
+
+def test_requery_exchange_history_events_uses_incremental_queue() -> None:
+    manager = ExchangeManager(msg_aggregator=MagicMock())
+    manager.database = MagicMock()
+    manager.database.get_settings.return_value = SimpleNamespace(non_syncing_exchanges=set())
+    exchange = MagicMock()
+    exchange.name = 'test'
+    exchange.location = Location.BINANCE
+    exchange.location_id.return_value = 'binance_test'
+    exchange.requery_online_history_events_into_queue.return_value = Timestamp(2)
+    manager.connected_exchanges[Location.BINANCE].append(exchange)
+    event_queue = MagicMock(spec=HistoryEventQueue)
+    event_queue.queried_events = 3
+    event_queue.saved_events = 2
+
+    with patch(
+        'rotkehlchen.exchanges.manager.HistoryEventQueue',
+        return_value=event_queue,
+    ):
+        result = manager.requery_exchange_history_events(
+            location=Location.BINANCE,
+            name='test',
+            start_ts=Timestamp(1),
+            end_ts=Timestamp(2),
+        )
+
+    exchange.requery_online_history_events_into_queue.assert_called_once_with(
+        start_ts=Timestamp(1),
+        end_ts=Timestamp(2),
+        event_queue=event_queue,
+    )
+    event_queue.flush.assert_called_once_with()
+    assert result == (3, 2, 1, Timestamp(2))

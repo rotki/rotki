@@ -503,6 +503,21 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         event_queue.events.extend(self._query_trades(start_ts=start_ts, end_ts=end_ts))
         return end_ts
 
+    def requery_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        event_queue.events.extend(self._query_asset_movements(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            force_refresh=True,
+            event_queue=event_queue,
+        ))
+        event_queue.events.extend(self._query_trades(start_ts=start_ts, end_ts=end_ts))
+        return end_ts
+
     def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Bitstamp API key is good for usage in rotki
 

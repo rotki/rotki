@@ -13,11 +13,10 @@ from rotkehlchen.db.constants import (
     KRAKEN_FUTURES_API_SECRET_KEY,
     OKX_LOCATION_KEY,
 )
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithExtras
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithExtras, HistoryEventQueue
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ApiKey,
@@ -446,21 +445,20 @@ class ExchangeManager:
             step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
             period=[start_ts, end_ts],
         )
-        events_list, actual_end_ts = exchange.query_online_history_events(
+        event_queue = HistoryEventQueue(
+            database=self.database,
+            location_string=f'{exchange.location!s}_history_events_{exchange.name}',
+            query_start_ts=start_ts,
+        )
+        actual_end_ts = exchange.requery_online_history_events_into_queue(
             start_ts=start_ts,
             end_ts=end_ts,
-            force_refresh=True,
+            event_queue=event_queue,
         )
+        event_queue.flush()
         exchange.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
-        if (total_events := len(events_list)) == 0:
+        if (total_events := event_queue.queried_events) == 0:
             return 0, 0, 0, actual_end_ts
 
-        with self.database.user_write() as write_cursor:
-            db_manager = DBHistoryEvents(self.database)
-            saved_events_amount = (
-                db_manager.add_history_events(write_cursor=write_cursor, history=events_list)
-                if total_events != 0 else 0
-            )
-
-        skipped_events = total_events - saved_events_amount
-        return total_events, saved_events_amount, skipped_events, actual_end_ts
+        skipped_events = total_events - event_queue.saved_events
+        return total_events, event_queue.saved_events, skipped_events, actual_end_ts
