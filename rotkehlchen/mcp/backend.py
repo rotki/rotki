@@ -125,6 +125,22 @@ def query_history_events_page(
     return payload['result']
 
 
+def query_settings() -> dict[str, Any]:
+    """Return the user's settings. The analytics layer reads ``main_currency`` from here so
+    that valued events are denominated the same way the rest of rotki denominates them.
+    """
+    backend_config = get_backend_config()
+    payload = request_api(
+        base_url=backend_config.base_url,
+        endpoint='settings',
+        timeout=backend_config.timeout,
+    )
+    if not isinstance(result := payload['result'], dict):
+        raise BackendQueryError('rotki backend returned an unexpected settings response')
+
+    return result
+
+
 def query_all_balances(refresh: bool, timeout: int) -> dict[str, Any]:
     """Return the current balances snapshot. ``refresh=True`` forces a slow live query of
     every exchange and chain; otherwise the cached snapshot is returned. Read-only: never

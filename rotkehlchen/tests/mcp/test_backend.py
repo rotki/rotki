@@ -8,6 +8,8 @@ from rotkehlchen.mcp.backend import (
     BackendQueryError,
     configure_backend,
     get_backend_config,
+    query_historical_prices,
+    query_settings,
     request_api,
 )
 
@@ -80,3 +82,52 @@ def test_request_api_should_post_json_body(monkeypatch) -> None:
     ) == {'result': {'entries': []}, 'message': ''}
     assert captured['url'] == 'http://backend/api/1/history/events'
     assert captured['json'] == {'limit': 10}
+
+
+def test_query_settings_should_return_main_currency(monkeypatch) -> None:
+    monkeypatch.setattr(
+        requests,
+        'get',
+        lambda url, **kwargs: MockResponse({'result': {'main_currency': 'EUR'}, 'message': ''}),
+    )
+    configure_backend(base_url='http://backend/api/1', timeout=5)
+
+    assert query_settings()['main_currency'] == 'EUR'
+
+
+def test_query_settings_should_reject_non_dict_result(monkeypatch) -> None:
+    monkeypatch.setattr(
+        requests,
+        'get',
+        lambda url, **kwargs: MockResponse({'result': True, 'message': ''}),
+    )
+    configure_backend(base_url='http://backend/api/1', timeout=5)
+
+    with pytest.raises(BackendQueryError, match='unexpected settings response'):
+        query_settings()
+
+
+def test_historical_prices_should_always_send_only_cache_period(monkeypatch) -> None:
+    """``only_cache_period`` is what confines the endpoint to rotki's stored prices. Without
+    it the backend falls through to ``query_multiple_prices`` and hits remote oracles, which
+    the MCP must never do on an agent's behalf.
+    """
+    captured: dict[str, Any] = {}
+
+    def mock_post(url: str, **kwargs: Any) -> MockResponse:
+        captured['json'] = kwargs.get('json')
+        return MockResponse({'result': {'assets': {}, 'target_asset': 'EUR'}, 'message': ''})
+
+    monkeypatch.setattr(requests, 'post', mock_post)
+    configure_backend(base_url='http://backend/api/1', timeout=5)
+
+    query_historical_prices(
+        asset_timestamps=[('ETH', 1614556800)],
+        target_asset='EUR',
+        max_seconds_distance=3600,
+    )
+    assert captured['json'] == {
+        'assets_timestamp': [('ETH', 1614556800)],
+        'target_asset': 'EUR',
+        'only_cache_period': 3600,
+    }

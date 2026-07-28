@@ -1,3 +1,4 @@
+import json
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 from typing import Any
@@ -375,6 +376,219 @@ def test_load_is_uncapped_by_default_and_respects_max_events(monkeypatch) -> Non
                                         include_ignored_assets=False)
     assert capped['tables']['history_events']['rows'] == 3
     assert capped['tables']['history_events']['source']['cache_truncated'] is True
+
+
+def _mock_prices(monkeypatch, prices: dict[str, dict[int, str]], currency: str = 'EUR') -> list:
+    """Mock the settings + historical-price backends, recording every price call made."""
+    calls: list[dict[str, Any]] = []
+
+    def fake_prices(asset_timestamps, target_asset, max_seconds_distance):
+        calls.append({
+            'pairs': list(asset_timestamps),
+            'target_asset': target_asset,
+            'max_seconds_distance': max_seconds_distance,
+        })
+        assets: dict[str, dict[str, str]] = {}
+        for asset, timestamp in asset_timestamps:
+            if (price := prices.get(asset, {}).get(timestamp)) is not None:
+                # both levels come back as strings over JSON, as the real endpoint does
+                assets.setdefault(asset, {})[str(timestamp)] = price
+        return {'assets': assets, 'target_asset': target_asset}
+
+    monkeypatch.setattr(analytics, 'query_settings', lambda: {'main_currency': currency})
+    monkeypatch.setattr(analytics, 'query_historical_prices', fake_prices)
+    return calls
+
+
+def _valued_event(identifier: int, asset: str, amount: str, timestamp: int) -> dict[str, Any]:
+    return {
+        'identifier': identifier,
+        'asset': asset,
+        'amount': amount,
+        'timestamp': timestamp,
+        'event_type': 'spend',
+    }
+
+
+def test_include_values_off_should_not_query_prices(monkeypatch) -> None:
+    """Valuation costs minutes on a real history, so it must never happen implicitly."""
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [_valued_event(1, 'ETH', '2', 1614556800000)])
+    calls = _mock_prices(monkeypatch, {'ETH': {1614556800: '1500'}})
+
+    session = AnalyticsSession()
+    loaded = session.refresh(
+        tables=None,
+        from_timestamp=0,
+        to_timestamp=0,
+        include_ignored_assets=False,
+    )['tables']['history_events']
+
+    assert calls == []
+    assert 'value_currency' not in loaded['source']
+    names = {column['name'] for column in session.describe_table('history_events')['columns']}
+    assert names.isdisjoint({'value', 'price', 'price_missing'})
+
+
+def test_include_values_should_multiply_amount_by_cached_price(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        _valued_event(1, 'ETH', '2', 1614556800000),    # priced: 2 * 1500
+        _valued_event(2, 'BTC', '0.5', 1614556800000),  # priced: 0.5 * 40000
+        _valued_event(3, 'DOGE', '100', 1614556800000),  # no cached price
+    ])
+    calls = _mock_prices(monkeypatch, {
+        'ETH': {1614556800: '1500'},
+        'BTC': {1614556800: '40000'},
+    })
+    session = AnalyticsSession()
+    loaded = session.refresh(
+        tables=None,
+        from_timestamp=0,
+        to_timestamp=0,
+        include_ignored_assets=False,
+        include_values=True,
+    )['tables']['history_events']
+
+    assert loaded['source']['value_currency'] == 'EUR'
+    assert loaded['source']['priced_rows'] == 2
+    assert loaded['source']['unpriced_rows'] == 1
+    assert loaded['source']['lookup_count'] == 3
+    # only_cache_period must always be sent, so no remote oracle fetch can be triggered
+    assert all(call['max_seconds_distance'] == 3600 for call in calls)
+    assert all(call['target_asset'] == 'EUR' for call in calls)
+
+    rows = session.query_sql(
+        'select asset, value, price, price_missing from history_events order by asset',
+        max_rows=10,
+    )['rows']
+    assert rows == [
+        {'asset': 'BTC', 'value': 20000.0, 'price': 40000.0, 'price_missing': 0},
+        {'asset': 'DOGE', 'value': None, 'price': None, 'price_missing': 1},
+        {'asset': 'ETH', 'value': 3000.0, 'price': 1500.0, 'price_missing': 0},
+    ]
+
+
+def test_unpriced_events_should_be_null_never_zero(monkeypatch) -> None:
+    """A 0 would silently understate every total an agent sums over ``value``."""
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [_valued_event(1, 'DOGE', '100', 1614556800000)])
+    _mock_prices(monkeypatch, {})
+    session = AnalyticsSession()
+    session.refresh(tables=None, from_timestamp=0, to_timestamp=0,
+                    include_ignored_assets=False, include_values=True)
+
+    assert session.query_sql(
+        'select sum(value) as total, count(value) as priced from history_events',
+        max_rows=10,
+    )['rows'] == [{'total': None, 'priced': 0}]
+
+
+def test_null_results_should_stay_json_serializable(monkeypatch) -> None:
+    """A NULL in a numeric result column must reach the agent as ``null``. Reading results
+    back through a DataFrame turned it into NaN, which ``json.dumps`` emits as a bare ``NaN``
+    token -- invalid JSON, so the whole tool response fails to parse on the client.
+    """
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        _valued_event(1, 'ETH', '2', 1614556800000),
+        _valued_event(2, 'DOGE', '100', 1614556800000),
+    ])
+    _mock_prices(monkeypatch, {'ETH': {1614556800: '1500'}})
+    session = AnalyticsSession()
+    session.refresh(tables=None, from_timestamp=0, to_timestamp=0,
+                    include_ignored_assets=False, include_values=True)
+
+    result = session.query_sql('select asset, value from history_events order by asset', 10)
+    assert result['rows'] == [{'asset': 'DOGE', 'value': None}, {'asset': 'ETH', 'value': 3000.0}]
+    assert 'NaN' not in json.dumps(result)  # strict JSON has no NaN literal
+
+
+def test_price_lookups_should_dedupe_into_hour_buckets(monkeypatch) -> None:
+    """100 events in one asset-hour cost exactly one lookup, not 100."""
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        # spread across one hour: 1614556800000 is exactly 2021-03-01T00:00:00Z
+        _valued_event(i, 'ETH', '1', 1614556800000 + i * 30_000) for i in range(100)
+    ])
+    calls = _mock_prices(monkeypatch, {'ETH': {1614556800: '1500'}})
+    loaded = AnalyticsSession().refresh(
+        tables=None,
+        from_timestamp=0,
+        to_timestamp=0,
+        include_ignored_assets=False,
+        include_values=True,
+    )['tables']['history_events']
+
+    assert len(calls) == 1
+    assert calls[0]['pairs'] == [('ETH', 1614556800)]
+    assert loaded['source']['lookup_count'] == 1
+    assert loaded['source']['priced_rows'] == 100  # all 100 rows still get the bucket's price
+
+
+def test_price_lookups_should_chunk_at_500_pairs(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        # 1200 distinct asset-hours -> 500 + 500 + 200
+        _valued_event(i, f'ASSET{i}', '1', 1614556800000 + i * 3_600_000) for i in range(1200)
+    ])
+    calls = _mock_prices(monkeypatch, {})
+    loaded = AnalyticsSession().refresh(
+        tables=None,
+        from_timestamp=0,
+        to_timestamp=0,
+        include_ignored_assets=False,
+        include_values=True,
+    )['tables']['history_events']
+
+    assert [len(call['pairs']) for call in calls] == [500, 500, 200]
+    assert loaded['source']['lookup_count'] == 1200
+
+
+def test_valuation_should_not_block_queries(monkeypatch) -> None:
+    """Price resolution takes minutes; it must run outside the connection lock so the
+    previous snapshot stays queryable, exactly like the event paging above it.
+    """
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [_valued_event(1, 'ETH', '2', 1614556800000)])
+    session = AnalyticsSession()
+    assert session.refresh(tables=None, from_timestamp=0, to_timestamp=0,
+                           include_ignored_assets=False)['errors'] == {}
+
+    started, proceed = Event(), Event()
+
+    def blocking_prices(asset_timestamps, target_asset, max_seconds_distance):
+        started.set()
+        assert proceed.wait(timeout=5)
+        return {'assets': {'ETH': {'1614556800': '1500'}}, 'target_asset': target_asset}
+
+    monkeypatch.setattr(analytics, 'query_settings', lambda: {'main_currency': 'EUR'})
+    monkeypatch.setattr(analytics, 'query_historical_prices', blocking_prices)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        refresh_future = executor.submit(
+            session.refresh,
+            tables=None,
+            from_timestamp=0,
+            to_timestamp=0,
+            include_ignored_assets=False,
+            include_values=True,
+        )
+        assert started.wait(timeout=5)
+        query_future = executor.submit(
+            session.query_sql,
+            'select count(*) as count from history_events',
+            10,
+        )
+        try:  # the un-valued snapshot answers while valuation is still in flight
+            assert query_future.result(timeout=5)['rows'] == [{'count': 1}]
+        finally:
+            proceed.set()
+        assert refresh_future.result(timeout=5)['errors'] == {}
+
+    assert session.query_sql('select value from history_events', max_rows=10)['rows'] == [
+        {'value': 3000.0},
+    ]
 
 
 def test_query_sql_without_loaded_tables_errors() -> None:
