@@ -2,7 +2,7 @@ import json
 import warnings as test_warnings
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -13,6 +13,8 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.constants import GATE_LOCATION_KEY
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.exchanges.gate import (
     GATE_BASE_URL,
     GATE_MAX_MOVEMENT_WINDOW,
@@ -126,6 +128,38 @@ def test_gate_history_query_commits_30_day_chunks(gate_exchange: Gate) -> None:
             end_ts=query_end,
         )
     assert ranges_to_query == []
+
+
+def test_gate_flushes_successful_movement_query_before_raising(gate_exchange: Gate) -> None:
+    event_queue = MagicMock(spec=HistoryEventQueue)
+    deposit = MagicMock(spec=AssetMovement)
+
+    def mock_query_movements(
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            query_for: HistoryEventType,
+    ) -> list[AssetMovement]:
+        if query_for == HistoryEventType.DEPOSIT:
+            return [deposit]
+        raise RemoteError('Failed to query withdrawals')
+
+    with (
+        patch.object(
+            gate_exchange,
+            '_query_deposits_withdrawals',
+            side_effect=mock_query_movements,
+        ),
+        patch.object(gate_exchange, '_query_trades') as query_trades,
+        pytest.raises(RemoteError, match='Failed to query withdrawals'),
+    ):
+        gate_exchange.query_online_history_events(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1),
+            event_queue=event_queue,
+        )
+
+    event_queue.flush.assert_called_once_with([deposit])
+    query_trades.assert_not_called()
 
 
 def gate_account_mock(

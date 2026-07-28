@@ -590,26 +590,30 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Query deposits, withdrawals, and trades from Gate."""
         events: list[AssetMovement | SwapEvent] = []
-        if event_queue is None:
-            movement_tasks = [
-                spawn(
-                    self._query_deposits_withdrawals,
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    query_for=event_type,
-                ) for event_type in (HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL)
-            ]
-            wait(movement_tasks)
-            for task in movement_tasks:
-                events.extend(result_of(task))
-        else:
-            for event_type in (HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL):
-                event_queue.events.extend(self._query_deposits_withdrawals(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    query_for=event_type,
-                ))
-                event_queue.flush()
+        movement_tasks = [
+            spawn(
+                self._query_deposits_withdrawals,
+                start_ts=start_ts,
+                end_ts=end_ts,
+                query_for=event_type,
+            ) for event_type in (HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL)
+        ]
+        wait(movement_tasks)
+        error: RemoteError | None = None
+        for task in movement_tasks:
+            try:
+                movements = result_of(task)
+            except RemoteError as e:
+                error = e
+                continue
+
+            if event_queue is None:
+                events.extend(movements)
+            else:
+                event_queue.flush(movements)
+
+        if error is not None:
+            raise error
 
         events.extend(self._query_trades(
             start_ts=start_ts,
