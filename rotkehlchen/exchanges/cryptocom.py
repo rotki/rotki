@@ -463,42 +463,43 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
         while True:
             try:
                 result = self._process_response(self._api_query(method=method, options=options))
-                if result.code != API_SUCCESS_CODE or result.result is None:
-                    msg = f'Failed to query {self.name} {query_type}s: {result.message}'
-                    log.error(msg)
-                    raise RemoteError(msg)
-
-                page_events: list[HistoryBaseEntry] = []
-                for raw_asset_movement in (raw_list := result.result.get(result_key, [])):
-                    try:
-                        page_events.extend(deserialize_fn(raw_asset_movement))
-                    except (DeserializationError, UnknownAsset, KeyError) as e:
-                        msg = f'missing key: {e!s}' if isinstance(e, KeyError) else str(e)
-                        log.error(
-                            f'Error processing {self.name} {query_type}: '
-                            f'{raw_asset_movement} due to {msg}',
-                        )
-                        self.msg_aggregator.add_error(
-                            f'Failed to deserialize a {self.name} {query_type}. '
-                            f'Check the logs for details.',
-                        )
-
-                if event_queue is None:
-                    events.extend(page_events)
-                else:
-                    event_queue.events.extend(page_events)
-                    event_queue.flush()
-
-                if len(raw_list) < page_size:
-                    break
-
-                if page_key == 'page':
-                    options[page_key] += 1
-                else:  # trades endpoint pages by timestamp
-                    options[page_key] = raw_list[-1]['create_time_ns']
             except RemoteError as e:
                 self.msg_aggregator.add_error(f'Failed to query {self.name} {query_type}s: {e!s}')
                 raise
+
+            if result.code != API_SUCCESS_CODE or result.result is None:
+                msg = f'Failed to query {self.name} {query_type}s: {result.message}'
+                log.error(msg)
+                raise RemoteError(msg)
+
+            page_events: list[HistoryBaseEntry] = []
+            for raw_asset_movement in (raw_list := result.result.get(result_key, [])):
+                try:
+                    page_events.extend(deserialize_fn(raw_asset_movement))
+                except (DeserializationError, UnknownAsset, KeyError) as e:
+                    msg = f'missing key: {e!s}' if isinstance(e, KeyError) else str(e)
+                    log.error(
+                        f'Error processing {self.name} {query_type}: '
+                        f'{raw_asset_movement} due to {msg}',
+                    )
+                    self.msg_aggregator.add_error(
+                        f'Failed to deserialize a {self.name} {query_type}. '
+                        f'Check the logs for details.',
+                    )
+
+            if event_queue is None:
+                events.extend(page_events)
+            else:
+                event_queue.events.extend(page_events)
+                event_queue.flush()
+
+            if len(raw_list) < page_size:
+                break
+
+            if page_key == 'page':
+                options[page_key] += 1
+            else:  # trades endpoint pages by timestamp
+                options[page_key] = raw_list[-1]['create_time_ns']
 
         return events
 
