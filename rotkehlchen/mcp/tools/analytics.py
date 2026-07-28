@@ -123,9 +123,16 @@ async def query_sql(sql: str, max_rows: int = DEFAULT_MAX_RESULT_ROWS) -> dict[s
       exists only after refreshing with ``include_values=true``.
     - ``timestamp`` is in **milliseconds**; the ``datetime`` and ``year`` columns are derived
       from it, so filter on those instead of doing unix math.
-    - One trade is several rows sharing a ``group_identifier`` (spend, receive, fee — each in
-      a different asset), ordered by ``sequence_index``. Self-join on ``group_identifier`` to
-      see both sides; never sum across the legs.
+    - One trade is several rows sharing a group (spend, receive, fee — each in a different
+      asset), ordered by ``sequence_index``. Self-join on ``group_identifier_hash`` to see
+      both sides; never sum across the legs.
+    - Identifier columns arrive as ``<col>_hash`` holding ``anon_…`` values. They are stable
+      within this session, so joining and grouping on them works, but they are not reversible
+      and not stable across sessions — never quote one to the user as if it were an address.
+    - ``value`` is denominated in ``source.value_currency`` from the refresh result, not
+      necessarily USD.
+
+    ``get_event_taxonomy`` carries worked queries for the common questions under ``recipes``.
     """
     return await asyncio.to_thread(
         get_analytics_session().query_sql,

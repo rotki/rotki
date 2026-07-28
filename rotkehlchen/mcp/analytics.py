@@ -22,6 +22,7 @@ from rotkehlchen.mcp.backend import (
     query_history_events_page,
     query_settings,
 )
+from rotkehlchen.mcp.taxonomy import resolve_direction
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -271,6 +272,28 @@ def _sanitize_row(row: dict[str, Any], privacy_mode: PrivacyMode) -> dict[str, A
     return sanitized
 
 
+def _add_directions(frame: pd.DataFrame) -> None:
+    """Add rotki's own ``in``/``out``/``neutral`` direction for each event, in place.
+
+    The serialized event carries no direction, so without this an agent has to infer income
+    from ``event_type`` -- the guess that double counts MEV rewards. Deriving it here from
+    the same function the rest of rotki uses makes the correct aggregation a plain
+    ``group by direction``. Resolution is cached per type/subtype/location because a large
+    history has ~100 distinct combinations across six figures of rows.
+    """
+    if not {'event_type', 'event_subtype', 'location'} <= set(frame.columns):
+        return
+
+    cache: dict[tuple[Any, Any, Any], str | None] = {}
+    directions: list[str | None] = []
+    for key in zip(frame['event_type'], frame['event_subtype'], frame['location'], strict=True):
+        if key not in cache:
+            cache[key] = resolve_direction(*key)
+        directions.append(cache[key])
+
+    frame['direction'] = directions
+
+
 def _iter_entries(entries: list[Any]) -> Iterator[dict[str, Any]]:
     """Yield every event in a page, including the ones the API nests.
 
@@ -450,6 +473,8 @@ def _load_history_events(scope: AnalyticsScope) -> TableData:
         dt = pd.to_datetime(frame['timestamp'], unit='ms', utc=True)
         frame['datetime'] = dt.dt.strftime('%Y-%m-%dT%H:%M:%SZ')
         frame['year'] = dt.dt.year
+
+    _add_directions(frame)
 
     # Valuation runs here, in the loader, so its minutes of price lookups stay outside the
     # connection lock and queries keep serving the previous snapshot meanwhile.

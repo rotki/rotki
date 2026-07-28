@@ -16,6 +16,7 @@ from rotkehlchen.mcp.analytics import (
     _validate_sql,
 )
 from rotkehlchen.mcp.backend import configure_backend
+from rotkehlchen.mcp.taxonomy import RECIPES
 
 ADDRESS = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'
 TX_HASH = '0x' + 'ab' * 32
@@ -857,6 +858,88 @@ def test_describe_should_never_emit_hashed_values(monkeypatch) -> None:
     assert 'top_values' not in columns['address_hash']
     # a column the allowlist does not know is hashed too, but for a different reason
     assert columns['ens_name_hash']['hashed_reason'] == 'unrecognized'
+
+
+def test_direction_column_should_use_rotki_resolution(monkeypatch) -> None:
+    """The serialized event carries no direction, so it is derived locally -- otherwise the
+    "aggregate on direction" guidance refers to a column that does not exist.
+    """
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        {'identifier': 1, 'asset': 'ETH', 'amount': '1', 'location': 'ethereum',
+         'event_type': 'staking', 'event_subtype': 'mev reward'},
+        {'identifier': 2, 'asset': 'ETH', 'amount': '1', 'location': 'ethereum',
+         'event_type': 'informational', 'event_subtype': 'mev reward'},
+        {'identifier': 3, 'asset': 'ETH', 'amount': '1', 'location': 'ethereum',
+         'event_type': 'spend', 'event_subtype': 'fee'},
+    ])
+    session = AnalyticsSession()
+    session.refresh(tables=None, from_timestamp=0, to_timestamp=0, include_ignored_assets=False)
+
+    assert session.query_sql(
+        'select event_type, direction from history_events order by identifier',
+        max_rows=10,
+    )['rows'] == [
+        {'event_type': 'staking', 'direction': 'in'},
+        {'event_type': 'informational', 'direction': 'neutral'},  # not counted twice
+        {'event_type': 'spend', 'direction': 'out'},
+    ]
+
+
+def test_unparsable_event_should_not_fail_the_load(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        {'identifier': 1, 'asset': 'ETH', 'amount': '1', 'location': 'ethereum',
+         'event_type': 'not_a_real_type', 'event_subtype': 'nonsense'},
+    ])
+    session = AnalyticsSession()
+    assert session.refresh(tables=None, from_timestamp=0, to_timestamp=0,
+                           include_ignored_assets=False)['errors'] == {}
+    assert session.query_sql('select direction from history_events', 10)['rows'] == [
+        {'direction': None},
+    ]
+
+
+def test_every_shipped_recipe_should_execute(monkeypatch) -> None:
+    """Doubles as regression coverage: a recipe breaks the moment the schema drifts."""
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        {'entry': {'identifier': 1, 'asset': 'ETH', 'amount': '0.01',
+                   'timestamp': 1614556800000, 'location': 'ethereum', 'event_type': 'spend',
+                   'event_subtype': 'fee', 'counterparty': 'gas', 'sequence_index': 0,
+                   'group_identifier': '0xaaa'}},
+        {'entry': {'identifier': 2, 'asset': 'ETH', 'amount': '1',
+                   'timestamp': 1614556800000, 'location': 'ethereum',
+                   'event_type': 'staking', 'event_subtype': 'mev reward',
+                   'sequence_index': 0, 'group_identifier': '0xbbb'}},
+        {'entry': {'identifier': 3, 'asset': 'ETH', 'amount': '2',
+                   'timestamp': 1614556800000, 'location': 'kraken', 'event_type': 'trade',
+                   'event_subtype': 'spend', 'sequence_index': 0,
+                   'group_identifier': '0xccc'}},
+        {'entry': {'identifier': 4, 'asset': 'USDC', 'amount': '6000',
+                   'timestamp': 1614556800000, 'location': 'kraken', 'event_type': 'trade',
+                   'event_subtype': 'receive', 'sequence_index': 1,
+                   'group_identifier': '0xccc'}},
+    ])
+    _mock_prices(monkeypatch, {'ETH': {1614556800: '1500'}, 'USDC': {1614556800: '1'}})
+    monkeypatch.setattr(analytics, 'query_all_balances', lambda refresh, timeout: {
+        'assets': {'ETH': {'amount': '3', 'usd_value': '4500'}},
+        'liabilities': {},
+        'net_value': '4500',
+    })
+    session = AnalyticsSession()
+    assert session.refresh(
+        tables=['history_events', 'balances'],
+        from_timestamp=0,
+        to_timestamp=0,
+        include_ignored_assets=False,
+        include_values=True,
+    )['errors'] == {}
+
+    for recipe in RECIPES:
+        result = session.query_sql(recipe['sql'], max_rows=100)
+        assert 'error' not in result, f'recipe failed: {recipe["question"]}: {result}'
+        assert 'excludes' in recipe and 'requires' in recipe
 
 
 def test_query_sql_without_loaded_tables_errors() -> None:
