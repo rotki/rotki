@@ -6,9 +6,12 @@ import logging
 from ipaddress import ip_address
 from typing import TYPE_CHECKING, Any, Literal
 
+from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
+from pydantic import AnyHttpUrl
 
+from rotkehlchen.mcp.auth import MCP_SCOPE, SessionTokenVerifier
 from rotkehlchen.mcp.backend import configure_backend
 from rotkehlchen.mcp.constants import SERVICE_NAME, LogLevel, PrivacyMode
 from rotkehlchen.mcp.premium import premium_gate
@@ -16,6 +19,7 @@ from rotkehlchen.mcp.registry import discover_tools
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from pathlib import Path
 
 
 def validate_loopback_host(host: str) -> str:
@@ -30,7 +34,7 @@ def validate_loopback_host(host: str) -> str:
 
     if not is_loopback:
         raise ValueError(
-            'The unauthenticated streamable HTTP transport must bind to a loopback host',
+            'The MCP streamable HTTP transport must bind to a loopback host',
         )
     return host
 
@@ -63,8 +67,14 @@ def setup_server(
         max_events: int | None = None,
         host: str = '127.0.0.1',
         port: int = 4445,
+        session_key: bytes | None = None,
+        session_db: Path | None = None,
 ) -> FastMCP:
     host = validate_loopback_host(host)
+    if session_key is not None and session_db is None:
+        raise ValueError(
+            'The session database path is required when MCP authentication is enabled',
+        )
     configure_backend(
         base_url=backend_url,
         timeout=timeout,
@@ -77,6 +87,13 @@ def setup_server(
         log_level=log_level,
         host=host,
         port=port,
+        auth=AuthSettings(
+            issuer_url=AnyHttpUrl(backend_url),
+            required_scopes=[MCP_SCOPE],
+            resource_server_url=None,
+        ) if session_key is not None else None,
+        token_verifier=SessionTokenVerifier(session_key=session_key, session_db=session_db)
+        if session_key is not None and session_db is not None else None,
         transport_security=TransportSecuritySettings(
             allowed_hosts=[http_host],
             allowed_origins=[f'http://{http_host}'],
@@ -105,6 +122,8 @@ def run_server(
         transport: Literal['stdio', 'streamable-http'] = 'stdio',
         host: str = '127.0.0.1',
         port: int = 4445,
+        session_key: bytes | None = None,
+        session_db: Path | None = None,
 ) -> None:
     if transport == 'streamable-http':
         # sse-starlette logs every serialized SSE payload (and ping body) at DEBUG.
@@ -119,5 +138,7 @@ def run_server(
         max_events=max_events,
         host=host,
         port=port,
+        session_key=session_key if transport == 'streamable-http' else None,
+        session_db=session_db if transport == 'streamable-http' else None,
     )
     server.run(transport=transport)

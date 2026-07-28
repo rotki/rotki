@@ -5,6 +5,9 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
+from mcp.server.auth.middleware.auth_context import get_access_token
+
+from rotkehlchen.api.session_token import SESSION_COOKIE_NAME
 
 if TYPE_CHECKING:
     from rotkehlchen.mcp.constants import PrivacyMode
@@ -73,8 +76,18 @@ def request_api(
     """
     url = _api_url(base_url=base_url, endpoint=endpoint)
     request = requests.post if method == 'POST' else requests.get
+    cookies = (
+        {SESSION_COOKIE_NAME: access_token.token}
+        if (access_token := get_access_token()) is not None else None
+    )
     try:
-        response = request(url=url, params=params, json=json_data, timeout=timeout)
+        response = request(
+            url=url,
+            params=params,
+            json=json_data,
+            timeout=timeout,
+            cookies=cookies,
+        )
     except requests.exceptions.RequestException as e:
         raise BackendQueryError(f'Could not connect to rotki backend at {url}: {e!s}') from e
 

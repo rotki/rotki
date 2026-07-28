@@ -96,6 +96,11 @@ def test_reissue_rejects_non_active_sid(tmp_path):
     assert store.reissue('nobody', 'whatever') is None
 
 
+@pytest.mark.parametrize('token', ['not-ascii-€.signature', 'payload.not-ascii-€'])
+def test_read_session_token_rejects_non_ascii_token(token: str) -> None:
+    assert read_session_token(KEY, token) is None
+
+
 @pytest.mark.freeze_time(BASE)
 def test_revoke_removes_session(tmp_path):
     store = _store(tmp_path)

@@ -17,6 +17,11 @@ When rotki is set up with the ``ROTKI_SESSION_KEY`` environment variable (the Do
   - Accepts the account ``password`` and issues the session cookie before the asynchronous unlock, so the gated task poll and websocket handshake are authorized.
   - Has no effect when ``ROTKI_SESSION_KEY`` is unset (desktop/Electron deployment), where the API stays session-less as before.
 
+* **New Endpoint**: ``POST /api/(version)/mcp/token``
+
+  - Reissues the authenticated active session as a bearer token for the streamable HTTP MCP transport exposed by Docker at ``/mcp``.
+  - The MCP server validates the bearer token before protocol handling and checks the durable active-session record, so logout and session takeover revoke MCP access.
+
 Spam Token Endpoint Renamed
 ----------------------------
 
@@ -210,4 +215,3 @@ ERC-721 token IDs may now be set when adding/editing assets.
 * **Modified Endpoint**: ``GET /api/(version)/assets/all``
 
   - Now includes a ``collectible_id`` field in the response when token_kind is ``"erc721"``.
-

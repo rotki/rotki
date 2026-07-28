@@ -10,6 +10,7 @@
 //! | `/api/1/*`   | `core` (127.0.0.1:4242)   | preserved              |
 //! | `/ws/*`      | `core` (127.0.0.1:4242)   | preserved + WS upgrade |
 //! | `/colibri/*` | `colibri` (127.0.0.1:4343)| prefix **stripped**    |
+//! | `/mcp`       | `mcp` (127.0.0.1:4445)    | preserved              |
 //! | everything   | static SPA on disk        | SPA fallback to index  |
 //!
 //! Unlike nginx, the proxy **streams** request/response bodies without buffering,
@@ -102,6 +103,10 @@ pub struct ProxyConfig {
     pub core_port: u16,
     /// Loopback port of colibri.
     pub colibri_port: u16,
+    /// Loopback port of the authenticated MCP server.
+    pub mcp_port: u16,
+    /// Whether the externally reachable MCP route is enabled.
+    pub mcp_enabled: bool,
     /// Directory holding the built SPA (served by `ServeDir`). `Some` in docker
     /// mode, where starling replaces nginx and serves the bundle; `None` in
     /// embedded mode, where Electron loads the SPA itself and the proxy is a
@@ -129,6 +134,8 @@ struct ProxyState {
     client: HttpClient,
     core_addr: String,
     colibri_addr: String,
+    mcp_addr: String,
+    mcp_enabled: bool,
 }
 
 /// Bind the proxy listener on `host`. Done before serving so a bind failure
@@ -255,6 +262,8 @@ fn router(config: &ProxyConfig) -> Router {
         client: Client::builder(TokioExecutor::new()).build_http(),
         core_addr: format!("127.0.0.1:{}", config.core_port),
         colibri_addr: format!("127.0.0.1:{}", config.colibri_port),
+        mcp_addr: format!("127.0.0.1:{}", config.mcp_port),
+        mcp_enabled: config.mcp_enabled,
     };
 
     // nginx `location /prefix/` is a prefix match that also matches the bare
@@ -271,7 +280,7 @@ fn router(config: &ProxyConfig) -> Router {
     // Body-size ceiling on the proxied API routes (replaces nginx's
     // `client_max_body_size`; the backends impose no limit of their own). axum's
     // `.layer()` wraps only routes registered *before* the call, so the limit
-    // covers `/api` + `/colibri` but NOT `/ws` (a long-lived upgrade with no
+    // covers `/api` + `/colibri` + `/mcp` but NOT `/ws` (a long-lived upgrade with no
     // content length) or the static SPA, both added afterwards. The proxy still
     // streams, the layer rejects (413 on Content-Length, else errors the body)
     // without buffering.
@@ -282,11 +291,14 @@ fn router(config: &ProxyConfig) -> Router {
         .route("/colibri", any(proxy_colibri))
         .route("/colibri/", any(proxy_colibri))
         .route("/colibri/{*rest}", any(proxy_colibri))
+        .route("/mcp", any(proxy_mcp))
+        .route("/mcp/", any(proxy_mcp))
+        .route("/mcp/{*rest}", any(proxy_mcp))
         .layer(RequestBodyLimitLayer::new(config.max_body_bytes))
         // Inactivity timeout on the request body (nginx `client_body_timeout`):
         // a client that stalls mid-upload is dropped rather than holding a
         // connection slot. Same `.layer()` scoping as the size limit above, so it
-        // covers `/api` + `/colibri` but not `/ws` or the static SPA.
+        // covers `/api` + `/colibri` + `/mcp` but not `/ws` or the static SPA.
         .layer(RequestBodyTimeoutLayer::new(BODY_READ_TIMEOUT))
         .route("/ws", any(proxy_ws))
         .route("/ws/", any(proxy_ws))
@@ -436,6 +448,22 @@ async fn proxy_core(State(state): State<ProxyState>, req: Request) -> Response {
 async fn proxy_colibri(State(state): State<ProxyState>, req: Request) -> Response {
     let stripped = strip_colibri_prefix(&path_and_query(&req));
     let target = format!("http://{}{}", state.colibri_addr, stripped);
+    let peer = peer_addr(&req);
+    let req = req_with_target(req, target, peer);
+    forward(&state, req).await
+}
+
+/// `/mcp` → MCP, path preserved. Starling is the only caller reachable by MCP's
+/// loopback listener, so replace the external Host with the actual upstream Host
+/// accepted by MCP's DNS-rebinding protection.
+async fn proxy_mcp(State(state): State<ProxyState>, mut req: Request) -> Response {
+    if !state.mcp_enabled {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    if let Ok(host) = HeaderValue::from_str(&state.mcp_addr) {
+        req.headers_mut().insert(header::HOST, host);
+    }
+    let target = format!("http://{}{}", state.mcp_addr, path_and_query(&req));
     let peer = peer_addr(&req);
     let req = req_with_target(req, target, peer);
     forward(&state, req).await
@@ -745,6 +773,8 @@ mod tests {
             port: 0,
             core_port: port,
             colibri_port: port,
+            mcp_port: port,
+            mcp_enabled: true,
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -826,6 +856,8 @@ mod tests {
             port: 0,
             core_port: port,
             colibri_port: port,
+            mcp_port: port,
+            mcp_enabled: true,
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -850,6 +882,8 @@ mod tests {
             port: 0,
             core_port: port,
             colibri_port: port,
+            mcp_port: port,
+            mcp_enabled: true,
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -868,6 +902,80 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn mcp_path_and_bearer_are_forwarded_with_upstream_host() {
+        let listener = TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
+            .await
+            .unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let app = Router::new().fallback(any(|req: Request| async move {
+            format!(
+                "{}|{}|{}",
+                path_and_query(&req),
+                req.headers()
+                    .get(header::AUTHORIZATION)
+                    .and_then(|value| value.to_str().ok())
+                    .unwrap_or_default(),
+                req.headers()
+                    .get(header::HOST)
+                    .and_then(|value| value.to_str().ok())
+                    .unwrap_or_default(),
+            )
+        }));
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        let app = router(&ProxyConfig {
+            port: 0,
+            core_port: 1,
+            colibri_port: 1,
+            mcp_port: port,
+            mcp_enabled: true,
+            frontend_dir: None,
+            max_body_bytes: 50 * 1024 * 1024,
+            access_log: Default::default(),
+        });
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/mcp")
+                    .header(header::HOST, "rotki.example")
+                    .header(header::AUTHORIZATION, "Bearer signed-token")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            body_string(response).await,
+            format!("/mcp|Bearer signed-token|127.0.0.1:{port}"),
+        );
+    }
+
+    #[tokio::test]
+    async fn mcp_route_is_closed_when_authentication_is_disabled() {
+        let app = router(&ProxyConfig {
+            port: 0,
+            core_port: 1,
+            colibri_port: 1,
+            mcp_port: 1,
+            mcp_enabled: false,
+            frontend_dir: Some(unique_temp_dir()),
+            max_body_bytes: 50 * 1024 * 1024,
+            access_log: Default::default(),
+        });
+
+        let response = app
+            .oneshot(Request::builder().uri("/mcp").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
     async fn static_cache_control_and_security_headers() {
         let dir = unique_temp_dir();
         std::fs::create_dir_all(&dir).unwrap();
@@ -880,6 +988,8 @@ mod tests {
             port: 0,
             core_port: 1,
             colibri_port: 1,
+            mcp_port: 1,
+            mcp_enabled: true,
             frontend_dir: Some(dir.clone()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -951,6 +1061,8 @@ mod tests {
             port: 0,
             core_port: 1,
             colibri_port: 1,
+            mcp_port: 1,
+            mcp_enabled: true,
             frontend_dir: Some(dir.clone()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -979,6 +1091,8 @@ mod tests {
             port: 0,
             core_port: 1,
             colibri_port: 1,
+            mcp_port: 1,
+            mcp_enabled: true,
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1010,6 +1124,8 @@ mod tests {
             port: 0,
             core_port: 1,
             colibri_port: 1,
+            mcp_port: 1,
+            mcp_enabled: true,
             frontend_dir: Some(dir.clone()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1040,6 +1156,8 @@ mod tests {
             port: 0,
             core_port: 9,
             colibri_port: 9,
+            mcp_port: 9,
+            mcp_enabled: true,
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 16,
             access_log: Default::default(),
@@ -1065,6 +1183,8 @@ mod tests {
             port: 0,
             core_port: 9, // discard port; connect refused
             colibri_port: 9,
+            mcp_port: 9,
+            mcp_enabled: true,
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1130,6 +1250,8 @@ mod tests {
             port: proxy_port,
             core_port: upstream_port,
             colibri_port: upstream_port,
+            mcp_port: upstream_port,
+            mcp_enabled: true,
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1167,6 +1289,8 @@ mod tests {
             port: proxy_port,
             core_port: 9,
             colibri_port: 9,
+            mcp_port: 9,
+            mcp_enabled: true,
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),

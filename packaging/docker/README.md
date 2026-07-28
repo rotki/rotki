@@ -190,6 +190,14 @@ it. Keep it stable across restarts or existing sessions are invalidated. Note it
 is visible in `/proc/<pid>/environ` to the owning uid, the same exposure the
 previous entrypoint had.
 
+With authentication enabled, starling also starts the MCP service and exposes its
+streamable HTTP transport at `/mcp`. Obtain a bearer token from an authenticated
+browser session with `POST /api/1/mcp/token`, then configure the MCP client to send
+it as `Authorization: Bearer <token>`. The token belongs to the same active session:
+logging out or signing in from another browser revokes both the cookie and MCP access.
+Without `ROTKI_SESSION_KEY`, Docker does not auto-start the externally routed MCP
+service and `/mcp` remains closed.
+
 ## Shutdown
 
 `docker stop` sends `SIGTERM`, which starling handles: it stops the backends in

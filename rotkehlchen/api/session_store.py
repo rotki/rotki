@@ -132,6 +132,15 @@ class SessionStore:
         active = self._active.get(username)
         return active.sid if active is not None else None
 
+    def issue_token(self, username: str, sid: str) -> str | None:
+        """Mint a fresh token for an already authenticated active session.
+
+        This is the bearer-token issuance path used by MCP. Reusing the same signed
+        session credential lets the MCP process validate it independently and pass it
+        back to core as a cookie when a tool delegates to a protected API endpoint.
+        """
+        return self.reissue(username=username, sid=sid)
+
     def revoke(self, username: str) -> None:
         """Drop the active session for ``username`` (logout)."""
         with self._lock:
@@ -143,3 +152,21 @@ class SessionStore:
         """Close the underlying connection (test cleanup; the process shares one store)."""
         with self._lock:
             self._conn.close()
+
+
+def is_persisted_session_active(db_path: Path, username: str, sid: str) -> bool:
+    """Check the durable active-session authority without mutating it.
+
+    MCP runs in a separate process from core, so it cannot use the in-memory
+    ``SessionStore``. Opening the disposable session database read-only makes logout
+    and session takeover revoke bearer tokens without giving MCP write access.
+    """
+    try:
+        with sqlite3.connect(f'{db_path.resolve().as_uri()}?mode=ro', uri=True) as connection:
+            row = connection.execute(
+                'SELECT 1 FROM active_sessions WHERE user = ? AND sid = ? AND abs > ?',
+                (username, sid, int(time.time())),
+            ).fetchone()
+    except sqlite3.Error:
+        return False
+    return row is not None

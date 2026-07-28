@@ -141,8 +141,8 @@ def read_session_token(key: bytes, token: str, now: int | None = None) -> Sessio
     except ValueError:
         return None
 
-    expected = hmac.new(key, payload_b64.encode('ascii'), hashlib.sha256).digest()
     try:
+        expected = hmac.new(key, payload_b64.encode('ascii'), hashlib.sha256).digest()
         provided = _b64url_decode(signature_b64)
     except (ValueError, binascii.Error):
         return None

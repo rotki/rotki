@@ -209,6 +209,39 @@ def test_cookie_gate(rotkehlchen_api_server: APIServer, username: str) -> None:
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_issue_mcp_bearer_token(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+) -> None:
+    """Only an authenticated active session can obtain an MCP bearer token."""
+    store = _enable_session(rotkehlchen_api_server)
+    token_url = api_url_for(rotkehlchen_api_server, 'mcptokenresource')
+    try:
+        session = requests.Session()
+        assert_error_response(
+            response=session.post(token_url),
+            status_code=HTTPStatus.UNAUTHORIZED,
+        )
+
+        session.cookies.set(SESSION_COOKIE_NAME, store.login(username))
+        response = session.post(token_url)
+        result = assert_proper_sync_response_with_result(response)
+        assert response.headers['Cache-Control'] == 'no-store'
+        assert response.headers['Pragma'] == 'no-cache'
+        assert result['token_type'] == 'Bearer'
+        assert isinstance(result['expires_at'], int)
+        claims = read_session_token(SESSION_KEY, result['access_token'])
+        assert claims is not None
+        assert claims.username == username
+        assert store.is_active(username=username, sid=claims.sid) is True
+
+        store.revoke(username)
+        assert store.is_active(username=username, sid=claims.sid) is False
+    finally:
+        _disable_session(rotkehlchen_api_server)
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_cookie_less_patch_user_is_gated(
         rotkehlchen_api_server: APIServer,
         username: str,

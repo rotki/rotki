@@ -431,6 +431,13 @@ pub fn mcp_args(layout: &ServiceLayout) -> Vec<String> {
         "127.0.0.1".to_string(),
         "--port".to_string(),
         layout.mcp_port.to_string(),
+        "--session-db".to_string(),
+        layout
+            .data_dir
+            .join("global")
+            .join("session.db")
+            .to_string_lossy()
+            .into_owned(),
         "--log-level".to_string(),
         if layout.log_level.eq_ignore_ascii_case("trace") {
             "DEBUG".to_string()
@@ -609,6 +616,10 @@ mod tests {
             Some("streamable-http"),
         );
         assert_eq!(flag_value(&mcp.args, "--port"), Some("4445"));
+        assert_eq!(
+            flag_value(&mcp.args, "--session-db"),
+            Some("/data/global/session.db"),
+        );
         assert_eq!(mcp.restart.on_crash, OnCrash::ReportOnly);
 
         layout.log_level = "trace".to_string();

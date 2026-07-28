@@ -3,6 +3,7 @@ from typing import Any
 
 import pytest
 import requests
+from mcp.server.auth.provider import AccessToken
 
 from rotkehlchen.mcp.backend import (
     BackendQueryError,
@@ -55,6 +56,28 @@ def test_request_api_should_return_payload(monkeypatch) -> None:
         'result': True,
         'message': '',
     }
+
+
+def test_request_api_should_delegate_bearer_as_session_cookie(monkeypatch) -> None:
+    captured: dict[str, Any] = {}
+
+    def mock_get(url: str, **kwargs: Any) -> MockResponse:
+        captured.update(kwargs)
+        return MockResponse({'result': True, 'message': ''})
+
+    monkeypatch.setattr(requests, 'get', mock_get)
+    monkeypatch.setattr(
+        'rotkehlchen.mcp.backend.get_access_token',
+        lambda: AccessToken(
+            token='mcp-bearer',
+            client_id='rotki-backend',
+            scopes=['mcp'],
+        ),
+    )
+
+    request_api(base_url='http://backend/api/1', endpoint='settings', timeout=5)
+
+    assert captured['cookies'] == {'rotki_session': 'mcp-bearer'}
 
 
 def test_request_api_should_post_json_body(monkeypatch) -> None:

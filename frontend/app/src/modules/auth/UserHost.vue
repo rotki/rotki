@@ -16,7 +16,7 @@ const { restarting } = useRestartingStatus();
 
 const { connected, connectionFailure, dockerRiskAccepted } = storeToRefs(useMainStore());
 
-const isDocker = import.meta.env.VITE_DOCKER;
+const isDocker = import.meta.env.VITE_DOCKER === 'true';
 const showDockerWarning = logicAnd(isDocker, logicNot(dockerRiskAccepted));
 // Hide the login form while an auto-unlock is running — the ConnectionLoading card is the
 // single loading state for the whole attempt, so the empty form never shows behind it.

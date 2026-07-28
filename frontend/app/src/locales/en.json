@@ -1789,7 +1789,10 @@
         },
         "auto_start": "Start MCP automatically with rotki",
         "desktop_only": "MCP lifecycle controls are available in the rotki desktop app.",
+        "docker_description": "MCP is started automatically by Starling in authenticated Docker deployments. Generate a bearer token to connect an MCP client.",
+        "endpoint": "Endpoint",
         "error": "Failed to update the MCP server: {message}",
+        "generate_token": "Generate bearer token",
         "hint": "Manage the local MCP server used by AI assistants.",
         "label": "MCP Server",
         "status": {
@@ -1801,7 +1804,10 @@
           "stopped": "Stopped",
           "stopping": "Stopping",
           "unavailable": "Unavailable"
-        }
+        },
+        "token": "Bearer token",
+        "token_error": "Failed to generate an MCP token: {message}",
+        "token_expires": "Expires {timestamp}"
       }
     },
     "sqlite_instructions": {

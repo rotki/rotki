@@ -549,7 +549,7 @@ async fn main() -> std::process::ExitCode {
         Launcher::command(colibri_binary, cli.colibri_prefix)
     };
 
-    let layout = ServiceLayout {
+    let mut layout = ServiceLayout {
         core_launcher,
         colibri_launcher,
         core_cwd: cli.core_cwd,
@@ -589,9 +589,9 @@ async fn main() -> std::process::ExitCode {
     //
     // `ROTKI_SESSION_KEY` is set explicitly on every spec rather than left to
     // inheritance. In docker it is the inherited value, so `docker run -e
-    // ROTKI_SESSION_KEY=...` reaches both children exactly as it did under
-    // entrypoint.py and survives the privilege drop. Off docker it is forced
-    // empty, which core and colibri read as "off": the spawn *adds to* the
+    // ROTKI_SESSION_KEY=...` reaches every managed service and survives the
+    // privilege drop. Off docker it is forced
+    // empty, which core, colibri, and MCP read as "off": the spawn *adds to* the
     // inherited environment rather than clearing it, so without this a stray
     // `ROTKI_SESSION_KEY` in the developer's own shell would silently switch the
     // desktop app onto cookie auth it has no flow for.
@@ -600,8 +600,10 @@ async fn main() -> std::process::ExitCode {
     } else {
         String::new()
     };
-    if docker && !session_key.is_empty() {
+    let authenticated_mcp = docker && !session_key.is_empty();
+    if authenticated_mcp {
         info!("session cookie auth enabled");
+        layout.mcp_autostart = true;
     }
     let build = move |layout: &ServiceLayout| -> Vec<ServiceSpec> {
         let mut specs = build_services(layout);
@@ -780,16 +782,17 @@ async fn main() -> std::process::ExitCode {
             port,
             core_port: cli.core_port,
             colibri_port: cli.colibri_port,
+            mcp_port: cli.mcp_port,
+            mcp_enabled: authenticated_mcp,
             frontend_dir: Some(
                 cli.frontend_dir
                     .clone()
                     .unwrap_or_else(|| PathBuf::from(DEFAULT_FRONTEND_DIR)),
             ),
             max_body_bytes,
-            // No proxy-level auth in this slice: docker's gate is the session
-            // cookie, which core and colibri validate themselves and the proxy
-            // forwards transparently. The renderer/backend secret gates land with
-            // the embedded single-origin slice that needs them.
+            // Core and colibri validate the session cookie themselves. MCP validates
+            // its bearer token itself too, while `mcp_enabled` ensures the external
+            // route remains closed unless authenticated Docker mode was configured.
             access_log: starling_proxy::access_log::AccessLog {
                 // Docker only. In embedded the proxy fronts nothing but the local
                 // renderer, so every line would be the app talking to itself -
