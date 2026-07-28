@@ -69,7 +69,10 @@ class HistoryEventQueue:
             cursor_update: HistoryQueryProgressUpdate | None = None,
             queried_until_ts: Timestamp | None = None,
     ) -> None:
-        """Atomically persist queued events, cursor progress and a safe range boundary."""
+        """Atomically persist queued events, cursor progress and a safe range boundary.
+
+        Callers that flush events must not also return the flushed events to the queue owner.
+        """
         self.events.extend(events)
         if len(self.events) == 0 and cursor_update is None and queried_until_ts is None:
             return
