@@ -1,6 +1,7 @@
 import { NotificationCategory, NotificationGroup, type NotificationPayload, Priority, Severity } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useNotificationDispatcher } from './use-notification-dispatcher';
 
 /** Matches NOTIFICATION_COOLDOWN_MS in use-notification-cooldown.ts */
@@ -212,5 +213,72 @@ describe('useNotificationDispatcher', () => {
 
     store.displayed([get(data)[0].id]);
     expect(get(data)[0]).toMatchObject({ display: false });
+  });
+
+  describe('silent mode', () => {
+    function silence(): void {
+      useSettingsRepo().updateFrontend({ silentNotifications: true });
+    }
+
+    function unsilence(): void {
+      useSettingsRepo().updateFrontend({ silentNotifications: false });
+    }
+
+    it('should keep a notification out of the popup queue', () => {
+      silence();
+      const { notify } = useNotificationDispatcher();
+      const { data, queue } = storeToRefs(useNotificationsStore());
+
+      notify({ display: true, message: 'msg', title: 'title' });
+
+      expect(get(queue)).toHaveLength(0);
+      expect(get(data)[0]).toMatchObject({ display: false, message: 'msg' });
+    });
+
+    it('should still deliver the notification to the notification area', () => {
+      silence();
+      const { notify } = useNotificationDispatcher();
+      const { data } = storeToRefs(useNotificationsStore());
+
+      notify({
+        action: { action: vi.fn(), label: 'Configure' },
+        display: true,
+        message: 'msg',
+        priority: Priority.ACTION,
+        title: 'title',
+      });
+
+      // Silenced, not suppressed: the row and its action have to survive.
+      expect(get(data)).toHaveLength(1);
+      expect(get(data)[0].action).toBeDefined();
+      expect(get(data)[0].priority).toBe(Priority.ACTION);
+    });
+
+    it('should still collapse grouped notifications while silent', () => {
+      silence();
+      const { notify } = useNotificationDispatcher();
+      const { data } = storeToRefs(useNotificationsStore());
+
+      notify({ display: true, group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'first', title: 'title' });
+      notify({ display: true, group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'second', title: 'title' });
+
+      expect(get(data)).toHaveLength(1);
+      expect(get(data)[0]).toMatchObject({ display: false, groupCount: 2, message: 'second' });
+    });
+
+    it('should let notifications interrupt again once it is turned off', () => {
+      silence();
+      const { notify } = useNotificationDispatcher();
+      const { queue } = storeToRefs(useNotificationsStore());
+
+      notify({ display: true, message: 'quiet', title: 'title' });
+      unsilence();
+      notify({ display: true, message: 'loud', title: 'title' });
+
+      // Only the new one pops. The silenced notification must not be waiting in the queue to
+      // fire the moment silent mode is switched off.
+      expect(get(queue)).toHaveLength(1);
+      expect(get(queue)[0]).toMatchObject({ message: 'loud' });
+    });
   });
 });

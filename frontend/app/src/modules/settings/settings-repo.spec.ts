@@ -116,6 +116,7 @@ describe('useSettingsRepo frontend channel', () => {
       enableAliasNames: true,
       enablePasswordConfirmation: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+      silentNotifications: false,
       subscriptDecimals: false,
       savedFilters: {},
       balanceValueThreshold: {

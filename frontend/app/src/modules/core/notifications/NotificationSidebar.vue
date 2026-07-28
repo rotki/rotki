@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { type NotificationData, Priority, Severity } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import Notification from '@/modules/core/notifications/Notification.vue';
 import PendingTasks from '@/modules/core/notifications/PendingTasks.vue';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
+import { useSilentNotifications } from '@/modules/core/notifications/use-silent-notifications';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import LazyLoader from '@/modules/shell/components/LazyLoader.vue';
 
@@ -31,6 +33,7 @@ const notificationStore = useNotificationsStore();
 const { messageOverflow, prioritized: allNotifications } = storeToRefs(notificationStore);
 const { remove } = notificationStore;
 const { hasRunningTasks } = storeToRefs(useTaskStore());
+const { silent, toggle: toggleSilent } = useSilentNotifications();
 const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
 const { y } = useScroll(contentWrapper);
 
@@ -60,6 +63,10 @@ const selectedNotifications = computed(() => {
 
 function close() {
   set(display, false);
+}
+
+function toggleSilentMode(): void {
+  startPromise(toggleSilent());
 }
 
 function clear() {
@@ -121,13 +128,29 @@ watch(
         <div class="text-h6">
           {{ t('notification_sidebar.title') }}
         </div>
-        <RuiButton
-          variant="text"
-          icon
-          @click="close()"
-        >
-          <RuiIcon name="lu-x" />
-        </RuiButton>
+        <div class="flex items-center">
+          <RuiTooltip :open-delay="400">
+            <template #activator>
+              <RuiButton
+                variant="text"
+                icon
+                :color="silent ? 'primary' : undefined"
+                data-testid="silent-notifications-toggle"
+                @click="toggleSilentMode()"
+              >
+                <RuiIcon :name="silent ? 'lu-bell-off' : 'lu-bell'" />
+              </RuiButton>
+            </template>
+            {{ silent ? t('notification_sidebar.silent.on') : t('notification_sidebar.silent.off') }}
+          </RuiTooltip>
+          <RuiButton
+            variant="text"
+            icon
+            @click="close()"
+          >
+            <RuiIcon name="lu-x" />
+          </RuiButton>
+        </div>
       </div>
 
       <ReuseNoMessages v-if="!hasRunningTasks && allNotifications.length === 0" />

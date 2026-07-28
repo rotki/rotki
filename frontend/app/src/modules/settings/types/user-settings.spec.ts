@@ -83,6 +83,7 @@ describe('user-types', () => {
       enableAliasNames: true,
       enablePasswordConfirmation: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+      silentNotifications: false,
       subscriptDecimals: false,
       savedFilters: {},
       balanceValueThreshold: {},

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
+import { useSilentNotifications } from '@/modules/core/notifications/use-silent-notifications';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 
@@ -17,8 +18,13 @@ function click() {
 }
 
 const { hasRunningTasks } = storeToRefs(useTaskStore());
+const { silent } = useSilentNotifications();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const tooltip = computed<string>(() => get(silent)
+  ? t('notification_indicator.tooltip_silent')
+  : t('notification_indicator.tooltip'));
 </script>
 
 <template>
@@ -32,13 +38,14 @@ const { t } = useI18n({ useScope: 'global' });
     offset-x="-12"
   >
     <MenuTooltipButton
-      :tooltip="t('notification_indicator.tooltip')"
+      :tooltip="tooltip"
       @click="click()"
     >
       <RuiIcon
         v-if="!hasRunningTasks"
         :class="{ '-rotate-[25deg]': visible }"
-        name="lu-bell"
+        :name="silent ? 'lu-bell-off' : 'lu-bell'"
+        data-testid="notification-indicator-icon"
       />
       <div
         v-else

@@ -4856,7 +4856,8 @@
     "tooltip": "Notes"
   },
   "notification_indicator": {
-    "tooltip": "Notifications"
+    "tooltip": "Notifications",
+    "tooltip_silent": "Notifications (silent)"
   },
   "notification_messages": {
     "accounting_rule_conflict": {
@@ -4994,6 +4995,10 @@
     },
     "message_overflow": "The total amount of notifications received has exceeded the limit of 200. Older notifications have been removed.",
     "no_messages": "No messages!",
+    "silent": {
+      "off": "Silence notification popups",
+      "on": "Popups silenced. Click to allow them again"
+    },
     "tabs": {
       "error": "Error",
       "needs_action": "Needs Action",
