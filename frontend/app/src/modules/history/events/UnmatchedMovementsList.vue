@@ -1,29 +1,14 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
-import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import type { UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
-import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
-import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
-import { getEventEntryFromCollection } from '@/modules/history/event-utils';
-import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';
-import UnmatchedRowActions, { type UnmatchedRowActionLabels } from '@/modules/history/events/UnmatchedRowActions.vue';
-import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass } from '@/modules/history/events/use-pinned-column-class';
-import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import { getAssetMovementsType } from '@/modules/history/management/forms/utils';
+import UnmatchedMovementsCards from '@/modules/history/events/UnmatchedMovementsCards.vue';
+import UnmatchedMovementsTable from '@/modules/history/events/UnmatchedMovementsTable.vue';
+import { useUnmatchedMovementRows } from '@/modules/history/events/use-unmatched-movement-rows';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
-interface UnmatchedMovementRow {
-  groupIdentifier: string;
-  entry: HistoryEventEntry;
-  eventSubtype: string;
-  isFiat: boolean;
-  location: string;
-  timestamp: number;
-  original: UnmatchedAssetMovement;
-}
-
+// The host of the unmatched-movements surface. See UnmatchedBridgesList for the shape: the
+// model and both presentations are free of `isPinned`, and only this file reads it.
 const selected = defineModel<string[]>('selected', { required: true });
 
 const {
@@ -47,112 +32,30 @@ const {
 }>();
 
 const emit = defineEmits<{
-  'ignore': [movement: UnmatchedAssetMovement];
-  'pin': [];
-  'restore': [movement: UnmatchedAssetMovement];
-  'select': [movement: UnmatchedAssetMovement];
-  'show-in-events': [movement: UnmatchedAssetMovement];
+  action: [payload: UnmatchedActionPayload<UnmatchedAssetMovement>];
+  pin: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { currentTier, premium } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
 
-const pinnedColumnClass = usePinnedColumnClass(() => isPinned);
-const pinnedAssetColumnClass = usePinnedAssetColumnClass(() => isPinned);
-
-function createColumns(isPinned: boolean, baseClass: ColumnClassConfig, assetClass: ColumnClassConfig): DataTableColumn<UnmatchedMovementRow>[] {
-  const columns: DataTableColumn<UnmatchedMovementRow>[] = [
-    {
-      key: 'timestamp',
-      label: isPinned
-        ? t('asset_movement_matching.dialog.info_column')
-        : t('common.datetime'),
-      ...baseClass,
-    },
-  ];
-
-  if (!isPinned) {
-    columns.push(
-      {
-        key: 'eventSubtype',
-        label: t('common.type'),
-        ...baseClass,
-      },
-      {
-        align: 'center',
-        key: 'location',
-        label: t('common.exchange'),
-        ...baseClass,
-      },
-    );
-  }
-
-  columns.push(
-    {
-      key: 'asset',
-      label: t('common.asset'),
-      ...assetClass,
-    },
-    {
-      key: 'actions',
-      label: t('asset_movement_matching.dialog.manual_action'),
-      ...baseClass,
-    },
-  );
-
-  return columns;
-}
-
-const columns = computed<DataTableColumn<UnmatchedMovementRow>[]>(() => createColumns(isPinned ?? false, get(pinnedColumnClass), get(pinnedAssetColumnClass)));
-
-const rows = computed<UnmatchedMovementRow[]>(() =>
-  movements.map((movement) => {
-    const { entry, ...meta } = getEventEntryFromCollection(movement.events);
-    const eventEntry = { ...entry, ...meta };
-    return {
-      entry: eventEntry,
-      eventSubtype: entry.eventSubtype,
-      groupIdentifier: movement.groupIdentifier,
-      isFiat: movement.isFiat,
-      location: entry.location,
-      original: movement,
-      timestamp: entry.timestamp,
-    };
-  }),
-);
-
-const emptyDescription = computed<string>(() =>
-  showRestore
-    ? t('asset_movement_matching.dialog.no_ignored')
-    : t('asset_movement_matching.dialog.no_unmatched'),
-);
+const { description, emptyDescription, rows, specFor } = useUnmatchedMovementRows({
+  matchDisabled: () => matchDisabled,
+  movements: () => movements,
+  showRestore: () => showRestore,
+});
 
 const descriptionEl = useTemplateRef<HTMLElement>('description');
 const { height: descriptionHeight } = useElementSize(descriptionEl);
 
-const tableMaxHeight = computed<string>(() =>
+const maxHeight = computed<string>(() =>
   isPinned
-    ? `calc(100vh - 15.4rem - ${get(descriptionHeight)}px)`
+    // the card list keeps its select-all bar and pager outside the scroll area,
+    // so it gets less room than the table did at the same width
+    ? `calc(100vh - 20rem - ${get(descriptionHeight)}px)`
     : 'calc(100vh - 23rem)',
 );
-
-function getRowClass(row: UnmatchedMovementRow): string {
-  const classes = ['transition-all'];
-  if (row.groupIdentifier === highlightedGroupIdentifier) {
-    classes.push('!bg-rui-warning/15');
-  }
-  return classes.join(' ');
-}
-
-const actionLabels = computed<UnmatchedRowActionLabels>(() => ({
-  findMatch: t('asset_movement_matching.dialog.find_match'),
-  ignore: t('asset_movement_matching.dialog.ignore'),
-  ignoreTooltip: t('asset_movement_matching.dialog.ignore_tooltip'),
-  restore: t('asset_movement_matching.dialog.restore'),
-  restoreTooltip: t('asset_movement_matching.dialog.restore_tooltip'),
-  showInEventsTooltip: t('asset_movement_matching.dialog.show_in_events'),
-}));
 </script>
 
 <template>
@@ -162,7 +65,7 @@ const actionLabels = computed<UnmatchedRowActionLabels>(() => ({
         ref="description"
         class="text-body-2 text-rui-text-secondary"
       >
-        {{ showRestore ? t('asset_movement_matching.dialog.ignored_description') : t('asset_movement_matching.dialog.description') }}
+        {{ description }}
       </p>
       <RuiButton
         v-if="!isPinned"
@@ -180,104 +83,30 @@ const actionLabels = computed<UnmatchedRowActionLabels>(() => ({
         {{ t('asset_movement_matching.actions_pin.pin_section') }}
       </RuiButton>
     </div>
-    <ScrollableDialogContent :max-height="tableMaxHeight">
-      <RuiDataTable
-        v-model="selected"
-        :cols="columns"
-        :rows="rows"
-        row-attr="groupIdentifier"
-        :item-class="getRowClass"
-        outlined
-        dense
-        multi-page-select
-        :loading="loading"
-        :empty="{ description: emptyDescription }"
+
+    <Component
+      :is="isPinned ? UnmatchedMovementsCards : UnmatchedMovementsTable"
+      v-model:selected="selected"
+      :rows="rows"
+      :spec-for="specFor"
+      :empty-description="emptyDescription"
+      :max-height="maxHeight"
+      :highlighted-group-identifier="highlightedGroupIdentifier"
+      :ignore-loading="ignoreLoading"
+      :loading="loading"
+      @action="emit('action', $event)"
+    >
+      <template
+        v-if="matchDisabled"
+        #alert
       >
-        <template
-          v-if="matchDisabled"
-          #body.prepend
-        >
-          <tr>
-            <td :colspan="columns.length + 1">
-              <UnmatchedMatchDisabledAlert
-                variant="asset-movement"
-                :premium="premium"
-                :current-tier="currentTier"
-                :match-minimum-tier="matchMinimumTier"
-              />
-            </td>
-          </tr>
-        </template>
-        <template #item.asset="{ row }">
-          <div class="flex items-center gap-2">
-            <HistoryEventAsset
-              :dense="isPinned"
-              disable-options
-              :event="row.entry"
-            />
-            <RuiTooltip
-              v-if="row.isFiat"
-              :open-delay="400"
-              :popper="{ placement: 'top' }"
-              tooltip-class="max-w-80"
-            >
-              <template #activator>
-                <RuiChip
-                  size="sm"
-                  color="warning"
-                >
-                  {{ t('asset_movement_matching.fiat_hint.label') }}
-                </RuiChip>
-              </template>
-              {{ t('asset_movement_matching.fiat_hint.tooltip') }}
-            </RuiTooltip>
-          </div>
-        </template>
-        <template #item.eventSubtype="{ row }">
-          <BadgeDisplay>
-            {{ getAssetMovementsType(row.eventSubtype) }}
-          </BadgeDisplay>
-        </template>
-        <template #item.location="{ row }">
-          <LocationDisplay
-            size="24px"
-            :identifier="row.location"
-          />
-        </template>
-        <template #item.timestamp="{ row }">
-          <DateDisplay
-            :timestamp="row.timestamp"
-            milliseconds
-          />
-          <div
-            v-if="isPinned"
-            class="flex flex-wrap items-center gap-x-1.5"
-          >
-            <BadgeDisplay class="!leading-6 my-1">
-              {{ getAssetMovementsType(row.eventSubtype) }}
-            </BadgeDisplay>
-            <LocationDisplay
-              class="[&_div]:!justify-start"
-              size="16px"
-              :identifier="row.location"
-              horizontal
-            />
-          </div>
-        </template>
-        <template #item.actions="{ row }">
-          <UnmatchedRowActions
-            :labels="actionLabels"
-            :is-pinned="isPinned"
-            :show-restore="showRestore"
-            :ignore-loading="ignoreLoading"
-            :match-disabled="matchDisabled"
-            @show-in-events="emit('show-in-events', row.original)"
-            @restore="emit('restore', row.original)"
-            @select="emit('select', row.original)"
-            @ignore="emit('ignore', row.original)"
-          />
-        </template>
-      </RuiDataTable>
-    </ScrollableDialogContent>
+        <UnmatchedMatchDisabledAlert
+          variant="asset-movement"
+          :premium="premium"
+          :current-tier="currentTier"
+          :match-minimum-tier="matchMinimumTier"
+        />
+      </template>
+    </Component>
   </div>
 </template>

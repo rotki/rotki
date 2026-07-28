@@ -3475,7 +3475,6 @@
           }
         },
         "event_subtype": {
-          "label": "Sous-type d'événement",
           "validation": {
             "non_empty": "Le champ sous-type d'événement ne peut pas être vide."
           }

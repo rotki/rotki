@@ -3,21 +3,20 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import type { PotentialMatchRow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
-import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
+import PotentialMatchesCards from '@/modules/history/events/PotentialMatchesCards.vue';
+import PotentialMatchesEmpty from '@/modules/history/events/PotentialMatchesEmpty.vue';
+import PotentialMatchSubject from '@/modules/history/events/PotentialMatchSubject.vue';
 import RecommendedMatchIcon from '@/modules/history/events/RecommendedMatchIcon.vue';
 import ShowInEventsButton from '@/modules/history/events/ShowInEventsButton.vue';
-import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass, usePinnedSimpleTableClass } from '@/modules/history/events/use-pinned-column-class';
-import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { getAssetMovementsType } from '@/modules/history/management/forms/utils';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
-import SimpleTable from '@/modules/shell/components/SimpleTable.vue';
 
 const selectedMatchIds = defineModel<number[]>('selectedMatchIds', { required: true });
 
@@ -38,7 +37,7 @@ const { movement, matches, loading, isPinned, highlightedIdentifier, entryLabels
    * relabel the type badge and the location column together, so the two travel as one unit; omitting
    * it falls back to the asset-movement type and the exchange header.
    */
-  entryLabels?: { type: string; locationHeader: string };
+  entryLabels?: { type: string; locationHeader: string; matchingFor?: string };
   /** When set, the last search failed; the message is shown above the results. */
   searchError?: string;
   /** Shown when a search returns no matches, explaining why none can be found. */
@@ -57,52 +56,14 @@ const { getHistoryEventSubTypeName, getHistoryEventTypeName } = useHistoryEventM
 
 const [DefineRowActions, ReuseRowActions] = createReusableTemplate<{ row: PotentialMatchRow }>();
 
-const pinnedColumnClass = usePinnedColumnClass(() => isPinned);
-const pinnedAssetColumnClass = usePinnedAssetColumnClass(() => isPinned);
-const pinnedSimpleTableClass = usePinnedSimpleTableClass(() => isPinned);
-
-function createColumns(isPinned: boolean, baseClass: ColumnClassConfig, assetClass: ColumnClassConfig): DataTableColumn<PotentialMatchRow>[] {
-  const columns: DataTableColumn<PotentialMatchRow>[] = [
-    {
-      key: 'timestamp',
-      label: isPinned
-        ? t('asset_movement_matching.dialog.compacted_info')
-        : t('common.datetime'),
-      ...baseClass,
-    },
-  ];
-
-  if (!isPinned) {
-    columns.push({
-      key: 'eventTypeAndSubtype',
-      label: `${t('transactions.events.form.event_type.label')} -\n${t('transactions.events.form.event_subtype.label')}`,
-      class: `min-w-32 ${baseClass.class ?? ''}`.trim(),
-      cellClass: baseClass.cellClass ?? '',
-    });
-  }
-
-  columns.push(
-    {
-      key: 'txRef',
-      label: `${t('common.tx_hash')} -\n${t('common.account')}`,
-      class: `min-w-32 ${baseClass.class ?? ''}`.trim(),
-      cellClass: baseClass.cellClass ?? '',
-    },
-    {
-      key: 'asset',
-      label: t('common.asset'),
-      ...assetClass,
-    },
-  );
-
-  if (!isPinned) {
-    columns.push({ key: 'actions', label: '', ...baseClass });
-  }
-
-  return columns;
-}
-
-const columns = computed<DataTableColumn<PotentialMatchRow>[]>(() => createColumns(isPinned ?? false, get(pinnedColumnClass), get(pinnedAssetColumnClass)));
+// dialog-only: the pinned panel renders `PotentialMatchesCards` instead
+const columns = computed<DataTableColumn<PotentialMatchRow>[]>(() => [
+  { key: 'timestamp', label: t('common.datetime') },
+  { class: 'min-w-32', key: 'eventTypeAndSubtype', label: t('asset_movement_matching.dialog.event_column') },
+  { class: 'min-w-32', key: 'txRef', label: t('asset_movement_matching.dialog.transaction_column') },
+  { key: 'asset', label: t('common.asset') },
+  { key: 'actions', label: '' },
+]);
 
 function isSelected(row: PotentialMatchRow): boolean {
   return get(selectedMatchIds).includes(row.entry.identifier);
@@ -140,6 +101,29 @@ const tableMaxHeight = computed<string>(() =>
     : 'calc(100vh - 33rem)',
 );
 
+/** The time field's own max. */
+const MAX_SEARCH_HOURS = 168;
+
+/** Past a full 100% either side, the tolerance no longer excludes anything. */
+const MAX_TOLERANCE_PERCENTAGE = 100;
+
+/** Nothing left to widen once both criteria sit at their ceiling, so stop offering it. */
+const canWiden = computed<boolean>(() =>
+  Number(get(searchTimeRange)) < MAX_SEARCH_HOURS || Number(get(tolerancePercentage)) < MAX_TOLERANCE_PERCENTAGE);
+
+/** Doubling both criteria is the cheapest useful next attempt, capped at each field's max. */
+function widenSearch(): void {
+  const hours = Number(get(searchTimeRange));
+  if (!Number.isNaN(hours))
+    set(searchTimeRange, Math.min(hours * 2, MAX_SEARCH_HOURS).toString());
+
+  const tolerance = Number(get(tolerancePercentage));
+  if (!Number.isNaN(tolerance))
+    set(tolerancePercentage, Math.min(tolerance * 2, MAX_TOLERANCE_PERCENTAGE).toString());
+
+  emit('search');
+}
+
 watchDebounced(onlyExpectedAssets, () => {
   emit('search');
 }, { debounce: 200 });
@@ -147,11 +131,8 @@ watchDebounced(onlyExpectedAssets, () => {
 
 <template>
   <DefineRowActions #default="{ row }">
-    <div
-      class="flex items-center gap-2"
-      :class="isPinned ? 'justify-start' : 'justify-end'"
-    >
-      <RecommendedMatchIcon v-if="row.isCloseMatch && !isPinned" />
+    <div class="flex items-center justify-end gap-2">
+      <RecommendedMatchIcon v-if="row.isCloseMatch" />
       <ShowInEventsButton
         @click="emit('show-in-events', { identifier: row.entry.identifier, groupIdentifier: row.entry.groupIdentifier })"
       />
@@ -182,65 +163,15 @@ watchDebounced(onlyExpectedAssets, () => {
   <div class="flex flex-col gap-4">
     <div>
       <p class="text-body-2 font-medium mb-2">
-        {{ t('asset_movement_matching.dialog.matching_for') }}
+        {{ entryLabels?.matchingFor ?? t('asset_movement_matching.dialog.matching_for') }}
       </p>
-      <SimpleTable :class="pinnedSimpleTableClass">
-        <thead>
-          <tr>
-            <th>{{ t('common.datetime') }}</th>
-            <th>{{ t('common.type') }}</th>
-            <th
-              v-if="!isPinned"
-              class="!text-center"
-            >
-              {{ usedLocationHeader }}
-            </th>
-            <th>{{ t('common.asset') }}</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          <tr :class="{ 'bg-rui-warning/15': isPinned }">
-            <td>
-              <DateDisplay
-                :timestamp="movementEntry.timestamp"
-                milliseconds
-              />
-            </td>
-            <td>
-              <BadgeDisplay :class="{ '!leading-6 mb-1': isPinned }">
-                {{ usedTypeLabel }}
-              </BadgeDisplay>
-              <LocationDisplay
-                v-if="isPinned"
-                class="[&_div]:!justify-start"
-                size="16px"
-                :identifier="movementEntry.location"
-                horizontal
-              />
-            </td>
-            <td
-              v-if="!isPinned"
-              class="text-center"
-            >
-              <LocationDisplay
-                horizontal
-                :identifier="movementEntry.location"
-              />
-            </td>
-            <td>
-              <HistoryEventAsset
-                :dense="isPinned"
-                disable-options
-                :event="movementEntry"
-              />
-            </td>
-            <td class="text-right">
-              <ShowInEventsButton @click="emit('show-unmatched-in-events')" />
-            </td>
-          </tr>
-        </tbody>
-      </SimpleTable>
+      <PotentialMatchSubject
+        :entry="movementEntry"
+        :type-label="usedTypeLabel"
+        :location-header="usedLocationHeader"
+        :is-pinned="isPinned"
+        @show-in-events="emit('show-unmatched-in-events')"
+      />
     </div>
     <div ref="searchControls">
       <div class="text-body-2 font-medium mb-4">
@@ -257,8 +188,8 @@ watchDebounced(onlyExpectedAssets, () => {
           color="primary"
           hide-details
           max="168"
-          :label="t('asset_movement_matching.dialog.time_range_hours')"
-          class="w-36"
+          :label="isPinned ? t('asset_movement_matching.dialog.time_range_short') : t('asset_movement_matching.dialog.time_range_hours')"
+          :class="isPinned ? 'w-28' : 'w-36'"
           variant="outlined"
           dense
         />
@@ -269,8 +200,8 @@ watchDebounced(onlyExpectedAssets, () => {
           variant="outlined"
           hide-details
           dense
-          :label="t('asset_movement_matching.settings.amount_tolerance.label')"
-          class="w-36"
+          :label="isPinned ? t('asset_movement_matching.dialog.tolerance_short') : t('asset_movement_matching.settings.amount_tolerance.label')"
+          :class="isPinned ? 'w-28' : 'w-36'"
         />
         <RuiTooltip
           :popper="{ placement: 'top' }"
@@ -282,8 +213,8 @@ watchDebounced(onlyExpectedAssets, () => {
               color="primary"
               hide-details
               size="sm"
-              class="!my-0 [&_span]:!text-sm [&_span]:!my-0 [&_label]:!items-center"
-              :class="{ 'whitespace-break-spaces': isPinned }"
+              class="!my-0 [&_span]:!my-0 [&_label]:!items-center"
+              :class="isPinned ? '[&_span]:!text-caption' : '[&_span]:!text-sm'"
             >
               {{ t('asset_movement_matching.dialog.only_expected_assets') }}
             </RuiCheckbox>
@@ -296,10 +227,9 @@ watchDebounced(onlyExpectedAssets, () => {
         >
           <template #activator>
             <RuiButton
-              class="ml-3"
               :loading="loading"
               :size="isPinned ? 'sm' : 'xl'"
-              :class="isPinned ? '[&>span]:!hidden !px-2.5' : '[&>span]:!inline'"
+              :class="isPinned ? '[&>span]:!hidden !px-2.5 !h-[38px]' : 'ml-3 [&>span]:!inline'"
               @click="emit('search')"
             >
               <template #prepend>
@@ -323,20 +253,37 @@ watchDebounced(onlyExpectedAssets, () => {
         {{ searchError }}
       </RuiAlert>
 
-      <RuiAlert
-        v-else-if="emptyExplanation && !loading && matches.length === 0"
-        type="warning"
-        size="sm"
-        class="mb-4"
+      <p
+        v-if="matches.length > 0"
+        class="text-body-2 font-medium mb-2"
       >
-        {{ emptyExplanation }}
-      </RuiAlert>
-
-      <p class="text-body-2 font-medium mb-2">
         {{ t('asset_movement_matching.dialog.matching_hint') }}
       </p>
 
-      <ScrollableDialogContent :max-height="tableMaxHeight">
+      <PotentialMatchesEmpty
+        v-else-if="!loading"
+        :hours="searchTimeRange"
+        :tolerance="tolerancePercentage"
+        :can-widen="canWiden"
+        :explanation="emptyExplanation"
+        @widen="widenSearch()"
+      />
+
+      <PotentialMatchesCards
+        v-if="isPinned && (matches.length > 0 || loading)"
+        v-model:selected-ids="selectedMatchIds"
+        :matches="matches"
+        :highlighted-identifier="highlightedIdentifier"
+        :loading="loading"
+        :max-height="tableMaxHeight"
+        :empty-label="t('asset_movement_matching.dialog.no_matches_found')"
+        @show-in-events="emit('show-in-events', $event)"
+      />
+
+      <ScrollableDialogContent
+        v-else-if="!isPinned && (matches.length > 0 || loading)"
+        :max-height="tableMaxHeight"
+      >
         <RuiDataTable
           :cols="columns"
           :rows="matches"
@@ -344,23 +291,15 @@ watchDebounced(onlyExpectedAssets, () => {
           :item-class="getRowClass"
           dense
           outlined
+          hide-default-header
           :empty="{ label: t('asset_movement_matching.dialog.no_matches_found') }"
           :loading="loading"
         >
           <template #item.timestamp="{ row }">
-            <div class="flex flex-col gap-1">
-              <DateDisplay
-                :timestamp="row.entry.timestamp"
-                milliseconds
-              />
-              <div
-                v-if="isPinned"
-                class="font-bold"
-              >
-                {{ getHistoryEventTypeName(row.entry.eventType) }} -
-                {{ getHistoryEventSubTypeName(row.entry.eventSubtype) }}
-              </div>
-            </div>
+            <DateDisplay
+              :timestamp="row.entry.timestamp"
+              milliseconds
+            />
           </template>
           <template #item.eventTypeAndSubtype="{ row }">
             <div>{{ getHistoryEventTypeName(row.entry.eventType) }} -</div>
@@ -369,28 +308,24 @@ watchDebounced(onlyExpectedAssets, () => {
           <template #item.txRef="{ row }">
             <div
               v-if="'txRef' in row.entry && row.entry.txRef"
-              class="flex items-center"
-              :class="isPinned ? 'gap-2' : 'gap-1'"
+              class="flex items-center gap-1"
             >
               <LocationIcon
                 horizontal
                 icon
                 size="1.25rem"
                 :item="row.entry.location"
-                :class="{ '!text-xs': isPinned }"
               />
               <HashLink
                 :text="row.entry.txRef"
                 type="transaction"
                 :location="row.entry.location"
-                :class="{ '!text-[10px]': isPinned }"
               />
             </div>
             <div>
               <span v-if="!row.entry.locationLabel">-</span>
               <HistoryEventAccount
                 v-else
-                :dense="isPinned"
                 :location="row.entry.location"
                 :location-label="row.entry.locationLabel"
               />
@@ -399,17 +334,10 @@ watchDebounced(onlyExpectedAssets, () => {
           <template #item.asset="{ row }">
             <div class="flex items-center gap-2">
               <HistoryEventAsset
-                :dense="isPinned"
-                :class="{ '-mt-2 -mb-1': isPinned }"
                 disable-options
                 :event="row.entry"
               />
-              <RecommendedMatchIcon v-if="row.isCloseMatch && isPinned" />
             </div>
-            <ReuseRowActions
-              v-if="isPinned"
-              :row="row"
-            />
           </template>
           <template #item.actions="{ row }">
             <ReuseRowActions :row="row" />

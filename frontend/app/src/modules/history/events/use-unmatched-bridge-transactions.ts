@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { TaskMeta } from '@/modules/core/tasks/types';
 import type { LinkedMovementMatch } from '@/modules/history/events/event-payloads';
@@ -227,7 +227,7 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
       const success = await matchBridgeTransactionsApi(bridgeEventId, undefined, 'external');
 
       if (success) {
-        showSuccessMessage(t('actions.bridge_matching.external_success.title'), t('actions.bridge_matching.external_success.description'));
+        // the caller reports this with an undo affordance, so no success dialog here
         signalEventsModified();
       }
 
@@ -319,6 +319,36 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
     unmatchedTransactions,
   };
 });
+
+export interface BridgeEntryLabels {
+  type: string;
+  locationHeader: string;
+  matchingFor: string;
+}
+
+/**
+ * How a bridge leg describes itself inside the generic matching UI. Shared by the dialog
+ * and the pinned panel so the two cannot drift apart on wording.
+ */
+export function useBridgeEntryLabels(
+  transaction: MaybeRefOrGetter<UnmatchedBridgeTransaction | undefined>,
+): ComputedRef<BridgeEntryLabels> {
+  const { t } = useI18n({ useScope: 'global' });
+
+  return computed<BridgeEntryLabels>(() => {
+    const isDeposit = toValue(transaction)?.direction !== 'withdrawal';
+    return {
+      locationHeader: t('common.location'),
+      // the generic copy calls every subject an "asset movement", which a bridge leg is not
+      matchingFor: isDeposit
+        ? t('bridge_matching.dialog.matching_for_out')
+        : t('bridge_matching.dialog.matching_for_in'),
+      type: isDeposit
+        ? t('bridge_matching.dialog.direction_out')
+        : t('bridge_matching.dialog.direction_in'),
+    };
+  });
+}
 
 /**
  * The bridge implementation of the shared matching flow contract, consumed by the

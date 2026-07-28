@@ -15,6 +15,7 @@ const { spies } = vi.hoisted(() => ({
     showErrorMessage: vi.fn(),
     getChainName: vi.fn((chain: string) => chain.toUpperCase()),
     isCounterpartUntracked: vi.fn<() => boolean>(() => false),
+    notify: vi.fn(),
   },
 }));
 
@@ -59,6 +60,7 @@ vi.mock('@/modules/history/events/use-untracked-bridge-counterpart', () => ({
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: (error: unknown): string => error instanceof Error ? error.message : String(error),
   useNotifications: (): object => ({
+    notify: spies.notify,
     showErrorMessage: spies.showErrorMessage,
   }),
 }));
@@ -164,118 +166,42 @@ describe('use-bridge-transaction-actions', () => {
     });
   });
 
-  describe('confirmMarkExternal', () => {
-    it('should show the recorded destination chain and address in the confirmation', () => {
-      const transaction = createMockTransaction({
-        bridge: { toAddress: '0xdef', toChain: 'optimism' },
-      });
-      const { confirmMarkExternal } = useBridgeTransactionActions();
+  describe('markExternal', () => {
+    it('should resolve the transaction without asking through a modal', async () => {
+      const { markExternal } = useBridgeTransactionActions();
 
-      confirmMarkExternal(transaction);
+      await markExternal(createMockTransaction({ identifier: 21 }));
 
-      expect(spies.showConfirm).toHaveBeenCalledOnce();
-      expect(spies.getChainName).toHaveBeenCalledWith('optimism');
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        message: expect.any(String),
-        primaryAction: expect.any(String),
-        title: expect.any(String),
-      });
-    });
-
-    it('should use the recorded source chain and address for a withdrawal confirmation', () => {
-      const transaction = createMockTransaction({
-        bridge: { fromAddress: '0xabc', fromChain: 'osmosis', toChain: 'ethereum' },
-        direction: 'withdrawal',
-      });
-      const { confirmMarkExternal } = useBridgeTransactionActions();
-
-      confirmMarkExternal(transaction);
-
-      expect(spies.showConfirm).toHaveBeenCalledOnce();
-      expect(spies.getChainName).toHaveBeenCalledWith('osmosis');
-      expect(spies.getChainName).not.toHaveBeenCalledWith('ethereum');
-    });
-
-    it('should use guidance copy when the destination address is not tracked', () => {
-      spies.isCounterpartUntracked.mockReturnValueOnce(true);
-      const transaction = createMockTransaction({
-        bridge: { toAddress: '0xdef', toChain: 'optimism' },
-      });
-      const { confirmMarkExternal } = useBridgeTransactionActions();
-
-      confirmMarkExternal(transaction);
-
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        message: 'bridge_matching.actions.mark_external_confirm_untracked_chain::0xdef, OPTIMISM',
-      });
-    });
-
-    it('should use the chainless guidance copy for an untracked destination without a recorded chain', () => {
-      spies.isCounterpartUntracked.mockReturnValueOnce(true);
-      const transaction = createMockTransaction({
-        bridge: { toAddress: '0xdef' },
-      });
-      const { confirmMarkExternal } = useBridgeTransactionActions();
-
-      confirmMarkExternal(transaction);
-
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        message: 'bridge_matching.actions.mark_external_confirm_untracked::0xdef',
-      });
-    });
-
-    it('should use guidance copy when the source address of a withdrawal is not tracked', () => {
-      spies.isCounterpartUntracked.mockReturnValueOnce(true);
-      const transaction = createMockTransaction({
-        bridge: { fromAddress: '0xabc', fromChain: 'osmosis' },
-        direction: 'withdrawal',
-      });
-      const { confirmMarkExternal } = useBridgeTransactionActions();
-
-      confirmMarkExternal(transaction);
-
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        message: 'bridge_matching.actions.mark_external_in_confirm_untracked_chain::0xabc, OSMOSIS',
-      });
-    });
-
-    it('should keep the are-you-sure copy when the counterpart address is tracked', () => {
-      const transaction = createMockTransaction({
-        bridge: { toAddress: '0xdef', toChain: 'optimism' },
-      });
-      const { confirmMarkExternal } = useBridgeTransactionActions();
-
-      confirmMarkExternal(transaction);
-
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        message: 'bridge_matching.actions.mark_external_confirm_destination::0xdef, OPTIMISM',
-      });
-    });
-
-    it('should resolve the deposit as external when the user confirms', async () => {
-      const transaction = createMockTransaction({ identifier: 21 });
-      const { confirmMarkExternal } = useBridgeTransactionActions();
-
-      confirmMarkExternal(transaction);
-      await extractAndCallConfirmCallback();
-
+      expect(spies.showConfirm).not.toHaveBeenCalled();
       expect(spies.resolveExternal).toHaveBeenCalledWith(21);
       expect(spies.refreshUnmatchedBridgeTransactions).toHaveBeenCalledOnce();
     });
 
-    it('should not refresh when resolving as external fails', async () => {
-      spies.resolveExternal.mockResolvedValueOnce({ message: 'nope', success: false });
-      const { confirmMarkExternal } = useBridgeTransactionActions();
+    it('should report the result with an undo that unlinks it again', async () => {
+      const { markExternal } = useBridgeTransactionActions();
 
-      confirmMarkExternal(createMockTransaction());
-      await extractAndCallConfirmCallback();
+      await markExternal(createMockTransaction({ identifier: 21 }));
+
+      expect(spies.notify).toHaveBeenCalledOnce();
+      const [notification] = spies.notify.mock.calls[0];
+      expect(notification).toMatchObject({
+        action: { label: 'common.actions.undo' },
+        title: 'actions.bridge_matching.external_success.title',
+      });
+
+      await notification.action.action();
+
+      expect(spies.unlinkBridgeTransaction).toHaveBeenCalledWith(21);
+    });
+
+    it('should not refresh or report when resolving as external fails', async () => {
+      spies.resolveExternal.mockResolvedValueOnce({ message: 'nope', success: false });
+      const { markExternal } = useBridgeTransactionActions();
+
+      await markExternal(createMockTransaction());
 
       expect(spies.refreshUnmatchedBridgeTransactions).not.toHaveBeenCalled();
+      expect(spies.notify).not.toHaveBeenCalled();
     });
   });
 

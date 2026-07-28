@@ -3172,7 +3172,6 @@
           "hint": "事件发生的日期和时间"
         },
         "event_subtype": {
-          "label": "事件子类型",
           "validation": {
             "non_empty": "事件子类型字段不能为空。"
           }

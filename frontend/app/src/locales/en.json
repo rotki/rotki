@@ -564,6 +564,10 @@
         "description": "Failed to fetch unmatched bridge transactions: {error}",
         "title": "Fetching Unmatched Bridge Transactions"
       },
+      "ignored": {
+        "description": "It moved to the ignored list.",
+        "title": "Transaction ignored"
+      },
       "success": {
         "description": "Bridge transaction successfully matched to its counterpart event.",
         "title": "Bridge Transaction Matched"
@@ -1361,6 +1365,10 @@
       "error_title": "Auto Match Failed",
       "task_title": "Matching asset movements"
     },
+    "card_list": {
+      "select_all": "Select all",
+      "selected_count": "{count} selected | {count} selected"
+    },
     "compact_notes": {
       "deposit": "Deposit {amount} {asset}{to}{from}",
       "from_part": " from {address}",
@@ -1368,14 +1376,20 @@
       "withdraw": "Withdraw {amount} {asset}{from}{to}"
     },
     "dialog": {
-      "compacted_info": "Date\nEvent Type - Subtype",
+      "confirm_ignore": "Ignore this movement?",
       "confirm_match": "Confirm Match",
       "description": "Select an unmatched asset movement and find matching blockchain transactions to link them together.",
+      "empty": {
+        "hint": "Widen the time range or the amount tolerance, or resolve this row another way.",
+        "title": "No candidate within ±{hours}h / {tolerance}%",
+        "widen": "Widen search"
+      },
+      "event_column": "Event",
       "find_match": "Find Match",
+      "find_match_anyway": "Find match anyway",
       "ignore": "Ignore",
       "ignore_tooltip": "Mark this asset movement as having no corresponding event.",
       "ignored_description": "These asset movements have been marked as having no corresponding event. Restore them to retry matching.",
-      "info_column": "Info",
       "manual_action": "Manual Action",
       "matching_for": "Finding matches for the following asset movement.",
       "matching_hint": "You can select one or more events to link.",
@@ -1394,7 +1408,10 @@
       "selected": "Selected",
       "show_in_events": "Show in history events",
       "time_range_hours": "Time range (hours)",
-      "title": "Match Asset Movements"
+      "time_range_short": "Range (h)",
+      "title": "Match Asset Movements",
+      "tolerance_short": "Tolerance (%)",
+      "transaction_column": "Transaction"
     },
     "fiat_hint": {
       "label": "Fiat",
@@ -1901,20 +1918,6 @@
       "create_counterpart_confirm_out_chain": "Are you sure you want to create the missing destination event of this bridge deposit on {chain}? A synthetic event mirroring it (same asset, amount and time) will be created there and linked, so the transfer is accounted for as a movement of your own funds. Use this when {chain} can no longer be queried. The synthetic event is clearly marked and is deleted again if you unlink the pair.",
       "ignore_selected": "Ignore Selected",
       "ignore_selected_confirm": "Are you sure you want to ignore {count} selected bridge transaction(s)? This action marks them as having no corresponding event.",
-      "mark_external": "Mark as External Payment",
-      "mark_external_confirm": "Are you sure you want to resolve this bridge deposit as a payment to an external (untracked) address? The event will become a bridge send, accounted for as a plain payment, and no counterpart event will be linked.",
-      "mark_external_confirm_address": "Are you sure you want to resolve this bridge deposit as a payment to the external (untracked) address {address}? The event will become a bridge send, accounted for as a plain payment, and no counterpart event will be linked.",
-      "mark_external_confirm_chain": "Are you sure you want to resolve this bridge deposit as a payment to an external (untracked) address on {chain}? The event will become a bridge send, accounted for as a plain payment, and no counterpart event will be linked.",
-      "mark_external_confirm_destination": "Are you sure you want to resolve this bridge deposit as a payment to the external (untracked) address {address} on {chain}? The event will become a bridge send, accounted for as a plain payment, and no counterpart event will be linked.",
-      "mark_external_confirm_untracked": "The destination address {address} is not tracked by rotki, so no counterpart event can exist for this bridge deposit. Resolving it as external is the correct action: the event stays visible as a bridge send, accounted for as a plain payment. You can restore it from the ignored list if you start tracking the address.",
-      "mark_external_confirm_untracked_chain": "The destination address {address} on {chain} is not tracked by rotki, so no counterpart event can exist for this bridge deposit. Resolving it as external is the correct action: the event stays visible as a bridge send, accounted for as a plain payment. You can restore it from the ignored list if you start tracking the address.",
-      "mark_external_in": "Mark as External Income",
-      "mark_external_in_confirm": "Are you sure you want to resolve this bridge withdrawal as income from an external (untracked) source? The event will become a bridge receive, accounted for as plain income, and no counterpart event will be linked.",
-      "mark_external_in_confirm_address": "Are you sure you want to resolve this bridge withdrawal as income from the external (untracked) address {address}? The event will become a bridge receive, accounted for as plain income, and no counterpart event will be linked.",
-      "mark_external_in_confirm_chain": "Are you sure you want to resolve this bridge withdrawal as income from an external (untracked) source on {chain}? The event will become a bridge receive, accounted for as plain income, and no counterpart event will be linked.",
-      "mark_external_in_confirm_source": "Are you sure you want to resolve this bridge withdrawal as income from the external (untracked) address {address} on {chain}? The event will become a bridge receive, accounted for as plain income, and no counterpart event will be linked.",
-      "mark_external_in_confirm_untracked": "The source address {address} is not tracked by rotki, so no counterpart event can exist for this bridge withdrawal. Resolving it as external is the correct action: the event stays visible as a bridge receive, accounted for as plain income. You can restore it from the ignored list if you start tracking the address.",
-      "mark_external_in_confirm_untracked_chain": "The source address {address} on {chain} is not tracked by rotki, so no counterpart event can exist for this bridge withdrawal. Resolving it as external is the correct action: the event stays visible as a bridge receive, accounted for as plain income. You can restore it from the ignored list if you start tracking the address.",
       "restore_selected": "Restore Selected",
       "restore_selected_confirm": "Are you sure you want to restore {count} selected bridge transaction(s) to the unmatched list?"
     },
@@ -1924,26 +1927,32 @@
       "task_title": "Matching bridge transactions"
     },
     "dialog": {
+      "confirm_ignore": "Ignore this transaction?",
+      "confirm_mark_external": "Resolve as an external payment?",
       "create_counterpart": "Create Counterpart",
       "create_counterpart_in_tooltip": "Create a synthetic mirror event on the source chain and link it to this bridge withdrawal. Use this when the source chain can no longer be queried, so the transfer stays a movement of your own funds.",
       "create_counterpart_tooltip": "Create a synthetic mirror event on the destination chain and link it to this bridge deposit. Use this when the destination chain can no longer be queried, so the transfer stays a movement of your own funds.",
       "description": "Select an unmatched bridge transaction and find the counterpart event on the other chain to link them together.",
+      "direction_in": "Bridge in",
+      "direction_out": "Bridge out",
       "ignore_tooltip": "Mark this bridge transaction as having no corresponding event.",
       "ignored_description": "These bridge transactions have been marked as having no corresponding event. Restore them to retry matching.",
-      "info_column": "Info",
       "manual_action": "Manual Action",
       "mark_external": "External",
       "mark_external_in_tooltip": "Resolve this bridge withdrawal as income from an external (untracked) source.",
       "mark_external_tooltip": "Resolve this bridge deposit as a payment to an external (untracked) address.",
+      "matching_for_in": "Finding the counterpart for this bridge in.",
+      "matching_for_out": "Finding the counterpart for this bridge out.",
       "no_ignored": "No ignored bridge transactions.",
       "no_match_untracked_destination": "No matches can be found: the destination address {address} is not tracked by rotki, so the counterpart event cannot exist in your history. Mark this deposit as an external payment instead.",
       "no_match_untracked_source": "No matches can be found: the source address {address} is not tracked by rotki, so the counterpart event cannot exist in your history. Mark this withdrawal as external income instead.",
       "no_unmatched": "All bridge transactions have been matched.",
       "restore_tooltip": "Restore this bridge transaction to the unmatched list.",
       "title": "Match Bridge Transactions",
-      "untracked_destination": "untracked destination",
+      "untracked_destination": "Destination not tracked",
       "untracked_destination_tooltip": "The destination address {address} is not tracked by rotki, so the counterpart event cannot exist in your history. Resolve this bridge deposit by marking it as an external payment.",
-      "untracked_source": "untracked source",
+      "untracked_reason": "{label}: no match can exist",
+      "untracked_source": "Source not tracked",
       "untracked_source_tooltip": "The source address {address} is not tracked by rotki, so the counterpart event cannot exist in your history. Resolve this bridge withdrawal by marking it as external income."
     },
     "premium": {
@@ -2083,6 +2092,7 @@
       "generate": "Generate",
       "import": "Import",
       "install": "Install",
+      "more": "More actions",
       "next": "Next",
       "no": "No",
       "ok": "OK",
@@ -6398,7 +6408,6 @@
           }
         },
         "event_subtype": {
-          "label": "Event Subtype",
           "validation": {
             "non_empty": "The event subtype field cannot be empty."
           }

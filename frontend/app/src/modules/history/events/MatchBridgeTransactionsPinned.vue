@@ -6,6 +6,7 @@ import PotentialMatchesContent from '@/modules/history/events/PotentialMatchesCo
 import { HighlightTargetTypes, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 import {
   type UnmatchedBridgeTransaction,
+  useBridgeEntryLabels,
   useBridgeMatchingFlow,
   useUnmatchedBridgeTransactions,
 } from '@/modules/history/events/use-unmatched-bridge-transactions';
@@ -53,6 +54,7 @@ const {
 
 const flow: MatchingFlow = useBridgeMatchingFlow();
 const { unmatchableExplanation: emptyExplanation } = useBridgeUnmatchableExplanation(potentialMatchTransaction);
+const bridgeEntryLabels = useBridgeEntryLabels(potentialMatchTransaction);
 
 function selectTransaction(transaction: UnmatchedBridgeTransaction): void {
   const identifier = transaction.identifier;
@@ -206,7 +208,10 @@ watch(() => highlightedGroupIdentifier, (newHighlight, oldHighlight) => {
         @show-in-events="showInHistoryEvents($event)"
       />
 
-      <PinnedDetailSheet v-model="potentialMatchesSheetOpen">
+      <PinnedDetailSheet
+        v-model="potentialMatchesSheetOpen"
+        :label="t('asset_movement_matching.dialog.select_match_title')"
+      >
         <template #header>
           <div class="flex items-center justify-between bg-rui-grey-200 dark:bg-rui-grey-800 px-4 py-2 shrink-0">
             <span class="text-body-2 font-medium">
@@ -232,7 +237,7 @@ watch(() => highlightedGroupIdentifier, (newHighlight, oldHighlight) => {
           <PotentialMatchesContent
             :movement="potentialMatchTransaction"
             :flow="flow"
-            :entry-labels="{ locationHeader: t('common.location'), type: potentialMatchTransaction.direction }"
+            :entry-labels="bridgeEntryLabels"
             :highlighted-identifier="activePotentialMatchIdentifier"
             :empty-explanation="emptyExplanation"
             is-pinned
