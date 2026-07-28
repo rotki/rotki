@@ -1511,11 +1511,15 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         events: list[HistoryBaseEntry] = []
         with_errors = False
         try:
-            events.extend(self._query_online_asset_movements(
+            asset_movements = self._query_online_asset_movements(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 force_refresh=force_refresh,
-            ))
+            )
+            if event_queue is None:
+                events.extend(asset_movements)
+            else:
+                event_queue.flush(asset_movements)
         except (RemoteError, BinancePermissionError) as e:
             with_errors = True
             log.error(
