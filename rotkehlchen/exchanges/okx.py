@@ -2,6 +2,7 @@ import datetime
 import logging
 from collections import defaultdict
 from enum import Enum
+from functools import partial
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode, urljoin
 
@@ -51,7 +52,7 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
@@ -227,6 +228,10 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self,
             endpoint: OkxEndpoint,
             pagination_key: str,
+            deserialization_method: Callable[
+                [dict[str, Any]],
+                list[AssetMovement] | list[SwapEvent],
+            ],
             options: dict | None = None,
             event_queue: HistoryEventQueue | None = None,
     ) -> list:
@@ -248,18 +253,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             else:
                 page_events: list[AssetMovement | SwapEvent] = []
                 for raw_event in data:
-                    if endpoint == OkxEndpoint.DEPOSITS:
-                        page_events.extend(self.asset_movement_from_okx(
-                            raw_movement=raw_event,
-                            event_subtype=HistoryEventSubType.RECEIVE,
-                        ))
-                    elif endpoint == OkxEndpoint.WITHDRAWALS:
-                        page_events.extend(self.asset_movement_from_okx(
-                            raw_movement=raw_event,
-                            event_subtype=HistoryEventSubType.SPEND,
-                        ))
-                    else:
-                        page_events.extend(self.swap_events_from_okx(raw_event))
+                    page_events.extend(deserialization_method(raw_event))
                 event_queue.flush(page_events)
 
             if len(data) < self.MAX_RESULTS:
@@ -351,6 +345,10 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         deposits = self._api_query_list_paginated(
             endpoint=OkxEndpoint.DEPOSITS,
             pagination_key='ts',
+            deserialization_method=partial(
+                self.asset_movement_from_okx,
+                event_subtype=HistoryEventSubType.RECEIVE,
+            ),
             options={
                 'start_ts': start_ts,
                 'end_ts': end_ts,
@@ -360,6 +358,10 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         withdrawals = self._api_query_list_paginated(
             endpoint=OkxEndpoint.WITHDRAWALS,
             pagination_key='ts',
+            deserialization_method=partial(
+                self.asset_movement_from_okx,
+                event_subtype=HistoryEventSubType.SPEND,
+            ),
             options={
                 'start_ts': start_ts,
                 'end_ts': end_ts,
@@ -369,6 +371,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         trades = self._api_query_list_paginated(
             endpoint=OkxEndpoint.TRADES,
             pagination_key='ordId',
+            deserialization_method=self.swap_events_from_okx,
             options={
                 'start_ts': start_ts,
                 'end_ts': end_ts,

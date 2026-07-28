@@ -1,5 +1,5 @@
 import warnings as test_warnings
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -7,6 +7,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.exchanges.okx import Okx, OkxEndpoint
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -22,6 +23,22 @@ def test_name():
     exchange = Okx('okx1', 'a', b'a', 'a', object(), object())
     assert exchange.location == Location.OKX
     assert exchange.name == 'okx1'
+
+
+def test_paginated_query_uses_provided_deserializer(mock_okx: Okx) -> None:
+    event_queue = MagicMock(spec=HistoryEventQueue)
+    deserialized_event = MagicMock()
+    deserialization_method = MagicMock(return_value=[deserialized_event])
+    with patch.object(mock_okx, '_api_query_list', return_value=[{'id': '1'}]):
+        assert mock_okx._api_query_list_paginated(
+            endpoint=OkxEndpoint.CURRENCIES,
+            pagination_key='id',
+            deserialization_method=deserialization_method,
+            event_queue=event_queue,
+        ) == []
+
+    deserialization_method.assert_called_once_with({'id': '1'})
+    event_queue.flush.assert_called_once_with([deserialized_event])
 
 
 @pytest.mark.asset_test
