@@ -2,7 +2,6 @@
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
-import PotentialMatchSubjectCard from '@/modules/history/events/PotentialMatchSubjectCard.vue';
 import ShowInEventsButton from '@/modules/history/events/ShowInEventsButton.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -12,7 +11,6 @@ defineProps<{
   entry: HistoryEventEntry;
   typeLabel: string;
   locationHeader: string;
-  isPinned?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -23,22 +21,13 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <PotentialMatchSubjectCard
-    v-if="isPinned"
-    :entry="entry"
-    :type-label="typeLabel"
-    @show-in-events="emit('show-in-events')"
-  />
-
-  <SimpleTable v-else>
+  <!-- the row being matched, as a summary table; `PotentialMatchSubjectCard` is the pinned-width half -->
+  <SimpleTable data-testid="potential-match-subject">
     <thead>
       <tr>
         <th>{{ t('common.datetime') }}</th>
         <th>{{ t('common.type') }}</th>
-        <th
-          v-if="!isPinned"
-          class="!text-center"
-        >
+        <th class="!text-center">
           {{ locationHeader }}
         </th>
         <th>{{ t('common.asset') }}</th>
@@ -46,7 +35,7 @@ const { t } = useI18n({ useScope: 'global' });
       </tr>
     </thead>
     <tbody>
-      <tr :class="{ 'bg-rui-warning/15': isPinned }">
+      <tr>
         <td>
           <DateDisplay
             :timestamp="entry.timestamp"
@@ -54,21 +43,11 @@ const { t } = useI18n({ useScope: 'global' });
           />
         </td>
         <td>
-          <BadgeDisplay :class="{ '!leading-6 mb-1': isPinned }">
+          <BadgeDisplay>
             {{ typeLabel }}
           </BadgeDisplay>
-          <LocationDisplay
-            v-if="isPinned"
-            class="[&_div]:!justify-start"
-            size="16px"
-            :identifier="entry.location"
-            horizontal
-          />
         </td>
-        <td
-          v-if="!isPinned"
-          class="text-center"
-        >
+        <td class="text-center">
           <LocationDisplay
             horizontal
             :identifier="entry.location"
@@ -76,7 +55,6 @@ const { t } = useI18n({ useScope: 'global' });
         </td>
         <td>
           <HistoryEventAsset
-            :dense="isPinned"
             disable-options
             :event="entry"
           />

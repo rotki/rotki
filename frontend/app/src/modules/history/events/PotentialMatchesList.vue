@@ -1,21 +1,13 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { PotentialMatchRow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
-import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
-import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
-import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
-import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import PotentialMatchesCards from '@/modules/history/events/PotentialMatchesCards.vue';
 import PotentialMatchesEmpty from '@/modules/history/events/PotentialMatchesEmpty.vue';
-import PotentialMatchSubject from '@/modules/history/events/PotentialMatchSubject.vue';
-import RecommendedMatchIcon from '@/modules/history/events/RecommendedMatchIcon.vue';
-import ShowInEventsButton from '@/modules/history/events/ShowInEventsButton.vue';
+import PotentialMatchesTable from '@/modules/history/events/PotentialMatchesTable.vue';
+import PotentialMatchSubjectCard from '@/modules/history/events/PotentialMatchSubjectCard.vue';
+import PotentialMatchSubjectTable from '@/modules/history/events/PotentialMatchSubjectTable.vue';
 import { getAssetMovementsType } from '@/modules/history/management/forms/utils';
-import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
-import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
-import HashLink from '@/modules/shell/components/HashLink.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 const selectedMatchIds = defineModel<number[]>('selectedMatchIds', { required: true });
@@ -51,38 +43,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { getHistoryEventSubTypeName, getHistoryEventTypeName } = useHistoryEventMappings();
-
-const [DefineRowActions, ReuseRowActions] = createReusableTemplate<{ row: PotentialMatchRow }>();
-
-// dialog-only: the pinned panel renders `PotentialMatchesCards` instead
-const columns = computed<DataTableColumn<PotentialMatchRow>[]>(() => [
-  { key: 'timestamp', label: t('common.datetime') },
-  { class: 'min-w-32', key: 'eventTypeAndSubtype', label: t('asset_movement_matching.dialog.event_column') },
-  { class: 'min-w-32', key: 'txRef', label: t('asset_movement_matching.dialog.transaction_column') },
-  { key: 'asset', label: t('common.asset') },
-  { key: 'actions', label: '' },
-]);
-
-function isSelected(row: PotentialMatchRow): boolean {
-  return get(selectedMatchIds).includes(row.entry.identifier);
-}
-
-function toggleSelection(row: PotentialMatchRow): void {
-  const ids = get(selectedMatchIds);
-  const identifier = row.entry.identifier;
-  if (ids.includes(identifier)) {
-    set(selectedMatchIds, ids.filter(id => id !== identifier));
-  }
-  else {
-    set(selectedMatchIds, [...ids, identifier]);
-  }
-}
-
-function getRowClass(row: PotentialMatchRow): string {
-  return row.entry.identifier === highlightedIdentifier ? '!bg-rui-success/15' : '';
-}
 
 const movementEntry = computed<HistoryEventEntry>(() => {
   const { entry, ...meta } = getEventEntryFromCollection(movement.events);
@@ -130,46 +90,24 @@ watchDebounced(onlyExpectedAssets, () => {
 </script>
 
 <template>
-  <DefineRowActions #default="{ row }">
-    <div class="flex items-center justify-end gap-2">
-      <RecommendedMatchIcon v-if="row.isCloseMatch" />
-      <ShowInEventsButton
-        @click="emit('show-in-events', { identifier: row.entry.identifier, groupIdentifier: row.entry.groupIdentifier })"
-      />
-      <RuiButton
-        size="sm"
-        :color="isSelected(row) ? 'success' : 'primary'"
-        :variant="isSelected(row) ? 'default' : 'outlined'"
-        class="min-w-24"
-        @click="toggleSelection(row)"
-      >
-        <template
-          v-if="isSelected(row)"
-          #prepend
-        >
-          <RuiIcon
-            name="lu-check"
-            size="12"
-          />
-        </template>
-        {{ isSelected(row)
-          ? t('asset_movement_matching.dialog.selected')
-          : t('asset_movement_matching.dialog.select')
-        }}
-      </RuiButton>
-    </div>
-  </DefineRowActions>
-
   <div class="flex flex-col gap-4">
     <div>
       <p class="text-body-2 font-medium mb-2">
         {{ entryLabels?.matchingFor ?? t('asset_movement_matching.dialog.matching_for') }}
       </p>
-      <PotentialMatchSubject
+      <!-- kept as two components rather than one that branches: the card has no column headers,
+           so it takes no `locationHeader` -->
+      <PotentialMatchSubjectCard
+        v-if="isPinned"
+        :entry="movementEntry"
+        :type-label="usedTypeLabel"
+        @show-in-events="emit('show-unmatched-in-events')"
+      />
+      <PotentialMatchSubjectTable
+        v-else
         :entry="movementEntry"
         :type-label="usedTypeLabel"
         :location-header="usedLocationHeader"
-        :is-pinned="isPinned"
         @show-in-events="emit('show-unmatched-in-events')"
       />
     </div>
@@ -269,8 +207,9 @@ watchDebounced(onlyExpectedAssets, () => {
         @widen="widenSearch()"
       />
 
-      <PotentialMatchesCards
-        v-if="isPinned && (matches.length > 0 || loading)"
+      <Component
+        :is="isPinned ? PotentialMatchesCards : PotentialMatchesTable"
+        v-if="matches.length > 0 || loading"
         v-model:selected-ids="selectedMatchIds"
         :matches="matches"
         :highlighted-identifier="highlightedIdentifier"
@@ -279,71 +218,6 @@ watchDebounced(onlyExpectedAssets, () => {
         :empty-label="t('asset_movement_matching.dialog.no_matches_found')"
         @show-in-events="emit('show-in-events', $event)"
       />
-
-      <ScrollableDialogContent
-        v-else-if="!isPinned && (matches.length > 0 || loading)"
-        :max-height="tableMaxHeight"
-      >
-        <RuiDataTable
-          :cols="columns"
-          :rows="matches"
-          row-attr="identifier"
-          :item-class="getRowClass"
-          dense
-          outlined
-          hide-default-header
-          :empty="{ label: t('asset_movement_matching.dialog.no_matches_found') }"
-          :loading="loading"
-        >
-          <template #item.timestamp="{ row }">
-            <DateDisplay
-              :timestamp="row.entry.timestamp"
-              milliseconds
-            />
-          </template>
-          <template #item.eventTypeAndSubtype="{ row }">
-            <div>{{ getHistoryEventTypeName(row.entry.eventType) }} -</div>
-            <div>{{ getHistoryEventSubTypeName(row.entry.eventSubtype) }}</div>
-          </template>
-          <template #item.txRef="{ row }">
-            <div
-              v-if="'txRef' in row.entry && row.entry.txRef"
-              class="flex items-center gap-1"
-            >
-              <LocationIcon
-                horizontal
-                icon
-                size="1.25rem"
-                :item="row.entry.location"
-              />
-              <HashLink
-                :text="row.entry.txRef"
-                type="transaction"
-                :location="row.entry.location"
-              />
-            </div>
-            <div>
-              <span v-if="!row.entry.locationLabel">-</span>
-              <HistoryEventAccount
-                v-else
-                :location="row.entry.location"
-                :location-label="row.entry.locationLabel"
-              />
-            </div>
-          </template>
-          <template #item.asset="{ row }">
-            <div class="flex items-center gap-2">
-              <HistoryEventAsset
-                disable-options
-                :event="row.entry"
-              />
-            </div>
-          </template>
-          <template #item.actions="{ row }">
-            <ReuseRowActions :row="row" />
-          </template>
-        </RuiDataTable>
-      </ScrollableDialogContent>
     </div>
   </div>
 </template>
