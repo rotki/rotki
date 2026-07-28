@@ -1,6 +1,7 @@
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  canCreateBridgeCounterpart,
   getBridgeCounterpartAddress,
   getBridgeCounterpartChain,
   isCounterpartUnqueryable,
@@ -74,6 +75,32 @@ describe('use-untracked-bridge-counterpart', () => {
 
     it('should return undefined without recorded bridge data', () => {
       expect(getBridgeCounterpartChain(createTransaction())).toBeUndefined();
+    });
+  });
+
+  describe('canCreateBridgeCounterpart', () => {
+    it('should offer it for an unqueryable chain whose counterpart is ours', () => {
+      const transaction = createTransaction({ bridge: { fromChain: 1, toChain: 'zksync_lite', toAddress: '0xTracked' } });
+
+      expect(canCreateBridgeCounterpart(transaction, false)).toBe(true);
+    });
+
+    it('should not offer it when the counterpart address is untracked', () => {
+      // reported by lefteris: an untracked destination showed both External and Create
+      // Counterpart, but the event belongs to someone else, so external is the only answer
+      const transaction = createTransaction({ bridge: { fromChain: 1, toChain: 'zksync_lite', toAddress: '0xSomeoneElse' } });
+
+      expect(canCreateBridgeCounterpart(transaction, true)).toBe(false);
+    });
+
+    it('should not offer it merely because the counterpart chain is known', () => {
+      const transaction = createTransaction({ bridge: { fromChain: 1, toChain: 10, toAddress: '0xTracked' } });
+
+      expect(canCreateBridgeCounterpart(transaction, false)).toBe(false);
+    });
+
+    it('should not offer it without recorded bridge data', () => {
+      expect(canCreateBridgeCounterpart(createTransaction(), false)).toBe(false);
     });
   });
 

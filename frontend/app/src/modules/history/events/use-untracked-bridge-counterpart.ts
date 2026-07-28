@@ -35,6 +35,19 @@ export function isCounterpartUnqueryable(transaction: UnmatchedBridgeTransaction
 }
 
 /**
+ * Whether offering to create a synthetic counterpart event makes sense for a leg.
+ *
+ * Only the unqueryable case qualifies: the counterpart chain cannot be pulled, so the
+ * event has to be written by hand. A leg whose counterpart address is simply not tracked
+ * belongs to someone else, so no counterpart event should exist at all and the correct
+ * resolution is to mark it external. Offering both at once (which merely knowing the
+ * counterpart chain used to do) invites fabricating an event for a payment out.
+ */
+export function canCreateBridgeCounterpart(transaction: UnmatchedBridgeTransaction, counterpartUntracked: boolean): boolean {
+  return !counterpartUntracked && isCounterpartUnqueryable(transaction);
+}
+
+/**
  * Detects bridge legs whose counterpart address is not tracked by rotki. Such a leg can
  * never be matched -- rotki only decodes transactions of tracked addresses, so the
  * counterpart event cannot exist in the database -- and resolving it as external is the

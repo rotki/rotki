@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import AssetMovementMatchingSettingsMenu from '@/modules/history/events/AssetMovementMatchingSettingsMenu.vue';
+import { UNMATCHED_ACTIONS, type UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
 import UnmatchedBridgesList from '@/modules/history/events/UnmatchedBridgesList.vue';
 import { useBridgeTransactionActions } from '@/modules/history/events/use-bridge-transaction-actions';
 import { type UnmatchedBridgeTransaction, useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
@@ -36,16 +38,39 @@ const {
 const {
   confirmCreateCounterpart,
   confirmIgnoreSelected,
-  confirmMarkExternal,
   confirmRestoreSelected,
   ignoreLoading,
   ignoreTransaction,
+  markExternal,
   restoreTransaction,
   modelSelectedIgnored,
   modelSelectedUnmatched,
 } = useBridgeTransactionActions({ onActionComplete });
 
 const buttonSize = computed<'sm' | 'lg'>(() => isPinned ? 'sm' : 'lg');
+
+function handleAction({ action, item }: UnmatchedActionPayload<UnmatchedBridgeTransaction>): void {
+  switch (action) {
+    case UNMATCHED_ACTIONS.CREATE_COUNTERPART:
+      confirmCreateCounterpart(item);
+      break;
+    case UNMATCHED_ACTIONS.FIND_MATCH:
+      emit('select', item);
+      break;
+    case UNMATCHED_ACTIONS.IGNORE:
+      startPromise(ignoreTransaction(item));
+      break;
+    case UNMATCHED_ACTIONS.MARK_EXTERNAL:
+      startPromise(markExternal(item));
+      break;
+    case UNMATCHED_ACTIONS.RESTORE:
+      startPromise(restoreTransaction(item));
+      break;
+    case UNMATCHED_ACTIONS.SHOW_IN_EVENTS:
+      emit('show-in-events', item);
+      break;
+  }
+}
 
 onBeforeMount(async () => {
   await refreshUnmatchedBridgeTransactions();
@@ -97,12 +122,8 @@ onBeforeMount(async () => {
         :loading="loading"
         :match-disabled="!isAutoMatchAllowed"
         :match-minimum-tier="autoMatchMinimumTier"
-        @create-counterpart="confirmCreateCounterpart($event)"
-        @ignore="ignoreTransaction($event)"
-        @mark-external="confirmMarkExternal($event)"
+        @action="handleAction($event)"
         @pin="emit('pin')"
-        @select="emit('select', $event)"
-        @show-in-events="emit('show-in-events', $event)"
       />
     </RuiTabItem>
     <RuiTabItem>
@@ -114,9 +135,8 @@ onBeforeMount(async () => {
         :ignore-loading="ignoreLoading"
         :is-pinned="isPinned"
         show-restore
+        @action="handleAction($event)"
         @pin="emit('pin')"
-        @restore="restoreTransaction($event)"
-        @show-in-events="emit('show-in-events', $event)"
       />
     </RuiTabItem>
   </RuiTabItems>
@@ -127,14 +147,15 @@ onBeforeMount(async () => {
   >
     <div
       v-if="activeTab === 0"
-      class="flex"
+      class="flex grow"
     >
       <RuiButton
+        v-if="modelSelectedUnmatched.length > 0"
         variant="outlined"
         color="primary"
         :size="buttonSize"
         :class="{ 'h-[30px]': isPinned }"
-        :disabled="modelSelectedUnmatched.length === 0 || ignoreLoading"
+        :disabled="ignoreLoading"
         :loading="ignoreLoading"
         @click="confirmIgnoreSelected()"
       >
@@ -150,7 +171,8 @@ onBeforeMount(async () => {
       </RuiButton>
       <RuiButtonGroup
         color="primary"
-        :class="isPinned ? '!pl-2' : 'pl-3' "
+        class="grow justify-end"
+        :class="isPinned && modelSelectedUnmatched.length > 0 ? '!pl-2' : ''"
         :disabled="!isAutoMatchAllowed || autoMatchLoading"
       >
         <RuiTooltip
@@ -185,10 +207,11 @@ onBeforeMount(async () => {
       class="flex gap-2"
     >
       <RuiButton
+        v-if="modelSelectedIgnored.length > 0"
         variant="outlined"
         color="primary"
         :size="buttonSize"
-        :disabled="modelSelectedIgnored.length === 0 || ignoreLoading"
+        :disabled="ignoreLoading"
         :loading="ignoreLoading"
         @click="confirmRestoreSelected()"
       >

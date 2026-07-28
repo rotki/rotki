@@ -3015,7 +3015,6 @@
           "hint": "The date & time of when the event happened"
         },
         "event_subtype": {
-          "label": "Event Subtype",
           "validation": {
             "non_empty": "The event subtype field cannot be empty."
           }

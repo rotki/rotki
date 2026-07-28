@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import AssetMovementMatchingSettingsMenu from '@/modules/history/events/AssetMovementMatchingSettingsMenu.vue';
+import { UNMATCHED_ACTIONS, type UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
 import UnmatchedMovementsList from '@/modules/history/events/UnmatchedMovementsList.vue';
 import { useAssetMovementActions } from '@/modules/history/events/use-asset-movement-actions';
 import { type UnmatchedAssetMovement, useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
@@ -46,6 +48,27 @@ const {
 } = useAssetMovementActions({ onActionComplete });
 
 const buttonSize = computed<'sm' | 'lg'>(() => isPinned ? 'sm' : 'lg');
+
+function handleAction({ action, item }: UnmatchedActionPayload<UnmatchedAssetMovement>): void {
+  switch (action) {
+    case UNMATCHED_ACTIONS.FIND_MATCH:
+      emit('select', item);
+      break;
+    case UNMATCHED_ACTIONS.IGNORE:
+      startPromise(ignoreMovement(item));
+      break;
+    case UNMATCHED_ACTIONS.RESTORE:
+      startPromise(restoreMovement(item));
+      break;
+    case UNMATCHED_ACTIONS.SHOW_IN_EVENTS:
+      emit('show-in-events', item);
+      break;
+    // movements have no counterpart to create or mark external
+    case UNMATCHED_ACTIONS.CREATE_COUNTERPART:
+    case UNMATCHED_ACTIONS.MARK_EXTERNAL:
+      break;
+  }
+}
 
 onBeforeMount(async () => {
   await refreshUnmatchedAssetMovements();
@@ -97,10 +120,8 @@ onBeforeMount(async () => {
         :loading="loading"
         :match-disabled="!isAutoMatchAllowed"
         :match-minimum-tier="autoMatchMinimumTier"
-        @ignore="ignoreMovement($event)"
+        @action="handleAction($event)"
         @pin="emit('pin')"
-        @select="emit('select', $event)"
-        @show-in-events="emit('show-in-events', $event)"
       />
     </RuiTabItem>
     <RuiTabItem>
@@ -112,9 +133,8 @@ onBeforeMount(async () => {
         :ignore-loading="ignoreLoading"
         :is-pinned="isPinned"
         show-restore
+        @action="handleAction($event)"
         @pin="emit('pin')"
-        @restore="restoreMovement($event)"
-        @show-in-events="emit('show-in-events', $event)"
       />
     </RuiTabItem>
   </RuiTabItems>

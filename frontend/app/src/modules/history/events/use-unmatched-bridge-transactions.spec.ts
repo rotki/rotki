@@ -352,8 +352,9 @@ describe('use-unmatched-bridge-transactions', () => {
 
       expect(result.success).toBe(true);
       expect(spies.matchBridgeTransactions).toHaveBeenCalledWith(9, undefined, 'external');
-      expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
       expect(spies.signalEventsModified).toHaveBeenCalledOnce();
+      // the caller reports this one with an undo affordance, so no success dialog here
+      expect(spies.showSuccessMessage).not.toHaveBeenCalled();
     });
 
     it('should report failure when resolving as external throws', async () => {

@@ -3,6 +3,7 @@ import type { MatchingFlow } from '@/modules/history/events/matching/types';
 import PotentialMatchesContent from '@/modules/history/events/PotentialMatchesContent.vue';
 import {
   type UnmatchedBridgeTransaction,
+  useBridgeEntryLabels,
   useBridgeMatchingFlow,
 } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useBridgeUnmatchableExplanation } from '@/modules/history/events/use-untracked-bridge-counterpart';
@@ -22,6 +23,8 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const bridgeEntryLabels = useBridgeEntryLabels(() => transaction);
 const { pin } = usePinnedPanel(PinnedNames.MATCH_BRIDGE_TRANSACTIONS);
 
 const flow: MatchingFlow = useBridgeMatchingFlow();
@@ -77,7 +80,7 @@ function showPotentialMatchInEvents(data: { identifier: number; groupIdentifier:
       <PotentialMatchesContent
         :movement="transaction"
         :flow="flow"
-        :entry-labels="{ locationHeader: t('common.location'), type: transaction.direction }"
+        :entry-labels="bridgeEntryLabels"
         :empty-explanation="emptyExplanation"
         @close="closeDialog()"
         @matched="onMatched()"

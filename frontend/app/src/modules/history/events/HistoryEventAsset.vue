@@ -7,10 +7,12 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import AssetDetailsMenuContent from '@/modules/assets/AssetDetailsMenuContent.vue';
 import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 
-const { event, dense, disableOptions } = defineProps<{
+const { event, dense, disableOptions, inline } = defineProps<{
   event: HistoryEventEntry;
   dense?: boolean;
   disableOptions?: boolean;
+  /** Amount and value on one line instead of stacked, for narrow card layouts. */
+  inline?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -60,8 +62,11 @@ watch(menuOpened, (menuOpened) => {
     <template #activator="{ attrs }">
       <div
         data-cy="event-asset"
-        class="flex items-center w-full py-2 gap-2 overflow-hidden transition-colors"
-        :class="!disableOptions && 'cursor-pointer hover:bg-rui-grey-300 dark:hover:bg-rui-grey-900 rounded-md group/asset -ml-1 pl-1 min-h-14 pr-2 relative'"
+        class="flex items-center w-full gap-2 overflow-hidden transition-colors"
+        :class="[
+          inline ? 'py-1.5' : 'py-2',
+          !disableOptions && 'cursor-pointer hover:bg-rui-grey-300 dark:hover:bg-rui-grey-900 rounded-md group/asset -ml-1 pl-1 min-h-14 pr-2 relative',
+        ]"
         v-bind="attrs"
         @contextmenu="openMenuHandler($event)"
       >
@@ -76,14 +81,20 @@ watch(menuOpened, (menuOpened) => {
         />
         <div
           v-if="showBalance"
-          class="flex flex-col min-w-0"
+          class="min-w-0"
+          :class="inline ? 'flex items-baseline gap-1' : 'flex flex-col'"
         >
           <AssetAmountDisplay
             data-cy="event-amount"
             :amount="event.amount"
             :asset="event.asset"
             no-collection-parent
-            :class="dense ? 'text-xs' : 'text-sm'"
+            :class="[dense ? 'text-xs' : 'text-sm', inline && 'font-medium']"
+          />
+          <!-- separator as pseudo content: a raw middot in the template is not translatable text -->
+          <span
+            v-if="inline"
+            class="text-rui-text-disabled before:content-['·']"
           />
           <AssetValueDisplay
             :key="event.timestamp"

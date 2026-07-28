@@ -21,7 +21,7 @@ const { flow, isPinned, movement } = defineProps<{
    */
   flow?: MatchingFlow;
   /** How the unmatched entry is described in the summary table; see `PotentialMatchesList`. */
-  entryLabels?: { type: string; locationHeader: string };
+  entryLabels?: { type: string; locationHeader: string; matchingFor?: string };
   /** Shown when a search returns no matches, explaining why none can be found. */
   emptyExplanation?: string;
 }>();

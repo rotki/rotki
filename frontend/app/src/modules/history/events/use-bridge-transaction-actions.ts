@@ -1,11 +1,11 @@
 import type { Ref } from 'vue';
+import { NotificationCategory, Priority, Severity } from '@rotki/common';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
 import { type UnmatchedBridgeTransaction, useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
-import { useUntrackedBridgeCounterpart } from '@/modules/history/events/use-untracked-bridge-counterpart';
 
 interface UseBridgeTransactionActionsOptions {
   /** Invoked after an ignore/restore/external action succeeds, e.g. to clear highlights. */
@@ -18,8 +18,8 @@ interface UseBridgeTransactionActionsReturn {
   modelSelectedUnmatched: Ref<string[]>;
   confirmCreateCounterpart: (transaction: UnmatchedBridgeTransaction) => void;
   confirmIgnoreSelected: () => void;
-  confirmMarkExternal: (transaction: UnmatchedBridgeTransaction) => void;
   confirmRestoreSelected: () => void;
+  markExternal: (transaction: UnmatchedBridgeTransaction) => Promise<void>;
   ignoreTransaction: (transaction: UnmatchedBridgeTransaction) => Promise<void>;
   restoreTransaction: (transaction: UnmatchedBridgeTransaction) => Promise<void>;
 }
@@ -41,9 +41,8 @@ export function useBridgeTransactionActions(
 
   const { matchBridgeTransactions, unlinkBridgeTransaction } = useBridgeMatchingApi();
   const { show } = useConfirmStore();
-  const { showErrorMessage } = useNotifications();
+  const { notify, showErrorMessage } = useNotifications();
   const { getChainName } = useSupportedChains();
-  const { isCounterpartUntracked } = useUntrackedBridgeCounterpart();
 
   const ignoreLoading = shallowRef<boolean>(false);
   const modelSelectedUnmatched = ref<string[]>([]);
@@ -68,6 +67,26 @@ export function useBridgeTransactionActions(
     );
   }
 
+  /**
+   * Reversible work reports itself with an undo affordance instead of asking first with a
+   * modal: both ignoring and resolving as external are undone by the same unlink call,
+   * which the backend uses to clear the marker and restore the event from its backup.
+   */
+  function notifyUndoable(title: string, message: string, transaction: UnmatchedBridgeTransaction): void {
+    notify({
+      action: {
+        action: async () => restoreTransaction(transaction),
+        label: t('common.actions.undo'),
+      },
+      category: NotificationCategory.DEFAULT,
+      display: true,
+      message,
+      priority: Priority.ACTION,
+      severity: Severity.INFO,
+      title,
+    });
+  }
+
   function formatChain(chain: string | number | undefined): string | undefined {
     if (chain === undefined)
       return undefined;
@@ -81,6 +100,11 @@ export function useBridgeTransactionActions(
       deselect(transaction);
       await refreshUnmatchedBridgeTransactions();
       await onActionComplete?.();
+      notifyUndoable(
+        t('actions.bridge_matching.ignored.title'),
+        t('actions.bridge_matching.ignored.description'),
+        transaction,
+      );
     }
     catch (error: unknown) {
       notifyActionFailure('Failed to ignore bridge transaction:', error);
@@ -114,41 +138,16 @@ export function useBridgeTransactionActions(
         deselect(transaction);
         await refreshUnmatchedBridgeTransactions();
         await onActionComplete?.();
+        notifyUndoable(
+          t('actions.bridge_matching.external_success.title'),
+          t('actions.bridge_matching.external_success.description'),
+          transaction,
+        );
       }
     }
     finally {
       set(ignoreLoading, false);
     }
-  }
-
-  function buildMarkExternalOutMessage(untracked: boolean, chain?: string, address?: string): string {
-    if (untracked && address) {
-      return chain
-        ? t('bridge_matching.actions.mark_external_confirm_untracked_chain', { address, chain })
-        : t('bridge_matching.actions.mark_external_confirm_untracked', { address });
-    }
-    if (chain && address)
-      return t('bridge_matching.actions.mark_external_confirm_destination', { address, chain });
-    if (address)
-      return t('bridge_matching.actions.mark_external_confirm_address', { address });
-    if (chain)
-      return t('bridge_matching.actions.mark_external_confirm_chain', { chain });
-    return t('bridge_matching.actions.mark_external_confirm');
-  }
-
-  function buildMarkExternalInMessage(untracked: boolean, chain?: string, address?: string): string {
-    if (untracked && address) {
-      return chain
-        ? t('bridge_matching.actions.mark_external_in_confirm_untracked_chain', { address, chain })
-        : t('bridge_matching.actions.mark_external_in_confirm_untracked', { address });
-    }
-    if (chain && address)
-      return t('bridge_matching.actions.mark_external_in_confirm_source', { address, chain });
-    if (address)
-      return t('bridge_matching.actions.mark_external_in_confirm_address', { address });
-    if (chain)
-      return t('bridge_matching.actions.mark_external_in_confirm_chain', { chain });
-    return t('bridge_matching.actions.mark_external_in_confirm');
   }
 
   async function createCounterpart(transaction: UnmatchedBridgeTransaction): Promise<void> {
@@ -186,25 +185,6 @@ export function useBridgeTransactionActions(
       primaryAction: t('common.actions.confirm'),
       title: t('bridge_matching.actions.create_counterpart'),
     }, async () => createCounterpart(transaction));
-  }
-
-  function confirmMarkExternal(transaction: UnmatchedBridgeTransaction): void {
-    const isDeposit = transaction.direction === 'deposit';
-    const chain = formatChain(isDeposit ? transaction.bridge?.toChain : transaction.bridge?.fromChain);
-    const address = isDeposit ? transaction.bridge?.toAddress : transaction.bridge?.fromAddress;
-    // A verified-untracked counterpart turns the "are you sure" warning into guidance:
-    // the counterpart event cannot exist, so resolving as external is the correct action.
-    const untracked = isCounterpartUntracked(transaction);
-
-    show({
-      message: isDeposit
-        ? buildMarkExternalOutMessage(untracked, chain, address)
-        : buildMarkExternalInMessage(untracked, chain, address),
-      primaryAction: t('common.actions.confirm'),
-      title: isDeposit
-        ? t('bridge_matching.actions.mark_external')
-        : t('bridge_matching.actions.mark_external_in'),
-    }, async () => markExternal(transaction));
   }
 
   async function ignoreSelectedTransactions(rowIds: string[]): Promise<void> {
@@ -264,8 +244,8 @@ export function useBridgeTransactionActions(
   return {
     confirmCreateCounterpart,
     confirmIgnoreSelected,
-    confirmMarkExternal,
     confirmRestoreSelected,
+    markExternal,
     ignoreLoading: readonly(ignoreLoading),
     ignoreTransaction,
     restoreTransaction,
