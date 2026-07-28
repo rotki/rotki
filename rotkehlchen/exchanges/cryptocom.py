@@ -479,8 +479,11 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                 except (DeserializationError, UnknownAsset, KeyError) as e:
                     msg = f'missing key: {e!s}' if isinstance(e, KeyError) else str(e)
                     log.error(
-                        f'Error processing {self.name} {query_type}: '
-                        f'{raw_asset_movement} due to {msg}',
+                        'Error processing %s %s: %s due to %s',
+                        self.name,
+                        query_type,
+                        raw_asset_movement,
+                        msg,
                     )
                     self.msg_aggregator.add_error(
                         f'Failed to deserialize a {self.name} {query_type}. '

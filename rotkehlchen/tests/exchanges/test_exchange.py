@@ -1,12 +1,12 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import ExchangeWithoutApiSecret, HistoryEventQueue
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Price, Timestamp
@@ -24,9 +24,9 @@ def test_history_event_queue_discards_failed_batch() -> None:
         patch.object(
             DBHistoryEvents,
             'add_history_events',
-            side_effect=sqlcipher.IntegrityError,
+            side_effect=DeserializationError('Failed to deserialize event'),
         ),
-        pytest.raises(sqlcipher.IntegrityError),  # pylint: disable=no-member
+        pytest.raises(DeserializationError),
     ):
         event_queue.flush()
 
