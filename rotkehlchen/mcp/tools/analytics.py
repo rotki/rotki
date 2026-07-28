@@ -75,12 +75,24 @@ async def list_tables() -> dict[str, Any]:
 
 @register_tool(name='describe_table')
 async def describe_table(table: str) -> dict[str, Any]:
-    """Describe a loaded analytics table: its columns (name + dtype), row count and source.
+    """Describe a loaded analytics table: its columns, row count and source metadata.
 
-    Use this to discover the schema before writing SQL. Note that identifier columns are
-    privacy-filtered: addresses/hashes appear as ``<col>_hash`` (consistent within a
-    session so you can still GROUP BY / JOIN on them) and free-text ``notes`` are redacted
-    to a ``has_notes`` flag, unless the server was started in ``raw`` privacy mode.
+    Use this to discover the schema before writing SQL. Each column reports:
+
+    - ``sqlite_type``, which is what your query actually sees, alongside the pandas
+      ``dtype`` it was built from. They differ: booleans arrive as 0/1 integers.
+    - ``null_fraction``, and ``all_null`` for columns that are present but carry nothing —
+      many ``extra_data_*`` columns exist only for one protocol and are empty otherwise.
+    - ``distinct_count`` and ``top_values`` for small enum-like columns (``event_type``,
+      ``location``, ``entry_type``, ``counterparty``), so you do not need a SELECT DISTINCT
+      round trip to learn the valid values.
+    - ``hashed`` with a ``hashed_reason`` of ``pii`` (an address or hash, hidden by policy)
+      or ``unrecognized`` (a column the allowlist does not know, hashed rather than leaked).
+
+    Identifier columns are privacy-filtered: they appear as ``<col>_hash``, consistent within
+    a session so you can still GROUP BY / JOIN on them but not reversible and not stable
+    across sessions. Their values are never listed. Free-text ``notes``/``user_notes`` are
+    redacted to a ``has_<col>`` flag, unless the server was started in ``raw`` privacy mode.
     """
     return await asyncio.to_thread(get_analytics_session().describe_table, table=table)
 
