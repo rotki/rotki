@@ -24,7 +24,7 @@ from rotkehlchen.mcp.backend import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
     from rotkehlchen.mcp.constants import PrivacyMode
 
@@ -139,6 +139,7 @@ class AnalyticsScope:
     include_ignored_assets: bool
     privacy_mode: PrivacyMode
     include_values: bool = False
+    aggregate_by_group_ids: bool = False
 
 
 def _hash_identifier(value: Any) -> str | None:
@@ -256,6 +257,22 @@ def _sanitize_row(row: dict[str, Any], privacy_mode: PrivacyMode) -> dict[str, A
     return sanitized
 
 
+def _iter_entries(entries: list[Any]) -> Iterator[dict[str, Any]]:
+    """Yield every event in a page, including the ones the API nests.
+
+    Without ``aggregate_by_group_ids`` the endpoint returns a *sub-list* per group for EVM
+    and Solana swaps and for matched asset movements, so a page mixes plain event dicts with
+    lists of them. Keeping only the dicts silently dropped every on-chain swap and matched
+    deposit/withdrawal from the loaded table -- and, because a grouped sub-list still counts
+    as one entry against the page limit, made pages look short for no visible reason.
+    """
+    for entry in entries:
+        if isinstance(entry, dict):
+            yield entry
+        elif isinstance(entry, list):
+            yield from (grouped for grouped in entry if isinstance(grouped, dict))
+
+
 def _promote_entry(raw: dict[str, Any]) -> dict[str, Any]:
     """The history/events API wraps each event's fields in an ``entry`` sub-object next to
     sibling metadata. Promote those fields to the top level so SQL columns read as
@@ -358,6 +375,7 @@ def _load_history_events(scope: AnalyticsScope) -> TableData:
             from_timestamp=scope.from_timestamp,
             to_timestamp=scope.to_timestamp,
             exclude_ignored_assets=scope.include_ignored_assets is False,
+            aggregate_by_group_ids=scope.aggregate_by_group_ids,
         )
         entries_found = result.get('entries_found')
         entries_total = result.get('entries_total')
@@ -367,7 +385,7 @@ def _load_history_events(scope: AnalyticsScope) -> TableData:
 
         rows.extend(
             _sanitize_row(_flatten(_promote_entry(entry)), scope.privacy_mode)
-            for entry in entries if isinstance(entry, dict)
+            for entry in _iter_entries(entries)
         )
         offset += PAGE_SIZE
         if isinstance(entries_found, int) and offset >= entries_found:
@@ -497,6 +515,7 @@ class AnalyticsSession:
             to_timestamp: int,
             include_ignored_assets: bool,
             include_values: bool,
+            aggregate_by_group_ids: bool,
     ) -> AnalyticsScope:
         return AnalyticsScope(
             from_timestamp=_filter_seconds(from_timestamp),
@@ -504,6 +523,7 @@ class AnalyticsSession:
             include_ignored_assets=include_ignored_assets,
             privacy_mode=get_backend_config().privacy_mode,
             include_values=include_values,
+            aggregate_by_group_ids=aggregate_by_group_ids,
         )
 
     def refresh(
@@ -513,6 +533,7 @@ class AnalyticsSession:
             to_timestamp: int,
             include_ignored_assets: bool,
             include_values: bool = False,
+            aggregate_by_group_ids: bool = False,
     ) -> dict[str, Any]:
         with self._refresh_lock:
             scope = self._current_scope(
@@ -520,6 +541,7 @@ class AnalyticsSession:
                 to_timestamp=to_timestamp,
                 include_ignored_assets=include_ignored_assets,
                 include_values=include_values,
+                aggregate_by_group_ids=aggregate_by_group_ids,
             )
             loaded: dict[str, Any] = {}
             errors: dict[str, str] = {}

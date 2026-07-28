@@ -200,7 +200,10 @@ def test_validate_sql(sql: str, valid: bool) -> None:
     assert (_validate_sql(sql) is None) is valid
 
 
-def _mock_history_pages(monkeypatch, entries: list[dict[str, Any]]) -> None:
+def _mock_history_pages(monkeypatch, entries: list[Any]) -> None:
+    """``entries`` may hold plain event dicts or, as the real endpoint returns for grouped
+    swaps and matched movements, sub-lists of them.
+    """
     def fake_page(limit, offset, **kwargs):
         page = entries[offset:offset + limit]
         return {
@@ -641,6 +644,62 @@ def test_valuation_should_not_block_queries(monkeypatch) -> None:
     assert session.query_sql('select value from history_events', max_rows=10)['rows'] == [
         {'value': 3000.0},
     ]
+
+
+def test_grouped_sublist_entries_should_not_be_dropped(monkeypatch) -> None:
+    """Without aggregate_by_group_ids the API nests each EVM/Solana swap and each matched
+    asset movement in a sub-list, so a page mixes dicts with lists of dicts. Keeping only the
+    dicts silently lost every on-chain swap -- exactly the trades an agent asks about.
+    """
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    swap_legs = [
+        {'entry': {'identifier': 2, 'asset': 'ETH', 'amount': '1', 'event_subtype': 'spend',
+                   'group_identifier': '0xswap', 'sequence_index': 0}},
+        {'entry': {'identifier': 3, 'asset': 'USDC', 'amount': '3000',
+                   'event_subtype': 'receive', 'group_identifier': '0xswap',
+                   'sequence_index': 1}},
+    ]
+    _mock_history_pages(monkeypatch, [
+        {'entry': {'identifier': 1, 'asset': 'BTC', 'amount': '1', 'event_subtype': 'receive'}},
+        swap_legs,  # a grouped sub-list, as the endpoint really returns it
+    ])
+    session = AnalyticsSession()
+    loaded = session.refresh(tables=None, from_timestamp=0, to_timestamp=0,
+                             include_ignored_assets=False)
+
+    assert loaded['tables']['history_events']['rows'] == 3  # not 1
+    assert session.query_sql(
+        'select asset from history_events order by asset',
+        max_rows=10,
+    )['rows'] == [{'asset': 'BTC'}, {'asset': 'ETH'}, {'asset': 'USDC'}]
+
+
+def test_aggregate_by_group_ids_should_be_opt_in(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    captured: list[Any] = []
+
+    def fake_page(limit, offset, aggregate_by_group_ids=False, **kwargs):
+        captured.append(aggregate_by_group_ids)
+        return {'entries': [] if offset else [
+            {'identifier': 1, 'asset': 'ETH', 'amount': '1', 'grouped_events_num': 3},
+        ], 'entries_found': 1, 'entries_total': 1, 'entries_limit': -1}
+
+    monkeypatch.setattr(analytics, 'query_history_events_page', fake_page)
+
+    session = AnalyticsSession()
+    session.refresh(tables=None, from_timestamp=0, to_timestamp=0,
+                    include_ignored_assets=False)
+    assert captured == [False]  # default request is unchanged
+
+    captured.clear()
+    session.refresh(tables=None, from_timestamp=0, to_timestamp=0,
+                    include_ignored_assets=False, aggregate_by_group_ids=True)
+    assert captured == [True]
+    # the count survives flattening and is queryable
+    assert session.query_sql(
+        'select grouped_events_num from history_events',
+        max_rows=10,
+    )['rows'] == [{'grouped_events_num': 3}]
 
 
 def test_query_sql_without_loaded_tables_errors() -> None:
