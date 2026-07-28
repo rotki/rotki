@@ -10,7 +10,7 @@ from polyleven import levenshtein
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.types import AssetFlag, AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_OP, A_SAI, A_USD, A_USDC, A_WSOL
 from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ONE
@@ -596,6 +596,87 @@ def test_get_all_assets(rotkehlchen_api_server: APIServer) -> None:
         contained_in_msg='Given value xxxxxxxxx is not a valid EVM or Solana address',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+def test_filter_assets_by_flag(
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
+) -> None:
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute('DELETE FROM asset_flags')
+        write_cursor.executemany(
+            'INSERT INTO asset_flags(identifier, flag) VALUES (?, ?)',
+            (
+                (A_DAI.identifier, AssetFlag.REBASING),
+                (A_USD.identifier, AssetFlag.REBASING),
+            ),
+        )
+
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json={'asset_flag': AssetFlag.REBASING.value},
+    ))
+    assert result['entries_found'] == 2
+    entries = {entry['identifier']: entry for entry in result['entries']}
+    assert entries.keys() == {A_DAI.identifier, A_USD.identifier}
+    assert entries[A_DAI.identifier]['is_rebasing'] is True
+    assert entries[A_USD.identifier]['is_rebasing'] is True
+
+    assert_error_response(
+        response=requests.post(
+            api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+            json={'asset_flag': 'invalid'},
+        ),
+        contained_in_msg='Illegal value invalid for',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+def test_edit_rebasing_asset_flag(
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
+) -> None:
+    token = EvmToken.initialize(
+        address=make_evm_address(),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        name=None,
+    )
+    globaldb.add_asset(token)
+    payload = {
+        'asset_type': token.asset_type.serialize(),
+        'identifier': token.identifier,
+        'name': None,
+        'address': token.evm_address,
+        'token_kind': str(token.token_kind.name),
+        'evm_chain': token.chain_id.to_name(),
+        'symbol': None,
+        'decimals': None,
+    }
+
+    assert_proper_response(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json=payload | {'is_rebasing': True},
+    ))
+    assert token.identifier in globaldb.get_asset_ids_with_flag(AssetFlag.REBASING)
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json={'identifiers': [token.identifier]},
+    ))
+    assert result['entries'][0]['is_rebasing'] is True
+
+    # Omitting the optional field must preserve the existing flag.
+    assert_proper_response(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json=payload,
+    ))
+    assert token.identifier in globaldb.get_asset_ids_with_flag(AssetFlag.REBASING)
+
+    assert_proper_response(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json=payload | {'is_rebasing': False},
+    ))
+    assert token.identifier not in globaldb.get_asset_ids_with_flag(AssetFlag.REBASING)
 
 
 def test_get_all_assets_levenshtein_ranking(rotkehlchen_api_server: APIServer) -> None:
@@ -1529,6 +1610,7 @@ def test_add_solana_token(rotkehlchen_api_server: APIServer) -> None:
             'symbol': payload['symbol'],
             'started': payload['started'],
             'forked': None,
+            'is_rebasing': False,
             'swapped_for': None,
             'protocol': None,
             'token_kind': ' '.join(payload['token_kind'].split('_')),  # type: ignore[attr-defined]  # it is a string

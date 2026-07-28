@@ -25,7 +25,7 @@ from rotkehlchen.assets.asset import (
     SolanaToken,
 )
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
-from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.types import AssetFlag, AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount
 from rotkehlchen.chain.bitcoin.bch.utils import (
@@ -2766,6 +2766,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     name = EmptyAsNoneStringField(load_default=None)
     symbol = EmptyAsNoneStringField(load_default=None)
     asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
+    asset_flag = StrEnumField(enum_class=AssetFlag, load_default=None)
     address = EmptyAsNoneStringField(load_default=None)
     evm_chain = EvmChainNameField(load_default=None)
     ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
@@ -2828,6 +2829,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             name=data['name'],
             symbol=data['symbol'],
             asset_type=data['asset_type'],
+            asset_flag=data['asset_flag'],
             chain_id=data['evm_chain'],
             address=address,
             identifiers=data['identifiers'],

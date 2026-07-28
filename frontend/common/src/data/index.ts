@@ -50,6 +50,7 @@ export const SupportedAsset = BaseAsset.extend({
   decimals: z.number().nullish(),
   ended: z.number().nullish(),
   forked: z.string().nullish(),
+  isRebasing: z.boolean().default(false),
   protocol: z.string().nullish(),
   underlyingTokens: z.array(UnderlyingToken).nullish(),
 });

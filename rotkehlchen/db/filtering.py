@@ -10,7 +10,7 @@ from eth_utils import is_hex_address
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
-from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.types import AssetFlag, AssetType
 from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
@@ -407,6 +407,16 @@ class DBSubStringFilter(DBFilter):
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         return [f'{self.field} LIKE ?'], [f'%{self.search_string}%']
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBAssetFlagFilter(DBFilter):
+    asset_flag: AssetFlag
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        return [
+            'INNER JOIN asset_flags AS AF USING(identifier) WHERE AF.flag=?',
+        ], [self.asset_flag.value]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -2047,6 +2057,7 @@ class AssetsFilterQuery(DBFilterQuery):
             substring_search: str | None = None,
             search_column: str | None = None,
             asset_type: AssetType | None = None,
+            asset_flag: AssetFlag | None = None,
             identifiers: list[str] | None = None,
             show_user_owned_assets_only: bool = False,
             show_whitelisted_assets_only: bool = False,
@@ -2073,6 +2084,9 @@ class AssetsFilterQuery(DBFilterQuery):
             order_by_case_sensitive=False,
         )
         filter_query.ignored_assets_handling = ignored_assets_handling
+        if asset_flag is not None:
+            filter_query.join_clause = DBAssetFlagFilter(and_op=True, asset_flag=asset_flag)
+
         filters: list[DBFilter] = []
         if name is not None:
             filters.append(DBSubStringFilter(

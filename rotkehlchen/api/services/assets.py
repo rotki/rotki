@@ -28,7 +28,7 @@ from rotkehlchen.assets.asset import (
     SolanaToken,
 )
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetType
+from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetFlag, AssetType
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.airdrops import fetch_airdrops_metadata
 from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
@@ -229,7 +229,11 @@ class AssetsService:
         types = [str(x) for x in AssetType if x not in ASSET_TYPES_EXCLUDED_FOR_USERS]
         return {'result': types, 'message': '', 'status_code': HTTPStatus.OK}
 
-    def add_user_asset(self, asset: AssetWithOracles) -> dict[str, Any]:
+    def add_user_asset(
+            self,
+            asset: AssetWithOracles,
+            is_rebasing: bool | None,
+    ) -> dict[str, Any]:
         if isinstance(asset, EvmToken):
             try:
                 asset.check_existence()
@@ -255,13 +259,24 @@ class AssetsService:
 
         with self.rotkehlchen.data.db.user_write() as cursor:
             self.rotkehlchen.data.db.add_asset_identifiers(cursor, [asset.identifier])
+        if is_rebasing is not None:
+            GlobalDBHandler.set_asset_flag(
+                identifier=asset.identifier,
+                flag=AssetFlag.REBASING,
+                enabled=is_rebasing,
+            )
+
         return {
             'result': {'identifier': asset.identifier},
             'message': '',
             'status_code': HTTPStatus.OK,
         }
 
-    def edit_user_asset(self, asset: AssetWithOracles) -> dict[str, Any]:
+    def edit_user_asset(
+            self,
+            asset: AssetWithOracles,
+            is_rebasing: bool | None,
+    ) -> dict[str, Any]:
         try:
             GlobalDBHandler.edit_user_asset(asset)
         except InputError as e:
@@ -269,6 +284,13 @@ class AssetsService:
 
         AssetResolver.clean_memory_cache(asset.identifier)
         self.rotkehlchen.icon_manager.failed_asset_ids.remove(asset.identifier)
+        if is_rebasing is not None:
+            GlobalDBHandler.set_asset_flag(
+                identifier=asset.identifier,
+                flag=AssetFlag.REBASING,
+                enabled=is_rebasing,
+            )
+
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
     def delete_asset(self, identifier: str) -> dict[str, Any]:

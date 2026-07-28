@@ -1,3 +1,4 @@
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
@@ -40,6 +41,10 @@ class AssetType(DBCharEnumMixIn):
         crypto_asset_types_values = set(range(4, 27))
         crypto_asset_types_values.add(2)  # include `OWN_CHAIN`
         return asset_type.value in crypto_asset_types_values
+
+
+class AssetFlag(StrEnum):
+    REBASING = 'rebasing'
 
 
 ASSETS_WITH_NO_CRYPTO_ORACLES = {AssetType.NFT, AssetType.CUSTOM_ASSET}

@@ -49,7 +49,7 @@ def assert_token_entry_exists_in_result(
     We append the identifier to each entry since it's returned
     """
     for entry in expected_result:
-        assert entry in result
+        assert entry | {'is_rebasing': False} in result
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -69,6 +69,7 @@ def test_query_user_tokens(rotkehlchen_api_server: APIServer) -> None:
     result: Any = assert_proper_sync_response_with_result(response)['entries'][0]
     expected_result = expected_tokens[0].to_dict()
     expected_result['identifier'] = ethaddress_to_identifier(user_token_address1)
+    expected_result['is_rebasing'] = False
     assert result == expected_result
 
     # Test querying all
@@ -740,6 +741,7 @@ def test_adding_evm_token_with_underlying_token(
             'evm_chain': 'ethereum',
             'token_kind': 'erc20',
             'decimals': 18,
+            'is_rebasing': False,
             'underlying_tokens': underlying_tokens,
             'protocol': 'balancer',
             'symbol': 'BPT',

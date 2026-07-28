@@ -1,6 +1,7 @@
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AssetFlag } from '@/modules/assets/types';
 import { useAssetManagementApi } from './use-asset-management-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
@@ -22,12 +23,14 @@ describe('composables/api/assets/management', () => {
               entries: [
                 {
                   identifier: 'ETH',
+                  is_rebasing: false,
                   name: 'Ethereum',
                   symbol: 'ETH',
                   asset_type: 'own chain',
                 },
                 {
                   identifier: 'BTC',
+                  is_rebasing: true,
                   name: 'Bitcoin',
                   symbol: 'BTC',
                   asset_type: 'own chain',
@@ -44,6 +47,7 @@ describe('composables/api/assets/management', () => {
 
       const { queryAllAssets } = useAssetManagementApi();
       const result = await queryAllAssets({
+        assetFlag: AssetFlag.REBASING,
         limit: 100,
         offset: 0,
         orderByAttributes: ['name'],
@@ -51,12 +55,15 @@ describe('composables/api/assets/management', () => {
       });
 
       expect(capturedBody).toEqual({
+        asset_flag: 'rebasing',
         limit: 100,
         offset: 0,
         order_by_attributes: ['name'],
         ascending: [true],
       });
       expect(result.data).toHaveLength(2);
+      expect(result.data[0].isRebasing).toBe(false);
+      expect(result.data[1].isRebasing).toBe(true);
       expect(result.found).toBe(2);
       expect(result.total).toBe(50);
     });
@@ -308,6 +315,7 @@ describe('composables/api/assets/management', () => {
       const { editAsset } = useAssetManagementApi();
       const result = await editAsset({
         identifier: 'TOKEN_1',
+        isRebasing: true,
         name: 'Updated Token',
         symbol: 'UPD',
         assetType: 'evm token',
@@ -315,6 +323,7 @@ describe('composables/api/assets/management', () => {
 
       expect(capturedBody).toEqual({
         identifier: 'TOKEN_1',
+        is_rebasing: true,
         name: 'Updated Token',
         symbol: 'UPD',
         asset_type: 'evm token',

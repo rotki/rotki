@@ -1,8 +1,11 @@
 import pytest
 
+from rotkehlchen.assets.types import AssetFlag
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.filtering import (
+    AssetsFilterQuery,
+    DBAssetFlagFilter,
     DBEvmTransactionJoinsFilter,
     DBFilterOrder,
     DBFilterPagination,
@@ -18,6 +21,22 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.tests.utils.database import clean_ignored_assets
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import Location, Timestamp, TimestampMS
+
+
+def test_asset_flag_filter() -> None:
+    assert AssetsFilterQuery.make().join_clause is None
+
+    filter_query = AssetsFilterQuery.make(
+        asset_flag=AssetFlag.REBASING,
+        name='ether',
+    )
+    assert isinstance(filter_query.join_clause, DBAssetFlagFilter)
+    query, bindings = filter_query.prepare()
+    assert query == (
+        'INNER JOIN asset_flags AS AF USING(identifier) WHERE AF.flag=? '
+        'AND ((name LIKE ?)) ORDER BY name COLLATE NOCASE ASC'
+    )
+    assert bindings == [AssetFlag.REBASING.value, '%ether%']
 
 
 def test_ethereum_transaction_filter():
