@@ -47,6 +47,14 @@ async def refresh_analytics_data(
       need both sides of a swap, and you should not sum amounts over it.
 
     Returns the per-table row counts and source metadata, plus the active ``privacy_mode``.
+
+    On coverage, check ``source.completeness`` before trusting any aggregate: ``complete``
+    means everything in range was loaded, ``truncated_by_max_events`` that the server's
+    ``--max-events`` cap cut the load short, and ``stopped_early`` that paging gave up with
+    data still outstanding. ``source.rows_loaded`` is the authoritative count of what is
+    actually queryable. The counters under ``source.backend_metadata`` are the backend's own
+    and will not match it — ``entries_found`` in particular is a pre-serialization estimate,
+    so do not compute coverage from it.
     """
     return await asyncio.to_thread(
         get_analytics_session().refresh,
