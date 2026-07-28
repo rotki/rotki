@@ -151,11 +151,19 @@ describe('useAccount', () => {
   describe('password confirmation', () => {
     beforeEach(() => {
       vi.clearAllMocks();
+      // Freeze the clock. These cases assert on an interval boundary, but the timestamp they store
+      // and the one `use-password-confirmation` compares it against are two independent reads of
+      // the wall clock. Crossing a second between them makes the elapsed time one greater than the
+      // interval, which flipped the boundary assertions at random on a loaded machine. Only `Date`
+      // is faked, so the async paths under test keep real timers.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
       mockInterop.isPackaged = true;
       localStorage.setItem(REMEMBER_PASSWORD_KEY, 'true');
     });
 
     afterEach(() => {
+      vi.useRealTimers();
       localStorage.removeItem(REMEMBER_PASSWORD_KEY);
     });
 
