@@ -789,6 +789,76 @@ def test_max_events_cap_should_report_truncation(monkeypatch) -> None:
     assert source['cache_truncated'] is True
 
 
+def _described(session: AnalyticsSession, table: str = 'history_events') -> dict[str, Any]:
+    return {column['name']: column for column in session.describe_table(table)['columns']}
+
+
+def test_describe_should_report_sqlite_type_beside_pandas_dtype(monkeypatch) -> None:
+    """The pandas dtype is not what SQL sees; reporting it alone misled every query."""
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        {'identifier': 1, 'asset': 'ETH', 'amount': '1', 'event_type': 'spend',
+         'auto_notes': 'Deposit 1 ETH to kraken'},
+        {'identifier': 2, 'asset': 'BTC', 'amount': '2', 'event_type': 'receive'},
+    ])
+    session = AnalyticsSession()
+    session.refresh(tables=None, from_timestamp=0, to_timestamp=0, include_ignored_assets=False)
+    columns = _described(session)
+
+    assert all(column['sqlite_type'] for column in columns.values())
+    assert columns['asset']['sqlite_type'] == 'TEXT'
+    # the has_ flag is a real bool filled for the event that lacked the field entirely
+    assert columns['has_auto_notes']['dtype'] == 'bool'
+    assert session.query_sql(
+        'select has_auto_notes, count(*) as count from history_events '
+        'group by has_auto_notes order by has_auto_notes',
+        max_rows=10,
+    )['rows'] == [{'has_auto_notes': 0, 'count': 1}, {'has_auto_notes': 1, 'count': 1}]
+
+
+def test_describe_should_list_enum_values_and_null_fractions(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        {'identifier': 1, 'asset': 'ETH', 'amount': '1', 'event_type': 'spend'},
+        {'identifier': 2, 'asset': 'ETH', 'amount': '2', 'event_type': 'spend'},
+        {'identifier': 3, 'asset': 'BTC', 'amount': '3', 'event_type': 'receive',
+         'extra_data_cdp_id': None},
+    ])
+    session = AnalyticsSession()
+    session.refresh(tables=None, from_timestamp=0, to_timestamp=0, include_ignored_assets=False)
+    columns = _described(session)
+
+    assert columns['event_type']['distinct_count'] == 2
+    assert columns['event_type']['top_values'] == [
+        {'value': 'spend', 'rows': 2},
+        {'value': 'receive', 'rows': 1},
+    ]
+    assert columns['asset']['null_fraction'] == 0.0
+    # a column that exists but carries nothing is called out rather than looking substantial
+    assert columns['extra_data_cdp_id']['all_null'] is True
+    assert columns['extra_data_cdp_id']['null_fraction'] == 1.0
+
+
+def test_describe_should_never_emit_hashed_values(monkeypatch) -> None:
+    """Listing anon_ values would be noise at best and defeats the point at worst."""
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        {'identifier': 1, 'asset': 'ETH', 'amount': '1', 'address': ADDRESS,
+         'ens_name': 'vitalik.eth'},
+    ])
+    session = AnalyticsSession()
+    session.refresh(tables=None, from_timestamp=0, to_timestamp=0, include_ignored_assets=False)
+    described = session.describe_table('history_events')
+    columns = _described(session)
+
+    assert 'anon_' not in str(described)
+    assert columns['address_hash']['hashed'] is True
+    assert columns['address_hash']['hashed_reason'] == 'pii'
+    assert 'top_values' not in columns['address_hash']
+    # a column the allowlist does not know is hashed too, but for a different reason
+    assert columns['ens_name_hash']['hashed_reason'] == 'unrecognized'
+
+
 def test_query_sql_without_loaded_tables_errors() -> None:
     assert AnalyticsSession().query_sql('select 1', max_rows=10)['error']['type'] == (
         'no_tables_loaded'

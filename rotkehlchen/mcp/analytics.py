@@ -45,6 +45,10 @@ PRICE_LOOKUP_CHUNK_SIZE: Final = 500
 # How many consecutive empty pages to tolerate before giving up on a load. Empty windows are
 # normal mid-range; an endless run of them is a backend fault and must not spin forever.
 MAX_CONSECUTIVE_EMPTY_PAGES: Final = 5
+# describe_table lists a string column's actual values when there are few enough for the set
+# to be a useful hint (an enum) rather than a data dump.
+MAX_DISTINCT_VALUES_SCANNED: Final = 50
+MAX_DISTINCT_VALUES_REPORTED: Final = 10
 # Prices are matched within an hour of the event, the same tolerance rotki's own CSV export
 # uses, so bucketing event timestamps to the hour costs no accuracy while roughly halving the
 # number of distinct lookups (measured: 64,936 exact-second pairs vs 31,878 hourly ones).
@@ -431,6 +435,15 @@ def _load_history_events(scope: AnalyticsScope) -> TableData:
     if cache_truncated:
         completeness = 'truncated_by_max_events'
     frame = pd.DataFrame(rows) if rows else pd.DataFrame()
+    for column in frame.columns:
+        if str(column).startswith('has_'):
+            # These flags are only emitted for rows that carry the underlying field, so
+            # ragged event types leave gaps and the column ends up object dtype -- which then
+            # reaches SQL as a confusing 0/1/NULL mix. A missing flag means the field was
+            # absent on that event type, which is exactly false, so fill it and keep a real
+            # bool.
+            frame[column] = frame[column].fillna(value=False).astype(bool)
+
     if 'timestamp' in frame.columns and pd.api.types.is_integer_dtype(frame['timestamp']):
         # Add readable date columns derived from the ms timestamp so an LLM can filter on
         # `year` / `datetime` instead of computing error-prone unix-millisecond bounds.
@@ -522,6 +535,61 @@ def _validate_sql(sql: str) -> str | None:
     if disallowed := tokens & DENIED_SQL_TOKENS:
         return f'Disallowed SQL token(s): {", ".join(sorted(disallowed))}'
     return None
+
+
+def _hashed_reason(column: str, privacy_mode: PrivacyMode) -> str | None:
+    """Why a column holds opaque hashes instead of values, or None if it is readable.
+
+    ``pii`` means the column was always going to be hashed (an address, a tx hash);
+    ``unrecognized`` means it hit the fail-closed branch -- a column the allowlist does not
+    know, hashed rather than leaked. The distinction tells an agent whether a column is
+    hidden by policy or merely unclassified. Which set applies depends on the mode the data
+    was loaded under, since ``strict`` also treats user-authored labels as identifiers.
+    """
+    if not column.endswith('_hash'):
+        return None
+    identifier_columns = (
+        STRICT_IDENTIFIER_COLUMN_NAMES if privacy_mode == 'strict' else PII_COLUMN_NAMES
+    )
+    base = _base_column_name(column.removesuffix('_hash'))
+    return 'pii' if base in identifier_columns else 'unrecognized'
+
+
+def _describe_column(
+        name: str,
+        series: pd.Series,
+        sqlite_type: str | None,
+        privacy_mode: PrivacyMode,
+) -> dict[str, Any]:
+    """Describe one column: how SQL sees it, how empty it is, and -- for small enums -- what
+    is actually in it, so an agent does not have to spend a round trip on SELECT DISTINCT.
+    """
+    column: dict[str, Any] = {
+        'name': name,
+        # The pandas dtype is not what the query sees: everything goes through to_sql, so a
+        # bool lands as an integer and an all-null object column as a float.
+        'dtype': str(series.dtype),
+        'sqlite_type': sqlite_type,
+        'null_fraction': round(float(series.isna().mean()), 4) if len(series) > 0 else None,
+    }
+    if column['null_fraction'] == 1.0:
+        column['all_null'] = True  # present but carries nothing; do not build a query on it
+    if (reason := _hashed_reason(name, privacy_mode)) is not None:
+        # Never list hashed values: pages of anon_ strings are pure noise to an agent.
+        return column | {'hashed': True, 'hashed_reason': reason}
+
+    # pandas gives string columns a dedicated ``str`` dtype and only falls back to ``object``
+    # for ragged/mixed ones, so both are candidates for a value listing.
+    is_texty = pd.api.types.is_string_dtype(series) or pd.api.types.is_object_dtype(series)
+    if is_texty and len(counts := series.value_counts()) <= MAX_DISTINCT_VALUES_SCANNED:
+        column['distinct_count'] = len(counts)
+        column['top_values'] = [
+            {'value': value, 'rows': int(rows)}
+            for value, rows in counts.head(MAX_DISTINCT_VALUES_REPORTED).items()
+            # defence in depth: a hash must never reach the agent through this path either
+            if not (isinstance(value, str) and value.startswith('anon_'))
+        ]
+    return column
 
 
 def _error(error_type: str, message: str, **details: Any) -> dict[str, Any]:
@@ -633,11 +701,24 @@ class AnalyticsSession:
                     f'Table {table!r} is not loaded. Call refresh_analytics_data first.',
                     available_tables=list(AVAILABLE_TABLES),
                 )
+            with closing(self._connection.cursor()) as cursor:
+                # The declared sqlite types are the ones the query actually sees, so report
+                # them next to the pandas dtypes rather than instead of them.
+                sqlite_types = {
+                    row[1]: row[2]
+                    for row in cursor.execute(f'PRAGMA table_info("{table}")')
+                }
             return {
                 'table': table,
                 'columns': [
-                    {'name': name, 'dtype': str(dtype)}
-                    for name, dtype in table_data.frame.dtypes.items()
+                    _describe_column(
+                        name=str(name),
+                        series=table_data.frame[name],
+                        sqlite_type=sqlite_types.get(str(name)),
+                        # the mode the frame was built under, not the current config
+                        privacy_mode=table_data.source.get('privacy_mode', 'balanced'),
+                    )
+                    for name in table_data.frame.columns
                 ],
                 'rows': len(table_data.frame),
                 'source': table_data.source,
