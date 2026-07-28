@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` You can now silence notification popups from the notification area, so rotki stops interrupting you while you work. Nothing is lost: every notification still arrives in the notification area with its actions. The setting stays as you left it the next time you log in.
 * :bug:`-` The "No indexers available" and missing API key warnings no longer pop up at every login. Each one now goes quiet for a day, then two days, then a week, and finally stops interrupting you. It stays in the notification sidebar with its action so you can still deal with it, and starts over if you change that chain's indexer order or that service's key. Chains and services are also tracked separately now, so one no longer replaces or silences another.
 * :feature:`-` The "Actions needed" button in history events is now a single actions center. It counts the categories needing attention rather than every item, and lists each as a row with its own count and action, including categories with nothing to do so you can re-check them at any time. The duplicate "Check ..." entries in the overflow menu are gone.
 * :feature:`-` Yearn vesting escrows are now supported. All related transactions are understood and decoded and balances in escrow automatically detected. Calendar entries with reminders are also created for the cliff and full vesting dates of your escrows.

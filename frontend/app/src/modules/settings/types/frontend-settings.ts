@@ -263,6 +263,7 @@ export const FrontendSettings = z.object({
   scrambleMultiplier: z.number().optional().default(generateRandomScrambleMultiplier()),
   selectedTheme: ThemeEnum.default(Theme.AUTO),
   showGraphRangeSelector: z.boolean().default(true),
+  silentNotifications: z.boolean().default(false),
   subscriptDecimals: z.boolean().default(false),
   suppressNoIndexerChains: z.array(z.string()).default([]),
   thousandSeparator: z.string().default(Defaults.DEFAULT_THOUSAND_SEPARATOR),

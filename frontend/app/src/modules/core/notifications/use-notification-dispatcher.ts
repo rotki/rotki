@@ -7,6 +7,7 @@ import { bulkDuplicateStrategy } from './strategies/bulk-duplicate';
 import { createDeserializationErrorStrategy } from './strategies/deserialization-error';
 import { createGroupUpdateStrategy } from './strategies/group-update';
 import { useNotificationCooldown } from './use-notification-cooldown';
+import { useSilentNotifications } from './use-silent-notifications';
 
 interface UseNotificationDispatcherReturn {
   notify: (payload: SemiPartial<NotificationPayload, 'title' | 'message'>) => void;
@@ -16,6 +17,7 @@ export function useNotificationDispatcher(): UseNotificationDispatcherReturn {
   const { t } = useI18n({ useScope: 'global' });
   const store = useNotificationsStore();
   const cooldown = useNotificationCooldown();
+  const { silent } = useSilentNotifications();
 
   const strategies: NotificationStrategy[] = [
     bulkDuplicateStrategy,
@@ -25,13 +27,21 @@ export function useNotificationDispatcher(): UseNotificationDispatcherReturn {
   ];
 
   function notify(payload: SemiPartial<NotificationPayload, 'title' | 'message'>): void {
+    // Silent mode is applied here, before the strategies, because this is the one entry point every
+    // notification passes through. Denying the display up front rather than filtering the popup
+    // queue matters: a stored notification keeps `display: true` until it is actually shown, so
+    // filtering downstream would leave a backlog that all pops at once when silent mode is
+    // switched off. Nothing is lost either way - the notification is still created, still updates
+    // its group, and still reaches the notification area with its actions.
+    const incoming = get(silent) ? { ...payload, display: false } : payload;
+
     const context: NotificationStrategyContext = {
       getNextId: store.getNextId,
       notifications: store.trimmedCopy(),
     };
 
     for (const strategy of strategies) {
-      const result = strategy.process(payload, context);
+      const result = strategy.process(incoming, context);
       if (result) {
         store.replace(result.notifications);
         return;
@@ -39,7 +49,7 @@ export function useNotificationDispatcher(): UseNotificationDispatcherReturn {
     }
 
     // No strategy matched — add as a plain new notification
-    store.add([createNotification(store.getNextId(), payload)]);
+    store.add([createNotification(store.getNextId(), incoming)]);
   }
 
   return { notify };

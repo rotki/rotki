@@ -171,6 +171,7 @@ export const frontendRegistry = {
   shouldShowAmount: frontend.projected(settings => settings.privacyMode < PrivacyMode.SEMI_PRIVATE),
   shouldShowPercentage: frontend.projected(settings => settings.privacyMode < PrivacyMode.PRIVATE),
   showGraphRangeSelector: frontend('showGraphRangeSelector'),
+  silentNotifications: frontend('silentNotifications'),
   subscriptDecimals: frontend('subscriptDecimals', {
     anchor: SettingsHighlightIds.SUBSCRIPT,
     search: {
