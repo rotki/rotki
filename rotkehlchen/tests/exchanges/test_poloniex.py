@@ -277,6 +277,19 @@ def test_incremental_trade_history_deduplicates_pages(poloniex: Poloniex) -> Non
     assert len(event_queue.flush.call_args.args[0]) == 3
 
 
+def test_incremental_trade_history_skips_missing_id(poloniex: Poloniex) -> None:
+    event_queue = MagicMock(spec=HistoryEventQueue)
+    with patch.object(poloniex, 'api_query_list', return_value=[{}, TEST_POLO_TRADE]):
+        assert poloniex.return_trade_history(
+            start=Timestamp(1500000000),
+            end=Timestamp(1500758400),
+            event_queue=event_queue,
+        ) == []
+
+    event_queue.flush.assert_called_once()
+    assert len(event_queue.flush.call_args.args[0]) == 3
+
+
 def test_query_trade_history_unexpected_data(poloniex):
     """Test that poloniex trade history querying returning unexpected data is handled gracefully"""
     poloniex.cache_ttl_secs = 0

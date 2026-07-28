@@ -332,7 +332,13 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             })
             page_data: list[dict[str, Any]] = []
             for trade in new_data:
-                if (trade_id := trade['id']) not in seen_trade_ids:
+                try:
+                    trade_id = trade['id']
+                except KeyError:
+                    log.error('Skipping poloniex trade without an id', trade=trade)
+                    continue
+
+                if trade_id not in seen_trade_ids:
                     page_data.append(trade)
                     seen_trade_ids.add(trade_id)
 
