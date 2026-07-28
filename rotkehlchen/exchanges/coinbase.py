@@ -1062,6 +1062,18 @@ class Coinbase(ExchangeInterface):
         self._query_transactions(event_queue=event_queue)
         return end_ts
 
+    def requery_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        event_queue.events.extend(self._query_transactions(
+            force_refresh=True,
+            event_queue=event_queue,
+        ))
+        return end_ts
+
     def _deserialize_history_event(self, raw_data: dict[str, Any]) -> HistoryEvent | None:
         """Processes a single transaction from coinbase and deserializes it
 

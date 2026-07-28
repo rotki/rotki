@@ -1576,6 +1576,21 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         event_queue.events.extend(events)
         return actual_end_ts
 
+    def requery_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        events, actual_end_ts = self._query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            force_refresh=True,
+            event_queue=event_queue,
+        )
+        event_queue.events.extend(events)
+        return actual_end_ts
+
     def _query_online_asset_movements(
             self,
             start_ts: Timestamp,

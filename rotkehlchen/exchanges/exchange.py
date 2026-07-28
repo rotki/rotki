@@ -62,6 +62,8 @@ class HistoryEventQueue:
     location_string: str
     query_start_ts: Timestamp
     events: list[HistoryBaseEntry] = field(default_factory=list)
+    queried_events: int = 0
+    saved_events: int = 0
 
     def flush(
             self,
@@ -78,9 +80,10 @@ class HistoryEventQueue:
             return
 
         events_to_write, self.events = self.events, []
+        saved_events = 0
         with self.database.user_write() as write_cursor:
             if len(events_to_write) != 0:
-                DBHistoryEvents(self.database).add_history_events(
+                saved_events = DBHistoryEvents(self.database).add_history_events(
                     write_cursor=write_cursor,
                     history=events_to_write,
                 )
@@ -93,6 +96,8 @@ class HistoryEventQueue:
                     queried_ranges=[(self.query_start_ts, queried_until_ts)],
                 )
 
+        self.queried_events += len(events_to_write)
+        self.saved_events += saved_events
         if queried_until_ts is not None:
             self.query_start_ts = queried_until_ts
 
@@ -398,6 +403,19 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         )
         event_queue.events.extend(events)
         return actual_end_ts
+
+    def requery_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        """Force requery events into the explicit queue without recording range progress."""
+        return self.query_online_history_events_into_queue(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
 
     def query_margin_history(
             self,
