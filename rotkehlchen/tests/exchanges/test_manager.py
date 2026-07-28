@@ -3,6 +3,9 @@ from importlib import import_module
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.exchanges.manager import ExchangeManager
@@ -69,3 +72,22 @@ def test_requery_exchange_history_events_uses_incremental_queue() -> None:
     )
     event_queue.flush.assert_called_once_with()
     assert result == (3, 2, 1, Timestamp(2))
+
+
+def test_query_exchange_history_events_continues_after_remote_error() -> None:
+    manager = ExchangeManager(msg_aggregator=MagicMock())
+    manager.database = MagicMock()
+    manager.database.get_settings.return_value = SimpleNamespace(non_syncing_exchanges=set())
+    exchanges = [MagicMock(), MagicMock()]
+    for idx, exchange in enumerate(exchanges):
+        exchange.name = f'test_{idx}'
+        exchange.location = Location.BINANCE
+        exchange.location_id.return_value = f'binance_test_{idx}'
+    exchanges[0].query_history_events.side_effect = RemoteError('first failed')
+    manager.connected_exchanges[Location.BINANCE].extend(exchanges)
+
+    with pytest.raises(RemoteError, match='first failed'):
+        manager.query_exchange_history_events(location=Location.BINANCE, name=None)
+
+    for exchange in exchanges:
+        exchange.query_history_events.assert_called_once_with()
