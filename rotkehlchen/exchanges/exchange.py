@@ -74,11 +74,12 @@ class HistoryEventQueue:
         if len(self.events) == 0 and cursor_update is None and queried_until_ts is None:
             return
 
+        events_to_write, self.events = self.events, []
         with self.database.user_write() as write_cursor:
-            if len(self.events) != 0:
+            if len(events_to_write) != 0:
                 DBHistoryEvents(self.database).add_history_events(
                     write_cursor=write_cursor,
-                    history=self.events,
+                    history=events_to_write,
                 )
             if cursor_update is not None:
                 cursor_update(write_cursor)
@@ -89,7 +90,6 @@ class HistoryEventQueue:
                     queried_ranges=[(self.query_start_ts, queried_until_ts)],
                 )
 
-        self.events.clear()
         if queried_until_ts is not None:
             self.query_start_ts = queried_until_ts
 

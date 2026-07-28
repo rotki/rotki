@@ -1,13 +1,36 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC
-from rotkehlchen.exchanges.exchange import ExchangeWithoutApiSecret
+from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.exchanges.exchange import ExchangeWithoutApiSecret, HistoryEventQueue
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Price
+from rotkehlchen.types import Price, Timestamp
+
+
+def test_history_event_queue_discards_failed_batch() -> None:
+    database = MagicMock()
+    event_queue = HistoryEventQueue(
+        database=database,
+        location_string='test',
+        query_start_ts=Timestamp(0),
+        events=[MagicMock()],
+    )
+    with (
+        patch.object(
+            DBHistoryEvents,
+            'add_history_events',
+            side_effect=sqlcipher.IntegrityError,
+        ),
+        pytest.raises(sqlcipher.IntegrityError),  # pylint: disable=no-member
+    ):
+        event_queue.flush()
+
+    assert event_queue.events == []
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
