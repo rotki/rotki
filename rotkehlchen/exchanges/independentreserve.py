@@ -49,7 +49,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_sec_to_ms
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
@@ -282,11 +282,14 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
         self.account_guids = account_guids
         return dict(self.balances_from_amounts(amounts)), ''
 
-    def _gather_paginated_data(self, path: str, extra_options: dict | None = None) -> list[dict[str, Any]]:  # noqa: E501
+    def _iterate_paginated_data(
+            self,
+            path: str,
+            extra_options: dict | None = None,
+    ) -> Iterator[list[dict[str, Any]]]:
         """May raise KeyError"""
         page = 1
         page_size = 50
-        data = []
         while True:
             call_options = extra_options.copy() if extra_options is not None else {}
             call_options.update({'pageIndex': page, 'pageSize': page_size})
@@ -296,32 +299,63 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                 path=path,
                 options=call_options,
             )
-            data.extend(resp['Data'])
-            if len(resp['Data']) < 50:
+            yield (page_data := resp['Data'])
+            if len(page_data) < page_size:
                 break  # get out of the loop
 
             page += 1  # go to the next page
 
-        return data
+    def _gather_paginated_data(
+            self,
+            path: str,
+            extra_options: dict | None = None,
+    ) -> list[dict[str, Any]]:
+        return [
+            entry
+            for page_data in self._iterate_paginated_data(
+                path=path,
+                extra_options=extra_options,
+            )
+            for entry in page_data
+        ]
 
     def _query_trades(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[SwapEvent]:
         """Query IndependentReserve trades and convert them into SwapEvents.
         https://www.independentreserve.com/products/api#GetTrades
         May raise RemoteError.
         """
+        events: list[SwapEvent] = []
         try:
-            resp_trades = self._gather_paginated_data(path='GetTrades')
+            for raw_trades in self._iterate_paginated_data(path='GetTrades'):
+                page_events = self._deserialize_trades(
+                    raw_trades=raw_trades,
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                )
+                if event_queue is None:
+                    events.extend(page_events)
+                else:
+                    event_queue.flush(page_events)
         except KeyError as e:
             msg = f'Error processing independentreserve trades response. Missing key: {e!s}.'
             self.msg_aggregator.add_error(msg)
             raise RemoteError(msg) from e
 
-        events = []
-        for raw_trade in resp_trades:
+        return events
+
+    def _deserialize_trades(
+            self,
+            raw_trades: list[dict[str, Any]],
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> list[SwapEvent]:
+        events: list[SwapEvent] = []
+        for raw_trade in raw_trades:
             try:
                 log.debug(f'Processing raw IndependentReserve trade: {raw_trade}')
                 timestamp = deserialize_timestamp_from_date(
@@ -458,7 +492,11 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
             event_queue.events.extend(movements)
             event_queue.flush()
 
-        trades = self._query_trades(start_ts=start_ts, end_ts=end_ts)
+        trades = self._query_trades(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
         if event_queue is None:
             events.extend(trades)
         else:
