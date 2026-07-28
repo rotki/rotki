@@ -23,6 +23,7 @@ from rotkehlchen.exchanges.bitstamp import (
     USER_TRANSACTION_SORTING_MODE,
     Bitstamp,
 )
+from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
@@ -875,6 +876,36 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
             unique_id='5',
         ),
     )]
+
+
+def test_trade_query_flushes_completed_page_before_failure(mock_bitstamp: Bitstamp) -> None:
+    event_queue = MagicMock(spec=HistoryEventQueue)
+    responses = [
+        MockResponse(HTTPStatus.OK, """[{
+            "id": 2,
+            "type": "2",
+            "datetime": "2020-12-02 09:30:00",
+            "btc": "0.50000000",
+            "usd": "-10000.00000000",
+            "btc_usd": "0.00005000",
+            "fee": "20.00000000",
+            "order_id": 2
+        }]"""),
+        MockResponse(HTTPStatus.BAD_GATEWAY, 'failed'),
+    ]
+    with (
+        patch('rotkehlchen.exchanges.bitstamp.API_MAX_LIMIT', 1),
+        patch.object(mock_bitstamp, '_api_query', side_effect=responses),
+        pytest.raises(RemoteError),
+    ):
+        mock_bitstamp._query_trades(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1607000000),
+            event_queue=event_queue,
+        )
+
+    event_queue.flush.assert_called_once()
+    assert len(event_queue.flush.call_args.args[0]) == 3
 
 
 @pytest.mark.parametrize(('start_ts', 'since_id'), [(0, 1), (1606995001, 6)])
