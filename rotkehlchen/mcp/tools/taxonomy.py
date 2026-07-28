@@ -23,5 +23,8 @@ async def get_event_taxonomy() -> dict[str, Any]:
       (``in`` / ``out`` / ``neutral``). ``direction`` is the field to aggregate on.
     - ``grouped_event_types``: which event types span several rows sharing a
       ``group_identifier``, and in what leg order.
+    - ``recipes``: worked SQLite queries for the common questions (yearly gas cost, staking
+      income, swap round-trips, top counterparties by outflow, balance reconciliation), each
+      stating what it deliberately excludes.
     """
     return await asyncio.to_thread(build_event_taxonomy)
