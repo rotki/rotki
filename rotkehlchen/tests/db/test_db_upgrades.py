@@ -4240,7 +4240,7 @@ def test_upgrade_db_52_to_53(
             'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
             [
                 ('last_btc_tx_block_bc1qdlt2jrplkf0v7ucvhhjhs0qf7cqr0j27k7j7p0', '700000'),
-                ('last_bch_tx_block_qzm47qz5ue99y9yl4aca7jnz7dwgdenl85jkfx3znl', '800000'),
+                ('last_bch_tx_block_qrfec2pytp47p5drvfsdexqd0ue4r3hrhv9tq7vj5z', '800000'),
                 ('last_query_ts_kraken_trades', '1730000000'),
             ],
         )
@@ -4477,7 +4477,7 @@ def test_upgrade_db_52_to_53(
             'SELECT name FROM key_value_cache WHERE name IN (?, ?, ?)',
             (
                 'last_btc_tx_block_bc1qdlt2jrplkf0v7ucvhhjhs0qf7cqr0j27k7j7p0',
-                'last_bch_tx_block_qzm47qz5ue99y9yl4aca7jnz7dwgdenl85jkfx3znl',
+                'last_bch_tx_block_qrfec2pytp47p5drvfsdexqd0ue4r3hrhv9tq7vj5z',
                 'last_query_ts_kraken_trades',
             ),
         ).fetchall() == [('last_query_ts_kraken_trades',)]

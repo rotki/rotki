@@ -1,4 +1,3 @@
-import json
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -10,7 +9,7 @@ from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.utils import BlockchainAccountData, get_query_chunks
+from rotkehlchen.db.utils import BlockchainAccountData
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -576,61 +575,17 @@ def test_skip_unconfirmed_blockchain_info_txs(
 
 
 # Real mainnet transaction from block 700000. Two inputs pay 0.01 BTC to an external address
-# and send the remainder to a change address. Its raw blockchain.info payload is embedded so
-# the change-output tests stay deterministic without needing a cassette.
+# and send the remainder back to a change address, which is the shape an xpub wallet produces
+# when spending to an exchange.
 CHANGE_TX_ID = '3281f96f3c458a4bee6248d6667c45e8481f51f4f79b878faedbf2e385dfdb95'
 CHANGE_TX_INPUT1 = string_to_btc_address('bc1qdlt2jrplkf0v7ucvhhjhs0qf7cqr0j27k7j7p0')
 CHANGE_TX_INPUT2 = string_to_btc_address('bc1q5242kk7ut5nkyv74g765amvwqnglrya6xgj6mz')
 CHANGE_TX_EXTERNAL_OUTPUT = string_to_btc_address('3CXosf9wCHdSkGieziJ4BVg8g9HpwbX45t')
 CHANGE_TX_CHANGE_OUTPUT = string_to_btc_address('bc1qm4lpczdpkcs6j4twpzd2lgguy0sd8zzsm6puhl')
+CHANGE_TX_GROUP_IDENTIFIER = f'{BTC_GROUP_IDENTIFIER_PREFIX}{CHANGE_TX_ID}'
 CHANGE_TX_FEE = FVal('0.0003135')
 CHANGE_TX_EXTERNAL_AMOUNT = FVal('0.01')
 CHANGE_TX_CHANGE_AMOUNT = FVal('0.02543836')
-CHANGE_TX_RAW = f"""{{"txs":[
-    {{"hash":"{CHANGE_TX_ID}","ver":2,"vin_sz":2,"vout_sz":2,"fee":31350,"time":1631333672,"block_index":700000,"block_height":700000,
-    "inputs":[
-        {{"index":0,"prev_out":{{"value":113000,"n":0,"script":"00146fd6a90c3fb25ecf730cbde5783c09f60037c95e","addr":"{CHANGE_TX_INPUT1}"}}}},
-        {{"index":1,"prev_out":{{"value":3462186,"n":1,"script":"0014a2aaab5bdc5d276233d547b54eed8e04d1f193ba","addr":"{CHANGE_TX_INPUT2}"}}}}
-    ],
-    "out":[
-        {{"value":1000000,"n":0,"script":"a91476eb94d31cee6f54e6616ef2f31991dfa14d830087","addr":"{CHANGE_TX_EXTERNAL_OUTPUT}"}},
-        {{"value":2543836,"n":1,"script":"0014dd7e1c09a1b621a9556e089aafa11c23e0d38850","addr":"{CHANGE_TX_CHANGE_OUTPUT}"}}
-    ]}}
-],"info":{{"latest_block":{{"height":700000}}}}}}"""
-
-
-def _query_change_tx(bitcoin_manager: BitcoinManager, accounts: list[BTCAddress]) -> None:
-    """Run the change tx through the full query/decode/save path for the given accounts."""
-    with patch(
-        'rotkehlchen.chain.bitcoin.manager.requests.get',
-        return_value=MockResponse(200, CHANGE_TX_RAW),
-    ):
-        bitcoin_manager.query_transactions(
-            from_timestamp=Timestamp(0),
-            to_timestamp=ts_now(),
-            addresses=accounts,
-        )
-
-
-def _decode_change_tx(
-        bitcoin_manager: BitcoinManager,
-        accounts: list[BTCAddress],
-) -> list[HistoryEvent]:
-    """Decode the embedded change tx with the given accounts tracked."""
-    bitcoin_manager.tracked_accounts = accounts
-    tx = bitcoin_manager.deserialize_tx_from_blockchain_info(
-        data=json.loads(CHANGE_TX_RAW)['txs'][0],
-    )
-    assert tx is not None
-    return bitcoin_manager.decode_transaction(tx=tx)
-
-
-def _stored_change_tx_events(bitcoin_manager: BitcoinManager) -> list[HistoryBaseEntry]:
-    with bitcoin_manager.database.conn.read_ctx() as cursor:
-        return DBHistoryEvents(bitcoin_manager.database).get_history_events_internal(
-            cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(),
-        )
 
 
 def _sum_amounts(
@@ -645,6 +600,7 @@ def _sum_amounts(
     )
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('btc_accounts', [[
     'bc1qdlt2jrplkf0v7ucvhhjhs0qf7cqr0j27k7j7p0',
     'bc1q5242kk7ut5nkyv74g765amvwqnglrya6xgj6mz',
@@ -660,7 +616,10 @@ def test_change_output_is_not_double_counted(
     input and an acquisition of the change that never happened, which corrupts cost basis
     even though the net balance stays correct.
     """
-    events = _decode_change_tx(bitcoin_manager=bitcoin_manager, accounts=btc_accounts)
+    events = get_decoded_events_of_bitcoin_tx(
+        bitcoin_manager=bitcoin_manager,
+        tx_id=CHANGE_TX_ID,
+    )
     # Only the amount actually leaving the wallet is a spend, and it goes to the external
     # address alone. The change stays inside the wallet, so it is a balance-only transfer.
     assert _sum_amounts(events, HistoryEventType.SPEND) == CHANGE_TX_EXTERNAL_AMOUNT
@@ -684,6 +643,7 @@ def test_change_output_is_not_double_counted(
     ) == -(CHANGE_TX_EXTERNAL_AMOUNT + CHANGE_TX_FEE)
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('btc_accounts', [[
     'bc1qdlt2jrplkf0v7ucvhhjhs0qf7cqr0j27k7j7p0',
     'bc1q5242kk7ut5nkyv74g765amvwqnglrya6xgj6mz',
@@ -697,7 +657,10 @@ def test_fully_internal_tx_only_costs_the_fee(
     """When every output is owned the tx is a consolidation/self transfer.
     It must cost the wallet the fee and nothing else - no spend and no receive.
     """
-    events = _decode_change_tx(bitcoin_manager=bitcoin_manager, accounts=btc_accounts)
+    events = get_decoded_events_of_bitcoin_tx(
+        bitcoin_manager=bitcoin_manager,
+        tx_id=CHANGE_TX_ID,
+    )
     assert _sum_amounts(events, HistoryEventType.SPEND) == ZERO
     assert _sum_amounts(events, HistoryEventType.RECEIVE) == ZERO
     assert _sum_amounts(events, HistoryEventType.SPEND, HistoryEventSubType.FEE) == CHANGE_TX_FEE
@@ -706,6 +669,7 @@ def test_fully_internal_tx_only_costs_the_fee(
     )
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('btc_accounts', [['bc1qm4lpczdpkcs6j4twpzd2lgguy0sd8zzsm6puhl']])
 def test_receive_only_tx_is_not_charged_a_fee(
         bitcoin_manager: BitcoinManager,
@@ -714,13 +678,17 @@ def test_receive_only_tx_is_not_charged_a_fee(
     """The wallet owns none of the inputs, so the sender paid the fee.
     Only the received amount should be recorded.
     """
-    events = _decode_change_tx(bitcoin_manager=bitcoin_manager, accounts=btc_accounts)
+    events = get_decoded_events_of_bitcoin_tx(
+        bitcoin_manager=bitcoin_manager,
+        tx_id=CHANGE_TX_ID,
+    )
     assert _sum_amounts(events, HistoryEventType.RECEIVE) == CHANGE_TX_CHANGE_AMOUNT
     assert _sum_amounts(events, HistoryEventType.SPEND) == ZERO
     assert _sum_amounts(events, HistoryEventType.SPEND, HistoryEventSubType.FEE) == ZERO
     assert _sum_amounts(events, HistoryEventType.TRANSFER) == ZERO
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('btc_accounts', [['bc1qdlt2jrplkf0v7ucvhhjhs0qf7cqr0j27k7j7p0']])
 def test_redecoding_after_tracking_more_accounts(
         bitcoin_manager: BitcoinManager,
@@ -733,10 +701,23 @@ def test_redecoding_after_tracking_more_accounts(
     events under UNIQUE(group_identifier, sequence_index). That silently kept outdated rows
     and dropped the corrected ones, leaving duplicated spends and missing fee events.
     """
-    _query_change_tx(bitcoin_manager=bitcoin_manager, accounts=btc_accounts)
-    assert len(_stored_change_tx_events(bitcoin_manager)) == 2  # one fee and one spend
+    def query_and_get_tx_events(accounts: list[BTCAddress]) -> list[HistoryBaseEntry]:
+        """Query the given accounts and return only the events of the change tx."""
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=accounts,
+        )
+        with bitcoin_manager.database.conn.read_ctx() as cursor:
+            return [
+                x for x in DBHistoryEvents(bitcoin_manager.database).get_history_events_internal(
+                    cursor=cursor,
+                    filter_query=HistoryEventFilterQuery.make(),
+                ) if x.group_identifier == CHANGE_TX_GROUP_IDENTIFIER
+            ]
 
-    all_accounts = [*btc_accounts, CHANGE_TX_INPUT2, CHANGE_TX_CHANGE_OUTPUT]
+    assert len(query_and_get_tx_events(btc_accounts)) == 2  # one fee event and one spend event
+
     with bitcoin_manager.database.user_write() as write_cursor:
         bitcoin_manager.database.add_blockchain_accounts(
             write_cursor=write_cursor,
@@ -746,70 +727,14 @@ def test_redecoding_after_tracking_more_accounts(
             ],
         )
 
-    _query_change_tx(bitcoin_manager=bitcoin_manager, accounts=all_accounts)
-    events = _stored_change_tx_events(bitcoin_manager)
+    events = query_and_get_tx_events(
+        accounts=[*btc_accounts, CHANGE_TX_INPUT2, CHANGE_TX_CHANGE_OUTPUT],
+    )
 
     # No leftovers from the first decode: two fees, two spends and two transfers.
     assert len(events) == 6
+    assert len({x.sequence_index for x in events}) == len(events)  # no duplicate indexes
     assert _sum_amounts(events, HistoryEventType.SPEND, HistoryEventSubType.FEE) == CHANGE_TX_FEE
     assert _sum_amounts(events, HistoryEventType.SPEND) == CHANGE_TX_EXTERNAL_AMOUNT
     assert _sum_amounts(events, HistoryEventType.TRANSFER) == CHANGE_TX_CHANGE_AMOUNT
-    assert len({x.sequence_index for x in events}) == len(events)  # no duplicate indexes
-
-
-@pytest.mark.parametrize('btc_accounts', [[
-    'bc1qdlt2jrplkf0v7ucvhhjhs0qf7cqr0j27k7j7p0',
-    'bc1q5242kk7ut5nkyv74g765amvwqnglrya6xgj6mz',
-    'bc1qm4lpczdpkcs6j4twpzd2lgguy0sd8zzsm6puhl',
-]])
-def test_redecoding_chunks_the_purge(
-        bitcoin_manager: BitcoinManager,
-        btc_accounts: list[BTCAddress],
-) -> None:
-    """Resetting the query cache makes the next query return the entire history at once, so
-    the purge preceding the insert must not bind one variable per transaction. Patch the
-    chunk size down so a handful of transactions crosses several chunk boundaries.
-    """
-    tx_ids = [f'{idx:064x}' for idx in range(1, 8)]
-    raw = json.loads(CHANGE_TX_RAW)
-    template = raw['txs'][0]
-    raw['txs'] = [{**template, 'hash': tx_id} for tx_id in tx_ids]
-    response = json.dumps(raw)
-
-    def query_all() -> None:
-        with patch(
-            'rotkehlchen.chain.bitcoin.manager.requests.get',
-            return_value=MockResponse(200, response),
-        ):
-            bitcoin_manager.query_transactions(
-                from_timestamp=Timestamp(0),
-                to_timestamp=ts_now(),
-                addresses=btc_accounts,
-            )
-
-    with patch('rotkehlchen.db.history_events.SQL_VARIABLE_CHUNK_SIZE', 4), patch(
-        'rotkehlchen.chain.bitcoin.manager.get_query_chunks',
-        side_effect=lambda data: get_query_chunks(data=data, chunk_size=2),
-    ):
-        query_all()
-        assert len(first_pass := _stored_change_tx_events(bitcoin_manager)) == 6 * len(tx_ids)
-
-        # reset the cache the way the db upgrade does, then requery the full history
-        with bitcoin_manager.database.user_write() as write_cursor:
-            write_cursor.execute(
-                "DELETE FROM key_value_cache WHERE name LIKE 'last\\_btc\\_tx\\_block\\_%' "
-                "ESCAPE '\\'",
-            )
-
-        query_all()
-
-    # every transaction was purged and reinserted exactly once, with no duplicates left
-    assert len(second_pass := _stored_change_tx_events(bitcoin_manager)) == len(first_pass)
-    assert len({(x.group_identifier, x.sequence_index) for x in second_pass}) == len(second_pass)
-    for tx_id in tx_ids:
-        assert _sum_amounts(
-            events := [x for x in second_pass
-                       if x.group_identifier == f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'],
-            event_type=HistoryEventType.SPEND,
-        ) == CHANGE_TX_EXTERNAL_AMOUNT
-        assert _sum_amounts(events, HistoryEventType.TRANSFER) == CHANGE_TX_CHANGE_AMOUNT
+    assert _sum_amounts(events, HistoryEventType.RECEIVE) == ZERO

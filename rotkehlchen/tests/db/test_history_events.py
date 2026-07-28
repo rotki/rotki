@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -47,6 +48,7 @@ from rotkehlchen.tests.utils.factories import (
     make_evm_tx_hash,
 )
 from rotkehlchen.types import (
+    BTCTxId,
     ChainID,
     EvmTransaction,
     EVMTxHash,
@@ -1908,3 +1910,52 @@ def test_delete_events_and_track_removes_backups(database: DBHandler) -> None:
             'SELECT COUNT(*) FROM history_events WHERE identifier=?',
             (identifiers[1],),
         ).fetchone()[0] == 1
+
+
+def test_delete_events_by_tx_ref_chunks_bindings(database: DBHandler) -> None:
+    """Test that deleting by tx ref chunks its bindings instead of binding one variable
+    per transaction. A full history redecode, such as the one following a bitcoin
+    transaction query cache reset, passes every transaction of every queried address at
+    once and would otherwise risk exhausting the SQL variable limit.
+    """
+    db_events = DBHistoryEvents(database)
+    tx_ids = [BTCTxId(f'{idx:064x}') for idx in range(1, 10)]
+    with database.user_write() as write_cursor:
+        db_events.add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(
+                group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}',
+                sequence_index=0,
+                timestamp=TimestampMS(1631333672000),
+                location=Location.BITCOIN,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_BTC,
+                amount=ONE,
+                location_label='bc1qdlt2jrplkf0v7ucvhhjhs0qf7cqr0j27k7j7p0',
+            ) for tx_id in tx_ids],
+        )
+        # customize one of them so the per chunk exclusion lookup is exercised too
+        write_cursor.execute(
+            'INSERT INTO history_events_mappings(parent_identifier, name, value) '
+            'SELECT identifier, ?, ? FROM history_events WHERE group_identifier=?',
+            (
+                HISTORY_MAPPING_KEY_STATE,
+                HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+                f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_ids[4]}',
+            ),
+        )
+
+        # chunk size of 2 makes the 9 transactions span five chunks
+        with patch('rotkehlchen.db.history_events.SQL_VARIABLE_CHUNK_SIZE', 4):
+            db_events.delete_events_by_tx_ref(
+                write_cursor=write_cursor,
+                tx_refs=tx_ids,
+                location=Location.BITCOIN,
+                customized_handling='preserve_transactions',
+            )
+
+        assert write_cursor.execute(
+            'SELECT group_identifier FROM history_events WHERE location=?',
+            (Location.BITCOIN.serialize_for_db(),),
+        ).fetchall() == [(f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_ids[4]}',)]
