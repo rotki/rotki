@@ -13,11 +13,14 @@ from typing import TYPE_CHECKING, Any, Final
 
 import pandas as pd
 
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.mcp.backend import (
     BackendQueryError,
     get_backend_config,
     query_all_balances,
+    query_historical_prices,
     query_history_events_page,
+    query_settings,
 )
 
 if TYPE_CHECKING:
@@ -35,6 +38,15 @@ AVAILABLE_TABLES: Final = ('history_events', 'balances')
 # millisecond timestamp is ~1.7e12. Used to accept either unit for the time-range filter:
 # the event ``timestamp`` column is in ms, so an LLM naturally passes ms here too.
 MS_THRESHOLD: Final = 10**11
+# Valuation batches this many (asset, timestamp) pairs per backend request. The endpoint is
+# linear in pair count (~8.4s per 1000 against a real history), so the chunk size only bounds
+# request size, not total cost -- which is why valuation is opt-in.
+PRICE_LOOKUP_CHUNK_SIZE: Final = 500
+# Prices are matched within an hour of the event, the same tolerance rotki's own CSV export
+# uses, so bucketing event timestamps to the hour costs no accuracy while roughly halving the
+# number of distinct lookups (measured: 64,936 exact-second pairs vs 31,878 hourly ones).
+PRICE_TOLERANCE_SECONDS: Final = HOUR_IN_SECONDS
+DEFAULT_VALUE_CURRENCY: Final = 'USD'
 
 # --- privacy classification -------------------------------------------------------------
 # Free-text columns: never emitted verbatim outside ``raw`` mode (only a ``has_<col>``
@@ -70,6 +82,7 @@ SAFE_PASSTHROUGH_COLUMN_NAMES: Final = frozenset({
     'location',
     'percentage_of_net_value',
     'price',
+    'price_missing',
     'product',
     'sequence_index',
     'timestamp',
@@ -116,6 +129,7 @@ class AnalyticsScope:
     to_timestamp: int | None
     include_ignored_assets: bool
     privacy_mode: PrivacyMode
+    include_values: bool = False
 
 
 def _hash_identifier(value: Any) -> str | None:
@@ -231,6 +245,82 @@ def _promote_entry(raw: dict[str, Any]) -> dict[str, Any]:
     return {**{key: value for key, value in raw.items() if key != 'entry'}, **inner}
 
 
+def _resolve_prices(
+        pairs: list[tuple[str, int]],
+        target_asset: str,
+) -> dict[tuple[str, int], float]:
+    """Look up unit prices for ``(asset, unix_second)`` pairs, cache-only and chunked.
+
+    ``max_seconds_distance`` maps to the endpoint's ``only_cache_period``, which is what
+    keeps the query inside rotki's stored price history: the MCP must never trigger a remote
+    oracle fetch on an agent's behalf. The response is keyed by the timestamp we *asked*
+    for (the backend rewrites the matched row's timestamp to the queried one), so pairs join
+    straight back without a nearest-match search.
+    """
+    resolved: dict[tuple[str, int], float] = {}
+    for start in range(0, len(pairs), PRICE_LOOKUP_CHUNK_SIZE):
+        result = query_historical_prices(
+            asset_timestamps=pairs[start:start + PRICE_LOOKUP_CHUNK_SIZE],
+            target_asset=target_asset,
+            max_seconds_distance=PRICE_TOLERANCE_SECONDS,
+        )
+        for asset, by_timestamp in result['assets'].items():
+            if not isinstance(by_timestamp, dict):
+                continue
+            for timestamp, price in by_timestamp.items():
+                # Both levels arrive as strings over JSON (object keys always are, and prices
+                # are serialized decimals), so neither can be trusted to convert.
+                if (
+                    (second := _to_float(timestamp)) is not None and
+                    (unit_price := _to_float(price)) is not None
+                ):
+                    resolved[asset, int(second)] = unit_price
+
+    return resolved
+
+
+def _add_fiat_values(frame: pd.DataFrame) -> dict[str, Any]:
+    """Add ``price``/``value``/``price_missing`` to a loaded history frame, in place.
+
+    Mirrors how rotki itself values events for the CSV export (dedupe the lookups, read them
+    from the price cache, multiply by the amount) minus the oracle fallback. Rows whose price
+    is not cached get a null ``value``, never 0 -- a zero would silently understate every
+    total an agent computes over the column.
+    """
+    target_asset = str(query_settings().get('main_currency') or DEFAULT_VALUE_CURRENCY)
+    summary: dict[str, Any] = {
+        'value_currency': target_asset,
+        'priced_rows': 0,
+        'unpriced_rows': len(frame),
+        'lookup_count': 0,
+    }
+    if not {'asset', 'timestamp', 'amount_float'} <= set(frame.columns):
+        return summary  # nothing to join on (empty history, or a fully ragged one)
+
+    # Bucket to the hour the tolerance already spans; ``to_numeric`` keeps a ragged timestamp
+    # column (missing on some entry types -> object dtype) from blowing up the arithmetic.
+    seconds: pd.Series = pd.to_numeric(frame['timestamp'], errors='coerce')
+    buckets = seconds // 1000 // PRICE_TOLERANCE_SECONDS * PRICE_TOLERANCE_SECONDS
+    keys = [
+        (asset, int(bucket)) if isinstance(asset, str) and pd.notna(bucket) else None
+        for asset, bucket in zip(frame['asset'], buckets, strict=True)
+    ]
+    if len(pairs := sorted({key for key in keys if key is not None})) == 0:
+        return summary
+
+    resolved = _resolve_prices(pairs=pairs, target_asset=target_asset)
+    frame['price'] = [resolved.get(key) if key is not None else None for key in keys]
+    # NaN propagates through the multiplication, so an unpriced row lands as NULL in sqlite.
+    amounts: pd.Series = pd.to_numeric(frame['amount_float'], errors='coerce')
+    frame['value'] = amounts * frame['price']
+    frame['price_missing'] = frame['price'].isna()
+    return summary | {
+        'priced_rows': int((~frame['price_missing']).sum()),
+        'unpriced_rows': int(frame['price_missing'].sum()),
+        'lookup_count': len(pairs),
+    }
+
+
 def _load_history_events(scope: AnalyticsScope) -> TableData:
     # No cap by default: load the complete (time-scoped) set so the user gets complete data
     # unless they explicitly bound it with --max-events to limit load time on a huge history.
@@ -277,6 +367,9 @@ def _load_history_events(scope: AnalyticsScope) -> TableData:
         frame['datetime'] = dt.dt.strftime('%Y-%m-%dT%H:%M:%SZ')
         frame['year'] = dt.dt.year
 
+    # Valuation runs here, in the loader, so its minutes of price lookups stay outside the
+    # connection lock and queries keep serving the previous snapshot meanwhile.
+    values = _add_fiat_values(frame) if scope.include_values else {}
     return TableData(
         frame=frame,
         source={
@@ -288,6 +381,7 @@ def _load_history_events(scope: AnalyticsScope) -> TableData:
             'entries_total': entries_total,
             'entries_limit': entries_limit,
             'privacy_mode': scope.privacy_mode,
+            **values,
         },
     )
 
@@ -381,12 +475,14 @@ class AnalyticsSession:
             from_timestamp: int,
             to_timestamp: int,
             include_ignored_assets: bool,
+            include_values: bool,
     ) -> AnalyticsScope:
         return AnalyticsScope(
             from_timestamp=_filter_seconds(from_timestamp),
             to_timestamp=_filter_seconds(to_timestamp),
             include_ignored_assets=include_ignored_assets,
             privacy_mode=get_backend_config().privacy_mode,
+            include_values=include_values,
         )
 
     def refresh(
@@ -395,9 +491,15 @@ class AnalyticsSession:
             from_timestamp: int,
             to_timestamp: int,
             include_ignored_assets: bool,
+            include_values: bool = False,
     ) -> dict[str, Any]:
         with self._refresh_lock:
-            scope = self._current_scope(from_timestamp, to_timestamp, include_ignored_assets)
+            scope = self._current_scope(
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                include_ignored_assets=include_ignored_assets,
+                include_values=include_values,
+            )
             loaded: dict[str, Any] = {}
             errors: dict[str, str] = {}
             pending: dict[str, TableData] = {}
@@ -474,10 +576,12 @@ class AnalyticsSession:
             try:
                 with closing(self._connection.cursor()) as cursor:
                     cursor.execute(sql)
-                    result_frame = pd.DataFrame(
-                        cursor.fetchall(),
-                        columns=[desc[0] for desc in cursor.description],
-                    )
+                    # Read the rows straight from sqlite rather than through a DataFrame: a
+                    # NULL in a numeric result column would come back out of pandas as NaN,
+                    # which is not valid JSON and would corrupt the tool response. sqlite
+                    # already hands back None/int/float/str natives.
+                    columns = [description[0] for description in cursor.description]
+                    fetched = cursor.fetchall()
             except sqlite3.Error as e:
                 return _error(
                     'sql_execution_error',
@@ -489,13 +593,13 @@ class AnalyticsSession:
                 )
 
         bounded = min(max(max_rows, 1), MAX_RESULT_ROWS)
-        result_rows = result_frame.head(bounded).to_dict('records')
+        result_rows = [dict(zip(columns, row, strict=True)) for row in fetched[:bounded]]
         return {
-            'columns': list(result_frame.columns),
+            'columns': columns,
             'rows': result_rows,
-            'row_count': len(result_frame),
+            'row_count': len(fetched),
             'returned_rows': len(result_rows),
-            'result_truncated': len(result_frame) > bounded,
+            'result_truncated': len(fetched) > bounded,
             'privacy_mode': get_backend_config().privacy_mode,
         }
 

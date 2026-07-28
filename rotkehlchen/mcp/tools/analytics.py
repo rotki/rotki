@@ -11,6 +11,7 @@ async def refresh_analytics_data(
         from_timestamp: int = 0,
         to_timestamp: int = 0,
         include_ignored_assets: bool = False,
+        include_values: bool = False,
 ) -> dict[str, Any]:
     """Load the user's rotki data into the local, privacy-filtered analytics session.
 
@@ -27,6 +28,16 @@ async def refresh_analytics_data(
       returned source metadata reports ``cache_truncated`` when that happens — narrow the
       range to load everything.
     - ``include_ignored_assets``: include events for assets the user has marked ignored.
+    - ``include_values``: also value every event in the user's main currency, adding the
+      ``value``, ``price`` and ``price_missing`` columns needed for any "how much was this
+      worth" question. **Off by default because it is slow**: it costs roughly 8 seconds per
+      1000 distinct (asset, hour) pairs, so a single year of history takes ~20-90s while a
+      full multi-year history takes several minutes. Scope it with ``from_timestamp`` /
+      ``to_timestamp`` whenever you can. Prices are read only from rotki's local cache, never
+      fetched from an oracle, so some events may be unpriced: those get ``value = NULL`` and
+      ``price_missing = 1`` rather than 0, and the returned source metadata reports
+      ``value_currency``, ``priced_rows``, ``unpriced_rows`` and ``lookup_count``. Check
+      ``unpriced_rows`` before reporting any total, or you will understate it.
 
     Returns the per-table row counts and source metadata, plus the active ``privacy_mode``.
     """
@@ -36,6 +47,7 @@ async def refresh_analytics_data(
         from_timestamp=from_timestamp,
         to_timestamp=to_timestamp,
         include_ignored_assets=include_ignored_assets,
+        include_values=include_values,
     )
 
 
