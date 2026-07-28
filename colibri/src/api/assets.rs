@@ -169,6 +169,15 @@ fn is_hex_address(address: &str) -> bool {
     address.starts_with("0x") || address.starts_with("0X")
 }
 
+fn is_hyperliquid_token_address(address: &str) -> bool {
+    address
+        .strip_prefix("0x")
+        .or_else(|| address.strip_prefix("0X"))
+        .is_some_and(|value| {
+            value.len() == 32 && value.chars().all(|char| char.is_ascii_hexdigit())
+        })
+}
+
 fn is_native_token(identifier: &str) -> bool {
     [
         SupportedBlockchain::Bitcoin,
@@ -278,13 +287,19 @@ pub async fn search_assets_levenshtein(
         } else {
             // Address-only: direct lookup in the appropriate token table.
             let address = payload.address.as_ref().unwrap(); // safe: validated above
-            let query = if is_hex_address(address) {
+            let query = if is_hyperliquid_token_address(address) {
+                "SELECT identifier FROM hyperliquid_tokens WHERE address = ?"
+            } else if is_hex_address(address) {
                 "SELECT identifier FROM evm_tokens WHERE address = ?"
             } else {
                 "SELECT identifier FROM solana_tokens WHERE address = ?"
             };
             let mut stmt = conn_guard.prepare(query)?;
-            let mut rows = stmt.query(rusqlite::params![address])?;
+            let normalized_address =
+                is_hyperliquid_token_address(address).then(|| address.to_ascii_lowercase());
+            let mut rows = stmt.query(rusqlite::params![normalized_address
+                .as_deref()
+                .unwrap_or(address)])?;
             let mut ids = Vec::new();
             while let Some(row) = rows.next()? {
                 ids.push(row.get::<_, String>(0)?);
@@ -303,17 +318,31 @@ pub async fn search_assets_levenshtein(
 
         // When both substring and address are provided, apply the address
         // filter in step 2 (step 1 already narrowed by name/symbol).
-        let need_solana_join =
-            has_substring && payload.address.as_ref().is_some_and(|a| !is_hex_address(a));
+        let need_solana_join = has_substring
+            && payload
+                .address
+                .as_ref()
+                .is_some_and(|address| !is_hex_address(address));
+        let need_hyperliquid_join = has_substring
+            && payload
+                .address
+                .as_ref()
+                .is_some_and(|address| is_hyperliquid_token_address(address));
         if has_substring {
             if let Some(address) = payload.address.as_ref() {
-                let col = if is_hex_address(address) {
+                let col = if is_hyperliquid_token_address(address) {
+                    "ht.address"
+                } else if is_hex_address(address) {
                     "et.address"
                 } else {
                     "st.address"
                 };
                 static_conditions.push(format!("{col} = ?"));
-                static_bindings.push(Value::Text(address.clone()));
+                static_bindings.push(Value::Text(if is_hyperliquid_token_address(address) {
+                    address.to_ascii_lowercase()
+                } else {
+                    address.clone()
+                }));
             }
         }
 
@@ -343,6 +372,11 @@ pub async fn search_assets_levenshtein(
         } else {
             ""
         };
+        let hyperliquid_join = if need_hyperliquid_join {
+            "LEFT JOIN hyperliquid_tokens ht ON ht.identifier = a.identifier"
+        } else {
+            ""
+        };
         let chunk_size = SQLITE_SAFE_VARIABLE_LIMIT
             .saturating_sub(static_bindings.len())
             .max(1);
@@ -369,6 +403,7 @@ pub async fn search_assets_levenshtein(
                  LEFT JOIN evm_tokens et ON et.identifier = a.identifier
                  LEFT JOIN custom_assets ca ON ca.identifier = a.identifier
                  {solana_join}
+                 {hyperliquid_join}
                  WHERE {where_clause}"
             );
 
@@ -636,6 +671,33 @@ mod tests {
         .unwrap();
     }
 
+    async fn add_hyperliquid_token(state: &Arc<AppState>) {
+        let conn = state.globaldb.conn.lock().await;
+        conn.execute(
+            "INSERT INTO assets(identifier, name, type) VALUES (?, ?, ?)",
+            rusqlite::params![
+                "hyperc:0x6781b92b6ea5d8ed37d275eb201f64af",
+                "$MAX",
+                AssetType::HyperliquidToken.serialize_for_db(),
+            ],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO common_asset_details(identifier, symbol) VALUES (?, ?)",
+            rusqlite::params!["hyperc:0x6781b92b6ea5d8ed37d275eb201f64af", "MAX"],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO hyperliquid_tokens(identifier, address, decimals) VALUES (?, ?, ?)",
+            rusqlite::params![
+                "hyperc:0x6781b92b6ea5d8ed37d275eb201f64af",
+                "0x6781b92b6ea5d8ed37d275eb201f64af",
+                6,
+            ],
+        )
+        .unwrap();
+    }
+
     #[tokio::test]
     async fn test_search_assets_bad_request_if_value_and_address_missing() {
         let state = create_test_state().await;
@@ -768,6 +830,53 @@ mod tests {
         assert!(result.iter().any(|entry| {
             entry.get("identifier").and_then(|v| v.as_str())
                 == Some("eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F")
+        }));
+    }
+
+    #[tokio::test]
+    async fn test_search_hyperliquid_token_by_symbol_and_address() {
+        let state = create_test_state().await;
+        add_hyperliquid_token(&state).await;
+
+        let (status, body) = call_search(
+            state.clone(),
+            AssetsLevenshteinSearch {
+                value: Some("MAX".to_string()),
+                evm_chain: None,
+                asset_type: Some("hyperliquid token".to_string()),
+                address: None,
+                limit: 25,
+                search_nfts: false,
+            },
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK);
+        let result = body.get("result").and_then(|v| v.as_array()).unwrap();
+        assert!(result.iter().any(|entry| {
+            entry.get("identifier").and_then(|v| v.as_str())
+                == Some("hyperc:0x6781b92b6ea5d8ed37d275eb201f64af")
+                && entry.get("asset_type").and_then(|v| v.as_str()) == Some("hyperliquid token")
+        }));
+
+        let (status, body) = call_search(
+            state,
+            AssetsLevenshteinSearch {
+                value: None,
+                evm_chain: None,
+                asset_type: None,
+                address: Some("0x6781B92B6EA5D8ED37D275EB201F64AF".to_string()),
+                limit: 25,
+                search_nfts: false,
+            },
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK);
+        let result = body.get("result").and_then(|v| v.as_array()).unwrap();
+        assert!(result.iter().any(|entry| {
+            entry.get("identifier").and_then(|v| v.as_str())
+                == Some("hyperc:0x6781b92b6ea5d8ed37d275eb201f64af")
         }));
     }
 

@@ -1,7 +1,14 @@
 import { type AssetInfoWithId, bigNumberify } from '@rotki/common';
+import { HYPERLIQUID_TOKEN_ADDRESS } from '@test/utils/asset-test-data';
 import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
+import {
+  EVM_TOKEN,
+  HYPERLIQUID_CORE_CHAIN,
+  HYPERLIQUID_TOKEN,
+  SOLANA_CHAIN,
+  SOLANA_TOKEN,
+} from '@/modules/assets/types';
 import {
   assetDisplayCaption,
   assetDisplayLabel,
@@ -49,6 +56,28 @@ describe('parseAssetSearchKeyword', () => {
   it('should treat a raw eth address as an address', () => {
     expect(parseAssetSearchKeyword(DAI)).toEqual({ address: DAI, value: '' });
   });
+
+  it('should extract the address from a Hyperliquid Core identifier', () => {
+    expect(parseAssetSearchKeyword(`hyperc:${HYPERLIQUID_TOKEN_ADDRESS}`)).toEqual({
+      address: HYPERLIQUID_TOKEN_ADDRESS,
+      value: '',
+    });
+  });
+
+  it('should treat a raw Hyperliquid Core token ID as an address', () => {
+    expect(parseAssetSearchKeyword(HYPERLIQUID_TOKEN_ADDRESS)).toEqual({
+      address: HYPERLIQUID_TOKEN_ADDRESS,
+      value: '',
+    });
+  });
+
+  it('should normalize the address extracted from a Hyperliquid Core identifier', () => {
+    const mixedCaseAddress = HYPERLIQUID_TOKEN_ADDRESS.toUpperCase().replace('0X', '0x');
+    expect(parseAssetSearchKeyword(`hyperc:${mixedCaseAddress}`)).toEqual({
+      address: HYPERLIQUID_TOKEN_ADDRESS,
+      value: '',
+    });
+  });
 });
 
 describe('getSanitizedChain', () => {
@@ -67,6 +96,10 @@ describe('getSanitizedChain', () => {
     expect(getSanitizedChain('ethereum', matchChain, getEvmChainName)).toBe('ethereum');
   });
 
+  it('should preserve a supported non-EVM pseudo-chain without matching it as a blockchain', () => {
+    expect(getSanitizedChain(HYPERLIQUID_CORE_CHAIN, matchChain, getEvmChainName)).toBe(HYPERLIQUID_CORE_CHAIN);
+  });
+
   it('should fall back to the matched chain when no evm name exists', () => {
     const noEvmName = (): string | undefined => undefined;
     expect(getSanitizedChain('ethereum', matchChain, noEvmName)).toBe('eth');
@@ -76,6 +109,13 @@ describe('getSanitizedChain', () => {
 describe('getAssetSearchTypeParams', () => {
   it('should map the solana chain to the solana token type', () => {
     expect(getAssetSearchTypeParams(SOLANA_CHAIN)).toEqual({ assetType: SOLANA_TOKEN, evmChain: undefined });
+  });
+
+  it('should map Hyperliquid Core to the Hyperliquid token type', () => {
+    expect(getAssetSearchTypeParams(HYPERLIQUID_CORE_CHAIN)).toEqual({
+      assetType: HYPERLIQUID_TOKEN,
+      evmChain: undefined,
+    });
   });
 
   it('should map any other chain to the evm token type', () => {
@@ -190,6 +230,20 @@ describe('assetSuggestions', () => {
 
     expect(await promise).toEqual([{ identifier: 'DAI', symbol: 'DAI' }]);
   });
+
+  it('should search Hyperliquid Core suggestions using the Hyperliquid token asset type', async () => {
+    const assetSearch = vi.fn().mockResolvedValue([]);
+    const suggest = assetSuggestions(assetSearch, HYPERLIQUID_CORE_CHAIN);
+
+    const promise = suggest('MAX');
+    await vi.advanceTimersByTimeAsync(200);
+    await promise;
+
+    expect(assetSearch).toHaveBeenCalledWith(expect.objectContaining({
+      assetType: HYPERLIQUID_TOKEN,
+      evmChain: undefined,
+    }));
+  });
 });
 
 describe('assetDisplayLabel', () => {
@@ -204,6 +258,10 @@ describe('assetDisplayLabel', () => {
   it('should fall back to the shortened address when there is no symbol', () => {
     expect(assetDisplayLabel(unknown)).toBe('0x214A...f818');
     expect(assetDisplayLabel(unknown, '  ')).toBe('0x214A...f818');
+  });
+
+  it('should fall back to the shortened Hyperliquid Core token ID', () => {
+    expect(assetDisplayLabel(`hyperc:${HYPERLIQUID_TOKEN_ADDRESS}`)).toBe('0x6781...64af');
   });
 
   it('should truncate a non-evm identifier that has no address to extract', () => {

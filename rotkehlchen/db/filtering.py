@@ -12,6 +12,7 @@ from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetFlag, AssetType
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
+from rotkehlchen.chain.hyperliquid.validation import is_valid_hyperliquid_token_address
 from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
@@ -2391,7 +2392,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             and_op: bool = True,
             substring_search: str | None = None,
             chain_id: ChainID | None = None,
-            address: ChecksumEvmAddress | SolanaAddress | None = None,
+            address: ChecksumEvmAddress | SolanaAddress | str | None = None,
             asset_type: AssetType | None = None,
             ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
     ) -> LevenshteinFilterQuery:
@@ -2471,7 +2472,13 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             ))
 
         if address is not None:
-            filters.append((DBEqualsFilter(and_op=True, column='evm_tokens.address' if is_hex_address(address) else 'solana_tokens.address', value=address), 'assets'))  # noqa: E501
+            if is_valid_hyperliquid_token_address(address):
+                column = 'hyperliquid_tokens.address'
+            elif is_hex_address(address):
+                column = 'evm_tokens.address'
+            else:
+                column = 'solana_tokens.address'
+            filters.append((DBEqualsFilter(and_op=True, column=column, value=address), 'assets'))
 
         filter_query.filters = filters
         return filter_query

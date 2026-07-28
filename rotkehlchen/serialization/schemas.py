@@ -12,6 +12,7 @@ from rotkehlchen.api.v1.fields import (
     EvmAddressField,
     EvmChainNameField,
     FloatingPercentageField,
+    HyperliquidTokenAddressField,
     NonEmptyStringField,
     SerializableEnumField,
     SolanaAddressField,
@@ -23,6 +24,7 @@ from rotkehlchen.assets.asset import (
     CustomAsset,
     EvmToken,
     FiatAsset,
+    HyperliquidToken,
     SolanaToken,
     UnderlyingToken,
 )
@@ -331,6 +333,52 @@ class SolanaTokenSchema(TokenWithDecimalAndProtocolSchema):
         )
 
 
+class HyperliquidTokenSchema(CryptoAssetFieldsSchema):
+    address = HyperliquidTokenAddressField(required=True)
+    decimals = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=0,
+            error='Token decimals should be greater than or equal to 0',
+        ),
+        required=True,
+    )
+
+    def __init__(
+            self,
+            coingecko: Coingecko | None = None,
+            cryptocompare: Cryptocompare | None = None,
+            is_edit: bool = False,
+    ) -> None:
+        super().__init__(
+            identifier_required=False,
+            coingecko=coingecko,
+            cryptocompare=cryptocompare,
+        )
+        if is_edit is True:
+            self.fields['name'].allow_none = True
+            self.fields['symbol'].allow_none = True
+            self.fields['decimals'].allow_none = True
+
+    @post_load
+    def transform_data(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> HyperliquidToken:
+        return HyperliquidToken.initialize(
+            address=data['address'],
+            name=data['name'],
+            symbol=data['symbol'],
+            started=data['started'],
+            forked=data['forked'],
+            swapped_for=data['swapped_for'],
+            coingecko=data['coingecko'],
+            cryptocompare=data['cryptocompare'],
+            decimals=data['decimals'],
+        )
+
+
 class BaseCustomAssetSchema(BaseAssetSchema):
     notes = EmptyAsNoneStringField(load_default=None)
     custom_asset_type = NonEmptyStringField(required=True)
@@ -431,6 +479,12 @@ class AssetSchema(Schema):
             ).load(data)
         elif asset_type == AssetType.SOLANA_TOKEN:
             asset = SolanaTokenSchema(
+                coingecko=self.coingecko_obj,
+                cryptocompare=self.cryptocompare_obj,
+                is_edit=self.is_edit,
+            ).load(data)
+        elif asset_type == AssetType.HYPERLIQUID_TOKEN:
+            asset = HyperliquidTokenSchema(
                 coingecko=self.coingecko_obj,
                 cryptocompare=self.cryptocompare_obj,
                 is_edit=self.is_edit,

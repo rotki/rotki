@@ -45,6 +45,11 @@ describe('managedAssetIgnoreSwitch', () => {
     expect(wrapper.findComponent({ name: 'RuiMenu' }).exists()).toBe(true);
   });
 
+  it('should hide spam/whitelist menu for Hyperliquid tokens without backend protocol support', () => {
+    wrapper = createWrapper({ identifier: 'hyperc:0x00000000000000000000000000000001', assetType: 'hyperliquid token' });
+    expect(wrapper.findComponent({ name: 'RuiMenu' }).exists()).toBe(false);
+  });
+
   it('should hide spam/whitelist menu for custom assets', () => {
     wrapper = createWrapper({ identifier: 'my-custom-asset', assetType: 'custom asset' });
     expect(wrapper.findComponent({ name: 'RuiMenu' }).exists()).toBe(false);

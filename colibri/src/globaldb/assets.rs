@@ -142,6 +142,7 @@ impl GlobalDB {
 #[cfg(test)]
 mod tests {
     use crate::create_globaldb;
+    use crate::types::AssetType;
 
     #[tokio::test]
     async fn test_get_assets_mappings() {
@@ -273,5 +274,48 @@ mod tests {
             empty_collections.is_empty(),
             "Should return empty collections for empty input"
         );
+    }
+
+    #[tokio::test]
+    async fn test_get_hyperliquid_asset_mapping() {
+        let globaldb = create_globaldb!().await.unwrap();
+        {
+            let conn = globaldb.conn.lock().await;
+            conn.execute(
+                "INSERT INTO assets(identifier, name, type) VALUES (?, ?, ?)",
+                rusqlite::params![
+                    "hyperc:0x6781b92b6ea5d8ed37d275eb201f64af",
+                    "$MAX",
+                    AssetType::HyperliquidToken.serialize_for_db(),
+                ],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO common_asset_details(identifier, symbol) VALUES (?, ?)",
+                rusqlite::params!["hyperc:0x6781b92b6ea5d8ed37d275eb201f64af", "MAX",],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO hyperliquid_tokens(identifier, address, decimals) VALUES (?, ?, ?)",
+                rusqlite::params![
+                    "hyperc:0x6781b92b6ea5d8ed37d275eb201f64af",
+                    "0x6781b92b6ea5d8ed37d275eb201f64af",
+                    6,
+                ],
+            )
+            .unwrap();
+        }
+
+        let (assets, _) = globaldb
+            .get_assets_mappings(&["hyperc:0x6781b92b6ea5d8ed37d275eb201f64af".to_string()])
+            .await
+            .unwrap();
+        let asset = assets
+            .get("hyperc:0x6781b92b6ea5d8ed37d275eb201f64af")
+            .unwrap();
+        assert_eq!(asset.name, "$MAX");
+        assert_eq!(asset.symbol, "MAX");
+        assert_eq!(asset.asset_type, "hyperliquid token");
+        assert!(asset.evm_chain.is_none());
     }
 }

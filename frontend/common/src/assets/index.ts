@@ -1,5 +1,7 @@
 import { EvmTokenKind } from '../data';
-import { isValidEthAddress, isValidSolanaAddress } from '../text';
+import { isValidEthAddress, isValidHyperliquidTokenAddress, isValidSolanaAddress } from '../text';
+
+const HYPERLIQUID_TOKEN_IDENTIFIER_PREFIX = 'hyperc:';
 
 export function isEvmIdentifier(identifier?: string): boolean {
   if (!identifier)
@@ -119,4 +121,21 @@ export function getAddressFromSolanaIdentifier(identifier?: string): string {
     return '';
 
   return identifier.split(':')[1] ?? '';
+}
+
+/** Checks whether an identifier contains a valid Hyperliquid Core token address. */
+export function isHyperliquidTokenIdentifier(identifier?: string): boolean {
+  if (!identifier)
+    return false;
+
+  return identifier.startsWith(HYPERLIQUID_TOKEN_IDENTIFIER_PREFIX)
+    && isValidHyperliquidTokenAddress(identifier.slice(HYPERLIQUID_TOKEN_IDENTIFIER_PREFIX.length));
+}
+
+/** Extracts and normalizes the address from a Hyperliquid Core token identifier. */
+export function getAddressFromHyperliquidTokenIdentifier(identifier?: string): string {
+  if (!identifier || !isHyperliquidTokenIdentifier(identifier))
+    return '';
+
+  return identifier.slice(HYPERLIQUID_TOKEN_IDENTIFIER_PREFIX.length).toLowerCase();
 }

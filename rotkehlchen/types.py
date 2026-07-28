@@ -171,6 +171,9 @@ Eth2PubKey = NewType('Eth2PubKey', T_Eth2PubKey)
 T_SolanaAddress = str
 SolanaAddress = NewType('SolanaAddress', T_SolanaAddress)
 
+T_HyperliquidTokenAddress = str
+HyperliquidTokenAddress = NewType('HyperliquidTokenAddress', T_HyperliquidTokenAddress)
+
 BlockchainAddress = BTCAddress | ChecksumEvmAddress | SubstrateAddress | SolanaAddress
 AnyBlockchainAddress = TypeVar(
     'AnyBlockchainAddress',

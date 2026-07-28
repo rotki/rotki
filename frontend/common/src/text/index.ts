@@ -2,6 +2,8 @@
 
 export * from './case';
 
+export * from './hyperliquid';
+
 /**
  *
  * @param {string} string - String to convert

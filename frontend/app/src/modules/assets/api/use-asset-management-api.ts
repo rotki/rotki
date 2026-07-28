@@ -7,8 +7,7 @@ import {
   type CustomAsset,
   type CustomAssetRequestPayload,
   CustomAssets,
-  SOLANA_CHAIN,
-  SOLANA_TOKEN,
+  NON_EVM_CHAIN_ASSET_TYPES,
   SupportedAssets,
 } from '@/modules/assets/types';
 import { api } from '@/modules/core/api/rotki-api';
@@ -40,10 +39,13 @@ export function useAssetManagementApi(): UseAssetManagementApiReturn {
   const queryAllAssets = async (payload: MaybeRef<AssetRequestPayload>): Promise<Collection<SupportedAsset>> => {
     const payloadValue = get(payload);
     const transformedPayload = { ...payloadValue };
+    const nonEvmAssetType = transformedPayload.evmChain
+      ? NON_EVM_CHAIN_ASSET_TYPES[transformedPayload.evmChain]
+      : undefined;
 
-    if (transformedPayload.evmChain === SOLANA_CHAIN) {
+    if (nonEvmAssetType) {
       delete transformedPayload.evmChain;
-      transformedPayload.assetType = SOLANA_TOKEN;
+      transformedPayload.assetType = nonEvmAssetType;
     }
 
     const response = await api.post<SupportedAssets>(

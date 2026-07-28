@@ -4,7 +4,14 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
 if TYPE_CHECKING:
-    from rotkehlchen.types import ChainID, ChecksumEvmAddress, SolanaAddress, Timestamp, TokenKind
+    from rotkehlchen.types import (
+        ChainID,
+        ChecksumEvmAddress,
+        HyperliquidTokenAddress,
+        SolanaAddress,
+        Timestamp,
+        TokenKind,
+    )
 
 
 class AssetType(DBCharEnumMixIn):
@@ -35,11 +42,13 @@ class AssetType(DBCharEnumMixIn):
     SOLANA_TOKEN = 25
     NFT = 26
     CUSTOM_ASSET = 27
+    HYPERLIQUID_TOKEN = 28
 
     @staticmethod
     def is_crypto_asset(asset_type: AssetType) -> bool:
         crypto_asset_types_values = set(range(4, 27))
         crypto_asset_types_values.add(2)  # include `OWN_CHAIN`
+        crypto_asset_types_values.add(28)  # include `HYPERLIQUID_TOKEN`
         return asset_type.value in crypto_asset_types_values
 
 
@@ -63,7 +72,7 @@ class AssetData(NamedTuple):
     started: Timestamp | None
     forked: str | None
     swapped_for: str | None
-    address: ChecksumEvmAddress | SolanaAddress | None
+    address: ChecksumEvmAddress | SolanaAddress | HyperliquidTokenAddress | None
     chain_id: ChainID | None
     token_kind: TokenKind | None
     decimals: int | None

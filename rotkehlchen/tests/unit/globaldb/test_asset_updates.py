@@ -19,7 +19,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.api.test_assets_updates import mock_asset_updates
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, Timestamp, TokenKind
+from rotkehlchen.types import ChainID, HyperliquidTokenAddress, Timestamp, TokenKind
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -378,6 +378,64 @@ def test_parse_full_insert_assets(
             )
 
         assert error_msg in str(excinfo.value)
+
+
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
+def test_parse_and_apply_full_insert_hyperliquid_asset(
+        assets_updater: AssetsUpdater,
+        globaldb: GlobalDBHandler,
+) -> None:
+    address = '0x6781b92b6ea5d8ed37d275eb201f64af'
+    identifier = f'hyperc:{address}'
+    text = (
+        f"INSERT INTO assets(identifier, name, type) VALUES("
+        f"'{identifier}', '$MAX', '\\');"
+        "INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, "
+        f"forked, started, swapped_for) VALUES('{identifier}', 'MAX', "
+        "NULL, NULL, NULL, 1749829092, NULL);"
+        "INSERT INTO hyperliquid_tokens (identifier, address, decimals) VALUES ("
+        f"'{identifier}', '{address}', 6);"
+    )
+    assert assets_updater.asset_parser.parse(
+        insert_text=text,
+        connection=globaldb.conn,
+        version=41,
+    ) == AssetData(
+        identifier=identifier,
+        name='$MAX',
+        symbol='MAX',
+        asset_type=AssetType.HYPERLIQUID_TOKEN,
+        started=Timestamp(1749829092),
+        forked=None,
+        swapped_for=None,
+        address=HyperliquidTokenAddress(address),
+        chain_id=None,
+        token_kind=None,
+        decimals=6,
+        cryptocompare=None,
+        coingecko=None,
+        protocol=None,
+    )
+    assets_updater._apply_single_version_update(
+        connection=globaldb.conn,
+        version=41,
+        text=f'{text}\n*',
+        assets_conflicts={},
+        update_file_type=UpdateFileType.ASSETS,
+    )
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT name, type FROM assets WHERE identifier=?',
+            (identifier,),
+        ).fetchone() == ('$MAX', '\\')
+        assert cursor.execute(
+            'SELECT symbol, started FROM common_asset_details WHERE identifier=?',
+            (identifier,),
+        ).fetchone() == ('MAX', 1749829092)
+        assert cursor.execute(
+            'SELECT address, decimals FROM hyperliquid_tokens WHERE identifier=?',
+            (identifier,),
+        ).fetchone() == (address, 6)
 
 
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])

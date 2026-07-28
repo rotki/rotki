@@ -99,6 +99,8 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
   if (row.assetType === SOLANA_TOKEN)
     return SOLANA_CHAIN;
 
+  // AssetIcon supplies the Hyperliquid icon from the resolved asset type. Core token IDs are not
+  // HyperEVM addresses, so they intentionally have no explorer location here.
   return undefined;
 }
 </script>

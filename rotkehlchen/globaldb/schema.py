@@ -81,6 +81,8 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Y', 25);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Z', 26);
 /* CUSTOM ASSET */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('[', 27);
+/* HYPERLIQUID TOKEN */
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('\\', 28);
 """
 
 # Custom enum table for token kinds
@@ -165,6 +167,14 @@ CREATE TABLE IF NOT EXISTS solana_tokens (
     address VARCHAR[44] NOT NULL,
     decimals INTEGER,
     protocol TEXT,
+    FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+);"""
+
+DB_CREATE_HYPERLIQUID_TOKENS = """
+CREATE TABLE IF NOT EXISTS hyperliquid_tokens (
+    identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+    address VARCHAR[34] NOT NULL,
+    decimals INTEGER,
     FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
 );"""
 
@@ -372,6 +382,7 @@ CREATE INDEX IF NOT EXISTS idx_underlying_tokens_parent_entry ON underlying_toke
 CREATE INDEX IF NOT EXISTS idx_binance_pairs_identifier ON binance_pairs (base_asset, quote_asset);
 CREATE INDEX IF NOT EXISTS idx_multiasset_mappings_identifier ON multiasset_mappings (asset);
 CREATE INDEX IF NOT EXISTS idx_solana_tokens_identifier ON solana_tokens (identifier, protocol);
+CREATE INDEX IF NOT EXISTS idx_hyperliquid_tokens_identifier ON hyperliquid_tokens (identifier, address);
 """  # noqa: E501
 
 DB_SCRIPT_CREATE_TABLES = f"""
@@ -401,6 +412,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_LOCATION_ASSET_MAPPINGS}
 {DB_CREATE_COUNTERPARTY_ASSET_MAPPINGS}
 {DB_CREATE_SOLANA_TOKENS}
+{DB_CREATE_HYPERLIQUID_TOKENS}
 {DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;

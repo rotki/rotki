@@ -130,4 +130,17 @@ def migrate_to_v17(
             [(address, new_identifier) for _, new_identifier, address in renames],
         )
 
+    @progress_step('Add Hyperliquid Core tokens table.')
+    def _add_hyperliquid_tokens_table(write_cursor: DBCursor) -> None:
+        write_cursor.executescript("""
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('\\', 28);
+CREATE TABLE IF NOT EXISTS hyperliquid_tokens (
+    identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+    address VARCHAR[34] NOT NULL,
+    decimals INTEGER,
+    FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_hyperliquid_tokens_identifier ON hyperliquid_tokens (identifier, address);
+""")  # noqa: E501
+
     perform_globaldb_upgrade_steps(connection, progress_handler)
