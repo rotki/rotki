@@ -195,6 +195,14 @@ def test_hash_is_stable_within_session_for_grouping() -> None:
     ('drop table history_events', False),
     ('select 1; select 2', False),
     ('update history_events set amount = 0', False),
+    # read-only scalar functions and literals must not be mistaken for writes
+    ("select replace(counterparty, '-', ' ') from history_events limit 1", True),
+    ("select * from history_events where auto_notes like '%update%'", True),
+    ("select * from history_events where auto_notes = 'a; drop table x'", True),
+    ('select "update" from history_events', True),
+    # ... while real writes stay rejected
+    ('insert into history_events values (1)', False),
+    ('select 1; insert into history_events values (1)', False),
 ])
 def test_validate_sql(sql: str, valid: bool) -> None:
     assert (_validate_sql(sql) is None) is valid
@@ -700,6 +708,85 @@ def test_aggregate_by_group_ids_should_be_opt_in(monkeypatch) -> None:
         'select grouped_events_num from history_events',
         max_rows=10,
     )['rows'] == [{'grouped_events_num': 3}]
+
+
+def _paged_backend(monkeypatch, pages: list[list[dict[str, Any]]], entries_found: int) -> None:
+    """Serve pre-baked pages by offset, so a page can be empty mid-range."""
+    def fake_page(limit, offset, **kwargs):
+        index = offset // limit
+        return {
+            'entries': pages[index] if index < len(pages) else [],
+            'entries_found': entries_found,
+            'entries_total': entries_found,
+            'entries_limit': -1,
+        }
+    monkeypatch.setattr(analytics, 'query_history_events_page', fake_page)
+    monkeypatch.setattr(analytics, 'PAGE_SIZE', 2)
+
+
+def _event(identifier: int) -> dict[str, Any]:
+    return {'identifier': identifier, 'asset': 'ETH', 'amount': '1', 'event_type': 'spend'}
+
+
+def test_complete_load_should_report_completeness(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _paged_backend(monkeypatch, [[_event(1), _event(2)], [_event(3)]], entries_found=3)
+
+    source = AnalyticsSession().refresh(
+        tables=None, from_timestamp=0, to_timestamp=0, include_ignored_assets=False,
+    )['tables']['history_events']['source']
+
+    assert source['completeness'] == 'complete'
+    assert source['rows_loaded'] == 3
+    assert source['backend_metadata']['entries_found'] == 3
+
+
+def test_empty_middle_page_should_not_end_the_load(monkeypatch) -> None:
+    """Pages come back short and a whole window can filter out, so stopping at the first
+    empty page silently truncated the load while still reporting it as complete.
+    """
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _paged_backend(
+        monkeypatch,
+        [[_event(1), _event(2)], [], [_event(3), _event(4)]],
+        entries_found=6,
+    )
+
+    source = AnalyticsSession().refresh(
+        tables=None, from_timestamp=0, to_timestamp=0, include_ignored_assets=False,
+    )['tables']['history_events']['source']
+
+    assert source['rows_loaded'] == 4  # the events after the empty window are not lost
+    assert source['completeness'] == 'complete'
+
+
+def test_persistently_empty_pages_should_stop_and_say_so(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _paged_backend(monkeypatch, [[_event(1), _event(2)]], entries_found=1000)
+
+    source = AnalyticsSession().refresh(
+        tables=None, from_timestamp=0, to_timestamp=0, include_ignored_assets=False,
+    )['tables']['history_events']['source']
+
+    assert source['rows_loaded'] == 2
+    assert source['completeness'] == 'stopped_early'  # never claim complete coverage
+
+
+def test_max_events_cap_should_report_truncation(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, max_events=3)
+    _paged_backend(
+        monkeypatch,
+        [[_event(1), _event(2)], [_event(3), _event(4)], [_event(5), _event(6)]],
+        entries_found=6,
+    )
+
+    source = AnalyticsSession().refresh(
+        tables=None, from_timestamp=0, to_timestamp=0, include_ignored_assets=False,
+    )['tables']['history_events']['source']
+
+    assert source['rows_loaded'] == 3
+    assert source['completeness'] == 'truncated_by_max_events'
+    assert source['cache_truncated'] is True
 
 
 def test_query_sql_without_loaded_tables_errors() -> None:

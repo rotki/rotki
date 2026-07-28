@@ -42,6 +42,9 @@ MS_THRESHOLD: Final = 10**11
 # linear in pair count (~8.4s per 1000 against a real history), so the chunk size only bounds
 # request size, not total cost -- which is why valuation is opt-in.
 PRICE_LOOKUP_CHUNK_SIZE: Final = 500
+# How many consecutive empty pages to tolerate before giving up on a load. Empty windows are
+# normal mid-range; an endless run of them is a backend fault and must not spin forever.
+MAX_CONSECUTIVE_EMPTY_PAGES: Final = 5
 # Prices are matched within an hour of the event, the same tolerance rotki's own CSV export
 # uses, so bucketing event timestamps to the hour costs no accuracy while roughly halving the
 # number of distinct lookups (measured: 64,936 exact-second pairs vs 31,878 hourly ones).
@@ -100,10 +103,17 @@ SAFE_PASSTHROUGH_COLUMN_NAMES: Final = frozenset({
 })
 
 ALLOWED_SQL_PREFIXES: Final = ('select ', 'with ')
+# ``replace`` is deliberately absent: it is a perfectly ordinary read-only scalar function
+# (``select replace(counterparty, '-', ' ')``) and SQLite's ``REPLACE INTO`` is already
+# blocked by the select/with prefix requirement. The denylist is defence in depth on top of
+# that prefix check and the read-only in-memory connection, not the primary guard.
 DENIED_SQL_TOKENS: Final = frozenset({
     'alter', 'attach', 'copy', 'create', 'delete', 'drop',
-    'insert', 'replace', 'truncate', 'update',
+    'insert', 'truncate', 'update',
 })
+# Quoted strings and identifiers are stripped before tokenising, so a denied word appearing
+# inside a literal (or a semicolon inside one) does not get mistaken for a statement.
+SQL_QUOTED_RE: Final = re.compile(r"'(?:[^']|'')*'|\"(?:[^\"]|\"\")*\"")
 SQL_ERROR_HINT: Final = (
     'Use list_tables() and describe_table(table) to inspect the schema, then query, e.g. '
     '`select * from history_events limit 1`.'
@@ -368,6 +378,8 @@ def _load_history_events(scope: AnalyticsScope) -> TableData:
     entries_found: int | None = None
     entries_total: int | None = None
     entries_limit: int | None = None
+    consecutive_empty = 0
+    completeness = 'complete'
     while max_events is None or len(rows) < max_events:
         result = query_history_events_page(
             limit=PAGE_SIZE,
@@ -380,13 +392,31 @@ def _load_history_events(scope: AnalyticsScope) -> TableData:
         entries_found = result.get('entries_found')
         entries_total = result.get('entries_total')
         entries_limit = result.get('entries_limit')
-        if not isinstance(entries := result.get('entries'), list) or len(entries) == 0:
+        if not isinstance(entries := result.get('entries'), list):
+            completeness = 'stopped_early'
             break
 
-        rows.extend(
-            _sanitize_row(_flatten(_promote_entry(entry)), scope.privacy_mode)
-            for entry in _iter_entries(entries)
-        )
+        if len(entries) == 0:
+            # A window can legitimately come back empty (every event in it filtered out), so
+            # an empty page means "skip this window", not "end of data" -- stopping here was
+            # cutting loads short while still reporting them as complete. Bounded so a
+            # backend that only ever returns nothing cannot spin forever, and if we give up
+            # with ground still to cover the load is reported as incomplete.
+            consecutive_empty += 1
+            if (
+                consecutive_empty >= MAX_CONSECUTIVE_EMPTY_PAGES or
+                not isinstance(entries_found, int)
+            ):
+                if isinstance(entries_found, int) and offset < entries_found:
+                    completeness = 'stopped_early'
+                break
+        else:
+            consecutive_empty = 0
+            rows.extend(
+                _sanitize_row(_flatten(_promote_entry(entry)), scope.privacy_mode)
+                for entry in _iter_entries(entries)
+            )
+
         offset += PAGE_SIZE
         if isinstance(entries_found, int) and offset >= entries_found:
             break
@@ -398,6 +428,8 @@ def _load_history_events(scope: AnalyticsScope) -> TableData:
         isinstance(entries_found, int) and
         entries_found > len(rows)
     )
+    if cache_truncated:
+        completeness = 'truncated_by_max_events'
     frame = pd.DataFrame(rows) if rows else pd.DataFrame()
     if 'timestamp' in frame.columns and pd.api.types.is_integer_dtype(frame['timestamp']):
         # Add readable date columns derived from the ms timestamp so an LLM can filter on
@@ -414,11 +446,16 @@ def _load_history_events(scope: AnalyticsScope) -> TableData:
         source={
             'endpoint': 'history/events',
             'range_scoped': True,
-            'cached_rows': len(rows),
+            'rows_loaded': len(rows),
+            'completeness': completeness,
             'cache_truncated': cache_truncated,
-            'entries_found': entries_found,
-            'entries_total': entries_total,
-            'entries_limit': entries_limit,
+            # The backend's own counters, which do not agree with rows_loaded and are not
+            # meant to: entries_found is its pre-serialization estimate of matching events.
+            'backend_metadata': {
+                'entries_found': entries_found,
+                'entries_total': entries_total,
+                'entries_limit': entries_limit,
+            },
             'privacy_mode': scope.privacy_mode,
             **values,
         },
@@ -447,7 +484,7 @@ def _load_balances(scope: AnalyticsScope) -> TableData:
         source={
             'endpoint': 'balances',
             'range_scoped': False,
-            'cached_rows': len(rows),
+            'rows_loaded': len(rows),
             'net_value': result.get('net_value'),
             'privacy_mode': scope.privacy_mode,
         },
@@ -478,9 +515,10 @@ def _validate_sql(sql: str) -> str | None:
     normalized = ' '.join(sql.strip().lower().split())
     if not normalized.startswith(ALLOWED_SQL_PREFIXES):
         return 'Only read-only SELECT/WITH queries over analytics tables are allowed'
-    if ';' in normalized.rstrip(';'):
+    unquoted = SQL_QUOTED_RE.sub(' ', normalized)
+    if ';' in unquoted.rstrip(';'):
         return 'Only a single SQL statement is allowed'
-    tokens = set(normalized.replace(',', ' ').replace('(', ' ').replace(')', ' ').split())
+    tokens = set(unquoted.replace(',', ' ').replace('(', ' ').replace(')', ' ').split())
     if disallowed := tokens & DENIED_SQL_TOKENS:
         return f'Disallowed SQL token(s): {", ".join(sorted(disallowed))}'
     return None
