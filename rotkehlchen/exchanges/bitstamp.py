@@ -398,13 +398,10 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 options=options,
             )
             if response.status_code != HTTPStatus.OK:
-                self._process_unsuccessful_response(
+                raise RemoteError(self._process_unsuccessful_response(
                     response=response,
                     case='crypto-transactions',
-                )
-                raise RemoteError(
-                    f'Bitstamp crypto transactions query failed: {response.text}',
-                )
+                ))
 
             try:
                 response_dict = jsonloads_dict(response.text)
@@ -658,11 +655,10 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 options=call_options,
             )
             if response.status_code != HTTPStatus.OK:
-                self._process_unsuccessful_response(
+                raise RemoteError(self._process_unsuccessful_response(
                     response=response,
                     case=response_case,
-                )
-                raise RemoteError(f'Bitstamp {response_case} query failed: {response.text}')
+                ))
             try:
                 response_list = jsonloads_list(response.text)
             except JSONDecodeError as e:
@@ -952,14 +948,14 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             self,
             response: Response,
             case: Literal['trades', 'asset_movements', 'crypto-transactions'],
-    ) -> list[HistoryBaseEntry]:
+    ) -> str:
         ...
 
     def _process_unsuccessful_response(
             self,
             response: Response,
             case: Literal['validate_api_key', 'balances', 'trades', 'asset_movements', 'crypto-transactions'],  # noqa: E501
-    ) -> list | (tuple[bool, str] | ExchangeQueryBalances):
+    ) -> str | tuple[bool, str] | ExchangeQueryBalances:
         """This function processes not successful responses for the following
         cases listed in `case`.
         """
@@ -973,10 +969,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             if case in {'validate_api_key', 'balances'}:
                 return False, msg
             if case in {'trades', 'asset_movements', 'crypto-transactions'}:
-                self.msg_aggregator.add_error(
-                    f'Got remote error while querying Bistamp {case_pretty}: {msg}',
-                )
-                return []
+                return f'Got remote error while querying Bitstamp {case_pretty}: {msg}'
 
             raise AssertionError(f'Unexpected Bitstamp response_case: {case}.') from e
 
@@ -994,10 +987,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         if case in {'validate_api_key', 'balances'}:
             return False, msg
         if case in {'trades', 'asset_movements', 'crypto-transactions'}:
-            self.msg_aggregator.add_error(
-                f'Got remote error while querying Bistamp {case_pretty}: {msg}',
-            )
-            return []
+            return f'Got remote error while querying Bitstamp {case_pretty}: {msg}'
 
         raise AssertionError(f'Unexpected Bitstamp response_case: {case}.')
 

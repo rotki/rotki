@@ -105,12 +105,10 @@ def test_validate_api_key_err_auth_nonce(mock_bitstamp):
         assert result is False
         assert msg == API_ERR_AUTH_NONCE_MESSAGE
 
-        with pytest.raises(RemoteError):
+        with pytest.raises(RemoteError, match=API_ERR_AUTH_NONCE_MESSAGE):
             mock_bitstamp.query_online_history_events(0, 1)
 
-        errors = mock_bitstamp.msg_aggregator.consume_errors()
-        assert len(errors) == 1
-        assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
+        assert mock_bitstamp.msg_aggregator.consume_errors() == []
 
 
 @pytest.mark.parametrize('code', API_KEY_ERROR_CODE_ACTION.keys())
@@ -557,11 +555,15 @@ def test_api_query_paginated_invalid_json(mock_bitstamp):
         )
 
 
-@pytest.mark.parametrize('response', [
-    '{"code": "APIXXX", "reason": "has reason"}',
-    '{"code": "APIXXX", "text": "has text"}',
+@pytest.mark.parametrize(('response', 'expected_message'), [
+    ('{"code": "APIXXX", "reason": "has reason"}', 'has reason'),
+    ('{"code": "APIXXX", "text": "has text"}', 'has text'),
 ])
-def test_api_query_paginated_non_related_error_code(mock_bitstamp, response):
+def test_api_query_paginated_non_related_error_code(
+        mock_bitstamp,
+        response,
+        expected_message,
+):
     """Test an unrelated API error aborts the incomplete query."""
     options = {
         'since_id': USER_TRANSACTION_MIN_SINCE_ID,
@@ -575,13 +577,32 @@ def test_api_query_paginated_non_related_error_code(mock_bitstamp, response):
 
     with (
         patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response),
-        pytest.raises(RemoteError),
+        pytest.raises(RemoteError, match=expected_message),
     ):
         mock_bitstamp._api_query_paginated(
             end_ts=Timestamp(1),
             options=options,
             case='trades',
         )
+
+    assert mock_bitstamp.msg_aggregator.consume_errors() == []
+
+
+def test_crypto_transactions_raises_decoded_error_once(mock_bitstamp: Bitstamp) -> None:
+    with (
+        patch.object(
+            mock_bitstamp,
+            '_api_query',
+            return_value=MockResponse(
+                HTTPStatus.FORBIDDEN,
+                '{"code": "APIXXX", "reason": "has reason"}',
+            ),
+        ),
+        pytest.raises(RemoteError, match='has reason'),
+    ):
+        mock_bitstamp._query_crypto_transactions(offset=0, force_refresh=False)
+
+    assert mock_bitstamp.msg_aggregator.consume_errors() == []
 
 
 def test_api_query_paginated_skips_different_type_result(mock_bitstamp):
