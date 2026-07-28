@@ -319,6 +319,14 @@ describe('useNewlyDetectedTokensDb', () => {
   describe('prune', () => {
     const SECONDS_PER_DAY = 86400;
 
+    /**
+     * Margin between the cutoff and a token that must survive it. `prune` recomputes the cutoff
+     * from its own clock read, several awaited IndexedDB round trips after the one here, so a
+     * token placed a second inside the window can fall outside it on a slow machine. The clock
+     * cannot simply be frozen: prune's in-progress guard then latches across cases.
+     */
+    const TTL_MARGIN_MS = 60_000;
+
     beforeEach(() => {
       const settingsStore = useSettingsRepo();
       settingsStore.updateFrontend({
@@ -344,7 +352,7 @@ describe('useNewlyDetectedTokensDb', () => {
       await db().newlyDetectedTokens.bulkAdd([
         { tokenIdentifier: 'expired-1', tokenKind: NewDetectedTokenKind.EVM, detectedAt: cutoffTime - 1000 },
         { tokenIdentifier: 'expired-2', tokenKind: NewDetectedTokenKind.EVM, detectedAt: cutoffTime - 2000 },
-        { tokenIdentifier: 'valid-1', tokenKind: NewDetectedTokenKind.EVM, detectedAt: cutoffTime + 1000 },
+        { tokenIdentifier: 'valid-1', tokenKind: NewDetectedTokenKind.EVM, detectedAt: cutoffTime + TTL_MARGIN_MS },
         { tokenIdentifier: 'valid-2', tokenKind: NewDetectedTokenKind.EVM, detectedAt: now },
       ]);
 
@@ -402,7 +410,7 @@ describe('useNewlyDetectedTokensDb', () => {
 
       await db().newlyDetectedTokens.bulkAdd([
         { tokenIdentifier: 'expired-1', tokenKind: NewDetectedTokenKind.EVM, detectedAt: cutoffTime - 1000 },
-        { tokenIdentifier: 'valid-oldest', tokenKind: NewDetectedTokenKind.EVM, detectedAt: cutoffTime + 1000 },
+        { tokenIdentifier: 'valid-oldest', tokenKind: NewDetectedTokenKind.EVM, detectedAt: cutoffTime + TTL_MARGIN_MS },
         { tokenIdentifier: 'valid-middle', tokenKind: NewDetectedTokenKind.EVM, detectedAt: now - 2000 },
         { tokenIdentifier: 'valid-newest', tokenKind: NewDetectedTokenKind.EVM, detectedAt: now - 1000 },
       ]);
