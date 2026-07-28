@@ -553,12 +553,23 @@ def test_bit2me_internal_transfers_skipped(bit2me):
     def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, internal_only)
 
-    with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
+    with (
+        patch.object(bit2me.session, 'request', side_effect=mock_api_return),
+        patch.object(
+            bit2me,
+            '_query_transactions',
+            wraps=bit2me._query_transactions,
+        ) as query_transactions,
+    ):
         movements = bit2me.query_online_deposits_withdrawals(
             start_ts=Timestamp(0),
             end_ts=Timestamp(1800000000),
         )
 
+    query_transactions.assert_called_once_with(
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1800000000),
+    )
     # Internal transfers should be skipped
     assert len(movements) == 0
 

@@ -298,9 +298,9 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
 
     def _query_transactions(
             self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
             event_queue: HistoryEventQueue | None = None,
-            start_ts: Timestamp | None = None,
-            end_ts: Timestamp | None = None,
     ) -> list[dict[str, Any]]:
         """Query all transactions from /v2/wallet/transaction, paginating through every page.
 
@@ -328,7 +328,6 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             if event_queue is None:
                 all_transactions.extend(page)
             else:
-                assert start_ts is not None and end_ts is not None
                 event_queue.events.extend(self._build_asset_movements(page, start_ts, end_ts))
                 event_queue.events.extend(self._build_brokerage_trades(page, start_ts, end_ts))
                 event_queue.events.extend(self._build_earn_movements(page, start_ts, end_ts))
@@ -396,7 +395,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
     ) -> list[AssetMovement]:
         """Query Bit2me deposits and withdrawals within a time range."""
         try:
-            transactions = self._query_transactions()
+            transactions = self._query_transactions(start_ts=start_ts, end_ts=end_ts)
         except RemoteError as e:
             self.msg_aggregator.add_error(f'Failed to query {self.name} transactions. {e!s}')
             return []
@@ -410,7 +409,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
     ) -> list[SwapEvent]:
         """Query Bit2me brokerage trades (direct purchases) within a time range."""
         try:
-            transactions = self._query_transactions()
+            transactions = self._query_transactions(start_ts=start_ts, end_ts=end_ts)
         except RemoteError as e:
             self.msg_aggregator.add_error(
                 f'Failed to query {self.name} brokerage transactions. {e!s}',
@@ -426,7 +425,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
     ) -> list[HistoryEvent]:
         """Query Bit2me EARN (staking) movements within a time range."""
         try:
-            transactions = self._query_transactions()
+            transactions = self._query_transactions(start_ts=start_ts, end_ts=end_ts)
         except RemoteError as e:
             self.msg_aggregator.add_error(f'Failed to query {self.name} EARN transactions. {e!s}')
             return []
@@ -440,7 +439,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
     ) -> list[HistoryEvent]:
         """Query Bit2me airdrops (social-pay gifts) within a time range."""
         try:
-            transactions = self._query_transactions()
+            transactions = self._query_transactions(start_ts=start_ts, end_ts=end_ts)
         except RemoteError as e:
             self.msg_aggregator.add_error(f'Failed to query {self.name} airdrop transactions. {e!s}')  # noqa: E501
             return []
