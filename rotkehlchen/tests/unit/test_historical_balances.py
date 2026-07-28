@@ -1749,3 +1749,57 @@ def test_unmatched_bridge_data_issues(
         filters=DataIssueFilters(kind=IssueKind.UNMATCHED_BRIDGE.value),
     )
     assert {issue.state for issue in issues} == {IssueState.RESOLVED.value}
+
+
+def test_bitcoin_transfer_updates_sender_and_receiver_buckets(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """Test bitcoin TRANSFER/NONE events credit the receiving address too.
+
+    Bitcoin events are plain HistoryEvents with no address column, so the counterparty has to
+    come from the notes. Without it a change output would only be debited from the sending
+    address and never credited to the receiving one, understating the wallet by the full
+    change amount on every send.
+    """
+    sender = 'bc1qdlt2jrplkf0v7ucvhhjhs0qf7cqr0j27k7j7p0'
+    change = 'bc1qm4lpczdpkcs6j4twpzd2lgguy0sd8zzsm6puhl'
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(
+                group_identifier='btc_receive',
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.BITCOIN,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_BTC,
+                amount=FVal('10'),
+                location_label=sender,
+                notes='Receive 10 BTC from bc1q5242kk7ut5nkyv74g765amvwqnglrya6xgj6mz',
+            ), HistoryEvent(
+                group_identifier='btc_change',
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.BITCOIN,
+                event_type=HistoryEventType.TRANSFER,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_BTC,
+                amount=FVal('3'),
+                location_label=sender,
+                notes=f'Transfer 3 BTC to {change}',
+            )],
+        )
+
+    process_historical_balances(database, messages_aggregator)
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT timestamp, asset, location_label, metric_value FROM event_metrics '
+            'ORDER BY timestamp, metric_value',
+        ).fetchall() == [
+            (1000, A_BTC.identifier, sender, '10'),
+            (2000, A_BTC.identifier, change, '3'),  # credited, not lost
+            (2000, A_BTC.identifier, sender, '7'),
+        ]

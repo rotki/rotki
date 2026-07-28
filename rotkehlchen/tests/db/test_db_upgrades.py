@@ -4189,6 +4189,62 @@ def test_upgrade_db_52_to_53(
             ),
         )
 
+        # bitcoin events, which the upgrade leaves in place. They are replaced per
+        # transaction by the next transaction query, not deleted here.
+        for group_identifier, sequence_index, location in (
+            ('btc_resetme', 0, Location.BITCOIN.serialize_for_db()),
+            ('btc_resetme', 1, Location.BITCOIN.serialize_for_db()),
+            ('bch_resetme', 0, Location.BITCOIN_CASH.serialize_for_db()),
+            ('btc_customized', 0, Location.BITCOIN.serialize_for_db()),
+            ('manual_btc_event', 0, Location.BITCOIN.serialize_for_db()),
+        ):
+            write_cursor.execute(
+                'INSERT INTO history_events('
+                'entry_type, group_identifier, sequence_index, timestamp, location, '
+                'location_label, asset, amount, notes, type, subtype'
+                ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                (
+                    HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db(),
+                    group_identifier,
+                    sequence_index,
+                    1730000000000,
+                    location,
+                    'bc1qdlt2jrplkf0v7ucvhhjhs0qf7cqr0j27k7j7p0',
+                    'BTC',
+                    '1',
+                    'Send 1 BTC',
+                    HistoryEventType.SPEND.serialize(),
+                    HistoryEventSubType.NONE.serialize(),
+                ),
+            )
+            if group_identifier == 'btc_customized':
+                write_cursor.execute(
+                    'INSERT INTO history_events_mappings(parent_identifier, name, value) '
+                    'VALUES(?, ?, ?)',
+                    (write_cursor.lastrowid, 'state', 1),
+                )
+            elif group_identifier == 'btc_resetme' and sequence_index == 0:
+                btc_reset_identifier = write_cursor.lastrowid
+                write_cursor.execute(
+                    'INSERT INTO bitcoin_events_addresses(event_identifier, address) '
+                    'VALUES(?, ?)',
+                    (btc_reset_identifier, 'bc1qm4lpczdpkcs6j4twpzd2lgguy0sd8zzsm6puhl'),
+                )
+
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM bitcoin_events_addresses WHERE event_identifier=?',
+            (btc_reset_identifier,),
+        ).fetchone()[0] == 1
+
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
+            [
+                ('last_btc_tx_block_bc1qdlt2jrplkf0v7ucvhhjhs0qf7cqr0j27k7j7p0', '700000'),
+                ('last_bch_tx_block_qzm47qz5ue99y9yl4aca7jnz7dwgdenl85jkfx3znl', '800000'),
+                ('last_query_ts_kraken_trades', '1730000000'),
+            ],
+        )
+
         # evm_internal_transactions has no source column yet at v52
         assert 'source' not in {
             row[1] for row in write_cursor.execute(
@@ -4383,6 +4439,34 @@ def test_upgrade_db_52_to_53(
             'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
             ('EVENT_METRICS_TEST_1',),
         ).fetchone()[0] == 1
+
+        # the bitcoin events survive the upgrade so the user keeps a visible history. They
+        # are purged and rewritten per transaction by the next transaction query.
+        assert cursor.execute(
+            'SELECT group_identifier FROM history_events '
+            "WHERE location IN ('q', 'r') ORDER BY group_identifier, sequence_index",
+        ).fetchall() == [
+            ('bch_resetme',),
+            ('btc_customized',),
+            ('btc_resetme',),
+            ('btc_resetme',),
+            ('manual_btc_event',),
+        ]
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM bitcoin_events_addresses WHERE event_identifier=?',
+            (btc_reset_identifier,),
+        ).fetchone()[0] == 1
+
+        # the last queried block was reset for bitcoin only, so the next query refetches
+        # the full history, while unrelated cache entries were left alone
+        assert cursor.execute(
+            'SELECT name FROM key_value_cache WHERE name IN (?, ?, ?)',
+            (
+                'last_btc_tx_block_bc1qdlt2jrplkf0v7ucvhhjhs0qf7cqr0j27k7j7p0',
+                'last_bch_tx_block_qzm47qz5ue99y9yl4aca7jnz7dwgdenl85jkfx3znl',
+                'last_query_ts_kraken_trades',
+            ),
+        ).fetchall() == [('last_query_ts_kraken_trades',)]
 
         # the matched exchange adjustment gained the synthetic state (5); the
         # user-customized one was left alone

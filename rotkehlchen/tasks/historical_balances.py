@@ -10,7 +10,7 @@ from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
-from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.history_events import DBHistoryEvents, get_bitcoin_counterparty_addresses
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
@@ -145,6 +145,18 @@ class Bucket(NamedTuple):
         event_key = (event.event_type, event.event_subtype)
         counterparty = getattr(event, 'counterparty', None)
         address = getattr(event, 'address', None)
+        if (  # Bitcoin/BCH events are plain HistoryEvents with no address column, so recover the
+            # counterparty from the notes. Without it a transfer between two owned addresses
+            # would only debit the sender bucket and never credit the receiver.
+            address is None and
+            event_key in DUAL_BUCKET_TRANSFER_EVENTS and
+            event.location in (Location.BITCOIN, Location.BITCOIN_CASH) and
+            len(addresses := get_bitcoin_counterparty_addresses(
+                location=event.location,
+                notes=event.notes,
+            )) == 1
+        ):
+            address = addresses[0]
 
         if (
             event_key in COWSWAP_ORDER_EVENTS_TO_IGNORE and
