@@ -5,7 +5,7 @@ import json
 import os
 import warnings as test_warnings
 from typing import TYPE_CHECKING, cast
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 from urllib.parse import urlencode
 
 import pytest
@@ -28,6 +28,7 @@ from rotkehlchen.exchanges.binance import (
     trade_from_binance,
 )
 from rotkehlchen.exchanges.data_structures import Location
+from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
@@ -499,6 +500,34 @@ def test_binance_query_history_events_failure_keeps_range(function_scope_binance
             end_ts=end_ts,
         )
     assert actual_end_ts == end_ts
+
+
+def test_binance_flushes_asset_movements_before_trade_failure(
+        function_scope_binance: Binance,
+) -> None:
+    event_queue = MagicMock(spec=HistoryEventQueue)
+    asset_movement = MagicMock()
+    with (
+        patch.object(
+            function_scope_binance,
+            '_query_online_asset_movements',
+            return_value=[asset_movement],
+        ),
+        patch.object(
+            function_scope_binance,
+            '_query_online_trade_history',
+            side_effect=RemoteError('failed to query trades'),
+        ),
+    ):
+        _, actual_end_ts = function_scope_binance._query_online_history_events(
+            start_ts=Timestamp(1),
+            end_ts=Timestamp(2),
+            force_refresh=False,
+            event_queue=event_queue,
+        )
+
+    event_queue.flush.assert_called_once_with([asset_movement])
+    assert actual_end_ts == Timestamp(1)
 
 
 def test_binance_history_query_persists_completed_pairs_on_rate_limit(
