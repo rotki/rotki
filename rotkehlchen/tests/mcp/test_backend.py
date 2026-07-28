@@ -11,6 +11,7 @@ from rotkehlchen.mcp.backend import (
     configure_backend,
     get_backend_config,
     query_historical_prices,
+    query_history_events_page,
     query_settings,
     request_api,
 )
@@ -118,6 +119,24 @@ def test_request_api_should_post_json_body(monkeypatch) -> None:
     ) == {'result': {'entries': []}, 'message': ''}
     assert captured['url'] == 'http://backend/api/1/history/events'
     assert captured['json'] == {'limit': 10}
+
+
+def test_aggregate_flag_should_only_be_sent_when_set(monkeypatch) -> None:
+    """The default request body must stay byte-identical to before the flag existed."""
+    captured: dict[str, Any] = {}
+
+    def mock_post(url: str, **kwargs: Any) -> MockResponse:
+        captured['json'] = kwargs.get('json')
+        return MockResponse({'result': {'entries': []}, 'message': ''})
+
+    monkeypatch.setattr(requests, 'post', mock_post)
+    configure_backend(base_url='http://backend/api/1', timeout=5)
+
+    query_history_events_page(limit=10, offset=0)
+    assert 'aggregate_by_group_ids' not in captured['json']
+
+    query_history_events_page(limit=10, offset=0, aggregate_by_group_ids=True)
+    assert captured['json']['aggregate_by_group_ids'] is True
 
 
 def test_query_settings_should_return_main_currency(monkeypatch) -> None:

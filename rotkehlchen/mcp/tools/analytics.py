@@ -12,6 +12,7 @@ async def refresh_analytics_data(
         to_timestamp: int = 0,
         include_ignored_assets: bool = False,
         include_values: bool = False,
+        aggregate_by_group_ids: bool = False,
 ) -> dict[str, Any]:
     """Load the user's rotki data into the local, privacy-filtered analytics session.
 
@@ -38,6 +39,12 @@ async def refresh_analytics_data(
       ``price_missing = 1`` rather than 0, and the returned source metadata reports
       ``value_currency``, ``priced_rows``, ``unpriced_rows`` and ``lookup_count``. Check
       ``unpriced_rows`` before reporting any total, or you will understate it.
+    - ``aggregate_by_group_ids``: load one row per group instead of one row per event, each
+      carrying a ``grouped_events_num`` count. Use it to count distinct transactions or
+      trades. **The rows are representatives, not merged legs**: each is the *first* event of
+      its group, so a trade loaded this way shows only what was spent, with no trace of what
+      was received. It is not a substitute for self-joining on ``group_identifier`` when you
+      need both sides of a swap, and you should not sum amounts over it.
 
     Returns the per-table row counts and source metadata, plus the active ``privacy_mode``.
     """
@@ -48,6 +55,7 @@ async def refresh_analytics_data(
         to_timestamp=to_timestamp,
         include_ignored_assets=include_ignored_assets,
         include_values=include_values,
+        aggregate_by_group_ids=aggregate_by_group_ids,
     )
 
 

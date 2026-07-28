@@ -124,9 +124,14 @@ def query_history_events_page(
         from_timestamp: int | None = None,
         to_timestamp: int | None = None,
         exclude_ignored_assets: bool = True,
+        aggregate_by_group_ids: bool = False,
 ) -> dict[str, Any]:
     """Fetch one page of decoded history events. Used by the analytics loader to page the
     full (time-scoped) set into a local frame. Returns the backend ``result`` dict.
+
+    ``aggregate_by_group_ids`` collapses each group to its first event plus a
+    ``grouped_events_num`` count; it is only sent when set, so the default request body is
+    unchanged.
     """
     backend_config = get_backend_config()
     body: dict[str, Any] = {
@@ -134,6 +139,8 @@ def query_history_events_page(
         'offset': offset,
         'exclude_ignored_assets': exclude_ignored_assets,
     }
+    if aggregate_by_group_ids:
+        body['aggregate_by_group_ids'] = True
     if from_timestamp is not None:
         body['from_timestamp'] = from_timestamp
     if to_timestamp is not None:
