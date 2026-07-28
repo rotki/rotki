@@ -1,23 +1,31 @@
 
+from __future__ import annotations
+
 import functools
-from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from marshmallow import Schema, exceptions as ma_exceptions
-from webargs.core import _UNKNOWN_DEFAULT_PARAM, ArgMap, ValidateArg, _ensure_list_of_callables
+from webargs.core import _UNKNOWN_DEFAULT_PARAM, _ensure_list_of_callables
 from webargs.flaskparser import FlaskParser
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+    from typing import Any, TypeVar
+
     from flask import Request
     from flask.views import MethodView
+    from webargs._types import ValidateArg
+
+    ResourceT = TypeVar('ResourceT', bound=MethodView)
+    ResourceSchemaFactory = Callable[[ResourceT], Schema]
 
 
 class ResourceReadingParser(FlaskParser):
     """A version of FlaskParser that can access the resource object it decorates"""
 
-    def use_args(
+    def use_args(  # type: ignore[override]
             self,
-            argmap: ArgMap,
+            argmap: ResourceSchemaFactory[ResourceT],
             req: Request | None = None,
             *,
             location: str | None = None,
@@ -39,12 +47,6 @@ class ResourceReadingParser(FlaskParser):
         """
         location = location or self.location
         request_obj = req
-        # Optimization: If argmap is passed as a dictionary, we only need
-        # to generate a Schema once
-        if isinstance(argmap, Mapping):
-            if not isinstance(argmap, dict):
-                argmap = dict(argmap)
-            argmap = Schema.from_dict(argmap)()
 
         def decorator(func: Callable) -> Callable:
             req_ = request_obj
@@ -77,10 +79,33 @@ class ResourceReadingParser(FlaskParser):
 
         return decorator
 
+    def use_kwargs(  # type: ignore[override]
+            self,
+            argmap: ResourceSchemaFactory[ResourceT],
+            req: Request | None = None,
+            *,
+            location: str | None = None,
+            unknown: str | None = _UNKNOWN_DEFAULT_PARAM,
+            validate: ValidateArg | None = None,
+            error_status_code: int | None = None,
+            error_headers: Mapping[str, str] | None = None,
+    ) -> Callable:
+        """Decorator that injects parsed arguments into a resource method as keyword arguments."""
+        return self.use_args(
+            argmap,
+            req=req,
+            as_kwargs=True,
+            location=location,
+            unknown=unknown,
+            validate=validate,
+            error_status_code=error_status_code,
+            error_headers=error_headers,
+        )
+
     def parse(  # type: ignore  # we have added the resource_object on top of parse
             self,
-            resource_object: MethodView,
-            argmap: ArgMap,
+            resource_object: ResourceT,
+            argmap: ResourceSchemaFactory[ResourceT],
             req: Request | None = None,
             *,
             location: str | None = None,
@@ -131,10 +156,10 @@ class ResourceReadingParser(FlaskParser):
             )
         return data
 
-    def _get_schema(
+    def _get_schema(  # type: ignore[override]
             self,
-            argmap: ArgMap,
-            resource_object: MethodView,  # type: ignore[override]
+            argmap: ResourceSchemaFactory[ResourceT],
+            resource_object: ResourceT,
     ) -> Schema:
         """Override the behaviour of the standard parser.
 
@@ -142,7 +167,7 @@ class ResourceReadingParser(FlaskParser):
         The type ignore is due to the underlying original class having `Request` type there.
         """
         assert callable(argmap), 'Should only use this parser with a callable'
-        return argmap(resource_object)  # type: ignore
+        return argmap(resource_object)
 
 
 class IgnoreKwargAfterPostLoadParser(FlaskParser):
