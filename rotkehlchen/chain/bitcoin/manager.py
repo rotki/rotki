@@ -21,13 +21,14 @@ from rotkehlchen.chain.decoding.utils import decode_transfer_direction
 from rotkehlchen.chain.manager import ChainManagerWithTransactions
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import BTCAddress, Location, SupportedBlockchain, Timestamp
+from rotkehlchen.types import BTCAddress, BTCTxId, Location, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -36,6 +37,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.cache import DBCacheDynamic
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
@@ -241,10 +243,15 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             addresses=addresses,
             status=TransactionStatusStep.DECODING_TRANSACTIONS_STARTED,
         )
-        events = []
+        events, decoded_tx_ids = [], set()
         for tx in tx_list:
+            if tx.tx_id in decoded_tx_ids:
+                continue  # the same tx is returned once per queried address it touches
+
+            decoded_tx_ids.add(BTCTxId(tx.tx_id))
             events.extend(self.decode_transaction(tx))
 
+        dbevents = DBHistoryEvents(self.database)
         with self.database.conn.write_ctx() as write_cursor:
             for address in addresses:
                 self.database.set_dynamic_cache(
@@ -254,15 +261,54 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                     address=address,
                 )
 
-            DBHistoryEvents(self.database).add_history_events(
+            # Replace any previously decoded events for these transactions. Sequence indexes
+            # are positional, so when the tracked account set changed since the last decode
+            # (e.g. an xpub was added after a standalone address) the new events collide with
+            # the stale ones under UNIQUE(group_identifier, sequence_index). Inserting without
+            # purging first keeps outdated rows and silently drops the corrected ones.
+            dbevents.delete_events_by_tx_ref(
                 write_cursor=write_cursor,
-                history=events,
+                tx_refs=list(decoded_tx_ids),
+                location=self.location,
+                customized_handling='preserve_transactions',
             )
+            if len(customized := self._get_customized_group_identifiers(
+                cursor=write_cursor,
+                tx_ids=decoded_tx_ids,
+            )) != 0:  # these were kept above, so don't try to write over them
+                events = [x for x in events if x.group_identifier not in customized]
+
+            dbevents.add_history_events(write_cursor=write_cursor, history=events)
 
         self._send_tx_ws_status(
             addresses=addresses,
             status=TransactionStatusStep.DECODING_TRANSACTIONS_FINISHED,
         )
+
+    def _get_customized_group_identifiers(
+            self,
+            cursor: DBCursor,
+            tx_ids: set[BTCTxId],
+    ) -> set[str]:
+        """Get the group identifiers of the given txs that still have events in the DB.
+        Only called right after purging their events, so anything still present was
+        deliberately preserved for containing a customized event.
+
+        Chunked since a full history redecode passes every tx of every queried address.
+        """
+        customized: set[str] = set()
+        for chunk, placeholders in get_query_chunks(
+            data=[f'{self.group_identifier_prefix}{tx_id}' for tx_id in tx_ids],
+        ):
+            customized.update(
+                row[0] for row in cursor.execute(
+                    f'SELECT DISTINCT group_identifier FROM history_events '
+                    f'WHERE group_identifier IN ({placeholders})',
+                    chunk,
+                )
+            )
+
+        return customized
 
     def _process_raw_tx_lists(
             self,
@@ -535,39 +581,91 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             outputs: dict[BTCAddress, FVal],
     ) -> list[HistoryEvent]:
         """Decodes transfers in a transaction with multiple inputs and multiple outputs.
-        Since there's no direct mapping between specific inputs and outputs,
-        we decode events as follows:
-        1. Total amount sent from each input address to all outputs
-        2. Total amount received by each output address from all inputs
+        Since there's no direct mapping between specific inputs and outputs, each address'
+        amount is split across the opposite side proportionally to that side's totals.
+
+        The split is done per tracked/untracked side so that value staying inside the wallet
+        (most commonly a change output) is decoded as a TRANSFER rather than as a
+        SPEND/RECEIVE pair. Emitting the latter would report a disposal and an acquisition
+        that never happened, corrupting cost basis even though the net balance is unaffected.
+        This mirrors what `_decode_single_to_many_transfers` already does via
+        `decode_transfer_direction`.
 
         Note: The logic where this function is called in `decode_transaction` guarantees
-        that the `inputs` and `outputs` dicts both have multiple entries.
+        that the `inputs` and `outputs` dicts both have multiple entries, and that all the
+        amounts in them are non-zero.
+
+        Note: when `tx.multi_io` is set the API may have omitted TxIOs unrelated to the
+        queried addresses, so the totals below can be incomplete. Each address' own amount is
+        still fully allocated, but the tracked/untracked proportions are only as good as the
+        data the API returned.
 
         Returns a list of HistoryEvents.
         """
-        events: list[HistoryEvent] = []
-        for totals_dict, other_side_dict, event_type, notes in (
-            (inputs, outputs, HistoryEventType.SPEND, f'Send {{amount}} {self.asset.identifier} to {{other_addresses}}'),  # noqa: E501
-            (outputs, inputs, HistoryEventType.RECEIVE, f'Receive {{amount}} {self.asset.identifier} from {{other_addresses}}'),  # noqa: E501
-        ):
-            for address, amount in totals_dict.items():
-                if address not in self.tracked_accounts:
-                    continue
+        tracked_inputs, external_inputs = self._split_by_tracked(inputs)
+        tracked_outputs, external_outputs = self._split_by_tracked(outputs)
+        total_input, total_output = sum(inputs.values()), sum(outputs.values())
+        external_output_total = sum(external_outputs.values())
+        external_input_total = sum(external_inputs.values())
 
-                events.append(self.create_event(
+        spend_events: list[HistoryEvent] = []
+        transfer_events: list[HistoryEvent] = []
+        receive_events: list[HistoryEvent] = []
+        for address, amount in tracked_inputs.items():
+            if external_output_total != ZERO:  # the part that actually leaves the wallet
+                spend_events.append(self.create_event(
                     tx=tx,
-                    event_type=event_type,
+                    event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.NONE,
-                    amount=amount,
-                    notes=notes.format(
-                        amount=amount,
-                        other_addresses=', '.join([self.get_display_address(x) for x in other_side_dict]),  # noqa: E501
-                    ),
+                    amount=(spend_amount := amount * external_output_total / total_output),
+                    notes=f'Send {spend_amount} {self.asset.identifier} to {self._display_addresses(external_outputs)}',  # noqa: E501
                     location_label=address,
-                    counterparty_addresses=list(other_side_dict.keys()),
+                    counterparty_addresses=list(external_outputs),
                 ))
 
-        return events
+            # The part staying in the wallet. One event per receiving address so that the
+            # per-address balance buckets get an exact counterparty to credit.
+            for output_address, output_amount in tracked_outputs.items():
+                transfer_events.append(self.create_event(
+                    tx=tx,
+                    event_type=HistoryEventType.TRANSFER,
+                    event_subtype=HistoryEventSubType.NONE,
+                    amount=(transfer_amount := amount * output_amount / total_output),
+                    notes=f'Transfer {transfer_amount} {self.asset.identifier} to {self.get_display_address(output_address)}',  # noqa: E501
+                    location_label=address,
+                    counterparty_addresses=[output_address],
+                ))
+
+        if external_input_total != ZERO:  # the part actually entering the wallet
+            for address, amount in tracked_outputs.items():
+                receive_events.append(self.create_event(
+                    tx=tx,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    amount=(receive_amount := amount * external_input_total / total_input),
+                    notes=f'Receive {receive_amount} {self.asset.identifier} from {self._display_addresses(external_inputs)}',  # noqa: E501
+                    location_label=address,
+                    counterparty_addresses=list(external_inputs),
+                ))
+
+        return spend_events + transfer_events + receive_events
+
+    def _split_by_tracked(
+            self,
+            totals: dict[BTCAddress, FVal],
+    ) -> tuple[dict[BTCAddress, FVal], dict[BTCAddress, FVal]]:
+        """Split the given address totals into tracked and untracked ones."""
+        tracked, untracked = {}, {}
+        for address, amount in totals.items():
+            if address in self.tracked_accounts:
+                tracked[address] = amount
+            else:
+                untracked[address] = amount
+
+        return tracked, untracked
+
+    def _display_addresses(self, addresses: dict[BTCAddress, FVal]) -> str:
+        return ', '.join([self.get_display_address(x) for x in addresses])
 
     def decode_transaction(self, tx: BitcoinTx) -> list[HistoryEvent]:
         """Decode a BitcoinTx into HistoryEvents.

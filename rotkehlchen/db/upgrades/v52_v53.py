@@ -256,6 +256,30 @@ DROP TABLE ens_mappings_old;
             "WHERE M.name='state' AND M.value=3 AND H.type='exchange adjustment'",
         )
 
+    @progress_step(description='Reset bitcoin transaction query range.')
+    def _reset_bitcoin_query_range(write_cursor: DBCursor) -> None:
+        """Bitcoin transactions with a change output were decoded as a spend of the entire
+        input plus a receive of the change, inventing a disposal and an acquisition that
+        never happened and corrupting cost basis. Transfers between owned addresses were
+        also never credited to the receiving address in historical balances.
+
+        Unlike EVM and Solana, raw bitcoin transactions are not stored locally, so they
+        cannot be redecoded offline here. Instead reset the per-address last queried block,
+        so the next transaction query refetches the full history from the explorers and
+        decodes it with the corrected logic.
+
+        The existing events are deliberately left in place rather than deleted here. The
+        query purges each transaction's events right before writing the new ones, so they
+        are replaced one transaction at a time and the user keeps a visible history in the
+        meantime. That purge is keyed on the group identifier, so it also clears the mixed
+        stale/new event sets left by the sequence index collisions this same release fixes.
+        """
+        write_cursor.execute(
+            "DELETE FROM key_value_cache WHERE "
+            "name LIKE 'last\\_btc\\_tx\\_block\\_%' ESCAPE '\\' OR "
+            "name LIKE 'last\\_bch\\_tx\\_block\\_%' ESCAPE '\\'",
+        )
+
     @progress_step(description='Remove obsolete airdrop parquet files.')
     def _remove_airdrop_parquet_files(write_cursor: DBCursor) -> None:
         """Remove parquet airdrop files left behind now that airdrops use compressed CSV files."""

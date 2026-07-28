@@ -31,6 +31,7 @@ from rotkehlchen.db.constants import (
     HISTORY_BASE_ENTRY_FIELDS,
     HISTORY_BASE_ENTRY_LENGTH,
     HISTORY_MAPPING_KEY_STATE,
+    SQL_VARIABLE_CHUNK_SIZE,
     TX_DECODED,
     HistoryEventLinkType,
     HistoryMappingState,
@@ -105,7 +106,7 @@ NOTES_ADDRESS_MARKER_RE = re.compile(r'\b(?:to|from)\b\s+(.+)$')
 BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY = 'bitcoin_counterparty_addresses'
 
 
-def _get_bitcoin_counterparty_addresses(
+def get_bitcoin_counterparty_addresses(
         location: Location,
         notes: str | None,
 ) -> list[str]:
@@ -357,7 +358,7 @@ class DBHistoryEvents:
         if decoded_addresses is not None:
             addresses = decoded_addresses
         else:
-            addresses = _get_bitcoin_counterparty_addresses(
+            addresses = get_bitcoin_counterparty_addresses(
                 location=location,
                 notes=notes,
             )
@@ -1014,7 +1015,6 @@ class DBHistoryEvents:
             customized_handling: Literal['delete', 'preserve_events', 'preserve_transactions'] = 'preserve_events',  # noqa: E501
     ) -> None:
         """Delete all relevant (by transaction hash) history events.
-        Only use with limited number of transactions!!!
 
         customized_handling controls how customized events affect deletion:
         - 'delete': delete all events including customized ones.
@@ -1023,11 +1023,32 @@ class DBHistoryEvents:
           in that transaction is customized.
         Custom events without an associated blockchain transaction are unaffected.
 
-        If you want to reset all decoded events better use the _reset_decoded_events
-        code in v37 -> v38 upgrade as that is not limited to the number of transactions
-        and won't potentially raise a too many sql variables error
+        The tx refs are chunked, so this is safe for an arbitrary number of transactions,
+        such as the full history redecode that follows a transaction query cache reset.
         """
-        placeholders = ', '.join(['?'] * len(tx_refs))
+        for chunk, placeholders in get_query_chunks(
+            data=tx_refs,
+            # Each chunk binds its own customized exclusions on top of the tx refs,
+            # so only use half the budget for the refs themselves.
+            chunk_size=SQL_VARIABLE_CHUNK_SIZE // 2,
+        ):
+            self._delete_events_by_tx_ref_chunk(
+                write_cursor=write_cursor,
+                tx_refs=chunk,
+                placeholders=placeholders,
+                location=location,
+                customized_handling=customized_handling,
+            )
+
+    def _delete_events_by_tx_ref_chunk(
+            self,
+            write_cursor: DBCursor,
+            tx_refs: Sequence[EVMTxHash | BTCTxId | Signature],
+            placeholders: str,
+            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            customized_handling: Literal['delete', 'preserve_events', 'preserve_transactions'],
+    ) -> None:
+        """Delete the events of a single chunk of tx refs. See delete_events_by_tx_ref."""
         bindings: list[str | bytes]
         if location.is_bitcoin():
             where_str = f'WHERE group_identifier IN ({placeholders})'
