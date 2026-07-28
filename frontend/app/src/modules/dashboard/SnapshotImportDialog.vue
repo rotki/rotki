@@ -3,13 +3,9 @@ import FileUpload from '@/modules/user-data/FileUpload.vue';
 
 const model = defineModel<boolean>({ required: true });
 
-const balanceFile = defineModel<File>('balanceFile', {
-  default: undefined,
-});
+const balanceFile = defineModel<File>('balanceFile');
 
-const locationFile = defineModel<File>('locationFile', {
-  default: undefined,
-});
+const locationFile = defineModel<File>('locationFile');
 
 const { loading = false, persistent = false } = defineProps<{
   loading?: boolean;

@@ -21,7 +21,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { default: {}, required: false });
+const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { default: () => ({}), required: false });
 
 const pagination = defineModel<TablePaginationData>('pagination', { required: true });
 
