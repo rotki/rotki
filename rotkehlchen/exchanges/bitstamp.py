@@ -445,6 +445,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[HistoryBaseEntry]:
         """Return the account trades on Bitstamp.
 
@@ -469,6 +470,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             end_ts=end_ts,
             options=options,
             case='trades',
+            event_queue=event_queue,
         )
 
     def query_online_history_events(
@@ -500,7 +502,11 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             event_queue=event_queue,
         )
         event_queue.events.extend(events)
-        event_queue.events.extend(self._query_trades(start_ts=start_ts, end_ts=end_ts))
+        event_queue.events.extend(self._query_trades(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        ))
         return end_ts
 
     def requery_online_history_events_into_queue(
@@ -515,7 +521,11 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             force_refresh=True,
             event_queue=event_queue,
         ))
-        event_queue.events.extend(self._query_trades(start_ts=start_ts, end_ts=end_ts))
+        event_queue.events.extend(self._query_trades(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        ))
         return end_ts
 
     def validate_api_key(self) -> tuple[bool, str]:
@@ -598,6 +608,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             options: dict[str, Any],
             case: Literal['trades', 'asset_movements'],
             offset: int = 0,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[HistoryBaseEntry]:
         """Request a Bitstamp API v2 endpoint paginating via an options
         attribute.
@@ -665,6 +676,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             has_results = False
             is_result_timestamp_gt_end_ts = False
             result: list[SwapEvent] | list[AssetMovement]
+            page_events: list[HistoryBaseEntry] = []
             for raw_result in response_list:
                 try:
                     entry_type = deserialize_int_from_str(raw_result['type'], 'bitstamp event')
@@ -695,8 +707,14 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                     )
                     continue
 
-                results.extend(result)
+                if event_queue is None:
+                    results.extend(result)
+                else:
+                    page_events.extend(result)
                 has_results = True  # NB: endpoint agnostic
+
+            if event_queue is not None:
+                event_queue.flush(page_events)
 
             if len(response_list) < limit or is_result_timestamp_gt_end_ts:
                 break
@@ -709,10 +727,14 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 # If has_results is true then _deserialize_trade and create_swap_events returned
                 # successfully which guarantees at least one full group of SwapEvents will be
                 # present (either 2 events: spend, receive; or 3 events: spend, receive, fee).
-                since_id = (
-                    int((results[-2].extra_data or results[-3].extra_data)['reference']) + 1  # type: ignore[index]  # the spend event will always have extra_data
-                    if has_results else call_options['since_id']
-                )
+                pagination_events = results if event_queue is None else page_events
+                if has_results:
+                    reference_data = (
+                        pagination_events[-2].extra_data or pagination_events[-3].extra_data
+                    )
+                    since_id = int(reference_data['reference']) + 1  # type: ignore[index]  # the spend event will always have extra_data
+                else:
+                    since_id = call_options['since_id']
                 call_options.update({
                     'since_id': since_id,
                     'offset': offset,
