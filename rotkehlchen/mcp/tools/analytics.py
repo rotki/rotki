@@ -73,15 +73,31 @@ async def describe_table(table: str) -> dict[str, Any]:
 async def query_sql(sql: str, max_rows: int = DEFAULT_MAX_RESULT_ROWS) -> dict[str, Any]:
     """Run a read-only SQL query over the loaded, privacy-filtered analytics tables.
 
-    Polars SQL runs the query, so aggregations, joins, grouping, ordering and window
-    functions are all available and computed exactly — use it for the math (sums, cost
-    basis candidates, rolling balances, per-asset/per-counterparty rollups, fee totals)
-    rather than doing arithmetic yourself. Only a single ``SELECT``/``WITH`` statement is
-    allowed; writes and DDL are rejected.
+    The query runs against **SQLite**, so write SQLite-flavoured SQL. Aggregations, joins,
+    grouping, ordering and window functions are all available and computed exactly — use it
+    for the math (sums, cost basis candidates, rolling balances, per-asset/per-counterparty
+    rollups, fee totals) rather than doing arithmetic yourself. Only a single
+    ``SELECT``/``WITH`` statement is allowed; writes and DDL are rejected.
 
     Call ``refresh_analytics_data`` first to load data, and ``describe_table`` to learn the
     columns. The default table is ``history_events``. ``max_rows`` caps returned rows; the
     result reports ``result_truncated`` and the true ``row_count`` when more matched.
+
+    Rules that decide whether an aggregate is right or quietly wrong:
+
+    - Call ``get_event_taxonomy`` before any aggregate over ``event_type`` — it explains all
+      30+ type/subtype combinations and gives each a ``direction``.
+    - Aggregate on ``direction`` rather than ``event_type``. Every ``informational`` row is
+      neutral: those are annotations whose value arrives as a separate real event, so
+      including them double counts MEV and block-production rewards.
+    - ``amount`` is a decimal string — do arithmetic on ``amount_float``. But it is in each
+      row's own asset, so only sum it per-asset; for money questions use ``value``, which
+      exists only after refreshing with ``include_values=true``.
+    - ``timestamp`` is in **milliseconds**; the ``datetime`` and ``year`` columns are derived
+      from it, so filter on those instead of doing unix math.
+    - One trade is several rows sharing a ``group_identifier`` (spend, receive, fee — each in
+      a different asset), ordered by ``sequence_index``. Self-join on ``group_identifier`` to
+      see both sides; never sum across the legs.
     """
     return await asyncio.to_thread(
         get_analytics_session().query_sql,
