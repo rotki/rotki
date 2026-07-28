@@ -1,7 +1,7 @@
 import json
 from http import HTTPStatus
 from typing import Final
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -53,6 +53,35 @@ def test_api_query_response_handling():
     response = MockResponse(HTTPStatus.OK, text='invalid json')
     with pytest.raises(RemoteError):
         exchange._process_response(response)
+
+
+def test_paginated_query_does_not_duplicate_api_error(mock_cryptocom: Cryptocom) -> None:
+    with (
+        patch.object(
+            mock_cryptocom,
+            '_api_query',
+            return_value=MockResponse(
+                HTTPStatus.OK,
+                text='{"code": 1, "message": "failed"}',
+            ),
+        ),
+        pytest.raises(
+            RemoteError,
+            match=f'Failed to query {mock_cryptocom.name} trades: failed',
+        ),
+    ):
+        mock_cryptocom._query_paginated(
+            query_type='trade',
+            method='private/get-trades',
+            options={},
+            initial_page=0,
+            page_key='page',
+            page_size=1,
+            result_key='data',
+            deserialize_fn=MagicMock(),
+        )
+
+    assert mock_cryptocom.msg_aggregator.consume_errors() == []
 
 
 def test_query_balances_empty_account(mock_cryptocom):
