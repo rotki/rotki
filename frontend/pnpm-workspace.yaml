@@ -41,7 +41,7 @@ catalog:
   '@fontsource/roboto-mono': 5.3.0
   '@intlify/eslint-plugin-vue-i18n': 4.5.1
   '@intlify/unplugin-vue-i18n': 11.2.4
-  '@pinia/testing': 1.0.3
+  '@pinia/testing': 2.0.1
   '@playwright/test': 1.61.1
   '@rotki/eslint-config': 7.0.0
   '@rotki/eslint-plugin': 1.5.0
@@ -100,7 +100,7 @@ catalog:
   msw: 2.15.0
   npm-run-all2: 9.0.2
   ofetch: 1.5.1
-  pinia: 3.0.4
+  pinia: 4.0.2
   plainfp: 0.1.1
   postcss: 8.5.18
   postcss-html: 1.8.1
