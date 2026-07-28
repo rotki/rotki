@@ -463,6 +463,13 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 entry_type=HistoryBaseEntryType.SWAP_EVENT,
             ))
 
+        if event_queue is None:
+            return self._api_query_paginated(
+                end_ts=end_ts,
+                options=options,
+                case='trades',
+            )
+
         return self._api_query_paginated(
             end_ts=end_ts,
             options=options,
