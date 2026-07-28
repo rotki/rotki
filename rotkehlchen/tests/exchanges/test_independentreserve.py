@@ -1,12 +1,14 @@
 import warnings as test_warnings
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants.assets import A_BTC, A_ETC, A_ETH, A_OMG
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import Location
+from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.exchanges.independentreserve import (
     Independentreserve,
     independentreserve_asset,
@@ -246,6 +248,37 @@ def test_query_trade_history(function_scope_independentreserve):
             unique_id=unique_id_2,
         ),
     )]
+
+
+def test_trade_query_flushes_completed_page_before_failure(
+        function_scope_independentreserve: Independentreserve,
+) -> None:
+    event_queue = MagicMock(spec=HistoryEventQueue)
+    raw_trade = {
+        'TradeGuid': 'foo1',
+        'TradeTimestampUtc': '2017-11-22T22:54:40.3249401Z',
+        'OrderType': 'MarketOffer',
+        'PrimaryCurrencyCode': 'Eth',
+        'SecondaryCurrencyCode': 'Aud',
+        'Price': 603.7,
+        'VolumeTraded': 0.5,
+    }
+    with (
+        patch.object(
+            function_scope_independentreserve,
+            '_api_query',
+            side_effect=[{'Data': [raw_trade] * 50}, {}],
+        ),
+        pytest.raises(RemoteError, match='Missing key'),
+    ):
+        function_scope_independentreserve._query_trades(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1565732120),
+            event_queue=event_queue,
+        )
+
+    event_queue.flush.assert_called_once()
+    assert len(event_queue.flush.call_args.args[0]) == 100
 
 
 # TODO: Make a test for asset movements.
