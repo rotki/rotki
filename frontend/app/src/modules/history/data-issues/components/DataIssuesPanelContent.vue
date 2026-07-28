@@ -409,7 +409,10 @@ onMounted(() => {
       </RouterLink>
     </div>
 
-    <PinnedDetailSheet v-model="modelDrawerOpen">
+    <PinnedDetailSheet
+      v-model="modelDrawerOpen"
+      :label="t('data_issues.detail.title')"
+    >
       <DataIssueDetailContent
         :issue="modelSelectedIssue"
         :busy="modelActionBusy"

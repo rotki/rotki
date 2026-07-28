@@ -5,10 +5,11 @@ import { createRuiPlugin } from '@/plugins/rui';
 
 function createWrapper(open: boolean, slots: Record<string, string> = {}): VueWrapper<InstanceType<typeof PinnedDetailSheet>> {
   return mount(PinnedDetailSheet, {
+    attachTo: document.body,
     global: {
       plugins: [createRuiPlugin({})],
     },
-    props: { modelValue: open },
+    props: { label: 'Issue details', modelValue: open },
     slots: {
       default: '<div data-testid="sheet-body">body</div>',
       ...slots,
@@ -55,6 +56,66 @@ describe('pinnedDetailSheet', () => {
     const classes = wrapper.find('[data-testid=pinned-detail-sheet]').classes();
     expect(classes).toContain('absolute');
     expect(classes).toContain('bottom-0');
+  });
+
+  it('should announce itself as a modal dialog', () => {
+    const wrapper = createWrapper(true);
+
+    const sheet = wrapper.find('[data-testid=pinned-detail-sheet]');
+    expect(sheet.attributes('role')).toBe('dialog');
+    expect(sheet.attributes('aria-modal')).toBe('true');
+    expect(sheet.attributes('aria-label')).toBe('Issue details');
+  });
+
+  it('should close on Escape', async () => {
+    const wrapper = createWrapper(true);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await nextTick();
+
+    expect(wrapper.emitted('update:modelValue')).toEqual([[false]]);
+  });
+
+  it('should not swallow Escape while closed', async () => {
+    const wrapper = createWrapper(false);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await nextTick();
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+  });
+
+  it('should move focus into the sheet on open and restore it on close', async () => {
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+
+    const wrapper = createWrapper(false);
+    await wrapper.setProps({ modelValue: true });
+    await nextTick();
+
+    expect(document.activeElement).toBe(wrapper.find('[data-testid=pinned-detail-sheet]').element);
+
+    await wrapper.setProps({ modelValue: false });
+    await nextTick();
+
+    expect(document.activeElement).toBe(opener);
+    opener.remove();
+  });
+
+  it('should cycle Tab back to the first control instead of leaving the sheet', async () => {
+    const wrapper = createWrapper(true, {
+      default: '<div><button data-testid="first">first</button><button data-testid="last">last</button></div>',
+    });
+    await nextTick();
+
+    const last = wrapper.find<HTMLButtonElement>('[data-testid=last]').element;
+    last.focus();
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' }));
+    await nextTick();
+
+    expect(document.activeElement).toBe(wrapper.find('[data-testid=first]').element);
   });
 
   it('should apply the default height and allow overriding it', () => {
