@@ -111,7 +111,13 @@ if (envPath)
 if (!hmrEnabled)
   console.info('HMR is disabled');
 
-const enableChecker = !((process.env.CI ?? isTest) || process.env.VITEST);
+// vue-tsc in the dev server is expensive (it type-checks the whole project on every
+// change), so it is opt-in: set ENABLE_TYPE_CHECKER=1 when you want inline type errors.
+// `pnpm run typecheck` remains the canonical check and CI runs it separately.
+const enableChecker = !!process.env.ENABLE_TYPE_CHECKER && !((process.env.CI ?? isTest) || process.env.VITEST);
+
+if (enableChecker)
+  console.info('Type checker is enabled');
 
 /**
  * These modules are required by walletconnect
@@ -159,13 +165,13 @@ export default defineConfig({
       dts: './src/route-map.d.ts',
     }),
     vue(),
-    checker(enableChecker
-      ? {
+    ...(enableChecker
+      ? [checker({
           vueTsc: {
             tsconfigPath: 'tsconfig.app.json',
           },
-        }
-      : {}),
+        })]
+      : []),
     AutoImport({
       include: [
         /\.[jt]sx?$/, // .ts, .tsx, .js, .jsx
