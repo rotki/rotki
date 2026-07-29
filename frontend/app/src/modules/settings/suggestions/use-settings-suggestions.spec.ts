@@ -318,41 +318,53 @@ describe('useSettingsSuggestions', () => {
   });
 
   describe('checkForSuggestions', () => {
-    it('should do nothing on a development version', () => {
+    it('should do nothing on a development version', async () => {
       set(mockAppVersion, '1.43.0-dev');
       const { checkForSuggestions } = useSettingsSuggestions();
-      checkForSuggestions(createFrontendSettings(), createGeneralSettings());
+      await checkForSuggestions(createFrontendSettings(), createGeneralSettings());
 
       expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
       expect(mockStore.showSuggestionsDialog).toBe(false);
     });
 
-    it('should do nothing when the app version is empty', () => {
+    it('should do nothing when the app version is empty', async () => {
       set(mockAppVersion, '');
       const { checkForSuggestions } = useSettingsSuggestions();
-      checkForSuggestions(createFrontendSettings(), createGeneralSettings());
+      await checkForSuggestions(createFrontendSettings(), createGeneralSettings());
 
       expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
     });
 
-    it('should open the dialog when there are pending suggestions', () => {
+    it('should open the dialog when there are pending suggestions', async () => {
       mockRegistry.value = [
         { suggestions: [{ description: 'd', key: 'submitUsageAnalytics', settingType: 'general', suggestedValue: true }], version: '1.43.0' },
       ];
       const { checkForSuggestions } = useSettingsSuggestions();
-      checkForSuggestions(createFrontendSettings(), createGeneralSettings({ submitUsageAnalytics: false }));
+      await checkForSuggestions(createFrontendSettings(), createGeneralSettings({ submitUsageAnalytics: false }));
 
       expect(mockStore.showSuggestionsDialog).toBe(true);
       expect(mockStore.pendingSuggestions).toHaveLength(1);
       expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
     });
 
-    it('should mark the version applied when there are no suggestions', () => {
+    it('should mark the version applied when there are no suggestions', async () => {
       const { checkForSuggestions } = useSettingsSuggestions();
-      checkForSuggestions(createFrontendSettings(), createGeneralSettings());
+      await checkForSuggestions(createFrontendSettings(), createGeneralSettings());
 
       expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ lastAppliedSettingsVersion: '1.43.0' });
       expect(mockStore.showSuggestionsDialog).toBe(false);
+    });
+
+    it('should skip the dialog for a new account and mark the version applied', async () => {
+      mockRegistry.value = [
+        { suggestions: [{ description: 'd', key: 'submitUsageAnalytics', settingType: 'general', suggestedValue: true }], version: '1.43.0' },
+      ];
+      const { checkForSuggestions } = useSettingsSuggestions();
+      await checkForSuggestions(createFrontendSettings(), createGeneralSettings({ submitUsageAnalytics: false }), true);
+
+      expect(mockStore.showSuggestionsDialog).toBe(false);
+      expect(mockStore.pendingSuggestions).toEqual([]);
+      expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ lastAppliedSettingsVersion: '1.43.0' });
     });
   });
 

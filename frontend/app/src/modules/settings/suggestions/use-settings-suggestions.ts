@@ -1,6 +1,5 @@
 import type { FrontendSettings, FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import type { GeneralSettings, SettingsUpdate } from '@/modules/settings/types/user-settings';
-import { startPromise } from '@shared/utils';
 import { isEqual } from 'es-toolkit';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
@@ -86,7 +85,8 @@ interface UseSettingsSuggestionsReturn {
   checkForSuggestions: (
     frontendSettings: FrontendSettings,
     generalSettings: GeneralSettings,
-  ) => void;
+    newAccount?: boolean,
+  ) => Promise<void>;
 }
 
 export function useSettingsSuggestions(): UseSettingsSuggestionsReturn {
@@ -95,13 +95,26 @@ export function useSettingsSuggestions(): UseSettingsSuggestionsReturn {
   const { appVersion } = storeToRefs(useMainStore());
   const { t } = useI18n({ useScope: 'global' });
 
-  function checkForSuggestions(
+  // Awaited by `initialize` rather than fire-and-forget: `updateFrontendSetting` rewrites the
+  // whole settings blob from a snapshot of the repo, so a concurrent write (the privacy reset
+  // that follows in `initialize`) would snapshot the pre-stamp version and put it back.
+  async function checkForSuggestions(
     frontendSettings: FrontendSettings,
     generalSettings: GeneralSettings,
-  ): void {
+    newAccount = false,
+  ): Promise<void> {
     const version = get(appVersion);
     if (!version || version.includes('dev'))
       return;
+
+    // A freshly created account is already on the current defaults, so recommendations from
+    // past versions never apply to it. Stamp the version instead of replaying them — the
+    // stored `0.0.0` default would otherwise make every historical suggestion pending, and
+    // applying one would move the account *off* the defaults it was just created with.
+    if (newAccount) {
+      await updateFrontendSetting({ lastAppliedSettingsVersion: version });
+      return;
+    }
 
     const registry = createSettingsSuggestions(t);
     const items = collectPendingSuggestions(frontendSettings, generalSettings, version, registry);
@@ -111,7 +124,7 @@ export function useSettingsSuggestions(): UseSettingsSuggestionsReturn {
       suggestionsStore.showSuggestionsDialog = true;
     }
     else {
-      startPromise(updateFrontendSetting({ lastAppliedSettingsVersion: version }));
+      await updateFrontendSetting({ lastAppliedSettingsVersion: version });
     }
   }
 
