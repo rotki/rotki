@@ -288,6 +288,9 @@ def test_incremental_trade_history_skips_missing_id(poloniex: Poloniex) -> None:
 
     event_queue.flush.assert_called_once()
     assert len(event_queue.flush.call_args.args[0]) == 3
+    assert poloniex.msg_aggregator.consume_warnings() == [
+        'Error deserializing a poloniex trade. Check the logs for details',
+    ]
 
 
 def test_query_trade_history_unexpected_data(poloniex):

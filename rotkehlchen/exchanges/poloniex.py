@@ -336,6 +336,9 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                     trade_id = trade['id']
                 except KeyError:
                     log.error('Skipping poloniex trade without an id', trade=trade)
+                    self.msg_aggregator.add_warning(
+                        'Error deserializing a poloniex trade. Check the logs for details',
+                    )
                     continue
 
                 if trade_id not in seen_trade_ids:
