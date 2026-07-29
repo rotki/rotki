@@ -33,10 +33,23 @@ function isPortFree(port: number): boolean {
  * `reuseExistingServer`). Move the whole block up in steps of 10 until every port in it
  * is free. CI is pinned to the base block: the build job bakes the backend/colibri URLs
  * into the frontend bundle from its own env, so the ports cannot be chosen here.
+ *
+ * The offset must be resolved exactly once per run. Playwright loads this config in the
+ * main process and again in every worker, and by the time a worker loads it the servers
+ * the main process started are occupying the block it picked. A second probe would see
+ * them as busy and shift, leaving the helpers that import `backendUrl` pointing at a port
+ * nothing is listening on. Publishing the result to the env makes the workers - which are
+ * children of the main process - inherit the decision instead of re-deciding.
  */
 function resolvePortOffset(): number {
   if (process.env.CI)
     return 0;
+
+  // A non-empty value is either inherited from the main process or set deliberately in the
+  // shell to pin a block; `'0'` is truthy, so the base block still round-trips.
+  const inherited = process.env.E2E_PORT_OFFSET;
+  if (inherited && Number.isInteger(Number(inherited)))
+    return Number(inherited);
 
   for (let block = 0; block < MAX_PORT_BLOCKS; block++) {
     const offset = block * PORT_BLOCK_STRIDE;
@@ -44,6 +57,7 @@ function resolvePortOffset(): number {
       if (offset > 0)
         console.log(`[e2e] ports ${BASE_FRONTEND_PORT}-${BASE_MOCK_RPC_PORT} are busy, using +${offset}`);
 
+      process.env.E2E_PORT_OFFSET = String(offset);
       return offset;
     }
   }
