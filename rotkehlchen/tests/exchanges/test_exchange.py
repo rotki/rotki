@@ -9,6 +9,7 @@ from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import ExchangeWithoutApiSecret, HistoryEventQueue
@@ -35,6 +36,29 @@ def test_history_event_queue_discards_failed_batch() -> None:
         event_queue.flush()
 
     assert event_queue.events == []
+
+
+def test_history_event_queue_does_not_move_range_backwards() -> None:
+    database = MagicMock()
+    event_queue = HistoryEventQueue(
+        database=database,
+        location_string='test',
+        query_start_ts=Timestamp(10),
+    )
+
+    with patch.object(DBQueryRanges, 'update_used_query_range') as update_range:
+        event_queue.flush(queried_until_ts=Timestamp(9))
+        assert event_queue.query_start_ts == Timestamp(10)
+        update_range.assert_not_called()
+
+        event_queue.flush(queried_until_ts=Timestamp(11))
+
+    update_range.assert_called_once_with(
+        write_cursor=database.user_write.return_value.__enter__.return_value,
+        location_string='test',
+        queried_ranges=[(Timestamp(10), Timestamp(11))],
+    )
+    assert event_queue.query_start_ts == Timestamp(11)
 
 
 @pytest.mark.parametrize('error', [
