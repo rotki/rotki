@@ -1,15 +1,19 @@
+from collections import defaultdict
+from threading import Semaphore
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import ExchangeWithoutApiSecret, HistoryEventQueue
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.types import Location, Price, Timestamp
 
 
 def test_history_event_queue_discards_failed_batch() -> None:
@@ -31,6 +35,33 @@ def test_history_event_queue_discards_failed_batch() -> None:
         event_queue.flush()
 
     assert event_queue.events == []
+
+
+def test_history_query_flushes_and_finishes_on_remote_error() -> None:
+    exchange = MagicMock()
+    exchange.db = MagicMock()
+    exchange.location = Location.BINANCE
+    exchange.name = 'test'
+    exchange.query_locks_map = defaultdict(Semaphore)
+    exchange.query_locks_map_lock = Semaphore()
+    exchange.query_online_history_events_into_queue.side_effect = RemoteError('query failed')
+    event_queue = MagicMock(spec=HistoryEventQueue)
+
+    with (
+        patch(
+            'rotkehlchen.exchanges.exchange.DBQueryRanges.get_location_query_ranges',
+            return_value=[(Timestamp(1), Timestamp(2))],
+        ),
+        patch('rotkehlchen.exchanges.exchange.HistoryEventQueue', return_value=event_queue),
+        patch('rotkehlchen.exchanges.exchange.ts_now', return_value=Timestamp(2)),
+        pytest.raises(RemoteError, match='query failed'),
+    ):
+        ExchangeWithoutApiSecret.query_history_events(exchange)
+
+    event_queue.flush.assert_called_once_with()
+    assert exchange.send_history_events_status_msg.call_args_list[-1].kwargs == {
+        'step': HistoryEventsStep.QUERYING_EVENTS_FINISHED,
+    }
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
