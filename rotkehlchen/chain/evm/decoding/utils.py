@@ -89,6 +89,7 @@ def make_bridge_extra_data(
         from_address: ChecksumEvmAddress | None = None,
         to_address: ChecksumEvmAddress | None = None,
         transfer_id: str | None = None,
+        to_asset: ChecksumEvmAddress | None = None,
 ) -> dict[str, BridgeExtraData]:
     """Build the extra_data mapping with the structured cross-chain data of a bridge event.
 
@@ -102,6 +103,7 @@ def make_bridge_extra_data(
     for key, value in (
             ('from_address', from_address),
             ('to_address', to_address),
+            ('to_asset', to_asset),
             ('transfer_id', transfer_id),
     ):
         if value is not None:
@@ -117,6 +119,7 @@ def set_bridge_extra_data(
         from_address: ChecksumEvmAddress | None = None,
         to_address: ChecksumEvmAddress | None = None,
         transfer_id: str | None = None,
+        to_asset: ChecksumEvmAddress | None = None,
 ) -> None:
     """Set the structured bridge data on the event, preserving other extra_data keys.
 
@@ -130,6 +133,7 @@ def set_bridge_extra_data(
         to_chain=to_chain,
         from_address=from_address,
         to_address=to_address,
+        to_asset=to_asset,
         transfer_id=transfer_id,
     )[BRIDGE_EXTRA_DATA_KEY]
     event.extra_data = existing_data | {

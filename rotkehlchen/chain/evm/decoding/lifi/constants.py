@@ -19,6 +19,10 @@ LIFI_INTENT_REFUND_BASE: Final = string_to_evm_address(
 LIFI_FEE_ROUTER_MONAD: Final = string_to_evm_address('0x3c6B2E0b7421254846C53c118e24c65d59eAe75e')
 MAYAN_SWIFT: Final = string_to_evm_address('0xC38e4e6A15593f908255214653d3D947CA1c2338')
 
+CALL_DIAMOND_WITH_PERMIT2_SELECTOR: Final = b'\x01\x93\xb9\xfc'
+CALL_DIAMOND_WITH_EIP2612_SIGNATURE_SELECTOR: Final = b'\xd7\xa0\x84\x73'
+START_BRIDGE_TOKENS_VIA_GLACIS_SELECTOR: Final = b'\x6f\x92\x06\xba'
+SWAP_AND_START_BRIDGE_TOKENS_VIA_SQUID_SELECTOR: Final = b'\xa8\xf6\x66\x66'
 TRANSFER_STARTED_TOPIC: Final = (
     b'\x43\x8f\x81\xf3\xfe\x94\x45\x6c\xd9\xd9\x8e\x90\x73\x52\x4f\x1c\x2b\xaf\xb3\xce\x75\xde\xf8\xce\xd6\x9f'
     b'\x70\x80\x61\xdd\xd5\xc4'
