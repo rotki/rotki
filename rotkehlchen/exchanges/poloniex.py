@@ -361,7 +361,8 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                 # got all the trades for this 180 day chunk. Accumulate them (deduplicating
                 # against previous chunks) and move on to the next chunk. Note we extend
                 # instead of overwriting since data may hold trades from previous chunks.
-                data.extend(page_data)
+                if event_queue is None:
+                    data.extend(page_data)
                 current_start_ms = current_end_ms
                 continue
 
@@ -385,12 +386,13 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                     )
                     continue
 
-            data.extend(page_data)
+            if event_queue is None:
+                data.extend(page_data)
             # the chunk returned TRADES_LIMIT results so it may have more. Query again
             # from the last ts seen in the last result.
             current_start_ms = latest_ts_ms
 
-        return [] if event_queue is not None else data
+        return data
 
     # ---- General exchanges interface ----
     @protect_with_lock()
