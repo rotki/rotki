@@ -98,7 +98,7 @@ class HistoryEventQueue:
 
         self.queried_events += len(events_to_write)
         self.saved_events += saved_events
-        if queried_until_ts is not None:
+        if queried_until_ts is not None and queried_until_ts > self.query_start_ts:
             self.query_start_ts = queried_until_ts
 
 
