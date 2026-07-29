@@ -558,17 +558,16 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         location_string=location_string,
                         query_start_ts=chunk_start,
                     )
+                    actual_end_ts: Timestamp | None = None
                     try:
                         _, actual_end_ts = self.query_online_history_events(
                             start_ts=chunk_start,
                             end_ts=chunk_end,
                             event_queue=event_queue,
                         )
-                    except RemoteError:
-                        event_queue.flush()
-                        raise
+                    finally:
+                        event_queue.flush(queried_until_ts=actual_end_ts)
 
-                    event_queue.flush(queried_until_ts=actual_end_ts)
                     if actual_end_ts != chunk_end:
                         log.error(
                             'Failed to query all %s history events between %s '
