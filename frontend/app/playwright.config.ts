@@ -64,6 +64,38 @@ function detectSystemChromium(): string | undefined {
 
 const systemChromium = detectSystemChromium();
 
+/**
+ * Interactive runs (`--ui`, `--headed`, `--debug`) keep the Vite dev server so HMR and
+ * un-minified sources are available while poking at a failing spec. Every other local
+ * run builds once and serves the output with `vite preview`: the dev server holds the
+ * whole module graph plus its transform cache in memory (multiple GB on this codebase),
+ * while preview only serves static files. CI already builds in a separate workflow step,
+ * so there the command is a bare `vite preview`.
+ */
+function isInteractiveRun(): boolean {
+  if (process.env.PWDEBUG)
+    return true;
+
+  return process.argv.some(arg => arg === '--headed' || arg === '--debug' || arg === '--ui' || arg.startsWith('--ui-'));
+}
+
+const interactive = isInteractiveRun();
+
+function buildFrontendCommand(): string {
+  // --no-open: this is a test harness, don't pop a browser tab (serve.ts
+  // auto-opens in web mode by default). Playwright drives its own browser.
+  if (interactive)
+    return `tsx scripts/serve.ts --web --no-open --port ${FRONTEND_PORT}`;
+
+  // --strictPort: fail loudly instead of silently serving on another port, which would
+  // leave the tests pointing at a URL nothing is listening on.
+  const preview = `vite preview --port ${FRONTEND_PORT} --strictPort`;
+  // CI builds the frontend in its own workflow job and downloads the artifact.
+  return process.env.CI ? preview : `pnpm run build:app --mode e2e && ${preview}`;
+}
+
+const frontendCommand = buildFrontendCommand();
+
 // Get the test group from environment (app or balances)
 const testGroup = process.env.GROUP;
 const testDirPath = testGroup ? `./tests/e2e/specs/${testGroup}` : './tests/e2e/specs';
@@ -144,14 +176,12 @@ export default defineConfig({
       timeout: 180_000,
     },
     {
-      command: process.env.CI
-        ? `vite preview --port ${FRONTEND_PORT}`
-        // --no-open: this is a test harness, don't pop a browser tab (serve.ts
-        // auto-opens in web mode by default) — Playwright drives its own browser.
-        : `tsx scripts/serve.ts --web --no-open --port ${FRONTEND_PORT}`,
+      command: frontendCommand,
       url: frontendUrl,
       reuseExistingServer: !process.env.CI,
-      timeout: 180_000,
+      // The local non-interactive path builds before serving (~15s on a warm machine),
+      // so it gets more headroom than starting a dev server or serving an existing dist.
+      timeout: interactive || process.env.CI ? 180_000 : 300_000,
       env: {
         VITE_BACKEND_URL: backendUrl,
         VITE_COLIBRI_URL: colibriUrl,
