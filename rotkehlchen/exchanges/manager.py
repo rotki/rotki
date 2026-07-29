@@ -408,7 +408,7 @@ class ExchangeManager:
                 return
             exchanges_list.extend(exchanges)
 
-        error: RemoteError | None = None
+        errors: list[str] = []
         for exchange in exchanges_list:
             if exchange.location_id() in excluded:
                 log.info(
@@ -425,10 +425,12 @@ class ExchangeManager:
                     exchange.name,
                     e,
                 )
-                error = e
+                errors.append(f'{exchange.name}: {e!s}')
 
-        if error is not None:
-            raise error
+        if len(errors) != 0:
+            raise RemoteError(
+                f'Failed to query {location!s} history events for {", ".join(errors)}',
+            )
 
     def requery_exchange_history_events(
             self,

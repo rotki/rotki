@@ -117,9 +117,16 @@ def test_query_exchange_history_events_continues_after_remote_error() -> None:
         exchange.location = Location.BINANCE
         exchange.location_id.return_value = f'binance_test_{idx}'
     exchanges[0].query_history_events.side_effect = RemoteError('first failed')
+    exchanges[1].query_history_events.side_effect = RemoteError('second failed')
     manager.connected_exchanges[Location.BINANCE].extend(exchanges)
 
-    with pytest.raises(RemoteError, match='first failed'):
+    with pytest.raises(
+        RemoteError,
+        match=(
+            'Failed to query binance history events for '
+            'test_0: first failed, test_1: second failed'
+        ),
+    ):
         manager.query_exchange_history_events(location=Location.BINANCE, name=None)
 
     for exchange in exchanges:
