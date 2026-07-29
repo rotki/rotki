@@ -15,6 +15,81 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 USDT0_MONAD = Asset('eip155:143/erc20:0xe7cd86e13AC4309349F30B3435a9d337750fC82D')
 USDC_ETHEREUM = Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 USDC_BASE = Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
+USDC_ARBITRUM = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x58ea4953f07A23232Ff6FdFcE008BBfE010f801c']])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_lifi_swap_and_bridge_to_bsc(arbitrum_one_inquirer, arbitrum_one_accounts):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash(
+            '0x812c09ea25ccfa9db288c40d086bbec21ab23b8ebce18a9d388111488f7db945',
+        )),
+    )
+    router = string_to_evm_address('0x89c6340B1a1f4b25D36cd8B063D49045caF3f818')
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1758745718000),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.00000564139'),
+        location_label=arbitrum_one_accounts[0],
+        notes='Burn 0.00000564139 ETH for gas',
+        counterparty='gas',
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=TimestampMS(1758745718000),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal('0.000071721004734066'),
+        location_label=arbitrum_one_accounts[0],
+        notes='Send 0.000071721004734066 ETH to 0x89c6340B1a1f4b25D36cd8B063D49045caF3f818',
+        address=router,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=TimestampMS(1758745718000),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=USDC_ARBITRUM,
+        amount=FVal('57.000421'),
+        location_label=arbitrum_one_accounts[0],
+        notes=(
+            'Set USDC spending approval of 0x58ea4953f07A23232Ff6FdFcE008BBfE010f801c '
+            'by 0x89c6340B1a1f4b25D36cd8B063D49045caF3f818 to 57.000421'
+        ),
+        address=router,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=TimestampMS(1758745718000),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=USDC_ARBITRUM,
+        amount=FVal('57.000421'),
+        location_label=arbitrum_one_accounts[0],
+        notes='Bridge 57.000421 USDC from Arbitrum One to Binance Smart Chain via LI.FI',
+        counterparty=CPT_LIFI,
+        address=router,
+        extra_data={'bridge': {
+            'from_chain': 42161,
+            'to_chain': 56,
+            'from_address': arbitrum_one_accounts[0],
+            'to_address': arbitrum_one_accounts[0],
+            'to_asset': '0x0000000000000000000000000000000000000000',
+            'transfer_id': '9e92183abb12dfbb36fd2f8899d5531adf84398757d27988efb99c985884d945',
+        }},
+    )]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -70,6 +145,7 @@ def test_lifi_bridge_out(monad_inquirer, monad_accounts):
             'to_chain': 1,
             'from_address': monad_accounts[0],
             'to_address': monad_accounts[0],
+            'to_asset': '0xdAC17F958D2ee523a2206206994597C13D831ec7',
             'transfer_id': '7ae3f916a9df3f226d02db3c9bebc60e94d4215f38b10dcb71874f1f90a79aef',
         }},
     ), EvmEvent(

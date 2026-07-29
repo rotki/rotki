@@ -34,6 +34,8 @@ class BridgeExtraData(TypedDict, total=False):
 
     Chains are raw EVM chain ids (int) so that destinations rotki does not support can
     still be recorded, or a SupportedBlockchain serialized name (str) for non-EVM chains.
+    to_asset is the raw target-chain token address. A zero address is preserved as a
+    protocol-specific native-asset or default-routing sentinel.
     transfer_id is the protocol-native identifier of the transfer (deposit id, message
     nonce, transfer hash etc.) normalized to a string: decimal for numeric ids, 0x-hex
     for hash ids. It is unique per (counterparty, from_chain) and when present on both
@@ -41,6 +43,7 @@ class BridgeExtraData(TypedDict, total=False):
     """
     from_chain: int | str
     to_chain: int | str
+    to_asset: str
     from_address: str
     to_address: str
     transfer_id: str

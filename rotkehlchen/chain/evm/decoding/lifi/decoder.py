@@ -1,11 +1,17 @@
 from typing import TYPE_CHECKING, Any
 
+from eth_abi import decode as decode_abi
+from eth_abi.exceptions import DecodingError
+from eth_utils import to_checksum_address
+
 from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.lifi.constants import (
+    CALL_DIAMOND_WITH_EIP2612_SIGNATURE_SELECTOR,
+    CALL_DIAMOND_WITH_PERMIT2_SELECTOR,
     CPT_LIFI,
     INTENT_REFUNDED_TOPIC,
     LIFI_DIAMOND,
@@ -16,6 +22,8 @@ from rotkehlchen.chain.evm.decoding.lifi.constants import (
     LIFI_INTENT_REFUND_BASE,
     MAYAN_ORDER_REFUNDED_TOPIC,
     MAYAN_SWIFT,
+    START_BRIDGE_TOKENS_VIA_GLACIS_SELECTOR,
+    SWAP_AND_START_BRIDGE_TOKENS_VIA_SQUID_SELECTOR,
     TRANSFER_COMPLETED_ABI,
     TRANSFER_COMPLETED_TOPIC,
     TRANSFER_RECOVERED_ABI,
@@ -42,6 +50,92 @@ if TYPE_CHECKING:
 
 
 class LifiDecoder(EvmDecoderInterface):
+
+    @staticmethod
+    def _unwrap_diamond_calldata(input_data: bytes) -> bytes:
+        if input_data.startswith(CALL_DIAMOND_WITH_PERMIT2_SELECTOR):
+            calldata_offset_position = len(CALL_DIAMOND_WITH_PERMIT2_SELECTOR)
+        elif input_data.startswith(CALL_DIAMOND_WITH_EIP2612_SIGNATURE_SELECTOR):
+            calldata_offset_position = (
+                len(CALL_DIAMOND_WITH_EIP2612_SIGNATURE_SELECTOR) + 32 * 6
+            )
+        else:
+            return input_data
+
+        if len(input_data) < calldata_offset_position + 32:
+            return b''
+
+        arguments_start = len(CALL_DIAMOND_WITH_PERMIT2_SELECTOR)
+        calldata_start = arguments_start + int.from_bytes(
+            input_data[calldata_offset_position:calldata_offset_position + 32],
+        )
+        if len(input_data) < calldata_start + 32:
+            return b''
+
+        calldata_length = int.from_bytes(input_data[calldata_start:calldata_start + 32])
+        return input_data[calldata_start + 32:calldata_start + 32 + calldata_length]
+
+    @staticmethod
+    def _decode_glacis_target_asset(input_data: bytes) -> ChecksumEvmAddress | None:
+        input_data = LifiDecoder._unwrap_diamond_calldata(input_data)
+
+        if not input_data.startswith(START_BRIDGE_TOKENS_VIA_GLACIS_SELECTOR):
+            return None
+
+        try:
+            _, glacis_data = decode_abi(
+                types=[
+                    '(bytes32,string,string,address,address,address,uint256,uint256,bool,bool)',
+                    '(bytes32,address,uint256,bytes32)',
+                ],
+                data=input_data[len(START_BRIDGE_TOKENS_VIA_GLACIS_SELECTOR):],
+            )
+        except DecodingError:
+            return None
+
+        if any((output_token := glacis_data[3])[:12]):
+            return None  # bytes32 output tokens for non-EVM destinations are not addresses
+
+        return string_to_evm_address(to_checksum_address(output_token[-20:]))
+
+    @staticmethod
+    def _decode_squid_assets(
+            input_data: bytes,
+            receiver: ChecksumEvmAddress,
+    ) -> tuple[ChecksumEvmAddress | None, ChecksumEvmAddress | None]:
+        input_data = LifiDecoder._unwrap_diamond_calldata(input_data)
+        if not input_data.startswith(SWAP_AND_START_BRIDGE_TOKENS_VIA_SQUID_SELECTOR):
+            return None, None
+
+        try:
+            _, swap_data, squid_data = decode_abi(
+                types=[
+                    '(bytes32,string,string,address,address,address,uint256,uint256,bool,bool)',
+                    '(address,address,address,address,uint256,bytes,bool)[]',
+                    '(uint8,string,string,string,address,(uint8,address,uint256,bytes,bytes)[],bytes,uint256,bool)',
+                ],
+                data=input_data[len(SWAP_AND_START_BRIDGE_TOKENS_VIA_SQUID_SELECTOR):],
+            )
+            destination_calls, _ = decode_abi(
+                types=['(uint8,address,uint256,bytes,bytes)[]', 'address'],
+                data=squid_data[6],
+            )
+        except DecodingError:
+            return None, None
+
+        if len(swap_data) == 0:
+            return None, None
+
+        source_asset = string_to_evm_address(to_checksum_address(swap_data[0][2]))
+        for call_type, target, _, call_data, payload in reversed(destination_calls):
+            if to_checksum_address(target) != receiver or len(call_data) != 0:
+                continue
+            if call_type == 2:  # FullNativeBalance
+                return ZERO_ADDRESS, source_asset
+            if call_type == 1 and len(payload) >= 32:  # FullTokenBalance
+                return string_to_evm_address(to_checksum_address(payload[12:32])), source_asset
+
+        return None, source_asset
 
     def _decode_lifi(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] in (TRANSFER_COMPLETED_TOPIC, TRANSFER_RECOVERED_TOPIC):
@@ -70,11 +164,21 @@ class LifiDecoder(EvmDecoderInterface):
             bridge_data = data[0]
             sending_asset = bridge_data[4]
             receiver = bridge_data[5]
+            receiving_asset = self._decode_glacis_target_asset(context.transaction.input_data)
+            if receiving_asset is None:
+                receiving_asset, source_asset = self._decode_squid_assets(
+                    input_data=context.transaction.input_data,
+                    receiver=receiver,
+                )
+            else:
+                source_asset = None
             amount = int(bridge_data[6])
             destination_chain = int(bridge_data[7])
             transfer_id = bridge_data[0].hex()
         else:
             sending_asset = data[4]
+            receiving_asset = data[5]
+            source_asset = None
             receiver = data[6]
             amount = int(data[7])
             destination_chain = int(data[8])
@@ -84,6 +188,11 @@ class LifiDecoder(EvmDecoderInterface):
             expected_asset = self.node_inquirer.native_token
         else:
             expected_asset = self.base.get_or_create_evm_token(address=sending_asset)
+        expected_source_asset = (
+            self.base.get_or_create_evm_token(address=source_asset)
+            if source_asset is not None
+            else None
+        )
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
@@ -105,8 +214,16 @@ class LifiDecoder(EvmDecoderInterface):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == sender and
                 event.counterparty is None and
-                event.asset == expected_asset and
-                event.amount >= asset_normalized_value(amount, expected_asset)
+                (
+                    (
+                        event.asset == expected_source_asset and
+                        event.address == context.transaction.to_address
+                    ) or
+                    (
+                        event.asset == expected_asset and
+                        event.amount >= asset_normalized_value(amount, expected_asset)
+                    )
+                )
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.BRIDGE
@@ -122,6 +239,7 @@ class LifiDecoder(EvmDecoderInterface):
                     to_chain=destination_chain,
                     from_address=sender,
                     to_address=receiver,
+                    to_asset=receiving_asset,
                     transfer_id=transfer_id,
                 )
                 break
