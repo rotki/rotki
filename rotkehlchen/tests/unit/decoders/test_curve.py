@@ -1952,7 +1952,13 @@ def test_gauge_deposit_optimism(database, optimism_inquirer, optimism_accounts, 
 @pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0xD4f9FE0039Da59e6DDb21bbb6E84e0C9e83D73eD']])
-def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts, load_global_caches):
+def test_gauge_withdraw_gnosis(
+        database,
+        gnosis_inquirer,
+        gnosis_accounts,
+        load_global_caches,
+        allow_gnosis_etherscan,
+):
     gauge_address = string_to_evm_address('0x05cd911eE9B60C28FCEE4ea03Cc5670637D955B1')
     get_or_create_evm_token(  # gauge token should already exist in db by reloading cache tokens
         userdb=database,
@@ -2357,7 +2363,12 @@ def test_crv_minter(ethereum_transaction_decoder, ethereum_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_gauge_deposit_and_stake(gnosis_inquirer, gnosis_accounts, load_global_caches):
+def test_gauge_deposit_and_stake(
+        gnosis_inquirer,
+        gnosis_accounts,
+        load_global_caches,
+        allow_gnosis_etherscan,
+):
     gauge_address = string_to_evm_address('0xd91770E868c7471a9585d1819143063A40c54D00')
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
@@ -2410,7 +2421,12 @@ def test_gauge_deposit_and_stake(gnosis_inquirer, gnosis_accounts, load_global_c
 @pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_gauge_deposit_and_stake_multiple(gnosis_inquirer, gnosis_accounts, load_global_caches):
+def test_gauge_deposit_and_stake_multiple(
+        gnosis_inquirer,
+        gnosis_accounts,
+        load_global_caches,
+        allow_gnosis_etherscan,
+):
     gauge_address = string_to_evm_address('0xd91770E868c7471a9585d1819143063A40c54D00')
     deposited_eur, deposited_usdc = '0.551864219634212696', '0.593161'
     events, _ = get_decoded_events_of_transaction(
@@ -2477,7 +2493,12 @@ def test_gauge_deposit_and_stake_multiple(gnosis_inquirer, gnosis_accounts, load
 @pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_liquidity_withdrawal(gnosis_inquirer, gnosis_accounts, load_global_caches):
+def test_liquidity_withdrawal(
+        gnosis_inquirer,
+        gnosis_accounts,
+        load_global_caches,
+        allow_gnosis_etherscan,
+):
     """Test that a withdrawal in the case of pools that have underlying pools
     is correctly decoded"""
     pool_address = string_to_evm_address('0x0CA1C1eC4EBf3CC67a9f545fF90a3795b318cA4a')
@@ -2532,7 +2553,12 @@ def test_liquidity_withdrawal(gnosis_inquirer, gnosis_accounts, load_global_cach
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_monerium_eure_v2(gnosis_inquirer, gnosis_accounts, load_global_caches):
+def test_monerium_eure_v2(
+        gnosis_inquirer,
+        gnosis_accounts,
+        load_global_caches,
+        allow_gnosis_etherscan,
+):
     """Regression test for https://github.com/rotki/rotki/issues/8452
     This test pulls a transaction after the deployment of the monerium v2 contracts
     and checks that we ignore correctly the log events emitted by the v1 contract.
@@ -2593,6 +2619,7 @@ def test_deposit_wxdai_and_eure_zap_with_intermediate_provider(
         gnosis_inquirer,
         gnosis_accounts,
         load_global_caches,
+        allow_gnosis_etherscan: None,
 ) -> None:
     """Regression test for deposits where AddLiquidity is emitted with an intermediate provider."""
     events, _ = get_decoded_events_of_transaction(
@@ -2660,7 +2687,12 @@ def test_deposit_wxdai_and_eure_zap_with_intermediate_provider(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
-def test_deposit_order(gnosis_inquirer, gnosis_accounts, load_global_caches):
+def test_deposit_order(
+        gnosis_inquirer,
+        gnosis_accounts,
+        load_global_caches,
+        allow_gnosis_etherscan,
+):
     """Ensure that multiple deposits when depositing and staking keep the correct order.
     This is a regression test for an issue where the approval was in between the other deposits.
     """

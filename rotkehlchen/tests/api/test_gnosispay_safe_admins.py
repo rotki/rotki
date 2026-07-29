@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 def test_gnosis_pay_safe_admins_success(
         rotkehlchen_api_server: APIServer,
         gnosis_accounts: list[str],
+        allow_gnosis_etherscan: None,
 ) -> None:
     with patch(
         'rotkehlchen.api.v1.resources.has_premium_capability',

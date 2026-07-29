@@ -1,5 +1,7 @@
 import json
 import warnings as test_warnings
+from contextlib import contextmanager
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -12,6 +14,9 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.externalapis.routescan import ROUTESCAN_SUPPORTED_CHAINS
 from rotkehlchen.types import ChainID, ExternalService
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 @pytest.fixture(name='gnosispay_credentials')
@@ -60,14 +65,35 @@ def fixture_allow_base_routescan():
         yield
 
 
+@contextmanager
+def _force_etherscan_indexer(chain: ChainID) -> Iterator[None]:
+    """Pin a chain to etherscan regardless of the configured indexer order.
+
+    Used by the fixtures below to keep cassettes recorded back when etherscan was the chain's
+    primary indexer replayable after the default moved elsewhere.
+    """
+    test_warnings.warn(UserWarning(f'Temporarily allowing Etherscan for {chain.to_name()}'))
+    cached = CachedSettings()
+    new_order = {**cached._evm_indexers_order_per_chain, chain: (EvmIndexer.ETHERSCAN,)}
+    with patch.object(type(cached), '_evm_indexers_order_per_chain', new_order):
+        yield
+
+
 @pytest.fixture(name='allow_scroll_etherscan')
 def fixture_allow_scroll_etherscan():
     """Etherscan no longer supports Scroll, so we've removed it from its supported chains.
     Let's use this fixture to not fail old recorded tests. Can remove if we re-record
     all tests that have this fixture.
     """
-    test_warnings.warn(UserWarning('Temporarily allowing Etherscan for Scroll'))
-    cached = CachedSettings()
-    new_order = {**cached._evm_indexers_order_per_chain, ChainID.SCROLL: (EvmIndexer.ETHERSCAN,)}
-    with patch.object(type(cached), '_evm_indexers_order_per_chain', new_order):
+    with _force_etherscan_indexer(ChainID.SCROLL):
+        yield
+
+
+@pytest.fixture(name='allow_gnosis_etherscan')
+def fixture_allow_gnosis_etherscan():
+    """Etherscan only serves Gnosis to paid api keys now, so blockscout became the primary
+    gnosis indexer. Every gnosis cassette predates that and is recorded against etherscan, so
+    this fixture keeps them replayable. Can remove if we re-record all tests that have it.
+    """
+    with _force_etherscan_indexer(ChainID.GNOSIS):
         yield

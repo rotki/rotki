@@ -197,6 +197,9 @@ const chainWarnings = computed<string[]>(() => {
   if (tab === 'base' && (order.length === 0 || order[0] !== EvmIndexer.BLOCKSCOUT))
     warnings.push(t('evm_settings.indexer.chain_warnings.base_limited_indexers'));
 
+  if (tab === 'gnosis')
+    warnings.push(t('evm_settings.indexer.chain_warnings.gnosis_key_required'));
+
   return warnings;
 });
 

@@ -33,7 +33,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x7EcB43E01425c66a783A3065F782ccF304b39B99']])
-def test_gnosis_pay_cashback(gnosis_inquirer, gnosis_accounts):
+def test_gnosis_pay_cashback(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x1c6f58c55ba2eeef7e08ed4725d16ae479d1b4210b39e647a9b282af6ffb9470')),  # noqa: E501
@@ -60,7 +60,7 @@ def test_gnosis_pay_cashback(gnosis_inquirer, gnosis_accounts):
 @pytest.mark.parametrize('gnosis_accounts', [[
     '0xc746598C9dD7FC62EF8775445F2F375aCbaCa7AE',  # user's gnosis pay safe
 ]])
-def test_gnosis_pay_referral(gnosis_inquirer, gnosis_accounts):
+def test_gnosis_pay_referral(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc778b8c23b823d6cec199ece516ab68658c7caafb508104f2a0c9de4d0358529')),  # noqa: E501
@@ -87,7 +87,12 @@ def test_gnosis_pay_referral(gnosis_inquirer, gnosis_accounts):
 @pytest.mark.parametrize('gnosis_accounts', [[
     '0xF4a1fB1689104479De1EcADfA472A9B866D08B16',  # user's gnosis pay safe
 ]])
-def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts, rotki_premium_object):
+def test_gnosis_pay_spend(
+        gnosis_inquirer,
+        gnosis_accounts,
+        rotki_premium_object,
+        allow_gnosis_etherscan,
+):
     events, gnosis_txs_decoder = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe8d666d6acf22e5a50dfea7ece1473558a854dfa04441ea9b3d0898843364ad8')),  # noqa: E501
@@ -200,7 +205,11 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts, rotki_premium_object
 @pytest.mark.parametrize('gnosis_accounts', [[
     '0x9E0D8c9ff04F58e8D4053b78d33e582D8aCc8c44',  # user's gnosis pay safe
 ]])
-def test_gnosis_pay_new_spender_contract(gnosis_inquirer, gnosis_accounts) -> None:
+def test_gnosis_pay_new_spender_contract(
+        gnosis_inquirer,
+        gnosis_accounts,
+        allow_gnosis_etherscan,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x91e34df64e80dde83ca30a8275019b239a52a0165bce348c6b44e4b4b0acd0fd')),  # noqa: E501
@@ -228,7 +237,7 @@ def test_gnosis_pay_new_spender_contract(gnosis_inquirer, gnosis_accounts) -> No
 @pytest.mark.parametrize('gnosis_accounts', [[
     '0x49e52a677BD19E50beE3642a8050A5A08a6EC697',  # user's gnosis pay safe
 ]])
-def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
+def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     events, gnosis_txs_decoder = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5f659bbc5214b358ffa5474c4209fad0587b7a9735b5965e7475c2bcb893ad38')),  # noqa: E501

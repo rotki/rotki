@@ -271,4 +271,37 @@ DROP TABLE ens_mappings_old;
                     e,
                 )
 
+    @progress_step(description='Adding blockscout to the gnosis indexer order.')
+    def _add_blockscout_to_gnosis_indexers(write_cursor: DBCursor) -> None:
+        """Etherscan now only serves gnosis to paid api keys, so blockscout became the primary
+        gnosis indexer. Users who never customized the order pick that up from the defaults, but
+        an explicitly saved gnosis order overrides them and would keep querying an endpoint the
+        user probably has no access to. Put blockscout first for those, keeping whatever else
+        they had chosen as the fallback. Hardcoded strings to keep the upgrade immune to future
+        changes of the setting's serialization.
+        """
+        if (result := write_cursor.execute(
+            "SELECT value FROM settings WHERE name='evm_indexers_order'",
+        ).fetchone()) is None:
+            return  # never customized, the new default applies
+
+        try:
+            orders = json.loads(result[0])
+        except json.JSONDecodeError as e:
+            log.error('During v52->v53 found a non-json evm_indexers_order entry. %s', e)
+            return
+
+        if (
+            not isinstance(orders, dict) or
+            not isinstance(gnosis_order := orders.get('gnosis'), list) or
+            'blockscout' in gnosis_order
+        ):
+            return  # no explicit gnosis order, or blockscout is already among the choices
+
+        orders['gnosis'] = ['blockscout', *gnosis_order]
+        write_cursor.execute(
+            "UPDATE settings SET value=? WHERE name='evm_indexers_order'",
+            (json.dumps(orders),),
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)

@@ -117,6 +117,7 @@ def test_swap_amount_in(ethereum_inquirer, ethereum_accounts):
 def test_gnosis_swap_amount_in(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ):
     tx_hash = deserialize_evm_tx_hash('0x421c23d305703a57ea0b64cfc75e8f13b6db2ef30fba321ae19eecd1b91695bc')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -821,6 +822,7 @@ def test_swap_on_augustus_rfq(
 def test_eure_receive_swap(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ):
     """Regression test for a bug where swaps in Gnosis receiving EURe were not decoded properly"""
     tx_hash = deserialize_evm_tx_hash('0x81130d4e9695b1e03c5960e51864740a7d6a3c3cab7b708f717dc5f18caad079')  # noqa: E501
@@ -873,6 +875,7 @@ def test_swap_with_unrelated_curve_deposit(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
         load_global_caches,
+        allow_gnosis_etherscan: None,
 ) -> None:
     """Regression test for a bug where an unrelated curve deposit was causing the spend half of the
     swap to be incorrectly decoded."""
@@ -939,6 +942,7 @@ def test_curve_deposit_interfering_with_paraswap_swap(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
         load_global_caches,
+        allow_gnosis_etherscan: None,
 ) -> None:
     """Regression test for a bug where a curve deposit was causing the spend half of the
     paraswap swap to be incorrectly decoded as a curve return wrapped event."""

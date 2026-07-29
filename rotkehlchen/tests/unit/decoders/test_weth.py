@@ -325,7 +325,7 @@ def test_weth_interaction_errors(ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_wxdai_unwrap(gnosis_inquirer, gnosis_accounts):
+def test_wxdai_unwrap(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0xa6af9ea737de26c87a36367fd896a8fe471049f4c18ac909901336aaccbf2369')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -376,7 +376,7 @@ def test_wxdai_unwrap(gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xd6f585378F3232E440B165AD56658bFcA76D1B32']])
-def test_wxdai_wrap(gnosis_inquirer, gnosis_accounts):
+def test_wxdai_wrap(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x8cf8362f36e5a76912bc05ef804c0ea4b4f2de54700afe9ced99aa486f3dd0e8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)

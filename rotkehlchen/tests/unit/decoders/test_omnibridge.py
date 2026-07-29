@@ -104,7 +104,7 @@ def test_omnibridge_ethereum_eth_deposit(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xD2e5D774BE8dF6A2e5f091812e10149BbB12702f']])
-def test_omnibridge_gnosis_token_deposit(gnosis_inquirer, gnosis_accounts):
+def test_omnibridge_gnosis_token_deposit(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     tx_hash = deserialize_evm_tx_hash('0x36dfd776bcc430609ea47ea74893095f27e62e691d8622569cc43ea70cec3dd4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, bridge_amount = gnosis_accounts[0], TimestampMS(1723743095000), '0.000318556', '8416.007021'  # noqa: E501
@@ -146,7 +146,11 @@ def test_omnibridge_gnosis_token_deposit(gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_omnibridge_gnosis_token_deposit_with_fee(gnosis_inquirer, gnosis_accounts):
+def test_omnibridge_gnosis_token_deposit_with_fee(
+        gnosis_inquirer,
+        gnosis_accounts,
+        allow_gnosis_etherscan,
+):
     """Test bridging a token for which the mediator takes a home to foreign fee.
 
     The TokensBridgingInitiated amount is the post-fee amount, so the fee has to be
@@ -290,7 +294,11 @@ def test_omnibridge_ethereum_eth_withdrawal(ethereum_inquirer, ethereum_accounts
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xcc2c6D82e00E14f81FFc8e4F6A26c4522adA5a34']])
-def test_omnibridge_gnosis_token_withdrawal(gnosis_inquirer, gnosis_accounts):
+def test_omnibridge_gnosis_token_withdrawal(
+        gnosis_inquirer,
+        gnosis_accounts,
+        allow_gnosis_etherscan,
+):
     tx_hash = deserialize_evm_tx_hash('0x6d4006bc0927588758911407d0f01124056453ab8828897a1c4a125a5f574520')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address, timestamp, bridge_amount = gnosis_accounts[0], TimestampMS(1598480695000), '300'

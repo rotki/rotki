@@ -24,6 +24,7 @@ def test_gnosischain_specific_chain_data(
         database: DBHandler,
         gnosis_transactions: GnosisTransactions,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ) -> None:
     now = ts_now()
     start_ts = Timestamp(1711618437)
@@ -77,6 +78,7 @@ def test_gnosischain_specific_chain_data_failing_logic(
         database: DBHandler,
         gnosis_transactions: GnosisTransactions,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ) -> None:
     """Tests that in case of error while querying gnosis logs
     we correctly store the last queried timestamp.
@@ -117,6 +119,7 @@ def test_gnosischain_specific_chain_data_ts_logic(
         database: DBHandler,
         gnosis_transactions: GnosisTransactions,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ) -> None:
     """
     This test ensures that the query range logic for gnosis logs works as expected.

@@ -604,7 +604,13 @@ def test_balancer_v1_exit_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts,
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V1]])
 @pytest.mark.parametrize('gnosis_accounts', [['0x87A04752E516548B0d5d4DF97384C0b22B649179']])
-def test_balancer_v1_join_gnosis(gnosis_inquirer, gnosis_accounts, load_global_caches, globaldb):
+def test_balancer_v1_join_gnosis(
+        gnosis_inquirer,
+        gnosis_accounts,
+        load_global_caches,
+        globaldb,
+        allow_gnosis_etherscan,
+):
     with globaldb.conn.write_ctx() as write_cursor:
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
@@ -748,7 +754,7 @@ def test_balancer_v2_exit_ethereum(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x63A49B0cA8B5B907dd083ada6D9F6853522Bb975']])
-def test_balancer_v2_exit_gnosis(gnosis_inquirer, gnosis_accounts):
+def test_balancer_v2_exit_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     tx_hash = deserialize_evm_tx_hash('0x1a9e201fcec608a49dd6b106c46818f2f898401f6439dc5e619869ad48167a3a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, return_amt, withdrawn_sdai_amt = gnosis_accounts[0], TimestampMS(1731923340000), '0.0003807456', '2403.555042425564723735', '2215.645258238073851336'  # noqa: E501
@@ -797,7 +803,7 @@ def test_balancer_v2_exit_gnosis(gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x63A49B0cA8B5B907dd083ada6D9F6853522Bb975']])
-def test_balancer_v2_join_gnosis(gnosis_inquirer, gnosis_accounts):
+def test_balancer_v2_join_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     tx_hash = deserialize_evm_tx_hash('0x1915189b0ad23d6c8e6f23df298e92504ec7537dfa8d52571c60193bc598a8b8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, receive_amt, deposit_sdai_amt = gnosis_accounts[0], TimestampMS(1729441770000), '0.0003671558', '2403.555042425564723735', '2229.291979360811376949'  # noqa: E501
@@ -1101,7 +1107,11 @@ def test_balancer_gauge_withdrawal(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_balancer_v2_swap_token_to_native(gnosis_inquirer, gnosis_accounts):
+def test_balancer_v2_swap_token_to_native(
+        gnosis_inquirer,
+        gnosis_accounts,
+        allow_gnosis_etherscan,
+):
     """This tests a swap from a token to the native token where there are also two swap tx_logs.
     So the tokens are swapped/unwrapped as follows (GIV -> GNO -> WXDAI -> xDAI).
     """
@@ -1149,7 +1159,7 @@ def test_balancer_v2_swap_token_to_native(gnosis_inquirer, gnosis_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V2]])
 @pytest.mark.parametrize('gnosis_accounts', [['0x6d983700980dd4b559ab8e932d1f1D96Bf677248']])
-def test_balancer_v2_swap_repeated_pair_netted_transfers(gnosis_inquirer, gnosis_accounts, load_global_caches):  # noqa: E501
+def test_balancer_v2_swap_repeated_pair_netted_transfers(gnosis_inquirer, gnosis_accounts, load_global_caches, allow_gnosis_etherscan):  # noqa: E501
     """Regression for a batch swap with repeated pairs and netted transfer events."""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,

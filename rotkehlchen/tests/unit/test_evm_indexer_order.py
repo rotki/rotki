@@ -16,6 +16,8 @@ from rotkehlchen.types import ChainID, SupportedBlockchain
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
+
 
 @dataclass
 class DummyIndexer:
@@ -177,3 +179,27 @@ def test_call_contract_indexers_forwards_block_identifier() -> None:
         block_identifier=10000000,
     ) == 1
     assert seen_kwargs['block_identifier'] == 10000000
+
+
+@pytest.mark.parametrize('include_blockscout_key', [False])
+def test_gnosis_falls_back_to_etherscan_without_a_blockscout_key(
+        gnosis_inquirer: GnosisInquirer,
+) -> None:
+    """A paid etherscan key alone must be enough to query gnosis.
+
+    Blockscout leads the default gnosis order but its endpoints reject keyless queries, so
+    without a blockscout key it has to step aside rather than make gnosis unqueryable.
+    """
+    assert CachedSettings().get_evm_indexers_order_for_chain(ChainID.GNOSIS) == (
+        EvmIndexer.BLOCKSCOUT,
+        EvmIndexer.ETHERSCAN,
+    )
+    queried: list[str] = []
+
+    def track(indexer: Any) -> str:
+        queried.append(indexer.name)
+        return indexer._get_url(chain_id=ChainID.GNOSIS)  # raises RemoteError for keyless blockscout  # noqa: E501
+
+    # blockscout is attempted first, bails out keyless, and etherscan serves the query
+    assert 'etherscan.io' in gnosis_inquirer._try_indexers(func=track)
+    assert queried == ['Blockscout', 'Etherscan']

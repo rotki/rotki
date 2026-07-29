@@ -622,7 +622,7 @@ def test_1inch_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_1inch_gnosis_v5_swap(gnosis_inquirer, gnosis_accounts):
+def test_1inch_gnosis_v5_swap(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4b1fcb8836d7cc323015c0d019f595273d176bd6024f7b59b4b15d3f7071ef71')),  # noqa: E501
@@ -1210,6 +1210,7 @@ def test_1inch_v5_liquidity_book_swap_arbitrum(arbitrum_one_inquirer, arbitrum_o
 def test_limit_order_swap(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,

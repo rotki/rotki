@@ -158,6 +158,7 @@ GNOSIS_RPC_NODE = WeightedNode(
 @pytest.mark.parametrize('gnosis_manager_connect_at_start', [(GNOSIS_RPC_NODE,)])
 def test_lookup_evm_transaction_returns_not_found_for_wrong_chain(
         rotkehlchen_api_server: APIServer,
+        allow_gnosis_etherscan: None,
 ) -> None:
     gnosis_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.gnosis.node_inquirer  # noqa: E501
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:

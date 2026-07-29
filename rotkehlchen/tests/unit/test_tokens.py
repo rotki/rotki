@@ -879,6 +879,7 @@ def test_monerium_queries(
         gnosis_manager: GnosisManager,
         gnosis_accounts: list[ChecksumEvmAddress],
         inquirer: Inquirer,
+        allow_gnosis_etherscan: None,
 ):
     """Test that we query balances for the new monerium eure but not the old one"""
     new_eure = get_or_create_evm_token(  # ensure that the new eure is in the db

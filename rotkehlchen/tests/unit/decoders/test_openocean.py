@@ -444,6 +444,7 @@ def test_openocean_swap_on_binance_sc(
 def test_openocean_swap_xdai_to_token(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
 ):
     tx_hash = deserialize_evm_tx_hash('0x806a840fd2c7ed43eefb2069a3a1d1921b668f3762a3ec6928549055d5b65453')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)

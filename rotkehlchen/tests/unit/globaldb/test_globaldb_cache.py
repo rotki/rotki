@@ -629,7 +629,7 @@ def test_balancer_cache(ethereum_inquirer):
 
 
 @pytest.mark.vcr
-def test_query_balancer_data_protocol_version_gnosis(gnosis_inquirer):
+def test_query_balancer_data_protocol_version_gnosis(gnosis_inquirer, allow_gnosis_etherscan):
     """Test that query_balancer_data correctly sets the protocol version for tokens."""
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM evm_tokens WHERE address=?', (pool_address := string_to_evm_address('0xBc2acf5E821c5c9f8667A36bB1131dAd26Ed64F9'),)).fetchone()[0] == 0  # noqa: E501

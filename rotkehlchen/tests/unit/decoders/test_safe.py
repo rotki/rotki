@@ -805,7 +805,7 @@ def test_safepass_vesting_claim(ethereum_inquirer, ethereum_accounts):
     '0x97c599819C95Aaf1BBC9063f4c743cCfCE7bc591',
     '0xEbfbf7A3006104fB1D3b68529A7B1b584acf4203',
 ]])
-def test_safe_added_owner_indexed(gnosis_inquirer, gnosis_accounts):
+def test_safe_added_owner_indexed(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
     tx_hash = deserialize_evm_tx_hash('0x42536687dbc0c93d6b18c451c458def1e9d78476f610c8909be31bf2ffd56a69')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas = gnosis_accounts[0], gnosis_accounts[1], TimestampMS(1747908200000), '0.000097393118048512'  # noqa: E501
@@ -891,7 +891,7 @@ def test_safe_execute_tx_with_hash_in_topics(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x7CE490534D78F1Ee54b20F7D03A99d5e3162e02B']])
-def test_safe_gnosisdao_distribution_claim(gnosis_inquirer, gnosis_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
+def test_safe_gnosisdao_distribution_claim(gnosis_inquirer, gnosis_accounts: list[ChecksumEvmAddress], allow_gnosis_etherscan: None) -> None:  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0xef79b799e909545cd16528bf218894957a1a39857141c76794fc7d2121542649')))  # noqa: E501
     assert events == [EvmEvent(
         tx_ref=tx_hash,

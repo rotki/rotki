@@ -131,7 +131,7 @@ def test_transfers(
 def test_get_token_balance(rotkehlchen_api_server: APIServer) -> None:
     rotkehlchen_api_server.rest_api.rotkehlchen.set_settings(
         settings=ModifiableDBSettings(evm_indexers_order=SerializableChainIndexerOrder(
-            order={chain_id: [EvmIndexer.ETHERSCAN] for chain_id in [ChainID.BASE, ChainID.BINANCE_SC, ChainID.OPTIMISM]},  # noqa: E501
+            order={chain_id: [EvmIndexer.ETHERSCAN] for chain_id in [ChainID.BASE, ChainID.BINANCE_SC, ChainID.OPTIMISM, ChainID.GNOSIS]},  # noqa: E501
         )),
     )
     # TODO: figure out why the db_settings fixture didn't have any effect when setting the indexer
