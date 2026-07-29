@@ -1307,6 +1307,35 @@ def test_asset_movement_with_fee_works_correctly(mock_bitstamp: Bitstamp) -> Non
     assert len(mock_bitstamp.msg_aggregator.consume_errors()) == 0
 
 
+@pytest.mark.parametrize('force_requery', [False, True])
+def test_bitstamp_flushes_movements_before_trade_query(
+        mock_bitstamp: Bitstamp,
+        force_requery: bool,
+) -> None:
+    event_queue = MagicMock(spec=HistoryEventQueue)
+    movement = MagicMock(spec=AssetMovement)
+    query_method = (
+        mock_bitstamp.requery_online_history_events_into_queue if force_requery else
+        mock_bitstamp.query_online_history_events_into_queue
+    )
+    with (
+        patch.object(mock_bitstamp, '_query_asset_movements', return_value=[movement]),
+        patch.object(
+            mock_bitstamp,
+            '_query_trades',
+            side_effect=RemoteError('trade query failed'),
+        ),
+        pytest.raises(RemoteError, match='trade query failed'),
+    ):
+        query_method(
+            start_ts=Timestamp(1),
+            end_ts=Timestamp(2),
+            event_queue=event_queue,
+        )
+
+    event_queue.flush.assert_called_once_with([movement])
+
+
 @pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.UTC))
 @pytest.mark.parametrize('bitstamp_api_key', ['123456'])
 @pytest.mark.parametrize('bitstamp_api_secret', [str.encode('abcdefg')])
