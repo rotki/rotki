@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import type { PendingSuggestion } from './settings-suggestions';
+import type { PendingSuggestion, SuggestionAction, SuggestionChoice, SuggestionRequirement } from './settings-suggestions';
 
 const { suggestion } = defineProps<{
   suggestion: PendingSuggestion;
   accepted: boolean;
+  choice?: string;
 }>();
 
 defineEmits<{
   toggle: [];
+  select: [choice: string];
+  action: [action: SuggestionAction];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -25,6 +28,8 @@ const knownLabels: Record<string, string> = {
 
 const isArray = computed<boolean>(() => Array.isArray(suggestion.currentValue));
 const isMerge = computed<boolean>(() => !!suggestion.merge);
+const choices = computed<SuggestionChoice[]>(() => suggestion.choices ?? []);
+const requirements = computed<SuggestionRequirement[]>(() => suggestion.requirements ?? []);
 
 const addedItems = computed<string[]>(() => {
   if (!get(isMerge) || !Array.isArray(suggestion.currentValue) || !Array.isArray(suggestion.suggestedValue))
@@ -42,6 +47,12 @@ function formatValue(value: unknown): string {
 function formatLabel(value: unknown): string {
   return knownLabels[String(value)] ?? String(value);
 }
+
+function choiceLabel(item: SuggestionChoice): string {
+  return item.id === suggestion.recommendedChoice
+    ? t('settings_suggestions.dialog.recommended_choice', { choice: item.label })
+    : item.label;
+}
 </script>
 
 <template>
@@ -58,7 +69,64 @@ function formatLabel(value: unknown): string {
       </div>
 
       <div
-        v-if="isMerge"
+        v-if="suggestion.note"
+        class="text-caption text-rui-text-secondary mt-1"
+      >
+        {{ suggestion.note }}
+      </div>
+
+      <div
+        v-if="requirements.length > 0"
+        class="flex flex-wrap gap-x-4 gap-y-1 mt-2"
+        data-cy="suggestion-requirements"
+      >
+        <div
+          v-for="requirement in requirements"
+          :key="requirement.label"
+          class="flex items-center gap-1 text-caption"
+          :class="requirement.met ? 'text-rui-success' : 'text-rui-text-secondary'"
+        >
+          <RuiIcon
+            :name="requirement.met ? 'lu-circle-check' : 'lu-circle-x'"
+            size="14"
+          />
+          {{ requirement.label }}
+        </div>
+      </div>
+
+      <template v-if="choices.length > 0">
+        <RuiRadioGroup
+          :model-value="choice"
+          color="primary"
+          hide-details
+          class="mt-2"
+          data-cy="suggestion-choices"
+          @update:model-value="$emit('select', String($event))"
+        >
+          <RuiRadio
+            v-for="item in choices"
+            :key="item.id"
+            :value="item.id"
+            :label="choiceLabel(item)"
+            :data-cy="`suggestion-choice-${item.id}`"
+          />
+        </RuiRadioGroup>
+
+        <RuiButton
+          v-if="suggestion.action"
+          color="primary"
+          variant="outlined"
+          size="sm"
+          class="mt-2"
+          data-cy="suggestion-action"
+          @click="$emit('action', suggestion.action)"
+        >
+          {{ suggestion.action.label }}
+        </RuiButton>
+      </template>
+
+      <div
+        v-else-if="isMerge"
         class="text-caption text-rui-text-secondary mt-0.5"
       >
         {{ t("settings_suggestions.dialog.adding") }}

@@ -18,7 +18,7 @@ const mockUpdateSession = vi.fn();
 const mockUpdateFrontendSetting = vi.fn();
 const mockSetConnectedExchanges = vi.fn();
 const mockCheckDefaultThemeVersion = vi.fn();
-const mockCheckForSuggestions = vi.fn();
+const mockCheckForSuggestions = vi.fn(async (): Promise<void> => {});
 
 vi.mock('@/modules/premium/use-premium-store', () => ({
   usePremiumStore: vi.fn(() => ({
