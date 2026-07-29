@@ -443,6 +443,7 @@ class ExchangeManager:
 
         May raise:
             - InputError: if the exchange instance can't be found.
+            - RemoteError: if the exchange's remote query fails.
             - DeserializationError
             - IntegrityError
         """
