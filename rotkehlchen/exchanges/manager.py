@@ -463,13 +463,20 @@ class ExchangeManager:
             location_string=f'{exchange.location!s}_history_events_{exchange.name}',
             query_start_ts=start_ts,
         )
-        actual_end_ts = exchange.requery_online_history_events_into_queue(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            event_queue=event_queue,
-        )
-        event_queue.flush()
-        exchange.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
+        try:
+            actual_end_ts = exchange.requery_online_history_events_into_queue(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                event_queue=event_queue,
+            )
+        finally:
+            try:
+                event_queue.flush()
+            finally:
+                exchange.send_history_events_status_msg(
+                    step=HistoryEventsStep.QUERYING_EVENTS_FINISHED,
+                )
+
         if (total_events := event_queue.queried_events) == 0:
             return 0, 0, 0, actual_end_ts
 
