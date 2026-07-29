@@ -500,17 +500,16 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             end_ts: Timestamp,
             event_queue: HistoryEventQueue,
     ) -> Timestamp:
-        events = self._query_asset_movements(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            event_queue=event_queue,
-        )
-        event_queue.events.extend(events)
-        event_queue.events.extend(self._query_trades(
+        event_queue.flush(self._query_asset_movements(
             start_ts=start_ts,
             end_ts=end_ts,
             event_queue=event_queue,
         ))
+        self._query_trades(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
         return end_ts
 
     def requery_online_history_events_into_queue(
@@ -519,17 +518,17 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             end_ts: Timestamp,
             event_queue: HistoryEventQueue,
     ) -> Timestamp:
-        event_queue.events.extend(self._query_asset_movements(
+        event_queue.flush(self._query_asset_movements(
             start_ts=start_ts,
             end_ts=end_ts,
             force_refresh=True,
             event_queue=event_queue,
         ))
-        event_queue.events.extend(self._query_trades(
+        self._query_trades(
             start_ts=start_ts,
             end_ts=end_ts,
             event_queue=event_queue,
-        ))
+        )
         return end_ts
 
     def validate_api_key(self) -> tuple[bool, str]:
