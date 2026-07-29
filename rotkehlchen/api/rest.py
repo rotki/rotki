@@ -44,6 +44,7 @@ from rotkehlchen.api.session_store import SESSION_DB_NAME, SessionStore
 from rotkehlchen.api.session_token import (
     SESSION_COOKIE_NAME,
     clear_session_cookie,
+    read_mcp_token,
     read_session_token,
     set_session_cookie,
 )
@@ -1209,7 +1210,7 @@ class RestAPI:
             self.session_store is None or
             (username := getattr(g, 'rotki_session_user', None)) is None or
             (sid := getattr(g, 'rotki_session_sid', None)) is None or
-            (token := self.session_store.issue_token(username=username, sid=sid)) is None
+            (token := self.session_store.issue_mcp_token(username=username, sid=sid)) is None
         ):
             return api_response(
                 wrap_in_fail_result('Authentication required'),
@@ -1217,7 +1218,7 @@ class RestAPI:
             )
 
         assert self.session_key is not None  # built together with session_store
-        claims = read_session_token(self.session_key, token)
+        claims = read_mcp_token(self.session_key, token)
         assert claims is not None  # the SessionStore minted it with the same key
         response = api_response(
             _wrap_in_ok_result({

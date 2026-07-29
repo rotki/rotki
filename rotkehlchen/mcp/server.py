@@ -78,6 +78,7 @@ def setup_server(
     configure_backend(
         base_url=backend_url,
         timeout=timeout,
+        session_key=session_key,
         privacy_mode=privacy_mode,
         max_events=max_events,
     )

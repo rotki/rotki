@@ -1,4 +1,4 @@
-"""Session token — the signed HttpOnly cookie used in the Docker deployment.
+"""Session and MCP tokens used in the authenticated Docker deployment.
 
 core is the password authority: on a successful ``authenticate`` (and account
 creation) it mints a short-lived HMAC-SHA256 token with the key the operator
@@ -15,6 +15,12 @@ Wire format (headerless, JWT-like):
 the compact JSON ``{"u":<username>,"iat":<unix>,"exp":<unix>,"sid":<session id>}``.
 The signature covers the first segment verbatim so the validator never
 re-serializes the JSON.
+
+MCP credentials use a purpose-derived signing key and carry ``"aud":"mcp"``.
+That cryptographic domain separation means a bearer token exposed to an MCP
+client can never validate as a browser cookie. MCP-to-core requests additionally
+carry a proof made with a second purpose-derived key; Starling strips that
+internal-only header from externally proxied API requests.
 
 ``sid`` is the **active-session id**: a random nonce minted per login and held in
 memory by core as the single active session (the backend is single-user). core
@@ -51,6 +57,10 @@ SESSION_ABSOLUTE_TTL: Final = 7 * 24 * 60 * 60  # 7 days
 
 # Name of the signed HttpOnly cookie carrying the session token.
 SESSION_COOKIE_NAME: Final = 'rotki_session'
+MCP_BACKEND_PROOF_HEADER: Final = 'X-Rotki-MCP-Proof'
+MCP_TOKEN_AUDIENCE: Final = 'mcp'
+_MCP_TOKEN_KEY_CONTEXT: Final = b'rotki-mcp-access-v1'
+_MCP_BACKEND_PROOF_KEY_CONTEXT: Final = b'rotki-mcp-backend-proof-v1'
 
 
 class SessionClaims(NamedTuple):
@@ -100,41 +110,42 @@ def _b64url_decode(segment: str) -> bytes:
     return base64.urlsafe_b64decode(segment + padding)
 
 
-def mint_session_token(
+def _derive_key(key: bytes, context: bytes) -> bytes:
+    """Derive a purpose-specific HMAC key without exposing the operator's root key."""
+    return hmac.new(key, context, hashlib.sha256).digest()
+
+
+def _mint_token(
         key: bytes,
         username: str,
         sid: str,
         now: int | None = None,
         expires_at: int | None = None,
+        audience: str | None = None,
 ) -> MintedSessionToken:
-    """Mint a signed session token for ``username`` carrying the active ``sid``.
-
-    Returns ``{'token': <str>, 'exp': <unix seconds>}``. ``now`` is injectable
-    for tests; production uses the wall clock. ``expires_at`` lets the caller set
-    the token ``exp`` explicitly (the SessionStore passes a rolling value capped at
-    the absolute ceiling); when omitted it defaults to ``now + SESSION_TOKEN_TTL``.
-    """
     issued_at = int(time.time()) if now is None else now
     if expires_at is None:
         expires_at = issued_at + SESSION_TOKEN_TTL
-    payload = json.dumps(
-        {'u': username, 'iat': issued_at, 'exp': expires_at, 'sid': sid},
-        separators=(',', ':'),
-    ).encode('utf-8')
+    payload_data: dict[str, int | str] = {
+        'u': username,
+        'iat': issued_at,
+        'exp': expires_at,
+        'sid': sid,
+    }
+    if audience is not None:
+        payload_data['aud'] = audience
+    payload = json.dumps(payload_data, separators=(',', ':')).encode('utf-8')
     payload_b64 = _b64url(payload)
     signature = hmac.new(key, payload_b64.encode('ascii'), hashlib.sha256).digest()
     return {'token': f'{payload_b64}.{_b64url(signature)}', 'exp': expires_at}
 
 
-def read_session_token(key: bytes, token: str, now: int | None = None) -> SessionClaims | None:
-    """Validate a session token and return its claims (username, exp, sid).
-
-    Recomputes the HMAC over the first segment (constant-time compare) and checks
-    the expiry. Returns the claims on success, or ``None`` for any failure —
-    malformed token, bad signature, or expired. ``now`` is injectable for tests.
-    The ``exp`` lets the caller implement rolling refresh past half the lifetime;
-    ``sid`` lets core/WS enforce single-session.
-    """
+def _read_token(
+        key: bytes,
+        token: str,
+        now: int | None = None,
+        audience: str | None = None,
+) -> SessionClaims | None:
     current_time = int(time.time()) if now is None else now
     try:
         payload_b64, signature_b64 = token.split('.')
@@ -160,12 +171,79 @@ def read_session_token(key: bytes, token: str, now: int | None = None) -> Sessio
     if (
         not isinstance(expires_at, int) or
         not isinstance(username, str) or
-        not isinstance(sid, str)
+        not isinstance(sid, str) or
+        payload.get('aud') != audience
     ):
         return None
     if current_time >= expires_at:
         return None
     return SessionClaims(username=username, exp=expires_at, sid=sid)
+
+
+def mint_session_token(
+        key: bytes,
+        username: str,
+        sid: str,
+        now: int | None = None,
+        expires_at: int | None = None,
+) -> MintedSessionToken:
+    """Mint a signed browser-session token carrying the active ``sid``."""
+    return _mint_token(
+        key=key,
+        username=username,
+        sid=sid,
+        now=now,
+        expires_at=expires_at,
+    )
+
+
+def read_session_token(key: bytes, token: str, now: int | None = None) -> SessionClaims | None:
+    """Validate a browser-session token and return its claims."""
+    return _read_token(key=key, token=token, now=now)
+
+
+def mint_mcp_token(
+        key: bytes,
+        username: str,
+        sid: str,
+        expires_at: int,
+        now: int | None = None,
+) -> MintedSessionToken:
+    """Mint an MCP-only bearer linked to the active browser session ``sid``."""
+    return _mint_token(
+        key=_derive_key(key, _MCP_TOKEN_KEY_CONTEXT),
+        username=username,
+        sid=sid,
+        now=now,
+        expires_at=expires_at,
+        audience=MCP_TOKEN_AUDIENCE,
+    )
+
+
+def read_mcp_token(key: bytes, token: str, now: int | None = None) -> SessionClaims | None:
+    """Validate an MCP-only bearer and return its linked session claims."""
+    return _read_token(
+        key=_derive_key(key, _MCP_TOKEN_KEY_CONTEXT),
+        token=token,
+        now=now,
+        audience=MCP_TOKEN_AUDIENCE,
+    )
+
+
+def create_mcp_backend_proof(key: bytes, token: str) -> str:
+    """Authenticate an MCP process's direct request to core without a session cookie."""
+    proof_key = _derive_key(key, _MCP_BACKEND_PROOF_KEY_CONTEXT)
+    return _b64url(hmac.new(proof_key, token.encode('ascii'), hashlib.sha256).digest())
+
+
+def verify_mcp_backend_proof(key: bytes, token: str, proof: str) -> bool:
+    """Validate the internal MCP-to-core proof, failing closed for malformed input."""
+    try:
+        proof.encode('ascii')
+        expected = create_mcp_backend_proof(key=key, token=token)
+        return hmac.compare_digest(expected, proof)
+    except UnicodeError:
+        return False
 
 
 def verify_session_token(key: bytes, token: str, now: int | None = None) -> str | None:

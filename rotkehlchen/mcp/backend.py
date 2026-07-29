@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 import requests
 from mcp.server.auth.middleware.auth_context import get_access_token
 
-from rotkehlchen.api.session_token import SESSION_COOKIE_NAME
+from rotkehlchen.api.session_token import MCP_BACKEND_PROOF_HEADER, create_mcp_backend_proof
 
 if TYPE_CHECKING:
     from rotkehlchen.mcp.constants import PrivacyMode
@@ -22,6 +22,7 @@ DEFAULT_PRIVACY_MODE: Final[PrivacyMode] = 'balanced'
 class BackendConfig:
     base_url: str
     timeout: int
+    session_key: bytes | None = None
     privacy_mode: PrivacyMode = DEFAULT_PRIVACY_MODE
     # Optional cap on how many history events a single analytics load pulls in. None means
     # no cap (load the complete set) so users get complete data by default; set it only to
@@ -39,6 +40,7 @@ class BackendQueryError(Exception):
 def configure_backend(
         base_url: str,
         timeout: int,
+        session_key: bytes | None = None,
         privacy_mode: PrivacyMode = DEFAULT_PRIVACY_MODE,
         max_events: int | None = None,
 ) -> None:
@@ -46,6 +48,7 @@ def configure_backend(
     _backend_config = BackendConfig(
         base_url=base_url,
         timeout=timeout,
+        session_key=session_key,
         privacy_mode=privacy_mode,
         max_events=max_events,
     )
@@ -76,17 +79,25 @@ def request_api(
     """
     url = _api_url(base_url=base_url, endpoint=endpoint)
     request = requests.post if method == 'POST' else requests.get
-    cookies = (
-        {SESSION_COOKIE_NAME: access_token.token}
-        if (access_token := get_access_token()) is not None else None
-    )
+    headers: dict[str, str] | None = None
+    if (
+        (access_token := get_access_token()) is not None and
+        (session_key := get_backend_config().session_key) is not None
+    ):
+        headers = {
+            'Authorization': f'Bearer {access_token.token}',
+            MCP_BACKEND_PROOF_HEADER: create_mcp_backend_proof(
+                key=session_key,
+                token=access_token.token,
+            ),
+        }
     try:
         response = request(
             url=url,
             params=params,
             json=json_data,
             timeout=timeout,
-            cookies=cookies,
+            headers=headers,
         )
     except requests.exceptions.RequestException as e:
         raise BackendQueryError(f'Could not connect to rotki backend at {url}: {e!s}') from e

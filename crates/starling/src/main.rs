@@ -30,8 +30,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use clap::{Parser, Subcommand, ValueEnum};
 use starling_core::{
-    build_services, Controller, Launcher, OsSpawner, Outcome, ServiceLayout, ServiceSpec, Startup,
-    StdioMode, Supervisor,
+    build_services, Controller, Launcher, OnCrash, OsSpawner, Outcome, RestartPolicy,
+    ServiceLayout, ServiceSpec, Startup, StdioMode, Supervisor,
 };
 use starling_proxy::ProxyConfig;
 use std::sync::Arc;
@@ -610,6 +610,13 @@ async fn main() -> std::process::ExitCode {
         for spec in &mut specs {
             spec.env
                 .insert("ROTKI_SESSION_KEY".to_string(), session_key.clone());
+            if authenticated_mcp && spec.name == "mcp" {
+                spec.restart = RestartPolicy {
+                    max_retries: 3,
+                    backoff: Duration::from_secs(1),
+                    on_crash: OnCrash::Restart,
+                };
+            }
         }
         if docker {
             for spec in &mut specs {

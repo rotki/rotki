@@ -2,6 +2,7 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from rotkehlchen.api.session_store import SessionStore
+from rotkehlchen.api.session_token import read_session_token
 from rotkehlchen.mcp.auth import MCP_SCOPE, SessionTokenVerifier
 
 if TYPE_CHECKING:
@@ -11,7 +12,10 @@ if TYPE_CHECKING:
 def test_session_token_verifier_should_require_active_session(tmp_path: Path) -> None:
     session_db = tmp_path / 'session.db'
     store = SessionStore(db_path=session_db, session_key=(session_key := b'test-key'))
-    token = store.login(username := 'alice')
+    session_token = store.login(username := 'alice')
+    assert (claims := read_session_token(session_key, session_token)) is not None
+    token = store.issue_mcp_token(username=username, sid=claims.sid)
+    assert token is not None
     verifier = SessionTokenVerifier(session_key=session_key, session_db=session_db)
     try:
         access_token = asyncio.run(verifier.verify_token(token))

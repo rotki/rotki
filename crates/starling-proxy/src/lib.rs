@@ -58,6 +58,9 @@ use tracing::{error, info, warn};
 
 /// The prefix nginx stripped when proxying to colibri (`proxy_pass …:4343/`).
 const COLIBRI_PREFIX: &str = "/colibri";
+/// Internal proof added by the loopback MCP process. External clients must never
+/// be able to relay one through Starling to core.
+const MCP_BACKEND_PROOF_HEADER: &str = "x-rotki-mcp-proof";
 
 /// How long a client may take to send a complete request head before the
 /// connection is dropped. This is the slowloris guard nginx provided by default
@@ -437,7 +440,8 @@ fn is_fingerprinted(file: &str) -> bool {
 }
 
 /// `/api/1/*` → core, path preserved.
-async fn proxy_core(State(state): State<ProxyState>, req: Request) -> Response {
+async fn proxy_core(State(state): State<ProxyState>, mut req: Request) -> Response {
+    req.headers_mut().remove(MCP_BACKEND_PROOF_HEADER);
     let target = format!("http://{}{}", state.core_addr, path_and_query(&req));
     let peer = peer_addr(&req);
     let req = req_with_target(req, target, peer);
@@ -791,6 +795,7 @@ mod tests {
                     .header(header::TRAILER, "X-Trailer")
                     .header(header::PROXY_AUTHORIZATION, "Basic secret")
                     .header("x-hop", "should-be-dropped")
+                    .header(MCP_BACKEND_PROOF_HEADER, "internal-proof")
                     .header("x-keep", "should-survive")
                     .body(Body::empty())
                     .unwrap(),
@@ -804,6 +809,7 @@ mod tests {
             "te",
             "trailer",
             "proxy-authorization",
+            MCP_BACKEND_PROOF_HEADER,
             "x-hop",
             "connection",
         ] {

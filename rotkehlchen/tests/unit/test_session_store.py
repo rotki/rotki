@@ -13,7 +13,10 @@ from rotkehlchen.api.session_store import (
 from rotkehlchen.api.session_token import (
     SESSION_ABSOLUTE_TTL,
     SESSION_IDLE_TTL,
+    create_mcp_backend_proof,
+    read_mcp_token,
     read_session_token,
+    verify_mcp_backend_proof,
 )
 
 KEY = b'unit-test-session-key'
@@ -96,9 +99,32 @@ def test_reissue_rejects_non_active_sid(tmp_path):
     assert store.reissue('nobody', 'whatever') is None
 
 
+@pytest.mark.freeze_time(BASE)
+def test_mcp_token_is_domain_separated_and_linked_to_session(tmp_path) -> None:
+    store = _store(tmp_path)
+    session_claims = read_session_token(KEY, store.login('alice'))
+    assert session_claims is not None
+
+    token = store.issue_mcp_token(username='alice', sid=session_claims.sid)
+    assert token is not None
+    assert read_session_token(KEY, token) is None
+    assert (mcp_claims := read_mcp_token(KEY, token)) is not None
+    assert mcp_claims.username == session_claims.username
+    assert mcp_claims.sid == session_claims.sid
+    assert store.is_active(mcp_claims.username, mcp_claims.sid) is True
+
+    proof = create_mcp_backend_proof(key=KEY, token=token)
+    assert verify_mcp_backend_proof(key=KEY, token=token, proof=proof) is True
+    assert verify_mcp_backend_proof(key=KEY, token=f'{token}x', proof=proof) is False
+
+    store.revoke('alice')
+    assert store.is_active(mcp_claims.username, mcp_claims.sid) is False
+
+
 @pytest.mark.parametrize('token', ['not-ascii-€.signature', 'payload.not-ascii-€'])
 def test_read_session_token_rejects_non_ascii_token(token: str) -> None:
     assert read_session_token(KEY, token) is None
+    assert read_mcp_token(KEY, token) is None
 
 
 @pytest.mark.freeze_time(BASE)

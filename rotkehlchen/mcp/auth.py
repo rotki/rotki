@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Final
 from mcp.server.auth.provider import AccessToken
 
 from rotkehlchen.api.session_store import is_persisted_session_active
-from rotkehlchen.api.session_token import read_session_token
+from rotkehlchen.api.session_token import read_mcp_token
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -25,7 +25,7 @@ class SessionTokenVerifier:  # pylint: disable=too-few-public-methods
 
     async def verify_token(self, token: str) -> AccessToken | None:
         """Return MCP access claims only for a signed, currently active session."""
-        if (claims := read_session_token(self.session_key, token)) is None:
+        if (claims := read_mcp_token(self.session_key, token)) is None:
             return None
         if not await asyncio.to_thread(
             is_persisted_session_active,

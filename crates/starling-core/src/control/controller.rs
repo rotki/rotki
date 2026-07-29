@@ -16,9 +16,9 @@
 //!   queue. So `/health` stays responsive even while a multi-second `restart` is
 //!   mid-flight (during which the snapshot reads not-ready, which is correct).
 //!
-//! A `restart` blocks the run loop for its duration; that only delays the *next
-//! mutation*, never a read. With the explicit-only crash policy (v1) there is no
-//! internal restart competing, so the serialized loop is the whole story.
+//! A restart blocks the run loop for its duration; that only delays the *next
+//! mutation*, never a read. Automatic crash retries run in this same serialized
+//! loop, so they cannot race explicit lifecycle operations.
 
 use std::collections::HashSet;
 use std::future::Future;
@@ -94,8 +94,8 @@ pub enum Outcome {
     Shutdown,
     /// A `stop` control request was honored.
     Stopped,
-    /// A service exited unexpectedly (explicit-only crash policy: surfaced, not
-    /// auto-restarted).
+    /// A service exited unexpectedly and its policy was fatal or exhausted its
+    /// automatic restart attempts.
     Crashed,
 }
 
@@ -515,10 +515,71 @@ impl<S: Spawner> Controller<S> {
                             self.publish();
                             self.emit_crashes(&dead);
                             if dead.iter().any(|service| {
-                                self.supervisor.on_crash(service).ok()
+                                self.supervisor.restart_policy(service).ok()
+                                    .map(|policy| policy.on_crash)
                                     == Some(OnCrash::ExitSupervisor)
                             }) {
                                 return Outcome::Crashed;
+                            }
+                            for service in dead {
+                                let Ok(policy) = self.supervisor.restart_policy(&service) else {
+                                    return Outcome::Crashed;
+                                };
+                                if policy.on_crash != OnCrash::Restart {
+                                    continue;
+                                }
+
+                                self.emit(ControlEvent::Restarting {
+                                    reason: RestartReason::Crash,
+                                });
+                                let mut recovered = false;
+                                for attempt in 1..=policy.max_retries {
+                                    info!(
+                                        service,
+                                        attempt,
+                                        max_retries = policy.max_retries,
+                                        "restarting crashed service",
+                                    );
+                                    let restart_result = tokio::select! {
+                                        result = self
+                                            .supervisor
+                                            .restart_failed_service(&service) => result,
+                                        _ = &mut shutdown => {
+                                            info!(
+                                                service,
+                                                "shutdown signal during automatic restart",
+                                            );
+                                            return Outcome::Shutdown;
+                                        }
+                                    };
+                                    match restart_result {
+                                        Ok(()) => {
+                                            recovered = true;
+                                            break;
+                                        }
+                                        Err(err) => {
+                                            error!(
+                                                service,
+                                                attempt,
+                                                max_retries = policy.max_retries,
+                                                %err,
+                                                "crashed service restart failed",
+                                            );
+                                        }
+                                    }
+                                }
+                                self.publish();
+                                if !recovered {
+                                    return Outcome::Crashed;
+                                }
+                                let services = self
+                                    .supervisor
+                                    .status()
+                                    .into_iter()
+                                    .filter(|status| status.state == ServiceState::Ready)
+                                    .map(|status| status.name)
+                                    .collect();
+                                self.emit(ControlEvent::Ready { services });
                             }
                         }
                         Ok(_) => self.publish(),
@@ -1588,6 +1649,79 @@ mod tests {
         assert!(events.try_recv().is_ok_and(
             |event| matches!(event, ControlEvent::Crashed { service, .. } if service == "mcp"),
         ));
+    }
+
+    #[tokio::test]
+    async fn docker_mcp_crash_is_restarted_without_stopping_backend() {
+        let spawner = TestSpawner::new();
+        let mut services = specs_with_optional_mcp();
+        let mcp = services
+            .iter_mut()
+            .find(|service| service.name == "mcp")
+            .unwrap();
+        mcp.autostart = true;
+        mcp.restart = crate::config::RestartPolicy {
+            max_retries: 3,
+            backoff: Duration::ZERO,
+            on_crash: OnCrash::Restart,
+        };
+        let mut sup = Supervisor::new(spawner.clone(), services.clone()).unwrap();
+        sup.start_all().await.unwrap();
+        let mcp_pid = sup
+            .status()
+            .into_iter()
+            .find(|service| service.name == "mcp")
+            .and_then(|service| service.pid)
+            .unwrap();
+        let mut controller = Controller::new(
+            sup,
+            layout(),
+            Box::new(move |_| services.clone()),
+            Duration::from_millis(50),
+            Some(1_700_000_000),
+        );
+        controller.poll_interval = Duration::from_millis(5);
+        let handle = controller.handle();
+        let mut events = handle.subscribe();
+        spawner.live.lock().unwrap().remove(&mcp_pid);
+
+        let status_handle = handle.clone();
+        let observed_spawner = spawner.clone();
+        let outcome = controller
+            .run(async move {
+                tokio::time::timeout(Duration::from_secs(1), async {
+                    loop {
+                        let status = status_handle.status(Transport::Stdio).unwrap();
+                        if status.services.iter().any(|service| {
+                            service.name == "mcp"
+                                && service.state == ServiceState::Ready
+                                && service.restarts == 1
+                        }) {
+                            break;
+                        }
+                        tokio::task::yield_now().await;
+                    }
+                })
+                .await
+                .expect("MCP was not restarted");
+                assert_eq!(observed_spawner.spawns.load(Ordering::SeqCst), 4);
+            })
+            .await;
+
+        assert_eq!(outcome, Outcome::Shutdown);
+        let emitted: Vec<ControlEvent> = std::iter::from_fn(|| events.try_recv().ok()).collect();
+        assert!(emitted.iter().any(
+            |event| matches!(event, ControlEvent::Crashed { service, .. } if service == "mcp"),
+        ));
+        assert!(emitted.iter().any(|event| matches!(
+            event,
+            ControlEvent::Restarting {
+                reason: RestartReason::Crash,
+            },
+        )));
+        assert!(emitted
+            .iter()
+            .any(|event| matches!(event, ControlEvent::Ready { .. })));
     }
 
     #[tokio::test]

@@ -19,9 +19,12 @@ import requests
 
 from rotkehlchen.api.session_store import SESSION_DB_NAME, SessionStore
 from rotkehlchen.api.session_token import (
+    MCP_BACKEND_PROOF_HEADER,
     SESSION_COOKIE_NAME,
     SESSION_IDLE_TTL,
+    create_mcp_backend_proof,
     mint_session_token,
+    read_mcp_token,
     read_session_token,
     verify_session_token,
 )
@@ -230,13 +233,34 @@ def test_issue_mcp_bearer_token(
         assert response.headers['Pragma'] == 'no-cache'
         assert result['token_type'] == 'Bearer'
         assert isinstance(result['expires_at'], int)
-        claims = read_session_token(SESSION_KEY, result['access_token'])
+        token = result['access_token']
+        assert read_session_token(SESSION_KEY, token) is None
+        claims = read_mcp_token(SESSION_KEY, token)
         assert claims is not None
         assert claims.username == username
         assert store.is_active(username=username, sid=claims.sid) is True
 
+        settings_url = api_url_for(rotkehlchen_api_server, 'settingsresource')
+        assert requests.get(
+            settings_url,
+            cookies={SESSION_COOKIE_NAME: token},
+        ).status_code == HTTPStatus.UNAUTHORIZED
+        assert requests.get(
+            settings_url,
+            headers={'Authorization': f'Bearer {token}'},
+        ).status_code == HTTPStatus.UNAUTHORIZED
+        internal_headers = {
+            'Authorization': f'Bearer {token}',
+            MCP_BACKEND_PROOF_HEADER: create_mcp_backend_proof(key=SESSION_KEY, token=token),
+        }
+        assert requests.get(settings_url, headers=internal_headers).status_code == HTTPStatus.OK
+
         store.revoke(username)
         assert store.is_active(username=username, sid=claims.sid) is False
+        assert requests.get(
+            settings_url,
+            headers=internal_headers,
+        ).status_code == HTTPStatus.UNAUTHORIZED
     finally:
         _disable_session(rotkehlchen_api_server)
 

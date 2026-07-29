@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Final, NamedTuple
 from rotkehlchen.api.session_token import (
     SESSION_ABSOLUTE_TTL,
     SESSION_IDLE_TTL,
+    mint_mcp_token,
     mint_session_token,
 )
 
@@ -110,6 +111,12 @@ class SessionStore:
         """Rolling refresh: re-mint the *same* sid with a fresh idle ``exp`` capped at
         the session's absolute ceiling. Returns the new token, or ``None`` if this sid is
         not the user's active session (nothing to refresh). Never writes to the DB."""
+        if (exp := self._refresh_exp(username=username, sid=sid)) is None:
+            return None
+        return mint_session_token(self.session_key, username, sid, expires_at=exp)['token']
+
+    def _refresh_exp(self, username: str, sid: str) -> int | None:
+        """Roll an active session's idle expiry and return it without minting a token."""
         with self._lock:  # same lock as the DB writers, so the read-modify-write is atomic
             active = self._active.get(username)
             if active is None or active.sid != sid:
@@ -117,7 +124,7 @@ class SessionStore:
             current_time = int(time.time())
             exp = min(current_time + SESSION_IDLE_TTL, active.absolute_exp)
             self._active[username] = active._replace(exp=exp)
-        return mint_session_token(self.session_key, username, sid, expires_at=exp)['token']
+        return exp
 
     def is_active(self, username: str, sid: str) -> bool:
         """Whether ``sid`` is the user's live session and within its absolute ceiling.
@@ -132,14 +139,21 @@ class SessionStore:
         active = self._active.get(username)
         return active.sid if active is not None else None
 
-    def issue_token(self, username: str, sid: str) -> str | None:
-        """Mint a fresh token for an already authenticated active session.
+    def issue_mcp_token(self, username: str, sid: str) -> str | None:
+        """Mint an MCP-only token linked to an authenticated active session.
 
-        This is the bearer-token issuance path used by MCP. Reusing the same signed
-        session credential lets the MCP process validate it independently and pass it
-        back to core as a cookie when a tool delegates to a protected API endpoint.
+        The token carries the same ``sid`` but uses a purpose-derived signing key, so it
+        cannot authenticate as a browser cookie. Logout/session takeover removes or
+        replaces the shared durable ``sid`` and therefore revokes both credentials.
         """
-        return self.reissue(username=username, sid=sid)
+        if (exp := self._refresh_exp(username=username, sid=sid)) is None:
+            return None
+        return mint_mcp_token(
+            key=self.session_key,
+            username=username,
+            sid=sid,
+            expires_at=exp,
+        )['token']
 
     def revoke(self, username: str) -> None:
         """Drop the active session for ``username`` (logout)."""

@@ -13,6 +13,7 @@ from starlette.testclient import TestClient
 
 from rotkehlchen import __main__ as rotkehlchen_main
 from rotkehlchen.api.session_store import SessionStore
+from rotkehlchen.api.session_token import read_session_token
 from rotkehlchen.mcp import __main__ as mcp_main, server
 from rotkehlchen.mcp.auth import MCP_SCOPE, SessionTokenVerifier
 from rotkehlchen.mcp.constants import SERVICE_NAME
@@ -161,7 +162,13 @@ def test_streamable_http_should_authenticate_before_protocol_handling(
             )
             assert malformed.status_code == 401
 
-            token = store.login('alice')
+            session_token = store.login('alice')
+            session_headers = {**headers, 'Authorization': f'Bearer {session_token}'}
+            assert client.post('/mcp', json=request, headers=session_headers).status_code == 401
+
+            assert (claims := read_session_token(session_key, session_token)) is not None
+            token = store.issue_mcp_token('alice', claims.sid)
+            assert token is not None
             authorized_headers = {**headers, 'Authorization': f'Bearer {token}'}
             authorized = client.post(
                 '/mcp',
