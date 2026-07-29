@@ -17,6 +17,7 @@ import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFo
 import { assetSuggestions } from '@/modules/core/common/display/assets';
 import { useEventSubtypeKeys } from '@/modules/core/table/filters/use-event-subtype-keys';
 import {
+  isBitcoinEventType,
   isEthBlockEventType,
   isEthDepositEventType,
   isEvmEventType,
@@ -130,7 +131,7 @@ export function useHistoryEventFilter(
 
     return {
       evmOrOnline: entryTypesVal.some(type => isEvmEventType(type) || isOnlineHistoryEventType(type)),
-      transactions: entryTypesVal.some(type => isEvmEventType(type) || isEthDepositEventType(type) || isSolanaEventType(type)),
+      transactions: entryTypesVal.some(type => isEvmEventType(type) || isEthDepositEventType(type) || isSolanaEventType(type) || isBitcoinEventType(type)),
       validatorIndex: entryTypesVal.some(type => isWithdrawalEventType(type) || isEthBlockEventType(type) || isEthDepositEventType(type)),
     };
   }

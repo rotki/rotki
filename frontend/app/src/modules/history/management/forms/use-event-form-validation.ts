@@ -1,6 +1,6 @@
 import type { ValidationRuleCollection, ValidationRuleWithoutParams } from '@vuelidate/core';
 import type { Ref } from 'vue';
-import { isValidEthAddress, isValidEvmTxHash, isValidSolanaAddress, isValidSolanaSignature } from '@rotki/common';
+import { isValidBtcTxHash, isValidEthAddress, isValidEvmTxHash, isValidSolanaAddress, isValidSolanaSignature } from '@rotki/common';
 import { helpers, minLength, required, requiredIf } from '@vuelidate/validators';
 
 interface CreateCommonRules {
@@ -25,6 +25,7 @@ interface CreateCommonRules {
   createValidSolanaAddressRule: <T>() => ValidationRuleCollection<T>;
   createValidTxHashRule: <T>() => ValidationRuleCollection<T>;
   createValidSolanaSignatureRule: <T>() => ValidationRuleCollection<T>;
+  createValidBitcoinTxIdRule: <T>() => ValidationRuleCollection<T>;
 }
 
 interface UseEventFormValidationReturn {
@@ -131,6 +132,13 @@ export function useEventFormValidation(): UseEventFormValidationReturn {
         (value: string) => isValidSolanaSignature(value),
       ),
       required: helpers.withMessage(t('transactions.events.form.signature.validation.non_empty'), required),
+    }),
+    createValidBitcoinTxIdRule: () => ({
+      isValid: helpers.withMessage(
+        t('transactions.events.form.tx_id.validation.valid'),
+        (value: string) => isValidBtcTxHash(value),
+      ),
+      required: helpers.withMessage(t('transactions.events.form.tx_id.validation.non_empty'), required),
     }),
     createValidTxHashRule: () => ({
       isValid: helpers.withMessage(

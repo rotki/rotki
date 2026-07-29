@@ -92,6 +92,16 @@ const EvmSwapEventSchema = CommonHistoryEvent.extend({
 
 export type EvmSwapEvent = z.infer<typeof EvmSwapEventSchema>;
 
+const BitcoinEventSchema = CommonHistoryEvent.extend({
+  address: z.string().nullable(),
+  counterparty: z.string().nullable(),
+  entryType: z.literal(HistoryEventEntryType.BITCOIN_EVENT),
+  extraData: z.unknown().nullish(),
+  txRef: z.string(),
+});
+
+export type BitcoinEvent = z.infer<typeof BitcoinEventSchema>;
+
 const SolanaEventSchema = CommonHistoryEvent.extend({
   address: z.string().nullable(),
   counterparty: z.string().nullable(),
@@ -123,6 +133,7 @@ export const HistoryEvent = z.union([
   EvmSwapEventSchema,
   SolanaEventSchema,
   SolanaSwapEventSchema,
+  BitcoinEventSchema,
 ]);
 
 export type GroupEditableHistoryEvents = AssetMovementEvent | SwapEvent | EvmSwapEvent | SolanaSwapEvent;
@@ -134,7 +145,7 @@ export interface FeeEntry {
 
 export type SwapEventUserNotes = [string, string, ...string[]];
 
-export type StandaloneEditableEvents = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | SolanaEvent;
+export type StandaloneEditableEvents = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | SolanaEvent | BitcoinEvent;
 
 export type HistoryEvent = StandaloneEditableEvents | GroupEditableHistoryEvents;
 
@@ -197,6 +208,15 @@ type EditSolanaEventPayload = Omit<
 };
 
 export type NewSolanaEventPayload = Omit<EditSolanaEventPayload, 'identifier'>;
+
+type EditBitcoinEventPayload = Omit<
+  BitcoinEvent,
+  'ignoredInAccounting' | 'states' | 'groupIdentifier' | 'address'
+> & {
+  groupIdentifier: string | null;
+};
+
+export type NewBitcoinEventPayload = Omit<EditBitcoinEventPayload, 'identifier'>;
 
 type EditOnlineHistoryEventPayload = Omit<OnlineHistoryEvent, 'ignoredInAccounting' | 'states'>;
 
@@ -287,7 +307,8 @@ export type EditHistoryEventPayload =
   | EditEthDepositEventPayload
   | EditEthWithdrawalEventPayload
   | EditAssetMovementEventPayload
-  | EditSolanaEventPayload;
+  | EditSolanaEventPayload
+  | EditBitcoinEventPayload;
 
 export type NewHistoryEventPayload =
   | NewEvmHistoryEventPayload
@@ -296,7 +317,8 @@ export type NewHistoryEventPayload =
   | NewEthDepositEventPayload
   | NewEthWithdrawalEventPayload
   | NewAssetMovementEventPayload
-  | NewSolanaEventPayload;
+  | NewSolanaEventPayload
+  | NewBitcoinEventPayload;
 
 export type AddHistoryEventPayload = NewHistoryEventPayload | AddSwapEventPayload | AddEvmSwapEventPayload | AddSolanaSwapEventPayload;
 
