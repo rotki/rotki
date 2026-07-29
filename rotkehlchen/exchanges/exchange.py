@@ -524,17 +524,16 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
                     location_string=location_string,
                     query_start_ts=query_start_ts,
                 )
+                actual_end_ts: Timestamp | None = None
                 try:
                     actual_end_ts = self.query_online_history_events_into_queue(
                         start_ts=query_start_ts,
                         end_ts=query_end_ts,
                         event_queue=event_queue,
                     )
-                except RemoteError:
-                    event_queue.flush()
-                    raise
+                finally:
+                    event_queue.flush(queried_until_ts=actual_end_ts)
 
-                event_queue.flush(queried_until_ts=actual_end_ts)
                 if actual_end_ts != query_end_ts:
                     log.error(
                         'Failed to query all %s history events between %s and %s. '

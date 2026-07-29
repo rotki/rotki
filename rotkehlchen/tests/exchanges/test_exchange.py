@@ -37,14 +37,20 @@ def test_history_event_queue_discards_failed_batch() -> None:
     assert event_queue.events == []
 
 
-def test_history_query_flushes_and_finishes_on_remote_error() -> None:
+@pytest.mark.parametrize('error', [
+    RemoteError('query failed'),
+    DeserializationError('query failed'),
+])
+def test_history_query_flushes_and_finishes_on_error(
+        error: RemoteError | DeserializationError,
+) -> None:
     exchange = MagicMock()
     exchange.db = MagicMock()
     exchange.location = Location.BINANCE
     exchange.name = 'test'
     exchange.query_locks_map = defaultdict(Semaphore)
     exchange.query_locks_map_lock = Semaphore()
-    exchange.query_online_history_events_into_queue.side_effect = RemoteError('query failed')
+    exchange.query_online_history_events_into_queue.side_effect = error
     event_queue = MagicMock(spec=HistoryEventQueue)
 
     with (
@@ -54,11 +60,11 @@ def test_history_query_flushes_and_finishes_on_remote_error() -> None:
         ),
         patch('rotkehlchen.exchanges.exchange.HistoryEventQueue', return_value=event_queue),
         patch('rotkehlchen.exchanges.exchange.ts_now', return_value=Timestamp(2)),
-        pytest.raises(RemoteError, match='query failed'),
+        pytest.raises(type(error), match='query failed'),
     ):
         ExchangeWithoutApiSecret.query_history_events(exchange)
 
-    event_queue.flush.assert_called_once_with()
+    event_queue.flush.assert_called_once_with(queried_until_ts=None)
     assert exchange.send_history_events_status_msg.call_args_list[-1].kwargs == {
         'step': HistoryEventsStep.QUERYING_EVENTS_FINISHED,
     }
