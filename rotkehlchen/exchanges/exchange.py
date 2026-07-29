@@ -508,34 +508,40 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
                 end_ts=ts_now(),
             )
 
-        for query_start_ts, query_end_ts in ranges_to_query:
-            self.send_history_events_status_msg(
-                step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
-                period=[query_start_ts, query_end_ts],
-            )
-            event_queue = HistoryEventQueue(
-                database=self.db,
-                location_string=location_string,
-                query_start_ts=query_start_ts,
-            )
-            actual_end_ts = self.query_online_history_events_into_queue(
-                start_ts=query_start_ts,
-                end_ts=query_end_ts,
-                event_queue=event_queue,
-            )
-            event_queue.flush(queried_until_ts=actual_end_ts)
-            if actual_end_ts != query_end_ts:
-                log.error(
-                    'Failed to query all %s history events between %s and %s. '
-                    'Last successfully queried timestamp: %s',
-                    self.name,
-                    query_start_ts,
-                    query_end_ts,
-                    actual_end_ts,
+        try:
+            for query_start_ts, query_end_ts in ranges_to_query:
+                self.send_history_events_status_msg(
+                    step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
+                    period=[query_start_ts, query_end_ts],
                 )
-                break
+                event_queue = HistoryEventQueue(
+                    database=self.db,
+                    location_string=location_string,
+                    query_start_ts=query_start_ts,
+                )
+                try:
+                    actual_end_ts = self.query_online_history_events_into_queue(
+                        start_ts=query_start_ts,
+                        end_ts=query_end_ts,
+                        event_queue=event_queue,
+                    )
+                except RemoteError:
+                    event_queue.flush()
+                    raise
 
-        self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
+                event_queue.flush(queried_until_ts=actual_end_ts)
+                if actual_end_ts != query_end_ts:
+                    log.error(
+                        'Failed to query all %s history events between %s and %s. '
+                        'Last successfully queried timestamp: %s',
+                        self.name,
+                        query_start_ts,
+                        query_end_ts,
+                        actual_end_ts,
+                    )
+                    break
+        finally:
+            self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
 
     def query_history_with_callbacks(
             self,
