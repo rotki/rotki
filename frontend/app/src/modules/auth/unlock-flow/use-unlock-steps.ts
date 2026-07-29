@@ -30,6 +30,8 @@ interface LoadedAccount {
   exchanges: Exchange[];
   fetchData: boolean;
   username: string;
+  /** set by `createUnlock`; suppresses the settings-suggestions dialog for a fresh account */
+  newAccount?: boolean;
 }
 
 export interface UseUnlockStepsReturn {
@@ -178,7 +180,7 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
       return err({ kind: UnlockErrorKind.unknown, message: 'no unlocked account to load' });
 
     try {
-      await initialize(loaded.settings, loaded.exchanges);
+      await initialize(loaded.settings, loaded.exchanges, loaded.newAccount);
       set(username, loaded.username);
       set(logged, true);
       if (loaded.fetchData)
@@ -251,9 +253,14 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
 
       const { exchanges, settings } = UserAccount.parse(outcome.result);
       await colibriLogin({ password: payload.credentials.password, username: payload.credentials.username });
+      // Restoring a premium backup is not a fresh account: the pulled database carries the
+      // settings (and the applied-suggestions version) of the account it came from, so the
+      // recommendations still apply to it.
+      const syncDatabase = payload.premiumSetup?.syncDatabase ?? false;
       loaded = {
         exchanges,
-        fetchData: payload.premiumSetup?.syncDatabase ?? false,
+        fetchData: syncDatabase,
+        newAccount: !syncDatabase,
         settings,
         username: payload.credentials.username,
       };

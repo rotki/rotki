@@ -11,7 +11,7 @@ import { useSettingsOperations } from '@/modules/settings/use-settings-operation
 import { useThemeMigration } from '@/modules/settings/use-theme-migration';
 
 interface UseSessionSettingsReturn {
-  initialize: (model: UserSettingsModel, exchanges: Exchange[]) => Promise<void>;
+  initialize: (model: UserSettingsModel, exchanges: Exchange[], newAccount?: boolean) => Promise<void>;
 }
 
 export function useSessionSettings(): UseSessionSettingsReturn {
@@ -35,6 +35,7 @@ export function useSessionSettings(): UseSessionSettingsReturn {
       other: { frontendSettings, havePremium, premiumShouldSync },
     }: UserSettingsModel,
     exchanges: Exchange[],
+    newAccount = false,
   ): Promise<void> => {
     if (frontendSettings) {
       const { lastKnownTimeframe, persistPrivacySettings, timeframeSetting } = frontendSettings;
@@ -48,7 +49,9 @@ export function useSessionSettings(): UseSessionSettingsReturn {
       setConnectedExchanges(exchanges);
       updateSessionSettings({ timeframe });
       checkDefaultThemeVersion();
-      checkForSuggestions(frontendSettings, general);
+      // Awaited before the privacy reset below: both go through the same read-modify-write of
+      // the settings blob, so overlapping them can lose the applied-suggestions version.
+      await checkForSuggestions(frontendSettings, general, newAccount);
 
       if (!persistPrivacySettings) {
         await updateFrontendSetting({

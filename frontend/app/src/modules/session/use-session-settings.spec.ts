@@ -3,6 +3,7 @@ import type { FrontendSettings } from '@/modules/settings/types/frontend-setting
 import type { UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { TimeFramePeriod, TimeFramePersist } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrivacyMode } from '@/modules/session/types';
 import { useSessionSettings } from '@/modules/session/use-session-settings';
@@ -108,7 +109,36 @@ describe('useSessionSettings', () => {
     expect(mockUpdateFrontend).toHaveBeenCalledOnce();
     expect(mockSetConnectedExchanges).toHaveBeenCalledWith(exchanges);
     expect(mockCheckDefaultThemeVersion).toHaveBeenCalledOnce();
-    expect(mockCheckForSuggestions).toHaveBeenCalledOnce();
+    expect(mockCheckForSuggestions).toHaveBeenCalledWith(expect.anything(), expect.anything(), false);
+  });
+
+  it('should flag a new account when checking for suggestions', async () => {
+    const { initialize } = useSessionSettings();
+    await initialize(buildModel(), [], true);
+
+    expect(mockCheckForSuggestions).toHaveBeenCalledWith(expect.anything(), expect.anything(), true);
+  });
+
+  it('should await the suggestions check before resetting privacy settings', async () => {
+    let release: () => void = () => {};
+    mockCheckForSuggestions.mockReturnValue(new Promise<void>((resolve) => {
+      release = resolve;
+    }));
+
+    const { initialize } = useSessionSettings();
+    const pending = initialize(buildModel({ frontendSettings: frontend({ persistPrivacySettings: false }) }), [], true);
+    await flushPromises();
+
+    // both writes rewrite the whole settings blob, so the privacy reset must not overlap
+    expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
+
+    release();
+    await pending;
+
+    expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({
+      privacyMode: PrivacyMode.NORMAL,
+      scrambleData: false,
+    });
   });
 
   it('should use the explicit timeframe when it is not REMEMBER', async () => {
