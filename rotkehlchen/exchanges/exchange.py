@@ -410,7 +410,12 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
             end_ts: Timestamp,
             event_queue: HistoryEventQueue,
     ) -> Timestamp:
-        """Force requery events into the explicit queue without recording range progress."""
+        """Force requery events into the explicit queue without recording range progress.
+
+        The default implementation cannot honor force_refresh because
+        query_online_history_events_into_queue() does not accept it. Any exchange whose
+        query_online_history_events() uses force_refresh must override this method.
+        """
         return self.query_online_history_events_into_queue(
             start_ts=start_ts,
             end_ts=end_ts,
