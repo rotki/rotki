@@ -1019,6 +1019,7 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
             'offset': 0,
         },
         case='trades',
+        event_queue=None,
     )
     with (
         patch.object(mock_bitstamp, '_api_query_paginated') as mock_api_query_paginated,
