@@ -18,8 +18,8 @@ interface Sponsor {
 }
 
 const data: Sponsor = {
-  image: '/assets/images/sponsorship/1.43.0_pcaversaccio.jpg',
-  name: 'pcaversaccio',
+  image: '/assets/images/sponsorship/1.44.0_ambire.png',
+  name: 'Ambire Wallet',
 };
 </script>
 

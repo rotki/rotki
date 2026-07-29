@@ -22,8 +22,8 @@ vi.mock('@/modules/shell/layout/use-links', (): Record<string, unknown> => ({
 }));
 
 describe('sponsorship-view', () => {
-  const SPONSOR_IMAGE = '/assets/images/sponsorship/1.43.0_pcaversaccio.jpg';
-  const SPONSOR_NAME = 'pcaversaccio';
+  const SPONSOR_IMAGE = '/assets/images/sponsorship/1.44.0_ambire.png';
+  const SPONSOR_NAME = 'Ambire Wallet';
 
   let wrapper: VueWrapper<InstanceType<typeof SponsorshipView>>;
   let pinia: Pinia;
@@ -62,12 +62,12 @@ describe('sponsorship-view', () => {
     set(version, {
       downloadUrl: '',
       latestVersion: '',
-      version: '1.43.0',
+      version: '1.44.0',
     });
 
     wrapper = createWrapper();
 
-    expect(wrapper.text()).toContain('1.43.0');
+    expect(wrapper.text()).toContain('1.44.0');
   });
 
   it('should display the new sponsor name', () => {
