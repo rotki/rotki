@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.exchange import HistoryEventQueue
@@ -72,6 +73,38 @@ def test_requery_exchange_history_events_uses_incremental_queue() -> None:
     )
     event_queue.flush.assert_called_once_with()
     assert result == (3, 2, 1, Timestamp(2))
+
+
+def test_requery_exchange_history_events_flushes_and_finishes_on_error() -> None:
+    manager = ExchangeManager(msg_aggregator=MagicMock())
+    manager.database = MagicMock()
+    manager.database.get_settings.return_value = SimpleNamespace(non_syncing_exchanges=set())
+    exchange = MagicMock()
+    exchange.name = 'test'
+    exchange.location = Location.BINANCE
+    exchange.location_id.return_value = 'binance_test'
+    exchange.requery_online_history_events_into_queue.side_effect = RemoteError('query failed')
+    manager.connected_exchanges[Location.BINANCE].append(exchange)
+    event_queue = MagicMock(spec=HistoryEventQueue)
+
+    with (
+        patch(
+            'rotkehlchen.exchanges.manager.HistoryEventQueue',
+            return_value=event_queue,
+        ),
+        pytest.raises(RemoteError, match='query failed'),
+    ):
+        manager.requery_exchange_history_events(
+            location=Location.BINANCE,
+            name='test',
+            start_ts=Timestamp(1),
+            end_ts=Timestamp(2),
+        )
+
+    event_queue.flush.assert_called_once_with()
+    assert exchange.send_history_events_status_msg.call_args_list[-1].kwargs == {
+        'step': HistoryEventsStep.QUERYING_EVENTS_FINISHED,
+    }
 
 
 def test_query_exchange_history_events_continues_after_remote_error() -> None:
