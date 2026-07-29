@@ -15,6 +15,7 @@ from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.chain.mixins.rpc_nodes import NodeStatus
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.concurrency import exception_of, spawn, wait
+from rotkehlchen.db.bitcointx import DBBitcoinTx
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -451,15 +452,22 @@ class TransactionsService:
                     write_cursor=write_cursor,
                     tx_hash=tx_ref,  # type: ignore[arg-type]
                 )
-            elif chain.is_bitcoin() and tx_ref is None:
-                self._delete_bitcoin_tx_data(
-                    write_cursor=write_cursor,
-                    cache_key=(
-                        DBCacheDynamic.LAST_BTC_TX_BLOCK
-                        if chain == SupportedBlockchain.BITCOIN
-                        else DBCacheDynamic.LAST_BCH_TX_BLOCK
-                    ),
-                )
+            elif chain.is_bitcoin():
+                if tx_ref is None:
+                    self._delete_bitcoin_tx_data(
+                        write_cursor=write_cursor,
+                        cache_key=(
+                            DBCacheDynamic.LAST_BTC_TX_BLOCK
+                            if chain == SupportedBlockchain.BITCOIN
+                            else DBCacheDynamic.LAST_BCH_TX_BLOCK
+                        ),
+                    )
+                else:  # its events were already deleted above
+                    DBBitcoinTx(self.rotkehlchen.data.db).delete_transactions(
+                        write_cursor=write_cursor,
+                        location=Location.from_chain(chain),
+                        tx_ids=[tx_ref],  # type: ignore[list-item]  # is a BTCTxId for bitcoin chains
+                    )
 
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
@@ -1064,6 +1072,14 @@ class TransactionsService:
             write_cursor: DBCursor,
             cache_key: Literal[DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK],
     ) -> None:
+        DBBitcoinTx(self.rotkehlchen.data.db).delete_transactions(
+            write_cursor=write_cursor,
+            location=(
+                Location.BITCOIN
+                if cache_key == DBCacheDynamic.LAST_BTC_TX_BLOCK
+                else Location.BITCOIN_CASH
+            ),
+        )
         self.rotkehlchen.data.db.delete_dynamic_caches(
             write_cursor=write_cursor,
             key_parts=[cache_key.value[0].removesuffix('{address}')],

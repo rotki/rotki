@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 import requests
 
@@ -20,6 +20,7 @@ from rotkehlchen.chain.bitcoin.utils import OpCodes
 from rotkehlchen.chain.decoding.utils import decode_transfer_direction
 from rotkehlchen.chain.manager import ChainManagerWithTransactions
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.bitcointx import DBBitcoinTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
@@ -29,7 +30,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import BTCAddress, BTCTxId, Location, SupportedBlockchain, Timestamp
-from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
+from rotkehlchen.utils.misc import get_chunks, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -43,6 +44,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY = 'bitcoin_counterparty_addresses'
+# Number of transactions decoded per write. Keeps a full history redecode from holding
+# every event of every transaction in memory before anything is saved.
+DECODING_CHUNK_SIZE: Final = 500
 
 
 class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
@@ -65,6 +69,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         self.group_identifier_prefix = group_identifier_prefix
         self.cache_key = cache_key
         self.api_callbacks = api_callbacks
+        self.dbtx = DBBitcoinTx(database)
 
     def refresh_tracked_accounts(self) -> None:
         with self.database.conn.read_ctx() as cursor:
@@ -78,6 +83,16 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         Reimplemented in subclasses to return the address in a different format.
         """
         return address
+
+    def get_api_address(self, address: BTCAddress) -> BTCAddress:
+        """Returns the address in the format the APIs use, which is what TxIOs are saved
+        with. The inverse of get_display_address, resolved via the tracked accounts since
+        the conversion the subclasses do only goes one way.
+        """
+        return next(
+            (x for x in self.tracked_accounts if self.get_display_address(x) == address),
+            address,
+        )
 
     @overload
     def _query(
@@ -216,6 +231,12 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 ) or 0
                 accounts_by_latest_query[block_height].append(address)
 
+        # An address queried for the first time may already appear in transactions saved for
+        # another address. Those were decoded while it was untracked, so their events are
+        # outdated. Mark them now and they get decoded again along with the new ones.
+        if len(new_addresses := accounts_by_latest_query.get(0, [])) != 0:
+            self.mark_addresses_transactions_for_redecode(new_addresses)
+
         tx_list: list[BitcoinTx] = []
         new_block_height = 0
         for last_queried_block, accounts in accounts_by_latest_query.items():
@@ -239,19 +260,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             log.debug(f'No new transactions found for {self.blockchain!s} accounts {accounts_str}')
             return
 
-        self._send_tx_ws_status(
-            addresses=addresses,
-            status=TransactionStatusStep.DECODING_TRANSACTIONS_STARTED,
-        )
-        events, decoded_tx_ids = [], set()
-        for tx in tx_list:
-            if tx.tx_id in decoded_tx_ids:
-                continue  # the same tx is returned once per queried address it touches
-
-            decoded_tx_ids.add(BTCTxId(tx.tx_id))
-            events.extend(self.decode_transaction(tx))
-
-        dbevents = DBHistoryEvents(self.database)
+        unique_txs = {tx.tx_id: tx for tx in tx_list}  # the same tx is returned once per queried address it touches  # noqa: E501
         with self.database.conn.write_ctx() as write_cursor:
             for address in addresses:
                 self.database.set_dynamic_cache(
@@ -261,29 +270,151 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                     address=address,
                 )
 
-            # Replace any previously decoded events for these transactions. Sequence indexes
-            # are positional, so when the tracked account set changed since the last decode
-            # (e.g. an xpub was added after a standalone address) the new events collide with
-            # the stale ones under UNIQUE(group_identifier, sequence_index). Inserting without
-            # purging first keeps outdated rows and silently drops the corrected ones.
-            dbevents.delete_events_by_tx_ref(
+            # Save the transactions before decoding them. Decoding runs in its own write so
+            # that a failure only leaves them pending decoding instead of losing the query.
+            self._save_transactions(
                 write_cursor=write_cursor,
-                tx_refs=list(decoded_tx_ids),
-                location=self.location,
-                customized_handling='preserve_transactions',
+                transactions=list(unique_txs.values()),
             )
-            if len(customized := self._get_customized_group_identifiers(
-                cursor=write_cursor,
-                tx_ids=decoded_tx_ids,
-            )) != 0:  # these were kept above, so don't try to write over them
-                events = [x for x in events if x.group_identifier not in customized]
 
-            dbevents.add_history_events(write_cursor=write_cursor, history=events)
-
+        self._send_tx_ws_status(
+            addresses=addresses,
+            status=TransactionStatusStep.DECODING_TRANSACTIONS_STARTED,
+        )
+        self.decode_transactions()
         self._send_tx_ws_status(
             addresses=addresses,
             status=TransactionStatusStep.DECODING_TRANSACTIONS_FINISHED,
         )
+
+    def _save_transactions(
+            self,
+            write_cursor: DBCursor,
+            transactions: list[BitcoinTx],
+    ) -> None:
+        """Save the given transactions, associating each with the tracked addresses that
+        take part in it. The addresses are saved in the format they are tracked in, which
+        for bitcoin cash is not the one the APIs return them in.
+        """
+        for tx in transactions:
+            if len(relevant_addresses := {
+                self.get_display_address(tx_io.address)
+                for tx_io in tx.inputs + tx.outputs
+                if tx_io.address is not None and tx_io.address in self.tracked_accounts
+            }) == 0:
+                log.error(
+                    'Found %s transaction %s without any tracked address in its inputs '
+                    'or outputs. Should not happen.',
+                    self.blockchain,
+                    tx.tx_id,
+                )
+
+            self.dbtx.add_transactions(  # one at a time since the addresses differ per tx
+                write_cursor=write_cursor,
+                transactions=[tx],
+                location=self.location,
+                relevant_addresses=list(relevant_addresses),
+            )
+
+    def decode_transactions(self, tx_ids: list[BTCTxId] | None = None) -> int:
+        """Decode the saved transactions that are pending decoding into history events.
+
+        If tx_ids is given only those transactions are considered. Returns the number of
+        transactions decoded.
+        """
+        self.refresh_tracked_accounts()
+        with self.database.conn.read_ctx() as cursor:
+            transactions = self.dbtx.get_transactions(
+                cursor=cursor,
+                location=self.location,
+                tx_ids=tx_ids,
+                undecoded_only=True,
+            )
+
+        if len(transactions) == 0:
+            return 0
+
+        dbevents = DBHistoryEvents(self.database)
+        for tx_chunk in get_chunks(transactions, DECODING_CHUNK_SIZE):
+            events, decoded_tx_ids = [], set()
+            for tx in tx_chunk:
+                decoded_tx_ids.add(BTCTxId(tx.tx_id))
+                events.extend(self.decode_transaction(tx))
+
+            with self.database.conn.write_ctx() as write_cursor:
+                # Replace any previously decoded events for these transactions. Sequence
+                # indexes are positional, so when the tracked account set changed since the
+                # last decode (e.g. an xpub was added after a standalone address) the new
+                # events collide with the stale ones under
+                # UNIQUE(group_identifier, sequence_index). Inserting without purging first
+                # keeps outdated rows and silently drops the corrected ones.
+                dbevents.delete_events_by_tx_ref(
+                    write_cursor=write_cursor,
+                    tx_refs=list(decoded_tx_ids),
+                    location=self.location,
+                    customized_handling='preserve_transactions',
+                )
+                if len(customized := self._get_customized_group_identifiers(
+                    cursor=write_cursor,
+                    tx_ids=decoded_tx_ids,
+                )) != 0:  # these were kept above, so don't try to write over them
+                    events = [x for x in events if x.group_identifier not in customized]
+
+                dbevents.add_history_events(write_cursor=write_cursor, history=events)
+                self.dbtx.set_decoded(
+                    write_cursor=write_cursor,
+                    location=self.location,
+                    tx_ids=list(decoded_tx_ids),
+                )
+
+        return len(transactions)
+
+    def redecode_transactions(self, tx_ids: list[BTCTxId] | None = None) -> int:
+        """Decode the saved transactions again, replacing their existing events.
+        If tx_ids is given only those transactions are redecoded, otherwise all of them.
+
+        Since the raw transactions are saved locally this needs no querying of the
+        explorers, which is what makes it usable to correct a decoding mistake.
+        """
+        with self.database.conn.write_ctx() as write_cursor:
+            self.dbtx.reset_decoded_state(
+                write_cursor=write_cursor,
+                location=self.location,
+                tx_ids=tx_ids,
+            )
+
+        return self.decode_transactions(tx_ids=tx_ids)
+
+    def mark_addresses_transactions_for_redecode(self, addresses: list[BTCAddress]) -> None:
+        """Mark the saved transactions the given addresses take part in as pending decoding.
+
+        The events of a bitcoin transaction depend on which of its addresses are tracked, so
+        a transaction that was decoded while one of these was untracked is now outdated. It
+        needs no querying since the transactions are already saved.
+        """
+        with self.database.conn.write_ctx() as write_cursor:
+            tx_ids: set[BTCTxId] = set()
+            for address in addresses:
+                tx_ids.update(self.dbtx.get_transaction_ids_for_address(
+                    cursor=write_cursor,
+                    location=self.location,
+                    address=self.get_api_address(address),
+                ))
+
+            if len(tx_ids) == 0:
+                return
+
+            log.debug(
+                'Marking %s %s transactions of %s newly tracked addresses for redecoding',
+                len(tx_ids),
+                self.blockchain,
+                len(addresses),
+            )
+            self.dbtx.reset_decoded_state(
+                write_cursor=write_cursor,
+                location=self.location,
+                tx_ids=list(tx_ids),
+            )
 
     def _get_customized_group_identifiers(
             self,
