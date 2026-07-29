@@ -109,6 +109,7 @@ from rotkehlchen.history.events.structures.asset_movement import (
     create_asset_movement_with_fee,
 )
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
+from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.eth2 import (
     EthBlockEvent,
     EthDepositEvent,
@@ -137,6 +138,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    BITCOIN_LOCATIONS,
     CHAINS_WITH_TRANSACTION_DECODERS,
     CHAINS_WITH_TRANSACTIONS,
     CHAINS_WITH_TX_DECODING,
@@ -186,6 +188,7 @@ from .fields import (
     ApiSecretField,
     AssetConflictsField,
     AssetField,
+    BitcoinTxIdField,
     BlockchainField,
     ColorField,
     CurrentPriceOracleField,
@@ -1062,6 +1065,27 @@ class CreateHistoryEventSchema(Schema):
             data['notes'] = data.pop('user_notes')
             return {'events': [SolanaEvent(**data)]}
 
+    class CreateBitcoinEventSchema(BaseEventSchema):
+        """Schema for bitcoin and bitcoin cash events.
+
+        The counterparty addresses are not taken from the user. They are re-derived from the
+        notes when the event is saved, which is what keeps them in sync with an edit.
+        """
+        tx_ref = BitcoinTxIdField(required=True)
+        group_identifier = EmptyAsNoneStringField(required=False, load_default=None)
+        counterparty = EmptyAsNoneStringField(load_default=None)
+        extra_data = fields.Dict(load_default=None)
+        location = LocationField(required=True, limit_to=BITCOIN_LOCATIONS)
+
+        @post_load
+        def make_history_base_entry(
+                self,
+                data: dict[str, Any],
+                **_kwargs: Any,
+        ) -> dict[str, Any]:
+            data['notes'] = data.pop('user_notes')
+            return {'events': [BitcoinEvent(**data)]}
+
     class CreateEthBlockEventEventSchema(BaseSchema):
         is_mev_reward = fields.Boolean(required=True)
         group_identifier = EmptyAsNoneStringField(required=False, load_default=None)
@@ -1337,6 +1361,7 @@ class CreateHistoryEventSchema(Schema):
         HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT: CreateEthWithdrawalEventEventSchema,
         HistoryBaseEntryType.EVM_EVENT: CreateEvmEventSchema,
         HistoryBaseEntryType.SOLANA_EVENT: CreateSolanaEventSchema,
+        HistoryBaseEntryType.BITCOIN_EVENT: CreateBitcoinEventSchema,
         HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: CreateAssetMovementEventSchema,
         HistoryBaseEntryType.SWAP_EVENT: CreateSwapEventSchema,
         HistoryBaseEntryType.EVM_SWAP_EVENT: CreateEvmSwapEventSchema,

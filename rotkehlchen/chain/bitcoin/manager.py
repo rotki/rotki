@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Final, Literal, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, cast, overload
 
 import requests
 
@@ -25,11 +25,18 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import BTCAddress, BTCTxId, Location, SupportedBlockchain, Timestamp
+from rotkehlchen.types import (
+    BITCOIN_LOCATIONS_TYPE,
+    BTCAddress,
+    BTCTxId,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.utils.misc import get_chunks, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -43,7 +50,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY = 'bitcoin_counterparty_addresses'
 # Number of transactions decoded per write. Keeps a full history redecode from holding
 # every event of every transaction in memory before anything is saved.
 DECODING_CHUNK_SIZE: Final = 500
@@ -64,7 +70,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         self.database = database
         self.tracked_accounts: list[BTCAddress] = []
         self.blockchain = blockchain
-        self.location = Location.from_chain(self.blockchain)
+        self.location = cast('BITCOIN_LOCATIONS_TYPE', Location.from_chain(self.blockchain))
         self.asset = asset
         self.group_identifier_prefix = group_identifier_prefix
         self.cache_key = cache_key
@@ -206,7 +212,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             to_timestamp: Timestamp,
     ) -> None:
         """Query transactions in the time range for the specified accounts,
-        decode them into HistoryEvents, and save the results to the db.
+        decode them into BitcoinEvents, and save the results to the db.
 
         Queries for addresses that have the same latest queried block height are batched.
         The maximum block height from any address is then saved in the cache for all addresses
@@ -504,9 +510,9 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             notes: str | None = None,
             location_label: str | None = None,
             counterparty_addresses: list[BTCAddress] | None = None,
-    ) -> HistoryEvent:
-        event = HistoryEvent(
-            group_identifier=f'{self.group_identifier_prefix}{tx.tx_id}',
+    ) -> BitcoinEvent:
+        return BitcoinEvent(
+            tx_ref=BTCTxId(tx.tx_id),
             sequence_index=0,  # events are reshuffled later
             timestamp=ts_sec_to_ms(tx.timestamp),
             location=self.location,
@@ -516,26 +522,22 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             amount=amount,
             notes=notes,
             location_label=self.get_display_address(BTCAddress(location_label)) if location_label is not None else None,  # noqa: E501
+            counterparty_addresses=[
+                self.get_display_address(address) for address in counterparty_addresses
+            ] if counterparty_addresses is not None else None,
         )
-        if counterparty_addresses is not None:
-            setattr(
-                event,
-                BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY,
-                [str(self.get_display_address(address)) for address in counterparty_addresses],
-            )
-        return event
 
     def _maybe_create_fee_events(
             self,
             tx: BitcoinTx,
             totals_per_address: dict[BTCAddress, FVal],
-    ) -> tuple[list[HistoryEvent], dict[BTCAddress, FVal]]:
+    ) -> tuple[list[BitcoinEvent], dict[BTCAddress, FVal]]:
         """Create fee events for inputs from tracked addresses.
         Fee amount per address is proportional to the amount spent by that address.
         The fee share for each address is subtracted from the total input for that address.
         Returns the list of fee events and the adjusted input totals in a tuple.
         """
-        events: list[HistoryEvent] = []
+        events: list[BitcoinEvent] = []
         if tx.fee == ZERO:  # Some early txs have no fee
             return events, totals_per_address
 
@@ -591,7 +593,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
 
         return input_totals, output_totals
 
-    def _maybe_decode_op_return(self, tx: BitcoinTx, script: bytes) -> HistoryEvent | None:
+    def _maybe_decode_op_return(self, tx: BitcoinTx, script: bytes) -> BitcoinEvent | None:
         """Decode an OP_RETURN script into an informational history event.
         If data is valid utf-8 encoded text, show the decoded text in the event notes.
         Returns the history event or None on error.
@@ -658,13 +660,13 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             single_address: BTCAddress,
             single_address_side: BtcTxIODirection,
             other_side_totals: dict[BTCAddress, FVal],
-    ) -> list[HistoryEvent]:
+    ) -> list[BitcoinEvent]:
         """Decode transfers in a transaction with one side only having a single address and
         the other side having one or more addresses.
-        Returns a list of HistoryEvents.
+        Returns a list of BitcoinEvents.
         """
-        spend_events: list[HistoryEvent] = []
-        receive_events: list[HistoryEvent] = []
+        spend_events: list[BitcoinEvent] = []
+        receive_events: list[BitcoinEvent] = []
         get_sender_receiver = (  # to avoid repeating the if check in every loop iteration
             (lambda addr: (single_address, addr))
             if single_address_side == BtcTxIODirection.INPUT else
@@ -710,7 +712,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             tx: BitcoinTx,
             inputs: dict[BTCAddress, FVal],
             outputs: dict[BTCAddress, FVal],
-    ) -> list[HistoryEvent]:
+    ) -> list[BitcoinEvent]:
         """Decodes transfers in a transaction with multiple inputs and multiple outputs.
         Since there's no direct mapping between specific inputs and outputs, each address'
         amount is split across the opposite side proportionally to that side's totals.
@@ -731,7 +733,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         still fully allocated, but the tracked/untracked proportions are only as good as the
         data the API returned.
 
-        Returns a list of HistoryEvents.
+        Returns a list of BitcoinEvents.
         """
         tracked_inputs, external_inputs = self._split_by_tracked(inputs)
         tracked_outputs, external_outputs = self._split_by_tracked(outputs)
@@ -739,9 +741,9 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         external_output_total = sum(external_outputs.values())
         external_input_total = sum(external_inputs.values())
 
-        spend_events: list[HistoryEvent] = []
-        transfer_events: list[HistoryEvent] = []
-        receive_events: list[HistoryEvent] = []
+        spend_events: list[BitcoinEvent] = []
+        transfer_events: list[BitcoinEvent] = []
+        receive_events: list[BitcoinEvent] = []
         for address, amount in tracked_inputs.items():
             if external_output_total != ZERO:  # the part that actually leaves the wallet
                 spend_events.append(self.create_event(
@@ -798,11 +800,11 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
     def _display_addresses(self, addresses: dict[BTCAddress, FVal]) -> str:
         return ', '.join([self.get_display_address(x) for x in addresses])
 
-    def decode_transaction(self, tx: BitcoinTx) -> list[HistoryEvent]:
-        """Decode a BitcoinTx into HistoryEvents.
+    def decode_transaction(self, tx: BitcoinTx) -> list[BitcoinEvent]:
+        """Decode a BitcoinTx into BitcoinEvents.
         Combines multiple inputs/outputs per address into single events with total amounts.
         Creates fee events proportional to the total amount spent by each address.
-        Returns a list of HistoryEvents.
+        Returns a list of BitcoinEvents.
         """
         op_return_events = []
         io_totals_per_address: dict[BtcTxIODirection, dict[BTCAddress, FVal]] = {

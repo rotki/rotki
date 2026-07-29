@@ -307,6 +307,42 @@ CREATE TABLE IF NOT EXISTS bitcoin_tx_mappings (
             'CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_io_address ON bitcoin_tx_io(address);',
         )
 
+    @progress_step(description='Turn bitcoin events into chain events.')
+    def _migrate_bitcoin_events(write_cursor: DBCursor) -> None:
+        """Bitcoin events were plain history events that identified their transaction only by
+        the prefix of their group identifier, so every query that goes from a transaction to
+        its events needed a bitcoin-specific branch. Turn them into chain events like every
+        other chain, with the transaction id in chain_events_info.tx_ref.
+
+        Only events whose group identifier is a prefixed 64 character transaction id are
+        converted; anything else at a bitcoin location was created by the user and stays a
+        plain history event. Hardcoded values to keep the upgrade immune to future changes.
+        """
+        migrated: list[tuple[int, bytes]] = []
+        for location, prefix in (('q', 'btc_'), ('r', 'bch_')):
+            for identifier, group_identifier in write_cursor.execute(
+                'SELECT identifier, group_identifier FROM history_events '
+                'WHERE location=? AND entry_type=1 AND group_identifier LIKE ?',  # 1 is HistoryBaseEntryType.HISTORY_EVENT  # noqa: E501
+                (location, f'{prefix}%'),
+            ).fetchall():  # materialized since the writes below reuse the cursor
+                try:
+                    tx_ref = bytes.fromhex(group_identifier.removeprefix(prefix))
+                except ValueError:
+                    continue  # a user created event that only looks like a transaction
+
+                if len(tx_ref) == 32:
+                    migrated.append((identifier, tx_ref))
+
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO chain_events_info(identifier, tx_ref, counterparty, address) '
+            'VALUES(?, ?, NULL, NULL)',
+            migrated,
+        )
+        write_cursor.executemany(  # 11 is HistoryBaseEntryType.BITCOIN_EVENT
+            'UPDATE history_events SET entry_type=11 WHERE identifier=?',
+            [(identifier,) for identifier, _ in migrated],
+        )
+
     @progress_step(description='Reset bitcoin transaction query range.')
     def _reset_bitcoin_query_range(write_cursor: DBCursor) -> None:
         """Bitcoin transactions with a change output were decoded as a spend of the entire

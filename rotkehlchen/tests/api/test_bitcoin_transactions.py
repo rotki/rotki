@@ -5,19 +5,18 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
+from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
-from rotkehlchen.types import Location, SupportedBlockchain, TimestampMS
+from rotkehlchen.types import BTCTxId, Location, SupportedBlockchain, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.tests.fixtures import WebsocketReader
     from rotkehlchen.types import BTCAddress
 
@@ -99,9 +98,9 @@ def test_query_btc_transactions(
             chain=SupportedBlockchain.BITCOIN,
         )
 
-    assert events[74:76] == [HistoryEvent(
+    assert events[74:76] == [BitcoinEvent(
+        tx_ref=BTCTxId('67c97abe049b671a02e537eb901cd600430ddaa5b09b50434969e360ada748bf'),
         identifier=74,
-        group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}67c97abe049b671a02e537eb901cd600430ddaa5b09b50434969e360ada748bf'),  # noqa: E501
         sequence_index=0,
         # The two apis disagree on the timestamp here. Seems to be a bug in blockchain.info.
         # I've seen it switch between two different timestamps when repeating the same query.
@@ -115,9 +114,9 @@ def test_query_btc_transactions(
         amount=FVal(fee_amount := '0.00000109921082299887260428410372040586245772266065388951521984216459977452085682074'),  # noqa: E501
         location_label=(user_address := btc_accounts[0]),
         notes=f'Spend {fee_amount} BTC for fees',
-    ), HistoryEvent(
+    ), BitcoinEvent(
+        tx_ref=BTCTxId('67c97abe049b671a02e537eb901cd600430ddaa5b09b50434969e360ada748bf'),
         identifier=75,
-        group_identifier=group_identifier,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BITCOIN,
@@ -128,9 +127,9 @@ def test_query_btc_transactions(
         location_label=user_address,
         notes=f'Send {spend_amount} BTC to bc1pg8vm7hk9ashas2mxkv5g74lxn26w3qr9lqyxrql7tg95j7xja5kqjz3na4',  # noqa: E501
     )]
-    assert events[0] == HistoryEvent(
+    assert events[0] == BitcoinEvent(
+        tx_ref=BTCTxId('0d39207fd965314941546a698e5f76277818e8b95f41b2e02dfe1901db86acf1'),
         identifier=3,
-        group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}0d39207fd965314941546a698e5f76277818e8b95f41b2e02dfe1901db86acf1',
         sequence_index=0,
         timestamp=TimestampMS(1519764871000),
         location=Location.BITCOIN,
@@ -194,9 +193,9 @@ def test_query_bch_transactions(
             chain=SupportedBlockchain.BITCOIN_CASH,
         )
 
-    assert events[100:] == [HistoryEvent(
+    assert events[100:] == [BitcoinEvent(
+        tx_ref=BTCTxId('cc39c599f9684909efbec9a86a37bbe583fd9865f61e90c684b290b092b818f2'),
         identifier=100,
-        group_identifier=f'{BCH_GROUP_IDENTIFIER_PREFIX}cc39c599f9684909efbec9a86a37bbe583fd9865f61e90c684b290b092b818f2',
         sequence_index=0,
         timestamp=TimestampMS(1703868928000),
         location=Location.BITCOIN_CASH,
@@ -216,9 +215,9 @@ def test_query_bch_transactions(
             'bitcoincash:qzp6f39tzqpldjcugszpuhhysvahtc5rzgha66g79r, bitcoincash:qq3xtnu9vlkt9dsj8us75xayyvww2vx6hyusu2pwkr, bitcoincash:qqhknunxuc60zhcm7lqwd52gewvq0drq0s6vr082gt, '  # noqa: E501
             'bitcoincash:qqa0h85huwpyqumpj8tmp6lc45ksxgv3dsvqrxwgmy'
         ),
-    ), HistoryEvent(
+    ), BitcoinEvent(
+        tx_ref=BTCTxId('dcc1e78d9a48643553f4cd9b71564fb8032f6fd48ede977f8806be15ac29b917'),
         identifier=102,
-        group_identifier=f'{BCH_GROUP_IDENTIFIER_PREFIX}dcc1e78d9a48643553f4cd9b71564fb8032f6fd48ede977f8806be15ac29b917',
         sequence_index=0,
         timestamp=TimestampMS(1732270516000),
         location=Location.BITCOIN_CASH,
@@ -228,9 +227,9 @@ def test_query_bch_transactions(
         amount=(receive_amount_1 := FVal('0.01986791')),
         location_label=(user_address := bch_accounts[1]),
         notes=f'Receive {receive_amount_1} BCH from bitcoincash:qpx003lsm24lu7q2nf7zh640n52gdl2kucna02956q, bitcoincash:qpq4ajfp58lpj70r232pf7pt55s9vm8x4yxmd6c90w',  # noqa: E501
-    ), HistoryEvent(
+    ), BitcoinEvent(
+        tx_ref=BTCTxId('3944ec023a1a4004d26c476051160ab97c1004a5a34799fc197c885acc745ead'),
         identifier=103,
-        group_identifier=(group_identifier := f'{BCH_GROUP_IDENTIFIER_PREFIX}3944ec023a1a4004d26c476051160ab97c1004a5a34799fc197c885acc745ead'),  # noqa: E501
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1749190001000)),
         location=Location.BITCOIN_CASH,
@@ -240,9 +239,9 @@ def test_query_bch_transactions(
         amount=FVal(fee_amount := '0.00007592'),
         location_label=user_address,
         notes=f'Spend {fee_amount} BCH for fees',
-    ), HistoryEvent(
+    ), BitcoinEvent(
+        tx_ref=BTCTxId('3944ec023a1a4004d26c476051160ab97c1004a5a34799fc197c885acc745ead'),
         identifier=104,
-        group_identifier=group_identifier,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BITCOIN_CASH,
@@ -253,9 +252,9 @@ def test_query_bch_transactions(
         location_label=user_address,
         notes=f'Send {spend_amount} BCH to bitcoincash:qr40efj25rw7lmr4qr90636xne2gsmq39ugdsw5k3g',
     )]
-    assert events[0] == HistoryEvent(
+    assert events[0] == BitcoinEvent(
+        tx_ref=BTCTxId('7eb2146b27dbf6e4ea0d61c2e85a6aeae2415392043fa44904b0a88f1341a662'),
         identifier=2,
-        group_identifier=f'{BCH_GROUP_IDENTIFIER_PREFIX}7eb2146b27dbf6e4ea0d61c2e85a6aeae2415392043fa44904b0a88f1341a662',
         sequence_index=0,
         timestamp=TimestampMS(1545323818000),
         location=Location.BITCOIN_CASH,

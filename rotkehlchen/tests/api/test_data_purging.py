@@ -5,8 +5,6 @@ import pytest
 import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.zksync_lite.structures import (
     ZKSyncLiteSwapData,
     ZKSyncLiteTransaction,
@@ -27,6 +25,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -47,7 +46,9 @@ from rotkehlchen.tests.utils.factories import (
     make_random_timestamp,
 )
 from rotkehlchen.types import (
+    BITCOIN_LOCATIONS,
     BTCAddress,
+    BTCTxId,
     ChainID,
     EvmTransaction,
     Location,
@@ -369,8 +370,8 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: APIServer) ->
         'a8cc486127d9c787219f08dac7abe497a95a3f0fd8d55755882caa27c3356453',
     )
     with rotki.data.db.user_write() as write_cursor:
-        for event in [HistoryEvent(
-            group_identifier=f'{prefix}{tx_hash}',
+        for event in [BitcoinEvent(
+            tx_ref=BTCTxId(tx_hash),
             sequence_index=0,
             timestamp=TimestampMS(1600000000000),
             location=location,
@@ -378,9 +379,9 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: APIServer) ->
             event_subtype=HistoryEventSubType.NONE,
             asset=asset,
             amount=FVal('0.0001'),
-        ) for prefix, hashes, location, asset in (
-            (BTC_GROUP_IDENTIFIER_PREFIX, (btc_tx_hash1, btc_tx_hash2, btc_tx_hash3), Location.BITCOIN, A_BTC),  # noqa: E501
-            (BCH_GROUP_IDENTIFIER_PREFIX, (bch_tx_hash1, bch_tx_hash2, bch_tx_hash3), Location.BITCOIN_CASH, A_BCH),  # noqa: E501
+        ) for hashes, location, asset in (
+            ((btc_tx_hash1, btc_tx_hash2, btc_tx_hash3), BITCOIN_LOCATIONS[0], A_BTC),
+            ((bch_tx_hash1, bch_tx_hash2, bch_tx_hash3), BITCOIN_LOCATIONS[1], A_BCH),
         ) for tx_hash in hashes]:
             events_db.add_history_event(
                 write_cursor=write_cursor,

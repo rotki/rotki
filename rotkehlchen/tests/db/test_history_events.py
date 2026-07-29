@@ -38,6 +38,7 @@ from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
     HistoryEvent,
 )
+from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.eth2 import EthDepositEvent, EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
@@ -1923,8 +1924,8 @@ def test_delete_events_by_tx_ref_chunks_bindings(database: DBHandler) -> None:
     with database.user_write() as write_cursor:
         db_events.add_history_events(
             write_cursor=write_cursor,
-            history=[HistoryEvent(
-                group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}',
+            history=[BitcoinEvent(
+                tx_ref=tx_id,
                 sequence_index=0,
                 timestamp=TimestampMS(1631333672000),
                 location=Location.BITCOIN,

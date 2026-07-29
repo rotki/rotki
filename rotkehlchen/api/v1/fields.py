@@ -50,6 +50,7 @@ from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     ApiKey,
     ApiSecret,
+    BTCTxId,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
@@ -787,7 +788,7 @@ class SolanaAddressField(fields.Field):
         return SolanaAddress(value)
 
 
-class BaseTransactionHashField[T_TxHash: EVMTxHash | Signature](fields.Field, ABC):
+class BaseTransactionHashField[T_TxHash: EVMTxHash | Signature | BTCTxId](fields.Field, ABC):
 
     @staticmethod
     @abstractmethod
@@ -840,6 +841,24 @@ class SolanaSignatureField(BaseTransactionHashField[Signature]):
     @staticmethod
     def deserialize_string_value(value: str) -> Signature:
         return deserialize_tx_signature(value)
+
+
+class BitcoinTxIdField(BaseTransactionHashField[BTCTxId]):
+
+    @staticmethod
+    def deserialize_string_value(value: str) -> BTCTxId:
+        """Ensure the given value is a valid bitcoin transaction id and deserialize it.
+        May raise ValidationError.
+        """
+        if len(value) != 64:
+            raise ValidationError(f'Bitcoin transaction id {value} should be 64 characters')
+
+        try:
+            bytes.fromhex(value)
+        except ValueError as e:
+            raise ValidationError(f'Bitcoin transaction id {value} is not valid hex') from e
+
+        return BTCTxId(value)
 
 
 class AssetTypeField(fields.Field):

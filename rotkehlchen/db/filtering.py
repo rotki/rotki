@@ -11,8 +11,6 @@ from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetFlag, AssetType
-from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.db.constants import (
@@ -1253,6 +1251,7 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
                 HistoryBaseEntryType.EVM_EVENT,
                 HistoryBaseEntryType.EVM_SWAP_EVENT,
                 HistoryBaseEntryType.SOLANA_SWAP_EVENT,
+                HistoryBaseEntryType.BITCOIN_EVENT,
                 HistoryBaseEntryType.HISTORY_EVENT,
             ])
 
@@ -1283,40 +1282,17 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
             max_amount=max_amount,
         )
         if tx_refs is not None and len(tx_refs) > 0:
-            group_identifiers, tx_ref_values = [], []
-            for tx_ref in tx_refs:
-                if isinstance(tx_ref, str):  # BTCTxId is simply a NewType (can't be used with isinstance) wrapping str  # noqa: E501
-                    group_identifiers.extend([
-                        f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_ref}',
-                        f'{BCH_GROUP_IDENTIFIER_PREFIX}{tx_ref}',
-                    ])
-                elif isinstance(tx_ref, Signature):
-                    tx_ref_values.append(tx_ref.to_bytes())
-                else:  # EVMTxHash
-                    tx_ref_values.append(tx_ref)
-
-            tx_ref_filters: list[DBFilter] = []
-            if len(group_identifiers) > 0:
-                tx_ref_filters.append(DBMultiStringFilter(
-                    and_op=True,
-                    column='group_identifier',
-                    values=group_identifiers,
-                ))
-
-            if len(tx_ref_values) > 0:
-                tx_ref_filters.append(DBMultiBytesFilter(
-                    and_op=True,
-                    column='tx_ref',
-                    values=tx_ref_values,
-                ))
-
-            if len(tx_ref_filters) == 1:
-                filter_query.filters.extend(tx_ref_filters)
-            elif len(tx_ref_filters) > 1:
-                filter_query.filters.append(DBNestedFilter(
-                    and_op=False,
-                    filters=tx_ref_filters,
-                ))
+            filter_query.filters.append(DBMultiBytesFilter(
+                and_op=True,
+                column='tx_ref',
+                values=[
+                    # BTCTxId is simply a NewType (can't be used with isinstance) wrapping str
+                    bytes.fromhex(tx_ref) if isinstance(tx_ref, str) else
+                    tx_ref.to_bytes() if isinstance(tx_ref, Signature) else
+                    tx_ref  # EVMTxHash
+                    for tx_ref in tx_refs
+                ],
+            ))
 
         return filter_query
 
@@ -1387,6 +1363,7 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
                 HistoryBaseEntryType.EVM_EVENT,
                 HistoryBaseEntryType.EVM_SWAP_EVENT,
                 HistoryBaseEntryType.SOLANA_SWAP_EVENT,
+                HistoryBaseEntryType.BITCOIN_EVENT,
             ])
 
         filter_query = super().make(
