@@ -470,6 +470,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             if result.code != API_SUCCESS_CODE or result.result is None:
                 msg = f'Failed to query {self.name} {query_type}s: {result.message}'
                 log.error(msg)
+                self.msg_aggregator.add_error(msg)
                 raise RemoteError(msg)
 
             page_events: list[HistoryBaseEntry] = []

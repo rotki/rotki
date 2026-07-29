@@ -81,7 +81,9 @@ def test_paginated_query_does_not_duplicate_api_error(mock_cryptocom: Cryptocom)
             deserialize_fn=MagicMock(),
         )
 
-    assert mock_cryptocom.msg_aggregator.consume_errors() == []
+    assert mock_cryptocom.msg_aggregator.consume_errors() == [
+        f'Failed to query {mock_cryptocom.name} trades: failed',
+    ]
 
 
 def test_query_balances_empty_account(mock_cryptocom):
