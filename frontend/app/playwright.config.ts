@@ -1,19 +1,72 @@
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { defineConfig, devices } from '@playwright/test';
 
-const FRONTEND_PORT = 30301;
-const BACKEND_PORT = 30302;
-const COLIBRI_PORT = 30303;
-const MOCK_RPC_PORT = 30304;
+const BASE_FRONTEND_PORT = 30301;
+const BASE_BACKEND_PORT = 30302;
+const BASE_COLIBRI_PORT = 30303;
+const BASE_MOCK_RPC_PORT = 30304;
+
+const BASE_PORTS = [BASE_FRONTEND_PORT, BASE_BACKEND_PORT, BASE_COLIBRI_PORT, BASE_MOCK_RPC_PORT];
+const PORT_BLOCK_STRIDE = 10;
+const MAX_PORT_BLOCKS = 10;
+
+/**
+ * Synchronously check whether a port can be bound. Playwright config files are loaded
+ * synchronously, so this shells out to a short-lived node instead of using an async
+ * `net.createServer` probe.
+ */
+function isPortFree(port: number): boolean {
+  const probe = 'const net = require("node:net");'
+    + 'const server = net.createServer();'
+    + 'server.once("error", () => process.exit(1));'
+    + 'server.once("listening", () => server.close(() => process.exit(0)));'
+    + `server.listen(${port}, "127.0.0.1");`;
+  return spawnSync(process.execPath, ['-e', probe], { stdio: 'ignore' }).status === 0;
+}
+
+/**
+ * The four services use fixed ports, so a second checkout running e2e at the same time
+ * would collide (or worse, silently reuse the other checkout's servers via
+ * `reuseExistingServer`). Move the whole block up in steps of 10 until every port in it
+ * is free. CI is pinned to the base block: the build job bakes the backend/colibri URLs
+ * into the frontend bundle from its own env, so the ports cannot be chosen here.
+ */
+function resolvePortOffset(): number {
+  if (process.env.CI)
+    return 0;
+
+  for (let block = 0; block < MAX_PORT_BLOCKS; block++) {
+    const offset = block * PORT_BLOCK_STRIDE;
+    if (BASE_PORTS.every(port => isPortFree(port + offset))) {
+      if (offset > 0)
+        console.log(`[e2e] ports ${BASE_FRONTEND_PORT}-${BASE_MOCK_RPC_PORT} are busy, using +${offset}`);
+
+      return offset;
+    }
+  }
+
+  throw new Error(
+    `Could not find a free block of e2e ports after ${MAX_PORT_BLOCKS} attempts starting at ${BASE_FRONTEND_PORT}`,
+  );
+}
+
+const portOffset = resolvePortOffset();
+
+const FRONTEND_PORT = BASE_FRONTEND_PORT + portOffset;
+const BACKEND_PORT = BASE_BACKEND_PORT + portOffset;
+const COLIBRI_PORT = BASE_COLIBRI_PORT + portOffset;
+const MOCK_RPC_PORT = BASE_MOCK_RPC_PORT + portOffset;
 
 const frontendUrl = `http://localhost:${FRONTEND_PORT}`;
 const backendUrl = `http://127.0.0.1:${BACKEND_PORT}`;
 const colibriUrl = `http://127.0.0.1:${COLIBRI_PORT}`;
 const mockRpcUrl = `http://127.0.0.1:${MOCK_RPC_PORT}`;
 
+// `.e2e` is resolved from the cwd, so parallel runs in different worktrees already get
+// their own data and log directories.
 const testDir = path.join(process.cwd(), '.e2e');
 const dataDir = path.join(testDir, 'data');
 const logDir = path.join(testDir, 'logs');
