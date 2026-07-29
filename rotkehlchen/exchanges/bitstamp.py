@@ -726,6 +726,8 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 # present (either 2 events: spend, receive; or 3 events: spend, receive, fee).
                 pagination_events = results if event_queue is None else page_events
                 if has_results:
+                    # NB: page_events holds only this page, so index -3 is reachable only for a
+                    # 3-event group, where -2 is the receive event and -3 the spend one.
                     reference_data = (
                         pagination_events[-2].extra_data or pagination_events[-3].extra_data
                     )
