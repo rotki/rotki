@@ -10,9 +10,7 @@ from sqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -63,6 +61,7 @@ from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
     HistoryEvent,
 )
+from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.eth2 import (
     EthBlockEvent,
     EthDepositEvent,
@@ -103,7 +102,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 NOTES_ADDRESS_MARKER_RE = re.compile(r'\b(?:to|from)\b\s+(.+)$')
-BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY = 'bitcoin_counterparty_addresses'
 
 
 def get_bitcoin_counterparty_addresses(
@@ -334,7 +332,7 @@ class DBHistoryEvents:
             location: Location,
             event_type: HistoryEventType,
             notes: str | None,
-            decoded_addresses: list[str] | None,
+            decoded_addresses: Sequence[str] | None,
             clear_existing: bool = True,
     ) -> None:
         # clear_existing is only needed when editing an event (its location/addresses may have
@@ -434,7 +432,7 @@ class DBHistoryEvents:
             location=event.location,
             event_type=event.event_type,
             notes=event.notes,
-            decoded_addresses=getattr(event, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY, None),
+            decoded_addresses=event.counterparty_addresses if isinstance(event, BitcoinEvent) else None,  # noqa: E501
             clear_existing=False,  # fresh insert: no pre-existing rows can exist (see method)
         )
 
@@ -673,7 +671,7 @@ class DBHistoryEvents:
             location=event.location,
             event_type=event.event_type,
             notes=event.notes,
-            decoded_addresses=getattr(event, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY, None),
+            decoded_addresses=event.counterparty_addresses if isinstance(event, BitcoinEvent) else None,  # noqa: E501
         )
 
         # Mark event state and store original position for duplicate prevention during redecode.
@@ -981,29 +979,22 @@ class DBHistoryEvents:
             if customized_handling == 'preserve_transactions'
             else 'identifier'
         )
-        if location.is_bitcoin():
-            id_prefix = BTC_GROUP_IDENTIFIER_PREFIX if location == Location.BITCOIN else BCH_GROUP_IDENTIFIER_PREFIX  # noqa: E501
-            group_identifiers = [f'{id_prefix}{tx_hash}' for tx_hash in tx_refs]
-            query = (
-                f'SELECT DISTINCT h.{select_field} FROM history_events h '
-                'INNER JOIN history_events_mappings m ON h.identifier = m.parent_identifier '
-                f'WHERE h.group_identifier IN ({placeholders}) AND h.location = ? '
-                'AND m.name = ? AND m.value = ?'
-            )
-            bindings: tuple[Any, ...] = (*group_identifiers, *customized_bindings)
+        tx_ref_bindings: list[Any]
+        if location == Location.SOLANA:
+            tx_ref_bindings = [x.to_bytes() for x in tx_refs]  # type: ignore[union-attr]  # solana signatures
+        elif location.is_bitcoin():
+            tx_ref_bindings = [bytes.fromhex(x) for x in tx_refs]  # type: ignore[arg-type]  # bitcoin tx ids
         else:
-            if location == Location.SOLANA:
-                tx_ref_bindings = [x.to_bytes() for x in tx_refs]  # type: ignore[union-attr]  # solana signatures
-            else:
-                tx_ref_bindings = list(tx_refs)  # evm tx hashes
-            query = (
-                f'SELECT DISTINCT h.{select_field} FROM history_events h '
-                'INNER JOIN chain_events_info c ON h.identifier = c.identifier '
-                'INNER JOIN history_events_mappings m ON h.identifier = m.parent_identifier '
-                f'WHERE c.tx_ref IN ({placeholders}) AND h.location = ? '
-                'AND m.name = ? AND m.value = ?'
-            )
-            bindings = (*tx_ref_bindings, *customized_bindings)
+            tx_ref_bindings = list(tx_refs)  # evm tx hashes
+
+        query = (
+            f'SELECT DISTINCT h.{select_field} FROM history_events h '
+            'INNER JOIN chain_events_info c ON h.identifier = c.identifier '
+            'INNER JOIN history_events_mappings m ON h.identifier = m.parent_identifier '
+            f'WHERE c.tx_ref IN ({placeholders}) AND h.location = ? '
+            'AND m.name = ? AND m.value = ?'
+        )
+        bindings = (*tx_ref_bindings, *customized_bindings)
 
         return [row[0] for row in cursor.execute(query, bindings)]
 
@@ -1050,19 +1041,16 @@ class DBHistoryEvents:
     ) -> None:
         """Delete the events of a single chunk of tx refs. See delete_events_by_tx_ref."""
         bindings: list[str | bytes]
-        if location.is_bitcoin():
-            where_str = f'WHERE group_identifier IN ({placeholders})'
-            id_prefix = BTC_GROUP_IDENTIFIER_PREFIX if location == Location.BITCOIN else BCH_GROUP_IDENTIFIER_PREFIX  # noqa: E501
-            bindings = [f'{id_prefix}{tx_hash}' for tx_hash in tx_refs]
+        where_str = (
+            f'WHERE identifier IN (SELECT identifier FROM chain_events_info '
+            f'WHERE tx_ref IN ({placeholders}))'
+        )
+        if location == Location.SOLANA:
+            bindings = [x.to_bytes() for x in tx_refs]  # type: ignore[union-attr]  # hashes will be solana signatures
+        elif location.is_bitcoin():
+            bindings = [bytes.fromhex(x) for x in tx_refs]  # type: ignore[arg-type]  # hashes will be bitcoin tx ids
         else:
-            where_str = (
-                f'WHERE identifier IN (SELECT identifier FROM chain_events_info '
-                f'WHERE tx_ref IN ({placeholders}))'
-            )
-            if location == Location.SOLANA:
-                bindings = [x.to_bytes() for x in tx_refs]  # type: ignore[union-attr]  # hashes will be solana signatures
-            else:
-                bindings = list(tx_refs)  # type: ignore  # different type of elements in the list
+            bindings = list(tx_refs)  # type: ignore  # different type of elements in the list
 
         if customized_handling != 'delete' and (
             length := len(exclusions := self._get_customized_exclusions_for_tx_refs(
@@ -1636,8 +1624,14 @@ class DBHistoryEvents:
                         entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + 1]  # noqa: E501
                     )
                     deserialized_event = EthDepositEvent.deserialize_from_db(data)
-                elif entry_type == HistoryBaseEntryType.SOLANA_EVENT:
-                    deserialized_event = SolanaEvent.deserialize_from_db(
+                elif entry_type in (
+                        HistoryBaseEntryType.SOLANA_EVENT,
+                        HistoryBaseEntryType.BITCOIN_EVENT,
+                ):
+                    deserialized_event = (
+                        SolanaEvent if entry_type == HistoryBaseEntryType.SOLANA_EVENT
+                        else BitcoinEvent
+                    ).deserialize_from_db(
                         entry[data_start_idx:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1] +
                         entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + 1],  # noqa: E501
                     )

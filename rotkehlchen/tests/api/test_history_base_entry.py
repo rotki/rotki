@@ -9,9 +9,6 @@ import requests
 
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.manager import BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -36,6 +33,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
@@ -73,6 +71,8 @@ from rotkehlchen.tests.utils.history_base_entry import (
     predefined_events_to_insert,
 )
 from rotkehlchen.types import (
+    BTCAddress,
+    BTCTxId,
     ChainID,
     EvmTransaction,
     Location,
@@ -1854,8 +1854,8 @@ def test_tx_ref_and_address_filtering(rotkehlchen_api_server: APIServer) -> None
         address=make_solana_address(),
         notes=f'Solana event {idx}',
     ) for idx in range(2)])
-    btc_event = HistoryEvent(
-        group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{btc_tx_id}',
+    all_events.extend([BitcoinEvent(
+        tx_ref=BTCTxId(btc_tx_id),
         sequence_index=0,
         timestamp=TimestampMS(0),
         location=Location.BITCOIN,
@@ -1864,14 +1864,9 @@ def test_tx_ref_and_address_filtering(rotkehlchen_api_server: APIServer) -> None
         asset=A_BTC,
         amount=ZERO,
         notes='Custom BTC send note',
-    )
-    setattr(
-        btc_event,
-        BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY,
-        ['1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp'],
-    )
-    bch_event = HistoryEvent(
-        group_identifier=f'{BCH_GROUP_IDENTIFIER_PREFIX}{bch_tx_id}',
+        counterparty_addresses=[BTCAddress('1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp')],
+    ), BitcoinEvent(
+        tx_ref=BTCTxId(bch_tx_id),
         sequence_index=0,
         timestamp=TimestampMS(0),
         location=Location.BITCOIN_CASH,
@@ -1880,13 +1875,8 @@ def test_tx_ref_and_address_filtering(rotkehlchen_api_server: APIServer) -> None
         asset=A_BCH,
         amount=ZERO,
         notes='Custom BCH receive note',
-    )
-    setattr(
-        bch_event,
-        BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY,
-        ['bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt'],
-    )
-    all_events.extend([btc_event, bch_event])
+        counterparty_addresses=[BTCAddress('bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt')],
+    )])
 
     with rotki.data.db.conn.write_ctx() as write_cursor:
         db.add_history_events(write_cursor=write_cursor, history=all_events)

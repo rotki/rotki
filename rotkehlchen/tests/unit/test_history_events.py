@@ -5,7 +5,6 @@ import pytest
 
 from rotkehlchen.accounting.constants import EVENT_CATEGORY_MAPPINGS
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
-from rotkehlchen.chain.bitcoin.manager import BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY
 from rotkehlchen.chain.evm.decoding.eas.constants import CPT_EAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -21,13 +20,14 @@ from rotkehlchen.history.events.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.tests.utils.factories import (
     make_ethereum_transaction,
     make_evm_address,
     make_evm_tx_hash,
 )
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS
+from rotkehlchen.types import BTCAddress, BTCTxId, ChecksumEvmAddress, Location, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -258,12 +258,12 @@ def test_non_onchain_edits_skip_cache(database: DBHandler) -> None:
 
 def test_edit_bitcoin_event_updates_counterparty_mappings(database: DBHandler) -> None:
     events_db = DBHistoryEvents(database)
-    first_counterparty = '1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp'
-    second_counterparty = '1BoatSLRHtKNngkdXEeobR76b53LETtpyT'
+    first_counterparty = BTCAddress('1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp')
+    second_counterparty = BTCAddress('1BoatSLRHtKNngkdXEeobR76b53LETtpyT')
 
     with database.user_write() as write_cursor:
-        event = HistoryEvent(
-            group_identifier='btc_event_mapping_edit_test',
+        event = BitcoinEvent(
+            tx_ref=BTCTxId('a' * 64),
             sequence_index=0,
             timestamp=TimestampMS(1710000000000),
             location=Location.BITCOIN,
@@ -272,8 +272,8 @@ def test_edit_bitcoin_event_updates_counterparty_mappings(database: DBHandler) -
             asset=A_BTC,
             amount=ONE,
             notes='Send 1 BTC to test address',
+            counterparty_addresses=[first_counterparty],
         )
-        setattr(event, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY, [first_counterparty])
         assert (event_id := events_db.add_history_event(
             write_cursor=write_cursor,
             event=event,
@@ -284,7 +284,7 @@ def test_edit_bitcoin_event_updates_counterparty_mappings(database: DBHandler) -
             (event_id,),
         ).fetchall() == [(first_counterparty,)]
 
-        setattr(event, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY, [second_counterparty])
+        event.counterparty_addresses = [second_counterparty]
         events_db.edit_history_event(write_cursor=write_cursor, event=event, mapping_state=None)
         assert write_cursor.execute(
             'SELECT address FROM bitcoin_events_addresses WHERE event_identifier=?',

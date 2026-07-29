@@ -4205,11 +4205,12 @@ def test_upgrade_db_52_to_53(
 
         # bitcoin events, which the upgrade leaves in place. They are replaced per
         # transaction by the next transaction query, not deleted here.
+        btc_tx_id, bch_tx_id, customized_tx_id = 'a' * 64, 'b' * 64, 'c' * 64
         for group_identifier, sequence_index, location in (
-            ('btc_resetme', 0, Location.BITCOIN.serialize_for_db()),
-            ('btc_resetme', 1, Location.BITCOIN.serialize_for_db()),
-            ('bch_resetme', 0, Location.BITCOIN_CASH.serialize_for_db()),
-            ('btc_customized', 0, Location.BITCOIN.serialize_for_db()),
+            (f'btc_{btc_tx_id}', 0, Location.BITCOIN.serialize_for_db()),
+            (f'btc_{btc_tx_id}', 1, Location.BITCOIN.serialize_for_db()),
+            (f'bch_{bch_tx_id}', 0, Location.BITCOIN_CASH.serialize_for_db()),
+            (f'btc_{customized_tx_id}', 0, Location.BITCOIN.serialize_for_db()),
             ('manual_btc_event', 0, Location.BITCOIN.serialize_for_db()),
         ):
             write_cursor.execute(
@@ -4231,13 +4232,13 @@ def test_upgrade_db_52_to_53(
                     HistoryEventSubType.NONE.serialize(),
                 ),
             )
-            if group_identifier == 'btc_customized':
+            if group_identifier == f'btc_{customized_tx_id}':
                 write_cursor.execute(
                     'INSERT INTO history_events_mappings(parent_identifier, name, value) '
                     'VALUES(?, ?, ?)',
                     (write_cursor.lastrowid, 'state', 1),
                 )
-            elif group_identifier == 'btc_resetme' and sequence_index == 0:
+            elif group_identifier == f'btc_{btc_tx_id}' and sequence_index == 0:
                 btc_reset_identifier = write_cursor.lastrowid
                 write_cursor.execute(
                     'INSERT INTO bitcoin_events_addresses(event_identifier, address) '
@@ -4474,11 +4475,25 @@ def test_upgrade_db_52_to_53(
             'SELECT group_identifier FROM history_events '
             "WHERE location IN ('q', 'r') ORDER BY group_identifier, sequence_index",
         ).fetchall() == [
-            ('bch_resetme',),
-            ('btc_customized',),
-            ('btc_resetme',),
-            ('btc_resetme',),
+            (f'bch_{bch_tx_id}',),
+            (f'btc_{btc_tx_id}',),
+            (f'btc_{btc_tx_id}',),
+            (f'btc_{customized_tx_id}',),
             ('manual_btc_event',),
+        ]
+
+        # the ones identifying a transaction became chain events carrying its id, while
+        # the user created one that only looks like a transaction stayed a plain event
+        assert cursor.execute(
+            'SELECT H.group_identifier, H.entry_type, C.tx_ref FROM history_events AS H '
+            'LEFT JOIN chain_events_info AS C ON C.identifier=H.identifier '
+            "WHERE H.location IN ('q', 'r') ORDER BY H.group_identifier, H.sequence_index",
+        ).fetchall() == [
+            (f'bch_{bch_tx_id}', 11, bytes.fromhex(bch_tx_id)),
+            (f'btc_{btc_tx_id}', 11, bytes.fromhex(btc_tx_id)),
+            (f'btc_{btc_tx_id}', 11, bytes.fromhex(btc_tx_id)),
+            (f'btc_{customized_tx_id}', 11, bytes.fromhex(customized_tx_id)),
+            ('manual_btc_event', 1, None),
         ]
         assert cursor.execute(
             'SELECT COUNT(*) FROM bitcoin_events_addresses WHERE event_identifier=?',

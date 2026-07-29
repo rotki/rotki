@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 from rotkehlchen.accounting.constants import DEFAULT, EVENT_CATEGORY_MAPPINGS, EXCHANGE
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.errors.serialization import DeserializationError
@@ -151,6 +149,7 @@ class HistoryBaseEntryType(DBIntEnumMixIn):
     EVM_SWAP_EVENT = auto()
     SOLANA_EVENT = auto()
     SOLANA_SWAP_EVENT = auto()
+    BITCOIN_EVENT = auto()
 
 
 T = TypeVar('T', bound='HistoryBaseEntry')
@@ -374,11 +373,6 @@ class HistoryBaseEntry[
                 serialized_data['auto_notes'] = f'Gain {self.amount} {self.asset.symbol_or_name()} from Kraken staking'  # noqa: E501
             elif self.event_subtype == HistoryEventSubType.FEE:
                 serialized_data['auto_notes'] = f'Spend {self.amount} {self.asset.symbol_or_name()} as Kraken staking fee'  # noqa: E501
-        elif self.location == Location.BITCOIN:
-            serialized_data['tx_ref'] = self.group_identifier.replace(BTC_GROUP_IDENTIFIER_PREFIX, '')  # noqa: E501
-        elif self.location == Location.BITCOIN_CASH:
-            serialized_data['tx_ref'] = self.group_identifier.replace(BCH_GROUP_IDENTIFIER_PREFIX, '')  # noqa: E501
-
         return serialized_data
 
     def serialize_for_csv(

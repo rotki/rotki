@@ -4,7 +4,6 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.manager import BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY
 from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcTxIO, BtcTxIODirection
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
@@ -12,12 +11,13 @@ from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import BlockchainAccountData
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
+from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.bitcoin import get_decoded_events_of_bitcoin_tx, string_to_btc_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     BTCAddress,
+    BTCTxId,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 @pytest.mark.vcr
@@ -44,7 +45,8 @@ def test_1input_1output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
         string_to_btc_address('1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp'),
     )
     events = get_decoded_events_of_bitcoin_tx(bitcoin_manager=bitcoin_manager, tx_id=tx_id)
-    fee_event = HistoryEvent(
+    fee_event = BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1686238076000)),
@@ -57,7 +59,8 @@ def test_1input_1output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
         notes=f'Spend {fee_amount} BTC for fees',
     )
     if btc_accounts == [address1]:  # only input tracked - fee event and spend event
-        assert events == [fee_event, HistoryEvent(
+        assert events == [fee_event, BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=group_identifier,
             sequence_index=1,
             timestamp=timestamp,
@@ -69,9 +72,10 @@ def test_1input_1output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
             location_label=address1,
             notes=f'Send {transfer_amount} BTC to {address2}',
         )]
-        assert getattr(events[1], BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY) == [address2]
+        assert events[1].counterparty_addresses == [address2]
     elif btc_accounts == [address2]:  # only output tracked - single receive event
-        assert events == [HistoryEvent(
+        assert events == [BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=group_identifier,
             sequence_index=0,
             timestamp=timestamp,
@@ -83,9 +87,10 @@ def test_1input_1output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
             location_label=address2,
             notes=f'Receive {transfer_amount} BTC from {address1}',
         )]
-        assert getattr(events[0], BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY) == [address1]
+        assert events[0].counterparty_addresses == [address1]
     else:  # input and output tracked - fee event and transfer event
-        assert events == [fee_event, HistoryEvent(
+        assert events == [fee_event, BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=group_identifier,
             sequence_index=1,
             timestamp=timestamp,
@@ -97,7 +102,7 @@ def test_1input_1output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
             location_label=address1,
             notes=f'Transfer {transfer_amount} BTC to {address2}',
         )]
-        assert getattr(events[1], BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY) == [address2]
+        assert events[1].counterparty_addresses == [address2]
 
 
 @pytest.mark.vcr
@@ -114,7 +119,8 @@ def test_1input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
     )
     events = get_decoded_events_of_bitcoin_tx(bitcoin_manager=bitcoin_manager, tx_id=tx_id)
     if btc_accounts == [address2]:  # only one receiver tracked - single receive event
-        assert events == [HistoryEvent(
+        assert events == [BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}',
             sequence_index=0,
             timestamp=TimestampMS(1339247930000),
@@ -127,7 +133,8 @@ def test_1input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
             location_label=address2,
         )]
     else:  # Sender and one receiver tracked - fee event, transfer event, and spend event
-        assert events == [HistoryEvent(
+        assert events == [BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1339247930000)),
@@ -138,7 +145,8 @@ def test_1input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
             amount=(fee_amount := FVal('0.01')),
             location_label=address1,
             notes=f'Spend {fee_amount} BTC for fees',
-        ), HistoryEvent(
+        ), BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=group_identifier,
             sequence_index=1,
             timestamp=timestamp,
@@ -149,7 +157,8 @@ def test_1input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
             amount=FVal(amount1 := '0.56196218'),
             notes=f'Transfer {amount1} BTC to {address2}',
             location_label=address1,
-        ), HistoryEvent(
+        ), BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=group_identifier,
             sequence_index=2,
             timestamp=timestamp,
@@ -175,7 +184,8 @@ def test_op_return(
         bitcoin_manager=bitcoin_manager,
         tx_id=(tx_id := 'eb4d2def800c4993928a6f8cc3dd350933a1fb71e6706902025f29a061e5547f'),
         use_blockcypher=use_blockcypher,
-    ) == [HistoryEvent(
+    ) == [BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1729677861000)),
@@ -186,7 +196,8 @@ def test_op_return(
         amount=(fee_amount := FVal('0.00001')),
         location_label=btc_accounts[0],
         notes=f'Spend {fee_amount} BTC for fees',
-    ), HistoryEvent(
+    ), BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=group_identifier,
         sequence_index=1,
         timestamp=timestamp,
@@ -209,7 +220,8 @@ def test_op_return_multiple_pushbytes(
     assert get_decoded_events_of_bitcoin_tx(
         bitcoin_manager=bitcoin_manager,
         tx_id=(tx_id := '42c4fabe072e70eae555cb41e34291ee5c9ff205c3e5704e230339abc912b339'),
-    ) == [HistoryEvent(
+    ) == [BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1749216296000)),
@@ -220,7 +232,8 @@ def test_op_return_multiple_pushbytes(
         amount=(fee_amount := FVal('0.00002')),
         location_label=(user_address := btc_accounts[0]),
         notes=f'Spend {fee_amount} BTC for fees',
-    ), HistoryEvent(
+    ), BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=group_identifier,
         sequence_index=1,
         timestamp=timestamp,
@@ -230,7 +243,8 @@ def test_op_return_multiple_pushbytes(
         asset=A_BTC,
         amount=ZERO,
         notes='Store data on the blockchain: a0a1a2a3a4a5a6a7a8a9b0b1b2b3b4b5b6b7b8b9c0c1c2c3c4c5c6c7c8c9d0d1d2d3d4d5d6d7d8d9e0',  # noqa: E501
-    ), HistoryEvent(
+    ), BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=group_identifier,
         sequence_index=2,
         timestamp=timestamp,
@@ -254,7 +268,8 @@ def test_op_return_pushdata1(
     assert get_decoded_events_of_bitcoin_tx(
         bitcoin_manager=bitcoin_manager,
         tx_id=(tx_id := '2033435de7ce307341231e818ed937cd3a5e8597381fd83a7e5b0234f61b38d3'),
-    ) == [HistoryEvent(
+    ) == [BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1749216962000)),
@@ -265,7 +280,8 @@ def test_op_return_pushdata1(
         amount=(fee_amount := FVal('0.00002')),
         location_label=(user_address := btc_accounts[0]),
         notes=f'Spend {fee_amount} BTC for fees',
-    ), HistoryEvent(
+    ), BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=group_identifier,
         sequence_index=1,
         timestamp=timestamp,
@@ -275,7 +291,8 @@ def test_op_return_pushdata1(
         asset=A_BTC,
         amount=ZERO,
         notes='Store text on the blockchain: learnmeabitcoin',
-    ), HistoryEvent(
+    ), BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=group_identifier,
         sequence_index=2,
         timestamp=timestamp,
@@ -319,7 +336,8 @@ def test_2input_1output(
         FVal('0.119546502918617111274039817269189555016637527494219164175737409057582764649484'),
     )
     events = get_decoded_events_of_bitcoin_tx(bitcoin_manager=bitcoin_manager, tx_id=tx_id)
-    fee_event1 = HistoryEvent(
+    fee_event1 = BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1749114440000)),
@@ -331,7 +349,8 @@ def test_2input_1output(
         location_label=address1,
         notes=f'Spend {fee_amount1} BTC for fees',
     )
-    fee_event2 = HistoryEvent(
+    fee_event2 = BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=group_identifier,
         sequence_index=0,
         timestamp=timestamp,
@@ -344,7 +363,8 @@ def test_2input_1output(
         notes=f'Spend {fee_amount2} BTC for fees',
     )
     if btc_accounts == [address1]:  # self-transfer input address tracked
-        assert events == [fee_event1, HistoryEvent(
+        assert events == [fee_event1, BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=group_identifier,
             sequence_index=1,
             timestamp=timestamp,
@@ -357,7 +377,8 @@ def test_2input_1output(
             notes=f'Send {transfer_amount1} BTC to {address3}',
         )]
     elif btc_accounts == [address2]:  # other input address tracked
-        assert events == [fee_event2, HistoryEvent(
+        assert events == [fee_event2, BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=group_identifier,
             sequence_index=1,
             timestamp=timestamp,
@@ -370,7 +391,8 @@ def test_2input_1output(
             notes=f'Send {transfer_amount2} BTC to {address3}',
         )]
     elif btc_accounts == [address3]:  # output address tracked
-        assert events == [HistoryEvent(
+        assert events == [BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=group_identifier,
             sequence_index=0,
             timestamp=timestamp,
@@ -381,7 +403,8 @@ def test_2input_1output(
             amount=transfer_amount1,
             location_label=address3,
             notes=f'Receive {transfer_amount1} BTC from {address1}',
-        ), HistoryEvent(
+        ), BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=group_identifier,
             sequence_index=1,
             timestamp=timestamp,
@@ -395,7 +418,8 @@ def test_2input_1output(
         )]
     else:  # all addresses tracked
         fee_event2.sequence_index = 1
-        assert events == [fee_event1, fee_event2, HistoryEvent(
+        assert events == [fee_event1, fee_event2, BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=group_identifier,
             sequence_index=2,
             timestamp=timestamp,
@@ -406,7 +430,8 @@ def test_2input_1output(
             amount=transfer_amount1,
             location_label=address1,
             notes=f'Transfer {transfer_amount1} BTC to {address3}',
-        ), HistoryEvent(
+        ), BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=group_identifier,
             sequence_index=3,
             timestamp=timestamp,
@@ -445,7 +470,8 @@ def test_3input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
         tx_id=(tx_id := 'cccd3a9ce6c59fd0b5ae4244cb9b239387efa31c96e0d45c0c0b82c0d7ee3bd8'),
     )
     address1, address2, address3, address4, address5 = btc_accounts
-    assert events[:3] == [HistoryEvent(
+    assert events[:3] == [BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1711929790000)),
@@ -456,7 +482,8 @@ def test_3input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
         amount=(fee_amount1 := FVal('0.0000349900109618287314696311430719520663908035422202581481970374366538300400020661')),  # noqa: E501
         location_label=address1,
         notes=f'Spend {fee_amount1} BTC for fees',
-    ), HistoryEvent(
+    ), BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=group_identifier,
         sequence_index=1,
         timestamp=timestamp,
@@ -467,7 +494,8 @@ def test_3input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
         amount=(fee_amount2 := FVal('0.0000000549945190856342651844284640239668045982288898709259014812816730849799989669482')),  # noqa: E501
         location_label=address2,
         notes=f'Spend {fee_amount2} BTC for fees',
-    ), HistoryEvent(
+    ), BitcoinEvent(
+        tx_ref=BTCTxId(tx_id),
         group_identifier=group_identifier,
         sequence_index=2,
         timestamp=timestamp,
@@ -489,7 +517,7 @@ def test_3input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
         x.event_subtype == HistoryEventSubType.NONE and
         x.group_identifier == group_identifier and
         x.timestamp == timestamp and
-        len(getattr(x, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY)) == 1
+        x.counterparty_addresses is not None and len(x.counterparty_addresses) == 1
         for x in transfers
     )
     for output_address, output_amount in (
@@ -498,7 +526,7 @@ def test_3input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
     ):  # each output is credited exactly what it received in the tx
         assert sum(
             (x.amount for x in transfers
-             if getattr(x, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY) == [output_address]),
+             if x.counterparty_addresses == [output_address]),
             ZERO,
         ).is_close(output_amount, max_diff='1e-20')
 
@@ -526,7 +554,8 @@ def test_p2pk(
         bitcoin_manager=bitcoin_manager,
         tx_id=(tx_id := '1db6251a9afce7025a2061a19e63c700dffc3bec368bd1883decfac353357a9d'),
         use_blockcypher=use_blockcypher,
-        ) == [expected_event := HistoryEvent(
+        ) == [expected_event := BitcoinEvent(
+            tx_ref=BTCTxId(tx_id),
             group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}',
             sequence_index=0,
             timestamp=TimestampMS(1313042188000),
@@ -630,11 +659,11 @@ def test_change_output_is_not_double_counted(
 
     for event in events:
         if event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE:  # noqa: E501
-            assert getattr(event, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY) == [CHANGE_TX_EXTERNAL_OUTPUT]  # noqa: E501
+            assert event.counterparty_addresses == [CHANGE_TX_EXTERNAL_OUTPUT]
         elif event.event_type == HistoryEventType.TRANSFER:
             # a single counterparty per transfer so balance tracking knows which
             # address to credit
-            assert getattr(event, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY) == [CHANGE_TX_CHANGE_OUTPUT]  # noqa: E501
+            assert event.counterparty_addresses == [CHANGE_TX_CHANGE_OUTPUT]
 
     # The wallet's net position must equal what it actually lost on chain.
     assert (

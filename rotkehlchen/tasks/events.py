@@ -206,14 +206,14 @@ def _load_customized_event_candidates(
         database: DBHandler,
         group_identifiers: list[str] | None = None,
 ) -> dict[str, list[CustomizedEventCandidate]]:
-    """Load customized and related non-customized EVM/Solana events grouped by group identifier.
+    """Load customized and related non-customized chain events grouped by group identifier.
 
     Query outline:
     - Select base history event fields plus chain metadata (counterparty/address).
-    - LEFT JOIN chain_events_info for EVM/Solana-specific columns.
+    - LEFT JOIN chain_events_info for the chain-specific columns.
     - LEFT JOIN history_events_mappings to mark customized rows.
     - Restrict to group identifiers that include at least one customized event (EXISTS).
-    - Filter to EVM/Solana entry types and order by group/sequence for stable ordering.
+    - Filter to the chain entry types and order by group/sequence for stable ordering.
     """
     group_events: dict[str, list[CustomizedEventCandidate]] = defaultdict(list)
     entry_type_values = [entry_type.serialize_for_db() for entry_type in (
@@ -221,6 +221,7 @@ def _load_customized_event_candidates(
         HistoryBaseEntryType.EVM_SWAP_EVENT,
         HistoryBaseEntryType.SOLANA_EVENT,
         HistoryBaseEntryType.SOLANA_SWAP_EVENT,
+        HistoryBaseEntryType.BITCOIN_EVENT,
     )]
     entry_type_placeholders = ', '.join(['?'] * len(entry_type_values))
     query = (
