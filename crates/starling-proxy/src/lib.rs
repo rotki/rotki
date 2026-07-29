@@ -458,19 +458,51 @@ async fn proxy_colibri(State(state): State<ProxyState>, req: Request) -> Respons
 }
 
 /// `/mcp` → MCP, path preserved. Starling is the only caller reachable by MCP's
-/// loopback listener, so replace the external Host with the actual upstream Host
-/// accepted by MCP's DNS-rebinding protection.
+/// loopback listener, so replace the external Host and Origin with the upstream
+/// values accepted by MCP's DNS-rebinding protection.
 async fn proxy_mcp(State(state): State<ProxyState>, mut req: Request) -> Response {
     if !state.mcp_enabled {
         return StatusCode::NOT_FOUND.into_response();
     }
+    if !mcp_origin_matches_host(req.headers()) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
     if let Ok(host) = HeaderValue::from_str(&state.mcp_addr) {
         req.headers_mut().insert(header::HOST, host);
     }
+    if req.headers().contains_key(header::ORIGIN) {
+        if let Ok(origin) = HeaderValue::from_str(&format!("http://{}", state.mcp_addr)) {
+            req.headers_mut().insert(header::ORIGIN, origin);
+        }
+    }
+    req.headers_mut().remove(MCP_BACKEND_PROOF_HEADER);
     let target = format!("http://{}{}", state.mcp_addr, path_and_query(&req));
     let peer = peer_addr(&req);
     let req = req_with_target(req, target, peer);
     forward(&state, req).await
+}
+
+fn mcp_origin_matches_host(headers: &HeaderMap) -> bool {
+    let Some(origin) = headers.get(header::ORIGIN) else {
+        return true;
+    };
+    let Some(host) = headers
+        .get(header::HOST)
+        .and_then(|value| value.to_str().ok())
+    else {
+        return false;
+    };
+    let Ok(origin) = origin.to_str() else {
+        return false;
+    };
+    let Ok(uri) = origin.parse::<Uri>() else {
+        return false;
+    };
+    if !matches!(uri.scheme_str(), Some("http" | "https")) {
+        return false;
+    }
+    uri.authority()
+        .is_some_and(|authority| authority.as_str().eq_ignore_ascii_case(host))
 }
 
 /// `/ws/*` → core, preserving the path and bridging the WebSocket upgrade.
@@ -915,7 +947,7 @@ mod tests {
         let port = listener.local_addr().unwrap().port();
         let app = Router::new().fallback(any(|req: Request| async move {
             format!(
-                "{}|{}|{}",
+                "{}|{}|{}|{}|{}",
                 path_and_query(&req),
                 req.headers()
                     .get(header::AUTHORIZATION)
@@ -923,6 +955,14 @@ mod tests {
                     .unwrap_or_default(),
                 req.headers()
                     .get(header::HOST)
+                    .and_then(|value| value.to_str().ok())
+                    .unwrap_or_default(),
+                req.headers()
+                    .get(header::ORIGIN)
+                    .and_then(|value| value.to_str().ok())
+                    .unwrap_or_default(),
+                req.headers()
+                    .get(MCP_BACKEND_PROOF_HEADER)
                     .and_then(|value| value.to_str().ok())
                     .unwrap_or_default(),
             )
@@ -946,7 +986,9 @@ mod tests {
                 Request::builder()
                     .uri("/mcp")
                     .header(header::HOST, "rotki.example")
+                    .header(header::ORIGIN, "https://rotki.example")
                     .header(header::AUTHORIZATION, "Bearer signed-token")
+                    .header(MCP_BACKEND_PROOF_HEADER, "must-not-be-forwarded")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -956,8 +998,36 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(
             body_string(response).await,
-            format!("/mcp|Bearer signed-token|127.0.0.1:{port}"),
+            format!("/mcp|Bearer signed-token|127.0.0.1:{port}|http://127.0.0.1:{port}|",),
         );
+    }
+
+    #[tokio::test]
+    async fn mcp_rejects_cross_origin_requests() {
+        let app = router(&ProxyConfig {
+            port: 0,
+            core_port: 1,
+            colibri_port: 1,
+            mcp_port: 1,
+            mcp_enabled: true,
+            frontend_dir: None,
+            max_body_bytes: 50 * 1024 * 1024,
+            access_log: Default::default(),
+        });
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/mcp")
+                    .header(header::HOST, "rotki.example")
+                    .header(header::ORIGIN, "https://attacker.example")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
     }
 
     #[tokio::test]

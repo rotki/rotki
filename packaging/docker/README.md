@@ -197,6 +197,8 @@ browser session with `POST /api/1/mcp/token`, then configure the MCP client to s
 it as `Authorization: Bearer <token>`. The token belongs to the same active session:
 logging out or signing in from another browser revokes both the cookie and MCP access.
 It is cryptographically scoped to MCP and cannot authenticate directly to the REST API.
+It expires at the session's absolute ceiling, at most seven days after login; generate a
+replacement in the settings UI and update the MCP client before the displayed expiry.
 Without `ROTKI_SESSION_KEY`, Docker does not auto-start the externally routed MCP
 service and `/mcp` remains closed.
 

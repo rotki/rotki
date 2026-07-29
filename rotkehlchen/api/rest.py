@@ -1208,6 +1208,7 @@ class RestAPI:
         """Return a bearer token for the cookie-authenticated active session."""
         if (
             self.session_store is None or
+            getattr(g, 'rotki_session_exp', None) is None or
             (username := getattr(g, 'rotki_session_user', None)) is None or
             (sid := getattr(g, 'rotki_session_sid', None)) is None or
             (token := self.session_store.issue_mcp_token(username=username, sid=sid)) is None

@@ -225,7 +225,13 @@ impl<S: Spawner> Supervisor<S> {
             rt.process.take();
         }
         tokio::time::sleep(backoff).await;
-        self.start_one(name).await
+        let result = self.start_one(name).await;
+        if let Err(err) = &result {
+            let rt = self.services.get_mut(name).expect("service exists");
+            rt.state = ServiceState::Failed;
+            rt.last_error = Some(err.to_string());
+        }
+        result
     }
 
     async fn start_one(&mut self, name: &str) -> Result<()> {

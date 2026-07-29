@@ -187,10 +187,30 @@ describe('mcpServerSetting', () => {
     await flushPromises();
 
     expect(mocks.generateMcpToken).toHaveBeenCalledOnce();
-    expect(wrapper.find('[data-testid="mcp-token"]').text()).toBe('generated-mcp-token');
+    expect(wrapper.find('[data-testid="mcp-token"]').text()).toBe('••••••••••••••••');
     expect(wrapper.findAll('.copy-tooltip')[1].attributes('data-value')).toBe(
       'generated-mcp-token',
     );
+    expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.token_expiry_hint');
+
+    await wrapper.find('[data-testid="mcp-toggle-token"]').trigger('click');
+    expect(wrapper.find('[data-testid="mcp-token"]').text()).toBe('generated-mcp-token');
     expect(mocks.getMcpServerStatus).not.toHaveBeenCalled();
+  });
+
+  it('should show token generation errors separately in Docker', async () => {
+    vi.stubEnv('VITE_DOCKER', 'true');
+    mocks.isPackaged = false;
+    mocks.generateMcpToken.mockRejectedValueOnce(new Error('token failed'));
+
+    const wrapper = createWrapper();
+    await wrapper.find('[data-testid="mcp-generate-token"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(
+      'backend_settings.settings.mcp_server.token_error',
+    );
+    expect(wrapper.text()).toContain('token failed');
+    expect(wrapper.text()).not.toContain('backend_settings.settings.mcp_server.error');
   });
 });

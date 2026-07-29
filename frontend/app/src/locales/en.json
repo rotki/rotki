@@ -1793,8 +1793,10 @@
         "endpoint": "Endpoint",
         "error": "Failed to update the MCP server: {message}",
         "generate_token": "Generate bearer token",
+        "hide_token": "Hide bearer token",
         "hint": "Manage the local MCP server used by AI assistants.",
         "label": "MCP Server",
+        "reveal_token": "Reveal bearer token",
         "status": {
           "failed": "Failed",
           "label": "Status",
@@ -1807,7 +1809,8 @@
         },
         "token": "Bearer token",
         "token_error": "Failed to generate an MCP token: {message}",
-        "token_expires": "Expires {timestamp}"
+        "token_expires": "Expires {timestamp}",
+        "token_expiry_hint": "Tokens expire at the time shown, at most seven days after login. Generate a replacement and update your client before then. Logging out revokes the token."
       }
     },
     "sqlite_instructions": {

@@ -24,8 +24,13 @@ def test_session_token_verifier_should_require_active_session(tmp_path: Path) ->
         assert access_token.scopes == [MCP_SCOPE]
         assert access_token.subject == username
 
-        store.revoke(username)
+        replacement_token = store.issue_mcp_token(username=username, sid=claims.sid)
+        assert replacement_token is not None
         assert asyncio.run(verifier.verify_token(token)) is None
+        assert asyncio.run(verifier.verify_token(replacement_token)) is not None
+
+        store.revoke(username)
+        assert asyncio.run(verifier.verify_token(replacement_token)) is None
     finally:
         store.close()
 

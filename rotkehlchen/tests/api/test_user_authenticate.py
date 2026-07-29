@@ -238,7 +238,7 @@ def test_issue_mcp_bearer_token(
         claims = read_mcp_token(SESSION_KEY, token)
         assert claims is not None
         assert claims.username == username
-        assert store.is_active(username=username, sid=claims.sid) is True
+        assert store.is_mcp_active(username=username, sid=claims.sid) is True
 
         settings_url = api_url_for(rotkehlchen_api_server, 'settingsresource')
         assert requests.get(
@@ -254,12 +254,40 @@ def test_issue_mcp_bearer_token(
             MCP_BACKEND_PROOF_HEADER: create_mcp_backend_proof(key=SESSION_KEY, token=token),
         }
         assert requests.get(settings_url, headers=internal_headers).status_code == HTTPStatus.OK
+        assert_error_response(
+            response=requests.post(token_url, headers=internal_headers),
+            status_code=HTTPStatus.UNAUTHORIZED,
+        )
 
-        store.revoke(username)
-        assert store.is_active(username=username, sid=claims.sid) is False
+        replacement_result = assert_proper_sync_response_with_result(session.post(token_url))
+        replacement_token = replacement_result['access_token']
+        replacement_headers = {
+            'Authorization': f'Bearer {replacement_token}',
+            MCP_BACKEND_PROOF_HEADER: create_mcp_backend_proof(
+                key=SESSION_KEY,
+                token=replacement_token,
+            ),
+        }
+        assert store.is_mcp_active(username=username, sid=claims.sid) is False
         assert requests.get(
             settings_url,
             headers=internal_headers,
+        ).status_code == HTTPStatus.UNAUTHORIZED
+        assert requests.get(
+            settings_url,
+            headers=replacement_headers,
+        ).status_code == HTTPStatus.OK
+
+        store.revoke(username)
+        replacement_claims = read_mcp_token(SESSION_KEY, replacement_token)
+        assert replacement_claims is not None
+        assert store.is_mcp_active(
+            username=username,
+            sid=replacement_claims.sid,
+        ) is False
+        assert requests.get(
+            settings_url,
+            headers=replacement_headers,
         ).status_code == HTTPStatus.UNAUTHORIZED
     finally:
         _disable_session(rotkehlchen_api_server)

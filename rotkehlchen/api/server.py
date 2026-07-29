@@ -586,7 +586,7 @@ class APIServer:
                     (
                         internal_claims := _read_internal_mcp_token(session_key=session_key)
                     ) is None or
-                    not self.rest_api.session_store.is_active(
+                    not self.rest_api.session_store.is_mcp_active(
                         internal_claims.username,
                         internal_claims.sid,
                     )

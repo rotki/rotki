@@ -525,8 +525,22 @@ impl<S: Spawner> Controller<S> {
                                 let Ok(policy) = self.supervisor.restart_policy(&service) else {
                                     return Outcome::Crashed;
                                 };
-                                if policy.on_crash != OnCrash::Restart {
+                                if !matches!(
+                                    policy.on_crash,
+                                    OnCrash::Restart | OnCrash::RestartOrReport
+                                ) {
                                     continue;
+                                }
+                                if policy.max_retries == 0 {
+                                    if policy.on_crash == OnCrash::RestartOrReport {
+                                        error!(
+                                            service,
+                                            "restart policy has no attempts; leaving service failed",
+                                        );
+                                        continue;
+                                    }
+                                    error!(service, "restart policy has no attempts");
+                                    return Outcome::Crashed;
                                 }
 
                                 self.emit(ControlEvent::Restarting {
@@ -570,6 +584,19 @@ impl<S: Spawner> Controller<S> {
                                 }
                                 self.publish();
                                 if !recovered {
+                                    if policy.on_crash == OnCrash::RestartOrReport {
+                                        error!(
+                                            service,
+                                            max_retries = policy.max_retries,
+                                            "restart attempts exhausted; leaving service failed",
+                                        );
+                                        continue;
+                                    }
+                                    error!(
+                                        service,
+                                        max_retries = policy.max_retries,
+                                        "restart attempts exhausted",
+                                    );
                                     return Outcome::Crashed;
                                 }
                                 let services = self
@@ -896,6 +923,7 @@ mod tests {
         spawns: Arc<AtomicU32>,
         live: Arc<Mutex<HashSet<u32>>>,
         next_pid: Arc<AtomicU32>,
+        fail_after: Arc<AtomicU32>,
     }
 
     impl TestSpawner {
@@ -904,7 +932,12 @@ mod tests {
                 spawns: Arc::new(AtomicU32::new(0)),
                 live: Arc::new(Mutex::new(HashSet::new())),
                 next_pid: Arc::new(AtomicU32::new(1000)),
+                fail_after: Arc::new(AtomicU32::new(u32::MAX)),
             }
+        }
+
+        fn fail_after(&self, successful_spawns: u32) {
+            self.fail_after.store(successful_spawns, Ordering::SeqCst);
         }
     }
 
@@ -952,7 +985,10 @@ mod tests {
     #[async_trait]
     impl Spawner for TestSpawner {
         async fn spawn(&self, _spec: &ServiceSpec) -> io::Result<Box<dyn Process>> {
-            self.spawns.fetch_add(1, Ordering::SeqCst);
+            let spawn_index = self.spawns.fetch_add(1, Ordering::SeqCst);
+            if spawn_index >= self.fail_after.load(Ordering::SeqCst) {
+                return Err(io::Error::other("configured spawn failure"));
+            }
             let pid = self.next_pid.fetch_add(1, Ordering::SeqCst);
             self.live.lock().unwrap().insert(pid);
             Ok(Box::new(TestProcess {
@@ -1663,7 +1699,7 @@ mod tests {
         mcp.restart = crate::config::RestartPolicy {
             max_retries: 3,
             backoff: Duration::ZERO,
-            on_crash: OnCrash::Restart,
+            on_crash: OnCrash::RestartOrReport,
         };
         let mut sup = Supervisor::new(spawner.clone(), services.clone()).unwrap();
         sup.start_all().await.unwrap();
@@ -1722,6 +1758,180 @@ mod tests {
         assert!(emitted
             .iter()
             .any(|event| matches!(event, ControlEvent::Ready { .. })));
+    }
+
+    #[tokio::test]
+    async fn exhausted_mcp_restarts_leave_only_mcp_failed() {
+        let spawner = TestSpawner::new();
+        let mut services = specs_with_optional_mcp();
+        let mcp = services
+            .iter_mut()
+            .find(|service| service.name == "mcp")
+            .unwrap();
+        mcp.autostart = true;
+        mcp.restart = crate::config::RestartPolicy {
+            max_retries: 3,
+            backoff: Duration::ZERO,
+            on_crash: OnCrash::RestartOrReport,
+        };
+        let mut sup = Supervisor::new(spawner.clone(), services.clone()).unwrap();
+        sup.start_all().await.unwrap();
+        let mcp_pid = sup
+            .status()
+            .into_iter()
+            .find(|service| service.name == "mcp")
+            .and_then(|service| service.pid)
+            .unwrap();
+        let mut controller = Controller::new(
+            sup,
+            layout(),
+            Box::new(move |_| services.clone()),
+            Duration::from_millis(50),
+            Some(1_700_000_000),
+        );
+        controller.poll_interval = Duration::from_millis(5);
+        let handle = controller.handle();
+        spawner.fail_after(3);
+        spawner.live.lock().unwrap().remove(&mcp_pid);
+
+        let status_handle = handle.clone();
+        let outcome = controller
+            .run(async move {
+                tokio::time::timeout(Duration::from_secs(1), async {
+                    loop {
+                        let status = status_handle.status(Transport::Stdio).unwrap();
+                        if status.services.iter().any(|service| {
+                            service.name == "mcp"
+                                && service.state == ServiceState::Failed
+                                && service.restarts == 3
+                        }) {
+                            break;
+                        }
+                        tokio::task::yield_now().await;
+                    }
+                })
+                .await
+                .expect("MCP restart attempts were not exhausted");
+                tokio::time::sleep(Duration::from_millis(20)).await;
+            })
+            .await;
+
+        assert_eq!(outcome, Outcome::Shutdown);
+        assert_eq!(spawner.spawns.load(Ordering::SeqCst), 6);
+        let status = handle.status(Transport::Stdio).unwrap();
+        assert!(status
+            .services
+            .iter()
+            .filter(|service| service.name != "mcp")
+            .all(|service| service.state == ServiceState::Ready));
+    }
+
+    #[tokio::test]
+    async fn exhausted_fatal_restart_policy_crashes_supervisor() {
+        let spawner = TestSpawner::new();
+        let mut services = specs_with_optional_mcp();
+        let mcp = services
+            .iter_mut()
+            .find(|service| service.name == "mcp")
+            .unwrap();
+        mcp.autostart = true;
+        mcp.restart = crate::config::RestartPolicy {
+            max_retries: 3,
+            backoff: Duration::ZERO,
+            on_crash: OnCrash::Restart,
+        };
+        let mut sup = Supervisor::new(spawner.clone(), services.clone()).unwrap();
+        sup.start_all().await.unwrap();
+        let mcp_pid = sup
+            .status()
+            .into_iter()
+            .find(|service| service.name == "mcp")
+            .and_then(|service| service.pid)
+            .unwrap();
+        let mut controller = Controller::new(
+            sup,
+            layout(),
+            Box::new(move |_| services.clone()),
+            Duration::from_millis(50),
+            Some(1_700_000_000),
+        );
+        controller.poll_interval = Duration::from_millis(5);
+        spawner.fail_after(3);
+        spawner.live.lock().unwrap().remove(&mcp_pid);
+
+        assert_eq!(
+            controller.run(std::future::pending::<()>()).await,
+            Outcome::Crashed,
+        );
+        assert_eq!(spawner.spawns.load(Ordering::SeqCst), 6);
+    }
+
+    #[tokio::test]
+    async fn zero_mcp_restart_attempts_leave_service_failed() {
+        let spawner = TestSpawner::new();
+        let mut services = specs_with_optional_mcp();
+        let mcp = services
+            .iter_mut()
+            .find(|service| service.name == "mcp")
+            .unwrap();
+        mcp.autostart = true;
+        mcp.restart = crate::config::RestartPolicy {
+            max_retries: 0,
+            backoff: Duration::ZERO,
+            on_crash: OnCrash::RestartOrReport,
+        };
+        let mut sup = Supervisor::new(spawner.clone(), services.clone()).unwrap();
+        sup.start_all().await.unwrap();
+        let mcp_pid = sup
+            .status()
+            .into_iter()
+            .find(|service| service.name == "mcp")
+            .and_then(|service| service.pid)
+            .unwrap();
+        let mut controller = Controller::new(
+            sup,
+            layout(),
+            Box::new(move |_| services.clone()),
+            Duration::from_millis(50),
+            Some(1_700_000_000),
+        );
+        controller.poll_interval = Duration::from_millis(5);
+        let handle = controller.handle();
+        spawner.live.lock().unwrap().remove(&mcp_pid);
+
+        let status_handle = handle.clone();
+        let outcome = controller
+            .run(async move {
+                tokio::time::timeout(Duration::from_secs(1), async {
+                    loop {
+                        let status = status_handle.status(Transport::Stdio).unwrap();
+                        if status.services.iter().any(|service| {
+                            service.name == "mcp" && service.state == ServiceState::Failed
+                        }) {
+                            break;
+                        }
+                        tokio::task::yield_now().await;
+                    }
+                })
+                .await
+                .expect("MCP crash was not observed");
+                tokio::time::sleep(Duration::from_millis(20)).await;
+            })
+            .await;
+
+        assert_eq!(outcome, Outcome::Shutdown);
+        assert_eq!(spawner.spawns.load(Ordering::SeqCst), 3);
+        assert_eq!(
+            handle
+                .status(Transport::Stdio)
+                .unwrap()
+                .services
+                .iter()
+                .find(|service| service.name == "mcp")
+                .unwrap()
+                .state,
+            ServiceState::Failed,
+        );
     }
 
     #[tokio::test]

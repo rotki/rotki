@@ -239,10 +239,9 @@ def create_mcp_backend_proof(key: bytes, token: str) -> str:
 def verify_mcp_backend_proof(key: bytes, token: str, proof: str) -> bool:
     """Validate the internal MCP-to-core proof, failing closed for malformed input."""
     try:
-        proof.encode('ascii')
         expected = create_mcp_backend_proof(key=key, token=token)
         return hmac.compare_digest(expected, proof)
-    except UnicodeError:
+    except (TypeError, UnicodeError):
         return False
 
 

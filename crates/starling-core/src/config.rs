@@ -84,8 +84,10 @@ impl Readiness {
 pub enum OnCrash {
     /// Tear everything down and exit the supervisor (today's Docker behavior).
     ExitSupervisor,
-    /// Attempt to restart the service per [`RestartPolicy`].
+    /// Attempt to restart the service, exiting the supervisor if attempts are exhausted.
     Restart,
+    /// Attempt to restart an optional service, leaving it failed if attempts are exhausted.
+    RestartOrReport,
     /// Leave it down and surface the failure (today's Electron behavior).
     ReportOnly,
 }

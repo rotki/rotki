@@ -1,6 +1,7 @@
 """Unit tests for the persistent single-active-session store (Docker cookie auth)."""
 import sqlite3
 from datetime import UTC, datetime, timedelta
+from unittest.mock import MagicMock, patch
 
 import pytest
 from freezegun import freeze_time
@@ -9,6 +10,7 @@ from rotkehlchen.api.session_store import (
     SESSION_DB_NAME,
     SESSION_DB_VERSION,
     SessionStore,
+    is_persisted_mcp_session_active,
 )
 from rotkehlchen.api.session_token import (
     SESSION_ABSOLUTE_TTL,
@@ -110,15 +112,39 @@ def test_mcp_token_is_domain_separated_and_linked_to_session(tmp_path) -> None:
     assert read_session_token(KEY, token) is None
     assert (mcp_claims := read_mcp_token(KEY, token)) is not None
     assert mcp_claims.username == session_claims.username
-    assert mcp_claims.sid == session_claims.sid
-    assert store.is_active(mcp_claims.username, mcp_claims.sid) is True
+    assert mcp_claims.sid != session_claims.sid
+    assert mcp_claims.exp == BASE_TS + SESSION_ABSOLUTE_TTL
+    assert store.is_mcp_active(mcp_claims.username, mcp_claims.sid) is True
+
+    replacement_token = store.issue_mcp_token(
+        username='alice',
+        sid=session_claims.sid,
+    )
+    assert replacement_token is not None
+    assert (replacement_claims := read_mcp_token(KEY, replacement_token)) is not None
+    assert replacement_claims.sid != mcp_claims.sid
+    assert store.is_mcp_active(mcp_claims.username, mcp_claims.sid) is False
+    assert store.is_mcp_active(replacement_claims.username, replacement_claims.sid) is True
 
     proof = create_mcp_backend_proof(key=KEY, token=token)
     assert verify_mcp_backend_proof(key=KEY, token=token, proof=proof) is True
     assert verify_mcp_backend_proof(key=KEY, token=f'{token}x', proof=proof) is False
+    assert verify_mcp_backend_proof(key=KEY, token=token, proof='non-ascii-€') is False
 
     store.revoke('alice')
-    assert store.is_active(mcp_claims.username, mcp_claims.sid) is False
+    assert store.is_mcp_active(replacement_claims.username, replacement_claims.sid) is False
+
+
+def test_persisted_session_check_closes_connection(tmp_path) -> None:
+    connection = MagicMock()
+    connection.execute.return_value.fetchone.return_value = (1,)
+    with patch('rotkehlchen.api.session_store.sqlite3.connect', return_value=connection):
+        assert is_persisted_mcp_session_active(
+            db_path=tmp_path / SESSION_DB_NAME,
+            username='alice',
+            sid='active-sid',
+        ) is True
+    connection.close.assert_called_once_with()
 
 
 @pytest.mark.parametrize('token', ['not-ascii-€.signature', 'payload.not-ascii-€'])

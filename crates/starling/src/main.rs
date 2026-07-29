@@ -614,7 +614,7 @@ async fn main() -> std::process::ExitCode {
                 spec.restart = RestartPolicy {
                     max_retries: 3,
                     backoff: Duration::from_secs(1),
-                    on_crash: OnCrash::Restart,
+                    on_crash: OnCrash::RestartOrReport,
                 };
             }
         }

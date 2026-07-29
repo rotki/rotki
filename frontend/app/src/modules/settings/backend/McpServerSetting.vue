@@ -22,9 +22,11 @@ const {
 const { generateMcpToken } = useMcpApi();
 
 const status = ref<McpServerStatus>();
-const error = ref<string>();
+const serverError = ref<string>();
 const loading = ref<boolean>(isPackaged);
 const token = ref<McpToken>();
+const tokenError = ref<string>();
+const tokenVisible = ref<boolean>(false);
 const mcpServerState = useMcpServerState();
 
 const transitioningStates: ReadonlySet<McpServiceState> = new Set([
@@ -36,6 +38,14 @@ const transitioningStates: ReadonlySet<McpServiceState> = new Set([
 
 const isRunning = computed<boolean>(() => get(status)?.state === 'Ready');
 const dockerEndpoint = computed<string>(() => `${window.location.origin}/mcp`);
+const tokenDisplay = computed<string>(() => (
+  get(tokenVisible) ? get(token)?.accessToken ?? '' : '••••••••••••••••'
+));
+const tokenVisibilityLabel = computed<string>(() => (
+  get(tokenVisible)
+    ? t('backend_settings.settings.mcp_server.hide_token')
+    : t('backend_settings.settings.mcp_server.reveal_token')
+));
 const statusLabels = computed<Record<McpServiceState, string>>(() => ({
   Degraded: t('backend_settings.settings.mcp_server.status.failed'),
   Failed: t('backend_settings.settings.mcp_server.status.failed'),
@@ -64,12 +74,12 @@ async function loadStatus(): Promise<void> {
     return;
 
   set(loading, true);
-  set(error, undefined);
+  set(serverError, undefined);
   try {
     set(status, await getMcpServerStatus());
   }
   catch (error_: unknown) {
-    set(error, getErrorMessage(error_));
+    set(serverError, getErrorMessage(error_));
   }
   finally {
     set(loading, false);
@@ -78,12 +88,12 @@ async function loadStatus(): Promise<void> {
 
 async function updateAutoStart(enabled: boolean): Promise<void> {
   set(loading, true);
-  set(error, undefined);
+  set(serverError, undefined);
   try {
     set(status, await setMcpAutoStart(enabled));
   }
   catch (error_: unknown) {
-    set(error, getErrorMessage(error_));
+    set(serverError, getErrorMessage(error_));
   }
   finally {
     set(loading, false);
@@ -92,14 +102,14 @@ async function updateAutoStart(enabled: boolean): Promise<void> {
 
 async function toggleServer(): Promise<void> {
   set(loading, true);
-  set(error, undefined);
+  set(serverError, undefined);
   try {
     set(status, await (get(isRunning) ? stopMcpServer() : startMcpServer()));
   }
   catch (error_: unknown) {
     const message = getErrorMessage(error_);
     await loadStatus();
-    set(error, message);
+    set(serverError, message);
   }
   finally {
     set(loading, false);
@@ -108,16 +118,21 @@ async function toggleServer(): Promise<void> {
 
 async function createToken(): Promise<void> {
   set(loading, true);
-  set(error, undefined);
+  set(tokenError, undefined);
   try {
     set(token, await generateMcpToken());
+    set(tokenVisible, false);
   }
   catch (error_: unknown) {
-    set(error, getErrorMessage(error_));
+    set(tokenError, getErrorMessage(error_));
   }
   finally {
     set(loading, false);
   }
+}
+
+function toggleTokenVisibility(): void {
+  set(tokenVisible, !get(tokenVisible));
 }
 
 watch(mcpServerState, (state) => {
@@ -149,10 +164,10 @@ onBeforeMount(() => {
       </RuiAlert>
 
       <RuiAlert
-        v-if="error"
+        v-if="tokenError"
         type="error"
       >
-        {{ t('backend_settings.settings.mcp_server.token_error', { message: error }) }}
+        {{ t('backend_settings.settings.mcp_server.token_error', { message: tokenError }) }}
       </RuiAlert>
 
       <div class="flex flex-col gap-1">
@@ -184,6 +199,7 @@ onBeforeMount(() => {
 
       <RuiButton
         data-testid="mcp-generate-token"
+        type="button"
         color="primary"
         :loading="loading"
         @click="createToken()"
@@ -203,8 +219,22 @@ onBeforeMount(() => {
             data-testid="mcp-token"
             class="flex-1 min-w-0 text-sm break-all font-mono"
           >
-            {{ token.accessToken }}
+            {{ tokenDisplay }}
           </code>
+          <RuiButton
+            data-testid="mcp-toggle-token"
+            icon
+            variant="text"
+            color="primary"
+            size="sm"
+            :aria-label="tokenVisibilityLabel"
+            @click="toggleTokenVisibility()"
+          >
+            <RuiIcon
+              :name="tokenVisible ? 'lu-eye-off' : 'lu-eye'"
+              size="16"
+            />
+          </RuiButton>
           <CopyTooltip :value="token.accessToken">
             <RuiButton
               icon
@@ -227,6 +257,9 @@ onBeforeMount(() => {
             timestamp: new Date(token.expiresAt * 1000).toLocaleString(),
           }) }}
         </span>
+        <RuiAlert type="warning">
+          {{ t('backend_settings.settings.mcp_server.token_expiry_hint') }}
+        </RuiAlert>
       </div>
     </div>
 
@@ -242,10 +275,10 @@ onBeforeMount(() => {
       class="flex flex-col gap-4"
     >
       <RuiAlert
-        v-if="error"
+        v-if="serverError"
         type="error"
       >
-        {{ t('backend_settings.settings.mcp_server.error', { message: error }) }}
+        {{ t('backend_settings.settings.mcp_server.error', { message: serverError }) }}
       </RuiAlert>
 
       <div class="flex flex-wrap items-center gap-3">
