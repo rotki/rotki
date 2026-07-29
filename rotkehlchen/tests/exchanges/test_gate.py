@@ -188,6 +188,27 @@ def test_gate_flushes_successful_movement_query_before_raising(gate_exchange: Ga
     query_trades.assert_not_called()
 
 
+def test_gate_requery_uses_incremental_queue(gate_exchange: Gate) -> None:
+    event_queue = MagicMock(spec=HistoryEventQueue)
+    with patch.object(
+        gate_exchange,
+        'query_online_history_events',
+        return_value=([], Timestamp(2)),
+    ) as query_events:
+        assert gate_exchange.requery_online_history_events_into_queue(
+            start_ts=Timestamp(1),
+            end_ts=Timestamp(2),
+            event_queue=event_queue,
+        ) == Timestamp(2)
+
+    query_events.assert_called_once_with(
+        start_ts=Timestamp(1),
+        end_ts=Timestamp(2),
+        force_refresh=True,
+        event_queue=event_queue,
+    )
+
+
 def gate_account_mock(
         calls: dict[str, list[tuple[dict[str, Any] | None, Any]]],
 ) -> Callable[[str, dict[str, Any] | None], Any]:
