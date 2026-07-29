@@ -256,6 +256,57 @@ DROP TABLE ens_mappings_old;
             "WHERE M.name='state' AND M.value=3 AND H.type='exchange adjustment'",
         )
 
+    @progress_step(description='Create bitcoin transaction tables.')
+    def _create_bitcoin_transaction_tables(write_cursor: DBCursor) -> None:
+        """Bitcoin transactions used to be decoded into history events and then thrown away,
+        on the assumption that a chain without protocols would never need decoding again.
+        Correcting a decoding mistake does need it though, and so does a transaction whose
+        events changed because another of its addresses started being tracked. Save them so
+        that both can be done without querying the explorers again.
+
+        Hardcoded schema/indexes to prevent future schema changes from affecting this upgrade.
+        """
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS bitcoin_transactions (
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    location CHAR(1) NOT NULL REFERENCES location(location),
+    tx_id TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    block_height INTEGER NOT NULL,
+    fee INTEGER NOT NULL,
+    vin_count INTEGER,
+    vout_count INTEGER,
+    UNIQUE(location, tx_id)
+);""")
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS bitcoin_tx_io (
+    tx_id INTEGER NOT NULL,
+    direction INTEGER NOT NULL CHECK(direction IN (1, 2)),
+    io_index INTEGER NOT NULL,
+    value INTEGER NOT NULL,
+    address TEXT,
+    script BLOB,
+    PRIMARY KEY(tx_id, direction, io_index),
+    FOREIGN KEY(tx_id) REFERENCES bitcoin_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+) WITHOUT ROWID;""")  # noqa: E501
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS bitcointx_address_mappings (
+    tx_id INTEGER NOT NULL,
+    address TEXT NOT NULL,
+    PRIMARY KEY(tx_id, address),
+    FOREIGN KEY(tx_id) REFERENCES bitcoin_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+) WITHOUT ROWID;""")  # noqa: E501
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS bitcoin_tx_mappings (
+    tx_id INTEGER NOT NULL,
+    value INTEGER NOT NULL,
+    PRIMARY KEY(tx_id, value),
+    FOREIGN KEY(tx_id) REFERENCES bitcoin_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+) WITHOUT ROWID;""")  # noqa: E501
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_io_address ON bitcoin_tx_io(address);',
+        )
+
     @progress_step(description='Reset bitcoin transaction query range.')
     def _reset_bitcoin_query_range(write_cursor: DBCursor) -> None:
         """Bitcoin transactions with a change output were decoded as a spend of the entire
@@ -263,10 +314,11 @@ DROP TABLE ens_mappings_old;
         never happened and corrupting cost basis. Transfers between owned addresses were
         also never credited to the receiving address in historical balances.
 
-        Unlike EVM and Solana, raw bitcoin transactions are not stored locally, so they
-        cannot be redecoded offline here. Instead reset the per-address last queried block,
-        so the next transaction query refetches the full history from the explorers and
-        decodes it with the corrected logic.
+        There is nothing saved locally to redecode from yet, since the transaction tables
+        this same upgrade creates are only filled from now on. Instead reset the per-address
+        last queried block, so the next transaction query refetches the full history from the
+        explorers and decodes it with the corrected logic. That query also fills the new
+        tables, which is what makes any future correction a local redecode instead of this.
 
         The existing events are deliberately left in place rather than deleted here. The
         query purges each transaction's events right before writing the new ones, so they

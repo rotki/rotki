@@ -36,6 +36,7 @@ from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.limits import FREE_USER_NOTES_LIMIT
 from rotkehlchen.constants.misc import CONTRACT_TAG_NAME, NFT_DIRECTIVE, USERDB_NAME
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
+from rotkehlchen.db.bitcointx import DBBitcoinTx
 from rotkehlchen.db.cache import (
     AddressArgType,
     BinancePairLastTradeArgsType,
@@ -3127,9 +3128,14 @@ class DBHandler:
             blockchain: SUPPORTED_BITCOIN_CHAINS_TYPE,
     ) -> None:
         """Deletes all bitcoin related data from the DB for a single bitcoin address"""
+        DBBitcoinTx(self).delete_data_for_address(
+            write_cursor=write_cursor,
+            location=(location := Location.from_chain(blockchain)),
+            address=address,
+        )
         DBHistoryEvents(database=self).delete_location_events(
             write_cursor=write_cursor,
-            location=Location.from_chain(blockchain),
+            location=location,
             address=address,
         )
         self.delete_dynamic_cache(

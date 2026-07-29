@@ -115,6 +115,15 @@ def satoshis_to_btc(satoshis: int | FVal) -> FVal:
     return satoshis * FVal('0.00000001')
 
 
+def btc_to_satoshis(amount: FVal) -> int:
+    """Convert a btc amount back to satoshis for saving it in the DB.
+    Only used for amounts that came from an API as satoshis, so it must stay exact.
+
+    May raise ConversionError if the amount is not a whole number of satoshis.
+    """
+    return (amount * 100000000).to_int(exact=True)
+
+
 def timestamp_to_date(
         ts: Timestamp,
         formatstr: str = '%d/%m/%Y %H:%M:%S',

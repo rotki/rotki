@@ -259,6 +259,7 @@ class BitcoinCashManager(BitcoinCommonManager):
     def deserialize_tx_io_from_haskoin(
             data: dict[str, Any],
             direction: BtcTxIODirection,
+            position: int,
     ) -> BtcTxIO:
         """Deserialize a TxIO from a haskoin API.
         May raise DeserializationError, KeyError, ValueError.
@@ -268,4 +269,5 @@ class BitcoinCashManager(BitcoinCommonManager):
             script=bytes.fromhex(data['pkscript']),
             address=data.get('address'),
             direction=direction,
+            io_index=position,  # this api returns every TxIO, so the position is the real index
         )

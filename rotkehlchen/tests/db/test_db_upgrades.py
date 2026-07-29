@@ -3363,7 +3363,14 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == {'evm_internal_tx_conflicts'}
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'data_issues', 'event_metrics'}
+    assert new_tables == {
+        'bitcoin_transactions',
+        'bitcoin_tx_io',
+        'bitcoin_tx_mappings',
+        'bitcointx_address_mappings',
+        'data_issues',
+        'event_metrics',
+    }
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
@@ -4169,6 +4176,13 @@ def test_upgrade_db_52_to_53(
     with db_v52.conn.write_ctx() as write_cursor:
         assert not table_exists(cursor=write_cursor, name='event_metrics')
         assert not table_exists(cursor=write_cursor, name='data_issues')
+        for table_name in (
+            'bitcoin_transactions',
+            'bitcoin_tx_io',
+            'bitcointx_address_mappings',
+            'bitcoin_tx_mappings',
+        ):
+            assert not table_exists(cursor=write_cursor, name=table_name)
         write_cursor.execute(
             'INSERT INTO history_events('
             'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
@@ -4470,6 +4484,17 @@ def test_upgrade_db_52_to_53(
             'SELECT COUNT(*) FROM bitcoin_events_addresses WHERE event_identifier=?',
             (btc_reset_identifier,),
         ).fetchone()[0] == 1
+
+        # bitcoin transactions are saved from now on, so a future decoding fix needs no
+        # refetching. They start empty since nothing was saved before this upgrade.
+        for table_name in (
+            'bitcoin_transactions',
+            'bitcoin_tx_io',
+            'bitcointx_address_mappings',
+            'bitcoin_tx_mappings',
+        ):
+            assert table_exists(cursor=cursor, name=table_name)
+            assert cursor.execute(f'SELECT COUNT(*) FROM {table_name}').fetchone()[0] == 0
 
         # the last queried block was reset for bitcoin only, so the next query refetches
         # the full history, while unrelated cache entries were left alone

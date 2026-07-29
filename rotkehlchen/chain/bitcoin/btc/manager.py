@@ -255,6 +255,10 @@ class BitcoinManager(BitcoinCommonManager):
                 direction=BtcTxIODirection.OUTPUT,
                 deserialize_fn=self.deserialize_tx_io_from_blockcypher,
             ),
+            # this api paginates the TxIOs instead of omitting them, and
+            # _process_raw_tx_from_blockcypher follows the pagination to the end.
+            vin_count=data.get('vin_sz'),
+            vout_count=data.get('vout_sz'),
         )
 
     def deserialize_tx_from_blockchain_info(self, data: dict[str, Any]) -> BitcoinTx | None:
@@ -264,18 +268,14 @@ class BitcoinManager(BitcoinCommonManager):
         if (raw_block_height := data['block_height']) is None:
             return None  # blockchain.info can't be limited to only confirmed txs.
 
-        inputs = [vin['prev_out'] for vin in data['inputs']]
+        # This api omits TxIOs that don't directly affect the addresses queried, so carry
+        # the real index of each TxIO over to the deserialized one. Outputs already have it
+        # as `n`, but for inputs it lives on the vin rather than on the prev_out we use.
+        inputs = [
+            vin['prev_out'] | {'index': vin.get('index', position)}
+            for position, vin in enumerate(data['inputs'])
+        ]
         outputs = data['out']
-        multi_io = False
-        if (
-            (vin_sz := data['vin_sz']) > 1 and
-            (vout_sz := data['vout_sz']) > 1 and
-            (len(inputs) != vin_sz or len(outputs) != vout_sz)
-        ):
-            # This api omits some TxIOs if they don't directly affect the addresses queried.
-            # Set multi_io to ensure proper many-to-many decoding if some TxIOs are missing.
-            multi_io = True
-
         return BitcoinTx(
             tx_id=data['hash'],
             timestamp=deserialize_timestamp(data['time']),
@@ -291,7 +291,8 @@ class BitcoinManager(BitcoinCommonManager):
                 direction=BtcTxIODirection.OUTPUT,
                 deserialize_fn=self.deserialize_tx_io_from_blockchain_info,
             ),
-            multi_io=multi_io,
+            vin_count=deserialize_int(value=data['vin_sz'], location='btc tx vin_sz'),
+            vout_count=deserialize_int(value=data['vout_sz'], location='btc tx vout_sz'),
         )
 
     def set_custom_mempool_api(self, endpoint: str) -> tuple[bool, str]:
@@ -335,6 +336,7 @@ class BitcoinManager(BitcoinCommonManager):
     def deserialize_tx_io_from_blockcypher(
             data: dict[str, Any],
             direction: BtcTxIODirection,
+            position: int,
     ) -> BtcTxIO:
         """Deserialize a TxIO from blockcypher.
         May raise DeserializationError, KeyError, ValueError.
@@ -347,12 +349,14 @@ class BitcoinManager(BitcoinCommonManager):
             script=bytes.fromhex(script) if (script := data.get('script')) is not None else None,
             address=addresses[0] if (addresses := data['addresses']) is not None else None,
             direction=direction,
+            io_index=position,  # this api returns every TxIO, so the position is the real index
         )
 
     @staticmethod
     def deserialize_tx_io_from_blockchain_info(
             data: dict[str, Any],
             direction: BtcTxIODirection,
+            position: int,
     ) -> BtcTxIO:
         """Deserialize a TxIO from blockchain.info.
         May raise DeserializationError, KeyError, ValueError.
@@ -362,6 +366,12 @@ class BitcoinManager(BitcoinCommonManager):
             script=bytes.fromhex(data['script']),
             address=data.get('addr'),
             direction=direction,
+            # outputs carry their real index as `n` and inputs get theirs attached by
+            # deserialize_tx_from_blockchain_info. Fall back to the position for safety.
+            io_index=deserialize_int(
+                value=data.get('n' if direction == BtcTxIODirection.OUTPUT else 'index', position),
+                location='btc TxIO index',
+            ),
         )
 
     @staticmethod

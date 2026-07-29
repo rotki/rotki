@@ -2,6 +2,7 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -16,9 +17,9 @@ class BtcQueryAction(Enum):
     TRANSACTIONS = auto()
 
 
-class BtcTxIODirection(Enum):
-    INPUT = auto()
-    OUTPUT = auto()
+class BtcTxIODirection(DBIntEnumMixIn):
+    INPUT = 1
+    OUTPUT = 2
 
 
 class BtcApiCallback(NamedTuple):
@@ -35,16 +36,22 @@ class BtcTxIO(NamedTuple):
     script: bytes | None  # optional since blockcypher omits the script for input TxIOs
     address: BTCAddress | None  # address may be missing for scripts such as op_return
     direction: BtcTxIODirection
+    # Position of this TxIO within its side of the transaction, as numbered by the chain
+    # itself. APIs that return only the TxIOs touching the queried addresses still report
+    # the real index, so it is what identifies a TxIO across two partial views of the same
+    # transaction and lets the locally saved copy be completed instead of duplicated.
+    io_index: int
 
     @classmethod
     def deserialize(
             cls,
             data: dict[str, Any],
             direction: BtcTxIODirection,
-            deserialize_fn: Callable[[dict[str, Any], BtcTxIODirection], BtcTxIO],
+            position: int,
+            deserialize_fn: Callable[[dict[str, Any], BtcTxIODirection, int], BtcTxIO],
     ) -> BtcTxIO:
         try:
-            return deserialize_fn(data, direction)
+            return deserialize_fn(data, direction, position)
         except KeyError as e:
             raise DeserializationError(f'Missing key {e!s}') from e
         except ValueError as e:
@@ -55,13 +62,14 @@ class BtcTxIO(NamedTuple):
             cls,
             data_list: list[dict[str, Any]],
             direction: BtcTxIODirection,
-            deserialize_fn: Callable[[dict[str, Any], BtcTxIODirection], BtcTxIO],
+            deserialize_fn: Callable[[dict[str, Any], BtcTxIODirection, int], BtcTxIO],
     ) -> list[BtcTxIO]:
         return [cls.deserialize(
             data=raw_tx_io,
             direction=direction,
+            position=position,
             deserialize_fn=deserialize_fn,
-        ) for raw_tx_io in data_list]
+        ) for position, raw_tx_io in enumerate(data_list)]
 
 
 class BitcoinTx(NamedTuple):
@@ -71,4 +79,29 @@ class BitcoinTx(NamedTuple):
     fee: FVal
     inputs: list[BtcTxIO]
     outputs: list[BtcTxIO]
-    multi_io: bool = False
+    # Number of TxIOs the transaction has on each side according to the API. Some APIs
+    # return only the TxIOs touching the queried addresses while still reporting the real
+    # counts, so these say whether `inputs`/`outputs` hold the whole transaction. They
+    # default to the length of the lists for APIs that always return everything.
+    vin_count: int | None = None
+    vout_count: int | None = None
+
+    @property
+    def is_complete(self) -> bool:
+        """Whether every TxIO of the transaction is present."""
+        return (
+            (self.vin_count is None or len(self.inputs) == self.vin_count) and
+            (self.vout_count is None or len(self.outputs) == self.vout_count)
+        )
+
+    @property
+    def multi_io(self) -> bool:
+        """Whether the transaction has multiple TxIOs on both sides while some of them are
+        missing. Such a transaction must be decoded as a many-to-many even though fewer
+        TxIOs are present, since the missing ones can't be mapped to a single counterparty.
+        """
+        return (
+            (self.vin_count or len(self.inputs)) > 1 and
+            (self.vout_count or len(self.outputs)) > 1 and
+            not self.is_complete
+        )

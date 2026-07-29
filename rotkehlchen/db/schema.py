@@ -900,6 +900,66 @@ CREATE TABLE IF NOT EXISTS solana_ata_address_mappings (
 );
 """  # noqa: E501
 
+# Stores the bitcoin/bitcoin cash transactions we queried, so that they can be decoded
+# again without querying the explorers a second time. Both chains share the tables since
+# a single manager serves them, with the location column telling them apart.
+# vin/vout_count are the number of TxIOs the transaction has according to the API. Some
+# APIs return only the TxIOs touching the queried addresses, so they are what tells a
+# locally saved transaction that is missing TxIOs apart from a complete one.
+DB_CREATE_BITCOIN_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS bitcoin_transactions (
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    location CHAR(1) NOT NULL REFERENCES location(location),
+    tx_id TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    block_height INTEGER NOT NULL,
+    fee INTEGER NOT NULL,
+    vin_count INTEGER,
+    vout_count INTEGER,
+    UNIQUE(location, tx_id)
+);
+"""
+
+# The inputs and outputs of a bitcoin transaction. Amounts are in satoshis, which is what
+# every API returns and keeps them exact. `io_index` is the index the chain itself gives
+# the TxIO, so that two partial views of the same transaction complete each other instead
+# of duplicating rows. Address is null for scripts that have none, such as op_return, and
+# script is null for the input TxIOs of APIs that omit it.
+DB_CREATE_BITCOIN_TX_IO = """
+CREATE TABLE IF NOT EXISTS bitcoin_tx_io (
+    tx_id INTEGER NOT NULL,
+    direction INTEGER NOT NULL CHECK(direction IN (1, 2)),
+    io_index INTEGER NOT NULL,
+    value INTEGER NOT NULL,
+    address TEXT,
+    script BLOB,
+    PRIMARY KEY(tx_id, direction, io_index),
+    FOREIGN KEY(tx_id) REFERENCES bitcoin_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+) WITHOUT ROWID;
+"""  # noqa: E501
+
+# Maps each bitcoin transaction to the tracked addresses it was queried for. Used to know
+# which transactions to remove along with an address, keeping the ones another tracked
+# address still needs.
+DB_CREATE_BITCOINTX_ADDRESS_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS bitcointx_address_mappings (
+    tx_id INTEGER NOT NULL,
+    address TEXT NOT NULL,
+    PRIMARY KEY(tx_id, address),
+    FOREIGN KEY(tx_id) REFERENCES bitcoin_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+) WITHOUT ROWID;
+"""  # noqa: E501
+
+# Marks the state of a bitcoin transaction, currently only whether it has been decoded.
+DB_CREATE_BITCOIN_TX_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS bitcoin_tx_mappings (
+    tx_id INTEGER NOT NULL,
+    value INTEGER NOT NULL,
+    PRIMARY KEY(tx_id, value),
+    FOREIGN KEY(tx_id) REFERENCES bitcoin_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+) WITHOUT ROWID;
+"""  # noqa: E501
+
 # Lido CSM tracking tables. All columns are consumed by DBLidoCsm for enforcing the
 # FK to tracked Ethereum accounts and persisting cached metrics snapshots.
 DB_CREATE_LIDO_CSM_NODE_OPERATORS = """
@@ -1023,6 +1083,7 @@ CREATE INDEX IF NOT EXISTS idx_history_events_type ON history_events(type);
 CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype);
 CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);
 CREATE INDEX IF NOT EXISTS idx_bitcoin_events_addresses_address ON bitcoin_events_addresses(address);
+CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_io_address ON bitcoin_tx_io(address);
 CREATE INDEX IF NOT EXISTS idx_history_event_links_right ON history_event_links(right_event_id);
 CREATE INDEX IF NOT EXISTS idx_history_event_links_composite ON history_event_links(link_type, left_event_id, right_event_id);
 CREATE INDEX IF NOT EXISTS idx_history_event_link_ignores_type ON history_event_link_ignores(link_type);
@@ -1086,6 +1147,10 @@ BEGIN TRANSACTION;
 {DB_CREATE_HISTORY_EVENTS}
 {DB_CREATE_CHAIN_EVENTS_INFO}
 {DB_CREATE_BITCOIN_EVENTS_ADDRESSES}
+{DB_CREATE_BITCOIN_TRANSACTIONS}
+{DB_CREATE_BITCOIN_TX_IO}
+{DB_CREATE_BITCOINTX_ADDRESS_MAPPINGS}
+{DB_CREATE_BITCOIN_TX_MAPPINGS}
 {DB_CREATE_ETH_STAKING_EVENTS_INFO}
 {DB_CREATE_HISTORY_EVENTS_MAPPINGS}
 {DB_CREATE_HISTORY_EVENTS_BACKUP}

@@ -5,6 +5,7 @@ import pytest
 
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.manager import BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY
+from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcTxIO, BtcTxIODirection
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -738,3 +739,184 @@ def test_redecoding_after_tracking_more_accounts(
     assert _sum_amounts(events, HistoryEventType.SPEND) == CHANGE_TX_EXTERNAL_AMOUNT
     assert _sum_amounts(events, HistoryEventType.TRANSFER) == CHANGE_TX_CHANGE_AMOUNT
     assert _sum_amounts(events, HistoryEventType.RECEIVE) == ZERO
+
+
+@pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1]])
+def test_transactions_are_saved_and_redecoded_offline(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Test that queried transactions are saved and can be decoded again without querying
+    the explorers, which is what makes correcting a decoding mistake possible at all.
+    """
+    bitcoin_manager.query_transactions(
+        from_timestamp=Timestamp(0),
+        to_timestamp=ts_now(),
+        addresses=btc_accounts,
+    )
+    dbevents, dbtx = DBHistoryEvents(bitcoin_manager.database), bitcoin_manager.dbtx
+    with bitcoin_manager.database.conn.read_ctx() as cursor:
+        saved_txs = dbtx.get_transactions(cursor=cursor, location=Location.BITCOIN)
+        original_events = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+        # everything queried is saved, decoded and associated with the address it came from
+        assert len(saved_txs) > 0
+        assert dbtx.count_undecoded_transactions(cursor=cursor, location=Location.BITCOIN) == 0
+        assert dbtx.get_transaction_ids_for_address(
+            cursor=cursor,
+            location=Location.BITCOIN,
+            address=btc_accounts[0],
+        ) != []
+        assert (change_tx := next(
+            x for x in saved_txs if x.tx_id == CHANGE_TX_ID
+        )).is_complete is True
+        assert {x.address for x in change_tx.outputs} == {
+            CHANGE_TX_EXTERNAL_OUTPUT,
+            CHANGE_TX_CHANGE_OUTPUT,
+        }
+
+    with patch.object(  # any explorer query during the redecode must fail the test
+        bitcoin_manager,
+        '_query',
+        side_effect=AssertionError('Redecoding should not query the explorers'),
+    ):
+        assert bitcoin_manager.redecode_transactions() == len(saved_txs)
+
+    with bitcoin_manager.database.conn.read_ctx() as cursor:
+        redecoded_events = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+
+    assert len(redecoded_events) == len(original_events)
+    for redecoded, original in zip(redecoded_events, original_events, strict=True):
+        assert redecoded.group_identifier == original.group_identifier
+        assert redecoded.sequence_index == original.sequence_index
+        assert redecoded.amount == original.amount
+        assert redecoded.notes == original.notes
+
+
+@pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1]])
+def test_saved_transaction_completed_by_a_second_partial_view(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Test that two partial views of the same transaction complete each other instead of
+    duplicating rows. blockchain.info returns only the TxIOs touching the queried addresses,
+    so a transaction saved for one address may be missing the TxIOs of another.
+    """
+    def make_tx(outputs: list[BtcTxIO]) -> BitcoinTx:
+        return BitcoinTx(
+            tx_id=CHANGE_TX_ID,
+            timestamp=Timestamp(1700000000),
+            block_height=1,
+            fee=CHANGE_TX_FEE,
+            inputs=[BtcTxIO(
+                value=FVal('0.03'),
+                script=b'\x01',
+                address=CHANGE_TX_INPUT1,
+                direction=BtcTxIODirection.INPUT,
+                io_index=0,
+            )],
+            outputs=outputs,
+            vin_count=1,
+            vout_count=2,
+        )
+
+    external_output = BtcTxIO(
+        value=CHANGE_TX_EXTERNAL_AMOUNT,
+        script=b'\x02',
+        address=CHANGE_TX_EXTERNAL_OUTPUT,
+        direction=BtcTxIODirection.OUTPUT,
+        io_index=0,
+    )
+    change_output = BtcTxIO(
+        value=CHANGE_TX_CHANGE_AMOUNT,
+        script=b'\x03',
+        address=CHANGE_TX_CHANGE_OUTPUT,
+        direction=BtcTxIODirection.OUTPUT,
+        io_index=1,
+    )
+    dbtx = bitcoin_manager.dbtx
+    with bitcoin_manager.database.conn.write_ctx() as write_cursor:
+        assert dbtx.add_transactions(  # only the change output is known at first
+            write_cursor=write_cursor,
+            transactions=[make_tx(outputs=[change_output])],
+            location=Location.BITCOIN,
+            relevant_addresses=[CHANGE_TX_INPUT1],
+        ) == {CHANGE_TX_ID}
+
+    with bitcoin_manager.database.conn.read_ctx() as cursor:
+        assert (saved := dbtx.get_transactions(
+            cursor=cursor,
+            location=Location.BITCOIN,
+        )[0]).is_complete is False
+        assert saved.multi_io is False  # only one input, so it is still a single-to-many
+        assert saved.outputs == [change_output]
+
+    with bitcoin_manager.database.conn.write_ctx() as write_cursor:
+        assert dbtx.add_transactions(  # the other output arrives with another address' query
+            write_cursor=write_cursor,
+            transactions=[make_tx(outputs=[external_output, change_output])],
+            location=Location.BITCOIN,
+            relevant_addresses=[CHANGE_TX_CHANGE_OUTPUT],
+        ) == {CHANGE_TX_ID}
+
+    with bitcoin_manager.database.conn.read_ctx() as cursor:
+        assert (saved := dbtx.get_transactions(
+            cursor=cursor,
+            location=Location.BITCOIN,
+        )[0]).is_complete is True
+        assert saved.outputs == [external_output, change_output]
+        assert saved.fee == CHANGE_TX_FEE  # amounts survive the satoshi roundtrip
+        # gaining a TxIO makes the events decoded from the incomplete copy outdated
+        assert dbtx.count_undecoded_transactions(cursor=cursor, location=Location.BITCOIN) == 1
+
+
+@pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1, CHANGE_TX_CHANGE_OUTPUT]])
+def test_removing_an_address_keeps_shared_transactions(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Test that removing an address only deletes the transactions no other tracked address
+    was queried for.
+    """
+    bitcoin_manager.query_transactions(
+        from_timestamp=Timestamp(0),
+        to_timestamp=ts_now(),
+        addresses=btc_accounts,
+    )
+    database, dbtx = bitcoin_manager.database, bitcoin_manager.dbtx
+    with database.conn.read_ctx() as cursor:
+        assert CHANGE_TX_ID in {  # the change tx was queried for both addresses
+            x.tx_id for x in dbtx.get_transactions(cursor=cursor, location=Location.BITCOIN)
+        }
+
+    with database.user_write() as write_cursor:
+        database.remove_single_blockchain_accounts(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.BITCOIN,
+            accounts=[CHANGE_TX_CHANGE_OUTPUT],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        saved_tx_ids = {
+            x.tx_id for x in dbtx.get_transactions(cursor=cursor, location=Location.BITCOIN)
+        }
+        assert CHANGE_TX_ID in saved_tx_ids  # still needed by the address left tracking it
+
+    with database.user_write() as write_cursor:
+        database.remove_single_blockchain_accounts(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.BITCOIN,
+            accounts=[CHANGE_TX_INPUT1],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert dbtx.get_transactions(cursor=cursor, location=Location.BITCOIN) == []
+        assert DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN),
+        ) == []
