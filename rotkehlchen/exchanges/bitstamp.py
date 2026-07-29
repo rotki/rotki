@@ -398,10 +398,11 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 options=options,
             )
             if response.status_code != HTTPStatus.OK:
-                raise RemoteError(self._process_unsuccessful_response(
+                self.msg_aggregator.add_error(msg := self._process_unsuccessful_response(
                     response=response,
                     case='crypto-transactions',
                 ))
+                raise RemoteError(msg)
 
             try:
                 response_dict = jsonloads_dict(response.text)
@@ -409,7 +410,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 msg = f'Bitstamp returned invalid JSON response: {response.text}.'
                 log.error(msg)
                 self.msg_aggregator.add_error(
-                    f'Got remote error while querying Bistamp crypto transactions: {msg}',
+                    f'Got remote error while querying Bitstamp crypto transactions: {msg}',
                 )
                 raise RemoteError(msg) from e
 
@@ -654,17 +655,18 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 options=call_options,
             )
             if response.status_code != HTTPStatus.OK:
-                raise RemoteError(self._process_unsuccessful_response(
+                self.msg_aggregator.add_error(msg := self._process_unsuccessful_response(
                     response=response,
                     case=response_case,
                 ))
+                raise RemoteError(msg)
             try:
                 response_list = jsonloads_list(response.text)
             except JSONDecodeError as e:
                 msg = f'Bitstamp returned invalid JSON response: {response.text}.'
                 log.error(msg)
                 self.msg_aggregator.add_error(
-                    f'Got remote error while querying Bistamp trades: {msg}',
+                    f'Got remote error while querying Bitstamp trades: {msg}',
                 )
                 raise RemoteError(msg) from e
 
