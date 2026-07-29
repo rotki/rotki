@@ -108,7 +108,8 @@ def test_validate_api_key_err_auth_nonce(mock_bitstamp):
         with pytest.raises(RemoteError, match=API_ERR_AUTH_NONCE_MESSAGE):
             mock_bitstamp.query_online_history_events(0, 1)
 
-        assert mock_bitstamp.msg_aggregator.consume_errors() == []
+        assert len(errors := mock_bitstamp.msg_aggregator.consume_errors()) == 1
+        assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
 
 
 @pytest.mark.parametrize('code', API_KEY_ERROR_CODE_ACTION.keys())
@@ -585,7 +586,8 @@ def test_api_query_paginated_non_related_error_code(
             case='trades',
         )
 
-    assert mock_bitstamp.msg_aggregator.consume_errors() == []
+    assert len(errors := mock_bitstamp.msg_aggregator.consume_errors()) == 1
+    assert expected_message in errors[0]
 
 
 def test_crypto_transactions_raises_decoded_error_once(mock_bitstamp: Bitstamp) -> None:
@@ -602,7 +604,8 @@ def test_crypto_transactions_raises_decoded_error_once(mock_bitstamp: Bitstamp) 
     ):
         mock_bitstamp._query_crypto_transactions(offset=0, force_refresh=False)
 
-    assert mock_bitstamp.msg_aggregator.consume_errors() == []
+    assert len(errors := mock_bitstamp.msg_aggregator.consume_errors()) == 1
+    assert 'has reason' in errors[0]
 
 
 def test_api_query_paginated_skips_different_type_result(mock_bitstamp):
