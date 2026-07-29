@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.assets.converters import asset_from_gate
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -128,6 +129,31 @@ def test_gate_history_query_commits_30_day_chunks(gate_exchange: Gate) -> None:
             end_ts=query_end,
         )
     assert ranges_to_query == []
+
+
+def test_gate_history_query_flushes_and_finishes_on_remote_error(
+        gate_exchange: Gate,
+) -> None:
+    event_queue = MagicMock(spec=HistoryEventQueue)
+    query_end = Timestamp(GATE_MOVEMENTS_QUERY_START_TS + DAY_IN_SECONDS)
+
+    with (
+        patch('rotkehlchen.exchanges.gate.ts_now', return_value=query_end),
+        patch('rotkehlchen.exchanges.gate.HistoryEventQueue', return_value=event_queue),
+        patch.object(
+            gate_exchange,
+            'query_online_history_events',
+            side_effect=RemoteError('query failed'),
+        ),
+        patch.object(gate_exchange, 'send_history_events_status_msg') as send_status,
+        pytest.raises(RemoteError, match='query failed'),
+    ):
+        gate_exchange.query_history_events()
+
+    event_queue.flush.assert_called_once_with()
+    assert send_status.call_args_list[-1].kwargs == {
+        'step': HistoryEventsStep.QUERYING_EVENTS_FINISHED,
+    }
 
 
 def test_gate_flushes_successful_movement_query_before_raising(gate_exchange: Gate) -> None:

@@ -536,50 +536,57 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 end_ts=ts_now(),
             )
 
-        for query_start_ts, query_end_ts in ranges_to_query:
-            chunk_start = query_start_ts
-            while chunk_start < query_end_ts:
-                chunk_end = Timestamp(min(chunk_start + GATE_MAX_MOVEMENT_WINDOW, query_end_ts))
-                log.debug(
-                    'Querying Gate history events chunk for %s with '
-                    'chunk_start=%s, chunk_end=%s',
-                    self.name, chunk_start, chunk_end,
-                )
-                self.send_history_events_status_msg(
-                    step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
-                    period=[chunk_start, chunk_end],
-                )
-                event_queue = HistoryEventQueue(
-                    database=self.db,
-                    location_string=location_string,
-                    query_start_ts=chunk_start,
-                )
-                _, actual_end_ts = self.query_online_history_events(
-                    start_ts=chunk_start,
-                    end_ts=chunk_end,
-                    event_queue=event_queue,
-                )
-                event_queue.flush(queried_until_ts=actual_end_ts)
-                if actual_end_ts != chunk_end:
-                    log.error(
-                        'Failed to query all %s history events between %s '
-                        'and %s. Last successfully queried timestamp: %s',
-                        self.name, chunk_start, chunk_end, actual_end_ts,
+        try:
+            for query_start_ts, query_end_ts in ranges_to_query:
+                chunk_start = query_start_ts
+                while chunk_start < query_end_ts:
+                    chunk_end = Timestamp(min(
+                        chunk_start + GATE_MAX_MOVEMENT_WINDOW,
+                        query_end_ts,
+                    ))
+                    log.debug(
+                        'Querying Gate history events chunk for %s with '
+                        'chunk_start=%s, chunk_end=%s',
+                        self.name, chunk_start, chunk_end,
                     )
                     self.send_history_events_status_msg(
-                        step=HistoryEventsStep.QUERYING_EVENTS_FINISHED,
+                        step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
+                        period=[chunk_start, chunk_end],
                     )
-                    return
+                    event_queue = HistoryEventQueue(
+                        database=self.db,
+                        location_string=location_string,
+                        query_start_ts=chunk_start,
+                    )
+                    try:
+                        _, actual_end_ts = self.query_online_history_events(
+                            start_ts=chunk_start,
+                            end_ts=chunk_end,
+                            event_queue=event_queue,
+                        )
+                    except RemoteError:
+                        event_queue.flush()
+                        raise
 
-                log.debug(
-                    'Finished querying Gate history events chunk for %s with '
-                    'chunk_start=%s, actual_end_ts=%s',
-                    self.name, chunk_start, actual_end_ts,
-                )
+                    event_queue.flush(queried_until_ts=actual_end_ts)
+                    if actual_end_ts != chunk_end:
+                        log.error(
+                            'Failed to query all %s history events between %s '
+                            'and %s. Last successfully queried timestamp: %s',
+                            self.name, chunk_start, chunk_end, actual_end_ts,
+                        )
+                        return
 
-                chunk_start = chunk_end
+                    log.debug(
+                        'Finished querying Gate history events chunk for %s with '
+                        'chunk_start=%s, actual_end_ts=%s',
+                        self.name, chunk_start, actual_end_ts,
+                    )
 
-        self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
+                    chunk_start = chunk_end
+
+        finally:
+            self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
 
     def query_online_history_events(
             self,
