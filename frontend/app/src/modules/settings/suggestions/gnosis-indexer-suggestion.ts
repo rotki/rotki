@@ -11,9 +11,9 @@ type IndexersOrder = GeneralSettings['evmIndexersOrder'];
  * The gnosis order 1.44 made the default: etherscan stopped serving gnosis on the free tier, so
  * blockscout leads and etherscan trails as the fallback for whoever holds a paid plan.
  */
-export const BLOCKSCOUT_FIRST_GNOSIS_ORDER: EvmIndexer[] = [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN];
+export const BLOCKSCOUT_FIRST_GNOSIS_ORDER: readonly EvmIndexer[] = [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN];
 
-export const ETHERSCAN_FIRST_GNOSIS_ORDER: EvmIndexer[] = [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT];
+export const ETHERSCAN_FIRST_GNOSIS_ORDER: readonly EvmIndexer[] = [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT];
 
 const BLOCKSCOUT_SERVICE: ExternalServiceName = 'blockscout';
 
@@ -52,9 +52,11 @@ export function createGnosisIndexerSuggestion(
   // still serve gnosis, assuming it is on a paid plan.
   const blockscoutFirst = hasBlockscoutKey || !hasEtherscanKey;
   const recommendedChoice = blockscoutFirst ? EvmIndexer.BLOCKSCOUT : EvmIndexer.ETHERSCAN;
-  const withGnosisOrder = (order: EvmIndexer[]): IndexersOrder => ({
+  // A fresh copy every time: these orders are module constants that end up inside the settings
+  // update payload, and a shared instance would let anything downstream mutate them for good.
+  const withGnosisOrder = (order: readonly EvmIndexer[]): IndexersOrder => ({
     ...indexersOrder,
-    [Blockchain.GNOSIS]: order,
+    [Blockchain.GNOSIS]: [...order],
   });
 
   return {
