@@ -2,6 +2,7 @@ import type { GeneralSettings } from '@/modules/settings/types/user-settings';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Currency } from '@/modules/assets/amount-display/currencies';
 import { defaultGeneralSettings } from '@/modules/settings/factories';
+import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import {
   type FrontendSettings,
   getDefaultFrontendSettings,
@@ -13,6 +14,8 @@ import { collectPendingSuggestions, useSettingsSuggestions } from './use-setting
 const { mockRegistry } = vi.hoisted<{ mockRegistry: { value: VersionSuggestions[] } }>(() => ({ mockRegistry: { value: [] } }));
 const mockUpdate = vi.fn();
 const mockUpdateFrontendSetting = vi.fn();
+const mockFetchHistoryEvents = vi.fn();
+const mockQueryExternalServices = vi.fn();
 const mockAppVersion = ref<string>('1.43.0');
 const mockStore: { pendingSuggestions: PendingSuggestion[]; showSuggestionsDialog: boolean } = { pendingSuggestions: [], showSuggestionsDialog: false };
 
@@ -20,6 +23,18 @@ vi.mock('./settings-suggestions', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./settings-suggestions')>();
   return { ...actual, createSettingsSuggestions: vi.fn(() => mockRegistry.value) };
 });
+
+vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
+  useHistoryEventsApi: vi.fn(() => ({
+    fetchHistoryEvents: mockFetchHistoryEvents,
+  })),
+}));
+
+vi.mock('@/modules/settings/api/use-external-services-api', () => ({
+  useExternalServicesApi: vi.fn(() => ({
+    queryExternalServices: mockQueryExternalServices,
+  })),
+}));
 
 vi.mock('./use-suggestions-store', () => ({
   useSuggestionsStore: vi.fn(() => mockStore),
@@ -263,6 +278,33 @@ describe('collectPendingSuggestions', () => {
     expect(result.some(s => s.fromVersion === '1.43.0')).toBe(true);
   });
 
+  it('should keep a choice suggestion even when it matches the current value', () => {
+    const choiceRegistry: VersionSuggestions[] = [
+      {
+        version: '1.44.0',
+        suggestions: [
+          {
+            settingType: 'general',
+            key: 'evmIndexersOrder',
+            suggestedValue: { gnosis: [EvmIndexer.BLOCKSCOUT] },
+            choices: [{ id: 'blockscout', label: 'Blockscout', value: { gnosis: [EvmIndexer.BLOCKSCOUT] } }],
+            description: 'Choose the gnosis indexer',
+          },
+        ],
+      },
+    ];
+
+    const result = collectPendingSuggestions(
+      createFrontendSettings({ lastAppliedSettingsVersion: '1.43.0' }),
+      createGeneralSettings({ evmIndexersOrder: { gnosis: [EvmIndexer.BLOCKSCOUT] } }),
+      '1.44.0',
+      choiceRegistry,
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].currentValue).toEqual({ gnosis: [EvmIndexer.BLOCKSCOUT] });
+  });
+
   it('should use deep equality for array values', () => {
     const oracleRegistry: VersionSuggestions[] = [
       {
@@ -315,6 +357,8 @@ describe('useSettingsSuggestions', () => {
     mockStore.showSuggestionsDialog = false;
     mockUpdateFrontendSetting.mockResolvedValue(undefined);
     mockUpdate.mockResolvedValue(undefined);
+    mockFetchHistoryEvents.mockResolvedValue({ entriesFound: 0 });
+    mockQueryExternalServices.mockResolvedValue({});
   });
 
   describe('checkForSuggestions', () => {
@@ -366,6 +410,46 @@ describe('useSettingsSuggestions', () => {
       expect(mockStore.pendingSuggestions).toEqual([]);
       expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ lastAppliedSettingsVersion: '1.43.0' });
     });
+
+    it('should not probe for gnosis activity when the gnosis order is untouched', async () => {
+      const { checkForSuggestions } = useSettingsSuggestions();
+      await checkForSuggestions(createFrontendSettings(), createGeneralSettings({
+        evmIndexersOrder: { gnosis: [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN], optimism: [EvmIndexer.ETHERSCAN] },
+      }));
+
+      expect(mockFetchHistoryEvents).not.toHaveBeenCalled();
+      expect(mockQueryExternalServices).not.toHaveBeenCalled();
+    });
+
+    it('should look up the api keys only once gnosis events are found', async () => {
+      const general = createGeneralSettings({ evmIndexersOrder: { gnosis: [EvmIndexer.ETHERSCAN] } });
+      const { checkForSuggestions } = useSettingsSuggestions();
+      await checkForSuggestions(createFrontendSettings(), general);
+
+      expect(mockFetchHistoryEvents).toHaveBeenCalledWith({
+        aggregateByGroupIds: false,
+        limit: 1,
+        location: 'gnosis',
+        offset: 0,
+      });
+      expect(mockQueryExternalServices).not.toHaveBeenCalled();
+
+      mockFetchHistoryEvents.mockResolvedValue({ entriesFound: 3 });
+      await checkForSuggestions(createFrontendSettings(), general);
+
+      expect(mockQueryExternalServices).toHaveBeenCalledOnce();
+    });
+
+    it('should treat a failed gnosis probe as no activity', async () => {
+      mockFetchHistoryEvents.mockRejectedValue(new Error('offline'));
+      const { checkForSuggestions } = useSettingsSuggestions();
+      await checkForSuggestions(createFrontendSettings(), createGeneralSettings({
+        evmIndexersOrder: { gnosis: [EvmIndexer.ETHERSCAN] },
+      }));
+
+      expect(mockQueryExternalServices).not.toHaveBeenCalled();
+      expect(mockStore.showSuggestionsDialog).toBe(false);
+    });
   });
 
   describe('applySelected', () => {
@@ -377,7 +461,7 @@ describe('useSettingsSuggestions', () => {
       ];
 
       const { applySelected } = useSettingsSuggestions();
-      await applySelected(selected);
+      await applySelected({ choices: {}, selected });
 
       expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ defiSetupDone: true, lastAppliedSettingsVersion: '1.43.0' });
       expect(mockUpdate).toHaveBeenCalledWith({ uiFloatingPrecision: 6 });
@@ -391,10 +475,52 @@ describe('useSettingsSuggestions', () => {
       ];
 
       const { applySelected } = useSettingsSuggestions();
-      await applySelected(selected);
+      await applySelected({ choices: {}, selected });
 
       expect(mockUpdateFrontendSetting).toHaveBeenCalledOnce();
       expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should write the picked choice instead of the recommended value', async () => {
+      const selected: PendingSuggestion[] = [{
+        choices: [
+          { id: 'blockscout', label: 'b', value: { gnosis: [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN] } },
+          { id: 'etherscan', label: 'e', value: { gnosis: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT] } },
+        ],
+        currentValue: { gnosis: [EvmIndexer.ETHERSCAN] },
+        description: 'd',
+        fromVersion: '1.44.0',
+        key: 'evmIndexersOrder',
+        recommendedChoice: 'blockscout',
+        settingType: 'general',
+        suggestedValue: { gnosis: [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN] },
+      }];
+
+      const { applySelected } = useSettingsSuggestions();
+      await applySelected({ choices: { 'general:evmIndexersOrder': 'etherscan' }, selected });
+
+      expect(mockUpdate).toHaveBeenCalledWith({
+        evmIndexersOrder: { gnosis: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT] },
+      });
+    });
+
+    it('should fall back to the suggested value when no choice was picked', async () => {
+      const selected: PendingSuggestion[] = [{
+        choices: [{ id: 'blockscout', label: 'b', value: { gnosis: [EvmIndexer.BLOCKSCOUT] } }],
+        currentValue: { gnosis: [EvmIndexer.ETHERSCAN] },
+        description: 'd',
+        fromVersion: '1.44.0',
+        key: 'evmIndexersOrder',
+        settingType: 'general',
+        suggestedValue: { gnosis: [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN] },
+      }];
+
+      const { applySelected } = useSettingsSuggestions();
+      await applySelected({ choices: {}, selected });
+
+      expect(mockUpdate).toHaveBeenCalledWith({
+        evmIndexersOrder: { gnosis: [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN] },
+      });
     });
   });
 

@@ -5833,10 +5833,20 @@
       "description": "The following settings have new recommended defaults. Select which ones you would like to update.",
       "disabled": "Disabled",
       "enabled": "Enabled",
+      "recommended_choice": "{choice} (recommended for you)",
       "title": "New recommended settings",
       "version_group": "New in {version}"
     },
     "evm_chains_skip_detection_v1_43": "Disable auto-detection for chains with high spam activity",
+    "gnosis_indexer_v1_44": {
+      "add_key": "Add a {service} API key",
+      "blockscout_first": "Blockscout, then Etherscan",
+      "blockscout_key": "Blockscout API key",
+      "description": "Choose which indexer rotki uses for Gnosis",
+      "etherscan_first": "Etherscan, then Blockscout",
+      "etherscan_key": "Etherscan API key (paid plan)",
+      "note": "Etherscan no longer serves Gnosis on the free tier, so Gnosis now needs either a paid Etherscan plan or a Blockscout key (free or paid). You customized the Gnosis order, so pick the one that matches the keys you have. An indexer with no usable key is skipped, so the other one is used."
+    },
     "historical_price_oracles_v1_43": "Prioritize DefiLlama for historical prices (less rate limiting)",
     "keep_current": "Keep current"
   },

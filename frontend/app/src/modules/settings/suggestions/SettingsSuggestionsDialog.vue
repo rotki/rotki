@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import type { SuggestionSelection } from './use-settings-suggestions';
 import { groupBy } from 'es-toolkit';
-import { getSuggestionKey, type PendingSuggestion } from './settings-suggestions';
+import { getSuggestionKey, type PendingSuggestion, type SuggestionAction } from './settings-suggestions';
 import SettingsSuggestionItem from './SettingsSuggestionItem.vue';
 
 const modelValue = defineModel<boolean>({ required: true });
@@ -10,24 +11,57 @@ const { suggestions } = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  apply: [selected: PendingSuggestion[]];
+  apply: [selection: SuggestionSelection];
   dismiss: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const router = useRouter();
 
 const acceptedKeys = ref<Set<string>>(new Set());
+const selectedChoices = ref<Record<string, string>>({});
+
+function defaultChoiceOf(suggestion: PendingSuggestion): string | undefined {
+  const choices = suggestion.choices;
+  if (!choices || choices.length === 0)
+    return undefined;
+
+  return suggestion.recommendedChoice ?? choices[0].id;
+}
 
 watch(
   () => suggestions,
   (items) => {
     set(acceptedKeys, new Set(items.map(s => getSuggestionKey(s))));
+    set(selectedChoices, Object.fromEntries(
+      items.flatMap((s) => {
+        const choice = defaultChoiceOf(s);
+        return choice ? [[getSuggestionKey(s), choice]] : [];
+      }),
+    ));
   },
   { immediate: true },
 );
 
 function isAccepted(suggestion: PendingSuggestion): boolean {
   return get(acceptedKeys).has(getSuggestionKey(suggestion));
+}
+
+function choiceOf(suggestion: PendingSuggestion): string | undefined {
+  return get(selectedChoices)[getSuggestionKey(suggestion)];
+}
+
+function selectChoice(suggestion: PendingSuggestion, choice: string): void {
+  set(selectedChoices, { ...get(selectedChoices), [getSuggestionKey(suggestion)]: choice });
+}
+
+/**
+ * The dialog closes without marking the version applied, so it comes back at the next login until
+ * the user has actually decided — which is what they are being sent away to make possible.
+ */
+function runAction(action: SuggestionAction): void {
+  set(modelValue, false);
+  router.push({ name: '/api-keys/external/', query: { service: action.service } });
 }
 
 const grouped = computed<Record<string, PendingSuggestion[]>>(
@@ -45,8 +79,10 @@ function toggleAccepted(suggestion: PendingSuggestion): void {
 }
 
 function apply(): void {
-  const selected = suggestions.filter(s => isAccepted(s));
-  emit('apply', selected);
+  emit('apply', {
+    choices: get(selectedChoices),
+    selected: suggestions.filter(s => isAccepted(s)),
+  });
 }
 
 function dismiss(): void {
@@ -94,7 +130,10 @@ function dismiss(): void {
             :key="getSuggestionKey(item)"
             :suggestion="item"
             :accepted="isAccepted(item)"
+            :choice="choiceOf(item)"
             @toggle="toggleAccepted(item)"
+            @select="selectChoice(item, $event)"
+            @action="runAction($event)"
           />
         </div>
       </div>
@@ -109,6 +148,7 @@ function dismiss(): void {
         </RuiButton>
         <RuiButton
           color="primary"
+          data-cy="apply-suggestions"
           @click="apply()"
         >
           {{ t("settings_suggestions.apply_selected") }}
