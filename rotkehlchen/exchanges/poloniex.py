@@ -478,12 +478,16 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                 )
         except UnknownAsset as e:
             self.send_unknown_asset_message(asset_identifier=e.identifier, details='trade')
-        except (UnprocessableTradePair, DeserializationError) as e:
+        except (UnprocessableTradePair, DeserializationError, KeyError) as e:
             self.msg_aggregator.add_error(
                 'Error deserializing a poloniex trade. Check the logs '
                 'and open a bug report.',
             )
-            log.error('Error deserializing poloniex trade', trade=trade_data, error=str(e))
+            log.error(
+                'Error deserializing poloniex trade',
+                trade=trade_data,
+                error=f'Missing key entry for {e}.' if isinstance(e, KeyError) else str(e),
+            )
 
         return []
 
