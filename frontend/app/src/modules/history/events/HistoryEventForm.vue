@@ -4,6 +4,7 @@ import { HistoryEventEntryType } from '@rotki/common';
 import { kebabCase } from 'es-toolkit';
 import { useTemplateRef } from 'vue';
 import AssetMovementEventForm from '@/modules/history/management/forms/AssetMovementEventForm.vue';
+import BitcoinEventForm from '@/modules/history/management/forms/BitcoinEventForm.vue';
 import EthBlockEventForm from '@/modules/history/management/forms/EthBlockEventForm.vue';
 import EthDepositEventForm from '@/modules/history/management/forms/EthDepositEventForm.vue';
 import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
@@ -61,6 +62,7 @@ const historyEventEntryTypes = computed<HistoryEventEntryType[]>(() => {
 
 const formComponents: Record<HistoryEventEntryType, Component> = {
   [HistoryEventEntryType.ASSET_MOVEMENT_EVENT]: AssetMovementEventForm,
+  [HistoryEventEntryType.BITCOIN_EVENT]: BitcoinEventForm,
   [HistoryEventEntryType.ETH_BLOCK_EVENT]: EthBlockEventForm,
   [HistoryEventEntryType.ETH_DEPOSIT_EVENT]: EthDepositEventForm,
   [HistoryEventEntryType.ETH_WITHDRAWAL_EVENT]: EthWithdrawalEventForm,

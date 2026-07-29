@@ -6507,6 +6507,13 @@
             "valid": "The tx hash is invalid, fill it with valid tx hash"
           }
         },
+        "tx_id": {
+          "label": "Transaction ID",
+          "validation": {
+            "non_empty": "The transaction id field cannot be empty.",
+            "valid": "The transaction id is invalid, fill it with a valid transaction id"
+          }
+        },
         "unique_id": {
           "label": "Unique Id"
         },

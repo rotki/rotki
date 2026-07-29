@@ -1,5 +1,6 @@
 export const HistoryEventEntryType = {
   ASSET_MOVEMENT_EVENT: 'asset movement event',
+  BITCOIN_EVENT: 'bitcoin event',
   ETH_BLOCK_EVENT: 'eth block event',
   ETH_DEPOSIT_EVENT: 'eth deposit event',
   ETH_WITHDRAWAL_EVENT: 'eth withdrawal event',
