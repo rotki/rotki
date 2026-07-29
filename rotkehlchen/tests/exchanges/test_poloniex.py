@@ -124,6 +124,20 @@ def test_poloniex_trade_deserialization_errors():
         trade_from_poloniex(poloniex_trade=test_trade, exchange_name=exchange_name)
 
 
+def test_poloniex_trade_missing_timestamp_is_skipped(poloniex: Poloniex) -> None:
+    trade = TEST_POLO_TRADE.copy()
+    del trade['createTime']
+
+    assert poloniex._deserialize_trade(  # pylint: disable=protected-access
+        trade_data=trade,
+        start_ts=Timestamp(1500000000),
+        end_ts=Timestamp(1565732120),
+    ) == []
+    assert poloniex.msg_aggregator.consume_errors() == [
+        'Error deserializing a poloniex trade. Check the logs and open a bug report.',
+    ]
+
+
 def test_poloniex_trade_with_asset_needing_conversion():
     amount = FVal(613.79427133)
     rate = FVal(0.00022999)
