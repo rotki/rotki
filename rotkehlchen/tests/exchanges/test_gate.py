@@ -131,8 +131,13 @@ def test_gate_history_query_commits_30_day_chunks(gate_exchange: Gate) -> None:
     assert ranges_to_query == []
 
 
-def test_gate_history_query_flushes_and_finishes_on_remote_error(
+@pytest.mark.parametrize('error', [
+    RemoteError('query failed'),
+    KeyError('query failed'),
+])
+def test_gate_history_query_flushes_and_finishes_on_error(
         gate_exchange: Gate,
+        error: RemoteError | KeyError,
 ) -> None:
     event_queue = MagicMock(spec=HistoryEventQueue)
     query_end = Timestamp(GATE_MOVEMENTS_QUERY_START_TS + DAY_IN_SECONDS)
@@ -143,14 +148,14 @@ def test_gate_history_query_flushes_and_finishes_on_remote_error(
         patch.object(
             gate_exchange,
             'query_online_history_events',
-            side_effect=RemoteError('query failed'),
+            side_effect=error,
         ),
         patch.object(gate_exchange, 'send_history_events_status_msg') as send_status,
-        pytest.raises(RemoteError, match='query failed'),
+        pytest.raises(type(error), match='query failed'),
     ):
         gate_exchange.query_history_events()
 
-    event_queue.flush.assert_called_once_with()
+    event_queue.flush.assert_called_once_with(queried_until_ts=None)
     assert send_status.call_args_list[-1].kwargs == {
         'step': HistoryEventsStep.QUERYING_EVENTS_FINISHED,
     }
