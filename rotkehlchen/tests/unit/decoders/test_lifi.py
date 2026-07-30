@@ -5,9 +5,10 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.lifi.constants import CPT_LIFI, MAYAN_SWIFT
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_MON
+from rotkehlchen.constants.assets import A_ETH, A_MON, A_XDAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -16,6 +17,9 @@ USDT0_MONAD = Asset('eip155:143/erc20:0xe7cd86e13AC4309349F30B3435a9d337750fC82D
 USDC_ETHEREUM = Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 USDC_BASE = Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
 USDC_ARBITRUM = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')
+EURE_ARBITRUM = Asset('eip155:42161/erc20:0x0c06cCF38114ddfc35e07427B9424adcca9F44F8')
+COW_GNOSIS = Asset('eip155:100/erc20:0x177127622c4A00F3d409B75571e12cB3c8973d3c')
+WSTETH_GNOSIS = Asset('eip155:100/erc20:0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -303,4 +307,115 @@ def test_lifi_arbitrum_native_value_is_not_a_fee(arbitrum_one_inquirer, arbitrum
         location_label=arbitrum_one_accounts[0],
         notes='Send 0.327600637606583949 ETH to 0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE',
         address=string_to_evm_address('0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_lifi_bridge_arbitrum_to_ethereum(arbitrum_one_inquirer, arbitrum_one_accounts):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash(
+            '0x647abf5dc64b1c8bddd70c74fa08b8d1a6b8769513358c96d1e6c90a2c300d50',
+        )),
+    )
+    router = string_to_evm_address('0x89c6340B1a1f4b25D36cd8B063D49045caF3f818')
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1783071502000),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.000016014181258'),
+        location_label=arbitrum_one_accounts[0],
+        notes='Burn 0.000016014181258 ETH for gas',
+        counterparty='gas',
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=7,
+        timestamp=TimestampMS(1783071502000),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=EURE_ARBITRUM,
+        amount=FVal('52.085941055797375509'),
+        location_label=arbitrum_one_accounts[0],
+        notes='Bridge 52.085941055797375509 EURe from Arbitrum One to Ethereum via LI.FI',
+        counterparty=CPT_LIFI,
+        address=router,
+        extra_data={'bridge': {
+            'from_chain': 42161,
+            'to_chain': 1,
+            'from_address': arbitrum_one_accounts[0],
+            'to_address': arbitrum_one_accounts[0],
+            'transfer_id': '2ffe44cc7046926c69029503629564b1f4f98675ab149a4a4cc14f9911b6d675',
+        }},
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_lifi_swap(gnosis_inquirer, gnosis_accounts):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash(
+            '0x44c68c421b29d00b3c294d3f635dc41e900b9b97d862f1dd718df672d231f5d5',
+        )),
+    )
+    router = string_to_evm_address('0x89c6340B1a1f4b25D36cd8B063D49045caF3f818')
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1784300960000),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_XDAI,
+        amount=FVal('0.000894472'),
+        location_label=(user_address := gnosis_accounts[0]),
+        notes='Burn 0.000894472 XDAI for gas',
+        counterparty='gas',
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=48,
+        timestamp=TimestampMS(1784300960000),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=COW_GNOSIS,
+        amount=FVal(0),
+        location_label=user_address,
+        notes=(
+            'Revoke COW spending approval of 0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF '
+            'by 0x000000000022D473030F116dDEE9F6B43aC78BA3'
+        ),
+        address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=49,
+        timestamp=TimestampMS(1784300960000),
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=COW_GNOSIS,
+        amount=FVal('21.28020167239588353'),
+        location_label=user_address,
+        notes='Swap 21.28020167239588353 COW via LI.FI',
+        counterparty=CPT_LIFI,
+        address=router,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=50,
+        timestamp=TimestampMS(1784300960000),
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=WSTETH_GNOSIS,
+        amount=FVal('0.001282759266331817'),
+        location_label=user_address,
+        notes='Receive 0.001282759266331817 wstETH as the result of a swap via LI.FI',
+        counterparty=CPT_LIFI,
+        address=router,
     )]

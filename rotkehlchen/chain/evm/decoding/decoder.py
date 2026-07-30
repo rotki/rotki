@@ -41,6 +41,8 @@ from rotkehlchen.chain.evm.decoding.pendle.constants import (
 from rotkehlchen.chain.evm.decoding.pendle.decoder import PendleCommonDecoder
 from rotkehlchen.chain.evm.decoding.rainbow.constants import RAINBOW_SUPPORTED_CHAINS
 from rotkehlchen.chain.evm.decoding.rainbow.decoder import RainbowDecoder
+from rotkehlchen.chain.evm.decoding.relay.constants import RELAY_SOLVERS
+from rotkehlchen.chain.evm.decoding.relay.decoder import RelayDecoder
 from rotkehlchen.chain.evm.decoding.safe.decoder import SafemultisigDecoder
 from rotkehlchen.chain.evm.decoding.socket_bridge.decoder import SocketBridgeDecoder
 from rotkehlchen.chain.evm.decoding.stakedao.constants import (
@@ -262,6 +264,13 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         self._add_single_decoder(class_name='Oneinchv6', decoder_class=Oneinchv6Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='SocketBridgeDecoder', decoder_class=SocketBridgeDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Lifi', decoder_class=LifiDecoder, rules=rules)
+        if (relay_solvers := RELAY_SOLVERS.get(self.evm_inquirer.chain_id)) is not None:
+            self._add_single_decoder(
+                class_name='Relay',
+                decoder_class=RelayDecoder,
+                rules=rules,
+                decoder_args=(relay_solvers,),
+            )
         if self.evm_inquirer.chain_id in SUPPORTED_BEEFY_CHAINS:
             self._add_single_decoder(class_name='BeefyFinance', decoder_class=BeefyFinanceCommonDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Merkl', decoder_class=MerklDecoder, rules=rules)
@@ -325,6 +334,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             class_name: str,
             decoder_class: type[EvmDecoderInterface],
             rules: EvmDecodingRules,
+            decoder_args: tuple[Any, ...] = (),
     ) -> None:
         """Initialize a single decoder, add it to the set of decoders to use
         and append its rules to the passed rules
@@ -332,18 +342,17 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         if class_name in self.decoders:
             raise ModuleLoadingError(f'{self.chain_name} decoder with name {class_name} already loaded')  # noqa: E501
 
-        extra_args: list[Any] = []
         if class_name == 'Eth2':
-            extra_args.append(self.beacon_chain)
+            decoder_args = (self.beacon_chain,)
         elif class_name == 'Monerium':
-            extra_args.append(self.monerium)
+            decoder_args = (self.monerium,)
 
         try:  # not giving kwargs since, kwargs name can differ
             self.decoders[class_name] = decoder_class(
                 self.evm_inquirer,  # evm_inquirer
                 self.base,  # base_tools
                 self.msg_aggregator,  # msg_aggregator
-                *extra_args,
+                *decoder_args,
             )
         except (UnknownAsset, WrongAssetType) as e:
             self.msg_aggregator.add_error(
