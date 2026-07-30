@@ -78,6 +78,7 @@ from rotkehlchen.history.price import query_price_or_use_default
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
+    BITCOIN_LOCATIONS,
     BLOCKCHAIN_LOCATIONS_TYPE,
     CHAINS_WITH_TRANSACTIONS,
     BTCTxId,
@@ -526,6 +527,24 @@ class DBHistoryEvents:
                 f'DELETE FROM history_events_backup WHERE identifier IN ({placeholders})',
                 chunk,
             )
+            # Replacing an event deletes its row first, which cascades its counterparty
+            # addresses away. Those have no backup table of their own, but the notes they
+            # are taken from do, so derive them from the restored ones again. Without this
+            # a restored bitcoin event stops being found by its counterparty address, in
+            # the per-address balances as much as in the event filters.
+            for identifier, raw_location, raw_type, notes in write_cursor.execute(
+                f'SELECT identifier, location, type, notes FROM history_events '
+                f'WHERE identifier IN ({placeholders}) AND location IN (?, ?)',
+                [*chunk, *(x.serialize_for_db() for x in BITCOIN_LOCATIONS)],
+            ).fetchall():  # materialized since the writes below reuse the cursor
+                DBHistoryEvents._store_bitcoin_event_counterparty_addresses(
+                    write_cursor=write_cursor,
+                    identifier=identifier,
+                    location=Location.deserialize_from_db(raw_location),
+                    event_type=HistoryEventType.deserialize(raw_type),
+                    notes=notes,
+                    decoded_addresses=None,  # re-derived from the restored notes
+                )
 
     def restore_matched_events_before_purge(
             self,
@@ -907,12 +926,11 @@ class DBHistoryEvents:
     ) -> None:
         """Reset the given location's events, etc. for re-decoding.
         Handles different cases depending on the location:
-        * Bitcoin - simply deletes all non-customized bitcoin events.
-        * EVM and EVM-like - deletes non-customized events that also have a corresponding
-          transaction in the evm_transactions table. If any event in a transaction is
-          customized, all events in that transaction are preserved.
-        * EVM - removes the TX_DECODED evm_tx_mappings to enable re-processing,
-          except for transactions containing customized events.
+        * All - deletes non-customized events of the location. If any event of a transaction
+          is customized, all events of that transaction are preserved.
+        * EVM, Solana and Bitcoin - removes the TX_DECODED mapping of the chain's saved
+          transactions to enable re-processing, except for the ones containing customized
+          events.
         """
         self.delete_location_events(
             write_cursor=write_cursor,
@@ -921,48 +939,52 @@ class DBHistoryEvents:
             customized_handling='preserve_transactions',
         )
 
-        # zksynclite's decode status is stored in zksynclite_transactions.is_decoded
-        # and btc/bch don't have the individual txs or decoded status in the db
-        if location.is_evm():  # so only delete mappings here for evm and solana locations
-            query = 'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?'  # noqa: E501
-            bindings: tuple = (TX_DECODED,)
-            if (write_cursor.execute(
-                'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value IN (?, ?)',
-                (customized_bindings := (
-                    HISTORY_MAPPING_KEY_STATE,
-                    HistoryMappingState.CUSTOMIZED.serialize_for_db(),
-                    HistoryMappingState.MATCHED.serialize_for_db(),
-                )),
-            ).fetchone()[0]) != 0:
-                query += (
-                    ' AND tx_id NOT IN ('
-                    'SELECT DISTINCT T.identifier FROM evm_transactions T '
-                    'INNER JOIN chain_events_info C ON T.tx_hash = C.tx_ref '
-                    'INNER JOIN history_events_mappings M ON C.identifier = M.parent_identifier '
-                    'WHERE M.name=? AND M.value IN (?, ?))'
-                )
-                bindings += customized_bindings
-            write_cursor.execute(query, bindings)
+        # zksynclite's decode status is stored in zksynclite_transactions.is_decoded, so it
+        # is the one location whose transactions are not marked through a mappings table.
+        tx_where = ''
+        tx_where_bindings: tuple = ()
+        join_bindings: tuple = ()
+        if location.is_evm():
+            mappings_table, tx_table = 'evm_tx_mappings', 'evm_transactions'
+            join_on = 'T.tx_hash = C.tx_ref'
         elif location == Location.SOLANA:
-            query = 'DELETE from solana_tx_mappings WHERE tx_id IN (SELECT identifier FROM solana_transactions) AND value=?'  # noqa: E501
-            bindings = (TX_DECODED,)
-            if (write_cursor.execute(
-                'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value IN (?, ?)',
-                (customized_bindings := (
-                    HISTORY_MAPPING_KEY_STATE,
-                    HistoryMappingState.CUSTOMIZED.serialize_for_db(),
-                    HistoryMappingState.MATCHED.serialize_for_db(),
-                )),
-            ).fetchone()[0]) != 0:
-                query += (
-                    ' AND tx_id NOT IN ('
-                    'SELECT DISTINCT T.identifier FROM solana_transactions T '
-                    'INNER JOIN chain_events_info C ON T.signature = C.tx_ref '
-                    'INNER JOIN history_events_mappings M ON C.identifier = M.parent_identifier '
-                    'WHERE M.name=? AND M.value IN (?, ?))'
-                )
-                bindings += customized_bindings
-            write_cursor.execute(query, bindings)
+            mappings_table, tx_table = 'solana_tx_mappings', 'solana_transactions'
+            join_on = 'T.signature = C.tx_ref'
+        elif location.is_bitcoin():
+            mappings_table, tx_table = 'bitcoin_tx_mappings', 'bitcoin_transactions'
+            # The transaction keeps its id as hex text while the event keeps it as bytes.
+            # Both bitcoin chains also share the tables and every transaction id made before
+            # the fork exists on both, so the location has to take part in the match or
+            # resetting one chain would reset the other's transactions too.
+            join_on = 'T.tx_id = lower(hex(C.tx_ref)) AND T.location = ?'
+            tx_where = ' WHERE location=?'
+            tx_where_bindings = join_bindings = (location.serialize_for_db(),)
+        else:
+            return
+
+        query = (
+            f'DELETE FROM {mappings_table} WHERE tx_id IN '
+            f'(SELECT identifier FROM {tx_table}{tx_where}) AND value=?'
+        )
+        bindings: tuple = (*tx_where_bindings, TX_DECODED)
+        if (write_cursor.execute(
+            'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value IN (?, ?)',
+            (customized_bindings := (
+                HISTORY_MAPPING_KEY_STATE,
+                HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+                HistoryMappingState.MATCHED.serialize_for_db(),
+            )),
+        ).fetchone()[0]) != 0:
+            query += (
+                f' AND tx_id NOT IN ('
+                f'SELECT DISTINCT T.identifier FROM {tx_table} T '
+                f'INNER JOIN chain_events_info C ON {join_on} '
+                f'INNER JOIN history_events_mappings M ON C.identifier = M.parent_identifier '
+                f'WHERE M.name=? AND M.value IN (?, ?))'
+            )
+            bindings += (*join_bindings, *customized_bindings)
+
+        write_cursor.execute(query, bindings)
 
     @staticmethod
     def _get_customized_exclusions_for_tx_refs(

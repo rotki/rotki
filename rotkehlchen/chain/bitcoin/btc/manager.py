@@ -16,7 +16,13 @@ from rotkehlchen.chain.bitcoin.btc.constants import (
     MEMPOOL_SPACE_BASE_URL,
 )
 from rotkehlchen.chain.bitcoin.manager import BitcoinCommonManager
-from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcApiCallback, BtcTxIO, BtcTxIODirection
+from rotkehlchen.chain.bitcoin.types import (
+    BitcoinTx,
+    BtcApiCallback,
+    BtcTxIO,
+    BtcTxIODirection,
+    UnplaceableTxIOsError,
+)
 from rotkehlchen.chain.bitcoin.utils import (
     query_blockstream_like_balances,
     query_blockstream_like_blockheight,
@@ -26,7 +32,6 @@ from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_int,
@@ -285,8 +290,11 @@ class BitcoinManager(BitcoinCommonManager):
         # two partial views of it complete each other instead of duplicating rows. A TxIO
         # missing its index from a response that omitted some of the others can only be
         # placed by its position, which is not where it belongs, and saving it there would
-        # overwrite or shadow the TxIO that does. Skip the whole transaction instead; a
-        # later query for one of its other addresses saves it with its real indexes.
+        # overwrite or shadow the TxIO that does. Give up on this api for the whole query
+        # instead of skipping the transaction: skipping it advances the cached block height
+        # past it as soon as a newer transaction of the same response is kept, and nothing
+        # would ever query it again. UnplaceableTxIOsError is not caught while processing the
+        # response, so it reaches the api loop and the next explorer returns it whole.
         for raw_tx_ios, index_key, declared_count in (
             (raw_inputs, 'index', vin_count),
             (raw_outputs, 'n', vout_count),
@@ -295,7 +303,7 @@ class BitcoinManager(BitcoinCommonManager):
                 len(raw_tx_ios) != declared_count and
                 any(tx_io.get(index_key) is None for tx_io in raw_tx_ios)
             ):
-                raise DeserializationError(
+                raise UnplaceableTxIOsError(
                     f'blockchain.info returned {len(raw_tx_ios)} of the {declared_count} TxIOs '
                     f'of transaction {data["hash"]} without a {index_key} on all of them, so '
                     f'their real position in it is unknown',

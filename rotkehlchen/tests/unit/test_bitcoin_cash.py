@@ -18,12 +18,12 @@ from rotkehlchen.chain.bitcoin.bch.utils import (
 )
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.types import BTCAddress
 from rotkehlchen.utils.network import request_get
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.bch.manager import BitcoinCashManager
     from rotkehlchen.inquirer import Inquirer
-    from rotkehlchen.types import BTCAddress
 
 
 def test_is_valid_bitcoin_cash_address():
@@ -86,6 +86,37 @@ def test_validate_bch_address_input():
     with pytest.raises(ValidationError) as exc_info:
         validate_bch_address_input('ababkjk', empty_set)
     assert 'not a valid bitcoin cash address' in str(exc_info)
+
+
+@pytest.mark.parametrize('bch_accounts', [[
+    '38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr',  # legacy, converted to cashaddr
+    'qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa',  # cashaddr without the prefix
+    'bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt',  # already in the api format
+]])
+def test_bch_tracked_accounts_use_the_api_format(
+        bitcoin_cash_manager: BitcoinCashManager,
+        bch_accounts: list[BTCAddress],
+) -> None:
+    """Test that the tracked accounts are kept in the CashAddr format the apis return, while
+    both the display format the events use and the reverse mapping back to the api format
+    still resolve to the address the user added.
+    """
+    bitcoin_cash_manager.refresh_tracked_accounts()
+    assert set(bitcoin_cash_manager.tracked_accounts) == (expected := {
+        'bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g',
+        'bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa',
+        'bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt',
+    })
+    assert bitcoin_cash_manager.tracked_accounts_set == expected
+    for account in bch_accounts:  # the roundtrip gets back to what the user added
+        assert bitcoin_cash_manager.get_display_address(
+            bitcoin_cash_manager.get_api_address(account),
+        ) == account
+
+    # and an untracked address is left as it is instead of resolving to something else
+    assert bitcoin_cash_manager.get_api_address(
+        untracked := BTCAddress('1Mnwij9Zkk6HtmdNzyEUFgp6ojoLaZekP8'),
+    ) == untracked
 
 
 @pytest.mark.vcr

@@ -240,6 +240,7 @@ defineExpose({
         v-model:timestamp="timestamp"
         v-model:location="location"
         class="col-span-2"
+        :location-disabled="data.type !== 'add'"
         :locations="BITCOIN_LOCATIONS"
         :error-messages="{
           location: toMessages(v$.location),

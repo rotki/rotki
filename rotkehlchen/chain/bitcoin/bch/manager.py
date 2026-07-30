@@ -79,13 +79,12 @@ class BitcoinCashManager(BitcoinCommonManager):
         # Used to avoid repeated health queries when either of the haskoin APIs are queried often.
         self.last_haskoin_health: dict[str, tuple[bool, Timestamp]] = {}
 
-    def refresh_tracked_accounts(self) -> None:
-        """Refresh the tracked accounts and ensure the CashAddr format of each address is used
-        since all addresses returned from haskoin are in the CashAddr format.
+    def _adjust_tracked_accounts(self, accounts: list[BTCAddress]) -> list[BTCAddress]:
+        """Ensure the CashAddr format of each address is used since all addresses returned
+        from haskoin are in the CashAddr format.
         """
-        super().refresh_tracked_accounts()
         self.converted_addresses.clear()
-        for idx, account in enumerate(self.tracked_accounts):
+        for idx, account in enumerate(accounts):
             cash_addr, is_valid_cashaddr = None, is_valid_bitcoin_cash_address(account)
             # for valid bch addresses without prefix, add the prefix
             if is_valid_cashaddr and ':' not in account:
@@ -96,7 +95,9 @@ class BitcoinCashManager(BitcoinCommonManager):
 
             if cash_addr is not None:
                 self.converted_addresses[cash_addr] = account
-                self.tracked_accounts[idx] = cash_addr
+                accounts[idx] = cash_addr
+
+        return accounts
 
     def get_display_address(self, address: BTCAddress) -> BTCAddress:
         """Get the legacy address for any addresses that were converted to CashAddr format,

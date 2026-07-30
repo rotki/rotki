@@ -15,6 +15,7 @@ from rotkehlchen.chain.bitcoin.types import (
     BtcApiCallback,
     BtcQueryAction,
     BtcTxIODirection,
+    UnplaceableTxIOsError,
 )
 from rotkehlchen.chain.bitcoin.utils import OpCodes
 from rotkehlchen.chain.decoding.utils import decode_transfer_direction
@@ -69,6 +70,12 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         """Common class for the bitcoin and bitcoin cash managers."""
         self.database = database
         self.tracked_accounts: list[BTCAddress] = []
+        # The same addresses as a set. Membership in them is checked once per TxIO of every
+        # transaction saved and once more for every address of every transaction decoded, so
+        # a full history redecode of an xpub wallet would otherwise scan the whole account
+        # list millions of times.
+        self.tracked_accounts_set: frozenset[BTCAddress] = frozenset()
+        self.api_addresses: dict[BTCAddress, BTCAddress] = {}
         self.blockchain = blockchain
         self.location = cast('BITCOIN_LOCATIONS_TYPE', Location.from_chain(self.blockchain))
         self.asset = asset
@@ -79,10 +86,24 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
 
     def refresh_tracked_accounts(self) -> None:
         with self.database.conn.read_ctx() as cursor:
-            self.tracked_accounts = self.database.get_single_blockchain_addresses(
+            accounts = self.database.get_single_blockchain_addresses(
                 cursor=cursor,
                 blockchain=self.blockchain,
             )
+
+        self.tracked_accounts = self._adjust_tracked_accounts(accounts)
+        self.tracked_accounts_set = frozenset(self.tracked_accounts)
+        # The api format of an address is what TxIOs are saved with, so keep the mapping
+        # back to it instead of scanning the accounts for every address that needs it.
+        self.api_addresses = {
+            self.get_display_address(x): x for x in self.tracked_accounts
+        }
+
+    def _adjust_tracked_accounts(self, accounts: list[BTCAddress]) -> list[BTCAddress]:
+        """Hook for subclasses to put the tracked accounts in the format the APIs use.
+        Called by refresh_tracked_accounts before anything derived from them is built.
+        """
+        return accounts
 
     def get_display_address(self, address: BTCAddress) -> BTCAddress:
         """Returns the display address for the given address.
@@ -95,10 +116,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         with. The inverse of get_display_address, resolved via the tracked accounts since
         the conversion the subclasses do only goes one way.
         """
-        return next(
-            (x for x in self.tracked_accounts if self.get_display_address(x) == address),
-            address,
-        )
+        return self.api_addresses.get(address, address)
 
     @overload
     def _query(
@@ -315,7 +333,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             if len(relevant_addresses := {
                 self.get_display_address(tx_io.address)
                 for tx_io in tx.inputs + tx.outputs
-                if tx_io.address is not None and tx_io.address in self.tracked_accounts
+                if tx_io.address is not None and tx_io.address in self.tracked_accounts_set
             }) == 0:
                 log.error(
                     'Found %s transaction %s without any tracked address in its inputs '
@@ -493,6 +511,14 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                     if (tx := processing_fn(entry)) is None:
                         log.debug(f'Skipping unconfirmed bitcoin transaction {entry}')
                         continue
+                except UnplaceableTxIOsError:
+                    # Deliberately not skipped like the other failures below. The block
+                    # height cached at the end of this function comes from the newest
+                    # transaction kept out of the list, so skipping this one would cache a
+                    # height past its block and no later query would ever reach it again.
+                    # Failing the whole api instead leaves the cache untouched and lets
+                    # `_query` fall back to the next explorer, which returns it whole.
+                    raise
                 except (
                     DeserializationError,  # malformed data encountered when deserializing entry
                     KeyError,  # missing required key when deserializing entry
@@ -578,7 +604,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 remaining_fee -= fee_share
 
             totals_per_address[address] -= fee_share
-            if address not in self.tracked_accounts:
+            if address not in self.tracked_accounts_set:
                 continue  # only add the fee event for tracked accounts
 
             events.append(self.create_event(
@@ -699,7 +725,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             direction_result = decode_transfer_direction(
                 from_address=sender,
                 to_address=receiver,
-                tracked_accounts=self.tracked_accounts,
+                tracked_accounts=self.tracked_accounts_set,
                 maybe_get_exchange_fn=lambda _: None,
             )
             if direction_result is None:
@@ -812,7 +838,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         """Split the given address totals into tracked and untracked ones."""
         tracked, untracked = {}, {}
         for address, amount in totals.items():
-            if address in self.tracked_accounts:
+            if address in self.tracked_accounts_set:
                 tracked[address] = amount
             else:
                 untracked[address] = amount
@@ -842,7 +868,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                     io_totals_per_address[direction][address] += tx_io.value
                 elif (  # decode op_return if an input is tracked and the script is present.
                     tx_io.script is not None and
-                    any(tx_input.address in self.tracked_accounts for tx_input in tx.inputs) and
+                    any(x.address in self.tracked_accounts_set for x in tx.inputs) and
                     (event := self._maybe_decode_op_return(tx=tx, script=tx_io.script)) is not None
                 ):
                     op_return_events.append(event)
