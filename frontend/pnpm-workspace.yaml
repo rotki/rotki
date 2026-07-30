@@ -45,7 +45,7 @@ catalog:
   '@playwright/test': 1.61.1
   '@rotki/eslint-config': 7.0.0
   '@rotki/eslint-plugin': 1.5.0
-  '@rotki/ui-library': 2.22.2
+  '@rotki/ui-library': 2.23.0
   '@tsconfig/node24': 24.0.4
   '@types/body-parser': 1.19.6
   '@types/express': 5.0.6
