@@ -26,6 +26,7 @@ from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_int,
@@ -277,14 +278,38 @@ class BitcoinManager(BitcoinCommonManager):
         if (raw_block_height := data['block_height']) is None:
             return None  # blockchain.info can't be limited to only confirmed txs.
 
+        vin_count = deserialize_int(value=data['vin_sz'], location='btc tx vin_sz')
+        vout_count = deserialize_int(value=data['vout_sz'], location='btc tx vout_sz')
+        raw_inputs, raw_outputs = data['inputs'], data['out']
+        # The saved copy of a transaction is keyed on the real index of each TxIO, so that
+        # two partial views of it complete each other instead of duplicating rows. A TxIO
+        # missing its index from a response that omitted some of the others can only be
+        # placed by its position, which is not where it belongs, and saving it there would
+        # overwrite or shadow the TxIO that does. Skip the whole transaction instead; a
+        # later query for one of its other addresses saves it with its real indexes.
+        for raw_tx_ios, index_key, declared_count in (
+            (raw_inputs, 'index', vin_count),
+            (raw_outputs, 'n', vout_count),
+        ):
+            if (
+                len(raw_tx_ios) != declared_count and
+                any(tx_io.get(index_key) is None for tx_io in raw_tx_ios)
+            ):
+                raise DeserializationError(
+                    f'blockchain.info returned {len(raw_tx_ios)} of the {declared_count} TxIOs '
+                    f'of transaction {data["hash"]} without a {index_key} on all of them, so '
+                    f'their real position in it is unknown',
+                )
+
         # This api omits TxIOs that don't directly affect the addresses queried, so carry
         # the real index of each TxIO over to the deserialized one. Outputs already have it
         # as `n`, but for inputs it lives on the vin rather than on the prev_out we use.
+        # Falling back to the position is only reached for a transaction that came back
+        # whole, where the two are the same.
         inputs = [
             vin['prev_out'] | {'index': vin.get('index', position)}
-            for position, vin in enumerate(data['inputs'])
+            for position, vin in enumerate(raw_inputs)
         ]
-        outputs = data['out']
         return BitcoinTx(
             tx_id=data['hash'],
             timestamp=deserialize_timestamp(data['time']),
@@ -296,12 +321,12 @@ class BitcoinManager(BitcoinCommonManager):
                 deserialize_fn=self.deserialize_tx_io_from_blockchain_info,
             ),
             outputs=BtcTxIO.deserialize_list(
-                data_list=outputs,
+                data_list=raw_outputs,
                 direction=BtcTxIODirection.OUTPUT,
                 deserialize_fn=self.deserialize_tx_io_from_blockchain_info,
             ),
-            vin_count=deserialize_int(value=data['vin_sz'], location='btc tx vin_sz'),
-            vout_count=deserialize_int(value=data['vout_sz'], location='btc tx vout_sz'),
+            vin_count=vin_count,
+            vout_count=vout_count,
         )
 
     def set_custom_mempool_api(self, endpoint: str) -> tuple[bool, str]:

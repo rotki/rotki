@@ -43,7 +43,6 @@ const timestamp = ref<number>(0);
 const location = ref<string>(BITCOIN_LOCATIONS[0]);
 const eventType = ref<string>('');
 const eventSubtype = ref<string>('none');
-const asset = ref<string>('');
 const amount = ref<string>('');
 const locationLabel = ref<string>('');
 const notes = ref<string>('');
@@ -56,6 +55,10 @@ const { createCommonRules } = useEventFormValidation();
 const commonRules = createCommonRules();
 
 const isInformationalEvent = computed(() => get(eventType) === 'informational');
+
+// A bitcoin transaction only ever moves the asset of its own chain, so the asset follows
+// the location instead of being picked. The backend refuses anything else.
+const asset = computed<string>(() => get(location) === BITCOIN_LOCATIONS[1] ? 'BCH' : 'BTC');
 
 const rules = {
   amount: commonRules.createRequiredAmountRule(),
@@ -112,7 +115,6 @@ function reset() {
   set(locationLabel, '');
   set(eventType, '');
   set(eventSubtype, 'none');
-  set(asset, '');
   set(amount, '0');
   set(notes, '');
   set(counterparty, undefined);
@@ -129,9 +131,9 @@ function applyEditableData(entry: BitcoinEvent) {
   set(hasActualGroupIdentifier, hasActual);
   set(groupIdentifier, hasActual ? entry.actualGroupIdentifier! : entry.groupIdentifier);
   set(timestamp, entry.timestamp);
+  set(location, entry.location);
   set(eventType, entry.eventType);
   set(eventSubtype, entry.eventSubtype || 'none');
-  set(asset, entry.asset);
   set(amount, entry.amount.toFixed());
   set(locationLabel, entry.locationLabel ?? '');
   set(notes, entry.userNotes ?? '');
@@ -148,6 +150,7 @@ function applyGroupHeaderData(entry: BitcoinEvent) {
   set(locationLabel, entry.locationLabel ?? '');
   set(txRef, entry.txRef);
   set(timestamp, entry.timestamp);
+  set(location, entry.location);
 }
 
 watch(errorMessages, (errors) => {
@@ -262,8 +265,9 @@ defineExpose({
 
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
-      v-model:asset="asset"
       v-model:amount="amount"
+      :asset="asset"
+      disable-asset
       :location="location"
       :v$="v$"
       :timestamp="timestamp"
