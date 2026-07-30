@@ -73,9 +73,9 @@ fn error_code(err: &ControlError) -> i64 {
         // A precondition failure, not a malformed request: the caller asked for a
         // valid thing at a moment it does not apply.
         ControlError::AlreadyStarted => ERR_RESTART_FAILED,
-        ControlError::RestartFailed(_) | ControlError::ServiceOperationFailed(_) => {
-            ERR_RESTART_FAILED
-        }
+        ControlError::RestartFailed(_)
+        | ControlError::StartFailed(_)
+        | ControlError::ServiceOperationFailed(_) => ERR_RESTART_FAILED,
         ControlError::ControllerStopped => INTERNAL_ERROR,
     }
 }

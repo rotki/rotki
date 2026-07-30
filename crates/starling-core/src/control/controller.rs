@@ -622,7 +622,7 @@ impl<S: Spawner> Controller<S> {
 
     /// Execute a `start`: rate-limit, apply the initial options, rebuild specs
     /// from the merged layout, and bring the tree up, emitting `ready` (or
-    /// returning [`ControlError::RestartFailed`] on a failed bring-up). Unlike
+    /// returning [`ControlError::StartFailed`] on a failed bring-up). Unlike
     /// `restart` there is nothing to tear down: the supervisor is idle, so no
     /// `restarting` event and no shutdown. `reconfigure` resets every service to
     /// `Idle` for the fresh `start_all`.
@@ -669,7 +669,7 @@ impl<S: Spawner> Controller<S> {
                 if let Some(guard) = self.datadir_guard.as_mut() {
                     if let Err(err) = guard.relock(&new_path) {
                         self.audit("start", transport, "datadir-locked");
-                        return Err(ControlError::RestartFailed(format!(
+                        return Err(ControlError::StartFailed(format!(
                             "data directory {new_dir} is already in use by another rotki instance: {err}",
                         )));
                     }
@@ -682,7 +682,7 @@ impl<S: Spawner> Controller<S> {
         let specs = (self.build)(&self.layout);
         if let Err(err) = self.supervisor.reconfigure(specs) {
             self.audit("start", transport, "reconfigure-failed");
-            return Err(ControlError::RestartFailed(err.to_string()));
+            return Err(ControlError::StartFailed(err.to_string()));
         }
 
         match self.supervisor.start_all().await {
@@ -702,7 +702,7 @@ impl<S: Spawner> Controller<S> {
             Err(err) => {
                 self.publish();
                 self.audit("start", transport, "failed");
-                Err(ControlError::RestartFailed(err.to_string()))
+                Err(ControlError::StartFailed(err.to_string()))
             }
         }
     }
