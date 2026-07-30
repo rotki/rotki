@@ -288,4 +288,30 @@ describe('starlingHandler', () => {
     // The exit reason is reported once; the readiness path must not double it.
     expect(onProcessError).toHaveBeenCalledTimes(1);
   });
+
+  it('should surface the actual start-failure reason instead of a generic message', async () => {
+    // starling stays alive (it supervises), but the `start` RPC rejects with the
+    // dead core's own error text. The handler must relay that so the renderer's
+    // error screen shows why it failed and the user can exit manually.
+    const reason = 'failed to start the backend: service \'core\' exited before becoming ready: '
+      + 'ERROR at initialization: Tables {\'asset_flags\'} are missing from your global database';
+    const child = makeFakeChild((message, stdout) => {
+      if (message.method === 'start') {
+        writeMessage(stdout, { id: message.id, error: { message: reason } });
+        return;
+      }
+      // Answer `stop` and let the child exit so teardown does not hit the kill timeout.
+      writeMessage(stdout, { id: message.id, result: null });
+      if (message.method === 'stop')
+        queueMicrotask(() => child.emit('exit', 0, null));
+    });
+    spawnMock.mockImplementation(() => child);
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+
+    expect(onProcessError).toHaveBeenCalledWith(reason, BackendCode.TERMINATED);
+    expect(onProcessError).toHaveBeenCalledTimes(1);
+  });
 });

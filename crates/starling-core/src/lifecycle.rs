@@ -283,7 +283,11 @@ impl<S: Spawner> Supervisor<S> {
         let mut attempt = 0;
         loop {
             if let Some(dead) = self.first_exited(name).await? {
-                return Err(SupervisorError::EarlyExit { service: dead });
+                let detail = self.captured_error(&dead).await;
+                return Err(SupervisorError::EarlyExit {
+                    service: dead,
+                    detail,
+                });
             }
             if probe_once(readiness).await {
                 return Ok(());
@@ -328,6 +332,28 @@ impl<S: Spawner> Supervisor<S> {
             }
         }
         Ok(None)
+    }
+
+    /// The tail of a just-exited service's captured stderr, if any — the text it
+    /// printed as it died (a global-db schema error, a bad config), so callers
+    /// can report *why* it exited rather than only that it did. Returns `None`
+    /// when stderr was not captured (inherited/docker) or nothing was written.
+    async fn captured_error(&self, service: &str) -> Option<String> {
+        // Let the reader task append whatever the child wrote on its way out
+        // before we sample the tail.
+        tokio::time::sleep(STDERR_DRAIN_GRACE).await;
+        let process = self.services.get(service)?.process.as_ref()?;
+        let lines = process.recent_stderr();
+        if lines.is_empty() {
+            return None;
+        }
+        let joined = lines.join("\n");
+        // Keep the tail: the fatal line is the last thing written before exit.
+        let detail = match joined.char_indices().nth_back(MAX_DETAIL_CHARS - 1) {
+            Some((idx, _)) if idx > 0 => format!("…{}", &joined[idx..]),
+            _ => joined,
+        };
+        Some(detail)
     }
 
     /// Whether a service is really gone: its direct child has exited *and* nothing
@@ -469,6 +495,15 @@ const TREE_DRAIN_POLL: Duration = Duration::from_millis(50);
 /// five-minute wait looks identical to a hang.
 const READINESS_LOG_EVERY: u32 = 15;
 
+/// Grace to let a dead service's stderr reader drain before reading its tail. The
+/// fatal line is often written immediately before exit, so without this beat the
+/// tail can be sampled just before the reader task appends it.
+const STDERR_DRAIN_GRACE: Duration = Duration::from_millis(100);
+
+/// Cap on the surfaced stderr detail (kept from the tail, where the fatal line
+/// is) so a chatty debug log can't blow up an error dialog.
+const MAX_DETAIL_CHARS: usize = 2_000;
+
 /// Resolves once the service is *actually* gone: its direct child has exited and
 /// nothing is left in its process tree.
 ///
@@ -569,12 +604,18 @@ mod tests {
         /// direct child has exited. 0 (the default) means no stragglers.
         tree_probes_left: AtomicU32,
         killed: KillSwitch,
+        /// Stderr tail a captured child would expose; empty for inherited stderr.
+        stderr: Vec<String>,
     }
 
     #[async_trait]
     impl Process for MockProcess {
         fn pid(&self) -> Option<u32> {
             Some(self.pid)
+        }
+
+        fn recent_stderr(&self) -> Vec<String> {
+            self.stderr.clone()
         }
 
         async fn try_status(&self) -> io::Result<Option<ExitInfo>> {
@@ -634,6 +675,8 @@ mod tests {
         /// Stragglers each spawned process reports after its direct child exits.
         tree_probes: u32,
         killed: KillSwitch,
+        /// Per-service captured stderr tail handed to the spawned `MockProcess`.
+        stderr: HashMap<String, Vec<String>>,
     }
 
     impl MockSpawner {
@@ -644,7 +687,17 @@ mod tests {
                 next_pid: Mutex::new(1000),
                 tree_probes: 0,
                 killed: Arc::new(Mutex::new(HashSet::new())),
+                stderr: HashMap::new(),
             }
+        }
+
+        /// Give a service a captured stderr tail, as a piped child would have.
+        fn with_stderr(mut self, name: &str, lines: &[&str]) -> Self {
+            self.stderr.insert(
+                name.to_string(),
+                lines.iter().map(|s| s.to_string()).collect(),
+            );
+            self
         }
 
         /// Handle for killing a service out from under the supervisor later.
@@ -683,6 +736,7 @@ mod tests {
                 log: self.log.clone(),
                 tree_probes_left: AtomicU32::new(self.tree_probes),
                 killed: self.killed.clone(),
+                stderr: self.stderr.get(&spec.name).cloned().unwrap_or_default(),
             }))
         }
     }
@@ -900,11 +954,48 @@ mod tests {
 
         let err = sup.start_all().await.unwrap_err();
         match err {
-            SupervisorError::EarlyExit { service } => assert_eq!(
+            SupervisorError::EarlyExit { service, .. } => assert_eq!(
                 service, "core",
                 "the dead service should be named, not the one that was gating",
             ),
             other => panic!("expected core's death to fail the bring-up, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn early_exit_carries_the_dead_service_stderr_tail() {
+        let log: EventLog = Arc::new(Mutex::new(Vec::new()));
+        let spawner = MockSpawner::new(log).with_dead(&["core"]).with_stderr(
+            "core",
+            &[
+                "some earlier log line",
+                "ERROR at initialization: Tables {'asset_flags'} are missing",
+            ],
+        );
+        // A probing readiness so the gate runs the early-exit guard (Immediate
+        // returns Ready without ever checking whether the process is still alive).
+        let core = ServiceSpec::new("core", "/bin/true").readiness(Readiness::PortOpen {
+            host: "127.0.0.1".to_string(),
+            port: 1,
+            retries: 2,
+            interval: Duration::from_millis(10),
+        });
+        let mut sup = Supervisor::new(spawner, vec![core]).unwrap();
+
+        let err = sup.start_all().await.unwrap_err();
+        // The rendered form is what the control channel relays to the renderer.
+        let rendered = err.to_string();
+        assert!(
+            rendered.contains("exited before becoming ready:") && rendered.contains("asset_flags"),
+            "the dead service's stderr should ride along in the message: {rendered}",
+        );
+        match err {
+            SupervisorError::EarlyExit { service, detail } => {
+                assert_eq!(service, "core");
+                let detail = detail.expect("captured stderr should be attached");
+                assert!(detail.contains("asset_flags"), "detail was: {detail}");
+            }
+            other => panic!("expected an early exit, got {other:?}"),
         }
     }
 

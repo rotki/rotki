@@ -1,6 +1,6 @@
 import type { AppConfig } from '@electron/main/app-config';
 import type { LogService } from '@electron/main/log-service';
-import type { JsonRpcResponse, StarlingErrorListener } from '@electron/main/starling-handler-types';
+import type { StarlingErrorListener } from '@electron/main/starling-handler-types';
 import { type ChildProcess, spawn } from 'node:child_process';
 import * as os from 'node:os';
 import path from 'node:path';
@@ -11,6 +11,7 @@ import { resolveLogLevel } from '@electron/main/resolve-log-level';
 import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingInvocation } from '@electron/main/starling-args';
 import { forwardStarlingLine } from '@electron/main/starling-log';
 import { eventLastError, getMcpServerState, isMcpCrash, setMcpServerRunning } from '@electron/main/starling-mcp';
+import { StarlingRpc } from '@electron/main/starling-rpc';
 import { BackendCode, type BackendOptions, type McpServiceState } from '@shared/ipc';
 import { wait } from '@shared/utils';
 
@@ -45,12 +46,15 @@ export class StarlingHandler {
   private currentDataDir: string | undefined;
   private currentLogDir: string | undefined;
 
-  // --- JSON-RPC client state ---
-  private nextId: number = 1;
-  private readonly pending = new Map<number, { resolve: (value: any) => void; reject: (error: Error) => void }>();
+  /** The listener for the live child, so control-channel events can reach it. */
+  private currentListener: StarlingErrorListener | undefined;
+
+  /** The NDJSON JSON-RPC client over the child's stdio. */
+  private readonly rpc: StarlingRpc;
 
   constructor(private readonly logger: LogService, private readonly config: AppConfig) {
     this.logger.info('Starting rotki (starling supervisor)');
+    this.rpc = new StarlingRpc(logger, (method, params) => this.onEvent(method, params));
   }
 
   private checkIfMacOsVersionIsSupported(): boolean {
@@ -105,7 +109,7 @@ export class StarlingHandler {
   private async restartInPlace(options: Partial<BackendOptions>, listener: StarlingErrorListener): Promise<void> {
     this.logger.info('Restarting backend in place via control RPC');
     try {
-      await this.request('restart', this.restartParams(options));
+      await this.rpc.request('restart', this.restartParams(options));
     }
     catch (error: any) {
       this.logger.error('Backend restart failed', error);
@@ -156,18 +160,18 @@ export class StarlingHandler {
     // (log level, tunables, data dir) the CLI no longer passes. It resolves once
     // the whole tree is ready, and rejects on a failed bring-up or early exit.
     try {
-      await this.request('start', this.startParams(options));
+      await this.rpc.request('start', this.startParams(options));
     }
     catch (error) {
-      // Report only while the child is still alive: if it already exited, its
-      // `exit` handler reported the precise reason (data-dir lock / non-zero
-      // exit) and rejected this request as a side effect — re-reporting doubles it.
+      // Report only while the child is still alive: an already-exited child had its
+      // precise reason reported by the `exit` handler, and re-reporting doubles it.
       if (!this.exiting && this.child) {
         this.logger.error('Backend start failed', error);
-        listener.onProcessError(
-          'Failed to start the rotki backend. Please check the logs for more details.',
-          BackendCode.TERMINATED,
-        );
+        // Relay starling's real reason (now carrying the dead core's stderr tail).
+        const message = error instanceof Error && error.message.length > 0
+          ? error.message
+          : 'Failed to start the rotki backend. Please check the logs for more details.';
+        listener.onProcessError(message, BackendCode.TERMINATED);
         await this.stop();
       }
     }
@@ -196,13 +200,15 @@ export class StarlingHandler {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     this.child = child;
+    this.currentListener = listener;
 
     if (!child.stdout || !child.stderr || !child.stdin)
       throw new Error('starling child is missing its stdio pipes');
 
     // stdout is the NDJSON control channel (responses + event notifications).
+    this.rpc.attach(child.stdin);
     const rl = readline.createInterface({ input: child.stdout });
-    rl.on('line', line => this.onLine(line, listener));
+    rl.on('line', line => this.rpc.handleLine(line));
 
     // stderr carries starling's own logs and the inherited backend stderr, so
     // supervisor diagnostics land in the Electron log (gotcha 2).
@@ -222,8 +228,10 @@ export class StarlingHandler {
         errReader.close();
         // Rejecting the pending requests also unblocks the initial `start`
         // request if the child died before replying.
-        this.rejectAllPending(new Error('starling exited'));
+        this.rpc.rejectAll(new Error('starling exited'));
+        this.rpc.detach();
         this.child = undefined;
+        this.currentListener = undefined;
         if (!this.exiting && code === EXIT_DATADIR_IN_USE) {
           listener.onProcessError(
             'Another rotki instance is already using this data directory. Please close it and try again.',
@@ -241,37 +249,9 @@ export class StarlingHandler {
     });
   }
 
-  /** Parse one NDJSON line: an id-correlated response, or an event notification. */
-  private onLine(line: string, listener: StarlingErrorListener): void {
-    const trimmed = line.trim();
-    if (!trimmed)
-      return;
-    let message: JsonRpcResponse;
-    try {
-      message = JSON.parse(trimmed);
-    }
-    catch {
-      this.logger.warn(`Ignoring non-JSON line from starling: ${trimmed}`);
-      return;
-    }
-
-    if (typeof message.id === 'number') {
-      const pending = this.pending.get(message.id);
-      if (!pending)
-        return;
-      this.pending.delete(message.id);
-      if (message.error)
-        pending.reject(new Error(message.error.message));
-      else
-        pending.resolve(message.result);
-      return;
-    }
-
-    if (message.method)
-      this.onEvent(message.method, message.params, listener);
-  }
-
-  private onEvent(method: string, params: unknown, listener: StarlingErrorListener): void {
+  /** React to a control-channel notification from starling (an `event.*`). */
+  private onEvent(method: string, params: unknown): void {
+    const listener = this.currentListener;
     switch (method) {
       case 'event.ready':
         // The whole backend tree is up. Initial readiness is gated on the `start`
@@ -283,9 +263,9 @@ export class StarlingHandler {
         const lastError = eventLastError(params);
         this.logger.error(`Backend service crashed: ${lastError}`);
         if (isMcpCrash(params))
-          listener.onMcpState?.('Failed');
+          listener?.onMcpState?.('Failed');
         else if (!this.exiting)
-          listener.onProcessError(lastError, BackendCode.TERMINATED);
+          listener?.onProcessError(lastError, BackendCode.TERMINATED);
         break;
       }
       case 'event.restarting':
@@ -299,7 +279,7 @@ export class StarlingHandler {
 
   async getMcpServerState(): Promise<McpServiceState> {
     return this.child
-      ? getMcpServerState(async (method, params) => this.request(method, params))
+      ? getMcpServerState(async (method, params) => this.rpc.request(method, params))
       : 'Unavailable';
   }
 
@@ -309,34 +289,8 @@ export class StarlingHandler {
 
   async setMcpServerRunning(running: boolean): Promise<McpServiceState> {
     return this.child
-      ? setMcpServerRunning(async (method, params) => this.request(method, params), running)
+      ? setMcpServerRunning(async (method, params) => this.rpc.request(method, params), running)
       : 'Unavailable';
-  }
-
-  /** Send a JSON-RPC request over the child's stdin and await its response. */
-  private async request<T = unknown>(method: string, params?: Record<string, unknown>): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-      const child = this.child;
-      if (!child?.stdin) {
-        reject(new Error('starling is not running'));
-        return;
-      }
-      const id = this.nextId++;
-      this.pending.set(id, { resolve, reject });
-      const payload = JSON.stringify({ jsonrpc: '2.0', id, method, ...(params ? { params } : {}) });
-      child.stdin.write(`${payload}\n`, (error) => {
-        if (error) {
-          this.pending.delete(id);
-          reject(error);
-        }
-      });
-    });
-  }
-
-  private rejectAllPending(error: Error): void {
-    for (const { reject } of this.pending.values())
-      reject(error);
-    this.pending.clear();
   }
 
   /**
@@ -356,7 +310,7 @@ export class StarlingHandler {
     this.exiting = true;
     this.logger.debug('Stopping starling');
     try {
-      await Promise.race([this.request('stop').catch(() => undefined), wait(STOP_REQUEST_TIMEOUT)]);
+      await Promise.race([this.rpc.request('stop').catch(() => undefined), wait(STOP_REQUEST_TIMEOUT)]);
     }
     catch {
       // best-effort; fall through to wait/kill

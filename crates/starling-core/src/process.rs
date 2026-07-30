@@ -2,11 +2,20 @@
 //! unit-tested headless with a fake spawner and the real OS implementation can
 //! carry platform-specific process-tree termination.
 
+use std::collections::VecDeque;
 use std::io;
+use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
+use tokio::io::{AsyncBufReadExt, BufReader};
 
 use crate::config::{ServiceSpec, StdioMode};
+
+/// How many trailing stderr lines a captured child keeps. A fatal startup error
+/// (e.g. core's global-db schema check) is the last thing written before exit,
+/// so the tail is what carries it; the bound keeps a chatty debug log from
+/// growing without limit.
+const STDERR_TAIL_LINES: usize = 50;
 
 /// The outcome of a process that has exited.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -54,6 +63,15 @@ pub trait Process: Send + Sync {
     /// Forcibly kill the whole process tree
     /// (SIGKILL to the process group on unix, TerminateJobObject on windows).
     async fn kill(&self) -> io::Result<()>;
+
+    /// The most recent lines the child wrote to stderr, oldest first.
+    ///
+    /// Only populated when the spawner captured stderr (embedded/detached mode);
+    /// empty for inherited stderr and for test fakes. Used to surface a service's
+    /// own failure text (not just its exit code) when it dies during bring-up.
+    fn recent_stderr(&self) -> Vec<String> {
+        Vec::new()
+    }
 }
 
 /// Spawns [`Process`]es from [`ServiceSpec`]s.
@@ -80,11 +98,16 @@ impl Spawner for OsSpawner {
 
         // §S7: when the supervisor's stdout is a private control channel, detach
         // the child's stdin+stdout so it can neither read control requests nor
-        // corrupt the response stream. stderr stays inherited for diagnostics.
+        // corrupt the response stream. stderr is piped (not inherited) so we can
+        // both forward it — preserving the diagnostics that used to flow straight
+        // through — and keep a tail of it to surface as the service's own error
+        // when it dies during bring-up. Docker's inherit mode keeps stderr
+        // untouched so the container runtime still captures it directly.
         if spec.stdio == StdioMode::Detached {
             std_cmd
                 .stdin(std::process::Stdio::null())
-                .stdout(std::process::Stdio::null());
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::piped());
         }
 
         // Put the child in its own process group so we can signal the whole tree
@@ -141,8 +164,26 @@ impl Spawner for OsSpawner {
         // shutdown, don't leak the child.
         cmd.kill_on_drop(true);
 
-        let child = cmd.spawn()?;
+        let mut child = cmd.spawn()?;
         let pid = child.id();
+
+        // Tee the piped stderr to the supervisor's own stderr (where it landed
+        // before, via inheritance) while keeping a bounded tail for diagnostics.
+        let stderr_tail: Arc<Mutex<VecDeque<String>>> = Arc::new(Mutex::new(VecDeque::new()));
+        if let Some(stderr) = child.stderr.take() {
+            let tail = stderr_tail.clone();
+            tokio::spawn(async move {
+                let mut lines = BufReader::new(stderr).lines();
+                while let Ok(Some(line)) = lines.next_line().await {
+                    eprintln!("{line}");
+                    let mut buf = tail.lock().expect("stderr tail mutex poisoned");
+                    if buf.len() == STDERR_TAIL_LINES {
+                        buf.pop_front();
+                    }
+                    buf.push_back(line);
+                }
+            });
+        }
 
         #[cfg(windows)]
         let job = platform::create_job_and_assign(&child)?;
@@ -150,6 +191,7 @@ impl Spawner for OsSpawner {
         Ok(Box::new(OsProcess {
             child: tokio::sync::Mutex::new(child),
             pid,
+            stderr_tail,
             #[cfg(windows)]
             job,
         }))
@@ -160,6 +202,9 @@ impl Spawner for OsSpawner {
 struct OsProcess {
     child: tokio::sync::Mutex<tokio::process::Child>,
     pid: Option<u32>,
+    /// Bounded tail of the child's captured stderr, filled by the reader task.
+    /// Empty when stderr was inherited rather than piped.
+    stderr_tail: Arc<Mutex<VecDeque<String>>>,
     /// Windows Job Object that owns the child's process tree.
     /// `KILL_ON_JOB_CLOSE` means dropping this handle reaps the whole tree —
     /// that's the auto-reap safety net if the supervisor dies.
@@ -202,6 +247,15 @@ impl Process for OsProcess {
 
     async fn tree_alive(&self) -> io::Result<bool> {
         platform::tree_alive(self).await
+    }
+
+    fn recent_stderr(&self) -> Vec<String> {
+        self.stderr_tail
+            .lock()
+            .expect("stderr tail mutex poisoned")
+            .iter()
+            .cloned()
+            .collect()
     }
 }
 

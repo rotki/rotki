@@ -302,6 +302,11 @@ pub enum ControlError {
     /// A `restart` tore down the backend but failed to bring it back up.
     #[error("restart failed: {0}")]
     RestartFailed(String),
+    /// The initial `start` (from idle) failed to bring the backend up. Kept
+    /// distinct from `RestartFailed` so a first-start failure does not tell the
+    /// user a "restart" failed when nothing was running to restart.
+    #[error("failed to start the backend: {0}")]
+    StartFailed(String),
     /// Starting or stopping one optional service failed.
     #[error("service operation failed: {0}")]
     ServiceOperationFailed(String),
