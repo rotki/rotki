@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.exchanges.manager import ExchangeManager
@@ -126,6 +126,28 @@ def test_query_exchange_history_events_continues_after_remote_error() -> None:
             'Failed to query binance history events for '
             'test_0: first failed, test_1: second failed'
         ),
+    ):
+        manager.query_exchange_history_events(location=Location.BINANCE, name=None)
+
+    for exchange in exchanges:
+        exchange.query_history_events.assert_called_once_with()
+
+
+def test_query_exchange_history_events_should_continue_after_input_error() -> None:
+    manager = ExchangeManager(msg_aggregator=MagicMock())
+    manager.database = MagicMock()
+    manager.database.get_settings.return_value = SimpleNamespace(non_syncing_exchanges=set())
+    exchanges = [MagicMock(), MagicMock()]
+    for idx, exchange in enumerate(exchanges):
+        exchange.name = f'test_{idx}'
+        exchange.location = Location.BINANCE
+        exchange.location_id.return_value = f'binance_test_{idx}'
+    exchanges[0].query_history_events.side_effect = InputError('no market pairs selected')
+    manager.connected_exchanges[Location.BINANCE].extend(exchanges)
+
+    with pytest.raises(
+        RemoteError,
+        match='Failed to query binance history events for test_0: no market pairs selected',
     ):
         manager.query_exchange_history_events(location=Location.BINANCE, name=None)
 

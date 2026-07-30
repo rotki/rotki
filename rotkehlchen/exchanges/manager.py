@@ -418,7 +418,7 @@ class ExchangeManager:
                 continue
             try:
                 exchange.query_history_events()
-            except RemoteError as e:
+            except (InputError, RemoteError) as e:
                 log.error(
                     'Failed to query history events for %s exchange %s due to %s',
                     exchange.location,
