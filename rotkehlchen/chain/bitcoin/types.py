@@ -11,6 +11,18 @@ if TYPE_CHECKING:
     from rotkehlchen.types import BTCAddress, Timestamp
 
 
+class UnplaceableTxIOsError(DeserializationError):
+    """Raised when an api returns only some of a transaction's TxIOs without the real index
+    of all of them, leaving no way to tell where the returned ones belong.
+
+    Kept apart from a plain DeserializationError so that it is not swallowed like other
+    malformed data. Skipping such a transaction advances the query checkpoint past its block
+    the moment a newer transaction of the same response is kept, and nothing ever asks for it
+    again. Letting it propagate leaves the checkpoint where it is and lets the query fall back
+    to the next api, which returns the transaction whole.
+    """
+
+
 class BtcQueryAction(Enum):
     BALANCES = auto()
     HAS_TRANSACTIONS = auto()

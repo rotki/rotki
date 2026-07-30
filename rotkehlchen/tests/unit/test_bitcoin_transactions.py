@@ -1,16 +1,28 @@
+import json
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcTxIO, BtcTxIODirection
+from rotkehlchen.chain.bitcoin.btc.constants import (
+    BLOCKCHAIN_INFO_BASE_URL,
+    BLOCKCYPHER_BASE_URL,
+    BTC_GROUP_IDENTIFIER_PREFIX,
+)
+from rotkehlchen.chain.bitcoin.types import (
+    BitcoinTx,
+    BtcTxIO,
+    BtcTxIODirection,
+    UnplaceableTxIOsError,
+)
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import BlockchainAccountData
-from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -962,11 +974,11 @@ def test_partial_views_from_a_single_query_are_all_saved(
     assert _sum_amounts(events, HistoryEventType.RECEIVE) == ZERO
 
 
-def test_truncated_blockchain_info_tx_without_indexes_is_skipped(
+def test_truncated_blockchain_info_tx_without_indexes_is_rejected(
         bitcoin_manager: BitcoinManager,
 ) -> None:
     """Test that a transaction whose TxIOs came back both incomplete and without their real
-    index is skipped instead of saved under the wrong ones.
+    index is rejected instead of saved under the wrong ones.
 
     The saved copy is keyed on the real index so that two partial views complete each other.
     Placing a TxIO by its position in a response that omitted some of the others would put it
@@ -994,7 +1006,7 @@ def test_truncated_blockchain_info_tx_without_indexes_is_skipped(
             }],
         }
 
-    with pytest.raises(DeserializationError, match='without a index on all of them'):
+    with pytest.raises(UnplaceableTxIOsError, match='without a index on all of them'):
         bitcoin_manager.deserialize_tx_from_blockchain_info(
             data=blockchain_info_tx(vin_count=2, with_index=False),
         )
@@ -1006,6 +1018,166 @@ def test_truncated_blockchain_info_tx_without_indexes_is_skipped(
             data=blockchain_info_tx(vin_count=vin_count, with_index=with_index),
         )) is not None
         assert tx.inputs[0].io_index == expected_index
+
+
+# A confirmed transaction newer than the change tx, used to place a valid transaction ahead
+# of an unplaceable one in the same response.
+NEWER_TX_ID = 'a' * 64
+NEWER_TX_BLOCK_HEIGHT = 700001
+CHANGE_TX_BLOCK_HEIGHT = 700000
+CHANGE_TX_INPUT1_VALUE = 2000000
+CHANGE_TX_INPUT2_VALUE = 1575186
+
+
+def _blockchain_info_response() -> str:
+    """A blockchain.info multiaddr response holding the newer transaction and, after it, the
+    change tx with only the input touching the queried address and no index on it.
+    """
+    return json.dumps({'addresses': [], 'txs': [{
+        'hash': NEWER_TX_ID,
+        'time': 1700000100,
+        'block_height': NEWER_TX_BLOCK_HEIGHT,
+        'fee': 1000,
+        'vin_sz': 1,
+        'vout_sz': 1,
+        'inputs': [{'index': 0, 'prev_out': {
+            'value': 5000000, 'script': '00', 'addr': CHANGE_TX_EXTERNAL_OUTPUT,
+        }}],
+        'out': [{'n': 0, 'value': 4999000, 'script': '00', 'addr': CHANGE_TX_INPUT1}],
+    }, {
+        'hash': CHANGE_TX_ID,
+        'time': 1700000000,
+        'block_height': CHANGE_TX_BLOCK_HEIGHT,
+        'fee': 31350,
+        'vin_sz': 2,  # but only the one touching the queried address is returned...
+        'vout_sz': 2,
+        'inputs': [{'prev_out': {  # ...and without an index saying where it belongs
+            'value': CHANGE_TX_INPUT1_VALUE, 'script': '00', 'addr': CHANGE_TX_INPUT1,
+        }}],
+        'out': [
+            {'n': 0, 'value': 1000000, 'script': '00', 'addr': CHANGE_TX_EXTERNAL_OUTPUT},
+            {'n': 1, 'value': 2543836, 'script': '00', 'addr': CHANGE_TX_CHANGE_OUTPUT},
+        ],
+    }]})
+
+
+def _blockcypher_response() -> str:
+    """The same two transactions as blockcypher returns them, with every TxIO present."""
+    return json.dumps({
+        'address': CHANGE_TX_INPUT1,
+        'hasMore': False,
+        'txs': [{
+            'hash': NEWER_TX_ID,
+            'confirmed': '2023-11-14T22:15:00Z',
+            'block_height': NEWER_TX_BLOCK_HEIGHT,
+            'fees': 1000,
+            'vin_sz': 1,
+            'vout_sz': 1,
+            'inputs': [{'output_value': 5000000, 'addresses': [CHANGE_TX_EXTERNAL_OUTPUT]}],
+            'outputs': [{'value': 4999000, 'script': '00', 'addresses': [CHANGE_TX_INPUT1]}],
+        }, {
+            'hash': CHANGE_TX_ID,
+            'confirmed': '2023-11-14T22:13:20Z',
+            'block_height': CHANGE_TX_BLOCK_HEIGHT,
+            'fees': 31350,
+            'vin_sz': 2,
+            'vout_sz': 2,
+            'inputs': [
+                {'output_value': CHANGE_TX_INPUT1_VALUE, 'addresses': [CHANGE_TX_INPUT1]},
+                {'output_value': CHANGE_TX_INPUT2_VALUE, 'addresses': [CHANGE_TX_INPUT2]},
+            ],
+            'outputs': [
+                {'value': 1000000, 'script': '00', 'addresses': [CHANGE_TX_EXTERNAL_OUTPUT]},
+                {'value': 2543836, 'script': '00', 'addresses': [CHANGE_TX_CHANGE_OUTPUT]},
+            ],
+        }],
+    })
+
+
+@pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1]])
+def test_unplaceable_txios_fall_back_to_the_next_explorer(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Test that a transaction blockchain.info returns incomplete and without the real index
+    of its TxIOs is obtained from the next explorer instead of being dropped for good.
+
+    Skipping it would not be recoverable: the newer transaction of the same response sets the
+    cached block height past its block, so no later query would ever reach it again, and the
+    fallback that has the whole transaction would never be tried either.
+    """
+    def mock_get(url: str, **_kwargs: Any) -> MockResponse:
+        if BLOCKCHAIN_INFO_BASE_URL in url:
+            return MockResponse(200, _blockchain_info_response())
+
+        assert BLOCKCYPHER_BASE_URL in url
+        return MockResponse(200, _blockcypher_response())
+
+    with patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get):
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    with bitcoin_manager.database.conn.read_ctx() as cursor:
+        saved = {x.tx_id: x for x in bitcoin_manager.dbtx.get_transactions(
+            cursor=cursor,
+            location=Location.BITCOIN,
+        )}
+        cached_block = bitcoin_manager.database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=btc_accounts[0],
+        )
+
+    assert set(saved) == {NEWER_TX_ID, CHANGE_TX_ID}  # neither transaction was lost
+    # and the one blockchain.info could not place came from the fallback whole
+    assert (change_tx := saved[CHANGE_TX_ID]).is_complete is True
+    assert [x.address for x in change_tx.inputs] == [CHANGE_TX_INPUT1, CHANGE_TX_INPUT2]
+    assert [x.address for x in change_tx.outputs] == [
+        CHANGE_TX_EXTERNAL_OUTPUT,
+        CHANGE_TX_CHANGE_OUTPUT,
+    ]
+    assert cached_block == NEWER_TX_BLOCK_HEIGHT
+
+
+@pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1]])
+def test_unplaceable_txios_do_not_advance_the_query_range(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Test that when no explorer can place the TxIOs the query fails without caching a
+    block height, so that the whole range is asked for again on the next query instead of
+    the unplaceable transaction being left behind.
+    """
+    def mock_get(url: str, **_kwargs: Any) -> MockResponse:
+        if BLOCKCHAIN_INFO_BASE_URL in url:
+            return MockResponse(200, _blockchain_info_response())
+
+        return MockResponse(500, '{}')  # the fallback is unavailable too
+
+    with (
+        patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get),
+        patch.object(CachedSettings(), 'get_query_retry_limit', return_value=1),
+        pytest.raises(RemoteError),
+    ):
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    with bitcoin_manager.database.conn.read_ctx() as cursor:
+        assert bitcoin_manager.dbtx.get_transactions(
+            cursor=cursor,
+            location=Location.BITCOIN,
+        ) == []
+        assert bitcoin_manager.database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=btc_accounts[0],
+        ) is None
 
 
 def test_each_raw_tx_list_is_processed_on_its_own(bitcoin_manager: BitcoinManager) -> None:

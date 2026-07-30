@@ -192,6 +192,26 @@ describe('forms/BitcoinEventForm.vue', () => {
     expect(notesTextArea.element.value).toBe(group.userNotes);
   });
 
+  it('should lock the location to the saved transaction outside the add flow', async () => {
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+
+    // the location picks the asset, so leaving it editable would let a BTC event that
+    // belongs to a saved bitcoin transaction be relabelled as BCH, and vice versa
+    expect(wrapper.find('[data-cy=location] input').attributes('disabled')).toBeUndefined();
+
+    for (const data of [
+      { event: group, nextSequenceId: '10', type: 'edit' },
+      { group, nextSequenceId: '10', type: 'group-add' },
+    ] as const) {
+      await wrapper.setProps({ data });
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(wrapper.find('[data-cy=location] input').attributes('disabled')).toBeDefined();
+      expect(wrapper.find('[data-cy=tx-ref] input').attributes('disabled')).toBeDefined();
+    }
+  });
+
   it('should show all counterparties options correctly', async () => {
     wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
     await vi.advanceTimersToNextTimerAsync();

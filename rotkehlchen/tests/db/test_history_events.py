@@ -9,6 +9,7 @@ import pytest
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.types import BitcoinTx
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -16,6 +17,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.bitcointx import DBBitcoinTx
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
@@ -1818,6 +1820,89 @@ def test_reset_events_for_redecode_preserves_customized_transaction(database: DB
         assert remaining_tx_hash == bytes(tx_hash_a)
 
 
+def test_reset_events_for_redecode_resets_bitcoin_transactions(database: DBHandler) -> None:
+    """Test that resetting a bitcoin location clears the decoded state of its saved
+    transactions, keeps the ones holding a customized event, and leaves the other bitcoin
+    chain alone.
+
+    Deleting the events without clearing the decoded state would leave nothing to show for
+    those transactions and no decode run that would ever produce them again. The two chains
+    also share the tables and every transaction id from before the fork, so a reset of one
+    must not take the other's transactions with it.
+    """
+    tx_id_a, tx_id_b = BTCTxId('aa' * 32), BTCTxId('bb' * 32)
+    db, dbtx = DBHistoryEvents(database), DBBitcoinTx(database)
+
+    def bitcoin_tx(tx_id: BTCTxId) -> BitcoinTx:
+        return BitcoinTx(
+            tx_id=tx_id,
+            timestamp=Timestamp(1700000000),
+            block_height=700000,
+            fee=ZERO,
+            inputs=[],
+            outputs=[],
+        )
+
+    with database.user_write() as write_cursor:
+        for location, tx_ids in zip(
+            BITCOIN_LOCATIONS,
+            ((tx_id_a, tx_id_b), (tx_id_a,)),  # the same id exists on both chains
+            strict=True,
+        ):
+            dbtx.add_transactions(
+                write_cursor=write_cursor,
+                transactions=[bitcoin_tx(tx_id) for tx_id in tx_ids],
+                location=location,
+                relevant_addresses=[],
+            )
+            dbtx.set_decoded(
+                write_cursor=write_cursor,
+                location=location,
+                tx_ids=list(tx_ids),
+            )
+            for tx_id in tx_ids:
+                db.add_history_event(
+                    write_cursor=write_cursor,
+                    event=BitcoinEvent(
+                        tx_ref=tx_id,
+                        sequence_index=0,
+                        timestamp=TimestampMS(1700000000000),
+                        location=location,
+                        event_type=HistoryEventType.RECEIVE,
+                        event_subtype=HistoryEventSubType.NONE,
+                        asset=A_BTC if location == Location.BITCOIN else A_BCH,
+                        amount=ONE,
+                    ),
+                    # only the first bitcoin transaction is customized
+                    mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED} if location == Location.BITCOIN and tx_id == tx_id_a else None,  # noqa: E501
+                )
+
+        assert write_cursor.execute('SELECT COUNT(*) FROM bitcoin_tx_mappings').fetchone()[0] == 3
+        db.reset_events_for_redecode(write_cursor=write_cursor, location=Location.BITCOIN)
+
+    with database.conn.read_ctx() as cursor:
+        # the customized transaction keeps both its event and its decoded state
+        assert dbtx.get_transaction_ids(
+            cursor=cursor,
+            location=Location.BITCOIN,
+            undecoded_only=True,
+        ) == [tx_id_b]
+        assert {x.tx_ref for x in db.get_history_events_internal(  # type: ignore[attr-defined]  # bitcoin events
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN),
+        )} == {tx_id_a}
+        # and bitcoin cash was not touched, despite sharing the id of the reset transaction
+        assert dbtx.get_transaction_ids(
+            cursor=cursor,
+            location=Location.BITCOIN_CASH,
+            undecoded_only=True,
+        ) == []
+        assert len(db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN_CASH),
+        )) == 1
+
+
 def test_history_events_count_memoization(database: DBHandler) -> None:
     """The unfiltered history_events counts scan the whole table on every history page
     request, so they are memoized until any DB write happens. Check that the cache is
@@ -1930,6 +2015,59 @@ def test_delete_events_and_track_removes_backups(database: DBHandler) -> None:
             'SELECT COUNT(*) FROM history_events WHERE identifier=?',
             (identifiers[1],),
         ).fetchone()[0] == 1
+
+
+def test_restoring_a_bitcoin_event_keeps_its_counterparty_addresses(
+        database: DBHandler,
+) -> None:
+    """Test that restoring a bitcoin event from its backup does not leave it without the
+    counterparty addresses it is found by.
+
+    Only history_events and chain_events_info are backed up. Putting an event back replaces
+    its row, which cascades the addresses away, so they have to be derived from the restored
+    notes again or the event silently drops out of the per-address balances and filters.
+    """
+    counterparty = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'
+    events_db = DBHistoryEvents(database)
+    with database.conn.write_ctx() as write_cursor:
+        identifier = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=(event := BitcoinEvent(
+                tx_ref=BTCTxId('cc' * 32),
+                sequence_index=0,
+                timestamp=TimestampMS(1700000000000),
+                location=Location.BITCOIN,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_BTC,
+                amount=ONE,
+                notes=f'Receive 1 BTC from {counterparty}',
+            )),
+        )
+        assert identifier is not None
+        event.identifier = identifier
+        event.notes = 'Receive 1 BTC from an address I renamed'
+        events_db.edit_history_event(
+            write_cursor=write_cursor,
+            event=event,
+            mapping_state=HistoryMappingState.CUSTOMIZED,
+            save_backup=True,
+        )
+        assert write_cursor.execute(  # the edited notes name no address any more
+            'SELECT COUNT(*) FROM bitcoin_events_addresses WHERE event_identifier=?',
+            (identifier,),
+        ).fetchone()[0] == 0
+
+        events_db.maybe_restore_history_events_from_backup(
+            write_cursor=write_cursor,
+            identifiers=[identifier],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert [row[0] for row in cursor.execute(
+            'SELECT address FROM bitcoin_events_addresses WHERE event_identifier=?',
+            (identifier,),
+        )] == [counterparty]
 
 
 def test_delete_events_by_tx_ref_chunks_bindings(database: DBHandler) -> None:
