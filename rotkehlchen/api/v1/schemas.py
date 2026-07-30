@@ -392,8 +392,8 @@ class BlockchainTransactionDeletionSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        """Validate that tx_ref is only specified with a chain, and if chain is EVM, EVM-like, or
-        Solana, deserialize the tx_ref. Hashes for other chains remain as strings.
+        """Validate that tx_ref is only specified with a chain and deserialize it into the
+        type the chain uses, which is what the deletion turns into DB bindings.
         """
         if (tx_ref := data['tx_ref']) is not None:
             if (chain := data['chain']) is None:
@@ -405,6 +405,8 @@ class BlockchainTransactionDeletionSchema(Schema):
                 data['tx_ref'] = EVMTransactionHashField.deserialize_string_value(tx_ref)
             elif chain == SupportedBlockchain.SOLANA:
                 data['tx_ref'] = SolanaSignatureField.deserialize_string_value(tx_ref)
+            elif chain.is_bitcoin():
+                data['tx_ref'] = BitcoinTxIdField.deserialize_string_value(tx_ref)
 
         return data
 
@@ -1076,6 +1078,20 @@ class CreateHistoryEventSchema(Schema):
         counterparty = EmptyAsNoneStringField(load_default=None)
         extra_data = fields.Dict(load_default=None)
         location = LocationField(required=True, limit_to=BITCOIN_LOCATIONS)
+
+        @validates_schema
+        def validate_asset(self, data: dict[str, Any], **_kwargs: Any) -> None:
+            """A bitcoin transaction only ever moves the chain's own asset, so that is the
+            only one accepted here. Same rule as the plain history events of these locations
+            (see CreateBaseHistoryEventSchema).
+            """
+            if data['asset'] != (
+                    expected_asset := A_BTC if data['location'] == Location.BITCOIN else A_BCH
+            ):
+                raise ValidationError(
+                    message=f'{data["location"]!s} events must use {expected_asset.identifier} as the asset',  # noqa: E501
+                    field_name='asset',
+                )
 
         @post_load
         def make_history_base_entry(

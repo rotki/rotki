@@ -785,10 +785,18 @@ class DBHistoryEvents:
         for identifier in identifiers:
             if force_delete is False:
                 with self.db.conn.read_ctx() as cursor:
+                    # Bitcoin events are guarded the same way as EVM ones: their transaction
+                    # stays marked as decoded, so deleting the last event of it would leave
+                    # nothing behind for the frontend to find the transaction by, and no
+                    # decode run would produce the events again.
                     cursor.execute(
                         'SELECT COUNT(*) == 1 FROM history_events WHERE group_identifier=(SELECT '
-                        'group_identifier FROM history_events WHERE identifier=? AND entry_type=?)',  # noqa: E501
-                        (identifier, HistoryBaseEntryType.EVM_EVENT.serialize_for_db()),
+                        'group_identifier FROM history_events WHERE identifier=? AND entry_type IN (?, ?))',  # noqa: E501
+                        (
+                            identifier,
+                            HistoryBaseEntryType.EVM_EVENT.serialize_for_db(),
+                            HistoryBaseEntryType.BITCOIN_EVENT.serialize_for_db(),
+                        ),
                     )
                     if bool(cursor.fetchone()[0]) is True:
                         return (
@@ -1040,17 +1048,24 @@ class DBHistoryEvents:
             customized_handling: Literal['delete', 'preserve_events', 'preserve_transactions'],
     ) -> None:
         """Delete the events of a single chunk of tx refs. See delete_events_by_tx_ref."""
-        bindings: list[str | bytes]
+        tx_ref_bindings: list[str | bytes]
+        if location == Location.SOLANA:
+            tx_ref_bindings = [x.to_bytes() for x in tx_refs]  # type: ignore[union-attr]  # hashes will be solana signatures
+        elif location.is_bitcoin():
+            tx_ref_bindings = [bytes.fromhex(x) for x in tx_refs]  # type: ignore[arg-type]  # hashes will be bitcoin tx ids
+        else:
+            tx_ref_bindings = list(tx_refs)  # type: ignore  # different type of elements in the list
+
+        # Scoped to the location since a tx ref is not unique across chains: bitcoin and
+        # bitcoin cash share the id of every transaction made before the fork, and the same
+        # hash can appear on more than one EVM chain. Without it, redecoding one chain would
+        # delete the events another chain decoded from its own transaction, which is
+        # unrecoverable while that transaction stays marked as decoded.
         where_str = (
-            f'WHERE identifier IN (SELECT identifier FROM chain_events_info '
+            f'WHERE location=? AND identifier IN (SELECT identifier FROM chain_events_info '
             f'WHERE tx_ref IN ({placeholders}))'
         )
-        if location == Location.SOLANA:
-            bindings = [x.to_bytes() for x in tx_refs]  # type: ignore[union-attr]  # hashes will be solana signatures
-        elif location.is_bitcoin():
-            bindings = [bytes.fromhex(x) for x in tx_refs]  # type: ignore[arg-type]  # hashes will be bitcoin tx ids
-        else:
-            bindings = list(tx_refs)  # type: ignore  # different type of elements in the list
+        bindings: list[str | bytes] = [location.serialize_for_db(), *tx_ref_bindings]
 
         if customized_handling != 'delete' and (
             length := len(exclusions := self._get_customized_exclusions_for_tx_refs(

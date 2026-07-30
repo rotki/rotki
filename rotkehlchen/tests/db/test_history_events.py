@@ -13,7 +13,7 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
@@ -49,6 +49,7 @@ from rotkehlchen.tests.utils.factories import (
     make_evm_tx_hash,
 )
 from rotkehlchen.types import (
+    BITCOIN_LOCATIONS,
     BTCTxId,
     ChainID,
     EvmTransaction,
@@ -621,18 +622,36 @@ def test_delete_last_event(database):
             write_cursor=write_cursor,
             event=make_ethereum_event(index=1),
         )
+        bitcoin_identifier = db.add_history_event(
+            write_cursor=write_cursor,
+            event=BitcoinEvent(
+                tx_ref=BTCTxId('a' * 64),
+                sequence_index=0,
+                timestamp=TimestampMS(1683115229000),
+                location=Location.BITCOIN,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_BTC,
+                amount=ONE,
+            ),
+        )
     with db.db.conn.read_ctx() as cursor:
-        assert len(db.get_history_events_internal(cursor, HistoryEventFilterQuery.make())) == 2
+        assert len(db.get_history_events_internal(cursor, HistoryEventFilterQuery.make())) == 3
 
     msg = db.delete_history_events_by_identifier(identifiers=[withdrawal_group_identifier])
     assert msg is None
     with db.db.conn.read_ctx() as cursor:
-        assert len(db.get_history_events_internal(cursor, HistoryEventFilterQuery.make())) == 1, 'Only the EVM event should be left'  # noqa: E501
+        assert len(db.get_history_events_internal(cursor, HistoryEventFilterQuery.make())) == 2, 'Only the transaction events should be left'  # noqa: E501
 
     msg = db.delete_history_events_by_identifier(identifiers=[evm_group_identifier])
     assert 'was the last event of a transaction' in msg
+
+    # a bitcoin event is guarded the same way. Its transaction stays marked as decoded, so
+    # deleting the last event of it would leave nothing to find the transaction by.
+    msg = db.delete_history_events_by_identifier(identifiers=[bitcoin_identifier])
+    assert 'was the last event of a transaction' in msg
     with db.db.conn.read_ctx() as cursor:
-        assert len(db.get_history_events_internal(cursor, HistoryEventFilterQuery.make())) == 1, 'EVM event should be left'  # noqa: E501
+        assert len(db.get_history_events_internal(cursor, HistoryEventFilterQuery.make())) == 2, 'the transaction events should be left'  # noqa: E501
 
 
 def test_get_history_events_free_filter(database: DBHandler):
@@ -1960,3 +1979,40 @@ def test_delete_events_by_tx_ref_chunks_bindings(database: DBHandler) -> None:
             'SELECT group_identifier FROM history_events WHERE location=?',
             (Location.BITCOIN.serialize_for_db(),),
         ).fetchall() == [(f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_ids[4]}',)]
+
+
+def test_delete_events_by_tx_ref_is_scoped_to_the_location(database: DBHandler) -> None:
+    """Test that deleting the events of a transaction only touches the given location.
+
+    A tx ref is not unique across chains: bitcoin and bitcoin cash share the id of every
+    transaction made before the fork, which a user tracking the same legacy address on both
+    chains has saved twice, and the same hash can appear on more than one EVM chain. Deleting
+    across locations would take the events another chain decoded from its own transaction,
+    and those don't come back while that transaction stays marked as decoded.
+    """
+    db_events, tx_id = DBHistoryEvents(database), BTCTxId('c' * 64)
+    with database.user_write() as write_cursor:
+        db_events.add_history_events(
+            write_cursor=write_cursor,
+            history=[BitcoinEvent(
+                tx_ref=tx_id,
+                sequence_index=0,
+                timestamp=TimestampMS(1500000000000),
+                location=location,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=asset,
+                amount=ONE,
+            ) for location, asset in (
+                (BITCOIN_LOCATIONS[0], A_BTC),
+                (BITCOIN_LOCATIONS[1], A_BCH),
+            )],
+        )
+        db_events.delete_events_by_tx_ref(
+            write_cursor=write_cursor,
+            tx_refs=[tx_id],
+            location=Location.BITCOIN,
+        )
+        assert write_cursor.execute('SELECT location FROM history_events').fetchall() == [
+            (Location.BITCOIN_CASH.serialize_for_db(),),
+        ]

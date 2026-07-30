@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -616,6 +616,44 @@ CHANGE_TX_GROUP_IDENTIFIER = f'{BTC_GROUP_IDENTIFIER_PREFIX}{CHANGE_TX_ID}'
 CHANGE_TX_FEE = FVal('0.0003135')
 CHANGE_TX_EXTERNAL_AMOUNT = FVal('0.01')
 CHANGE_TX_CHANGE_AMOUNT = FVal('0.02543836')
+# Its TxIOs, used to hand the manager or the db partial views of the transaction.
+CHANGE_TX_INPUT_IO = BtcTxIO(
+    value=CHANGE_TX_EXTERNAL_AMOUNT + CHANGE_TX_CHANGE_AMOUNT + CHANGE_TX_FEE,
+    script=b'\x01',
+    address=CHANGE_TX_INPUT1,
+    direction=BtcTxIODirection.INPUT,
+    io_index=0,
+)
+CHANGE_TX_EXTERNAL_IO = BtcTxIO(
+    value=CHANGE_TX_EXTERNAL_AMOUNT,
+    script=b'\x02',
+    address=CHANGE_TX_EXTERNAL_OUTPUT,
+    direction=BtcTxIODirection.OUTPUT,
+    io_index=0,
+)
+CHANGE_TX_CHANGE_IO = BtcTxIO(
+    value=CHANGE_TX_CHANGE_AMOUNT,
+    script=b'\x03',
+    address=CHANGE_TX_CHANGE_OUTPUT,
+    direction=BtcTxIODirection.OUTPUT,
+    io_index=1,
+)
+
+
+def _partial_change_tx(outputs: list[BtcTxIO]) -> BitcoinTx:
+    """Build a view of the change tx holding only the given outputs, the way the apis that
+    return just the TxIOs touching the queried addresses do.
+    """
+    return BitcoinTx(
+        tx_id=CHANGE_TX_ID,
+        timestamp=Timestamp(1700000000),
+        block_height=1,
+        fee=CHANGE_TX_FEE,
+        inputs=[CHANGE_TX_INPUT_IO],
+        outputs=outputs,
+        vin_count=1,
+        vout_count=2,
+    )
 
 
 def _sum_amounts(
@@ -836,43 +874,11 @@ def test_saved_transaction_completed_by_a_second_partial_view(
     duplicating rows. blockchain.info returns only the TxIOs touching the queried addresses,
     so a transaction saved for one address may be missing the TxIOs of another.
     """
-    def make_tx(outputs: list[BtcTxIO]) -> BitcoinTx:
-        return BitcoinTx(
-            tx_id=CHANGE_TX_ID,
-            timestamp=Timestamp(1700000000),
-            block_height=1,
-            fee=CHANGE_TX_FEE,
-            inputs=[BtcTxIO(
-                value=FVal('0.03'),
-                script=b'\x01',
-                address=CHANGE_TX_INPUT1,
-                direction=BtcTxIODirection.INPUT,
-                io_index=0,
-            )],
-            outputs=outputs,
-            vin_count=1,
-            vout_count=2,
-        )
-
-    external_output = BtcTxIO(
-        value=CHANGE_TX_EXTERNAL_AMOUNT,
-        script=b'\x02',
-        address=CHANGE_TX_EXTERNAL_OUTPUT,
-        direction=BtcTxIODirection.OUTPUT,
-        io_index=0,
-    )
-    change_output = BtcTxIO(
-        value=CHANGE_TX_CHANGE_AMOUNT,
-        script=b'\x03',
-        address=CHANGE_TX_CHANGE_OUTPUT,
-        direction=BtcTxIODirection.OUTPUT,
-        io_index=1,
-    )
     dbtx = bitcoin_manager.dbtx
     with bitcoin_manager.database.conn.write_ctx() as write_cursor:
         assert dbtx.add_transactions(  # only the change output is known at first
             write_cursor=write_cursor,
-            transactions=[make_tx(outputs=[change_output])],
+            transactions=[_partial_change_tx(outputs=[CHANGE_TX_CHANGE_IO])],
             location=Location.BITCOIN,
             relevant_addresses=[CHANGE_TX_INPUT1],
         ) == {CHANGE_TX_ID}
@@ -883,12 +889,14 @@ def test_saved_transaction_completed_by_a_second_partial_view(
             location=Location.BITCOIN,
         )[0]).is_complete is False
         assert saved.multi_io is False  # only one input, so it is still a single-to-many
-        assert saved.outputs == [change_output]
+        assert saved.outputs == [CHANGE_TX_CHANGE_IO]
 
     with bitcoin_manager.database.conn.write_ctx() as write_cursor:
         assert dbtx.add_transactions(  # the other output arrives with another address' query
             write_cursor=write_cursor,
-            transactions=[make_tx(outputs=[external_output, change_output])],
+            transactions=[_partial_change_tx(
+                outputs=[CHANGE_TX_EXTERNAL_IO, CHANGE_TX_CHANGE_IO],
+            )],
             location=Location.BITCOIN,
             relevant_addresses=[CHANGE_TX_CHANGE_OUTPUT],
         ) == {CHANGE_TX_ID}
@@ -898,10 +906,89 @@ def test_saved_transaction_completed_by_a_second_partial_view(
             cursor=cursor,
             location=Location.BITCOIN,
         )[0]).is_complete is True
-        assert saved.outputs == [external_output, change_output]
+        assert saved.outputs == [CHANGE_TX_EXTERNAL_IO, CHANGE_TX_CHANGE_IO]
         assert saved.fee == CHANGE_TX_FEE  # amounts survive the satoshi roundtrip
         # gaining a TxIO makes the events decoded from the incomplete copy outdated
         assert dbtx.count_undecoded_transactions(cursor=cursor, location=Location.BITCOIN) == 1
+
+
+@pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1, CHANGE_TX_CHANGE_OUTPUT]])
+def test_partial_views_from_a_single_query_are_all_saved(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Test that a transaction returned more than once by the same query ends up saved as one
+    complete transaction instead of one view overwriting the other.
+
+    blockchain.info takes at most 80 addresses per request and returns only the TxIOs touching
+    the requested ones, so a transaction paying two tracked addresses that fall into different
+    batches comes back once per batch, each time missing the other's TxIOs. Deduplicating them
+    by transaction id would keep whichever came last and persist an incomplete transaction.
+    """
+    def query_two_partial_views(**_kwargs: Any) -> tuple[int, list[BitcoinTx]]:
+        return 1, [
+            _partial_change_tx(outputs=[CHANGE_TX_EXTERNAL_IO]),
+            _partial_change_tx(outputs=[CHANGE_TX_CHANGE_IO]),
+        ]
+
+    with patch.object(bitcoin_manager, '_query', side_effect=query_two_partial_views):
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    database = bitcoin_manager.database
+    with database.conn.read_ctx() as cursor:
+        assert (saved := bitcoin_manager.dbtx.get_transactions(
+            cursor=cursor,
+            location=Location.BITCOIN,
+        )[0]).is_complete is True  # no view was dropped, so every TxIO is there
+        assert saved.outputs == [CHANGE_TX_EXTERNAL_IO, CHANGE_TX_CHANGE_IO]
+        assert cursor.execute(  # and both addresses count as a reason to keep it
+            'SELECT COUNT(*) FROM bitcointx_address_mappings',
+        ).fetchone()[0] == 2
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+
+    # Decoded from the complete transaction, so the change is a transfer inside the wallet
+    # instead of part of the spend an incomplete copy would have produced.
+    assert _sum_amounts(events, HistoryEventType.SPEND, HistoryEventSubType.FEE) == CHANGE_TX_FEE
+    assert _sum_amounts(events, HistoryEventType.SPEND) == CHANGE_TX_EXTERNAL_AMOUNT
+    assert _sum_amounts(events, HistoryEventType.TRANSFER) == CHANGE_TX_CHANGE_AMOUNT
+    assert _sum_amounts(events, HistoryEventType.RECEIVE) == ZERO
+
+
+def test_each_raw_tx_list_is_processed_on_its_own(bitcoin_manager: BitcoinManager) -> None:
+    """Test that every list of raw transactions is processed separately.
+
+    The apis return their transactions newest first, but only within a single request. Going
+    through the concatenation of two requests would stop at the first transaction older than
+    the last queried block and skip everything the other request returned, and would take the
+    newest queried block from the first list alone, caching a height the rest never reached.
+    """
+    def process(entry: dict[str, Any]) -> BitcoinTx:
+        return BitcoinTx(
+            tx_id=f'{entry["height"]:064x}',
+            timestamp=Timestamp(1700000000),
+            block_height=entry['height'],
+            fee=ZERO,
+            inputs=[],
+            outputs=[],
+        )
+
+    new_block_height, txs = bitcoin_manager._process_raw_tx_lists(
+        raw_tx_lists=[
+            [{'height': 600}, {'height': 400}],  # the last one predates the requested range
+            [{'height': 900}, {'height': 550}],  # this list reaches a newer block than the first
+        ],
+        options={'last_queried_block': 500, 'to_timestamp': ts_now()},
+        processing_fn=process,
+    )
+    assert [x.block_height for x in txs] == [600, 900, 550]
+    assert new_block_height == 900  # the newest block any of the lists reached
 
 
 @pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1, CHANGE_TX_CHANGE_OUTPUT]])
@@ -935,6 +1022,13 @@ def test_removing_an_address_keeps_shared_transactions(
             x.tx_id for x in dbtx.get_transactions(cursor=cursor, location=Location.BITCOIN)
         }
         assert CHANGE_TX_ID in saved_tx_ids  # still needed by the address left tracking it
+        # but its events were decoded while the removed address was tracked, so the transfer
+        # to it is no longer what happened. It is pending decoding again.
+        assert CHANGE_TX_ID in dbtx.get_transaction_ids(
+            cursor=cursor,
+            location=Location.BITCOIN,
+            undecoded_only=True,
+        )
 
     with database.user_write() as write_cursor:
         database.remove_single_blockchain_accounts(

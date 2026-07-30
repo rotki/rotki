@@ -41,6 +41,7 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
+    deserialize_btc_tx_id,
     deserialize_fval,
     deserialize_hex_color_code,
     deserialize_timestamp,
@@ -848,17 +849,18 @@ class BitcoinTxIdField(BaseTransactionHashField[BTCTxId]):
     @staticmethod
     def deserialize_string_value(value: str) -> BTCTxId:
         """Ensure the given value is a valid bitcoin transaction id and deserialize it.
+
+        Deserializing through the common function normalizes the case, which matters since
+        the id is what the group identifier of the event is built from and what the saved
+        transaction is looked up by. An uppercase id would create a second group for a
+        transaction that already has one.
+
         May raise ValidationError.
         """
-        if len(value) != 64:
-            raise ValidationError(f'Bitcoin transaction id {value} should be 64 characters')
-
         try:
-            bytes.fromhex(value)
-        except ValueError as e:
-            raise ValidationError(f'Bitcoin transaction id {value} is not valid hex') from e
-
-        return BTCTxId(value)
+            return deserialize_btc_tx_id(value)
+        except DeserializationError as e:
+            raise ValidationError(f'Invalid bitcoin transaction id {value}. {e!s}') from e
 
 
 class AssetTypeField(fields.Field):

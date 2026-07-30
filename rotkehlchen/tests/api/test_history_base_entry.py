@@ -9,6 +9,7 @@ import requests
 
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -2224,3 +2225,57 @@ def test_delete_events_by_filter(rotkehlchen_api_server: APIServer) -> None:
         )
     assert len(remaining) == 1
     assert remaining[0].asset == A_USDC
+
+
+def test_add_bitcoin_event(rotkehlchen_api_server: APIServer) -> None:
+    """Test the validation of a user created bitcoin event.
+
+    Its transaction id is what the group it belongs to is built from, so it needs to reach
+    the event in a single form, and a bitcoin transaction can only move the chain's own asset.
+    """
+    def add_event(tx_ref: str, asset: Asset) -> requests.Response:
+        return requests.put(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json={
+                'entry_type': 'bitcoin event',
+                'tx_ref': tx_ref,
+                'sequence_index': 0,
+                'timestamp': 1600000000000,
+                'location': 'bitcoin',
+                'event_type': 'spend',
+                'event_subtype': 'none',
+                'asset': asset.identifier,
+                'amount': '0.5',
+            },
+        )
+
+    tx_id = make_btc_tx_id()
+    assert_error_response(
+        response=add_event(tx_ref=tx_id, asset=A_ETH),
+        contained_in_msg='bitcoin events must use BTC as the asset',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    assert_error_response(
+        response=add_event(tx_ref=f'0x{tx_id}', asset=A_BTC),
+        contained_in_msg='Invalid bitcoin transaction id',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # an uppercase id is normalized, so the event lands in the group of the transaction
+    # instead of creating a second one for the same transaction
+    result = assert_proper_sync_response_with_result(add_event(
+        tx_ref=str(tx_id).upper(),
+        asset=A_BTC,
+    ))
+    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(
+            rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+        ).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(identifiers=[result['identifier']]),
+        )
+
+    assert len(events) == 1
+    assert isinstance(event := events[0], BitcoinEvent)
+    assert event.tx_ref == tx_id
+    assert event.group_identifier == f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'

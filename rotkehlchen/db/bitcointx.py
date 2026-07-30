@@ -168,6 +168,32 @@ class DBBitcoinTx:
 
         return transactions
 
+    def get_transaction_ids(
+            self,
+            cursor: DBCursor,
+            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            tx_ids: Sequence[BTCTxId] | None = None,
+            undecoded_only: bool = False,
+    ) -> list[BTCTxId]:
+        """Get the ids of the saved transactions of the given location, oldest to newest.
+        Filtered the same way as get_transactions, but without reading the transactions
+        themselves, so that a caller working through them in chunks doesn't need to hold
+        every transaction and all its TxIOs in memory to know what to work on.
+        """
+        result: list[BTCTxId] = []
+        for query, bindings in self._transaction_queries(
+            location=location,
+            tx_ids=tx_ids,
+            undecoded_only=undecoded_only,
+        ):
+            result.extend(BTCTxId(x[0]) for x in cursor.execute(
+                f'SELECT tx_id FROM bitcoin_transactions {query} '
+                f'ORDER BY timestamp ASC, identifier ASC',
+                bindings,
+            ))
+
+        return result
+
     def get_transaction_ids_for_address(
             self,
             cursor: DBCursor,
@@ -250,21 +276,40 @@ class DBBitcoinTx:
             address: BTCAddress,
     ) -> None:
         """Delete the transactions that were queried only for the given address, along with
-        their events. Transactions another tracked address was also queried for are kept.
+        their events. Transactions another tracked address was also queried for are kept, but
+        marked as needing decoding again: the events of a bitcoin transaction depend on which
+        of its addresses are tracked, so what was decoded while this one still was is now
+        outdated (a transfer between two owned addresses becomes a plain spend, for one).
         """
-        if len(tx_ids := [BTCTxId(x[0]) for x in write_cursor.execute(
-            'SELECT T.tx_id FROM bitcointx_address_mappings AS M INNER JOIN bitcoin_transactions '
-            'AS T ON T.identifier=M.tx_id WHERE M.address=? AND T.location=? AND M.tx_id NOT IN '
-            '(SELECT tx_id FROM bitcointx_address_mappings WHERE address!=?)',
-            (address, location.serialize_for_db(), address),
-        )]) != 0:
+        own_tx_ids: list[BTCTxId] = []
+        shared_tx_ids: list[BTCTxId] = []
+        for tx_id, is_shared in write_cursor.execute(
+            'SELECT T.tx_id, EXISTS(SELECT 1 FROM bitcointx_address_mappings WHERE tx_id=M.tx_id '
+            'AND address!=?) FROM bitcointx_address_mappings AS M INNER JOIN bitcoin_transactions '
+            'AS T ON T.identifier=M.tx_id WHERE M.address=? AND T.location=?',
+            (address, address, location.serialize_for_db()),
+        ).fetchall():  # materialized since the writes below reuse the cursor
+            (shared_tx_ids if is_shared == 1 else own_tx_ids).append(BTCTxId(tx_id))
+
+        if len(own_tx_ids) != 0:
             DBHistoryEvents(self.db).delete_events_by_tx_ref(
                 write_cursor=write_cursor,
-                tx_refs=tx_ids,
+                tx_refs=own_tx_ids,
                 location=location,
                 customized_handling='delete',
             )
-            self.delete_transactions(write_cursor=write_cursor, location=location, tx_ids=tx_ids)
+            self.delete_transactions(
+                write_cursor=write_cursor,
+                location=location,
+                tx_ids=own_tx_ids,
+            )
+
+        if len(shared_tx_ids) != 0:
+            self.reset_decoded_state(
+                write_cursor=write_cursor,
+                location=location,
+                tx_ids=shared_tx_ids,
+            )
 
         # Drop what the address left on the transactions it shared with another one, so that
         # it no longer counts as a reason to keep them once that other address goes too.
