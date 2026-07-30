@@ -138,6 +138,18 @@ export function dateSerializer(dateInputFormat: Ref<DateFormat>): (date: string)
   return (date: string) => convertToTimestamp(date, get(dateInputFormat)).toString();
 }
 
+/**
+ * A written date read into the unix-second string a filter bound stores, or `undefined` when the
+ * text is not a date. `dateSerializer` cannot say no: dayjs parses leniently and yields NaN for
+ * nonsense, which would otherwise reach a filter as the literal string `NaN`.
+ */
+export function dateBoundParser(dateInputFormat: Ref<DateFormat>): (value: string) => string | undefined {
+  return (value: string): string | undefined => {
+    const timestamp = convertToTimestamp(value, get(dateInputFormat));
+    return Number.isFinite(timestamp) && timestamp > 0 ? timestamp.toString() : undefined;
+  };
+}
+
 export function dateDeserializer(dateInputFormat: Ref<DateFormat>): (timestamp: string) => string {
   return (timestamp: string) => convertFromTimestamp(parseInt(timestamp), get(dateInputFormat));
 }
