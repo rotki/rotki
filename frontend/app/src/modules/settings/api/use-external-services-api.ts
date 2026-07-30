@@ -3,15 +3,16 @@ import { VALID_WITH_SESSION_STATUS } from '@/modules/core/api/utils';
 import { type ExternalServiceKey, ExternalServiceKeys } from '@/modules/integrations/types';
 
 interface UseExternalServicesApiReturn {
-  queryExternalServices: () => Promise<ExternalServiceKeys>;
+  queryExternalServices: (options?: { tags?: string[] }) => Promise<ExternalServiceKeys>;
   setExternalServices: (keys: ExternalServiceKey[]) => Promise<ExternalServiceKeys>;
   deleteExternalServices: (serviceToDelete: string) => Promise<ExternalServiceKeys>;
 }
 
 export function useExternalServicesApi(): UseExternalServicesApiReturn {
-  const queryExternalServices = async (): Promise<ExternalServiceKeys> => {
+  const queryExternalServices = async (options?: { tags?: string[] }): Promise<ExternalServiceKeys> => {
     const response = await api.get<ExternalServiceKeys>('/external_services', {
       skipRootCamelCase: true,
+      tags: options?.tags,
       validStatuses: VALID_WITH_SESSION_STATUS,
     });
 

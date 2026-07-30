@@ -179,6 +179,22 @@ const EnablePasswordConfirmation = z.boolean();
 export const FrontendSettings = z.object({
   abbreviateNumber: z.boolean().default(false),
   amountRoundingMode: RoundingMode.default(BigNumber.ROUND_UP),
+  /**
+   * Ids of the one-off questions the user has already answered. Kept apart from
+   * `lastAppliedSettingsVersion` because a decision is retired by being answered, not by the version
+   * cursor moving past the release that asked it.
+   *
+   * Append-only, and deliberately never pruned. An id whose provider has been deleted is inert, so
+   * the only thing pruning would buy is a few bytes, against the risk of a user on an older build
+   * dropping ids it does not recognise and being re-asked on the way back up. A question that gets
+   * superseded takes a *new* id, which leaves the old answer harmlessly behind rather than trying to
+   * migrate it. Ids must therefore never be reused or renamed;
+   * `select-providers.spec.ts` enforces that they are at least unique.
+   *
+   * `.catch` because a corrupt value here should cost the user one repeated question, not a reset of
+   * every frontend setting they have.
+   */
+  answeredSuggestions: z.array(z.string()).default([]).catch([]),
   autoDetectTokensCooldownHours: AutoDetectTokensCooldownHours.default(24),
   autoDetectTokensOnLogin: z.boolean().default(false),
   balanceValueThreshold: BalanceValueThreshold.default({}),

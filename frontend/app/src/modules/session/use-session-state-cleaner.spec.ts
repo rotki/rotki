@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type EffectScope, nextTick } from 'vue';
+import { SUGGESTION_PROBE_TAG } from '@/modules/settings/suggestions/use-suggestion-probes';
 import { useSessionStateCleaner } from './use-session-state-cleaner';
 
 const logged = ref<boolean>(false);
@@ -8,6 +9,7 @@ const start = vi.fn();
 const stop = vi.fn();
 const resetInstance = vi.fn();
 const resetState = vi.fn();
+const cancelByTag = vi.fn();
 
 vi.mock('@/modules/auth/use-session-auth-store', () => ({
   useSessionAuthStore: (): object => ({ logged }),
@@ -27,6 +29,10 @@ vi.mock('@/modules/balances/services/balance-queue', () => ({
 
 vi.mock('@/modules/shell/app/store-plugins', () => ({
   resetState: (): void => resetState(),
+}));
+
+vi.mock('@/modules/core/api/rotki-api', () => ({
+  api: { cancelByTag: (tag: string): void => cancelByTag(tag) },
 }));
 
 describe('useSessionStateCleaner', () => {
@@ -59,6 +65,8 @@ describe('useSessionStateCleaner', () => {
     expect(clearUploadStatus).toHaveBeenCalledOnce();
     expect(resetInstance).toHaveBeenCalledOnce();
     expect(resetState).toHaveBeenCalledOnce();
+    // The login-time suggestion probes are not awaited by the login, so they can outlive it.
+    expect(cancelByTag).toHaveBeenCalledWith(SUGGESTION_PROBE_TAG);
   });
 
   it('should not clean up while the user stays logged in', async () => {
