@@ -317,31 +317,41 @@ CREATE TABLE IF NOT EXISTS bitcoin_tx_mappings (
         Only events whose group identifier is a prefixed 64 character transaction id are
         converted; anything else at a bitcoin location was created by the user and stays a
         plain history event. Hardcoded values to keep the upgrade immune to future changes.
+
+        The backup copies kept for edited/matched events are migrated the same way. A restore
+        replaces the live row (INSERT OR REPLACE), which cascades its chain_events_info away
+        and puts the backup's own chain info back, so a backup left as a plain event would
+        silently undo this migration and leave an event that no transaction filter, deletion
+        or redecode could find any more.
         """
-        migrated: list[tuple[int, bytes]] = []
-        for location, prefix in (('q', 'btc_'), ('r', 'bch_')):
-            for identifier, group_identifier in write_cursor.execute(
-                'SELECT identifier, group_identifier FROM history_events '
-                'WHERE location=? AND entry_type=1 AND group_identifier LIKE ?',  # 1 is HistoryBaseEntryType.HISTORY_EVENT  # noqa: E501
-                (location, f'{prefix}%'),
-            ).fetchall():  # materialized since the writes below reuse the cursor
-                try:
-                    tx_ref = bytes.fromhex(group_identifier.removeprefix(prefix))
-                except ValueError:
-                    continue  # a user created event that only looks like a transaction
+        for table, chain_table in (
+            ('history_events', 'chain_events_info'),
+            ('history_events_backup', 'chain_events_info_backup'),
+        ):
+            migrated: list[tuple[int, bytes]] = []
+            for location, prefix in (('q', 'btc_'), ('r', 'bch_')):
+                for identifier, group_identifier in write_cursor.execute(
+                    f'SELECT identifier, group_identifier FROM {table} '
+                    'WHERE location=? AND entry_type=1 AND group_identifier LIKE ?',  # 1 is HistoryBaseEntryType.HISTORY_EVENT  # noqa: E501
+                    (location, f'{prefix}%'),
+                ).fetchall():  # materialized since the writes below reuse the cursor
+                    try:
+                        tx_ref = bytes.fromhex(group_identifier.removeprefix(prefix))
+                    except ValueError:
+                        continue  # a user created event that only looks like a transaction
 
-                if len(tx_ref) == 32:
-                    migrated.append((identifier, tx_ref))
+                    if len(tx_ref) == 32:
+                        migrated.append((identifier, tx_ref))
 
-        write_cursor.executemany(
-            'INSERT OR IGNORE INTO chain_events_info(identifier, tx_ref, counterparty, address) '
-            'VALUES(?, ?, NULL, NULL)',
-            migrated,
-        )
-        write_cursor.executemany(  # 11 is HistoryBaseEntryType.BITCOIN_EVENT
-            'UPDATE history_events SET entry_type=11 WHERE identifier=?',
-            [(identifier,) for identifier, _ in migrated],
-        )
+            write_cursor.executemany(
+                f'INSERT OR IGNORE INTO {chain_table}(identifier, tx_ref, counterparty, address) '
+                'VALUES(?, ?, NULL, NULL)',
+                migrated,
+            )
+            write_cursor.executemany(  # 11 is HistoryBaseEntryType.BITCOIN_EVENT
+                f'UPDATE {table} SET entry_type=11 WHERE identifier=?',
+                [(identifier,) for identifier, _ in migrated],
+            )
 
     @progress_step(description='Reset bitcoin transaction query range.')
     def _reset_bitcoin_query_range(write_cursor: DBCursor) -> None:

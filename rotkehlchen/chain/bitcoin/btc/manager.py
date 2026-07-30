@@ -1,6 +1,7 @@
 import logging
 import urllib
 from collections import defaultdict
+from itertools import chain
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.chain.bitcoin.btc.constants import (
@@ -90,26 +91,32 @@ class BitcoinManager(BitcoinCommonManager):
     def _query_blockchain_info(
             accounts: Sequence[BTCAddress],
             key: Literal['addresses', 'txs'] = 'addresses',
-    ) -> list[dict[str, Any]]:
+    ) -> list[list[dict[str, Any]]]:
         """Queries blockchain.info for the specified accounts.
         The response from blockchain.info is a dict with two keys: addresses and txs, each of which
-        contains a list of dicts. Returns the full list of dicts for the specified key.
+        contains a list of dicts. Returns one such list per queried batch of addresses, since the
+        API takes at most 80 of them at a time.
+
+        The batches are kept apart because each is ordered newest to oldest on its own but the
+        concatenation of two isn't. Merging them would make the deserialization loop stop at
+        the oldest requested tx of the first batch and silently skip every following batch.
+
         May raise:
         - RemoteError if got problems with querying the API
         - UnableToDecryptRemoteData if unable to load json in request_get
         - KeyError if got unexpected json structure
         """
-        results: list[dict[str, Any]] = []
+        results: list[list[dict[str, Any]]] = []
         # the docs suggest 10 seconds for 429 (https://blockchain.info/q)
         kwargs: Any = {'handle_429': True, 'backoff_in_seconds': 10}
         for i in range(0, len(accounts), 80):
             base_url = f"{BLOCKCHAIN_INFO_BASE_URL}/multiaddr?active={'|'.join(accounts[i:i + 80])}"  # noqa: E501
             if key == 'addresses':
-                results.extend(request_get_dict(url=base_url, **kwargs)[key])
+                results.append(request_get_dict(url=base_url, **kwargs)[key])
             else:  # key == 'txs'
-                offset = 0
+                offset, batch_results = 0, []
                 while True:
-                    results.extend(chunk := request_get_dict(
+                    batch_results.extend(chunk := request_get_dict(
                         url=f'{base_url}&n={BLOCKCHAIN_INFO_TX_LIMIT}&offset={offset}',
                         **kwargs,
                     )[key])
@@ -117,6 +124,8 @@ class BitcoinManager(BitcoinCommonManager):
                         break  # all txs have been queried
 
                     offset += BLOCKCHAIN_INFO_TX_LIMIT
+
+                results.append(batch_results)
 
         return results
 
@@ -126,7 +135,7 @@ class BitcoinManager(BitcoinCommonManager):
     ) -> dict[BTCAddress, FVal]:
         log.debug('Querying blockchain.info for accounts')
         balances: dict[BTCAddress, FVal] = {}
-        for entry in self._query_blockchain_info(accounts):
+        for entry in chain.from_iterable(self._query_blockchain_info(accounts)):
             balances[entry['address']] = satoshis_to_btc(ensure_type(
                 symbol=entry['final_balance'],
                 expected_type=int,
@@ -139,7 +148,7 @@ class BitcoinManager(BitcoinCommonManager):
             accounts: Sequence[BTCAddress],
     ) -> dict[BTCAddress, tuple[bool, FVal]]:
         have_transactions = {}
-        for entry in self._query_blockchain_info(accounts):
+        for entry in chain.from_iterable(self._query_blockchain_info(accounts)):
             balance = satoshis_to_btc(ensure_type(
                 symbol=entry['final_balance'],
                 expected_type=int,
@@ -157,7 +166,7 @@ class BitcoinManager(BitcoinCommonManager):
         Returns a tuple containing the latest queried block height and the list of txs.
         """
         return self._process_raw_tx_lists(
-            raw_tx_lists=[self._query_blockchain_info(accounts=accounts, key='txs')],
+            raw_tx_lists=self._query_blockchain_info(accounts=accounts, key='txs'),
             options=options,
             processing_fn=self.deserialize_tx_from_blockchain_info,
         )

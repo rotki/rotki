@@ -264,9 +264,14 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         )
         if len(tx_list) == 0:
             log.debug(f'No new transactions found for {self.blockchain!s} accounts {accounts_str}')
+            if len(new_addresses) != 0:
+                # Nothing new came back, but the saved transactions the newly tracked
+                # addresses appear in were marked above and still need decoding with them
+                # tracked. Without this they would wait for a query that returns something.
+                self.decode_transactions()
+
             return
 
-        unique_txs = {tx.tx_id: tx for tx in tx_list}  # the same tx is returned once per queried address it touches  # noqa: E501
         with self.database.conn.write_ctx() as write_cursor:
             for address in addresses:
                 self.database.set_dynamic_cache(
@@ -278,10 +283,14 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
 
             # Save the transactions before decoding them. Decoding runs in its own write so
             # that a failure only leaves them pending decoding instead of losing the query.
-            self._save_transactions(
-                write_cursor=write_cursor,
-                transactions=list(unique_txs.values()),
-            )
+            #
+            # The same transaction can come back more than once, since it is returned for
+            # each queried address it touches. They are all saved rather than deduplicated:
+            # blockchain.info returns only the TxIOs touching the addresses of the request,
+            # so two such copies are complementary partial views that the saved transaction
+            # merges into one complete copy. Dropping either would persist a transaction
+            # that is missing TxIOs and decode it that way.
+            self._save_transactions(write_cursor=write_cursor, transactions=tx_list)
 
         self._send_tx_ws_status(
             addresses=addresses,
@@ -330,18 +339,24 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         """
         self.refresh_tracked_accounts()
         with self.database.conn.read_ctx() as cursor:
-            transactions = self.dbtx.get_transactions(
+            pending_tx_ids = self.dbtx.get_transaction_ids(
                 cursor=cursor,
                 location=self.location,
                 tx_ids=tx_ids,
                 undecoded_only=True,
             )
 
-        if len(transactions) == 0:
-            return 0
-
         dbevents = DBHistoryEvents(self.database)
-        for tx_chunk in get_chunks(transactions, DECODING_CHUNK_SIZE):
+        for id_chunk in get_chunks(pending_tx_ids, DECODING_CHUNK_SIZE):
+            # Read and decode a chunk at a time so that a full history redecode never holds
+            # every transaction, all its TxIOs and all their events in memory at once.
+            with self.database.conn.read_ctx() as cursor:
+                tx_chunk = self.dbtx.get_transactions(
+                    cursor=cursor,
+                    location=self.location,
+                    tx_ids=id_chunk,
+                )
+
             events, decoded_tx_ids = [], set()
             for tx in tx_chunk:
                 decoded_tx_ids.add(BTCTxId(tx.tx_id))
@@ -373,7 +388,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                     tx_ids=list(decoded_tx_ids),
                 )
 
-        return len(transactions)
+        return len(pending_tx_ids)
 
     def redecode_transactions(self, tx_ids: list[BTCTxId] | None = None) -> int:
         """Decode the saved transactions again, replacing their existing events.
@@ -472,6 +487,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         to_timestamp = options.get('to_timestamp', ts_now())
         new_block_height = 0
         for raw_tx_list in raw_tx_lists:
+            list_start = len(tx_list)  # where the txs of this list begin
             for entry in raw_tx_list:
                 try:
                     if (tx := processing_fn(entry)) is None:
@@ -496,7 +512,13 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
 
                 tx_list.append(tx)
 
-            block_height = tx_list[0].block_height if len(tx_list) > 0 else last_queried_block
+            # Each list is ordered newest to oldest, so the first tx kept from it is the
+            # newest block this list reached. Taken per list since a later list may reach
+            # further than the first one did.
+            block_height = (
+                tx_list[list_start].block_height
+                if len(tx_list) > list_start else last_queried_block
+            )
             new_block_height = max(new_block_height, block_height)
 
         return new_block_height, tx_list

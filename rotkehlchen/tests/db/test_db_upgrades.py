@@ -4245,6 +4245,11 @@ def test_upgrade_db_52_to_53(
                     'VALUES(?, ?)',
                     (btc_reset_identifier, 'bc1qm4lpczdpkcs6j4twpzd2lgguy0sd8zzsm6puhl'),
                 )
+                write_cursor.execute(  # the backup an edit of it left behind
+                    'INSERT INTO history_events_backup '
+                    'SELECT * FROM history_events WHERE identifier=?',
+                    (btc_reset_identifier,),
+                )
 
         assert write_cursor.execute(
             'SELECT COUNT(*) FROM bitcoin_events_addresses WHERE event_identifier=?',
@@ -4499,6 +4504,15 @@ def test_upgrade_db_52_to_53(
             'SELECT COUNT(*) FROM bitcoin_events_addresses WHERE event_identifier=?',
             (btc_reset_identifier,),
         ).fetchone()[0] == 1
+
+        # the backup of an edited event is migrated too. Restoring one that stayed a plain
+        # event would replace the migrated row and cascade its chain info away, leaving an
+        # event no transaction filter or redecode could find.
+        assert cursor.execute(
+            'SELECT B.entry_type, C.tx_ref FROM history_events_backup AS B LEFT JOIN '
+            'chain_events_info_backup AS C ON C.identifier=B.identifier WHERE B.identifier=?',
+            (btc_reset_identifier,),
+        ).fetchall() == [(11, bytes.fromhex(btc_tx_id))]
 
         # bitcoin transactions are saved from now on, so a future decoding fix needs no
         # refetching. They start empty since nothing was saved before this upgrade.

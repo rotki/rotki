@@ -1,4 +1,5 @@
 import typing
+from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 import pytest
@@ -32,6 +33,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.db.test_solana_tx import create_test_solana_transactions
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
@@ -398,6 +400,17 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: APIServer) ->
                 value=12345,
                 address=BTCAddress('xxxxxxxxxx'),
             )
+
+    # a tx ref that is not a bitcoin transaction id is refused instead of reaching the
+    # deletion, where turning it into the bytes of a tx_ref would fail
+    assert_error_response(
+        response=requests.delete(
+            api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
+            json={'chain': 'btc', 'tx_ref': 'not a transaction id'},
+        ),
+        contained_in_msg='Invalid bitcoin transaction id',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
     for chain, location, tx_hash, customized_tx_hash, cache_key in (
         ('btc', Location.BITCOIN, btc_tx_hash2, btc_tx_hash1, DBCacheDynamic.LAST_BTC_TX_BLOCK),
