@@ -10,6 +10,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import BlockchainAccountData
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -959,6 +960,52 @@ def test_partial_views_from_a_single_query_are_all_saved(
     assert _sum_amounts(events, HistoryEventType.SPEND) == CHANGE_TX_EXTERNAL_AMOUNT
     assert _sum_amounts(events, HistoryEventType.TRANSFER) == CHANGE_TX_CHANGE_AMOUNT
     assert _sum_amounts(events, HistoryEventType.RECEIVE) == ZERO
+
+
+def test_truncated_blockchain_info_tx_without_indexes_is_skipped(
+        bitcoin_manager: BitcoinManager,
+) -> None:
+    """Test that a transaction whose TxIOs came back both incomplete and without their real
+    index is skipped instead of saved under the wrong ones.
+
+    The saved copy is keyed on the real index so that two partial views complete each other.
+    Placing a TxIO by its position in a response that omitted some of the others would put it
+    where another one belongs, shadowing that one instead of completing the transaction.
+    """
+    def blockchain_info_tx(vin_count: int, with_index: bool) -> dict[str, Any]:
+        """One input of a transaction that declares vin_count of them."""
+        return {
+            'hash': CHANGE_TX_ID,
+            'time': 1700000000,
+            'block_height': 700000,
+            'fee': 31350,
+            'vin_sz': vin_count,
+            'vout_sz': 1,
+            'inputs': [{'script': '', 'prev_out': {
+                'value': 3575186,
+                'script': '00',
+                'addr': CHANGE_TX_INPUT1,
+            }} | ({'index': 3} if with_index else {})],
+            'out': [{
+                'value': 1000000,
+                'script': '00',
+                'addr': CHANGE_TX_EXTERNAL_OUTPUT,
+                'n': 0,
+            }],
+        }
+
+    with pytest.raises(DeserializationError, match='without a index on all of them'):
+        bitcoin_manager.deserialize_tx_from_blockchain_info(
+            data=blockchain_info_tx(vin_count=2, with_index=False),
+        )
+
+    # a transaction that came back whole is deserialized by position as before, and so is
+    # an incomplete one that does carry the real indexes
+    for vin_count, with_index, expected_index in ((1, False, 0), (2, True, 3)):
+        assert (tx := bitcoin_manager.deserialize_tx_from_blockchain_info(
+            data=blockchain_info_tx(vin_count=vin_count, with_index=with_index),
+        )) is not None
+        assert tx.inputs[0].io_index == expected_index
 
 
 def test_each_raw_tx_list_is_processed_on_its_own(bitcoin_manager: BitcoinManager) -> None:

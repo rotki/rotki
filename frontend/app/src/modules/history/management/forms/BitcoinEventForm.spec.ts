@@ -213,7 +213,7 @@ describe('forms/BitcoinEventForm.vue', () => {
       eventType: group.eventType,
     });
     await nextTick();
-    await wrapper.find('[data-cy=asset] input').setValue(group.asset);
+    // the asset is not picked, it follows the location
     await wrapper.find('[data-cy=amount] input').setValue('100');
     await wrapper.find('[data-cy=sequence-index] input').setValue(group.sequenceIndex);
     await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue(group.userNotes);
@@ -323,6 +323,33 @@ describe('forms/BitcoinEventForm.vue', () => {
     });
   });
 
+  it('should keep the location and asset of the edited event', async () => {
+    wrapper = createWrapper({
+      props: {
+        data: {
+          event: {
+            ...group,
+            asset: 'BCH',
+            groupIdentifier: `bch_${group.txRef}`,
+            location: 'bitcoin_cash',
+          },
+          nextSequenceId: '1',
+          type: 'edit',
+        },
+      },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.find('[data-cy=amount] input').setValue('150');
+
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    expect(await wrapper.vm.save()).toBe(true);
+    expect(editHistoryEventMock).toHaveBeenCalledWith(expect.objectContaining({
+      asset: 'BCH',
+      location: 'bitcoin_cash',
+    }));
+  });
+
   it('should handle server validation errors', async () => {
     wrapper = createWrapper({
       props: {
@@ -361,7 +388,8 @@ describe('forms/BitcoinEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.find('[data-cy=amount] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=asset] .details').exists()).toBe(true);
+    // the asset field has nothing to validate since it follows the location
+    expect(wrapper.find('[data-cy=tx-ref] .details').exists()).toBe(true);
   });
 
   describe('actualGroupIdentifier', () => {
