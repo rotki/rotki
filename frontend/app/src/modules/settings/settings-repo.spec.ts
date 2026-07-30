@@ -121,6 +121,7 @@ describe('useSettingsRepo frontend channel', () => {
       subscriptDecimals: false,
       recentFilterValues: {},
       savedFilters: {},
+      savedViews: {},
       balanceValueThreshold: {
         [BalanceSource.EXCHANGES]: '0',
         [BalanceSource.BLOCKCHAIN]: '0',

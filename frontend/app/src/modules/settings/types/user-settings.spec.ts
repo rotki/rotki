@@ -87,6 +87,7 @@ describe('user-types', () => {
       subscriptDecimals: false,
       recentFilterValues: {},
       savedFilters: {},
+      savedViews: {},
       balanceValueThreshold: {},
       useHistoricalAssetBalances: false,
       scrambleData: false,

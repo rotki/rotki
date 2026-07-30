@@ -164,6 +164,7 @@ export const frontendRegistry = {
   }),
   recentFilterValues: frontend('recentFilterValues', { userFacing: false }),
   savedFilters: frontend('savedFilters', { userFacing: false }),
+  savedViews: frontend('savedViews', { userFacing: false }),
   scrambleData: frontend('scrambleData', {
     anchor: SettingsHighlightIds.SCRAMBLE,
     search: { category: SettingsCategoryIds.INTERFACE_ONLY, titleKey: msg.$t('frontend_settings.scramble.title') },
