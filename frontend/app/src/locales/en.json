@@ -6096,6 +6096,23 @@
         "title": "Failed to save filter"
       }
     },
+    "saved_views": {
+      "actions": {
+        "apply": "Apply this view",
+        "remove": "Remove this view",
+        "save": "Save"
+      },
+      "converted_name": "Saved filter {number}",
+      "empty": "You don't have any saved views yet.",
+      "errors": {
+        "duplicate": "A view with this name already exists.",
+        "limit": "You can only save up to {limit} views. Remove one to save another.",
+        "name_required": "Give the view a name."
+      },
+      "name_placeholder": "Name these filters…",
+      "nothing_to_save": "Add a filter to save it as a view.",
+      "title": "Views"
+    },
     "start_typing": "Type the value for the {search} filter",
     "title": "Available filters",
     "unsupported_filter": "Unsupported filter:"

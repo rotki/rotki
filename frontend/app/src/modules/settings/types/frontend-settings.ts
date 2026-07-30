@@ -17,6 +17,7 @@ import { DateFormatEnum } from '@/modules/core/common/date-format';
 import { Defaults } from '@/modules/core/common/defaults';
 import { logger } from '@/modules/core/common/logging/logging';
 import { BaseSuggestion, SavedFilterLocation } from '@/modules/core/table/filtering';
+import { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import { TableColumnEnum } from '@/modules/core/table/table-column';
 import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
 import { PrivacyMode } from '@/modules/session/types';
@@ -173,6 +174,9 @@ const PasswordConfirmationInterval = z
   .min(Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS)
   .max(Constraints.PASSWORD_CONFIRMATION_MAX_SECONDS)
   .int();
+const LastPasswordConfirmed = z.number().int().nonnegative();
+const EnablePasswordConfirmation = z.boolean();
+
 /**
  * One remembered free-text filter value. Array order carries recency (newest first) and `count`
  * carries how often it was used, so the ranking can move from one to the other, or to a blend,
@@ -182,9 +186,6 @@ const RecentFilterValue = z.object({
   count: z.number().default(1),
   value: z.string(),
 });
-
-const LastPasswordConfirmed = z.number().int().nonnegative();
-const EnablePasswordConfirmation = z.boolean();
 
 export const FrontendSettings = z.object({
   abbreviateNumber: z.boolean().default(false),
@@ -287,6 +288,10 @@ export const FrontendSettings = z.object({
     .partialRecord(SavedFilterLocationEnum, z.array(z.array(BaseSuggestion)))
     .default({})
 
+    .catch({}),
+  savedViews: z
+    .partialRecord(SavedFilterLocationEnum, z.array(SavedView))
+    .default({})
     .catch({}),
   schemaVersion: z.literal(2),
   scrambleData: z.boolean().default(false),
