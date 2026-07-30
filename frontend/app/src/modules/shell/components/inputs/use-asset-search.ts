@@ -31,6 +31,8 @@ interface UseAssetSearchReturn {
   error: Readonly<Ref<string>>;
   visibleAssets: ComputedRef<AssetInfoWithId[]>;
   getVisibleAsset: (identifier: string) => AssetInfoWithId | undefined;
+  /** Fills the options from a search without prefilling the search box. See below. */
+  preload: (keyword: string) => Promise<void>;
 }
 
 /**
@@ -77,18 +79,46 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
     return get(visibleAssets)?.find(asset => asset.identifier === identifier);
   }
 
+  async function resolveSelected(): Promise<Asset | undefined> {
+    const val = get(modelValue);
+    assert(val);
+    const mapping = await assetMapping([val]);
+    return {
+      identifier: val,
+      ...mapping.assets[transformCase(val, true)],
+    };
+  }
+
+  /** Replaces the options with `newAssets`, with the selected value appended so it is never absent. */
   async function retainSelectedValueInOptions(newAssets: Asset[]): Promise<void> {
     try {
-      const val = get(modelValue);
-      assert(val);
-      const mapping = await assetMapping([val]);
-      set(assets, [
-        ...newAssets,
-        {
-          identifier: val,
-          ...mapping.assets[transformCase(val, true)],
-        },
-      ]);
+      const selectedAsset = await resolveSelected();
+      if (selectedAsset)
+        set(assets, [...newAssets, selectedAsset]);
+    }
+    catch (error_: any) {
+      set(loading, false);
+      set(error, error_.message);
+    }
+  }
+
+  /**
+   * Adds the selected value to whatever the options hold, without replacing them.
+   *
+   * The list is read *after* the mapping request resolves, not captured before it. That is the
+   * difference that matters: this runs on mount at the same time as an opening search, and a
+   * snapshot taken up front would wipe whichever of the two resolved first, leaving a list of one.
+   */
+  async function addSelectedToOptions(): Promise<void> {
+    try {
+      const selectedAsset = await resolveSelected();
+      if (!selectedAsset)
+        return;
+
+      set(assets, uniqueObjects<Asset>(
+        [...get(assets).filter(item => item.identifier !== selectedAsset.identifier), selectedAsset],
+        item => item.identifier,
+      ));
     }
     catch (error_: any) {
       set(loading, false);
@@ -130,7 +160,7 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
     if (!get(modelValue))
       return;
 
-    await retainSelectedValueInOptions(get(assets));
+    await addSelectedToOptions();
   }
 
   watch(modelValue, async () => {
@@ -144,17 +174,21 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
       set(loading, false);
   });
 
-  watchDebounced(modelSearch, async (value) => {
-    if (!value)
-      return set(loading, false);
-
+  async function runSearch(keyword: string): Promise<void> {
     if (pending) {
       pending.abort();
       pending = null;
     }
     set(error, '');
     pending = new AbortController();
-    await searchAssets(value, pending.signal);
+    await searchAssets(keyword, pending.signal);
+  }
+
+  watchDebounced(modelSearch, async (value) => {
+    if (!value)
+      return set(loading, false);
+
+    await runSearch(value);
   }, { debounce: 800 });
 
   watch(() => toValue(chain), async () => {
@@ -166,6 +200,17 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
     }
     await retainSelectedValueInOptions([]);
   });
+
+  /**
+   * Fills the options from a search without routing the keyword through `modelSearch`, so a
+   * picker can open on a non-empty list while its search box stays empty. Writing the keyword to
+   * `modelSearch` would show it as text the user has to clear before typing their own.
+   *
+   * Runs immediately, skipping the 800ms debounce the typed path uses.
+   */
+  async function preload(keyword: string): Promise<void> {
+    await runSearch(keyword);
+  }
 
   onMounted(async () => {
     await checkValue();
@@ -180,6 +225,7 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
     getVisibleAsset,
     loading: readonly(loading),
     modelSearch,
+    preload,
     visibleAssets,
   };
 }

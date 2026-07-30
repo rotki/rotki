@@ -17,6 +17,7 @@ import { useSetting } from '@/modules/settings/use-setting';
 interface UseAddressNameResolutionReturn {
   getAddressName: (address: string, blockchain?: string) => string | undefined;
   getAddressNameSource: (address: string, blockchain?: string) => string | undefined;
+  isAddressNamePending: (address: string, blockchain?: string) => boolean;
   getEnsName: (address: string) => string | null;
   useEnsNamesList: () => ComputedRef<string[]>;
   resetAddressNamesData: (items: AddressBookSimplePayload[]) => void;
@@ -184,6 +185,18 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
     return resolveAddressInfo(address, 'name', blockchain);
   }
 
+  /** True while an alias/ENS lookup for the address is in flight and nothing is cached yet. */
+  function isAddressNamePending(address: string, blockchain: string = Blockchain.ETH): boolean {
+    if (!get(enableAliasNames) || !address)
+      return false;
+
+    if (!isBlockchain(blockchain) || blockchain === Blockchain.ETH2)
+      return false;
+
+    const key = createKey(address, blockchain);
+    return getIsPending(key) && !resolve(key);
+  }
+
   function getAddressNameSource(address: string, blockchain: string = Blockchain.ETH): string | undefined {
     return resolveAddressInfo(address, 'source', blockchain);
   }
@@ -238,6 +251,7 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
     getAddressName,
     getAddressNameSource,
     getEnsName,
+    isAddressNamePending,
     useEnsNamesList,
     refreshAvatarTimestamp,
     resetAddressNamesData,

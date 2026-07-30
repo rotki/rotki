@@ -6066,6 +6066,15 @@
       "example": "start = 26/05/2022"
     },
     "label": "Combined filters",
+    "operators": {
+      "after": "after",
+      "before": "before",
+      "between": "between",
+      "greater_than": "greater than",
+      "is": "is",
+      "is_not": "is not",
+      "less_than": "less than"
+    },
     "press_enter_to_apply": "Press enter to apply:",
     "saved_filters": {
       "actions": {
@@ -6623,11 +6632,15 @@
       "account": "Filter by account",
       "address": "filter by counterparty address",
       "asset": "filter by the asset of the events",
+      "date_from": "From",
       "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
+      "date_to": "To",
+      "duplicate_value": "Already added",
       "end_date": "filter by the end date of the transaction period",
       "entry_type": "filter by entry type",
       "event_subtype": "filter by event sub type",
       "event_type": "filter by event type",
+      "invalid_value": "Invalid value",
       "location": "filter by event location",
       "match_exact_filter": "Should match exact filter",
       "match_exact_filter_hint": "If enabled, it will show only the events that match the filter, excluding the other events in the same group.",
@@ -6635,6 +6648,9 @@
       "min_amount": "filter by minimum amount",
       "notes": "filter by notes content",
       "protocol": "filter by the protocol of the events",
+      "range_max": "Max",
+      "range_max_below_min": "Max must be greater than min",
+      "range_min": "Min",
       "show_ignored_assets": "Show entries with ignored assets",
       "start_date": "filter by the start date of the transaction period",
       "state_markers": "Filter by state",
