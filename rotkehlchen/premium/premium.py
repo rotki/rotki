@@ -360,10 +360,11 @@ def extended_get_machine_id(username: str) -> str:
 
     May raise:
         - MachineIdNotFound
+        - FileNotFoundError
     """
     try:
         return machineid.hashed_id(username)
-    except machineid.MachineIdNotFound:
+    except (machineid.MachineIdNotFound, FileNotFoundError):
         if (container_info := check_docker_container()) is not None:
             container_identifier, _ = container_info
             return hmac.new(
