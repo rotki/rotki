@@ -357,11 +357,16 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         with spot trades from /v1/trading/trade.
         """
         events: list[HistoryBaseEntry] = []
-        transactions = self._query_transactions(
-            event_queue=event_queue,
-            start_ts=start_ts,
-            end_ts=end_ts,
-        )
+        try:
+            transactions = self._query_transactions(
+                event_queue=event_queue,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            )
+        except RemoteError as e:
+            self.msg_aggregator.add_error(f'Failed to query {self.name} transactions. {e!s}')
+            raise
+
         if event_queue is None:
             events.extend(self._build_asset_movements(transactions, start_ts, end_ts))
             events.extend(self._build_brokerage_trades(transactions, start_ts, end_ts))

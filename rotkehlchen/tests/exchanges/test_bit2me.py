@@ -6,6 +6,7 @@ import pytest
 from rotkehlchen.assets.converters import asset_from_bit2me
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -529,6 +530,27 @@ def test_bit2me_query_history_events(bit2me):
     # Should have: 2 withdrawal events + 2 deposit events + 2 brokerage trade events
     # Internal transfers are skipped
     assert len(events) >= 4  # At minimum movements
+
+
+def test_bit2me_history_query_should_report_transaction_errors(bit2me) -> None:
+    with (
+        patch.object(
+            bit2me,
+            '_query_transactions',
+            side_effect=RemoteError('API unavailable'),
+        ),
+        patch.object(bit2me, 'query_online_trade_history') as query_trades,
+        pytest.raises(RemoteError, match='API unavailable'),
+    ):
+        bit2me.query_online_history_events(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1),
+        )
+
+    query_trades.assert_not_called()
+    assert bit2me.msg_aggregator.consume_errors() == [
+        'Failed to query bit2me transactions. API unavailable',
+    ]
 
 
 def test_bit2me_internal_transfers_skipped(bit2me):
