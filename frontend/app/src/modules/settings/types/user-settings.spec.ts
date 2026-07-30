@@ -104,6 +104,7 @@ describe('user-types', () => {
       lastAutoDetectAt: 0,
       gnosisPaySafeMigrationLastNotified: 0,
       gnosisPaySafeMigrationNeverNotify: false,
+      answeredSuggestions: [],
     };
 
     const raw = {

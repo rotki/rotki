@@ -26,6 +26,7 @@ export const frontendRegistry = {
       titleKey: msg.$t('rounding_settings.title'),
     },
   }),
+  answeredSuggestions: frontend('answeredSuggestions', { userFacing: false }),
   autoDetectTokensCooldownHours: frontend('autoDetectTokensCooldownHours', {
     anchor: SettingsHighlightIds.AUTO_DETECT_TOKENS_COOLDOWN,
     search: {

@@ -54,6 +54,7 @@ describe('useSettingsRepo frontend channel', () => {
       defiSetupDone: true,
       language: SupportedLanguage.EN,
       lastAppliedSettingsVersion: '0.0.0',
+      answeredSuggestions: [],
       timeframeSetting: TimeFramePeriod.YEAR,
       lastKnownTimeframe: TimeFramePeriod.TWO_WEEKS,
       visibleTimeframes: [

@@ -1,4 +1,8 @@
-import type { GeneralSettingsSuggestion, SuggestionTranslate } from './settings-suggestions';
+import type {
+  GeneralSettingsSuggestion,
+  SuggestionProvider,
+  SuggestionTranslate,
+} from './settings-suggestions';
 import type { ExternalServiceName } from '@/modules/integrations/types';
 import type { GeneralSettings } from '@/modules/settings/types/user-settings';
 import { Blockchain, toCapitalCase } from '@rotki/common';
@@ -17,10 +21,15 @@ export const ETHERSCAN_FIRST_GNOSIS_ORDER: readonly EvmIndexer[] = [EvmIndexer.E
 
 const BLOCKSCOUT_SERVICE: ExternalServiceName = 'blockscout';
 
+/**
+ * Recorded in `answeredSuggestions` once answered. Stable forever: changing it re-asks everyone who
+ * already decided.
+ */
+export const GNOSIS_INDEXER_DECISION = 'gnosis-indexer-order-1.44';
+
 export interface GnosisIndexerContext {
   /** The whole evmIndexersOrder setting, keyed by evm chain name. */
   indexersOrder: IndexersOrder;
-  hasGnosisEvents: boolean;
   hasBlockscoutKey: boolean;
   hasEtherscanKey: boolean;
 }
@@ -37,14 +46,14 @@ export function hasCustomGnosisOrder(indexersOrder: IndexersOrder): boolean {
 }
 
 /**
- * The gnosis indexer decision offered at upgrade time. Only users who both have gnosis events and
- * a gnosis order of their own are asked: nobody else can be broken by the etherscan change.
+ * The gnosis indexer decision offered at upgrade time. Whether this user should be asked at all is
+ * the provider's call below; this only turns an answered "yes" into the row itself.
  */
 export function createGnosisIndexerSuggestion(
   t: SuggestionTranslate,
-  { hasBlockscoutKey, hasEtherscanKey, hasGnosisEvents, indexersOrder }: GnosisIndexerContext,
+  { hasBlockscoutKey, hasEtherscanKey, indexersOrder }: GnosisIndexerContext,
 ): GeneralSettingsSuggestion | undefined {
-  if (!hasGnosisEvents || !hasCustomGnosisOrder(indexersOrder))
+  if (!hasCustomGnosisOrder(indexersOrder))
     return undefined;
 
   // Blockscout is the only one of the two with a free tier, so it leads unless the user holds an
@@ -95,3 +104,27 @@ export function createGnosisIndexerSuggestion(
         }),
   };
 }
+
+/**
+ * Only users who kept a gnosis order of their own and actually have gnosis activity are asked:
+ * nobody else can be broken by the etherscan change.
+ *
+ * The order check is free and the activity check is a request, so the free one gates it. Both sit
+ * behind the decision gate, so once this has been asked and answered neither runs again.
+ */
+export const gnosisIndexerProvider: SuggestionProvider = {
+  decisionId: GNOSIS_INDEXER_DECISION,
+  version: '1.44.0',
+  isRelevant: ({ general }) => hasCustomGnosisOrder(general.evmIndexersOrder),
+  resolve: async ({ general }, probes, t) => {
+    if (!await probes.hasEvents(Blockchain.GNOSIS))
+      return undefined;
+
+    const keys = await probes.apiKeys();
+    return createGnosisIndexerSuggestion(t, {
+      hasBlockscoutKey: !!keys?.blockscout?.apiKey,
+      hasEtherscanKey: !!keys?.etherscan?.apiKey,
+      indexersOrder: general.evmIndexersOrder,
+    });
+  },
+};

@@ -8,21 +8,19 @@ import {
   getDefaultFrontendSettings,
 } from '@/modules/settings/types/frontend-settings';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import { getSuggestionKey, type PendingSuggestion, type VersionSuggestions } from './settings-suggestions';
+import { GNOSIS_INDEXER_DECISION, gnosisIndexerProvider } from './gnosis-indexer-suggestion';
+import { getSuggestionKey, type PendingSuggestion, type SettingsSuggestion, type VersionSuggestions } from './settings-suggestions';
 import { collectPendingSuggestions, useSettingsSuggestions } from './use-settings-suggestions';
+import { SUGGESTION_PROBE_TAG } from './use-suggestion-probes';
 
-const { mockRegistry } = vi.hoisted<{ mockRegistry: { value: VersionSuggestions[] } }>(() => ({ mockRegistry: { value: [] } }));
 const mockUpdate = vi.fn();
 const mockUpdateFrontendSetting = vi.fn();
 const mockFetchHistoryEvents = vi.fn();
 const mockQueryExternalServices = vi.fn();
 const mockAppVersion = ref<string>('1.43.0');
+const mockLogged = ref<boolean>(true);
 const mockStore: { pendingSuggestions: PendingSuggestion[]; showSuggestionsDialog: boolean } = { pendingSuggestions: [], showSuggestionsDialog: false };
-
-vi.mock('./settings-suggestions', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./settings-suggestions')>();
-  return { ...actual, createSettingsSuggestions: vi.fn(() => mockRegistry.value) };
-});
+const mockRepo: { frontend: FrontendSettings } = { frontend: getDefaultFrontendSettings() };
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   useHistoryEventsApi: vi.fn(() => ({
@@ -38,6 +36,16 @@ vi.mock('@/modules/settings/api/use-external-services-api', () => ({
 
 vi.mock('./use-suggestions-store', () => ({
   useSuggestionsStore: vi.fn(() => mockStore),
+}));
+
+vi.mock('@/modules/settings/settings-repo', () => ({
+  useSettingsRepo: vi.fn(() => mockRepo),
+}));
+
+vi.mock('@/modules/auth/use-session-auth-store', () => ({
+  useSessionAuthStore: vi.fn(() => ({
+    logged: mockLogged,
+  })),
 }));
 
 vi.mock('@/modules/settings/use-settings-operations', () => ({
@@ -351,10 +359,11 @@ describe('collectPendingSuggestions', () => {
 describe('useSettingsSuggestions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRegistry.value = [];
     set(mockAppVersion, '1.43.0');
+    set(mockLogged, true);
     mockStore.pendingSuggestions = [];
     mockStore.showSuggestionsDialog = false;
+    mockRepo.frontend = getDefaultFrontendSettings();
     mockUpdateFrontendSetting.mockResolvedValue(undefined);
     mockUpdate.mockResolvedValue(undefined);
     mockFetchHistoryEvents.mockResolvedValue({ entriesFound: 0 });
@@ -364,7 +373,7 @@ describe('useSettingsSuggestions', () => {
   describe('checkForSuggestions', () => {
     it('should do nothing on a development version', async () => {
       set(mockAppVersion, '1.43.0-dev');
-      const { checkForSuggestions } = useSettingsSuggestions();
+      const { checkForSuggestions } = useSettingsSuggestions([]);
       await checkForSuggestions(createFrontendSettings(), createGeneralSettings());
 
       expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
@@ -373,17 +382,17 @@ describe('useSettingsSuggestions', () => {
 
     it('should do nothing when the app version is empty', async () => {
       set(mockAppVersion, '');
-      const { checkForSuggestions } = useSettingsSuggestions();
+      const { checkForSuggestions } = useSettingsSuggestions([]);
       await checkForSuggestions(createFrontendSettings(), createGeneralSettings());
 
       expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
     });
 
     it('should open the dialog when there are pending suggestions', async () => {
-      mockRegistry.value = [
-        { suggestions: [{ description: 'd', key: 'submitUsageAnalytics', settingType: 'general', suggestedValue: true }], version: '1.43.0' },
-      ];
-      const { checkForSuggestions } = useSettingsSuggestions();
+      const { checkForSuggestions } = useSettingsSuggestions([{
+        resolve: (): SettingsSuggestion => ({ description: 'd', key: 'submitUsageAnalytics', settingType: 'general', suggestedValue: true }),
+        version: '1.43.0',
+      }]);
       await checkForSuggestions(createFrontendSettings(), createGeneralSettings({ submitUsageAnalytics: false }));
 
       expect(mockStore.showSuggestionsDialog).toBe(true);
@@ -392,7 +401,7 @@ describe('useSettingsSuggestions', () => {
     });
 
     it('should mark the version applied when there are no suggestions', async () => {
-      const { checkForSuggestions } = useSettingsSuggestions();
+      const { checkForSuggestions } = useSettingsSuggestions([]);
       await checkForSuggestions(createFrontendSettings(), createGeneralSettings());
 
       expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ lastAppliedSettingsVersion: '1.43.0' });
@@ -400,19 +409,42 @@ describe('useSettingsSuggestions', () => {
     });
 
     it('should skip the dialog for a new account and mark the version applied', async () => {
-      mockRegistry.value = [
-        { suggestions: [{ description: 'd', key: 'submitUsageAnalytics', settingType: 'general', suggestedValue: true }], version: '1.43.0' },
-      ];
-      const { checkForSuggestions } = useSettingsSuggestions();
+      const resolve = vi.fn(() => ({ description: 'd', key: 'submitUsageAnalytics', settingType: 'general', suggestedValue: true } as const));
+      const { checkForSuggestions } = useSettingsSuggestions([{ resolve, version: '1.43.0' }]);
       await checkForSuggestions(createFrontendSettings(), createGeneralSettings({ submitUsageAnalytics: false }), true);
 
       expect(mockStore.showSuggestionsDialog).toBe(false);
       expect(mockStore.pendingSuggestions).toEqual([]);
       expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ lastAppliedSettingsVersion: '1.43.0' });
+      // The short-circuit has to come before the registry, or a new account pays for probes it can
+      // never need.
+      expect(resolve).not.toHaveBeenCalled();
+    });
+
+    it('should not ask a new account about a decision it never had to make', async () => {
+      set(mockAppVersion, '1.44.0');
+      mockFetchHistoryEvents.mockResolvedValue({ entriesFound: 3 });
+      const { checkForSuggestions } = useSettingsSuggestions([gnosisIndexerProvider]);
+
+      // The account is created on 1.44.0 defaults, so there is nothing to decide.
+      await checkForSuggestions(createFrontendSettings(), createGeneralSettings(), true);
+      const [created] = mockUpdateFrontendSetting.mock.calls[0];
+
+      // It then deliberately picks etherscan-first, which is exactly the state the 1.44 question
+      // looks for. Asking about it would be asking someone to reconsider a choice they just made.
+      set(mockLogged, true);
+      await checkForSuggestions(
+        createFrontendSettings(created),
+        createGeneralSettings({ evmIndexersOrder: { gnosis: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT] } }),
+      );
+
+      expect(mockFetchHistoryEvents).not.toHaveBeenCalled();
+      expect(mockStore.showSuggestionsDialog).toBe(false);
     });
 
     it('should not probe for gnosis activity when the gnosis order is untouched', async () => {
-      const { checkForSuggestions } = useSettingsSuggestions();
+      set(mockAppVersion, '1.44.0');
+      const { checkForSuggestions } = useSettingsSuggestions([gnosisIndexerProvider]);
       await checkForSuggestions(createFrontendSettings(), createGeneralSettings({
         evmIndexersOrder: { gnosis: [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN], optimism: [EvmIndexer.ETHERSCAN] },
       }));
@@ -422,8 +454,9 @@ describe('useSettingsSuggestions', () => {
     });
 
     it('should look up the api keys only once gnosis events are found', async () => {
+      set(mockAppVersion, '1.44.0');
       const general = createGeneralSettings({ evmIndexersOrder: { gnosis: [EvmIndexer.ETHERSCAN] } });
-      const { checkForSuggestions } = useSettingsSuggestions();
+      const { checkForSuggestions } = useSettingsSuggestions([gnosisIndexerProvider]);
       await checkForSuggestions(createFrontendSettings(), general);
 
       expect(mockFetchHistoryEvents).toHaveBeenCalledWith({
@@ -431,18 +464,98 @@ describe('useSettingsSuggestions', () => {
         limit: 1,
         location: 'gnosis',
         offset: 0,
-      });
+      }, { tags: [SUGGESTION_PROBE_TAG] });
       expect(mockQueryExternalServices).not.toHaveBeenCalled();
 
       mockFetchHistoryEvents.mockResolvedValue({ entriesFound: 3 });
       await checkForSuggestions(createFrontendSettings(), general);
 
       expect(mockQueryExternalServices).toHaveBeenCalledOnce();
+      // Tagged so logging out can cancel whatever is still queued.
+      expect(mockQueryExternalServices).toHaveBeenCalledWith({ tags: [SUGGESTION_PROBE_TAG] });
+    });
+
+    it('should not probe once the decision has been answered', async () => {
+      set(mockAppVersion, '1.44.0');
+      const { checkForSuggestions } = useSettingsSuggestions([gnosisIndexerProvider]);
+      await checkForSuggestions(
+        createFrontendSettings({
+          answeredSuggestions: [GNOSIS_INDEXER_DECISION],
+          lastAppliedSettingsVersion: '1.43.0',
+        }),
+        createGeneralSettings({
+          evmIndexersOrder: { gnosis: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT] },
+        }),
+      );
+
+      expect(mockFetchHistoryEvents).not.toHaveBeenCalled();
+      expect(mockQueryExternalServices).not.toHaveBeenCalled();
+    });
+
+    it('should still ask an unanswered decision after the version cursor passed it', async () => {
+      set(mockAppVersion, '1.44.0');
+      mockFetchHistoryEvents.mockResolvedValue({ entriesFound: 3 });
+      const { checkForSuggestions } = useSettingsSuggestions([gnosisIndexerProvider]);
+      await checkForSuggestions(
+        createFrontendSettings({ lastAppliedSettingsVersion: '1.44.0' }),
+        createGeneralSettings({
+          evmIndexersOrder: { gnosis: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT] },
+        }),
+      );
+
+      expect(mockStore.showSuggestionsDialog).toBe(true);
+      expect(mockStore.pendingSuggestions).toHaveLength(1);
+      expect(mockStore.pendingSuggestions[0].decisionId).toBe(GNOSIS_INDEXER_DECISION);
+    });
+
+    it('should write nothing when the user logged out while the probes were in flight', async () => {
+      set(mockAppVersion, '1.44.0');
+      mockFetchHistoryEvents.mockImplementation(async () => {
+        set(mockLogged, false);
+        return { entriesFound: 3 };
+      });
+
+      const { checkForSuggestions } = useSettingsSuggestions([gnosisIndexerProvider]);
+      await checkForSuggestions(createFrontendSettings(), createGeneralSettings({
+        evmIndexersOrder: { gnosis: [EvmIndexer.ETHERSCAN] },
+      }));
+
+      expect(mockStore.showSuggestionsDialog).toBe(false);
+      expect(mockStore.pendingSuggestions).toEqual([]);
+      expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
+    });
+
+    it('should stop probing once a decision is found not to apply', async () => {
+      set(mockAppVersion, '1.44.0');
+      const general = createGeneralSettings({ evmIndexersOrder: { gnosis: [EvmIndexer.ETHERSCAN] } });
+      const { checkForSuggestions } = useSettingsSuggestions([gnosisIndexerProvider]);
+
+      // No gnosis events, so the question can never be asked — and so would never be answered.
+      await checkForSuggestions(createFrontendSettings(), general);
+
+      expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({
+        answeredSuggestions: [GNOSIS_INDEXER_DECISION],
+        lastAppliedSettingsVersion: '1.44.0',
+      });
+    });
+
+    it('should not settle a decision when the probe could not find out', async () => {
+      set(mockAppVersion, '1.44.0');
+      mockFetchHistoryEvents.mockRejectedValue(new Error('offline'));
+      const { checkForSuggestions } = useSettingsSuggestions([gnosisIndexerProvider]);
+
+      await checkForSuggestions(createFrontendSettings(), createGeneralSettings({
+        evmIndexersOrder: { gnosis: [EvmIndexer.ETHERSCAN] },
+      }));
+
+      // A flaky login must not bury the question for good.
+      expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ lastAppliedSettingsVersion: '1.44.0' });
     });
 
     it('should treat a failed gnosis probe as no activity', async () => {
+      set(mockAppVersion, '1.44.0');
       mockFetchHistoryEvents.mockRejectedValue(new Error('offline'));
-      const { checkForSuggestions } = useSettingsSuggestions();
+      const { checkForSuggestions } = useSettingsSuggestions([gnosisIndexerProvider]);
       await checkForSuggestions(createFrontendSettings(), createGeneralSettings({
         evmIndexersOrder: { gnosis: [EvmIndexer.ETHERSCAN] },
       }));
@@ -522,9 +635,70 @@ describe('useSettingsSuggestions', () => {
         evmIndexersOrder: { gnosis: [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN] },
       });
     });
+
+    it('should record a decision as answered even when it was left unchecked', async () => {
+      const decision: PendingSuggestion = {
+        currentValue: { gnosis: [EvmIndexer.ETHERSCAN] },
+        decisionId: GNOSIS_INDEXER_DECISION,
+        description: 'd',
+        fromVersion: '1.44.0',
+        key: 'evmIndexersOrder',
+        settingType: 'general',
+        suggestedValue: { gnosis: [EvmIndexer.BLOCKSCOUT] },
+      };
+      mockStore.pendingSuggestions = [decision];
+
+      const { applySelected } = useSettingsSuggestions();
+      await applySelected({ choices: {}, selected: [] });
+
+      expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({
+        answeredSuggestions: [GNOSIS_INDEXER_DECISION],
+        lastAppliedSettingsVersion: '1.43.0',
+      });
+      expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should not re-append a decision the user had already answered', async () => {
+      mockRepo.frontend = getDefaultFrontendSettings({ answeredSuggestions: [GNOSIS_INDEXER_DECISION] });
+      mockStore.pendingSuggestions = [{
+        currentValue: { gnosis: [EvmIndexer.ETHERSCAN] },
+        decisionId: GNOSIS_INDEXER_DECISION,
+        description: 'd',
+        fromVersion: '1.44.0',
+        key: 'evmIndexersOrder',
+        settingType: 'general',
+        suggestedValue: { gnosis: [EvmIndexer.BLOCKSCOUT] },
+      }];
+
+      const { applySelected } = useSettingsSuggestions();
+      await applySelected({ choices: {}, selected: [] });
+
+      expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ lastAppliedSettingsVersion: '1.43.0' });
+    });
   });
 
   describe('dismissAll', () => {
+    it('should record every shown decision as answered', async () => {
+      mockRepo.frontend = getDefaultFrontendSettings({ answeredSuggestions: ['some-older-decision'] });
+      mockStore.pendingSuggestions = [{
+        currentValue: { gnosis: [EvmIndexer.ETHERSCAN] },
+        decisionId: GNOSIS_INDEXER_DECISION,
+        description: 'd',
+        fromVersion: '1.44.0',
+        key: 'evmIndexersOrder',
+        settingType: 'general',
+        suggestedValue: { gnosis: [EvmIndexer.BLOCKSCOUT] },
+      }];
+
+      const { dismissAll } = useSettingsSuggestions();
+      await dismissAll();
+
+      expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({
+        answeredSuggestions: ['some-older-decision', GNOSIS_INDEXER_DECISION],
+        lastAppliedSettingsVersion: '1.43.0',
+      });
+    });
+
     it('should persist the current version and reset the store', async () => {
       mockStore.pendingSuggestions = [
         { currentValue: false, description: 'd', fromVersion: '1.43.0', key: 'defiSetupDone', settingType: 'frontend', suggestedValue: true },
