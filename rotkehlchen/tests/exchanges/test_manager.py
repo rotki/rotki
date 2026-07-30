@@ -153,3 +153,20 @@ def test_query_exchange_history_events_should_continue_after_input_error() -> No
 
     for exchange in exchanges:
         exchange.query_history_events.assert_called_once_with()
+
+
+def test_query_exchange_history_events_should_propagate_named_input_error() -> None:
+    manager = ExchangeManager(msg_aggregator=MagicMock())
+    manager.database = MagicMock()
+    manager.database.get_settings.return_value = SimpleNamespace(non_syncing_exchanges=set())
+    exchange = MagicMock()
+    exchange.name = 'test'
+    exchange.location = Location.BINANCE
+    exchange.location_id.return_value = 'binance_test'
+    exchange.query_history_events.side_effect = InputError('no market pairs selected')
+    manager.connected_exchanges[Location.BINANCE].append(exchange)
+
+    with pytest.raises(InputError, match='no market pairs selected'):
+        manager.query_exchange_history_events(location=Location.BINANCE, name='test')
+
+    exchange.query_history_events.assert_called_once_with()

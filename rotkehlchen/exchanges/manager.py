@@ -386,7 +386,8 @@ class ExchangeManager:
         """Queries new history events for the specified exchange.
 
         May raise:
-        - RemoteError if the exchange's remote query fails
+        - RemoteError if one or more exchange queries fail
+        - InputError if the specified exchange's query input is invalid
         """
         with self.database.conn.read_ctx() as cursor:
             excluded = self.database.get_settings(cursor).non_syncing_exchanges
@@ -419,6 +420,9 @@ class ExchangeManager:
             try:
                 exchange.query_history_events()
             except (InputError, RemoteError) as e:
+                if name is not None and isinstance(e, InputError):
+                    raise
+
                 log.error(
                     'Failed to query history events for %s exchange %s due to %s',
                     exchange.location,
