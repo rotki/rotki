@@ -3606,7 +3606,6 @@
       "event_type": "filtrer par type d'événement",
       "location": "filtrer par emplacement de l'événement",
       "protocol": "filtrer par le protocole des événements",
-      "show_ignored_assets": "Afficher les entrées avec des actifs ignorés",
       "start_date": "filtrer par la date de début de la période des transactions",
       "tx_hash": "filtrer par hash de transaction(s)",
       "validator_index": "filtrer par index de validateur(s)"
