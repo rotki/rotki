@@ -162,6 +162,7 @@ export const frontendRegistry = {
       titleKey: msg.$t('general_settings.nft_setting.subtitle.nft_images_rendering_setting'),
     },
   }),
+  recentFilterValues: frontend('recentFilterValues', { userFacing: false }),
   savedFilters: frontend('savedFilters', { userFacing: false }),
   scrambleData: frontend('scrambleData', {
     anchor: SettingsHighlightIds.SCRAMBLE,

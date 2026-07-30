@@ -119,6 +119,7 @@ describe('useSettingsRepo frontend channel', () => {
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       silentNotifications: false,
       subscriptDecimals: false,
+      recentFilterValues: {},
       savedFilters: {},
       balanceValueThreshold: {
         [BalanceSource.EXCHANGES]: '0',
