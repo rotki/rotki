@@ -332,10 +332,16 @@ def _resolve_prices(
     for (the backend rewrites the matched row's timestamp to the queried one), so pairs join
     straight back without a nearest-match search.
     """
-    resolved: dict[tuple[str, int], float] = {}
-    for start in range(0, len(pairs), PRICE_LOOKUP_CHUNK_SIZE):
+    # The main currency is worth exactly one of itself, and the price endpoint has no
+    # such pair cached, so asking for it leaves every fiat leg of an exchange trade
+    # unpriced. Resolve those locally and keep them out of the request entirely.
+    resolved: dict[tuple[str, int], float] = {
+        pair: 1.0 for pair in pairs if pair[0] == target_asset
+    }
+    remaining = [pair for pair in pairs if pair[0] != target_asset]
+    for start in range(0, len(remaining), PRICE_LOOKUP_CHUNK_SIZE):
         result = query_historical_prices(
-            asset_timestamps=pairs[start:start + PRICE_LOOKUP_CHUNK_SIZE],
+            asset_timestamps=remaining[start:start + PRICE_LOOKUP_CHUNK_SIZE],
             target_asset=target_asset,
             max_seconds_distance=PRICE_TOLERANCE_SECONDS,
         )

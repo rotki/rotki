@@ -69,12 +69,22 @@ RECIPES: Final[tuple[dict[str, Any], ...]] = (
         'sql': (
             'select year, sum(value) as income, count(*) as events '
             "from history_events where event_type = 'staking' and direction = 'in' "
+            "and event_subtype in ('reward', 'mev reward', 'block production') "
             'group by year order by year'
         ),
         'excludes': (
             'Filtering on direction = "in" drops the informational rows, which are the '
             'relayer/beacon-chain report of a reward that also arrives as a real event. '
-            'Without that filter every MEV and block-production reward is counted twice.'
+            'Without that filter every MEV and block-production reward is counted twice. '
+            'The event_subtype filter then drops unstaking: "remove asset" and '
+            '"redeem wrapped" are direction "in" but return principal, not income, so '
+            'including them overstates this total by whatever was unstaked -- which on an '
+            'account with validator exits or large LST redemptions is far larger than the '
+            'income itself. It is deliberately conservative and therefore understates ETH '
+            'staking: rotki records beacon-chain withdrawals as "remove asset" whether they '
+            'are a partial reward withdrawal (is_exit = 0) or a full exit (is_exit = 1), so '
+            'the reward-like partials are excluded here too. To include them, add '
+            "entry_type = 'eth withdrawal event' and is_exit = 0 as a separate union branch."
         ),
     },
     {
