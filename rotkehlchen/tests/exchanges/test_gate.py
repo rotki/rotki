@@ -193,6 +193,74 @@ def test_gate_flushes_successful_movement_query_before_raising(gate_exchange: Ga
     query_trades.assert_not_called()
 
 
+@pytest.mark.parametrize(('api_error', 'response', 'expected_error'), [
+    (
+        RemoteError('API unavailable'),
+        None,
+        'Failed to query Gate trades due to API unavailable',
+    ),
+    (
+        None,
+        {'error': 'malformed'},
+        "Gate trades response is not a list: {'error': 'malformed'}",
+    ),
+])
+def test_gate_trade_query_should_report_remote_errors(
+        gate_exchange: Gate,
+        api_error: RemoteError | None,
+        response: object,
+        expected_error: str,
+) -> None:
+    with (
+        patch.object(
+            gate_exchange,
+            '_api_query',
+            side_effect=api_error,
+            return_value=response,
+        ),
+        pytest.raises(RemoteError),
+    ):
+        gate_exchange._query_trades(start_ts=Timestamp(0), end_ts=Timestamp(1))
+
+    assert gate_exchange.msg_aggregator.consume_errors() == [expected_error]
+
+
+@pytest.mark.parametrize(('api_error', 'response', 'expected_error'), [
+    (
+        RemoteError('API unavailable'),
+        None,
+        'Failed to query Gate deposit due to API unavailable',
+    ),
+    (
+        None,
+        {'error': 'malformed'},
+        "Gate deposit response is not a list: {'error': 'malformed'}",
+    ),
+])
+def test_gate_movement_query_should_report_remote_errors(
+        gate_exchange: Gate,
+        api_error: RemoteError | None,
+        response: object,
+        expected_error: str,
+) -> None:
+    with (
+        patch.object(
+            gate_exchange,
+            '_api_query',
+            side_effect=api_error,
+            return_value=response,
+        ),
+        pytest.raises(RemoteError),
+    ):
+        gate_exchange._query_deposits_withdrawals(
+            start_ts=GATE_MOVEMENTS_QUERY_START_TS,
+            end_ts=Timestamp(GATE_MOVEMENTS_QUERY_START_TS + 1),
+            query_for=HistoryEventType.DEPOSIT,
+        )
+
+    assert gate_exchange.msg_aggregator.consume_errors() == [expected_error]
+
+
 def test_gate_requery_uses_incremental_queue(gate_exchange: Gate) -> None:
     event_queue = MagicMock(spec=HistoryEventQueue)
     with patch.object(
