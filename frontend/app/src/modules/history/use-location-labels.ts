@@ -15,6 +15,7 @@ interface UseLocationLabelsReturn {
   getTags: (item: LocationLabel) => string[];
   getTrackedAccountLabel: (item: LocationLabel) => string | undefined;
   getAccountName: (item: LocationLabel) => string | undefined;
+  isAccountNamePending: (item: LocationLabel) => boolean;
   filter: (item: LocationLabel, queryText: string) => boolean;
 }
 
@@ -29,7 +30,7 @@ export function useLocationLabels(options: MaybeRefOrGetter<LocationLabel[] | un
   const { allTxChainsInfo, matchChain } = useSupportedChains();
   const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
   const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
-  const { getAddressName } = useAddressNameResolution();
+  const { getAddressName, isAddressNamePending } = useAddressNameResolution();
 
   const locationLabelOptions = computed<LocationLabel[]>(() => toValue(options) ?? get(storeLocationLabels));
 
@@ -85,6 +86,18 @@ export function useLocationLabels(options: MaybeRefOrGetter<LocationLabel[] | un
     return getAddressName(item.locationLabel, chain) ?? undefined;
   }
 
+  /** True while the item has no tracked label and its alias/ENS name is still being fetched. */
+  function isAccountNamePending(item: LocationLabel): boolean {
+    if (getTrackedAccountLabel(item))
+      return false;
+
+    const chain = getBlockchainLocation(item.location);
+    if (!chain)
+      return false;
+
+    return isAddressNamePending(item.locationLabel, chain);
+  }
+
   function filter(item: LocationLabel, queryText: string): boolean {
     const locationLabel = getTextToken(item.locationLabel);
     const query = getTextToken(queryText);
@@ -116,6 +129,7 @@ export function useLocationLabels(options: MaybeRefOrGetter<LocationLabel[] | un
     getBlockchainLocation,
     getTags,
     getTrackedAccountLabel,
+    isAccountNamePending,
     locationLabelOptions,
   };
 }
