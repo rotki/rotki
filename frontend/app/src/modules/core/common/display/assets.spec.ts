@@ -3,6 +3,8 @@ import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import {
+  assetDisplayCaption,
+  assetDisplayLabel,
   assetFilterByKeyword,
   assetSuggestions,
   compareTextByKeyword,
@@ -158,5 +160,39 @@ describe('assetSuggestions', () => {
     expect(params.assetType).toBe(EVM_TOKEN);
     expect(params.evmChain).toBe('ethereum');
     expect(params.limit).toBe(10);
+  });
+});
+
+describe('assetDisplayLabel', () => {
+  const unknown = 'eip155:1/erc20:0x214AF1443f6bB9FFB2bDcF301c762Df28Dd7f818';
+
+  it('should use the symbol when the asset has one', () => {
+    expect(assetDisplayLabel(unknown, 'USDC')).toBe('USDC');
+  });
+
+  // A raw identifier swamps a pill or a suggestion row, so an asset with no metadata falls back
+  // to the shortened contract address instead.
+  it('should fall back to the shortened address when there is no symbol', () => {
+    expect(assetDisplayLabel(unknown)).toBe('0x214A...f818');
+    expect(assetDisplayLabel(unknown, '  ')).toBe('0x214A...f818');
+  });
+
+  it('should truncate a non-evm identifier that has no address to extract', () => {
+    expect(assetDisplayLabel('SOME-VERY-LONG-CUSTOM-IDENTIFIER')).toBe('SOME...FIER');
+  });
+});
+
+describe('assetDisplayCaption', () => {
+  const unknown = 'eip155:1/erc20:0x214AF1443f6bB9FFB2bDcF301c762Df28Dd7f818';
+
+  it('should use the name when it is a real name', () => {
+    expect(assetDisplayCaption(unknown, 'USD Coin')).toBe('USD Coin');
+  });
+
+  // An asset with no metadata reports its identifier as its name; echoing it under the label
+  // would just repeat the row.
+  it('should drop a name that is only the identifier again', () => {
+    expect(assetDisplayCaption(unknown, unknown)).toBeUndefined();
+    expect(assetDisplayCaption(unknown)).toBeUndefined();
   });
 });

@@ -12,7 +12,48 @@ import {
   type Nullable,
 } from '@rotki/common';
 import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
+import { getAssetNameFallback } from '@/modules/assets/use-resolve-asset-identifier';
+import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+
+/**
+ * Whether a resolved symbol or name is a real one, rather than the `EVM Token: 0x…` stand-in an
+ * unresolved asset is given. That stand-in is non-empty, so a truthiness check alone says "named"
+ * for exactly the assets that have no name.
+ */
+export function hasAssetMetadata(identifier: string, value?: Nullable<string>): boolean {
+  const trimmed = value?.trim();
+  if (!trimmed)
+    return false;
+  return trimmed !== identifier && trimmed !== getAssetNameFallback(identifier);
+}
+
+/**
+ * The label for an asset that may have no symbol: its symbol when it has one, else its shortened
+ * contract address.
+ *
+ * A raw identifier is unusable as a label — `eip155:1/erc20:0x214AF1443f6bB9FFB2bDcF301c762Df28Dd7f818`
+ * swamps a pill or a suggestion row, and so does the `EVM Token: 0x…` an unresolved asset resolves
+ * to. The shortened address is the usual display for an asset without metadata, and is what rotki
+ * already shows for any unnamed address. A non-EVM identifier has no address to extract, so it is
+ * truncated as-is.
+ */
+export function assetDisplayLabel(identifier: string, symbol?: Nullable<string>): string {
+  if (hasAssetMetadata(identifier, symbol))
+    return symbol!.trim();
+  return truncateAddress(getAddressFromEvmIdentifier(identifier) || identifier, 4);
+}
+
+/**
+ * The muted secondary text for an asset row: its name, when that is a real name.
+ *
+ * An asset with no metadata is given a stand-in name, so using it unguarded puts the same raw
+ * address in both the label and the caption. Nothing is better than a duplicate of what the row
+ * already shows.
+ */
+export function assetDisplayCaption(identifier: string, name?: Nullable<string>): string | undefined {
+  return hasAssetMetadata(identifier, name) ? name!.trim() : undefined;
+}
 
 interface ParsedAssetKeyword {
   value: string;
