@@ -300,10 +300,14 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 )
             except RemoteError as e:
                 log.error('Failed to query Gate trades due to %s', e)
+                self.msg_aggregator.add_error(f'Failed to query Gate trades due to {e!s}')
                 raise
 
             if not isinstance(raw_data, list):
-                raise RemoteError(f'Gate trades response is not a list: {raw_data}')
+                self.msg_aggregator.add_error(
+                    msg := f'Gate trades response is not a list: {raw_data}',
+                )
+                raise RemoteError(msg)
 
             if len(raw_data) == 0:
                 break
@@ -447,10 +451,16 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     )
                 except RemoteError as e:
                     log.error('Failed to query Gate %s due to %s', query_for, e)
+                    self.msg_aggregator.add_error(
+                        f'Failed to query Gate {query_for!s} due to {e!s}',
+                    )
                     raise
 
                 if not isinstance(result, list):
-                    raise RemoteError(f'Gate {query_for!s} response is not a list: {result}')
+                    self.msg_aggregator.add_error(
+                        msg := f'Gate {query_for!s} response is not a list: {result}',
+                    )
+                    raise RemoteError(msg)
 
                 raw_data.extend(result)
                 if len(result) < GATE_MOVEMENTS_PAGINATION_LIMIT:
