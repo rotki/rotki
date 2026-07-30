@@ -1,7 +1,8 @@
 # rotki Docker image
 
-The image runs three processes: **starling**, a supervisor that is PID 1, plus
-the two backends it owns, **rotki-core** (the Python API) and **colibri**.
+The image always runs **starling** (the PID 1 supervisor), **rotki-core** (the
+Python API), and **colibri**. Authenticated deployments additionally run the MCP
+service managed by starling.
 
 The image is built on distroless, so there is **no shell, no package manager and
 no coreutils** inside it. `docker exec <container> /opt/rotki/starling ctl status`
@@ -189,6 +190,17 @@ The value is inherited by both backends, which sign and validate the cookie with
 it. Keep it stable across restarts or existing sessions are invalidated. Note it
 is visible in `/proc/<pid>/environ` to the owning uid, the same exposure the
 previous entrypoint had.
+
+With authentication enabled, starling also starts the MCP service and exposes its
+streamable HTTP transport at `/mcp`. Obtain a bearer token from an authenticated
+browser session with `POST /api/1/mcp/token`, then configure the MCP client to send
+it as `Authorization: Bearer <token>`. The token belongs to the same active session:
+logging out or signing in from another browser revokes both the cookie and MCP access.
+It is cryptographically scoped to MCP and cannot authenticate directly to the REST API.
+It expires at the session's absolute ceiling, at most seven days after login; generate a
+replacement in the settings UI and update the MCP client before the displayed expiry.
+Without `ROTKI_SESSION_KEY`, Docker does not auto-start the externally routed MCP
+service and `/mcp` remains closed.
 
 ## Shutdown
 

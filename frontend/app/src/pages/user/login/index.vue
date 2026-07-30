@@ -35,7 +35,7 @@ const { performInitialChecks } = useLoginInitialChecks();
 const { activeWelcomeMessages, fetchMessages, welcomeHeader, welcomeMessage } = useDynamicMessages();
 const { showReleaseNotes } = useUpdateMessage();
 
-const isDocker = import.meta.env.VITE_DOCKER;
+const isDocker = import.meta.env.VITE_DOCKER === 'true';
 
 // The stage only takes over for phases that need their own UI (asset update + a DB upgrade
 // during unlock). The login form stays mounted (with its loading state) through the transient

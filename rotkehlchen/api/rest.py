@@ -15,7 +15,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
-from flask import Response, make_response, request, send_file
+from flask import Response, g, make_response, request, send_file
 from sqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
 from werkzeug.datastructures import FileStorage
@@ -44,6 +44,7 @@ from rotkehlchen.api.session_store import SESSION_DB_NAME, SessionStore
 from rotkehlchen.api.session_token import (
     SESSION_COOKIE_NAME,
     clear_session_cookie,
+    read_mcp_token,
     read_session_token,
     set_session_cookie,
 )
@@ -1201,6 +1202,36 @@ class RestAPI:
 
         response = api_response(_wrap_in_ok_result({}), status_code=HTTPStatus.OK)
         set_session_cookie(response, token)
+        return response
+
+    def issue_mcp_token(self) -> Response:
+        """Return a bearer token for the cookie-authenticated active session."""
+        if (
+            self.session_store is None or
+            getattr(g, 'rotki_session_exp', None) is None or
+            (username := getattr(g, 'rotki_session_user', None)) is None or
+            (sid := getattr(g, 'rotki_session_sid', None)) is None or
+            (token := self.session_store.issue_mcp_token(username=username, sid=sid)) is None
+        ):
+            return api_response(
+                wrap_in_fail_result('Authentication required'),
+                status_code=HTTPStatus.UNAUTHORIZED,
+            )
+
+        assert self.session_key is not None  # built together with session_store
+        claims = read_mcp_token(self.session_key, token)
+        assert claims is not None  # the SessionStore minted it with the same key
+        response = api_response(
+            _wrap_in_ok_result({
+                'access_token': token,
+                'expires_at': claims.exp,
+                'token_type': 'Bearer',
+            }),
+            status_code=HTTPStatus.OK,
+            log_result=False,
+        )
+        response.headers['Cache-Control'] = 'no-store'
+        response.headers['Pragma'] = 'no-cache'
         return response
 
     @async_api_call(session_token=True)

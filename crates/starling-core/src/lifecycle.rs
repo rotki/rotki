@@ -193,6 +193,47 @@ impl<S: Spawner> Supervisor<S> {
         self.start_one(name).await
     }
 
+    /// Restart a service already marked `Failed` by the crash poll.
+    ///
+    /// This is separate from manual `start_service`: it records the automatic
+    /// restart count, applies the configured backoff, and is only called by the
+    /// controller after checking the service's `OnCrash` policy.
+    pub async fn restart_failed_service(&mut self, name: &str) -> Result<()> {
+        let (backoff, dependencies) = {
+            let rt = self
+                .services
+                .get(name)
+                .ok_or_else(|| SupervisorError::NotFound(name.to_string()))?;
+            if rt.state != ServiceState::Failed {
+                return Err(SupervisorError::AlreadyRunning(name.to_string()));
+            }
+            (rt.spec.restart.backoff, rt.spec.deps.clone())
+        };
+        for dependency in dependencies {
+            if self.services[&dependency].state != ServiceState::Ready {
+                return Err(SupervisorError::DependencyNotReady {
+                    service: name.to_string(),
+                    dependency,
+                });
+            }
+        }
+
+        {
+            let rt = self.services.get_mut(name).expect("service exists");
+            rt.state = ServiceState::Restarting;
+            rt.restarts += 1;
+            rt.process.take();
+        }
+        tokio::time::sleep(backoff).await;
+        let result = self.start_one(name).await;
+        if let Err(err) = &result {
+            let rt = self.services.get_mut(name).expect("service exists");
+            rt.state = ServiceState::Failed;
+            rt.last_error = Some(err.to_string());
+        }
+        result
+    }
+
     async fn start_one(&mut self, name: &str) -> Result<()> {
         let spec = {
             let rt = self
@@ -412,10 +453,10 @@ impl<S: Spawner> Supervisor<S> {
     }
 
     /// Crash policy for a managed service.
-    pub fn on_crash(&self, name: &str) -> Result<crate::config::OnCrash> {
+    pub fn restart_policy(&self, name: &str) -> Result<crate::config::RestartPolicy> {
         self.services
             .get(name)
-            .map(|rt| rt.spec.restart.on_crash)
+            .map(|rt| rt.spec.restart)
             .ok_or_else(|| SupervisorError::NotFound(name.to_string()))
     }
 }

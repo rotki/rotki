@@ -16,10 +16,14 @@ from werkzeug.exceptions import NotFound
 from rotkehlchen.api.asgi import create_asgi_app
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.session_token import (
+    MCP_BACKEND_PROOF_HEADER,
     SESSION_COOKIE_NAME,
     SESSION_IDLE_TTL,
+    SessionClaims,
+    read_mcp_token,
     read_session_token,
     set_session_cookie,
+    verify_mcp_backend_proof,
 )
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.resources import (
@@ -138,6 +142,7 @@ from rotkehlchen.api.v1.resources import (
     ManuallyTrackedBalancesResource,
     MatchAssetMovementsResource,
     MatchBridgeTransactionsResource,
+    MCPTokenResource,
     MessagesResource,
     ModuleStatsResource,
     MoneriumOAuthResource,
@@ -219,6 +224,7 @@ URLS_V1: URLS = [
     ('/watchers', WatchersResource),
     ('/users/<string:name>', UsersByNameResource),
     ('/users/<string:name>/authenticate', UserAuthenticateResource),
+    ('/mcp/token', MCPTokenResource),
     ('/users/<string:name>/password', UserPasswordChangeResource),
     ('/premium', UserPremiumKeyResource),
     ('/premium/devices', PremiumDevicesResource),
@@ -414,6 +420,19 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def _read_internal_mcp_token(session_key: bytes) -> SessionClaims | None:
+    """Read an MCP bearer only when its calling process proves possession of the key."""
+    scheme, separator, token = request.headers.get('Authorization', '').partition(' ')
+    if (
+        separator == '' or
+        scheme.lower() != 'bearer' or
+        (proof := request.headers.get(MCP_BACKEND_PROOF_HEADER)) is None or
+        not verify_mcp_backend_proof(key=session_key, token=token, proof=proof)
+    ):
+        return None
+    return read_mcp_token(key=session_key, token=token)
+
+
 def setup_urls(
         rest_api: RestAPI,
         blueprint: Blueprint,
@@ -549,20 +568,39 @@ class APIServer:
             assert self.rest_api.session_store is not None  # built together with session_key
             rule = request.url_rule.rule if request.url_rule is not None else None
             if (rule, request.method) not in self._cookie_less_rules:
-                claims = read_session_token(
+                cookie_claims = read_session_token(
                     session_key,
                     request.cookies.get(SESSION_COOKIE_NAME, ''),
                 )
-                if claims is None or not self.rest_api.session_store.is_active(
-                    claims.username, claims.sid,
+                cookie_is_active = (
+                    cookie_claims is not None and
+                    self.rest_api.session_store.is_active(
+                        cookie_claims.username,
+                        cookie_claims.sid,
+                    )
+                )
+                if cookie_is_active:
+                    assert cookie_claims is not None  # cookie_is_active guarantees claims
+                    claims = cookie_claims
+                elif (
+                    (
+                        internal_claims := _read_internal_mcp_token(session_key=session_key)
+                    ) is None or
+                    not self.rest_api.session_store.is_mcp_active(
+                        internal_claims.username,
+                        internal_claims.sid,
+                    )
                 ):
                     return api_response(
                         wrap_in_fail_result('Authentication required'),
                         HTTPStatus.UNAUTHORIZED,
                     )
+                else:
+                    claims = internal_claims
                 g.rotki_session_user = claims.username
                 g.rotki_session_sid = claims.sid
-                g.rotki_session_exp = claims.exp
+                if cookie_is_active:
+                    g.rotki_session_exp = claims.exp
 
         log.debug(
             f'start rotki api {request.method} {request.path}',

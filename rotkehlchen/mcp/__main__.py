@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from rotkehlchen.mcp.backend import DEFAULT_BACKEND_URL
@@ -76,7 +77,13 @@ def main(argv: Sequence[str] | None = None) -> None:
         type=int,
         help='Port for the streamable HTTP transport. Defaults to %(default)s',
     )
+    parser.add_argument(
+        '--session-db',
+        type=Path,
+        help='Path to core session.db. Enables bearer authentication with ROTKI_SESSION_KEY.',
+    )
     args = parser.parse_args(argv)
+    session_key_value = os.environ.get('ROTKI_SESSION_KEY', '')
     run_server(
         backend_url=args.backend_url,
         timeout=args.timeout,
@@ -86,6 +93,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         transport=args.transport,
         host=args.host,
         port=args.port,
+        session_key=session_key_value.encode('utf-8') if session_key_value else None,
+        session_db=args.session_db,
     )
 
 

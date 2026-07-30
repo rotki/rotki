@@ -3,7 +3,9 @@ from typing import Any
 
 import pytest
 import requests
+from mcp.server.auth.provider import AccessToken
 
+from rotkehlchen.api.session_token import MCP_BACKEND_PROOF_HEADER, create_mcp_backend_proof
 from rotkehlchen.mcp.backend import (
     BackendQueryError,
     configure_backend,
@@ -54,6 +56,40 @@ def test_request_api_should_return_payload(monkeypatch) -> None:
     assert request_api(base_url='http://backend/api/1', endpoint='ping', timeout=5) == {
         'result': True,
         'message': '',
+    }
+
+
+def test_request_api_should_delegate_bearer_with_internal_proof(monkeypatch) -> None:
+    captured: dict[str, Any] = {}
+    session_key = b'session-key'
+
+    def mock_get(url: str, **kwargs: Any) -> MockResponse:
+        captured.update(kwargs)
+        return MockResponse({'result': True, 'message': ''})
+
+    monkeypatch.setattr(requests, 'get', mock_get)
+    monkeypatch.setattr(
+        'rotkehlchen.mcp.backend.get_access_token',
+        lambda: AccessToken(
+            token='mcp-bearer',
+            client_id='rotki-backend',
+            scopes=['mcp'],
+        ),
+    )
+    configure_backend(
+        base_url='http://backend/api/1',
+        timeout=5,
+        session_key=session_key,
+    )
+
+    request_api(base_url='http://backend/api/1', endpoint='settings', timeout=5)
+
+    assert captured['headers'] == {
+        'Authorization': 'Bearer mcp-bearer',
+        MCP_BACKEND_PROOF_HEADER: create_mcp_backend_proof(
+            key=session_key,
+            token='mcp-bearer',
+        ),
     }
 
 

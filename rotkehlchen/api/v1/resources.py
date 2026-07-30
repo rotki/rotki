@@ -1499,6 +1499,11 @@ class UserAuthenticateResource(BaseMethodView):
         return self.rest_api.authenticate_user(name=name, password=password)
 
 
+class MCPTokenResource(BaseMethodView):
+    def post(self) -> Response:
+        return self.rest_api.issue_mcp_token()
+
+
 class UserPasswordChangeResource(BaseMethodView):
     patch_schema = UserPasswordChangeSchema
 

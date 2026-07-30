@@ -19,9 +19,12 @@ import requests
 
 from rotkehlchen.api.session_store import SESSION_DB_NAME, SessionStore
 from rotkehlchen.api.session_token import (
+    MCP_BACKEND_PROOF_HEADER,
     SESSION_COOKIE_NAME,
     SESSION_IDLE_TTL,
+    create_mcp_backend_proof,
     mint_session_token,
+    read_mcp_token,
     read_session_token,
     verify_session_token,
 )
@@ -204,6 +207,88 @@ def test_cookie_gate(rotkehlchen_api_server: APIServer, username: str) -> None:
         assert session.patch(logout_url, json={'action': 'logout'}).status_code == HTTPStatus.OK
         assert SESSION_COOKIE_NAME not in session.cookies
         assert store.is_active(username, sid) is False
+    finally:
+        _disable_session(rotkehlchen_api_server)
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_issue_mcp_bearer_token(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+) -> None:
+    """Only an authenticated active session can obtain an MCP bearer token."""
+    store = _enable_session(rotkehlchen_api_server)
+    token_url = api_url_for(rotkehlchen_api_server, 'mcptokenresource')
+    try:
+        session = requests.Session()
+        assert_error_response(
+            response=session.post(token_url),
+            status_code=HTTPStatus.UNAUTHORIZED,
+        )
+
+        session.cookies.set(SESSION_COOKIE_NAME, store.login(username))
+        response = session.post(token_url)
+        result = assert_proper_sync_response_with_result(response)
+        assert response.headers['Cache-Control'] == 'no-store'
+        assert response.headers['Pragma'] == 'no-cache'
+        assert result['token_type'] == 'Bearer'
+        assert isinstance(result['expires_at'], int)
+        token = result['access_token']
+        assert read_session_token(SESSION_KEY, token) is None
+        claims = read_mcp_token(SESSION_KEY, token)
+        assert claims is not None
+        assert claims.username == username
+        assert store.is_mcp_active(username=username, sid=claims.sid) is True
+
+        settings_url = api_url_for(rotkehlchen_api_server, 'settingsresource')
+        assert requests.get(
+            settings_url,
+            cookies={SESSION_COOKIE_NAME: token},
+        ).status_code == HTTPStatus.UNAUTHORIZED
+        assert requests.get(
+            settings_url,
+            headers={'Authorization': f'Bearer {token}'},
+        ).status_code == HTTPStatus.UNAUTHORIZED
+        internal_headers = {
+            'Authorization': f'Bearer {token}',
+            MCP_BACKEND_PROOF_HEADER: create_mcp_backend_proof(key=SESSION_KEY, token=token),
+        }
+        assert requests.get(settings_url, headers=internal_headers).status_code == HTTPStatus.OK
+        assert_error_response(
+            response=requests.post(token_url, headers=internal_headers),
+            status_code=HTTPStatus.UNAUTHORIZED,
+        )
+
+        replacement_result = assert_proper_sync_response_with_result(session.post(token_url))
+        replacement_token = replacement_result['access_token']
+        replacement_headers = {
+            'Authorization': f'Bearer {replacement_token}',
+            MCP_BACKEND_PROOF_HEADER: create_mcp_backend_proof(
+                key=SESSION_KEY,
+                token=replacement_token,
+            ),
+        }
+        assert store.is_mcp_active(username=username, sid=claims.sid) is False
+        assert requests.get(
+            settings_url,
+            headers=internal_headers,
+        ).status_code == HTTPStatus.UNAUTHORIZED
+        assert requests.get(
+            settings_url,
+            headers=replacement_headers,
+        ).status_code == HTTPStatus.OK
+
+        store.revoke(username)
+        replacement_claims = read_mcp_token(SESSION_KEY, replacement_token)
+        assert replacement_claims is not None
+        assert store.is_mcp_active(
+            username=username,
+            sid=replacement_claims.sid,
+        ) is False
+        assert requests.get(
+            settings_url,
+            headers=replacement_headers,
+        ).status_code == HTTPStatus.UNAUTHORIZED
     finally:
         _disable_session(rotkehlchen_api_server)
 
