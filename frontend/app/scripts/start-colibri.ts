@@ -46,8 +46,9 @@ function startColibri(options: ColibriOptions): void {
   process.on('SIGINT', () => cleanup('SIGINT'));
   process.on('SIGHUP', () => cleanup('SIGHUP'));
 
-  const workDir = path.join(import.meta.dirname, '..', '..', '..', 'colibri');
-  const binaryPath = path.join(workDir, 'target', 'release', 'colibri');
+  const rootDir = path.join(import.meta.dirname, '..', '..', '..');
+  const workDir = path.join(rootDir, 'colibri');
+  const binaryPath = path.join(rootDir, 'target', 'release', 'colibri');
   const useBinary = process.env.CI && fs.existsSync(binaryPath);
 
   const command = useBinary ? binaryPath : 'cargo run --locked --';

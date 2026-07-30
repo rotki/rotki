@@ -326,7 +326,7 @@ impl GlobalDB {
 #[macro_export]
 macro_rules! create_globaldb {
     () => {{
-        use crate::globaldb::GlobalDB;
+        use $crate::globaldb::GlobalDB;
         use rand::{rngs::StdRng, SeedableRng};
         use std::{env, path::PathBuf, time::SystemTime};
         use tokio::fs;

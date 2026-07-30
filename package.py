@@ -727,7 +727,6 @@ class BackendBuilder:
     @log_group('cargo build')
     def __create_rust_binary(self) -> None:
         colibri_directory = self.__storage.colibri_directory
-        target_arg = ''
 
         build_env: dict[str, str] = os.environ.copy()
         if self.__win is not None:
@@ -738,7 +737,7 @@ class BackendBuilder:
 
         build_ret_code = subprocess.call(
             f'cargo build --target-dir {colibri_directory} '
-            f'--manifest-path ./colibri/Cargo.toml --release {target_arg}',
+            '--manifest-path ./Cargo.toml --release -p colibri',
             shell=True,
             env=build_env,
         )
@@ -779,7 +778,7 @@ class BackendBuilder:
 
         build_ret_code = subprocess.call(
             f'cargo build --target-dir {starling_directory} '
-            f'--manifest-path ./crates/Cargo.toml --release -p starling',
+            '--manifest-path ./Cargo.toml --release -p starling',
             shell=True,
             env=build_env,
         )

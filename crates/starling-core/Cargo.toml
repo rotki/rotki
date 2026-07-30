@@ -8,17 +8,27 @@ rust-version.workspace = true
 repository.workspace = true
 
 [dependencies]
-tokio.workspace = true
+tokio = { workspace = true, features = [
+    "rt-multi-thread",
+    "macros",
+    "process",
+    "time",
+    "signal",
+    "net",
+    "sync",
+    "io-util",
+    "io-std",
+] }
 async-trait.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 serde.workspace = true
-dirs = "=6.0.0"
+dirs.workspace = true
 
 [dev-dependencies]
 # Test-only: exercise the control-protocol wire shapes. The library itself
 # serializes via serde derive only; the JSON format lives in the binary.
-serde_json = "=1.0.150"
+serde_json.workspace = true
 # `test-util` for `#[tokio::test(start_paused = true)]`: lets the shutdown-budget
 # tests assert against a virtual clock instead of a flaky wall-clock margin.
 tokio = { workspace = true, features = ["test-util"] }

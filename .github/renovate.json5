@@ -25,9 +25,9 @@
       "groupName": "core (non-major)"
     },
     {
-      "matchFileNames": ["colibri/**"],
+      "matchFileNames": ["Cargo.toml", "Cargo.lock", "colibri/**", "crates/**"],
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "colibri (non-major)"
+      "groupName": "Rust workspace (non-major)"
     },
     {
       "allowedVersions": "/^(24)\\./",

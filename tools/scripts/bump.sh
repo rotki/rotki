@@ -72,15 +72,12 @@ cd "$ROOT_DIR" || exit 1
 
 bump2version --allow-dirty --config-file .bumpversion.cfg "$1"
 
-# The crates/ workspace carries the version once, in [workspace.package], and all
-# three members (starling, starling-core, starling-proxy) inherit it. Its lockfile
-# therefore has three entries to rewrite, which bump2version cannot express: its
-# config allows a single search/replace section per file. Let cargo rewrite the
-# lock instead and fold it into the commit bump2version just made, so the bump
-# stays one commit and the lock is never left behind at the old version.
-#
-# colibri is a single-package workspace, so its Cargo.lock is still rewritten by
-# bumpversion directly and needs nothing here.
-cargo update --offline --workspace --manifest-path crates/Cargo.toml
-git add crates/Cargo.lock
+# The Rust workspace carries the version once, in [workspace.package], and all
+# four members inherit it. Its lockfile therefore has four entries to rewrite,
+# which bump2version cannot express: its config allows a single search/replace
+# section per file. Let cargo rewrite the lock instead and fold it into the
+# commit bump2version just made, so the bump stays one commit and the lock is
+# never left behind at the old version.
+cargo update --offline --workspace --manifest-path Cargo.toml
+git add Cargo.lock
 git commit --amend --no-edit

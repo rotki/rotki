@@ -8,6 +8,7 @@
 .run
 build
 chromedriverlog.txt
+target
 colibri/target
 crates/target
 frontend/app/.env.development.local

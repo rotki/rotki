@@ -222,7 +222,7 @@ impl DBHandler {
 #[macro_export]
 macro_rules! create_test_userdb {
     () => {{
-        use crate::database::user_db::DBHandler;
+        use $crate::database::user_db::DBHandler;
         use rand::{rngs::StdRng, SeedableRng};
         use regex::Regex;
         use std::path::PathBuf;
