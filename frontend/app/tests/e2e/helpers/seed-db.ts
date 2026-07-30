@@ -116,3 +116,24 @@ export function seedHistoricPrices(
 
   seedGlobalDatabase(inserts);
 }
+
+/**
+ * Seeds tracked blockchain accounts into the user's encrypted DB.
+ *
+ * The account filter's options are the tracked addresses, so a filter test only needs the
+ * accounts to exist — not their balances. Writing the rows directly avoids adding accounts
+ * through the UI, which would pull in RPC mocking and a balance query for each one.
+ */
+export function seedBlockchainAccounts(
+  username: string,
+  accounts: string[],
+  blockchain: string = 'ETH',
+  password: string = '1234',
+): void {
+  seedUserDatabase(username, accounts.map(account => ({
+    table: 'blockchain_accounts',
+    columns: ['blockchain', 'account'],
+    values: [blockchain, account],
+    conflict: 'ignore' as const,
+  })), password);
+}

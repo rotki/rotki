@@ -16,6 +16,7 @@ import {
 } from '../fixtures/history-events';
 import { TIMEOUT_LONG, TIMEOUT_MEDIUM } from '../helpers/constants';
 import { selectAsset } from '../helpers/utils';
+import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
 export class HistoryEventsPage {
@@ -148,43 +149,27 @@ export class HistoryEventsPage {
     await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
   }
 
-  async applyTableFilter(key: string, value: string): Promise<void> {
-    const filter = this.page.locator('[data-cy=table-filter]');
-    // Click the activator to open the autocomplete and reveal the input
-    await filter.locator('[data-id=activator]').click();
-    const input = filter.locator('input');
-    await input.pressSequentially(`${key}=`, { delay: 50 });
+  /**
+   * Applies a single-value filter through the pill bar.
+   *
+   * `fieldKey` is the wire key the pill bar uses (`location`, `eventTypes`, …), and `value` is
+   * the raw wire value. Callers that only need "filter this table down" should use this; the
+   * pill bar's own behaviour is covered by `specs/history/pill-filter.spec.ts`.
+   */
+  async applyTableFilter(fieldKey: string, value: string): Promise<void> {
+    const bar = new PillFilterBar(this.page);
+    // A field that already has a pill is no longer offered by the add menu, so re-filtering the
+    // same field means editing its pill instead. Callers apply a location filter per test.
+    if (await bar.pill(fieldKey).count() > 0)
+      await bar.pill(fieldKey).click();
+    else
+      await bar.addField(fieldKey);
 
-    // Wait for suggestions dropdown to show filter values
-    const suggestions = this.page.locator('[data-cy=suggestions]');
-    await suggestions.waitFor({ state: 'visible' });
-
-    // Type the value character by character to trigger reactive suggestion updates
-    await input.pressSequentially(value, { delay: 50 });
-    const option = suggestions.getByText(value, { exact: false }).first();
-    await option.waitFor({ state: 'visible' });
-    await option.click();
-  }
-
-  async clickFilterChipToEdit(key: string, value: string): Promise<void> {
-    const filter = this.page.locator('[data-cy=table-filter]');
-    const chip = filter.locator('[role=button]', { hasText: `${key}=${value}` }).first();
-    await chip.waitFor({ state: 'visible' });
-    await chip.click();
-  }
-
-  async expectFilterSuggestionsVisible(): Promise<void> {
-    const suggestions = this.page.locator('[data-cy=suggestions]');
-    await suggestions.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
-    const buttons = suggestions.locator('> button');
-    expect(await buttons.count()).toBeGreaterThan(0);
-  }
-
-  async dismissFilterDropdown(): Promise<void> {
-    // Click a neutral page region to trigger onClickOutside on the chip's
-    // edit input and close the autocomplete menu.
-    await this.page.locator('body').click({ position: { x: 5, y: 5 } });
-    await this.page.locator('[data-cy=suggestions]').waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+    // Ticking is a toggle, so a value the pill already carries would be turned back off, and an
+    // emptied pill is dropped when the editor closes. Applying a filter has to be idempotent.
+    await bar.selectValueOnce(value);
+    await bar.closeEditor();
+    await bar.expectPillVisible(fieldKey);
   }
 
   async getEventRows(): Promise<number> {

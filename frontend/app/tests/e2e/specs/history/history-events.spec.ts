@@ -18,6 +18,7 @@ import { cleanupContext, createLoggedInContext, type SharedTestContext, test } f
 import { waitForNoRunningTasks } from '../../helpers/api';
 import { seedEvmTransaction, seedHistoricPrices } from '../../helpers/seed-db';
 import { HistoryEventsPage } from '../../pages/history-events-page';
+import { PillFilterBar } from '../../pages/pill-filter-bar';
 import { RotkiApp } from '../../pages/rotki-app';
 
 test.describe.serial('history events', () => {
@@ -549,8 +550,8 @@ test.describe.serial('history event filter persistence', () => {
     await waitForNoRunningTasks(ctx.sharedPage);
 
     // Apply event_type and event_subtype filters
-    await page.applyTableFilter('event_type', 'receive');
-    await page.applyTableFilter('event_subtype', 'none');
+    await page.applyTableFilter('eventTypes', 'receive');
+    await page.applyTableFilter('eventSubtypes', 'none');
 
     // Verify filters are in the URL
     await expect(async () => {
@@ -577,27 +578,21 @@ test.describe.serial('history event filter persistence', () => {
     }).toPass({ timeout: 10000 });
   });
 
-  // Regression test for a bug where editing an applied filter chip did not
-  // re-open the suggestions dropdown. The RuiAutoComplete menu closed on
-  // apply, which unmounted FilterDropdown, and clicking a chip had no way
-  // to reopen it. Follow-up: https://github.com/rotki/ui-library/issues/517
-  test('clicking a filter chip reopens the suggestions dropdown', async () => {
+  // Carried over from the TableFilter era, where editing an applied filter chip failed to
+  // re-open its suggestions once the menu had fully closed. The pill bar's equivalent is
+  // clicking a pill to re-open its value editor, and it must survive the editor closing in
+  // between — that close-then-reopen is what the original bug broke.
+  test('clicking a pill reopens its value editor', async () => {
     await page.visit();
     await waitForNoRunningTasks(ctx.sharedPage);
 
-    await page.applyTableFilter('event_type', 'receive');
+    const bar = new PillFilterBar(ctx.sharedPage);
+    await page.applyTableFilter('eventTypes', 'receive');
 
-    // First edit — reproduces the initial chip-edit case.
-    await page.clickFilterChipToEdit('event_type', 'receive');
-    await page.expectFilterSuggestionsVisible();
-
-    // Dismiss the dropdown by clicking elsewhere so the RuiAutoComplete
-    // menu fully closes (and FilterDropdown unmounts) before we re-edit.
-    // This is the condition under which the original bug manifested.
-    await page.dismissFilterDropdown();
-
-    // Second edit on the same chip — must still reopen suggestions.
-    await page.clickFilterChipToEdit('event_type', 'receive');
-    await page.expectFilterSuggestionsVisible();
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await bar.pill('eventTypes').click();
+      await expect(ctx.sharedPage.locator('[data-testid=value-select-search]')).toBeVisible();
+      await bar.closeEditor();
+    }
   });
 });
