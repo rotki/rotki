@@ -1,5 +1,14 @@
 use thiserror::Error;
 
+/// Render an [`SupervisorError::EarlyExit`] detail as a `": <detail>"` suffix, or
+/// nothing when the dead service left no captured stderr.
+fn early_exit_suffix(detail: &Option<String>) -> String {
+    match detail {
+        Some(detail) => format!(": {detail}"),
+        None => String::new(),
+    }
+}
+
 /// Errors surfaced by the supervisor lifecycle core.
 #[derive(Error, Debug)]
 pub enum SupervisorError {
@@ -11,9 +20,14 @@ pub enum SupervisorError {
     ReadinessTimeout { service: String, attempts: u32 },
 
     /// A service process exited before it became ready (the ping-gate equivalent
-    /// of `entrypoint.py`'s early-exit guard).
-    #[error("service '{service}' exited before becoming ready")]
-    EarlyExit { service: String },
+    /// of `entrypoint.py`'s early-exit guard). `detail` carries the tail of the
+    /// dead service's own stderr when captured, so the reason it died (e.g. a
+    /// global-db schema error) travels with the error instead of only its logs.
+    #[error("service '{service}' exited before becoming ready{}", early_exit_suffix(.detail))]
+    EarlyExit {
+        service: String,
+        detail: Option<String>,
+    },
 
     /// A service declared a dependency that is not part of the service set.
     #[error("service '{service}' depends on unknown service '{dependency}'")]
