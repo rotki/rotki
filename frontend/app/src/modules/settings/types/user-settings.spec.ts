@@ -85,6 +85,7 @@ describe('user-types', () => {
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       silentNotifications: false,
       subscriptDecimals: false,
+      recentFilterValues: {},
       savedFilters: {},
       balanceValueThreshold: {},
       useHistoricalAssetBalances: false,

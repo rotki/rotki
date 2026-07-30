@@ -173,6 +173,16 @@ const PasswordConfirmationInterval = z
   .min(Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS)
   .max(Constraints.PASSWORD_CONFIRMATION_MAX_SECONDS)
   .int();
+/**
+ * One remembered free-text filter value. Array order carries recency (newest first) and `count`
+ * carries how often it was used, so the ranking can move from one to the other, or to a blend,
+ * without migrating what is already stored.
+ */
+const RecentFilterValue = z.object({
+  count: z.number().default(1),
+  value: z.string(),
+});
+
 const LastPasswordConfirmed = z.number().int().nonnegative();
 const EnablePasswordConfirmation = z.boolean();
 
@@ -268,6 +278,10 @@ export const FrontendSettings = z.object({
       Math.min(Number.parseInt(String(refreshPeriod)) || -1, Constraints.MAX_MINUTES_DELAY),
     RefreshPeriod.default(-1),
   ),
+  recentFilterValues: z
+    .record(z.string(), z.array(RecentFilterValue))
+    .default({})
+    .catch({}),
   renderAllNftImages: z.boolean().default(true),
   savedFilters: z
     .partialRecord(SavedFilterLocationEnum, z.array(z.array(BaseSuggestion)))
