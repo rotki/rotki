@@ -11,6 +11,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_htx
 from rotkehlchen.constants.assets import A_CRV, A_DAI, A_USDT, A_ZRX
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.htx import PAGINATION_LIMIT, Htx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -160,6 +161,26 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
         ),
     ]
     assert movements == expected_movements
+
+
+def test_htx_movement_query_should_report_remote_errors(htx_exchange: Htx) -> None:
+    with (
+        patch.object(
+            htx_exchange,
+            '_paginated_query',
+            side_effect=RemoteError('API unavailable'),
+        ),
+        pytest.raises(RemoteError, match='API unavailable'),
+    ):
+        htx_exchange._query_deposits_withdrawals(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1),
+            query_for='deposit',
+        )
+
+    assert htx_exchange.msg_aggregator.consume_errors() == [
+        'Failed to query htx deposits. Check the logs for details.',
+    ]
 
 
 @pytest.mark.freeze_time('2024-03-12 00:00:00 GMT')

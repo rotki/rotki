@@ -280,6 +280,9 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
             )
         except RemoteError as e:
             log.error(f'Failed to query HTX api for deposits and withdrawals due to {e!s}')
+            self.msg_aggregator.add_error(
+                f'Failed to query {self.name} {query_for}s. Check the logs for details.',
+            )
             raise
 
         movements = []
