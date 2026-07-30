@@ -171,7 +171,12 @@ pub fn resolve_port(cli: Option<u16>, layered: bool) -> Result<u16, String> {
     } else {
         (DEFAULT_HTTP_PORT, Source::Default)
     };
-    info!(value = port, source = %source, "resolved http port");
+    // Only docker publishes this port; embedded resolves it and throws it away,
+    // so logging it there just invites the reader to mistake it for the port the
+    // supervisor is actually listening on.
+    if layered {
+        info!(value = port, source = %source, "resolved http port");
+    }
     Ok(port)
 }
 
