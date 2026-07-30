@@ -12,6 +12,33 @@ export interface FilterObjectWithBehaviour<T> {
   values: T;
 }
 
+/**
+ * The pill editor a field maps to. Derivable from the matcher discriminant for
+ * `asset`/`boolean`/`string` (→ `enum`); `range` and `date` are opt-in via `valueType`.
+ */
+export const FilterValueTypes = {
+  ASSET: 'asset',
+  BOOLEAN: 'boolean',
+  DATE: 'date',
+  ENUM: 'enum',
+  RANGE: 'range',
+} as const;
+
+export type FilterValueType = typeof FilterValueTypes[keyof typeof FilterValueTypes];
+
+/** Comparison operators a pill can express. The first allowed op is the default (hidden on the pill). */
+export const FilterOps = {
+  AFTER: 'after',
+  BEFORE: 'before',
+  BETWEEN: 'between',
+  GT: 'gt',
+  IS: 'is',
+  IS_NOT: 'is_not',
+  LT: 'lt',
+} as const;
+
+export type FilterOp = typeof FilterOps[keyof typeof FilterOps];
+
 type StringSuggestion = () => string[];
 
 type AssetSuggestion = (value: string) => Promise<AssetsWithId>;
@@ -26,6 +53,17 @@ interface BaseMatcher<K, KV = void> {
    * Suggestions to show in the table filter. Default is 5. Set to -1 to show all.
    */
   readonly suggestionsToShow?: number;
+  /**
+   * Pill editor this field maps to. Optional: when omitted the pill layer derives it
+   * from the discriminant (`asset`/`boolean` → same, `string` → `enum`). Set explicitly
+   * only for the opt-in types (`range`, `date`).
+   */
+  readonly valueType?: FilterValueType;
+  /**
+   * Allowed comparison operators, most-default first. Optional: the pill layer falls back
+   * to the per-`valueType` defaults when omitted.
+   */
+  readonly operators?: readonly FilterOp[];
 }
 
 export interface StringSuggestionMatcher<K, KV = void> extends BaseMatcher<K, KV> {
