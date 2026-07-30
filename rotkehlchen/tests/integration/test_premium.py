@@ -1033,7 +1033,7 @@ def test_check_docker_container_detects_unraid_mountinfo() -> None:
         )
 
 
-def test_extended_get_machine_id_uses_container_identifier():
+def test_extended_get_machine_id_uses_container_identifier() -> None:
     """Ensure extended_get_machine_id falls back to container identifier when needed."""
     username = 'test-user'
     container_identifier = 'abc123def456'
@@ -1048,6 +1048,25 @@ def test_extended_get_machine_id_uses_container_identifier():
             digestmod=hashlib.sha256,
         ).hexdigest()
         assert extended_get_machine_id(username) == expected
+
+
+def test_extended_get_machine_id_handles_distroless_docker() -> None:
+    """Ensure a missing shell does not prevent identifying the Docker container."""
+    with (
+        patch(
+            'rotkehlchen.premium.premium.machineid.hashed_id',
+            side_effect=FileNotFoundError(2, 'No such file or directory', '/bin/sh'),
+        ),
+        patch(
+            'rotkehlchen.premium.premium.check_docker_container',
+            return_value=((container_identifier := 'abc123def456'), DOCKER_PLATFORM_KEY),
+        ),
+    ):
+        assert extended_get_machine_id(username := 'test-user') == hmac.new(
+            key=username.encode(),
+            msg=container_identifier.encode(),
+            digestmod=hashlib.sha256,
+        ).hexdigest()
 
 
 def test_get_or_create_fallback_container_id_persists(tmp_path: Path) -> None:
