@@ -13,7 +13,14 @@ export function useResolveAssetIdentifier(): (identifier: string) => string {
   };
 }
 
-function getAssetNameFallback(id: string): string {
+/**
+ * The stand-in name an unresolved EVM asset is given: `EVM Token: 0x…`.
+ *
+ * Exported because it is what "this asset has no metadata" looks like downstream. The value is
+ * non-empty and not the identifier, so a plain truthiness check on `symbol` or `name` calls such
+ * an asset named, and every display that wants to know the difference has to ask here.
+ */
+export function getAssetNameFallback(id: string): string {
   if (isEvmIdentifier(id)) {
     const address = getAddressFromEvmIdentifier(id);
     return `EVM Token: ${address}`;

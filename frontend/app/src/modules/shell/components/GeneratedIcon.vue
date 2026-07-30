@@ -8,12 +8,19 @@ interface Dimension {
 
 const {
   asset = '',
+  blockie,
   customAsset,
   size,
 } = defineProps<{
   size: string;
   asset?: string;
   customAsset?: boolean;
+  /**
+   * Blockie data URI to render instead of the text mark. Used when there is no symbol or name to
+   * take initials from, where the text would otherwise be the first characters of a raw
+   * identifier — the same `eip` for every unknown EVM asset.
+   */
+  blockie?: string;
 }>();
 
 const dimensions = computed<Dimension>(() => {
@@ -67,6 +74,13 @@ const customIconSize = computed(() => {
       v-if="customAsset"
       :size="customIconSize"
       name="lu-pencil"
+    />
+    <img
+      v-else-if="blockie"
+      :src="blockie"
+      :style="wrapperStyle"
+      alt=""
+      class="rounded-full"
     />
     <template v-else>
       {{ text }}

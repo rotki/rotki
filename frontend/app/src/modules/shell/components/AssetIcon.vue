@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
+import { useBlockie } from '@/modules/accounts/use-blockie';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useAssetIconCheck } from '@/modules/assets/use-asset-icon-check';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { isBlockchain } from '@/modules/core/common/chains';
+import { hasAssetMetadata } from '@/modules/core/common/display/assets';
 import { useCopy } from '@/modules/core/common/use-clipboard';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSetting } from '@/modules/settings/use-setting';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
@@ -54,6 +57,8 @@ const pending = ref<boolean>(true);
 const abortController = ref<AbortController>();
 
 const { getAssetIconUrl } = useAssetsStore();
+const { getBlockie } = useBlockie();
+const { getChainName } = useSupportedChains();
 const { checkIfAssetExists } = useAssetIconCheck();
 const { currencies } = useCurrencies();
 const { useAssetInfo } = useAssetInfoRetrieval();
@@ -111,6 +116,36 @@ const displayAsset = computed<string>(() => {
 
   return get(symbol) ?? get(name) ?? get(mappedIdentifier) ?? '';
 });
+
+/**
+ * Whether the asset has anything to call itself by.
+ *
+ * The catch is that an asset with no metadata is still handed a name and a symbol: `EVM Token:
+ * 0x…`. Both are non-empty, so a plain `name ?? symbol` check says "named" for exactly the assets
+ * that have none, and every consumer of it would have to know that. It is asked once here instead.
+ */
+const hasAssetText = computed<boolean>(() => {
+  if (get(currency))
+    return true;
+  return hasAssetMetadata(identifier, get(symbol)) || hasAssetMetadata(identifier, get(name));
+});
+
+/**
+ * Blockie for an asset with nothing to call itself by. Its `displayAsset` falls back to the raw
+ * identifier, so the generated text mark reads `eip` for every unknown EVM asset alike. A blockie
+ * of the contract address at least tells two unknowns apart. Contract addresses are not user
+ * identities, so unlike an account blockie this one needs no scrambling.
+ */
+const blockie = computed<string | undefined>(() => {
+  if (get(hasAssetText) || !isEvmIdentifier(identifier))
+    return undefined;
+  const address = getAddressFromEvmIdentifier(identifier);
+  return address ? getBlockie(address) : undefined;
+});
+
+// Without it the tooltip's `[{symbol}] {name}` renders as a bare `[]`; the address block below
+// still carries the useful part.
+const hasTooltipText = hasAssetText;
 
 const tooltip = computed(() => {
   const assetName = get(name) ?? '';
@@ -228,8 +263,19 @@ const { copied, copy } = useCopy(() => identifier);
             'blur': !shouldShowAmount,
           }"
         >
+          <!-- An asset with no symbol and no name has no icon worth waiting on either: its
+               blockie IS the identity, so it renders instead of the image rather than only when
+               the image fails. Otherwise a placeholder served by the icon endpoint would keep the
+               fallback from ever running. -->
           <GeneratedIcon
-            v-if="!currency && pending"
+            v-if="blockie"
+            :blockie="blockie"
+            :size="size"
+            :flat="flat"
+          />
+
+          <GeneratedIcon
+            v-else-if="!currency && pending"
             class="absolute"
             :custom-asset="isCustomAsset"
             :asset="displayAsset"
@@ -238,7 +284,7 @@ const { copied, copy } = useCopy(() => identifier);
           />
 
           <GeneratedIcon
-            v-if="currency || error"
+            v-else-if="currency || error"
             :custom-asset="isCustomAsset"
             :asset="displayAsset"
             :size="size"
@@ -265,8 +311,35 @@ const { copied, copy } = useCopy(() => identifier);
       </div>
     </template>
 
-    <div>
+    <div v-if="hasTooltipText">
       {{ t('asset_icon.tooltip', tooltip) }}
+    </div>
+
+    <!-- Chain and protocol otherwise live only in the corner badges, a few pixels across. For an
+         asset with no symbol and no name they are the only context the tooltip can offer beyond
+         the address. -->
+    <div
+      v-if="chain || protocol"
+      class="flex items-center gap-3"
+    >
+      <span
+        v-if="chain"
+        class="flex items-center gap-1.5"
+      >
+        <EvmChainIcon
+          :chain="chain"
+          size="14px"
+        />
+        {{ getChainName(chain) }}
+      </span>
+      <!-- It hardcodes `text-rui-text`, the light-background colour, which is unreadable on the
+           tooltip's dark surface. Same specificity, so the override needs `!`. -->
+      <CounterpartyDisplay
+        v-if="protocol"
+        :counterparty="protocol"
+        size="14px"
+        class="!text-inherit"
+      />
     </div>
     <template v-if="isEvmIdentifier(identifier)">
       <div class="overflow-hidden h-5">
