@@ -11,6 +11,7 @@ from rotkehlchen.accounting.constants import (
     EXCHANGE,
 )
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.history.events.structures.base import get_event_direction
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import Location
@@ -37,6 +38,16 @@ TAXONOMY_RULES: Final = (
         'Subtypes containing "wrapped" (receive wrapped / return wrapped) are protocol '
         'wrapping: the user exchanges a token for its wrapped representation. They are '
         'transfers, not income or expense, even though value moves.'
+    ),
+    (
+        'event_group is the semantic grouping of each row and is the column to filter income '
+        'questions on: "income" is earnings, while "staking" is principal moving in or out of '
+        'a stake and "transfer"/"bridge" are value changing form rather than being earned or '
+        'spent. It is resolved from rotki own category mapping, so "staking" event_type rows '
+        'split correctly -- a reward is group "income", an unstake is group "staking" -- and '
+        'you never have to hand-maintain a list of subtypes. Combine it with direction rather '
+        'than replacing it: event_group says what a row means, direction says which way value '
+        'moved, and informational rows keep their group while being neutral.'
     ),
     (
         'Sum a single currency. Use the value column (main currency, present only when the '
@@ -68,23 +79,25 @@ RECIPES: Final[tuple[dict[str, Any], ...]] = (
         'requires': ['history_events (refreshed with include_values=true)'],
         'sql': (
             'select year, sum(value) as income, count(*) as events '
-            "from history_events where event_type = 'staking' and direction = 'in' "
-            "and event_subtype in ('reward', 'mev reward', 'block production') "
+            "from history_events where event_group = 'income' and direction = 'in' "
             'group by year order by year'
         ),
         'excludes': (
-            'Filtering on direction = "in" drops the informational rows, which are the '
-            'relayer/beacon-chain report of a reward that also arrives as a real event. '
-            'Without that filter every MEV and block-production reward is counted twice. '
-            'The event_subtype filter then drops unstaking: "remove asset" and '
-            '"redeem wrapped" are direction "in" but return principal, not income, so '
-            'including them overstates this total by whatever was unstaked -- which on an '
-            'account with validator exits or large LST redemptions is far larger than the '
-            'income itself. It is deliberately conservative and therefore understates ETH '
-            'staking: rotki records beacon-chain withdrawals as "remove asset" whether they '
-            'are a partial reward withdrawal (is_exit = 0) or a full exit (is_exit = 1), so '
-            'the reward-like partials are excluded here too. To include them, add '
-            "entry_type = 'eth withdrawal event' and is_exit = 0 as a separate union branch."
+            'event_group = "income" is what separates earnings from principal: an unstake '
+            '("remove asset") and an LST redemption ("redeem wrapped") are direction "in" '
+            'but group "staking", because they return principal rather than earn it. On an '
+            'account with validator exits or large LST redemptions the principal dwarfs the '
+            'income, so grouping on event_type = "staking" instead overstates this wildly. '
+            'Partial beacon-chain withdrawals (is_exit = 0) are counted: the consensus layer '
+            'only skims the balance above the effective balance, so they are pure reward, '
+            'while full exits (is_exit = 1) stay group "staking" as returned principal. '
+            'Keeping direction = "in" still drops the informational rows that mirror MEV and '
+            'block-production rewards, which would otherwise double count them. Two known '
+            'imprecisions: a *requested* partial withdrawal on an accumulating (0x02) '
+            'validator does return principal but is counted as income here, and an LST '
+            'redemption earns through the token appreciating rather than through any row, so '
+            'that income is not in history events at all -- it shows up as a capital gain '
+            'against cost basis in a tax report instead.'
         ),
     },
     {
@@ -112,11 +125,23 @@ RECIPES: Final[tuple[dict[str, Any], ...]] = (
         'sql': (
             'select counterparty, sum(value) as total_out, count(*) as events '
             "from history_events where direction = 'out' and value is not null "
+            'and counterparty is not null '
+            "and event_group not in ('transfer', 'bridge', 'defi deposit withdraw') "
+            "and event_subtype != 'return wrapped' "
             'group by counterparty order by total_out desc limit 10'
         ),
         'excludes': (
-            'Rows with no cached price are skipped rather than counted as zero, so this '
-            'ranks only what could be valued. Events with no counterparty group under null.'
+            'Value that only changes form is excluded, or it dominates the ranking: wrapping '
+            'ETH into WETH is an "out" leg whose value returns immediately as the wrapped '
+            'token (its out leg groups as "defi deposit withdraw" going in and carries '
+            'subtype "return wrapped" coming back), bridging is an "out" on one chain and an '
+            '"in" on another, and a plain transfer between your own accounts never left. '
+            'Depositing into a protocol is excluded on the same grounds -- you still own the '
+            'position. What remains is value that genuinely went somewhere: spends, fees, '
+            'repayments, donations and losses. Rows with no counterparty are dropped rather '
+            'than ranked, since "no counterparty" is not an answer to this question; drop '
+            'that clause to see how much they account for. Rows with no cached price are '
+            'skipped rather than counted as zero, so this ranks only what could be valued.'
         ),
     },
     {
@@ -165,32 +190,75 @@ def _describe(
     }
 
 
+def _parse_event_key(
+        event_type: Any,
+        event_subtype: Any,
+        location: Any,
+) -> tuple[HistoryEventType, HistoryEventSubType, Location | None] | None:
+    """Parse the serialized type/subtype/location as they appear in the analytics frame.
+
+    Returns None for anything that does not parse, so a single unrecognized event cannot
+    fail a whole load.
+    """
+    try:
+        return (
+            HistoryEventType.deserialize(event_type),
+            HistoryEventSubType.deserialize(event_subtype)
+            if isinstance(event_subtype, str) else HistoryEventSubType.NONE,
+            Location.deserialize(location) if isinstance(location, str) else None,
+        )
+    except DeserializationError:
+        return None
+
+
 def resolve_direction(
         event_type: Any,
         event_subtype: Any,
         location: Any = None,
 ) -> str | None:
-    """Resolve one serialized event to rotki's own ``in``/``out``/``neutral`` direction.
-
-    Takes the serialized strings as they appear in the analytics frame and returns None for
-    anything that does not parse, so a single unrecognized event cannot fail a whole load.
-    """
-    try:
-        parsed_type = HistoryEventType.deserialize(event_type)
-        parsed_subtype = (
-            HistoryEventSubType.deserialize(event_subtype)
-            if isinstance(event_subtype, str) else HistoryEventSubType.NONE
-        )
-        parsed_location = Location.deserialize(location) if isinstance(location, str) else None
-    except DeserializationError:
+    """Resolve one serialized event to rotki's own ``in``/``out``/``neutral`` direction."""
+    if (parsed := _parse_event_key(event_type, event_subtype, location)) is None:
         return None
 
     direction = get_event_direction(
-        event_type=parsed_type,
-        event_subtype=parsed_subtype,
-        location=parsed_location,
+        event_type=parsed[0],
+        event_subtype=parsed[1],
+        location=parsed[2],
     )
     return direction.serialize() if direction is not None else None
+
+
+def resolve_group(
+        event_type: Any,
+        event_subtype: Any,
+        location: Any = None,
+) -> str | None:
+    """Resolve one serialized event to its taxonomy group (``income``, ``staking``, ...).
+
+    The group is what separates ``staking``/``reward`` (group ``income``) from
+    ``staking``/``remove asset`` (group ``staking``, i.e. returned principal) -- the
+    distinction an agent has to reconstruct by hand from subtype lists otherwise, and gets
+    wrong. Exchange rows resolve through the ``EXCHANGE`` reading of the mapping, the same
+    override ``get_event_direction`` applies, so a CEX deposit does not read as a DeFi one.
+    """
+    if (parsed := _parse_event_key(event_type, event_subtype, location)) is None:
+        return None
+
+    try:
+        category_mapping = EVENT_CATEGORY_MAPPINGS[parsed[0]][parsed[1]]
+    except KeyError:
+        return None
+
+    if (
+        (parsed_location := parsed[2]) is not None and
+        EXCHANGE in category_mapping and
+        parsed_location in ALL_SUPPORTED_EXCHANGES
+    ):
+        category = category_mapping[EXCHANGE]
+    else:
+        category = category_mapping[DEFAULT]
+
+    return category.group.serialize()
 
 
 def get_event_taxonomy() -> dict[str, Any]:

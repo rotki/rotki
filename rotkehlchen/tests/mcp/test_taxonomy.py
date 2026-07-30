@@ -3,7 +3,7 @@ import sys
 
 from rotkehlchen.accounting.constants import DEFAULT, EVENT_CATEGORY_MAPPINGS
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.mcp.taxonomy import get_event_taxonomy
+from rotkehlchen.mcp.taxonomy import get_event_taxonomy, resolve_group
 
 
 def _entry(taxonomy: dict, event_type: str, event_subtype: str) -> dict:
@@ -23,6 +23,22 @@ def test_taxonomy_should_cover_every_mapped_combination() -> None:
         for event_type, subtypes in EVENT_CATEGORY_MAPPINGS.items()
         for event_subtype in subtypes
     }
+
+
+def test_resolve_group_should_agree_with_the_advertised_taxonomy() -> None:
+    """The event_group column is built from resolve_group while get_event_taxonomy reads the
+    category enum directly. If the two ever drift, an agent that looked the group up in the
+    taxonomy would write SQL that silently matches nothing.
+    """
+    assert all(
+        resolve_group(entry['event_type'], entry['event_subtype']) == entry['group']
+        for entry in get_event_taxonomy()['entries']
+    )
+    assert resolve_group('not_a_real_type', 'nonsense') is None
+    # exchange rows resolve through the EXCHANGE reading of the mapping, as direction does.
+    # No combination currently groups differently there, so this pins the parity rather than
+    # a difference -- an upstream split would then reach the column with no MCP change.
+    assert resolve_group('deposit', 'deposit asset', 'kraken') == 'cex'
 
 
 def test_every_combination_should_have_a_direction() -> None:

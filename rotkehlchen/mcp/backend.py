@@ -16,6 +16,8 @@ DEFAULT_BACKEND_HOST: Final = '127.0.0.1'
 DEFAULT_BACKEND_PORT: Final = 4242
 DEFAULT_BACKEND_URL: Final = f'http://{DEFAULT_BACKEND_HOST}:{DEFAULT_BACKEND_PORT}/api/1'
 DEFAULT_PRIVACY_MODE: Final[PrivacyMode] = 'balanced'
+# Floor for the balances endpoint only -- see balances_timeout().
+BALANCES_MIN_TIMEOUT_SECONDS: Final = 60
 
 
 @dataclass(frozen=True)
@@ -170,6 +172,19 @@ def query_settings() -> dict[str, Any]:
         raise BackendQueryError('rotki backend returned an unexpected settings response')
 
     return result
+
+
+def balances_timeout() -> int:
+    """The read timeout to give the balances endpoint.
+
+    It aggregates every connected exchange and chain, so it is in a different cost class
+    from an ordinary call: on a first, uncached load it routinely blew through the global
+    default and made the analytics ``balances`` table fail on a fresh agent's first attempt
+    (an immediate retry then succeeded). It gets its own floor rather than raising the
+    global default, which exists to keep the ordinary calls responsive. An explicitly
+    configured timeout above the floor still wins.
+    """
+    return max(get_backend_config().timeout, BALANCES_MIN_TIMEOUT_SECONDS)
 
 
 def query_all_balances(refresh: bool, timeout: int) -> dict[str, Any]:

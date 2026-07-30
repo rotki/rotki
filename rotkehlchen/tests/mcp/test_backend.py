@@ -7,7 +7,9 @@ from mcp.server.auth.provider import AccessToken
 
 from rotkehlchen.api.session_token import MCP_BACKEND_PROOF_HEADER, create_mcp_backend_proof
 from rotkehlchen.mcp.backend import (
+    BALANCES_MIN_TIMEOUT_SECONDS,
     BackendQueryError,
+    balances_timeout,
     configure_backend,
     get_backend_config,
     query_historical_prices,
@@ -186,3 +188,16 @@ def test_historical_prices_should_always_send_only_cache_period(monkeypatch) -> 
         'target_asset': 'EUR',
         'only_cache_period': 3600,
     }
+
+
+def test_balances_should_get_a_longer_timeout_than_ordinary_calls() -> None:
+    """The balances endpoint aggregates every exchange and chain, so on a first uncached
+    load it exceeded the global default and made the analytics table fail outright.
+    """
+    configure_backend(base_url='http://backend/api/1', timeout=5)
+    assert get_backend_config().timeout == 5  # ordinary calls stay responsive
+    assert balances_timeout() == BALANCES_MIN_TIMEOUT_SECONDS
+
+    # an explicitly configured timeout above the floor is the user's call and still wins
+    configure_backend(base_url='http://backend/api/1', timeout=BALANCES_MIN_TIMEOUT_SECONDS * 2)
+    assert balances_timeout() == BALANCES_MIN_TIMEOUT_SECONDS * 2

@@ -83,9 +83,12 @@ async def describe_table(table: str) -> dict[str, Any]:
       ``dtype`` it was built from. They differ: booleans arrive as 0/1 integers.
     - ``null_fraction``, and ``all_null`` for columns that are present but carry nothing —
       many ``extra_data_*`` columns exist only for one protocol and are empty otherwise.
-    - ``distinct_count`` and ``top_values`` for small enum-like columns (``event_type``,
-      ``location``, ``entry_type``, ``counterparty``), so you do not need a SELECT DISTINCT
-      round trip to learn the valid values.
+    - ``distinct_count`` and ``top_values`` for enum-like columns (``event_type``,
+      ``location``, ``entry_type``, ``event_group``, ``counterparty``), so you do not need a
+      SELECT DISTINCT round trip to learn the valid values. ``top_values`` holds only the
+      most common few, so on a wide column like ``counterparty`` check ``distinct_count`` to
+      see how much of the vocabulary you are being shown. A column whose values never repeat
+      reports ``distinct_count`` alone: it is per-row data, not an enum.
     - ``hashed`` with a ``hashed_reason`` of ``pii`` (an address or hash, hidden by policy)
       or ``unrecognized`` (a column the allowlist does not know, hashed rather than leaked).
 
@@ -118,6 +121,11 @@ async def query_sql(sql: str, max_rows: int = DEFAULT_MAX_RESULT_ROWS) -> dict[s
     - Aggregate on ``direction`` rather than ``event_type``. Every ``informational`` row is
       neutral: those are annotations whose value arrives as a separate real event, so
       including them double counts MEV and block-production rewards.
+    - For "what did I earn" questions filter on ``event_group = 'income'``, not on
+      ``event_type``. ``event_type = 'staking'`` spans both rewards (group ``income``) and
+      principal coming back out of a stake (group ``staking``), and both are direction
+      ``in`` — so summing the event type counts unstaked principal as earnings, which on an
+      account with validator exits is far larger than the income itself.
     - ``amount`` is a decimal string — do arithmetic on ``amount_float``. But it is in each
       row's own asset, so only sum it per-asset; for money questions use ``value``, which
       exists only after refreshing with ``include_values=true``.

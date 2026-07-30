@@ -16,13 +16,15 @@ import pandas as pd
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.mcp.backend import (
     BackendQueryError,
+    balances_timeout,
     get_backend_config,
     query_all_balances,
     query_historical_prices,
     query_history_events_page,
     query_settings,
 )
-from rotkehlchen.mcp.taxonomy import resolve_direction
+from rotkehlchen.mcp.taxonomy import resolve_direction, resolve_group
+from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -50,11 +52,29 @@ MAX_CONSECUTIVE_EMPTY_PAGES: Final = 5
 # to be a useful hint (an enum) rather than a data dump.
 MAX_DISTINCT_VALUES_SCANNED: Final = 50
 MAX_DISTINCT_VALUES_REPORTED: Final = 10
+# ``counterparty`` is the column whose vocabulary an agent most needs -- protocol names are
+# not guessable the way event types are -- yet any real account carries well over the general
+# scan cap (105 distinct on the account this was measured against), so it was the one
+# documented column that never got a listing. Scan far more of it; MAX_DISTINCT_VALUES_REPORTED
+# still bounds what is returned, so the payload does not grow.
+WIDE_SCAN_COLUMN_LIMITS: Final = {'counterparty': 500}
 # Prices are matched within an hour of the event, the same tolerance rotki's own CSV export
 # uses, so bucketing event timestamps to the hour costs no accuracy while roughly halving the
 # number of distinct lookups (measured: 64,936 exact-second pairs vs 31,878 hourly ones).
 PRICE_TOLERANCE_SECONDS: Final = HOUR_IN_SECONDS
+# The lookup radius has to be *twice* the bucket width, not equal to it. The backend matches
+# a price with `timestamp BETWEEN queried - distance AND queried + distance`, and what we
+# query is the bucket, not the event: an event sitting 59 minutes into its bucket asks from
+# an hour behind itself, so with an equal radius its window ran from 2 hours before the event
+# to 1 second after it -- a cached price minutes *later* than the event was missed even
+# though it was well inside the intended tolerance. Doubling restores a full +/- hour around
+# every event in the bucket while keeping the ~2x lookup saving bucketing buys.
+PRICE_LOOKUP_RADIUS_SECONDS: Final = 2 * PRICE_TOLERANCE_SECONDS
 DEFAULT_VALUE_CURRENCY: Final = 'USD'
+# Beacon-chain withdrawals: the entry type rotki files them under, and the taxonomy group a
+# partial one belongs to. See _add_partial_withdrawal_income.
+ETH_WITHDRAWAL_ENTRY_TYPE: Final = 'eth withdrawal event'
+INCOME_GROUP: Final = 'income'
 
 # --- privacy classification -------------------------------------------------------------
 # User-authored / decoder-written free text: never emitted verbatim outside ``raw`` mode
@@ -82,6 +102,13 @@ PII_COLUMN_NAMES: Final = frozenset({
 })
 # In ``strict`` mode, user-authored labels and names are treated as identifiers too.
 STRICT_IDENTIFIER_COLUMN_NAMES: Final = PII_COLUMN_NAMES | frozenset({'label', 'name', 'tag'})
+# ``location_label`` on an exchange row is the *account name*, which defaults to the venue
+# name but is user-editable ("Coinbase 1", "mom's savings"). In ``balanced`` only a value that
+# is exactly a rotki location name passes through readable; anything else is the user's own
+# text and gets hashed like every other identifier. This costs no venue information -- the
+# ``location`` column already carries it -- only the ability to tell two accounts on the same
+# venue apart *by name*, and their hashes still distinguish them for grouping.
+READABLE_LOCATION_LABELS: Final = frozenset(str(location) for location in Location)
 # The ONLY columns allowed through verbatim outside ``raw`` mode. This is the core of the
 # fail-closed design: anything whose base name is not here, and that is not handled by the
 # text/identifier paths above, is hashed (if a string) rather than leaked. Adding a new
@@ -249,13 +276,14 @@ def _sanitize_row(row: dict[str, Any], privacy_mode: PrivacyMode) -> dict[str, A
                 sanitized[column] = REDACTED_TEXT
         elif base in identifier_columns:
             sanitized[f'{column}_hash'] = _hash_identifier(value)
-            # In balanced mode a human-friendly account label (e.g. "Kraken main") that is
-            # not itself an address stays readable; anything address-shaped is hashed only.
+            # In balanced mode a location label that is exactly a venue name (e.g. "kraken")
+            # stays readable; a user-assigned account name ("Coinbase 1") is the user's own
+            # text and is hashed like any other identifier. See READABLE_LOCATION_LABELS.
             if (
                 privacy_mode == 'balanced' and
                 base == 'location_label' and
                 isinstance(value, str) and
-                SENSITIVE_IDENTIFIER_RE.search(value) is None
+                value.lower() in READABLE_LOCATION_LABELS
             ):
                 sanitized[column] = value
         elif base in SAFE_PASSTHROUGH_COLUMN_NAMES:
@@ -272,26 +300,59 @@ def _sanitize_row(row: dict[str, Any], privacy_mode: PrivacyMode) -> dict[str, A
     return sanitized
 
 
-def _add_directions(frame: pd.DataFrame) -> None:
-    """Add rotki's own ``in``/``out``/``neutral`` direction for each event, in place.
+def _add_partial_withdrawal_income(frame: pd.DataFrame) -> None:
+    """Reclassify partial beacon-chain withdrawals as ``income``, in place.
 
-    The serialized event carries no direction, so without this an agent has to infer income
-    from ``event_type`` -- the guess that double counts MEV rewards. Deriving it here from
-    the same function the rest of rotki uses makes the correct aggregation a plain
-    ``group by direction``. Resolution is cached per type/subtype/location because a large
-    history has ~100 distinct combinations across six figures of rows.
+    rotki records every beacon-chain withdrawal as ``staking``/``remove asset``, which the
+    taxonomy groups as ``staking`` -- returned principal. That is right for a full validator
+    exit and wrong for a partial withdrawal: the consensus layer only ever skims the balance
+    *above* the validator's effective balance, so a partial withdrawal is reward in its
+    entirety. rotki's own PnL engine agrees --
+    ``DBEth2.process_non_accumulating_validators_balances_and_pnl`` counts every partial
+    withdrawal as profit and subtracts principal only on an exit. Without this an account
+    with validator exits has its whole ETH staking income written off as principal.
+
+    Known imprecision: on an accumulating (0x02) validator a *requested* partial withdrawal
+    does return principal, unlike an automatic skim. Telling the two apart needs the running
+    per-validator deposit ledger (``process_accumulating_validators_balances_and_pnl``), not
+    anything on the row, so those are counted as income here. The recipe says so.
+    """
+    if not {'entry_type', 'is_exit', 'event_group'} <= set(frame.columns):
+        return
+
+    # NaN on every non-withdrawal row, and ``eq`` resolves those to False rather than raising.
+    frame.loc[
+        frame['entry_type'].eq(ETH_WITHDRAWAL_ENTRY_TYPE) & frame['is_exit'].eq(False),
+        'event_group',
+    ] = INCOME_GROUP
+
+
+def _add_taxonomy_columns(frame: pd.DataFrame) -> None:
+    """Add rotki's own ``direction`` and ``event_group`` for each event, in place.
+
+    The serialized event carries neither, so without them an agent has to infer income from
+    ``event_type`` -- the guess that double counts MEV rewards -- and hand-maintain subtype
+    lists to separate reward from returned principal. Deriving both here from the same
+    mappings the rest of rotki uses makes the correct aggregation a plain ``group by``.
+    Resolution is cached per type/subtype/location because a large history has ~100 distinct
+    combinations across six figures of rows.
+
+    The column is ``event_group`` rather than ``group`` because ``group`` is a SQL keyword
+    and every query touching it would need quoting.
     """
     if not {'event_type', 'event_subtype', 'location'} <= set(frame.columns):
         return
 
-    cache: dict[tuple[Any, Any, Any], str | None] = {}
-    directions: list[str | None] = []
+    cache: dict[tuple[Any, Any, Any], tuple[str | None, str | None]] = {}
+    resolved: list[tuple[str | None, str | None]] = []
     for key in zip(frame['event_type'], frame['event_subtype'], frame['location'], strict=True):
         if key not in cache:
-            cache[key] = resolve_direction(*key)
-        directions.append(cache[key])
+            cache[key] = (resolve_direction(*key), resolve_group(*key))
+        resolved.append(cache[key])
 
-    frame['direction'] = directions
+    frame['direction'] = [direction for direction, _ in resolved]
+    frame['event_group'] = [group for _, group in resolved]
+    _add_partial_withdrawal_income(frame)
 
 
 def _iter_entries(entries: list[Any]) -> Iterator[dict[str, Any]]:
@@ -328,9 +389,13 @@ def _resolve_prices(
 
     ``max_seconds_distance`` maps to the endpoint's ``only_cache_period``, which is what
     keeps the query inside rotki's stored price history: the MCP must never trigger a remote
-    oracle fetch on an agent's behalf. The response is keyed by the timestamp we *asked*
-    for (the backend rewrites the matched row's timestamp to the queried one), so pairs join
-    straight back without a nearest-match search.
+    oracle fetch on an agent's behalf. It is a search *radius*, not an exactness requirement
+    -- the backend takes the closest stored row inside the window -- so it has to account for
+    the hour of bucketing already applied to the timestamp. See PRICE_LOOKUP_RADIUS_SECONDS.
+
+    The response is keyed by the timestamp we *asked* for (the backend rewrites the matched
+    row's timestamp to the queried one), so pairs join straight back without a nearest-match
+    search -- but that also means a hit says nothing about how stale the matched price is.
     """
     # The main currency is worth exactly one of itself, and the price endpoint has no
     # such pair cached, so asking for it leaves every fiat leg of an exchange trade
@@ -343,7 +408,7 @@ def _resolve_prices(
         result = query_historical_prices(
             asset_timestamps=remaining[start:start + PRICE_LOOKUP_CHUNK_SIZE],
             target_asset=target_asset,
-            max_seconds_distance=PRICE_TOLERANCE_SECONDS,
+            max_seconds_distance=PRICE_LOOKUP_RADIUS_SECONDS,
         )
         for asset, by_timestamp in result['assets'].items():
             if not isinstance(by_timestamp, dict):
@@ -480,7 +545,7 @@ def _load_history_events(scope: AnalyticsScope) -> TableData:
         frame['datetime'] = dt.dt.strftime('%Y-%m-%dT%H:%M:%SZ')
         frame['year'] = dt.dt.year
 
-    _add_directions(frame)
+    _add_taxonomy_columns(frame)
 
     # Valuation runs here, in the loader, so its minutes of price lookups stay outside the
     # connection lock and queries keep serving the previous snapshot meanwhile.
@@ -509,7 +574,7 @@ def _load_history_events(scope: AnalyticsScope) -> TableData:
 def _load_balances(scope: AnalyticsScope) -> TableData:
     # Never force a refresh here: recalculating balances is slow and should stay an explicit
     # user action in the app. The analytics layer reads the latest cached snapshot.
-    result = query_all_balances(refresh=False, timeout=get_backend_config().timeout)
+    result = query_all_balances(refresh=False, timeout=balances_timeout())
     rows: list[dict[str, Any]] = []
     for category in ('assets', 'liabilities'):
         holdings = result.get(category)
@@ -612,14 +677,21 @@ def _describe_column(
     # pandas gives string columns a dedicated ``str`` dtype and only falls back to ``object``
     # for ragged/mixed ones, so both are candidates for a value listing.
     is_texty = pd.api.types.is_string_dtype(series) or pd.api.types.is_object_dtype(series)
-    if is_texty and len(counts := series.value_counts()) <= MAX_DISTINCT_VALUES_SCANNED:
+    scan_limit = WIDE_SCAN_COLUMN_LIMITS.get(name, MAX_DISTINCT_VALUES_SCANNED)
+    if is_texty and len(counts := series.value_counts()) <= scan_limit:
         column['distinct_count'] = len(counts)
-        column['top_values'] = [
-            {'value': value, 'rows': int(rows)}
-            for value, rows in counts.head(MAX_DISTINCT_VALUES_REPORTED).items()
-            # defence in depth: a hash must never reach the agent through this path either
-            if not (isinstance(value, str) and value.startswith('anon_'))
-        ]
+        # A long tail of values that each occur once is not an enum -- it is per-row data
+        # that happens to be sparse, like extra_data_amount holding one distinct amount per
+        # row. Listing those puts row-level financial detail in what should be a schema
+        # summary and tells an agent nothing about the vocabulary. A short list is still
+        # worth showing even if nothing repeats: it is cheap and it is the whole domain.
+        if len(counts) <= MAX_DISTINCT_VALUES_REPORTED or int(counts.iloc[0]) > 1:
+            column['top_values'] = [
+                {'value': value, 'rows': int(rows)}
+                for value, rows in counts.head(MAX_DISTINCT_VALUES_REPORTED).items()
+                # defence in depth: a hash must never reach the agent through this path
+                if not (isinstance(value, str) and value.startswith('anon_'))
+            ]
     return column
 
 
