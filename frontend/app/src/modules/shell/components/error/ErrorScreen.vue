@@ -28,48 +28,48 @@ const errorText = computed(() => !error ? message : `${message}\n\n${error}`);
 </script>
 
 <template>
-  <div class="py-6 bg-white dark:bg-black h-full w-full z-[99999] flex flex-col items-center justify-center">
-    <div>
-      <RuiIcon
-        size="120"
-        color="error"
-        name="lu-circle-alert"
-      />
-    </div>
-    <div
+  <div class="py-10 px-4 bg-white dark:bg-black h-full w-full z-[99999] flex flex-col items-center justify-center">
+    <RuiIcon
+      size="96"
+      color="error"
+      name="lu-circle-alert"
+    />
+    <h1
       v-if="header"
-      class="mt-6 mb-5"
+      class="text-h4 font-bold text-center mt-6"
     >
-      <div class="text-h4">
-        {{ header }}
-      </div>
-    </div>
+      {{ header }}
+    </h1>
 
     <slot />
 
     <RuiCard
       v-if="!alternative"
-      class="flex-1 my-6 overflow-hidden max-w-[80%]"
-      content-class="h-full"
+      class="w-full max-w-4xl mt-8"
     >
       <template #header>
-        {{ title }}
-
-        <CopyButton
-          :tooltip="t('error_screen.copy_tooltip')"
-          :value="errorText"
-        />
+        <div class="flex items-center gap-2">
+          <span>{{ title }}</span>
+          <CopyButton
+            :tooltip="t('error_screen.copy_tooltip')"
+            :value="errorText"
+          />
+        </div>
       </template>
       <template #subheader>
         {{ subtitle }}
       </template>
-      <div class="font-light text-rui-text-secondary text-caption">
-        <pre v-text="message" />
+      <div class="max-h-[50vh] overflow-y-auto rounded-md bg-rui-grey-100 dark:bg-rui-grey-900 p-4">
+        <pre
+          class="font-mono text-caption leading-relaxed text-rui-text-secondary whitespace-pre-wrap break-words"
+          v-text="message"
+        />
         <template v-if="error">
-          <RuiDivider
-            class="mt-4 mb-2"
+          <RuiDivider class="my-3" />
+          <pre
+            class="font-mono text-caption leading-relaxed text-rui-text-secondary whitespace-pre-wrap break-words"
+            v-text="error"
           />
-          <pre v-text="error" />
         </template>
         <textarea
           v-model="errorText"
@@ -79,10 +79,16 @@ const errorText = computed(() => !error ? message : `${message}\n\n${error}`);
     </RuiCard>
     <div
       v-else
-      class="text-h5 mt-12"
+      class="text-h5 text-center max-w-2xl mt-8"
     >
       {{ alternative }}
     </div>
-    <slot name="bottom" />
+
+    <div
+      v-if="$slots.bottom"
+      class="mt-8"
+    >
+      <slot name="bottom" />
+    </div>
   </div>
 </template>
