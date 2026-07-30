@@ -351,7 +351,7 @@ def test_lifi_bridge_arbitrum_to_ethereum(arbitrum_one_inquirer, arbitrum_one_ac
             'to_chain': 1,
             'from_address': arbitrum_one_accounts[0],
             'to_address': arbitrum_one_accounts[0],
-            'transfer_id': '2ffe44cc7046926c69029503629564b1f4f98675ab149a4a4cc14f9911b6d675',
+            'transfer_id': '4865275a0ce3b45d06b859019d78246f27ab851a689ba92ad9225999aa2d0753',
         }},
     )]
 

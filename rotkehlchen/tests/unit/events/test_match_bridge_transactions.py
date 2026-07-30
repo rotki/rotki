@@ -3,12 +3,16 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
 from rotkehlchen.chain.ethereum.modules.zksync.constants import (
     CPT_ZKSYNC,
     ZKSYNC_LITE_SUNSET_CLAIM,
 )
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
+from rotkehlchen.chain.evm.decoding.lifi.constants import CPT_LIFI
+from rotkehlchen.chain.evm.decoding.relay.constants import CPT_RELAY
 from rotkehlchen.chain.evm.decoding.stakedao.v2.constants import CPT_STAKEDAO_V2
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -129,6 +133,122 @@ def test_match_bridge_transactions_exact_transfer_id(database: DBHandler) -> Non
     # a second run must not create further links or messages about these
     match_bridge_transactions(database=database)
     assert _get_bridge_links(database) == {(_event_id(database, deposit), _event_id(database, withdrawal))}  # noqa: E501
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_lifi_relay_bridge_by_order_id(database: DBHandler) -> None:
+    """A LI.FI Relay route matches its Relay receive by the underlying order id,
+    despite different counterparties, assets and amounts."""
+    events_db = DBHistoryEvents(database)
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(deposit := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1783071502000),
+                location=Location.ARBITRUM_ONE,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=Asset('eip155:42161/erc20:0x0c06cCF38114ddfc35e07427B9424adcca9F44F8'),
+                amount=FVal('52.085941055797375509'),
+                location_label=(user_address := make_evm_address()),
+                counterparty=CPT_LIFI,
+                extra_data={'bridge': {
+                    'from_chain': 42161,
+                    'to_chain': 1,
+                    'to_address': user_address,
+                    'transfer_id': (
+                        order_id := (
+                            '4865275a0ce3b45d06b859019d78246f'
+                            '27ab851a689ba92ad9225999aa2d0753'
+                        )
+                    ),
+                }},
+            )), (withdrawal := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1783071503000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_ETH,
+                amount=FVal('0.034555752880651201'),
+                location_label=user_address,
+                counterparty=CPT_RELAY,
+                extra_data={'bridge': {
+                    'to_chain': 1,
+                    'to_address': user_address,
+                    'transfer_id': order_id,
+                }},
+            ))],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (_event_id(database, deposit), _event_id(database, withdrawal)),
+    }
+    with database.conn.read_ctx() as cursor:
+        assert all(
+            '"fee_amount"' not in row[0]
+            for row in cursor.execute(
+                'SELECT extra_data FROM history_events WHERE identifier IN (?, ?)',
+                (_event_id(database, deposit), _event_id(database, withdrawal)),
+            )
+        )
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_lifi_cross_asset_bridge_by_target_asset(database: DBHandler) -> None:
+    """LI.FI's explicit target asset narrows candidates and permits a cross-asset route."""
+    events_db = DBHistoryEvents(database)
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(deposit := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1783071502000),
+                location=Location.ARBITRUM_ONE,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_USDC,
+                amount=FVal('52.085941'),
+                location_label=(user_address := make_evm_address()),
+                counterparty=CPT_LIFI,
+                extra_data={'bridge': {
+                    'from_chain': 42161,
+                    'to_chain': 1,
+                    'to_address': user_address,
+                    'to_asset': ZERO_ADDRESS,
+                }},
+            )), EvmEvent(  # same source asset and amount, but not the declared target asset
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1783071502500),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_USDC,
+                amount=FVal('52.085941'),
+                location_label=user_address,
+            ), (receive := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1783071503000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('0.034555'),
+                location_label=user_address,
+            ))],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (_event_id(database, deposit), _event_id(database, receive)),
+    }
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])

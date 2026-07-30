@@ -26,6 +26,8 @@ from rotkehlchen.chain.evm.decoding.lifi.constants import (
     MAYAN_ORDER_REFUNDED_TOPIC,
     MAYAN_SWIFT,
     START_BRIDGE_TOKENS_VIA_GLACIS_SELECTOR,
+    START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR,
+    SWAP_AND_START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR,
     SWAP_AND_START_BRIDGE_TOKENS_VIA_SQUID_SELECTOR,
     SWAPPED_GENERIC_ABI,
     SWAPPED_GENERIC_TOPIC,
@@ -115,6 +117,27 @@ class LifiDecoder(EvmDecoderInterface):
             return None  # bytes32 output tokens for non-EVM destinations are not addresses
 
         return string_to_evm_address(to_checksum_address(output_token[-20:]))
+
+    @staticmethod
+    def _decode_relay_depository_order_id(input_data: bytes) -> str | None:
+        """Read Relay's order id from the LI.FI facet calldata.
+
+        RelayDepositoryData is the final static tuple argument. Its order id is the
+        second head word for a direct bridge and the third for a swap-and-bridge.
+        """
+        input_data = LifiDecoder._unwrap_diamond_calldata(input_data)
+        if input_data.startswith(START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR):
+            order_id_start = len(START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR) + 32
+        elif input_data.startswith(SWAP_AND_START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR):
+            order_id_start = (
+                len(SWAP_AND_START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR) + 64
+            )
+        else:
+            return None
+
+        if len(input_data) < order_id_start + 32:
+            return None
+        return input_data[order_id_start:order_id_start + 32].hex()
 
     @staticmethod
     def _decode_squid_assets(
@@ -264,7 +287,10 @@ class LifiDecoder(EvmDecoderInterface):
                 source_asset = source_asset or squid_source_asset
             amount = int(bridge_data[6])
             destination_chain = int(bridge_data[7])
-            transfer_id = bridge_data[0].hex()
+            transfer_id = (
+                self._decode_relay_depository_order_id(context.transaction.input_data) or
+                bridge_data[0].hex()
+            )
         else:
             sending_asset = data[4]
             receiving_asset = data[5]

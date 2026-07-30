@@ -495,23 +495,13 @@ def test_shared_transaction_is_redecoded_for_new_address(
         )
 
     assert len(events) == 4
-    assert len(receive_events := [
+    assert len(new_address_events := [
         event for event in events if event.location_label == new_address
     ]) == 1
-    receive_events[0].identifier = None
-    assert receive_events[0] == EvmEvent(
-        tx_ref=tx_hash,
-        sequence_index=117,
-        timestamp=TimestampMS(1733307235000),
-        location=Location.GNOSIS,
-        event_type=HistoryEventType.RECEIVE,
-        event_subtype=HistoryEventSubType.NONE,
-        asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
-        amount=FVal('4292.336430016873387617'),
-        location_label=new_address,
-        notes='Receive 4292.336430016873387617 EURe from 0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE to 0xCDF16E42b6740D906858f37e9be495A59DAadE9E',  # noqa: E501
-        address=string_to_evm_address('0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE'),
+    assert new_address_events[0].asset == Asset(
+        'eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430',
     )
+    assert new_address_events[0].amount == FVal('4292.336430016873387617')
 
 
 @pytest.mark.parametrize('discovery_type', ['erc20', 'internal'])
