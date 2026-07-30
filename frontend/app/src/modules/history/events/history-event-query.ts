@@ -6,6 +6,7 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import { type HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
 import { type LocationQuery, RouterLocationLabelsSchema } from '@/modules/core/table/route';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
+import { useEventActionPicker } from '@/modules/history/events/action-picker/use-event-action-picker';
 import { isValidHistoryEventState } from '@/modules/history/events/mapping/use-history-event-state-mapping';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
@@ -17,6 +18,13 @@ interface HistoryEventSourceDeps {
   eventTypes: MaybeRefOrGetter<string[]>;
   groupIdentifiersFromQuery: ComputedRef<string[] | undefined>;
   location: MaybeRefOrGetter<string | undefined>;
+  /**
+   * The selected action verb, written back from the route. It is not a wire filter itself: the
+   * request source below expands it into `eventTypes`/`eventSubtypes`, while only the verb rides
+   * the URL, which is what preserves whether the user picked an action or set the two fields
+   * themselves.
+   */
+  action: Ref<string | undefined>;
   /** Written back from the route by the url source's `from`; feeds both a request and a url source. */
   locationLabels: Ref<string[]>;
   missingAcquisitionFromQuery: ComputedRef<string[] | undefined>;
@@ -40,6 +48,7 @@ interface HistoryEventSourceDeps {
  * independent lifecycle and is not meant to be reused.
  */
 export function buildHistoryEventSources({
+  action,
   duplicateHandlingStatusFromQuery,
   entryTypes,
   eventSubTypes,
@@ -57,6 +66,33 @@ export function buildHistoryEventSources({
   usedLocationLabels,
   validators,
 }: HistoryEventSourceDeps): ParamSource[] {
+  // Resolved here rather than injected: `useHistoryEventsFilters` is at its dependency cap, and
+  // this is the file that owns the request keys an action expands into.
+  const { rows: actionRows } = useEventActionPicker();
+
+  /**
+   * The type and subtype keys one verb expands into.
+   *
+   * A verb names every type/subtype pair the global mapping resolves to it, which is regularly
+   * more than one, so taking the first pair filtered by a fraction of what the verb means and said
+   * nothing about the rest. Which pair that was even depended on the mapping's key order.
+   *
+   * The request has no way to name pairs, only a list of types and a list of subtypes, which it
+   * reads as a cross product. That is exact whenever the pairs form one (as they do when a verb
+   * varies in only one of the two), and otherwise matches a little more than the verb names.
+   * Erring wide keeps every event the user asked for on screen; erring narrow hid them silently.
+   */
+  const resolveActionKeys = (verbKey: string): { eventTypes: string[]; eventSubtypes: string[] } | undefined => {
+    const combinations = get(actionRows).find(row => row.verbKey === verbKey)?.combinations;
+    if (!combinations || combinations.length === 0)
+      return undefined;
+
+    return {
+      eventSubtypes: [...new Set(combinations.map(combination => combination.eventSubtype))],
+      eventTypes: [...new Set(combinations.map(combination => combination.eventType))],
+    };
+  };
+
   return [
     {
       isDefault: true,
@@ -92,6 +128,15 @@ export function buildHistoryEventSources({
           identifiers: get(missingAcquisitionFromQuery),
         };
 
+        // An action replaces the type and subtype filters rather than adding to them, which is
+        // why the two cannot be active beside it.
+        const verb = get(action);
+        const actionKeys = verb === undefined ? undefined : resolveActionKeys(verb);
+        if (actionKeys) {
+          params.eventTypes = actionKeys.eventTypes;
+          params.eventSubtypes = actionKeys.eventSubtypes;
+        }
+
         const accountsValue = get(usedLocationLabels);
 
         const locationVal = toValue(location);
@@ -120,7 +165,7 @@ export function buildHistoryEventSources({
       // pulls locationLabels, state markers and the accounting-overlay mode back
       // out of the route whenever URL state is (re)applied.
       fromQuery(query): void {
-        applyHistoryEventRouteQuery(query, { locationLabels, overlayMode, toggles });
+        applyHistoryEventRouteQuery(query, { action, locationLabels, overlayMode, toggles });
       },
       // Preserved in the URL but never sent to the API.
       to: 'url',
@@ -136,6 +181,7 @@ export function buildHistoryEventSources({
 
         const stateMarkersValue = get(toggles, 'stateMarkers');
         return {
+          action: get(action),
           duplicateHandlingStatus: get(duplicateHandlingStatusFromQuery),
           groupIdentifiers: get(groupIdentifiersFromQuery)?.join(','),
           ...(preserve
@@ -167,11 +213,17 @@ export function buildHistoryEventSources({
 function applyHistoryEventRouteQuery(
   query: LocationQuery,
   target: {
+    action: Ref<string | undefined>;
     locationLabels: Ref<string[]>;
     overlayMode: Ref<OverlayMode>;
     toggles: Ref<HistoryEventsToggles>;
   },
 ): void {
+  // A URL with no action simply has none: an older or hand-written link then reads as whatever
+  // event types it carries, rather than claiming an action it never expressed.
+  const actionParam = query.action;
+  set(target.action, typeof actionParam === 'string' && actionParam.length > 0 ? actionParam : undefined);
+
   const { locationLabels: parsed } = RouterLocationLabelsSchema.parse(query);
   set(target.locationLabels, !parsed || parsed.length === 0 ? [] : parsed);
 

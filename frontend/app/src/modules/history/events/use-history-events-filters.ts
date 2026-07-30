@@ -50,6 +50,9 @@ export function getDefaultToggles(): HistoryEventsToggles {
 interface UseHistoryEventsFiltersReturn {
   clearFilters: () => void;
   duplicateHandlingStatus: ComputedRef<DuplicateHandlingStatus | undefined>;
+  /** The selected action verb, if any; the bar's `action` param pill both reads and drives it. */
+  action: Readonly<Ref<string | undefined>>;
+  onActionChanged: (verbKey: string | undefined) => void;
   locationLabels: Readonly<Ref<string[]>>;
   groupIdentifiers: ComputedRef<string[] | undefined>;
   refetch: () => Promise<void>;
@@ -146,7 +149,12 @@ export function useHistoryEventsFilters(
     return get(locationLabels);
   });
 
+  // Owned here rather than by the caller: it is written back from the route like locationLabels,
+  // and expanded into the request by the source that already owns the two event-type keys.
+  const action = ref<string>();
+
   const sources = buildHistoryEventSources({
+    action,
     duplicateHandlingStatusFromQuery,
     entryTypes,
     eventSubTypes,
@@ -246,6 +254,7 @@ export function useHistoryEventsFilters(
   const hasActiveFiltersRaw = computed<boolean>(() =>
     Object.keys(get(filters)).length > 0
     || get(locationLabels).length > 0
+    || get(action) !== undefined
     || !isEqual(get(toggles), getDefaultToggles()));
 
   const hasActiveFilters = useRefWithDebounce(hasActiveFiltersRaw, 500);
@@ -253,7 +262,15 @@ export function useHistoryEventsFilters(
   function clearFilters(): void {
     setFilter({});
     onLocationLabelsChanged([]);
+    onActionChanged(undefined);
     set(toggles, { ...getDefaultToggles() });
+  }
+
+  function onActionChanged(verbKey: string | undefined): void {
+    // Same as locationLabels below: it drives a request source and a url source, so the change has
+    // to be attributed explicitly or it never reaches the URL.
+    markUserIntent();
+    set(action, verbKey);
   }
 
   function onLocationLabelsChanged(labels: string[]): void {
@@ -290,6 +307,7 @@ export function useHistoryEventsFilters(
   });
 
   return {
+    action: shallowReadonly(action),
     clearFilters,
     duplicateHandlingStatus: duplicateHandlingStatusFromQuery,
     filters,
@@ -305,6 +323,7 @@ export function useHistoryEventsFilters(
     locationLabels: shallowReadonly(locationLabels),
     locations,
     matchers,
+    onActionChanged,
     onLocationLabelsChanged,
     pagination,
     refetch,

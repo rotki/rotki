@@ -46,13 +46,17 @@ vi.mock('@/modules/core/table/use-server-table', () => ({
 
 // The filter schema is now built by the caller rather than by the mocked table, so
 // it has to be stubbed too: the real one reaches into the settings store.
-vi.mock('@/modules/core/table/filters/use-events-filter', () => ({
-  useHistoryEventFilter: vi.fn(() => ({
-    filters: ref({}),
-    matchers: computed(() => []),
-    RouteFilterSchema: undefined,
-  })),
-}));
+vi.mock('@/modules/core/table/filters/use-events-filter', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/modules/core/table/filters/use-events-filter')>();
+  return {
+    ...actual,
+    useHistoryEventFilter: vi.fn(() => ({
+      filters: ref({}),
+      matchers: computed(() => []),
+      RouteFilterSchema: undefined,
+    })),
+  };
+});
 
 vi.mock('@/modules/history/events/use-history-events', () => ({
   useHistoryEvents: vi.fn(() => ({
@@ -76,6 +80,28 @@ vi.mock('@/modules/history/events/use-history-event-navigation', async (importOr
 
 vi.mock('@/modules/history/events/use-history-event-navigation-consumer', () => ({
   useHistoryEventNavigationConsumer: vi.fn(),
+}));
+
+// The pill-bar field assembly is its own composable (and store-backed); this spec covers the
+// server-table wiring, not the fields, so stub it to an empty list.
+vi.mock('@/modules/history/events/use-history-event-fields', () => ({
+  useHistoryEventFields: vi.fn(() => computed(() => [])),
+}));
+
+// Store-backed too, and only consulted to expand an action verb into its type/subtype pair. One
+// row is enough for the wiring this spec covers.
+vi.mock('@/modules/history/events/action-picker/use-event-action-picker', () => ({
+  useEventActionPicker: vi.fn(() => ({
+    findRowByTypeSubtype: vi.fn(),
+    rows: computed(() => [{
+      combinations: [{ eventSubtype: 'fee', eventType: 'spend' }],
+      direction: 'out',
+      groupId: 'group',
+      icon: 'lu-flame',
+      label: 'Pay fee',
+      verbKey: 'pay_fee',
+    }]),
+  })),
 }));
 
 interface DefaultOptions {

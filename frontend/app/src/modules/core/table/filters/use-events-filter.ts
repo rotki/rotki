@@ -47,7 +47,7 @@ export enum HistoryEventFilterKeys {
   MAX_AMOUNT = 'max_amount',
 }
 
-enum HistoryEventFilterValueKeys {
+export enum HistoryEventFilterValueKeys {
   START = 'fromTimestamp',
   END = 'toTimestamp',
   ASSET = 'asset',
@@ -328,7 +328,7 @@ export function useHistoryEventFilter(
       multiple: true,
       string: true,
       suggestions: () => [],
-      validate: (validatorIndex: string) => !!validatorIndex,
+      validate: (validatorIndex: string) => /^\d+$/.test(validatorIndex),
     }];
   }
 

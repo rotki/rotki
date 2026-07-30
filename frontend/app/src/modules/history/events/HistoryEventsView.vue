@@ -10,6 +10,7 @@ import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/modules/histor
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import {
   getDefaultToggles,
+  useHistoryEventFields,
   useHistoryEventNavigationConsumer,
   useHistoryEventsActions,
   useHistoryEventsDeletion,
@@ -116,8 +117,10 @@ const {
   highlightTypes,
   identifiers,
   includes,
+  action,
   locationLabels,
   matchers,
+  onActionChanged,
   onLocationLabelsChanged,
   pagination,
   requestPayload,
@@ -139,6 +142,8 @@ const {
   toggles,
   overlayMode,
 );
+
+const fields = useHistoryEventFields(matchers, () => useExternalAccountFilter);
 
 // Accounting overlay: shows the known balance after each event. Keys off each event's own
 // (account, asset) pair, so no extra filter is required. Gated by VITE_ACCOUNTING_UPDATE,
@@ -339,14 +344,15 @@ watchDebounced(route, async () => {
               ref="tableActions"
               v-model:filters="filters"
               v-model:toggles="toggles"
+              :action="action"
               :location-labels="locationLabels"
               :processing="processing"
-              :matchers="matchers"
+              :fields="fields"
               :export-params="requestPayload"
               :hide-redecode-buttons="!mainPage"
-              :hide-account-selector="useExternalAccountFilter"
               :selection="selectionMode.state.value"
               :ignore-status="ignoreStatus"
+              @update:action="onActionChanged($event)"
               @update:location-labels="onLocationLabelsChanged($event)"
               @redecode="actions.redecode.by($event)"
               @selection:action="handleSelectionAction($event)"

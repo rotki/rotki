@@ -5,6 +5,8 @@
 // individual files. Longer term, the view's composables should be consolidated
 // into a single facade so this barrel (and HistoryEventsView's import sprawl)
 // can go away.
+export { useHistoryEventFields } from './use-history-event-fields';
+
 export { useHistoryEventsActions } from './use-history-events-actions';
 
 export { useHistoryEventsDeletion } from './use-history-events-deletion';

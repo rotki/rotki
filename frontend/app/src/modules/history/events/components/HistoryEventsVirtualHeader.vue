@@ -102,6 +102,7 @@ const limits = [10, 25, 50, 100];
         variant="text"
         size="sm"
         class="text-sm"
+        data-testid="events-sort-date"
         @click="toggleSort()"
       >
         <span class="hidden sm:inline">{{ t('common.datetime') }}</span>
@@ -151,6 +152,7 @@ const limits = [10, 25, 50, 100];
       <span
         v-if="!isSmAndDown"
         class="text-sm text-rui-text-secondary whitespace-nowrap"
+        data-testid="events-page-range"
       >
         {{ ((currentPage - 1) * itemsPerPage + 1).toLocaleString() }}-{{ Math.min(currentPage * itemsPerPage, pagination.total).toLocaleString() }}
         {{ t('common.of') }}
@@ -164,6 +166,7 @@ const limits = [10, 25, 50, 100];
           icon
           size="sm"
           :disabled="currentPage <= 1"
+          data-testid="events-page-first"
           @click="currentPage = 1"
         >
           <RuiIcon
@@ -188,6 +191,7 @@ const limits = [10, 25, 50, 100];
           icon
           size="sm"
           :disabled="currentPage >= totalPages"
+          data-testid="events-page-next"
           @click="currentPage = currentPage + 1"
         >
           <RuiIcon
