@@ -22,6 +22,8 @@ MAYAN_SWIFT: Final = string_to_evm_address('0xC38e4e6A15593f908255214653d3D947CA
 CALL_DIAMOND_WITH_PERMIT2_SELECTOR: Final = b'\x01\x93\xb9\xfc'
 CALL_DIAMOND_WITH_EIP2612_SIGNATURE_SELECTOR: Final = b'\xd7\xa0\x84\x73'
 START_BRIDGE_TOKENS_VIA_GLACIS_SELECTOR: Final = b'\x6f\x92\x06\xba'
+START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR: Final = b'\x09\x2e\x8f\xa4'
+SWAP_AND_START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR: Final = b'\xa3\x44\x3f\xaa'
 SWAP_AND_START_BRIDGE_TOKENS_VIA_SQUID_SELECTOR: Final = b'\xa8\xf6\x66\x66'
 TRANSFER_STARTED_TOPIC: Final = (
     b'\x43\x8f\x81\xf3\xfe\x94\x45\x6c\xd9\xd9\x8e\x90\x73\x52\x4f\x1c\x2b\xaf\xb3\xce\x75\xde\xf8\xce\xd6\x9f'
@@ -44,6 +46,12 @@ INTENT_REFUNDED_TOPIC: Final = (
 MAYAN_ORDER_REFUNDED_TOPIC: Final = (
     b'\xbf\xf5H\x7fd"\xbaJ\xcb\xcd\xe6\xbd^\x0c\xcb\x83\x12L$\x0b\x9d\xebjr\xe7\xb5\xeb\x8c{q\xd6\xfc'
 )  # 0xbff5487f6422ba4acbcde6bd5e0ccb83124c240b9deb6a72e7b5eb8c7b71d6fc
+GENERIC_SWAP_COMPLETED_TOPIC: Final = (
+    b'8\xee\xe7o\xd9\x11\xea\xba\xc7\x9d\xa7\xaf\x16\x05>\x80\x9b\xe0\xe1,\x867\xf1V\xe7~\x1a\xf3\t\xb9\x957'
+)  # 0x38eee76fd911eabac79da7af16053e809be0e12c8637f156e77e1af309b99537
+SWAPPED_GENERIC_TOPIC: Final = (
+    b"\x93Q{|o2\x85g7\x00\x8e\xdf7\xcf%B\xb5]'\xd8?\xa2\x99\xaa!oU\xa9\x82\xa6\xee\x1d"
+)  # 0x93517b7c6f32856737008edf37cf2542b55d27d83fa299aa216f55a982a6ee1d
 
 TRANSFER_STARTED_ABI: Final[ABIEvent] = {
     'anonymous': False,
@@ -131,5 +139,36 @@ MAYAN_ORDER_REFUNDED_ABI: Final[ABIEvent] = {
         {'indexed': False, 'name': 'netAmount', 'type': 'uint256'},
     ],
     'name': 'OrderRefunded',
+    'type': 'event',
+}
+
+GENERIC_SWAP_COMPLETED_ABI: Final[ABIEvent] = {
+    'anonymous': False,
+    'inputs': [
+        {'indexed': True, 'name': 'transactionId', 'type': 'bytes32'},
+        {'indexed': False, 'name': 'integrator', 'type': 'string'},
+        {'indexed': False, 'name': 'referrer', 'type': 'string'},
+        {'indexed': False, 'name': 'receiver', 'type': 'address'},
+        {'indexed': False, 'name': 'fromAssetId', 'type': 'address'},
+        {'indexed': False, 'name': 'toAssetId', 'type': 'address'},
+        {'indexed': False, 'name': 'fromAmount', 'type': 'uint256'},
+        {'indexed': False, 'name': 'toAmount', 'type': 'uint256'},
+    ],
+    'name': 'LiFiGenericSwapCompleted',
+    'type': 'event',
+}
+
+SWAPPED_GENERIC_ABI: Final[ABIEvent] = {
+    'anonymous': False,
+    'inputs': [
+        {'indexed': True, 'name': 'transactionId', 'type': 'bytes32'},
+        {'indexed': False, 'name': 'integrator', 'type': 'string'},
+        {'indexed': False, 'name': 'referrer', 'type': 'string'},
+        {'indexed': False, 'name': 'fromAssetId', 'type': 'address'},
+        {'indexed': False, 'name': 'toAssetId', 'type': 'address'},
+        {'indexed': False, 'name': 'fromAmount', 'type': 'uint256'},
+        {'indexed': False, 'name': 'toAmount', 'type': 'uint256'},
+    ],
+    'name': 'LiFiSwappedGeneric',
     'type': 'event',
 }

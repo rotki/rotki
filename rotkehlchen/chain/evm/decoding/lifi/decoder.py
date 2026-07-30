@@ -6,6 +6,7 @@ from eth_utils import to_checksum_address
 
 from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
@@ -13,6 +14,8 @@ from rotkehlchen.chain.evm.decoding.lifi.constants import (
     CALL_DIAMOND_WITH_EIP2612_SIGNATURE_SELECTOR,
     CALL_DIAMOND_WITH_PERMIT2_SELECTOR,
     CPT_LIFI,
+    GENERIC_SWAP_COMPLETED_ABI,
+    GENERIC_SWAP_COMPLETED_TOPIC,
     INTENT_REFUNDED_TOPIC,
     LIFI_DIAMOND,
     LIFI_DIAMOND_BASE_RECOVERY,
@@ -23,7 +26,11 @@ from rotkehlchen.chain.evm.decoding.lifi.constants import (
     MAYAN_ORDER_REFUNDED_TOPIC,
     MAYAN_SWIFT,
     START_BRIDGE_TOKENS_VIA_GLACIS_SELECTOR,
+    START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR,
+    SWAP_AND_START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR,
     SWAP_AND_START_BRIDGE_TOKENS_VIA_SQUID_SELECTOR,
+    SWAPPED_GENERIC_ABI,
+    SWAPPED_GENERIC_TOPIC,
     TRANSFER_COMPLETED_ABI,
     TRANSFER_COMPLETED_TOPIC,
     TRANSFER_RECOVERED_ABI,
@@ -50,6 +57,19 @@ if TYPE_CHECKING:
 
 
 class LifiDecoder(EvmDecoderInterface):
+
+    @staticmethod
+    def _decode_permit2_source_asset(input_data: bytes) -> ChecksumEvmAddress | None:
+        if (
+            not input_data.startswith(CALL_DIAMOND_WITH_PERMIT2_SELECTOR) or
+            len(input_data) < len(CALL_DIAMOND_WITH_PERMIT2_SELECTOR) + 64
+        ):
+            return None
+
+        token_word_start = len(CALL_DIAMOND_WITH_PERMIT2_SELECTOR) + 32
+        return string_to_evm_address(to_checksum_address(
+            input_data[token_word_start + 12:token_word_start + 32],
+        ))
 
     @staticmethod
     def _unwrap_diamond_calldata(input_data: bytes) -> bytes:
@@ -99,6 +119,27 @@ class LifiDecoder(EvmDecoderInterface):
         return string_to_evm_address(to_checksum_address(output_token[-20:]))
 
     @staticmethod
+    def _decode_relay_depository_order_id(input_data: bytes) -> str | None:
+        """Read Relay's order id from the LI.FI facet calldata.
+
+        RelayDepositoryData is the final static tuple argument. Its order id is the
+        second head word for a direct bridge and the third for a swap-and-bridge.
+        """
+        input_data = LifiDecoder._unwrap_diamond_calldata(input_data)
+        if input_data.startswith(START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR):
+            order_id_start = len(START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR) + 32
+        elif input_data.startswith(SWAP_AND_START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR):
+            order_id_start = (
+                len(SWAP_AND_START_BRIDGE_TOKENS_VIA_RELAY_DEPOSITORY_SELECTOR) + 64
+            )
+        else:
+            return None
+
+        if len(input_data) < order_id_start + 32:
+            return None
+        return input_data[order_id_start:order_id_start + 32].hex()
+
+    @staticmethod
     def _decode_squid_assets(
             input_data: bytes,
             receiver: ChecksumEvmAddress,
@@ -138,11 +179,83 @@ class LifiDecoder(EvmDecoderInterface):
         return None, source_asset
 
     def _decode_lifi(self, context: DecoderContext) -> EvmDecodingOutput:
+        if context.tx_log.topics[0] in (GENERIC_SWAP_COMPLETED_TOPIC, SWAPPED_GENERIC_TOPIC):
+            return self._decode_swap(context)
         if context.tx_log.topics[0] in (TRANSFER_COMPLETED_TOPIC, TRANSFER_RECOVERED_TOPIC):
             return self._decode_completed(context)
         if context.tx_log.topics[0] in (INTENT_REFUNDED_TOPIC, MAYAN_ORDER_REFUNDED_TOPIC):
             return self._decode_refund(context)
         return self._decode_started(context)
+
+    def _decode_swap(self, context: DecoderContext) -> EvmDecodingOutput:
+        _, data = decode_event_data_abi(
+            context.tx_log,
+            GENERIC_SWAP_COMPLETED_ABI
+            if context.tx_log.topics[0] == GENERIC_SWAP_COMPLETED_TOPIC
+            else SWAPPED_GENERIC_ABI,
+        )
+        if context.tx_log.topics[0] == GENERIC_SWAP_COMPLETED_TOPIC:
+            receiver, from_asset_address, to_asset_address = data[2:5]
+            from_amount_raw, to_amount_raw = data[5:7]
+        else:
+            receiver = None  # The deprecated event did not include the receiver
+            from_asset_address, to_asset_address = data[2:4]
+            from_amount_raw, to_amount_raw = data[4:6]
+
+        from_asset = (
+            self.node_inquirer.native_token
+            if from_asset_address in (ZERO_ADDRESS, ETH_SPECIAL_ADDRESS)
+            else self.base.get_or_create_evm_token(address=from_asset_address)
+        )
+        to_asset = (
+            self.node_inquirer.native_token
+            if to_asset_address in (ZERO_ADDRESS, ETH_SPECIAL_ADDRESS)
+            else self.base.get_or_create_evm_token(address=to_asset_address)
+        )
+        from_amount = asset_normalized_value(amount=int(from_amount_raw), asset=from_asset)
+        to_amount = asset_normalized_value(amount=int(to_amount_raw), asset=to_asset)
+        spend_event = receive_event = None
+        for event in context.decoded_events:
+            if (
+                event.location_label == context.transaction.from_address and
+                event.asset == from_asset and
+                event.amount == from_amount and
+                (event.event_type, event.event_subtype) in (
+                    (HistoryEventType.SPEND, HistoryEventSubType.NONE),
+                    (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
+                )
+            ):
+                spend_event = event
+            elif (
+                (receiver is None or event.location_label == receiver) and
+                event.asset == to_asset and
+                event.amount == to_amount and
+                (event.event_type, event.event_subtype) in (
+                    (HistoryEventType.RECEIVE, HistoryEventSubType.NONE),
+                    (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
+                )
+            ):
+                receive_event = event
+
+        if spend_event is None or receive_event is None:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        spend_event.event_type = receive_event.event_type = HistoryEventType.TRADE
+        spend_event.event_subtype = HistoryEventSubType.SPEND
+        receive_event.event_subtype = HistoryEventSubType.RECEIVE
+        spend_event.counterparty = CPT_LIFI
+        spend_event.notes = (
+            f'Swap {spend_event.amount} {spend_event.asset.symbol_or_name()} via LI.FI'
+        )
+        receive_event.notes = (
+            f'Receive {receive_event.amount} {receive_event.asset.symbol_or_name()} '
+            'as the result of a swap via LI.FI'
+        )
+        maybe_reshuffle_events(
+            ordered_events=[spend_event, receive_event],
+            events_list=context.decoded_events,
+        )
+        return EvmDecodingOutput(process_swaps=True)
 
     def _chain_label(self, chain_id: int) -> str:
         try:
@@ -164,17 +277,20 @@ class LifiDecoder(EvmDecoderInterface):
             bridge_data = data[0]
             sending_asset = bridge_data[4]
             receiver = bridge_data[5]
+            source_asset = self._decode_permit2_source_asset(context.transaction.input_data)
             receiving_asset = self._decode_glacis_target_asset(context.transaction.input_data)
             if receiving_asset is None:
-                receiving_asset, source_asset = self._decode_squid_assets(
+                receiving_asset, squid_source_asset = self._decode_squid_assets(
                     input_data=context.transaction.input_data,
                     receiver=receiver,
                 )
-            else:
-                source_asset = None
+                source_asset = source_asset or squid_source_asset
             amount = int(bridge_data[6])
             destination_chain = int(bridge_data[7])
-            transfer_id = bridge_data[0].hex()
+            transfer_id = (
+                self._decode_relay_depository_order_id(context.transaction.input_data) or
+                bridge_data[0].hex()
+            )
         else:
             sending_asset = data[4]
             receiving_asset = data[5]
@@ -190,7 +306,7 @@ class LifiDecoder(EvmDecoderInterface):
             expected_asset = self.base.get_or_create_evm_token(address=sending_asset)
         expected_source_asset = (
             self.base.get_or_create_evm_token(address=source_asset)
-            if source_asset is not None
+            if source_asset is not None and source_asset != sending_asset
             else None
         )
         for event in context.decoded_events:

@@ -175,6 +175,7 @@ from rotkehlchen.tasks.bridges import (
     ENTRY_TYPES_TO_EXCLUDE_FROM_BRIDGE_MATCHING,
     create_bridge_counterpart_event,
     find_bridge_transaction_matches,
+    get_bridge_match_assets_in_collection,
     get_unmatched_bridge_events,
     process_bridge_transactions,
     resolve_bridge_event_external,
@@ -4737,9 +4738,7 @@ class RestAPI:
 
         bridge_event = events[0]
 
-        assets_in_collection = GlobalDBHandler.get_assets_in_same_collection(
-            identifier=bridge_event.asset.identifier,
-        )
+        assets_in_collection = get_bridge_match_assets_in_collection(deposit=bridge_event)
         bridge_event_timestamp = ts_ms_to_sec(bridge_event.timestamp)
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             already_matched_event_ids = get_already_matched_event_ids(
