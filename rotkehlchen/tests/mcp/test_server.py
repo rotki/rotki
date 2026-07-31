@@ -80,7 +80,9 @@ def test_setup_server_should_register_discovered_tools(monkeypatch) -> None:
     assert transport_security.enable_dns_rebinding_protection is True
     assert transport_security.allowed_hosts == ['127.0.0.1:4445']
     assert transport_security.allowed_origins == ['http://127.0.0.1:4445']
-    assert tools == [('fake_tool', None, fake_tool)]
+    assert len(tools) == 1
+    assert tools[0][:2] == ('fake_tool', None)
+    assert tools[0][2] is not fake_tool
 
 
 def test_setup_server_should_enable_bearer_authentication(monkeypatch, tmp_path: Path) -> None:
@@ -242,10 +244,11 @@ def test_setup_server_should_gate_premium_tools(monkeypatch) -> None:
         privacy_mode='balanced',
     )
 
-    name, description, wrapped = tools[0]
+    name, description, registered_tool = tools[0]
     assert name == 'gated_tool'
     assert description == 'A gated tool.'  # docstring preserved through the wrapper
-    assert wrapped is not gated_tool  # the gated tool got wrapped
+    assert registered_tool is not gated_tool
+    wrapped = server._gate_with_premium(gated_tool)
 
     loop = asyncio.SelectorEventLoop(selectors.SelectSelector())
     try:
