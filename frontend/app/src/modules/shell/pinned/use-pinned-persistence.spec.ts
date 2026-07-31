@@ -2,7 +2,7 @@ import type { Report } from '@/modules/reports/report-types';
 import { createMock } from '@test/utils/create-mock';
 import { get, set } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope, nextTick } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
@@ -32,10 +32,15 @@ describe('usePinnedPersistence', () => {
     localStorage.clear();
     scope = effectScope();
     signIn();
+    // The data-issues panel is only available in accounting-update builds, and the flag is
+    // only set when the shell exports ROTKI_ACCOUNTING_UPDATE. Pin it so the cases using
+    // that panel do not depend on the developer's environment.
+    vi.stubEnv('VITE_ACCOUNTING_UPDATE', 'true');
   });
 
   afterEach(() => {
     scope.stop();
+    vi.unstubAllEnvs();
   });
 
   it('should restore the persisted rail width', () => {
@@ -77,6 +82,21 @@ describe('usePinnedPersistence', () => {
     // Report needs a live report, so only data-issues is restored and becomes active.
     expect(get(store.pinnedPanels).map(panel => panel.name)).toEqual([PinnedNames.DATA_ISSUES]);
     expect(get(store.activePinnedId)).toBe(PinnedNames.DATA_ISSUES);
+  });
+
+  it('should skip a panel that this build does not have', () => {
+    vi.stubEnv('VITE_ACCOUNTING_UPDATE', '');
+    localStorage.setItem(TABS_KEY, JSON.stringify({
+      activeId: PinnedNames.DATA_ISSUES,
+      names: [PinnedNames.MATCH_ASSET_MOVEMENTS, PinnedNames.DATA_ISSUES],
+    }));
+    const store = useAreaVisibilityStore();
+
+    scope.run(() => usePinnedPersistence());
+
+    // A rail persisted by an accounting-update build must not bring the inbox back here.
+    expect(get(store.pinnedPanels).map(panel => panel.name)).toEqual([PinnedNames.MATCH_ASSET_MOVEMENTS]);
+    expect(get(store.activePinnedId)).toBe(PinnedNames.MATCH_ASSET_MOVEMENTS);
   });
 
   it('should ignore a corrupt or legacy-shaped stored value instead of throwing', () => {

@@ -25,12 +25,23 @@ function tabsKeyFor(username: string): string {
   return `${TABS_KEY_PREFIX}.${username}`;
 }
 
-const restorableNames = new Set<string>(
-  Object.values(PinnedNames).filter(name => PINNED_PANELS[name].restorable !== false),
-);
+const pinnedNames = new Set<string>(Object.values(PinnedNames));
 
+function isPinnedName(name: string): name is PinnedName {
+  return pinnedNames.has(name);
+}
+
+/**
+ * A panel survives a reload when it can rebuild itself from an empty payload and it still
+ * exists in this build. Availability is resolved per call rather than once at import so a
+ * flag-gated panel is not baked in at module load.
+ */
 function isRestorable(name: string): name is PinnedName {
-  return restorableNames.has(name);
+  if (!isPinnedName(name))
+    return false;
+
+  const panel = PINNED_PANELS[name];
+  return panel.restorable !== false && (panel.available?.() ?? true);
 }
 
 /** Falls back to the default when the stored width is corrupt (e.g. `NaN`). */

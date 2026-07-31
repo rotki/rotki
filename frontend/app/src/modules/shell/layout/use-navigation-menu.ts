@@ -2,6 +2,7 @@ import type { RuiIcons } from '@rotki/ui-library';
 import type { ComputedRef } from 'vue';
 import type { RouteRecordNameGeneric } from 'vue-router';
 import type { RouteName, RouteNavMeta } from '@/types/router';
+import { ACCOUNTING_UPDATE_ROUTES, isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 
 interface MenuEntry {
   readonly name: RouteName;
@@ -33,12 +34,10 @@ export interface MenuDivider {
 export type MenuItem = MenuNavItem | MenuNavGroup | MenuDivider;
 
 // The data-issues inbox is part of the accounting refactor and only served in builds where the
-// backend exposes it (ROTKI_ACCOUNTING_UPDATE, mirrored into VITE_ACCOUNTING_UPDATE in
-// vite.config.ts). When disabled, History collapses from a group into a single item that links
-// straight to Events.
+// backend exposes it (see `isAccountingUpdateEnabled`). When disabled, History collapses from a
+// group into a single item that links straight to Events.
 const HISTORY_ROUTE = '/history/';
 const HISTORY_EVENTS_ROUTE = '/history/events/';
-const HISTORY_DATA_ISSUES_ROUTE = '/history/data-issues/';
 
 interface UseNavigationMenuReturn {
   menuItems: ComputedRef<MenuItem[]>;
@@ -52,7 +51,7 @@ interface UseNavigationMenuReturn {
  */
 export function useNavigationMenu(): UseNavigationMenuReturn {
   const router = useRouter();
-  const dataIssuesEnabled = !!import.meta.env.VITE_ACCOUNTING_UPDATE;
+  const dataIssuesEnabled = isAccountingUpdateEnabled();
 
   // A name taken from the live router is always registered, so `hasRoute` both validates it and
   // narrows the generic route name to a typed RouteName. This is the type-safe alternative to a cast.
@@ -80,7 +79,7 @@ export function useNavigationMenu(): UseNavigationMenuReturn {
       const nav = route.meta.nav;
       if (nav?.drawer === undefined || !isRouteName(route.name))
         continue;
-      if (route.name === HISTORY_DATA_ISSUES_ROUTE && !dataIssuesEnabled)
+      if (ACCOUNTING_UPDATE_ROUTES.has(route.name) && !dataIssuesEnabled)
         continue;
 
       const entry: MenuEntry = { name: route.name, nav };

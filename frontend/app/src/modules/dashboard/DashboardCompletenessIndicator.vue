@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import { useUndecodedTransactionsCount } from '@/modules/history/events/tx/use-undecoded-transactions-count';
 import DashboardMissingPricesDialog from './DashboardMissingPricesDialog.vue';
@@ -9,16 +10,27 @@ const { t } = useI18n({ useScope: 'global' });
 
 const missingPricesDialog = ref<boolean>(false);
 
+// The data issues inbox only exists in accounting-update builds (the same flag hides
+// it from the navigation drawer and the search palette), so without it we neither
+// query the endpoint nor link to a page the user cannot otherwise reach.
+const dataIssuesEnabled = isAccountingUpdateEnabled();
+
 const { missingPriceIdentifiers, missingPricesCount } = useMissingPrices();
 const { actionableCount, refreshSummary } = useDataIssuesSummary();
 const { fetchUndecodedTransactionsBreakdown, undecodedCount } = useUndecodedTransactionsCount();
 
+const dataIssuesCount = computed<number>(() => dataIssuesEnabled ? get(actionableCount) : 0);
+
 const hasIssues = computed<boolean>(() =>
-  get(missingPricesCount) > 0 || get(undecodedCount) > 0 || get(actionableCount) > 0,
+  get(missingPricesCount) > 0 || get(undecodedCount) > 0 || get(dataIssuesCount) > 0,
 );
 
 onMounted(() => {
-  startPromise(Promise.all([fetchUndecodedTransactionsBreakdown(), refreshSummary()]));
+  const pending: Promise<void>[] = [fetchUndecodedTransactionsBreakdown()];
+  if (dataIssuesEnabled)
+    pending.push(refreshSummary());
+
+  startPromise(Promise.all(pending));
 });
 </script>
 
@@ -64,7 +76,7 @@ onMounted(() => {
       </RuiButton>
     </RouterLink>
     <RouterLink
-      v-if="actionableCount > 0"
+      v-if="dataIssuesCount > 0"
       class="no-underline"
       :to="{ name: '/history/data-issues/' }"
     >
@@ -79,7 +91,7 @@ onMounted(() => {
             size="14"
           />
         </template>
-        {{ t('dashboard.completeness.data_issues', { count: actionableCount }, actionableCount) }}
+        {{ t('dashboard.completeness.data_issues', { count: dataIssuesCount }, dataIssuesCount) }}
       </RuiButton>
     </RouterLink>
   </div>

@@ -1,5 +1,6 @@
 import type { Component } from 'vue';
 import { type MessageKey, msg } from '@/message-key';
+import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { type PinnedName, PinnedNames } from '@/modules/session/types';
 
 /**
@@ -21,6 +22,11 @@ export interface PinnedPanelDef {
    * Panels that need live context (e.g. the report card needs a generated report)
    * opt out with `false`; the rest fetch their own data and restore safely. Defaults to true. */
   restorable?: boolean;
+  /** Whether the panel exists in this build at all. Panels behind a build flag report it
+   * here so a rail persisted by a build that had the flag does not bring the panel back
+   * in one that hides it. Called on use, not at import, so the flag stays stubbable.
+   * Defaults to available. */
+  available?: () => boolean;
 }
 
 export const PINNED_PANELS: Record<PinnedName, PinnedPanelDef> = {
@@ -30,6 +36,7 @@ export const PINNED_PANELS: Record<PinnedName, PinnedPanelDef> = {
     labelKey: msg.$t('balance_divergence.title'),
   },
   [PinnedNames.DATA_ISSUES]: {
+    available: isAccountingUpdateEnabled,
     component: defineAsyncComponent(async () => import('@/modules/history/data-issues/components/DataIssuesPinned.vue')),
     icon: 'lu-shield-alert',
     labelKey: msg.$t('data_issues.panel.title'),
