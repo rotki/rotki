@@ -1,5 +1,4 @@
-import type { BackendOptions } from '../ipc';
-import type { StarlingInvocation } from './starling-args';
+import type { StarlingBackendOptions, StarlingInvocation } from './starling-args';
 import type { StarlingRpc } from './starling-rpc';
 import { type ChildProcess, spawn } from 'node:child_process';
 import process from 'node:process';
@@ -83,7 +82,7 @@ export function spawnStarling(options: SpawnStarlingOptions): StarlingProcess {
  */
 export async function requestStarlingStart(
   rpc: StarlingRpc,
-  options: Partial<BackendOptions>,
+  options: StarlingBackendOptions,
   loglevel: string,
 ): Promise<void> {
   await rpc.request('start', { ...definedOptions(options), loglevel });
@@ -94,7 +93,7 @@ export async function requestStarlingStart(
  * camelCase field starling accepts, and an absent field leaves that setting
  * unchanged, so only the set ones are sent.
  */
-export function definedOptions(options: Partial<BackendOptions>): Record<string, unknown> {
+export function definedOptions(options: StarlingBackendOptions): Record<string, unknown> {
   const params: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(options)) {
     if (value !== undefined)

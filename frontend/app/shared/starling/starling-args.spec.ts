@@ -110,6 +110,45 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     });
   });
 
+  // How CI runs: the build job compiles both services once with --release and
+  // ships only those binaries, and the jobs that consume them have no rust
+  // toolchain at all. Falling back to cargo there is not a slow path, it is a
+  // dead one, so the release profile has to satisfy the same branch debug does.
+  describe('when only the release profile is built', () => {
+    beforeEach(() => {
+      existsSyncMock.mockImplementation((p: string) => !String(p).includes(path.join('target', 'debug')));
+    });
+
+    it('should launch the release starling binary rather than cargo', async () => {
+      const invocation = await buildDevInvocation();
+      expect(invocation.command).not.toBe('cargo');
+      expect(invocation.command).toContain(path.join('target', 'release'));
+      expect(invocation.command).toMatch(/starling(\.exe)?$/);
+    });
+
+    it('should point colibri at the release binary rather than cargo', async () => {
+      const { args } = await buildDevInvocation();
+      expect(flagValue(args, '--colibri-binary')).toContain(path.join('target', 'release'));
+      expect(args).not.toContain('--colibri-prefix=run');
+    });
+
+    it('should pass starling its own args, never cargo run args', async () => {
+      // The CI failure this guards: the command was swapped to the release
+      // binary while cargo's `run --locked -p starling --` args were kept, so
+      // starling rejected its arguments and died before answering `start`.
+      const { args } = await buildDevInvocation();
+      expect(args).not.toContain('run');
+      expect(args).not.toContain('--locked');
+      expect(args[0]).toMatch(/^--/);
+    });
+  });
+
+  it('should prefer the debug build when both profiles are present', async () => {
+    existsSyncMock.mockReturnValue(true);
+    const invocation = await buildDevInvocation();
+    expect(invocation.command).toContain(path.join('target', 'debug'));
+  });
+
   // The two launchers decide independently, so they can disagree: a prebuilt
   // starling still spawns colibri through cargo when only that build is missing.
   // The Strawberry Perl shim has to follow the cargo, not starling's own branch,

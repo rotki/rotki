@@ -6,6 +6,8 @@ import process from 'node:process';
 import { assert, toHumanReadable, toSentenceCase } from '@rotki/common';
 import consola from 'consola';
 import { ofetch } from 'ofetch';
+import { SHUTDOWN_GRACE_SECS } from '../shared/starling/starling-args';
+import { isUvAvailable } from '../shared/uv';
 
 interface Chain {
   id: string;
@@ -29,12 +31,26 @@ type Locations = Record<string, Location>;
 
 interface Counterparty { identifier: string; label: string; image: string }
 
-if (!(process.env.CI || process.env.VIRTUAL_ENV)) {
-  consola.error('Not CI or VIRTUAL_ENV');
+// An active virtualenv used to be required because this script spawned python
+// itself. starling resolves the interpreter now: the venv's when one is active,
+// otherwise the one uv resolves against uv.lock, so either is enough. Only the
+// case where neither exists still needs rejecting, since the remaining fallback
+// is whatever bare `python` happens to be on PATH.
+if (!process.env.VIRTUAL_ENV && !isUvAvailable()) {
+  consola.error(
+    'No python virtualenv active and `uv` is not on PATH.\n'
+    + 'Activate a venv (e.g. `source .venv/bin/activate`) or install uv (https://docs.astral.sh/uv/).',
+  );
   process.exit(1);
 }
 
+// The supervisor's proxy port, which is what this script talks to; core, colibri
+// and MCP sit behind it on the next three. Well clear of the app's dev and e2e
+// ranges so a running dev session or test run does not collide.
 const PORT = 55551;
+const CORE_PORT = 55552;
+const COLIBRI_PORT = 55553;
+const MCP_PORT = 55554;
 const HOST = '127.0.0.1';
 const API_URL = `http://${HOST}:${PORT}/api/1`;
 const PING_URL = `${API_URL}/ping`;
@@ -44,49 +60,79 @@ const imageUrl = 'https://raw.githubusercontent.com/rotki/rotki/develop/frontend
 // Store the backend process globally so we can terminate it later
 let backendProcess: ChildProcess | null = null;
 
-// Ensure the backend is terminated when the script is interrupted
-process.on('SIGINT', () => {
-  consola.info('Received SIGINT signal');
-  terminateBackend();
-  process.exit(0);
-});
+/**
+ * How long the supervisor gets to bring the tree down on its own. It asks starling
+ * to stop, gives it `SHUTDOWN_GRACE_SECS`, then kills it and reports the exit, so
+ * the wait has to outlast that grace or we would escalate over a teardown that was
+ * still progressing normally.
+ */
+const TEARDOWN_TIMEOUT_MS = (SHUTDOWN_GRACE_SECS + 5) * 1000;
 
-process.on('SIGTERM', () => {
-  consola.info('Received SIGTERM signal');
-  terminateBackend();
-  process.exit(0);
-});
+// Ensure the backend is terminated when the script is interrupted. The handlers
+// wait for the teardown rather than exiting under it, otherwise this process dies
+// first and leaves core and colibri behind holding their ports.
+function handleSignal(signal: NodeJS.Signals): void {
+  consola.info(`Received ${signal} signal`);
+  stopBackend()
+    .then(() => cleanupUserData())
+    .catch(error => consola.error('Error terminating backend:', error))
+    .finally(() => process.exit(0));
+}
+
+process.on('SIGINT', () => handleSignal('SIGINT'));
+process.on('SIGTERM', () => handleSignal('SIGTERM'));
+
+function hasExited(child: ChildProcess): boolean {
+  return child.exitCode !== null || child.signalCode !== null;
+}
+
+async function waitForExit(child: ChildProcess): Promise<void> {
+  return new Promise((resolve) => {
+    if (hasExited(child)) {
+      resolve();
+      return;
+    }
+    child.once('exit', () => resolve());
+  });
+}
 
 /**
- * Terminates the backend process if it's running
- * @returns {void}
+ * Stops the backend tree and waits for it to actually be down.
+ * @returns {Promise<void>}
  */
-function terminateBackend(): void {
-  if (backendProcess) {
-    consola.info('Terminating backend...');
-    try {
-      if (process.platform === 'win32') {
-        const pid = backendProcess.pid?.toString();
-        if (pid)
-          spawn('taskkill', ['/pid', pid, '/f', '/t']);
-      }
-      else {
-        try {
-          process.kill(-backendProcess.pid!, 'SIGTERM');
-        }
-        catch (error) {
-          consola.warn('Failed to kill process group, trying to kill just the process:', error);
-          process.kill(backendProcess.pid!, 'SIGTERM');
-        }
-      }
-      consola.success('Backend terminated');
-    }
-    catch (error) {
-      consola.error('Error terminating backend:', error);
-    }
-    finally {
-      backendProcess = null;
-    }
+async function stopBackend(): Promise<void> {
+  const child = backendProcess;
+  backendProcess = null;
+  if (!child)
+    return;
+
+  const { pid } = child;
+  // No pid means the spawn itself failed, so there is nothing running to reap.
+  if (pid === undefined || hasExited(child))
+    return;
+
+  consola.info('Terminating backend...');
+  // SIGTERM the supervisor script alone, never its group: it answers by asking
+  // starling to stop over RPC, and starling then tree-kills core and colibri in
+  // the order they have to come down in. Signalling the group would hit starling
+  // directly, racing that teardown and stranding whatever it had not reaped yet.
+  child.kill('SIGTERM');
+
+  // Kill this child only, never its group. It holds the write end of starling's
+  // stdin, so its death is an EOF there, and starling answers that by tearing the
+  // tree down itself. A group kill would take starling with it and strand exactly
+  // the core and colibri it was about to reap.
+  const escalation = setTimeout(() => {
+    consola.warn(`Backend did not exit within ${TEARDOWN_TIMEOUT_MS}ms, killing the supervisor`);
+    child.kill('SIGKILL');
+  }, TEARDOWN_TIMEOUT_MS);
+
+  try {
+    await waitForExit(child);
+    consola.success('Backend terminated');
+  }
+  finally {
+    clearTimeout(escalation);
   }
 }
 
@@ -102,6 +148,27 @@ function generateUsername(): string {
 // Generate the username once and use it throughout the script
 const username = generateUsername();
 const password = '123456789';
+
+// Scratch data directory for the throwaway user. Named at module scope so the
+// teardown can remove it without depending on `startBackend` having run.
+const userDir = path.join('/tmp', username);
+
+/**
+ * Removes the throwaway user's data directory. Only safe once the backend is
+ * down, since core holds its database open for the lifetime of the process.
+ *
+ * Kept to this run's own directory: a stale `protocols-*` from an earlier run
+ * could still belong to a live instance, and this script is not the owner of
+ * anything it did not create.
+ */
+function cleanupUserData(): void {
+  try {
+    fs.rmSync(userDir, { recursive: true, force: true });
+  }
+  catch (error) {
+    consola.warn(`Failed to remove ${userDir}:`, error);
+  }
+}
 
 /**
  * Checks if the backend is running by pinging the endpoint
@@ -123,7 +190,6 @@ async function isBackendRunning(): Promise<boolean> {
  */
 async function startBackend(): Promise<void> {
   // Create a folder in /tmp with the username
-  const userDir = path.join('/tmp', username);
   const dataDir = path.join(userDir, 'data');
   const logsDir = path.join(userDir, 'logs');
 
@@ -140,26 +206,41 @@ async function startBackend(): Promise<void> {
     fs.mkdirSync(logsDir, { recursive: true });
   }
 
+  // Run the backend under the starling supervisor, the same launcher the app and
+  // the e2e suite use, rather than spawning core directly. Only `/api/1/*` is
+  // needed here and that reaches core through the proxy unchanged.
   const args = [
-    path.join(process.cwd(), 'scripts', 'start-backend.ts'),
+    path.join(process.cwd(), 'scripts', 'start-starling.ts'),
     '--data',
     dataDir,
     '--logs',
     logsDir,
     '--port',
     PORT.toString(),
+    '--core-port',
+    CORE_PORT.toString(),
+    '--colibri-port',
+    COLIBRI_PORT.toString(),
+    '--mcp-port',
+    MCP_PORT.toString(),
   ];
 
   consola.info('Starting backend...');
 
-  // Spawn the backend process
+  // Spawn the backend process in its own process group. That insulates it from
+  // the terminal's Ctrl+C, so the teardown runs in one order, driven by the signal
+  // handlers here rather than by every process in the group being signalled at
+  // once. Deliberately not unref'd: this script owns the child's lifetime now and
+  // has to stay alive long enough to see it exit.
+  //
+  // `tsx` directly, never `pnpm run`: the stop below is a directed SIGTERM at this
+  // child, and pnpm does not forward signals to the command it spawns. Putting it
+  // in front would swallow the stop and strand the whole backend tree. tsx does
+  // forward, which is what makes the directed signal reach start-starling.ts.
   backendProcess = spawn('tsx', args, {
     stdio: 'inherit',
     detached: true,
   });
-
-  // Don't wait for the child process
-  backendProcess.unref();
 }
 
 /**
@@ -370,13 +451,18 @@ try {
 
   consola.success(`JSON data written to ${OUTPUT_FILE}`);
 
-  terminateBackend();
+  await stopBackend();
+  cleanupUserData();
 }
 catch (error) {
   consola.error('Error:', error);
 
   // Terminate the backend even if there's an error
-  terminateBackend();
+  await stopBackend();
+
+  // Deliberately keep the data directory on failure: its logs are the only record
+  // of why the backend would not come up.
+  consola.info(`Left the backend data directory behind for inspection: ${userDir}`);
 
   process.exit(1);
 }

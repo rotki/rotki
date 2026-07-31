@@ -190,6 +190,13 @@ struct Cli {
     #[arg(long)]
     colibri_prefix: Vec<String>,
 
+    /// Start core with its periodic task manager disabled. Used by the e2e
+    /// harness, which drives every query itself and would otherwise race
+    /// background refreshes. A launch fact, so it is CLI-only and cannot be
+    /// changed by a `start`/`restart` request.
+    #[arg(long)]
+    disable_task_manager: bool,
+
     /// Working directory for the core process (dev `uv run` resolves the project
     /// from here). Defaults to the supervisor's cwd.
     #[arg(long)]
@@ -588,6 +595,7 @@ async fn main() -> std::process::ExitCode {
         max_size_in_mb_all_logs: tunables.max_size_in_mb_all_logs,
         sqlite_instructions: tunables.sqlite_instructions,
         sleep_secs: None,
+        disable_task_manager: cli.disable_task_manager,
     };
 
     // The recipe for building the backend service specs from the (possibly

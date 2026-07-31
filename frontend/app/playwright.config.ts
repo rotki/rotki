@@ -8,8 +8,21 @@ const BASE_FRONTEND_PORT = 30301;
 const BASE_BACKEND_PORT = 30302;
 const BASE_COLIBRI_PORT = 30303;
 const BASE_MOCK_RPC_PORT = 30304;
+// starling's reverse proxy: the single origin the tests address. Core and colibri
+// stay on their own ports as its upstreams, but nothing dials them directly.
+const BASE_PROXY_PORT = 30305;
+// starling also wants an MCP port. Nothing in the suite uses it, but it must not
+// collide with another block, so it rides along.
+const BASE_MCP_PORT = 30306;
 
-const BASE_PORTS = [BASE_FRONTEND_PORT, BASE_BACKEND_PORT, BASE_COLIBRI_PORT, BASE_MOCK_RPC_PORT];
+const BASE_PORTS = [
+  BASE_FRONTEND_PORT,
+  BASE_BACKEND_PORT,
+  BASE_COLIBRI_PORT,
+  BASE_MOCK_RPC_PORT,
+  BASE_PROXY_PORT,
+  BASE_MCP_PORT,
+];
 const PORT_BLOCK_STRIDE = 10;
 const MAX_PORT_BLOCKS = 10;
 
@@ -28,7 +41,7 @@ function isPortFree(port: number): boolean {
 }
 
 /**
- * The four services use fixed ports, so a second checkout running e2e at the same time
+ * The services use fixed ports, so a second checkout running e2e at the same time
  * would collide (or worse, silently reuse the other checkout's servers via
  * `reuseExistingServer`). Move the whole block up in steps of 10 until every port in it
  * is free. CI is pinned to the base block: the build job bakes the backend/colibri URLs
@@ -73,10 +86,14 @@ const FRONTEND_PORT = BASE_FRONTEND_PORT + portOffset;
 const BACKEND_PORT = BASE_BACKEND_PORT + portOffset;
 const COLIBRI_PORT = BASE_COLIBRI_PORT + portOffset;
 const MOCK_RPC_PORT = BASE_MOCK_RPC_PORT + portOffset;
+const PROXY_PORT = BASE_PROXY_PORT + portOffset;
+const MCP_PORT = BASE_MCP_PORT + portOffset;
 
 const frontendUrl = `http://localhost:${FRONTEND_PORT}`;
-const backendUrl = `http://127.0.0.1:${BACKEND_PORT}`;
-const colibriUrl = `http://127.0.0.1:${COLIBRI_PORT}`;
+// One origin for both backends, matching every shipping mode: `/api/1/*` and
+// `/ws/` reach core, `/colibri/*` reaches colibri with the prefix stripped.
+const backendUrl = `http://127.0.0.1:${PROXY_PORT}`;
+const colibriUrl = `${backendUrl}/colibri`;
 const mockRpcUrl = `http://127.0.0.1:${MOCK_RPC_PORT}`;
 
 // `.e2e` is resolved from the cwd, so parallel runs in different worktrees already get
@@ -228,19 +245,23 @@ export default defineConfig({
       },
     },
     {
-      command: `tsx scripts/start-backend.ts --port ${BACKEND_PORT} --data ${dataDir} --logs ${logDir}`,
+      // One supervisor brings up core and colibri and fronts both behind its
+      // proxy. The probe hits core through that proxy, so a pass means the whole
+      // tree plus the routing is live.
+      command: `tsx scripts/start-starling.ts --port ${PROXY_PORT} --core-port ${BACKEND_PORT} --colibri-port ${COLIBRI_PORT} --mcp-port ${MCP_PORT} --data ${dataDir} --logs ${logDir}`,
       url: `${backendUrl}/api/1/ping`,
       reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
+      // Covers a cold `cargo run` for both Rust services on a fresh checkout.
+      timeout: 180_000,
+      // Playwright otherwise SIGKILLs the server's process tree. starling puts
+      // core and colibri in their own process groups so it can tree-kill them
+      // itself, so that kill never reaches them and both survive the run. Send
+      // SIGTERM instead and wait, which lets the wrapper drive the ordered
+      // shutdown; the window covers starling's own 10s grace with room to spare.
+      gracefulShutdown: { signal: 'SIGTERM', timeout: 20_000 },
       env: {
         ROTKEHLCHEN_ENVIRONMENT: 'test',
       },
-    },
-    {
-      command: `tsx scripts/start-colibri.ts --port ${COLIBRI_PORT} --data ${dataDir} --logs ${logDir}`,
-      url: `${colibriUrl}/health`,
-      reuseExistingServer: !process.env.CI,
-      timeout: 180_000,
     },
     {
       command: frontendCommand,

@@ -1,8 +1,7 @@
-import type { BackendOptions } from '../../app/shared/ipc';
 import path from 'node:path';
 import process from 'node:process';
 import { DEFAULT_MCP_PORT, DEFAULT_PROXY_PORT, selectPort } from '../../app/shared/port-utils';
-import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS } from '../../app/shared/starling/starling-args';
+import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingBackendOptions } from '../../app/shared/starling/starling-args';
 import { requestStarlingStart, spawnStarling } from '../../app/shared/starling/starling-launch';
 import { StarlingRpc } from '../../app/shared/starling/starling-rpc';
 import { createDevLogger, formatDevLine } from './logger';
@@ -59,7 +58,7 @@ export async function startStarlingSupervisor(options: StarlingDevOptions): Prom
   const mcpPort = await selectPort(DEFAULT_MCP_PORT, API_HOST);
   const proxyPort = await selectPort(DEFAULT_PROXY_PORT, API_HOST);
 
-  const backendOptions: Partial<BackendOptions> = {
+  const backendOptions: StarlingBackendOptions = {
     logDirectory: options.logDir,
     ...(options.dataDir ? { dataDirectory: options.dataDir } : {}),
   };
