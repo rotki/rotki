@@ -110,7 +110,6 @@
     "postcss": "catalog:",
     "postcss-html": "catalog:",
     "semver": "catalog:",
-    "source-map-support": "catalog:",
     "stylelint": "catalog:",
     "stylelint-config-recommended-vue": "catalog:",
     "stylelint-order": "catalog:",

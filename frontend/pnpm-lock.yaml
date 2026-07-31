@@ -222,9 +222,6 @@ catalogs:
     semver:
       specifier: 7.8.5
       version: 7.8.5
-    source-map-support:
-      specifier: 0.5.21
-      version: 0.5.21
     stylelint:
       specifier: 17.14.1
       version: 17.14.1
@@ -566,9 +563,6 @@ importers:
       semver:
         specifier: 'catalog:'
         version: 7.8.5
-      source-map-support:
-        specifier: 'catalog:'
-        version: 0.5.21
       stylelint:
         specifier: 'catalog:'
         version: 17.14.1(supports-color@10.2.2)(typescript@6.0.3)
