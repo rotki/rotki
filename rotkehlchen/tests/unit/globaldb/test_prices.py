@@ -106,7 +106,6 @@ def test_get_historical_price(globaldb, historical_price_test_data):  # pylint: 
         max_seconds_distance=10,
     )
     assert price_entry is None
-
     # multiple possible entries, make sure closest is returned
     expected_entry = HistoricalPrice(
         from_asset=A_ETH,
@@ -140,3 +139,20 @@ def test_get_historical_price(globaldb, historical_price_test_data):  # pylint: 
         max_seconds_distance=3600,
     )
     assert price_entry is None
+
+
+def test_historical_price_lookup_uses_pair_timestamp_index(globaldb) -> None:
+    """The lookup must narrow by pair and timestamp instead of scanning a pair's full history."""
+    with globaldb.conn.read_ctx() as cursor:
+        query_plan = cursor.execute(
+            'EXPLAIN QUERY PLAN SELECT from_asset, to_asset, source_type, timestamp, price '
+            'FROM price_history WHERE from_asset=? AND to_asset=? AND timestamp BETWEEN ? AND ? '
+            'ORDER BY ABS(timestamp - ?), CASE WHEN source_type=? THEN 0 ELSE 1 END',
+            (A_ETH.identifier, A_EUR.identifier, 1511624023, 1511631223, 1511627623, 'A'),
+        ).fetchall()
+
+    assert any(
+        'idx_price_history_pair_timestamp' in row[-1]
+        and 'timestamp>? AND timestamp<?' in row[-1]
+        for row in query_plan
+    )

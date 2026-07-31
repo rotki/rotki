@@ -36,6 +36,14 @@ def migrate_to_v17(
             ('J', 10),
         )
 
+    @progress_step('Optimize historical price lookup by asset pair and timestamp.')
+    def _optimize_historical_price_lookup(write_cursor: DBCursor) -> None:
+        write_cursor.execute('DROP INDEX IF EXISTS idx_price_history_identifier')
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_price_history_pair_timestamp '
+            'ON price_history(from_asset, to_asset, timestamp, source_type)',
+        )
+
     @progress_step('Create and populate the asset flags table.')
     def _create_and_populate_asset_flags(write_cursor: DBCursor) -> None:
         write_cursor.execute("""CREATE TABLE IF NOT EXISTS asset_flags (

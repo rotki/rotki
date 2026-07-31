@@ -1830,6 +1830,8 @@ def test_upgrade_v16_v17(
         assert cursor.execute(
             "SELECT seq FROM price_history_source_types WHERE type = 'J'",
         ).fetchone()[0] == 10
+        assert index_exists(cursor=cursor, name='idx_price_history_identifier') is False
+        assert index_exists(cursor=cursor, name='idx_price_history_pair_timestamp') is True
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
