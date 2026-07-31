@@ -12,10 +12,6 @@ import { setupDayjs } from '@/modules/core/common/data/date';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import EthDepositEventForm from '@/modules/history/management/forms/EthDepositEventForm.vue';
 
-vi.mock('json-editor-vue', () => ({
-  template: '<input />',
-}));
-
 vi.mock('@/modules/history/events/use-history-events', () => ({
   useHistoryEvents: vi.fn(),
 }));

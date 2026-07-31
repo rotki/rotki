@@ -193,3 +193,6 @@ config.global.stubs.RuiAutoComplete = RuiAutoCompleteStub;
 config.global.stubs.RuiIcon = RuiIconStub;
 config.global.stubs.RuiTooltip = RuiTooltipStub;
 config.global.stubs.I18nT = true;
+// JsonInput lazy-loads the heavy `vanilla-jsoneditor` on mount; no spec asserts its
+// DOM, so stub it globally to keep form mounts fast.
+config.global.stubs.JsonInput = true;
