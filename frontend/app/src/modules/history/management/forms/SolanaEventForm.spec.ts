@@ -15,10 +15,6 @@ import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/ma
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import SolanaEventForm from '@/modules/history/management/forms/SolanaEventForm.vue';
 
-vi.mock('json-editor-vue', () => ({
-  template: '<input />',
-}));
-
 vi.mock('@/modules/history/events/use-history-events', () => ({
   useHistoryEvents: vi.fn(),
 }));

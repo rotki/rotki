@@ -7,10 +7,6 @@ import { setupDayjs } from '@/modules/core/common/data/date';
 import HistoryEventForm from '@/modules/history/events/HistoryEventForm.vue';
 import { isEvmTypeEvent } from '@/modules/history/management/forms/form-guards';
 
-vi.mock('json-editor-vue', () => ({
-  template: '<input />',
-}));
-
 const formTypesYouCanAddTo = Object.values(HistoryEventEntryType).filter(type => !isEvmTypeEvent(type));
 
 type Wrapper = VueWrapper<InstanceType<typeof HistoryEventForm>>;
