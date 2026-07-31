@@ -114,6 +114,48 @@ describe('useSyncProgress', () => {
       const { phase } = useSyncProgress();
       expect(get(phase)).toBe(SyncPhase.COMPLETE);
     });
+
+    it('should complete when a chain failed rather than sitting short of the end', () => {
+      // The regression this guards: a failed address is terminal, but the two chain-completion
+      // counters here did not know about it, so a run holding one sat at "Syncing History 93%"
+      // forever even though the chain list it summarised had already settled.
+      setupTxStore([
+        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+        createEvmTxStatus('0x456', 'gnosis', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+      ]);
+      useTxQueryStatusStore().markAddressFailed({ address: '0x456', chain: 'gnosis' });
+
+      setupEventsStore([
+        createEventsStatus('kraken', 'Kraken', HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED),
+      ]);
+
+      const { completedChains, overallProgress, phase } = useSyncProgress();
+      expect(get(phase)).toBe(SyncPhase.COMPLETE);
+      expect(get(completedChains)).toBe(2);
+      expect(get(overallProgress)).toBe(100);
+    });
+
+    it('should report warnings when a chain failed', () => {
+      // Complete, but not clean: the header renders "Sync Complete with warnings" off this, and
+      // previously only online-events could raise it — so a run could show a plain green
+      // "Sync Complete" with failed addresses sitting in the notification drawer.
+      setupTxStore([
+        createEvmTxStatus('0x456', 'gnosis', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+      ]);
+      useTxQueryStatusStore().markAddressFailed({ address: '0x456', chain: 'gnosis' });
+
+      const { hasWarnings } = useSyncProgress();
+      expect(get(hasWarnings)).toBe(true);
+    });
+
+    it('should not report warnings when everything succeeded', () => {
+      setupTxStore([
+        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+      ]);
+
+      const { hasWarnings } = useSyncProgress();
+      expect(get(hasWarnings)).toBe(false);
+    });
   });
 
   describe('isActive', () => {

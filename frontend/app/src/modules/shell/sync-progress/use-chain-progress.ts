@@ -4,8 +4,8 @@ import { TransactionsQueryStatus } from '@/modules/core/messaging/types';
 import { type AddressProgress, AddressStatus, AddressStep, type ChainProgress } from './types';
 
 /**
- * Lookups rather than switches: a `Record` keyed by the status union is still exhaustive — a new
- * status is a compile error here, exactly as a missing `case` was — without every added state
+ * Lookups rather than switches: a `Record` keyed by the status union is still exhaustive (a new
+ * status is a compile error here, exactly as a missing `case` was) without every added state
  * costing another branch against the complexity cap.
  */
 const ADDRESS_STATUS: Record<TransactionsQueryStatus, AddressStatus> = {
@@ -76,9 +76,25 @@ function toAddressProgress(data: TxQueryStatusData): AddressProgress {
   };
 }
 
+/**
+ * Addresses that will not change again: succeeded, cancelled or failed.
+ *
+ * Exported because "terminal counts as done" was written out by hand at three separate call sites,
+ * so adding a terminal state fixed some of them and silently left the others behind: the sync
+ * banner sat at 93% forever while the chain list it summarised had already settled.
+ */
+export function settledAddresses(chain: Pick<ChainProgress, 'cancelled' | 'completed' | 'failed'>): number {
+  return chain.completed + chain.cancelled + chain.failed;
+}
+
+/** Whether every one of a chain's addresses has reached a terminal state. */
+export function isChainSettled(chain: Pick<ChainProgress, 'cancelled' | 'completed' | 'failed' | 'total'>): boolean {
+  return chain.total > 0 && settledAddresses(chain) === chain.total;
+}
+
 function isDone(status: AddressStatus): boolean {
   // Failed counts as done, like cancelled: no further progress is coming for that address. Same
-  // argument `percentageOf` makes for activities — a bar that excluded failures would stall short
+  // argument `percentageOf` makes for activities: a bar that excluded failures would stall short
   // of the end whenever a chain failed, and never reach a settled state.
   return status === AddressStatus.COMPLETE
     || status === AddressStatus.CANCELLED
