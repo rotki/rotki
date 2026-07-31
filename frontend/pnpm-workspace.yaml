@@ -66,7 +66,6 @@ catalog:
   '@vueuse/shared': 14.3.0
   '@walletconnect/core': 2.23.10
   '@walletconnect/universal-provider': 2.23.10
-  ajv: 8.20.0
   autoprefixer: 10.5.4
   bignumber.js: 9.3.1
   body-parser: 2.3.0

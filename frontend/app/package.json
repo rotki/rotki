@@ -92,7 +92,6 @@
     "@vue/devtools-api": "catalog:",
     "@vue/test-utils": "catalog:",
     "@vue/tsconfig": "catalog:",
-    "ajv": "catalog:",
     "autoprefixer": "catalog:",
     "c8": "catalog:",
     "cac": "catalog:",
