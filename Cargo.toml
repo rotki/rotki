@@ -21,9 +21,20 @@ repository = "https://github.com/rotki/rotki"
 
 # Exact-pinned, matching colibri's convention: reproducible builds, and a
 # dependency bump is always a deliberate, reviewable diff rather than something
-# that drifts in on the next lockfile refresh.
+# that drifts in on the next lockfile refresh. An exact pin in any workspace
+# member also constrains the transitive resolution of every other member.
 [workspace.dependencies]
-tokio = "=1.52.3"
+tokio = { version = "=1.52.3", features = [
+    "rt-multi-thread",
+    "macros",
+    "process",
+    "time",
+    "signal",
+    "net",
+    "sync",
+    "io-util",
+    "io-std",
+] }
 async-trait = "=0.1.89"
 thiserror = "=2.0.18"
 tracing = "=0.1.44"

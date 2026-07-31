@@ -31,7 +31,6 @@ frontend/logs
 .venv
 .pnpm-debug.log
 /target
-colibri/target
 **/.claude/
 out
 .codexbox-out/

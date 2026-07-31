@@ -315,7 +315,10 @@ mod tests {
     #[test]
     fn rejects_invalid_cookie() {
         let db = temp_session_db(&["active-sid"]);
-        assert_eq!(status_for(gate("k", db), Some("garbage")), StatusCode::UNAUTHORIZED);
+        assert_eq!(
+            status_for(gate("k", db), Some("garbage")),
+            StatusCode::UNAUTHORIZED
+        );
     }
 
     #[test]
@@ -335,7 +338,10 @@ mod tests {
         let key = "the-session-key";
         let db = temp_session_db(&["the-active-sid"]);
         let token = mint(key.as_bytes(), "user0", "a-stale-sid", unix_now() + 3600);
-        assert_eq!(status_for(gate(key, db), Some(&token)), StatusCode::UNAUTHORIZED);
+        assert_eq!(
+            status_for(gate(key, db), Some(&token)),
+            StatusCode::UNAUTHORIZED
+        );
     }
 
     #[test]
@@ -345,7 +351,10 @@ mod tests {
         let key = "the-session-key";
         let db = temp_session_db(&["active-sid"]); // belongs to "user0"
         let token = mint(key.as_bytes(), "mallory", "active-sid", unix_now() + 3600);
-        assert_eq!(status_for(gate(key, db), Some(&token)), StatusCode::UNAUTHORIZED);
+        assert_eq!(
+            status_for(gate(key, db), Some(&token)),
+            StatusCode::UNAUTHORIZED
+        );
     }
 
     #[test]
@@ -366,7 +375,10 @@ mod tests {
         // core commits a takeover: sid-1 replaced by sid-2 on a separate connection.
         let writer = Connection::open(&db).unwrap();
         writer
-            .execute("UPDATE active_sessions SET sid = ?1 WHERE sid = ?2", ["sid-2", "sid-1"])
+            .execute(
+                "UPDATE active_sessions SET sid = ?1 WHERE sid = ?2",
+                ["sid-2", "sid-1"],
+            )
             .unwrap();
 
         // data_version moved ⇒ the store drops its cache and re-reads: sid-1 is gone,

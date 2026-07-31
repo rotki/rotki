@@ -9,8 +9,6 @@
 build
 chromedriverlog.txt
 target
-colibri/target
-crates/target
 frontend/app/.env.development.local
 frontend/app/.idea
 frontend/app/.nyc_output

@@ -8,17 +8,7 @@ rust-version.workspace = true
 repository.workspace = true
 
 [dependencies]
-tokio = { workspace = true, features = [
-    "rt-multi-thread",
-    "macros",
-    "process",
-    "time",
-    "signal",
-    "net",
-    "sync",
-    "io-util",
-    "io-std",
-] }
+tokio.workspace = true
 tracing.workspace = true
 
 # Body combinators: the access log wraps the response body to count the bytes

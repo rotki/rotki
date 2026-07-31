@@ -281,6 +281,7 @@ class Storage:
         self.backend_directory = self.build_directory / 'backend'
         self.colibri_directory = self.build_directory / 'colibri'
         self.starling_directory = self.build_directory / 'starling'
+        self.rust_target_directory = self.build_directory / 'rust-target'
         self.build_directory.mkdir(parents=True, exist_ok=True)
 
     def prepare_backend(self) -> None:
@@ -734,10 +735,11 @@ class BackendBuilder:
         if self.__debug_symbols:
             # Keep release optimizations while emitting debug symbols for symbolization/testing.
             build_env['CARGO_PROFILE_RELEASE_DEBUG'] = '1'
+            build_env['CARGO_PROFILE_RELEASE_STRIP'] = 'none'
 
         build_ret_code = subprocess.call(
-            f'cargo build --target-dir {colibri_directory} '
-            '--manifest-path ./Cargo.toml --release -p colibri',
+            f'cargo build --target-dir {self.__storage.rust_target_directory} '
+            '--manifest-path ./Cargo.toml --release --locked -p colibri',
             shell=True,
             env=build_env,
         )
@@ -749,7 +751,7 @@ class BackendBuilder:
         if self.__win is not None:
             binary_name = f'{binary_name}.exe'
 
-        backend_binary = colibri_directory / 'release' / binary_name
+        backend_binary = self.__storage.rust_target_directory / 'release' / binary_name
 
         ret_code = subprocess.call(f'{backend_binary} --version', shell=True)
 
@@ -775,10 +777,11 @@ class BackendBuilder:
         if self.__debug_symbols:
             # Keep release optimizations while emitting debug symbols for symbolization/testing.
             build_env['CARGO_PROFILE_RELEASE_DEBUG'] = '1'
+            build_env['CARGO_PROFILE_RELEASE_STRIP'] = 'none'
 
         build_ret_code = subprocess.call(
-            f'cargo build --target-dir {starling_directory} '
-            '--manifest-path ./Cargo.toml --release -p starling',
+            f'cargo build --target-dir {self.__storage.rust_target_directory} '
+            '--manifest-path ./Cargo.toml --release --locked -p starling',
             shell=True,
             env=build_env,
         )
@@ -790,7 +793,7 @@ class BackendBuilder:
         if self.__win is not None:
             binary_name = f'{binary_name}.exe'
 
-        starling_binary = starling_directory / 'release' / binary_name
+        starling_binary = self.__storage.rust_target_directory / 'release' / binary_name
 
         ret_code = subprocess.call(f'{starling_binary} --version', shell=True)
 

@@ -255,14 +255,16 @@ async fn query_uniswap_position_icon(
         };
 
         let json_data: serde_json::Value = match STANDARD.decode(base64_str) {
-            Ok(bytes) => match serde_json::from_slice(&bytes) {
-                Ok(json) => json,
-                Err(e) => {
-                    error!("Failed to parse JSON from node '{}' for token ID {} on contract {}: {}",
+            Ok(bytes) => {
+                match serde_json::from_slice(&bytes) {
+                    Ok(json) => json,
+                    Err(e) => {
+                        error!("Failed to parse JSON from node '{}' for token ID {} on contract {}: {}",
                        node.name, token_id, contract_address, e);
-                    break;
+                        break;
+                    }
                 }
-            },
+            }
             Err(e) => {
                 error!("Failed to decode base64 JSON from node '{}' for token ID {} on contract {}: {}",
                        node.name, token_id, contract_address, e);

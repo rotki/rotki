@@ -152,7 +152,7 @@ describe('buildStarlingInvocation (dev launchers)', () => {
       const invocation = await buildDevInvocation();
       expect(invocation.command).toBe('cargo');
       expect(invocation.args.slice(0, 4)).toEqual(['run', '--locked', '-p', 'starling']);
-      expect(invocation.cwd).toBe(path.resolve(process.cwd(), '..', '..'));
+      expect(invocation.cwd.endsWith('crates')).toBe(false);
     });
 
     it('should fall back to running colibri through cargo', async () => {

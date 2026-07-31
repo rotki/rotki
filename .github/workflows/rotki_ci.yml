@@ -296,7 +296,7 @@ jobs:
       - name: Fetch Rust dependencies
         run: cargo fetch --locked
 
-      - run: cargo fmt --check -p starling -p starling-core -p starling-proxy
+      - run: cargo fmt --all --check
 
       - run: cargo check --workspace --exclude colibri --locked && cargo clippy --workspace --exclude colibri --all-targets --locked
         env:

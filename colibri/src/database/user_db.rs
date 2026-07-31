@@ -222,12 +222,12 @@ impl DBHandler {
 #[macro_export]
 macro_rules! create_test_userdb {
     () => {{
-        use $crate::database::user_db::DBHandler;
         use rand::{rngs::StdRng, SeedableRng};
         use regex::Regex;
         use std::path::PathBuf;
         use std::sync::Arc;
         use std::time::SystemTime;
+        use $crate::database::user_db::DBHandler;
 
         let timestamp = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)

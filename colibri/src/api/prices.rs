@@ -308,8 +308,14 @@ mod tests {
 
         assert_eq!(status, StatusCode::OK);
         let result = body.get("result").unwrap();
-        assert_eq!(result.get("ETH").and_then(|value| value.as_bool()), Some(true));
-        assert_eq!(result.get("BTC").and_then(|value| value.as_bool()), Some(false));
+        assert_eq!(
+            result.get("ETH").and_then(|value| value.as_bool()),
+            Some(true)
+        );
+        assert_eq!(
+            result.get("BTC").and_then(|value| value.as_bool()),
+            Some(false)
+        );
         assert_eq!(
             result.get("UNKNOWN").and_then(|value| value.as_bool()),
             Some(false)

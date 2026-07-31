@@ -8,14 +8,14 @@ repository.workspace = true
 
 [dependencies]
 # For logging
-log = "=0.4.29"
+log = "=0.4.33"
 # For the asynchronous Rest API
 reqwest = { version = "=0.13.2", default-features = false, features = ["json", "query", "rustls-no-provider"]}
 rustls = { version = "=0.23.40", default-features = false, features = ["ring", "std", "tls12"] }
 # `signal` powers the graceful-shutdown hook in main: starling stops us with
 # CTRL_BREAK (windows) / SIGTERM (unix), and without a handler the OS default
 # terminator kills us mid-flight instead of letting us close the database.
-tokio = { workspace = true, features = ["rt-multi-thread", "fs", "signal"] }
+tokio = { workspace = true, features = ["fs"] }
 axum.workspace = true
 # for serialization of structs via the API
 serde.workspace = true

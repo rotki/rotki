@@ -13,17 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 starling-core = { path = "../starling-core" }
-tokio = { workspace = true, features = [
-    "rt-multi-thread",
-    "macros",
-    "process",
-    "time",
-    "signal",
-    "net",
-    "sync",
-    "io-util",
-    "io-std",
-] }
+tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 clap = { workspace = true, features = ["derive"] }
