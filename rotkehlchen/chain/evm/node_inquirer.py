@@ -30,7 +30,11 @@ from rotkehlchen.chain.evm.constants import (
     FAKE_GENESIS_TX_RECEIPT,
     GENESIS_HASH,
 )
-from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
+from rotkehlchen.chain.evm.contracts import (
+    EvmContract,
+    EvmContracts,
+    checksum_decoded_addresses,
+)
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2_CHAINIDS_WITH_L1_FEES
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
 from rotkehlchen.chain.evm.types import EvmIndexer, RemoteDataQueryStatus, WeightedNode
@@ -683,7 +687,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             *given_arguments,
         )
         output_types = get_abi_output_types(fn_abi)
-        output_data = web3.codec.decode(output_types, bytes.fromhex(result[2:]))
+        output_data = checksum_decoded_addresses(
+            values=web3.codec.decode(output_types, bytes.fromhex(result[2:])),
+            output_types=output_types,
+        )
 
         if len(output_data) == 1:
             # due to https://github.com/PyCQA/pylint/issues/4114

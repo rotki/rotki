@@ -214,13 +214,11 @@ def _query_beefy_cow_token_price(
         try:
             token = get_or_create_evm_token(
                 userdb=evm_inquirer.database,
-                # comes out of the abi decoding non-checksummed and asset identifiers are
-                # compared exactly, so it has to be checksummed before building one
-                evm_address=deserialize_evm_address(underlying_token),
+                evm_address=underlying_token,
                 chain_id=evm_inquirer.chain_id,
                 encounter=TokenEncounterInfo(description='Querying Beefy vault token price'),
             )
-        except (NotERC20Conformant, NotERC721Conformant, InputError, DeserializationError) as e:
+        except (NotERC20Conformant, NotERC721Conformant, InputError) as e:
             log.error(
                 f'Failed to get underlying token {underlying_token} '
                 f'for Beefy vault {vault_token} on {evm_inquirer.chain_name} due to {e!s}',

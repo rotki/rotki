@@ -18,5 +18,5 @@ class ExtrafiBalances(ExtrafiCommonBalances):
         super().__init__(
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
-            extrafi_token=Asset('eip155:8453/erc20:0x2dad3a13ef0c6366220f989157009e501e7938f8'),
+            extrafi_token=Asset('eip155:8453/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8'),
         )

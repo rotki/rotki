@@ -2,6 +2,7 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeVar, overload
 
+from eth_utils import to_checksum_address
 from eth_utils.abi import get_abi_output_types
 from web3 import Web3
 from web3._utils.contracts import find_matching_event_abi
@@ -32,6 +33,35 @@ WEB3 = Web3()
 
 
 _WEB3_CONTRACT_CACHE: dict[tuple[ChecksumEvmAddress, int], Any] = {}
+
+
+def checksum_decoded_addresses(
+        values: tuple[Any, ...],
+        output_types: list[str],
+) -> tuple[Any, ...]:
+    """Checksum any address typed value decoded from a contract call.
+
+    web3's raw abi codec returns addresses lowercased, unlike its higher level contract api.
+    Decoders feed these straight into token creation and asset identifiers are compared
+    exactly, so a lowercased address here builds an identifier that never matches the
+    canonical one. Everything downstream is annotated ChecksumEvmAddress already.
+
+    Nested tuple outputs are left alone, no contract we decode returns an address inside one.
+    """
+    if not any(output_type.startswith('address') for output_type in output_types):
+        return values  # nothing to do, which is the common case
+
+    checksummed = []
+    for value, output_type in zip(values, output_types, strict=False):
+        if output_type == 'address':
+            checksummed.append(to_checksum_address(value))
+        elif output_type.startswith('address['):
+            # keep the container type the codec produced
+            checksummed.append(type(value)(to_checksum_address(item) for item in value))
+        else:
+            checksummed.append(value)
+
+    return tuple(checksummed)
 
 
 def _get_web3_contract(address: ChecksumEvmAddress, abi: ABI) -> Any:
@@ -107,7 +137,10 @@ class EvmContract(NamedTuple):
             *(arguments or []),
         )
         output_types = get_abi_output_types(fn_abi)
-        return WEB3.codec.decode(output_types, result)
+        return checksum_decoded_addresses(
+            values=WEB3.codec.decode(output_types, result),
+            output_types=output_types,
+        )
 
     def decode_event(
             self,

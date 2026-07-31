@@ -40,9 +40,13 @@ def is_valid_evm_address(address: str) -> bool:
 
 
 def find_addresses_in_string(content: str) -> list[tuple[str, int]]:
-    """Find all potential EVM addresses in a string using regex."""
-    # Pattern for 0x followed by 40 hexadecimal characters
-    pattern = r'0x[a-fA-F0-9]{40}'
+    """Find all potential EVM addresses in a string using regex.
+
+    The hex lookarounds keep a 40 char window out of a longer hex run from matching, so
+    transaction hashes and other 32 byte hex literals are not mistaken for addresses.
+    """
+    # Pattern for 0x followed by exactly 40 hexadecimal characters
+    pattern = r'(?<![a-fA-F0-9])0x[a-fA-F0-9]{40}(?![a-fA-F0-9])'
     matches = []
 
     for match in re.finditer(pattern, content):
@@ -129,20 +133,32 @@ def check_python_file(file_path: Path) -> list[AddressViolation]:
                             pass
             return violations
 
-        # Walk the AST to find string literals
+        # Walk the AST to find string literals. Addresses are looked for anywhere inside a
+        # string, not just when the whole string is one, since an address embedded in an asset
+        # identifier ('eip155:8453/erc20:0x...') has to be checksummed just the same: those
+        # identifiers are compared exactly, so a non-canonical one silently matches nothing.
         for node in ast.walk(tree):
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
-                address_str = node.value
-                if is_valid_evm_address(address_str) and not is_checksum_address(address_str):
+                for address_str, offset in find_addresses_in_string(node.value):
+                    if is_checksum_address(address_str):
+                        continue
+
                     try:
                         checksummed = to_checksum_address(address_str)
-                        # Find the line content
-                        line_content = lines[node.lineno - 1] if node.lineno <= len(lines) else ''
+                        # a string constant can span several lines, so resolve the line the
+                        # address actually sits on rather than the one the string starts at
+                        preceding = node.value[:offset]
+                        line_num = node.lineno + preceding.count('\n')
+                        if (newline_idx := preceding.rfind('\n')) != -1:
+                            column = offset - newline_idx  # already 1-based off the newline
+                        else:
+                            column = node.col_offset + 1 + offset
 
+                        line_content = lines[line_num - 1] if line_num <= len(lines) else ''
                         violations.append(AddressViolation(
                             file=file_path,
-                            line=node.lineno,
-                            column=node.col_offset + 1,
+                            line=line_num,
+                            column=column,
                             address=address_str,
                             checksummed=checksummed,
                             context=line_content.strip(),

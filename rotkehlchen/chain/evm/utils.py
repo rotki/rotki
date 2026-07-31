@@ -14,7 +14,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
+from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
     ChainID,
     Price,
@@ -147,19 +147,17 @@ def lp_price_from_uniswaplike_pool_contract(
         return None
 
     try:
-        # the addresses come out of the abi decoding non-checksummed, and asset identifiers
-        # are compared exactly, so they have to be checksummed before building one
         token0 = EvmToken(evm_address_to_identifier(
-            address=deserialize_evm_address(decoded[0]),
+            address=decoded[0],
             chain_id=token.chain_id,
             token_type=TokenKind.ERC20,
         ))
         token1 = EvmToken(evm_address_to_identifier(
-            address=deserialize_evm_address(decoded[1]),
+            address=decoded[1],
             chain_id=token.chain_id,
             token_type=TokenKind.ERC20,
         ))
-    except (UnknownAsset, WrongAssetType, DeserializationError):
+    except (UnknownAsset, WrongAssetType):
         log.debug(
             f'Unknown assets {decoded[0]} {decoded[1]} while querying price from '
             f'{evm_inquirer.chain_name} {abi_name} for token {token.evm_address}',

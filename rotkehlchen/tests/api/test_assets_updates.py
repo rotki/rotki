@@ -262,12 +262,12 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x6B175474E890
 *
 INSERT INTO assets(identifier, name, type) VALUES('DASH', 'Dash', 'B'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('DASH', 'DASH', 'dash-coingecko', NULL, 'BTC', 1337, NULL);
 *
-INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F', 'Conflicting token', 'C');INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES('eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F', 'A', 1, '0x1B175474E89094C44Da98b954EedeAC495271d0F', 18, NULL);INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F', 'CTK', 'ctk', NULL, NULL, 1573672677, NULL)
+INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1b175474E89094C44DA98B954EeDEAC495271d0f', 'Conflicting token', 'C');INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES('eip155:1/erc20:0x1b175474E89094C44DA98B954EeDEAC495271d0f', 'A', 1, '0x1b175474E89094C44DA98B954EeDEAC495271d0f', 18, NULL);INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('eip155:1/erc20:0x1b175474E89094C44DA98B954EeDEAC495271d0f', 'CTK', 'ctk', NULL, NULL, 1573672677, NULL)
 *
     """  # noqa: E501
     # add a conflicting token
     globaldb.add_asset(EvmToken.initialize(
-        address=string_to_evm_address('0x1B175474E89094C44Da98b954EedeAC495271d0F'),
+        address=string_to_evm_address('0x1b175474E89094C44DA98B954EeDEAC495271d0f'),
         chain_id=ChainID.ETHEREUM,
         token_kind=TokenKind.ERC20,
         decimals=12,
@@ -280,7 +280,7 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1B175474E890
         protocol=None,
         underlying_tokens=None,
     ))
-    globaldb.add_user_owned_assets([Asset('eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F')])
+    globaldb.add_user_owned_assets([Asset('eip155:1/erc20:0x1b175474E89094C44DA98B954EeDEAC495271d0f')])
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
         latest=999999991,
@@ -410,13 +410,13 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1B175474E890
                 'protocol': None,
             },
         }, {
-            'identifier': 'eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F',
+            'identifier': 'eip155:1/erc20:0x1b175474E89094C44DA98B954EeDEAC495271d0f',
             'local': {
                 'asset_type': 'evm token',
                 'coingecko': 'ctk',
                 'cryptocompare': None,
                 'decimals': 12,
-                'address': '0x1B175474E89094C44Da98b954EedeAC495271d0F',
+                'address': '0x1b175474E89094C44DA98B954EeDEAC495271d0f',
                 'evm_chain': 'ethereum',
                 'token_kind': 'erc20',
                 'forked': None,
@@ -445,7 +445,7 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1B175474E890
         assert result == expected_result
 
         # now try the update again but specify the conflicts resolution
-        conflicts = {'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F': 'remote', 'DASH': 'local', 'eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F': 'remote'}  # noqa: E501
+        conflicts = {'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F': 'remote', 'DASH': 'local', 'eip155:1/erc20:0x1b175474E89094C44DA98B954EeDEAC495271d0f': 'remote'}  # noqa: E501
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
@@ -519,7 +519,7 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1B175474E890
         assert cursor.execute('SELECT COUNT(*) from common_asset_details WHERE identifier=?', ('121-ada-FADS-as',)).fetchone()[0] == 1  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('121-ada-FADS-as',)).fetchone()[0] == 1  # noqa: E501
 
-        ctk = EvmToken('eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F')
+        ctk = EvmToken('eip155:1/erc20:0x1b175474E89094C44DA98B954EeDEAC495271d0f')
         assert ctk.name == 'Conflicting token'
         assert ctk.symbol == 'CTK'
         assert ctk.asset_type == AssetType.EVM_TOKEN
@@ -528,11 +528,11 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1B175474E890
         assert ctk.swapped_for is None
         assert ctk.coingecko == 'ctk'
         assert ctk.cryptocompare is None
-        assert ctk.evm_address == '0x1B175474E89094C44Da98b954EedeAC495271d0F'
+        assert ctk.evm_address == '0x1b175474E89094C44DA98B954EeDEAC495271d0f'
         assert ctk.decimals == 18
         assert ctk.protocol is None
-        assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address=?', ('0x1B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address=?', ('0x1b175474E89094C44DA98B954EeDEAC495271d0f',)).fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:1/erc20:0x1b175474E89094C44DA98B954EeDEAC495271d0f',)).fetchone()[0] == 1  # noqa: E501
 
 
 @pytest.mark.skip('Broken after changes in the assets. Check #4876')

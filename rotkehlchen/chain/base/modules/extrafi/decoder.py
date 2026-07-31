@@ -20,5 +20,5 @@ class ExtrafiDecoder(ExtrafiCommonDecoder):
             evm_inquirer=optimism_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            extra_token_identifier='eip155:8453/erc20:0x2dad3a13ef0c6366220f989157009e501e7938f8',
+            extra_token_identifier='eip155:8453/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8',
         )

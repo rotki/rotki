@@ -2661,7 +2661,7 @@ def test_deposit_wxdai_and_eure_zap_with_intermediate_provider(
             location=Location.GNOSIS,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
-            asset=Asset('eip155:100/erc20:0xE91D153E0b41518A2Ce8Dd3D7944Fa863463a97d'),
+            asset=Asset('eip155:100/erc20:0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d'),
             amount=FVal('1'),
             location_label=user_address,
             notes='Deposit 1 WXDAI in curve pool 0x056C6C5e684CeC248635eD86033378Cc444459B0',
