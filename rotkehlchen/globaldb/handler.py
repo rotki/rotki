@@ -2332,7 +2332,7 @@ class GlobalDBHandler:
             cursor.execute(
                'SELECT ac.main_asset FROM asset_collections AS ac '
                'INNER JOIN multiasset_mappings AS mm ON mm.collection_id = ac.id '
-               'WHERE mm.asset = ? ORDER BY mm.collection_id LIMIT 1',
+               'WHERE mm.asset = ? ORDER BY mm.rowid LIMIT 1',
                (identifier,),
             )
             result = cursor.fetchone()
@@ -2351,8 +2351,8 @@ class GlobalDBHandler:
                 cursor.execute(
                     'SELECT mm.asset, ac.main_asset FROM asset_collections AS ac '
                     'INNER JOIN multiasset_mappings AS mm ON mm.collection_id = ac.id '
-                    f'WHERE mm.asset IN ({placeholders}) AND mm.collection_id = ('
-                    'SELECT MIN(candidate.collection_id) FROM multiasset_mappings AS candidate '
+                    f'WHERE mm.asset IN ({placeholders}) AND mm.rowid = ('
+                    'SELECT MIN(candidate.rowid) FROM multiasset_mappings AS candidate '
                     'WHERE candidate.asset=mm.asset)',
                     chunk,
                 )

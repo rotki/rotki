@@ -871,8 +871,10 @@ class Inquirer:
         and a list of assets that still need their prices queried.
         """
         found_prices, replaced_assets, assets_to_check = {}, {}, []
+        seen_to_check: set[Asset] = set()
         collection_main_assets = AssetResolver.get_collection_main_assets({
-            asset.identifier for asset in from_assets if asset != A_ETH2
+            asset.identifier for asset in from_assets
+            if asset not in (A_ETH2, to_asset)
         })
         for from_asset in from_assets:
             if from_asset == to_asset:
@@ -888,7 +890,7 @@ class Inquirer:
 
             if asset_to_price != from_asset:
                 replaced_assets[from_asset] = asset_to_price
-                if asset_to_price in found_prices or asset_to_price in assets_to_check:
+                if asset_to_price in found_prices or asset_to_price in seen_to_check:
                     continue
 
             if (
@@ -898,7 +900,8 @@ class Inquirer:
                 found_prices[asset_to_price] = cache.price, cache.oracle
                 continue
 
-            if asset_to_price not in assets_to_check:
+            if asset_to_price not in seen_to_check:
+                seen_to_check.add(asset_to_price)
                 assets_to_check.append(asset_to_price)
 
         normalized_ids, unknown_ids = AssetResolver.bulk_check_existence({
@@ -910,11 +913,10 @@ class Inquirer:
                 log.error(f'Tried to ask for {asset_to_price.identifier} price but asset is missing from the DB')  # noqa: E501
                 found_prices[asset_to_price] = ZERO_PRICE, CurrentPriceOracle.MANUALCURRENT
             elif (normalized_id := normalized_ids.get(asset_to_price.identifier)) is not None:
-                unpriced_assets.append(
-                    asset_to_price
-                    if normalized_id == asset_to_price.identifier
-                    else Asset(normalized_id),
-                )
+                if normalized_id != asset_to_price.identifier:
+                    # Match Asset.check_existence() so the caller keeps the normalized result key.
+                    object.__setattr__(asset_to_price, 'identifier', normalized_id)
+                unpriced_assets.append(asset_to_price)
 
         return found_prices, replaced_assets, unpriced_assets
 

@@ -85,6 +85,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import (
     BTC_PER_BSQ,
@@ -461,6 +462,46 @@ def test_price_asset_preparation_and_manual_lookup_are_batched(
     assert collection_query.call_count == 1
     assert existence_query.call_count == 1
     assert manual_query.call_count == 1
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_price_query_normalizes_asset_in_place(inquirer: Inquirer, globaldb) -> None:
+    """A case-insensitive DB match must keep the caller's asset usable as the result key."""
+    asset = Asset('eTh')
+    expected_price = Price(FVal('1234'))
+    Inquirer._cached_current_price.clear()
+    with (
+        patch.object(Inquirer, '_get_manual_prices', return_value=([asset], {})),
+        patch.object(Inquirer, '_query_fiat_pairs', return_value=([asset], {})),
+        patch.object(Inquirer, '_get_special_prices', return_value=([asset], {})),
+        patch.object(
+            Inquirer,
+            '_query_oracle_instances',
+            return_value={A_ETH: (expected_price, CurrentPriceOracle.COINGECKO)},
+        ),
+    ):
+        assert Inquirer.find_price(asset, A_USD) == expected_price
+
+    assert asset.identifier == A_ETH.identifier
+
+
+def test_manual_price_batch_isolates_asset_errors(globaldb) -> None:
+    """A failed denomination conversion must not discard other manual prices in the batch."""
+    btc = A_BTC.resolve_to_asset_with_oracles()
+    eth = A_ETH.resolve_to_asset_with_oracles()
+    manual_prices = {
+        btc: (A_EUR, Price(FVal(2))),
+        eth: (A_JPY, Price(FVal(3))),
+    }
+    with (
+        patch.object(GlobalDBHandler, 'get_manual_current_prices', return_value=manual_prices),
+        patch.object(Inquirer, 'find_price', side_effect=(RemoteError('boom'), Price(FVal(4)))),
+    ):
+        assert ManualCurrentOracle().query_multiple_current_prices(
+            from_assets=[btc, eth],
+            to_asset=A_USD.resolve_to_asset_with_oracles(),
+        ) == {eth: Price(FVal(12))}
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

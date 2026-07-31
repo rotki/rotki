@@ -269,12 +269,15 @@ def test_check_existence_caches_db_lookups(globaldb):
 
 
 def test_bulk_collection_main_assets_match_scalar(globaldb) -> None:
-    """Use the primary collection when an asset belongs to multiple collections."""
-    polygon_usdt = 'eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F'
-    assert GlobalDBHandler.get_collection_main_asset(polygon_usdt) == A_USDT.identifier
-    assert GlobalDBHandler.get_collection_main_assets({polygon_usdt}) == {
-        polygon_usdt: A_USDT.identifier,
-    }
+    """Scalar and bulk lookups must agree, including for assets in multiple collections."""
+    eth_cbbtc = 'eip155:1/erc20:0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf'
+    for asset_id, expected in (
+            ('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F', A_USDT.identifier),
+            ('eip155:8453/erc20:0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf', eth_cbbtc),
+            (eth_cbbtc, eth_cbbtc),
+    ):
+        assert GlobalDBHandler.get_collection_main_asset(asset_id) == expected
+        assert GlobalDBHandler.get_collection_main_assets({asset_id}) == {asset_id: expected}
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
