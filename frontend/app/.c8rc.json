@@ -5,13 +5,17 @@
     "dist/**/*.js"
   ],
   "exclude": [
-    "node_modules",
+    "**/node_modules/**",
+    "../node_modules/**",
+    "../../node_modules/**",
+    "dist/**",
     "tests/",
     "**/*.d.ts",
     "src/main.ts",
     "src/router/index.ts"
   ],
   "all": false,
+  "excludeAfterRemap": true,
   "reporter": [
     "lcov",
     "text-summary"
