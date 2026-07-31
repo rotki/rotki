@@ -201,16 +201,23 @@ export interface ActionFieldOption {
  * It excludes Type and Subtype, and they exclude it: all three drive the same two request keys.
  */
 export function toHistoryActionField(t: Translate, actions: () => ActionFieldOption[]): FieldDef {
-  const byVerb = (): Map<string, ActionFieldOption> => new Map(actions().map(action => [action.verbKey, action]));
+  // Computed, not a getter that rebuilds. `resolveLabel` and `resolveIcon` are called once per
+  // candidate value while the bar narrows, so rebuilding the map inside them cost a full pass over
+  // the actions for every value examined - quadratic in the number of verbs, on every keystroke,
+  // and every object it allocated was thrown away immediately.
+  const byVerb = computed<Map<string, ActionFieldOption>>(
+    () => new Map(actions().map(action => [action.verbKey, action])),
+  );
+  const verbKeys = computed<string[]>(() => actions().map(action => action.verbKey));
   return toParamFieldDef({
     excludes: [HistoryEventFilterValueKeys.EVENT_TYPE, HistoryEventFilterValueKeys.EVENT_SUBTYPE],
     key: 'action',
     label: t('transactions.filter_field_labels.action'),
     multiple: false,
     paramKey: 'action',
-    resolveIcon: (value: string): ValueIcon | undefined => byVerb().get(value)?.icon,
-    resolveLabel: (value: string): string => byVerb().get(value)?.label ?? value,
-    suggest: (): string[] => actions().map(action => action.verbKey),
+    resolveIcon: (value: string): ValueIcon | undefined => get(byVerb).get(value)?.icon,
+    resolveLabel: (value: string): string => get(byVerb).get(value)?.label ?? value,
+    suggest: (): string[] => get(verbKeys),
     to: 'url',
   });
 }

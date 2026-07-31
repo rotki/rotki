@@ -35,21 +35,25 @@ export function useHistoryEventFields(
   const accountKeywords = computed<Map<string, string | undefined>>(
     () => new Map(get(accountOptions).map(option => [option.value, option.keywords])),
   );
+  // Computed rather than mapped on each call: `suggest` is read once per field per keystroke while
+  // the bar narrows, and this rebuilt the full address list every time.
+  const accountValues = computed<string[]>(() => get(accountOptions).map(option => option.value));
   const accountField = toHistoryAccountField(t, {
     resolveCaption,
     resolveKeywords: (value: string): string | undefined => get(accountKeywords).get(value),
     resolveLabel,
-    suggest: (): string[] => get(accountOptions).map(option => option.value),
+    suggest: (): string[] => get(accountValues),
   });
   const ignoredField = toHistoryIgnoredField(t);
   // An action's direction is what its icon colour carries, the same in/out reading the event rows
   // use, so a verb looks the same on a pill as it does in the table.
   const directionColors = { in: 'success', neutral: 'secondary', out: 'error' } as const;
-  const actionField = toHistoryActionField(t, (): ActionFieldOption[] => get(actionRows).map(row => ({
+  const actionOptions = computed<ActionFieldOption[]>(() => get(actionRows).map(row => ({
     icon: { color: directionColors[row.direction], icon: row.icon },
     label: row.label,
     verbKey: row.verbKey,
   })));
+  const actionField = toHistoryActionField(t, (): ActionFieldOption[] => get(actionOptions));
   const stateField = toHistoryStateField(
     t,
     Object.values(HistoryEventState),
