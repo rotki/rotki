@@ -95,6 +95,7 @@ catalog:
   httpxy: 0.5.5
   husky: 9.1.7
   imask: 7.6.1
+  knip: 6.29.0
   lint-staged: 17.1.0
   mitt: 3.0.1
   msw: 2.15.0
