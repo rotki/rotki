@@ -8,5 +8,6 @@ export interface AppConfig {
     colibriPort: number;
     corePort: number;
     mcpPort: number;
+    proxyPort: number;
   };
 }

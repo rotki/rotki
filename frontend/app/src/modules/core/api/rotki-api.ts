@@ -2,7 +2,7 @@ import type { ActionResult } from '@rotki/common';
 import type { QueueState } from '@/modules/core/api/request-queue/types';
 import type { RotkiFetchOptions } from '@/modules/core/api/types';
 import { ofetch } from 'ofetch';
-import { defaultApiUrls } from '@/modules/core/api/api-urls';
+import { apiUrls, defaultApiUrls } from '@/modules/core/api/api-urls';
 import { DEFAULT_TIMEOUT } from '@/modules/core/api/constants';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { RequestQueue } from '@/modules/core/api/request-queue/queue';
@@ -90,7 +90,10 @@ export class RotkiApi {
   private isColibriRequest(baseURL?: string): boolean {
     if (!baseURL)
       return false;
-    const colibriUrl = defaultApiUrls.colibriApiUrl;
+    // Read the mutable urls, not the frozen defaults: in embedded the proxy
+    // origin arrives via IPC after startup, so the frozen colibri url stays ''
+    // and would never match. The asset-* APIs set this same baseURL.
+    const colibriUrl = apiUrls.colibriApiUrl;
     return colibriUrl !== '' && baseURL.startsWith(colibriUrl);
   }
 

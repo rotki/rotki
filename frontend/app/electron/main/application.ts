@@ -7,7 +7,7 @@ import { IpcManager } from '@electron/main/ipc-setup';
 import { LogService } from '@electron/main/log-service';
 import { MenuManager } from '@electron/main/menu';
 import { parseToken } from '@electron/main/oauth-utils';
-import { DEFAULT_COLIBRI_PORT, DEFAULT_MCP_PORT, DEFAULT_PORT } from '@electron/main/port-utils';
+import { DEFAULT_COLIBRI_PORT, DEFAULT_MCP_PORT, DEFAULT_PORT, DEFAULT_PROXY_PORT } from '@electron/main/port-utils';
 import { resolveLogLevel } from '@electron/main/resolve-log-level';
 import { SettingsManager } from '@electron/main/settings-manager';
 import { StarlingHandler } from '@electron/main/starling-handler';
@@ -50,6 +50,7 @@ export class Application {
       colibriPort: instancePort('ROTKI_INSTANCE_COLIBRI_PORT', DEFAULT_COLIBRI_PORT),
       corePort: instancePort('ROTKI_INSTANCE_CORE_PORT', DEFAULT_PORT),
       mcpPort: instancePort('ROTKI_INSTANCE_MCP_PORT', DEFAULT_MCP_PORT),
+      proxyPort: instancePort('ROTKI_INSTANCE_PROXY_PORT', DEFAULT_PROXY_PORT),
     },
   };
 

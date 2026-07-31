@@ -185,9 +185,12 @@ where
     F: std::future::Future<Output = ()> + Send + 'static,
 {
     let app = router(&config);
+    // The SPA is served in docker only; embedded is a data-plane-only front, so
+    // say which of the two this is rather than always claiming both.
     info!(
         port = config.port,
-        "starting in-process HTTP server (SPA + proxy)"
+        spa = config.frontend_dir.is_some(),
+        "starting in-process HTTP server"
     );
 
     let connections = Arc::new(Semaphore::new(MAX_CONCURRENT_CONNECTIONS));
