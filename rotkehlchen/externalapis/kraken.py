@@ -110,27 +110,53 @@ class Kraken(CurrentPriceOracleInterface):
         main asset. Both Kraken-specific and common mappings are accepted, but
         the asset's symbol alone is never enough to match a Kraken market.
         """
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            mappings = cursor.execute(
-                'WITH related_assets(identifier) AS ('
-                'SELECT ? UNION SELECT related.asset FROM multiasset_mappings AS requested '
-                'JOIN multiasset_mappings AS related '
-                'ON related.collection_id=requested.collection_id WHERE requested.asset=?'
-                ') SELECT DISTINCT LM.exchange_symbol, CAD.symbol '
-                'FROM related_assets AS RA '
-                'JOIN location_asset_mappings AS LM ON LM.local_id=RA.identifier '
-                'JOIN common_asset_details AS CAD ON CAD.identifier=LM.local_id '
-                'WHERE LM.location=? OR LM.location IS NULL',
-                (
-                    asset.identifier,
-                    asset.identifier,
-                    Location.KRAKEN.serialize_for_db(),
-                ),
-            ).fetchall()
+        return Kraken._assets_to_kraken_symbols([asset])[asset]
 
-        symbols: set[str] = set()
-        for exchange_symbol, asset_symbol in mappings:
-            symbols.update((exchange_symbol, 'BTC' if asset_symbol == 'XBT' else asset_symbol))
+    @staticmethod
+    def _assets_to_kraken_symbols(
+            assets: list[AssetWithOracles],
+    ) -> dict[AssetWithOracles, set[str]]:
+        """Return possible Kraken symbols for a batch of explicitly mapped assets."""
+        unique_assets = list(dict.fromkeys(assets))
+        symbols: dict[AssetWithOracles, set[str]] = {
+            asset: set() for asset in unique_assets
+        }
+        if len(unique_assets) == 0:
+            return symbols
+
+        assets_by_identifier = {asset.identifier.lower(): asset for asset in unique_assets}
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            for start in range(0, len(unique_assets), 500):
+                chunk = unique_assets[start:start + 500]
+                values = ','.join(['(?)'] * len(chunk))
+                cursor.execute(
+                    f'WITH requested_assets(requested_identifier) AS (VALUES {values}), '
+                    'related_assets(requested_identifier, identifier) AS ('
+                    'SELECT requested_identifier, requested_identifier FROM requested_assets '
+                    'UNION SELECT requested.requested_identifier, related.asset '
+                    'FROM requested_assets AS requested '
+                    'JOIN multiasset_mappings AS requested_mapping '
+                    'ON requested_mapping.asset=requested.requested_identifier '
+                    'JOIN multiasset_mappings AS related '
+                    'ON related.collection_id=requested_mapping.collection_id'
+                    ') SELECT DISTINCT RA.requested_identifier, LM.exchange_symbol, CAD.symbol '
+                    'FROM related_assets AS RA '
+                    'JOIN location_asset_mappings AS LM '
+                    'INDEXED BY idx_location_mappings_identifier '
+                    'ON LM.local_id=RA.identifier '
+                    'JOIN common_asset_details AS CAD ON CAD.identifier=LM.local_id '
+                    'WHERE LM.location=? OR LM.location IS NULL',
+                    (
+                        *(asset.identifier for asset in chunk),
+                        Location.KRAKEN.serialize_for_db(),
+                    ),
+                )
+                for requested_identifier, exchange_symbol, asset_symbol in cursor:
+                    symbols[assets_by_identifier[requested_identifier.lower()]].update((
+                        exchange_symbol,
+                        'BTC' if asset_symbol == 'XBT' else asset_symbol,
+                    ))
+
         return symbols
 
     @staticmethod
@@ -199,12 +225,13 @@ class Kraken(CurrentPriceOracleInterface):
         else:
             prices = {}
 
+        asset_symbols = self._assets_to_kraken_symbols([*from_assets, to_asset])
         requested_asset_symbols: dict[str, set[AssetWithOracles]] = {}
         for asset in from_assets:
-            for symbol in self._asset_to_kraken_symbols(asset):
+            for symbol in asset_symbols[asset]:
                 requested_asset_symbols.setdefault(symbol, set()).add(asset)
 
-        to_asset_symbols = self._asset_to_kraken_symbols(to_asset)
+        to_asset_symbols = asset_symbols[to_asset]
         ticker_data = self._get_tickers()
 
         for pair, ticker in ticker_data.items():
