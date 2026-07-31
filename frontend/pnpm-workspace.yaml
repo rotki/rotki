@@ -107,7 +107,6 @@ catalog:
   qrcode: 1.5.4
   rimraf: 6.1.3
   semver: 7.8.5
-  source-map-support: 0.5.21
   stylelint: 17.14.1
   stylelint-config-recommended-vue: 1.6.1
   stylelint-order: 8.1.1
