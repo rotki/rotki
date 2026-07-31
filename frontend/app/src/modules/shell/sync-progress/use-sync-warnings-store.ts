@@ -1,5 +1,11 @@
 export const SyncWarningSource = {
   ONLINE_EVENTS: 'online_events',
+  /**
+   * Addresses whose transaction query failed. Derived in `useSyncProgress` from the chain list
+   * rather than pushed here: the failure is already recorded on the query status, so recording it
+   * a second time would be two sources of truth that can disagree.
+   */
+  TRANSACTIONS: 'transactions',
 } as const;
 
 export type SyncWarningSource = (typeof SyncWarningSource)[keyof typeof SyncWarningSource];

@@ -5960,6 +5960,7 @@
     "title": "Syncing History",
     "transactions": "Transactions",
     "warnings": {
+      "chain_failed": "{chain}: {count} address could not be queried | {chain}: {count} addresses could not be queried",
       "title": "Warnings"
     }
   },
