@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EvmChainInfo } from '@/modules/core/api/types/chains';
+import type { ChainInfo } from '@/modules/core/api/types/chains';
 import { getTextToken } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import HistoryRedecodeChainItem from '@/modules/history/redecode/HistoryRedecodeChainItem.vue';
@@ -23,22 +23,31 @@ const search = ref<string>('');
 const selection = ref<string[]>([]);
 
 const { t } = useI18n({ useScope: 'global' });
-const { txEvmChains } = useSupportedChains();
+// Every chain that can be redecoded, not just the EVM ones. The consumer decides whether a request
+// is the full run by comparing the selection against `decodableTxChainsInfo`, so offering a
+// narrower list here meant selecting everything still read as a partial run: it never took the
+// canonical `redecode:all` id and so never deduped against the Redecode All button.
+const { decodableTxChainsInfo } = useSupportedChains();
 
-const filteredChains = computed<EvmChainInfo[]>(() => {
+const filteredChains = computed<ChainInfo[]>(() => {
   const query = getTextToken(get(search));
-  const chains = get(txEvmChains);
-  return chains.filter(chain => getTextToken(chain.name).includes(query) || getTextToken(chain.evmChainName).includes(query));
+  return get(decodableTxChainsInfo).filter(chain =>
+    getTextToken(chain.name).includes(query)
+    // Only EVM chains carry an `evmChainName` to match on; the rest match by name alone.
+    // Narrowed with `in` rather than on `type`, because the fallback chain variant types `type` as
+    // a plain string and so is not excluded by comparing it to 'evm'.
+    || ('evmChainName' in chain && getTextToken(chain.evmChainName).includes(query)),
+  );
 });
 
 const indeterminate = computed<boolean>(() => {
   const selectedItems = get(selection).length;
-  return selectedItems > 0 && selectedItems < get(txEvmChains).length;
+  return selectedItems > 0 && selectedItems < get(decodableTxChainsInfo).length;
 });
 
 const selected = computed<boolean>(() => {
   const selectedItems = get(selection).length;
-  return selectedItems > 0 && selectedItems === get(txEvmChains).length;
+  return selectedItems > 0 && selectedItems === get(decodableTxChainsInfo).length;
 });
 
 function toggleSelection(chain: string, selected: boolean): void {
@@ -55,7 +64,7 @@ function toggleSelectAll() {
     set(selection, []);
   }
   else {
-    set(selection, get(txEvmChains).map(chain => chain.id));
+    set(selection, get(decodableTxChainsInfo).map(chain => chain.id));
   }
 }
 
@@ -147,7 +156,7 @@ function redecode() {
           :loading="loading"
           @click="redecode()"
         >
-          {{ t('history_redecode_selection.redecode', { total: selection.length }) }}
+          {{ t('history_redecode_selection.redecode', { total: selection.length }, selection.length) }}
         </RuiButton>
       </div>
     </div>
