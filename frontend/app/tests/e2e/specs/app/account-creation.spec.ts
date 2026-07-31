@@ -1,5 +1,6 @@
-import { type APIRequestContext, type BrowserContext, type Page, request, test } from '@playwright/test';
+import { type APIRequestContext, type BrowserContext, type Page, request } from '@playwright/test';
 import { isCoverageEnabled, startCoverage, stopCoverage } from '../../coverage';
+import { test } from '../../fixtures/test-fixtures';
 import { TEST_TIMEOUT_STANDARD, VIEWPORTS } from '../../helpers/constants';
 import { generateUsername } from '../../helpers/utils';
 import { RotkiApp } from '../../pages/rotki-app';

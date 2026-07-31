@@ -1,5 +1,4 @@
-import { test } from '@playwright/test';
-import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
+import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { confirmInlineSuccess } from '../../helpers/utils';
 import { GeneralSettingsPage } from '../../pages/general-settings-page';
 

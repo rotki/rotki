@@ -1,6 +1,6 @@
 import fs from 'node:fs';
-import { expect, test } from '@playwright/test';
-import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
+import { expect } from '@playwright/test';
+import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { seedHistoricPrices } from '../../helpers/seed-db';
 import { apiGetSnapshot } from '../../helpers/snapshot-api';
 import { type SnapshotFixturePaths, writeFixturesToTmp } from '../../helpers/snapshot-csv';

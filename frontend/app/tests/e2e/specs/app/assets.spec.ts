@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
+import { expect } from '@playwright/test';
+import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { apiEnsureSymbolsNotIgnored } from '../../helpers/api';
 import { apiConfigureRpcMock } from '../../helpers/rpc-mock';
 import { AssetsManagerPage } from '../../pages/assets-manager-page';
