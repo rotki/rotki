@@ -10,6 +10,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.constants import EXCHANGES_CPT
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
+from rotkehlchen.chain.hyperliquid.constants import CPT_HYPER
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_DAI, A_GLM, A_MKR, A_REP, A_SAI
 from rotkehlchen.constants.resolver import SOLANA_CHAIN_DIRECTIVE, identifier_to_evm_chain
@@ -1178,7 +1179,11 @@ def should_exclude_possible_match(
         if exclude_protocol_counterparty and (  # Protocol counterparties should not auto-match exchange movements.  # noqa: E501
             event.counterparty is not None and
             event.counterparty not in EXCHANGES_CPT and
-            event.counterparty != CPT_MONERIUM
+            event.counterparty != CPT_MONERIUM and
+            not (
+                event.counterparty == CPT_HYPER and
+                event.event_subtype == HistoryEventSubType.BRIDGE
+            )
         ):
             return True
 
