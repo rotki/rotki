@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
 import {
   assetMovementEventFixture,
   ethBlockEventFixture,
@@ -14,10 +14,9 @@ import {
   TEST_EVENT_TIMESTAMP,
   TEST_PRICE_ENTRIES,
 } from '../../fixtures/history-events';
-import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
+import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { waitForNoRunningTasks } from '../../helpers/api';
 import { seedEvmTransaction, seedHistoricPrices } from '../../helpers/seed-db';
-import { generateUsername } from '../../helpers/utils';
 import { HistoryEventsPage } from '../../pages/history-events-page';
 import { RotkiApp } from '../../pages/rotki-app';
 
@@ -346,24 +345,21 @@ test.describe.serial('evm history events', () => {
   let page: HistoryEventsPage;
 
   test.beforeAll(async ({ browser, request }) => {
-    const username = generateUsername();
+    ctx = await createLoggedInContext(browser, request, {
+      seed: (username) => {
+        // Historic prices go into the global DB, which is plain SQLite with no lock concerns. The
+        // transactions go into the user DB, so they are written here, while the account is created
+        // but logged back out, rather than afterwards.
+        seedHistoricPrices(TEST_PRICE_ENTRIES, TEST_EVENT_TIMESTAMP);
 
-    const sharedContext = await browser.newContext();
-    const sharedPage = await sharedContext.newPage();
-    const app = new RotkiApp(sharedPage, request);
-    await app.fasterLogin(username);
+        seedEvmTransaction(username, evmEventFixture.txRef);
+        seedEvmTransaction(username, evmSwapEventFixture.txRef);
+        seedEvmTransaction(username, evmMultiSwapEventFixture.txRef);
+        seedEvmTransaction(username, ethDepositEventFixture.txHash);
+      },
+    });
 
-    // Seed historic prices into the global DB (plain SQLite, no lock concerns)
-    seedHistoricPrices(TEST_PRICE_ENTRIES, TEST_EVENT_TIMESTAMP);
-
-    // Seed EVM transactions while logged in (WAL mode allows concurrent writes)
-    seedEvmTransaction(username, evmEventFixture.txRef);
-    seedEvmTransaction(username, evmSwapEventFixture.txRef);
-    seedEvmTransaction(username, evmMultiSwapEventFixture.txRef);
-    seedEvmTransaction(username, ethDepositEventFixture.txHash);
-
-    ctx = { sharedContext, sharedPage, sharedRequest: request, app, username };
-    page = new HistoryEventsPage(sharedPage);
+    page = new HistoryEventsPage(ctx.sharedPage);
   });
 
   test.afterAll(async () => {
