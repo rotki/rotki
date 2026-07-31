@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
+import { expect } from '@playwright/test';
+import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { EvmSettingsPage } from '../../pages/evm-settings-page';
 
 test.describe.serial('settings::evm', () => {

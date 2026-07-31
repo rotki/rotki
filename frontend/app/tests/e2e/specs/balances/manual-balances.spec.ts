@@ -1,7 +1,7 @@
 import type { FixtureManualBalance } from '../../pages/types';
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
 import manualBalancesFixture from '../../fixtures/account-balances/manual-balances.json' with { type: 'json' };
-import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
+import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { waitForNoRunningTasks } from '../../helpers/api';
 import { BALANCE_PRECISION } from '../../helpers/constants';
 import { DashboardPage } from '../../pages/dashboard-page';

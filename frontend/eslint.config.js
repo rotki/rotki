@@ -180,6 +180,21 @@ export default rotki({
     'vue/max-template-depth': 'warn',
   },
 }, {
+  // Coverage is armed on the `page` fixture in `tests/e2e/fixtures/test-fixtures`, so a spec that
+  // takes `test` straight from playwright silently contributes nothing to the coverage report.
+  // That failure is invisible - the spec passes, it is just never counted - so it is worth a rule
+  // rather than a convention. `expect` and the types are unaffected.
+  files: ['**/tests/e2e/specs/**/*.ts'],
+  rules: {
+    'no-restricted-imports': ['error', {
+      paths: [{
+        importNames: ['test'],
+        message: 'Import `test` from `tests/e2e/fixtures/test-fixtures`, which arms coverage on the page fixture.',
+        name: '@playwright/test',
+      }],
+    }],
+  },
+}, {
   files: ['**/locales/**/*.json'],
   rules: {
     'jsonc/sort-keys': ['error', 'asc', {

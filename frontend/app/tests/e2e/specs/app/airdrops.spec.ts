@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
+import { expect } from '@playwright/test';
+import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { AirdropsPage } from '../../pages/airdrops-page';
 
 test.describe.serial('airdrops', () => {

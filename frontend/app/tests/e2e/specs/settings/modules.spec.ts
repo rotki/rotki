@@ -1,5 +1,4 @@
-import { test } from '@playwright/test';
-import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
+import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { ModulesSettingsPage } from '../../pages/modules-settings-page';
 
 test.describe.serial('settings::modules', () => {

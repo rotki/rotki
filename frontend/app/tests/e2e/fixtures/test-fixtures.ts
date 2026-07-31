@@ -36,7 +36,7 @@ export interface LoginOptions {
   /**
    * Logs in through the form instead of `fasterLogin`, which authenticates over the API first.
    * With the backend already holding that session the form submit does not take and the suite
-   * sits on "Unlock account" - a failure that only shows up once the spec runs after others.
+   * sits on "Unlock account" — a failure that only shows up once the spec runs after others.
    *
    * Implied by `seed`, which needs the account created and released before login anyway.
    */
@@ -163,7 +163,21 @@ export async function cleanupContext(ctx: SharedTestContext | undefined): Promis
 }
 
 /**
- * Extended test fixture with shared context support.
- * Re-exports the base test for consistency.
+ * The base test with coverage armed on Playwright's own `page` fixture.
+ *
+ * A spec that drives `page` directly rather than building a context gets no coverage otherwise:
+ * the arming lives in `createLoggedInContext`, which such a spec never calls. Overriding the
+ * fixture here means a spec only has to import `test` from this module to be counted, and a spec
+ * that does not touch `page` never instantiates it, so this costs those nothing.
  */
-export { base as test };
+export const test = base.extend({
+  page: async ({ page }: { page: Page }, use: (page: Page) => Promise<void>): Promise<void> => {
+    if (isCoverageEnabled())
+      await startCoverage(page);
+
+    await use(page);
+
+    if (isCoverageEnabled())
+      await stopCoverage(page);
+  },
+});

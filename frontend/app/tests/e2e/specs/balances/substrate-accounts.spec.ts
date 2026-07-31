@@ -1,8 +1,8 @@
 import type { FixtureBlockchainAccount } from '../../pages/types';
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { BigNumber, Blockchain } from '@rotki/common';
 import { testEnv } from '../../fixtures';
-import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
+import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { waitForNoRunningTasks } from '../../helpers/api';
 import { TEST_TIMEOUT_BLOCKCHAIN } from '../../helpers/constants';
 import { BlockchainAccountsPage } from '../../pages/blockchain-accounts-page';

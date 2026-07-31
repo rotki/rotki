@@ -1,6 +1,5 @@
-import { test } from '@playwright/test';
 import { testEnv } from '../../fixtures';
-import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
+import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { ApiKeysPage } from '../../pages/api-keys-page';
 
 test.describe.serial('api keys', () => {

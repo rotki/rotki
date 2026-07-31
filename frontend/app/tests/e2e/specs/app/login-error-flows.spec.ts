@@ -1,5 +1,9 @@
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from '../../fixtures/test-fixtures';
 import { mockLoginResult, submitLogin } from '../../helpers/mock-login';
+
+// `test` comes from the fixtures module rather than from playwright directly: that is where
+// coverage is armed on the `page` fixture this spec drives.
 
 // Drives the real login UI + unlock flow with the login handshake intercepted, exercising
 // the response -> error-mapping integration (use-unlock-steps -> useUsersApi ->

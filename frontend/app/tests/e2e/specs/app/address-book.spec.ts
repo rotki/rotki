@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
+import { expect } from '@playwright/test';
+import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { AddressBookPage } from '../../pages/address-book-page';
 
 const ADDR_PRIVATE = '0x1111111111111111111111111111111111111111';
