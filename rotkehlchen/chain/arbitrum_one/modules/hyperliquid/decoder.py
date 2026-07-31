@@ -49,8 +49,8 @@ class HyperliquidDecoder(EvmDecoderInterface):
                 event.asset.identifier == 'eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'  # USDC  # noqa: E501
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
-                event.notes = f'Deposit {event.amount} USDC in Hyperliquid'
+                event.event_subtype = HistoryEventSubType.BRIDGE
+                event.notes = f'Bridge {event.amount} USDC to Hyperliquid'
                 event.counterparty = CPT_HYPER
             # not breaking since there could be more transafers in the same transaction
 
@@ -80,8 +80,8 @@ class HyperliquidDecoder(EvmDecoderInterface):
                 event.amount == amount
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
-                event.notes = f'Withdraw {event.amount} USDC from Hyperliquid'
+                event.event_subtype = HistoryEventSubType.BRIDGE
+                event.notes = f'Bridge {event.amount} USDC from Hyperliquid'
                 event.counterparty = CPT_HYPER
                 break
         else:

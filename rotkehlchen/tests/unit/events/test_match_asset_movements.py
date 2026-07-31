@@ -9,6 +9,7 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
+from rotkehlchen.chain.hyperliquid.constants import CPT_HYPER
 from rotkehlchen.constants import HOUR_IN_SECONDS, ONE
 from rotkehlchen.constants.assets import (
     A_AAVE,
@@ -83,6 +84,51 @@ def _get_match_for_movement(cursor: DBCursor, movement_id: int | None) -> int | 
         'SELECT right_event_id FROM history_event_links WHERE link_type=? AND left_event_id=?',
         (HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(), movement_id),
     ).fetchone()) is None else result[0]
+
+
+@pytest.mark.parametrize(
+    ('movement_subtype', 'event_type'),
+    [
+        (HistoryEventSubType.RECEIVE, HistoryEventType.DEPOSIT),
+        (HistoryEventSubType.SPEND, HistoryEventType.WITHDRAWAL),
+    ],
+)
+def test_match_hyperliquid_core_movement_with_evm_bridge_event(
+        database: DBHandler,
+        movement_subtype: AssetMovementSubtype,
+        event_type: HistoryEventType,
+) -> None:
+    """Match Core deposits and withdrawals with their Arbitrum bridge events."""
+    events_db = DBHistoryEvents(database)
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(movement := AssetMovement(
+                identifier=1,
+                location=Location.HYPERLIQUID,
+                event_subtype=movement_subtype,
+                timestamp=TimestampMS(1740826458000),
+                asset=(arb_usdc := Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')),  # noqa: E501
+                amount=FVal('500.59'),
+                unique_id='hyperliquid-core-movement',
+                location_label=make_evm_address(),
+            )), (bridge_event := EvmEvent(
+                identifier=2,
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=movement.timestamp,
+                location=Location.ARBITRUM_ONE,
+                event_type=event_type,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=arb_usdc,
+                amount=movement.amount,
+                counterparty=CPT_HYPER,
+            ))],
+        )
+
+    assert movement.identifier is not None
+    assert bridge_event.identifier is not None
+    _match_and_check(database, [(movement.identifier, bridge_event.identifier)])
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
