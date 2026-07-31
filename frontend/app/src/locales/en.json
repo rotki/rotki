@@ -4156,7 +4156,7 @@
     "swap_expanded": "Swap ({count} events) - click to collapse"
   },
   "history_redecode_selection": {
-    "redecode": "Recode {total} chains",
+    "redecode": "Redecode {total} chain | Redecode {total} chains",
     "search_chain": "Search chain",
     "selection": "Select one or more chains to redecode their events"
   },
