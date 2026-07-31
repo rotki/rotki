@@ -141,9 +141,7 @@ class Kraken(CurrentPriceOracleInterface):
                     'ON related.collection_id=requested_mapping.collection_id'
                     ') SELECT DISTINCT RA.requested_identifier, LM.exchange_symbol, CAD.symbol '
                     'FROM related_assets AS RA '
-                    'JOIN location_asset_mappings AS LM '
-                    'INDEXED BY idx_location_mappings_identifier '
-                    'ON LM.local_id=RA.identifier '
+                    'JOIN location_asset_mappings AS LM ON LM.local_id=RA.identifier '
                     'JOIN common_asset_details AS CAD ON CAD.identifier=LM.local_id '
                     'WHERE LM.location=? OR LM.location IS NULL',
                     (

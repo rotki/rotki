@@ -2,6 +2,9 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.errors.defi import DefiPoolError
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
@@ -74,6 +77,13 @@ class ManualCurrentOracle(CurrentPriceOracleInterface, DBSetterMixin):
                         to_asset=to_asset,
                     )
                 prices[from_asset] = Price(current_price * conversion_prices[current_to_asset])
+            except (DefiPoolError, PriceQueryUnsupportedAsset, RemoteError) as e:
+                log.debug(
+                    'Skipping manual price of %s to %s due to %s',
+                    from_asset,
+                    to_asset,
+                    e,
+                )
             finally:
                 self.processing_pairs.remove(pair)
 
