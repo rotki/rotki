@@ -32,6 +32,8 @@
     "test:unit": "pnpm run --filter rotki test:unit:run",
     "test:unit:watch": "pnpm run --filter rotki test:unit",
     "test:e2e": "pnpm run --filter rotki test:e2e",
+    "test:e2e:coverage": "pnpm run --filter rotki test:e2e:coverage",
+    "test:e2e:coverage:report": "pnpm run --filter rotki test:e2e:coverage:report",
     "typecheck": "pnpm run --filter rotki typecheck",
     "dev:web": "tsx scripts/start-dev.ts --web",
     "setup:hooks": "cd .. && husky frontend/.husky",
