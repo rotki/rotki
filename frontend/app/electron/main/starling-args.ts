@@ -269,7 +269,7 @@ function devBuiltBinary(targetDir: string, name: string): string | undefined {
 }
 
 /**
- * The dev colibri launcher: the binary `warmColibri` built, falling back to
+ * The dev colibri launcher: the binary the Rust warm-up built, falling back to
  * `cargo run --locked --` when it is missing (electron started without the
  * warm-up). The binary is preferred for the same reason core resolves its
  * interpreter - `cargo run` is a wrapper starling would `wait()` on instead of
@@ -278,7 +278,7 @@ function devBuiltBinary(targetDir: string, name: string): string | undefined {
  */
 function devColibriLauncherArgs(root: string): { args: string[]; usesCargo: boolean } {
   const cwd = path.join(root, COLIBRI_DIRECTORY);
-  const built = devBuiltBinary(path.join(cwd, 'target'), COLIBRI_DIRECTORY);
+  const built = devBuiltBinary(path.join(root, 'target'), COLIBRI_DIRECTORY);
   if (built)
     return { args: ['--colibri-binary', built, '--colibri-cwd', cwd], usesCargo: false };
 
@@ -326,14 +326,13 @@ export function buildStarlingInvocation(input: StarlingLaunchInput): StarlingInv
   }
 
   const root = repoRoot();
-  const cratesDir = path.join(root, 'crates');
   const colibri = devColibriLauncherArgs(root);
   const starlingArgs = [
     ...commonStarlingArgs(input),
     ...devCoreLauncherArgs(root),
     ...colibri.args,
   ];
-  const built = devBuiltBinary(path.join(cratesDir, 'target'), STARLING_DIRECTORY);
+  const built = devBuiltBinary(path.join(root, 'target'), STARLING_DIRECTORY);
 
   // The windows Strawberry Perl shim is needed by any cargo in the tree, and the
   // two launchers decide independently: starling may be prebuilt while colibri
@@ -343,12 +342,12 @@ export function buildStarlingInvocation(input: StarlingLaunchInput): StarlingInv
   const env = built && !colibri.usesCargo ? undefined : buildCargoEnv() ?? undefined;
 
   if (built)
-    return { command: built, args: starlingArgs, cwd: cratesDir, env };
+    return { command: built, args: starlingArgs, cwd: root, env };
 
   return {
     command: 'cargo',
     args: ['run', '--locked', '-p', 'starling', '--', ...starlingArgs],
-    cwd: cratesDir,
+    cwd: root,
     env,
   };
 }

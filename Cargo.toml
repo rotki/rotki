@@ -1,10 +1,16 @@
 [workspace]
 resolver = "2"
-members = ["starling", "starling-core", "starling-proxy"]
+members = [
+    "colibri",
+    "crates/starling",
+    "crates/starling-core",
+    "crates/starling-proxy",
+]
+exclude = ["tools/find-duplicate-constants"]
 
 [workspace.package]
 # Kept in lockstep with the rotki release version by `tools/scripts/bump.sh`
-# (see the `crates/Cargo.toml` entry in `.bumpversion.cfg`). Every member
+# (see the `Cargo.toml` entry in `.bumpversion.cfg`). Every member
 # inherits it via `version.workspace = true`, so this is the single place the
 # bump has to touch.
 version = "1.43.2"
@@ -15,7 +21,8 @@ repository = "https://github.com/rotki/rotki"
 
 # Exact-pinned, matching colibri's convention: reproducible builds, and a
 # dependency bump is always a deliberate, reviewable diff rather than something
-# that drifts in on the next lockfile refresh.
+# that drifts in on the next lockfile refresh. An exact pin in any workspace
+# member also constrains the transitive resolution of every other member.
 [workspace.dependencies]
 tokio = { version = "=1.52.3", features = [
     "rt-multi-thread",
@@ -31,9 +38,14 @@ tokio = { version = "=1.52.3", features = [
 async-trait = "=0.1.89"
 thiserror = "=2.0.18"
 tracing = "=0.1.44"
-tracing-subscriber = { version = "=0.3.23", features = ["env-filter"] }
+tracing-subscriber = { version = "=0.3.23", default-features = false }
 serde = { version = "=1.0.228", features = ["derive"] }
-clap = { version = "=4.6.1", features = ["derive"] }
+serde_json = "=1.0.150"
+clap = "=4.6.1"
+axum = "=0.8.9"
+dirs = "=6.0.0"
+tower = "=0.5.3"
+tower-http = "=0.6.11"
 
 [profile.release]
 strip = true

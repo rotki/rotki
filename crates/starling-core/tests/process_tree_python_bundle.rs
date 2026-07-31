@@ -5,13 +5,13 @@
 //! then run with:
 //!
 //! ```text
-//! # from crates/
+//! # from the repository root
 //! uv run pyinstaller --onedir --noconfirm --clean \
 //!     --name fake_bootloader_pyi \
 //!     --distpath target/pyi/dist \
 //!     --workpath target/pyi/build \
 //!     --specpath target/pyi \
-//!     starling-core/tests/support/fake_bootloader.py
+//!     crates/starling-core/tests/support/fake_bootloader.py
 //!
 //! # default discovery path:
 //! cargo test --test process_tree_pyinstaller -- --ignored --nocapture
@@ -47,16 +47,16 @@ fn locate_pyi_exe() -> Option<PathBuf> {
         return if p.is_file() { Some(p) } else { None };
     }
 
-    // CARGO_MANIFEST_DIR = crates/starling-core; the default dist path
-    // is under crates/target/pyi/dist. Walk up one to get there.
+    // CARGO_MANIFEST_DIR = crates/starling-core; the default dist path is under
+    // the workspace-root target/pyi/dist. Walk up twice to get there.
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let crates_root = manifest.parent()?;
+    let workspace_root = manifest.parent()?.parent()?;
     let exe_name = if cfg!(windows) {
         "fake_bootloader_pyi.exe"
     } else {
         "fake_bootloader_pyi"
     };
-    let candidate = crates_root
+    let candidate = workspace_root
         .join("target")
         .join("pyi")
         .join("dist")
@@ -140,7 +140,7 @@ async fn kill_reaps_pyinstaller_onedir_tree() {
     let Some(exe) = locate_pyi_exe() else {
         panic!(
             "pyinstaller bundle not found. Set {PYI_EXE_ENV}=<path> or build the default at \
-             crates/target/pyi/dist/fake_bootloader_pyi/. See the doc comment at the top of this \
+             target/pyi/dist/fake_bootloader_pyi/. See the doc comment at the top of this \
              file for the exact command.",
         );
     };

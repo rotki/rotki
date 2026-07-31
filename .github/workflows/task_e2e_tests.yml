@@ -75,8 +75,8 @@ jobs:
         id: colibri-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
-          path: colibri/target/release/colibri
-          key: ${{ runner.os }}-colibri-${{ hashFiles('colibri/Cargo.lock', 'colibri/Cargo.toml', 'colibri/build.rs', 'colibri/src/**') }}
+          path: target/release/colibri
+          key: ${{ runner.os }}-colibri-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'colibri/Cargo.toml', 'colibri/src/**') }}
 
       - name: Setup Rust
         if: steps.colibri-cache.outputs.cache-hit != 'true'
@@ -86,14 +86,13 @@ jobs:
 
       - name: Build Colibri
         if: steps.colibri-cache.outputs.cache-hit != 'true'
-        working-directory: ./colibri
-        run: cargo build --release --locked
+        run: cargo build --release --locked -p colibri
 
       - name: Upload Colibri binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: colibri-binary
-          path: colibri/target/release/colibri
+          path: target/release/colibri
           retention-days: 1
 
   e2e:
@@ -171,10 +170,10 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: colibri-binary
-          path: colibri/target/release
+          path: target/release
 
       - name: Make Colibri executable
-        run: chmod +x colibri/target/release/colibri
+        run: chmod +x target/release/colibri
 
       - name: Cache Playwright browsers
         id: playwright-cache

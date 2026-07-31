@@ -67,9 +67,9 @@ jobs:
                   - tag: run all py tests
                     value: nightly
               - name: colibri
-                paths: [colibri]
+                paths: [colibri, Cargo.toml, Cargo.lock]
               - name: starling
-                paths: [crates]
+                paths: [crates, Cargo.toml, Cargo.lock]
               - name: documentation
                 paths: [docs]
 
@@ -243,9 +243,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    defaults:
-      run:
-        working-directory: ./colibri
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
@@ -260,16 +257,16 @@ jobs:
         with:
           cache-on-failure: true
           workspaces: |
-            colibri -> target
+            . -> target
 
       - name: Fetch Rust dependencies
         run: cargo fetch --locked
 
-      - run: cargo check --workspace --locked && cargo clippy --workspace --locked
+      - run: cargo check -p colibri --locked && cargo clippy -p colibri --all-targets --locked
         env:
           RUSTFLAGS: -Dwarnings
 
-      - run: cargo test --locked
+      - run: cargo test -p colibri --locked
         env:
           RUSTFLAGS: -Dwarnings
 
@@ -280,9 +277,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    defaults:
-      run:
-        working-directory: ./crates
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
@@ -297,18 +291,18 @@ jobs:
         with:
           cache-on-failure: true
           workspaces: |
-            crates -> target
+            . -> target
 
       - name: Fetch Rust dependencies
         run: cargo fetch --locked
 
       - run: cargo fmt --all --check
 
-      - run: cargo check --workspace --locked && cargo clippy --workspace --all-targets --locked
+      - run: cargo check --workspace --exclude colibri --locked && cargo clippy --workspace --exclude colibri --all-targets --locked
         env:
           RUSTFLAGS: -Dwarnings
 
-      - run: cargo test --locked
+      - run: cargo test --workspace --exclude colibri --locked
         env:
           RUSTFLAGS: -Dwarnings
 
@@ -323,9 +317,6 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
-    defaults:
-      run:
-        working-directory: ./crates
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
@@ -344,7 +335,7 @@ jobs:
         with:
           cache-on-failure: true
           workspaces: |
-            crates -> target
+            . -> target
 
       - name: Setup python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
@@ -364,7 +355,7 @@ jobs:
       # A regression in the process-group isolation makes the Ctrl+C under test
       # escape to the shared console and take the harness down with it, so a
       # failure here can surface as a killed job rather than a failed assertion.
-      - run: cargo test --locked --test windows_lifecycle
+      - run: cargo test -p starling-core --locked --test windows_lifecycle
         env:
           RUSTFLAGS: -Dwarnings
 
@@ -380,9 +371,9 @@ jobs:
           --distpath target/pyi/dist
           --workpath target/pyi/build
           --specpath target/pyi
-          starling-core/tests/support/fake_bootloader.py
+          crates/starling-core/tests/support/fake_bootloader.py
 
-      - run: cargo test --locked --test process_tree_python_bundle -- --ignored
+      - run: cargo test -p starling-core --locked --test process_tree_python_bundle -- --ignored
         env:
           RUSTFLAGS: -Dwarnings
 

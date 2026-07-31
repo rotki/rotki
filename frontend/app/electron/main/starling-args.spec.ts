@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The dev launchers probe the filesystem (is the warm-up build there?) and shell
@@ -87,6 +88,14 @@ describe('buildStarlingInvocation (dev launchers)', () => {
       expect(args).not.toContain('--colibri-prefix=run');
     });
 
+    it('should resolve both Rust binaries from the shared workspace target', async () => {
+      const invocation = await buildDevInvocation();
+      expect(invocation.command).toContain(path.join('target', 'debug'));
+      expect(invocation.command).not.toContain(path.join('crates', 'target'));
+      expect(flagValue(invocation.args, '--colibri-binary')).toContain(path.join('target', 'debug'));
+      expect(flagValue(invocation.args, '--colibri-binary')).not.toContain(path.join('colibri', 'target'));
+    });
+
     // The regression this guards: starling signals the whole process group but
     // wait()s only on its direct child. A wrapper that dies faster than the
     // service (uv takes CTRL_BREAK straight to the default terminator) reports
@@ -150,6 +159,9 @@ describe('buildStarlingInvocation (dev launchers)', () => {
       const invocation = await buildDevInvocation();
       expect(invocation.command).toBe('cargo');
       expect(invocation.args.slice(0, 4)).toEqual(['run', '--locked', '-p', 'starling']);
+      if (invocation.cwd === undefined)
+        throw new Error('Expected the cargo invocation to set a working directory');
+      expect(invocation.cwd.endsWith('crates')).toBe(false);
     });
 
     it('should fall back to running colibri through cargo', async () => {

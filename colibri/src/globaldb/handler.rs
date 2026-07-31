@@ -304,8 +304,7 @@ impl GlobalDB {
                 WHERE from_asset IN ({placeholders})
                 AND source_type NOT IN (?, ?)"
             );
-            let mut params: Vec<Value> =
-                chunk.iter().map(|id| Value::Text(id.clone())).collect();
+            let mut params: Vec<Value> = chunk.iter().map(|id| Value::Text(id.clone())).collect();
             params.extend(excluded.iter().map(|code| Value::Text(code.clone())));
 
             let mut stmt = conn.prepare(&query)?;
@@ -326,10 +325,10 @@ impl GlobalDB {
 #[macro_export]
 macro_rules! create_globaldb {
     () => {{
-        use crate::globaldb::GlobalDB;
         use rand::{rngs::StdRng, SeedableRng};
         use std::{env, path::PathBuf, time::SystemTime};
         use tokio::fs;
+        use $crate::globaldb::GlobalDB;
 
         let timestamp = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)

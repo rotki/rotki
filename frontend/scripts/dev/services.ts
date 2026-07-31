@@ -87,51 +87,18 @@ interface ColibriSpawnOptions {
 }
 
 /**
- * Warm the colibri debug build before anything tries to launch it. Both start
- * paths run colibri via `cargo run --locked` (web mode here; electron mode from
- * its own subprocess handler), which compiles on the fly on a cold cache. On a
- * fresh worktree that cold compile happens at the worst moment — after the dev
- * server is already up in web mode, or mid electron-startup — and on Windows the
- * vendored-openssl compile blows past the readiness timeout entirely. Building
- * synchronously first (same debug profile, same target dir) means the later
- * `cargo run` is just a launch. Incremental rebuilds are near-instant, so this is
- * cheap once the cache is warm.
- */
-export async function warmColibri(): Promise<void> {
-  await buildColibriEagerly(path.join('..', 'colibri'));
-}
-
-/**
- * Warm the starling supervisor debug build. Electron mode spawns starling via
- * `cargo run --locked -p starling` from the `crates` workspace, which compiles
- * the whole supervisor on a cold cache — mid electron-startup on a fresh
- * worktree. Pre-building here (same debug profile, same target dir) makes that
- * later `cargo run` a plain launch. Only electron mode uses starling; web mode
- * spawns python + colibri directly, so callers skip this there. Starling lives
- * in its own `crates` workspace (separate target dir from colibri) and pulls in
- * no vendored-openssl, so it needs neither a separate warm from colibri nor the
- * Strawberry Perl PATH shim.
- */
-export async function warmStarling(): Promise<void> {
-  logger.info('Warming starling (cargo build --locked -p starling) so the electron dev launch does not compile the supervisor at startup; the first build may take a while');
-  await runCargoBuild(path.join('..', 'crates'), ['build', '--locked', '-p', 'starling']);
-}
-
-/**
  * Warm the rust builds a dev launch needs before either mode reaches its start
  * point, so a fresh worktree doesn't hit a cold compile at launch. Colibri is
  * needed in both modes; starling only in electron mode (web spawns python +
- * colibri directly). They live in separate workspaces, so warm concurrently.
+ * colibri directly). Both packages share one Cargo invocation and target
+ * directory, allowing their common dependencies to compile only once.
  *
  * The python deps are synced afterwards rather than concurrently: both stages
- * inherit stdio, and serialising keeps `uv sync`'s resolver output from being
+ * inherit stdio, and serializing keeps `uv sync`'s resolver output from being
  * interleaved into the middle of cargo's progress bars.
  */
 export async function warmDevServices(webMode: boolean): Promise<void> {
-  await Promise.all([
-    warmColibri(),
-    webMode ? Promise.resolve() : warmStarling(),
-  ]);
+  await buildRustServices(webMode);
   await syncPythonDeps();
 }
 
@@ -152,8 +119,9 @@ async function syncPythonDeps(): Promise<void> {
   await runCommand('uv', ['sync', '--locked'], path.join('..'));
 }
 
-async function buildColibriEagerly(cwd: string): Promise<void> {
-  logger.info('Warming colibri (cargo build --locked) so the dev launch does not compile at startup; the first build may take a while');
+async function buildRustServices(webMode: boolean): Promise<void> {
+  const packages = webMode ? ['-p', 'colibri'] : ['-p', 'colibri', '-p', 'starling'];
+  logger.info(`Warming Rust services (cargo build --locked ${packages.join(' ')}) so the dev launch does not compile at startup; the first build may take a while`);
   const buildEnv = buildCargoEnv();
   if (buildEnv === null) {
     logger.warn(STRAWBERRY_MISSING_WARNING);
@@ -161,10 +129,10 @@ async function buildColibriEagerly(cwd: string): Promise<void> {
   else if (buildEnv) {
     logger.info('Prioritizing Strawberry Perl on PATH for cargo build (vendored openssl)');
   }
-  await runCargoBuild(cwd, ['build', '--locked'], buildEnv ?? undefined);
+  await runCargoBuild(path.join('..'), ['build', '--locked', ...packages], buildEnv ?? undefined);
 }
 
-/** `cargo` with the colibri PATH shim applied by the caller. */
+/** `cargo` with the Colibri-compatible PATH shim applied by the caller. */
 async function runCargoBuild(cwd: string, args: string[], env?: Record<string, string>): Promise<void> {
   await runCommand('cargo', args, cwd, env);
 }

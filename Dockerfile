@@ -19,37 +19,23 @@ RUN --mount=type=cache,target=/pnpm-store \
     pnpm install --frozen-lockfile && \
     pnpm run docker:build
 
-FROM rust:1.91-bookworm AS colibri-build-stage
+FROM rust:1.91-bookworm AS rust-build-stage
 
 WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
 COPY colibri/ ./colibri
-# Cache the crates registry and the intermediate target dir. Without these every
-# build recompiles the whole dependency tree, including the vendored OpenSSL and
-# SQLCipher that dominate colibri's build. The release artifact is copied out of
-# the cache so the layer itself still holds a real file.
-# sharing=locked on the registry: BuildKit runs the two rust stages in parallel,
-# and an unlocked shared cache lets both cargos unpack into it at once, which
-# fails with "failed to unpack package ... File exists". The target dirs stay
-# per-stage since they hold different crates.
-RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,target=/tmp/cargo-target-colibri \
-    CARGO_TARGET_DIR=/tmp/cargo-target-colibri \
-    cargo build --manifest-path ./colibri/Cargo.toml --release && \
-    mkdir -p /tmp/dist/colibri/release && \
-    cp /tmp/cargo-target-colibri/release/colibri /tmp/dist/colibri/release/colibri
-
-# starling, the PID-1 supervisor that replaces entrypoint.py *and* nginx: it
-# spawns core+colibri, serves the SPA and reverse-proxies to them in-process.
-FROM rust:1.91-bookworm AS starling-build-stage
-
-WORKDIR /app
 COPY crates/ ./crates
+# Build both shipped Rust binaries from their shared workspace. The registry and
+# target caches preserve the expensive vendored OpenSSL/SQLCipher build, while
+# the single Cargo invocation lets Colibri and Starling reuse common artifacts.
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,target=/tmp/cargo-target-starling \
-    CARGO_TARGET_DIR=/tmp/cargo-target-starling \
-    cargo build --manifest-path ./crates/Cargo.toml --release -p starling && \
+    --mount=type=cache,target=/tmp/cargo-target \
+    CARGO_TARGET_DIR=/tmp/cargo-target \
+    cargo build --release --locked -p colibri -p starling && \
+    mkdir -p /tmp/dist/colibri/release && \
     mkdir -p /tmp/dist/starling/release && \
-    cp /tmp/cargo-target-starling/release/starling /tmp/dist/starling/release/starling
+    cp /tmp/cargo-target/release/colibri /tmp/dist/colibri/release/colibri && \
+    cp /tmp/cargo-target/release/starling /tmp/dist/starling/release/starling
 
 FROM python:3.14-bookworm AS backend-build-stage
 
@@ -88,8 +74,8 @@ RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/"
 FROM debian:12-slim AS layout-stage
 
 COPY --from=backend-build-stage /tmp/dist /opt/rotki
-COPY --from=colibri-build-stage /tmp/dist/colibri/release/colibri /opt/rotki/colibri
-COPY --from=starling-build-stage /tmp/dist/starling/release/starling /opt/rotki/starling
+COPY --from=rust-build-stage /tmp/dist/colibri/release/colibri /opt/rotki/colibri
+COPY --from=rust-build-stage /tmp/dist/starling/release/starling /opt/rotki/starling
 COPY --from=frontend-build-stage /app/app/dist /opt/rotki/frontend
 
 # Give the core binary a stable name *in place*, rather than symlinking it onto
