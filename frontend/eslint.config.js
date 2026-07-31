@@ -26,7 +26,17 @@ const i18nIgnoreKeys = [
 ];
 
 export default rotki({
-  ignores: ['app/backend-icons.generated.ts', 'app/tests/e2e/test-results/**'],
+  // Test output directories are gitignored, but only by the nested `app/.gitignore`. The gitignore
+  // integration reads just the root `.gitignore` next to this config, so it never sees those rules
+  // and the generated files stay visible to eslint. `.v8-coverage` holds the Playwright V8 coverage
+  // dumps, several megabytes of JSON that this config parses because it loads `jsonc-eslint-parser`,
+  // which turns a full lint run into minutes. List them here instead. The vitest report directory
+  // (`app/tests/unit/coverage`) is already covered by the shared config's `**/coverage` default.
+  ignores: [
+    'app/backend-icons.generated.ts',
+    'app/tests/e2e/.v8-coverage/**',
+    'app/tests/e2e/test-results/**',
+  ],
   vue: true,
   typescript: {
     tsconfigPath: 'tsconfig.json',
