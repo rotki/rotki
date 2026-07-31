@@ -1,5 +1,6 @@
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import { millisecondsToSeconds } from '@/modules/core/common/data/date';
+import { logger } from '@/modules/core/common/logging/logging';
 import {
   TransactionsQueryStatus,
   type UnifiedTransactionStatusData,
@@ -7,6 +8,12 @@ import {
 import { createQueryStatusState } from '@/modules/history/create-query-status-state';
 
 type EvmlikeStatusStep = 'started' | 'finished';
+
+/**
+ * Subtype for a synthesized failure entry. `TransactionChainType`'s values are exactly these
+ * strings, so a caller can pass the chain type it already has.
+ */
+type FailedSubtype = TxQueryStatusData['subtype'];
 
 interface BaseTxQueryStatusData {
   address: string;
@@ -94,7 +101,9 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
   const createKey = ({ address, chain }: ChainAddress): string => address + chain.toLowerCase();
 
   const isStatusFinished = (item: TxQueryStatusData): boolean => {
-    if (item.status === TransactionsQueryStatus.CANCELLED)
+    // Failed and cancelled are both terminal: no further progress is coming for that address, so a
+    // run holding one must still be able to settle.
+    if (item.status === TransactionsQueryStatus.CANCELLED || item.status === TransactionsQueryStatus.FAILED)
       return true;
 
     if (isBitcoinTxQueryStatusData(item)) {
@@ -105,7 +114,7 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
 
   const {
     isAllFinished,
-    markCancelled,
+    markTerminal,
     queryStatus,
     removeQueryStatus: remove,
     resetQueryStatus,
@@ -234,8 +243,53 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     const key = createKey(account);
     const existing = get(queryStatus)[key];
     if (existing) {
-      markCancelled(key, { ...existing, status: TransactionsQueryStatus.CANCELLED });
+      markTerminal(key, { ...existing, status: TransactionsQueryStatus.CANCELLED });
     }
+  };
+
+  /**
+   * Record that an address's query failed.
+   *
+   * Marked, not removed. Removing it did stop the address claiming to be querying forever, but the
+   * chain list is derived from these entries, so a chain whose every address failed disappeared
+   * from the sync panel entirely, taking its own denominator with it and leaving the run reading
+   * "11/11 chains complete" while three addresses had in fact failed.
+   *
+   * The entry is created when it is missing rather than dropped on the floor. A per-address query
+   * always announces itself first (`with_tx_status_messaging` sends STARTED before the call), so
+   * normally one exists. It does not when the task failed before reaching any address (erroring
+   * during setup or chain-level work), or when the run's messages never landed, e.g. the socket
+   * dropped mid-run. Returning early in those cases leaves the chain absent from the panel, which
+   * is the exact state this whole fix exists to prevent.
+   */
+  const markAddressFailed = (account: ChainAddress, subtype: FailedSubtype = 'evm'): void => {
+    const key = createKey(account);
+    const existing = get(queryStatus)[key];
+    if (existing) {
+      markTerminal(key, { ...existing, status: TransactionsQueryStatus.FAILED });
+      return;
+    }
+
+    logger.warn(
+      `marking ${account.address} on ${account.chain} as failed with no status entry to mark; `
+      + 'the query failed before it announced itself, or its progress messages never arrived',
+    );
+
+    const now = millisecondsToSeconds(Date.now());
+    const period: [number, number] = [0, now];
+    const base = {
+      address: account.address,
+      chain: account.chain.toLowerCase(),
+      status: TransactionsQueryStatus.FAILED,
+    };
+
+    set(queryStatus, {
+      ...get(queryStatus),
+      // Bitcoin entries carry no period; every other subtype does.
+      [key]: subtype === 'bitcoin'
+        ? { ...base, subtype }
+        : { ...base, originalPeriodEnd: now, period, subtype },
+    });
   };
 
   const isAddressCancelled = (account: ChainAddress): boolean =>
@@ -247,6 +301,7 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     isAllFinished,
     isStatusFinished,
     markAddressCancelled,
+    markAddressFailed,
     queryStatus,
     removeQueryStatus,
     resetQueryStatus,

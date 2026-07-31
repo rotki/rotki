@@ -33,7 +33,13 @@ export function useTransactionSync(): UseTransactionSyncReturn {
   const { fetchTransactionsTask } = useHistoryEventsApi();
 
   const { runTask } = useTaskHandler();
-  const { isAddressCancelled, markAddressCancelled, removeQueryStatus, setEvmlikeStatus } = useTxQueryStatusStore();
+  const {
+    isAddressCancelled,
+    markAddressCancelled,
+    markAddressFailed,
+    removeQueryStatus,
+    setEvmlikeStatus,
+  } = useTxQueryStatusStore();
   const { getChainName } = useSupportedChains();
   const { decodeTransactionsTask } = useHistoryTransactionDecoding();
   const { getTransactionTypeFromChain } = useHistoryTransactionAccounts();
@@ -85,6 +91,19 @@ export function useTransactionSync(): UseTransactionSyncReturn {
         markAddressCancelled(account);
       }
       else if (!outcome.skipped) {
+        // Nothing else moves this address off "querying". Evmlike chains send no websocket
+        // messages at all, so the `started` we set above is the last word on them. Evm chains do
+        // send `QUERYING_TRANSACTIONS_FINISHED` from a `finally` even when the query raised
+        // (`with_tx_status_messaging`), which is worse than silence: the address claims to have
+        // finished cleanly. Network failing after retries is an ordinary outcome, not an
+        // exception, so the status entry must say so either way.
+        //
+        // Marked rather than removed. Removing it also removes the address from the sync panel,
+        // whose chain list is derived from these entries, so a chain whose every address failed
+        // vanishes from the panel along with its own denominator: a run with three failed gnosis
+        // addresses reported "11/11 chains complete", every row green.
+        markAddressFailed(account, type);
+
         notifyError(
           t('actions.transactions.error.title'),
           t('actions.transactions.error.description', {

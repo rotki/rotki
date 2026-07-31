@@ -30,6 +30,7 @@ function getTransactionStatusDescription(status: TransactionsQueryStatus, t: Ret
     [TransactionsQueryStatus.CANCELLED]: t('dashboard.history_query_indicator.transaction_status.cancelled'),
     [TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED]: t('dashboard.history_query_indicator.transaction_status.decoding_transactions_finished'),
     [TransactionsQueryStatus.DECODING_TRANSACTIONS_STARTED]: t('dashboard.history_query_indicator.transaction_status.decoding_transactions_started'),
+    [TransactionsQueryStatus.FAILED]: t('dashboard.history_query_indicator.transaction_status.failed'),
     [TransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS]: t('dashboard.history_query_indicator.transaction_status.querying_evm_tokens_transactions'),
     [TransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS]: t('dashboard.history_query_indicator.transaction_status.querying_internal_transactions'),
     [TransactionsQueryStatus.QUERYING_TRANSACTIONS]: t('dashboard.history_query_indicator.transaction_status.querying_transactions'),

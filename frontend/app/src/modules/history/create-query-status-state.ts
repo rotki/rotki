@@ -4,7 +4,8 @@ interface QueryStatusStateReturn<T> {
   queryStatus: Ref<Record<string, T>>;
   syncing: Ref<boolean>;
   isAllFinished: ComputedRef<boolean>;
-  markCancelled: (key: string, cancelledStatus: T) => void;
+  /** Replace an entry's status with a terminal one (cancelled, failed) instead of dropping it. */
+  markTerminal: (key: string, terminalStatus: T) => void;
   removeQueryStatus: (key: string) => void;
   resetQueryStatus: () => void;
   stopSyncing: () => void;
@@ -23,10 +24,10 @@ export function createQueryStatusState<T>(isStatusFinished: (item: T) => boolean
     set(syncing, false);
   };
 
-  const markCancelled = (key: string, cancelledStatus: T): void => {
+  const markTerminal = (key: string, terminalStatus: T): void => {
     const statuses = { ...get(queryStatus) };
     if (statuses[key]) {
-      statuses[key] = cancelledStatus;
+      statuses[key] = terminalStatus;
       set(queryStatus, statuses);
     }
   };
@@ -45,7 +46,7 @@ export function createQueryStatusState<T>(isStatusFinished: (item: T) => boolean
 
   return {
     isAllFinished,
-    markCancelled,
+    markTerminal,
     queryStatus,
     removeQueryStatus,
     resetQueryStatus,

@@ -19,21 +19,27 @@ const INITIAL_SHOW_COUNT = 5;
 const expanded = ref<boolean>(false);
 const showAll = ref<boolean>(false);
 
+// Failed is terminal, so a chain whose addresses all failed is finished rather than perpetually
+// unresolved — without it such a chain rendered no icon at all: not complete, yet not active.
 const isComplete = computed<boolean>(() =>
-  (chain.completed + chain.cancelled) === chain.total && chain.total > 0,
+  (chain.completed + chain.cancelled + chain.failed) === chain.total && chain.total > 0,
 );
 
 const hasActivity = computed<boolean>(() => chain.inProgress > 0);
 const hasCancelled = computed<boolean>(() => chain.cancelled > 0);
+const hasFailed = computed<boolean>(() => chain.failed > 0);
 
 const sortedAddresses = computed(() =>
   [...chain.addresses].sort((a, b) => {
-    const priority: Record<string, number> = {
+    // Every status needs an entry: a missing one yields `undefined` here, and `undefined - number`
+    // is NaN, which makes the comparator incoherent rather than merely mis-ordered.
+    const priority: Record<AddressStatus, number> = {
       [AddressStatus.QUERYING]: 0,
       [AddressStatus.DECODING]: 1,
       [AddressStatus.PENDING]: 2,
-      [AddressStatus.CANCELLED]: 3,
-      [AddressStatus.COMPLETE]: 4,
+      [AddressStatus.FAILED]: 3,
+      [AddressStatus.CANCELLED]: 4,
+      [AddressStatus.COMPLETE]: 5,
     };
     return priority[a.status] - priority[b.status];
   }),
@@ -120,7 +126,13 @@ function showMore(): void {
       </span>
 
       <RuiIcon
-        v-if="isComplete"
+        v-if="isComplete && hasFailed"
+        name="lu-circle-alert"
+        class="text-rui-error"
+        :size="compact ? 14 : 18"
+      />
+      <RuiIcon
+        v-else-if="isComplete"
         name="lu-check"
         :class="hasCancelled ? 'text-rui-warning' : 'text-rui-success'"
         :size="compact ? 14 : 18"

@@ -15,11 +15,14 @@ const isComplete = computed<boolean>(() => address.status === AddressStatus.COMP
 const isQuerying = computed<boolean>(() => address.status === AddressStatus.QUERYING);
 const isDecoding = computed<boolean>(() => address.status === AddressStatus.DECODING);
 const isCancelled = computed<boolean>(() => address.status === AddressStatus.CANCELLED);
+// Without its own branch a failed address fell through to the neutral fallback and read as pending,
+// which is the opposite of what happened to it.
+const isFailed = computed<boolean>(() => address.status === AddressStatus.FAILED);
 
 const statusIcon = computed<string>(() => {
   if (get(isComplete))
     return 'lu-check';
-  if (get(isCancelled))
+  if (get(isFailed) || get(isCancelled))
     return 'lu-circle-alert';
   if (get(isQuerying) || get(isDecoding))
     return 'lu-loader-circle';
@@ -29,6 +32,8 @@ const statusIcon = computed<string>(() => {
 const statusColor = computed<string>(() => {
   if (get(isComplete))
     return 'text-rui-success';
+  if (get(isFailed))
+    return 'text-rui-error';
   if (get(isCancelled))
     return 'text-rui-warning';
   if (get(isQuerying) || get(isDecoding))
@@ -39,6 +44,9 @@ const statusColor = computed<string>(() => {
 const statusText = computed<string>(() => {
   if (get(isComplete))
     return t('sync_progress.status.complete');
+
+  if (get(isFailed))
+    return t('sync_progress.status.failed');
 
   if (get(isCancelled))
     return t('sync_progress.status.cancelled');

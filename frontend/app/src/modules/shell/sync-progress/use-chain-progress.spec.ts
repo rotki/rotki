@@ -140,6 +140,51 @@ describe('useChainProgress', () => {
 
       expect(chains[0].addresses[0].status).toBe(AddressStatus.CANCELLED);
     });
+
+    it('should map FAILED to FAILED status', () => {
+      const queryStatus = ref<Record<string, TxQueryStatusData>>({
+        key1: createEvmStatusData('0x123', 'eth', TransactionsQueryStatus.FAILED),
+      });
+
+      const result = useChainProgress(queryStatus);
+      const chains = get(result);
+
+      expect(chains[0].addresses[0].status).toBe(AddressStatus.FAILED);
+    });
+  });
+
+  describe('failed addresses', () => {
+    it('should keep a chain whose every address failed', () => {
+      // The regression this guards: a failed sync used to REMOVE its query-status entry, and the
+      // chain list is derived from those entries, so a chain that failed outright vanished from
+      // the panel along with its own denominator. A run with three failed gnosis addresses read
+      // "11/11 chains complete", all green.
+      const queryStatus = ref<Record<string, TxQueryStatusData>>({
+        key1: createEvmStatusData('0x111', 'gnosis', TransactionsQueryStatus.FAILED),
+        key2: createEvmStatusData('0x222', 'gnosis', TransactionsQueryStatus.FAILED),
+        key3: createEvmStatusData('0x333', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+      });
+
+      const chains = get(useChainProgress(queryStatus));
+
+      expect(chains.map(c => c.chain).sort()).toStrictEqual(['eth', 'gnosis']);
+      const gnosis = chains.find(c => c.chain === 'gnosis');
+      expect(gnosis?.failed).toBe(2);
+      expect(gnosis?.completed).toBe(0);
+    });
+
+    it('should count a failed address as done so the chain can settle', () => {
+      // Same argument `percentageOf` makes for activities: no further progress is coming, so a bar
+      // that excluded failures would stall short of the end and never settle.
+      const queryStatus = ref<Record<string, TxQueryStatusData>>({
+        key1: createEvmStatusData('0x111', 'gnosis', TransactionsQueryStatus.FAILED),
+        key2: createEvmStatusData('0x222', 'gnosis', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+      });
+
+      const chains = get(useChainProgress(queryStatus));
+
+      expect(chains[0].progress).toBe(100);
+    });
   });
 
   describe('chain grouping', () => {
