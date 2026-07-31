@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -63,6 +64,37 @@ def test_kraken_query_multiple_current_prices():
     assert prices[A_GNO] == Price(FVal('106.340000'))
     # INDEX is not listed on Kraken, so no price is returned for it
     assert A_3CRV not in prices
+
+
+def test_kraken_mapping_lookup_is_batched() -> None:
+    """A 100-asset uncached batch and its target must use one mapping query, not 101."""
+    kraken = Kraken()
+    btc = A_BTC.resolve_to_asset_with_oracles()
+    eth = A_ETH.resolve_to_asset_with_oracles()
+    usd = A_USD.resolve_to_asset_with_oracles()
+    with (
+        patch.object(
+            Kraken,
+            '_assets_to_kraken_symbols',
+            wraps=Kraken._assets_to_kraken_symbols,
+        ) as mapping_query,
+        patch.object(
+            Kraken,
+            '_asset_to_kraken_symbols',
+            side_effect=AssertionError('used scalar Kraken mapping lookup'),
+        ),
+        patch.object(kraken, '_get_tickers', return_value={
+            'BTC/USD': {'c': ['100000']},
+            'ETH/USD': {'c': ['4000']},
+        }),
+    ):
+        prices = kraken.query_multiple_current_prices(
+            from_assets=[btc, eth] * 50,
+            to_asset=usd,
+        )
+
+    assert prices == {btc: Price(FVal(100000)), eth: Price(FVal(4000))}
+    assert mapping_query.call_count == 1
 
 
 @pytest.mark.vcr
