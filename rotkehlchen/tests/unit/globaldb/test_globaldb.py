@@ -36,6 +36,7 @@ from rotkehlchen.constants.assets import (
     A_PICKLE,
     A_REP,
     A_USD,
+    A_USDT,
 )
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME, NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
@@ -259,6 +260,21 @@ def test_check_existence_caches_db_lookups(globaldb):
         AssetResolver.clean_memory_cache('ETH')
         assert AssetResolver.check_existence('ETH') == 'ETH'
         assert mock_exists.call_count == 2
+
+    AssetResolver.clean_memory_cache()
+    assert AssetResolver.bulk_check_existence({'eTh', 'usd'}) == (
+        {'eTh': 'ETH', 'usd': 'USD'},
+        set(),
+    )
+
+
+def test_bulk_collection_main_assets_match_scalar(globaldb) -> None:
+    """Use the primary collection when an asset belongs to multiple collections."""
+    polygon_usdt = 'eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F'
+    assert GlobalDBHandler.get_collection_main_asset(polygon_usdt) == A_USDT.identifier
+    assert GlobalDBHandler.get_collection_main_assets({polygon_usdt}) == {
+        polygon_usdt: A_USDT.identifier,
+    }
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

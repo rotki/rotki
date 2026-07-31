@@ -69,7 +69,7 @@ from .upgrades.manager import configure_globaldb
 from .utils import GLOBAL_DB_VERSION, globaldb_get_setting_value, initialize_globaldb
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterator, Sequence
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.filtering import (
@@ -1663,6 +1663,31 @@ class GlobalDBHandler:
         return Asset(result[0]), deserialize_price(result[1])
 
     @staticmethod
+    def get_manual_current_prices(
+            assets: Sequence[Asset],
+    ) -> dict[Asset, tuple[Asset, Price]]:
+        """Read the manual current prices for assets in bulk."""
+        if len(assets) == 0:
+            return {}
+
+        prices: dict[Asset, tuple[Asset, Price]] = {}
+        with GlobalDBHandler().conn.read_ctx() as read_cursor:
+            for chunk, placeholders in get_query_chunks(
+                    data=[asset.identifier for asset in assets],
+            ):
+                read_cursor.execute(
+                    'SELECT from_asset, to_asset, price FROM price_history '
+                    f'WHERE source_type=? AND from_asset IN ({placeholders})',
+                    (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), *chunk),
+                )
+                prices.update({
+                    Asset(from_asset): (Asset(to_asset), deserialize_price(price))
+                    for from_asset, to_asset, price in read_cursor
+                })
+
+        return prices
+
+    @staticmethod
     def get_all_manual_latest_prices(
             from_asset: Asset | None = None,
             to_asset: Asset | None = None,
@@ -2307,12 +2332,33 @@ class GlobalDBHandler:
             cursor.execute(
                'SELECT ac.main_asset FROM asset_collections AS ac '
                'INNER JOIN multiasset_mappings AS mm ON mm.collection_id = ac.id '
-               'WHERE mm.asset = ?',
+               'WHERE mm.asset = ? ORDER BY mm.collection_id LIMIT 1',
                (identifier,),
             )
             result = cursor.fetchone()
 
         return result[0] if result is not None else None
+
+    @staticmethod
+    def get_collection_main_assets(identifiers: set[str]) -> dict[str, str]:
+        """Return collection main assets for identifiers in bulk."""
+        if len(identifiers) == 0:
+            return {}
+
+        main_assets: dict[str, str] = {}
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            for chunk, placeholders in get_query_chunks(data=list(identifiers)):
+                cursor.execute(
+                    'SELECT mm.asset, ac.main_asset FROM asset_collections AS ac '
+                    'INNER JOIN multiasset_mappings AS mm ON mm.collection_id = ac.id '
+                    f'WHERE mm.asset IN ({placeholders}) AND mm.collection_id = ('
+                    'SELECT MIN(candidate.collection_id) FROM multiasset_mappings AS candidate '
+                    'WHERE candidate.asset=mm.asset)',
+                    chunk,
+                )
+                main_assets.update(cursor)
+
+        return main_assets
 
     @staticmethod
     def asset_in_collection(collection_id: int, asset_id: str) -> bool:
