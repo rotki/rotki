@@ -12,6 +12,7 @@ import {
   type Nullable,
 } from '@rotki/common';
 import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { getAssetNameFallback } from '@/modules/assets/use-resolve-asset-identifier';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -243,6 +244,7 @@ export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Pro
   let pending: AbortController | null = null;
 
   const { getEvmChainName, matchChain } = useSupportedChains();
+  const { isAssetIgnored } = useAssetsStore();
 
   return useDebounceFn(async (keyword: string) => {
     if (pending) {
@@ -263,6 +265,12 @@ export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Pro
       value,
     });
     pending = null;
-    return result;
+
+    // Ignored assets are hidden by every asset input in the app - `AssetSelect` defaults
+    // `showIgnored` to false and only a fee entry opts in - and the pill bar's own asset editor
+    // goes through `useAssetSearch`, which filters them. Leaving them in the inline suggestions
+    // made one field behave two ways: a spam asset offered while typing in the bar could not be
+    // found in the checklist the pill opens.
+    return result.filter(({ identifier }) => !isAssetIgnored(identifier));
   }, 200);
 }
