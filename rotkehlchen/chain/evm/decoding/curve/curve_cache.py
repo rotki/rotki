@@ -257,12 +257,12 @@ def _query_curve_data_from_chain(
         return []
 
     try:
-        metaregistry_address = deserialize_evm_address(address_provider.call(
+        metaregistry_address = address_provider.call(
             node_inquirer=evm_inquirer,
             method_name='get_address',
             arguments=[7],
-        ))
-    except (RemoteError, DeserializationError) as e:
+        )
+    except RemoteError as e:
         log.error(
             f'Failed to retrieve metaregistry address from the Curve '
             f'address provider on {evm_inquirer.chain_name} due to {e!s}',
@@ -308,11 +308,11 @@ def _query_curve_data_from_chain(
         )
 
         try:
-            if (pool_address := deserialize_evm_address(metaregistry.call(
+            if (pool_address := metaregistry.call(
                 node_inquirer=evm_inquirer,
                 method_name='pool_list',
                 arguments=[pool_index],
-            ))) in pools_to_skip:
+            )) in pools_to_skip:
                 continue
 
             log.debug(
@@ -326,7 +326,7 @@ def _query_curve_data_from_chain(
                 ) for method_name in CURVE_METAREGISTRY_METHODS],
                 require_success=False,
             )
-        except (RemoteError, DeserializationError) as e:
+        except RemoteError as e:
             log.error(
                 f'Failed to retrieve Curve pool address for index {pool_index} '
                 f'from the metaregistry on {evm_inquirer.chain_name} due to {e!s}',

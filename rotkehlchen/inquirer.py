@@ -1446,11 +1446,11 @@ class Inquirer:
         try:
             # return price of pool_token * virtual price of lp_token
             return self.find_usd_price(Asset(evm_address_to_identifier(
-                address=deserialize_evm_address(contract.call(
+                address=contract.call(
                     node_inquirer=evm_manager.node_inquirer,
                     method_name='getToken',
                     arguments=[0],
-                )),
+                ),
                 chain_id=lp_token.chain_id,
                 token_type=TokenKind.ERC20,
             ))) * FVal(contract.call(

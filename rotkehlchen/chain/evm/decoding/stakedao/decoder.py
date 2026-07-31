@@ -30,7 +30,6 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, Timestamp
 from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
@@ -214,11 +213,13 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     def _decode_withdraw(self, context: DecoderContext) -> EvmDecodingOutput:
         claim_events, recipient, withdraw_event, return_event, action_items = [], bytes_to_address(context.tx_log.topics[1]), None, None, []  # noqa: E501
         removed_raw_amount = int.from_bytes(context.tx_log.data[:32])
-        vault_or_staking_token = self.base.get_or_create_evm_token(deserialize_evm_address(self.node_inquirer.call_contract(  # noqa: E501
-            contract_address=context.tx_log.address,
-            abi=STAKEDAO_GAUGE_ABI,
-            method_name='staking_token',
-        )))
+        vault_or_staking_token = self.base.get_or_create_evm_token(
+            self.node_inquirer.call_contract(
+                contract_address=context.tx_log.address,
+                abi=STAKEDAO_GAUGE_ABI,
+                method_name='staking_token',
+            ),
+        )
         for event in context.decoded_events:
             if not (
                     event.address == context.tx_log.address and
@@ -290,11 +291,11 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                     action='transform',
                     amount=(received_amount := asset_normalized_value(  # retrieve the actual staked token  # noqa: E501
                         amount=removed_raw_amount,
-                        asset=(received_token := self.base.get_or_create_evm_token(deserialize_evm_address(self.node_inquirer.call_contract(  # noqa: E501
+                        asset=(received_token := self.base.get_or_create_evm_token(self.node_inquirer.call_contract(  # noqa: E501
                             contract_address=vault_or_staking_token.evm_address,
                             abi=STAKEDAO_VAULT_ABI,
                             method_name='token',
-                        )))),
+                        ))),
                     )),
                     asset=received_token,
                     from_event_type=HistoryEventType.RECEIVE,
