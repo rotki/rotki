@@ -147,4 +147,62 @@ describe('useHistoryDataFetching', () => {
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
   });
+
+  describe('concurrent reads', () => {
+    it('should issue one request when the location set is read concurrently', async () => {
+      let release: (value: string[]) => void = () => {};
+      mockFetchAssociatedLocationsApi.mockReturnValue(new Promise<string[]>((resolve) => {
+        release = resolve;
+      }));
+
+      // A flow ending produces several boundary reads at once: the redecode handler fetches when it
+      // finishes and the auto-fetch fetches when the run settles, neither able to see the other.
+      const { fetchAssociatedLocations } = useHistoryDataFetching();
+      const first = fetchAssociatedLocations();
+      const second = fetchAssociatedLocations();
+      const third = useHistoryDataFetching().fetchAssociatedLocations();
+
+      release(['kraken']);
+      await Promise.all([first, second, third]);
+
+      expect(mockFetchAssociatedLocationsApi).toHaveBeenCalledOnce();
+      expect(get(storeToRefs(useHistoryStore()).associatedLocations)).toEqual(['kraken']);
+    });
+
+    it('should read again once the previous read has settled', async () => {
+      mockFetchAssociatedLocationsApi.mockResolvedValue(['kraken']);
+
+      // Joining must not become caching: a manual add that creates a location has to be read even
+      // if a redecode read the set a moment earlier.
+      const { fetchAssociatedLocations } = useHistoryDataFetching();
+      await fetchAssociatedLocations();
+      await fetchAssociatedLocations();
+
+      expect(mockFetchAssociatedLocationsApi).toHaveBeenCalledTimes(2);
+    });
+
+    it('should keep the two location reads independent', async () => {
+      mockFetchAssociatedLocationsApi.mockResolvedValue(['kraken']);
+      mockFetchLocationLabelsApi.mockResolvedValue([]);
+
+      const { fetchAssociatedLocations, fetchLocationLabels } = useHistoryDataFetching();
+      await Promise.all([fetchAssociatedLocations(), fetchLocationLabels()]);
+
+      expect(mockFetchAssociatedLocationsApi).toHaveBeenCalledOnce();
+      expect(mockFetchLocationLabelsApi).toHaveBeenCalledOnce();
+    });
+
+    it('should recover after a failed read', async () => {
+      mockFetchAssociatedLocationsApi.mockRejectedValueOnce(new Error('boom'));
+      const { fetchAssociatedLocations } = useHistoryDataFetching();
+      await fetchAssociatedLocations();
+
+      // A rejected read must clear its slot, or every later read joins a dead promise.
+      mockFetchAssociatedLocationsApi.mockResolvedValue(['kraken']);
+      await fetchAssociatedLocations();
+
+      expect(mockFetchAssociatedLocationsApi).toHaveBeenCalledTimes(2);
+      expect(get(storeToRefs(useHistoryStore()).associatedLocations)).toEqual(['kraken']);
+    });
+  });
 });
