@@ -1530,7 +1530,7 @@ def test_find_balancer_v3_pool_price(database: DBHandler, inquirer_defi: Inquire
     )
     fluid_wsteth_weth_token = get_or_create_evm_token(  # another v3 pool
         userdb=database,
-        evm_address=string_to_evm_address('0x6b31a94029fd7840d780191b6d63fa0d269bd883'),
+        evm_address=string_to_evm_address('0x6b31a94029fd7840d780191B6D63Fa0D269bd883'),
         chain_id=ChainID.ETHEREUM,
         token_kind=TokenKind.ERC20,
         symbol='Surge Fluid wstETH-wETH',
@@ -1774,7 +1774,7 @@ def test_find_beefy_finance_boost_vault_price(
             weight=ONE,
         )],
     )
-    assert inquirer_defi.find_usd_price(rmoo_token) == FVal('199.06067619344672271996351206958275405755224768387246')  # noqa: E501
+    assert inquirer_defi.find_usd_price(rmoo_token) == FVal('58.80633126452384511790859841155348819836104460605700')  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

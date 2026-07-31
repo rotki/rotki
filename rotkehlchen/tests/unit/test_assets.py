@@ -11,6 +11,7 @@ import rsqlite
 from eth_utils import is_checksum_address
 
 from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.assets import asset as asset_module
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
 from rotkehlchen.assets.converters import asset_from_nexo
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
@@ -136,6 +137,17 @@ def test_asset_hashes_properly():
     assert mapping['ETH'] == 200
 
 
+@pytest.fixture(name='allow_case_mismatch')
+def fixture_allow_case_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Let a test compare deliberately miscased identifiers.
+
+    The suite-wide _asset_case_diagnostics fixture turns a case-only mismatch into a failure,
+    which is precisely what the tests pinning the comparison contract construct on purpose.
+    """
+    monkeypatch.setattr(asset_module, 'ASSET_CASE_DIAGNOSTICS', False)
+
+
+@pytest.mark.usefixtures('allow_case_mismatch')
 def test_asset_equals():
     btc_asset = Asset('BTC')
     eth_asset = Asset('ETH')
@@ -146,6 +158,35 @@ def test_asset_equals():
     assert btc_asset != 'ETH'
     assert btc_asset == other_btc_asset
     assert eth_asset == 'ETH'
+    # identifiers are compared exactly. Normalizing is the boundary's job, so a differently
+    # cased identifier is a missing normalization and must not silently compare equal
+    assert Asset('eTh') != eth_asset
+    assert Asset('eTh') != 'ETH'
+
+
+@pytest.mark.usefixtures('allow_case_mismatch')
+def test_asset_hash_matches_equality():
+    """Equal assets must hash equal, and the Asset<->str key contract must survive"""
+    assert hash(Asset('ETH')) == hash(Asset('ETH'))
+    assert len({Asset('ETH'), Asset('ETH')}) == 1
+    # the contract asserted by test_asset_hashes_properly
+    assert hash(Asset('ETH')) == hash('ETH')
+    # differently cased identifiers are unequal, so they are allowed to hash differently.
+    # What must not happen is the reverse: equal assets hashing differently
+    assert Asset('eTh') != Asset('ETH')
+
+
+@pytest.mark.usefixtures('allow_case_mismatch')
+def test_asset_ordering_agrees_with_equality():
+    """@total_ordering derives __le__/__gt__/__ge__ from __eq__ and __lt__, so the two must
+    not contradict each other or sorting becomes dependent on the input order"""
+    for first, second in (
+            (Asset('BTC'), Asset('ETH')),
+            (Asset('eTh'), Asset('ETH')),
+            (Asset('ETH'), Asset('ETH')),
+    ):
+        assert not (first == second and (first < second or second < first))
+        assert (first == second) != (first < second or second < first)
 
 
 def test_ethereum_tokens():
@@ -1085,11 +1126,11 @@ def test_get_or_create_evm_token(globaldb, database):
     new_token = get_or_create_evm_token(
         userdb=database,
         symbol='DOT',
-        evm_address='0xB179B8204A49672FF9703e18eE61402FAfCCdD60',
+        evm_address='0xb179b8204a49672ff9703E18EE61402fafCCdD60',
         chain_id=ChainID.ETHEREUM,
     )
     assert new_token.symbol == 'DOT'
-    assert new_token.evm_address == '0xB179B8204A49672FF9703e18eE61402FAfCCdD60'
+    assert new_token.evm_address == '0xb179b8204a49672ff9703E18EE61402fafCCdD60'
     assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 2
     # Check that token with wrong symbol but existing address is returned
     assert get_or_create_evm_token(
