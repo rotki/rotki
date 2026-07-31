@@ -1,19 +1,14 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": [
-    "src/main.ts!",
     "src/pages/**/*.vue!",
     "index.html!",
     "electron/main/index.ts!",
     "electron/preload/index.ts!",
     "electron/preload/wallet-bridge.ts!",
-    "vite.config.ts",
+    ".electron-builder.config.ts",
     "vite.config.main.ts",
     "vite.config.preload.ts",
-    "vitest.config.ts",
-    "playwright.config.ts",
-    "tailwind.config.ts",
-    "postcss.config.js",
     "scripts/**/*.{ts,js}",
     "src/**/*.{spec,test}.ts",
     "electron/**/*.{spec,test}.ts",
@@ -27,8 +22,14 @@
     "shared/**/*.ts",
     "tests/unit/**/*.ts"
   ],
-  "ignore": [
-    "**/*.d.ts"
+  "ignoreDependencies": [
+    "@fontsource/roboto",
+    "@fontsource/roboto-mono",
+    "@vueuse/math"
+  ],
+  "ignoreBinaries": [
+    "uv",
+    "xdg-mime"
   ],
   "paths": {
     "@/*": ["src/*"],
