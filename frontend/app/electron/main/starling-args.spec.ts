@@ -152,6 +152,8 @@ describe('buildStarlingInvocation (dev launchers)', () => {
       const invocation = await buildDevInvocation();
       expect(invocation.command).toBe('cargo');
       expect(invocation.args.slice(0, 4)).toEqual(['run', '--locked', '-p', 'starling']);
+      if (invocation.cwd === undefined)
+        throw new Error('Expected the cargo invocation to set a working directory');
       expect(invocation.cwd.endsWith('crates')).toBe(false);
     });
 
