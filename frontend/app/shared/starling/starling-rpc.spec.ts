@@ -1,11 +1,9 @@
-import type { LogService } from '@electron/main/log-service';
 import { PassThrough } from 'node:stream';
-import { createMock } from '@test/utils/create-mock';
 import { describe, expect, it, vi } from 'vitest';
-import { StarlingRpc } from './starling-rpc';
+import { StarlingRpc, type StarlingRpcLogger } from './starling-rpc';
 
-function makeLogger(): LogService {
-  return createMock<LogService>({ warn: vi.fn() });
+function makeLogger(): StarlingRpcLogger {
+  return { warn: vi.fn() };
 }
 
 /** Answer each written request by feeding a response line back through the rpc. */
@@ -60,6 +58,30 @@ describe('starlingRpc', () => {
     rpc.rejectAll(new Error('starling exited'));
 
     await expect(pending).rejects.toThrow('starling exited');
+  });
+
+  // The CI failure this guards: starling died before answering, the write hit a
+  // dead pipe, and the stream's own 'error' event had no listener — so node took
+  // the whole launcher down with an EPIPE trace instead of the request failing.
+  it('should reject rather than throw when the pipe is already gone', async () => {
+    const logger = makeLogger();
+    const rpc = new StarlingRpc(logger, () => {});
+    const stdin = new PassThrough();
+    rpc.attach(stdin);
+    stdin.destroy();
+
+    await expect(rpc.request('start')).rejects.toThrow();
+  });
+
+  it('should report a broken pipe through the logger', async () => {
+    const logger = makeLogger();
+    const rpc = new StarlingRpc(logger, () => {});
+    const stdin = new PassThrough();
+    rpc.attach(stdin);
+
+    stdin.emit('error', new Error('write EPIPE'));
+
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('write EPIPE'));
   });
 
   it('should ignore a non-JSON line and warn', () => {

@@ -7,98 +7,33 @@ import { buildCargoEnv, STRAWBERRY_MISSING_WARNING } from '../../app/shared/carg
 import { DEFAULT_PORTS, type InstanceRuntime } from '../dev-instance';
 import { formatPort } from '../dev-instance/format';
 import { createDevLogger } from './logger';
-import { getDebuggerPort, isUsingUvForPython, selectPort } from './prerequisites';
+import { getDebuggerPort, isUsingUvForPython } from './prerequisites';
 import { startProcess } from './process-pool';
+import { type StarlingDevEnv, startStarlingSupervisor } from './starling';
 
 const logger = createDevLogger('dev:services');
 
 const colors = {
-  red: (msg: string) => `\u001B[31m${msg}\u001B[0m`,
   green: (msg: string) => `\u001B[32m${msg}\u001B[0m`,
-  yellow: (msg: string) => `\u001B[33m${msg}\u001B[0m`,
   magenta: (msg: string) => `\u001B[35m${msg}\u001B[0m`,
 } as const;
 
 const PROXY = 'proxy';
 const APP = 'app';
-const BACKEND = 'backend';
-const COLIBRI = 'colibri';
-
-const READINESS_TIMEOUT_MS = 60_000;
-const READINESS_POLL_MS = 250;
-
-export interface BackendEnv {
-  VITE_BACKEND_URL: string;
-  VITE_COLIBRI_URL: string;
-}
-
-export interface BackendSpawnOptions {
-  webPort: number;
-  strictPort: boolean;
-  logDir: string;
-  dataDir?: string;
-  profilingArgs?: string;
-  profilingCmd?: string;
-}
-
-function resolvePythonPrefix(opts: BackendSpawnOptions, pythonInterpreterArgs: string[]): string[] {
-  const profilingArgs = opts.profilingArgs?.split(' ') ?? [];
-  return opts.profilingCmd
-    ? [...profilingArgs, 'python', ...pythonInterpreterArgs]
-    : [...pythonInterpreterArgs, ...profilingArgs];
-}
-
-function buildBackendArgs(opts: BackendSpawnOptions, chosenPort: number, pythonInterpreterArgs: string[]): string[] {
-  return [
-    ...resolvePythonPrefix(opts, pythonInterpreterArgs),
-    '-m',
-    'rotkehlchen',
-    '--rest-api-port',
-    chosenPort.toString(),
-    '--api-cors',
-    'http://localhost:*',
-    '--logfile',
-    `${path.join(opts.logDir, 'backend.log')}`,
-    ...(opts.dataDir ? ['--data-dir', opts.dataDir] : []),
-  ];
-}
-
-async function startPythonBackend(opts: BackendSpawnOptions): Promise<number> {
-  const chosenPort = opts.strictPort ? opts.webPort : await selectPort(opts.webPort);
-  logger.info(`Starting python backend on port ${formatPort(chosenPort)}`);
-  const pythonInterpreterArgs = process.env.ROTKI_GIL === 'false' ? ['-X', 'gil=0'] : [];
-
-  const args = buildBackendArgs(opts, chosenPort, pythonInterpreterArgs);
-
-  // `uv run --locked` honours uv.lock and errors if it's out of date,
-  // matching `cargo run --locked` semantics — no silent dep drift in dev.
-  const defaultPythonCmd = isUsingUvForPython() ? 'uv run --locked python' : 'python';
-  startProcess(opts.profilingCmd ?? defaultPythonCmd, colors.yellow(BACKEND), BACKEND, args, {
-    cwd: path.join('..'),
-  });
-  return chosenPort;
-}
-
-interface ColibriSpawnOptions {
-  colibriPort: number;
-  strictPort: boolean;
-  logDir: string;
-  dataDir?: string;
-}
 
 /**
  * Warm the rust builds a dev launch needs before either mode reaches its start
- * point, so a fresh worktree doesn't hit a cold compile at launch. Colibri is
- * needed in both modes; starling only in electron mode (web spawns python +
- * colibri directly). Both packages share one Cargo invocation and target
+ * point, so a fresh worktree doesn't hit a cold compile at launch. Both modes
+ * need both packages: starling supervises core and colibri in web mode exactly
+ * as it does under electron. They share one Cargo invocation and target
  * directory, allowing their common dependencies to compile only once.
  *
  * The python deps are synced afterwards rather than concurrently: both stages
  * inherit stdio, and serializing keeps `uv sync`'s resolver output from being
  * interleaved into the middle of cargo's progress bars.
  */
-export async function warmDevServices(webMode: boolean): Promise<void> {
-  await buildRustServices(webMode);
+export async function warmDevServices(): Promise<void> {
+  await buildRustServices();
   await syncPythonDeps();
 }
 
@@ -119,8 +54,8 @@ async function syncPythonDeps(): Promise<void> {
   await runCommand('uv', ['sync', '--locked'], path.join('..'));
 }
 
-async function buildRustServices(webMode: boolean): Promise<void> {
-  const packages = webMode ? ['-p', 'colibri'] : ['-p', 'colibri', '-p', 'starling'];
+async function buildRustServices(): Promise<void> {
+  const packages = ['-p', 'colibri', '-p', 'starling'];
   logger.info(`Warming Rust services (cargo build --locked ${packages.join(' ')}) so the dev launch does not compile at startup; the first build may take a while`);
   const buildEnv = buildCargoEnv();
   if (buildEnv === null) {
@@ -161,107 +96,10 @@ async function runCommand(cmd: string, args: string[], cwd: string, env?: Record
   });
 }
 
-async function startColibriService(opts: ColibriSpawnOptions): Promise<number> {
-  const chosenPort = opts.strictPort ? opts.colibriPort : await selectPort(opts.colibriPort);
-
-  const colibriCwd = path.join('..', 'colibri');
-
-  logger.info(`Starting colibri on port ${formatPort(chosenPort)}`);
-
-  // `cargo run --locked` rebuilds incrementally on its own; on win32 we
-  // already pre-built above, so this is just a launch.
-  const colibriArgs: string[] = [
-    `--logfile-path=${path.join(opts.logDir, 'colibri.log')}`,
-    `--port=${chosenPort}`,
-    '--api-cors=http://localhost:*',
-    ...(opts.dataDir ? [`--data-directory=${opts.dataDir}`] : []),
-  ];
-
-  startProcess('cargo run --locked -- ', colors.red(COLIBRI), COLIBRI, colibriArgs, {
-    cwd: colibriCwd,
-    // null (win32, Strawberry missing) and undefined both mean "inherit
-    // process.env" in startProcess; normalise so the env type matches.
-    env: buildCargoEnv() ?? undefined,
-  });
-  return chosenPort;
-}
-
-export interface BackendServicesOptions {
-  webPort: number;
-  colibriPort: number;
-  strictPort: boolean;
-  dataDir?: string;
-  profilingArgs?: string;
-  profilingCmd?: string;
-}
-
-export async function startBackendServices(opts: BackendServicesOptions): Promise<BackendEnv> {
-  const logDir = path.join(process.cwd(), 'logs');
-  if (!fs.existsSync(logDir))
-    fs.mkdirSync(logDir);
-
-  // python and colibri are independent — start them concurrently so the slower
-  // one (cargo build on first run) overlaps with python's startup.
-  const [restApiPort, colibriHttpPort] = await Promise.all([
-    startPythonBackend({
-      webPort: opts.webPort,
-      strictPort: opts.strictPort,
-      logDir,
-      dataDir: opts.dataDir,
-      profilingArgs: opts.profilingArgs,
-      profilingCmd: opts.profilingCmd,
-    }),
-    startColibriService({
-      colibriPort: opts.colibriPort,
-      strictPort: opts.strictPort,
-      logDir,
-      dataDir: opts.dataDir,
-    }),
-  ]);
-
-  return {
-    VITE_BACKEND_URL: `http://localhost:${restApiPort}`,
-    VITE_COLIBRI_URL: `http://localhost:${colibriHttpPort}`,
-  };
-}
-
-async function waitForHttpReady(
-  label: string,
-  port: number,
-  pathname: string,
-  timeoutMs: number = READINESS_TIMEOUT_MS,
-): Promise<boolean> {
-  const deadline = Date.now() + timeoutMs;
-  const url = `http://127.0.0.1:${port}${pathname}`;
-  while (Date.now() < deadline) {
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(2_000) });
-      if (res.ok) {
-        logger.info(`${label} ready on port ${formatPort(port)}`);
-        return true;
-      }
-    }
-    catch {
-      // not yet listening / not yet responding — keep polling
-    }
-    await new Promise(resolve => setTimeout(resolve, READINESS_POLL_MS));
-  }
-  logger.error(`${label} on port ${formatPort(port)} did not respond to ${pathname} within ${timeoutMs}ms`);
-  return false;
-}
-
-export async function waitForBackendReady(port: number, timeoutMs: number = READINESS_TIMEOUT_MS): Promise<boolean> {
-  return waitForHttpReady('backend', port, '/api/1/ping', timeoutMs);
-}
-
-export async function waitForColibriReady(port: number, timeoutMs: number = READINESS_TIMEOUT_MS): Promise<boolean> {
-  return waitForHttpReady('colibri', port, '/health', timeoutMs);
-}
-
 export interface DevServerOptions {
   noElectron: boolean;
   devPort?: number;
-  backendEnv?: BackendEnv;
+  backendEnv?: StarlingDevEnv;
   /** Extra env forwarded to the serve child (electron instance ports/data dir). */
   extraEnv?: Record<string, string>;
   onExit?: () => void;
@@ -311,58 +149,51 @@ export function startDevProxy(env?: Record<string, string>): void {
 }
 
 export interface DevEnvironmentOptions {
+  /** Port core starts probing from in web mode (`--web-port`). */
   webPort: number;
+  /** Port colibri starts probing from in web mode. */
   colibriPort: number;
   noElectron: boolean;
-  profilingArgs?: string;
-  profilingCmd?: string;
   instance: InstanceRuntime | null;
   /** Whether to spawn the dev-proxy in front of the backend. */
   useProxy: boolean;
   onChildExit: () => void;
 }
 
-async function awaitBackendsReady(restApiPort: number | null, colibriPort: number | null): Promise<void> {
-  // Block the dev server on both services being live so Vite doesn't proxy
-  // requests to a backend that hasn't bound its socket yet (manifests as a
-  // burst of ECONNREFUSED on first load). Probes run concurrently — colibri
-  // is usually slower on a cold cargo build than python's import startup.
-  // If either probe times out we abort: the previous "warn and continue"
-  // behaviour produced a dev server pointed at a non-existent backend.
-  const [backendOk, colibriOk] = await Promise.all([
-    restApiPort !== null ? waitForBackendReady(restApiPort) : Promise.resolve(true),
-    colibriPort !== null ? waitForColibriReady(colibriPort) : Promise.resolve(true),
-  ]);
-  if (backendOk && colibriOk)
-    return;
-  const failed = [!backendOk && 'backend', !colibriOk && 'colibri'].filter(Boolean).join(' and ');
-  throw new Error(`${failed} did not become ready — refusing to start the dev server.`);
-}
-
+/**
+ * Bring the backend tree up for web mode. starling supervises core and colibri
+ * and fronts both behind its own proxy, so there is no readiness polling here:
+ * the `start` control request it is driven with resolves only once the whole
+ * tree is up. In instance mode the reserved core/colibri ports are handed down
+ * so the slot still owns them; starling's proxy port is probed from its default.
+ */
 async function startBackendForMode(
   instance: InstanceRuntime | null,
   opts: DevEnvironmentOptions,
-): Promise<{ backendEnv: BackendEnv; devPort: number | undefined }> {
-  const backendEnv = await startBackendServices({
-    webPort: instance ? instance.ports.restApi : opts.webPort,
-    colibriPort: instance ? instance.ports.colibri : opts.colibriPort,
-    strictPort: instance !== null,
-    dataDir: instance?.dir,
-    profilingArgs: opts.profilingArgs,
-    profilingCmd: opts.profilingCmd,
-  });
+): Promise<{ backendEnv: StarlingDevEnv; devPort: number | undefined }> {
+  const logDir = path.join(process.cwd(), 'logs');
+  if (!fs.existsSync(logDir))
+    fs.mkdirSync(logDir);
 
-  const restApiPort = instance?.ports.restApi ?? extractPort(backendEnv.VITE_BACKEND_URL);
-  const colibriPort = instance?.ports.colibri ?? extractPort(backendEnv.VITE_COLIBRI_URL);
-  await awaitBackendsReady(restApiPort, colibriPort);
+  const backendEnv = await startStarlingSupervisor({
+    logDir,
+    dataDir: instance?.dir,
+    corePort: instance ? instance.ports.restApi : opts.webPort,
+    colibriPort: instance ? instance.ports.colibri : opts.colibriPort,
+    // An instance owns its slot outright; otherwise the defaults are only a
+    // starting point and a busy port walks up, as it did before starling.
+    strictPorts: instance !== null,
+  });
   return { backendEnv, devPort: instance?.ports.dev };
 }
 
-function spawnProxyForBackend(instance: InstanceRuntime | null, backendEnv: BackendEnv): void {
-  // Web mode — we know the actual backend port (instance slot or selectPort
-  // drift). Point VITE_BACKEND_URL at the proxy so Vite picks it up.
+function spawnProxyForBackend(instance: InstanceRuntime | null, backendEnv: StarlingDevEnv): void {
+  // The premium dev-proxy is the outermost hop, so it fronts starling's proxy
+  // rather than core directly: frontend -> dev-proxy -> starling proxy -> core.
+  // It only ever forwarded the core API, so colibri keeps addressing starling.
   const proxyPort = instance?.ports.proxy ?? DEFAULT_PORTS.proxy;
   process.env.VITE_BACKEND_URL = `http://127.0.0.1:${proxyPort}`;
+  process.env.VITE_COLIBRI_URL = backendEnv.VITE_COLIBRI_URL;
   startDevProxy({ PORT: String(proxyPort), BACKEND: backendEnv.VITE_BACKEND_URL });
 }
 
@@ -397,16 +228,19 @@ function instanceEnvForElectron(instance: InstanceRuntime | null): Record<string
   };
 }
 
-function pointFrontendAtBackend(backendEnv: BackendEnv): void {
-  // No proxy — Vite reads VITE_BACKEND_URL and connects directly. The Python
-  // backend's --api-cors=http://localhost:* permits the Vite origin.
+function pointFrontendAtBackend(backendEnv: StarlingDevEnv): void {
+  // No dev-proxy — Vite talks straight to starling's proxy, the same single
+  // origin the packaged renderer uses. Core answers `/api/1/*`, colibri
+  // `/colibri/*`, and the CORS allowance starling passes both backends permits
+  // the Vite origin.
   process.env.VITE_BACKEND_URL = backendEnv.VITE_BACKEND_URL;
+  process.env.VITE_COLIBRI_URL = backendEnv.VITE_COLIBRI_URL;
 }
 
 export async function startDevelopmentEnvironment(opts: DevEnvironmentOptions): Promise<void> {
   const { instance, noElectron, useProxy, onChildExit } = opts;
 
-  let backendEnv: BackendEnv | undefined;
+  let backendEnv: StarlingDevEnv | undefined;
   let devPort: number | undefined;
   let extraEnv: Record<string, string> | undefined;
 
@@ -435,14 +269,5 @@ export async function startDevelopmentEnvironment(opts: DevEnvironmentOptions): 
   // moment to attach before the first Vite compile.
   if (noElectron && platform() === 'win32') {
     await new Promise(resolve => setTimeout(resolve, 1_000));
-  }
-}
-
-function extractPort(url: string): number | null {
-  try {
-    return Number.parseInt(new URL(url).port, 10) || null;
-  }
-  catch {
-    return null;
   }
 }

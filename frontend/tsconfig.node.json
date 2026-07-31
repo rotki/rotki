@@ -11,6 +11,8 @@
   },
   "include": [
     "scripts/**/*",
-    "app/shared/cargo-env.ts"
+    "app/shared/cargo-env.ts",
+    "app/shared/ipc.ts",
+    "app/shared/starling/**/*"
   ]
 }

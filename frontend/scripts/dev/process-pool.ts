@@ -192,7 +192,36 @@ function escalateSurvivors(survivors: TrackedProcess[]): void {
   }
 }
 
+type ShutdownHook = () => Promise<void>;
+
+const hooks: ShutdownHook[] = [];
+
+/**
+ * Register work that must run before the tracked children are signalled.
+ * `startProcess` inherits stdin, so a child driven over a stdio control channel
+ * (starling) cannot live in the pool — it spawns itself and hooks in here to get
+ * its graceful stop ahead of the generic kill.
+ */
+export function registerShutdownHook(hook: ShutdownHook): void {
+  hooks.push(hook);
+}
+
+async function runShutdownHooks(): Promise<void> {
+  while (hooks.length > 0) {
+    const hook = hooks.pop();
+    if (!hook)
+      continue;
+    try {
+      await hook();
+    }
+    catch (error) {
+      logger.error(`shutdown hook failed: ${errorMessage(error)}`);
+    }
+  }
+}
+
 export async function terminateSubprocesses(): Promise<void> {
+  await runShutdownHooks();
   const survivors: TrackedProcess[] = [];
   while (tracked.length > 0) {
     const entry = tracked.pop();

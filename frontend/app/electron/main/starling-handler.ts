@@ -1,18 +1,18 @@
 import type { AppConfig } from '@electron/main/app-config';
 import type { LogService } from '@electron/main/log-service';
 import type { StarlingErrorListener } from '@electron/main/starling-handler-types';
-import { type ChildProcess, spawn } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import * as os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
-import readline from 'node:readline';
 import { selectPort } from '@electron/main/port-utils';
 import { resolveLogLevel } from '@electron/main/resolve-log-level';
-import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingInvocation } from '@electron/main/starling-args';
 import { forwardStarlingLine } from '@electron/main/starling-log';
 import { eventLastError, getMcpServerState, isMcpCrash, setMcpServerRunning } from '@electron/main/starling-mcp';
-import { StarlingRpc } from '@electron/main/starling-rpc';
 import { BackendCode, type BackendOptions, type McpServiceState } from '@shared/ipc';
+import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingInvocation } from '@shared/starling/starling-args';
+import { definedOptions, spawnStarling } from '@shared/starling/starling-launch';
+import { StarlingRpc } from '@shared/starling/starling-rpc';
 import { wait } from '@shared/utils';
 
 /** starling exits with this code when the data dir is already locked (main.rs). */
@@ -124,12 +124,7 @@ export class StarlingHandler {
    * through (an absent field leaves that setting unchanged).
    */
   private restartParams(options: Partial<BackendOptions>): Record<string, unknown> {
-    const params: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(options)) {
-      if (value !== undefined)
-        params[key] = value;
-    }
-    return params;
+    return definedOptions(options);
   }
 
   /** Allocate ports, spawn the child, then wait for the initial `ready` event. */
@@ -160,6 +155,7 @@ export class StarlingHandler {
       apiHost: API_HOST,
       logsDir,
       options,
+      devServerUrl: import.meta.env.VITE_DEV_SERVER_URL,
     });
 
     this.spawnChild(invocation, listener);
@@ -203,28 +199,16 @@ export class StarlingHandler {
 
   private spawnChild(invocation: StarlingInvocation, listener: StarlingErrorListener): void {
     this.logger.info(`Spawning starling: ${invocation.command} ${invocation.args.join(' ')}`);
-    const child = spawn(invocation.command, invocation.args, {
-      cwd: invocation.cwd,
-      // A complete env, not an overlay: spreading it over `process.env` would hand
-      // a Windows child both `Path` and `PATH` and let it pick. See StarlingInvocation.
-      env: invocation.env ?? process.env,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-    this.child = child;
-    this.currentListener = listener;
-
-    if (!child.stdout || !child.stderr || !child.stdin)
-      throw new Error('starling child is missing its stdio pipes');
-
-    // stdout is the NDJSON control channel (responses + event notifications).
-    this.rpc.attach(child.stdin);
-    const rl = readline.createInterface({ input: child.stdout });
-    rl.on('line', line => this.rpc.handleLine(line));
 
     // stderr carries starling's own logs and the inherited backend stderr, so
     // supervisor diagnostics land in the Electron log (gotcha 2).
-    const errReader = readline.createInterface({ input: child.stderr });
-    errReader.on('line', line => forwardStarlingLine(this.logger, line));
+    const { child, exited } = spawnStarling({
+      invocation,
+      rpc: this.rpc,
+      onStderr: line => forwardStarlingLine(this.logger, line),
+    });
+    this.child = child;
+    this.currentListener = listener;
 
     child.on('error', (error) => {
       this.logger.error('Failed to spawn starling', error);
@@ -232,31 +216,23 @@ export class StarlingHandler {
         listener.onProcessError(error, BackendCode.TERMINATED);
     });
 
-    this.exited = new Promise<number | null>((resolve) => {
-      child.on('exit', (code, signal) => {
-        this.logger.info(`starling exited (code: ${code}, signal: ${signal})`);
-        rl.close();
-        errReader.close();
-        // Rejecting the pending requests also unblocks the initial `start`
-        // request if the child died before replying.
-        this.rpc.rejectAll(new Error('starling exited'));
-        this.rpc.detach();
-        this.child = undefined;
-        this.currentListener = undefined;
-        if (!this.exiting && code === EXIT_DATADIR_IN_USE) {
-          listener.onProcessError(
-            'Another rotki instance is already using this data directory. Please close it and try again.',
-            BackendCode.TERMINATED,
-          );
-        }
-        else if (!this.exiting && code !== 0) {
-          listener.onProcessError(
-            'The rotki backend stopped unexpectedly. Please check the logs for more details.',
-            BackendCode.TERMINATED,
-          );
-        }
-        resolve(code);
-      });
+    this.exited = exited.then(({ code, signal }) => {
+      this.logger.info(`starling exited (code: ${code}, signal: ${signal})`);
+      this.child = undefined;
+      this.currentListener = undefined;
+      if (!this.exiting && code === EXIT_DATADIR_IN_USE) {
+        listener.onProcessError(
+          'Another rotki instance is already using this data directory. Please close it and try again.',
+          BackendCode.TERMINATED,
+        );
+      }
+      else if (!this.exiting && code !== 0) {
+        listener.onProcessError(
+          'The rotki backend stopped unexpectedly. Please check the logs for more details.',
+          BackendCode.TERMINATED,
+        );
+      }
+      return code;
     });
   }
 

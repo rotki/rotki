@@ -1,9 +1,27 @@
-import type { LogService } from '@electron/main/log-service';
-import type { JsonRpcResponse } from '@electron/main/starling-handler-types';
 import type { Writable } from 'node:stream';
+
+/** One decoded line of the control channel: a response, or an event notification. */
+interface JsonRpcResponse {
+  jsonrpc: '2.0';
+  id?: number;
+  result?: unknown;
+  error?: { code: number; message: string };
+  method?: string;
+  params?: unknown;
+}
 
 /** Dispatch for an id-less notification (an `event.*` method + its params). */
 export type StarlingNotificationHandler = (method: string, params: unknown) => void;
+
+/**
+ * The only logging this client does: one warning for a line that is not JSON.
+ * Narrowed to a single method so both consumers can satisfy it — Electron passes
+ * its `LogService`, the dev launcher a console-backed shim — without the shared
+ * module depending on either.
+ */
+export interface StarlingRpcLogger {
+  warn: (message: string) => void;
+}
 
 /**
  * The NDJSON JSON-RPC client half of the starling control channel: it correlates
@@ -17,12 +35,18 @@ export class StarlingRpc {
   private readonly pending = new Map<number, { resolve: (value: any) => void; reject: (error: Error) => void }>();
 
   constructor(
-    private readonly logger: LogService,
+    private readonly logger: StarlingRpcLogger,
     private readonly onNotification: StarlingNotificationHandler,
   ) {}
 
   /** Point the client at the current child's stdin. Called once per spawn. */
   attach(stdin: Writable): void {
+    // Writing to a pipe whose reader is gone fails the write callback *and*
+    // emits 'error' on the stream, which node treats as fatal when nothing is
+    // listening. The pending request already rejects through the callback, so
+    // this only has to keep a dead starling from taking the launcher down with
+    // an EPIPE stack trace instead of a reported failure.
+    stdin.on('error', error => this.logger.warn(`starling stdin: ${error.message}`));
     this.stdin = stdin;
   }
 

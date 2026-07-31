@@ -281,8 +281,9 @@ async function runDevAction(options: DevCliOptions): Promise<void> {
 
   // Warm the rust builds and sync the python deps before either mode reaches its
   // start point, so a fresh worktree doesn't hit a cold compile or a dep resolve
-  // at launch (colibri in both modes, starling only in electron mode).
-  await warmDevServices(!!options.web);
+  // at launch. Both modes need colibri and starling: web mode now runs the same
+  // supervisor electron does.
+  await warmDevServices();
 
   // Decide instance vs default from CLI/shell before loading env, then for a
   // default run strip the managed block first so it can't leak into process.env.
@@ -317,8 +318,6 @@ async function runDevAction(options: DevCliOptions): Promise<void> {
       webPort: parsePort(options.webPort, DEFAULT_PORTS.restApi),
       colibriPort: parsePort(options.colibriPort, DEFAULT_PORTS.colibri),
       noElectron: !!options.web,
-      profilingArgs: options.profilingArgs,
-      profilingCmd: options.profilingCmd,
       instance,
       useProxy,
       onChildExit: () => {
