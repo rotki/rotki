@@ -2407,7 +2407,6 @@
       "title": "blockchain"
     },
     "completeness": {
-      "data_issues": "{count} data issue needs attention | {count} data issues need attention",
       "missing_prices": "{count} asset without a price | {count} assets without a price",
       "missing_prices_dialog": {
         "add_price": "Add price",
@@ -2801,9 +2800,6 @@
     },
     "summary": {
       "all_clear": "All clear. No issues need your attention."
-    },
-    "toggle": {
-      "tooltip": "Data issues"
     },
     "view_details": "View details"
   },
@@ -6246,6 +6242,11 @@
           "action": "Review",
           "description": "Duplicated customized events that rotki can remove for you.",
           "title": "Duplicate events"
+        },
+        "data_issues": {
+          "action": "Review issues",
+          "description": "Gaps and inconsistencies in your history that need your call.",
+          "title": "Data issues"
         },
         "internal_conflicts": {
           "action": "Review",

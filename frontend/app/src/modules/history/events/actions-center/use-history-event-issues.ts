@@ -1,6 +1,8 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { ComputedRef } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
+import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/dialog-types';
 import { useUndecodedTransactionsCount } from '@/modules/history/events/tx/use-undecoded-transactions-count';
@@ -10,9 +12,11 @@ import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatch
 import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
+import { type Pinned, PinnedNames, toPinned } from '@/modules/session/types';
 
 export const HISTORY_ISSUE_IDS = {
   AUTO_FIX_DUPLICATES: 'autoFixDuplicates',
+  DATA_ISSUES: 'dataIssues',
   INTERNAL_CONFLICTS: 'internalConflicts',
   MANUAL_REVIEW_DUPLICATES: 'manualReviewDuplicates',
   UNDECODED: 'undecoded',
@@ -31,7 +35,9 @@ export type HistoryIssueSeverity = 'warning' | 'info' | 'muted';
 
 export type HistoryIssueTarget =
   | { kind: 'dialog'; options: DialogShowOptions }
-  | { kind: 'duplicates'; status: DuplicateHandlingStatus; groupIds: string[] };
+  | { kind: 'duplicates'; status: DuplicateHandlingStatus; groupIds: string[] }
+  /** Opens a panel in the pinned rail beside the events table. */
+  | { kind: 'pin'; panel: Pinned };
 
 export interface HistoryEventIssue {
   id: HistoryIssueId;
@@ -131,6 +137,10 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
   } = useCustomizedEventDuplicates();
 
   const { fetchCounts, issueCount: internalConflictsCount } = useInternalTxConflicts();
+  // The inbox is served only in accounting-update builds, so its row (and the four
+  // requests behind its count) exist only there.
+  const dataIssuesEnabled = isAccountingUpdateEnabled();
+  const { actionableCount: dataIssuesCount, refreshSummary } = useDataIssuesSummary();
   const { fetchUndecodedTransactionsBreakdown, undecodedCount } = useUndecodedTransactionsCount();
 
   // With nothing left unmatched the row switches to what was ignored, so those
@@ -189,6 +199,18 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
       target: { groupIds: get(manualReviewGroupIds), kind: 'duplicates', status: DuplicateHandlingStatus.MANUAL_REVIEW },
       title: t('transactions.alerts.issues.manual_review_duplicates.title'),
     }),
+    ...(dataIssuesEnabled
+      ? [createIssue({
+          actionLabel: t('transactions.alerts.issues.data_issues.action'),
+          count: get(dataIssuesCount),
+          description: t('transactions.alerts.issues.data_issues.description'),
+          icon: 'lu-shield-alert',
+          id: HISTORY_ISSUE_IDS.DATA_ISSUES,
+          severity: 'warning',
+          target: { kind: 'pin', panel: toPinned(PinnedNames.DATA_ISSUES, {}) },
+          title: t('transactions.alerts.issues.data_issues.title'),
+        })]
+      : []),
     createIssue({
       actionLabel: t('transactions.alerts.issues.internal_conflicts.action'),
       count: get(internalConflictsCount),
@@ -242,6 +264,7 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
       fetchCustomizedEventDuplicates(),
       fetchCounts(),
       fetchUndecodedTransactionsBreakdown(),
+      ...(dataIssuesEnabled ? [refreshSummary()] : []),
     ]);
     set(scanned, true);
   };

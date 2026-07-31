@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { HISTORY_ISSUE_IDS, type useHistoryEventIssues as UseHistoryEventIssues } from '@/modules/history/events/actions-center/use-history-event-issues';
 import { DIALOG_TYPES } from '@/modules/history/events/dialog-types';
+import { PinnedNames } from '@/modules/session/types';
 
 // Declared at module scope (not `vi.hoisted`): the mock factories below only
 // dereference `state` from inside their inner arrows, which run once the tests do.
@@ -10,6 +11,7 @@ const state = {
   autoFixGroupIds: ref<string[]>([]),
   autoMatchLoading: ref(false),
   bridgeAutoMatchLoading: ref(false),
+  dataIssuesCount: ref(0),
   fetchCounts: vi.fn<() => Promise<void>>(),
   fetchCustomizedEventDuplicates: vi.fn<() => Promise<void>>(),
   fetchUndecodedTransactionsBreakdown: vi.fn<() => Promise<void>>(),
@@ -21,6 +23,7 @@ const state = {
   logged: ref(true),
   matchingAllowed: ref(true),
   processing: ref(false),
+  refreshDataIssuesSummary: vi.fn<() => Promise<void>>(),
   refreshUnmatchedAssetMovements: vi.fn<() => Promise<void>>(),
   refreshUnmatchedBridgeTransactions: vi.fn<() => Promise<void>>(),
   undecodedCount: ref(0),
@@ -87,6 +90,13 @@ vi.mock('@/modules/history/events/use-history-events-status', () => ({
   useHistoryEventsStatus: (): object => ({ processing: state.processing }),
 }));
 
+vi.mock('@/modules/history/data-issues/use-data-issues-summary', () => ({
+  useDataIssuesSummary: (): object => ({
+    actionableCount: state.dataIssuesCount,
+    refreshSummary: state.refreshDataIssuesSummary,
+  }),
+}));
+
 vi.mock('@/modules/history/events/tx/use-undecoded-transactions-count', () => ({
   useUndecodedTransactionsCount: (): object => ({
     fetchUndecodedTransactionsBreakdown: state.fetchUndecodedTransactionsBreakdown,
@@ -112,6 +122,10 @@ describe('useHistoryEventIssues', () => {
     set(state.autoFixGroupIds, []);
     set(state.autoMatchLoading, false);
     set(state.bridgeAutoMatchLoading, false);
+    set(state.dataIssuesCount, 0);
+    // The inbox row only exists in accounting-update builds, and vitest inherits the
+    // flag from vite.config.ts, so pin it off by default rather than per environment.
+    vi.stubEnv('VITE_ACCOUNTING_UPDATE', '');
     set(state.internalConflictsCount, 0);
     set(state.manualReviewCount, 0);
     set(state.manualReviewGroupIds, []);
@@ -123,6 +137,10 @@ describe('useHistoryEventIssues', () => {
     set(state.undecodedCount, 0);
     set(state.unmatchedBridgesCount, 0);
     set(state.unmatchedMovementsCount, 0);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('should report no issues when every count is zero', () => {
@@ -288,5 +306,50 @@ describe('useHistoryEventIssues', () => {
     expect(state.fetchCustomizedEventDuplicates).toHaveBeenCalledOnce();
     expect(state.fetchCounts).toHaveBeenCalledOnce();
     expect(state.fetchUndecodedTransactionsBreakdown).toHaveBeenCalledOnce();
+  });
+
+  it('should leave the inbox out entirely when the build does not serve it', async () => {
+    set(state.dataIssuesCount, 4);
+    const { issues, refreshAll } = useHistoryEventIssues();
+
+    await refreshAll();
+
+    expect(get(issues).map(issue => issue.id)).not.toContain(HISTORY_ISSUE_IDS.DATA_ISSUES);
+    expect(get(issues)).toHaveLength(6);
+    // The summary costs four requests, so it must not be paid for a hidden row.
+    expect(state.refreshDataIssuesSummary).not.toHaveBeenCalled();
+  });
+
+  describe('with the inbox enabled', () => {
+    beforeEach(() => {
+      vi.stubEnv('VITE_ACCOUNTING_UPDATE', 'true');
+    });
+
+    it('should raise a data issues row that opens the inbox in the pinned rail', () => {
+      set(state.dataIssuesCount, 4);
+      const { activeIssues, issues } = useHistoryEventIssues();
+      const row = get(issues).find(issue => issue.id === HISTORY_ISSUE_IDS.DATA_ISSUES);
+
+      expect(get(issues)).toHaveLength(7);
+      expect(row?.count).toBe(4);
+      expect(row?.severity).toBe('warning');
+      expect(row?.target).toEqual({ kind: 'pin', panel: { name: PinnedNames.DATA_ISSUES, props: {} } });
+      expect(get(activeIssues).map(issue => issue.id)).toContain(HISTORY_ISSUE_IDS.DATA_ISSUES);
+    });
+
+    it('should clear the data issues row when nothing is actionable', () => {
+      const { activeIssues, clearedIssues } = useHistoryEventIssues();
+
+      expect(get(activeIssues)).toEqual([]);
+      expect(get(clearedIssues).map(issue => issue.id)).toContain(HISTORY_ISSUE_IDS.DATA_ISSUES);
+    });
+
+    it('should refresh the inbox summary alongside the other sources', async () => {
+      const { refreshAll } = useHistoryEventIssues();
+
+      await refreshAll();
+
+      expect(state.refreshDataIssuesSummary).toHaveBeenCalledOnce();
+    });
   });
 });
