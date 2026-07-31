@@ -12,6 +12,39 @@ interface UseHistoryDataFetchingReturn {
   fetchTransactionStatusSummary: () => Promise<void>;
 }
 
+/**
+ * In-flight reads, shared across every caller of this composable.
+ *
+ * The location set is read at flow boundaries, and a single flow ending produces several of them:
+ * a redecode handler fetches when it finishes, the auto-fetch fetches when the run settles, and a
+ * modification watcher may fire in between. Each is correct on its own, and none can see the
+ * others — measured on a scoped redecode that did 3 decodes, they produced 5 reads of an identical
+ * result, two of them in the same second.
+ *
+ * Joining rather than caching: a caller always gets a promise that resolves once the data is
+ * current. Nothing is ever skipped, so a manual add that creates a location still reads it
+ * immediately, even if a redecode read the set a moment earlier. Only genuinely concurrent reads
+ * collapse.
+ *
+ * Module scope, not composable scope: `useHistoryDataFetching` is a plain function, so each caller
+ * gets its own closure and per-instance state would not be shared.
+ */
+const inFlight = new Map<string, Promise<void>>();
+
+async function join(key: string, run: () => Promise<void>): Promise<void> {
+  const current = inFlight.get(key);
+  if (current)
+    return current;
+
+  // Clears only its own entry, so a request started after this one settles is never dropped.
+  const request = run().finally(() => {
+    if (inFlight.get(key) === request)
+      inFlight.delete(key);
+  });
+  inFlight.set(key, request);
+  return request;
+}
+
 export function useHistoryDataFetching(): UseHistoryDataFetchingReturn {
   const store = useHistoryStore();
   const { fetchAssociatedLocations: fetchAssociatedLocationsApi, fetchLocationLabels: fetchLocationLabelsApi } = useHistoryApi();
@@ -19,7 +52,7 @@ export function useHistoryDataFetching(): UseHistoryDataFetchingReturn {
   const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
-  async function fetchAssociatedLocations(): Promise<void> {
+  async function readAssociatedLocations(): Promise<void> {
     try {
       store.setAssociatedLocations(await fetchAssociatedLocationsApi());
     }
@@ -35,7 +68,7 @@ export function useHistoryDataFetching(): UseHistoryDataFetchingReturn {
     }
   }
 
-  async function fetchLocationLabels(): Promise<void> {
+  async function readLocationLabels(): Promise<void> {
     try {
       store.setLocationLabels(await fetchLocationLabelsApi());
     }
@@ -49,6 +82,14 @@ export function useHistoryDataFetching(): UseHistoryDataFetchingReturn {
         t('actions.history.fetch_location_labels.error.message', { message: getErrorMessage(error) }),
       );
     }
+  }
+
+  async function fetchAssociatedLocations(): Promise<void> {
+    return join('associated-locations', readAssociatedLocations);
+  }
+
+  async function fetchLocationLabels(): Promise<void> {
+    return join('location-labels', readLocationLabels);
   }
 
   async function fetchTransactionStatusSummary(): Promise<void> {
