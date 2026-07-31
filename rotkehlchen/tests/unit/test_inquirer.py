@@ -3,6 +3,7 @@ import json
 import math
 import os
 from http import HTTPStatus
+from itertools import starmap
 from typing import TYPE_CHECKING, Any
 from unittest import mock
 from unittest.mock import MagicMock, patch
@@ -402,6 +403,64 @@ def test_find_usd_price_manual_prices_preference(inquirer, globaldb):
 
     for oracle_instance in inquirer._oracle_instances:
         assert oracle_instance.query_current_price.call_count == 0
+
+
+def test_price_asset_preparation_and_manual_lookup_are_batched(
+        inquirer: Inquirer,
+        globaldb: GlobalDBHandler,
+) -> None:
+    """A cold 100-asset batch must use bulk DB lookups instead of three queries per asset."""
+    with globaldb.conn.read_ctx() as cursor:
+        assets = list(starmap(
+            Asset,
+            cursor.execute('SELECT identifier FROM assets LIMIT 100'),
+        ))
+
+    AssetResolver.clean_memory_cache()
+    Inquirer._cached_current_price.clear()
+    with (
+        patch.object(
+            GlobalDBHandler,
+            'get_collection_main_assets',
+            wraps=GlobalDBHandler.get_collection_main_assets,
+        ) as collection_query,
+        patch.object(
+            AssetResolver,
+            'bulk_check_existence',
+            wraps=AssetResolver.bulk_check_existence,
+        ) as existence_query,
+        patch.object(
+            GlobalDBHandler,
+            'get_manual_current_prices',
+            wraps=GlobalDBHandler.get_manual_current_prices,
+        ) as manual_query,
+        patch.object(
+            GlobalDBHandler,
+            'get_collection_main_asset',
+            side_effect=AssertionError('used scalar collection lookup'),
+        ),
+        patch.object(
+            GlobalDBHandler,
+            'get_manual_current_price',
+            side_effect=AssertionError('used scalar manual-price lookup'),
+        ),
+        patch.object(
+            Asset,
+            'check_existence',
+            side_effect=AssertionError('used scalar existence lookup'),
+        ),
+    ):
+        _, _, unpriced_assets = Inquirer._preprocess_assets_to_query(
+            from_assets=assets,
+            to_asset=A_USD,
+            ignore_cache=True,
+        )
+        Inquirer._get_manual_prices(from_assets=unpriced_assets, to_asset=A_USD)
+
+    assert len(unpriced_assets) == 100
+    assert collection_query.call_count == 1
+    assert existence_query.call_count == 1
+    assert manual_query.call_count == 1
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

@@ -123,6 +123,39 @@ class AssetResolver:
         return main_asset
 
     @staticmethod
+    def get_collection_main_assets(identifiers: set[str]) -> dict[str, str]:
+        """Return collection main assets for identifiers in bulk, using the shared cache."""
+        if len(identifiers) == 0:
+            return {}
+
+        cache = AssetResolver.collection_main_asset_cache
+        main_assets, to_query = {}, set()
+        for identifier in identifiers:
+            if identifier.lower() in cache:
+                if (main_asset := cache.get(identifier)) is not None:
+                    main_assets[identifier] = main_asset
+            else:
+                to_query.add(identifier)
+
+        if len(to_query) == 0:
+            return main_assets
+
+        clean_generation = AssetResolver.cache_clean_generation
+        queried_main_assets = AssetResolver._globaldb.get_collection_main_assets(to_query)
+        queried_by_lower = {
+            identifier.lower(): main_asset
+            for identifier, main_asset in queried_main_assets.items()
+        }
+        for identifier in to_query:
+            main_asset = queried_by_lower.get(identifier.lower())
+            if main_asset is not None:
+                main_assets[identifier] = main_asset
+            if AssetResolver._may_cache(clean_generation):
+                cache.add(identifier, main_asset)
+
+        return main_assets
+
+    @staticmethod
     def resolve_asset(identifier: str) -> AssetWithNameAndType:
         """
         Get all asset data for a valid asset identifier. May return any valid subclass of the
@@ -238,7 +271,7 @@ class AssetResolver:
             to_check.add(identifier)
 
         clean_generation = AssetResolver.cache_clean_generation
-        found_ids: set[str] = set()
+        found_by_lower: dict[str, str] = {}
         if len(to_check) != 0:
             with AssetResolver._globaldb.conn.read_ctx() as cursor:
                 for chunk in get_chunks(list(to_check), n=500):
@@ -247,12 +280,20 @@ class AssetResolver:
                         f'SELECT identifier FROM assets WHERE identifier IN ({placeholders})',
                         tuple(chunk),
                     )
-                    found_ids.update(row[0] for row in cursor)
+                    found_by_lower.update((row[0].lower(), row[0]) for row in cursor)
 
-        normalized_map.update({identifier: identifier for identifier in found_ids})
+        found_ids = {
+            identifier
+            for identifier in to_check
+            if identifier.lower() in found_by_lower
+        }
+        normalized_map.update({
+            identifier: found_by_lower[identifier.lower()]
+            for identifier in found_ids
+        })
         if AssetResolver._may_cache(clean_generation):
             for identifier in found_ids:
-                AssetResolver.existence_cache.add(identifier, identifier)
+                AssetResolver.existence_cache.add(identifier, normalized_map[identifier])
 
         if len(missing_ids := to_check - found_ids) == 0:
             return normalized_map, set()
@@ -262,7 +303,7 @@ class AssetResolver:
 
         missing_constant = {identifier for identifier in missing_ids if identifier in AssetResolver._constant_assets}  # noqa: E501
         missing_non_constant = missing_ids - missing_constant
-        packaged_found: set[str] = set()
+        packaged_by_lower: dict[str, str] = {}
         if len(missing_constant) != 0:
             with AssetResolver._globaldb.packaged_db_conn().read_ctx() as cursor:
                 for chunk in get_chunks(list(missing_constant), n=500):
@@ -271,12 +312,20 @@ class AssetResolver:
                         f'SELECT identifier FROM assets WHERE identifier IN ({placeholders})',
                         tuple(chunk),
                     )
-                    packaged_found.update(row[0] for row in cursor)
+                    packaged_by_lower.update((row[0].lower(), row[0]) for row in cursor)
 
-        normalized_map.update({identifier: identifier for identifier in packaged_found})
+        packaged_found = {
+            identifier
+            for identifier in missing_constant
+            if identifier.lower() in packaged_by_lower
+        }
+        normalized_map.update({
+            identifier: packaged_by_lower[identifier.lower()]
+            for identifier in packaged_found
+        })
         if AssetResolver._may_cache(clean_generation):
             for identifier in packaged_found:
-                AssetResolver.existence_cache.add(identifier, identifier)
+                AssetResolver.existence_cache.add(identifier, normalized_map[identifier])
         unknown_ids = missing_non_constant | (missing_constant - packaged_found)
         return normalized_map, unknown_ids
 

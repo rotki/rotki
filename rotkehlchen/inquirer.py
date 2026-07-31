@@ -870,15 +870,25 @@ class Inquirer:
         Returns a tuple containing a dict of found asset prices, a dict of replaced assets,
         and a list of assets that still need their prices queried.
         """
-        found_prices, replaced_assets, unpriced_assets = {}, {}, []
+        found_prices, replaced_assets, assets_to_check = {}, {}, []
+        collection_main_assets = AssetResolver.get_collection_main_assets({
+            asset.identifier for asset in from_assets if asset != A_ETH2
+        })
         for from_asset in from_assets:
             if from_asset == to_asset:
                 found_prices[from_asset] = Price(ONE), CurrentPriceOracle.MANUALCURRENT
                 continue
 
-            if (asset_to_price := Inquirer._maybe_replace_asset(asset=from_asset)) != from_asset:
+            if from_asset == A_ETH2:
+                asset_to_price = A_ETH
+            elif (main_asset_id := collection_main_assets.get(from_asset.identifier)) is not None:
+                asset_to_price = Asset(main_asset_id)
+            else:
+                asset_to_price = from_asset
+
+            if asset_to_price != from_asset:
                 replaced_assets[from_asset] = asset_to_price
-                if asset_to_price in found_prices or asset_to_price in unpriced_assets:
+                if asset_to_price in found_prices or asset_to_price in assets_to_check:
                     continue
 
             if (
@@ -888,11 +898,23 @@ class Inquirer:
                 found_prices[asset_to_price] = cache.price, cache.oracle
                 continue
 
-            try:  # Ensure the asset exists
-                unpriced_assets.append(asset_to_price.check_existence())
-            except UnknownAsset:
+            if asset_to_price not in assets_to_check:
+                assets_to_check.append(asset_to_price)
+
+        normalized_ids, unknown_ids = AssetResolver.bulk_check_existence({
+            asset.identifier for asset in assets_to_check
+        })
+        unpriced_assets = []
+        for asset_to_price in assets_to_check:
+            if asset_to_price.identifier in unknown_ids:
                 log.error(f'Tried to ask for {asset_to_price.identifier} price but asset is missing from the DB')  # noqa: E501
                 found_prices[asset_to_price] = ZERO_PRICE, CurrentPriceOracle.MANUALCURRENT
+            elif (normalized_id := normalized_ids.get(asset_to_price.identifier)) is not None:
+                unpriced_assets.append(
+                    asset_to_price
+                    if normalized_id == asset_to_price.identifier
+                    else Asset(normalized_id),
+                )
 
         return found_prices, replaced_assets, unpriced_assets
 

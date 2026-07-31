@@ -10,7 +10,7 @@ from rotkehlchen.types import Price
 from rotkehlchen.utils.interfaces import DBSetterMixin
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -33,30 +33,48 @@ class ManualCurrentOracle(CurrentPriceOracleInterface, DBSetterMixin):
 
     def query_current_price(
             self,
-            from_asset: Asset,
-            to_asset: Asset,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
     ) -> Price:
         """Searches for a manually specified current price for the `from_asset`.
         If found, converts it to a price in `to_asset` and returns it.
         Avoids recursion by skipping already processing asset pairs.
         """
-        if (from_asset, to_asset) in self.processing_pairs:
-            log.warning(f'Recursive price query detected for {from_asset=} -> {to_asset=}. Skipping.')  # noqa: E501
-            return ZERO_PRICE
+        return self.query_multiple_current_prices(
+            from_assets=[from_asset],
+            to_asset=to_asset,
+        ).get(from_asset, ZERO_PRICE)
 
-        self.processing_pairs.add((from_asset, to_asset))
-        try:
-            if (manual_current_result := GlobalDBHandler.get_manual_current_price(
-                    asset=from_asset,
-            )) is None:
-                return ZERO_PRICE
+    def query_multiple_current_prices(
+            self,
+            from_assets: list[AssetWithOracles],
+            to_asset: AssetWithOracles,
+    ) -> dict[AssetWithOracles, Price]:
+        """Read manual prices in one query and reuse denomination conversions."""
+        manual_prices = GlobalDBHandler.get_manual_current_prices(list(set(from_assets)))
+        prices, conversion_prices = {}, {}
+        for from_asset in from_assets:
+            pair = from_asset, to_asset
+            if pair in self.processing_pairs:
+                log.warning(
+                    'Recursive price query detected for from_asset=%s -> to_asset=%s. Skipping.',
+                    from_asset,
+                    to_asset,
+                )
+                continue
+            if (manual_price := manual_prices.get(from_asset)) is None:
+                continue
 
-            current_to_asset, current_price = manual_current_result
-            current_to_asset_price = Inquirer.find_price(
-                from_asset=current_to_asset,
-                to_asset=to_asset,
-            )
-            return Price(current_price * current_to_asset_price)
-        finally:
-            # Ensure we remove the pair after processing, even if an error occurs
-            self.processing_pairs.remove((from_asset, to_asset))
+            self.processing_pairs.add(pair)
+            try:
+                current_to_asset, current_price = manual_price
+                if current_to_asset not in conversion_prices:
+                    conversion_prices[current_to_asset] = Inquirer.find_price(
+                        from_asset=current_to_asset,
+                        to_asset=to_asset,
+                    )
+                prices[from_asset] = Price(current_price * conversion_prices[current_to_asset])
+            finally:
+                self.processing_pairs.remove(pair)
+
+        return prices
