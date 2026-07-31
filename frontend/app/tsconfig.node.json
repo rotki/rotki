@@ -20,6 +20,7 @@
     "shared/port-utils.ts",
     "shared/uv.ts",
     "shared/external-links.ts",
+    "shared/starling/**/*",
     ".electron-builder.config.*",
     "backend-icons.generated.ts"
   ]

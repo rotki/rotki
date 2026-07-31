@@ -12,7 +12,6 @@
   "include": [
     "scripts/**/*",
     "app/shared/cargo-env.ts",
-    "app/shared/ipc.ts",
     "app/shared/port-utils.ts",
     "app/shared/uv.ts",
     "app/shared/starling/**/*"

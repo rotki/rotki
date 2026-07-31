@@ -272,6 +272,7 @@ mod tests {
             max_size_in_mb_all_logs: None,
             sqlite_instructions: None,
             sleep_secs: None,
+            disable_task_manager: false,
         }
     }
 

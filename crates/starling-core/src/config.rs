@@ -343,6 +343,12 @@ pub struct ServiceLayout {
     /// Seconds core sleeps before starting (`--sleep-secs`). A desktop debug knob
     /// set via the embedded CLI / control restart; `None` everywhere else.
     pub sleep_secs: Option<u32>,
+    /// Start core with its periodic task manager disabled
+    /// (`--disable-task-manager`). Set by the e2e harness, which drives every
+    /// query itself and would otherwise race background refreshes; `false`
+    /// everywhere else. A launch fact, so it is CLI-only — never settable over
+    /// the control channel.
+    pub disable_task_manager: bool,
 }
 
 /// The mode-independent argument vector for the `core` backend.
@@ -388,6 +394,9 @@ pub fn core_args(layout: &ServiceLayout) -> Vec<String> {
     if let Some(n) = layout.sleep_secs {
         args.push("--sleep-secs".to_string());
         args.push(n.to_string());
+    }
+    if layout.disable_task_manager {
+        args.push("--disable-task-manager".to_string());
     }
 
     args
@@ -535,6 +544,7 @@ mod tests {
             max_size_in_mb_all_logs: None,
             sqlite_instructions: None,
             sleep_secs: None,
+            disable_task_manager: false,
         }
     }
 
@@ -695,6 +705,38 @@ mod tests {
         assert!(!args.iter().any(|a| a == "--max-size-in-mb-all-logs"));
         assert!(!args.iter().any(|a| a == "--sqlite-instructions"));
         assert!(!args.iter().any(|a| a == "--sleep-secs"));
+        assert!(!args.iter().any(|a| a == "--disable-task-manager"));
+    }
+
+    #[test]
+    fn disable_task_manager_emits_a_bare_flag() {
+        let mut layout = sample_layout(
+            Launcher::binary("/usr/sbin/rotki"),
+            Launcher::binary("/usr/sbin/colibri"),
+        );
+        layout.disable_task_manager = true;
+        let args = core_args(&layout);
+
+        // A bare flag: the next token must be another flag, not a value.
+        let index = args
+            .iter()
+            .position(|a| a == "--disable-task-manager")
+            .expect("flag emitted");
+        assert!(args
+            .get(index + 1)
+            .is_none_or(|next| next.starts_with("--")));
+    }
+
+    #[test]
+    fn disable_task_manager_never_reaches_colibri() {
+        let mut layout = sample_layout(
+            Launcher::binary("/usr/sbin/rotki"),
+            Launcher::binary("/usr/sbin/colibri"),
+        );
+        layout.disable_task_manager = true;
+        assert!(!colibri_args(&layout)
+            .iter()
+            .any(|a| a == "--disable-task-manager"));
     }
 
     #[test]

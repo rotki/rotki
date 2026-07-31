@@ -1,4 +1,3 @@
-import type { BackendOptions } from '../ipc';
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -18,6 +17,25 @@ const STARLING_DIRECTORY = 'starling';
  * about to reap.
  */
 export const SHUTDOWN_GRACE_SECS = 10;
+
+/**
+ * The backend settings that reach starling on a `start`/`restart`, declared
+ * structurally rather than imported from the app's `BackendOptions`. That type is
+ * zod-derived and pulls the renderer's module graph in with it, which the dev and
+ * e2e launchers — plain node, no bundler aliases — cannot resolve. The app's
+ * `Partial<BackendOptions>` satisfies this shape, so callers pass theirs directly.
+ */
+export interface StarlingBackendOptions {
+  loglevel?: string;
+  dataDirectory?: string;
+  logDirectory?: string;
+  sleepSeconds?: number;
+  logFromOtherModules?: boolean;
+  maxSizeInMbAllLogs?: number;
+  sqliteInstructions?: number;
+  maxLogfilesNum?: number;
+  mcpAutoStart?: boolean;
+}
 
 /**
  * How to launch the single `starling` supervisor child, fully resolved for the
@@ -52,7 +70,7 @@ export interface StarlingLaunchInput {
   /** Directory starling writes service logs to (owned by LogService). */
   logsDir: string;
   /** The persisted/UI backend options the renderer drives a (re)start with. */
-  options: Partial<BackendOptions>;
+  options: StarlingBackendOptions;
   /**
    * Origin the Vite dev server is serving the renderer from, added to the CORS
    * allowance in dev. Passed in rather than read from `import.meta.env` so this
@@ -67,6 +85,12 @@ export interface StarlingLaunchInput {
    * `frontend` and passes its own.
    */
   repoRoot?: string;
+  /**
+   * Start core with its periodic task manager disabled. Set by the e2e harness,
+   * which drives every query itself and would otherwise race background
+   * refreshes. A launch fact, so it rides the CLI rather than BackendOptions.
+   */
+  disableTaskManager?: boolean;
 }
 
 /**
@@ -213,6 +237,12 @@ function commonStarlingArgs(input: StarlingLaunchInput): string[] {
     args.push('--data-dir', options.dataDirectory);
   }
 
+  // A bare flag, and a launch fact rather than a tunable: core cannot be told to
+  // pick its task manager back up over the control channel.
+  if (input.disableTaskManager) {
+    args.push('--disable-task-manager');
+  }
+
   return args;
 }
 
@@ -256,10 +286,18 @@ function devCoreLauncherArgs(root: string): string[] {
   return ['--core-binary', binary, ...prefixFlags('--core-prefix', prefix), '--core-cwd', root];
 }
 
-/** Debug-profile binary the dev warm-up builds, if it is actually there. */
+/**
+ * A prebuilt binary for one of the Rust services, if there is one. Debug first,
+ * since that is what the dev warm-up builds and what a developer expects their
+ * last `cargo build` to have produced. Release is the fallback because CI builds
+ * the services once with `--release` and ships only those binaries to the jobs
+ * that consume them, where there is no cargo to fall back to.
+ */
 function devBuiltBinary(targetDir: string, name: string): string | undefined {
-  const exe = path.join(targetDir, 'debug', process.platform === 'win32' ? `${name}.exe` : name);
-  return fs.existsSync(exe) ? exe : undefined;
+  const exe = process.platform === 'win32' ? `${name}.exe` : name;
+  return ['debug', 'release']
+    .map(profile => path.join(targetDir, profile, exe))
+    .find(candidate => fs.existsSync(candidate));
 }
 
 /**
