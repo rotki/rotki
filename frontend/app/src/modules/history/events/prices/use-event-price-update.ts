@@ -6,7 +6,7 @@ import { PriceOracle } from '@/modules/settings/types/price-oracle';
 
 export type EventPriceUpdateMode = 'oracle' | 'manual';
 
-export interface EventPriceUpdateParams {
+interface EventPriceUpdateParams {
   fromAsset: string;
   toAsset: string;
   price: string;

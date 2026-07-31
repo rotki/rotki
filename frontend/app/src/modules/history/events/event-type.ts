@@ -38,9 +38,7 @@ export const EventCategoryGroupDetail = z.object({
 
 export type EventCategoryGroupDetail = z.infer<typeof EventCategoryGroupDetail>;
 
-export const EventCategoryGroups = z.record(z.string(), EventCategoryGroupDetail);
-
-export type EventCategoryGroups = z.infer<typeof EventCategoryGroups>;
+const EventCategoryGroups = z.record(z.string(), EventCategoryGroupDetail);
 
 export const HistoryEventCategoryDetailWithId = HistoryEventCategoryDetail.extend({
   direction: HistoryEventCategoryDirection,

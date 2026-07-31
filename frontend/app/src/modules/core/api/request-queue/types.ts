@@ -23,7 +23,7 @@ export interface QueueState {
   requestsThisSecond: number;
 }
 
-export interface DedupeSubscriber {
+interface DedupeSubscriber {
   // The queue holds requests whose result types are unrelated, which TypeScript cannot express.
   // `any` in the parameter position is what makes a QueuedRequest<T> storable next to the others;
   // with `unknown` every caller has to assert the request back into the queue's element type.

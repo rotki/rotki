@@ -9,7 +9,7 @@ import { BaseError, createWalletClient, custom, type CustomTransport, type Publi
  */
 export { getAddress, isHex } from 'viem';
 
-export type { Address, Chain, Hash, Hex } from 'viem';
+export type { Chain, Hash } from 'viem';
 
 export type ViemWalletClient = WalletClient<CustomTransport, undefined, undefined>
   & PublicActions<CustomTransport, undefined, undefined>;

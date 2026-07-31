@@ -27,7 +27,7 @@ export interface NewDetectedTokenRecord extends NewDetectedToken {
   id?: number;
 }
 
-export interface NewDetectedTokensFilterParams {
+interface NewDetectedTokensFilterParams {
   tokenKind?: NewDetectedTokenKind;
 }
 

@@ -75,7 +75,7 @@ export interface SigilQueueEntry {
 }
 
 /** Payload shape for a single event sent to the analytics backend. */
-export interface SigilEventPayload {
+interface SigilEventPayload {
   website: string;
   hostname: string;
   screen: string;

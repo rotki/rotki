@@ -5,7 +5,7 @@ export interface NotificationStrategyContext {
   readonly getNextId: () => number;
 }
 
-export interface NotificationStrategyResult {
+interface NotificationStrategyResult {
   readonly notifications: NotificationData[];
 }
 

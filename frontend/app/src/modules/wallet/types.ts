@@ -35,7 +35,7 @@ export interface GasFeeEstimation {
   maxAmount: string;
 }
 
-export interface PrepareTransferPayload {
+interface PrepareTransferPayload {
   fromAddress: string;
   toAddress: string;
   amount: string;

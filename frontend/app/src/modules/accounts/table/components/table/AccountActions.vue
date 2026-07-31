@@ -6,6 +6,7 @@ import TokenDetection from '@/modules/accounts/blockchain/TokenDetection.vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
+/** @public referenced only through inferred types; the export is required for declaration emit. */
 export interface Props<T extends BlockchainAccountBalance> {
   accountOperation: boolean;
   group?: 'evm' | 'xpub';

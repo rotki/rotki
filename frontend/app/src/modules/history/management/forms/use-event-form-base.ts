@@ -8,7 +8,7 @@ import { useEventFormValidation } from '@/modules/history/management/forms/use-e
 
 export { toMessages };
 
-export type CommonRules = ReturnType<ReturnType<typeof useEventFormValidation>['createCommonRules']>;
+type CommonRules = ReturnType<ReturnType<typeof useEventFormValidation>['createCommonRules']>;
 
 type RulesInput<TRules extends ValidationArgs> =
   | TRules

@@ -6,8 +6,6 @@ const MoneriumProfileSchema = z.object({
   name: z.string().optional(),
 });
 
-export type MoneriumProfile = z.infer<typeof MoneriumProfileSchema>;
-
 export const MoneriumStatusSchema = z.object({
   authenticated: z.boolean(),
   defaultProfileId: z.string().optional(),

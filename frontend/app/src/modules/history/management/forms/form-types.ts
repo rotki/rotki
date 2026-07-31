@@ -5,6 +5,7 @@ import type {
   StandaloneEditableEvents,
 } from '@/modules/history/events/schemas';
 
+/** @public referenced only through inferred types; the export is required for declaration emit. */
 export interface AddEventData {
   type: 'add';
   nextSequenceId: string;
@@ -16,12 +17,14 @@ export interface GroupAddEventData<I extends StandaloneEditableEvents | EvmSwapE
   group: I;
 }
 
+/** @public referenced only through inferred types; the export is required for declaration emit. */
 export interface EditStandaloneEventData<I extends StandaloneEditableEvents = StandaloneEditableEvents> {
   type: 'edit';
   event: I;
   nextSequenceId: string;
 }
 
+/** @public referenced only through inferred types; the export is required for declaration emit. */
 export interface EditGroupEventData<D extends GroupEditableHistoryEvents = GroupEditableHistoryEvents> {
   type: 'edit-group';
   eventsInGroup: D[];

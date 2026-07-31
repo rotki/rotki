@@ -2,7 +2,7 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { Suggestion } from '@/modules/core/table/filtering';
 import { isEqual } from 'es-toolkit';
 
-export type ChipDisplayType = 'normal' | 'grouped' | 'hidden';
+type ChipDisplayType = 'normal' | 'grouped' | 'hidden';
 
 const MAX_CHIPS_PER_KEY = 3;
 

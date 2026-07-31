@@ -1,8 +1,6 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 
-export const AIRDROP_POAP = 'poap';
-
 const PoapDeliveryDetails = z.object({
   assets: z.array(z.number()),
   event: z.string(),
@@ -44,7 +42,7 @@ const PoapDelivery = PoapDeliveryDetails.extend({
   iconUrl: z.string().optional(),
 });
 
-export type PoapDelivery = z.infer<typeof PoapDelivery>;
+type PoapDelivery = z.infer<typeof PoapDelivery>;
 
 const AirdropDetails = z.record(z.string(), AirdropDetail.or(z.array(PoapDelivery)).optional());
 

@@ -1,5 +1,4 @@
 import net from 'node:net';
-import { assert } from '@rotki/common';
 
 export const DEFAULT_PORT = 4242;
 
@@ -35,20 +34,4 @@ export async function selectPort(startPort: number = DEFAULT_PORT, host: string 
     }
   }
   throw new Error('no free ports found');
-}
-
-export async function getPortAndUrl(defaultPort: number, apiUrl: string): Promise<[number, string, boolean]> {
-  const port = await selectPort(defaultPort);
-
-  const regExp = /(.*):\/\/(.*):(.*)/;
-  const match = apiUrl.match(regExp);
-  assert(match?.length === 4);
-  const [, scheme, host, oldPort] = match;
-  assert(host);
-
-  return [
-    port,
-    `${scheme}://${host}:${port}`,
-    port !== defaultPort && Number.parseInt(oldPort) !== port,
-  ];
 }

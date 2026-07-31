@@ -5,7 +5,7 @@ import type SwapSubEventList from '@/modules/history/management/forms/swap/SwapS
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 
-export interface SwapEventFormListRefs {
+interface SwapEventFormListRefs {
   spendListRef: Readonly<ShallowRef<InstanceType<typeof SwapSubEventList> | null>>;
   receiveListRef: Readonly<ShallowRef<InstanceType<typeof SwapSubEventList> | null>>;
   feeListRef: Readonly<ShallowRef<InstanceType<typeof SwapSubEventList> | null>>;

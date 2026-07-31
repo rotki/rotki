@@ -21,7 +21,7 @@ export const CalendarEvent = CalendarEventPayload.extend({
 
 export type CalendarEvent = z.infer<typeof CalendarEvent>;
 
-export const CalendarAccountFilter = z.object({
+const CalendarAccountFilter = z.object({
   address: z.string(),
   blockchain: z.string().optional(),
 });

@@ -3,7 +3,7 @@ import { api } from '@/modules/core/api/rotki-api';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 
-export interface AssetMovementMatchSuggestions {
+interface AssetMovementMatchSuggestions {
   closeMatches: number[];
   otherEvents: number[];
 }

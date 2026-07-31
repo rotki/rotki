@@ -31,6 +31,7 @@
     "uv",
     "xdg-mime"
   ],
+  "tags": ["-@public"],
   "paths": {
     "@/*": ["src/*"],
     "@shared/*": ["shared/*"],

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const ProtocolMetadataSchema = z.object({
+const ProtocolMetadataSchema = z.object({
   identifier: z.string(),
   name: z.string(),
   icon: z.string(),
@@ -10,5 +10,3 @@ export const ProtocolMetadataSchema = z.object({
 export type ProtocolMetadata = z.infer<typeof ProtocolMetadataSchema>;
 
 export const ProtocolMetadataArraySchema = z.array(ProtocolMetadataSchema);
-
-export type ProtocolMetadataArray = z.infer<typeof ProtocolMetadataArraySchema>;

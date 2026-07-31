@@ -2,15 +2,13 @@ import type { MaybeRefOrGetter, Ref } from 'vue';
 
 export type DisabledChainQueries = Record<string, string[]>;
 
-export type RuleKind = 'chain' | 'address';
-
-export interface ChainRule {
+interface ChainRule {
   readonly id: string;
   readonly kind: 'chain';
   readonly chainId: string;
 }
 
-export interface AddressRule {
+interface AddressRule {
   readonly id: string;
   readonly kind: 'address';
   readonly address: string;

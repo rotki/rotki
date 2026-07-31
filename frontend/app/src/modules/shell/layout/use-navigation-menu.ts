@@ -27,7 +27,7 @@ export interface MenuNavGroup {
   readonly items: MenuNavItem[];
 }
 
-export interface MenuDivider {
+interface MenuDivider {
   readonly type: 'divider';
 }
 

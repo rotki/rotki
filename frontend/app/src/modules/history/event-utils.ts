@@ -4,7 +4,6 @@ import { HistoryEventEntryType } from '@rotki/common';
 import { snakeCase } from 'es-toolkit';
 import {
   type AssetMovementEvent,
-  type BitcoinEvent,
   type EthBlockEvent,
   type EthWithdrawalEvent,
   type EvmHistoryEvent,
@@ -99,10 +98,6 @@ export function isAssetMovementEventRef(event: MaybeRefOrGetter<HistoryEvent>): 
 
 export function isBitcoinEventType(type: HistoryEventEntryType): boolean {
   return type === HistoryEventEntryType.BITCOIN_EVENT;
-}
-
-export function isBitcoinEvent(event: HistoryEvent): event is BitcoinEvent {
-  return isBitcoinEventType(event.entryType);
 }
 
 export function isSolanaEventType(type: HistoryEventEntryType): boolean {

@@ -19,7 +19,7 @@ export interface ChainRpcSettingTab {
   setting?: RpcSettingKey;
 }
 
-export interface CustomRpcSettingTab {
+interface CustomRpcSettingTab {
   id: string;
   name: string;
   image: string;
@@ -28,7 +28,7 @@ export interface CustomRpcSettingTab {
 
 export type RpcSettingTab = ChainRpcSettingTab | CustomRpcSettingTab;
 
-export interface RpcRailOption {
+interface RpcRailOption {
   key: string;
   label: string;
   tab: RpcSettingTab;

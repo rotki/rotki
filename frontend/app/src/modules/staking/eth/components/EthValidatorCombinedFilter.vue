@@ -24,9 +24,9 @@ enum Eth2StakingFilterValueKeys {
   STATUS = 'status',
 }
 
-export type Matcher = SearchMatcher<Eth2StakingFilterKeys, Eth2StakingFilterValueKeys>;
+type Matcher = SearchMatcher<Eth2StakingFilterKeys, Eth2StakingFilterValueKeys>;
 
-export type Filters = MatchedKeyword<Eth2StakingFilterValueKeys>;
+type Filters = MatchedKeyword<Eth2StakingFilterValueKeys>;
 
 const filters = ref<Filters>({});
 

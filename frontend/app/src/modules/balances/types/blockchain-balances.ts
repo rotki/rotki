@@ -7,8 +7,6 @@ export type ProtocolBalances = z.infer<typeof ProtocolBalances>;
 
 const AssetBalancesSchema = z.record(z.string(), Balance);
 
-export type AssetBalances = z.infer<typeof AssetBalancesSchema>;
-
 const AssetProtocolBalancesSchema = z.record(z.string(), ProtocolBalances);
 
 export type AssetProtocolBalances = z.infer<typeof AssetProtocolBalancesSchema>;

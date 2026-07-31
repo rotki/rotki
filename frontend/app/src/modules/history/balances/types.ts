@@ -1,7 +1,7 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 
-export const HistoricalBalanceSeriesEntry = z.object({
+const HistoricalBalanceSeriesEntry = z.object({
   location: z.string(),
   locationLabel: z.string(),
   protocol: z.string().nullish(),
@@ -9,8 +9,6 @@ export const HistoricalBalanceSeriesEntry = z.object({
   times: z.array(z.number()),
   values: z.array(NumericString),
 });
-
-export type HistoricalBalanceSeriesEntry = z.infer<typeof HistoricalBalanceSeriesEntry>;
 
 export const HistoricalBalanceSeriesResponse = z.object({
   processingRequired: z.boolean(),
@@ -40,13 +38,11 @@ export const HistoricalBalanceDivergenceEvent = z.object({
 
 export type HistoricalBalanceDivergenceEvent = z.infer<typeof HistoricalBalanceDivergenceEvent>;
 
-export const HistoricalBalanceDivergenceProbe = z.object({
+const HistoricalBalanceDivergenceProbe = z.object({
   eventIndex: z.number(),
   matches: z.boolean(),
   event: HistoricalBalanceDivergenceEvent,
 });
-
-export type HistoricalBalanceDivergenceProbe = z.infer<typeof HistoricalBalanceDivergenceProbe>;
 
 export const HistoricalBalanceDivergenceResponse = z.object({
   status: z.enum(['diverged', 'diverged_from_start', 'no_divergence']),

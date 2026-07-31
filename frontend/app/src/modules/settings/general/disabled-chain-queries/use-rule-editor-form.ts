@@ -4,11 +4,11 @@ import type { ChainInfo } from '@/modules/core/api/types/chains';
 import type { Rule, RuleDraft } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chain-queries-state';
 import { isValidatorAccount } from '@/modules/accounts/account-utils';
 
-export type RuleKind = 'chain' | 'address';
+type RuleKind = 'chain' | 'address';
 
-export type AddressScope = 'all' | 'specific';
+type AddressScope = 'all' | 'specific';
 
-export interface AddressOption {
+interface AddressOption {
   readonly address: string;
   readonly chainIds: readonly string[];
   readonly searchText: string;

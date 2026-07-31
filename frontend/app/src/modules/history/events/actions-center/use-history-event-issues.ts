@@ -24,7 +24,7 @@ export const HISTORY_ISSUE_IDS = {
   UNMATCHED_MOVEMENTS: 'unmatchedMovements',
 } as const;
 
-export type HistoryIssueId = typeof HISTORY_ISSUE_IDS[keyof typeof HISTORY_ISSUE_IDS];
+type HistoryIssueId = typeof HISTORY_ISSUE_IDS[keyof typeof HISTORY_ISSUE_IDS];
 
 /**
  * How much attention a row asks for. `warning` needs a decision from the user,

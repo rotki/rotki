@@ -49,7 +49,7 @@ export type PullEventPayload = {
   data: LocationAndTxRef;
 };
 
-export interface ChainAndTxRefs {
+interface ChainAndTxRefs {
   readonly chain: string;
   readonly txRefs: string[];
 }

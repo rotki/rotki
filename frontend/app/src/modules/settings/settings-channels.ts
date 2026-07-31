@@ -13,7 +13,7 @@ import type { RouteName } from '@/types/router';
  * For a composite anchor (several keys, one highlight) only the representative key carries `search`,
  * so the anchor surfaces in exactly one search row.
  */
-export interface SettingSearch {
+interface SettingSearch {
   /** The setting's own label, shown as the last breadcrumb segment of the search row. */
   readonly titleKey: MessageKey;
   /** The category header this row nests under (must be declared in `SEARCH_CATEGORIES`). */
@@ -64,6 +64,7 @@ export interface RegistryEntry {
 }
 
 /** A setting backed by a real field on its channel object, identified by the typed wire key `W`. */
+/** @public referenced only through inferred types; the export is required for declaration emit. */
 export interface FieldDef<C extends SettingChannel, W extends string> {
   readonly channel: C;
   readonly wireKey: W;
@@ -76,6 +77,7 @@ export interface FieldDef<C extends SettingChannel, W extends string> {
 }
 
 /** A read-only setting whose value is derived from the whole channel object (e.g. `currencySymbol`). */
+/** @public referenced only through inferred types; the export is required for declaration emit. */
 export interface ProjectedDef<C extends SettingChannel, V> {
   readonly channel: C;
   readonly project: (settings: any) => V;

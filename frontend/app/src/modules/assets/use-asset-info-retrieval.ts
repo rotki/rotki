@@ -51,7 +51,7 @@ export type AssetStringField = 'symbol' | 'name';
 
 export type PlainAssetInfoReturn = (identifier: string | undefined, options?: AssetResolutionOptions) => AssetWithResolutionStatus | null;
 
-export type AssetInfoReturn = (identifier: MaybeRefOrGetter<string | undefined>, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<AssetWithResolutionStatus | null>;
+type AssetInfoReturn = (identifier: MaybeRefOrGetter<string | undefined>, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<AssetWithResolutionStatus | null>;
 
 type PlainAssetContractInfoReturn = (identifier: string | undefined, options?: AssetResolutionOptions) => AssetContractInfo | undefined;
 
