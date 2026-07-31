@@ -2,6 +2,7 @@
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import { AddressStatus, type ChainProgress } from '../types';
+import { isChainSettled } from '../use-chain-progress';
 import AddressProgressItem from './AddressProgressItem.vue';
 
 const { chain } = defineProps<{
@@ -20,10 +21,8 @@ const expanded = ref<boolean>(false);
 const showAll = ref<boolean>(false);
 
 // Failed is terminal, so a chain whose addresses all failed is finished rather than perpetually
-// unresolved — without it such a chain rendered no icon at all: not complete, yet not active.
-const isComplete = computed<boolean>(() =>
-  (chain.completed + chain.cancelled + chain.failed) === chain.total && chain.total > 0,
-);
+// unresolved. Without it such a chain rendered no icon at all: not complete, yet not active.
+const isComplete = computed<boolean>(() => isChainSettled(chain));
 
 const hasActivity = computed<boolean>(() => chain.inProgress > 0);
 const hasCancelled = computed<boolean>(() => chain.cancelled > 0);
@@ -32,7 +31,7 @@ const hasFailed = computed<boolean>(() => chain.failed > 0);
 const sortedAddresses = computed(() =>
   [...chain.addresses].sort((a, b) => {
     // Every status needs an entry: a missing one yields `undefined` here, and `undefined - number`
-    // is NaN, which makes the comparator incoherent rather than merely mis-ordered.
+    // is NaN, which makes the comparator incoherent rather than merely wrongly ordered.
     const priority: Record<AddressStatus, number> = {
       [AddressStatus.QUERYING]: 0,
       [AddressStatus.DECODING]: 1,

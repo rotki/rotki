@@ -13,7 +13,7 @@ import {
   SyncPhase,
   type SyncProgressState,
 } from './types';
-import { useChainProgress } from './use-chain-progress';
+import { isChainSettled, settledAddresses, useChainProgress } from './use-chain-progress';
 import { type SyncWarning, useSyncWarningsStore } from './use-sync-warnings-store';
 
 interface UseSyncProgressReturn {
@@ -103,7 +103,6 @@ export function useSyncProgress(): UseSyncProgressReturn {
 
   const { warnings: rawWarnings } = storeToRefs(warningsStore);
   const warnings = computed<SyncWarning[]>(() => get(rawWarnings));
-  const hasWarnings = computed<boolean>(() => get(rawWarnings).length > 0);
 
   const { queryStatus: txQueryStatus } = storeToRefs(txStore);
   const { queryStatus: eventsQueryStatus } = storeToRefs(eventsStore);
@@ -112,6 +111,17 @@ export function useSyncProgress(): UseSyncProgressReturn {
   const { protocolCacheStatus: rawProtocolCacheStatus } = storeToRefs(protocolCacheStatusStore);
 
   const chains = useChainProgress(txQueryStatus);
+
+  /**
+   * A run that finished with a failed address is complete, but not clean.
+   *
+   * The header already renders a warning state — alert icon, warning colour, "Sync Complete with
+   * warnings" — it simply had no way to hear about a failed chain: `SyncWarningSource` only carries
+   * online-events warnings, so a run could report a plain green "Sync Complete" with three failed
+   * addresses sitting in the notification drawer.
+   */
+  const hasFailedChains = computed<boolean>(() => get(chains).some(chain => chain.failed > 0));
+  const hasWarnings = computed<boolean>(() => get(rawWarnings).length > 0 || get(hasFailedChains));
 
   const locations = computed<LocationProgress[]>(() => {
     const statusMap = get(eventsQueryStatus);
@@ -152,7 +162,7 @@ export function useSyncProgress(): UseSyncProgressReturn {
 
   const totalChains = computed<number>(() => get(chains).length);
   const completedChains = computed<number>(() =>
-    get(chains).filter(c => (c.completed + c.cancelled) === c.total && c.total > 0).length,
+    get(chains).filter(chain => isChainSettled(chain)).length,
   );
 
   const totalLocations = computed<number>(() => get(locations).length);
@@ -170,7 +180,7 @@ export function useSyncProgress(): UseSyncProgressReturn {
   });
 
   const completedAccounts = computed<number>(() =>
-    get(chains).reduce((sum, c) => sum + c.completed + c.cancelled, 0),
+    get(chains).reduce((sum, chain) => sum + settledAddresses(chain), 0),
   );
 
   const hasTxActivity = computed<boolean>(() => get(totalAccounts) > 0);
