@@ -1,6 +1,6 @@
 import type { LogService } from '@electron/main/log-service';
 import { AddressImportServer } from '@electron/main/address-import-server';
-import { selectPort } from '@electron/main/port-utils';
+import { selectPort } from '@shared/port-utils';
 import { shell } from 'electron';
 
 export class WalletImportHandlers {

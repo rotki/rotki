@@ -1,23 +1,14 @@
 import type { BackendOptions } from '../../app/shared/ipc';
 import path from 'node:path';
 import process from 'node:process';
+import { DEFAULT_MCP_PORT, DEFAULT_PROXY_PORT, selectPort } from '../../app/shared/port-utils';
 import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS } from '../../app/shared/starling/starling-args';
 import { requestStarlingStart, spawnStarling } from '../../app/shared/starling/starling-launch';
 import { StarlingRpc } from '../../app/shared/starling/starling-rpc';
 import { createDevLogger, formatDevLine } from './logger';
-import { selectPort } from './prerequisites';
 import { registerShutdownHook } from './process-pool';
 
 const logger = createDevLogger('dev:starling');
-
-/**
- * Defaults for the two ports the caller does not choose, mirroring the Electron
- * main process (`port-utils.ts`). Both are probed with `selectPort`, so a busy
- * default walks up — which is how two concurrent `dev:web` runs stay off each
- * other without reserving a slot in the instance port registry.
- */
-const DEFAULT_MCP_PORT = 4445;
-const DEFAULT_STARLING_PROXY_PORT = 4141;
 
 const API_HOST = '127.0.0.1';
 
@@ -59,10 +50,14 @@ async function wait(ms: number): Promise<void> {
  * tree is up — so there is nothing here to poll.
  */
 export async function startStarlingSupervisor(options: StarlingDevOptions): Promise<StarlingDevEnv> {
-  const corePort = options.strictPorts ? options.corePort : await selectPort(options.corePort);
-  const colibriPort = options.strictPorts ? options.colibriPort : await selectPort(options.colibriPort);
-  const mcpPort = await selectPort(DEFAULT_MCP_PORT);
-  const proxyPort = await selectPort(DEFAULT_STARLING_PROXY_PORT);
+  const corePort = options.strictPorts ? options.corePort : await selectPort(options.corePort, API_HOST);
+  const colibriPort = options.strictPorts ? options.colibriPort : await selectPort(options.colibriPort, API_HOST);
+  // The two ports the caller does not choose come from the same defaults the
+  // Electron main process uses. Both are probed, so a busy default walks up,
+  // which is how two concurrent dev:web runs stay off each other without
+  // reserving a slot in the instance port registry.
+  const mcpPort = await selectPort(DEFAULT_MCP_PORT, API_HOST);
+  const proxyPort = await selectPort(DEFAULT_PROXY_PORT, API_HOST);
 
   const backendOptions: Partial<BackendOptions> = {
     logDirectory: options.logDir,
