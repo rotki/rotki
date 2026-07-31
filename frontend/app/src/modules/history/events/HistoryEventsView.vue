@@ -2,10 +2,10 @@
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import type { PullLocationTransactionPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
+import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { AccountingOverlayToggle, BalanceDivergenceToggle } from '@/modules/history/balances/components';
 import { OverlayMode, type OverlayPair, useAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay';
 import { provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
-import DataIssuesToggle from '@/modules/history/data-issues/components/DataIssuesToggle.vue';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/modules/history/events/action-types';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import {
@@ -148,7 +148,7 @@ const {
 // it rides along with pagination instead of being clobbered by it, and is NOT persisted across
 // sessions. Fresh navigation to history resets it to 'none' (empty query), while browser/in-app
 // back restores it from the history entry's query. Only the main page syncs (history: 'router').
-const overlayAvailable = !!import.meta.env.VITE_ACCOUNTING_UPDATE;
+const overlayAvailable = isAccountingUpdateEnabled();
 
 // Require the build flag too, so the 'balance' choice can't enable it where the
 // backend would reject every call.
@@ -358,7 +358,6 @@ watchDebounced(route, async () => {
             >
               <AccountingOverlayToggle v-model="overlayMode" />
               <BalanceDivergenceToggle />
-              <DataIssuesToggle />
             </div>
 
             <HistoryEventsFiltersChips

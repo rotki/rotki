@@ -1,10 +1,14 @@
+import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
+import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import HistoryEventsActionsCenter from '@/modules/history/events/actions-center/HistoryEventsActionsCenter.vue';
 import HistoryEventsActionsList from '@/modules/history/events/actions-center/HistoryEventsActionsList.vue';
 import { DIALOG_TYPES } from '@/modules/history/events/dialog-types';
+import { PinnedNames, toPinned } from '@/modules/session/types';
 
 // Declared at module scope (not `vi.hoisted`): the mock factories below only
 // dereference `state` from inside their inner arrows, which run once the tests do.
@@ -74,6 +78,7 @@ async function openMenu(
 
 describe('modules/history/events/actions-center/HistoryEventsActionsCenter', () => {
   beforeEach(() => {
+    setActivePinia(createCustomPinia());
     vi.clearAllMocks();
     state.fetchUndecodedTransactionsBreakdown.mockResolvedValue();
     state.refreshAll.mockResolvedValue();
@@ -135,6 +140,22 @@ describe('modules/history/events/actions-center/HistoryEventsActionsCenter', () 
 
     expect(wrapper.emitted('show:dialog')).toEqual([[{ type: DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS }]]);
     expect(wrapper.findComponent({ name: 'RuiMenu' }).props('modelValue')).toBe(false);
+  });
+
+  it('should open a pin target in the rail beside the table', async () => {
+    const store = useAreaVisibilityStore();
+    const wrapper = mountCenter();
+    const list = await openMenu(wrapper);
+
+    list.vm.$emit('open', { kind: 'pin', panel: toPinned(PinnedNames.DATA_ISSUES, {}) });
+    await nextTick();
+
+    // The panel is pinned, focused and the rail revealed, without leaving the page.
+    expect(get(store.pinnedPanels).map(panel => panel.name)).toEqual([PinnedNames.DATA_ISSUES]);
+    expect(get(store.activePinnedId)).toBe(PinnedNames.DATA_ISSUES);
+    expect(get(store.showPinned)).toBe(true);
+    expect(state.push).not.toHaveBeenCalled();
+    expect(wrapper.emitted('show:dialog')).toBeUndefined();
   });
 
   it('should route a duplicates target to the filtered events list', async () => {

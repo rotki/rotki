@@ -2,6 +2,7 @@
 import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import type { DialogShowOptions } from '@/modules/history/events/dialog-types';
 import { startPromise } from '@shared/utils';
+import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import HistoryEventsActionsList from '@/modules/history/events/actions-center/HistoryEventsActionsList.vue';
 import { type HistoryIssueTarget, useHistoryEventIssues } from '@/modules/history/events/actions-center/use-history-event-issues';
@@ -24,6 +25,7 @@ const { autoMatchLoading } = useUnmatchedAssetMovements();
 const { autoMatchLoading: bridgeAutoMatchLoading } = useUnmatchedBridgeTransactions();
 const { categoryCount, checking, hasIssues, refreshAll } = useHistoryEventIssues();
 const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsCount();
+const { pinPanel } = useAreaVisibilityStore();
 
 const settled = useRefWithDebounce(logicOr(processing, autoMatchLoading, bridgeAutoMatchLoading), 200);
 
@@ -45,6 +47,11 @@ function openTarget(target: HistoryIssueTarget): void {
   set(open, false);
   if (target.kind === 'dialog') {
     emit('show:dialog', target.options);
+  }
+  else if (target.kind === 'pin') {
+    // `pinPanel` focuses the tab and reveals the rail, so the panel opens beside
+    // the table whether or not it was already pinned.
+    pinPanel(target.panel);
   }
   else {
     startPromise(openDuplicates(target.groupIds, target.status));
