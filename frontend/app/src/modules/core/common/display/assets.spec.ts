@@ -21,6 +21,16 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   }),
 }));
 
+// `assetSuggestions` drops ignored assets, which is a store read. Hoisted so the set can be
+// written per test without the mock factory closing over an uninitialised binding.
+const { ignoredAssets } = vi.hoisted(() => ({ ignoredAssets: new Set<string>() }));
+
+vi.mock('@/modules/assets/use-assets-store', () => ({
+  useAssetsStore: (): { isAssetIgnored: (identifier: string) => boolean } => ({
+    isAssetIgnored: (identifier: string): boolean => ignoredAssets.has(identifier),
+  }),
+}));
+
 const DAI = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
 
 function info(symbol: string): AssetInfoWithId {
@@ -143,6 +153,7 @@ describe('assetFilterByKeyword', () => {
 describe('assetSuggestions', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    ignoredAssets.clear();
   });
 
   it('should search with the parsed keyword and chain params', async () => {
@@ -160,6 +171,24 @@ describe('assetSuggestions', () => {
     expect(params.assetType).toBe(EVM_TOKEN);
     expect(params.evmChain).toBe('ethereum');
     expect(params.limit).toBe(10);
+  });
+
+  // Every asset input in the app hides ignored assets (`AssetSelect` defaults `showIgnored` to
+  // false), and the pill bar's own asset editor goes through `useAssetSearch`, which filters them.
+  // Without this the same field behaved two ways: a spam asset offered while typing in the bar
+  // could not be found in the checklist the pill opens.
+  it('should drop ignored assets from the suggestions', async () => {
+    ignoredAssets.add('SPAM');
+    const assetSearch = vi.fn().mockResolvedValue([
+      { identifier: 'DAI', symbol: 'DAI' },
+      { identifier: 'SPAM', symbol: 'SPAM' },
+    ]);
+    const suggest = assetSuggestions(assetSearch, 'ethereum');
+
+    const promise = suggest('dai');
+    await vi.advanceTimersByTimeAsync(200);
+
+    expect(await promise).toEqual([{ identifier: 'DAI', symbol: 'DAI' }]);
   });
 });
 
