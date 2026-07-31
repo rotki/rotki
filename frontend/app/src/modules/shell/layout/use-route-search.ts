@@ -2,6 +2,7 @@ import type { RuiIcons } from '@rotki/ui-library';
 import type { ComputedRef } from 'vue';
 import type { RouteRecordNameGeneric, RouteRecordNormalized } from 'vue-router';
 import type { RouteName } from '@/types/router';
+import { ACCOUNTING_UPDATE_ROUTES, isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 
 export interface RouteSearchEntry {
   /** Resolved path used as the navigation target. */
@@ -32,13 +33,11 @@ interface UseRouteSearchReturn {
  * (the superset of the drawer) unless it opts out with `searchable: false`; the breadcrumb is the
  * label of the route named by `nav.parent`.
  */
-// Kept in sync with the drawer gate in `useNavigationMenu`: the data-issues inbox only exists in
-// builds where VITE_ACCOUNTING_UPDATE is set, so it must be hidden from search there too.
-const HISTORY_DATA_ISSUES_ROUTE = '/history/data-issues/';
-
 export function useRouteSearch(): UseRouteSearchReturn {
   const router = useRouter();
-  const dataIssuesEnabled = !!import.meta.env.VITE_ACCOUNTING_UPDATE;
+  // Kept in sync with the drawer gate in `useNavigationMenu`: a page that only exists in
+  // accounting-update builds has to be hidden from search there too.
+  const dataIssuesEnabled = isAccountingUpdateEnabled();
 
   const isRouteName = (name: RouteRecordNameGeneric): name is RouteName =>
     name !== undefined && router.hasRoute(name);
@@ -58,7 +57,7 @@ export function useRouteSearch(): UseRouteSearchReturn {
     if (!nav || nav.searchable === false || !isRouteName(route.name))
       return false;
 
-    return route.name !== HISTORY_DATA_ISSUES_ROUTE || dataIssuesEnabled;
+    return !ACCOUNTING_UPDATE_ROUTES.has(route.name) || dataIssuesEnabled;
   }
 
   const searchEntries = computed<RouteSearchEntry[]>(() => {

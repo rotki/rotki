@@ -2,7 +2,7 @@ import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref } from 'vue';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import DashboardCompletenessIndicator from '@/modules/dashboard/DashboardCompletenessIndicator.vue';
@@ -14,12 +14,14 @@ interface MockState {
   actionableCount: number;
   processing: boolean;
   assetsWithoutOracleHistory: Set<string>;
+  refreshSummary: ReturnType<typeof vi.fn>;
 }
 
 const state = vi.hoisted((): MockState => ({
   actionableCount: 0,
   assetsWithoutOracleHistory: new Set<string>(),
   processing: false,
+  refreshSummary: vi.fn(),
 }));
 
 vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
@@ -32,7 +34,7 @@ vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
 vi.mock('@/modules/history/data-issues/use-data-issues-summary', () => ({
   useDataIssuesSummary: (): Record<string, unknown> => ({
     actionableCount: ref(state.actionableCount),
-    refreshSummary: vi.fn().mockResolvedValue(undefined),
+    refreshSummary: state.refreshSummary,
   }),
 }));
 
@@ -67,6 +69,14 @@ describe('dashboardCompletenessIndicator', () => {
     state.actionableCount = 0;
     state.processing = false;
     state.assetsWithoutOracleHistory = new Set<string>();
+    state.refreshSummary = vi.fn().mockResolvedValue(undefined);
+    // The flag is only set when the shell exports ROTKI_ACCOUNTING_UPDATE, so pin it
+    // per test instead of inheriting whatever the developer's environment has.
+    vi.stubEnv('VITE_ACCOUNTING_UPDATE', '');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('should render nothing when there are no completeness issues', async () => {
@@ -119,8 +129,17 @@ describe('dashboardCompletenessIndicator', () => {
   });
 
   it('should show a button when data issues need attention', async () => {
+    vi.stubEnv('VITE_ACCOUNTING_UPDATE', 'true');
     state.actionableCount = 3;
     const wrapper = await createWrapper();
+    expect(state.refreshSummary).toHaveBeenCalledOnce();
     expect(wrapper.find('[data-testid=dashboard-completeness]').text()).toContain('data_issues');
+  });
+
+  it('should not query or show data issues when the accounting update flag is off', async () => {
+    state.actionableCount = 3;
+    const wrapper = await createWrapper();
+    expect(state.refreshSummary).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid=dashboard-completeness]').exists()).toBe(false);
   });
 });

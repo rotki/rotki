@@ -1,7 +1,8 @@
 import { startPromise } from '@shared/utils';
-import { createRouter, createWebHashHistory, type RouteLocationRaw } from 'vue-router';
+import { createRouter, createWebHashHistory, type RouteLocationRaw, type RouteRecordNameGeneric } from 'vue-router';
 import { handleHotUpdate, routes } from 'vue-router/auto-routes';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { ACCOUNTING_UPDATE_ROUTES, isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import NotFound from '@/pages/404.vue';
 
 const base = import.meta.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';
@@ -56,6 +57,15 @@ export const router = createRouter({
 
 const userRoutes: RouteLocationRaw[] = ['/user/create', '/user/login', '/user'];
 
+/**
+ * A flag-gated page is hidden from the drawer and the search palette, but its route stays
+ * registered, so a bookmark, a restored location or a hand-typed hash would still open a
+ * feature the rest of the app treats as absent. Send those to History instead.
+ */
+function isDisabledByFlag(name: RouteRecordNameGeneric): boolean {
+  return typeof name === 'string' && ACCOUNTING_UPDATE_ROUTES.has(name) && !isAccountingUpdateEnabled();
+}
+
 router.beforeEach((to) => {
   document.title = to.meta?.title ? to.meta.title.toString() : 'rotki';
 
@@ -64,6 +74,9 @@ router.beforeEach((to) => {
   if (logged) {
     if (userRoutes.includes(to.path))
       return '/dashboard';
+
+    if (isDisabledByFlag(to.name))
+      return { name: '/history/events/' };
 
     return true;
   }
