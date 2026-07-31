@@ -137,15 +137,20 @@ describe('useSyncProgress', () => {
 
     it('should report warnings when a chain failed', () => {
       // Complete, but not clean: the header renders "Sync Complete with warnings" off this, and
-      // previously only online-events could raise it — so a run could show a plain green
+      // previously only online-events could raise it, so a run could show a plain green
       // "Sync Complete" with failed addresses sitting in the notification drawer.
       setupTxStore([
         createEvmTxStatus('0x456', 'gnosis', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
       ]);
       useTxQueryStatusStore().markAddressFailed({ address: '0x456', chain: 'gnosis' });
 
-      const { hasWarnings } = useSyncProgress();
+      const { hasWarnings, warnings } = useSyncProgress();
       expect(get(hasWarnings)).toBe(true);
+      // The section renders this list, so a flag without an entry gave a "Warnings" heading with
+      // nothing underneath it.
+      expect(get(warnings)).toHaveLength(1);
+      expect(get(warnings)[0].key).toBe('gnosis');
+      expect(get(warnings)[0].message).toBeTruthy();
     });
 
     it('should not report warnings when everything succeeded', () => {

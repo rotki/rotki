@@ -1,4 +1,5 @@
 import type { ComputedRef } from 'vue';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/core/messaging/types';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
@@ -14,7 +15,7 @@ import {
   type SyncProgressState,
 } from './types';
 import { isChainSettled, settledAddresses, useChainProgress } from './use-chain-progress';
-import { type SyncWarning, useSyncWarningsStore } from './use-sync-warnings-store';
+import { type SyncWarning, SyncWarningSource, useSyncWarningsStore } from './use-sync-warnings-store';
 
 interface UseSyncProgressReturn {
   state: ComputedRef<SyncProgressState>;
@@ -95,6 +96,8 @@ function decodingRatio(items: { cancelled: boolean; progress: number }[]): numbe
 }
 
 export function useSyncProgress(): UseSyncProgressReturn {
+  const { t } = useI18n({ useScope: 'global' });
+  const { getChainName } = useSupportedChains();
   const txStore = useTxQueryStatusStore();
   const eventsStore = useEventsQueryStatusStore();
   const decodingStatusStore = useDecodingStatusStore();
@@ -102,7 +105,6 @@ export function useSyncProgress(): UseSyncProgressReturn {
   const warningsStore = useSyncWarningsStore();
 
   const { warnings: rawWarnings } = storeToRefs(warningsStore);
-  const warnings = computed<SyncWarning[]>(() => get(rawWarnings));
 
   const { queryStatus: txQueryStatus } = storeToRefs(txStore);
   const { queryStatus: eventsQueryStatus } = storeToRefs(eventsStore);
@@ -115,13 +117,24 @@ export function useSyncProgress(): UseSyncProgressReturn {
   /**
    * A run that finished with a failed address is complete, but not clean.
    *
-   * The header already renders a warning state — alert icon, warning colour, "Sync Complete with
-   * warnings" — it simply had no way to hear about a failed chain: `SyncWarningSource` only carries
+   * The header already renders a warning state (alert icon, warning colour, "Sync Complete with
+   * warnings"), it simply had no way to hear about a failed chain: `SyncWarningSource` only carries
    * online-events warnings, so a run could report a plain green "Sync Complete" with three failed
    * addresses sitting in the notification drawer.
    */
-  const hasFailedChains = computed<boolean>(() => get(chains).some(chain => chain.failed > 0));
-  const hasWarnings = computed<boolean>(() => get(rawWarnings).length > 0 || get(hasFailedChains));
+  const failureWarnings = computed<SyncWarning[]>(() => get(chains)
+    .filter(chain => chain.failed > 0)
+    .map(chain => ({
+      key: chain.chain,
+      message: t('sync_progress.warnings.chain_failed', {
+        chain: getChainName(chain.chain),
+        count: chain.failed,
+      }, chain.failed),
+      source: SyncWarningSource.TRANSACTIONS,
+    })));
+
+  const warnings = computed<SyncWarning[]>(() => [...get(rawWarnings), ...get(failureWarnings)]);
+  const hasWarnings = computed<boolean>(() => get(warnings).length > 0);
 
   const locations = computed<LocationProgress[]>(() => {
     const statusMap = get(eventsQueryStatus);
