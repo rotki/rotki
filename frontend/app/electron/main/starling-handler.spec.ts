@@ -38,8 +38,8 @@ vi.mock('node:child_process', async (importOriginal) => {
 // the handler only forwards its result to spawn(), so a stub is enough. The rest
 // of the module stays real: SHUTDOWN_GRACE_SECS is what the handler derives its
 // stop timeouts from, and a stubbed-away value would make those NaN.
-vi.mock('@electron/main/starling-args', async importOriginal => ({
-  ...await importOriginal<typeof import('@electron/main/starling-args')>(),
+vi.mock('@shared/starling/starling-args', async importOriginal => ({
+  ...await importOriginal<typeof import('@shared/starling/starling-args')>(),
   buildStarlingInvocation: buildStarlingInvocationMock,
 }));
 

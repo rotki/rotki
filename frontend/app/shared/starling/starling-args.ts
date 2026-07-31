@@ -1,9 +1,9 @@
-import type { BackendOptions } from '@shared/ipc';
+import type { BackendOptions } from '../ipc';
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { buildCargoEnv } from '@shared/cargo-env';
+import { buildCargoEnv } from '../cargo-env';
 
 const BACKEND_DIRECTORY = 'backend';
 const COLIBRI_DIRECTORY = 'colibri';
@@ -52,6 +52,20 @@ export interface StarlingLaunchInput {
   logsDir: string;
   /** The persisted/UI backend options the renderer drives a (re)start with. */
   options: Partial<BackendOptions>;
+  /**
+   * Origin the Vite dev server is serving the renderer from, added to the CORS
+   * allowance in dev. Passed in rather than read from `import.meta.env` so this
+   * module stays runnable outside a Vite bundle — the dev launcher imports it
+   * straight from node and would see no `import.meta.env` at all.
+   */
+  devServerUrl?: string;
+  /**
+   * Absolute repo root, holding the cargo workspace and the python package.
+   * Defaults to two levels above the cwd, which is right for Electron (it runs
+   * from `frontend/app`) but not for the dev launcher, which runs from
+   * `frontend` and passes its own.
+   */
+  repoRoot?: string;
 }
 
 /**
@@ -169,10 +183,11 @@ function resolveStarlingBinary(): string {
  * `app://localhost` (packaged) or the Vite dev server (dev); `localhost:*` keeps
  * loopback tooling working. starling forwards this to both core and colibri.
  */
-function corsOrigins(isDev: boolean): string {
+function corsOrigins(isDev: boolean, devServerUrl: string | undefined): string {
   if (!isDev)
     return 'app://*,http://localhost:*';
-  const devServerUrl: string = import.meta.env.VITE_DEV_SERVER_URL ?? 'http://localhost:*';
+  if (!devServerUrl)
+    return 'http://localhost:*';
   const trimmed = devServerUrl.endsWith('/') ? devServerUrl.slice(0, -1) : devServerUrl;
   return `${trimmed},http://localhost:*`;
 }
@@ -202,7 +217,7 @@ function commonStarlingArgs(input: StarlingLaunchInput): string[] {
     '--api-host',
     apiHost,
     '--api-cors',
-    corsOrigins(isDev),
+    corsOrigins(isDev, input.devServerUrl),
     '--logs-dir',
     logsDir,
     '--shutdown-grace-secs',
@@ -325,7 +340,7 @@ export function buildStarlingInvocation(input: StarlingLaunchInput): StarlingInv
     };
   }
 
-  const root = repoRoot();
+  const root = input.repoRoot ?? repoRoot();
   const colibri = devColibriLauncherArgs(root);
   const starlingArgs = [
     ...commonStarlingArgs(input),
