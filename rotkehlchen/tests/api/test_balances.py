@@ -1334,8 +1334,14 @@ def test_balance_snapshot_saves_manual_prices_as_historical(
 
         # Should have one more price than before
         assert len(new_prices) == len(initial_prices) + 1
-        # Find the newly added price
-        from_asset, to_asset, source_type, _, price_str = new_prices[-1]
+        # Find the newly added historical manual price. SQL row order is not guaranteed and
+        # may change when price_history indexes change.
+        historical_manual_prices = [
+            entry for entry in new_prices
+            if entry[2] == HistoricalPriceOracle.MANUAL.serialize_for_db()
+        ]
+        assert len(historical_manual_prices) == 1
+        from_asset, to_asset, source_type, _, price_str = historical_manual_prices[0]
         assert from_asset == A_ETH.identifier
         assert to_asset == A_EUR.identifier
         assert source_type == HistoricalPriceOracle.MANUAL.serialize_for_db()
