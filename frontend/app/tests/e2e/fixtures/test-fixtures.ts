@@ -1,5 +1,6 @@
 import { type APIRequestContext, test as base, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { isCoverageEnabled, startCoverage, stopCoverage } from '../coverage';
+import { apiCreateAccount, apiDisableModules, apiLogout } from '../helpers/api';
 import { apiConfigureRpcMocks, saveMockRpcCassette } from '../helpers/rpc-mock';
 import { generateUsername } from '../helpers/utils';
 import { RotkiApp } from '../pages/rotki-app';
@@ -32,6 +33,23 @@ export interface LoginOptions {
    * Defaults to ['ETH'].
    */
   rpcMockChains?: string[];
+  /**
+   * Logs in through the form instead of `fasterLogin`, which authenticates over the API first.
+   * With the backend already holding that session the form submit does not take and the suite
+   * sits on "Unlock account" - a failure that only shows up once the spec runs after others.
+   *
+   * Implied by `seed`, which needs the account created and released before login anyway.
+   */
+  formLogin?: boolean;
+  /**
+   * Writes fixture data straight into the user database.
+   *
+   * The callback runs after the account is created and logged back out, so nothing holds the
+   * database open while it writes. The backend does not reliably see rows written into a user DB
+   * it already has open, which is why the seam exists at all; anything the helpers in
+   * `helpers/seed-db` write belongs here rather than after login.
+   */
+  seed?: (username: string) => void | Promise<void>;
 }
 
 /**
@@ -77,11 +95,41 @@ export async function createLoggedInContext(
 
   // Login once for all tests
   const app = new RotkiApp(sharedPage, request);
-  await app.fasterLogin(username, '1234', options.disableModules ?? false);
 
-  // Replace default RPC nodes with mock server (if cassette specified)
-  if (options.rpcMockCassette) {
-    await apiConfigureRpcMocks(request, options.rpcMockCassette, options.rpcMockChains);
+  if (options.seed || options.formLogin) {
+    await apiLogout(request);
+    await apiCreateAccount(request, username, '1234');
+
+    // The mock has to be in place before login rather than after it: seeded tracked addresses make
+    // the app query balances the moment it logs in, and against real nodes that query outlives the
+    // test timeout.
+    if (options.rpcMockCassette) {
+      await apiConfigureRpcMocks(request, options.rpcMockCassette, options.rpcMockChains);
+    }
+
+    if (options.disableModules) {
+      await apiDisableModules(request);
+    }
+
+    // Release the database so the seeding writes land somewhere the backend will read them back.
+    await apiLogout(request);
+    await options.seed?.(username);
+
+    // Deliberately not `fasterLogin`, which authenticates over the API first: with the backend
+    // already holding that session the form submit does not take and the suite sits on "Unlock
+    // account". `checkGetPremiumButton` is the actual assertion that the app came up, since
+    // `login()` assumes success when neither post-login dialog appears in time.
+    await app.visit();
+    await app.login(username, '1234');
+    await app.checkGetPremiumButton();
+  }
+  else {
+    await app.fasterLogin(username, '1234', options.disableModules ?? false);
+
+    // Replace default RPC nodes with mock server (if cassette specified)
+    if (options.rpcMockCassette) {
+      await apiConfigureRpcMocks(request, options.rpcMockCassette, options.rpcMockChains);
+    }
   }
 
   return {
