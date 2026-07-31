@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { buildCargoEnv } from '../cargo-env';
+import { shouldUseUv } from '../uv';
 
 const BACKEND_DIRECTORY = 'backend';
 const COLIBRI_DIRECTORY = 'colibri';
@@ -66,28 +67,6 @@ export interface StarlingLaunchInput {
    * `frontend` and passes its own.
    */
   repoRoot?: string;
-}
-
-/**
- * In dev the backend defaults to the `python` on PATH, which fails unless a venv
- * is active. Mirror the dev launcher: if no venv and `uv` is available, resolve
- * the interpreter uv would use, against the repo's uv.lock. Cached.
- */
-let uvAvailable: boolean | undefined;
-
-function shouldUseUv(): boolean {
-  if (process.env.VIRTUAL_ENV)
-    return false;
-  if (uvAvailable === undefined) {
-    try {
-      execSync('uv --version', { stdio: 'ignore' });
-      uvAvailable = true;
-    }
-    catch {
-      uvAvailable = false;
-    }
-  }
-  return uvAvailable;
 }
 
 /**

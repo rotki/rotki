@@ -43,7 +43,7 @@ vi.mock('@shared/starling/starling-args', async importOriginal => ({
   buildStarlingInvocation: buildStarlingInvocationMock,
 }));
 
-vi.mock('@electron/main/port-utils', () => ({
+vi.mock('@shared/port-utils', () => ({
   selectPort: selectPortMock,
 }));
 

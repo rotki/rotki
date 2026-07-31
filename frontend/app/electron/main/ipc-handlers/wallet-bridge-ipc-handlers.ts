@@ -2,7 +2,7 @@ import type { LogService } from '@electron/main/log-service';
 import type { WalletBridgeWebSocketServer } from '@electron/main/ws';
 import type { EIP6963ProviderDetail } from '@/types';
 import { AppServer } from '@electron/main/app-server';
-import { selectPort } from '@electron/main/port-utils';
+import { selectPort } from '@shared/port-utils';
 import { ROTKI_RPC_METHODS } from '@shared/proxy/constants';
 import { wait } from '@shared/utils';
 import { shell } from 'electron';

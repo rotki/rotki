@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
-import net from 'node:net';
 import process from 'node:process';
+import { uvVersion } from '../../app/shared/uv';
 import { MAX_PORT } from '../dev-instance';
 import { createDevLogger } from './logger';
 
@@ -24,14 +24,11 @@ function checkForCargo(): boolean {
 }
 
 function checkForUv(): boolean {
-  try {
-    const uvVersion = execSync('uv --version', { encoding: 'utf-8' });
-    logger.info(`detected uv: ${uvVersion.trim()}`);
-    return true;
-  }
-  catch {
+  const version = uvVersion();
+  if (version === null)
     return false;
-  }
+  logger.info(`detected uv: ${version}`);
+  return true;
 }
 
 export function ensurePrerequisites(): void {
@@ -99,29 +96,4 @@ export function getDebuggerPort(): number | null {
     return null;
   const n = Number.parseInt(raw, 10);
   return Number.isFinite(n) && n > 0 && n <= MAX_PORT ? n : null;
-}
-
-async function isPortAvailable(port: number): Promise<boolean> {
-  return new Promise<boolean>((resolve, reject) => {
-    const server = net.createServer();
-    server.unref();
-    server.once('error', (err: NodeJS.ErrnoException) => {
-      if (err.code === 'EADDRINUSE' || err.code === 'EACCES')
-        resolve(false);
-      else
-        reject(err);
-    });
-    server.once('listening', () => {
-      server.close(() => resolve(true));
-    });
-    server.listen(port, '127.0.0.1');
-  });
-}
-
-export async function selectPort(startPort: number): Promise<number> {
-  for (let port = startPort; port <= MAX_PORT; port++) {
-    if (await isPortAvailable(port))
-      return port;
-  }
-  throw new Error('no free ports found');
 }

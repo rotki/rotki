@@ -17,6 +17,8 @@
     "tailwind.config.*",
     "scripts/**/*",
     "shared/cargo-env.ts",
+    "shared/port-utils.ts",
+    "shared/uv.ts",
     "shared/external-links.ts",
     ".electron-builder.config.*",
     "backend-icons.generated.ts"
