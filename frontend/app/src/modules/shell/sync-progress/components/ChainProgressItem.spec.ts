@@ -50,6 +50,7 @@ describe('modules/sync-progress/components/ChainProgressItem', () => {
       cancelled,
       chain,
       completed,
+      failed: 0,
       inProgress,
       pending: total - completed - inProgress - cancelled,
       progress: total > 0 ? Math.round((done / total) * 100) : 0,

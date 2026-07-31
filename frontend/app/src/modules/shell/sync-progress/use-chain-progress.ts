@@ -3,41 +3,44 @@ import type { TxQueryStatusData } from '@/modules/history/use-tx-query-status-st
 import { TransactionsQueryStatus } from '@/modules/core/messaging/types';
 import { type AddressProgress, AddressStatus, AddressStep, type ChainProgress } from './types';
 
+/**
+ * Lookups rather than switches: a `Record` keyed by the status union is still exhaustive — a new
+ * status is a compile error here, exactly as a missing `case` was — without every added state
+ * costing another branch against the complexity cap.
+ */
+const ADDRESS_STATUS: Record<TransactionsQueryStatus, AddressStatus> = {
+  [TransactionsQueryStatus.ACCOUNT_CHANGE]: AddressStatus.PENDING,
+  [TransactionsQueryStatus.CANCELLED]: AddressStatus.CANCELLED,
+  [TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED]: AddressStatus.COMPLETE,
+  [TransactionsQueryStatus.DECODING_TRANSACTIONS_STARTED]: AddressStatus.DECODING,
+  [TransactionsQueryStatus.FAILED]: AddressStatus.FAILED,
+  [TransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS]: AddressStatus.QUERYING,
+  [TransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS]: AddressStatus.QUERYING,
+  [TransactionsQueryStatus.QUERYING_TRANSACTIONS]: AddressStatus.QUERYING,
+  [TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED]: AddressStatus.COMPLETE,
+  [TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED]: AddressStatus.QUERYING,
+};
+
+/** Which sub-step a querying address is on; terminal and pending states have none. */
+const ADDRESS_STEP: Record<TransactionsQueryStatus, AddressStep | undefined> = {
+  [TransactionsQueryStatus.ACCOUNT_CHANGE]: undefined,
+  [TransactionsQueryStatus.CANCELLED]: undefined,
+  [TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED]: undefined,
+  [TransactionsQueryStatus.DECODING_TRANSACTIONS_STARTED]: undefined,
+  [TransactionsQueryStatus.FAILED]: undefined,
+  [TransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS]: AddressStep.TOKENS,
+  [TransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS]: AddressStep.INTERNAL,
+  [TransactionsQueryStatus.QUERYING_TRANSACTIONS]: AddressStep.TRANSACTIONS,
+  [TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED]: undefined,
+  [TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED]: undefined,
+};
+
 function mapStatus(status: TransactionsQueryStatus): AddressStatus {
-  switch (status) {
-    case TransactionsQueryStatus.ACCOUNT_CHANGE:
-      return AddressStatus.PENDING;
-    case TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED:
-    case TransactionsQueryStatus.QUERYING_TRANSACTIONS:
-    case TransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS:
-    case TransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS:
-      return AddressStatus.QUERYING;
-    case TransactionsQueryStatus.DECODING_TRANSACTIONS_STARTED:
-      return AddressStatus.DECODING;
-    case TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED:
-    case TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED:
-      return AddressStatus.COMPLETE;
-    case TransactionsQueryStatus.CANCELLED:
-      return AddressStatus.CANCELLED;
-  }
+  return ADDRESS_STATUS[status];
 }
 
 function mapStep(status: TransactionsQueryStatus): AddressStep | undefined {
-  switch (status) {
-    case TransactionsQueryStatus.QUERYING_TRANSACTIONS:
-      return AddressStep.TRANSACTIONS;
-    case TransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS:
-      return AddressStep.INTERNAL;
-    case TransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS:
-      return AddressStep.TOKENS;
-    case TransactionsQueryStatus.ACCOUNT_CHANGE:
-    case TransactionsQueryStatus.CANCELLED:
-    case TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED:
-    case TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED:
-    case TransactionsQueryStatus.DECODING_TRANSACTIONS_STARTED:
-    case TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED:
-      return undefined;
-  }
+  return ADDRESS_STEP[status];
 }
 
 function calculatePeriodProgress(period?: [number, number], originalPeriodEnd?: number, originalPeriodStart?: number): number | undefined {
@@ -74,7 +77,12 @@ function toAddressProgress(data: TxQueryStatusData): AddressProgress {
 }
 
 function isDone(status: AddressStatus): boolean {
-  return status === AddressStatus.COMPLETE || status === AddressStatus.CANCELLED;
+  // Failed counts as done, like cancelled: no further progress is coming for that address. Same
+  // argument `percentageOf` makes for activities — a bar that excluded failures would stall short
+  // of the end whenever a chain failed, and never reach a settled state.
+  return status === AddressStatus.COMPLETE
+    || status === AddressStatus.CANCELLED
+    || status === AddressStatus.FAILED;
 }
 
 function calculateChainProgress(addresses: AddressProgress[]): number {
@@ -104,6 +112,7 @@ export function useChainProgress(
       const addresses = items.map(({ data }) => toAddressProgress(data));
       let completed = 0;
       let cancelledCount = 0;
+      let failedCount = 0;
       let inProgress = 0;
       let pending = 0;
 
@@ -114,6 +123,9 @@ export function useChainProgress(
             break;
           case AddressStatus.CANCELLED:
             cancelledCount++;
+            break;
+          case AddressStatus.FAILED:
+            failedCount++;
             break;
           case AddressStatus.QUERYING:
           case AddressStatus.DECODING:
@@ -130,6 +142,7 @@ export function useChainProgress(
         cancelled: cancelledCount,
         chain,
         completed,
+        failed: failedCount,
         inProgress,
         pending,
         progress: calculateChainProgress(addresses),

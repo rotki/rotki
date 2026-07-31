@@ -9,7 +9,7 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
     item.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED
     || item.status === HistoryEventsQueryStatus.CANCELLED;
 
-  const { isAllFinished, markCancelled, queryStatus, removeQueryStatus, resetQueryStatus, stopSyncing, syncing }
+  const { isAllFinished, markTerminal, queryStatus, removeQueryStatus, resetQueryStatus, stopSyncing, syncing }
     = createQueryStatusState<HistoryEventsQueryData>(isStatusFinished, createKey);
 
   const initializeQueryStatus = (data: { location: string; name: string }[]): void => {
@@ -53,7 +53,7 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
     const key = createKey({ location, name });
     const existing = get(queryStatus)[key];
     if (existing) {
-      markCancelled(key, { ...existing, status: HistoryEventsQueryStatus.CANCELLED });
+      markTerminal(key, { ...existing, status: HistoryEventsQueryStatus.CANCELLED });
     }
   };
 

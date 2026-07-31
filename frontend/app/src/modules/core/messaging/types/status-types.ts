@@ -52,11 +52,21 @@ export const HistoryEventsQueryData = z.object({
 
 export type HistoryEventsQueryData = z.infer<typeof HistoryEventsQueryData>;
 
+/**
+ * ⚠️ Not purely the backend's enum. `TransactionStatusStep` (api/websockets/typedefs.py) sends the
+ * seven querying/decoding steps; `ACCOUNT_CHANGE`, `CANCELLED` and `FAILED` are frontend-assigned
+ * outcomes for states the backend has no message for.
+ */
 export const TransactionsQueryStatus = {
   ACCOUNT_CHANGE: 'account_change',
   CANCELLED: 'cancelled',
   DECODING_TRANSACTIONS_FINISHED: 'decoding_transactions_finished',
   DECODING_TRANSACTIONS_STARTED: 'decoding_transactions_started',
+  /**
+   * The query failed. Frontend-assigned: a failed query never sends
+   * `QUERYING_TRANSACTIONS_FINISHED`, since the backend only emits that on the success path.
+   */
+  FAILED: 'failed',
   QUERYING_EVM_TOKENS_TRANSACTIONS: 'querying_evm_tokens_transactions',
   QUERYING_INTERNAL_TRANSACTIONS: 'querying_internal_transactions',
   QUERYING_TRANSACTIONS: 'querying_transactions',

@@ -417,6 +417,74 @@ describe('store/history/query-status/tx-query-status', () => {
     });
   });
 
+  describe('markAddressFailed', () => {
+    it('should set status to FAILED, preserving the other fields', () => {
+      const store = useTxQueryStatusStore();
+      store.syncing = true;
+
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'evm',
+      });
+
+      store.markAddressFailed({ address: '0x123', chain: 'eth' });
+
+      const status = get(store.queryStatus)['0x123eth'];
+      expect(status.status).toBe(TransactionsQueryStatus.FAILED);
+      expect(status.address).toBe('0x123');
+      expect(status.chain).toBe('eth');
+      expect(status.subtype).toBe('evm');
+    });
+
+    it('should create the entry when the query failed before announcing itself', () => {
+      const store = useTxQueryStatusStore();
+      store.syncing = true;
+
+      store.markAddressFailed({ address: '0x123', chain: 'Gnosis' });
+
+      const status = get(store.queryStatus)['0x123gnosis'];
+      expect(status).toBeDefined();
+      expect(status.status).toBe(TransactionsQueryStatus.FAILED);
+      expect(status.address).toBe('0x123');
+      expect(status.chain).toBe('gnosis');
+      expect(status.subtype).toBe('evm');
+    });
+
+    it('should record the given subtype on a created entry', () => {
+      const store = useTxQueryStatusStore();
+      store.syncing = true;
+
+      store.markAddressFailed({ address: '0x123', chain: 'zksync_lite' }, 'evmlike');
+
+      const status = get(store.queryStatus)['0x123zksync_lite'];
+      expect(status.subtype).toBe('evmlike');
+      expect(status.status).toBe(TransactionsQueryStatus.FAILED);
+    });
+
+    it('should leave a created entry settled so the run can finish', () => {
+      const store = useTxQueryStatusStore();
+      store.syncing = true;
+
+      store.setUnifiedTxQueryStatus({
+        address: '0xOTHER',
+        chain: 'ETH',
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED,
+        subtype: 'evm',
+      });
+
+      store.markAddressFailed({ address: '0x123', chain: 'gnosis' });
+
+      // Assert the entry exists as well: with no entry at all `isAllFinished` is vacuously true,
+      // so on its own it would pass even if nothing were created.
+      expect(get(store.queryStatus)['0x123gnosis']).toBeDefined();
+      expect(get(store.isAllFinished)).toBe(true);
+    });
+  });
+
   describe('isAddressCancelled', () => {
     it('should return true for cancelled addresses', () => {
       const store = useTxQueryStatusStore();

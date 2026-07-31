@@ -2,6 +2,7 @@ export const AddressStatus = {
   CANCELLED: 'cancelled',
   COMPLETE: 'complete',
   DECODING: 'decoding',
+  FAILED: 'failed',
   PENDING: 'pending',
   QUERYING: 'querying',
 } as const;
@@ -42,6 +43,7 @@ export interface ChainProgress {
   total: number;
   completed: number;
   cancelled: number;
+  failed: number;
   inProgress: number;
   pending: number;
   progress: number;
