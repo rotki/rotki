@@ -26,7 +26,7 @@ export interface SearchItem {
   keywords?: string[];
 }
 
-export type SearchItemWithoutValue = Omit<SearchItem, 'value'>;
+type SearchItemWithoutValue = Omit<SearchItem, 'value'>;
 
 interface UseGlobalSearchReturn {
   search: (keyword: string) => Promise<SearchItem[]>;

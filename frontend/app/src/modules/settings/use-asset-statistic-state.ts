@@ -9,7 +9,7 @@ const Source = {
   SNAPSHOT: 'snapshot',
 } as const;
 
-export type Source = typeof Source[keyof typeof Source];
+type Source = typeof Source[keyof typeof Source];
 
 enum Preference {
   SNAPSHOT,

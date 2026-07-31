@@ -23,7 +23,7 @@ const SubstrateChainInfo = BasicChainInfo.extend({
   type: z.literal('substrate'),
 });
 
-export type SubstrateChainInfo = z.infer<typeof SubstrateChainInfo>;
+type SubstrateChainInfo = z.infer<typeof SubstrateChainInfo>;
 
 const EvmLikeChainInfo = BasicChainInfo.extend({
   nativeToken: z.string().optional(),

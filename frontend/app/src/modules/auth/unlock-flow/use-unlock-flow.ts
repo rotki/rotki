@@ -53,7 +53,7 @@ export type UnlockCredentials = LoginCredentials;
 // and the user can pick a partial `upToVersion` (advanced).
 export type UpdateChanges = AssetVersionUpdate;
 
-export type AssetConflict = AssetUpdateConflictResult;
+type AssetConflict = AssetUpdateConflictResult;
 
 export type Resolution = ConflictResolution;
 

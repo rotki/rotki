@@ -18,10 +18,6 @@ export const AssetBalances = z.record(z.string(), Balance);
 
 export type AssetBalances = z.infer<typeof AssetBalances>;
 
-export const AccountAssetBalances = z.record(z.string(), AssetBalances);
-
-export type AccountAssetBalances = z.infer<typeof AccountAssetBalances>;
-
 export enum BalanceType {
   ASSET = 'asset',
   LIABILITY = 'liability',

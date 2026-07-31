@@ -18,7 +18,7 @@ import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 
 // Re-exported so the facade's public surface stays exactly what it was before the
 // provenance and URL-sync internals moved into their own modules.
-export type { ChangeSource, UrlState };
+export type { ChangeSource };
 
 export { routeWhen };
 

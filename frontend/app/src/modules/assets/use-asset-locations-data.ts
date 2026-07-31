@@ -16,7 +16,7 @@ export interface AssetLocation extends AssetBreakdown {
   readonly label: string;
 }
 
-export type AssetLocations = AssetLocation[];
+type AssetLocations = AssetLocation[];
 
 interface UseAssetLocationsDataOptions {
   /** The asset identifier to look up locations for */

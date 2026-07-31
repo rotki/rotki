@@ -12,10 +12,6 @@ export type DataIssueError =
   | { readonly type: 'validation'; readonly message: string }
   | { readonly type: 'network'; readonly message: string };
 
-export function dataIssueErrorMessage(error: DataIssueError): string {
-  return error.message;
-}
-
 /** One entry in the auto-remediation timeline shown in the detail drawer. */
 export interface RemediationTimelineItem {
   readonly strategy: string;

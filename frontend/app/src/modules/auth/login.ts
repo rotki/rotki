@@ -1,5 +1,3 @@
-import type { Exchange } from '@/modules/balances/types/exchanges';
-import type { UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { z } from 'zod';
 
 export type SyncApproval = 'yes' | 'no' | 'unknown';
@@ -65,13 +63,6 @@ export interface CreateAccountPayload {
   readonly credentials: LoginCredentials;
   readonly initialSettings: InitialSettings;
   premiumSetup?: PremiumSetup;
-}
-
-export interface UnlockPayload {
-  settings: UserSettingsModel;
-  exchanges: Exchange[];
-  username: string;
-  fetchData?: boolean;
 }
 
 export interface CurrentDbUpgradeProgress {

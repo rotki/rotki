@@ -26,7 +26,7 @@ export const GnosisPayAdminsMappingSchema = z.record(z.string(), z.array(z.strin
 
 export type GnosisPayAdminsMapping = z.infer<typeof GnosisPayAdminsMappingSchema>;
 
-export const GnosisPayUntrackedSafeSchema = z.object({
+const GnosisPayUntrackedSafeSchema = z.object({
   address: z.string(),
   type: z.enum(['new', 'old']),
 });

@@ -122,5 +122,3 @@ export const useCurrencies = createSharedComposable(() => {
     findCurrency,
   };
 });
-
-export type ShownCurrency = 'none' | 'ticker' | 'symbol' | 'name';

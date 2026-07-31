@@ -2,7 +2,7 @@ import type { Ref } from 'vue';
 
 type LogType = 'info' | 'success' | 'error';
 
-export interface LogEntry {
+interface LogEntry {
   message: string;
   timestamp: string;
   type: LogType;

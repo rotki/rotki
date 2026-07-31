@@ -5,7 +5,7 @@ import type { PinnedName } from '@/modules/session/types';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { PINNED_PANELS } from '@/modules/shell/pinned/pinned-registry';
 
-export interface PinnedTab {
+interface PinnedTab {
   name: PinnedName;
   icon: string;
   labelKey: MessageKey;

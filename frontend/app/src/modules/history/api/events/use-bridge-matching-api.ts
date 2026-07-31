@@ -10,14 +10,14 @@ import { useTaskApi } from '@/modules/core/tasks/use-task-api';
  * `createCounterpart` manufactures the missing mirror leg on the other chain as a
  * synthetic event and links the two.
  */
-export type BridgeLegResolution = 'external' | 'createCounterpart';
+type BridgeLegResolution = 'external' | 'createCounterpart';
 
 /**
  * An unresolved bridge leg as reported by the backend. Legs are reported individually
  * since a single transaction group can carry several bridge legs that are matched or
  * ignored independently.
  */
-export interface UnmatchedBridgeLeg {
+interface UnmatchedBridgeLeg {
   identifier: number;
   groupIdentifier: string;
 }

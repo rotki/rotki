@@ -28,15 +28,13 @@ const CARD_HEIGHTS = {
 const INITIAL_EVENTS_LIMIT = 6;
 const LOAD_MORE_INCREMENT = 6;
 
-export type VirtualRowType = keyof typeof ROW_HEIGHTS;
-
-export interface GroupHeaderRow {
+interface GroupHeaderRow {
   type: 'group-header';
   groupId: string;
   data: HistoryEventEntry;
 }
 
-export interface EventDetailRow {
+interface EventDetailRow {
   type: 'event-row';
   groupId: string;
   data: HistoryEventEntry;
@@ -46,13 +44,13 @@ export interface EventDetailRow {
   matchedMovement?: boolean;
 }
 
-export interface EventPlaceholderRow {
+interface EventPlaceholderRow {
   type: 'event-placeholder';
   groupId: string;
   index: number;
 }
 
-export interface SwapRow {
+interface SwapRow {
   type: 'swap-row';
   groupId: string;
   events: HistoryEventEntry[];
@@ -60,7 +58,7 @@ export interface SwapRow {
   swapKey: string;
 }
 
-export interface SwapCollapseRow {
+interface SwapCollapseRow {
   type: 'swap-collapse';
   groupId: string;
   swapKey: string;
@@ -69,7 +67,7 @@ export interface SwapCollapseRow {
   bridge: boolean;
 }
 
-export interface MatchedMovementRow {
+interface MatchedMovementRow {
   type: 'matched-movement-row';
   groupId: string;
   events: HistoryEventEntry[];
@@ -77,14 +75,14 @@ export interface MatchedMovementRow {
   movementKey: string;
 }
 
-export interface MatchedMovementCollapseRow {
+interface MatchedMovementCollapseRow {
   type: 'matched-movement-collapse';
   groupId: string;
   movementKey: string;
   eventCount: number;
 }
 
-export interface LoadMoreRow {
+interface LoadMoreRow {
   type: 'load-more';
   groupId: string;
   hiddenCount: number;

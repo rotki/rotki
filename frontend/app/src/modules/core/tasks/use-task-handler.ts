@@ -10,7 +10,7 @@ import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 
 const USER_CANCELLED_TASK = 'task_cancelled_by_user';
 
-export interface TaskSuccess<R> {
+interface TaskSuccess<R> {
   readonly success: true;
   readonly result: R;
   readonly message?: string;

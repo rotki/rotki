@@ -16,5 +16,3 @@ export const RequestPriority = {
   /** Analytics, telemetry, non-essential background work */
   BACKGROUND: 0,
 } as const;
-
-export type RequestPriorityLevel = (typeof RequestPriority)[keyof typeof RequestPriority];

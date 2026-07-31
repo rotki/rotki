@@ -58,7 +58,7 @@ interface BaseSuggestion {
   action?: SuggestionAction;
 }
 
-export interface FrontendSettingsSuggestion extends BaseSuggestion {
+interface FrontendSettingsSuggestion extends BaseSuggestion {
   settingType: 'frontend';
   key: keyof FrontendSettings;
   suggestedValue: FrontendSettings[keyof FrontendSettings];

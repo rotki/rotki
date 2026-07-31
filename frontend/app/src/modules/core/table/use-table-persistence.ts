@@ -12,7 +12,7 @@ import { useRememberTableFilter } from '@/modules/core/table/use-remember-table-
  * - `untilChanged`: stripped only while the value still matches what the
  *   navigation arrived with. Once the user edits it, it persists.
  */
-export type PersistKeyPolicy = 'never' | 'untilChanged';
+type PersistKeyPolicy = 'never' | 'untilChanged';
 
 export interface PersistFilterSetting {
   tableId: TableId;

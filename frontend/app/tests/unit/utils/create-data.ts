@@ -3,16 +3,6 @@ import type { ManualBalanceWithPrice } from '@/modules/balances/types/manual-bal
 import { type Balance, bigNumberify, type ProtocolBalance } from '@rotki/common';
 import { BalanceType } from '@/modules/balances/types/balances';
 
-export function createTestBalanceResponse(amount: number, value: number): {
-  amount: string;
-  value: string;
-} {
-  return {
-    amount: amount.toString(),
-    value: value.toString(),
-  };
-}
-
 export function createTestBalance(amount: number, value: number): Balance {
   return {
     amount: bigNumberify(amount),

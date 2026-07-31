@@ -20,7 +20,7 @@ function asRowKey<T extends NonNullable<unknown>>(column: string): TableRowKey<T
 }
 
 /** The column every table falls back to when neither the state nor the defaults name one. */
-export const DEFAULT_FALLBACK_SORT_COLUMN = 'timestamp';
+const DEFAULT_FALLBACK_SORT_COLUMN = 'timestamp';
 
 export function getSorting<T extends NonNullable<unknown>>(
   sorting: { column?: string; direction?: 'asc' | 'desc' },

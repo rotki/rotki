@@ -5,8 +5,6 @@ import { z } from 'zod';
 import { CollectionCommonFields } from '@/modules/core/common/collection';
 import { PriceOracle, PriceOracleEnum } from '@/modules/settings/types/price-oracle';
 
-export { PriceOracle };
-
 const AssetPriceInput = z.tuple([NumericString, z.number()]);
 
 export const AssetPrice = z.object({

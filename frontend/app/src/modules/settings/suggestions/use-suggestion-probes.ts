@@ -15,7 +15,7 @@ export const SUGGESTION_PROBE_TAG = 'settings-suggestions';
  * settled. Failing closed makes them look identical from the outside, so the probe set is what
  * remembers.
  */
-export interface ProbeRun {
+interface ProbeRun {
   probes: SuggestionProbes;
   failed: () => boolean;
 }

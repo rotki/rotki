@@ -3,7 +3,7 @@ import { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { logger } from '@/modules/core/common/logging/logging';
 
-export interface AssetCheckOptions {
+interface AssetCheckOptions {
   abortController?: AbortController;
 }
 

@@ -45,7 +45,7 @@ export const DEFAULT_LIST_STATES: readonly IssueState[] = [
   IssueState.UNRESOLVED,
 ] as const;
 
-export type ChipColor = 'grey' | 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
+type ChipColor = 'grey' | 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
 
 interface StateMeta {
   readonly color: ChipColor;
