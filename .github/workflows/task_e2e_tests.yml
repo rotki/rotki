@@ -119,14 +119,16 @@ jobs:
         with:
           env_file: .github/.env.ci
 
-      # Keyed on everything the freeze reads: the spec, the dependency set and
-      # the package itself. Most runs restore this and never pay the freeze.
+      # Keyed on everything the freeze bundles: the spec, the dependency set,
+      # the package and `rotkehlchen/data`. That data is not .py, so a global.db
+      # or nodes.json change would otherwise restore a stale core and the suite
+      # would test the old data without failing.
       - name: Cache frozen core
         id: core-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: target/backend
-          key: ${{ runner.os }}-rotki-core-${{ hashFiles('uv.lock', 'pyproject.toml', 'rotkehlchen.spec', 'rotkehlchen/**/*.py') }}
+          key: ${{ runner.os }}-rotki-core-${{ hashFiles('uv.lock', 'pyproject.toml', 'rotkehlchen.spec', 'rotkehlchen/**/*.py', 'rotkehlchen/data/**') }}
 
       - name: Setup python
         if: steps.core-cache.outputs.cache-hit != 'true'
