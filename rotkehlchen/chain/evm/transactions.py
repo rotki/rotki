@@ -357,50 +357,50 @@ class EvmTransactions(ABC):  # noqa: B024
         Otherwise, data is fetched without updating the query range.
         If return_queried_hashes is True, returns only the transaction hashes that were saved.
         """
-        period_as_blocks = self.evm_inquirer.maybe_timestamp_to_block_range(period)
         queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None
         queried_from_ts = Timestamp(period.from_value)
-        for new_transactions in self.evm_inquirer.get_transactions(
-                account=address,
-                action='txlist',
-                period_or_hash=period_as_blocks,
-        ):
-            checkpoint()  # cancellation checkpoint at each pagination boundary
-            # add new transactions to the DB
-            if len(new_transactions) == 0:
-                continue
+        with self.evm_inquirer.block_range_skipping_stale_indexers(period) as period_as_blocks:
+            for new_transactions in self.evm_inquirer.get_transactions(
+                    account=address,
+                    action='txlist',
+                    period_or_hash=period_as_blocks,
+            ):
+                checkpoint()  # cancellation checkpoint at each pagination boundary
+                # add new transactions to the DB
+                if len(new_transactions) == 0:
+                    continue
 
-            with self.database.user_write() as write_cursor:
-                new_hashes = self.dbevmtx.add_transactions(
-                    write_cursor=write_cursor,
-                    evm_transactions=new_transactions,
-                    relevant_address=address,
+                with self.database.user_write() as write_cursor:
+                    new_hashes = self.dbevmtx.add_transactions(
+                        write_cursor=write_cursor,
+                        evm_transactions=new_transactions,
+                        relevant_address=address,
+                    )
+                    if period.range_type == 'timestamps':
+                        assert location_string, 'should always be given for timestamps'
+                        queried_to_ts = Timestamp(max(queried_from_ts, new_transactions[-1].timestamp))
+                        log.debug(f'{self.evm_inquirer.chain_name} transactions for {address} -> update range {queried_from_ts} - {queried_to_ts}')  # noqa: E501
+                        if update_ranges:  # update last queried time for the address
+                            self.dbranges.update_used_query_range(
+                                write_cursor=write_cursor,
+                                location_string=location_string,
+                                queried_ranges=[(queried_from_ts, queried_to_ts)],
+                            )
+                        queried_from_ts = queried_to_ts
+
+                if queried_hashes is not None:
+                    queried_hashes.extend(new_hashes)
+
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.TRANSACTION_STATUS,
+                    data={
+                        'address': address,
+                        'chain': self.evm_inquirer.blockchain.value,
+                        'subtype': str(TransactionStatusSubType.EVM),
+                        'period': [period.from_value, new_transactions[-1].timestamp],
+                        'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS),
+                    },
                 )
-                if period.range_type == 'timestamps':
-                    assert location_string, 'should always be given for timestamps'
-                    queried_to_ts = Timestamp(max(queried_from_ts, new_transactions[-1].timestamp))
-                    log.debug(f'{self.evm_inquirer.chain_name} transactions for {address} -> update range {queried_from_ts} - {queried_to_ts}')  # noqa: E501
-                    if update_ranges:  # update last queried time for the address
-                        self.dbranges.update_used_query_range(
-                            write_cursor=write_cursor,
-                            location_string=location_string,
-                            queried_ranges=[(queried_from_ts, queried_to_ts)],
-                        )
-                    queried_from_ts = queried_to_ts
-
-            if queried_hashes is not None:
-                queried_hashes.extend(new_hashes)
-
-            self.msg_aggregator.add_message(
-                message_type=WSMessageType.TRANSACTION_STATUS,
-                data={
-                    'address': address,
-                    'chain': self.evm_inquirer.blockchain.value,
-                    'subtype': str(TransactionStatusSubType.EVM),
-                    'period': [period.from_value, new_transactions[-1].timestamp],
-                    'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS),
-                },
-            )
         return queried_hashes
 
     def _query_range_in_splittable_chunks(
@@ -548,92 +548,93 @@ class EvmTransactions(ABC):  # noqa: B024
         else:
             queried_from_ts = None
 
-        internal_txs_iterator, indexer_source = self.evm_inquirer.get_transactions_with_source(
-                account=address,
-                period_or_hash=self.evm_inquirer.maybe_timestamp_to_block_range(period=period),
-                action='txlistinternal',
-        )
-        # a single indexer serves the whole iterator, so the source is stamped once at
-        # insertion time rather than onto each row
-        internal_source = indexer_source.to_internal_tx_source()
-        for new_internal_txs in internal_txs_iterator:
-            checkpoint()  # cancellation checkpoint at each pagination boundary
-            if len(internal_txs_with_timestamps := self._process_internal_transactions_batch(
-                new_internal_txs=new_internal_txs,
-                address=address,
-                parent_tx_timestamps=parent_tx_timestamps,
-                queried_hashes=queried_hashes,
-            )) == 0:
-                continue
+        with self.evm_inquirer.block_range_skipping_stale_indexers(period) as period_as_blocks:
+            internal_txs_iterator, indexer_source = self.evm_inquirer.get_transactions_with_source(
+                    account=address,
+                    period_or_hash=period_as_blocks,
+                    action='txlistinternal',
+            )
+            # a single indexer serves the whole iterator, so the source is stamped once at
+            # insertion time rather than onto each row
+            internal_source = indexer_source.to_internal_tx_source()
+            for new_internal_txs in internal_txs_iterator:
+                checkpoint()  # cancellation checkpoint at each pagination boundary
+                if len(internal_txs_with_timestamps := self._process_internal_transactions_batch(
+                    new_internal_txs=new_internal_txs,
+                    address=address,
+                    parent_tx_timestamps=parent_tx_timestamps,
+                    queried_hashes=queried_hashes,
+                )) == 0:
+                    continue
 
-            batch_transactions: list[EvmInternalTransaction] = []
-            parent_tx_hashes: set[EVMTxHash] = set()
-            for internal_tx, _ in internal_txs_with_timestamps:
-                batch_transactions.append(internal_tx)
-                parent_tx_hashes.add(internal_tx.parent_tx_hash)
+                batch_transactions: list[EvmInternalTransaction] = []
+                parent_tx_hashes: set[EVMTxHash] = set()
+                for internal_tx, _ in internal_txs_with_timestamps:
+                    batch_transactions.append(internal_tx)
+                    parent_tx_hashes.add(internal_tx.parent_tx_hash)
 
-            # deletes internal tx before readding them and after repulling them
-            with self.database.conn.write_ctx() as write_cursor:
-                for parent_tx_hash in parent_tx_hashes:
-                    if parent_tx_hash in replaced_parent_hashes:
-                        continue
-
-                    if address is None:
-                        self.dbevmtx.delete_evm_internal_transactions_by_parent_tx_hash(
-                            write_cursor=write_cursor,
-                            parent_tx_hash=parent_tx_hash,
-                            chain_id=self.evm_inquirer.chain_id,
-                        )
-                    else:
-                        self.dbevmtx.delete_evm_internal_transactions_by_parent_tx_hash_and_address(
-                            write_cursor=write_cursor,
-                            parent_tx_hash=parent_tx_hash,
-                            chain_id=self.evm_inquirer.chain_id,
-                            address=address,
-                        )
-                    replaced_parent_hashes.add(parent_tx_hash)
-
-                self.dbevmtx.add_evm_internal_transactions(
-                    write_cursor=write_cursor,
-                    transactions=batch_transactions,
-                    relevant_address=None,
-                    source=internal_source,
-                )
-
-            if queried_from_ts is None:
-                continue
-
-            # Update the used query range and notify the frontend once per fetched
-            # batch instead of once per internal transaction. A DeFi-heavy address
-            # can have thousands of internal txs per chain, and a committed write
-            # transaction plus a websocket message for each one is orders of
-            # magnitude slower. The cumulative effect is identical: the per-row
-            # updates only ever extended the range to the running max timestamp.
-            queried_to_ts = Timestamp(max(
-                queried_from_ts,
-                *(timestamp for _, timestamp in internal_txs_with_timestamps),
-            ))
-            log.debug('Internal %s transactions for %s -> update range %s - %s', self.evm_inquirer.chain_name, address, queried_from_ts, queried_to_ts)  # noqa: E501
-            if update_ranges:  # update last queried time for address
-                assert location_string is not None, 'should always be given for timestamps'
+                # deletes internal tx before readding them and after repulling them
                 with self.database.conn.write_ctx() as write_cursor:
-                    self.dbranges.update_used_query_range(
+                    for parent_tx_hash in parent_tx_hashes:
+                        if parent_tx_hash in replaced_parent_hashes:
+                            continue
+
+                        if address is None:
+                            self.dbevmtx.delete_evm_internal_transactions_by_parent_tx_hash(
+                                write_cursor=write_cursor,
+                                parent_tx_hash=parent_tx_hash,
+                                chain_id=self.evm_inquirer.chain_id,
+                            )
+                        else:
+                            self.dbevmtx.delete_evm_internal_transactions_by_parent_tx_hash_and_address(
+                                write_cursor=write_cursor,
+                                parent_tx_hash=parent_tx_hash,
+                                chain_id=self.evm_inquirer.chain_id,
+                                address=address,
+                            )
+                        replaced_parent_hashes.add(parent_tx_hash)
+
+                    self.dbevmtx.add_evm_internal_transactions(
                         write_cursor=write_cursor,
-                        location_string=location_string,
-                        queried_ranges=[(queried_from_ts, queried_to_ts)],
+                        transactions=batch_transactions,
+                        relevant_address=None,
+                        source=internal_source,
                     )
 
-            self.msg_aggregator.add_message(
-                message_type=WSMessageType.TRANSACTION_STATUS,
-                data={
-                    'address': address,
-                    'chain': self.evm_inquirer.blockchain.value,
-                    'subtype': str(TransactionStatusSubType.EVM),
-                    'period': [period.from_value, queried_to_ts],
-                    'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),
-                },
-            )
-            queried_from_ts = queried_to_ts
+                if queried_from_ts is None:
+                    continue
+
+                # Update the used query range and notify the frontend once per fetched
+                # batch instead of once per internal transaction. A DeFi-heavy address
+                # can have thousands of internal txs per chain, and a committed write
+                # transaction plus a websocket message for each one is orders of
+                # magnitude slower. The cumulative effect is identical: the per-row
+                # updates only ever extended the range to the running max timestamp.
+                queried_to_ts = Timestamp(max(
+                    queried_from_ts,
+                    *(timestamp for _, timestamp in internal_txs_with_timestamps),
+                ))
+                log.debug('Internal %s transactions for %s -> update range %s - %s', self.evm_inquirer.chain_name, address, queried_from_ts, queried_to_ts)  # noqa: E501
+                if update_ranges:  # update last queried time for address
+                    assert location_string is not None, 'should always be given for timestamps'
+                    with self.database.conn.write_ctx() as write_cursor:
+                        self.dbranges.update_used_query_range(
+                            write_cursor=write_cursor,
+                            location_string=location_string,
+                            queried_ranges=[(queried_from_ts, queried_to_ts)],
+                        )
+
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.TRANSACTION_STATUS,
+                    data={
+                        'address': address,
+                        'chain': self.evm_inquirer.blockchain.value,
+                        'subtype': str(TransactionStatusSubType.EVM),
+                        'period': [period.from_value, queried_to_ts],
+                        'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),
+                    },
+                )
+                queried_from_ts = queried_to_ts
 
         return queried_hashes
 
@@ -1051,53 +1052,51 @@ class EvmTransactions(ABC):  # noqa: B024
         If update_ranges is True, updates the database tracking for this query range.
         Otherwise, data is fetched without updating the query range.
         """  # noqa: E501
-        from_block, to_block = self.evm_inquirer.timestamp_range_to_block_range(
-            from_ts=Timestamp(period.from_value),
-            to_ts=Timestamp(period.to_value),
-        )
+        with self.evm_inquirer.block_range_skipping_stale_indexers(period) as blocks:
+            from_block, to_block = blocks.from_value, blocks.to_value
 
-        log.debug(f'Querying erc20 transfers of {address} from {period.from_value} to {period.to_value} in {self.evm_inquirer.chain_name}')  # noqa: E501
-        queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None
-        queried_from_ts = Timestamp(period.from_value)
-        for erc20_tx_hashes in self.evm_inquirer.get_token_transaction_hashes(
-            account=address,
-            from_block=from_block,
-            to_block=to_block,
-        ):
-            checkpoint()  # cancellation checkpoint at each pagination boundary
-            if not erc20_tx_hashes:
-                continue
+            log.debug(f'Querying erc20 transfers of {address} from {period.from_value} to {period.to_value} in {self.evm_inquirer.chain_name}')  # noqa: E501
+            queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None
+            queried_from_ts = Timestamp(period.from_value)
+            for erc20_tx_hashes in self.evm_inquirer.get_token_transaction_hashes(
+                account=address,
+                from_block=from_block,
+                to_block=to_block,
+            ):
+                checkpoint()  # cancellation checkpoint at each pagination boundary
+                if not erc20_tx_hashes:
+                    continue
 
-            batch_timestamps, new_hashes = self._batch_ensure_evm_txns_in_db(
-                tx_hashes=erc20_tx_hashes,
-                relevant_address=address,
-            )
-            if queried_hashes is not None:
-                queried_hashes.extend(new_hashes)
+                batch_timestamps, new_hashes = self._batch_ensure_evm_txns_in_db(
+                    tx_hashes=erc20_tx_hashes,
+                    relevant_address=address,
+                )
+                if queried_hashes is not None:
+                    queried_hashes.extend(new_hashes)
 
-            if period.range_type != 'timestamps':
-                continue
+                if period.range_type != 'timestamps':
+                    continue
 
-            queried_to_ts = Timestamp(max(queried_from_ts, *batch_timestamps.values()))
-            log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> update range {queried_from_ts} - {queried_to_ts}')  # noqa: E501
-            self.msg_aggregator.add_message(
-                message_type=WSMessageType.TRANSACTION_STATUS,
-                data={
-                    'address': address,
-                    'chain': self.evm_inquirer.blockchain.value,
-                    'subtype': str(TransactionStatusSubType.EVM),
-                    'period': [period.from_value, queried_to_ts],
-                    'status': str(TransactionStatusStep.QUERYING_EVM_TOKENS_TRANSACTIONS),
-                },
-            )
-            if update_ranges:
-                with self.database.user_write() as write_cursor:
-                    self.dbranges.update_used_query_range(
-                        write_cursor=write_cursor,
-                        location_string=location_string,
-                        queried_ranges=[(queried_from_ts, queried_to_ts)],
-                    )
-            queried_from_ts = queried_to_ts
+                queried_to_ts = Timestamp(max(queried_from_ts, *batch_timestamps.values()))
+                log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> update range {queried_from_ts} - {queried_to_ts}')  # noqa: E501
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.TRANSACTION_STATUS,
+                    data={
+                        'address': address,
+                        'chain': self.evm_inquirer.blockchain.value,
+                        'subtype': str(TransactionStatusSubType.EVM),
+                        'period': [period.from_value, queried_to_ts],
+                        'status': str(TransactionStatusStep.QUERYING_EVM_TOKENS_TRANSACTIONS),
+                    },
+                )
+                if update_ranges:
+                    with self.database.user_write() as write_cursor:
+                        self.dbranges.update_used_query_range(
+                            write_cursor=write_cursor,
+                            location_string=location_string,
+                            queried_ranges=[(queried_from_ts, queried_to_ts)],
+                        )
+                queried_from_ts = queried_to_ts
         return queried_hashes
 
     def address_has_been_spammed(self, address: ChecksumEvmAddress) -> bool:
