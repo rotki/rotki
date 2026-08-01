@@ -51,11 +51,11 @@ const ENUM_SOURCES: EnumSource[] = [
  *  (BRIDGE_DEPOSIT is labelled "Bridge In"), so they are scraped separately. */
 const LABEL_SOURCE = { file: 'rotkehlchen/accounting/constants.py', prefix: 'backend_mappings.events.type' };
 
-/** Keys that are not driven by the backend at all: the exchange sub-lists are hardcoded in the
- *  frontend and `type_direction.title` is a plain static key next to the generated directions. */
+/** Not driven by the backend: a plain static key sitting next to the generated directions. The
+ *  `exchanges.*` keys used to live here as a glob, but they come from frontend enums, so
+ *  ExchangeKeysForm.vue spells them out per option and the scanner sees them directly. */
 const STATIC_KEYS = [
   'backend_mappings.events.type_direction.title',
-  'backend_mappings.exchanges.*',
 ];
 
 function readSource(projectRoot: string, file: string): string | undefined {

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import { toSentenceCase } from '@rotki/common';
 import { RuiRevealableTextField, RuiTextField } from '@rotki/ui-library';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
+import { type MessageKey, msg } from '@/message-key';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { type ExchangeFormData, GateLocation, KrakenAccountType, OkxLocation } from '@/modules/balances/types/exchanges';
 import { useFormStateWatcher } from '@/modules/core/common/use-form';
@@ -30,7 +30,7 @@ const { exchangesWithoutApiSecret, exchangesWithPassphrase } = storeToRefs(locat
 const { useIsExperimentalExchange } = locationStore;
 const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 const { getLocationData } = useLocations();
-const { t, te } = useI18n({ useScope: 'global' });
+const { t } = useI18n({ useScope: 'global' });
 
 const requiresApiSecret = computed(() => {
   const { location } = get(modelValue);
@@ -198,35 +198,41 @@ function toggleFuturesEdit() {
   }
 }
 
-const gateLocations = GateLocation.options.map((item) => {
-  const translationKey = `backend_mappings.exchanges.gate.location.${item.toLowerCase()}`;
-  const label = te(translationKey) ? t(translationKey) : item;
+// Exhaustive per option rather than an interpolated key, so adding an option fails typecheck here
+// instead of silently falling back to the raw identifier, and so the keys are visible to the lint
+// rules. Adding an option to any of these enums requires a matching message.
+const GATE_LOCATION_KEYS: Record<GateLocation, MessageKey> = {
+  europe: msg.$t('backend_mappings.exchanges.gate.location.europe'),
+  global: msg.$t('backend_mappings.exchanges.gate.location.global'),
+  us: msg.$t('backend_mappings.exchanges.gate.location.us'),
+};
 
-  return {
-    identifier: item,
-    label,
-  };
-});
+const KRAKEN_ACCOUNT_TYPE_KEYS: Record<KrakenAccountType, MessageKey> = {
+  intermediate: msg.$t('backend_mappings.exchanges.kraken.type.intermediate'),
+  pro: msg.$t('backend_mappings.exchanges.kraken.type.pro'),
+  starter: msg.$t('backend_mappings.exchanges.kraken.type.starter'),
+};
 
-const krakenAccountTypes = KrakenAccountType.options.map((item) => {
-  const translationKey = `backend_mappings.exchanges.kraken.type.${item}`;
-  const label = te(translationKey) ? t(translationKey) : toSentenceCase(item);
+const OKX_LOCATION_KEYS: Record<OkxLocation, MessageKey> = {
+  eea: msg.$t('backend_mappings.exchanges.okx.location.eea'),
+  global: msg.$t('backend_mappings.exchanges.okx.location.global'),
+  us: msg.$t('backend_mappings.exchanges.okx.location.us'),
+};
 
-  return {
-    identifier: item,
-    label,
-  };
-});
+const gateLocations = GateLocation.options.map(item => ({
+  identifier: item,
+  label: t(GATE_LOCATION_KEYS[item]),
+}));
 
-const okxLocations = OkxLocation.options.map((item) => {
-  const translationKey = `backend_mappings.exchanges.okx.location.${item.toLowerCase()}`;
-  const label = te(translationKey) ? t(translationKey) : item;
+const krakenAccountTypes = KrakenAccountType.options.map(item => ({
+  identifier: item,
+  label: t(KRAKEN_ACCOUNT_TYPE_KEYS[item]),
+}));
 
-  return {
-    identifier: item,
-    label,
-  };
-});
+const okxLocations = OkxLocation.options.map(item => ({
+  identifier: item,
+  label: t(OKX_LOCATION_KEYS[item]),
+}));
 
 const sensitiveFieldEditable = logicOr(logicNot(editMode), editKeys);
 const futuresFieldEditable = logicOr(logicNot(editMode), editFuturesKeys);

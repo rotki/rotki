@@ -30,7 +30,6 @@ const i18nIgnoreKeys = [
   // glob also hid 60 keys belonging to premium screens retired before the 14.x major.
   // `pnpm run generate:premium-keys` refreshes it from a premium checkout.
   ...premiumComponentKeys,
-  'transactions.events.headers.*',
   ...translationKeys(),
 ];
 

@@ -158,7 +158,6 @@ export const backendMappingKeys = [
   'backend_mappings.events.type_direction.directions.neutral',
   'backend_mappings.events.type_direction.directions.out',
   'backend_mappings.events.type_direction.title',
-  'backend_mappings.exchanges.*',
   'backend_mappings.profit_loss_event_type.asset_movement',
   'backend_mappings.profit_loss_event_type.fee',
   'backend_mappings.profit_loss_event_type.history_event',

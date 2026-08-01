@@ -8,8 +8,13 @@ export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
 
 export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
 
-const GATE_LOCATIONS = ['global', 'europe', 'us'];
-const OKX_LOCATIONS = ['global', 'eea', 'us'];
+const GATE_LOCATIONS = ['global', 'europe', 'us'] as const;
+const OKX_LOCATIONS = ['global', 'eea', 'us'] as const;
+
+// `includes` on a readonly tuple narrows its argument to the member union, which an `unknown`
+// narrowed only to `string` cannot satisfy. A set lookup takes a plain string.
+const GATE_LOCATION_VALUES: ReadonlySet<string> = new Set(GATE_LOCATIONS);
+const OKX_LOCATION_VALUES: ReadonlySet<string> = new Set(OKX_LOCATIONS);
 
 export const GateLocation = z.enum(GATE_LOCATIONS);
 
@@ -20,11 +25,11 @@ export type GateLocation = z.infer<typeof GateLocation>;
 export type OkxLocation = z.infer<typeof OkxLocation>;
 
 function isValidGateLocation(val: unknown): val is GateLocation {
-  return typeof val === 'string' && GATE_LOCATIONS.includes(val);
+  return typeof val === 'string' && GATE_LOCATION_VALUES.has(val);
 }
 
 function isValidOkxLocation(val: unknown): val is OkxLocation {
-  return typeof val === 'string' && OKX_LOCATIONS.includes(val);
+  return typeof val === 'string' && OKX_LOCATION_VALUES.has(val);
 }
 
 export const QueryExchangeEventsPayload = z.object({

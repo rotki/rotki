@@ -2,6 +2,7 @@
 import type { AddressBookPayload } from '@/modules/accounts/address-book/eth-names';
 import type LatestPriceForm from '@/modules/assets/prices/latest/LatestPriceForm.vue';
 import { useTemplateRef } from 'vue';
+import { type MessageKey, msg } from '@/message-key';
 import AddressBookForm from '@/modules/accounts/address-book/AddressBookForm.vue';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
@@ -48,6 +49,20 @@ const emptyForm: () => AddressBookPayload = () => ({
 const { addAddressBook, updateAddressBook } = useAddressBookOperations();
 const { setMessage } = useMessageStore();
 
+// Spelled out per operation rather than interpolated. An inline template literal in `t()` makes the
+// unused-key rule treat its static prefix as used, so `address_book.actions.*` was exempt as a
+// whole - including the delete, fetch and tooltip keys, which this lookup never touches.
+const SAVE_ERROR_KEYS: Record<'add' | 'edit', { description: MessageKey; title: MessageKey }> = {
+  add: {
+    description: msg.$t('address_book.actions.add.error.description'),
+    title: msg.$t('address_book.actions.add.error.title'),
+  },
+  edit: {
+    description: msg.$t('address_book.actions.edit.error.description'),
+    title: msg.$t('address_book.actions.edit.error.title'),
+  },
+};
+
 function handleSaveError(error: unknown, isEdit: boolean, payload: AddressBookPayload): void {
   const message = getErrorMessage(error);
   let errors: string | ValidationErrors = message;
@@ -56,11 +71,11 @@ function handleSaveError(error: unknown, isEdit: boolean, payload: AddressBookPa
     errors = error.getValidationErrors(payload);
 
   if (typeof errors === 'string') {
-    const key = isEdit ? 'edit' : 'add';
+    const keys = SAVE_ERROR_KEYS[isEdit ? 'edit' : 'add'];
     setMessage({
-      description: t(`address_book.actions.${key}.error.description`, { message }),
+      description: t(keys.description, { message }),
       success: false,
-      title: t(`address_book.actions.${key}.error.title`),
+      title: t(keys.title),
     });
   }
   else {
