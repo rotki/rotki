@@ -3,6 +3,8 @@ import path from 'node:path';
 import rotki from '@rotki/eslint-config';
 import { translationKeys } from '@rotki/ui-library';
 
+import { backendMappingKeys } from './app/backend-strings.generated.js';
+
 // Pre-load the ESM-only ESLint parsers before the config factories run.
 // @intlify/eslint-plugin-vue-i18n require()s them while eslint composes configs
 // via Promise.all; warming them here avoids Node's ERR_REQUIRE_ESM_RACE_CONDITION.
@@ -16,11 +18,13 @@ const src = path.join('app', 'src');
 // Patterns are glob-ish: `*` is a wildcard, `.` is a literal dot (see the rule's `prepareUsedKeys`).
 // Do NOT slash-wrap them like a regex literal - the rule treats the slashes as literal characters.
 const i18nIgnoreKeys = [
-  'backend_mappings.*',
-  'notification_messages.missing_api_key.*',
+  // `backend_mappings.*` keys are built at runtime from identifiers the backend sends, so the
+  // scanner cannot see them. Listing the exact keys rather than globbing the subtree means a key
+  // the backend has stopped sending is still reported as unused - a blanket glob hid exactly that
+  // when `events.type.bridge` was renamed to `events.group.bridge`. Regenerate with
+  // `pnpm run generate:backend-strings`; `pnpm run check:backend-strings` fails when it is stale.
+  ...backendMappingKeys,
   'premium_components.*',
-  'transactions.query_status.*',
-  'transactions.query_status_events.*',
   'transactions.events.headers.*',
   ...translationKeys(),
 ];
@@ -34,6 +38,7 @@ export default rotki({
   // (`app/tests/unit/coverage`) is already covered by the shared config's `**/coverage` default.
   ignores: [
     'app/backend-icons.generated.ts',
+    'app/backend-strings.generated.js',
     'app/tests/e2e/.v8-coverage/**',
     'app/tests/e2e/test-results/**',
   ],

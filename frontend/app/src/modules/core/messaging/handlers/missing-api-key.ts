@@ -3,6 +3,7 @@ import type { NotificationHandler } from '../interfaces';
 import type { MissingApiKey } from '@/modules/core/messaging/types';
 import { type NotificationAction, NotificationCategory, NotificationGroup, Priority, Severity, toHumanReadable } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
+import { type MessageKey, msg } from '@/message-key';
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { createNotificationHandler } from '@/modules/core/messaging/utils';
@@ -101,33 +102,33 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
 
     const serviceConfig: Record<string, {
       category: NotificationCategory;
-      messageKey: string;
-      titleKey: string;
+      messageKey: MessageKey;
+      titleKey: MessageKey;
     }> = {
       [SuppressibleMissingKeyService.BEACONCHAIN]: {
         category: NotificationCategory.BEACONCHAIN,
-        messageKey: 'notification_messages.missing_api_key.beaconchain.message',
-        titleKey: 'notification_messages.missing_api_key.beaconchain.title',
+        messageKey: msg.$t('notification_messages.missing_api_key.beaconchain.message'),
+        titleKey: msg.$t('notification_messages.missing_api_key.beaconchain.title'),
       },
       [SuppressibleMissingKeyService.BLOCKSCOUT]: {
         category: NotificationCategory.BLOCKSCOUT,
-        messageKey: 'notification_messages.missing_api_key.blockscout.message',
-        titleKey: 'notification_messages.missing_api_key.blockscout.title',
+        messageKey: msg.$t('notification_messages.missing_api_key.blockscout.message'),
+        titleKey: msg.$t('notification_messages.missing_api_key.blockscout.title'),
       },
       [SuppressibleMissingKeyService.ETHERSCAN]: {
         category: NotificationCategory.ETHERSCAN,
-        messageKey: 'notification_messages.missing_api_key.etherscan.message',
-        titleKey: 'notification_messages.missing_api_key.etherscan.title',
+        messageKey: msg.$t('notification_messages.missing_api_key.etherscan.message'),
+        titleKey: msg.$t('notification_messages.missing_api_key.etherscan.title'),
       },
       [SuppressibleMissingKeyService.HELIUS]: {
         category: NotificationCategory.HELIUS,
-        messageKey: 'notification_messages.missing_api_key.helius.message',
-        titleKey: 'notification_messages.missing_api_key.helius.title',
+        messageKey: msg.$t('notification_messages.missing_api_key.helius.message'),
+        titleKey: msg.$t('notification_messages.missing_api_key.helius.title'),
       },
       [SuppressibleMissingKeyService.THEGRAPH]: {
         category: NotificationCategory.THEGRAPH,
-        messageKey: 'notification_messages.missing_api_key.thegraph.message',
-        titleKey: 'notification_messages.missing_api_key.thegraph.title',
+        messageKey: msg.$t('notification_messages.missing_api_key.thegraph.message'),
+        titleKey: msg.$t('notification_messages.missing_api_key.thegraph.title'),
       },
     };
 
