@@ -4,10 +4,19 @@ import path from 'node:path';
 import process from 'node:process';
 import { buildCargoEnv } from '../cargo-env';
 import { shouldUseUv } from '../uv';
+import { BACKEND_DIRECTORY, findCoreBinary, resolveCoreBinary, resourcesDir } from './starling-paths';
 
-const BACKEND_DIRECTORY = 'backend';
 const COLIBRI_DIRECTORY = 'colibri';
 const STARLING_DIRECTORY = 'starling';
+
+/**
+ * Where a frozen core lands outside a packaged build, repo-root relative. Under
+ * `target/` alongside the Rust binaries because that is where CI already drops
+ * the artifacts it builds once and ships to the jobs that consume them, and it
+ * is gitignored. Nothing writes here by default: a dev run without a freeze
+ * falls through to the interpreter.
+ */
+const DEV_BACKEND_DIRECTORY = path.join('target', BACKEND_DIRECTORY);
 
 /**
  * Grace period starling gives the backend tree to exit before escalating to a
@@ -148,33 +157,6 @@ function repoRoot(): string {
   return path.resolve(process.cwd(), '..', '..');
 }
 
-/** The packaged-build resource root holding the bundled backend binaries. */
-function resourcesDir(): string {
-  return process.resourcesPath ? process.resourcesPath : import.meta.dirname;
-}
-
-/**
- * Locate the single packaged `rotki-core-*` binary. Mirrors the resolution the
- * old core launcher used: prefer `<resources>/backend/rotki-core/`, fall back to
- * `<resources>/backend/`. Returns the binary path and its directory (the cwd the
- * backend expects).
- */
-function resolveCoreBinary(): { binary: string; dir: string } {
-  const backendDirectory = path.join(resourcesDir(), BACKEND_DIRECTORY);
-  const candidates = [path.join(backendDirectory, 'rotki-core'), backendDirectory];
-  const dir = candidates.find(directory => fs.existsSync(directory) && fs.statSync(directory).isDirectory());
-  if (!dir)
-    throw new Error(`No backend directory found. Searched: ${candidates.join(', ')}`);
-
-  const binaries = fs.readdirSync(dir).filter(file => file.startsWith('rotki-core-'));
-  if (binaries.length === 0)
-    throw new Error('No rotki-core binary found');
-  if (binaries.length > 1)
-    throw new Error(`Expected one rotki-core binary but found: ${binaries.join(', ')}. This might indicate a problematic upgrade.`);
-
-  return { binary: path.join(dir, binaries[0]), dir };
-}
-
 /** The bundled `starling` supervisor binary path for packaged builds. */
 function resolveStarlingBinary(): string {
   const binary = process.platform === 'win32' ? 'starling.exe' : 'starling';
@@ -258,6 +240,16 @@ function prefixFlags(flag: string, tokens: string[]): string[] {
  * `uvPythonPath`); with a venv active, `python` is already the venv's own.
  */
 function devCoreLauncherArgs(root: string): string[] {
+  // A frozen core, when the build job shipped one (see DEV_BACKEND_DIRECTORY).
+  // Preferred over the interpreter for the same reason the packaged build uses
+  // it: it exercises what actually ships, so a missing hidden import or data
+  // file fails the e2e run rather than a release. No prefix - the binary is the
+  // entrypoint, so `-m rotkehlchen` must not be passed - and its own directory
+  // is the cwd, exactly as `packagedLauncherArgs` does.
+  const frozen = findCoreBinary(path.join(root, DEV_BACKEND_DIRECTORY));
+  if (frozen)
+    return ['--core-binary', frozen.binary, '--core-cwd', frozen.dir];
+
   const profilingCmd = process.env.ROTKI_BACKEND_PROFILING_CMD;
   const profilingArgs = process.env.ROTKI_BACKEND_PROFILING_ARGS;
   // Interpreter args, so they precede `-m`: opt out of the GIL on a free-threaded

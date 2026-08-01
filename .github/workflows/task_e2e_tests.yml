@@ -102,9 +102,67 @@ jobs:
             target/release/starling
           retention-days: 1
 
+  build-backend:
+    name: 'Build Backend'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Load env
+        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        with:
+          env_file: .github/.env.ci
+
+      # Keyed on everything the freeze reads: the spec, the dependency set and
+      # the package itself. Most runs restore this and never pay the freeze.
+      - name: Cache frozen core
+        id: core-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: target/backend
+          key: ${{ runner.os }}-rotki-core-${{ hashFiles('uv.lock', 'pyproject.toml', 'rotkehlchen.spec', 'rotkehlchen/**/*.py') }}
+
+      - name: Setup python
+        if: steps.core-cache.outputs.cache-hit != 'true'
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        if: steps.core-cache.outputs.cache-hit != 'true'
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
+
+      # The same spec release packaging uses, so the e2e run exercises the
+      # binary that ships rather than the source tree. Invoked directly instead
+      # of through package.py, which would also build the Rust services that
+      # `build-rust-services` already covers.
+      - name: Freeze core
+        if: steps.core-cache.outputs.cache-hit != 'true'
+        run: |
+          uv sync --locked
+          uv run --with "pyinstaller==${PYINSTALLER_VERSION}" \
+            pyinstaller --noconfirm --clean --distpath target/backend rotkehlchen.spec
+
+      - name: Upload frozen core
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: backend-binary
+          path: target/backend
+          retention-days: 1
+
   e2e:
     name: 'shard-${{ matrix.shard }}'
-    needs: [ build-frontend, build-rust-services ]
+    needs: [ build-frontend, build-rust-services, build-backend ]
     env:
       CI: true
     runs-on: ubuntu-latest
@@ -160,6 +218,9 @@ jobs:
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
+      # Still needed with a frozen core: the suite seeds user and global DBs
+      # through `uv run python tests/e2e/scripts/seed-db.py`, which opens them
+      # with the venv's SQLCipher. Only core's own launch moves to the binary.
       - name: Setup backend
         run: uv sync --locked
 
@@ -181,6 +242,18 @@ jobs:
 
       - name: Make Rust binaries executable
         run: chmod +x target/release/colibri target/release/starling
+
+      # starling launches this instead of the interpreter once it is present
+      # (see `devCoreLauncherArgs`), so the suite drives the shipping binary.
+      - name: Download frozen core
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: backend-binary
+          path: target/backend
+
+      # upload-artifact drops the exec bit, same as the Rust binaries above.
+      - name: Make frozen core executable
+        run: chmod +x target/backend/rotki-core/rotki-core-*
 
       - name: Cache Playwright browsers
         id: playwright-cache

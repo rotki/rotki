@@ -4,8 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // The dev launchers probe the filesystem (is the warm-up build there?) and shell
 // out to uv (which interpreter?). Both are mocked so these run identically on a
 // CI box with no rust target dir and no uv installed.
-const { existsSyncMock, execSyncMock, buildCargoEnvMock } = vi.hoisted(() => ({
+const { existsSyncMock, statSyncMock, readdirSyncMock, execSyncMock, buildCargoEnvMock } = vi.hoisted(() => ({
   existsSyncMock: vi.fn(),
+  statSyncMock: vi.fn(),
+  readdirSyncMock: vi.fn(),
   execSyncMock: vi.fn(),
   buildCargoEnvMock: vi.fn(),
 }));
@@ -18,9 +20,13 @@ vi.mock('@shared/cargo-env', () => ({
   STRAWBERRY_MISSING_WARNING: 'strawberry missing',
 }));
 
+// `statSync`/`readdirSync` are stubbed alongside `existsSync` because the core
+// launcher probes for a frozen build, not just a file: with only `existsSync`
+// mocked, a broad `true` sends the real `statSync` at a path that is not there.
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
-  return { ...actual, default: { ...actual, existsSync: existsSyncMock }, existsSync: existsSyncMock };
+  const stubs = { existsSync: existsSyncMock, statSync: statSyncMock, readdirSync: readdirSyncMock };
+  return { ...actual, ...stubs, default: { ...actual, ...stubs } };
 });
 
 vi.mock('node:child_process', async (importOriginal) => {
@@ -64,6 +70,10 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     delete process.env.ROTKI_BACKEND_PROFILING_ARGS;
     delete process.env.ROTKI_GIL;
     buildCargoEnvMock.mockReturnValue(CARGO_ENV);
+    statSyncMock.mockReturnValue({ isDirectory: () => true });
+    // No frozen core unless a case says so, so the default stays the dev
+    // interpreter every branch below asserts on.
+    readdirSyncMock.mockReturnValue([]);
     execSyncMock.mockImplementation((cmd: string) => {
       if (cmd.includes('--version'))
         return '';
@@ -107,6 +117,39 @@ describe('buildStarlingInvocation (dev launchers)', () => {
       expect(args).not.toContain('--core-prefix=run');
       expect(args).toContain('--core-prefix=-m');
       expect(args).toContain('--core-prefix=rotkehlchen');
+    });
+  });
+
+  // The e2e run ships a frozen core the same way it ships the Rust binaries, so
+  // the suite drives the binary that actually ships: a missing hidden import or
+  // data file then fails the run rather than a release.
+  describe('when a frozen core is present', () => {
+    const FROZEN_CORE = 'rotki-core-1.43.0-linux';
+    const frozenDir = path.join('target', 'backend', 'rotki-core');
+
+    beforeEach(() => {
+      existsSyncMock.mockReturnValue(true);
+      readdirSyncMock.mockImplementation((probed: string) =>
+        String(probed).includes(frozenDir) ? [FROZEN_CORE] : []);
+    });
+
+    it('should launch the frozen binary rather than an interpreter', async () => {
+      const { args } = await buildDevInvocation();
+      expect(flagValue(args, '--core-binary')).toContain(path.join(frozenDir, FROZEN_CORE));
+      expect(flagValue(args, '--core-binary')).not.toBe(VENV_PYTHON);
+    });
+
+    // The binary is the entrypoint; passing `-m rotkehlchen` would have it
+    // treat the module flags as its own CLI args and refuse to start.
+    it('should not pass the module prefix', async () => {
+      const { args } = await buildDevInvocation();
+      expect(args).not.toContain('--core-prefix=-m');
+      expect(args).not.toContain('--core-prefix=rotkehlchen');
+    });
+
+    it('should run it from its own directory, as the packaged build does', async () => {
+      const { args } = await buildDevInvocation();
+      expect(flagValue(args, '--core-cwd')).toContain(frozenDir);
     });
   });
 
