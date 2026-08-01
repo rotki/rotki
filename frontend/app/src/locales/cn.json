@@ -50,8 +50,7 @@
       "addresses_hint": "插入多个地址，用逗号或换行符分隔",
       "blockchain": "选择区块链 | 选择区块链",
       "btc": {
-        "derivation_path": "推导路径",
-        "xpub": "XPUB"
+        "derivation_path": "推导路径"
       },
       "multiple": "添加多个地址"
     },
@@ -274,7 +273,6 @@
           "title": "Xpub 移除"
         },
         "task": {
-          "description": "{xpub}",
           "title": "删除 xpub"
         }
       }
@@ -696,9 +694,7 @@
     "manual_tooltip": "手动定义价格"
   },
   "app": {
-    "copyright": "© Rotki Solutions GmbH 2018-{year}",
-    "moto": "保护您隐私的开源投资组合管理器",
-    "name": "rotki"
+    "moto": "保护您隐私的开源投资组合管理器"
   },
   "asset_balances": {
     "loading": "rotki 正在查询余额，请稍候..."
@@ -719,7 +715,6 @@
     "labels": {
       "asset_type": "资产类型",
       "chain": "链",
-      "coingecko": "CoinGecko",
       "coingecko_hint": "CoinGecko 上资产的标识符。如果未设置,rotki 将无法从 CoinGecko 检索资产价格。",
       "cryptocompare": "加密比较",
       "cryptocompare_hint": "CryptoCompare 上资产的标识符。如果没有给出，符号将被假定为默认符号。如果这不起作用并且没有设置 rotki 将无法从 CryptoCompare 检索资产的价格",
@@ -741,9 +736,6 @@
     "validation": {
       "valid_address": "请输入有效的地址"
     }
-  },
-  "asset_icon": {
-    "tooltip": "[{symbol}] {name}"
   },
   "asset_locations": {
     "header": {
@@ -906,16 +898,17 @@
   },
   "backend_mappings": {
     "events": {
+      "group": {
+        "bridge": "桥"
+      },
       "history_event_subtype": {
         "airdrop": "空投",
         "approve": "批准",
         "bridge": "桥",
-        "deploy": "部署",
         "deposit_asset": "存入资产",
         "fee": "费用",
         "generate_debt": "生成债务",
         "governance": "治理",
-        "nft": "NFT",
         "none": "无",
         "payback_debt": "偿还债务",
         "receive": "接收",
@@ -936,24 +929,20 @@
         "staking": "质押",
         "trade": "贸易",
         "transfer": "转移",
-        "unknown": "未知",
         "withdrawal": "取款"
       },
       "type": {
         "airdrop": "空投",
         "approval": "批准",
         "borrow": "借",
-        "bridge": "桥",
         "cancel_order": "取消订单",
         "claim_reward": "领取奖励",
         "deploy": "部署",
         "deposit": "存款",
         "donate": "捐赠",
         "fee": "费用",
-        "gas_fee": "Gas Fee",
         "governance": "治理",
         "informational": "信息",
-        "liquidate": "清算",
         "place_order": "下订单",
         "receive": "接收",
         "receive_donation": "接收捐赠",
@@ -961,8 +950,6 @@
         "renew": "更新",
         "repay": "还款",
         "send": "发送",
-        "swap_in": "接收",
-        "swap_out": "交换",
         "transfer": "转移",
         "unknown": "未知",
         "withdraw": "撤回"
@@ -970,8 +957,6 @@
     },
     "profit_loss_event_type": {
       "asset_movement": "资产移动",
-      "fee": "Fee",
-      "history_base_entry": "历史数据库条目",
       "loan": "贷款",
       "margin_position": "保证金位置",
       "prefork_acquisition": "预叉收购",
@@ -983,8 +968,7 @@
       "banks": "银行",
       "commodities": "商品",
       "equities": "股票",
-      "external": "外部",
-      "real_estate": "房地产"
+      "external": "外部"
     }
   },
   "backend_settings": {
@@ -1151,7 +1135,6 @@
     "name": "姓名",
     "never": "从不",
     "notes": "备注",
-    "of": "of",
     "optional": "可选",
     "price": "价格",
     "price_in_symbol": "{symbol} 价格",
@@ -1353,7 +1336,6 @@
             "hints": {
               "location": "这是可选的。如果指定，位置余额数据将自动调整。如果没有，您必须手动更新位置余额数据。"
             },
-            "nft": "NFT",
             "nft_hint": "接受格式： \"_nft_{'ETH address'}_{'collection number'}\"",
             "preview": {
               "from": "从",
@@ -1365,11 +1347,7 @@
               "asset": "资产字段不能为空",
               "category": "类别字段不能为空",
               "value": "值字段不能为空"
-            },
-            "token": "Token"
-          },
-          "fetch": {
-
+            }
           },
           "location_data": {
             "add_title": "添加位置数据快照数据",
@@ -1379,14 +1357,6 @@
             "rules": {
               "location": "位置字段不能为空",
               "value": "值字段不能为空"
-            }
-          },
-          "message": {
-
-          },
-          "total": {
-            "rules": {
-
             }
           }
         }
@@ -1600,8 +1570,7 @@
     "loading_error": {
       "title": "加载 {chain} RPC 节点"
     },
-    "public_node": "这是一个公共节点",
-    "weight": "{weight}%"
+    "public_node": "这是一个公共节点"
   },
   "exchange_balances": {
     "add_exchange": "添加交易所",
@@ -1642,12 +1611,8 @@
       "sync_enabled": "同步启用"
     },
     "inputs": {
-      "api_key": "API Key",
-      "api_secret": "API Secret",
-      "kraken_account": "选择您的 Kraken 账户类型",
-      "passphrase": "Passphrase"
+      "kraken_account": "选择您的 Kraken 账户类型"
     },
-    "keys": "Keys",
     "subtitle": "rotki 可以连接到支持的交易所并自动从中提取您的交易和余额。有关详细信息，请参阅 {0}。",
     "sync": {
       "messages": {
@@ -1671,16 +1636,13 @@
     "tx_url": "交易将在 {txUrl} 打开"
   },
   "external_services": {
-    "api_key": "API key",
     "beaconchain": {
       "description": "rotki 使用 Beaconcha.in 獲取區塊生產歷史記錄和更詳細的質押分析。如果您需要這些數據，則需要 API 密鑰。",
-      "hint": "输入您的 Beaconcha.in API 密钥",
-      "title": "Beaconcha.in"
+      "hint": "输入您的 Beaconcha.in API 密钥"
     },
     "blockscout": {
       "description": "rotki 使用 Blockscout 获取有关 ETH 提现查询等信息。仅当您受到速率限制时才需要 API 密钥。",
-      "hint": "输入您的 Blockscout API 密钥",
-      "title": "Blockscout"
+      "hint": "输入您的 Blockscout API 密钥"
     },
     "confirmation": {
       "message": "您确定要删除此 API 密钥吗？",
@@ -1696,14 +1658,12 @@
     },
     "etherscan": {
       "description": "如果您不使用自己的节点，建议用于任何 EVM 区块链余额或交易。",
-      "hint": "输入您的 Etherscan API 密钥",
-      "title": "Etherscan"
+      "hint": "输入您的 Etherscan API 密钥"
     },
     "get_api_key": "您可以申请 an API key {link}",
     "opensea": {
       "description": "用于查询OpenSea的NFT信息和余额。",
-      "hint": "输入您的 OpenSea API key",
-      "title": "Opensea"
+      "hint": "输入您的 OpenSea API key"
     },
     "set": {
       "error": {
@@ -1820,8 +1780,7 @@
       "messages": {
         "error": "设置 NFT 图像渲染允许域时出错",
         "success": "成功保存 NFT 图像渲染的允许域"
-      },
-      "title": "NFT settings"
+      }
     },
     "rpc_node_setting": {
       "title": "RPC节点设置"
@@ -1921,18 +1880,14 @@
       "title": "常见问题解答"
     },
     "github": {
-      "subtitle": "查看我们的代码并打开问题",
-      "title": "Github"
+      "subtitle": "查看我们的代码并打开问题"
     },
     "support": {
-      "subtitle": "加入我们活跃的社区并获得支持",
-      "title": "Discord"
+      "subtitle": "加入我们活跃的社区并获得支持"
     },
     "title": "帮助与支持",
-    "tooltip": "Help",
     "twitter": {
-      "subtitle": "关注我们",
-      "title": "Twitter / X"
+      "subtitle": "关注我们"
     },
     "user_guide": {
       "subtitle": "从这里开始",
@@ -1972,47 +1927,40 @@
     "bisq": {
       "import": "从 Bisq 导入 {0}",
       "import_trade": "交易",
-      "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
-      "name": "Bisq"
+      "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。"
     },
     "bitcoin_tax": {
       "import": "从 bitcoin.tax 导入 {0}",
       "import_types": "交易、收入和支出",
       "line_one": "我们支持导入交易、收入和支出 csv 文件类型。",
       "line_three": "代表硬币重命名或分叉的交易文件类型的“交换”操作由 rotki 在别处处理，因此不需要为其创建历史事件。",
-      "line_two": "所有导入的事件都映射到 rotki 的历史事件。",
-      "name": "bitcoin.tax"
+      "line_two": "所有导入的事件都映射到 rotki 的历史事件。"
     },
     "bitmex": {
       "import": "从 BitMEX 导入 {0}",
       "import_types": "钱包历史",
       "line_one": "[Experimental]如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
-      "line_two": "钱包历史文件中的金额假定为比特币。如果您希望其他货币支持此功能，请联系。",
-      "name": "BitMEX"
+      "line_two": "钱包历史文件中的金额假定为比特币。如果您希望其他货币支持此功能，请联系。"
     },
     "bitstamp": {
       "import": "从 Bitstamp 导入 {0}",
-      "import_types": "交易、存款和取款",
-      "name": "Bitstamp"
+      "import_types": "交易、存款和取款"
     },
     "bittrex": {
       "import": "从 Bittrex 导入 {0}",
-      "import_types": "交易、存款和取款",
-      "name": "Bittrex"
+      "import_types": "交易、存款和取款"
     },
     "blockfi": {
       "import": "从 BlockFi 导入 {0}",
       "import_trade": "交易",
       "import_transactions": "交易",
       "line_one": "[Experimental]如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
-      "line_two": "BlockFi 允许您导出两个不同的文件。交易将从仅包含交易的文件中导入。",
-      "name": "BlockFi"
+      "line_two": "BlockFi 允许您导出两个不同的文件。交易将从仅包含交易的文件中导入。"
     },
     "cointracking": {
       "line_one": "CoinTracking 的交易/存款/取款不包括费用。",
       "line_three": "ETH/BTC 交易被视为存款/取款，因此它们不会导入到 rotki 中。要导入 ETH 交易，只需在 {0} 中输入您的账户，它们就会自动为您导入。",
       "line_two": "由于数据的表示方式，从 CoinTracking 导入的所有交易将始终被视为买入。",
-      "name": "CoinTracking",
       "preferred": "出于上述原因，最好直接连接你的交易所以便从那里导入数据。如果你不这样做，就会失去很多准确性。"
     },
     "cryptocom": {
@@ -2022,7 +1970,6 @@
       "line_three": "来自 crypto.com 的交易/存款/取款不包括费用明细。它们目前(2020 年 8 月)被免除或按交易金额处理。",
       "line_two": "{0} 如果您想连接您的 Crypto.com Exchange 帐户，请等待我们支持它，然后连接到它作为交易所。",
       "line_two_warning": "它只涉及 Crypto.com 移动应用程序。",
-      "name": "Crypto.com",
       "source_name": "crypto.com 移动应用程序"
     },
     "custom": {
@@ -2034,14 +1981,12 @@
     "kucoin": {
       "import": "从 Kucoin 导入 {0}",
       "import_types": "行业",
-      "line_one": "我们支持导入各行业的 csv 文件类型。",
-      "name": "Kucoin"
+      "line_one": "我们支持导入各行业的 csv 文件类型。"
     },
     "nexo": {
       "import": "从 Nexo 导入 {0}",
       "import_transactions": "交易",
-      "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
-      "name": "Nexo"
+      "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。"
     },
     "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
     "notice": "这些平台可能会经常以向后不兼容的方式更改其格式。 因此，此导入可能会停止工作。 如果发生这种情况{link}，我们将看看我们能做些什么。",
@@ -2053,16 +1998,14 @@
       "import": "从 ShapeShift 导入 {0}",
       "import_trade": "交易",
       "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
-      "line_two": "ShapeShift 允许您导出交易文件。交易将从仅包含交易的文件中导入。",
-      "name": "ShapeShift"
+      "line_two": "ShapeShift 允许您导出交易文件。交易将从仅包含交易的文件中导入。"
     },
     "title": "导入数据",
     "uphold": {
       "import": "从 Uphold 导入 {0}",
       "import_trade": "交易",
       "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
-      "line_two": "Uphold 让您导出一个交易文件。它可以在活动列表右上角的活动下找到。",
-      "name": "Uphold"
+      "line_two": "Uphold 让您导出一个交易文件。它可以在活动列表右上角的活动下找到。"
     }
   },
   "input_mode_select": {
@@ -2079,9 +2022,7 @@
   "kraken_page": {
     "loading": "您的 Kraken 质押信息正在加载中...",
     "page": {
-      "api_key": "API key",
-      "description": "要查看您的质押信息，您需要添加一个 Kraken {link}",
-      "title": "Kraken Staking"
+      "description": "要查看您的质押信息，您需要添加一个 Kraken {link}"
     }
   },
   "kraken_staking_events": {
@@ -2119,7 +2060,6 @@
   },
   "loan_stake": {
     "no_lqty_staked": "没有质押的 LQTY",
-    "title": "Stake",
     "unclaimed_rewards": "无人认领的奖励"
   },
   "locations": {
@@ -2136,7 +2076,6 @@
     "custom_backend": {
       "hint": "你想要连接的后端的 url(默认留空)",
       "label": "后台网址",
-      "placeholder": "http://localhost:4242",
       "session_only": "仅为本次会话保存",
       "tooltip": "连接到不同的 rotki 后端",
       "validation": {
@@ -2313,7 +2252,6 @@
     }
   },
   "navigation_menu": {
-    "api_keys": "API Keys",
     "api_keys_sub": {
       "exchanges": "交换",
       "external_services": "外部服务",
@@ -2345,7 +2283,6 @@
       "historic_prices": "历史价格",
       "latest_prices": "最新价格"
     },
-    "nfts": "NFTs Gallery",
     "profit_loss_report": "盈亏报告",
     "settings": "设置",
     "settings_sub": {
@@ -2413,7 +2350,6 @@
     "search": "搜索",
     "tabs": {
       "general": "一般",
-      "in_this_page": "In \"{page}\" ",
       "in_this_page_tooltip": "专用于 \"{page}\" 部分的注释"
     },
     "tooltip": "注释"
@@ -2472,27 +2408,9 @@
     "no_messages": "没有消息！",
     "title": "通知"
   },
-  "oracle_cache_management": {
-    "delete_confirmation": {
-
-    },
-    "headers": {
-
-    },
-    "notification": {
-
-    }
-  },
-  "oracles": {
-    "uniswap_v2": "Uniswap V2",
-    "uniswap_v3": "Uniswap V3"
-  },
   "overall_balances": {
     "loading": "加载中",
     "premium_hint": "通过升级到 rotki premium 获得完整体验"
-  },
-  "percentage_display": {
-    "symbol": "%"
   },
   "pinned": {
     "tooltip": "固定部分"
@@ -2512,7 +2430,6 @@
       "total_hint": "来自存款利息"
     },
     "common": {
-      "apr": "APR",
       "asset": "资产",
       "collateral": "抵押品",
       "debt": "债务",
@@ -2530,10 +2447,6 @@
     "eth2_staking": {
       "based_of_performance": "基于性能",
       "corresponds_to_percentage_of_the_validator_pnl": "这对应于验证者 pnl 的 {percentage} %。",
-      "current": {
-        "description": "基于ETH当前价格",
-        "title": "当前"
-      },
       "daily": {
         "description": "基于ETH的每日价格",
         "title": "每日"
@@ -2545,12 +2458,6 @@
         "validator": "验证器"
       },
       "overview": "概述",
-      "ranges": {
-        "one_day": "1D",
-        "one_month": "1M",
-        "one_week": "1W",
-        "one_year": "1Y"
-      },
       "staking_per_beacon_chain": "每个信标链验证器的 Staking",
       "staking_per_eth1_address": "每个 ETH1 地址的 Staking",
       "total_based_on_eth_daily_prices": "总量基于 ETH 的每日价格",
@@ -2559,28 +2466,10 @@
     "lending": {
       "yearn_inaccuracy": "yearn.finance 金库事件的历史法定价格可能不准确。"
     },
-    "liquidity": {
-      "headers": {
-        "asset_1_pnl": "Asset 1 PnL",
-        "asset_2_pnl": "Asset 2 PnL",
-        "asset_pnl": "Asset PnL",
-        "pnl": "PnL",
-        "total_pnl": "Total PnL"
-      }
-    },
     "staking": {
       "balance_overview": "余额概览",
       "detail_for_address": "{address} 的详细信息",
-      "headers": {
-        "issuance": "Issuance +",
-        "operation": "Operation",
-        "pool": "Pool",
-        "redemption": "Redemption +",
-        "stake": "Stake",
-        "value": "Value"
-      },
       "no_accounts": "没有检测到有 {protocol} 质押的账户。",
-      "pools": "Pools",
       "refresh": "刷新质押详情",
       "staking_balances_per_address": "每个地址的抵押余额",
       "staking_history": "质押历史",
@@ -2629,8 +2518,6 @@
     }
   },
   "premium_credentials": {
-    "label_api_key": "rotki API Key",
-    "label_api_secret": "rotki API Secret",
     "validation": {
       "non_empty_key": "API key 不能为空",
       "non_empty_secret": "API secret 不能为空"
@@ -2660,14 +2547,9 @@
       "removing_failed": "删除密钥不成功",
       "setting_failed": "设置密钥不成功"
     },
-    "fields": {
-      "api_key": "API Key",
-      "api_secret": "API Secret"
-    },
     "get": "获得溢价",
     "premium_active": "@:premium_settings.title 已激活",
-    "subtitle": "@:premium_settings.title 是一项可选的订阅服务，可以访问分析、图表并解锁许多其他功能。有关可用内容的更多信息，请访问 {0} 网站。",
-    "title": "rotki Premium"
+    "subtitle": "@:premium_settings.title 是一项可选的订阅服务，可以访问分析、图表并解锁许多其他功能。有关可用内容的更多信息，请访问 {0} 网站。"
   },
   "price_accuracy_hint": {
     "tooltip": "这些价格是基于美元历史价值的当前汇率"
@@ -2683,7 +2565,6 @@
       "hint": "1 {fromAsset} 值 {price} {toAsset}"
     },
     "price_non_empty": "价格不能为空",
-    "to_asset": "To Asset",
     "to_non_empty": "to 资产不能为空"
   },
   "price_management": {
@@ -2709,8 +2590,7 @@
     },
     "latest": {
       "add_title": "添加手动最新价格"
-    },
-    "to_asset": "To Asset"
+    }
   },
   "price_oracle_selection": {
     "hint": "* 禁用所有预言机将导致无法查询资产价格。您可能需要单击“刷新价格”来应用更改。"
@@ -2752,8 +2632,7 @@
       }
     },
     "headers": {
-      "from_asset": "来自资产",
-      "to_asset": "To Asset"
+      "from_asset": "来自资产"
     },
     "is_worth": "值得",
     "on": "上",
@@ -2773,19 +2652,9 @@
       "hide": "隐藏成本基础",
       "show": "显示成本基础"
     },
-    "headers": {
-      "pnl_free": "Tax Free PnL",
-      "pnl_taxable": "Taxable PnL",
-      "tax_free_amount": "Tax Free Amount",
-      "taxable_amount": "Taxable Amount"
-    },
     "same_action": "这个事件发生在同一个动作上"
   },
   "profit_loss_overview": {
-    "headers": {
-      "tax_free_profit_loss": "Tax Free Profit/Loss",
-      "taxable_profit_loss": "Taxable Profit/Loss"
-    },
     "title": "概述"
   },
   "profit_loss_report": {
@@ -2804,15 +2673,10 @@
           "quick_action": "快速行动"
         },
         "hint": "一些资产获取丢失了。你需要弄清楚你在哪里购买的，然后导入或手动创建相关的获取事件",
-        "title": "缺失收购({total})",
-        "to": "to"
+        "title": "缺失收购({total})"
       },
       "missing_prices": {
         "all_prices_filled": "所有价格均已填写",
-        "headers": {
-          "from_asset": "From Asset",
-          "to_asset": "To Asset"
-        },
         "hint": "一些事件被跳过，因为我们找不到相关资产的价格。您可以通过手动输入价格来帮助 rotki。您不填写的条目将继续被跳过。",
         "if_sure": "如果你确定，",
         "input_price": "输入价格",
@@ -2843,9 +2707,7 @@
     "columns": {
       "created": "创建日期",
       "end": "期末",
-      "start": "周期开始",
-      "taxable_profit_loss": "Taxable P/L",
-      "taxfree_profit_loss": "Tax Free P/L"
+      "start": "周期开始"
     },
     "debug": {
       "export_data": "导出调试数据",
@@ -2871,9 +2733,6 @@
       "title": "已生成盈亏报告"
     },
     "title": "生成的报告"
-  },
-  "progress_screen": {
-    "progress": "{progress} %"
   },
   "purge_selector": {
     "centralized_exchange": "中心化交易所",
@@ -2932,8 +2791,7 @@
     "owned": "拥有",
     "owned_hint": "如果此节点是用户拥有的私有节点则启用",
     "weight": "重量",
-    "weight_hint": "节点权重{weight}/100(调整公共节点权重时其他节点也会相应调整)",
-    "weight_per_hundred": "/100"
+    "weight_hint": "节点权重{weight}/100(调整公共节点权重时其他节点也会相应调整)"
   },
   "settings": {
     "not_saved": "设置未保存",
@@ -2963,12 +2821,6 @@
       "sort_asc_tooltip": "将排序改为升序",
       "sort_desc_tooltip": "将排序改为降序"
     }
-  },
-  "staking": {
-    "eth2": "ETH",
-    "kraken": "Kraken",
-    "lido_csm": "Lido CSM",
-    "liquity": "Liquity"
   },
   "staking_page": {
     "dropdown_hint": "选择一个位置以查看更多详细信息",
@@ -3054,8 +2906,7 @@
   },
   "table_filter": {
     "exclusion": {
-      "description": "使用运算符 `!=` 过滤掉选项，例如",
-      "example": "type != evm event"
+      "description": "使用运算符 `!=` 过滤掉选项，例如"
     },
     "hint": {
       "description": "输入过滤器，然后按回车键，例如。",
@@ -3251,8 +3102,7 @@
     },
     "tokens": {
       "token_kind": "代币种类",
-      "weight": "重量",
-      "weight_percentage": "{weight} %"
+      "weight": "重量"
     },
     "validation": {
       "address_non_empty": "地址不能为空",
