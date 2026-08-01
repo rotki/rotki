@@ -1142,7 +1142,6 @@
     "protocol": "协议",
     "refresh": "刷新",
     "rewards": "奖励",
-    "select_address": "选择地址",
     "select_directory": "选择目录",
     "status": "地位",
     "total": "总计",
@@ -2419,79 +2418,27 @@
     "title": "可领取的 POAP 交付 NFT"
   },
   "premium_components": {
-    "aave_borrowing": {
-      "total_earned": "总收入",
-      "total_earned_hint": "通过清算偿还债务",
-      "total_lost": "全部丢失",
-      "total_lost_hint": "通过债务利息和清算"
-    },
-    "aave_earned": {
-      "total": "Aave: 总收入",
-      "total_hint": "来自存款利息"
-    },
-    "common": {
-      "asset": "资产",
-      "collateral": "抵押品",
-      "debt": "债务",
-      "no_entries_found": "未找到 {title} 条目",
-      "pool": "池",
-      "profit_loss": "盈利/亏损",
-      "select_address": "@:common.select_address"
-    },
-    "compound": {
-      "debt_loss": "债务损失",
-      "interest_profit": "利息利润",
-      "liquidation_profit": "清算利润",
-      "rewards": "@:common.rewards"
-    },
     "eth2_staking": {
       "based_of_performance": "基于性能",
-      "corresponds_to_percentage_of_the_validator_pnl": "这对应于验证者 pnl 的 {percentage} %。",
-      "daily": {
-        "description": "基于ETH的每日价格",
-        "title": "每日"
-      },
-      "daily_stats": "每日统计",
-      "earned": "获得",
-      "headers": {
-        "income": "收入",
-        "validator": "验证器"
-      },
       "overview": "概述",
-      "staking_per_beacon_chain": "每个信标链验证器的 Staking",
-      "staking_per_eth1_address": "每个 ETH1 地址的 Staking",
-      "total_based_on_eth_daily_prices": "总量基于 ETH 的每日价格",
-      "validator_index": "验证器索引"
-    },
-    "lending": {
-      "yearn_inaccuracy": "yearn.finance 金库事件的历史法定价格可能不准确。"
+      "staking_per_beacon_chain": "每个信标链验证器的 Staking"
     },
     "staking": {
-      "balance_overview": "余额概览",
-      "detail_for_address": "{address} 的详细信息",
       "no_accounts": "没有检测到有 {protocol} 质押的账户。",
-      "refresh": "刷新质押详情",
-      "staking_balances_per_address": "每个地址的抵押余额",
-      "staking_history": "质押历史",
-      "unclaimed_rewards": "未领取奖励"
+      "refresh": "刷新质押详情"
     },
     "statistics": {
       "asset_amount_and_value_over_time": "资产数量和价值随时间的变化",
       "max_visible": "要显示的最大资产",
-      "max_visible_required": "您不能显示超过 {availableAssets} 个资产",
-      "min_visible_required": "你必须展示至少一项资产。",
       "netvalue_over_time": "一段时间内的净值",
       "no_balance_snapshot_data_available": "没有可用的余额快照数据。",
       "range_selector": {
-        "clear": "清除",
-        "clear_date_range": "清除日期范围",
         "data_available": "数据可用",
         "ending_date_must_before_starting_date": "结束日期不能早于开始日期。",
         "no_entries_available_before": "之前没有条目可用"
       },
       "refresh_the_net_value_data": "刷新净值数据",
       "select_asset": "搜索资产",
-      "show_graph_for_selected_range": "显示选定范围的图表",
       "value_distribution_by_asset": "按资产分配价值",
       "value_distribution_by_location": "按位置分配价值",
       "visible_percentage": "仅显示项目的百分比："
@@ -2503,18 +2450,13 @@
         "default": "重置为默认的应用程序颜色",
         "short": "重置为默认值"
       },
-      "select_color": "选择颜色",
-      "subtitle": "管理应用主题的颜色",
-      "title": "主题"
+      "select_color": "选择颜色"
     },
     "unsupported_app_version": {
       "minimum_supported": "最低支持版本为 v{v}",
       "subtitle": "高级组件不再支持此版本的 rotki。",
       "title": "不支持的应用版本",
       "update_to_latest": "为了更好的支持，请更新到最新版本。"
-    },
-    "vault": {
-      "borrowing_history": "借用历史记录"
     }
   },
   "premium_credentials": {

@@ -1279,8 +1279,6 @@
     "price_in_symbol": "Prix en {symbol}",
     "priority": "Priorité",
     "refresh": "Rafraîchir",
-    "rewards": "Récompenses",
-    "select_address": "Sélectionner adresse(s)",
     "select_directory": "Sélectionner un répertoire",
     "status": "Statut",
     "tx_hash": "Hash de transaction",
@@ -2652,43 +2650,8 @@
     "title": "POAP Delivery NFTs réclamables"
   },
   "premium_components": {
-    "aave_borrowing": {
-      "total_earned": "Total Gagné",
-      "total_earned_hint": "Par le remboursement de la dette de liquidation",
-      "total_lost": "Total Perdu",
-      "total_lost_hint": "Par l'intérêt de la dette et la liquidation"
-    },
-    "aave_earned": {
-      "total": "Aave : Total gagné",
-      "total_hint": "Par les intérêts de dépôt"
-    },
-    "common": {
-      "asset": "Actif",
-      "collateral": "Garantie",
-      "debt": "Dette",
-      "no_entries_found": "Aucune entrée trouvée",
-      "profit_loss": "Bénéfice/Perte",
-      "select_address": "@:common.select_address"
-    },
-    "compound": {
-      "debt_loss": "Perte de dette",
-      "interest_profit": "Profit d'intérêt",
-      "liquidation_profit": "Profit de liquidation",
-      "rewards": "@:common.rewards"
-    },
     "eth2_staking": {
       "based_of_performance": "Basé sur les performances de",
-      "corresponds_to_percentage_of_the_validator_pnl": "Cela correspond à {percentage} % des bénéfices du nœud validateur.",
-      "daily": {
-        "description": "Basé sur les prix quotidiens de ETH",
-        "title": "Journalier"
-      },
-      "daily_stats": "Statistiques Quotidiennes",
-      "earned": "Gagné",
-      "headers": {
-        "income": "Revenu",
-        "validator": "Nœud validateur"
-      },
       "overview": "Aperçu",
       "ranges": {
         "one_day": "1J",
@@ -2703,56 +2666,24 @@
         "el": "Couche d'exécution",
         "withdrawn_cl": "Retiré de la couche de consensus"
       },
-      "staking_per_beacon_chain": "Staking par Nœud validateur",
-      "staking_per_eth1_address": "Staking par Adresse ETH1",
-      "total_based_on_eth_daily_prices": "Le total est basé sur les prix quotidiens de ETH",
-      "validator_index": "Index du nœud validateur"
-    },
-    "lending": {
-      "yearn_inaccuracy": "Les prix historiques en fiat pour les événements de yearn.finance Vault peuvent être inexacts."
-    },
-    "liquidity": {
-      "headers": {
-        "asset_1_pnl": "Bénéfice/Perte de l'Actif 1",
-        "asset_2_pnl": "Bénéfice/Perte de l'Actif 2",
-        "asset_pnl": "Bénéfice/Perte de l'Actif",
-        "pnl": "Bénéfice/Perte",
-        "total_pnl": "Bénéfice/Perte Total"
-      }
+      "staking_per_beacon_chain": "Staking par Nœud validateur"
     },
     "staking": {
-      "balance_overview": "Aperçu du Solde",
-      "detail_for_address": "Détails pour {address}",
-      "headers": {
-        "issuance": "Émission +",
-        "operation": "Opération",
-        "redemption": "Rachat +",
-        "stake": "Staking",
-        "value": "Valeur"
-      },
       "no_accounts": "Aucun compte de participation {protocol} n'a été détecté.",
-      "refresh": " Rafraîchir les détails de la participation",
-      "staking_balances_per_address": "Solde de participation par Adresse",
-      "staking_history": "Historique de la Participation",
-      "unclaimed_rewards": "Récompenses non réclamées"
+      "refresh": " Rafraîchir les détails de la participation"
     },
     "statistics": {
       "asset_amount_and_value_over_time": "Quantité et valeur de l'actif dans le temps",
       "max_visible": "Nombre maximum d'actifs à afficher",
-      "max_visible_required": "Vous ne pouvez pas afficher plus de {availableAssets} actifs",
-      "min_visible_required": "Vous devez afficher au moins un actif.",
       "netvalue_over_time": "Valeur nette dans le temps",
       "no_balance_snapshot_data_available": "Aucune donnée de snapshot de solde disponible.",
       "range_selector": {
-        "clear": "Effacer",
-        "clear_date_range": "Effacer la plage de dates",
         "data_available": "Données disponibles",
         "ending_date_must_before_starting_date": "La date de fin ne peut pas être antérieure à la date de début.",
         "no_entries_available_before": "Aucune entrée disponible avant"
       },
       "refresh_the_net_value_data": " Rafraîchir les données de valeur nette",
       "select_asset": "Rechercher un actif",
-      "show_graph_for_selected_range": "Afficher le graphique pour la plage sélectionnée",
       "value_distribution_by_asset": "Répartition de la valeur par actif",
       "value_distribution_by_location": "Répartition de la valeur par emplacement",
       "visible_percentage": "% des éléments visibles uniquement:"
@@ -2764,18 +2695,13 @@
         "default": "Réinitialiser la couleur par défaut de l'application",
         "short": "Réinitialiser par défaut"
       },
-      "select_color": "Sélectionner une Couleur",
-      "subtitle": "Gérer les couleurs du thème de l'application",
-      "title": "Thème"
+      "select_color": "Sélectionner une Couleur"
     },
     "unsupported_app_version": {
       "minimum_supported": "La version minimale prise en charge est v{v}",
       "subtitle": "Cette version de rotki n'est plus prise en charge par les composants premium.",
       "title": "Version d'application non prise en charge",
       "update_to_latest": "Pour une meilleure prise en charge, veuillez mettre à jour vers la dernière version."
-    },
-    "vault": {
-      "borrowing_history": "Historique des Emprunts"
     }
   },
   "premium_credentials": {

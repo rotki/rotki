@@ -1746,7 +1746,6 @@
     "protocol": "Протокол",
     "refresh": "Обновить",
     "rewards": "Награды",
-    "select_address": "Выберите адрес(а)",
     "select_directory": "Выберите директорию",
     "signature": "Подпись",
     "status": "Статус",
@@ -3880,53 +3879,15 @@
     "title": "Доступные для клейма POAP Delivery NFT"
   },
   "premium_components": {
-    "aave_borrowing": {
-      "total_earned": "Всего заработано",
-      "total_earned_hint": "За счет погашения долга от ликвидации",
-      "total_lost": "Всего потеряно",
-      "total_lost_hint": "За счет процентов по долгу и ликвидации"
-    },
-    "aave_earned": {
-      "total": "Aave: Всего заработано",
-      "total_hint": "От процентов по депозиту"
-    },
-    "common": {
-      "asset": "Актив",
-      "collateral": "Залог",
-      "debt": "Долг",
-      "no_entries_found": "Записи {title} не найдены",
-      "pool": "Пул",
-      "profit_loss": "Прибыль/Убыток",
-      "select_address": "@:common.select_address"
-    },
-    "compound": {
-      "debt_loss": "Потеря долга",
-      "interest_profit": "Прибыль от процентов",
-      "liquidation_profit": "Прибыль от ликвидации",
-      "rewards": "@:common.rewards"
-    },
     "eth2_staking": {
       "active_validators": "{status} Валидаторы",
       "based_of_performance": "На основе производительности",
-      "corresponds_to_percentage_of_the_validator_pnl": "Это соответствует {percentage} % PnL валидатора.",
-      "daily": {
-        "description": "На основе ежедневных цен ETH",
-        "title": "Ежедневно"
-      },
-      "daily_stats": "Ежедневная статистика",
-      "daily_stats_refresh": "Получить последние данные с beaconcha.in",
-      "earned": "Заработано",
-      "headers": {
-        "income": "Доход",
-        "validator": "Валидатор"
-      },
       "overview": "Обзор",
       "performance": {
         "execution_blocks": "Блоки исполнения",
         "execution_mev": "MEV исполнения",
         "index": "Индекс",
         "outstanding": "Ожидающие",
-        "status": "Статус",
         "withdrawals": "Выведено"
       },
       "ranges": {
@@ -3947,44 +3908,11 @@
         "total_reward": "Всего наград",
         "withdrawn_cl": "Выведено с уровня консенсуса"
       },
-      "staking_per_beacon_chain": "Стейкинг на валидатора",
-      "staking_per_eth1_address": "Стейкинг на адрес ETH1",
-      "status": {
-        "active": "Активный",
-        "all": "Все",
-        "exited": "Вышел"
-      },
-      "total_based_on_eth_daily_prices": "Итог основан на ежедневных ценах ETH",
-      "validator_index": "Индекс валидатора"
-    },
-    "lending": {
-      "yearn_inaccuracy": "Историческая фиатная цена для событий хранилища yearn.finance может быть неточной."
-    },
-    "liquidity": {
-      "headers": {
-        "asset_1_pnl": "PnL актива 1",
-        "asset_2_pnl": "PnL актива 2",
-        "asset_pnl": "PnL актива",
-        "total_pnl": "Общий PnL"
-      }
+      "staking_per_beacon_chain": "Стейкинг на валидатора"
     },
     "staking": {
-      "balance_overview": "Обзор баланса",
-      "detail_for_address": "Детали для {address}",
-      "headers": {
-        "issuance": "Выпуск +",
-        "operation": "Операция",
-        "pool": "Пул",
-        "redemption": "Погашение +",
-        "stake": "Стейк",
-        "value": "Стоимость"
-      },
       "no_accounts": "Аккаунтов со стейкингом {protocol} не обнаружено.",
-      "pools": "Пулы",
-      "refresh": "Обновить детали стейкинга",
-      "staking_balances_per_address": "Балансы стейкинга по адресу",
-      "staking_history": "История стейкинга",
-      "unclaimed_rewards": "Невостребованные награды"
+      "refresh": "Обновить детали стейкинга"
     },
     "statistics": {
       "asset_amount_and_value_over_time": "Количество и стоимость актива во времени",
@@ -4011,7 +3939,6 @@
         "dialog_title": "Некоторые цены не были получены для актива: {name}",
         "missing_prices": {
           "description": "Мы не можем найти цены для {length} дат. Вы можете добавить ручные исторические цены.",
-          "end": "Вам нужно нажать \"Получить цены\" снова, чтобы применить сохраненные ручные исторические цены.",
           "title": "Отсутствующие цены"
         },
         "rate_limited": {
@@ -4026,17 +3953,12 @@
       "fetch_prices_hint": "rotki попытается получить ежедневные цены активов, чтобы заполнить пробел между событиями.",
       "fetching_graph_daily_data": "Получение ежедневных данных графика ({processed}/{total})",
       "fetching_graph_data": "Получение данных графика",
-      "fetching_historical_prices": "Получение исторических цен ({processed}/{total})",
       "history_events_no_data": "Данные из обработки событий истории не могут быть показаны.",
       "max_visible": "Максимум активов для отображения",
-      "max_visible_required": "Вы не можете показать более {availableAssets} активов",
-      "min_visible_required": "Вы должны показать хотя бы один актив.",
       "negative_amount_detected": "Обнаружено отрицательное количество во время исторической обработки.",
       "netvalue_over_time": "Чистая стоимость во времени",
       "no_balance_snapshot_data_available": "Данные снимка баланса недоступны.",
       "range_selector": {
-        "clear": "Очистить",
-        "clear_date_range": "Очистить диапазон дат",
         "data_available": "Данные доступны",
         "ending_date_must_before_starting_date": "Дата окончания не может быть раньше даты начала.",
         "no_entries_available_before": "Нет доступных записей до"
@@ -4044,7 +3966,6 @@
       "refresh_the_net_value_data": "Обновить данные чистой стоимости",
       "search_asset_to_see_graph": "Найдите актив, чтобы увидеть график",
       "select_asset": "Поиск актива",
-      "show_graph_for_selected_range": "Показать график для выбранного диапазона",
       "some_prices_are_missing": "Некоторые точки скрыты, потому что цены отсутствуют.\nНажмите \"Получить цены\", чтобы попытаться получить цены.",
       "value_distribution_by_asset": "Распределение стоимости по активам",
       "value_distribution_by_location": "Распределение стоимости по местоположению",
@@ -4058,19 +3979,14 @@
         "short": "Сбросить по умолчанию"
       },
       "select_color": "Выберите цвет",
-      "subtitle": "Управление цветами темы приложения",
       "text": "Тема приложения",
-      "text_hint": "Управление цветами темы приложения",
-      "title": "Тема"
+      "text_hint": "Управление цветами темы приложения"
     },
     "unsupported_app_version": {
       "minimum_supported": "Минимальная поддерживаемая версия v{v}",
       "subtitle": "Эта версия rotki больше не поддерживается премиум-компонентами.",
       "title": "Неподдерживаемая версия приложения",
       "update_to_latest": "Для лучшей поддержки, пожалуйста, обновитесь до последней версии."
-    },
-    "vault": {
-      "borrowing_history": "История займов"
     }
   },
   "premium_credentials": {
