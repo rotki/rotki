@@ -220,7 +220,6 @@
     "notes": "σημειώσεις",
     "of": "από",
     "refresh": "Ανανέωση",
-    "select_address": "Επιλογή διεύθυνσης(εων)",
     "select_directory": "Επιλέξτε έναν κατάλογο",
     "status": "Κατάσταση",
     "unclaimed": "αδιεκδίκητος",
@@ -534,11 +533,6 @@
         "title": "Κλειδί API {service}"
       },
       "get_key": "Λήψη κλειδιού API"
-    }
-  },
-  "premium_components": {
-    "common": {
-      "select_address": "@:common.select_address"
     }
   },
   "price_oracle_selection": {

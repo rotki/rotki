@@ -452,7 +452,6 @@
     "price": "Precio",
     "price_in_symbol": "Precio en {symbol}",
     "refresh": "Actualizar",
-    "select_address": "Seleccionar dirección(es)",
     "select_directory": "Seleccionar un directorio",
     "status": "Estado",
     "unclaimed": "No reclamado",
@@ -860,11 +859,6 @@
   },
   "overall_balances": {
     "loading": "Cargando"
-  },
-  "premium_components": {
-    "common": {
-      "select_address": "@:common.select_address"
-    }
   },
   "price_oracle_selection": {
     "hint": "* Al desactivar todos los oráculos será imposible consultar los precios de los activos. Es posible que tengas que hacer clic en 'Actualizar precios' para aplicar los cambios."

@@ -4,6 +4,7 @@ import rotki from '@rotki/eslint-config';
 import { translationKeys } from '@rotki/ui-library';
 
 import { backendMappingKeys } from './app/backend-strings.generated.js';
+import { premiumComponentKeys } from './app/premium-keys.generated.js';
 
 // Pre-load the ESM-only ESLint parsers before the config factories run.
 // @intlify/eslint-plugin-vue-i18n require()s them while eslint composes configs
@@ -24,7 +25,11 @@ const i18nIgnoreKeys = [
   // when `events.type.bridge` was renamed to `events.group.bridge`. Regenerate with
   // `pnpm run generate:backend-strings`; `pnpm run check:backend-strings` fails when it is stale.
   ...backendMappingKeys,
-  'premium_components.*',
+  // The premium bundle lives in another repository and resolves its messages against ours, so these
+  // keys have no usage here to find. Listed rather than globbed for the same reason as above: the
+  // glob also hid 60 keys belonging to premium screens retired before the 14.x major.
+  // `pnpm run generate:premium-keys` refreshes it from a premium checkout.
+  ...premiumComponentKeys,
   'transactions.events.headers.*',
   ...translationKeys(),
 ];
@@ -39,6 +44,7 @@ export default rotki({
   ignores: [
     'app/backend-icons.generated.ts',
     'app/backend-strings.generated.js',
+    'app/premium-keys.generated.js',
     'app/tests/e2e/.v8-coverage/**',
     'app/tests/e2e/test-results/**',
   ],

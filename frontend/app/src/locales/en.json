@@ -2162,7 +2162,6 @@
     "rebasing_token": "Rebasing token",
     "refresh": "Refresh",
     "rewards": "Rewards",
-    "select_address": "Select address(es)",
     "select_directory": "Select a directory",
     "signature": "Signature",
     "status": "Status",
@@ -5171,47 +5170,12 @@
     "title": "Claimable POAP Delivery NFTs"
   },
   "premium_components": {
-    "aave_borrowing": {
-      "total_earned": "Total Earned",
-      "total_earned_hint": "By debt repayment from liquidation",
-      "total_lost": "Total Lost",
-      "total_lost_hint": "By debt interest and liquidation"
-    },
-    "aave_earned": {
-      "total": "Aave: Total earned",
-      "total_hint": "From deposit interest"
-    },
     "common": {
-      "apr": "APR",
-      "asset": "Asset",
-      "collateral": "Collateral",
-      "debt": "Debt",
-      "no_entries_found": "No {title} entries found",
-      "pool": "Pool",
-      "profit_loss": "Profit/Loss",
-      "select_address": "@:common.select_address"
-    },
-    "compound": {
-      "debt_loss": "Debt Loss",
-      "interest_profit": "Interest Profit",
-      "liquidation_profit": "Liquidation profit",
-      "rewards": "@:common.rewards"
+      "apr": "APR"
     },
     "eth2_staking": {
       "active_validators": "{status} Validators",
       "based_of_performance": "Based of performance of",
-      "corresponds_to_percentage_of_the_validator_pnl": "This corresponds to {percentage} % of the validator pnl.",
-      "daily": {
-        "description": "Based on the daily prices of ETH",
-        "title": "Daily"
-      },
-      "daily_stats": "Daily Stats",
-      "daily_stats_refresh": "Get latest data from beaconcha.in",
-      "earned": "Earned",
-      "headers": {
-        "income": "Income",
-        "validator": "Validator"
-      },
       "overview": "Overview",
       "performance": {
         "apr": "APR",
@@ -5219,7 +5183,6 @@
         "execution_mev": "Execution MEV",
         "index": "Index",
         "outstanding": "Outstanding",
-        "status": "Status",
         "withdrawals": "Withdrawn"
       },
       "ranges": {
@@ -5241,45 +5204,11 @@
         "total_reward": "Total Rewards",
         "withdrawn_cl": "Withdrawn from consensus layer"
       },
-      "staking_per_beacon_chain": "Staking per Validator",
-      "staking_per_eth1_address": "Staking per ETH1 address",
-      "status": {
-        "active": "Active",
-        "all": "All",
-        "exited": "Exited"
-      },
-      "total_based_on_eth_daily_prices": "The total is based on the daily prices of ETH",
-      "validator_index": "Validator index"
-    },
-    "lending": {
-      "yearn_inaccuracy": "Historic fiat price for yearn.finance vault events may be inaccurate."
-    },
-    "liquidity": {
-      "headers": {
-        "asset_1_pnl": "Asset 1 PnL",
-        "asset_2_pnl": "Asset 2 PnL",
-        "asset_pnl": "Asset PnL",
-        "pnl": "PnL",
-        "total_pnl": "Total PnL"
-      }
+      "staking_per_beacon_chain": "Staking per Validator"
     },
     "staking": {
-      "balance_overview": "Balance Overview",
-      "detail_for_address": "Detail for {address}",
-      "headers": {
-        "issuance": "Issuance +",
-        "operation": "Operation",
-        "pool": "Pool",
-        "redemption": "Redemption +",
-        "stake": "Stake",
-        "value": "Value"
-      },
       "no_accounts": "No accounts with {protocol} staking were detected.",
-      "pools": "Pools",
-      "refresh": "Refresh the staking details",
-      "staking_balances_per_address": "Staking balances per address",
-      "staking_history": "Staking History",
-      "unclaimed_rewards": "Unclaimed rewards"
+      "refresh": "Refresh the staking details"
     },
     "statistics": {
       "asset_amount_and_value_over_time": "Asset amount and value over time",
@@ -5306,7 +5235,6 @@
         "dialog_title": "Some prices were not retrieved for the asset: {name}",
         "missing_prices": {
           "description": "We cannot find prices for {length} dates. You can add manual historical prices.",
-          "end": "You need to click \"Fetch Prices\" again to apply saved manual historical prices.",
           "title": "Missing prices"
         },
         "rate_limited": {
@@ -5321,17 +5249,12 @@
       "fetch_prices_hint": "rotki will try to get the daily prices of the assets to fill the gap between events.",
       "fetching_graph_daily_data": "Fetching graph daily data ({processed}/{total})",
       "fetching_graph_data": "Fetching graph data",
-      "fetching_historical_prices": "Fetching historical prices ({processed}/{total})",
       "history_events_no_data": "No data can be shown from history events processing.",
       "max_visible": "Maximum assets to show",
-      "max_visible_required": "You cannot show more than {availableAssets} assets",
-      "min_visible_required": "You have to show at least one asset.",
       "negative_amount_detected": "Negative amount detected during historical processing.",
       "netvalue_over_time": "Netvalue over time",
       "no_balance_snapshot_data_available": "No balance snapshot data available.",
       "range_selector": {
-        "clear": "Clear",
-        "clear_date_range": "Clear date range",
         "data_available": "Data available",
         "ending_date_must_before_starting_date": "The ending date cannot be earlier than the starting date.",
         "no_entries_available_before": "There are no entries available before"
@@ -5339,7 +5262,6 @@
       "refresh_the_net_value_data": "Refresh the net value data",
       "search_asset_to_see_graph": "Search for an asset to see the graph",
       "select_asset": "Search for an asset",
-      "show_graph_for_selected_range": "Show the graph for the selected range",
       "some_prices_are_missing": "Some points are hidden because prices are missing.\nClick \"Fetch prices\" to try retrieving the prices.",
       "value_distribution_by_asset": "Value distribution by asset",
       "value_distribution_by_location": "Value distribution by location",
@@ -5353,19 +5275,14 @@
         "short": "Reset to default"
       },
       "select_color": "Select Color",
-      "subtitle": "Manage colors for the app theme",
       "text": "App theme",
-      "text_hint": "Manage colors for the app theme",
-      "title": "Theme"
+      "text_hint": "Manage colors for the app theme"
     },
     "unsupported_app_version": {
       "minimum_supported": "The minimum supported version is v{v}",
       "subtitle": "This version of rotki is no longer supported by the premium components.",
       "title": "Unsupported app version",
       "update_to_latest": "For better support please update to the latest release."
-    },
-    "vault": {
-      "borrowing_history": "Borrowing History"
     }
   },
   "premium_credentials": {
