@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
-import { Blockchain, HistoryEventEntryType, toSentenceCase, toSnakeCase } from '@rotki/common';
+import { Blockchain, HistoryEventEntryType, toSentenceCase } from '@rotki/common';
+import { type MessageKey, msg } from '@/message-key';
 import {
   isAssetMovementEventRef,
   isEthBlockEventRef,
@@ -12,6 +13,27 @@ const { event, groupEvents } = defineProps<{
   event: HistoryEventEntry;
   groupEvents?: HistoryEventEntry[];
 }>();
+
+/**
+ * Header message per entry type. Exhaustive on purpose: deriving the key with
+ * `toSnakeCase(entryType)` meant a new entry type produced a key nobody had written, and `i18n-t`
+ * renders a missing keypath verbatim, so bitcoin and solana events displayed the raw
+ * `transactions.events.headers.*` string. Spelling the map out fails the build instead, and the
+ * branded values are checked against the locale messages.
+ */
+const HEADER_KEYS: Record<HistoryEventEntryType, MessageKey> = {
+  [HistoryEventEntryType.ASSET_MOVEMENT_EVENT]: msg.$t('transactions.events.headers.asset_movement_event'),
+  [HistoryEventEntryType.BITCOIN_EVENT]: msg.$t('transactions.events.headers.bitcoin_event'),
+  [HistoryEventEntryType.ETH_BLOCK_EVENT]: msg.$t('transactions.events.headers.eth_block_event'),
+  [HistoryEventEntryType.ETH_DEPOSIT_EVENT]: msg.$t('transactions.events.headers.eth_deposit_event'),
+  [HistoryEventEntryType.ETH_WITHDRAWAL_EVENT]: msg.$t('transactions.events.headers.eth_withdrawal_event'),
+  [HistoryEventEntryType.EVM_EVENT]: msg.$t('transactions.events.headers.evm_event'),
+  [HistoryEventEntryType.EVM_SWAP_EVENT]: msg.$t('transactions.events.headers.evm_swap_event'),
+  [HistoryEventEntryType.HISTORY_EVENT]: msg.$t('transactions.events.headers.history_event'),
+  [HistoryEventEntryType.SOLANA_EVENT]: msg.$t('transactions.events.headers.solana_event'),
+  [HistoryEventEntryType.SOLANA_SWAP_EVENT]: msg.$t('transactions.events.headers.solana_swap_event'),
+  [HistoryEventEntryType.SWAP_EVENT]: msg.$t('transactions.events.headers.swap_event'),
+};
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -68,7 +90,7 @@ const extraHashCount = computed<number>(() => Math.max(get(allTxRefs).length - 1
 
 const hashMenuOpen = ref<boolean>(false);
 
-const translationKey = computed<string>(() => {
+const translationKey = computed<MessageKey>(() => {
   // consider an evm swap event as a case of evm event
   // as they are both evm events and have the same header
   let entryType = event.entryType;
@@ -81,7 +103,7 @@ const translationKey = computed<string>(() => {
     entryType = HistoryEventEntryType.EVM_EVENT;
   }
 
-  return `transactions.events.headers.${toSnakeCase(entryType)}`;
+  return HEADER_KEYS[entryType];
 });
 
 const assetMovementTransactionId = computed<string | undefined>(() => get(assetMovementEvent)?.extraData?.transactionId ?? undefined);

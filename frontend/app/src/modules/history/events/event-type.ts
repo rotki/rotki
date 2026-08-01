@@ -25,6 +25,8 @@ const HistoryEventCategoryDetail = z.object({
 
 const HistoryEventCategoryDirection = z.enum(['neutral', 'in', 'out']);
 
+export type HistoryEventCategoryDirection = z.infer<typeof HistoryEventCategoryDirection>;
+
 const HistoryEventCategory = z.object({
   counterpartyMappings: z.record(z.string(), HistoryEventCategoryDetail),
   direction: HistoryEventCategoryDirection,

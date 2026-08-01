@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
-import type { HistoryEventCategoryDetailWithId } from '@/modules/history/events/event-type';
+import type { HistoryEventCategoryDetailWithId, HistoryEventCategoryDirection } from '@/modules/history/events/event-type';
+import { type MessageKey, msg } from '@/message-key';
 
 const { type, showInfo, showLabel, icon, highlight } = defineProps<{
   type: HistoryEventCategoryDetailWithId;
@@ -9,6 +10,14 @@ const { type, showInfo, showLabel, icon, highlight } = defineProps<{
   highlight?: boolean;
   showInfo?: boolean;
 }>();
+
+// Spelled out rather than interpolated: an inline template literal in `t()` makes the rule treat
+// the whole prefix as used, which quietly exempts the subtree from unused-key reporting.
+const DIRECTION_KEYS: Record<HistoryEventCategoryDirection, MessageKey> = {
+  in: msg.$t('backend_mappings.events.type_direction.directions.in'),
+  neutral: msg.$t('backend_mappings.events.type_direction.directions.neutral'),
+  out: msg.$t('backend_mappings.events.type_direction.directions.out'),
+};
 
 const directionIcon = computed<RuiIcons>(() => {
   switch (type.direction) {
@@ -71,7 +80,7 @@ const { t } = useI18n({ useScope: 'global' });
         >
           <template #direction>
             <span class="whitespace-nowrap font-bold">
-              {{ t(`backend_mappings.events.type_direction.directions.${type.direction}`) }}
+              {{ t(DIRECTION_KEYS[type.direction]) }}
             </span>
           </template>
         </i18n-t>
