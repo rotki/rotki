@@ -1529,7 +1529,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         # internal transaction and token transfer queries would go straight back to the
         # indexer the transaction query just found to be behind.
         failed = self.range_indexer_failures.get((from_ts, to_ts)) or frozenset()
-        if cached_from is None or cached_to is None:
+        if cached_from is not None and cached_to is not None:
+            from_block, to_block = cached_from, cached_to
+        else:
             def resolve(indexer: EtherscanLikeApi) -> tuple[int, int]:
                 resolved: dict[Timestamp, int] = {}
                 if cached_from is not None:
@@ -1545,20 +1547,20 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
                 return resolved[from_ts], resolved[to_ts]
 
-            (cached_from, cached_to), _, failed = self._try_indexers_reporting_failures(
+            (from_block, to_block), _, failed = self._try_indexers_reporting_failures(
                 func=resolve,
             )
-            cache.add(key=from_ts, value=cached_from)
-            cache.add(key=to_ts, value=cached_to)
+            cache.add(key=from_ts, value=from_block)
+            cache.add(key=to_ts, value=to_block)
             self.range_indexer_failures.add(key=(from_ts, to_ts), value=failed)
 
-        if cached_from > cached_to:
+        if from_block > to_block:
             raise RemoteError(
                 f'Resolved an inverted {self.chain_name} block range for {from_ts} - {to_ts}: '
-                f'{cached_from} - {cached_to}. An indexer is behind on the chain.',
+                f'{from_block} - {to_block}. An indexer is behind on the chain.',
             )
 
-        return cached_from, cached_to, failed
+        return from_block, to_block, failed
 
     @contextmanager
     def block_range_skipping_stale_indexers(
@@ -1584,9 +1586,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         )
         if len(failed) != 0:
             log.debug(
-                f'Indexers {[x.serialize() for x in failed]} could not resolve the '
-                f'{self.chain_name} range {period.from_value} - {period.to_value}. Not using '
-                f'them for its transactions either.',
+                'Indexers %s could not resolve the %s range %s - %s. Not using them for its '
+                'transactions either.',
+                [x.serialize() for x in failed], self.chain_name,
+                period.from_value, period.to_value,
             )
 
         token = DEGRADED_INDEXERS.set(DEGRADED_INDEXERS.get() | failed)
@@ -1944,7 +1947,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
     def _get_indexers_in_order(self) -> list[tuple[EvmIndexer, EtherscanLikeApi]]:
         """Return available indexers respecting user-defined order and optional subset."""
-        ordered = [
+        ordered: list[tuple[EvmIndexer, EtherscanLikeApi]] = [
             (indexer_name, indexer)
             for indexer_name in CachedSettings().get_evm_indexers_order_for_chain(chain_id=self.chain_id)  # noqa: E501
             if (indexer := self.available_indexers.get(indexer_name)) is not None

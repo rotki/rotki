@@ -235,6 +235,7 @@ class EtherscanLikeApi(ABC):
 
         May raise RemoteError or any of its subclasses.
         """
+        return  # no-op by default, the generic error is raised right after
 
     @overload
     def _query(

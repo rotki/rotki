@@ -503,7 +503,7 @@ def test_query_timeout_asks_for_a_smaller_range(temp_etherscan: Etherscan) -> No
     with patch.object(
         temp_etherscan.session,
         'get',
-        return_value=MockResponse(HTTPStatus.OK, '{"status":"0","message":"Query Timeout occured. Please select a smaller result dataset","result":null}'),  # noqa: E501
+        return_value=MockResponse(HTTPStatus.OK, '{"status":"0","message":"Query Timeout occurred. Please select a smaller result dataset","result":null}'),  # noqa: E501
     ), pytest.raises(RequestTooLargeError, match='Query Timeout'):
         temp_etherscan._query(
             chain_id=ChainID.GNOSIS,

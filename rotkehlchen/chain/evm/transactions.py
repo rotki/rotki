@@ -19,6 +19,7 @@ from rotkehlchen.chain.evm.types import EvmAccount, EvmIndexer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import TX_INTERNALS_QUERIED, InternalTxSource
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -72,6 +73,10 @@ RECEIPTS_QUERY_BATCH_SIZE: Final = 25
 # serve an hour of a single address is not going to serve half an hour either, so below this
 # we stop splitting and let the error surface.
 MIN_SPLITTABLE_QUERY_RANGE: Final = 3600
+# How far back a query range has to reach before we stop checking how much of it the
+# indexers actually cover. An index that lags does so at the head of the chain, so a range
+# ending further back than this is served in full by any indexer that is up at all.
+RECENT_RANGE_MARGIN: Final = 2 * DAY_IN_SECONDS
 
 
 def with_tx_status_messaging[T: Callable[..., Any]](func: T) -> T:
@@ -378,8 +383,8 @@ class EvmTransactions(ABC):  # noqa: B024
                     )
                     if period.range_type == 'timestamps':
                         assert location_string, 'should always be given for timestamps'
-                        queried_to_ts = Timestamp(max(queried_from_ts, new_transactions[-1].timestamp))
-                        log.debug(f'{self.evm_inquirer.chain_name} transactions for {address} -> update range {queried_from_ts} - {queried_to_ts}')  # noqa: E501
+                        queried_to_ts = Timestamp(max(queried_from_ts, new_transactions[-1].timestamp))  # noqa: E501
+                        log.debug('%s transactions for %s -> update range %s - %s', self.evm_inquirer.chain_name, address, queried_from_ts, queried_to_ts)  # noqa: E501
                         if update_ranges:  # update last queried time for the address
                             self.dbranges.update_used_query_range(
                                 write_cursor=write_cursor,
@@ -405,7 +410,7 @@ class EvmTransactions(ABC):  # noqa: B024
 
     def _query_range_in_splittable_chunks(
             self,
-            query: Callable[[Timestamp, Timestamp], None],
+            query: Callable[[Timestamp, Timestamp], Any],
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> None:
@@ -433,11 +438,62 @@ class EvmTransactions(ABC):  # noqa: B024
                     raise
 
                 log.debug(
-                    f'{self.evm_inquirer.chain_name} range {chunk_start} - {chunk_end} was too '
-                    f'large to serve ({e!s}). Splitting it in half and retrying.',
+                    '%s range %s - %s was too large to serve (%s). Splitting it in half and '
+                    'retrying.', self.evm_inquirer.chain_name, chunk_start, chunk_end, e,
                 )  # push the later half first so the earlier one is popped next
                 mid = Timestamp((chunk_start + chunk_end) // 2)
                 pending.extend(((Timestamp(mid + 1), chunk_end), (chunk_start, mid)))
+
+    def _mark_range_as_queried(
+            self,
+            location_string: str,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> None:
+        """Record the range as queried, clamped to what the indexers were actually asked.
+
+        Ranges are queried by block, and the upper bound is resolved with closest='before',
+        so nothing after that block's timestamp was ever looked at. Recording the range up
+        to end_ts regardless claims coverage we do not have: for an indexer whose view of
+        the chain lags, everything between its last indexed block and now is skipped, and
+        skipped permanently, since the range never comes up for querying again.
+
+        A lagging index only ever affects the leading edge of the chain, so the covered end
+        is only established for a range reaching into the recent past. Anything older is
+        fully indexed by any indexer that is up at all, and checking it would cost a block
+        header lookup per range for no benefit.
+
+        On a healthy chain the clamp costs nothing, as the gap is a single block time. When
+        the covered end cannot be established the range is left unrecorded, so it is
+        retried rather than assumed complete.
+        """
+        covered_end_ts = end_ts
+        if end_ts >= ts_now() - RECENT_RANGE_MARGIN:
+            try:
+                to_block = self.evm_inquirer.get_blocknumber_by_time(ts=end_ts, closest='before')
+                covered_end_ts = min(end_ts, self.evm_inquirer.get_block_timestamp(to_block))
+            except (RemoteError, NoAvailableIndexers, DeserializationError) as e:
+                log.warning(
+                    'Not recording the %s query range %s - %s for %s: could not establish how '
+                    'far the indexers actually covered due to %s',
+                    self.evm_inquirer.chain_name, start_ts, end_ts, location_string, e,
+                )
+                return
+
+        if covered_end_ts < start_ts:
+            return  # the indexers do not reach this range at all yet
+
+        log.debug(
+            '%s query range for %s recorded as %s - %s (asked for %s - %s)',
+            self.evm_inquirer.chain_name, location_string, start_ts, covered_end_ts,
+            start_ts, end_ts,
+        )
+        with self.database.user_write() as write_cursor:
+            self.dbranges.update_used_query_range(
+                write_cursor=write_cursor,
+                location_string=location_string,
+                queried_ranges=[(start_ts, covered_end_ts)],
+            )
 
     def _get_transactions_for_range(
             self,
@@ -489,13 +545,12 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
                 return
 
-        log.debug(f'{self.evm_inquirer.chain_name} transactions done for {address}. Update range {start_ts} - {end_ts}')  # noqa: E501
-        with self.database.user_write() as write_cursor:
-            self.dbranges.update_used_query_range(  # entire range is now considered queried
-                write_cursor=write_cursor,
-                location_string=location_string,
-                queried_ranges=[(start_ts, end_ts)],
-            )
+        log.debug('%s transactions done for %s', self.evm_inquirer.chain_name, address)
+        self._mark_range_as_queried(
+            location_string=location_string,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
 
     @overload
     def _query_and_save_internal_transactions_for_range(
@@ -939,13 +994,12 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
                 return
 
-        log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for address {address} done. Update range {start_ts} - {end_ts}')  # noqa: E501
-        with self.database.user_write() as write_cursor:
-            self.dbranges.update_used_query_range(  # entire range is now considered queried
-                write_cursor=write_cursor,
-                location_string=location_string,
-                queried_ranges=[(start_ts, end_ts)],
-            )
+        log.debug('Internal %s transactions for address %s done', self.evm_inquirer.chain_name, address)  # noqa: E501
+        self._mark_range_as_queried(
+            location_string=location_string,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
 
     def _get_erc20_transfers_for_ranges(
             self,
@@ -998,13 +1052,12 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
                 return
 
-        log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers done for address {address}. Update range {start_ts} - {end_ts}')  # noqa: E501
-        with self.database.user_write() as write_cursor:
-            self.dbranges.update_used_query_range(  # entire range is now considered queried
-                write_cursor=write_cursor,
-                location_string=location_string,
-                queried_ranges=[(start_ts, end_ts)],
-            )
+        log.debug('%s ERC20 Transfers done for address %s', self.evm_inquirer.chain_name, address)
+        self._mark_range_as_queried(
+            location_string=location_string,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
 
     @overload
     def _query_and_save_erc20_transfers_for_range(
@@ -1055,7 +1108,7 @@ class EvmTransactions(ABC):  # noqa: B024
         with self.evm_inquirer.block_range_skipping_stale_indexers(period) as blocks:
             from_block, to_block = blocks.from_value, blocks.to_value
 
-            log.debug(f'Querying erc20 transfers of {address} from {period.from_value} to {period.to_value} in {self.evm_inquirer.chain_name}')  # noqa: E501
+            log.debug('Querying erc20 transfers of %s from %s to %s in %s', address, period.from_value, period.to_value, self.evm_inquirer.chain_name)  # noqa: E501
             queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None
             queried_from_ts = Timestamp(period.from_value)
             for erc20_tx_hashes in self.evm_inquirer.get_token_transaction_hashes(
@@ -1078,7 +1131,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     continue
 
                 queried_to_ts = Timestamp(max(queried_from_ts, *batch_timestamps.values()))
-                log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> update range {queried_from_ts} - {queried_to_ts}')  # noqa: E501
+                log.debug('%s ERC20 Transfers for %s -> update range %s - %s', self.evm_inquirer.chain_name, address, queried_from_ts, queried_to_ts)  # noqa: E501
                 self.msg_aggregator.add_message(
                     message_type=WSMessageType.TRANSACTION_STATUS,
                     data={
