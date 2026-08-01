@@ -1051,8 +1051,10 @@ class EvmTransactions(ABC):  # noqa: B024
         If update_ranges is True, updates the database tracking for this query range.
         Otherwise, data is fetched without updating the query range.
         """  # noqa: E501
-        from_block = self.evm_inquirer.get_blocknumber_by_time(ts=Timestamp(period.from_value))
-        to_block = self.evm_inquirer.get_blocknumber_by_time(ts=Timestamp(period.to_value))
+        from_block, to_block = self.evm_inquirer.timestamp_range_to_block_range(
+            from_ts=Timestamp(period.from_value),
+            to_ts=Timestamp(period.to_value),
+        )
 
         log.debug(f'Querying erc20 transfers of {address} from {period.from_value} to {period.to_value} in {self.evm_inquirer.chain_name}')  # noqa: E501
         queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None

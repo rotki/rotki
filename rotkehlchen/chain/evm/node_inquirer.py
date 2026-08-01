@@ -1482,15 +1482,68 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         transaction, _ = self.get_transaction_by_hash(deployed_hash)
         return transaction.block_number
 
+    def timestamp_range_to_block_range(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> tuple[int, int]:
+        """Resolve both ends of a timestamp range to block numbers.
+
+        Whatever is not already cached is resolved by a single indexer, so the two ends of
+        the window cannot come from indexers holding different views of the chain. A cached
+        value is safe to mix in: it came from a resolution that succeeded, and blocks are
+        monotonic in time.
+
+        May raise:
+        - RemoteError if no indexer can resolve the range, or if the resolved window is
+        inverted. An inverted window would otherwise be handed to the indexers as-is, and
+        they answer it with an empty result and no error, which is indistinguishable from
+        the address genuinely having no history in that period.
+        - NoAvailableIndexers if there are no indexers available
+        """
+        cache = self.timestamp_to_block_cache[self.chain_id]
+        cached_from, cached_to = cache.get(from_ts), cache.get(to_ts)
+        if cached_from is None or cached_to is None:
+            def resolve(indexer: EtherscanLikeApi) -> tuple[int, int]:
+                resolved: dict[Timestamp, int] = {}
+                if cached_from is not None:
+                    resolved[from_ts] = cached_from
+                if cached_to is not None:
+                    resolved[to_ts] = cached_to
+
+                for ts in (from_ts, to_ts):  # a one element range asks for the same ts twice
+                    if ts not in resolved:
+                        resolved[ts] = indexer.get_blocknumber_by_time(
+                            chain_id=self.chain_id, ts=ts, closest='before',
+                        )
+
+                return resolved[from_ts], resolved[to_ts]
+
+            cached_from, cached_to = self._try_indexers(func=resolve)
+            cache.add(key=from_ts, value=cached_from)
+            cache.add(key=to_ts, value=cached_to)
+
+        if cached_from > cached_to:
+            raise RemoteError(
+                f'Resolved an inverted {self.chain_name} block range for {from_ts} - {to_ts}: '
+                f'{cached_from} - {cached_to}. An indexer is behind on the chain.',
+            )
+
+        return cached_from, cached_to
+
     def maybe_timestamp_to_block_range(
             self,
             period: TimestampOrBlockRange,
     ) -> TimestampOrBlockRange:
         if period.range_type == 'timestamps':
+            from_block, to_block = self.timestamp_range_to_block_range(
+                from_ts=Timestamp(period.from_value),
+                to_ts=Timestamp(period.to_value),
+            )
             return TimestampOrBlockRange(
                 range_type='blocks',
-                from_value=self.get_blocknumber_by_time(ts=Timestamp(period.from_value)),
-                to_value=self.get_blocknumber_by_time(ts=Timestamp(period.to_value)),
+                from_value=from_block,
+                to_value=to_block,
             )
 
         return period  # no op for block ranges

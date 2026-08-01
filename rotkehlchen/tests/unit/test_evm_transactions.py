@@ -1318,3 +1318,42 @@ def test_too_large_range_stops_splitting_at_the_floor(ethereum_manager: 'Ethereu
         )
 
     assert attempts == 1, 'a range already at the floor must not be split'
+
+
+def test_inverted_block_range_is_rejected(ethereum_inquirer: 'EthereumInquirer') -> None:
+    """An inverted window must raise instead of being handed to the indexers.
+
+    Indexers answer a range whose start is past its end with an empty result and no error,
+    which is indistinguishable from the address having no history in that period, so the
+    range would be recorded as queried and the activity in it lost.
+    """
+    with patch.object(
+        target=ethereum_inquirer,
+        attribute='_try_indexers',
+        return_value=(500, 100),  # a lagging indexer resolving the end behind the start
+    ), pytest.raises(RemoteError, match='inverted'):
+        ethereum_inquirer.timestamp_range_to_block_range(
+            from_ts=Timestamp(1000),
+            to_ts=Timestamp(2000),
+        )
+
+
+def test_block_range_ends_come_from_one_indexer(ethereum_inquirer: 'EthereumInquirer') -> None:
+    """Both ends must be resolved by the same indexer in a single fallback attempt."""
+    resolved_by: list[str] = []
+
+    def mock_blocknumber_by_time(chain_id, ts, closest='before'):
+        resolved_by.append(ethereum_inquirer.etherscan.name)
+        return ts // 10
+
+    with patch.object(
+        target=ethereum_inquirer.etherscan,
+        attribute='get_blocknumber_by_time',
+        side_effect=mock_blocknumber_by_time,
+    ):
+        assert ethereum_inquirer.timestamp_range_to_block_range(
+            from_ts=Timestamp(1000),
+            to_ts=Timestamp(2000),
+        ) == (100, 200)
+
+    assert resolved_by == [ethereum_inquirer.etherscan.name] * 2
