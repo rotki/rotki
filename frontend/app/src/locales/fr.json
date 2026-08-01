@@ -50,8 +50,7 @@
       "addresses_hint": "Insérez plusieurs adresses séparées par des virgules ou des sauts de ligne",
       "blockchain": "Choisir blockchain | Choisir blockchains",
       "btc": {
-        "derivation_path": "Chemin de dérivation",
-        "xpub": "XPUB"
+        "derivation_path": "Chemin de dérivation"
       },
       "multiple": "Ajouter plusieurs adresses"
     },
@@ -363,7 +362,6 @@
           "title": "Suppression de Xpub"
         },
         "task": {
-          "description": "{xpub}",
           "title": "Suppression de xpub"
         }
       }
@@ -371,8 +369,7 @@
     "defi": {
       "airdrops": {
         "error": {
-          "description": "Échec de la récupération des airdrops : {error}",
-          "title": "Airdrops"
+          "description": "Échec de la récupération des airdrops : {error}"
         },
         "task": {
           "title": "Interrogation des airdrops"
@@ -804,10 +801,6 @@
     }
   },
   "airdrops": {
-    "headers": {
-      "source": "Source"
-    },
-    "title": "Airdrops",
     "unknown_info": "Ces adresses font l'objet d'un relevé aérien, mais nous ne pouvons pas encore déterminer si elles ont été revendiquées ou non.",
     "unknown_tooltip": "L'adresse est éligible pour ce largage, mais nous ne pouvons pas encore analyser si elle a été réclamée ou non."
   },
@@ -817,9 +810,7 @@
     "manual_tooltip": "Prix défini manuellement"
   },
   "app": {
-    "copyright": "© Rotki Solutions GmbH 2018-{year}",
-    "moto": "Le gestionnaire de portefeuille open source qui protège votre vie privée",
-    "name": "rotki"
+    "moto": "Le gestionnaire de portefeuille open source qui protège votre vie privée"
   },
   "asset_balances": {
     "loading": "Veuillez attendre que rotki interroge les soldes..."
@@ -842,9 +833,7 @@
     "labels": {
       "asset_type": "Type d'actif",
       "chain": "Chaîne",
-      "coingecko": "CoinGecko",
       "coingecko_hint": "L'identifiant de l'actif sur CoinGecko. Si non défini, rotki ne sera pas en mesure de récupérer les prix pour l'actif à partir de CoinGecko.",
-      "cryptocompare": "CryptoCompare",
       "cryptocompare_hint": "L'identifiant de l'actif sur CryptoCompare. Si non spécifié, le symbole est supposé par défaut. Si cela ne fonctionne pas et si non autrement défini, rotki ne sera pas en mesure de récupérer les prix pour l'actif à partir de CryptoCompare.",
       "decimals": "Décimales",
       "forked": "Forké",
@@ -864,9 +853,6 @@
     "validation": {
       "valid_address": "Veuillez saisir une adresse valide"
     }
-  },
-  "asset_icon": {
-    "tooltip": "[{symbol}] {name}"
   },
   "asset_locations": {
     "header": {
@@ -1031,18 +1017,18 @@
   },
   "backend_mappings": {
     "events": {
+      "group": {
+        "bridge": "Pont"
+      },
       "history_event_subtype": {
-        "airdrop": "Airdrop",
         "approve": "Approuver",
         "bridge": "Pont",
-        "deploy": "Déployer",
         "deposit_asset": "Dépôt d'actif",
         "donate": "Faire un don",
         "fee": "Frais",
         "generate_debt": "Générer une dette",
         "governance": "Gouvernance",
         "liquidate": "Liquider",
-        "nft": "NFT",
         "none": "Aucun",
         "payback_debt": "Rembourser la dette",
         "place_order": "Passer une commande",
@@ -1064,14 +1050,11 @@
         "staking": "Mise en jeu",
         "trade": "Échange",
         "transfer": "Transfert",
-        "unknown": "Inconnu",
         "withdrawal": "Retrait"
       },
       "type": {
-        "airdrop": "Airdrop",
         "approval": "Approbation",
         "borrow": "Emprunter",
-        "bridge": "Pont",
         "cancel_order": "Annuler la commande",
         "claim_reward": "Réclamer une récompense",
         "deploy": "Déployer",
@@ -1081,7 +1064,6 @@
         "gas_fee": "Frais de gaz",
         "governance": "Gouvernance",
         "informational": "Informations",
-        "liquidate": "Liquider",
         "place_order": "Passer une commande",
         "receive": "Recevoir",
         "receive_donation": "Recevoir un don",
@@ -1089,8 +1071,6 @@
         "renew": "Renouveler",
         "repay": "Rembourser",
         "send": "Envoyer",
-        "swap_in": "Recevoir",
-        "swap_out": "Swap",
         "transfer": "Transfert",
         "unknown": "Inconnu",
         "withdraw": "Retirer"
@@ -1108,7 +1088,6 @@
       "kraken": {
         "type": {
           "intermediate": "Intermédiaire",
-          "pro": "Pro",
           "starter": "Démarrage / Express"
         }
       }
@@ -1116,7 +1095,6 @@
     "profit_loss_event_type": {
       "asset_movement": "Mouvement d'actif",
       "fee": "Frais",
-      "history_base_entry": "Entrée de base d'historique",
       "loan": "Prêt",
       "margin_position": "Position de marge",
       "prefork_acquisition": "Acquisition préfourche",
@@ -1128,8 +1106,7 @@
       "banks": "Banques",
       "commodities": "Marchandises",
       "equities": "Actions",
-      "external": "Externe",
-      "real_estate": "Immobilier"
+      "external": "Externe"
     }
   },
   "backend_settings": {
@@ -1189,8 +1166,7 @@
   "binance_market_selector": {
     "default_label": "Filtrer la paire de marché",
     "query_all": {
-      "error": "Impossible d'obtenir la liste des marchés pour Binance.",
-      "title": "Query Binance markets"
+      "error": "Impossible d'obtenir la liste des marchés pour Binance."
     },
     "query_user": {
       "error": "Impossible d'obtenir la liste des marchés sélectionnés à être interrogés pour Binance.",
@@ -1261,7 +1237,6 @@
       "install": "Installer",
       "next": "Suivant",
       "no": "Non",
-      "ok": "OK",
       "pull": "Tirer",
       "push": "Pousser",
       "save": "Enregistrer",
@@ -1271,7 +1246,6 @@
       "update": "Mettre à jour",
       "yes": "Oui"
     },
-    "actions_text": "Actions",
     "address": "Adresse",
     "all": "Tous",
     "amount": "Montant",
@@ -1282,7 +1256,6 @@
     "claimed": "Réclamé",
     "counterparty": "Contrepartie",
     "datetime": "Date/Heure",
-    "description": "Description",
     "details": "Détails",
     "entry_type": "Type d'entrée",
     "events": "Événements",
@@ -1300,21 +1273,17 @@
     "multi_chain": "Multi Chaîne",
     "name": "Nom",
     "never": "Jamais",
-    "notes": "Notes",
     "of": "de",
     "optional": "Facultatif",
     "price": "Prix",
     "price_in_symbol": "Prix en {symbol}",
     "priority": "Priorité",
-    "protocol": "Protocol",
     "refresh": "Rafraîchir",
     "rewards": "Récompenses",
     "select_address": "Sélectionner adresse(s)",
     "select_directory": "Sélectionner un répertoire",
     "status": "Statut",
-    "total": "Total",
     "tx_hash": "Hash de transaction",
-    "type": "Type",
     "unclaimed": "Non réclamé",
     "unknown": "Inconnu",
     "validator_index": "Index de validateur",
@@ -1322,7 +1291,6 @@
   },
   "conflict_dialog": {
     "action": {
-      "local": "Local",
       "remote": "Distant"
     },
     "action_hint": {
@@ -1340,7 +1308,6 @@
     "table": {
       "headers": {
         "keep": "Garder",
-        "local": "Local",
         "remote": "Distant"
       }
     },
@@ -1399,8 +1366,7 @@
     },
     "steps": {
       "step_1": {
-        "description": "Premier pas",
-        "title": "Introduction"
+        "description": "Premier pas"
       },
       "step_2": {
         "description": "Avez-vous un compte premium sur notre site web?",
@@ -1427,7 +1393,6 @@
     "chf": "Franc suisse",
     "cny": "Yuan chinois",
     "dkk": "Couronne danoise",
-    "eur": "Euro",
     "gbp": "Livre sterling",
     "inr": "Roupie indienne",
     "jpy": "Yen japonais",
@@ -1455,8 +1420,7 @@
         "only_refresh_balances": "Seulement rafraîchir les soldes",
         "redetect_tokens": "Ré-détecter les jetons et rafraîchir les soldes",
         "title": "Comportement du bouton de rafraîchissement blockchain"
-      },
-      "title": "blockchain"
+      }
     },
     "exchange_balances": {
       "add": "Ajouter une bourse",
@@ -1512,7 +1476,6 @@
             "hints": {
               "location": "Ceci est facultatif. Si spécifié, les données de solde de localisation seront ajustées automatiquement. Sinon, vous devez mettre à jour les données de solde de localisation manuellement."
             },
-            "nft": "NFT",
             "nft_hint": "Format accepté: \"_nft_{'ETH address'}_{'collection number'}\"",
             "preview": {
               "from": "De",
@@ -1527,9 +1490,6 @@
             },
             "token": "Jeton"
           },
-          "fetch": {
-
-          },
           "location_data": {
             "add_title": "Ajouter des données de localisation instantané",
             "delete_confirmation": "Voulez-vous vraiment supprimer cet élément de données de localisation instantané?",
@@ -1538,14 +1498,6 @@
             "rules": {
               "location": "Le champ de localisation ne peut pas être vide",
               "value": "Le champ de valeur ne peut pas être vide"
-            }
-          },
-          "message": {
-
-          },
-          "total": {
-            "rules": {
-
             }
           }
         }
@@ -1628,8 +1580,7 @@
       "title": "Échec de la sauvegarde de la base de données"
     },
     "column": {
-      "size": "Taille",
-      "version": "Version"
+      "size": "Taille"
     },
     "confirm": {
       "mass_message": "Es-tu sûr de vouloir supprimer ces {length} sauvegarde(s) de base de données ?",
@@ -1662,7 +1613,6 @@
       "locale_datetime": "Date et heure au format local",
       "locale_time": "Heure au format local",
       "milliseconds": "Millisecondes",
-      "minutes": "Minutes",
       "minutes_padded": "Deux chiffres minutes (avec des zéros en tête)",
       "month": "Nom complet du mois",
       "month_numeric": "Mois (numérique)",
@@ -1683,7 +1633,6 @@
   },
   "docker_warning": {
     "action": "Oui, je comprends",
-    "documentation": "documentation",
     "title": "Vous exécutez rotki dans docker. Assurez-vous d'avoir lu notre {0} et de comprendre le risque potentiel qu'il y a à exécuter rotki de cette façon."
   },
   "ens_names": {
@@ -1762,8 +1711,7 @@
     "loading_error": {
       "title": "Chargement des nœuds RPC {chain}"
     },
-    "public_node": "Ce nœud est public",
-    "weight": "{weight}%"
+    "public_node": "Ce nœud est public"
   },
   "exchange_balances": {
     "add_exchange": "Ajouter une plateforme d'échange",
@@ -1833,23 +1781,19 @@
     "address_url": "Les adresses s'ouvriront sur {addressUrl}",
     "block": "Blocs",
     "block_url": "Les blocs s'ouvriront sur {blockUrl}",
-    "chain_selector": "Blockchain",
     "subtitle": "Définir les URL des explorateurs de blocs externes pour les adresses et les transactions",
     "title": "Explorateurs de blockchain",
-    "tx": "Transactions",
     "tx_url": "Les transactions s'ouvriront sur {txUrl}"
   },
   "external_services": {
     "api_key": "Clé API",
     "beaconchain": {
       "description": "rotki utilise Beaconcha.in pour récupérer l'historique des productions de blocs et des analyses de staking améliorées. Une clé API est nécessaire si vous souhaitez ces données.",
-      "hint": "Entrer votre clé API Beaconcha.in",
-      "title": "Beaconcha.in"
+      "hint": "Entrer votre clé API Beaconcha.in"
     },
     "blockscout": {
       "description": "rotki utilise Blockscout pour obtenir des informations sur les retraits ETH et plus encore. Une clé API est uniquement nécessaire si vous êtes soumis à une limitation de taux.",
-      "hint": "Entrer votre clé API Blockscout",
-      "title": "Blockscout"
+      "hint": "Entrer votre clé API Blockscout"
     },
     "confirmation": {
       "message": "Voulez-vous vraiment supprimer cette clé API ?",
@@ -1857,16 +1801,14 @@
     },
     "cryptocompare": {
       "description": "rotki utilise cryptocompare pour obtenir des informations de prix sur les actifs de votre portefeuille. Une clé API est uniquement nécessaire si vous disposez de nombreux actifs et êtes soumis à une limitation de taux.",
-      "hint": "Entrer votre clé API CryptoCompare",
-      "title": "CryptoCompare"
+      "hint": "Entrer votre clé API CryptoCompare"
     },
     "delete_error": {
       "description": "Erreur lors de la suppression des clés API des services externes : {message}"
     },
     "etherscan": {
       "description": "Recommandé pour les soldes et transactions EVM sur toute blockchain autre que Ethereum si vous n'utilisez pas votre propre nœud.",
-      "hint": "Entrer votre clé Etherscan",
-      "title": "Etherscan"
+      "hint": "Entrer votre clé Etherscan"
     },
     "get_api_key": "Vous pouvez demander une clé API {link}",
     "monerium": {
@@ -1884,7 +1826,6 @@
       "refresh_token": "Jeton d'actualisation",
       "submit_token": "Envoyer les jetons",
       "success": "OAuth Monerium",
-      "title": "Monerium",
       "token_required": "Les jetons d'accès et d'actualisation sont requis.",
       "unknown_email": "email inconnu",
       "warning": "Autorisez Monerium afin que rotki puisse enrichir vos transactions. Les jetons d'accès sont stockés localement et utilisés en lecture seule.",
@@ -1892,8 +1833,7 @@
     },
     "opensea": {
       "description": "Utilisé pour interroger les informations et soldes NFT sur Opensea.",
-      "hint": "Entrer votre clé API Opensea",
-      "title": "Opensea"
+      "hint": "Entrer votre clé API Opensea"
     },
     "set": {
       "error": {
@@ -2119,22 +2059,19 @@
       "title": "Journal du navigateur"
     },
     "faq": {
-      "subtitle": "Questions fréquentes sur l'application",
-      "title": "FAQ"
+      "subtitle": "Questions fréquentes sur l'application"
     },
     "github": {
       "subtitle": "Examiner notre code et ouvrir des problèmes",
       "title": "GitHub"
     },
     "support": {
-      "subtitle": "Rejoindre notre communauté active et obtenir de l'aide",
-      "title": "Discord"
+      "subtitle": "Rejoindre notre communauté active et obtenir de l'aide"
     },
     "title": "Aide et support",
     "tooltip": "Aide",
     "twitter": {
-      "subtitle": "Nous suivre",
-      "title": "Twitter / X"
+      "subtitle": "Nous suivre"
     },
     "user_guide": {
       "subtitle": "Commencer ici",
@@ -2191,54 +2128,45 @@
     "binance": {
       "line_one": "Les colonnes que nous traitons sont les suivantes : User_ID, UTC_Time, Account, Operation, Coin, Change et Remark.",
       "line_three": "En raison du format CSV de Binance, il est possible que toutes les données ne soient pas importées. Dans ce cas, vous recevrez un avertissement.",
-      "line_two": "Vous pouvez obtenir le fichier CSV à partir de {link}.",
-      "name": "Binance"
+      "line_two": "Vous pouvez obtenir le fichier CSV à partir de {link}."
     },
     "bisq": {
       "import": "Importer {0} à partir de Bisq",
       "import_trade": "opérations de change",
-      "line_one": "[Expérimental] Si vous rencontrez un problème avec les données importées, informez-nous afin que nous puissions adapter le code en conséquence.",
-      "name": "Bisq"
+      "line_one": "[Expérimental] Si vous rencontrez un problème avec les données importées, informez-nous afin que nous puissions adapter le code en conséquence."
     },
     "bitcoin_tax": {
       "import": "Importer {0} à partir de bitcoin.tax",
       "import_types": "opérations de change, revenu et dépenses",
       "line_one": "Nous prenons en charge l'importation des types de fichiers opérations de change, revenu et dépenses.",
       "line_three": "L'action 'swap' du type d'opération de change qui représente une redenomination ou une fourche de pièce est traitée ailleurs par rotki, de sorte qu'aucun événement historique ne doit être créé pour cela.",
-      "line_two": "Tous les événements importés sont mappés aux événements historiques rotki.",
-      "name": "bitcoin.tax"
+      "line_two": "Tous les événements importés sont mappés aux événements historiques rotki."
     },
     "bitmex": {
       "import": "Importer {0} à partir de BitMEX",
       "import_types": "historique du portefeuille",
       "line_one": "[Expérimental] Si vous rencontrez un problème avec les données importées, informez-nous afin que nous puissions adapter le code en conséquence.",
-      "line_two": "Les montants dans le fichier d'historique du portefeuille sont supposés être en Bitcoin. Si vous souhaitez que cette fonctionnalité soit prise en charge pour d'autres devises, contactez-nous.",
-      "name": "BitMEX"
+      "line_two": "Les montants dans le fichier d'historique du portefeuille sont supposés être en Bitcoin. Si vous souhaitez que cette fonctionnalité soit prise en charge pour d'autres devises, contactez-nous."
     },
     "bitstamp": {
       "import": "Importer {0} à partir de Bitstamp",
-      "import_types": "opérations de change, dépôts et retraits",
-      "name": "Bitstamp"
+      "import_types": "opérations de change, dépôts et retraits"
     },
     "bittrex": {
       "import": "Importer {0} à partir de Bittrex",
       "import_types": "opérations de change, dépôts et retraits",
-      "name": "Bittrex",
       "warning": "Il peut y avoir des problèmes avec le fichier CSV de Bittrex si vous l'avez reçu par e-mail après la fermeture de votre compte, ce qui peut nécessiter une intervention manuelle. Le format de la date peut varier dans le même fichier CSV, les colonnes peuvent être décalées et toutes les données peuvent présenter des incohérences."
     },
     "blockfi": {
       "import": "Importer {0} à partir de BlockFi",
       "import_trade": "opérations de change",
-      "import_transactions": "transactions",
       "line_one": "[Expérimental] Si vous rencontrez un problème avec les données importées, informez-nous afin que nous puissions adapter le code en conséquence.",
-      "line_two": "BlockFi vous permet d'exporter deux fichiers différents. Les opérations de change seront importées à partir du fichier qui ne contient que les opérations de change.",
-      "name": "BlockFi"
+      "line_two": "BlockFi vous permet d'exporter deux fichiers différents. Les opérations de change seront importées à partir du fichier qui ne contient que les opérations de change."
     },
     "cointracking": {
       "line_one": "Les opérations/dépôts/retraits de CoinTracking ne comprennent pas les frais.",
       "line_three": "Les transactions ETH/BTC sont traitées comme des dépôts/retraits, elles ne sont donc pas importées dans rotki. Pour importer des transactions ETH, il vous suffit d'ajouter vos comptes dans {0} et ils seront importés automatiquement pour vous.",
       "line_two": "Toutes les opérations importées de CoinTracking seront toujours considérées comme des achats en raison de la façon dont les données sont représentées.",
-      "name": "CoinTracking",
       "preferred": "Pour cette raison, il est préférable de se connecter directement à vos échanges pour importer les données depuis là. Si vous ne le faites pas, une grande partie de la précision est perdue."
     },
     "cryptocom": {
@@ -2248,7 +2176,6 @@
       "line_three": "Les opérations de change/dépôts/retraits de crypto.com ne comprennent pas les détails des frais. Ils sont soit abandonnés au moment de l'écriture (août 2020) ou gérés dans le montant échangé.",
       "line_two": "{0} Si vous souhaitez connecter votre compte Crypto.com Exchange, veuillez attendre que nous le prenions en charge et vous connecter via cet échange.",
       "line_two_warning": "Cela ne concerne que l'application Crypto.com.",
-      "name": "Crypto.com",
       "source_name": "l'application mobile Crypto.com"
     },
     "custom": {
@@ -2260,14 +2187,11 @@
     "kucoin": {
       "import": "Importer {0} de Kucoin",
       "import_types": "métiers",
-      "line_one": "Nous prenons en charge l'importation de fichiers de type csv.",
-      "name": "Kucoin"
+      "line_one": "Nous prenons en charge l'importation de fichiers de type csv."
     },
     "nexo": {
       "import": "Importer {0} à partir de Nexo",
-      "import_transactions": "transactions",
-      "line_one": "[Expérimental] Si vous rencontrez un problème avec les données importées, informez-nous afin que nous puissions adapter le code en conséquence.",
-      "name": "Nexo"
+      "line_one": "[Expérimental] Si vous rencontrez un problème avec les données importées, informez-nous afin que nous puissions adapter le code en conséquence."
     },
     "note": "Notes importantes pour l'importation de données à partir des exports CSV de {0}.",
     "notice": "Ces plates-formes peuvent modifier leur format de manière incompatible de manière rétroactive assez souvent. Par conséquent, cet import peut cesser de fonctionner. Si cela se produit, {link} et nous verrons ce que nous pouvons faire.",
@@ -2279,16 +2203,14 @@
       "import": "Importer {0} à partir de ShapeShift",
       "import_trade": "transactions",
       "line_one": "[Expérimental] Si vous rencontrez un problème avec les données importées, informez-nous afin que nous puissions adapter le code en conséquence.",
-      "line_two": "ShapeShift vous permet d'exporter un fichier de transactions. Les transactions seront importées à partir du fichier qui ne contient que les transactions.",
-      "name": "ShapeShift"
+      "line_two": "ShapeShift vous permet d'exporter un fichier de transactions. Les transactions seront importées à partir du fichier qui ne contient que les transactions."
     },
     "title": "Importer des données",
     "uphold": {
       "import": "Importer {0} à partir de Uphold",
       "import_trade": "transactions",
       "line_one": "[Expérimental] Si vous rencontrez un problème avec les données importées, informez-nous afin que nous puissions adapter le code en conséquence.",
-      "line_two": "Uphold vous permet d'exporter un fichier d'activité. Il peut être trouvé sous 'activité' dans le coin supérieur droit de la liste d'activité.",
-      "name": "Uphold"
+      "line_two": "Uphold vous permet d'exporter un fichier d'activité. Il peut être trouvé sous 'activité' dans le coin supérieur droit de la liste d'activité."
     }
   },
   "input_mode_select": {
@@ -2296,7 +2218,6 @@
       "label": "Importer des adresses à partir du portefeuille du navigateur",
       "missing": "Nous ne pouvons détecter aucun portefeuille dans ce navigateur",
       "missing_tooltip": {
-        "title": "Here are the common cause:",
         "wallet_is_not_enabled": "L'extension pour le portefeuille est désactivée. Vous pouvez l'activer dans le menu Extensions/Add-Ons, en fonction de votre navigateur.",
         "wallet_is_not_installed": "Aucun portefeuille n'est installé dans ce navigateur. Vous pouvez aller dans le magasin d'extensions de votre navigateur et en installer un."
       }
@@ -2385,7 +2306,6 @@
     "custom_backend": {
       "hint": "L'URL du backend auquel vous souhaitez vous connecter (laissez vide pour la valeur par défaut).",
       "label": "URL du backend",
-      "placeholder": "http://localhost:4242",
       "session_only": "Enregistrer uniquement pour cette session",
       "tooltip": "Connectez-vous à un backend rotki différent",
       "validation": {
@@ -2503,7 +2423,6 @@
     "hint": "L'actif source sera fusionné dans l'actif cible et toutes ses utilisations seront mises à jour.",
     "merge": "Fusionner",
     "source": {
-      "label": "Source",
       "non_empty": "L'identifiant de la source ne peut pas être vide"
     },
     "source_hint": "L'identifiant de l'actif que vous souhaitez fusionner dans la cible",
@@ -2573,8 +2492,7 @@
     "api_keys": "Clés d'API",
     "api_keys_sub": {
       "exchanges": "Échanges",
-      "external_services": "Services externes",
-      "premium": "rotki Premium"
+      "external_services": "Services externes"
     },
     "balances": "Soldes",
     "balances_sub": {
@@ -2584,9 +2502,6 @@
       "non_fungible_balances": "Soldes NFT"
     },
     "dashboard": "Tableau de bord",
-    "defi_sub": {
-      "airdrops": "Airdrops"
-    },
     "history": "Historique",
     "import_data": "Importer des données",
     "locations": "Emplacements",
@@ -2608,10 +2523,8 @@
     "settings_sub": {
       "accounting": "Comptabilité",
       "database": "Base de données",
-      "general": "Général",
-      "modules": "Modules"
+      "general": "Général"
     },
-    "staking": "Staking",
     "statistics": "Statistiques"
   },
   "net_worth_chart": {
@@ -2638,9 +2551,6 @@
     "refresh_tooltip": "Recharger les NFT",
     "select_account": "Sélectionner le compte",
     "select_collection": "Sélectionner la collection",
-    "sort": {
-      "collection": "Collection"
-    },
     "upgrade": "Affichage de {limit} NFT. Pour en voir plus, veuillez passer à {link}"
   },
   "no_task_running": {
@@ -2677,11 +2587,7 @@
       "general": "Général",
       "in_this_page": "Dans \"{page}\" ",
       "in_this_page_tooltip": "Notes spécialisées pour la section \"{page}\""
-    },
-    "tooltip": "Notes"
-  },
-  "notification_indicator": {
-    "tooltip": "Notifications"
+    }
   },
   "notification_messages": {
     "accounting_rule_conflict": {
@@ -2692,9 +2598,6 @@
     "address_migration": {
       "message": "L'adresse suivante a été ajoutée à {chain}: {addresses}|Les adresses suivantes ont été ajoutées à {chain}: {addresses}",
       "title": "Adresse ajoutée à {chain}|Adresses ajoutées à {chain}"
-    },
-    "backend": {
-      "title": "Backend"
     },
     "missing_api_key": {
       "action": "Entrer la clé",
@@ -2736,30 +2639,11 @@
       "message": "Cette action va supprimer toutes les notifications actives. Souhaitez-vous continuer ?",
       "title": "Supprimer les notifications actives"
     },
-    "no_messages": "Aucun message !",
-    "title": "Notifications"
-  },
-  "oracle_cache_management": {
-    "delete_confirmation": {
-
-    },
-    "headers": {
-
-    },
-    "notification": {
-
-    }
-  },
-  "oracles": {
-    "uniswap_v2": "Uniswap V2",
-    "uniswap_v3": "Uniswap V3"
+    "no_messages": "Aucun message !"
   },
   "overall_balances": {
     "loading": "CHARGMENT",
     "premium_hint": "Obtenez l'expérience complète en passant à rotki premium"
-  },
-  "percentage_display": {
-    "symbol": "%"
   },
   "pinned": {
     "tooltip": "Section épinglée"
@@ -2779,12 +2663,10 @@
       "total_hint": "Par les intérêts de dépôt"
     },
     "common": {
-      "apr": "APR",
       "asset": "Actif",
       "collateral": "Garantie",
       "debt": "Dette",
       "no_entries_found": "Aucune entrée trouvée",
-      "pool": "Pool",
       "profit_loss": "Bénéfice/Perte",
       "select_address": "@:common.select_address"
     },
@@ -2810,7 +2692,6 @@
       "overview": "Aperçu",
       "ranges": {
         "one_day": "1J",
-        "one_month": "1M",
         "one_week": "1S",
         "one_year": "1A"
       },
@@ -2845,13 +2726,11 @@
       "headers": {
         "issuance": "Émission +",
         "operation": "Opération",
-        "pool": "Pool",
         "redemption": "Rachat +",
         "stake": "Staking",
         "value": "Valeur"
       },
       "no_accounts": "Aucun compte de participation {protocol} n'a été détecté.",
-      "pools": "Pools",
       "refresh": " Rafraîchir les détails de la participation",
       "staking_balances_per_address": "Solde de participation par Adresse",
       "staking_history": "Historique de la Participation",
@@ -2937,8 +2816,7 @@
     },
     "get": "Obtenir un premium",
     "premium_active": "@:premium_settings.title est activé",
-    "subtitle": "@:premium_settings.title est un service d'abonnement optionnel qui donne accès aux analyses, graphiques et débloque de nombreuses fonctionnalités supplémentaires. Pour plus d'informations sur ce qui est disponible, visitez le site web {0}.",
-    "title": "rotki Premium"
+    "subtitle": "@:premium_settings.title est un service d'abonnement optionnel qui donne accès aux analyses, graphiques et débloque de nombreuses fonctionnalités supplémentaires. Pour plus d'informations sur ce qui est disponible, visitez le site web {0}."
   },
   "price_accuracy_hint": {
     "tooltip": "Ces prix sont basés sur le taux de change actuel des valeurs USD historiques"
@@ -3146,9 +3024,6 @@
     },
     "title": "Rapports générés"
   },
-  "progress_screen": {
-    "progress": "{progress} %"
-  },
   "purge_selector": {
     "centralized_exchange": "Échange centralisé",
     "centralized_exchange_to_clear": {
@@ -3169,8 +3044,7 @@
       "hint": "Laissez ce champ vide pour supprimer les données de tous les modules DeFi",
       "label": "Module DeFi à effacer"
     },
-    "label": "Sélectionner une source de données",
-    "transactions": "Transactions"
+    "label": "Sélectionner une source de données"
   },
   "queried_address_dialog": {
     "add": "Ajouter une adresse",
@@ -3206,8 +3080,7 @@
     "owned": "Propriétaire",
     "owned_hint": "Activer si c'est un nœud privé appartenant à l'utilisateur",
     "weight": "Poids",
-    "weight_hint": "Poids du nœud {weight}/100 (lors de l'ajustement du poids d'un nœud public, les autres nœuds seront ajustés en conséquence)",
-    "weight_per_hundred": "/100"
+    "weight_hint": "Poids du nœud {weight}/100 (lors de l'ajustement du poids d'un nœud public, les autres nœuds seront ajustés en conséquence)"
   },
   "settings": {
     "not_saved": "Paramètre non enregistré",
@@ -3237,11 +3110,6 @@
       "sort_asc_tooltip": "Changer le tri en ascendant",
       "sort_desc_tooltip": "Changer le tri en descendant"
     }
-  },
-  "staking": {
-    "eth2": "ETH",
-    "kraken": "Kraken",
-    "liquity": "Liquity"
   },
   "staking_page": {
     "dropdown_hint": "Sélectionnez un emplacement pour voir plus de détails",
@@ -3301,7 +3169,6 @@
     "completed_protocol_cache": "{count} protocole actualisé | {count} protocoles actualisés",
     "decoding": "Décodage",
     "decoding_label": "chaînes décodées",
-    "decoding_progress": "{processed}/{total} txns",
     "events": "Événements",
     "locations_label": "emplacement | emplacements",
     "period": {
@@ -3309,7 +3176,6 @@
     },
     "protocol_cache": "Cache de Protocole",
     "protocol_cache_label": "protocoles actualisés",
-    "protocol_cache_progress": "{processed}/{total} pools",
     "show_more": "Afficher {count} de plus...",
     "status": {
       "complete": "Terminé",
@@ -3322,17 +3188,14 @@
       "querying_transactions": "Interrogation transactions",
       "refreshing": "Actualisation"
     },
-    "title": "Synchronisation de l'historique",
-    "transactions": "Transactions"
+    "title": "Synchronisation de l'historique"
   },
   "table_filter": {
     "exclusion": {
-      "description": "Utiliser l'opérateur `!=` pour filtrer l'option, par exemple.",
-      "example": "type != evm event"
+      "description": "Utiliser l'opérateur `!=` pour filtrer l'option, par exemple."
     },
     "hint": {
-      "description": "Tapez le filtre puis appuyez sur entrée, par exemple.",
-      "example": "start = 26/05/2022"
+      "description": "Tapez le filtre puis appuyez sur entrée, par exemple."
     },
     "label": "Filtres disponibles",
     "saved_filters": {
@@ -3553,7 +3416,6 @@
         "eth_deposit_event": "Événements de dépôt {txRef}",
         "eth_withdrawal_event": "Retrait pour le validateur {validatorIndex}",
         "event_identifier": "Information événement",
-        "evm_event": "Transaction {txRef}",
         "history_event": "Événement {location}"
       },
       "skipped": {
@@ -3585,9 +3447,6 @@
       "decoded": {
         "false": "Certains transactions nécessitent d'être recodés.",
         "true": "Tous les transactions ont été recodés."
-      },
-      "decoding": {
-
       },
       "progress": "Progression",
       "redecode_all": "Recoder tous les transactions EVM",
@@ -3638,8 +3497,7 @@
     },
     "tokens": {
       "token_kind": "Type de jeton",
-      "weight": "Poids",
-      "weight_percentage": "{weight} %"
+      "weight": "Poids"
     },
     "validation": {
       "address_non_empty": "L'adresse ne peut être vide",
@@ -3670,7 +3528,6 @@
     "events": "@:upgrade_row.first_line Pour en afficher plus, merci de passer à {link}",
     "events_premium": "@:upgrade_row.first_line Pour en afficher plus, merci de {link}",
     "first_line": "Traitement de {limit} sur {total} {label} à partir de {from} jusqu'à {to}.",
-    "rotki_premium": "rotki Premium",
     "upgrade": "Affichage de {limit} sur {total} {label}. Pour en afficher plus, merci de passer à {link}",
     "upgrade_premium": "Affichage de {limit} sur {total} {label}. Pour en afficher plus, merci de {link}",
     "upgrade_your_plan": "améliorer votre plan"
@@ -3679,8 +3536,7 @@
     "change_privacy_mode": {
       "label": "Changer le mode de confidentialité",
       "normal_mode": {
-        "description": "Afficher à la fois le montant et le pourcentage",
-        "label": "Normal"
+        "description": "Afficher à la fois le montant et le pourcentage"
       },
       "private_mode": {
         "description": "Masquer le montant et le pourcentage",

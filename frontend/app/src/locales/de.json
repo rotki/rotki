@@ -3,12 +3,8 @@
     "copy_data_directory_tooltip": "Datenverzeichnis kopieren",
     "copy_information_tooltip": "Programminformationen kopieren",
     "data_directory": "Datenverzeichnis:",
-    "electron": "Electron:",
-    "frontend_version": "Frontend Version:",
     "open_data_dir_tooltip": "Datenverzeichnis öffnen",
-    "platform": "Platform:",
-    "release_notes": "Was gibt's Neues",
-    "user_agent": "User Agent:"
+    "release_notes": "Was gibt's Neues"
   },
   "account_balance_table": {
     "liabilities": "Verbindlichkeiten"
@@ -42,10 +38,6 @@
       "addresses_entries": "keine Einträge | {count} einmaliger Eintrag | {count} einmalige Einträge",
       "addresses_hint": "Fügen Sie mehrere Adressen ein, getrennt durch Kommas oder Zeilenumbrüche",
       "blockchain": "Wähle Blockchain",
-      "btc": {
-        "derivation_path": "Derivation Path",
-        "xpub": "XPUB"
-      },
       "multiple": "Mehrere Adressen hinzufügen"
     },
     "validation": {
@@ -76,8 +68,7 @@
     "defi": {
       "liquity_pools": {
         "error": {
-          "description": "Die Abfrage der Liquity Pools ist fehlgeschlagen: {message}",
-          "title": "Liquity Pools"
+          "description": "Die Abfrage der Liquity Pools ist fehlgeschlagen: {message}"
         },
         "task": {
           "title": "Liquity Pools abfragen"

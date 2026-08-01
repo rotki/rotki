@@ -1625,7 +1625,6 @@
         "airdrop": "Airdrop",
         "approve": "Approve",
         "bridge": "Bridge",
-        "deploy": "Deploy",
         "deposit_asset": "Deposit Asset",
         "donate": "Donate",
         "fee": "Fee",
@@ -1655,7 +1654,6 @@
         "staking": "Staking",
         "trade": "Trade",
         "transfer": "Transfer",
-        "unknown": "Unknown",
         "withdrawal": "Withdrawal"
       },
       "type": {
@@ -1673,7 +1671,6 @@
         "gas_fee": "Gas Fee",
         "governance": "Governance",
         "informational": "Informational",
-        "liquidate": "Liquidate",
         "place_order": "Place Order",
         "receive": "Receive",
         "receive_donation": "Receive Donation",
@@ -1681,8 +1678,6 @@
         "renew": "Renew",
         "repay": "Repay",
         "send": "Send",
-        "swap_in": "Receive",
-        "swap_out": "Swap",
         "transfer": "Transfer",
         "unknown": "Unknown",
         "withdraw": "Withdraw"
@@ -1722,7 +1717,6 @@
     "profit_loss_event_type": {
       "asset_movement": "Asset Movement",
       "fee": "Fee",
-      "history_base_entry": "History Base Entry",
       "loan": "Loan",
       "margin_position": "Margin Position",
       "prefork_acquisition": "Prefork Acquisition",
@@ -1734,8 +1728,7 @@
       "banks": "Banks",
       "commodities": "Commodities",
       "equities": "Equities",
-      "external": "External",
-      "real_estate": "Real Estate"
+      "external": "External"
     }
   },
   "backend_settings": {
@@ -3013,7 +3006,6 @@
   },
   "eth2_page": {
     "no_premium": "The ETH staking view is not available",
-    "setting": {},
     "toggle": {
       "hint": "Switch the filtering and display mode between ETH staking validators and ETH1 Addresses",
       "key": "Validator",
@@ -5040,11 +5032,7 @@
         "oracle_penalty_threshold_count": "Oracle penalty threshold count"
       },
       "subtitle": "Penalty settings for misbehaving oracle(s) in runtime.",
-      "title": "Oracle penalty settings",
-      "validation": {
-        "oracle_penalty_duration": {},
-        "oracle_penalty_threshold_count": {}
-      }
+      "title": "Oracle penalty settings"
     }
   },
   "oracle_prices": {
@@ -5661,6 +5649,8 @@
       "stale_details": "Missing price and missing acquisition details are only kept for the most recently generated report. Re-generate this report to inspect them."
     },
     "binance_markets_alert": "The following Binance exchange(s) do not have market pairs configured: \n{exchanges}.\n\n Please configure market pairs before generating a report.",
+    "csv_export_error": "There was an error with export",
+    "download_failed": "Download of report is not possible",
     "error": {
       "subtitle": "The report generation was not possible due to an error",
       "title": "Profit and Loss Report Generation"
@@ -6641,7 +6631,6 @@
         "not_started": "The decoding process will continue after transaction querying is done.",
         "true": "All transactions have been processed."
       },
-      "decoding": {},
       "fetching": "Checking transaction decoding status",
       "preparing": "Decoding transactions, please wait...",
       "progress": "Progress",
