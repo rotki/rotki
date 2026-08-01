@@ -33,6 +33,7 @@ from rotkehlchen.errors.misc import (
     InputError,
     NoAvailableIndexers,
     RemoteError,
+    RequestTooLargeError,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -67,6 +68,10 @@ log = RotkehlchenLogsAdapter(logger)
 # Receipts queried per batched JSON-RPC request. Kept modest since public
 # nodes commonly cap the number of calls allowed in a single batch.
 RECEIPTS_QUERY_BATCH_SIZE: Final = 25
+# Smallest window we keep halving a too-large range down to. An indexer that still cannot
+# serve an hour of a single address is not going to serve half an hour either, so below this
+# we stop splitting and let the error surface.
+MIN_SPLITTABLE_QUERY_RANGE: Final = 3600
 
 
 def with_tx_status_messaging[T: Callable[..., Any]](func: T) -> T:
@@ -398,6 +403,42 @@ class EvmTransactions(ABC):  # noqa: B024
             )
         return queried_hashes
 
+    def _query_range_in_splittable_chunks(
+            self,
+            query: Callable[[Timestamp, Timestamp], None],
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> None:
+        """Run query over the range, halving it whenever an indexer says it is too large.
+
+        Etherscan answers a range whose result set it cannot assemble with a request for a
+        smaller one instead of with data. rotki's first query for an address spans the whole
+        chain history, so a busy address trips this on the one query that matters most, and
+        on the chains where etherscan is the only indexer there is nothing to fall back to.
+        Splitting the range is exactly what the indexer is asking us to do.
+
+        Chunks run oldest first so the query ranges recorded along the way stay monotonic.
+
+        May raise:
+        - RemoteError if a chunk too small to split further still cannot be served
+        - NoAvailableIndexers if no indexer is available for the chain
+        """
+        pending = [(start_ts, end_ts)]
+        while len(pending) != 0:
+            chunk_start, chunk_end = pending.pop()
+            try:
+                query(chunk_start, chunk_end)
+            except RequestTooLargeError as e:
+                if chunk_end - chunk_start <= MIN_SPLITTABLE_QUERY_RANGE:
+                    raise
+
+                log.debug(
+                    f'{self.evm_inquirer.chain_name} range {chunk_start} - {chunk_end} was too '
+                    f'large to serve ({e!s}). Splitting it in half and retrying.',
+                )  # push the later half first so the earlier one is popped next
+                mid = Timestamp((chunk_start + chunk_end) // 2)
+                pending.extend(((Timestamp(mid + 1), chunk_end), (chunk_start, mid)))
+
     def _get_transactions_for_range(
             self,
             address: ChecksumEvmAddress,
@@ -419,14 +460,18 @@ class EvmTransactions(ABC):  # noqa: B024
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
-                self._query_and_save_transactions_for_range(
-                    address=address,
-                    period=TimestampOrBlockRange(
-                        range_type='timestamps',
-                        from_value=query_start_ts,
-                        to_value=query_end_ts,
+                self._query_range_in_splittable_chunks(
+                    query=lambda chunk_start, chunk_end: self._query_and_save_transactions_for_range(  # noqa: E501
+                        address=address,
+                        period=TimestampOrBlockRange(
+                            range_type='timestamps',
+                            from_value=chunk_start,
+                            to_value=chunk_end,
+                        ),
+                        location_string=location_string,
                     ),
-                    location_string=location_string,
+                    start_ts=query_start_ts,
+                    end_ts=query_end_ts,
                 )
             except NoAvailableIndexers as e:
                 log.warning(
@@ -864,14 +909,18 @@ class EvmTransactions(ABC):  # noqa: B024
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} internal transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
-                self._query_and_save_internal_transactions_for_range(
-                    address=address,
-                    period=TimestampOrBlockRange(
-                        range_type='timestamps',
-                        from_value=query_start_ts,
-                        to_value=query_end_ts,
+                self._query_range_in_splittable_chunks(
+                    query=lambda chunk_start, chunk_end: self._query_and_save_internal_transactions_for_range(  # noqa: E501
+                        address=address,
+                        period=TimestampOrBlockRange(
+                            range_type='timestamps',
+                            from_value=chunk_start,
+                            to_value=chunk_end,
+                        ),
+                        location_string=location_string,
                     ),
-                    location_string=location_string,
+                    start_ts=query_start_ts,
+                    end_ts=query_end_ts,
                 )
             except NoAvailableIndexers as e:
                 log.warning(
@@ -919,14 +968,18 @@ class EvmTransactions(ABC):  # noqa: B024
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
-                self._query_and_save_erc20_transfers_for_range(
-                    address=address,
-                    period=TimestampOrBlockRange(
-                        range_type='timestamps',
-                        from_value=query_start_ts,
-                        to_value=query_end_ts,
+                self._query_range_in_splittable_chunks(
+                    query=lambda chunk_start, chunk_end: self._query_and_save_erc20_transfers_for_range(  # noqa: E501
+                        address=address,
+                        period=TimestampOrBlockRange(
+                            range_type='timestamps',
+                            from_value=chunk_start,
+                            to_value=chunk_end,
+                        ),
+                        location_string=location_string,
                     ),
-                    location_string=location_string,
+                    start_ts=query_start_ts,
+                    end_ts=query_end_ts,
                 )
             except NoAvailableIndexers as e:
                 log.warning(

@@ -26,7 +26,8 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import DataIntegrityError, RemoteError
+from rotkehlchen.chain.evm.transactions import MIN_SPLITTABLE_QUERY_RANGE
+from rotkehlchen.errors.misc import DataIntegrityError, RemoteError, RequestTooLargeError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -1274,3 +1275,46 @@ def test_wait_until_no_query_for_releases_locks_on_error(
 
     for address in addresses:
         assert eth_transactions.address_tx_locks[address].locked() is False
+
+
+def test_too_large_range_is_split_and_retried(ethereum_manager: 'EthereumManager') -> None:
+    """A range an indexer refuses to serve must be halved and retried, not abandoned.
+
+    Etherscan answers an oversized range by asking for a smaller dataset instead of
+    returning data, and rotki's first query for an address covers the whole chain history.
+    """
+    served: list[tuple[Timestamp, Timestamp]] = []
+
+    def query(chunk_start: Timestamp, chunk_end: Timestamp) -> None:
+        served.append((chunk_start, chunk_end))
+        if chunk_end - chunk_start > 20000:
+            raise RequestTooLargeError('Query Timeout occured')
+
+    ethereum_manager.transactions._query_range_in_splittable_chunks(
+        query=query,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(80000),
+    )
+    # the chunks that were actually served must tile the range, oldest first, without gaps
+    assert [x for x in served if x[1] - x[0] <= 20000] == [
+        (0, 20000), (20001, 40000), (40001, 60000), (60001, 80000),
+    ]
+
+
+def test_too_large_range_stops_splitting_at_the_floor(ethereum_manager: 'EthereumManager') -> None:
+    """Halving forever would spin, so below the floor the error surfaces to the caller."""
+    attempts = 0
+
+    def query(chunk_start: Timestamp, chunk_end: Timestamp) -> None:
+        nonlocal attempts
+        attempts += 1
+        raise RequestTooLargeError('Query Timeout occured')
+
+    with pytest.raises(RequestTooLargeError):
+        ethereum_manager.transactions._query_range_in_splittable_chunks(
+            query=query,
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(MIN_SPLITTABLE_QUERY_RANGE),
+        )
+
+    assert attempts == 1, 'a range already at the floor must not be split'

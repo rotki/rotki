@@ -226,6 +226,16 @@ class EtherscanLikeApi(ABC):
         """Return optional account endpoint pagination params for an indexer."""
         return None
 
+    def _handle_missing_result(self, chain_id: ChainID, json_ret: dict[str, Any]) -> None:
+        """Hook for subclasses to map a response carrying no result to a specific error.
+
+        Called just before the generic "missing a result" RemoteError is raised, so an
+        indexer that answers an oversized query with a distinguishable message can turn it
+        into something callers are able to act on instead of a malformed-response error.
+
+        May raise RemoteError or any of its subclasses.
+        """
+
     @overload
     def _query(
             self,
@@ -394,6 +404,7 @@ class EtherscanLikeApi(ABC):
                     if action in {'eth_getTransactionByHash', 'eth_getTransactionReceipt', 'getcontractcreation'}:  # noqa: E501
                         return None
 
+                    self._handle_missing_result(chain_id=chain_id, json_ret=json_ret)
                     raise RemoteError(
                         f'Unexpected format of {self.name} response for request {response.url}. '
                         f'Missing a result in response. Response was: {response.text}',

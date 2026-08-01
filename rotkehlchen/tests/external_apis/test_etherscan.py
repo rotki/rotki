@@ -1,4 +1,5 @@
 import os
+from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
@@ -13,7 +14,7 @@ from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, RequestTooLargeError
 from rotkehlchen.externalapis.etherscan import (
     ETHERSCAN_PAGINATION_LIMIT,
     ETHERSCAN_TIER_BY_DAILY_LIMIT,
@@ -21,6 +22,7 @@ from rotkehlchen.externalapis.etherscan import (
 )
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     ChainID,
@@ -490,3 +492,22 @@ def test_eth_call_historical_block_refused(temp_etherscan: Etherscan) -> None:
         ) == '0x1'
 
     assert query_mock.call_args.kwargs['options'] == {'to': dai, 'data': '0x18160ddd'}
+
+
+def test_query_timeout_asks_for_a_smaller_range(temp_etherscan: Etherscan) -> None:
+    """Etherscan answers an oversized range with a null result and a request to shrink it.
+
+    That must surface as RequestTooLargeError so callers split the range, rather than as a
+    generic malformed-response error that just aborts the query.
+    """
+    with patch.object(
+        temp_etherscan.session,
+        'get',
+        return_value=MockResponse(HTTPStatus.OK, '{"status":"0","message":"Query Timeout occured. Please select a smaller result dataset","result":null}'),  # noqa: E501
+    ), pytest.raises(RequestTooLargeError, match='Query Timeout'):
+        temp_etherscan._query(
+            chain_id=ChainID.GNOSIS,
+            module='account',
+            action='tokentx',
+            options={'address': make_evm_address()},
+        )
