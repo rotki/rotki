@@ -35,6 +35,19 @@ WEB3 = Web3()
 _WEB3_CONTRACT_CACHE: dict[tuple[ChecksumEvmAddress, int], Any] = {}
 
 
+def _checksum_address_output(value: Any, output_type: str) -> Any:
+    """Checksum one address typed output, recursing through arrays of any dimension.
+
+    An abi array type spells its outermost dimension last, so stripping the trailing
+    [] or [n] gives the element type. Keeps whatever container the codec produced.
+    """
+    if output_type == 'address':
+        return to_checksum_address(value)
+
+    inner_type = output_type[:output_type.rindex('[')]
+    return type(value)(_checksum_address_output(item, inner_type) for item in value)
+
+
 def checksum_decoded_addresses(
         values: tuple[Any, ...],
         output_types: list[str],
@@ -46,22 +59,17 @@ def checksum_decoded_addresses(
     exactly, so a lowercased address here builds an identifier that never matches the
     canonical one. Everything downstream is annotated ChecksumEvmAddress already.
 
-    Nested tuple outputs are left alone, no contract we decode returns an address inside one.
+    Arrays are handled at any nesting depth, gnosis pay's admins helper returns address[][].
+    Tuple (struct) outputs are left alone, no contract we decode returns an address inside one.
     """
     if not any(output_type.startswith('address') for output_type in output_types):
         return values  # nothing to do, which is the common case
 
-    checksummed = []
-    for value, output_type in zip(values, output_types, strict=False):
-        if output_type == 'address':
-            checksummed.append(to_checksum_address(value))
-        elif output_type.startswith('address['):
-            # keep the container type the codec produced
-            checksummed.append(type(value)(to_checksum_address(item) for item in value))
-        else:
-            checksummed.append(value)
-
-    return tuple(checksummed)
+    return tuple(
+        _checksum_address_output(value, output_type)
+        if output_type.startswith('address') else value
+        for value, output_type in zip(values, output_types, strict=False)
+    )
 
 
 def _get_web3_contract(address: ChecksumEvmAddress, abi: ABI) -> Any:

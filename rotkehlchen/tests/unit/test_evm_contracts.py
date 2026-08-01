@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 import pytest
 from eth_utils import is_checksum_address
 
+from rotkehlchen.chain.evm.contracts import checksum_decoded_addresses
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChainID
 
@@ -68,3 +69,24 @@ def test_fallback_to_packaged_db(ethereum_inquirer: EthereumInquirer):
             (address, abi),
         )
         assert cursor.fetchone()[0] == 1
+
+
+def test_checksum_decoded_addresses() -> None:
+    """Test that address outputs get checksummed at any array nesting depth.
+
+    Gnosis Pay's admins helper returns address[][], which is the deepest we decode.
+    """
+    assert checksum_decoded_addresses(
+        values=(
+            '0x37f18a82493cdf80675ff01e58c1a1b39637cf50',
+            ['0xc37b40abdb939635068d3c5f13e7faf686f03b65'],
+            ((), ('0x37f18a82493cdf80675ff01e58c1a1b39637cf50',)),
+            42,
+        ),
+        output_types=['address', 'address[]', 'address[][]', 'uint256'],
+    ) == (
+        '0x37f18A82493cdF80675fF01e58c1A1b39637cf50',
+        ['0xc37b40ABdB939635068d3c5f13E7faF686F03B65'],
+        ((), ('0x37f18A82493cdF80675fF01e58c1A1b39637cf50',)),
+        42,
+    )
