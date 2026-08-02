@@ -102,6 +102,16 @@ vi.mock('@vueuse/core', async () => {
   };
 });
 
+// `@/i18n` builds the real instance from `locales/en.json`, which costs ~835ms to import.
+// Nothing in a unit test uses it: `createI18n` is already mocked below, no spec imports the
+// module, and its only other consumer - the dev key-existence warning in `@/message-key` - is
+// compiled out under MODE === 'test'. It is reached transitively though (message-key is imported
+// by every settings registry slice), so leaving it real taxes any spec that touches a setting.
+vi.mock('@/i18n', () => ({
+  i18n: { global: { te: (): boolean => true } },
+  loadLocaleMessages: vi.fn(async () => Promise.resolve()),
+}));
+
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({
     t: mockT,
