@@ -2,8 +2,9 @@ import type { Ref } from 'vue';
 import type { OverlayPair } from '@/modules/history/balances/use-accounting-overlay';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import flushPromises from 'flush-promises';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TaskType } from '@/modules/core/tasks/task-type';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 
 const { runTaskMock } = vi.hoisted(() => ({ runTaskMock: vi.fn() }));
 
@@ -29,11 +30,11 @@ function entry(opts: { protocol?: string | null; times: number[]; values: string
 }
 
 function success(entries: Record<string, unknown>[], processingRequired = false): unknown {
-  return { success: true, result: { entries, processingRequired } };
+  return ok({ entries, processingRequired });
 }
 
 function failure(message: string): unknown {
-  return { success: false, message, cancelled: false, backendCancelled: false, skipped: false };
+  return err(TaskFailed({ message }));
 }
 
 describe('useAccountingOverlay', () => {
@@ -152,9 +153,6 @@ describe('useAccountingOverlay', () => {
     expect(runTaskMock).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({
-        guard: false,
-        type: TaskType.QUERY_HISTORICAL_BALANCE_SERIES,
-        unique: false,
       }),
     );
   });

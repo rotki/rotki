@@ -20,9 +20,15 @@ function asScope(members: readonly (string | number)[]): string {
  * exists, and the mechanism submits them later. A divergence between the two would not fail loudly
  * — the children would simply never be gated by the parent that claims them, and the flow would
  * report on work that is not the work running.
+ *
+ * ⚠️ `ignoreCache` is part of the identity for the same reason it is below. A refresh declares its
+ * per-chain decode up front with `deps` on every account sync, so `tx_decoding:<chain>` sat PENDING
+ * with `ignoreCache: false` for the whole sync window; keyed by chain alone, pressing "Redecode all
+ * transactions" during that window was handed the pending run's promise. The forced decode never
+ * reached the backend, and the REDECODE umbrella still settled COMPLETE.
  */
-export function decodeActivityId(chain: string): ActivityId {
-  return makeActivityId(ActivityKind.TX_DECODING, chain);
+export function decodeActivityId(chain: string, ignoreCache = false): ActivityId {
+  return makeActivityId(ActivityKind.TX_DECODING, chain, ignoreCache ? ActivityPart.PULL : ActivityPart.CACHED);
 }
 
 /**

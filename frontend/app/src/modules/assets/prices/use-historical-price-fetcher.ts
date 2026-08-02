@@ -1,12 +1,15 @@
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import { type HistoricalAssetPricePayload, HistoricalAssetPriceResponse } from '@rotki/common';
+import { getOr, map as mapResult, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseHistoricalPriceFetcherReturn {
   fetchHistoricalAssetPrice: (payload: HistoricalAssetPricePayload) => Promise<HistoricalAssetPriceResponse>;
@@ -16,7 +19,7 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const api = useStatisticsApi();
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
   const { getAssetField } = useAssetInfoRetrieval();
   const { notifyError } = useNotifications();
   const { failedDailyPrices, resolvedFailedDailyPrices } = useHistoricPriceCache();
@@ -59,41 +62,51 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
     const excludeTimestamps
       = failedTimestamps.filter(timestamp => !resolvedTimestamps.includes(timestamp));
 
-    const outcome = await runTask<HistoricalAssetPriceResponse, TaskMeta>(
-      async () => api.queryHistoricalAssetPrices({
-        ...payload,
-        excludeTimestamps,
-      }),
-      {
-        type: TaskType.FETCH_DAILY_HISTORIC_PRICE,
-        meta: {
-          description: t('actions.balances.historic_fetch_price.daily.task.detail', {
-            asset: getAssetField(payload.asset, 'name'),
-          }),
-          title: t('actions.balances.historic_fetch_price.daily.task.title'),
-        },
-      },
-    );
-
-    if (outcome.success) {
-      const parsed = HistoricalAssetPriceResponse.parse(outcome.result);
-      resetFailedStates(asset, parsed, excludeTimestamps);
-      return parsed;
-    }
-
-    if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
-      notifyError(
-        t('actions.balances.historic_fetch_price.daily.task.title'),
-        t('actions.balances.historic_fetch_price.daily.error.message'),
-      );
-    }
-
-    return {
+    const empty: HistoricalAssetPriceResponse = {
       noPricesTimestamps: [],
       prices: {},
       rateLimitedPricesTimestamps: [],
     };
+    // One native PRICES activity per (asset, interval, range) — the payload fields that make the
+    // query distinct. A per-asset id alone would let two different ranges for the same asset
+    // dedup onto one promise. Readers aggregate with `useWorkStatusPrefix`.
+    const outcome = await submitTask<HistoricalAssetPriceResponse>({
+      id: makeActivityId(
+        ActivityKind.PRICES,
+        ActivityPart.DAILY,
+        asset,
+        payload.interval,
+        payload.fromTimestamp,
+        payload.toTimestamp,
+      ),
+      kind: ActivityKind.PRICES,
+      rerunnable: true,
+      run: async ({ runTask }): Promise<Result<HistoricalAssetPriceResponse, TaskError>> => mapResult(
+        await runTask<HistoricalAssetPriceResponse>(
+          async () => api.queryHistoricalAssetPrices({
+            ...payload,
+            excludeTimestamps,
+          }),
+        ),
+        (result) => {
+          const parsed = HistoricalAssetPriceResponse.parse(result);
+          resetFailedStates(asset, parsed, excludeTimestamps);
+          return parsed;
+        },
+      ),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.prices.daily'), { asset: getAssetField(payload.asset, 'name') }),
+      title: t('task_center.group.prices'),
+    });
+
+    onActionableError(outcome, (error) => {
+      logger.error(error.message);
+      notifyError(
+        t('actions.balances.historic_fetch_price.daily.task.title'),
+        t('actions.balances.historic_fetch_price.daily.error.message'),
+      );
+    });
+
+    return getOr(outcome, empty);
   };
 
   return {

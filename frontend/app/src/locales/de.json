@@ -60,8 +60,7 @@
         },
         "task": {
           "description": "Alle Salden werden abgefragt und ein Snapshot für die Statistik gespeichert.",
-          "ignore_errors_note": "Fehler während der Abfrage werden ignoriert.",
-          "title": "Bilanz-Snapshot wird gespeichert"
+          "ignore_errors_note": "Fehler während der Abfrage werden ignoriert."
         }
       }
     },
@@ -69,9 +68,6 @@
       "liquity_pools": {
         "error": {
           "description": "Die Abfrage der Liquity Pools ist fehlgeschlagen: {message}"
-        },
-        "task": {
-          "title": "Liquity Pools abfragen"
         }
       }
     },
@@ -79,9 +75,6 @@
       "error": {
         "description": "Abfrage der Konten für {blockchain} fehlgeschlagen: {message}",
         "title": "Kontenabfrage"
-      },
-      "task": {
-        "title": "{blockchain}-Konten abfragen"
       }
     }
   },

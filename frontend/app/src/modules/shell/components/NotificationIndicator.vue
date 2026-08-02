@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useSilentNotifications } from '@/modules/core/notifications/use-silent-notifications';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 defineProps<{
   visible: boolean;
@@ -17,7 +17,7 @@ function click() {
   emit('click');
 }
 
-const { hasRunningTasks } = storeToRefs(useTaskStore());
+const { isActive: hasRunningTasks } = useTaskCenter();
 const { silent } = useSilentNotifications();
 
 const { t } = useI18n({ useScope: 'global' });

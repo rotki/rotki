@@ -1,23 +1,22 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import type { LinkedMovementMatch } from '@/modules/history/events/event-payloads';
 import type { MatchingFlow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
 import { NotificationGroup } from '@rotki/common';
+import { isErr, map as mapResult } from 'plainfp/result';
 import { z } from 'zod';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useBridgeMatchSettings } from '@/modules/settings/use-bridge-match-settings';
+import { activityLabel } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, isActionable, makeActivityId, type TaskOutcome, useNativeTask } from '@/modules/task-center/use-native-task';
 
 /** The bridge leg metadata the decoders record in the event's extra data. */
 const BridgeExtraData = z.object({
@@ -113,8 +112,7 @@ const triggerAutoMatchLoading = ref<boolean>(false);
 export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnmatchedBridgeTransactionsReturn => {
   const { t } = useI18n({ useScope: 'global' });
   const { removeMatching, showErrorMessage, showSuccessMessage } = useNotifications();
-  const { runTask } = useTaskHandler();
-  const { useIsTaskRunning } = useTaskStore();
+  const { statusOf, submitTask, useIsActive } = useNativeTask();
 
   const { fetchHistoryEvents } = useHistoryEventsApi();
   const {
@@ -126,8 +124,7 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
   const { signalEventsModified } = useHistoryStore();
   const { allowed: isBridgeMatchingAllowed, minimumTier: bridgeMatchingMinimumTier } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
 
-  const isTaskRunning = useIsTaskRunning(TaskType.MATCH_BRIDGE_TRANSACTIONS);
-  const autoMatchLoading = logicOr(triggerAutoMatchLoading, isTaskRunning);
+  const autoMatchLoading = logicOr(triggerAutoMatchLoading, useIsActive(ActivityKind.HISTORY_EVENTS, ActivityPart.BRIDGE));
 
   const unmatchedTransactions = computed<UnmatchedBridgeTransaction[]>(() => get(rawUnmatchedTransactions));
   const ignoredTransactions = computed<UnmatchedBridgeTransaction[]>(() => get(rawIgnoredTransactions));
@@ -268,23 +265,32 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
   };
 
   const triggerBridgeAutoMatching = async (): Promise<void> => {
-    if (!get(isBridgeMatchingAllowed) || get(isTaskRunning))
+    if (!get(isBridgeMatchingAllowed) || statusOf(ActivityKind.HISTORY_EVENTS, ActivityPart.BRIDGE).active)
       return;
 
     set(triggerAutoMatchLoading, true);
 
-    const outcome = await runTask<boolean, TaskMeta>(
-      async () => triggerBridgeMatching(),
-      { type: TaskType.MATCH_BRIDGE_TRANSACTIONS, meta: { title: t('bridge_matching.auto_match.task_title') }, guard: false },
-    );
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.HISTORY_EVENTS, ActivityPart.BRIDGE),
+      kind: ActivityKind.HISTORY_EVENTS,
+      rerunnable: true,
+      run: async ({ runTask }): Promise<TaskOutcome> => mapResult(
+        await runTask<boolean>(
+          async () => triggerBridgeMatching(),
+        ),
+        () => {},
+      ),
+      subtitle: activityLabel(ActivityKind.HISTORY_EVENTS, ActivityPart.BRIDGE),
+      title: t('task_center.group.history_events'),
+    });
 
-    if (outcome.success) {
+    if (!isErr(outcome)) {
       await refreshUnmatchedBridgeTransactions(true);
       signalEventsModified();
     }
-    else if (isActionableFailure(outcome)) {
+    else if (isActionable(outcome.error)) {
       logger.error('Failed to trigger bridge auto match:', outcome.error);
-      showErrorMessage(t('bridge_matching.auto_match.error_title'), t('bridge_matching.auto_match.error', { error: outcome.message }));
+      showErrorMessage(t('bridge_matching.auto_match.error_title'), t('bridge_matching.auto_match.error', { error: outcome.error.message }));
     }
 
     set(triggerAutoMatchLoading, false);

@@ -17,15 +17,15 @@ import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic
 import { zeroBalance } from '@/modules/core/common/data/bignumbers';
 import { balanceSum } from '@/modules/core/common/data/calculation';
 import { uniqueStrings } from '@/modules/core/common/data/data';
-import { Section } from '@/modules/core/common/status';
 import HistoryEventsView from '@/modules/history/events/HistoryEventsView.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
 import LiquityPools from '@/modules/staking/liquity/LiquityPools.vue';
 import LiquityProxyInformation from '@/modules/staking/liquity/LiquityProxyInformation.vue';
 import LiquityStake from '@/modules/staking/liquity/LiquityStake.vue';
 import LiquityStatistics from '@/modules/staking/liquity/LiquityStatistics.vue';
 import { useLiquityStore } from '@/modules/staking/liquity/use-liquity-store';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const emit = defineEmits<{
   refresh: [refresh: boolean];
@@ -37,12 +37,15 @@ defineSlots<{
 
 const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 const liquityStore = useLiquityStore();
-const { staking, stakingPools, stakingQueryStatus, statistics } = storeToRefs(liquityStore);
+const { staking, stakingPools, statistics } = storeToRefs(liquityStore);
+const { useActivity, useIsActive } = useTaskCenter();
+const stakingActivity = useActivity(ActivityKind.LIQUITY, ActivityPart.STAKING);
+const stakingQueryStatus = computed(() => get(stakingActivity)?.steps);
 
 const { getProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 const liquityHistoricPriceStatus = getProtocolStatsPriceQueryStatus('liquity');
 
-const { isLoading: loading } = useSectionStatus(Section.DEFI_LIQUITY_STAKING);
+const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STAKING);
 
 const chains = [Blockchain.ETH];
 
@@ -289,7 +292,7 @@ function refresh() {
             <div v-if="stakingQueryStatus">
               {{
                 t('liquity_staking_details.query_staking_data', {
-                  processed: stakingQueryStatus.processed,
+                  processed: stakingQueryStatus.current,
                   total: stakingQueryStatus.total,
                 })
               }}

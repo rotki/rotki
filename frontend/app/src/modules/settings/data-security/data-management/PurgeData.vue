@@ -23,7 +23,7 @@ const purgeableModules = [...Object.values(Module), ...purgeableOnlyModules];
 const { allExchanges } = storeToRefs(useLocationStore());
 const { allTxChainsInfo } = useSupportedChains();
 
-const { purgeCache } = useSessionPurge();
+const { purgeData } = useSessionPurge();
 const { deleteModuleData } = useBlockchainBalancesApi();
 const { deleteStakeEvents, deleteTransactions } = useHistoryEventsApi();
 const { deleteExchangeData } = useExchangeApi();
@@ -113,13 +113,14 @@ async function purgeSource(source: Purgeable) {
   const valueRef = purgeable.find(({ id }) => id === source)?.value;
   const value = valueRef ? get(valueRef) : '';
 
-  await deleteSourceData(source, value);
-
-  // Purgeable only modules don't have some cache that needs reset.
-  if (Array.prototype.includes.call(purgeableOnlyModules, value))
+  // Purgeable-only modules have no derived cache, so they need no activity for anything to hang a
+  // `staleAfter` edge off — delete them directly.
+  if (Array.prototype.includes.call(purgeableOnlyModules, value)) {
+    await deleteSourceData(source, value);
     return;
+  }
 
-  purgeCache(source, value);
+  await purgeData(source, value, async () => deleteSourceData(source, value));
 }
 
 const { pending, showConfirmation, status } = useCacheClear<Purgeable>(

@@ -1,8 +1,10 @@
+import { runSpecWith } from '@test/utils/mocks/native-task';
 import { createPinia, setActivePinia } from 'pinia';
-import { none, some } from 'plainfp';
+import { err, none, ok, some } from 'plainfp';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type CreateAccountPayload, IncompleteUpgradeError, SyncConflictError } from '@/modules/auth/login';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type UnlockCredentials, UnlockErrorKind } from './use-unlock-flow';
 import { useUnlockSteps } from './use-unlock-steps';
 
@@ -23,7 +25,7 @@ const {
   monitorStop,
   requestRestart,
   resolveStoredCredentials,
-  runTask,
+  runTaskResult,
   setSettings,
   sigilEmit,
   waitReady,
@@ -47,7 +49,7 @@ const {
     monitorStop: vi.fn(),
     requestRestart: vi.fn(),
     resolveStoredCredentials: vi.fn(),
-    runTask: vi.fn(),
+    runTaskResult: vi.fn(),
     setSettings: vi.fn(),
     sigilEmit: vi.fn(),
     waitReady: vi.fn(),
@@ -76,10 +78,18 @@ vi.mock('./use-stored-credentials', () => ({
   useStoredCredentials: vi.fn(() => ({ resolveStoredCredentials })),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', () => ({
-  isActionableFailure: (outcome: { success: boolean; error?: unknown }): boolean =>
-    !outcome.success && outcome.error !== undefined,
-  useTaskHandler: vi.fn(() => ({ runTask })),
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  ActivityKind: { SESSION: 'session' },
+  ActivityPart: { CREATE: 'create', LOGIN: 'login' },
+  // Mirrors the real predicate: only an actionable `TaskFailed` carries a `cause`.
+  isActionable: (error: { _tag?: string }): boolean => error?._tag === 'TaskFailed',
+  makeActivityId: (kind: string, ...parts: (string | number)[]): string => [kind, ...parts].join(':'),
+  // The real bridge runs the spec's `run` and returns its outcome; do the same so a test drives
+  // the flow purely through `runTaskResult`.
+  useNativeTask: vi.fn(() => ({
+    runTaskResult,
+    submitTask: vi.fn(runSpecWith(runTaskResult)),
+  })),
 }));
 
 vi.mock('@/modules/session/use-session-settings', () => ({
@@ -188,7 +198,7 @@ describe('useUnlockSteps', () => {
       expect(result).toEqual({ ok: true, value: undefined });
       expect(getRawSettings).toHaveBeenCalled();
       expect(getExchanges).toHaveBeenCalled();
-      expect(runTask).not.toHaveBeenCalled();
+      expect(runTaskResult).not.toHaveBeenCalled();
     });
 
     it('should map SyncConflictError onto the store and return err(syncConflict)', async () => {
@@ -232,22 +242,19 @@ describe('useUnlockSteps', () => {
   describe('loginSteps.login', () => {
     it('should run the login task path and colibri login', async () => {
       setupStore();
-      runTask.mockResolvedValue({
-        result: { exchanges: [], settings: { frontendSettings: '{}' } },
-        success: true,
-      });
+      runTaskResult.mockResolvedValue(ok({ exchanges: [], settings: { frontendSettings: '{}' } }));
 
       const { loginSteps } = useUnlockSteps();
       const result = await loginSteps.login({ password: 'p', username: 'bob' });
 
       expect(result).toEqual({ ok: true, value: undefined });
-      expect(runTask).toHaveBeenCalled();
+      expect(runTaskResult).toHaveBeenCalled();
       expect(colibriLogin).toHaveBeenCalledWith({ password: 'p', username: 'bob' });
     });
 
     it('should return err(wrongPassword) on a non-actionable login failure', async () => {
       setupStore();
-      runTask.mockResolvedValue({ message: '', success: false });
+      runTaskResult.mockResolvedValue(err(Cancelled({ message: '' })));
 
       const { loginSteps } = useUnlockSteps();
       const result = await loginSteps.login({ password: 'p', username: 'bob' });
@@ -263,15 +270,15 @@ describe('useUnlockSteps', () => {
       const result = await loginSteps.login({ password: 'p', username: '' });
 
       expect(result).toEqual({ error: { kind: UnlockErrorKind.unknown, message: '' }, ok: false });
-      expect(runTask).not.toHaveBeenCalled();
+      expect(runTaskResult).not.toHaveBeenCalled();
     });
 
     it('should map a SyncConflictError carried by an actionable login-task failure', async () => {
       const store = setupStore();
       const { syncConflict } = storeToRefs(store);
       const payload = { localLastModified: 1, remoteLastModified: 2 };
-      // the task monitor forwards the original error on the failed outcome
-      runTask.mockResolvedValue({ error: new SyncConflictError('conflict!', { payload }), message: 'conflict!', success: false });
+      // the task monitor forwards the original error as the cause of an actionable TaskFailed
+      runTaskResult.mockResolvedValue(err(TaskFailed({ cause: new SyncConflictError('conflict!', { payload }), message: 'conflict!' })));
 
       const { loginSteps } = useUnlockSteps();
       const result = await loginSteps.login({ password: 'p', username: 'bob' });
@@ -308,10 +315,7 @@ describe('useUnlockSteps', () => {
 
     it('should stash the new account when the create task succeeds', async () => {
       setupStore();
-      runTask.mockResolvedValue({
-        result: { exchanges: [], settings: { frontendSettings: '{}' } },
-        success: true,
-      });
+      runTaskResult.mockResolvedValue(ok({ exchanges: [], settings: { frontendSettings: '{}' } }));
 
       const { createSteps } = useUnlockSteps();
       const result = await createSteps(payload).login(payload.credentials);
@@ -322,7 +326,7 @@ describe('useUnlockSteps', () => {
 
     it('should return err(unknown) with the message when the create task fails', async () => {
       setupStore();
-      runTask.mockResolvedValue({ message: 'nope', success: false });
+      runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'nope' })));
 
       const { createSteps } = useUnlockSteps();
       const result = await createSteps(payload).login(payload.credentials);
@@ -354,9 +358,9 @@ describe('useUnlockSteps', () => {
       setupStore();
       callCreateAccount.mockResolvedValue({ taskId: 1 });
       // run the executor so the ack→monitor ordering inside createUnlock is observable.
-      runTask.mockImplementation(async (executor: () => Promise<unknown>) => {
+      runTaskResult.mockImplementation(async (executor: () => Promise<unknown>) => {
         await executor();
-        return { result: { exchanges: [], settings: { frontendSettings: '{}' } }, success: true };
+        return ok({ exchanges: [], settings: { frontendSettings: '{}' } });
       });
 
       const { createSteps } = useUnlockSteps();

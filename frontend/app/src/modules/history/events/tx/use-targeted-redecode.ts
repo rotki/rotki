@@ -7,6 +7,7 @@ import type {
 import { groupBy } from 'es-toolkit';
 import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
+import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -48,28 +49,30 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
    * Used by callers that need to handle errors themselves (e.g. conflict resolution).
    */
   const pullAndDecodeTransactionsRaw = async (payload: PullTransactionPayload, parent?: ActivityId): Promise<void> => {
-    // One tx names itself; a batch is only meaningful as a count.
-    const target = payload.txRefs.length === 1 ? payload.txRefs[0] : `${payload.txRefs.length}`;
+    // One tx names itself — truncated, since a full hash does not fit the row; a batch is only
+    // meaningful as a count.
+    const count = payload.txRefs.length;
+    const chain = getChainName(payload.chain);
+    const subtitle = count === 1
+      ? activityLabelFor(msg.$t('task_center.activity.tx_decoding.single'), { chain, tx: truncateAddress(payload.txRefs[0]) })
+      : activityLabelFor(msg.$t('task_center.activity.tx_decoding.batch'), { chain, count }, count);
 
     // Targeted re-decode of specific tx refs: a one-shot native TX_DECODING activity (not
     // rerunnable — the payload is request-specific). `decoded` carries whether the backend
     // actually re-decoded so the throw-on-no-change contract below is preserved.
-    let decoded = false;
-    const outcome = await submitTask({
+    const outcome = await submitTask<boolean>({
       id: targetedDecodeActivityId(payload.chain, payload.txRefs),
       kind: ActivityKind.TX_DECODING,
       lane: DECODE_LANE,
       parent,
       rerunnable: false,
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+      run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
         await runTask<boolean>(
           async () => pullAndRecodeTransactionRequest(payload),
         ),
-        (result) => {
-          decoded = result;
-        },
+        result => result,
       ),
-      subtitle: `${getChainName(payload.chain)} · ${target}`,
+      subtitle,
       title: t('task_center.group.tx_decoding'),
     });
 
@@ -79,7 +82,7 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
       return;
     }
 
-    if (!decoded)
+    if (!outcome.value)
       throw new Error(t('actions.transactions_redecode.error.title'));
   };
 
@@ -103,7 +106,10 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
   };
 
   const decodeBlockEvents = async (blockNumbers: readonly number[], parent?: ActivityId): Promise<void> => {
-    const target = blockNumbers.length === 1 ? `${blockNumbers[0]}` : `${blockNumbers.length}`;
+    const count = blockNumbers.length;
+    const subtitle = count === 1
+      ? activityLabelFor(msg.$t('task_center.activity.eth_block_decoding.single'), { block: blockNumbers[0] })
+      : activityLabelFor(msg.$t('task_center.activity.eth_block_decoding.batch'), { count }, count);
 
     const outcome = await submitTask({
       id: blockDecodeActivityId(blockNumbers),
@@ -117,7 +123,7 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
         ),
         () => {},
       ),
-      subtitle: target,
+      subtitle,
       title: t('task_center.group.eth_block_decoding'),
     });
 

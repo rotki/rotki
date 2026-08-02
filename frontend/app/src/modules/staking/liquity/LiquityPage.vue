@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
-import { Section } from '@/modules/core/common/status';
-import { useStatusStore } from '@/modules/core/common/use-status-store';
 import { usePremium } from '@/modules/premium/use-premium';
 import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
 import ActiveModules from '@/modules/settings/modules/ActiveModules.vue';
@@ -11,14 +9,11 @@ import { useSetting } from '@/modules/settings/use-setting';
 import LiquityStakingDetails from '@/modules/staking/liquity/LiquityStakingDetails.vue';
 import LiquityStakingPagePlaceholder from '@/modules/staking/liquity/LiquityStakingPagePlaceholder.vue';
 import { useLiquityDataFetching } from '@/modules/staking/liquity/use-liquity-data-fetching';
-import { useLiquityStore } from '@/modules/staking/liquity/use-liquity-store';
 
 const modules = [Module.LIQUITY];
 const { enabled: moduleEnabled } = useModuleEnabled(modules[0]);
-const { setStakingQueryStatus } = useLiquityStore();
 const { fetchPools, fetchStaking, fetchStatistics } = useLiquityDataFetching();
 const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
-const { useShouldShowLoadingScreen } = useStatusStore();
 const currencySymbol = useSetting('currencySymbol');
 const premium = usePremium();
 const { fetchPrices } = usePriceTaskManager();
@@ -28,7 +23,6 @@ const LQTY_ID = 'eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D';
 
 async function fetch(refresh = false) {
   resetProtocolStatsPriceQueryStatus('liquity');
-  setStakingQueryStatus(null);
 
   await Promise.all([
     fetchStaking(refresh),
@@ -50,21 +44,6 @@ watch(currencySymbol, async () => {
   if (get(moduleEnabled)) {
     await fetch(true);
   }
-});
-
-watch(useShouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING), async (current, old) => {
-  if (!old && current)
-    await fetchStaking();
-});
-
-watch(useShouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING_POOLS), async (current, old) => {
-  if (!old && current)
-    await fetchPools();
-});
-
-watch(useShouldShowLoadingScreen(Section.DEFI_LIQUITY_STATISTICS), async (current, old) => {
-  if (!old && current)
-    await fetchStatistics();
 });
 
 const { t } = useI18n({ useScope: 'global' });

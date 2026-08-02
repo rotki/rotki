@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
+import { useUndecodedTransactionsStatus } from '@/modules/history/events/tx/use-undecoded-transactions-status';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 
@@ -19,7 +19,7 @@ export function useUndecodedTransactionsCount(
 ): UseUndecodedTransactionsCountReturn {
   const { decodingStatus } = storeToRefs(useDecodingStatusStore());
   const { processing: statusProcessing } = useHistoryEventsStatus();
-  const { fetchUndecodedTransactionsBreakdown } = useHistoryTransactionDecoding();
+  const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
 
   const isProcessing = computed<boolean>(() =>
     processing === undefined ? get(statusProcessing) : toValue(processing),

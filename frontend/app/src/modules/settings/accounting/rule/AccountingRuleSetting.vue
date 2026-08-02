@@ -10,8 +10,6 @@ import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { type Filters, type Matcher, useAccountingRuleFilter } from '@/modules/core/table/filters/use-accounting-rule-filter';
 import TableFilter from '@/modules/core/table/TableFilter.vue';
 import { useServerTable } from '@/modules/core/table/use-server-table';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import AccountingRuleActionDialog, { type ActionDialogContext } from '@/modules/settings/accounting/rule/AccountingRuleActionDialog.vue';
 import AccountingRuleConflictsDialog from '@/modules/settings/accounting/rule/AccountingRuleConflictsDialog.vue';
 import AccountingRuleFormDialog from '@/modules/settings/accounting/rule/AccountingRuleFormDialog.vue';
@@ -23,6 +21,8 @@ import { useAccountingApi } from '@/modules/settings/api/use-accounting-api';
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
 import { anchorId } from '@/modules/settings/settings-actions';
 import { getPlaceholderRule } from '@/modules/settings/settings-utils';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const CustomRuleHandling = {
   /** Show regular rules (exclude event-specific rules) */
@@ -320,11 +320,11 @@ onMounted(async () => {
   await refresh();
 });
 
-const { useIsTaskRunning } = useTaskStore();
+const { useIsActive } = useTaskCenter();
 
-const exportFileLoading = useIsTaskRunning(TaskType.EXPORT_ACCOUNTING_RULES);
-const importFileLoading = useIsTaskRunning(TaskType.IMPORT_ACCOUNTING_RULES);
-const resetLoading = useIsTaskRunning(TaskType.RESET_ACCOUNTING_RULES);
+const exportFileLoading = useIsActive(ActivityKind.ACCOUNTING_RULES, ActivityPart.EXPORT);
+const importFileLoading = useIsActive(ActivityKind.ACCOUNTING_RULES, ActivityPart.IMPORT);
+const resetLoading = useIsActive(ActivityKind.ACCOUNTING_RULES, ActivityPart.RESET);
 
 const importFileDialog = ref<boolean>(false);
 </script>

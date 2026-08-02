@@ -1,10 +1,13 @@
 import type { ManualBalanceWithValue, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { bigNumberify } from '@rotki/common';
+import { runSpecWith } from '@test/utils/mocks/native-task';
 import { createPinia, setActivePinia } from 'pinia';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
-import { Status } from '@/modules/core/common/status';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useManualBalances } from './use-manual-balances';
 
 const manualBalances = ref<ManualBalanceWithValue[]>([]);
@@ -12,12 +15,14 @@ const manualLiabilities = ref<ManualBalanceWithValue[]>([]);
 
 const notifyError = vi.fn();
 const showErrorMessage = vi.fn();
-const runTask = vi.fn();
-const cancelTaskByTaskType = vi.fn().mockResolvedValue(undefined);
-const fetchDisabled = vi.fn().mockReturnValue(false);
-const getStatus = vi.fn().mockReturnValue(Status.NONE);
-const setStatus = vi.fn();
-const resetStatus = vi.fn();
+const runTaskResult = vi.fn();
+const cancelActivity = vi.fn();
+const statusOf = vi.fn();
+
+/** Runs the submitted spec inline so assertions see the real `run` body. */
+const submitTask = vi.fn(runSpecWith(runTaskResult));
+
+const IDLE = { active: false, everCompleted: false, pending: false, running: false };
 const queryManualBalances = vi.fn();
 const addManualBalances = vi.fn();
 const editManualBalances = vi.fn();
@@ -32,21 +37,15 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn(() => ({ notifyError, showErrorMessage })),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    useTaskHandler: vi.fn(() => ({ cancelTaskByTaskType, runTask })),
-  };
-});
-
-vi.mock('@/modules/shell/sync-progress/use-status-updater', async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    useStatusUpdater: vi.fn(() => ({ fetchDisabled, getStatus, resetStatus, setStatus })),
-  };
-});
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: vi.fn(() => ({
+    cancelActivity,
+    cancelByType: vi.fn(() => vi.fn()),
+    runTaskResult,
+    statusOf,
+    submitTask,
+  })),
+}));
 
 vi.mock('@/modules/balances/api/use-manual-balances-api', () => ({
   useManualBalancesApi: vi.fn(() => ({
@@ -119,34 +118,39 @@ describe('useManualBalances', () => {
     set(manualBalances, []);
     set(manualLiabilities, []);
     set(valueThreshold, '0');
-    fetchDisabled.mockReturnValue(false);
-    getStatus.mockReturnValue(Status.NONE);
+    statusOf.mockReturnValue(IDLE);
   });
 
   describe('fetchManualBalances', () => {
-    it('should skip the fetch when fetchDisabled returns true', async () => {
-      fetchDisabled.mockReturnValue(true);
+    it('should skip the fetch when already completed and not user initiated', async () => {
+      statusOf.mockReturnValue({ ...IDLE, everCompleted: true });
 
       await useManualBalances().fetchManualBalances();
 
-      expect(runTask).not.toHaveBeenCalled();
-      expect(setStatus).not.toHaveBeenCalled();
+      expect(submitTask).not.toHaveBeenCalled();
     });
 
-    it('should set REFRESHING when status is already LOADED', async () => {
-      getStatus.mockReturnValue(Status.LOADED);
-      runTask.mockResolvedValue({ success: true, result: { balances: [] } });
+    it('should skip the fetch while one is already active', async () => {
+      statusOf.mockReturnValue({ ...IDLE, active: true, running: true });
 
       await useManualBalances().fetchManualBalances();
 
-      expect(setStatus).toHaveBeenNthCalledWith(1, Status.REFRESHING);
-      expect(setStatus).toHaveBeenLastCalledWith(Status.LOADED);
+      expect(submitTask).not.toHaveBeenCalled();
+    });
+
+    it('should fetch when user initiated even if already completed', async () => {
+      statusOf.mockReturnValue({ ...IDLE, everCompleted: true });
+      runTaskResult.mockResolvedValue(ok({ balances: [] }));
+
+      await useManualBalances().fetchManualBalances(true);
+
+      expect(submitTask).toHaveBeenCalledOnce();
     });
 
     it('should split assets and liabilities into the matching refs', async () => {
       const asset = makeBalanceJson({ asset: 'ETH', balanceType: BalanceType.ASSET, identifier: 1 });
       const liability = makeBalanceJson({ asset: 'DAI', balanceType: BalanceType.LIABILITY, identifier: 2 });
-      runTask.mockResolvedValue({ success: true, result: { balances: [asset, liability] } });
+      runTaskResult.mockResolvedValue(ok({ balances: [asset, liability] }));
 
       await useManualBalances().fetchManualBalances();
 
@@ -156,42 +160,27 @@ describe('useManualBalances', () => {
       expect(get(manualLiabilities)[0].asset).toBe('DAI');
     });
 
-    it('should notify on actionable failure and reset status', async () => {
-      runTask.mockResolvedValue({
-        backendCancelled: false,
-        cancelled: false,
-        error: new Error('boom'),
-        message: 'boom',
-        skipped: false,
-        success: false,
-      });
+    it('should notify on an actionable failure', async () => {
+      runTaskResult.mockResolvedValue(err(TaskFailed({ cause: new Error('boom'), message: 'boom' })));
 
       await useManualBalances().fetchManualBalances();
 
       expect(notifyError).toHaveBeenCalled();
-      expect(resetStatus).toHaveBeenCalled();
     });
 
     it('should not notify when the failure was cancelled', async () => {
-      runTask.mockResolvedValue({
-        backendCancelled: false,
-        cancelled: true,
-        message: '',
-        skipped: false,
-        success: false,
-      });
+      runTaskResult.mockResolvedValue(err(Cancelled({ message: '' })));
 
       await useManualBalances().fetchManualBalances();
 
       expect(notifyError).not.toHaveBeenCalled();
-      expect(resetStatus).toHaveBeenCalled();
     });
 
     it('should forward the value threshold to queryManualBalances', async () => {
       set(valueThreshold, '5');
-      runTask.mockImplementation(async (task: () => Promise<unknown>) => {
+      runTaskResult.mockImplementation(async (task: () => Promise<unknown>) => {
         await task();
-        return { success: true, result: { balances: [] } };
+        return ok({ balances: [] });
       });
 
       await useManualBalances().fetchManualBalances();
@@ -202,16 +191,28 @@ describe('useManualBalances', () => {
 
   describe('addManualBalance', () => {
     it('should cancel any in-flight fetch before adding', async () => {
-      runTask.mockResolvedValue({ success: true, result: { balances: [] } });
+      runTaskResult.mockResolvedValue(ok({ balances: [] }));
 
       await useManualBalances().addManualBalance(makeRawBalance());
 
-      expect(cancelTaskByTaskType).toHaveBeenCalled();
+      expect(cancelActivity).toHaveBeenCalledWith(ActivityKind.MANUAL_BALANCES, ActivityPart.FETCH);
+    });
+
+    it('should give each balance its own activity id so concurrent saves do not dedup', async () => {
+      runTaskResult.mockResolvedValue(ok({ balances: [] }));
+
+      const balances = useManualBalances();
+      await balances.addManualBalance(makeRawBalance({ asset: 'ETH', label: 'one' }));
+      await balances.addManualBalance(makeRawBalance({ asset: 'DAI', label: 'two' }));
+
+      const [first] = submitTask.mock.calls[0];
+      const [second] = submitTask.mock.calls[1];
+      expect(first.id).not.toBe(second.id);
     });
 
     it('should update balances and return success on a successful add', async () => {
       const created = makeBalanceJson({ identifier: 10, label: 'added' });
-      runTask.mockResolvedValue({ success: true, result: { balances: [created] } });
+      runTaskResult.mockResolvedValue(ok({ balances: [created] }));
 
       const result = await useManualBalances().addManualBalance(makeRawBalance());
 
@@ -222,14 +223,7 @@ describe('useManualBalances', () => {
 
     it('should extract validation errors when the failure carries ApiValidationError', async () => {
       const error = new ApiValidationError('{"label": ["already exists"]}');
-      runTask.mockResolvedValue({
-        backendCancelled: false,
-        cancelled: false,
-        error,
-        message: 'validation failed',
-        skipped: false,
-        success: false,
-      });
+      runTaskResult.mockResolvedValue(err(TaskFailed({ cause: error, message: 'validation failed' })));
 
       const result = await useManualBalances().addManualBalance(makeRawBalance({ label: 'dup' }));
 
@@ -237,14 +231,7 @@ describe('useManualBalances', () => {
     });
 
     it('should return the raw message on a non-validation failure', async () => {
-      runTask.mockResolvedValue({
-        backendCancelled: false,
-        cancelled: false,
-        error: new Error('boom'),
-        message: 'server exploded',
-        skipped: false,
-        success: false,
-      });
+      runTaskResult.mockResolvedValue(err(TaskFailed({ cause: new Error('boom'), message: 'server exploded' })));
 
       const result = await useManualBalances().addManualBalance(makeRawBalance());
 
@@ -252,13 +239,7 @@ describe('useManualBalances', () => {
     });
 
     it('should return an empty message when the failure is cancelled', async () => {
-      runTask.mockResolvedValue({
-        backendCancelled: false,
-        cancelled: true,
-        message: 'cancelled',
-        skipped: false,
-        success: false,
-      });
+      runTaskResult.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
 
       const result = await useManualBalances().addManualBalance(makeRawBalance());
 
@@ -269,7 +250,7 @@ describe('useManualBalances', () => {
   describe('editManualBalance', () => {
     it('should update balances and return success on a successful edit', async () => {
       const updatedJson = makeBalanceJson({ identifier: 3, label: 'updated' });
-      runTask.mockResolvedValue({ success: true, result: { balances: [updatedJson] } });
+      runTaskResult.mockResolvedValue(ok({ balances: [updatedJson] }));
 
       const result = await useManualBalances().editManualBalance(makeBalance({ identifier: 3, label: 'updated' }));
 
@@ -277,16 +258,18 @@ describe('useManualBalances', () => {
       expect(get(manualBalances)[0].label).toBe('updated');
     });
 
+    it('should key the activity id on the balance identifier', async () => {
+      runTaskResult.mockResolvedValue(ok({ balances: [] }));
+
+      await useManualBalances().editManualBalance(makeBalance({ identifier: 42 }));
+
+      const [spec] = submitTask.mock.calls[0];
+      expect(spec.id).toContain('42');
+    });
+
     it('should extract validation errors on ApiValidationError failure', async () => {
       const error = new ApiValidationError('{"amount": ["must be positive"]}');
-      runTask.mockResolvedValue({
-        backendCancelled: false,
-        cancelled: false,
-        error,
-        message: 'validation failed',
-        skipped: false,
-        success: false,
-      });
+      runTaskResult.mockResolvedValue(err(TaskFailed({ cause: error, message: 'validation failed' })));
 
       const result = await useManualBalances().editManualBalance(makeBalance({ amount: bigNumberify(-1) }));
 
@@ -296,18 +279,21 @@ describe('useManualBalances', () => {
 
   describe('save', () => {
     it('should route raw balances (no identifier) to addManualBalance', async () => {
-      runTask.mockResolvedValue({ success: true, result: { balances: [] } });
+      runTaskResult.mockImplementation(async (task: () => Promise<unknown>) => {
+        await task();
+        return ok({ balances: [] });
+      });
 
       await useManualBalances().save(makeRawBalance());
 
-      expect(runTask).toHaveBeenCalledWith(expect.any(Function), expect.objectContaining({ type: expect.any(Number) }));
-      expect(addManualBalances).toBeDefined();
+      expect(addManualBalances).toHaveBeenCalled();
+      expect(editManualBalances).not.toHaveBeenCalled();
     });
 
     it('should route balances with an identifier to editManualBalance', async () => {
-      runTask.mockImplementation(async (task: () => Promise<unknown>) => {
+      runTaskResult.mockImplementation(async (task: () => Promise<unknown>) => {
         await task();
-        return { success: true, result: { balances: [] } };
+        return ok({ balances: [] });
       });
 
       await useManualBalances().save(makeBalance({ identifier: 7 }));

@@ -5,13 +5,13 @@ import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/modu
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
-import { Section } from '@/modules/core/common/status';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { exchange } = defineProps<{
   exchange: 'binance' | 'binanceus';
@@ -22,7 +22,8 @@ const { t } = useI18n({ useScope: 'global' });
 const savingsAssets = ref<string[]>([]);
 const savingsReceived = ref<AssetBalance[]>([]);
 
-const { isLoading: loading } = useSectionStatus(Section.EXCHANGE_SAVINGS);
+const { useIsActive } = useTaskCenter();
+const loading = useIsActive(ActivityKind.EXCHANGE_SAVINGS);
 const { fetchExchangeSavings } = useBinanceSavings();
 const currencySymbol = useSetting('currencySymbol');
 

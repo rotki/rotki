@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { BalanceQueryProgressType, CommonQueryProgressData } from '@/modules/dashboard/progress/types';
-import { TaskType } from '@/modules/core/tasks/task-type';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
+import { ActivityKind } from '@/modules/task-center/core/types';
 
 interface BalanceQueryProgressOperationData {
   type: BalanceQueryProgressType;
@@ -34,7 +34,7 @@ const currentOperationData = computed(() => progress.currentOperationData);
 
   <div class="inline gap-2">
     {{ processingMessage }}
-    <template v-if="currentOperationData && currentOperationData.type === TaskType.FETCH_DETECTED_TOKENS">
+    <template v-if="currentOperationData && currentOperationData.type === ActivityKind.TOKEN_DETECTION">
       <span class="inline-flex items-center gap-1">
         <span>&nbsp;</span>
         <ChainIcon

@@ -2,10 +2,10 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { Section } from '@/modules/core/common/status';
-import { useStatusStore } from '@/modules/core/common/use-status-store';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { isTerminalStatus } from '@/modules/task-center/core/status';
+import { ActivityKind, ActivityPart, activityParts } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 interface UseBlockchainAccountLoadingReturn {
   isDetectingTokens: ComputedRef<boolean>;
@@ -17,30 +17,42 @@ interface UseBlockchainAccountLoadingReturn {
 }
 
 export function useBlockchainAccountLoading(category: MaybeRefOrGetter<string> = ''): UseBlockchainAccountLoadingReturn {
-  const { isTaskRunning, useIsTaskRunning } = useTaskStore();
+  const { useIsActivePrefix } = useTaskCenter();
+  const { activities } = useTaskOrchestrator();
   const { massDetecting } = storeToRefs(useTokenDetectionStore());
-  const { getIsLoading } = useStatusStore();
   const { refreshingChains } = storeToRefs(useBalanceRefreshState());
 
   const { chainIds, isEvm } = useAccountCategoryHelper(category);
 
+  // Reads the live activities rather than a per-chain `useWorkStatus`, because the chain set is
+  // itself reactive. Matching on the id's first part covers both the network refresh
+  // (`blockchain-balances:<chain>`) and the cached read (`…:cached`).
   const isAnyBalancesFetching = computed<boolean>(() => {
-    if (!toValue(category))
-      return isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+    const fetching = get(activities).filter(activity =>
+      activity.kind === ActivityKind.BLOCKCHAIN_BALANCES && !isTerminalStatus(activity.status));
 
-    return get(chainIds).some(chain => isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES, { blockchain: chain }));
+    if (!toValue(category))
+      return fetching.length > 0;
+
+    const chains = new Set(get(chainIds));
+    return fetching.some(activity => chains.has(String(activityParts(activity.id)[0])));
   });
 
+  // `isAnyBalancesFetching` already narrows to the category, so the only thing left to add is the
+  // refresh side, which the orchestrator does not own: a POST that is in flight is tracked by
+  // `useBalanceRefreshState`, not by an activity status.
   const isSectionLoading = computed<boolean>(() => {
-    const refreshing = get(refreshingChains);
-    if (!toValue(category))
-      return getIsLoading(Section.BLOCKCHAIN) || refreshing.size > 0;
+    if (get(isAnyBalancesFetching))
+      return true;
 
-    return get(chainIds).some(chain => getIsLoading(Section.BLOCKCHAIN, chain) || refreshing.has(chain));
+    const refreshing = get(refreshingChains);
+    return toValue(category)
+      ? get(chainIds).some(chain => refreshing.has(chain))
+      : refreshing.size > 0;
   });
 
   const isDetectingTokens = computed<boolean>(() => get(isEvm) && isDefined(massDetecting));
-  const operationRunning = logicOr(useIsTaskRunning(TaskType.ADD_ACCOUNT), useIsTaskRunning(TaskType.REMOVE_ACCOUNT));
+  const operationRunning = logicOr(useIsActivePrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD), useIsActivePrefix(ActivityKind.ACCOUNTS, ActivityPart.REMOVE));
   const refreshDisabled = logicOr(isSectionLoading, isDetectingTokens);
   const deleteDisabled = logicOr(isAnyBalancesFetching, operationRunning);
   const isLoadingActive = logicOr(isDetectingTokens, isSectionLoading, operationRunning);

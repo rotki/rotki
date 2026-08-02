@@ -1,26 +1,24 @@
-import type { TaskResult } from '@/modules/core/tasks/use-task-handler';
+import { runSpecWith } from '@test/utils/mocks/native-task';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Section } from '@/modules/core/common/status';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { Purgeable } from './purge';
 import { useSessionPurge } from './use-purge';
 
 const refreshGeneralCacheTask = vi.fn();
-const resetStatus = vi.fn();
-const runTask = vi.fn();
+const runTaskResult = vi.fn();
 const notifyError = vi.fn();
 const markAllProtocolCacheCancelled = vi.fn();
 const resetProtocolCacheUpdatesStatus = vi.fn();
+
+const submitTask = vi.fn(runSpecWith(runTaskResult));
 
 vi.mock('@/modules/session/api/use-session-api', () => ({
   useSessionApi: (): object => ({ refreshGeneralCacheTask }),
 }));
 
-vi.mock('@/modules/core/common/use-status-store', () => ({
-  useStatusStore: (): object => ({ resetStatus }),
-}));
-
-vi.mock('@/modules/core/tasks/use-task-handler', () => ({
-  useTaskHandler: (): object => ({ runTask }),
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: (): object => ({ cancelByType: (): (() => void) => vi.fn(), runTaskResult, statusOf: vi.fn(), submitTask }),
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
@@ -31,26 +29,37 @@ vi.mock('@/modules/history/use-protocol-cache-status-store', () => ({
   useProtocolCacheStatusStore: (): object => ({ markAllProtocolCacheCancelled, resetProtocolCacheUpdatesStatus }),
 }));
 
-const success: TaskResult<boolean> = { success: true, result: true };
-
 describe('useSessionPurge', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    runTask.mockResolvedValue(success);
+    runTaskResult.mockResolvedValue(ok(true));
   });
 
-  describe('purgeCache', () => {
-    it.each([Purgeable.CENTRALIZED_EXCHANGES, Purgeable.TRANSACTIONS])(
-      'should reset the history status for %s',
-      (purgeable) => {
-        useSessionPurge().purgeCache(purgeable, '');
-        expect(resetStatus).toHaveBeenCalledWith(Section.HISTORY);
-      },
-    );
+  describe('purgeData', () => {
+    it('should run the deletion as an activity named after the source', async () => {
+      const deleteData = vi.fn().mockResolvedValue(undefined);
 
-    it('should not reset any status for unrelated purgeables', () => {
-      useSessionPurge().purgeCache(Purgeable.DEFI_MODULES, '');
-      expect(resetStatus).not.toHaveBeenCalled();
+      await useSessionPurge().purgeData(Purgeable.TRANSACTIONS, 'eth', deleteData);
+
+      expect(deleteData).toHaveBeenCalledTimes(1);
+      // The id carries the source (and its value), so a consumer's `staleAfter` edge can match on
+      // it by prefix instead of anyone reaching in to reset a status.
+      expect(submitTask).toHaveBeenCalledWith(expect.objectContaining({ id: 'purge:transactions:eth' }));
+    });
+
+    it('should name the activity by source alone when there is no value', async () => {
+      await useSessionPurge().purgeData(Purgeable.CENTRALIZED_EXCHANGES, '', vi.fn().mockResolvedValue(undefined));
+
+      expect(submitTask).toHaveBeenCalledWith(expect.objectContaining({ id: 'purge:centralized_exchanges' }));
+    });
+
+    it('should surface a failed deletion as a failed activity', async () => {
+      const deleteData = vi.fn().mockRejectedValue(new Error('nope'));
+
+      await useSessionPurge().purgeData(Purgeable.TRANSACTIONS, '', deleteData);
+
+      const outcome = await submitTask.mock.results[0].value;
+      expect(outcome).toStrictEqual(err(TaskFailed({ cause: new Error('nope'), message: 'nope' })));
     });
   });
 
@@ -58,28 +67,21 @@ describe('useSessionPurge', () => {
     it('should reset the protocol cache and run the refresh task', async () => {
       await useSessionPurge().refreshGeneralCache('opensea');
       expect(resetProtocolCacheUpdatesStatus).toHaveBeenCalledOnce();
-      expect(runTask).toHaveBeenCalledOnce();
+      expect(submitTask).toHaveBeenCalledOnce();
       expect(notifyError).not.toHaveBeenCalled();
     });
 
     it('should mark the protocol cache cancelled when the task is cancelled', async () => {
-      runTask.mockResolvedValue({ success: false, message: '', cancelled: true, backendCancelled: false, skipped: false });
+      runTaskResult.mockResolvedValue(err(Cancelled({ message: '' })));
       await useSessionPurge().refreshGeneralCache('opensea');
       expect(markAllProtocolCacheCancelled).toHaveBeenCalledOnce();
       expect(notifyError).not.toHaveBeenCalled();
     });
 
     it('should notify on an actionable failure', async () => {
-      runTask.mockResolvedValue({ success: false, message: 'boom', cancelled: false, backendCancelled: false, skipped: false });
+      runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
       await useSessionPurge().refreshGeneralCache('opensea');
       expect(notifyError).toHaveBeenCalledOnce();
-      expect(markAllProtocolCacheCancelled).not.toHaveBeenCalled();
-    });
-
-    it('should stay silent when the task is skipped', async () => {
-      runTask.mockResolvedValue({ success: false, message: '', cancelled: false, backendCancelled: false, skipped: true });
-      await useSessionPurge().refreshGeneralCache('opensea');
-      expect(notifyError).not.toHaveBeenCalled();
       expect(markAllProtocolCacheCancelled).not.toHaveBeenCalled();
     });
   });

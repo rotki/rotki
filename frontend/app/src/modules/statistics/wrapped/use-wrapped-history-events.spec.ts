@@ -1,10 +1,11 @@
-import type { Ref } from 'vue';
+import type { ComputedRef } from 'vue';
+import type { WorkStatus } from '@/modules/task-center/core/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TaskType } from '@/modules/core/tasks/task-type';
 import { useWrappedHistoryEvents } from '@/modules/statistics/wrapped/use-wrapped-history-events';
 
 const mockGetEarliestEventTimestamp = vi.fn<() => Promise<number | undefined>>();
-const mockIsFirstLoad = vi.fn<() => boolean>(() => false);
+// History freshness/liveness now come from the HISTORY_SYNC umbrella activity.
+const mockHistoryEverCompleted = ref<boolean>(true);
 const mockSectionLoading = ref<boolean>(false);
 
 const mockEventTaskLoading = ref<boolean>(false);
@@ -17,31 +18,36 @@ vi.mock('@/modules/history/events/use-history-events', () => ({
   }),
 }));
 
-vi.mock('@/modules/shell/sync-progress/use-status-updater', () => ({
-  useStatusUpdater: (): { isFirstLoad: typeof mockIsFirstLoad; loading: Ref<boolean> } => ({
-    isFirstLoad: mockIsFirstLoad,
-    loading: mockSectionLoading,
+// Decoding runs native (TX_DECODING kind); online events run native (ONLINE_EVENTS kind, W7).
+vi.mock('@/modules/task-center/use-task-center', () => ({
+  useTaskCenter: (): Record<string, unknown> => ({
+    useIsActive: (kind: string): ComputedRef<boolean> => computed<boolean>(() => {
+      if (kind === 'history-sync')
+        return get(mockSectionLoading);
+      return kind === 'tx-decoding' ? get(mockEventTaskLoading) : false;
+    }),
+    useWorkStatus: (kind: string): ComputedRef<WorkStatus> => computed<WorkStatus>(() => {
+      if (kind === 'history-sync') {
+        const active = get(mockSectionLoading);
+        return { active, everCompleted: get(mockHistoryEverCompleted), pending: false, running: active };
+      }
+      const active = kind === 'tx-decoding' ? get(mockEventTaskLoading) : false;
+      return { active, everCompleted: false, pending: false, running: active };
+    }),
+    useIsActivePrefix: (kind: string): ComputedRef<boolean> => computed<boolean>(() =>
+      kind === 'online-events' ? get(mockOnlineEventsLoading) : false),
+    useWorkStatusPrefix: (kind: string): ComputedRef<WorkStatus> => computed<WorkStatus>(() => {
+      const active = kind === 'online-events' ? get(mockOnlineEventsLoading) : false;
+      return { active, everCompleted: false, pending: false, running: active };
+    }),
   }),
-}));
-
-vi.mock('@/modules/core/tasks/use-task-store', () => ({
-  useTaskStore: (): { useIsTaskRunning: (type: TaskType) => Ref<boolean> } => {
-    const taskLoadingByType = new Map<TaskType, Ref<boolean>>([
-      [TaskType.TRANSACTIONS_DECODING, mockEventTaskLoading],
-      [TaskType.REFRESH_GENERAL_CACHE, mockProtocolCacheLoading],
-      [TaskType.QUERY_ONLINE_EVENTS, mockOnlineEventsLoading],
-    ]);
-    return {
-      useIsTaskRunning: (type: TaskType): Ref<boolean> => taskLoadingByType.get(type) ?? ref<boolean>(false),
-    };
-  },
 }));
 
 describe('useWrappedHistoryEvents', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
-    mockIsFirstLoad.mockReturnValue(false);
+    set(mockHistoryEverCompleted, true);
     mockGetEarliestEventTimestamp.mockResolvedValue(undefined);
     set(mockSectionLoading, false);
     set(mockEventTaskLoading, false);
@@ -67,19 +73,19 @@ describe('useWrappedHistoryEvents', () => {
   });
 
   it('should expose the first load state', () => {
-    mockIsFirstLoad.mockReturnValue(true);
+    set(mockHistoryEverCompleted, false);
     const { isFirstLoad } = useWrappedHistoryEvents(ref(0));
     expect(isFirstLoad()).toBe(true);
   });
 
   it('should be ready when not the first load and not refreshing', () => {
-    mockIsFirstLoad.mockReturnValue(false);
+    set(mockHistoryEverCompleted, true);
     const { historyEventsReady } = useWrappedHistoryEvents(ref(0));
     expect(get(historyEventsReady)).toBe(true);
   });
 
   it('should not be ready during the first load', () => {
-    mockIsFirstLoad.mockReturnValue(true);
+    set(mockHistoryEverCompleted, false);
     const { historyEventsReady } = useWrappedHistoryEvents(ref(0));
     expect(get(historyEventsReady)).toBe(false);
   });
@@ -102,7 +108,7 @@ describe('useWrappedHistoryEvents', () => {
 
   it('should initialize the start when the debounced ready state turns true', async () => {
     vi.useFakeTimers();
-    mockIsFirstLoad.mockReturnValue(false);
+    set(mockHistoryEverCompleted, true);
     mockGetEarliestEventTimestamp.mockResolvedValue(1_700_000_000);
     const start = ref<number>(0);
     useWrappedHistoryEvents(start);

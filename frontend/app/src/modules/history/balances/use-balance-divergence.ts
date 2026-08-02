@@ -1,17 +1,20 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import { err, none, ok, type OptionType as Option, type ResultType as Result, some } from 'plainfp';
 import { fromNullable, isSome, map as mapOption } from 'plainfp/option';
+import { isErr, map as mapResult } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import {
   type HistoricalBalanceDivergenceEvent,
   type HistoricalBalanceDivergencePayload,
   HistoricalBalanceDivergenceResponse,
 } from '@/modules/history/balances/types';
 import { HighlightTargetTypes, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 export interface DivergenceBoundaryEvent {
   key: 'last_matching' | 'first_diverged';
@@ -40,7 +43,7 @@ interface UseBalanceDivergenceReturn {
 export function useBalanceDivergence(): UseBalanceDivergenceReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { findHistoricalBalanceDivergence } = useHistoricalBalancesApi();
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
   const { requestNavigation, setHighlightTarget } = useHistoryEventNavigation();
 
   const loading = shallowRef<boolean>(false);
@@ -106,28 +109,38 @@ export function useBalanceDivergence(): UseBalanceDivergenceReturn {
   async function run(
     payload: HistoricalBalanceDivergencePayload,
   ): Promise<Result<Option<HistoricalBalanceDivergenceResponse>, DivergenceError>> {
-    try {
-      const outcome = await runTask<HistoricalBalanceDivergenceResponse, TaskMeta>(
-        async () => findHistoricalBalanceDivergence(payload),
-        {
-          guard: false,
-          meta: { title: t('balance_divergence.task.title', { asset: payload.asset }) },
-          type: TaskType.QUERY_HISTORICAL_BALANCE_DIVERGENCE,
-          unique: false,
-        },
-      );
+    // Per-request id keyed by the divergence target *and the tolerance* so concurrent panels don't
+    // dedup, and so re-asking with a different tolerance is not answered by the previous request.
+    // The response rides on the outcome rather than a closure local: a deduped caller's `run` never
+    // executes, and the resulting `undefined` fell into the `ok(none)` branch — reporting "no
+    // divergence found" for a run that had found one.
+    const outcome = await submitTask<HistoricalBalanceDivergenceResponse>({
+      id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.DIVERGENCE, payload.asset, payload.address, payload.evmChain, payload.tolerance ?? 0),
+      kind: ActivityKind.HISTORICAL_BALANCES,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<HistoricalBalanceDivergenceResponse, TaskError>> => mapResult(
+        await runTask<HistoricalBalanceDivergenceResponse>(
+          async () => findHistoricalBalanceDivergence(payload),
+        ),
+        value => value,
+      ),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.historical_balances.divergence'), { asset: payload.asset }),
+      title: t('task_center.group.historical_balances'),
+    });
 
-      if (outcome.success)
-        return ok(some(HistoricalBalanceDivergenceResponse.parse(outcome.result)));
-
-      if (isActionableFailure(outcome))
-        return err({ message: outcome.message });
-
-      return ok(none);
+    if (!isErr(outcome)) {
+      try {
+        return ok(some(HistoricalBalanceDivergenceResponse.parse(outcome.value)));
+      }
+      catch (error_: unknown) {
+        return err({ message: getErrorMessage(error_) });
+      }
     }
-    catch (error_: unknown) {
-      return err({ message: getErrorMessage(error_) });
-    }
+
+    if (isActionable(outcome.error))
+      return err({ message: outcome.error.message });
+
+    return ok(none);
   }
 
   async function find(payload: HistoricalBalanceDivergencePayload): Promise<void> {

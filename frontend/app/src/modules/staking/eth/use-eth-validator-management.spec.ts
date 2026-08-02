@@ -2,12 +2,14 @@ import type { EffectScope } from 'vue';
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify, Zero } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { runSpecWith } from '@test/utils/mocks/native-task';
 import flushPromises from 'flush-promises';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 import { useEthValidatorManagement } from '@/modules/staking/eth/use-eth-validator-management';
 
 const mockGetEth2Validators = vi.fn();
-const mockRunTask = vi.fn();
 const mockEthStakingValidators = ref<EthereumValidator[]>([]);
 
 vi.mock('@/modules/accounts/api/use-blockchain-accounts-api', () => ({
@@ -16,9 +18,16 @@ vi.mock('@/modules/accounts/api/use-blockchain-accounts-api', () => ({
   })),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', () => ({
-  useTaskHandler: vi.fn(() => ({
-    runTask: mockRunTask,
+const runTaskResult = vi.fn();
+/** Runs the submitted spec inline so assertions see the real `run` body. */
+const submitTask = vi.fn(runSpecWith(runTaskResult));
+
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: vi.fn(() => ({
+    cancelByType: vi.fn(() => vi.fn()),
+    runTaskResult,
+    statusOf: vi.fn(),
+    submitTask,
   })),
 }));
 
@@ -85,28 +94,28 @@ describe('useEthValidatorManagement', () => {
       const { fetchValidatorsWithFilter, total } = create();
       await fetchValidatorsWithFilter();
 
-      expect(mockRunTask).not.toHaveBeenCalled();
+      expect(submitTask).not.toHaveBeenCalled();
       expect(get(total).toNumber()).toBe(5);
     });
 
     it('should query by validator indices when validators are selected', async () => {
-      mockRunTask.mockImplementation(async (fn: () => Promise<unknown>) => {
+      runTaskResult.mockImplementation(async (fn: () => Promise<unknown>) => {
         await fn();
-        return { result: { entries: [], entriesFound: 0, entriesLimit: 100 }, success: true };
+        return ok({ entries: [], entriesFound: 0, entriesLimit: 100 });
       });
 
       const { modelSelection } = create();
       set(modelSelection, { validators: [{ index: 42, publicKey: '0xaaa', status: 'active' }] });
       await flushPromises();
 
-      expect(mockRunTask).toHaveBeenCalledOnce();
+      expect(submitTask).toHaveBeenCalledOnce();
       expect(mockGetEth2Validators).toHaveBeenCalledWith({ validatorIndices: [42] });
     });
 
     it('should query by addresses when accounts are selected', async () => {
-      mockRunTask.mockImplementation(async (fn: () => Promise<unknown>) => {
+      runTaskResult.mockImplementation(async (fn: () => Promise<unknown>) => {
         await fn();
-        return { result: { entries: [], entriesFound: 0, entriesLimit: 100 }, success: true };
+        return ok({ entries: [], entriesFound: 0, entriesLimit: 100 });
       });
 
       const { modelSelection } = create();
@@ -117,9 +126,9 @@ describe('useEthValidatorManagement', () => {
     });
 
     it('should merge the status filter with the account selection', async () => {
-      mockRunTask.mockImplementation(async (fn: () => Promise<unknown>) => {
+      runTaskResult.mockImplementation(async (fn: () => Promise<unknown>) => {
         await fn();
-        return { result: { entries: [], entriesFound: 0, entriesLimit: 100 }, success: true };
+        return ok({ entries: [], entriesFound: 0, entriesLimit: 100 });
       });
 
       const { modelFilter, modelSelection } = create();
@@ -132,10 +141,11 @@ describe('useEthValidatorManagement', () => {
 
     it('should update the total from the parsed result on success', async () => {
       set(mockEthStakingValidators, [validator('0xaaa', 4), validator('0xbbb', 6)]);
-      mockRunTask.mockResolvedValue({
-        result: { entries: [{ index: 1, publicKey: '0xbbb', status: 'active' }], entriesFound: 1, entriesLimit: 100 },
-        success: true,
-      });
+      runTaskResult.mockResolvedValue(ok({
+        entries: [{ index: 1, publicKey: '0xbbb', status: 'active' }],
+        entriesFound: 1,
+        entriesLimit: 100,
+      }));
 
       const { modelSelection, total } = create();
       set(modelSelection, { validators: [{ index: 1, publicKey: '0xbbb', status: 'active' }] });
@@ -146,12 +156,7 @@ describe('useEthValidatorManagement', () => {
 
     it('should leave the total unchanged when the task fails', async () => {
       set(mockEthStakingValidators, [validator('0xaaa', 4)]);
-      mockRunTask.mockResolvedValue({
-        cancelled: false,
-        message: 'boom',
-        skipped: false,
-        success: false,
-      });
+      runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
 
       const { modelSelection, total } = create();
       set(modelSelection, { validators: [{ index: 1, publicKey: '0xaaa', status: 'active' }] });

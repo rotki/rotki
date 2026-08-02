@@ -1,22 +1,21 @@
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import {
   LiquityBalancesWithCollateralInfo,
   LiquityPoolDetails,
   LiquityStakingDetails,
   LiquityStatistics,
 } from '@rotki/common';
+import { map as mapResult, type Result } from 'plainfp/result';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Module } from '@/modules/core/common/modules';
-import { Section, Status } from '@/modules/core/common/status';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useSetting } from '@/modules/settings/use-setting';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 import { useLiquityApi } from '@/modules/staking/liquity/use-liquity-api';
 import { useLiquityStore } from '@/modules/staking/liquity/use-liquity-store';
+import { activityLabel } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseLiquityDataFetchingReturn {
   fetchBalances: (refresh?: boolean) => Promise<void>;
@@ -29,8 +28,8 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
   const isPremium = usePremium();
   const activeModules = useSetting('activeModules');
   const { t } = useI18n({ useScope: 'global' });
-  const { runTask } = useTaskHandler();
-  const { isTaskRunning } = useTaskStore();
+  const { statusOf, submitTask } = useNativeTask();
+  const { notifyError } = useNotifications();
   const {
     fetchLiquityBalances,
     fetchLiquityStaking,
@@ -43,136 +42,160 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
     return get(activeModules).includes(Module.LIQUITY);
   }
 
-  function canFetch(taskType: TaskType, section: Section, refresh: boolean): { proceed: boolean; setStatus: (status: Status) => void } {
-    const { getStatus, setStatus } = useStatusUpdater(section);
-
-    if (!isModuleActive() || isTaskRunning(taskType) || (getStatus() === Status.LOADED && !refresh))
-      return { proceed: false, setStatus };
-
-    return { proceed: true, setStatus };
+  /**
+   * Skip when the module is off, an activity for this part is already live, or it has completed
+   * before and this is not a refresh. The components read the same activity for their loading
+   * display, so there is no second copy of this state to keep in step.
+   */
+  function canFetch(part: ActivityPart, refresh: boolean): boolean {
+    const status = statusOf(ActivityKind.LIQUITY, part);
+    return isModuleActive() && !status.active && (!status.everCompleted || refresh);
   }
 
-  function handleFailure(taskType: TaskType, outcome: { error?: unknown }, errorTitle: string, errorMessage: string): void {
-    logger.error(`action failure for task ${TaskType[taskType]}:`, outcome.error);
-    const { notifyError } = useNotifications();
+  function notifyFailure(part: ActivityPart, error: TaskError, errorTitle: string, errorMessage: string): void {
+    logger.error(`action failure for liquity ${part}:`, error);
     notifyError(errorTitle, errorMessage);
   }
 
   async function fetchBalances(refresh = false): Promise<void> {
-    const { proceed, setStatus } = canFetch(TaskType.LIQUITY_BALANCES, Section.DEFI_LIQUITY_BALANCES, refresh);
-    if (!proceed)
+    if (!canFetch(ActivityPart.BALANCES, refresh))
       return;
 
-    setStatus(refresh ? Status.REFRESHING : Status.LOADING);
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.LIQUITY, ActivityPart.BALANCES),
+      kind: ActivityKind.LIQUITY,
+      rerunnable: true,
+      // Derived from decoded history events, so a completed decode makes this stale. Restores what
+      // `clearDependedSection` did before it was deleted.
+      staleAfter: [{ kind: ActivityKind.TX_DECODING }],
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<LiquityBalancesWithCollateralInfo>(
+          async () => fetchLiquityBalances(),
+        ),
+        (result) => {
+          set(balances, LiquityBalancesWithCollateralInfo.parse(result));
+        },
+      ),
+      subtitle: activityLabel(ActivityKind.LIQUITY, ActivityPart.BALANCES),
+      title: t('task_center.group.liquity'),
+    });
 
-    const outcome = await runTask<LiquityBalancesWithCollateralInfo, TaskMeta>(
-      async () => fetchLiquityBalances(),
-      { type: TaskType.LIQUITY_BALANCES, meta: { title: t('actions.defi.liquity.task.title') }, guard: false },
-    );
-
-    if (outcome.success) {
-      set(balances, LiquityBalancesWithCollateralInfo.parse(outcome.result));
-    }
-    else if (isActionableFailure(outcome)) {
-      handleFailure(
-        TaskType.LIQUITY_BALANCES,
-        outcome,
+    onActionableError(outcome, (error) => {
+      notifyFailure(
+        ActivityPart.BALANCES,
+        error,
         t('actions.defi.liquity_balances.error.title'),
-        t('actions.defi.liquity_balances.error.description', { message: outcome.message }),
+        t('actions.defi.liquity_balances.error.description', { message: error.message }),
       );
-    }
-
-    setStatus(Status.LOADED);
+    });
   }
 
   async function fetchPools(refresh = false): Promise<void> {
     if (!get(isPremium))
       return;
 
-    const { proceed, setStatus } = canFetch(TaskType.LIQUITY_STAKING_POOLS, Section.DEFI_LIQUITY_STAKING_POOLS, refresh);
-    if (!proceed)
+    if (!canFetch(ActivityPart.POOLS, refresh))
       return;
 
-    setStatus(refresh ? Status.REFRESHING : Status.LOADING);
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.LIQUITY, ActivityPart.POOLS),
+      kind: ActivityKind.LIQUITY,
+      rerunnable: true,
+      // Derived from decoded history events, so a completed decode makes this stale. Restores what
+      // `clearDependedSection` did before it was deleted.
+      staleAfter: [{ kind: ActivityKind.TX_DECODING }],
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<LiquityPoolDetails>(
+          async () => fetchLiquityStakingPools(),
+        ),
+        (result) => {
+          set(stakingPools, LiquityPoolDetails.parse(result));
+        },
+      ),
+      subtitle: activityLabel(ActivityKind.LIQUITY, ActivityPart.POOLS),
+      title: t('task_center.group.liquity'),
+    });
 
-    const outcome = await runTask<LiquityPoolDetails, TaskMeta>(
-      async () => fetchLiquityStakingPools(),
-      { type: TaskType.LIQUITY_STAKING_POOLS, meta: { title: t('actions.defi.liquity_pools.task.title') }, guard: false },
-    );
-
-    if (outcome.success) {
-      set(stakingPools, LiquityPoolDetails.parse(outcome.result));
-    }
-    else if (isActionableFailure(outcome)) {
-      handleFailure(
-        TaskType.LIQUITY_STAKING_POOLS,
-        outcome,
+    onActionableError(outcome, (error) => {
+      notifyFailure(
+        ActivityPart.POOLS,
+        error,
         t('actions.defi.liquity_pools.error.title'),
-        t('actions.defi.liquity_pools.error.description', { message: outcome.message }),
+        t('actions.defi.liquity_pools.error.description', { message: error.message }),
       );
-    }
-
-    setStatus(Status.LOADED);
+    });
   }
 
   async function fetchStaking(refresh = false): Promise<void> {
     if (!get(isPremium))
       return;
 
-    const { proceed, setStatus } = canFetch(TaskType.LIQUITY_STAKING, Section.DEFI_LIQUITY_STAKING, refresh);
-    if (!proceed)
+    if (!canFetch(ActivityPart.STAKING, refresh))
       return;
 
-    setStatus(refresh ? Status.REFRESHING : Status.LOADING);
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.LIQUITY, ActivityPart.STAKING),
+      kind: ActivityKind.LIQUITY,
+      rerunnable: true,
+      // Derived from decoded history events, so a completed decode makes this stale. Restores what
+      // `clearDependedSection` did before it was deleted.
+      staleAfter: [{ kind: ActivityKind.TX_DECODING }],
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<LiquityStakingDetails>(
+          async () => fetchLiquityStaking(),
+        ),
+        (result) => {
+          set(staking, LiquityStakingDetails.parse(result));
+        },
+      ),
+      subtitle: activityLabel(ActivityKind.LIQUITY, ActivityPart.STAKING),
+      title: t('task_center.group.liquity'),
+    });
 
-    const outcome = await runTask<LiquityStakingDetails, TaskMeta>(
-      async () => fetchLiquityStaking(),
-      { type: TaskType.LIQUITY_STAKING, meta: { title: t('actions.defi.liquity_staking.task.title') }, guard: false },
-    );
-
-    if (outcome.success) {
-      set(staking, LiquityStakingDetails.parse(outcome.result));
-    }
-    else if (isActionableFailure(outcome)) {
-      handleFailure(
-        TaskType.LIQUITY_STAKING,
-        outcome,
+    onActionableError(outcome, (error) => {
+      notifyFailure(
+        ActivityPart.STAKING,
+        error,
         t('actions.defi.liquity_staking.error.title'),
-        t('actions.defi.liquity_staking.error.description', { message: outcome.message }),
+        t('actions.defi.liquity_staking.error.description', { message: error.message }),
       );
-    }
-
-    setStatus(Status.LOADED);
+    });
   }
 
   async function fetchStatistics(refresh = false): Promise<void> {
     if (!get(isPremium))
       return;
 
-    const { proceed, setStatus } = canFetch(TaskType.LIQUITY_STATISTICS, Section.DEFI_LIQUITY_STATISTICS, refresh);
-    if (!proceed)
+    if (!canFetch(ActivityPart.STATISTICS, refresh))
       return;
 
-    setStatus(refresh ? Status.REFRESHING : Status.LOADING);
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.LIQUITY, ActivityPart.STATISTICS),
+      kind: ActivityKind.LIQUITY,
+      rerunnable: true,
+      // Derived from decoded history events, so a completed decode makes this stale. Restores what
+      // `clearDependedSection` did before it was deleted.
+      staleAfter: [{ kind: ActivityKind.TX_DECODING }],
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<LiquityStatistics>(
+          async () => fetchLiquityStatistics(),
+        ),
+        (result) => {
+          set(statistics, LiquityStatistics.parse(result));
+        },
+      ),
+      subtitle: activityLabel(ActivityKind.LIQUITY, ActivityPart.STATISTICS),
+      title: t('task_center.group.liquity'),
+    });
 
-    const outcome = await runTask<LiquityStatistics, TaskMeta>(
-      async () => fetchLiquityStatistics(),
-      { type: TaskType.LIQUITY_STATISTICS, meta: { title: t('actions.defi.liquity_statistics.task.title') }, guard: false },
-    );
-
-    if (outcome.success) {
-      set(statistics, LiquityStatistics.parse(outcome.result));
-    }
-    else if (isActionableFailure(outcome)) {
-      handleFailure(
-        TaskType.LIQUITY_STATISTICS,
-        outcome,
+    onActionableError(outcome, (error) => {
+      notifyFailure(
+        ActivityPart.STATISTICS,
+        error,
         t('actions.defi.liquity_statistics.error.title'),
-        t('actions.defi.liquity_statistics.error.description', { message: outcome.message }),
+        t('actions.defi.liquity_statistics.error.description', { message: error.message }),
       );
-    }
-
-    setStatus(Status.LOADED);
+    });
   }
 
   return {

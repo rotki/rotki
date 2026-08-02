@@ -3,6 +3,7 @@ import type { ComputedRef } from 'vue';
 import type { ActivitySpec, ReportProgress } from './core/orchestrator/spec';
 import { startPromise } from '@shared/utils';
 import { err, type Result } from 'plainfp/result';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { isTerminalStatus } from './core/status';
@@ -22,8 +23,20 @@ export { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from './c
 
 export { isActionable } from '@/modules/core/tasks/task-result';
 
-/** Outcome of a native activity: the work's side effects landed, success or failure as a value. */
-export type TaskOutcome = Result<void, TaskError>;
+/**
+ * Outcome of a native activity: the work's side effects landed, success or failure as a value.
+ *
+ * Carries `run`'s return value rather than discarding it. Producers used to smuggle their result
+ * out through a variable in the enclosing closure, which is only correct when `run` actually
+ * executes — and a re-entrant call for a live id shares the in-flight promise *without* running,
+ * so the second caller read the local's initial value (`false`, `undefined`, `-1`) and treated it
+ * as a successful result. Returning the value means every awaiter, deduped or not, gets the same
+ * real one.
+ *
+ * This is sound only because a shared id means shared work: two calls that would produce
+ * different results must not collide on one id in the first place.
+ */
+export type TaskOutcome<T = void> = Result<T, TaskError>;
 
 /**
  * Runs a backend task *as part of the activity that received it*: it records the backend task id
@@ -47,8 +60,8 @@ export interface ActivityContext {
  * A producer-facing {@link ActivitySpec}: `run` takes an {@link ActivityContext}, and there is no
  * `cancel` — cancellation is the orchestrator's job now that it knows the backend task id.
  */
-export type NativeActivitySpec = Omit<ActivitySpec<void>, 'cancel' | 'run'> & {
-  readonly run: (ctx: ActivityContext) => ResultAsync<void, TaskError>;
+export type NativeActivitySpec<T = void> = Omit<ActivitySpec<T>, 'cancel' | 'run'> & {
+  readonly run: (ctx: ActivityContext) => ResultAsync<T, TaskError>;
 };
 
 interface UseNativeTaskReturn {
@@ -77,7 +90,7 @@ interface UseNativeTaskReturn {
    * yet known; every attempt so far reasoned from unit tests, which do not reproduce it. Diagnose
    * from the browser before trying a fourth.
    */
-  readonly submitTask: (spec: NativeActivitySpec) => Promise<TaskOutcome>;
+  readonly submitTask: <T = void>(spec: NativeActivitySpec<T>) => Promise<TaskOutcome<T>>;
   /**
    * Cancel one activity by identity — `orchestrator.cancel(makeActivityId(kind, ...parts))`. The
    * replacement for the old imperative cancel-by-task-type at producer call sites: it settles the
@@ -116,6 +129,8 @@ interface UseNativeTaskReturn {
    * `useTaskCenter` exposes; here so a producer needing both stays under the import cap.
    */
   readonly useWorkStatus: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<WorkStatus>;
+  /** Liveness only — the one-field read most spinners want. */
+  readonly useIsActive: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<boolean>;
 }
 
 /**
@@ -126,9 +141,14 @@ interface UseNativeTaskReturn {
 export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
   const { t } = useI18n({ useScope: 'global' });
   const orchestrator = useTaskOrchestrator();
-  const { cancelByKind, cancelByPrefix, reportProgress, statusOf, useWorkStatus } = orchestrator;
+  const { cancelByKind, cancelByPrefix, reportProgress, statusOf, useIsActive, useWorkStatus } = orchestrator;
   const { cancelTaskById, runTask: runBackendTask } = useTaskHandler();
-  const inflight = new Map<ActivityId, Promise<TaskOutcome>>();
+  /**
+   * The promise handed back to a re-entrant caller. Its value type is the submitting spec's `T`,
+   * which this map cannot express across heterogeneous ids — the erasure is contained here and
+   * re-applied at the one return below, rather than leaking `any` into producer call sites.
+   */
+  const inflight = new Map<ActivityId, Promise<TaskOutcome<never>>>();
 
   function cancelActivity(kind: ActivityKind, ...parts: (string | number)[]): void {
     // The Result is deliberately dropped: "nothing to cancel" (unknown id / already terminal) is
@@ -139,20 +159,20 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
   // Not `async`: re-entrant calls must return the *same* in-flight promise (identity dedup), and
   // the body owns its own deferred — wrapping it in async would create a fresh promise per call.
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  function submitTask(spec: NativeActivitySpec): Promise<TaskOutcome> {
+  function submitTask<T = void>(spec: NativeActivitySpec<T>): Promise<TaskOutcome<T>> {
     const running = inflight.get(spec.id);
     if (running)
       return running;
 
     let settled = false;
-    let settle: (outcome: TaskOutcome) => void = () => {};
+    let settle: (outcome: TaskOutcome<T>) => void = () => {};
     let stop: () => void = () => {};
 
-    const promise = new Promise<TaskOutcome>((resolve) => {
+    const promise = new Promise<TaskOutcome<T>>((resolve) => {
       settle = resolve;
     });
 
-    function finish(outcome: TaskOutcome): void {
+    function finish(outcome: TaskOutcome<T>): void {
       if (settled)
         return;
       settled = true;
@@ -190,10 +210,10 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
 
     // The spec's run carries the real outcome (and its store side effects); tee it so the caller
     // awaits the work itself, not just a status flip.
-    async function run(report: ReportProgress): Promise<Result<void, TaskError>> {
+    async function run(report: ReportProgress): Promise<Result<T, TaskError>> {
       backendTaskId = undefined;
       const outcome = spec.run({ report, runTask });
-      outcome.then(finish, () => finish(err(TaskFailed({ message: 'Unexpected error' }))));
+      outcome.then(finish, (error: unknown) => finish(err(TaskFailed({ message: getErrorMessage(error) }))));
       return outcome;
     }
 
@@ -205,7 +225,11 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
         finish(err(Cancelled({ message: 'Cancelled before running' })));
     });
 
-    inflight.set(spec.id, promise);
+    // Stored erased, handed back at this spec's own value type. The return below needs no
+    // assertion — `never` is assignable to every `T` — so this is the single unsound step, and it
+    // is why the map is keyed to `never` rather than `unknown`.
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- a per-entry key/value type correlation TypeScript cannot express without existential types; contained to this line
+    inflight.set(spec.id, promise as Promise<TaskOutcome<never>>);
     orchestrator.submit({ ...spec, cancel, run });
     return promise;
   }
@@ -217,6 +241,7 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     reportProgress,
     statusOf,
     submitTask,
+    useIsActive,
     useWorkStatus,
   };
 });

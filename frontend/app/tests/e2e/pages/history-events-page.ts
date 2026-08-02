@@ -182,6 +182,23 @@ export class HistoryEventsPage {
     return rows.count();
   }
 
+  /**
+   * Swap groups, counted whether or not they are expanded.
+   *
+   * An expanded swap renders no `history-event-swap` row at all — it is replaced by its collapse
+   * header and its sub-events — so {@link getSwapRows} silently counts only the collapsed ones.
+   * That makes it useless for "did a swap disappear": expansion is keyed by position
+   * (`use-virtual-rows.ts`), so deleting any event re-indexes the list and a previously expanded
+   * swap collapses back into view, holding the count level while the delete plainly succeeded.
+   */
+  async getSwapGroups(): Promise<number> {
+    const [collapsed, expanded] = await Promise.all([
+      this.page.locator('[data-cy=history-event-swap]').count(),
+      this.page.locator('[data-testid=swap-collapse]').count(),
+    ]);
+    return collapsed + expanded;
+  }
+
   async getMovementRows(): Promise<number> {
     const rows = this.page.locator('[data-cy=history-event-movement]');
     return rows.count();

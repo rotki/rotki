@@ -2,14 +2,14 @@
 import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { firstQueryValue } from '@/modules/core/table/route';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import ReportGenerator from '@/modules/reports/ReportGenerator.vue';
 import ReportsTable from '@/modules/reports/ReportsTable.vue';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import ErrorScreen from '@/modules/shell/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import FileUpload from '@/modules/user-data/FileUpload.vue';
 import { useReportsPageActions } from '@/pages/reports/use-reports-page-actions';
 
@@ -20,11 +20,11 @@ definePage({
   },
 });
 
-const { useIsTaskRunning } = useTaskStore();
+const { useIsActive } = useTaskCenter();
 const reportsStore = useReportsStore();
 const { reportError } = storeToRefs(reportsStore);
 const { clearError } = reportsStore;
-const isRunning = useIsTaskRunning(TaskType.TRADE_HISTORY);
+const isRunning = useIsActive(ActivityKind.PNL_REPORT);
 const importDataDialog = ref<boolean>(false);
 const reportDebugData = ref<File>();
 const reportDebugDataUploader = useTemplateRef<InstanceType<typeof FileUpload>>('reportDebugDataUploader');

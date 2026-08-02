@@ -4,7 +4,8 @@ import { useEthStakingRefresh } from '@/modules/staking/eth/use-eth-staking-refr
 const mockFetchEthStakingValidators = vi.fn();
 const mockFetchBlockchainBalances = vi.fn();
 const mockRefreshBlockchainBalances = vi.fn();
-const mockIsFirstLoad = vi.fn((): boolean => false);
+// `everCompleted === false` means "first load"; drives the isFirstLoad gate in the SUT.
+const mockFirstLoad = ref<boolean>(false);
 const { mockLoggerLog } = vi.hoisted(() => ({ mockLoggerLog: vi.fn() }));
 
 const mockUsername = ref<string>('test-user');
@@ -44,15 +45,27 @@ vi.mock('@/modules/core/tasks/use-task-store', () => ({
   })),
 }));
 
-vi.mock('@/modules/shell/sync-progress/use-section-status', () => ({
-  useSectionStatus: vi.fn((_section: unknown, subsection?: unknown) => ({
-    isLoading: subsection === undefined ? mockPerformanceRefreshing : mockEth2Loading,
-  })),
-}));
-
-vi.mock('@/modules/shell/sync-progress/use-status-updater', () => ({
-  useStatusUpdater: vi.fn(() => ({
-    isFirstLoad: mockIsFirstLoad,
+vi.mock('@/modules/task-center/use-task-center', () => ({
+  ActivityKind: { ONLINE_EVENTS: 'online-events', STAKING: 'staking' },
+  useTaskCenter: vi.fn(() => ({
+    useIsActive: vi.fn((kind: string) => computed<boolean>(() =>
+      kind === 'online-events' ? get(mockBlockProductionLoading) : get(mockPerformanceRefreshing))),
+    useWorkStatus: vi.fn((kind: string) => computed(() => {
+      // Online events (block production) vs the staking performance activity.
+      const active = kind === 'online-events' ? get(mockBlockProductionLoading) : get(mockPerformanceRefreshing);
+      return {
+        active,
+        everCompleted: !get(mockFirstLoad),
+        pending: false,
+        running: active,
+      };
+    })),
+    // The eth2 chain's balance activity, which the refresh waits on.
+    useIsActivePrefix: vi.fn(() => computed<boolean>(() => get(mockEth2Loading))),
+    useWorkStatusPrefix: vi.fn(() => computed(() => {
+      const active = get(mockEth2Loading);
+      return { active, everCompleted: false, pending: false, running: active };
+    })),
   })),
 }));
 
@@ -83,7 +96,7 @@ function createCallbacks(overrides: {
 describe('useEthStakingRefresh', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockIsFirstLoad.mockReturnValue(false);
+    set(mockFirstLoad, false);
     set(mockUsername, 'test-user');
     set(mockStakingValidatorsLimits, undefined);
     set(mockPerformanceRefreshing, false);
@@ -105,7 +118,7 @@ describe('useEthStakingRefresh', () => {
     });
 
     it('should force a balance refresh on first load even when not user initiated', async () => {
-      mockIsFirstLoad.mockReturnValue(true);
+      set(mockFirstLoad, true);
 
       const { refresh } = useEthStakingRefresh(createCallbacks());
       await refresh(false);

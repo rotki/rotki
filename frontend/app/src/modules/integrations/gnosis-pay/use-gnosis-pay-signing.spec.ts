@@ -1,6 +1,8 @@
 import type { Ref } from 'vue';
-import type { TaskResult } from '@/modules/core/tasks/use-task-handler';
+import { runSpecWith } from '@test/utils/mocks/native-task';
+import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { GnosisPayError, type GnosisPayErrorContext } from './types';
 import { useGnosisPaySigning } from './use-gnosis-pay-signing';
 
@@ -8,8 +10,10 @@ const CONNECTED_ADDRESS = '0x1234567890123456789012345678901234567890';
 
 const fetchNonce = vi.fn();
 const verifySiweSignature = vi.fn();
-const runTask = vi.fn();
+const runTaskResult = vi.fn();
 const showErrorMessage = vi.fn();
+
+const submitTask = vi.fn(runSpecWith(runTaskResult));
 const signMessage = vi.fn();
 const injectedGetWalletClient = vi.fn();
 const wcGetWalletClient = vi.fn();
@@ -22,15 +26,14 @@ vi.mock('@/modules/integrations/gnosis-pay/use-gnosis-pay-api', () => ({
   })),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async () => {
-  const actual = await vi.importActual<typeof import('@/modules/core/tasks/use-task-handler')>(
-    '@/modules/core/tasks/use-task-handler',
-  );
-  return {
-    ...actual,
-    useTaskHandler: vi.fn().mockImplementation(() => ({ runTask })),
-  };
-});
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: vi.fn().mockImplementation(() => ({
+    cancelByType: vi.fn(() => vi.fn()),
+    runTaskResult,
+    statusOf: vi.fn(),
+    submitTask,
+  })),
+}));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn().mockImplementation(() => ({ showErrorMessage })),
@@ -61,18 +64,14 @@ vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
-function makeSuccess<T>(result: T): TaskResult<T> {
-  return { result, success: true };
+function makeSuccess<T>(result: T): Result<T, TaskError> {
+  return ok(result);
 }
 
-function makeFailure(message: string, opts: Partial<{ cancelled: boolean; skipped: boolean }> = {}): TaskResult<never> {
-  return {
-    backendCancelled: false,
-    cancelled: opts.cancelled ?? false,
-    message,
-    skipped: opts.skipped ?? false,
-    success: false,
-  };
+function makeFailure(message: string, opts: Partial<{ cancelled: boolean }> = {}): Result<never, TaskError> {
+  if (opts.cancelled)
+    return err(Cancelled({ message }));
+  return err(TaskFailed({ message }));
 }
 
 interface Harness {
@@ -101,7 +100,8 @@ describe('useGnosisPaySigning', () => {
   beforeEach(() => {
     fetchNonce.mockReset();
     verifySiweSignature.mockReset();
-    runTask.mockReset();
+    runTaskResult.mockReset();
+    submitTask.mockClear();
     showErrorMessage.mockReset();
     signMessage.mockReset().mockResolvedValue('0xSignature');
     const fakeClient = { signMessage };
@@ -112,12 +112,12 @@ describe('useGnosisPaySigning', () => {
 
   it('should clear error when starting a fresh sign-in', async () => {
     const harness = makeHarness();
-    runTask.mockImplementation(async (fn: () => Promise<unknown>) => {
+    runTaskResult.mockImplementation(async (fn: () => Promise<unknown>) => {
       await fn();
       return makeSuccess('nonce-1');
     });
-    runTask.mockImplementationOnce(async () => makeSuccess('nonce-1'));
-    runTask.mockImplementationOnce(async () => makeSuccess(true));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce-1'));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess(true));
 
     const { signInWithEthereum } = useGnosisPaySigning({ ...harness, signInSuccess: harness.signInSuccess });
     await signInWithEthereum();
@@ -127,8 +127,8 @@ describe('useGnosisPaySigning', () => {
 
   it('should preserve INVALID_ADDRESS warning while signing', async () => {
     const harness = makeHarness({ errorType: ref(GnosisPayError.INVALID_ADDRESS) });
-    runTask.mockImplementationOnce(async () => makeSuccess('nonce'));
-    runTask.mockImplementationOnce(async () => makeSuccess(true));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess(true));
 
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
@@ -143,21 +143,21 @@ describe('useGnosisPaySigning', () => {
     await signInWithEthereum();
 
     expect(harness.setError).toHaveBeenCalledWith(GnosisPayError.NO_WALLET_CONNECTED);
-    expect(runTask).not.toHaveBeenCalled();
+    expect(submitTask).not.toHaveBeenCalled();
     expect(get(harness.signingInProgress)).toBe(false);
   });
 
   it('should sign in successfully and invoke onSignInComplete', async () => {
     const onSignInComplete = vi.fn();
     const harness = makeHarness();
-    runTask.mockImplementationOnce(async () => makeSuccess('nonce-123'));
-    runTask.mockImplementationOnce(async () => makeSuccess(true));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce-123'));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess(true));
 
     const { signInWithEthereum } = useGnosisPaySigning({ ...harness, onSignInComplete });
     await signInWithEthereum();
 
     expect(fetchNonce).not.toHaveBeenCalled();
-    expect(runTask).toHaveBeenCalledTimes(2);
+    expect(submitTask).toHaveBeenCalledTimes(2);
     expect(signMessage).toHaveBeenCalledTimes(1);
     const signedMessage = String(signMessage.mock.calls[0][0].message);
     expect(signedMessage).toContain(CONNECTED_ADDRESS);
@@ -169,7 +169,7 @@ describe('useGnosisPaySigning', () => {
 
   it('should bail out when fetching the nonce fails actionably', async () => {
     const harness = makeHarness();
-    runTask.mockImplementationOnce(async () => makeFailure('nonce error'));
+    runTaskResult.mockImplementationOnce(async () => makeFailure('nonce error'));
 
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
@@ -181,7 +181,7 @@ describe('useGnosisPaySigning', () => {
 
   it('should not show error message when nonce fetch is cancelled', async () => {
     const harness = makeHarness();
-    runTask.mockImplementationOnce(async () => makeFailure('cancelled', { cancelled: true }));
+    runTaskResult.mockImplementationOnce(async () => makeFailure('cancelled', { cancelled: true }));
 
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
@@ -192,8 +192,8 @@ describe('useGnosisPaySigning', () => {
 
   it('should bail out when verification fails', async () => {
     const harness = makeHarness();
-    runTask.mockImplementationOnce(async () => makeSuccess('nonce'));
-    runTask.mockImplementationOnce(async () => makeFailure('verify failed'));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
+    runTaskResult.mockImplementationOnce(async () => makeFailure('verify failed'));
 
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
@@ -204,8 +204,8 @@ describe('useGnosisPaySigning', () => {
 
   it('should show generic failure when verification returns false', async () => {
     const harness = makeHarness();
-    runTask.mockImplementationOnce(async () => makeSuccess('nonce'));
-    runTask.mockImplementationOnce(async () => makeSuccess(false));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess(false));
 
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
@@ -216,7 +216,7 @@ describe('useGnosisPaySigning', () => {
 
   it('should detect a user-rejected signature error', async () => {
     const harness = makeHarness();
-    runTask.mockImplementationOnce(async () => makeSuccess('nonce'));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
     signMessage.mockRejectedValueOnce(new Error('User rejected the request'));
 
     const { signInWithEthereum } = useGnosisPaySigning(harness);
@@ -228,7 +228,7 @@ describe('useGnosisPaySigning', () => {
 
   it('should show a generic error when signing throws an unknown error', async () => {
     const harness = makeHarness();
-    runTask.mockImplementationOnce(async () => makeSuccess('nonce'));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
     signMessage.mockRejectedValueOnce(new Error('boom'));
 
     const { signInWithEthereum } = useGnosisPaySigning(harness);
@@ -241,8 +241,8 @@ describe('useGnosisPaySigning', () => {
   it('should use the wallet-connect provider when in walletconnect mode', async () => {
     set(walletMode, 'walletconnect');
     const harness = makeHarness();
-    runTask.mockImplementationOnce(async () => makeSuccess('nonce'));
-    runTask.mockImplementationOnce(async () => makeSuccess(true));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess(true));
 
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
@@ -253,7 +253,7 @@ describe('useGnosisPaySigning', () => {
 
   it('should always reset signingInProgress when finished', async () => {
     const harness = makeHarness();
-    runTask.mockImplementationOnce(async () => {
+    runTaskResult.mockImplementationOnce(async () => {
       throw new Error('unexpected');
     });
 
@@ -265,11 +265,11 @@ describe('useGnosisPaySigning', () => {
 
   it('should run the task helpers with the expected task types', async () => {
     const harness = makeHarness();
-    runTask.mockImplementationOnce(async (fn: () => Promise<string>) => {
+    runTaskResult.mockImplementationOnce(async (fn: () => Promise<string>) => {
       await fn();
       return makeSuccess('nonce');
     });
-    runTask.mockImplementationOnce(async (fn: () => Promise<boolean>) => {
+    runTaskResult.mockImplementationOnce(async (fn: () => Promise<boolean>) => {
       await fn();
       return makeSuccess(true);
     });

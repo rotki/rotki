@@ -1,25 +1,12 @@
-import type { TaskType } from '@/modules/core/tasks/task-type';
 import { z } from 'zod';
 
-export interface Task<T extends TaskMeta> {
+/**
+ * A backend task the frontend is waiting on. The label is display-only: it names the task in the
+ * monitor's failure notification and in the dev logs. Identity is the backend id.
+ */
+export interface Task {
   readonly id: number;
-  readonly type: TaskType;
-  readonly meta: T;
-  readonly time: number;
-}
-
-export interface TaskMeta {
-  readonly title: string;
-  readonly description?: string;
-  readonly ignoreResult?: boolean;
-}
-
-export interface ExchangeMeta extends TaskMeta {
-  readonly location: string;
-}
-
-export interface BlockchainMetadata extends TaskMeta {
-  readonly blockchain?: string;
+  readonly label: string;
 }
 
 export interface TaskResultResponse<T> {
@@ -33,7 +20,7 @@ export interface TaskStatus {
   readonly completed: number[];
 }
 
-export type TaskMap<T extends TaskMeta> = Record<number, Task<T>>;
+export type TaskMap = Record<number, Task>;
 
 export class TaskNotFoundError extends Error {
   constructor(msg: string, options?: ErrorOptions) {

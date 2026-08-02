@@ -4,11 +4,9 @@ import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-acc
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { isCacheInitialLoading } from '@/modules/balances/use-balance-status';
-import { Section } from '@/modules/core/common/status';
-import { useStatusStore } from '@/modules/core/common/use-status-store';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 interface UseAccountLoadingStates<T extends BlockchainAccountBalance> {
   accountOperation: ComputedRef<boolean>;
@@ -20,30 +18,33 @@ interface UseAccountLoadingStates<T extends BlockchainAccountBalance> {
 export function useAccountLoadingStates<T extends BlockchainAccountBalance>(
   category: MaybeRefOrGetter<string>,
 ): UseAccountLoadingStates<T> {
-  const { useIsTaskRunning } = useTaskStore();
-  const statusStore = useStatusStore();
-  const { status } = storeToRefs(statusStore);
+  const { useIsActivePrefix } = useTaskCenter();
+  const { statusOf, statusOfPrefix, version } = useTaskOrchestrator();
   const { refreshingChains } = storeToRefs(useBalanceRefreshState());
   const { isSectionLoading } = useBlockchainAccountLoading(category);
   const { chainIds } = useAccountCategoryHelper(category);
 
   const accountOperation = logicOr(
-    useIsTaskRunning(TaskType.ADD_ACCOUNT),
-    useIsTaskRunning(TaskType.REMOVE_ACCOUNT),
+    useIsActivePrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD),
+    useIsActivePrefix(ActivityKind.ACCOUNTS, ActivityPart.REMOVE),
     isSectionLoading,
   );
 
+  // A chain the category does not cover, or one that has already loaded, contributes nothing:
+  // `active && !everCompleted` is false for both, so no "has this chain been touched" filter is
+  // needed the way the status map required one. A category whose chain list is not resolved yet
+  // falls back to every chain, as it did before.
   const isInitialLoading = computed<boolean>(() => {
-    const chains = get(status)[Section.BLOCKCHAIN];
-    if (!chains)
-      return false;
-    const categoryChains = get(chainIds);
-    const candidates = categoryChains.length > 0
-      ? categoryChains.filter(chain => chain in chains)
-      : Object.keys(chains);
-    if (candidates.length === 0)
-      return false;
-    return candidates.some(chain => isCacheInitialLoading(chains[chain]));
+    get(version); // touch the change counter so this re-reads the non-reactive ledger
+    const chains = get(chainIds);
+    if (chains.length === 0) {
+      const { active, everCompleted } = statusOf(ActivityKind.BLOCKCHAIN_BALANCES);
+      return active && !everCompleted;
+    }
+    return chains.some((chain) => {
+      const { active, everCompleted } = statusOfPrefix(ActivityKind.BLOCKCHAIN_BALANCES, chain);
+      return active && !everCompleted;
+    });
   });
 
   function isRowLoading(row: AccountDataRow<T>): boolean {

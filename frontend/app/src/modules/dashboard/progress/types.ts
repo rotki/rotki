@@ -1,6 +1,7 @@
-import type { TaskType } from '@/modules/core/tasks/task-type';
+import type { ActivityKind } from '@/modules/task-center/core/types';
 
-export type BalanceQueryProgressType = TaskType.FETCH_DETECTED_TOKENS | TaskType.QUERY_BLOCKCHAIN_BALANCES;
+/** The two kinds of work the balance-query indicator distinguishes. */
+export type BalanceQueryProgressType = typeof ActivityKind.TOKEN_DETECTION | typeof ActivityKind.BLOCKCHAIN_BALANCES;
 
 export interface BalanceQueryQueueItem {
   id: string;

@@ -9,14 +9,14 @@ import { getKeyType, guessPrefix, isPrefixed } from '@/modules/accounts/xpub';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
 import { logger } from '@/modules/core/common/logging/logging';
-import { Section } from '@/modules/core/common/status';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/modules/core/common/use-csv-import-export';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { useTagOperations } from '@/modules/tags/use-tag-operations';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseAccountImportReturn {
   importAccounts: (file: File) => Promise<void>;
@@ -37,7 +37,8 @@ export function useAccountImport(): UseAccountImportReturn {
   const { increment, setTotal, skip } = progressStore;
   const { progress } = storeToRefs(progressStore);
 
-  const { isLoading: blockchainLoading } = useSectionStatus(Section.BLOCKCHAIN);
+  const { useIsActive } = useTaskCenter();
+  const blockchainLoading = useIsActive(ActivityKind.BLOCKCHAIN_BALANCES);
   const doneLoading = refDebounced(logicNot(blockchainLoading), 2000);
 
   async function importValidators(validators: CSVRow[]): Promise<void> {

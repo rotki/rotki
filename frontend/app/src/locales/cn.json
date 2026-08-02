@@ -137,19 +137,10 @@
     }
   },
   "actions": {
-    "add_eth2_validator": {
-      "task": {
-        "description": "添加 ETH 質押驗證器",
-        "title": "添加验证器：{id}"
-      }
-    },
     "assets": {
       "erc20": {
         "error": {
           "description": "检索token详细信息时出错: {message}",
-          "title": "正在检索 {address} ({evmChain}) 的token详细信息"
-        },
-        "task": {
           "title": "正在检索 {address} ({evmChain}) 的token详细信息"
         }
       },
@@ -178,27 +169,19 @@
         },
         "task": {
           "description": "正在查询所有余额并保存统计快照。",
-          "ignore_errors_note": "查询过程中的错误将被忽略。",
-          "title": "保存余额快照"
+          "ignore_errors_note": "查询过程中的错误将被忽略。"
         }
       },
       "blockchain": {
         "error": {
           "description": "查询区块链余额时出错：{error}",
           "title": "查询区块链余额"
-        },
-        "task": {
-          "title": "查询 {chain} 余额"
         }
       },
       "blockchain_account_removal": {
         "error": {
           "description": "删除账户失败：{error}",
           "title": "删除 {count} {blockchain} 个帐户"
-        },
-        "task": {
-          "description": "{count} 个账户正在被删除",
-          "title": "删除 {blockchain} 帐户"
         }
       },
       "blockchain_accounts_add": {
@@ -209,7 +192,6 @@
           "description": "所选地址已被 rotki 跟踪"
         },
         "task": {
-          "description": "添加 {address}",
           "title": "添加 {blockchain} 账户"
         }
       },
@@ -220,7 +202,6 @@
       },
       "detect_tokens": {
         "task": {
-          "description": "为 {address} ({chain}) 获取检测到的token",
           "title": "获取检测到的token"
         }
       },
@@ -228,17 +209,11 @@
         "error": {
           "message": "无法查询 {location} 余额：{error}",
           "title": "{location}余额查询"
-        },
-        "task": {
-          "title": "检索{location}余额"
         }
       },
       "exchange_rates": {
         "error": {
           "message": "获取汇率失败： {message}",
-          "title": "汇率"
-        },
-        "task": {
           "title": "汇率"
         }
       },
@@ -271,9 +246,6 @@
         "error": {
           "description": "无法删除 {xpub}: {error}",
           "title": "Xpub 移除"
-        },
-        "task": {
-          "title": "删除 xpub"
         }
       }
     },
@@ -282,14 +254,6 @@
         "error": {
           "description": "获取空投失败： {error}",
           "title": "空投"
-        },
-        "task": {
-          "title": "查询空投"
-        }
-      },
-      "liquity": {
-        "task": {
-          "title": "查询流动性余额"
         }
       },
       "liquity_balances": {
@@ -302,18 +266,12 @@
         "error": {
           "description": "查询流动性池失败： {message}",
           "title": "流动资金池"
-        },
-        "task": {
-          "title": "查询流动性池"
         }
       },
       "liquity_staking": {
         "error": {
           "description": "无法检索流动性质押： {message}",
           "title": "流动性质押"
-        },
-        "task": {
-          "title": "查询流动性质押"
         }
       }
     },
@@ -327,9 +285,6 @@
       "error": {
         "description": "查询{blockchain}账户失败：{message}",
         "title": "账户查询"
-      },
-      "task": {
-        "title": "正在查询{blockchain}账户"
       }
     },
     "history": {
@@ -370,9 +325,6 @@
       "error": {
         "message": "查询 kraken 质押事件时出错：{message}",
         "title": "查询Kraken质押事件"
-      },
-      "task": {
-        "title": "查询Kraken质押事件"
       }
     },
     "manual_balances": {
@@ -391,20 +343,12 @@
         "task": {
           "title": "编辑手动余额"
         }
-      },
-      "fetch": {
-        "task": {
-          "title": "检索手动余额"
-        }
       }
     },
     "nft_balances": {
       "error": {
         "message": "查询 NFT 余额时出错：{message}",
         "title": "NFT余额查询"
-      },
-      "task": {
-        "title": "查询NFT余额"
       }
     },
     "notifications": {
@@ -425,10 +369,6 @@
           },
           "title": "CSV导出"
         }
-      },
-      "task": {
-        "description": "请求新的 {queryType} 事件",
-        "title": "查询事件"
       }
     },
     "reports": {
@@ -454,9 +394,6 @@
       "generate": {
         "error": {
           "description": "生成损益报告时收到意外响应。这可能表示生成机制存在问题。请检查日志中是否有任何错误消息（您可能必须先启用调试日志记录）并创建问题"
-        },
-        "task": {
-          "title": "创建税务报告"
         }
       }
     },
@@ -471,17 +408,9 @@
           "message": "删除查询地址失败：{message}"
         }
       },
-      "fetch_nfts": {
-        "task": {
-          "title": "查询NFT"
-        }
-      },
       "fetch_prices": {
         "error": {
           "message": "获取价格失败：{error}",
-          "title": "获取价格"
-        },
-        "task": {
           "title": "获取价格"
         }
       },
@@ -497,9 +426,6 @@
         },
         "success": {
           "message": "数据同步操作成功完成。",
-          "title": "强制同步"
-        },
-        "task": {
           "title": "强制同步"
         }
       },
@@ -557,9 +483,6 @@
         "error": {
           "description": "查詢 ETH 質押詳情失敗：{error}",
           "title": "查詢 ETH 質押詳情"
-        },
-        "task": {
-          "title": "查詢 ETH 質押詳情"
         }
       }
     },
@@ -575,30 +498,18 @@
       "error": {
         "description": "{address} ({chain}) 查询失败：{error}",
         "title": "Blockchain交易查询"
-      },
-      "task": {
-        "description": "正在检索 {address} ({chain}) 的交易",
-        "title": "Blockchain 交易"
       }
     },
     "transactions_redecode": {
       "error": {
         "description": "解码事务事件失败： {error}",
         "title": "解码来自事务的事件"
-      },
-      "task": {
-        "description": "为事务的事务事件解码： {tx} ({chain})",
-        "title": "解码事务事件"
       }
     },
     "transactions_redecode_by_chain": {
       "error": {
         "description": "解码 {chain} 事件失败： {error}",
         "title": "从事务中解码事件"
-      },
-      "task": {
-        "description": "为 {chain} 事件解码事务",
-        "title": "解码交易事件"
       }
     },
     "unignore": {
@@ -1681,10 +1592,7 @@
     "import_complete": "导入成功完成。",
     "loading": "加载中",
     "many_files_selected": "必须选择一个文件",
-    "only_files": "只允许 {fileFilter} 个文件",
-    "task": {
-      "title": "正在为来源导入 csv:{source}"
-    }
+    "only_files": "只允许 {fileFilter} 个文件"
   },
   "frontend_settings": {
     "subtitle": {

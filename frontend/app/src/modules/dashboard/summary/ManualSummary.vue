@@ -1,17 +1,17 @@
 <script lang="ts" setup>
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import ManualBalanceCardList from './ManualBalanceCardList.vue';
 import SummaryCard from './SummaryCard.vue';
 import SummaryCardCreateButton from './SummaryCardCreateButton.vue';
 
 const { fetchManualBalances } = useManualBalances();
 const { manualBalanceByLocation } = useManualBalanceData();
-const { useIsTaskRunning } = useTaskStore();
+const { useIsActive } = useTaskCenter();
 
-const isManualBalancesLoading = useIsTaskRunning(TaskType.MANUAL_BALANCES);
+const isManualBalancesLoading = useIsActive(ActivityKind.MANUAL_BALANCES);
 const { t } = useI18n({ useScope: 'global' });
 </script>
 

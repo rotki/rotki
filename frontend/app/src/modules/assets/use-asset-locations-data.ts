@@ -7,9 +7,10 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { isBlockchain } from '@/modules/core/common/chains';
-import { useStatusStore } from '@/modules/core/common/use-status-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSetting } from '@/modules/settings/use-setting';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 export interface AssetLocation extends AssetBreakdown {
   readonly account?: BlockchainAccount;
@@ -32,7 +33,7 @@ interface UseAssetLocationsDataOptions {
 interface UseAssetLocationsDataReturn {
   assetLocations: ComputedRef<AssetLocations>;
   currencySymbol: Ref<string>;
-  detailsLoading: Ref<boolean>;
+  detailsLoading: ComputedRef<boolean>;
   matchChain: (location: string) => Blockchain | undefined;
   totalValue: ComputedRef<BigNumber>;
   visibleAssetLocations: ComputedRef<AssetLocations>;
@@ -42,7 +43,13 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
   const { identifier, locationFilter, onlyTags, selectedAccounts } = options;
 
   const currencySymbol = useSetting('currencySymbol');
-  const { detailsLoading } = storeToRefs(useStatusStore());
+  // Every source that can still be filling the breakdown this table renders.
+  const { useIsActive } = useTaskCenter();
+  const detailsLoading = logicOr(
+    useIsActive(ActivityKind.BLOCKCHAIN_BALANCES),
+    useIsActive(ActivityKind.EXCHANGE_BALANCES),
+    useIsActive(ActivityKind.MANUAL_BALANCES),
+  );
   const { getAccountByAddress } = useBlockchainAccountsStore();
   const { getAddressName } = useAddressNameResolution();
 

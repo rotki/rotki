@@ -2,10 +2,11 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { EvmChainInfo } from '@/modules/core/api/types/chains';
 import { getTextToken } from '@rotki/common';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseDetectTokenChainsSelectionReturn {
   /** EVM chains with accounts, filtered by the search query. */
@@ -32,7 +33,8 @@ interface UseDetectTokenChainsSelectionReturn {
 }
 
 export function useDetectTokenChainsSelection(search: MaybeRefOrGetter<string>): UseDetectTokenChainsSelectionReturn {
-  const { isTaskRunning, useIsTaskRunning } = useTaskStore();
+  const { useIsActive } = useTaskCenter();
+  const { isDetecting } = useTokenDetectionOrchestrator();
   const { txEvmChains } = useSupportedChains();
   const { addresses } = useAccountAddresses();
   const { massDetectTokens } = useBalanceRefresh();
@@ -53,7 +55,7 @@ export function useDetectTokenChainsSelection(search: MaybeRefOrGetter<string>):
     return chains.filter(item => getTextToken(item.evmChainName).includes(query) || getTextToken(item.name).includes(query));
   });
 
-  const isDetectingTokens = useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
+  const isDetectingTokens = useIsActive(ActivityKind.TOKEN_DETECTION);
 
   const selectedCount = computed<number>(() => get(selectedChains).length);
 
@@ -70,7 +72,7 @@ export function useDetectTokenChainsSelection(search: MaybeRefOrGetter<string>):
 
   function toggle(chain?: string): void {
     if (chain) {
-      if (isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, { chain }))
+      if (isDetecting(chain))
         return;
       const chains = [...get(selectedChains)];
       const index = chains.indexOf(chain);
@@ -82,7 +84,7 @@ export function useDetectTokenChainsSelection(search: MaybeRefOrGetter<string>):
       set(selectedChains, chains);
     }
     else {
-      if (isTaskRunning(TaskType.FETCH_DETECTED_TOKENS))
+      if (get(isDetectingTokens))
         return;
       const filteredVal = get(filtered);
       if (get(selectedChains).length < filteredVal.length)

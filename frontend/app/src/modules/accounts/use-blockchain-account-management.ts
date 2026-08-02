@@ -6,8 +6,8 @@ import { type RefreshAccountsParams, useAccountOperations } from '@/modules/acco
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface AddAccountsOption {
   wait: boolean;
@@ -28,7 +28,8 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
 
   // Keep essential stores and composables
   const { getChainName } = useSupportedChains();
-  const { isTaskRunning } = useTaskStore();
+  const { useWorkStatusPrefix } = useTaskCenter();
+  const addRunning = useWorkStatusPrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD);
   const { notifyInfo } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -71,9 +72,8 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
   };
 
   const addAccounts = async (chain: string, payload: AddAccountsPayload | XpubAccountPayload, options?: AddAccountsOption): Promise<void> => {
-    const taskType = TaskType.ADD_ACCOUNT;
-    if (isTaskRunning(taskType)) {
-      logger.debug(`${TaskType[taskType]} is already running.`);
+    if (get(addRunning).active) {
+      logger.debug('account add is already running.');
       return;
     }
 

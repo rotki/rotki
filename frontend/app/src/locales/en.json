@@ -201,9 +201,6 @@
     "over_time": "Balance over time",
     "processing": "Still computing balances for this scope.",
     "show_breakdown": "Show balance breakdown",
-    "task": {
-      "title": "Querying balance history for {asset}"
-    },
     "tooltip": "Show the known balance after each event",
     "total": "Total",
     "wallet": "Wallet"
@@ -332,12 +329,6 @@
         "title": "Accounting Rules Reset"
       }
     },
-    "add_eth2_validator": {
-      "task": {
-        "description": "Adding ETH staking validator",
-        "title": "Adding validator: {id}"
-      }
-    },
     "asset_movement_matching": {
       "error": {
         "description": "Failed to match asset movement: {message}",
@@ -358,24 +349,6 @@
           "description": "There was an error while retrieving token details: {message}",
           "timeout": "Timed out while retrieving token details. You can enter the token information manually.",
           "title": "Retrieving token details for {address} ({evmChain})"
-        },
-        "task": {
-          "title": "Retrieving token details for {address} ({evmChain})"
-        }
-      },
-      "export": {
-        "task": {
-          "title": "Exporting user assets"
-        }
-      },
-      "import": {
-        "task": {
-          "title": "Importing user assets"
-        }
-      },
-      "reset": {
-        "task": {
-          "title": "Resetting assets database"
         }
       },
       "update": {
@@ -403,36 +376,24 @@
         },
         "task": {
           "description": "Querying all balances and saving a snapshot for statistics.",
-          "ignore_errors_note": "Errors during the query will be ignored.",
-          "title": "Saving Balance Snapshot"
+          "ignore_errors_note": "Errors during the query will be ignored."
         }
       },
       "blockchain": {
         "error": {
           "description": "Error at querying blockchain balances: {error}",
           "title": "Querying blockchain balances"
-        },
-        "task": {
-          "title": "Query {chain} balances"
         }
       },
       "blockchain_account_removal": {
         "agnostic": {
           "error": {
             "title": "Removing account for address {address}"
-          },
-          "task": {
-            "description": "Account {address} are being removed",
-            "title": "Removing blockchain account"
           }
         },
         "error": {
           "description": "Failed to remove the account: {error}",
           "title": "Removing {count} {blockchain} account(s)"
-        },
-        "task": {
-          "description": "{count} accounts are being removed",
-          "title": "Removing {blockchain} account"
         }
       },
       "blockchain_accounts_add": {
@@ -454,7 +415,6 @@
           "description": "Address {address} is successfully added for all EVM chains. Token detection and balance queries are now running. Open the History page to also fetch and decode its transactions. | Address {address} is successfully added for these chains: \n {list}\nToken detection and balance queries are now running. Open the History page to also fetch and decode its transactions."
         },
         "task": {
-          "description": "Adding {address}",
           "title": "Adding {blockchain} account"
         }
       },
@@ -465,14 +425,13 @@
           "title": "Create oracle cache"
         },
         "failed": "Failed while creating a cache entry from {fromAsset} to {toAsset} on source: {error}",
-        "task": "Creating cache entry from {fromAsset} to {toAsset} on {source}"
+        "task": "Building the {source} price cache from {fromAsset} to {toAsset}"
       },
       "detect_tokens": {
         "error": {
           "message": "Failed to detect tokens for {address} ({chain}): {error}"
         },
         "task": {
-          "description": "Fetch detected tokens for {address} ({chain})",
           "title": "Fetch detected tokens"
         }
       },
@@ -480,17 +439,11 @@
         "error": {
           "message": "Failed to query {location} balances: {error}",
           "title": "{location} balance query"
-        },
-        "task": {
-          "title": "Retrieving {location} balances"
         }
       },
       "exchange_rates": {
         "error": {
           "message": "Failed fetching exchange rates: {message}",
-          "title": "Exchange Rates"
-        },
-        "task": {
           "title": "Exchange Rates"
         }
       },
@@ -502,9 +455,6 @@
         "error": {
           "message": "Failed to query {location} savings interest information: {error}",
           "title": "{location} savings interest information query"
-        },
-        "task": {
-          "title": "Retrieving {location} savings interest information"
         }
       },
       "exchange_setup": {
@@ -517,7 +467,6 @@
             "message": "Failed to fetch daily historic prices: {message}"
           },
           "task": {
-            "detail": "Fetching daily historic prices for asset: {asset}",
             "title": "Fetching daily historic prices"
           }
         },
@@ -544,10 +493,6 @@
         "error": {
           "description": "Failed to remove {xpub}: {error}",
           "title": "Xpub Removal"
-        },
-        "task": {
-          "description": "{xpub}",
-          "title": "Removing xpub"
         }
       }
     },
@@ -609,14 +554,6 @@
         "error": {
           "description": "Failed to retrieve airdrops: {error}",
           "title": "Airdrops"
-        },
-        "task": {
-          "title": "Querying airdrops"
-        }
-      },
-      "liquity": {
-        "task": {
-          "title": "Querying Liquity Balances"
         }
       },
       "liquity_balances": {
@@ -629,27 +566,18 @@
         "error": {
           "description": "Failed to query Liquity Pools: {message}",
           "title": "Liquity Pools"
-        },
-        "task": {
-          "title": "Querying Liquity Pools"
         }
       },
       "liquity_staking": {
         "error": {
           "description": "Failed to retrieve Liquity staking: {message}",
           "title": "Liquity staking"
-        },
-        "task": {
-          "title": "Querying Liquity staking"
         }
       },
       "liquity_statistics": {
         "error": {
           "description": "Failed to query Liquity statistics: {message}",
           "title": "Liquity Statistics"
-        },
-        "task": {
-          "title": "Querying Liquity Statistics"
         }
       }
     },
@@ -663,19 +591,11 @@
       "error": {
         "message": "Failed to detect EVM accounts with the following error: {message}",
         "title": "Detecting EVM accounts"
-      },
-      "task": {
-        "title": "Detecting EVM accounts"
       }
     },
     "eth_block_events_redecoding": {
       "error": {
         "description": "Failed to decode ETH block events: {error}",
-        "title": "Decoding ETH block events"
-      },
-      "task": {
-        "description": "Decoding ETH block events for block: {block}",
-        "single_description": "Decoding ETH block events for {number} blocks",
         "title": "Decoding ETH block events"
       }
     },
@@ -687,17 +607,12 @@
       "loading": "Fetching transaction details...",
       "needs_related_address": "Pick a tracked address below to auto-fill the timestamp from this transaction",
       "needs_related_address_swap": "Set a tracked address on the first spend below to auto-fill the timestamp from this transaction",
-      "retry": "Retry transaction lookup",
-      "title": "Looking up EVM transaction"
+      "retry": "Retry transaction lookup"
     },
     "exchange_events": {
       "error": {
         "description": "Failed to query exchange events for {location} with name '{name}': {error}",
         "title": "Exchange events query"
-      },
-      "task": {
-        "description": "Requesting new events for {location} with name '{name}'",
-        "title": "Querying exchange events"
       }
     },
     "fetch_counterparties": {
@@ -713,9 +628,6 @@
       "error": {
         "description": "Failed to query accounts for {blockchain}: {message}",
         "title": "Querying of accounts"
-      },
-      "task": {
-        "title": "Querying {blockchain} accounts"
       }
     },
     "history": {
@@ -788,9 +700,6 @@
       "error": {
         "message": "There was an error while querying the kraken staking events: {message}",
         "title": "Querying Kraken staking events"
-      },
-      "task": {
-        "title": "Querying Kraken staking events"
       }
     },
     "manual_balances": {
@@ -809,20 +718,12 @@
         "task": {
           "title": "Editing manual balances"
         }
-      },
-      "fetch": {
-        "task": {
-          "title": "Retrieving manual balances"
-        }
       }
     },
     "nft_balances": {
       "error": {
         "message": "An error occurred while querying the NFT balances: {message}",
         "title": "NFT balance querying"
-      },
-      "task": {
-        "title": "Querying NFT balances"
       }
     },
     "notifications": {
@@ -849,10 +750,6 @@
           },
           "title": "CSV Export"
         }
-      },
-      "task": {
-        "description": "Requesting new {queryType} events",
-        "title": "Querying events"
       },
       "warning": {
         "missing_api_key": {
@@ -892,9 +789,6 @@
       "generate": {
         "error": {
           "description": "An unexpected response was received while generating the profit and loss report. This might indicate an issue with the generation mechanism. Please check the logs for any error messages (you might have to enable debug logging first) and create an issue."
-        },
-        "task": {
-          "title": "Create tax report"
         }
       }
     },
@@ -955,18 +849,9 @@
           "message": "Failure to delete a queriable address: {message}"
         }
       },
-      "fetch_nfts": {
-        "task": {
-          "title": "Querying NFTs"
-        }
-      },
       "fetch_prices": {
         "error": {
           "message": "Failed to fetch prices: {error}",
-          "title": "Fetching prices"
-        },
-        "task": {
-          "description": "Fetching prices for {count} asset | Fetching prices for {count} assets",
           "title": "Fetching prices"
         }
       },
@@ -983,9 +868,6 @@
         "success": {
           "message": "The data sync operation was completed successfully.",
           "title": "Forced sync"
-        },
-        "task": {
-          "title": "Forced Sync"
         }
       },
       "ignored_assets": {
@@ -1048,9 +930,6 @@
         "error": {
           "description": "Failed to query the ETH staking details: {error}",
           "title": "Querying the ETH staking details"
-        },
-        "task": {
-          "title": "Querying ETH staking details"
         }
       }
     },
@@ -1066,31 +945,18 @@
       "error": {
         "description": "Failed query for {address} ({chain}): {error}",
         "title": "Blockchain Transactions Query"
-      },
-      "task": {
-        "description": "Retrieving txns for {address} ({chain})",
-        "title": "Blockchain Transactions"
       }
     },
     "transactions_redecode": {
       "error": {
         "description": "Failed to decode events from transactions: {error}",
         "title": "Decoding events from transactions"
-      },
-      "task": {
-        "description": "Decoding transaction events for transactions: {tx} ({chain})",
-        "single_description": "Decoding {chain} transaction events for {number} transactions",
-        "title": "Decoding transaction events"
       }
     },
     "transactions_redecode_by_chain": {
       "error": {
         "description": "Failed to decode {chain} events: {error}",
         "title": "Decoding events from transactions"
-      },
-      "task": {
-        "description": "Decoding transactions for {chain} events",
-        "title": "Decoding transaction events"
       }
     },
     "unignore": {
@@ -1366,8 +1232,7 @@
     },
     "auto_match": {
       "error": "Failed to run automatic matching: {error}",
-      "error_title": "Auto Match Failed",
-      "task_title": "Matching asset movements"
+      "error_title": "Auto Match Failed"
     },
     "card_list": {
       "select_all": "Select all",
@@ -1850,9 +1715,6 @@
     "no_options": "No EVM location labels are available.",
     "onchain": "On-chain",
     "settings_link": "RPC node settings",
-    "task": {
-      "title": "Finding balance divergence for {asset}"
-    },
     "title": "Find balance divergence",
     "tracked": "Tracked",
     "view_event": "View event"
@@ -1942,8 +1804,7 @@
     },
     "auto_match": {
       "error": "Failed to run automatic bridge matching: {error}",
-      "error_title": "Bridge Auto Match Failed",
-      "task_title": "Matching bridge transactions"
+      "error_title": "Bridge Auto Match Failed"
     },
     "dialog": {
       "confirm_ignore": "Ignore this transaction?",
@@ -3350,7 +3211,6 @@
         "disconnect": "Disconnect Wallet",
         "explanation": "To authenticate with Gnosis Pay, you need to sign a message with an Ethereum wallet that is a controller of the Gnosis Pay Safe.",
         "failed": "Failed to authenticate Gnosis Pay",
-        "fetching_nonce": "Fetching authentication nonce",
         "sign_explanation": "Sign a message with your wallet to authenticate and generate a session token.",
         "sign_message": "Sign Message to Authenticate",
         "step1_title": "Select Wallet Mode & Connect",
@@ -3359,7 +3219,6 @@
         "success_message": "Successfully authenticated with Gnosis Pay",
         "switch_to_gnosis": "Switch to Gnosis",
         "validating_address": "Validating address...",
-        "verifying_signature": "Verifying signature and generating token",
         "wrong_chain": "You are not connected to the Gnosis network. Please switch to continue."
       },
       "title": "Gnosis Pay"
@@ -3455,9 +3314,6 @@
     "many_files_selected": "Only one file must be selected",
     "only_files": "Only {fileFilter} files are allowed",
     "replace_file": "Replace file",
-    "task": {
-      "title": "Importing csv for source: {source}"
-    },
     "timezone": {
       "hint": "Used for dates in the file that do not include timezone information. Defaults to UTC.",
       "label": "Timezone",
@@ -4063,9 +3919,7 @@
     "negative_balances": {
       "view_event_tooltip": "The negative balance was detected at this event, but it doesn't necessarily mean this event is the cause. The issue might originate from an earlier event during processing."
     },
-    "processing_description": "Processing historical events to calculate balances",
-    "processing_progress": "Processing: {processed} / {total}",
-    "title": "Historical Balances"
+    "processing_progress": "Processing: {processed} / {total}"
   },
   "history_event_action": {
     "direction": {
@@ -4709,6 +4563,9 @@
     "table": {
       "enabled": "Enabled",
       "select_accounts": "Select accounts"
+    },
+    "tasks": {
+      "toggle": "Updating modules"
     }
   },
   "module_settings": {
@@ -6090,6 +5947,161 @@
       "title": "Edit Tag"
     },
     "title": "Tag Manager"
+  },
+  "task_center": {
+    "activity": {
+      "accounting_rules": {
+        "export": "Exporting accounting rules",
+        "import": "Importing accounting rules from {file}",
+        "reset": "Resetting accounting rules to defaults"
+      },
+      "accounts": {
+        "add": "Adding {address}",
+        "detect": "Detecting EVM accounts",
+        "ens": "Resolving ENS names for {count} address | Resolving ENS names for {count} addresses",
+        "remove": "Removing {address}",
+        "remove_count": "Removing {count} account | Removing {count} accounts",
+        "remove_xpub": "Removing xpub {xpub}"
+      },
+      "assets": {
+        "erc20": "Retrieving token details for {address} ({chain})",
+        "export": "Exporting user assets",
+        "import": "Importing user assets from {file}",
+        "nfts": "Querying NFTs",
+        "reset_hard": "Resetting the assets database (hard reset)",
+        "reset_soft": "Resetting the assets database (soft reset)",
+        "update": "Applying asset database update v{version}",
+        "versions": "Checking for asset database updates"
+      },
+      "blockchain_balances": {
+        "cached": "Reading cached {chain} data",
+        "query": "Querying the {chain} network"
+      },
+      "csv_import": {
+        "source": "Importing data from {source}"
+      },
+      "eth_block_decoding": {
+        "batch": "Pulling {count} block | Pulling {count} blocks",
+        "single": "Pulling block {block}"
+      },
+      "exchange_balances": {
+        "query": "Reading balances from {location}"
+      },
+      "exchange_savings": {
+        "interest": "Reading savings interest from {location}"
+      },
+      "gnosis_pay": {
+        "nonce": "Fetching authentication nonce",
+        "verify": "Verifying signature and generating token"
+      },
+      "historical_balances": {
+        "divergence": "Looking for divergence in {asset}",
+        "processing": "Processing historical events to calculate balances",
+        "series": "Building the {asset} balance series"
+      },
+      "history_events": {
+        "bridge": "Matching bridge transactions",
+        "exchange": "Reading events from {exchange} ({account})",
+        "export": "Exporting history events to CSV",
+        "lookup": "Looking up transaction {tx}",
+        "match": "Matching asset movements",
+        "undecoded": "Retrieving breakdown for undecoded transactions"
+      },
+      "liquidity_pools": {
+        "protocol": "Querying {protocol} pools"
+      },
+      "liquity": {
+        "balances": "Reading Liquity balances",
+        "pools": "Reading stability pool deposits",
+        "staking": "Reading LQTY staking",
+        "statistics": "Reading Liquity statistics"
+      },
+      "manual_balances": {
+        "fetch": "Retrieving manual balances",
+        "save": "Saving {label}"
+      },
+      "online_events": {
+        "refresh": "Refreshing {queryType}"
+      },
+      "pnl_report": {
+        "export": "Exporting report data",
+        "generate": "Generating the report for {period}",
+        "import": "Importing report data"
+      },
+      "prices": {
+        "daily": "Filling daily prices for {asset}",
+        "exchange_rates": "Updating exchange rates for {currency}",
+        "historic": "Looking up {fromAsset} to {toAsset} on {date}",
+        "latest": "Updating {count} asset | Updating {count} assets",
+        "manual_add": "Saving a manual price for {asset}",
+        "manual_remove": "Removing the manual price for {asset}"
+      },
+      "protocol_cache": {
+        "source": "Refreshing the {source} cache"
+      },
+      "purge": {
+        "target": "Clearing {target}"
+      },
+      "redecode": {
+        "chains": "Re-deriving events on {chains}"
+      },
+      "staking": {
+        "add_validator": "Adding validator {validator}",
+        "kraken": "Querying Kraken staking events",
+        "performance": "Refreshing ETH staking performance cache",
+        "validators": "Querying ETH validators"
+      },
+      "token_detection": {
+        "detect": "Detecting tokens for {address} on {chain}"
+      },
+      "tx_decoding": {
+        "batch": "Pulling {count} transaction from {chain} | Pulling {count} transactions from {chain}",
+        "chain": "Processing {chain} transactions",
+        "single": "Pulling {tx} from {chain}"
+      },
+      "tx_sync": {
+        "address": "Retrieving transactions for {address} on {chain}",
+        "chain": "Syncing transactions on {chain}"
+      }
+    },
+    "count": {
+      "transactions": "{count} transaction | {count} transactions"
+    },
+    "group": {
+      "accounting_rules": "Accounting rules",
+      "accounts": "Accounts",
+      "airdrops": "Airdrops",
+      "all_balances": "All balances",
+      "assets": "Assets",
+      "blockchain_balances": "Blockchain balances",
+      "csv_import": "CSV import",
+      "eth_block_decoding": "Block event decoding",
+      "exchange_balances": "Exchange balances",
+      "exchange_events": "Exchange events",
+      "exchange_savings": "Exchange savings",
+      "gnosis_pay": "Gnosis Pay",
+      "historical_balances": "Historical balances",
+      "history_events": "History events",
+      "history_sync": "History refresh",
+      "liquidity_pools": "Liquidity pools",
+      "liquity": "Liquity",
+      "manual_balances": "Manual balances",
+      "nft_balances": "NFT balances",
+      "online_events": "Online events",
+      "other": "Other",
+      "pnl_report": "Profit & loss report",
+      "prices": "Prices",
+      "protocol_cache": "Protocol cache",
+      "purge": "Purging data",
+      "redecode": "Re-decoding events",
+      "repulling": "Re-pulling events",
+      "staking": "Staking",
+      "sync": "Database sync",
+      "targeted_redecode": "Re-decoding selected transactions",
+      "token_detection": "Token detection",
+      "tx_decoding": "Transaction decoding",
+      "tx_sync": "Transaction sync"
+    }
   },
   "task_manager": {
     "error": "An error occurred while processing task [{taskId}] '{title}': {error}"

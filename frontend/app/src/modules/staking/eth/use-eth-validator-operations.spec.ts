@@ -1,8 +1,8 @@
-import type { Ref } from 'vue';
+import type { ComputedRef } from 'vue';
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
+import type { WorkStatus } from '@/modules/task-center/core/types';
 import { bigNumberify, Blockchain } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TaskType } from '@/modules/core/tasks/task-type';
 import { useEthValidatorOperations } from '@/modules/staking/eth/use-eth-validator-operations';
 
 const mockShowConfirmation = vi.fn();
@@ -28,20 +28,25 @@ vi.mock('@/modules/balances/use-blockchain-balances', () => ({
   }),
 }));
 
-vi.mock('@/modules/shell/sync-progress/use-section-status', () => ({
-  useSectionStatus: (): { isLoading: Ref<boolean> } => ({ isLoading: mockLoading }),
-}));
+function activeFor(part?: string): boolean {
+  if (part === 'add')
+    return get(mockAddRunning);
+  if (part === 'remove')
+    return get(mockRemoveRunning);
+  // The eth2 chain's balance activity, which used to be read as a Section subsection.
+  if (part === 'eth2')
+    return get(mockLoading);
+  return false;
+}
 
-vi.mock('@/modules/core/tasks/use-task-store', () => ({
-  useTaskStore: (): { useIsTaskRunning: (type: TaskType) => Ref<boolean> } => {
-    const byType = new Map<TaskType, Ref<boolean>>([
-      [TaskType.ADD_ACCOUNT, mockAddRunning],
-      [TaskType.REMOVE_ACCOUNT, mockRemoveRunning],
-    ]);
-    return {
-      useIsTaskRunning: (type: TaskType): Ref<boolean> => byType.get(type) ?? ref<boolean>(false),
-    };
-  },
+vi.mock('@/modules/task-center/use-task-center', () => ({
+  useTaskCenter: (): Record<string, unknown> => ({
+    useIsActivePrefix: (_kind: string, part?: string): ComputedRef<boolean> => computed<boolean>(() => activeFor(part)),
+    useWorkStatusPrefix: (_kind: string, part?: string): ComputedRef<WorkStatus> => computed<WorkStatus>(() => {
+      const active = activeFor(part);
+      return { active, everCompleted: false, pending: false, running: active };
+    }),
+  }),
 }));
 
 function validator(overrides: Partial<EthereumValidator> = {}): EthereumValidator {

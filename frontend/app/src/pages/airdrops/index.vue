@@ -1,25 +1,20 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
-import type { TaskMeta } from '@/modules/core/tasks/types';
+import type {
+  Airdrop,
+  Airdrops,
+  PoapDeliveryDetails,
+} from '@/modules/airdrops/airdrops';
 import { type BigNumber, Blockchain, Zero } from '@rotki/common';
 import { msg } from '@/message-key';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import AirdropDisplay from '@/modules/airdrops/AirdropDisplay.vue';
-import {
-  type Airdrop,
-  Airdrops,
-  type PoapDeliveryDetails,
-} from '@/modules/airdrops/airdrops';
 import PoapDeliveryAirdrops from '@/modules/airdrops/PoapDeliveryAirdrops.vue';
-import { useDefiApi } from '@/modules/airdrops/use-defi-api';
+import { useAirdrops } from '@/modules/airdrops/use-airdrops';
 import { AssetAmountDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
-import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -35,16 +30,12 @@ type AirdropWithIndex = Omit<Airdrop, 'amount'> & { index: number; amount: BigNu
 type Statuses = '' | 'unknown' | 'unclaimed' | 'claimed' | 'missed';
 const ETH = Blockchain.ETH;
 const { t } = useI18n({ useScope: 'global' });
-const { runTask } = useTaskHandler();
-const { notifyError } = useNotifications();
-const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
+const { airdrops, fetchAirdrops, loading } = useAirdrops();
 const hideUnknownAlert = useLocalStorage('rotki.airdrops.hide_unknown_alert', false);
 
 const sort = ref<DataTableSortData<AirdropWithIndex>>([]);
 
-const airdrops = ref<Airdrops>({});
 const expanded = ref<AirdropWithIndex[]>([]);
-const loading = ref<boolean>(false);
 const status = ref<Statuses>('');
 const pagination = ref<TablePaginationData>();
 const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
@@ -152,30 +143,6 @@ function filterByAddress(data: Airdrops, addresses: string[]): Airdrop[] {
     }
   }
   return result;
-}
-
-async function fetchAirdrops(): Promise<void> {
-  set(loading, true);
-
-  const outcome = await runTask<Airdrops, TaskMeta>(
-    () => fetchAirdropsCaller(),
-    { type: TaskType.DEFI_AIRDROPS, meta: { title: t('actions.defi.airdrops.task.title') } },
-  );
-
-  if (outcome.success) {
-    set(airdrops, Airdrops.parse(outcome.result));
-  }
-  else if (isActionableFailure(outcome)) {
-    logger.error(outcome.error);
-    notifyError(
-      t('actions.defi.airdrops.error.title'),
-      t('actions.defi.airdrops.error.description', {
-        error: outcome.message,
-      }),
-    );
-  }
-
-  set(loading, false);
 }
 
 function hasDetails(details?: PoapDeliveryDetails[]): details is PoapDeliveryDetails[] {

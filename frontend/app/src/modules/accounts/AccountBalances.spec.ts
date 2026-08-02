@@ -6,12 +6,11 @@ import flushPromises from 'flush-promises';
 import { setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountBalances from '@/modules/accounts/AccountBalances.vue';
-import { Section, Status } from '@/modules/core/common/status';
 import { useMainStore } from '@/modules/core/common/use-main-store';
-import { useStatusStore } from '@/modules/core/common/use-status-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn().mockImplementation(() =>
@@ -59,19 +58,14 @@ describe('account-balances', () => {
 
   it('should enter loading state when balances load', async () => {
     const { add, remove } = useTaskStore();
-    add({
-      id: 1,
-      type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
-      meta: {
-        title: 'test',
-      },
-      time: 0,
-    });
+    const orchestrator = useTaskOrchestrator();
+    add({ id: 1, label: 'test' });
 
-    useStatusStore().setStatus({
-      section: Section.BLOCKCHAIN,
-      subsection: Blockchain.ETH,
-      status: Status.LOADING,
+    orchestrator.submit({
+      id: makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH),
+      kind: ActivityKind.BLOCKCHAIN_BALANCES,
+      run: async (): Promise<never> => new Promise(() => {}),
+      title: 'eth',
     });
 
     await nextTick();
@@ -79,11 +73,7 @@ describe('account-balances', () => {
     expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBe(true);
 
     remove(1);
-    useStatusStore().setStatus({
-      section: Section.BLOCKCHAIN,
-      subsection: Blockchain.ETH,
-      status: Status.LOADED,
-    });
+    orchestrator.markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH);
     await nextTick();
 
     expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBe(false);

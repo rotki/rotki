@@ -1,10 +1,8 @@
 import type { ComputedRef, Ref } from 'vue';
 import { get, set } from '@vueuse/shared';
-import { Section } from '@/modules/core/common/status';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseWrappedHistoryEventsReturn {
   historyEventsReady: ComputedRef<boolean>;
@@ -15,12 +13,20 @@ interface UseWrappedHistoryEventsReturn {
 
 export function useWrappedHistoryEvents(start: Ref<number>): UseWrappedHistoryEventsReturn {
   const { getEarliestEventTimestamp } = useHistoryEvents();
-  const { isFirstLoad, loading: sectionLoading } = useStatusUpdater(Section.HISTORY);
-  const { useIsTaskRunning } = useTaskStore();
+  const { useIsActive, useWorkStatus, useIsActivePrefix } = useTaskCenter();
 
-  const eventTaskLoading = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
-  const protocolCacheUpdatesLoading = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
-  const onlineHistoryEventsLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
+  // The whole history refresh is one umbrella activity: its liveness is "a refresh is running",
+  // its freshness is "history has loaded at least once".
+  const historySyncStatus = useWorkStatus(ActivityKind.HISTORY_SYNC);
+  const sectionLoading = computed<boolean>(() => get(historySyncStatus).active);
+  const isFirstLoad = (): boolean => !get(historySyncStatus).everCompleted;
+
+  // Transaction decoding runs native (Phase 2): aggregate liveness across every per-chain activity.
+  const eventTaskLoading = useIsActive(ActivityKind.TX_DECODING);
+  // Protocol cache refresh runs native (W9).
+  const protocolCacheUpdatesLoading = useIsActive(ActivityKind.PROTOCOL_CACHE);
+  // Online events run native (W7): aggregate liveness across every per-queryType activity.
+  const onlineHistoryEventsLoading = useIsActivePrefix(ActivityKind.ONLINE_EVENTS);
 
   const refreshing = logicOr(
     sectionLoading,
@@ -29,7 +35,10 @@ export function useWrappedHistoryEvents(start: Ref<number>): UseWrappedHistoryEv
     protocolCacheUpdatesLoading,
   );
 
-  const historyEventsReady = logicAnd(!isFirstLoad(), logicNot(refreshing));
+  // `!isFirstLoad()` used to be evaluated once, at setup, so this never became ready if history
+  // had not loaded by then.
+  const everLoaded = computed<boolean>(() => get(historySyncStatus).everCompleted);
+  const historyEventsReady = logicAnd(everLoaded, logicNot(refreshing));
   const usedHistoryEventsReady = refDebounced(historyEventsReady, 500);
 
   async function initializeStartFromEarliestEvent(): Promise<void> {

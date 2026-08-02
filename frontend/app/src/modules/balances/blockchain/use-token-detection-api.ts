@@ -1,16 +1,22 @@
 import type { EvmTokensRecord } from '@/modules/balances/types/balances';
-import type { TaskMeta } from '@/modules/core/tasks/types';
+import type { RunBackendTask } from '@/modules/task-center/use-native-task';
+import { err, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { Cancelled, isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 
 interface UseTokenDetectionApiReturn {
-  fetchDetectedTokens: (chain: string, address?: string | null) => Promise<void>;
+  /**
+   * Task-backed detection for one address. Runs inside a TOKEN_DETECTION activity, so it takes
+   * that activity's bound runner rather than reaching for the unbound one.
+   */
+  detectTokensForAddress: (runTask: RunBackendTask, chain: string, address: string) => Promise<Result<void, TaskError>>;
+  /** Cached read for a whole chain. No backend task, so nothing to bind to an activity. */
+  fetchCachedDetectedTokens: (chain: string) => Promise<Result<void, TaskError>>;
 }
 
 export function useTokenDetectionApi(): UseTokenDetectionApiReturn {
@@ -18,64 +24,64 @@ export function useTokenDetectionApi(): UseTokenDetectionApiReturn {
   const { fetchDetectedTokens: fetchCachedTokens, fetchDetectedTokensTask } = useBlockchainBalancesApi();
   const { getChainName } = useSupportedChains();
   const { notifyError } = useNotifications();
-  const { runTask } = useTaskHandler();
   const { t } = useI18n({ useScope: 'global' });
 
-  const fetchDetectedTokens = async (chain: string, address: string | null = null): Promise<void> => {
-    if (address) {
-      const taskMeta = {
-        address,
-        chain,
-        description: t('actions.balances.detect_tokens.task.description', {
-          address,
-          chain: getChainName(chain),
-        }),
-        title: t('actions.balances.detect_tokens.task.title'),
-      };
+  const detectTokensForAddress = async (
+    runTask: RunBackendTask,
+    chain: string,
+    address: string,
+  ): Promise<Result<void, TaskError>> => {
+    const result = await runTask<EvmTokensRecord>(
+      async () => fetchDetectedTokensTask(chain, [address]),
+    );
 
-      const outcome = await runTask<EvmTokensRecord, TaskMeta>(
-        async () => fetchDetectedTokensTask(chain, [address]),
-        { type: TaskType.FETCH_DETECTED_TOKENS, meta: taskMeta, unique: false },
-      );
-
-      if (outcome.success) {
-        setState(chain, outcome.result);
-      }
-      else if (isActionableFailure(outcome)) {
-        logger.error(outcome.error);
+    if (isErr(result)) {
+      if (isActionable(result.error)) {
+        logger.error(result.error.message);
         notifyError(
           t('actions.balances.detect_tokens.task.title'),
           t('actions.balances.detect_tokens.error.message', {
             address,
             chain: getChainName(chain),
-            error: outcome.message,
+            error: result.error.message,
           }),
         );
       }
     }
     else {
-      try {
-        const result = await fetchCachedTokens(chain, null);
-        setState(chain, result);
-      }
-      catch (error: unknown) {
-        if (isRequestCancellation(error))
-          return;
+      setState(chain, result.value);
+    }
 
-        logger.error(error);
-        notifyError(
-          t('actions.balances.detect_tokens.task.title'),
-          t('actions.balances.detect_tokens.error.message', {
-            address: '',
-            chain: getChainName(chain),
-            error: getErrorMessage(error),
-          }),
-        );
-      }
+    return mapResult(result, () => {});
+  };
+
+  const fetchCachedDetectedTokens = async (chain: string): Promise<Result<void, TaskError>> => {
+    try {
+      const result = await fetchCachedTokens(chain, null);
+      setState(chain, result);
+      return ok(undefined);
+    }
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
+
+      if (isRequestCancellation(error))
+        return err(Cancelled({ message }));
+
+      logger.error(error);
+      notifyError(
+        t('actions.balances.detect_tokens.task.title'),
+        t('actions.balances.detect_tokens.error.message', {
+          address: '',
+          chain: getChainName(chain),
+          error: message,
+        }),
+      );
+      return err(TaskFailed({ message }));
     }
   };
 
   return {
-    fetchDetectedTokens,
+    detectTokensForAddress,
+    fetchCachedDetectedTokens,
   };
 }

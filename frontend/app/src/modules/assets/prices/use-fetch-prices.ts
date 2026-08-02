@@ -1,10 +1,10 @@
 import type { FetchPricePayload } from '@/modules/accounts/blockchain-accounts';
+import { chunk } from 'es-toolkit';
 import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { AssetPriceResponse } from '@/modules/assets/prices/price-types';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
-import { chunkArray } from '@/modules/core/common/data/data';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -14,6 +14,31 @@ import { type RunBackendTask, useNativeTask } from '@/modules/task-center/use-na
 
 interface UseFetchPricesReturn {
   fetchPrices: (payload: FetchPricePayload) => Promise<void>;
+}
+
+/**
+ * A stable short digest of the requested asset set, for the activity id.
+ *
+ * `submitTask` dedups by id, so the set has to be part of the identity: under a single
+ * `prices:latest` id, opening the manual-balance form while the background sweep was in flight
+ * handed the form the sweep's promise, its own batch never ran, and the form showed no price.
+ * The set itself cannot go in the id — it is routinely hundreds of assets — so it is folded to
+ * FNV-1a/32, sorted first so member order never changes the identity.
+ *
+ * A collision would re-introduce exactly the bug this prevents, for one pair of sets. At the
+ * handful of price requests that can be in flight at once, that is far below the noise floor,
+ * and the failure is a stale price rather than a wrong one.
+ */
+export function assetSetDigest(assets: readonly string[]): string {
+  let hash = 0x811C9DC5;
+  for (const asset of [...assets].sort()) {
+    for (let index = 0; index < asset.length; index++) {
+      hash = Math.imul(hash ^ asset.charCodeAt(index), 0x01000193);
+    }
+    // Fold the separator too, so ['ab','c'] and ['a','bc'] cannot land on the same digest.
+    hash = Math.imul(hash ^ 0x2C, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
 }
 
 /**
@@ -32,7 +57,14 @@ export function useFetchPrices(): UseFetchPricesReturn {
 
   const fetchPrices = async (payload: FetchPricePayload): Promise<void> => {
     const selected = [...payload.selectedAssets];
-    const batches = chunkArray<string>(selected, 100);
+    const assetCount = selected.length;
+
+    // No assets means no batches, so the run would query nothing and return ok immediately -
+    // there is nothing worth showing in the task center.
+    if (assetCount === 0)
+      return;
+
+    const batches = chunk(selected, 100);
 
     /** Query one batch and fold the parsed response into the price store — failures stay errors. */
     const fetchBatch = async (runTask: RunBackendTask, assets: string[]): Promise<Result<void, TaskError>> => mapResult(
@@ -50,7 +82,7 @@ export function useFetchPrices(): UseFetchPricesReturn {
     // circuiting fold: flatMap drops every later batch on the first error, reporting progress
     // before each step and once more on success.
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.PRICES, ActivityPart.LATEST),
+      id: makeActivityId(ActivityKind.PRICES, ActivityPart.LATEST, assetSetDigest(selected), payload.ignoreCache ? ActivityPart.PULL : ActivityPart.CACHED),
       kind: ActivityKind.PRICES,
       rerunnable: true,
       run: async ({ report, runTask }): Promise<Result<void, TaskError>> => {
@@ -64,7 +96,7 @@ export function useFetchPrices(): UseFetchPricesReturn {
         report({ current: total, total });
         return ok(undefined);
       },
-      subtitle: activityLabelFor(msg.$t('task_center.activity.prices.latest'), { count: selected.length }, selected.length),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.prices.latest'), { count: assetCount }, assetCount),
       title: t('task_center.group.prices'),
     });
 

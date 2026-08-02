@@ -1,5 +1,4 @@
 import type { ActionStatus } from '@/modules/core/common/action';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import type {
   AddTransactionHashPayload,
   RepullingEthStakingPayload,
@@ -10,19 +9,39 @@ import type {
   RepullingTransactionResponse,
 } from '@/modules/history/events/event-payloads';
 import { toHumanReadable } from '@rotki/common';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useRefreshTransactions } from '@/modules/history/events/tx/use-refresh-transactions';
 import { useSetting } from '@/modules/settings/use-setting';
+import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 export interface RepullingTransactionResult {
   newTransactionsCount: number;
   newTransactions: Record<string, string[]>;
+}
+
+/**
+ * The identity of one transaction re-pull.
+ *
+ * Extracted rather than inlined: every optional field needs its own fallback, and those branches
+ * pushed `repullingTransactions` past the complexity cap. An absent bound is still part of the
+ * identity — "everything before X" is a different request from "X to Y".
+ */
+function repullTransactionsActivityId(payload: RepullingTransactionPayload): ActivityId {
+  return makeActivityId(
+    ActivityKind.REPULLING,
+    ActivityPart.TRANSACTIONS,
+    payload.address ?? '',
+    payload.chain ?? '',
+    payload.fromTimestamp ?? 0,
+    payload.toTimestamp ?? 0,
+  );
 }
 
 export const useHistoryTransactions = createSharedComposable(() => {
@@ -35,7 +54,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     repullingTransactions: repullingTransactionsCaller,
   } = useHistoryEventsApi();
 
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
   const dateDisplayFormat = useSetting('dateDisplayFormat');
   const { refreshTransactions } = useRefreshTransactions();
 
@@ -89,23 +108,33 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
     const isAddressSpecified = payload.address && payload.chain;
 
-    const taskMeta = {
-      description: isAddressSpecified
-        ? t('actions.repulling_transaction.task.description', messagePayload)
-        : t('actions.repulling_transaction.task.no_address_or_chain_transaction', messagePayload),
-      title: t('actions.repulling_transaction.task.title'),
-    };
+    const subtitle = isAddressSpecified
+      ? t('actions.repulling_transaction.task.description', messagePayload)
+      : t('actions.repulling_transaction.task.no_address_or_chain_transaction', messagePayload);
 
-    const outcome = await runTask<RepullingTransactionResponse, TaskMeta>(
-      async () => repullingTransactionsCaller(payload),
-      { type: TaskType.REPULLING_TXS, meta: taskMeta, unique: false },
-    );
+    // The operation *and* its payload are the identity. `REPULLING` covers three unrelated backend
+    // calls, and all three submitted under the bare kind: a second re-pull of any of them started
+    // while another was live was deduped onto it and returned "no new events" without doing any
+    // work, and cancelling "repulling" killed whichever of the three happened to own the record.
+    const outcome = await submitTask<RepullingTransactionResponse | undefined>({
+      id: repullTransactionsActivityId(payload),
+      kind: ActivityKind.REPULLING,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<RepullingTransactionResponse | undefined, TaskError>> => mapResult(
+        await runTask<RepullingTransactionResponse>(
+          async () => repullingTransactionsCaller(payload),
+        ),
+        value => value,
+      ),
+      subtitle,
+      title: t('task_center.group.repulling'),
+    });
 
-    if (outcome.success) {
-      return outcome.result;
+    if (!isErr(outcome)) {
+      return outcome.value;
     }
-    else if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
+    if (isActionable(outcome.error)) {
+      logger.error(outcome.error.message);
       notifyError(
         t('actions.repulling_transaction.task.title'),
         isAddressSpecified
@@ -123,18 +152,31 @@ export const useHistoryTransactions = createSharedComposable(() => {
       exchange: `${payload.name} (${payload.location})`,
     };
 
-    const taskMeta = {
-      description: t('actions.repulling_exchange_events.task.description', messagePayload),
-      title: t('actions.repulling_exchange_events.task.title'),
-    };
+    const subtitle = t('actions.repulling_exchange_events.task.description', messagePayload);
 
-    const outcome = await runTask<RepullingExchangeEventsResponse, TaskMeta>(
-      async () => repullingExchangeEventsCaller(payload),
-      { type: TaskType.REPULLING_TXS, meta: taskMeta, unique: false },
-    );
+    const outcome = await submitTask<RepullingExchangeEventsResponse>({
+      id: makeActivityId(
+        ActivityKind.REPULLING,
+        ActivityPart.EXCHANGE_EVENTS,
+        payload.location,
+        payload.name,
+        payload.fromTimestamp ?? 0,
+        payload.toTimestamp ?? 0,
+      ),
+      kind: ActivityKind.REPULLING,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<RepullingExchangeEventsResponse, TaskError>> => mapResult(
+        await runTask<RepullingExchangeEventsResponse>(
+          async () => repullingExchangeEventsCaller(payload),
+        ),
+        value => value,
+      ),
+      subtitle,
+      title: t('task_center.group.repulling'),
+    });
 
-    if (outcome.success) {
-      const { storedEvents } = outcome.result;
+    if (!isErr(outcome)) {
+      const { storedEvents } = outcome.value;
       notifyInfo(
         t('actions.repulling_exchange_events.task.title'),
         storedEvents ? t('actions.repulling_exchange_events.success.description', { length: storedEvents }) : t('actions.repulling_exchange_events.success.no_events_description'),
@@ -142,8 +184,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
       return storedEvents > 0;
     }
-    else if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
+    if (isErr(outcome) && isActionable(outcome.error)) {
+      logger.error(outcome.error.message);
       notifyError(
         t('actions.repulling_exchange_events.task.title'),
         t('actions.repulling_exchange_events.error.description', messagePayload),
@@ -159,18 +201,30 @@ export const useHistoryTransactions = createSharedComposable(() => {
       entryType: toHumanReadable(payload.entryType),
     };
 
-    const taskMeta = {
-      description: t('actions.repulling_eth_staking.task.description', messagePayload),
-      title: t('actions.repulling_eth_staking.task.title'),
-    };
+    const subtitle = t('actions.repulling_eth_staking.task.description', messagePayload);
 
-    const outcome = await runTask<RepullingEthStakingResponse, TaskMeta>(
-      async () => repullingEthStakingEventsCaller(payload),
-      { type: TaskType.REPULLING_TXS, meta: taskMeta, unique: false },
-    );
+    const outcome = await submitTask<RepullingEthStakingResponse>({
+      id: makeActivityId(
+        ActivityKind.REPULLING,
+        ActivityPart.STAKING,
+        payload.entryType,
+        payload.fromTimestamp ?? 0,
+        payload.toTimestamp ?? 0,
+      ),
+      kind: ActivityKind.REPULLING,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<RepullingEthStakingResponse, TaskError>> => mapResult(
+        await runTask<RepullingEthStakingResponse>(
+          async () => repullingEthStakingEventsCaller(payload),
+        ),
+        value => value,
+      ),
+      subtitle,
+      title: t('task_center.group.repulling'),
+    });
 
-    if (outcome.success) {
-      const { total, perValidator, perAddress } = outcome.result;
+    if (!isErr(outcome)) {
+      const { total, perValidator, perAddress } = outcome.value;
 
       const validatorDetails = Object.entries(perValidator)
         .map(([index, count]) => `  ${t('actions.repulling_eth_staking.success.validator_entry', { index, count })}`)
@@ -194,8 +248,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
       return total > 0;
     }
-    else if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
+    if (isErr(outcome) && isActionable(outcome.error)) {
+      logger.error(outcome.error.message);
       notifyError(
         t('actions.repulling_eth_staking.task.title'),
         t('actions.repulling_eth_staking.error.description', messagePayload),

@@ -1,5 +1,6 @@
 import type { ActionStatus } from '@/modules/core/common/action';
-import type { TaskMeta } from '@/modules/core/tasks/types';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useManualBalancesApi } from '@/modules/balances/api/use-manual-balances-api';
 import { BalanceType } from '@/modules/balances/types/balances';
@@ -14,12 +15,12 @@ import { isRequestCancellation } from '@/modules/core/api/request-queue/is-reque
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { Section, Status } from '@/modules/core/common/status';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseManualBalancesReturn {
   addManualBalance: (balance: RawManualBalance) => Promise<ActionStatus<ValidationErrors | string>>;
@@ -32,8 +33,7 @@ interface UseManualBalancesReturn {
 export function useManualBalances(): UseManualBalancesReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
   const { notifyError, showErrorMessage } = useNotifications();
-  const { cancelTaskByTaskType, runTask } = useTaskHandler();
-  const { fetchDisabled, getStatus, resetStatus, setStatus } = useStatusUpdater(Section.MANUAL_BALANCES);
+  const { cancelActivity, statusOf, submitTask } = useNativeTask();
   const { addManualBalances, deleteManualBalances, editManualBalances, queryManualBalances } = useManualBalancesApi();
   const valueThreshold = useValueThreshold(BalanceSource.MANUAL);
   const { t } = useI18n({ useScope: 'global' });
@@ -56,96 +56,109 @@ export function useManualBalances(): UseManualBalancesReturn {
   }
 
   const fetchManualBalances = async (userInitiated = false): Promise<void> => {
-    if (fetchDisabled(userInitiated)) {
+    // `fetchDisabled(refresh)` was `!(isFirstLoad || refresh) || loading`; on the orchestrator's
+    // projection that is `(everCompleted && !userInitiated) || active`.
+    const status = statusOf(ActivityKind.MANUAL_BALANCES, ActivityPart.FETCH);
+    if ((status.everCompleted && !userInitiated) || status.active) {
       logger.debug('skipping manual balance refresh');
       return;
     }
-    const currentStatus: Status = getStatus();
-
-    const newStatus = currentStatus === Status.LOADED ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus);
 
     const threshold = get(valueThreshold);
 
-    const outcome = await runTask<ManualBalances, TaskMeta>(
-      async () => queryManualBalances(threshold),
-      { type: TaskType.MANUAL_BALANCES, meta: { title: t('actions.manual_balances.fetch.task.title') } },
-    );
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.MANUAL_BALANCES, ActivityPart.FETCH),
+      kind: ActivityKind.MANUAL_BALANCES,
+      rerunnable: true,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<ManualBalances>(
+          async () => queryManualBalances(threshold),
+        ),
+        (result) => {
+          updateBalances(ManualBalances.parse(result).balances);
+        },
+      ),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.manual_balances.fetch')),
+      title: t('task_center.group.manual_balances'),
+    });
 
-    if (outcome.success) {
-      const { balances } = ManualBalances.parse(outcome.result);
-      updateBalances(balances);
-      setStatus(Status.LOADED);
-    }
-    else {
-      if (isActionableFailure(outcome)) {
-        logger.error(outcome.error);
-        notifyError(
-          t('actions.balances.manual_balances.error.title'),
-          t('actions.balances.manual_balances.error.message', { message: outcome.message }),
-        );
-      }
-      resetStatus();
-    }
+    onActionableError(outcome, (error) => {
+      logger.error(error.message);
+      notifyError(
+        t('actions.balances.manual_balances.error.title'),
+        t('actions.balances.manual_balances.error.message', { message: error.message }),
+      );
+    });
   };
 
-  const addManualBalance = async (balance: RawManualBalance): Promise<ActionStatus<ValidationErrors | string>> => {
-    await cancelTaskByTaskType(TaskType.MANUAL_BALANCES);
-    const outcome = await runTask<ManualBalances, TaskMeta>(
+  /**
+   * Add and edit differ only in task type, part, endpoint and identity, so they share one
+   * submission. The id carries the balance's identity (`identifier` for edit, location+asset+label
+   * for add) rather than being a per-part singleton: `submitTask` dedups by id, so a shared id
+   * would hand two concurrent saves the same promise and report one the other's outcome.
+   */
+  async function saveManualBalance<T extends ManualBalance | RawManualBalance>(
+    balance: T,
+    part: ActivityPart,
+    identity: (string | number)[],
+    title: string,
+    apiCall: () => Promise<{ taskId: number }>,
+  ): Promise<ActionStatus<ValidationErrors | string>> {
+    // A save supersedes an in-flight list refresh, which would otherwise clobber the new data.
+    // Cancelling by activity (not by task type) settles the FETCH activity terminal right away:
+    // the backend routinely refuses the abort, and the old `cancelTaskByTaskType` left nothing to
+    // settle the native activity, so its `active` status — and every spinner reading it — stayed
+    // stuck until the monitor reaped the task ~30s later.
+    cancelActivity(ActivityKind.MANUAL_BALANCES, ActivityPart.FETCH);
+
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.MANUAL_BALANCES, part, ...identity),
+      kind: ActivityKind.MANUAL_BALANCES,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<ManualBalances>(apiCall),
+        (result) => {
+          updateBalances(ManualBalances.parse(result).balances);
+        },
+      ),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.manual_balances.save'), { label: balance.label }),
+      title: t('task_center.group.manual_balances'),
+    });
+
+    if (!isErr(outcome))
+      return { success: true };
+
+    if (!isActionable(outcome.error))
+      return { message: '', success: false };
+
+    logger.error(outcome.error.message);
+
+    // The backend's field-level validation errors ride on the tagged error's `cause`.
+    const cause = outcome.error.cause;
+    const message: ValidationErrors | string = cause instanceof ApiValidationError
+      ? cause.getValidationErrors(balance)
+      : outcome.error.message;
+
+    return { message, success: false };
+  }
+
+  const addManualBalance = async (balance: RawManualBalance): Promise<ActionStatus<ValidationErrors | string>> =>
+    saveManualBalance(
+      balance,
+      ActivityPart.ADD,
+      [balance.location, balance.asset, balance.label],
+      t('actions.manual_balances.add.task.title'),
       async () => addManualBalances([balance]),
-      { type: TaskType.MANUAL_BALANCES_ADD, meta: { title: t('actions.manual_balances.add.task.title') } },
     );
 
-    if (outcome.success) {
-      const { balances } = ManualBalances.parse(outcome.result);
-      updateBalances(balances);
-      return { success: true };
-    }
-
-    if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
-
-      let messages: ValidationErrors | string = outcome.message;
-      if (outcome.error instanceof ApiValidationError)
-        messages = outcome.error.getValidationErrors(balance);
-
-      return {
-        message: messages,
-        success: false,
-      };
-    }
-
-    return { message: '', success: false };
-  };
-
-  const editManualBalance = async (balance: ManualBalance): Promise<ActionStatus<ValidationErrors | string>> => {
-    await cancelTaskByTaskType(TaskType.MANUAL_BALANCES);
-    const outcome = await runTask<ManualBalances, TaskMeta>(
+  const editManualBalance = async (balance: ManualBalance): Promise<ActionStatus<ValidationErrors | string>> =>
+    saveManualBalance(
+      balance,
+      ActivityPart.EDIT,
+      [balance.identifier],
+      t('actions.manual_balances.edit.task.title'),
       async () => editManualBalances([balance]),
-      { type: TaskType.MANUAL_BALANCES_EDIT, meta: { title: t('actions.manual_balances.edit.task.title') } },
     );
-
-    if (outcome.success) {
-      const { balances } = ManualBalances.parse(outcome.result);
-      updateBalances(balances);
-      return { success: true };
-    }
-
-    if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
-
-      let message: ValidationErrors | string = outcome.message;
-      if (outcome.error instanceof ApiValidationError)
-        message = outcome.error.getValidationErrors(balance);
-
-      return {
-        message,
-        success: false,
-      };
-    }
-
-    return { message: '', success: false };
-  };
 
   const save = async (balance: ManualBalance | RawManualBalance): Promise<ActionStatus<ValidationErrors | string>> =>
     'identifier' in balance ? editManualBalance(balance) : addManualBalance(balance);

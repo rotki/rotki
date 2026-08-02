@@ -1,17 +1,21 @@
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import { groupBy } from 'es-toolkit';
-import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
-import { LimitedParallelizationQueue } from '@/modules/core/common/async/limited-parallelization-queue';
+import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { hasTag } from 'plainfp/tagged';
+import { msg } from '@/message-key';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { type BlockchainAddress, type ChainAddress, TransactionChainType, TransactionChainTypeNeedDecoding, type TransactionRequestPayload } from '@/modules/history/events/event-payloads';
+import { accountSyncActivityId, chainSyncActivityId } from '@/modules/history/events/tx/sync-activity';
 import { useHistoryTransactionAccounts } from '@/modules/history/events/tx/use-history-transaction-accounts';
 import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
 import { useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { ACCOUNT_SYNC_LANE_PREFIX, CHAIN_SYNC_LANE, familyLane } from '@/modules/task-center/core/orchestrator/spec';
+import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface TransactionSyncParams {
   accounts: ChainAddress[];
@@ -20,34 +24,65 @@ interface TransactionSyncParams {
 }
 
 interface UseTransactionSyncReturn {
-  syncAndReDecodeEvents: (chain: string, params: TransactionSyncParams) => Promise<void>;
-  syncTransactionTask: (account: ChainAddress, type: TransactionChainType, trackProgress?: boolean) => Promise<void>;
-  syncTransactionsByChains: (accounts: ChainAddress[], trackProgress?: boolean) => Promise<void>;
-  waitForDecoding: () => Promise<void>;
+  syncAndReDecodeEvents: (chain: string, params: TransactionSyncParams, parent?: ActivityId) => Promise<void>;
+  syncTransactionTask: (account: ChainAddress, type: TransactionChainType, trackProgress?: boolean, parent?: ActivityId) => Promise<void>;
+  syncTransactionsByChains: (accounts: ChainAddress[], trackProgress?: boolean, parent?: ActivityId) => Promise<void>;
 }
 
 export function useTransactionSync(): UseTransactionSyncReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { notifyError } = useNotifications();
-  const queue = new LimitedParallelizationQueue(1);
   const { fetchTransactionsTask } = useHistoryEventsApi();
 
-  const { runTask } = useTaskHandler();
-  const {
-    isAddressCancelled,
-    markAddressCancelled,
-    markAddressFailed,
-    removeQueryStatus,
-    setEvmlikeStatus,
-  } = useTxQueryStatusStore();
+  const { submitTask } = useNativeTask();
+  const { isAddressCancelled, markAddressCancelled, markAddressFailed, removeQueryStatus, setEvmlikeStatus } = useTxQueryStatusStore();
   const { getChainName } = useSupportedChains();
   const { decodeTransactionsTask } = useHistoryTransactionDecoding();
   const { getTransactionTypeFromChain } = useHistoryTransactionAccounts();
+
+  /**
+   * A failed query leaves its address claiming to be querying unless something says otherwise.
+   *
+   * A skipped task is not a failure: it never ran, so a chain with no API key reports "skipped" and
+   * must keep its own status. For a genuine failure, nothing else moves the address on: the backend
+   * emits `QUERYING_TRANSACTIONS_FINISHED` only on the success path, and evmlike chains send no
+   * websocket messages at all. Network failing after retries is an ordinary outcome, not an
+   * exception, so the status entry has to say so.
+   *
+   * Marked rather than removed. Removing it also removed the address from the sync panel, whose
+   * chain list is derived from these entries, so a chain whose every address failed vanished along
+   * with its own denominator and a run with three failed gnosis addresses read "11/11 chains
+   * complete". `type` rides along so a synthesized entry carries the right subtype; defaulting to
+   * evm would wrongly describe an evmlike or bitcoin address.
+   */
+  const recordQueryFailure = (
+    error: TaskError,
+    account: ChainAddress,
+    type: TransactionChainType,
+    chainName: string,
+  ): void => {
+    if (hasTag(error, 'Skipped'))
+      return;
+
+    markAddressFailed(account, type);
+
+    if (isActionable(error)) {
+      notifyError(
+        t('actions.transactions.error.title'),
+        t('actions.transactions.error.description', {
+          address: account.address,
+          chain: chainName,
+          error: error.message,
+        }),
+      );
+    }
+  };
 
   const syncTransactionTask = async (
     account: ChainAddress,
     type: TransactionChainType,
     trackProgress = true,
+    parent?: ActivityId,
   ): Promise<void> => {
     const { address, chain } = account;
     const isEvmlike = type === TransactionChainType.EVMLIKE;
@@ -66,52 +101,36 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       setEvmlikeStatus(account, 'started');
 
     const chainName = getChainName(chain);
-    const taskMeta = {
-      address,
-      chain,
-      description: t('actions.transactions.task.description', {
-        address,
-        chain: chainName,
-      }),
-      title: t('actions.transactions.task.title'),
-      type,
-    };
+    // One native TX_SYNC activity per {chain, address}, on that chain's own lane so the family cap
+    // gives two concurrent accounts *per chain*. Liveness, cancellation and re-run are the
+    // orchestrator's; the chain grouping and the decode hand-off are in syncAndReDecodeEvents.
+    const outcome = await submitTask({
+      id: accountSyncActivityId(chain, address),
+      kind: ActivityKind.TX_SYNC,
+      lane: familyLane(ACCOUNT_SYNC_LANE_PREFIX, chain),
+      parent,
+      rerunnable: true,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<boolean>(
+          async () => fetchTransactionsTask(defaults),
+        ),
+        () => {},
+      ),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.tx_sync.address'), { address, chain: chainName }),
+      title: t('task_center.group.tx_sync'),
+    });
 
-    const outcome = await runTask<boolean, TaskMeta>(
-      async () => fetchTransactionsTask(defaults),
-      { type: TaskType.TX, meta: taskMeta, unique: false },
-    );
-
-    if (!outcome.success) {
-      if (outcome.backendCancelled) {
-        logger.debug(outcome.message);
+    if (isErr(outcome)) {
+      const { error } = outcome;
+      if (hasTag(error, 'BackendCancelled')) {
+        logger.debug(error.message);
         removeQueryStatus(account);
       }
-      else if (outcome.cancelled) {
+      else if (hasTag(error, 'Cancelled')) {
         markAddressCancelled(account);
       }
-      else if (!outcome.skipped) {
-        // Nothing else moves this address off "querying". Evmlike chains send no websocket
-        // messages at all, so the `started` we set above is the last word on them. Evm chains do
-        // send `QUERYING_TRANSACTIONS_FINISHED` from a `finally` even when the query raised
-        // (`with_tx_status_messaging`), which is worse than silence: the address claims to have
-        // finished cleanly. Network failing after retries is an ordinary outcome, not an
-        // exception, so the status entry must say so either way.
-        //
-        // Marked rather than removed. Removing it also removes the address from the sync panel,
-        // whose chain list is derived from these entries, so a chain whose every address failed
-        // vanishes from the panel along with its own denominator: a run with three failed gnosis
-        // addresses reported "11/11 chains complete", every row green.
-        markAddressFailed(account, type);
-
-        notifyError(
-          t('actions.transactions.error.title'),
-          t('actions.transactions.error.description', {
-            address,
-            chain: chainName,
-            error: outcome.message,
-          }),
-        );
+      else {
+        recordQueryFailure(error, account, type, chainName);
       }
     }
 
@@ -121,67 +140,82 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       setEvmlikeStatus(account, 'finished');
   };
 
+  /**
+   * One chain's sync, as its own activity, with its whole subtree declared in the same tick: the
+   * per-account syncs and the decode that follows them all exist before any of it runs, so the
+   * task center shows the shape of a refresh rather than discovering it.
+   *
+   * Concurrency is still the scheduler's, and still nested: the chain sits on
+   * {@link CHAIN_SYNC_LANE} (2 at a time), its accounts on the chain's own lane (2 each, and only
+   * 2 chains' lanes live at once), and the decode on {@link DECODE_LANE} (1 across all chains).
+   * The accounts cannot start before this activity does — the orchestrator gates a child on its
+   * parent — so declaring them early does not start them early.
+   */
   const syncAndReDecodeEvents = async (
     chain: string,
     params: TransactionSyncParams,
+    parent?: ActivityId,
   ): Promise<void> => {
     const { accounts, trackProgress = true, type } = params;
-    logger.debug(`syncing ${chain} transactions for ${accounts.length} addresses`);
+    const chainId = chainSyncActivityId(chain);
 
-    const getAccountKey = (item: ChainAddress): string => item.chain + item.address;
+    // The chain activity is submitted before its children so the parent gate applies to them, but
+    // its `run` needs their promises — which only exist once they are submitted. It waits on this
+    // rather than on an array that would still be empty when the run body first executes.
+    let declared!: (work: readonly Promise<void>[]) => void;
+    const subtree = new Promise<readonly Promise<void>[]>((resolve) => {
+      declared = resolve;
+    });
 
-    await awaitParallelExecution(
-      accounts,
-      getAccountKey,
-      async item => syncTransactionTask(item, type, trackProgress),
-      2,
-    );
+    const chainWork = submitTask({
+      id: chainId,
+      kind: ActivityKind.TX_SYNC,
+      lane: CHAIN_SYNC_LANE,
+      parent,
+      rerunnable: false,
+      run: async (): Promise<Result<void, TaskError>> => {
+        logger.debug(`syncing ${chain} transactions for ${accounts.length} addresses`);
+        await Promise.all(await subtree);
+        return ok(undefined);
+      },
+      subtitle: activityLabelFor(msg.$t('task_center.activity.tx_sync.chain'), { chain: getChainName(chain) }),
+      title: t('task_center.group.tx_sync'),
+    });
 
-    // Skip decoding if all accounts for this chain were cancelled
-    const allCancelled = accounts.every(acc => isAddressCancelled(acc));
+    const accountWork = accounts.map(async account => syncTransactionTask(account, type, trackProgress, chainId));
 
-    if (allCancelled) {
-      logger.debug(`skipping decoding for ${chain} — all accounts were cancelled`);
-      return;
-    }
+    // Decoding is declared here rather than run at the end: it waits on every account of the chain
+    // through `deps`, and completes as a no-op when they were all cancelled, so a refresh has the
+    // same shape whether or not there turns out to be anything to decode.
+    const decodeWork = TransactionChainTypeNeedDecoding.includes(type)
+      ? [decodeTransactionsTask(chain, false, {
+          deps: accounts.map(account => accountSyncActivityId(chain, account.address)),
+          parent: chainId,
+          skipWhen: () => accounts.every(account => isAddressCancelled(account)),
+        })]
+      : [];
 
-    if (TransactionChainTypeNeedDecoding.includes(type)) {
-      logger.debug(`queued ${chain} transactions for decoding`);
-      queue.queue(chain, async () => {
-        await decodeTransactionsTask(chain);
-        logger.debug(`finished decoding ${chain} transactions`);
-      });
-    }
+    declared([...accountWork, ...decodeWork]);
+
+    await chainWork;
   };
 
-  const syncTransactionsByChains = async (accounts: ChainAddress[], trackProgress = true): Promise<void> => {
+  const syncTransactionsByChains = async (accounts: ChainAddress[], trackProgress = true, parent?: ActivityId): Promise<void> => {
     logger.debug(`refreshing transactions for ${accounts.length} addresses`);
 
-    const groupedByChains = Object.entries(groupBy(accounts, item => item.chain));
-
-    await awaitParallelExecution(
-      groupedByChains,
-      ([chain]) => chain,
-      async ([chain, accounts]) => {
-        const type = getTransactionTypeFromChain(chain);
-        await syncAndReDecodeEvents(chain, { accounts, trackProgress, type });
-      },
-      2,
-    );
+    // The account set is known here, synchronously, so every chain and every account below it is
+    // declared in this pass. No limiter: CHAIN_SYNC_LANE caps how many chains run at once.
+    await Promise.all(Object.entries(groupBy(accounts, item => item.chain))
+      .map(async ([chain, chainAccounts]) => syncAndReDecodeEvents(chain, {
+        accounts: chainAccounts,
+        trackProgress,
+        type: getTransactionTypeFromChain(chain),
+      }, parent)));
   };
-
-  const waitForDecoding = async (): Promise<void> => new Promise((resolve) => {
-    if (queue.running === 0 && queue.pending === 0) {
-      resolve();
-      return;
-    }
-    queue.setOnCompletion(() => resolve());
-  });
 
   return {
     syncAndReDecodeEvents,
     syncTransactionsByChains,
     syncTransactionTask,
-    waitForDecoding,
   };
 }

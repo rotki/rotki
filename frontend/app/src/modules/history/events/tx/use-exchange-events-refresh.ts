@@ -1,6 +1,7 @@
 import { toSentenceCase } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { type Exchange, QueryExchangeEventsPayload } from '@/modules/balances/types/exchanges';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -8,6 +9,7 @@ import { isActionable, isCancellation, type TaskError } from '@/modules/core/tas
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { exchangeEventsActivityId } from '@/modules/history/events/tx/sync-activity';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { EXCHANGE_EVENTS_LANE_PREFIX, familyLane } from '@/modules/task-center/core/orchestrator/spec';
 import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
@@ -47,7 +49,7 @@ export function useExchangeEventsRefresh(): UseExchangeEventsRefreshReturn {
         ),
         () => {},
       ),
-      subtitle: `${toSentenceCase(exchange.location)} · ${exchange.name}`,
+      subtitle: activityLabelFor(msg.$t('task_center.activity.history_events.exchange'), { account: exchange.name, exchange: toSentenceCase(exchange.location) }),
       title: t('task_center.group.exchange_events'),
     });
 

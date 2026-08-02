@@ -3,12 +3,12 @@ import { type AssetBalance, type Balance, type BigNumber, type LiquityPoolDetail
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { bigNumberSum } from '@/modules/core/common/data/calculation';
-import { Section } from '@/modules/core/common/status';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
 import LiquityAssetBalanceList from '@/modules/staking/liquity/LiquityAssetBalanceList.vue';
 import LiquityPnlRow from '@/modules/staking/liquity/LiquityPnlRow.vue';
 import LiquityStatisticRow from '@/modules/staking/liquity/LiquityStatisticRow.vue';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { pool = null, statistic = null } = defineProps<{
   statistic?: LiquityStatisticDetails | null;
@@ -32,7 +32,8 @@ const lusdPriceOrOne = computed<BigNumber>(() => {
   return price && price.gt(0) ? price : One;
 });
 
-const { isLoading: loading } = useSectionStatus(Section.DEFI_LIQUITY_STATISTICS);
+const { useIsActive } = useTaskCenter();
+const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STATISTICS);
 
 const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() => {
   if (!statistic)

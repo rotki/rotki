@@ -53,8 +53,7 @@
         },
         "task": {
           "description": "Ερώτημα όλων των υπολοίπων και αποθήκευση στιγμιότυπου για τα στατιστικά.",
-          "ignore_errors_note": "Τα σφάλματα κατά τη διάρκεια του ερωτήματος θα αγνοηθούν.",
-          "title": "Αποθήκευση στιγμιότυπου υπολοίπων"
+          "ignore_errors_note": "Τα σφάλματα κατά τη διάρκεια του ερωτήματος θα αγνοηθούν."
         }
       }
     },
@@ -62,9 +61,6 @@
       "liquity_pools": {
         "error": {
           "description": "Αποτυχία ανάκτησης Liquity Pools: {message}"
-        },
-        "task": {
-          "title": "Ανάκτηση Liquity Pools"
         }
       }
     },
@@ -97,10 +93,6 @@
           },
           "title": "Εξαγωγή σε CSV"
         }
-      },
-      "task": {
-        "description": "Αίτημα για νέα συμβάντα τύπου {queryType}",
-        "title": "Ερώτημα για online συμβάντα"
       }
     },
     "session": {
@@ -117,20 +109,12 @@
       "error": {
         "description": "Απέτυχε η αποκωδικοποίηση συμβάντων από συναλλαγές: {error}",
         "title": "Αποκωδικοποίηση γεγονότων από συναλλαγές"
-      },
-      "task": {
-        "description": "Αποκωδικοποίηση συμβάντων συναλλαγών για συναλλαγές: {tx} ({chain})",
-        "title": "Αποκωδικοποίηση συμβάντων συναλλαγής"
       }
     },
     "transactions_redecode_by_chain": {
       "error": {
         "description": "Απέτυχε η αποκωδικοποίηση των συμβάντων {chain}: {error}",
         "title": "Αποκωδικοποίηση γεγονότων από συναλλαγές"
-      },
-      "task": {
-        "description": "Αποκωδικοποίηση συναλλαγών για γεγονότα {chain}",
-        "title": "Αποκωδικοποίηση συμβάντων συναλλαγής"
       }
     }
   },
@@ -605,6 +589,77 @@
   },
   "table_filter": {
     "start_typing": "Πληκτρολογήστε την τιμή για το φίλτρο {search}"
+  },
+  "task_center": {
+    "activity": {
+      "accounting_rules": {
+        "export": "Εξαγωγή λογιστικών κανόνων",
+        "import": "Εισαγωγή λογιστικών κανόνων από {file}",
+        "reset": "Επαναφορά λογιστικών κανόνων στις προεπιλογές"
+      },
+      "accounts": {
+        "add": "Προσθήκη {address}",
+        "detect": "Εντοπισμός λογαριασμών EVM",
+        "ens": "Επίλυση ονομάτων ENS για {count} διεύθυνση | Επίλυση ονομάτων ENS για {count} διευθύνσεις",
+        "remove": "Αφαίρεση {address}",
+        "remove_count": "Αφαίρεση {count} λογαριασμού | Αφαίρεση {count} λογαριασμών",
+        "remove_xpub": "Αφαίρεση xpub {xpub}"
+      },
+      "assets": {
+        "erc20": "Ανάκτηση στοιχείων token για {address} ({chain})",
+        "export": "Εξαγωγή assets χρήστη",
+        "import": "Εισαγωγή assets χρήστη από {file}",
+        "nfts": "Ανάκτηση NFT",
+        "reset_hard": "Επαναφορά της βάσης δεδομένων assets (πλήρης επαναφορά)",
+        "reset_soft": "Επαναφορά της βάσης δεδομένων assets (ήπια επαναφορά)",
+        "update": "Εφαρμογή ενημέρωσης της βάσης δεδομένων assets v{version}",
+        "versions": "Έλεγχος για ενημερώσεις της βάσης δεδομένων assets"
+      },
+      "gnosis_pay": {
+        "nonce": "Λήψη nonce ταυτοποίησης",
+        "verify": "Επαλήθευση υπογραφής και δημιουργία token"
+      },
+      "historical_balances": {
+        "processing": "Επεξεργασία ιστορικών συμβάντων για υπολογισμό υπολοίπων"
+      },
+      "history_events": {
+        "bridge": "Αντιστοίχιση συναλλαγών bridge",
+        "export": "Εξαγωγή ιστορικών συμβάντων σε CSV",
+        "lookup": "Αναζήτηση συναλλαγής {tx}",
+        "match": "Αντιστοίχιση μεταφορών assets",
+        "undecoded": "Ανάκτηση ανάλυσης για μη αποκωδικοποιημένες συναλλαγές"
+      },
+      "liquity": {
+        "balances": "Υπόλοιπα",
+        "pools": "Pools",
+        "staking": "Staking",
+        "statistics": "Στατιστικά"
+      },
+      "manual_balances": {
+        "fetch": "Ανάκτηση χειροκίνητων υπολοίπων"
+      },
+      "pnl_report": {
+        "export": "Εξαγωγή δεδομένων αναφοράς",
+        "import": "Εισαγωγή δεδομένων αναφοράς"
+      },
+      "prices": {
+        "latest": "Λήψη τιμών για {count} asset | Λήψη τιμών για {count} assets"
+      },
+      "staking": {
+        "kraken": "Ανάκτηση συμβάντων staking του Kraken",
+        "performance": "Ανανέωση cache απόδοσης ETH staking",
+        "validators": "Ανάκτηση validators ETH"
+      },
+      "token_detection": {
+        "detect": "Εντοπισμός token για {address} στο {chain}"
+      },
+      "tx_sync": {
+        "address": "Ανάκτηση συναλλαγών για {address} στο {chain}"
+      }
+    },
+    "count": {
+      "transactions": "{count} συναλλαγή | {count} συναλλαγές"
+    }
   },
   "transactions": {
     "actions": {

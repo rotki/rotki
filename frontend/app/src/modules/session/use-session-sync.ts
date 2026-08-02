@@ -1,17 +1,16 @@
 import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/core/messaging/types';
-import type { TaskMeta } from '@/modules/core/tasks/types';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { api } from '@/modules/core/api/rotki-api';
 import { serializer } from '@/modules/core/messaging/use-dynamic-messages';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSyncApi } from '@/modules/session/api/use-sync-api';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
+import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 export const useSync = createSharedComposable(() => {
-  const { runTask } = useTaskHandler();
-  const { isTaskRunning } = useTaskStore();
+  const { statusOf, submitTask } = useNativeTask();
   const { notifyError, notifyInfo } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const syncAction = ref<SyncAction>(SYNC_DOWNLOAD);
@@ -34,7 +33,7 @@ export const useSync = createSharedComposable(() => {
   };
 
   const forceSync = async (logout: () => Promise<void>): Promise<void> => {
-    if (isTaskRunning(TaskType.FORCE_SYNC))
+    if (statusOf(ActivityKind.SYNC).active)
       return;
 
     const notifyFailure = (error: string): void => {
@@ -50,13 +49,21 @@ export const useSync = createSharedComposable(() => {
     if (action === SYNC_UPLOAD)
       set(displaySyncConfirmation, false);
 
-    const outcome = await runTask<boolean, TaskMeta>(
-      async () => useSyncApi().forceSync(action),
-      { type: TaskType.FORCE_SYNC, meta: { title: t('actions.session.force_sync.task.title') }, guard: false },
-    );
+    const outcome = await submitTask<boolean>({
+      id: makeActivityId(ActivityKind.SYNC),
+      kind: ActivityKind.SYNC,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
+        await runTask<boolean>(
+          async () => useSyncApi().forceSync(action),
+        ),
+        result => result,
+      ),
+      title: t('task_center.group.sync'),
+    });
 
-    if (outcome.success) {
-      if (outcome.result) {
+    if (!isErr(outcome)) {
+      if (outcome.value) {
         const title = t('actions.session.force_sync.success.title');
         const message = t('actions.session.force_sync.success.message');
 
@@ -66,11 +73,11 @@ export const useSync = createSharedComposable(() => {
           await logout();
       }
       else {
-        notifyFailure(outcome.message ?? '');
+        notifyFailure('');
       }
     }
-    else if (isActionableFailure(outcome)) {
-      notifyFailure(outcome.message);
+    else if (isActionable(outcome.error)) {
+      notifyFailure(outcome.error.message);
     }
   };
 

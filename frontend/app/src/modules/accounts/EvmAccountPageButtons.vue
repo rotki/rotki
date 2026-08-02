@@ -4,10 +4,8 @@ import AccountBalancesExportImport from '@/modules/accounts/AccountBalancesExpor
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import BlockchainBalanceRefreshBehaviourMenu
   from '@/modules/balances/BlockchainBalanceRefreshBehaviourMenu.vue';
-import { Section } from '@/modules/core/common/status';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
+import { ActivityPart } from '@/modules/task-center/core/types';
+import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { addDisabled = false } = defineProps<{
   isAccountsTabSelected: boolean;
@@ -23,12 +21,12 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading('evm');
-const { useIsTaskRunning } = useTaskStore();
-const { isLoading: eth2Loading } = useSectionStatus(Section.BLOCKCHAIN, Blockchain.ETH2);
+const { useIsActive, useIsActivePrefix } = useTaskCenter();
+const eth2Loading = useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2);
 
 const isEth2Loading = logicOr(
   eth2Loading,
-  useIsTaskRunning(TaskType.FETCH_ETH2_VALIDATORS),
+  useIsActive(ActivityKind.STAKING, ActivityPart.VALIDATORS),
 );
 </script>
 

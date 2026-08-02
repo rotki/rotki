@@ -269,6 +269,12 @@ export const ActivityPart = {
   ORACLE_CACHE: 'oracle-cache',
   /** The latest-price sweep, as opposed to historic/daily/exchange-rate price work. */
   LATEST: 'latest',
+  /**
+   * A user editing prices by hand, as opposed to the app fetching them. Its own parent so a
+   * consumer can declare itself stale after a manual edit (`prices:manual:*`) without also
+   * matching every automatic sweep — `staleAfter` matches by id *prefix*.
+   */
+  MANUAL: 'manual',
   HISTORIC: 'historic',
   DAILY: 'daily',
   BATCH: 'batch',
@@ -293,6 +299,12 @@ export const ActivityPart = {
   RESET: 'reset',
   NFTS: 'nfts',
   UNDECODED: 'undecoded',
+  /**
+   * What a re-pull is re-pulling. `REPULLING` covers three separate backend operations, so the
+   * kind alone is not an identity — see the ids in `use-history-transactions.ts`.
+   */
+  TRANSACTIONS: 'transactions',
+  EXCHANGE_EVENTS: 'exchange-events',
   MATCH: 'match',
   BRIDGE: 'bridge',
   LOOKUP: 'lookup',

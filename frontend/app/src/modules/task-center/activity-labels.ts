@@ -11,9 +11,17 @@ import { type ActivityKind, type ActivityPart, ActivityKind as Kind, ActivityPar
  * 2. It is keyed by **kind then part**, not by part alone. A description is a function of both:
  *    `EXPORT` belongs to four kinds, and "Exporting user assets" cannot serve accounting rules.
  *
- * Only entries that need one belong here. A kind with a single activity says enough through its
- * group title, and adding a description there is noise. Parts that carry a *value* (a chain, an
- * address) are not descriptions either — those producers pass a formatted string straight through.
+ * Every activity gets a short description saying what it is doing — a bare value ("Ethereum",
+ * "EUR") tells the reader nothing the row does not already show. Values belong *inside* the
+ * sentence as named params ("Querying the {chain} network"), never appended to it.
+ *
+ * A description must not repeat its group title: under "Blockchain balances", "Querying balances
+ * for Ethereum" says "balances" twice, while "Querying the Ethereum network" adds the verb and the
+ * target. Keep them succinct and verb-first.
+ *
+ * Producers whose text is already a full sentence built elsewhere (e.g. the oracle cache's
+ * "Creating cache entry from {fromAsset} to {toAsset} on {source}") pass that string straight
+ * through rather than duplicating it here.
  */
 const ACTIVITY_LABEL: Partial<Record<ActivityKind, Partial<Record<ActivityPart, MessageKey>>>> = {
   [Kind.ACCOUNTING_RULES]: {

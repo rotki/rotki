@@ -2,6 +2,7 @@ import { bigNumberify } from '@rotki/common';
 import { mockUseNotifications } from '@test/utils/mocks/notifications';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import flushPromises from 'flush-promises';
+import { ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
@@ -47,7 +48,7 @@ describe('useHistoricPriceCache', () => {
         },
       },
     };
-    runTaskMock.mockResolvedValue({ success: true, result: mockPricesResponse });
+    runTaskMock.mockResolvedValue(ok(mockPricesResponse));
     resolve(key);
     resolve(key);
     vi.advanceTimersByTime(2500);
@@ -57,13 +58,10 @@ describe('useHistoricPriceCache', () => {
   });
 
   it('should not request failed assets twice unless they expire', async () => {
-    runTaskMock.mockResolvedValue({
-      success: true,
-      result: {
-        targetAsset: 'USD',
-        assets: {},
-      },
-    });
+    runTaskMock.mockResolvedValue(ok({
+      targetAsset: 'USD',
+      assets: {},
+    }));
     const { createKey, resolve } = useHistoricPriceCache();
     const key = createKey(mockAsset, mockTimestamp);
     resolve(key);
@@ -91,7 +89,7 @@ describe('useHistoricPriceCache', () => {
         },
       },
     };
-    runTaskMock.mockResolvedValue({ success: true, result: mockPricesResponse });
+    runTaskMock.mockResolvedValue(ok(mockPricesResponse));
 
     resolve(key);
     vi.advanceTimersToNextTimer();
@@ -112,13 +110,10 @@ describe('useHistoricPriceCache', () => {
     const { historicStorage } = useHistoricCachePriceStore();
     const key = createKey(mockAsset, mockTimestamp);
 
-    runTaskMock.mockResolvedValue({
-      success: true,
-      result: {
-        targetAsset: 'USD',
-        assets: { [mockAsset]: { [mockTimestamp]: mockPrice } },
-      },
-    });
+    runTaskMock.mockResolvedValue(ok({
+      targetAsset: 'USD',
+      assets: { [mockAsset]: { [mockTimestamp]: mockPrice } },
+    }));
 
     resolve(key);
     vi.advanceTimersByTime(2500);
@@ -131,13 +126,10 @@ describe('useHistoricPriceCache', () => {
 
   it('should retain cached prices after the composable is torn down and re-created', async () => {
     const key = `${mockAsset}#${mockTimestamp}`;
-    runTaskMock.mockResolvedValue({
-      success: true,
-      result: {
-        targetAsset: 'USD',
-        assets: { [mockAsset]: { [mockTimestamp]: mockPrice } },
-      },
-    });
+    runTaskMock.mockResolvedValue(ok({
+      targetAsset: 'USD',
+      assets: { [mockAsset]: { [mockTimestamp]: mockPrice } },
+    }));
 
     // First subscriber resolves and populates the store-backed cache.
     const scope1 = effectScope();
@@ -169,6 +161,36 @@ describe('useHistoricPriceCache', () => {
     await flushPromises();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledOnce();
     scope2.stop();
+  });
+
+  it('should surface each batch as its own native activity', async () => {
+    const { ActivityKind, ActivityPart } = await import('@/modules/task-center/core/types');
+    const { useTaskOrchestrator } = await import('@/modules/task-center/use-task-orchestrator');
+    const orchestrator = useTaskOrchestrator();
+    const { createKey, resolve } = useHistoricPriceCache();
+
+    runTaskMock.mockResolvedValue(ok({
+      targetAsset: 'USD',
+      assets: { [mockAsset]: { [mockTimestamp]: mockPrice } },
+    }));
+
+    resolve(createKey(mockAsset, mockTimestamp));
+    vi.advanceTimersByTime(2500);
+    await flushPromises();
+
+    resolve(createKey('OTHER', mockTimestamp));
+    vi.advanceTimersByTime(2500);
+    await flushPromises();
+
+    // Each batch carries its own id, so two batches never dedup onto one promise, and both are
+    // visible in the task center instead of running behind a raw backend task.
+    const ids = orchestrator.snapshot()
+      .map(activity => activity.id)
+      .filter(id => id.startsWith(`${ActivityKind.PRICES}:${ActivityPart.HISTORIC}:${ActivityPart.BATCH}:`));
+
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+    expect(orchestrator.statusOfPrefix(ActivityKind.PRICES, ActivityPart.HISTORIC).everCompleted).toBe(true);
   });
 
   it('should reset historical prices data', async () => {
@@ -205,7 +227,7 @@ describe('useHistoricPriceCache', () => {
         },
       },
     };
-    runTaskMock.mockResolvedValue({ success: true, result: mockPricesResponse });
+    runTaskMock.mockResolvedValue(ok(mockPricesResponse));
 
     resolve(key);
     resolve(key1);

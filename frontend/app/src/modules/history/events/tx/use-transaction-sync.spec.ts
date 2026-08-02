@@ -1,6 +1,6 @@
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BackendCancelled, Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
+import { BackendCancelled, Cancelled, Skipped, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useTransactionSync } from './use-transaction-sync';
@@ -105,11 +105,26 @@ describe('useTransactionSync', () => {
       expect(mockNotifyError).toHaveBeenCalledOnce();
       // A failed query never sends the completion websocket message, so nothing else would ever
       // move this entry off "querying".
-      expect(mocks.markAddressFailed).toHaveBeenCalledWith(account);
+      // The chain type rides along so a synthesized entry carries the right subtype; defaulting to
+      // evm would wrongly describe an evmlike or bitcoin address.
+      expect(mocks.markAddressFailed).toHaveBeenCalledWith(account, TransactionChainType.EVM);
       // Marked, NOT removed: the sync panel derives its chain list from these entries, so removing
       // it took the whole chain out of the panel and out of its own denominator.
       expect(mocks.removeQueryStatus).not.toHaveBeenCalled();
       expect(mocks.markAddressCancelled).not.toHaveBeenCalled();
+    });
+
+    it('should leave a skipped task alone', async () => {
+      // A skipped task never ran, so it has not failed and must not be reported as such. A chain
+      // with no API key reports Skipped, and a bare `else` on the error would have marked it failed.
+      mocks.submitTask.mockResolvedValue(err(Skipped({ message: 'no api key' })));
+
+      const { syncTransactionTask } = useTransactionSync();
+      await syncTransactionTask(account, TransactionChainType.EVM);
+
+      expect(mocks.markAddressFailed).not.toHaveBeenCalled();
+      expect(mocks.removeQueryStatus).not.toHaveBeenCalled();
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
     it('should bracket evmlike progress with started/finished', async () => {
@@ -118,6 +133,38 @@ describe('useTransactionSync', () => {
 
       expect(mocks.setEvmlikeStatus).toHaveBeenNthCalledWith(1, account, 'started');
       expect(mocks.setEvmlikeStatus).toHaveBeenNthCalledWith(2, account, 'finished');
+    });
+  });
+
+  /**
+   * Against the real store rather than the mock above.
+   *
+   * A failing evmlike query calls `markAddressFailed` and then the unconditional `finished` tail,
+   * and the defect was in what the second call did to the first one's result. Every assertion in
+   * this file's other tests is on the mock recording that a call happened, which is true either
+   * way, so none of them can see it. This one asserts the status the address is actually left in.
+   */
+  describe('evmlike failure against the real query-status store', () => {
+    const evmlikeAccount: ChainAddress = { address: '0xABC', chain: 'zksync_lite' };
+
+    beforeEach(() => {
+      vi.resetModules();
+      vi.doUnmock('@/modules/history/use-tx-query-status-store');
+      setActivePinia(createPinia());
+    });
+
+    it('should leave a failed evmlike address failed, not complete', async () => {
+      const { useTxQueryStatusStore } = await import('@/modules/history/use-tx-query-status-store');
+      const { TransactionsQueryStatus } = await import('@/modules/core/messaging/types');
+      const { useTransactionSync: useRealStoreSync } = await import('./use-transaction-sync');
+
+      mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
+      const store = useTxQueryStatusStore();
+
+      const { syncTransactionTask } = useRealStoreSync();
+      await syncTransactionTask(evmlikeAccount, TransactionChainType.EVMLIKE);
+
+      expect(get(store.queryStatus)['0xABCzksync_lite'].status).toBe(TransactionsQueryStatus.FAILED);
     });
   });
 });

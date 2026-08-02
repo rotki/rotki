@@ -2,6 +2,7 @@ import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { DialogEventHandlers } from '@/modules/history/events/dialog-types';
 import type {
+  DecodeScope,
   LocationAndTxRef,
   PullEthBlockEventPayload,
   PullLocationTransactionPayload,
@@ -18,10 +19,10 @@ import {
   isSolanaEvent,
   toLocationAndTxRef,
 } from '@/modules/history/event-utils';
-import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/modules/history/events/action-types';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
 import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
+import { useTargetedRedecode } from '@/modules/history/events/tx/use-targeted-redecode';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
 import { useHistoryEventsDialogHandlers } from '@/modules/history/events/use-history-events-dialog-handlers';
@@ -34,7 +35,6 @@ interface UseHistoryEventsActionsOptions {
   /** Entry types to filter on; when set, EVM events may be skipped during refresh. */
   entryTypes?: MaybeRefOrGetter<HistoryEventEntryType[] | undefined>;
   /** Tracks the current action state (e.g. querying, decoding). */
-  currentAction: Ref<HistoryEventAction>;
   /** Callback to fetch the current page of history events. */
   refetch: () => Promise<void>;
   /** The current collection of grouped history event rows. */
@@ -57,7 +57,7 @@ interface UseHistoryEventsActionsReturn {
   redecode: {
     all: () => void; // Shows confirmation dialog
     blocks: (data: PullEthBlockEventPayload) => Promise<void>;
-    by: (payload: 'all' | 'page' | string[]) => Promise<void>; // Current unified redecode
+    by: (scope: DecodeScope) => Promise<void>;
     evm: (data: PullLocationTransactionPayload) => Promise<void>;
     page: () => Promise<void>;
     transactions: (chains: Blockchain[]) => Promise<void>;
@@ -70,7 +70,6 @@ interface UseHistoryEventsActionsReturn {
 
 export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions): UseHistoryEventsActionsReturn {
   const {
-    currentAction,
     entryTypes,
     refetch: fetchEventsData,
     groups,
@@ -84,10 +83,36 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   const route = useRoute();
   const { fetchCustomizedEventDuplicates } = useCustomizedEventDuplicates();
 
+  /**
+   * Serialises every read of the events table onto one chain.
+   *
+   * `useTableData.refetch` opens with `api.cancelByTag`, so a second read started while the first is
+   * in flight cancels it, and both settle onto one shared `useAsyncState`. With several independent
+   * callers now able to ask for a read at once (an event save via `eventsVersion`, the auto-fetch
+   * when an activity completes, and `refresh.all`), that overlap became reachable, and the table can
+   * be left holding the loser's result. It renders whatever the collection says, so an empty result
+   * empties the table (`HistoryEventsVirtualTable` only falls back to its empty state when
+   * `groups.length === 0`; it does not hide rows merely because a read is running).
+   *
+   * Queueing rather than cancelling: each caller wants the table to end up current, and none of them
+   * benefits from aborting a read that is nearly done. A rejected read does not poison the chain.
+   *
+   * The chaining assignment runs synchronously on call, before the first suspension point, so
+   * ordering is fixed by call order even though the function is `async`.
+   */
+  let reads: Promise<void> = Promise.resolve();
+
+  async function serialiseRead(read: () => Promise<void>): Promise<void> {
+    reads = reads.catch(() => {}).then(read);
+    return reads;
+  }
+
   async function fetchData(): Promise<void> {
-    await fetchEventsData();
-    if (get(route).query.groupIdentifiers)
-      await fetchCustomizedEventDuplicates();
+    return serialiseRead(async () => {
+      await fetchEventsData();
+      if (get(route).query.groupIdentifiers)
+        await fetchCustomizedEventDuplicates();
+    });
   }
 
   const { show } = useConfirmStore();
@@ -95,13 +120,8 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   const historyStore = useHistoryStore();
   const { eventsVersion } = storeToRefs(historyStore);
   const { refreshTransactions } = useHistoryTransactions();
-  const {
-    fetchUndecodedTransactionsStatus,
-    pullAndRecodeEthBlockEvents,
-    pullAndRedecodeTransactions,
-    redecodeTransactions,
-    checkMissingEventsAndRedecode,
-  } = useHistoryTransactionDecoding();
+  const { checkMissingEventsAndRedecode, fetchUndecodedTransactionsBreakdown, redecodeTransactions } = useHistoryTransactionDecoding();
+  const { redecodeTargeted } = useTargetedRedecode();
   const historyEventMappings = useHistoryEventMappings();
 
   async function fetchDataAndLocations(): Promise<void> {
@@ -118,7 +138,6 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     else
       startPromise(fetchDataAndLocations());
 
-    set(currentAction, HISTORY_EVENT_ACTIONS.QUERY);
     const entryTypesVal = toValue(entryTypes) ?? [];
     const disableEvmEvents = entryTypesVal.length > 0 && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
     await refreshTransactions({
@@ -130,39 +149,49 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   }
 
   async function forceRedecodeEvmEvents(data: PullLocationTransactionPayload): Promise<void> {
-    set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
-    await pullAndRedecodeTransactions(data);
+    await redecodeTargeted(data);
     await fetchDataAndLocations();
   }
 
   async function fetchAndRedecodeEvents(data?: PullLocationTransactionPayload): Promise<void> {
-    await fetchDataAndLocations();
-    if (data)
+    // `forceRedecodeEvmEvents` fetches when it finishes, so fetching first as well read the table
+    // twice for one action — and the first read showed pre-redecode data that was immediately
+    // replaced. With a payload the redecode's own fetch is the only one needed.
+    if (data) {
       await forceRedecodeEvmEvents(data);
+      return;
+    }
+
+    await fetchDataAndLocations();
   }
 
   async function redecodeBlockEvents(data: PullEthBlockEventPayload): Promise<void> {
-    set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
-    await pullAndRecodeEthBlockEvents(data);
+    await redecodeTargeted(data);
     await fetchDataAndLocations();
   }
 
+  /**
+   * Development-only: re-decode whatever the current page happens to show.
+   *
+   * A scope, not a flow of its own — it resolves the page to the transactions and block events it
+   * holds and hands both to the targeted re-decode as one request. Previously it made two separate
+   * calls, so a page holding both kinds produced two unrelated sets of activities with nothing
+   * naming the single thing the user asked for.
+   */
   async function redecodePageTransactions(): Promise<void> {
     const events = get(groups).data.flat();
     const txEvents = events.filter(event => isEvmEvent(event) || isEvmSwapEvent(event) || isSolanaEvent(event));
     const ethBlockEvents = events.filter(isEthBlockEvent);
 
     if (txEvents.length > 0 || ethBlockEvents.length > 0) {
-      if (txEvents.length > 0) {
-        const redecodePayload: LocationAndTxRef[] = txEvents.map(toLocationAndTxRef);
-        await pullAndRedecodeTransactions({ transactions: redecodePayload });
-        await fetchUndecodedTransactionsStatus();
-      }
+      const transactions: LocationAndTxRef[] = txEvents.map(toLocationAndTxRef);
+      await redecodeTargeted({
+        blockNumbers: ethBlockEvents.map(item => item.blockNumber),
+        transactions,
+      });
 
-      if (ethBlockEvents.length > 0) {
-        const redecodePayload = ethBlockEvents.map(item => item.blockNumber);
-        await redecodeBlockEvents({ blockNumbers: redecodePayload });
-      }
+      if (txEvents.length > 0)
+        await fetchUndecodedTransactionsBreakdown();
 
       await fetchDataAndLocations();
     }
@@ -179,36 +208,53 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   }
 
   async function redecodeAllEventsHandler(): Promise<void> {
-    set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
-    await fetchUndecodedTransactionsStatus();
+    await fetchUndecodedTransactionsBreakdown();
     await redecodeTransactions(toValue(onlyChains));
     await fetchDataAndLocations();
   }
 
-  async function redecode(payload: 'all' | 'page' | string[]): Promise<void> {
-    if (payload === 'all') {
-      redecodeAllEvents();
-    }
-    else if (Array.isArray(payload)) {
-      set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
-      await redecodeTransactions(payload);
-      await fetchDataAndLocations();
-    }
-    else if (payload === 'page') {
-      await redecodePageTransactions();
+  async function redecode(scope: DecodeScope): Promise<void> {
+    switch (scope.type) {
+      case 'all':
+        redecodeAllEvents();
+        break;
+      case 'chains':
+        await redecodeTransactions(scope.chains);
+        await fetchDataAndLocations();
+        break;
+      case 'page':
+        await redecodePageTransactions();
+        break;
     }
   }
 
   // Set up auto-fetch functionality if shouldFetchEventsRegularly is provided
-  if (shouldFetchEventsRegularly) {
-    useHistoryEventsAutoFetch(shouldFetchEventsRegularly, fetchDataAndLocations);
-  }
+  const autoFetch = shouldFetchEventsRegularly
+    ? useHistoryEventsAutoFetch(shouldFetchEventsRegularly, {
+        onProgress: fetchData,
+        onSettle: fetchDataAndLocations,
+      })
+    : undefined;
 
-  // Refresh when events are modified (e.g., from pinned sidebar matching)
+  // Refresh when events are modified (e.g., from pinned sidebar matching).
+  //
+  // Routed through the auto-fetch's reader rather than owning a second debounce: matching writes
+  // arrive in bursts alongside decode progress, and two independent debounces landed on the same
+  // instant and read the identical page twice. Falls back to a direct read on the pages that have
+  // no auto-fetch, where nothing else can be reading concurrently.
+  //
+  // Reads the events only: matching links existing events, so it can neither create the first nor
+  // remove the last event of a location. Manual add/delete goes through `onHistoryEventSaved`,
+  // which still fetches locations.
   if (mainPage) {
-    watch(eventsVersion, async (current, previous) => {
-      if (toValue(mainPage) && current > previous)
-        await fetchDataAndLocations();
+    watch(eventsVersion, (current, previous) => {
+      if (!toValue(mainPage) || current <= previous)
+        return;
+
+      if (autoFetch)
+        autoFetch.markStale();
+      else
+        startPromise(fetchData());
     });
   }
 
@@ -225,7 +271,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     fetch: {
       dataAndLocations: fetchDataAndLocations,
       dataAndRedecode: fetchAndRedecodeEvents,
-      undecodedStatus: fetchUndecodedTransactionsStatus,
+      undecodedStatus: fetchUndecodedTransactionsBreakdown,
     },
     redecode: {
       all: redecodeAllEvents,

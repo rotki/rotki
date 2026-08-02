@@ -8,18 +8,15 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
-import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/modules/history/events/action-types';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import RepullingTransactionForm, { type AccountType } from '@/modules/history/events/tx/RepullingTransactionForm.vue';
 import { type RepullingTransactionResult, useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
 import { useRepullingTransactionForm } from '@/modules/history/events/tx/use-repulling-transaction-form';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const modelValue = defineModel<boolean>({ required: true });
-const currentAction = defineModel<HistoryEventAction>('currentAction', { required: true });
 
 const { repullExchangeEvents, repullTransactions } = defineProps<{
   loading?: boolean;
@@ -39,11 +36,11 @@ const stateUpdated = ref<boolean>(false);
 const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
 const { repullingEthStakingEvents, repullingExchangeEvents, repullingTransactions } = useHistoryTransactions();
-const { useIsTaskRunning } = useTaskStore();
+const { useIsActive } = useTaskCenter();
 const { createDefaultFormData, shouldShowConfirmation } = useRepullingTransactionForm();
 const { resetUndecodedTransactionsStatus } = useDecodingStatusStore();
 
-const taskRunning = useIsTaskRunning(TaskType.REPULLING_TXS);
+const taskRunning = useIsActive(ActivityKind.REPULLING);
 
 const formData = ref(createDefaultFormData());
 
@@ -96,7 +93,6 @@ async function handleExchangeSubmission(
     toTimestamp: data.toTimestamp,
   };
 
-  set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
   const newEventsDetected = await repullingExchangeEvents(exchangePayload);
   if (newEventsDetected && exchange) {
     repullExchangeEvents?.([exchange]);
@@ -113,7 +109,6 @@ async function handleBlockchainSubmission(data: RepullingTransactionPayload): Pr
     toTimestamp: data.toTimestamp,
   };
 
-  set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
   resetUndecodedTransactionsStatus();
   const result = await repullingTransactions(blockchainPayload);
   if (result) {
@@ -123,7 +118,6 @@ async function handleBlockchainSubmission(data: RepullingTransactionPayload): Pr
 }
 
 async function handleEthStakingSubmission(): Promise<void> {
-  set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
   await repullingEthStakingEvents(get(ethStakingData));
 }
 

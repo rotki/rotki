@@ -95,6 +95,63 @@ describe('useTargetedRedecode', () => {
     });
   });
 
+  /**
+   * These three subtitles were built by hand and so bypassed `activityLabelFor` entirely, which is
+   * why a sweep that grepped for that call missed them. They rendered a bare count ("Ethereum · 2"),
+   * a full 66-character transaction hash, and a bare block number — none of which say what the row
+   * is doing. Asserting the {@link TranslatableText} shape rather than a rendered string keeps this
+   * honest: a hand-built string cannot satisfy it.
+   */
+  describe('subtitles', () => {
+    const txHash = '0x1234567890123456789012345678901234567890123456789012345678901234';
+
+    async function subtitleOf(run: () => Promise<void>): Promise<any> {
+      await run();
+      return mocks.submitTask.mock.calls.at(-1)?.[0].subtitle;
+    }
+
+    it('should name a single transaction with a truncated hash, not the bare hash', async () => {
+      const { pullAndDecodeTransactionsRaw } = useTargetedRedecode();
+      const subtitle = await subtitleOf(async () => {
+        await pullAndDecodeTransactionsRaw({ chain: 'ethereum', txRefs: [txHash] }).catch(() => {});
+      });
+
+      expect(subtitle.key).toBe('task_center.activity.tx_decoding.single');
+      expect(subtitle.params.chain).toBe('ethereum');
+      expect(subtitle.params.tx).not.toBe(txHash);
+      expect(subtitle.params.tx.length).toBeLessThan(txHash.length);
+    });
+
+    it('should describe a batch of transactions by count, pluralised', async () => {
+      const { pullAndDecodeTransactionsRaw } = useTargetedRedecode();
+      const subtitle = await subtitleOf(async () => {
+        await pullAndDecodeTransactionsRaw({ chain: 'ethereum', txRefs: [txHash, '0xabc'] }).catch(() => {});
+      });
+
+      expect(subtitle.key).toBe('task_center.activity.tx_decoding.batch');
+      expect(subtitle.params).toMatchObject({ chain: 'ethereum', count: 2 });
+      // Without the plural argument the message renders its singular half for every count.
+      expect(subtitle.plural).toBe(2);
+    });
+
+    it('should name a single block, not print the number on its own', async () => {
+      const { redecodeTargeted } = useTargetedRedecode();
+      const subtitle = await subtitleOf(async () => redecodeTargeted({ blockNumbers: [25644057] }));
+
+      expect(subtitle.key).toBe('task_center.activity.eth_block_decoding.single');
+      expect(subtitle.params).toMatchObject({ block: 25644057 });
+    });
+
+    it('should describe a batch of blocks by count, pluralised', async () => {
+      const { redecodeTargeted } = useTargetedRedecode();
+      const subtitle = await subtitleOf(async () => redecodeTargeted({ blockNumbers: [1, 2, 3] }));
+
+      expect(subtitle.key).toBe('task_center.activity.eth_block_decoding.batch');
+      expect(subtitle.params).toMatchObject({ count: 3 });
+      expect(subtitle.plural).toBe(3);
+    });
+  });
+
   describe('pullAndDecodeTransactionsRaw', () => {
     it('should throw on an actionable failure', async () => {
       mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));

@@ -1,7 +1,6 @@
 import type { MaybeRef } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { Collection } from '@/modules/core/common/collection';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import type {
   AccountingRuleConflict,
   AccountingRuleConflictRequestPayload,
@@ -9,14 +8,17 @@ import type {
   AccountingRuleEntry,
   AccountingRuleRequestPayload,
 } from '@/modules/settings/types/accounting';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { defaultCollectionState, mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useAccountingApi } from '@/modules/settings/api/use-accounting-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { activityLabel } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseAccountingSettingsReturn {
   getAccountingRule: (payload: MaybeRef<AccountingRuleRequestPayload>, counterparty: string | null) => Promise<AccountingRuleEntry | undefined>;
@@ -124,27 +126,36 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
     }
   };
 
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
 
   const exportAccountingRulesData = async (
     directoryPath?: string,
   ): Promise<{ result: boolean | object; message?: string } | null> => {
-    const outcome = await runTask<boolean | object, TaskMeta>(
-      async () => exportAccountingRules(directoryPath),
-      { type: TaskType.EXPORT_ACCOUNTING_RULES, meta: { title: t('actions.accounting_rules.export.title') } },
-    );
+    const outcome = await submitTask<boolean | object>({
+      id: makeActivityId(ActivityKind.ACCOUNTING_RULES, ActivityPart.EXPORT),
+      kind: ActivityKind.ACCOUNTING_RULES,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<boolean | object, TaskError>> => mapResult(
+        await runTask<boolean | object>(
+          async () => exportAccountingRules(directoryPath),
+        ),
+        value => value,
+      ),
+      subtitle: activityLabel(ActivityKind.ACCOUNTING_RULES, ActivityPart.EXPORT),
+      title: t('task_center.group.accounting_rules'),
+    });
 
-    if (outcome.success) {
+    if (!isErr(outcome)) {
       return {
-        result: outcome.result,
+        result: outcome.value,
       };
     }
 
-    if (!isActionableFailure(outcome))
+    if (!isActionable(outcome.error))
       return null;
 
     return {
-      message: outcome.message,
+      message: outcome.error.message,
       result: false,
     };
   };
@@ -191,39 +202,57 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
 
   async function importJSON(file: File): Promise<ActionStatus | null> {
     const path = getPath(file);
-    const outcome = await runTask<boolean, TaskMeta>(
-      async () => path ? importAccountingRulesData(path) : uploadAccountingRulesData(file),
-      { type: TaskType.IMPORT_ACCOUNTING_RULES, meta: { title: t('actions.accounting_rules.import.title') } },
-    );
+    const outcome = await submitTask<boolean>({
+      id: makeActivityId(ActivityKind.ACCOUNTING_RULES, ActivityPart.IMPORT),
+      kind: ActivityKind.ACCOUNTING_RULES,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
+        await runTask<boolean>(
+          async () => path ? importAccountingRulesData(path) : uploadAccountingRulesData(file),
+        ),
+        value => value,
+      ),
+      subtitle: activityLabel(ActivityKind.ACCOUNTING_RULES, ActivityPart.IMPORT, { file: file.name }),
+      title: t('task_center.group.accounting_rules'),
+    });
 
-    if (outcome.success)
-      return { message: '', success: outcome.result };
+    if (!isErr(outcome))
+      return { message: '', success: outcome.value };
 
-    if (!isActionableFailure(outcome))
+    if (!isActionable(outcome.error))
       return null;
 
-    return { message: outcome.message, success: false };
+    return { message: outcome.error.message, success: false };
   }
 
   async function resetToDefaults(): Promise<ActionStatus | null> {
     const title = t('actions.accounting_rules.reset.title');
-    const outcome = await runTask<boolean, TaskMeta>(
-      async () => resetAccountingRules(),
-      { type: TaskType.RESET_ACCOUNTING_RULES, meta: { title } },
-    );
+    const outcome = await submitTask<boolean>({
+      id: makeActivityId(ActivityKind.ACCOUNTING_RULES, ActivityPart.RESET),
+      kind: ActivityKind.ACCOUNTING_RULES,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
+        await runTask<boolean>(
+          async () => resetAccountingRules(),
+        ),
+        value => value,
+      ),
+      subtitle: activityLabel(ActivityKind.ACCOUNTING_RULES, ActivityPart.RESET),
+      title: t('task_center.group.accounting_rules'),
+    });
 
-    if (outcome.success) {
+    if (!isErr(outcome)) {
       showSuccessMessage(title, t('actions.accounting_rules.reset.message.success'));
-      return { message: '', success: outcome.result };
+      return { message: '', success: outcome.value };
     }
 
-    if (!isActionableFailure(outcome))
+    if (!isActionable(outcome.error))
       return null;
 
     showErrorMessage(title, t('actions.accounting_rules.reset.message.failure', {
-      description: outcome.message,
+      description: outcome.error.message,
     }));
-    return { message: outcome.message, success: false };
+    return { message: outcome.error.message, success: false };
   }
 
   return {

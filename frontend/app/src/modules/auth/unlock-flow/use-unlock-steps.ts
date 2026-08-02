@@ -1,5 +1,4 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import { err, none, ok, type OptionType as Option, type ResultType as Result } from 'plainfp';
 import { lastLogin } from '@/modules/auth/account-management';
 import { type CreateAccountPayload, IncompleteUpgradeError, SyncConflictError } from '@/modules/auth/login';
@@ -8,13 +7,13 @@ import { useUsersApi } from '@/modules/auth/use-users-api';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { useSessionSettings } from '@/modules/session/use-session-settings';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import { migrateSettingsIfNeeded } from '@/modules/settings/types/frontend-settings-migrations';
 import { type SettingsUpdate, UserAccount, UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { useMonitorService } from '@/modules/shell/app/use-monitor-service';
+import { SESSION_LANE } from '@/modules/task-center/core/orchestrator/spec';
+import { ActivityKind, ActivityPart, isActionable, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
 import { useAssetUpdateSteps } from './use-asset-update-steps';
 import { useStoredCredentials } from './use-stored-credentials';
 import {
@@ -48,7 +47,7 @@ export interface UseUnlockStepsReturn {
 export function useUnlockSteps(): UseUnlockStepsReturn {
   const authStore = useSessionAuthStore();
   const { conflictExist, incompleteUpgradeConflict, logged, shouldFetchData, syncConflict, username } = storeToRefs(authStore);
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
   const { initialize } = useSessionSettings();
   const { authenticate: sessionAuthenticate, checkIfLogged, colibriLogin, createAccount: callCreateAccount, login: callLogin } = useUsersApi();
   const { getRawSettings, setSettings } = useSettingsApi();
@@ -112,24 +111,35 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
 
     authStore.resetSyncConflict();
     authStore.resetIncompleteUpgradeConflict();
-    const outcome = await runTask<{ settings: SettingsUpdate; exchanges: Exchange[] }, TaskMeta>(
-      async () => callLogin(credentials),
-      { meta: { title: 'login in' }, type: TaskType.LOGIN },
-    );
+    // Login runs through the orchestrator like any other backend task, but flagged `ephemeral`
+    // so it never shows in the task center (it settles before the shell even mounts). The task
+    // result rides out on the outcome, and the SyncConflict/IncompleteUpgrade cause rides through
+    // on `TaskFailed.cause`.
+    const outcome = await submitTask<{ settings: SettingsUpdate; exchanges: Exchange[] }>({
+      ephemeral: true,
+      id: makeActivityId(ActivityKind.SESSION, ActivityPart.LOGIN),
+      kind: ActivityKind.SESSION,
+      lane: SESSION_LANE,
+      run: async ({ runTask }) => runTask<{ settings: SettingsUpdate; exchanges: Exchange[] }>(
+        async () => callLogin(credentials),
+      ),
+      title: 'login',
+    });
 
-    if (!outcome.success) {
+    if (!outcome.ok) {
       // An actionable failure carries the original error (the task monitor forwards a
-      // SyncConflictError/IncompleteUpgradeError verbatim). Map it through `failWith` so its
-      // type survives — throwing a generic Error here would erase it and the sync/upgrade
-      // alerts would never show.
-      if (isActionableFailure(outcome))
-        return err(failWith(outcome.error ?? new Error(outcome.message)));
+      // SyncConflictError/IncompleteUpgradeError verbatim on `TaskFailed.cause`). Map it through
+      // `failWith` so its type survives — a generic Error here would erase it and the
+      // sync/upgrade alerts would never show. Cancels/skips fall through to wrong-password.
+      if (!outcome.ok && isActionable(outcome.error))
+        return err(failWith(outcome.error.cause ?? new Error(outcome.error.message)));
       return err({ kind: UnlockErrorKind.wrongPassword });
     }
 
     await colibriLogin({ password: credentials.password, username: credentials.username });
-    outcome.result.settings.frontendSettings = await migrateAndSaveSettings(outcome.result.settings.frontendSettings);
-    const account = UserAccount.parse(outcome.result);
+    const result = outcome.value;
+    result.settings.frontendSettings = await migrateAndSaveSettings(result.settings.frontendSettings);
+    const account = UserAccount.parse(result);
     return ok({ exchanges: account.exchanges, fetchData: true, settings: account.settings, username: name });
   }
 
@@ -237,21 +247,29 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
 
   const createUnlock = (payload: CreateAccountPayload) => async (): Promise<Result<void, UnlockError>> =>
     guarded(async () => {
-      const outcome = await runTask<UserAccount, TaskMeta>(
-        async () => {
-          const pending = await callCreateAccount(payload);
-          // The create ack has now set the session cookie and the active sid, so the socket
-          // handshake and the gated /tasks poll both carry it. Start the monitor here (create's
-          // connect step is a no-op) rather than before the ack, when no cookie exists yet.
-          useMonitorService().start();
-          return pending;
-        },
-        { meta: { title: 'creating account' }, type: TaskType.CREATE_ACCOUNT },
-      );
-      if (!outcome.success)
-        return err({ kind: UnlockErrorKind.unknown, message: outcome.message });
+      // Account creation runs through the orchestrator flagged `ephemeral`, same as login, so it
+      // never leaves a stale task-center entry once the shell mounts.
+      const outcome = await submitTask<UserAccount>({
+        ephemeral: true,
+        id: makeActivityId(ActivityKind.SESSION, ActivityPart.CREATE),
+        kind: ActivityKind.SESSION,
+        lane: SESSION_LANE,
+        run: async ({ runTask }) => runTask<UserAccount>(
+          async () => {
+            const pending = await callCreateAccount(payload);
+            // The create ack has now set the session cookie and the active sid, so the socket
+            // handshake and the gated /tasks poll both carry it. Start the monitor here (create's
+            // connect step is a no-op) rather than before the ack, when no cookie exists yet.
+            useMonitorService().start();
+            return pending;
+          },
+        ),
+        title: 'creating account',
+      });
+      if (!outcome.ok)
+        return err({ kind: UnlockErrorKind.unknown, message: outcome.ok ? '' : outcome.error.message });
 
-      const { exchanges, settings } = UserAccount.parse(outcome.result);
+      const { exchanges, settings } = UserAccount.parse(outcome.value);
       await colibriLogin({ password: payload.credentials.password, username: payload.credentials.username });
       // Restoring a premium backup is not a fresh account: the pulled database carries the
       // settings (and the applied-suggestions version) of the account it came from, so the

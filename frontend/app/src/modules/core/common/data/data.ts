@@ -2,14 +2,6 @@ import { BigNumber } from '@rotki/common';
 import { isString, isUndefined } from 'es-toolkit';
 import { objectKeys } from '@/modules/core/common/data/array';
 
-export function chunkArray<T>(myArray: T[], size: number): T[][] {
-  const results: T[][] = [];
-
-  while (myArray.length > 0) results.push(myArray.splice(0, size));
-
-  return results;
-}
-
 export function uniqueStrings<T = string>(value: T, index: number, array: T[]): boolean {
   return array.indexOf(value) === index;
 }

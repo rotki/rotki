@@ -9,6 +9,8 @@ import { getErrorMessage, useNotifications } from '@/modules/core/notifications/
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import { useIgnore } from '@/modules/history/use-ignore';
+import { EditKind } from '@/modules/task-center/core/rerun/policy';
+import { taskCenterBus } from '@/modules/task-center/events/task-center-bus';
 import { buildDeletionConfirmationMessage, DELETION_STRATEGY_TYPE, type DeletionStrategy } from './use-deletion-strategies';
 import { analyzeSelectedEvents, type TransactionGroup } from './use-event-analysis';
 
@@ -122,10 +124,15 @@ export function useHistoryEventsDeletion(
       ? message ?? t('transactions.events.delete.error.message')
       : message ?? t('transactions.events.ignore.error.message');
 
-    if (success)
+    if (success) {
       showSuccessMessage(title, successMessage);
-    else
+      // Single choke point for every deletion path (events / transactions / ignore / filter):
+      // a removal makes computed P&L / historical balances stale (issue #6825).
+      taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_DELETED });
+    }
+    else {
       showErrorMessage(errorTitle, errorMessage);
+    }
   }
 
   async function deleteByFilter(totalCount: number): Promise<void> {

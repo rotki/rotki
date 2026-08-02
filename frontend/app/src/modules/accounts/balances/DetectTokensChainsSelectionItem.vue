@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import type { EvmChainInfo } from '@/modules/core/api/types/chains';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 
 const { item } = defineProps<{
@@ -16,14 +15,10 @@ const emit = defineEmits<{
   detect: [chain: string];
 }>();
 
-const { useIsTaskRunning } = useTaskStore();
+const { useIsDetecting } = useTokenDetectionOrchestrator();
 const { t } = useI18n({ useScope: 'global' });
 
-const taskMeta = computed(() => ({
-  chain: item.id,
-}));
-
-const isDetectingChain = useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS, taskMeta);
+const isDetectingChain = useIsDetecting(() => item.id);
 </script>
 
 <template>

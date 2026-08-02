@@ -4,8 +4,6 @@ import { isEqual } from 'es-toolkit';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
@@ -13,6 +11,8 @@ import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unm
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const HISTORY_EVENTS_MODIFIED_DEBOUNCE_MS = 15_000;
 
@@ -31,8 +31,8 @@ export function useHistoryWatchers(): void {
   const processingDebounced = useRefWithDebounce(processing, 500);
 
   // Protocol cache status reset when refresh task completes
-  const { useIsTaskRunning } = useTaskStore();
-  const refreshProtocolCacheTaskRunning = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
+  const { useIsActive } = useTaskCenter();
+  const refreshProtocolCacheTaskRunning = useIsActive(ActivityKind.PROTOCOL_CACHE);
   const protocolCacheStore = useProtocolCacheStatusStore();
   const { protocolCacheUpdateStatus } = storeToRefs(protocolCacheStore);
 

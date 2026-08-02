@@ -1,18 +1,21 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import { transformCase, Zero } from '@rotki/common';
+import { err, ok, type Result } from 'plainfp/result';
 import QueriedAddressDialog from '@/modules/accounts/QueriedAddressDialog.vue';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/modules/core/common/modules';
-import { Section } from '@/modules/core/common/status';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
+import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 type ModuleEntry = SupportedModule & { enabled: boolean };
 
@@ -29,7 +32,7 @@ const activeModules = useSetting('activeModules');
 const { update: updateSettings } = useSettingsOperations();
 
 const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
-const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
+const { submitTask } = useNativeTask();
 
 const sort = ref<DataTableSortColumn<ModuleEntry>>({
   column: 'name',
@@ -69,9 +72,6 @@ const modules = computed<ModuleEntry[]>(() => {
   }));
 });
 
-const { start: fetch } = useTimeoutFn(() => resetStatus(), 800, {
-  immediate: false,
-});
 const { start: clearNfBalances } = useTimeoutFn(() => {
   set(nonFungibleTotalValue, Zero);
 }, 800, { immediate: false });
@@ -89,27 +89,71 @@ async function switchModule(module: Module, enabled: boolean) {
     modules = [...active, module];
   else modules = active.filter(m => m !== module);
 
-  await update(modules);
-  if (module === Module.NFTS) {
-    if (enabled)
-      fetch();
-    else clearNfBalances();
-  }
+  // Ephemeral, so it never shows up as work: this exists only so what a module feeds can declare a
+  // `staleAfter` edge against it. The direction is part of the id, because enabling a module makes
+  // its data fetchable while disabling it does not.
+  await submitTask({
+    ephemeral: true,
+    id: makeActivityId(ActivityKind.MODULE_TOGGLE, module, enabled ? 'enabled' : 'disabled'),
+    kind: ActivityKind.MODULE_TOGGLE,
+    run: async (): Promise<Result<void, TaskError>> => {
+      try {
+        await update(modules);
+        return ok(undefined);
+      }
+      catch (error: unknown) {
+        return err(TaskFailed({ cause: error, message: getErrorMessage(error) }));
+      }
+    },
+    title: t('module_selector.tasks.toggle'),
+  });
+
+  if (module === Module.NFTS && !enabled)
+    clearNfBalances();
+}
+
+/**
+ * Applies a bulk module change, announcing each module whose state actually flips as its own
+ * `MODULE_TOGGLE` activity.
+ *
+ * Bulk enable/disable used to call `update` straight through, so it announced nothing: consumers
+ * declare their edges per module and direction (`use-nft-balances.ts` keys on
+ * `module_toggle:nfts:enabled`), and "Enable all" with NFTs previously off therefore left NFT
+ * balances stale indefinitely. One shared settings write, several identities — the work is a
+ * single call, but "NFTs became enabled" is what a consumer can subscribe to.
+ */
+async function applyBulk(next: Module[]): Promise<void> {
+  const active = get(activeModules);
+  const changed = supportedModules
+    .map(module => module.identifier)
+    .filter(module => active.includes(module) !== next.includes(module));
+
+  if (changed.length === 0)
+    return;
+
+  // Folded to a Result here, not inside `run`: the scheduler calls `run` on a later tick, so a
+  // rejection would have no handler attached at the moment it happens.
+  const written = update(next).then(
+    (): Result<void, TaskError> => ok(undefined),
+    (error: unknown): Result<void, TaskError> => err(TaskFailed({ cause: error, message: getErrorMessage(error) })),
+  );
+
+  await Promise.all(changed.map(async module => submitTask({
+    ephemeral: true,
+    id: makeActivityId(ActivityKind.MODULE_TOGGLE, module, next.includes(module) ? 'enabled' : 'disabled'),
+    kind: ActivityKind.MODULE_TOGGLE,
+    run: async (): Promise<Result<void, TaskError>> => written,
+    title: t('module_selector.tasks.toggle'),
+  })));
 }
 
 async function enableAll() {
-  const allModules = supportedModules.map(x => x.identifier);
-  const active = get(activeModules);
-  const activatedModules = allModules.filter(m => !active.includes(m));
-  await update(allModules);
-
-  if (activatedModules.includes(Module.NFTS))
-    fetch();
+  await applyBulk(supportedModules.map(x => x.identifier));
 }
 
 async function disableAll() {
   const active = get(activeModules);
-  await update([]);
+  await applyBulk([]);
   if (active.includes(Module.NFTS))
     clearNfBalances();
 }
