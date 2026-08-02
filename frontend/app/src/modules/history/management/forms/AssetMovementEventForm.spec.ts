@@ -2,6 +2,7 @@ import type { AssetMap } from '@/modules/assets/types';
 import type { TradeLocationData } from '@/modules/core/common/location';
 import type { AssetMovementEvent } from '@/modules/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
+import { selectorContract } from '@test/utils/selector-contract';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import flushPromises from 'flush-promises';
@@ -154,6 +155,33 @@ describe('forms/AssetMovementEventForm.vue', () => {
       plugins: [pinia],
     },
     ...options,
+  });
+
+  it('should render the documented e2e selector contract', () => {
+    wrapper = createWrapper();
+    // The e2e suite finds every field through these selectors; losing one is an e2e break.
+    expect(selectorContract(wrapper)).toMatchInlineSnapshot(`
+      [
+        "data-cy=amount",
+        "data-cy=asset",
+        "data-cy=asset-movement-event-form__advance",
+        "data-cy=blockchain-id",
+        "data-cy=datetime",
+        "data-cy=eventSubtype",
+        "data-cy=fee-amount",
+        "data-cy=fee-asset",
+        "data-cy=groupIdentifier",
+        "data-cy=grouped-amount-input__swap-button",
+        "data-cy=has-fee",
+        "data-cy=location",
+        "data-cy=locationLabel",
+        "data-cy=notes",
+        "data-cy=primary",
+        "data-cy=secondary",
+        "data-cy=tx-ref",
+        "data-cy=unique-id",
+      ]
+    `);
   });
 
   it('should show the default state when adding a new event', async () => {
