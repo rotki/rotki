@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, NamedTuple
 from rotkehlchen.concurrency import TaskCancelledError
 from rotkehlchen.globaldb.migrations.migration2 import globaldb_data_migration_2
 from rotkehlchen.globaldb.migrations.migration3 import globaldb_data_migration_3
+from rotkehlchen.globaldb.utils import globaldb_get_setting_value
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
-from ..utils import globaldb_get_setting_value
 from .migration1 import globaldb_data_migration_1
 
 logger = logging.getLogger(__name__)

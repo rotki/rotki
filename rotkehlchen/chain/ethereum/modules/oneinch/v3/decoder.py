@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V3
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.v4.decoder import Oneinchv3n4DecoderBase
 
@@ -9,7 +10,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
-from ..constants import CPT_ONEINCH_V3
 from .constants import ONEINCH_V3_MAINNET_ROUTER
 
 

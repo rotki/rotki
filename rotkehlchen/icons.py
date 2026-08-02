@@ -79,7 +79,7 @@ def create_image_response(image_path: Path) -> Response:
             _build_http_header_for_images(image_path),
         ),
     )
-    response.set_etag(hashlib.md5(image_data).hexdigest())
+    response.set_etag(hashlib.md5(image_data, usedforsecurity=False).hexdigest())
     return response
 
 

@@ -4,6 +4,7 @@ from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.constants import AMM_POSSIBLE_COUNTERPARTIES
+from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V1
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.oneinch.constants import ONEINCH_ICON, ONEINCH_LABEL
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -14,8 +15,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.utils.misc import bytes_to_address
-
-from ..constants import CPT_ONEINCH_V1
 
 if TYPE_CHECKING:
     from rotkehlchen.types import ChecksumEvmAddress

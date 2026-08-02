@@ -45,8 +45,6 @@ from .constants import (
     MIN_EFFECTIVE_BALANCE,
     UNKNOWN_VALIDATOR_INDEX,
 )
-
-ETH_STAKED_CACHE_TIME: Final = 7200  # 2 hours in seconds
 from .structures import (
     PerformanceStatusFilter,
     ValidatorDetailsWithStatus,
@@ -65,6 +63,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+ETH_STAKED_CACHE_TIME: Final = 7200  # 2 hours in seconds
 
 
 class Eth2(EthereumModule):

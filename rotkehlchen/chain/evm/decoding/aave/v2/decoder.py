@@ -4,6 +4,7 @@ from rotkehlchen.assets.utils import asset_normalized_value, token_normalized_va
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import REWARDS_CLAIMED_TOPIC
 from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3LikeDecoder
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V2
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
@@ -13,7 +14,6 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.utils.misc import bytes_to_address
 
-from ..constants import CPT_AAVE_V2
 from .constants import BORROW, DEPOSIT, REPAY
 
 if TYPE_CHECKING:

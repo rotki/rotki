@@ -15,7 +15,7 @@ def file_md5(filepath: Path) -> str:
     May raise:
     - SystemPermissionError if the file can't be accessed for some reason
     """
-    md5_hash = hashlib.md5()
+    md5_hash = hashlib.md5(usedforsecurity=False)
     try:
         with open(filepath, 'rb') as f:
             # Read and update hash in chunks of 4K
