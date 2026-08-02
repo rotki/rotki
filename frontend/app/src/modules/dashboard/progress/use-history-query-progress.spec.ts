@@ -117,6 +117,24 @@ describe('useHistoryQueryProgress', () => {
     expect(value?.percentage).toBe(100);
   });
 
+  it('should count failed transactions as finished and skip them as active', () => {
+    // A failed address is done, not still querying. Counting it active pinned the indicator on
+    // "Query failed" and kept it short of 100% for the rest of the session.
+    setTxStatuses({
+      a: evmTx(TransactionsQueryStatus.FAILED, '0x1'),
+      b: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x2'),
+    });
+
+    const { progress } = useHistoryQueryProgress();
+    const value = get(progress);
+
+    expect(value?.currentOperation).toBeNull();
+    expect(value?.currentOperationData).toBeNull();
+    expect(value?.currentStep).toBe(2);
+    expect(value?.totalSteps).toBe(2);
+    expect(value?.percentage).toBe(100);
+  });
+
   // eslint-disable-next-line complexity
   it('should fall back to an active event when no transactions are active', () => {
     setTxStatuses({
