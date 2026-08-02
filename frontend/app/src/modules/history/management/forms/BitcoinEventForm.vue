@@ -270,9 +270,13 @@ defineExpose({
       :asset="asset"
       disable-asset
       :location="location"
-      :v$="v$"
+      :error-messages="{
+        amount: toMessages(v$.amount),
+        asset: toMessages(v$.asset),
+      }"
       :timestamp="timestamp"
       :no-price-fields="isInformationalEvent"
+      @blur="v$[$event].$touch()"
     />
 
     <RuiDivider class="mb-6 mt-2" />

@@ -319,13 +319,13 @@ defineExpose({
       v-model:asset="states.spendAsset"
       hide-price-fields
       :timestamp="timestamp"
-      :v$="{
-        ...v$,
-        asset: v$.spendAsset,
-        amount: v$.spendAmount,
+      :error-messages="{
+        amount: toMessages(v$.spendAmount),
+        asset: toMessages(v$.spendAsset),
       }"
       :location="states.location"
       type="spend"
+      @blur="v$[$event === 'amount' ? 'spendAmount' : 'spendAsset'].$touch()"
     />
 
     <HistoryEventAssetPriceForm
@@ -334,13 +334,13 @@ defineExpose({
       v-model:asset="states.receiveAsset"
       hide-price-fields
       :timestamp="timestamp"
-      :v$="{
-        ...v$,
-        asset: v$.receiveAsset,
-        amount: v$.receiveAmount,
+      :error-messages="{
+        amount: toMessages(v$.receiveAmount),
+        asset: toMessages(v$.receiveAsset),
       }"
       :location="states.location"
       type="receive"
+      @blur="v$[$event === 'amount' ? 'receiveAmount' : 'receiveAsset'].$touch()"
     />
 
     <RuiTextField

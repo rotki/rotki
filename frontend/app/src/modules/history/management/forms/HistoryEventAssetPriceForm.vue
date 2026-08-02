@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import type { Validation } from '@vuelidate/core';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { NewHistoryEventPayload } from '@/modules/history/events/schemas';
 import { assert, toSentenceCase } from '@rotki/common';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { toMessages } from '@/modules/core/common/validation/validation';
 import { useEventPriceUpdate } from '@/modules/history/events/prices/use-event-price-update';
 import ToggleLocationLink from '@/modules/history/management/forms/common/ToggleLocationLink.vue';
 import { useEventPriceConversion } from '@/modules/history/management/forms/use-event-price-conversion';
@@ -16,7 +14,16 @@ import TwoFieldsAmountInput from '@/modules/shell/components/inputs/TwoFieldsAmo
 interface HistoryEventAssetPriceFormProps {
   timestamp: number;
   disableAsset?: boolean;
-  v$: Validation;
+  /**
+   * Errors for the two fields this form owns, already resolved to strings. Deliberately not a
+   * validator instance: the parent owns validation, this component only renders what it is given,
+   * which is what lets Vuelidate and zod parents share it while the subtree migrates.
+   */
+  errorMessages: {
+    amount: string[];
+    /** Omitted by forms whose asset is fixed (`disableAsset`), which have no asset rule at all. */
+    asset?: string[];
+  };
   noPriceFields?: boolean;
   hidePriceFields?: boolean;
   location: string | undefined;
@@ -30,13 +37,17 @@ const asset = defineModel<string | undefined>('asset', { required: true });
 const {
   timestamp,
   disableAsset,
-  v$,
+  errorMessages,
   noPriceFields,
   hidePriceFields,
   location,
   disabled,
   type,
 } = defineProps<HistoryEventAssetPriceFormProps>();
+
+const emit = defineEmits<{
+  blur: [source: 'amount' | 'asset'];
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -98,10 +109,7 @@ defineExpose({
 
 <template>
   <div>
-    <div
-      v-if="v$"
-      class="grid md:grid-cols-2 gap-4 mb-4"
-    >
+    <div class="grid md:grid-cols-2 gap-4 mb-4">
       <AmountInput
         v-model="amount"
         variant="outlined"
@@ -109,8 +117,8 @@ defineExpose({
         :disabled="disabled"
         :label="type ? t('transactions.events.form.asset_price.amount_label', { type: toSentenceCase((type)) }) : t('common.amount')"
         required
-        :error-messages="toMessages(v$.amount)"
-        @blur="v$.amount.$touch()"
+        :error-messages="errorMessages.amount"
+        @blur="emit('blur', 'amount')"
       />
       <div class="flex">
         <AssetSelect
@@ -122,8 +130,8 @@ defineExpose({
           :label="type ? t('transactions.events.form.asset_price.asset_label', { type: toSentenceCase((type)) }) : t('common.asset')"
           required
           :chain="chain"
-          :error-messages="disableAsset ? [''] : toMessages(v$.asset)"
-          @blur="v$.asset.$touch()"
+          :error-messages="disableAsset ? [''] : errorMessages.asset ?? []"
+          @blur="emit('blur', 'asset')"
         />
         <ToggleLocationLink
           v-model="chain"
