@@ -375,6 +375,18 @@ describe('store/history/query-status/tx-query-status', () => {
       store.setEvmlikeStatus({ address: '0x123', chain: 'scroll' }, 'finished');
       expect(get(store.queryStatus)['0x123scroll'].status).toBe(TransactionsQueryStatus.CANCELLED);
     });
+
+    it('should not overwrite failed entries', () => {
+      const store = useTxQueryStatusStore();
+
+      store.setEvmlikeStatus({ address: '0x123', chain: 'scroll' }, 'started');
+      store.markAddressFailed({ address: '0x123', chain: 'scroll' }, 'evmlike');
+
+      // The caller marks the query failed and then runs its unconditional `finished` tail. Without
+      // the guard that tail reports the failed address as complete.
+      store.setEvmlikeStatus({ address: '0x123', chain: 'scroll' }, 'finished');
+      expect(get(store.queryStatus)['0x123scroll'].status).toBe(TransactionsQueryStatus.FAILED);
+    });
   });
 
   describe('markAddressCancelled', () => {

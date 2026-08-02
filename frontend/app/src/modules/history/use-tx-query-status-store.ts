@@ -206,8 +206,13 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     const chain = account.chain.toLowerCase();
     const key = createKey({ address: account.address, chain });
 
-    // Guard: don't overwrite cancelled entries
-    if (status[key]?.status === TransactionsQueryStatus.CANCELLED)
+    // Don't overwrite an entry that has already reached a terminal state. The caller runs its
+    // `finished` tail unconditionally, so without this a query that failed reports success: the
+    // address renders as a green "Complete", its chain's `failed` count stays 0 and no warning is
+    // raised. Evmlike is the one case where nothing else corrects that, since these chains send no
+    // websocket messages of their own.
+    const current = status[key]?.status;
+    if (current === TransactionsQueryStatus.CANCELLED || current === TransactionsQueryStatus.FAILED)
       return;
 
     const now = millisecondsToSeconds(Date.now());
