@@ -1,20 +1,31 @@
 import type { NftResponse } from '@/modules/assets/nfts';
 import { createCustomPinia } from '@test/utils/create-pinia';
-import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
+import { runSpecWith } from '@test/utils/mocks/native-task';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
 import { useNfts } from '@/modules/assets/use-asset-nft';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 
-const { runTaskMock } = vi.hoisted(() => ({ runTaskMock: vi.fn() }));
+const runTaskResult = vi.fn();
+
+/** Runs the submitted spec inline so assertions see the real `run` body. */
+const submitTask = vi.fn(runSpecWith(runTaskResult));
 
 vi.mock('@/modules/assets/api/use-assets-api', () => ({
   useAssetsApi: vi.fn().mockReturnValue({
-    fetchNfts: vi.fn().mockResolvedValue(1),
+    fetchNfts: vi.fn().mockResolvedValue({ taskId: 1 }),
   }),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
-  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), { runTask: runTaskMock }));
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: vi.fn(() => ({
+    cancelByType: vi.fn(() => vi.fn()),
+    runTaskResult,
+    statusOf: vi.fn(),
+    submitTask,
+  })),
+}));
 
 describe('useNftStore', () => {
   let store: ReturnType<typeof useNfts>;
@@ -37,7 +48,10 @@ describe('useNftStore', () => {
         entriesLimit: 0,
       };
 
-      runTaskMock.mockResolvedValue({ success: true, result: nfts });
+      runTaskResult.mockImplementation(async (task: () => Promise<unknown>) => {
+        await task();
+        return ok(nfts);
+      });
 
       const result = await store.fetchNfts(true);
 
@@ -50,11 +64,9 @@ describe('useNftStore', () => {
     });
 
     it('should handle failure', async () => {
-      runTaskMock.mockResolvedValue({ success: false, message: 'failed', cancelled: false, backendCancelled: false, skipped: false });
+      runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'failed' })));
 
       const result = await store.fetchNfts(true);
-
-      expect(api.fetchNfts).toHaveBeenCalledWith(true);
 
       expect(result).toEqual({
         result: null,

@@ -28,6 +28,10 @@ interface UseTaskCenterReturn {
    * the coarse read for producers that submit one activity per request.
    */
   useWorkStatusPrefix: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<WorkStatus>;
+  /** Liveness only — see `useIsActive` on the orchestrator shell. */
+  useIsActive: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<boolean>;
+  /** Liveness only, aggregated over a prefix. */
+  useIsActivePrefix: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<boolean>;
   /** Reactive live {@link Activity} for a kind (or specific id) — the native progress channel. */
   useActivity: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<Activity | undefined>;
 }
@@ -41,7 +45,7 @@ export const useTaskCenter = createSharedComposable((): UseTaskCenterReturn => {
   const { t } = useI18n({ useScope: 'global' });
   const translate: TranslateFn = (key, params) => (params ? t(key, params) : t(key));
 
-  const { activities, useActivity, useWorkStatus, useWorkStatusPrefix } = useTaskOrchestrator();
+  const { activities, useActivity, useIsActive, useIsActivePrefix, useWorkStatus, useWorkStatusPrefix } = useTaskOrchestrator();
 
   const model = computed<ActivityModel>(() => assembleActivityModel(get(activities), translate));
 
@@ -51,5 +55,5 @@ export const useTaskCenter = createSharedComposable((): UseTaskCenterReturn => {
   const overall = computed<ActivityOverall>(() => get(model).overall);
   const isActive = computed<boolean>(() => get(model).overall.phase === ActivityPhase.WORKING);
 
-  return { active, current, isActive, model, overall, pending, useActivity, useWorkStatus, useWorkStatusPrefix };
+  return { active, current, isActive, model, overall, pending, useActivity, useIsActive, useIsActivePrefix, useWorkStatus, useWorkStatusPrefix };
 });

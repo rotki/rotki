@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useTaskPollingScheduler } from './use-task-polling-scheduler';
 
@@ -27,7 +26,7 @@ describe('useTaskPollingScheduler', () => {
   });
 
   const runTask = (): void => {
-    useTaskStore().add({ id: 1, meta: { title: 'test' }, time: Date.now(), type: TaskType.TX });
+    useTaskStore().add({ id: 1, label: 'test' });
   };
 
   it('should poll slowly while nothing is outstanding', async () => {
@@ -80,7 +79,7 @@ describe('useTaskPollingScheduler', () => {
 
     // New work is a sign more is about to happen, so the next gap is the fast one again rather
     // than the third step of the backoff.
-    useTaskStore().add({ id: 2, meta: { title: 'second' }, time: Date.now(), type: TaskType.TX });
+    useTaskStore().add({ id: 2, label: 'second' });
     await vi.advanceTimersByTimeAsync(SECOND_GAP_MS * 1.5 + 50);
     expect(monitor).toHaveBeenCalledTimes(3);
 

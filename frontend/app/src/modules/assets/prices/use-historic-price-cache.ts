@@ -1,19 +1,20 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import {
   type BigNumber,
   type CommonQueryStatusData,
   type FailedHistoricalAssetPriceResponse,
   NoPrice,
 } from '@rotki/common';
+import { getOr, map as mapResult, type Result } from 'plainfp/result';
 import { HistoricPrices } from '@/modules/assets/prices/price-types';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { createItemCache } from '@/modules/core/common/use-item-cache';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSetting } from '@/modules/settings/use-setting';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseHistoricPriceCacheReturn {
   cache: ReturnType<typeof createItemCache<BigNumber>>['cache'];
@@ -31,64 +32,73 @@ interface UseHistoricPriceCacheReturn {
   unknown: Map<string, number>;
 }
 
+/**
+ * Monotonic batch counter behind the activity id of each batched historic-price fetch.
+ * Module-scoped on purpose: the composable is shared and can be disposed/re-created while a batch
+ * is still in flight, and a per-instance counter would restart and collide with that batch's id.
+ */
+let batchSequence = 0;
+
 export const useHistoricPriceCache = createSharedComposable((): UseHistoricPriceCacheReturn => {
   const currencySymbol = useSetting('currencySymbol');
   const historicCachePriceStore = useHistoricCachePriceStore();
   const { historicStorage } = historicCachePriceStore;
   const { failedDailyPrices, historicalDailyPriceStatus, resolvedFailedDailyPrices } = storeToRefs(historicCachePriceStore);
   const { queryHistoricalRates } = usePriceApi();
-  const { cancelTaskByTaskType, runTask } = useTaskHandler();
+  const { cancelByPrefix, submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
   const { notifyError } = useNotifications();
 
   const createKey = (fromAsset: string, timestamp: number | string): string => `${fromAsset}#${timestamp}`;
 
   async function fetchHistoricPrices(keys: string[]): ReturnType<Parameters<typeof createItemCache<BigNumber>>[0]> {
-    const taskType = TaskType.FETCH_HISTORIC_PRICE;
     const assetsTimestamp = keys.map((key) => {
       const [from, timestamp] = key.split('#');
 
       return [from, timestamp];
     });
     const targetAsset = get(currencySymbol);
-
-    let data: HistoricPrices = { assets: {}, targetAsset: '' };
-
-    const outcome = await runTask<HistoricPrices, TaskMeta>(
-      async () => queryHistoricalRates({
-        assetsTimestamp,
-        targetAsset,
-      }),
+    const description = t(
+      'actions.balances.historic_fetch_price.task.description',
       {
-        type: taskType,
-        meta: {
-          description: t(
-            'actions.balances.historic_fetch_price.task.description',
-            {
-              count: assetsTimestamp.length,
-              toAsset: targetAsset,
-            },
-            2,
-          ),
-          title: t('actions.balances.historic_fetch_price.task.title'),
-        },
-        unique: false,
+        count: assetsTimestamp.length,
+        toAsset: targetAsset,
       },
+      2,
     );
 
-    if (outcome.success) {
-      data = outcome.result;
-    }
-    else if (isActionableFailure(outcome)) {
-      notifyError(
-        t('actions.balances.historic_fetch_price.task.title'),
-        t('actions.balances.historic_fetch_price.error.message', {
-          message: outcome.message,
-        }),
-      );
-    }
+    // One native PRICES activity per *batch*. `createItemCache` debounces keys into batches and
+    // can have several in flight at once, so the id carries a monotonic sequence: a shared id
+    // would let `submitTask` dedup two different key sets onto one promise and resolve a batch
+    // with the other's prices. It sits under the `prices:historic` prefix so the currency-change
+    // and premium cancels reach it alongside the per-lookup activities.
+    const outcome = await submitTask<HistoricPrices>({
+      id: makeActivityId(ActivityKind.PRICES, ActivityPart.HISTORIC, ActivityPart.BATCH, ++batchSequence),
+      kind: ActivityKind.PRICES,
+      // The result is consumed by the cache through the closure below; a re-run from the task
+      // center would refetch with nothing left to write it into.
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<HistoricPrices, TaskError>> => mapResult(
+        await runTask<HistoricPrices>(
+          async () => queryHistoricalRates({
+            assetsTimestamp,
+            targetAsset,
+          }),
+        ),
+        result => result,
+      ),
+      subtitle: description,
+      title: t('task_center.group.prices'),
+    });
 
-    const response = HistoricPrices.parse(data);
+    onActionableError(outcome, error => notifyError(
+      t('actions.balances.historic_fetch_price.task.title'),
+      t('actions.balances.historic_fetch_price.error.message', {
+        message: error.message,
+      }),
+    ));
+
+    const response = HistoricPrices.parse(getOr(outcome, { assets: {}, targetAsset: '' }));
 
     return function* (): Generator<{ key: string; item: BigNumber }, void> {
       for (const assetTimestamp of assetsTimestamp) {
@@ -154,8 +164,11 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
     deleteCacheKeys([...keysToBeDeleted]);
   }
 
-  watch(currencySymbol, async () => {
-    await cancelTaskByTaskType([TaskType.FETCH_HISTORIC_PRICE, TaskType.FETCH_DAILY_HISTORIC_PRICE]);
+  watch(currencySymbol, () => {
+    // Prices are quoted in the old currency, so drop everything in flight. Every producer gives
+    // each query (or batch) its own id, so cancelling by activity prefix covers all of them.
+    cancelByPrefix(ActivityKind.PRICES, ActivityPart.HISTORIC);
+    cancelByPrefix(ActivityKind.PRICES, ActivityPart.DAILY);
     set(failedDailyPrices, {});
     set(resolvedFailedDailyPrices, {});
     reset();

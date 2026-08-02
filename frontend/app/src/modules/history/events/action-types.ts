@@ -8,14 +8,6 @@ export const DuplicateHandlingStatus = {
 
 export type DuplicateHandlingStatus = (typeof DuplicateHandlingStatus)[keyof typeof DuplicateHandlingStatus];
 
-export const HISTORY_EVENT_ACTIONS = {
-  DECODE: 'decode',
-  QUERY: 'query',
-  REPULLING: 'repulling',
-} as const;
-
-export type HistoryEventAction = typeof HISTORY_EVENT_ACTIONS[keyof typeof HISTORY_EVENT_ACTIONS];
-
 export type HighlightType = ContextColorsType;
 
 const HIGHLIGHT_CLASSES: Partial<Record<HighlightType, string>> = {

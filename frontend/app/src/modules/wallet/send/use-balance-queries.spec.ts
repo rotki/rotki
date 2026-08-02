@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBalanceQueries } from '@/modules/wallet/send/use-balance-queries';
 
 const addressesRef = ref<Record<string, string[]>>({});
-const taskRunningRef = ref<boolean>(false);
+const workStatusRef = ref<{ active: boolean }>({ active: false });
 
 vi.mock('@/modules/balances/blockchain/use-account-addresses', () => ({
   useAccountAddresses: vi.fn().mockImplementation(() => ({
@@ -11,9 +11,10 @@ vi.mock('@/modules/balances/blockchain/use-account-addresses', () => ({
   })),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-store', () => ({
-  useTaskStore: vi.fn().mockImplementation(() => ({
-    useIsTaskRunning: vi.fn().mockReturnValue(taskRunningRef),
+vi.mock('@/modules/task-center/use-task-center', () => ({
+  useTaskCenter: vi.fn().mockImplementation(() => ({
+    useWorkStatus: vi.fn().mockReturnValue(workStatusRef),
+    useIsActive: vi.fn(() => computed<boolean>(() => get(workStatusRef).active)),
   })),
 }));
 
@@ -25,17 +26,17 @@ vi.mock('@/modules/core/common/use-ref-debounce', () => ({
 describe('useBalanceQueries', () => {
   beforeEach(() => {
     set(addressesRef, {});
-    set(taskRunningRef, false);
+    set(workStatusRef, { active: false });
   });
 
   describe('useQueryingBalances', () => {
-    it('should mirror the task-running ref', () => {
+    it('should mirror the blockchain-balances work status', () => {
       const connected = ref(true);
       const address = ref<string | undefined>('0xabc');
       const { useQueryingBalances } = useBalanceQueries(connected, address);
 
       expect(get(useQueryingBalances)).toBe(false);
-      set(taskRunningRef, true);
+      set(workStatusRef, { active: true });
       expect(get(useQueryingBalances)).toBe(true);
     });
   });

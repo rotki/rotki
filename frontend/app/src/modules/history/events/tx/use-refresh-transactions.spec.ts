@@ -1,10 +1,11 @@
 import type { RefreshTransactionsParams } from './types';
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
+import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Status } from '@/modules/core/common/status';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
-import { useHistoryRefreshStateStore } from '@/modules/history/use-history-refresh-state-store';
+import { ActivityKind, makeActivityId, type WorkStatus } from '@/modules/task-center/core/types';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 import { useRefreshTransactions } from './use-refresh-transactions';
 
 const mockOnHistoryStarted = vi.fn();
@@ -49,18 +50,64 @@ const mockHistoryTransactionAccounts = {
   getAllAccounts: vi.fn(() => [...mockEvmAccounts, ...mockBitcoinAccounts]),
 };
 
-const mockStatusUpdater = {
-  fetchDisabled: vi.fn(() => false),
-  getStatus: vi.fn(() => Status.NONE),
-  isFirstLoad: vi.fn(() => true),
-  loading: vi.fn(() => false),
-  resetStatus: vi.fn(),
-  setStatus: vi.fn(),
-};
+// Novelty now comes from the completion ledger, so the spec states which per-account work has been
+// attempted instead of relying on a side effect of the first refresh.
+const attempted = new Set<string>();
 
-const mockHistoryTransactionDecoding = {
+vi.mock('@/modules/task-center/use-native-task', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/modules/task-center/use-native-task')>();
+  return {
+    ...actual,
+    useNativeTask: vi.fn(() => {
+      const real = actual.useNativeTask();
+      return {
+        ...real,
+        // The umbrella's own status comes from the real orchestrator, so the re-entrancy guard and
+        // the "has history ever loaded" check are exercised for real rather than pinned to a
+        // constant. Only the per-account/per-exchange ledger novelty detection reads is faked.
+        statusOf: vi.fn((kind: string, ...parts: string[]) => {
+          if (kind === actual.ActivityKind.HISTORY_SYNC)
+            return real.statusOf(actual.ActivityKind.HISTORY_SYNC, ...parts);
+
+          return {
+            active: false,
+            everCompleted: false,
+            lastOutcome: attempted.has([kind, ...parts].join(':')) ? 'complete' : undefined,
+            pending: false,
+            running: false,
+          };
+        }),
+      };
+    }),
+  };
+});
+
+const HISTORY_SYNC_ID = makeActivityId(ActivityKind.HISTORY_SYNC);
+
+function historySyncStatus(): WorkStatus {
+  return useTaskOrchestrator().statusOf(ActivityKind.HISTORY_SYNC);
+}
+
+/**
+ * `submitTask` resolves off the producer's own promise, one tick before the orchestrator marks the
+ * activity terminal. So a caller that awaits a refresh and immediately submits another still sees
+ * the umbrella active and takes the re-entrancy branch. Flush so each refresh below asserts real
+ * behaviour rather than passing because the previous one looks like it is still running.
+ */
+async function settleRefresh(): Promise<void> {
+  await flushPromises();
+}
+
+function markAttempted(): void {
+  attempted.add('tx-sync:eth:0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c');
+  attempted.add('tx-sync:optimism:0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199');
+  attempted.add('tx-sync:btc:bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh');
+  attempted.add('exchange-events:kraken:Kraken1');
+  attempted.add('exchange-events:binance:Binance1');
+}
+
+const mockUndecodedTransactionsStatus = {
   fetchUndecodedTransactionsBreakdown: vi.fn().mockResolvedValue(undefined),
-  fetchUndecodedTransactionsStatus: vi.fn().mockResolvedValue(undefined),
 };
 
 const mockDecodingStatusStore = {
@@ -70,8 +117,15 @@ const mockDecodingStatusStore = {
 };
 
 const mockTransactionSync = {
-  syncTransactionsByChains: vi.fn<(accounts: ChainAddress[], showProgress: boolean) => Promise<void>>().mockResolvedValue(undefined),
-  waitForDecoding: vi.fn().mockResolvedValue(undefined),
+  // Records what it synced. The real one settles a TX_SYNC activity per account, and the completion
+  // ledger those settles write is exactly what the drain reads to decide what was never attempted —
+  // so a mock that settled nothing would leave every account novel forever and drain on every run.
+  syncTransactionsByChains: vi.fn<(accounts: ChainAddress[], showProgress: boolean, parent?: string) => Promise<void>>(
+    async (accounts: ChainAddress[]): Promise<void> => {
+      for (const account of accounts)
+        attempted.add(`tx-sync:${account.chain}:${account.address}`);
+    },
+  ),
 };
 
 const mockSupportedChains = {
@@ -79,7 +133,11 @@ const mockSupportedChains = {
 };
 
 const mockRefreshHandlers = {
-  queryAllExchangeEvents: vi.fn().mockResolvedValue(undefined),
+  // Same contract as the sync mock above: settling is what makes an exchange stop being novel.
+  queryAllExchangeEvents: vi.fn(async (exchanges: Exchange[] = []): Promise<void> => {
+    for (const exchange of exchanges)
+      attempted.add(`exchange-events:${exchange.location}:${exchange.name}`);
+  }),
   queryOnlineEvent: vi.fn().mockResolvedValue(undefined),
   resetOnlineWarnings: vi.fn(),
 };
@@ -93,16 +151,8 @@ vi.mock('./use-history-transaction-accounts', () => ({
   useHistoryTransactionAccounts: vi.fn(() => mockHistoryTransactionAccounts),
 }));
 
-vi.mock(import('@/modules/shell/sync-progress/use-status-updater'), async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    useStatusUpdater: vi.fn(() => mockStatusUpdater),
-  };
-});
-
-vi.mock('./use-history-transaction-decoding', () => ({
-  useHistoryTransactionDecoding: vi.fn(() => mockHistoryTransactionDecoding),
+vi.mock('./use-undecoded-transactions-status', () => ({
+  useUndecodedTransactionsStatus: vi.fn(() => mockUndecodedTransactionsStatus),
 }));
 
 vi.mock('@/modules/history/use-decoding-status-store', () => ({
@@ -141,13 +191,12 @@ describe('useRefreshTransactions', () => {
     setActivePinia(pinia);
     scope = effectScope();
 
-    // Reset the refresh state store
-    const refreshStateStore = useHistoryRefreshStateStore();
-    refreshStateStore.reset();
+    // The orchestrator is a shared singleton, so its completion ledger would otherwise leak the
+    // umbrella's `everCompleted` from one test into the next.
+    useTaskOrchestrator().reset();
 
     vi.clearAllMocks();
-    mockStatusUpdater.fetchDisabled.mockReturnValue(false);
-    mockStatusUpdater.isFirstLoad.mockReturnValue(true);
+    attempted.clear();
 
     // Reset mock return values to defaults
     mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([...mockEvmAccounts, ...mockBitcoinAccounts]);
@@ -164,50 +213,50 @@ describe('useRefreshTransactions', () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
+      await settleRefresh();
 
-      expect(mockStatusUpdater.setStatus).toHaveBeenCalledWith(Status.LOADING);
       expect(mockTxQueryStatusStore.initializeQueryStatus).toHaveBeenCalled();
       expect(mockDecodingStatusStore.resetUndecodedTransactionsStatus).toHaveBeenCalled();
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalled();
       expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalled();
-      expect(mockStatusUpdater.setStatus).toHaveBeenCalledWith(Status.LOADED);
+      // The umbrella settled, so history reads as loaded and nothing is left in flight.
+      expect(historySyncStatus().everCompleted).toBe(true);
+      expect(historySyncStatus().active).toBe(false);
     });
 
-    it('should skip refresh when fetchDisabled returns true and no new accounts', async () => {
-      mockStatusUpdater.fetchDisabled.mockReturnValue(true);
-
-      // First, perform a refresh to mark all accounts/exchanges as refreshed
+    it('should skip refresh when history already loaded and no new accounts', async () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
-      mockStatusUpdater.fetchDisabled.mockReturnValue(false);
+      await refreshTransactions();
+      await settleRefresh();
+
+      // Everything has now been attempted, so nothing is novel on the second pass.
+      markAttempted();
+      mockTransactionSync.syncTransactionsByChains.mockClear();
+
       await refreshTransactions();
 
-      // Reset mocks and set fetchDisabled to true
-      vi.clearAllMocks();
-      mockStatusUpdater.fetchDisabled.mockReturnValue(true);
-
-      // Now refresh again - should be skipped since no new accounts/exchanges
-      await refreshTransactions();
-
-      expect(mockStatusUpdater.setStatus).not.toHaveBeenCalled();
       expect(mockTransactionSync.syncTransactionsByChains).not.toHaveBeenCalled();
     });
 
-    it('should set LOADING status on first load', async () => {
-      mockStatusUpdater.isFirstLoad.mockReturnValue(true);
+    it('should show sync progress on first load', async () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
-      expect(mockStatusUpdater.setStatus).toHaveBeenCalledWith(Status.LOADING);
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(expect.anything(), true, HISTORY_SYNC_ID);
     });
 
-    it('should set REFRESHING status on subsequent loads', async () => {
-      mockStatusUpdater.isFirstLoad.mockReturnValue(false);
+    it('should not show sync progress on subsequent loads without novelty', async () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
-
       await refreshTransactions();
+      await settleRefresh();
 
-      expect(mockStatusUpdater.setStatus).toHaveBeenCalledWith(Status.REFRESHING);
+      markAttempted();
+      mockTransactionSync.syncTransactionsByChains.mockClear();
+
+      await refreshTransactions({ userInitiated: true });
+
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(expect.anything(), false, HISTORY_SYNC_ID);
     });
   });
 
@@ -223,7 +272,8 @@ describe('useRefreshTransactions', () => {
 
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
         specificAccounts,
-        true, // shouldShowSyncProgress is true because isFirstLoad() returns true
+        true, // shouldShowSyncProgress is true because history has not loaded yet
+        HISTORY_SYNC_ID,
       );
     });
 
@@ -248,7 +298,7 @@ describe('useRefreshTransactions', () => {
       });
 
       expect(mockEventsQueryStatusStore.initializeQueryStatus).toHaveBeenCalledWith(mockExchanges);
-      expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledWith(mockExchanges);
+      expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledWith(mockExchanges, HISTORY_SYNC_ID);
     });
 
     it('should refresh all connected exchanges in full refresh', async () => {
@@ -256,53 +306,93 @@ describe('useRefreshTransactions', () => {
 
       await refreshTransactions();
 
-      expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledWith(mockExchanges);
+      expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledWith(mockExchanges, HISTORY_SYNC_ID);
       expect(mockEventsQueryStatusStore.initializeQueryStatus).toHaveBeenCalled();
     });
   });
 
   describe('new account detection', () => {
-    it('should bypass fetchDisabled when new accounts are detected', async () => {
-      mockStatusUpdater.fetchDisabled.mockReturnValue(true);
+    it('should refresh already loaded history when a new account is detected', async () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+      await refreshTransactions();
+      await settleRefresh();
+
+      // Every account but the new one has been attempted, so only it is novel.
+      markAttempted();
+      attempted.delete('tx-sync:eth:0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c');
+      mockTransactionSync.syncTransactionsByChains.mockClear();
 
       await refreshTransactions();
 
-      // Even with fetchDisabled true, should proceed due to new accounts
-      expect(mockStatusUpdater.setStatus).toHaveBeenCalledWith(Status.LOADING);
+      // Not user initiated and history already loaded — it proceeds only because of the novelty.
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalled();
     });
   });
 
   describe('new exchange detection', () => {
-    it('should bypass fetchDisabled when new exchanges are detected', async () => {
-      mockStatusUpdater.fetchDisabled.mockReturnValue(true);
+    it('should refresh already loaded history when a new exchange is detected', async () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+      await refreshTransactions();
+      await settleRefresh();
+
+      markAttempted();
+      attempted.delete('exchange-events:kraken:Kraken1');
+      mockRefreshHandlers.queryAllExchangeEvents.mockClear();
 
       await refreshTransactions();
 
-      // Even with fetchDisabled true, should proceed due to new exchanges
-      expect(mockStatusUpdater.setStatus).toHaveBeenCalledWith(Status.LOADING);
+      expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalled();
     });
   });
 
   describe('concurrent refresh handling', () => {
-    it('should add new accounts to pending when refresh is running', async () => {
+    it('should sync an account added while a refresh was running', async () => {
       vi.useFakeTimers();
+
+      // An account the in-flight refresh does not cover. It becomes tracked mid-refresh, which is
+      // what makes it novel: the drain asks the completion ledger which tracked accounts have never
+      // been attempted, rather than keeping a set of deferred keys.
+      const addedMidRefresh: ChainAddress = { address: '0x9531C059098e3d194fF87FebB587aB07B30B1306', chain: 'eth' };
 
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
       const firstRefresh = refreshTransactions();
 
-      // Trigger another refresh while first is running
+      mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([...mockEvmAccounts, ...mockBitcoinAccounts, addedMidRefresh]);
+
+      // Trigger another refresh while the first is running
       await refreshTransactions({
-        payload: { accounts: [mockEvmAccounts[0]] },
+        payload: { accounts: [addedMidRefresh] },
       });
 
       await firstRefresh;
 
       await vi.advanceTimersByTimeAsync(150);
+      // The drain re-enters asynchronously; without settling it here the tail of that refresh lands
+      // in the next test and looks like a spurious drain there.
+      await settleRefresh();
 
-      // Should be called 2 times: first refresh (all accounts) + pending refresh (single account)
+      // Twice: the first refresh over every account, then the drain over the late arrival alone.
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledTimes(2);
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenLastCalledWith([addedMidRefresh], expect.anything(), HISTORY_SYNC_ID);
+
+      vi.useRealTimers();
+    });
+
+    it('should not queue accounts the running refresh already covers', async () => {
+      vi.useFakeTimers();
+
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+      const firstRefresh = refreshTransactions();
+
+      await refreshTransactions({
+        payload: { accounts: [mockEvmAccounts[0]] },
+      });
+
+      await firstRefresh;
+      await vi.advanceTimersByTimeAsync(150);
+      await settleRefresh();
+
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledTimes(1);
 
       vi.useRealTimers();
     });
@@ -333,9 +423,11 @@ describe('useRefreshTransactions', () => {
 
       expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledWith(
         OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
+        HISTORY_SYNC_ID,
       );
       expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledWith(
         OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
+        HISTORY_SYNC_ID,
       );
       expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledTimes(2);
     });
@@ -353,6 +445,7 @@ describe('useRefreshTransactions', () => {
 
       expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledWith(
         OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
+        HISTORY_SYNC_ID,
       );
       expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledTimes(1);
     });
@@ -366,9 +459,11 @@ describe('useRefreshTransactions', () => {
 
       expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledWith(
         OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
+        HISTORY_SYNC_ID,
       );
       expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledWith(
         OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
+        HISTORY_SYNC_ID,
       );
     });
 
@@ -383,19 +478,24 @@ describe('useRefreshTransactions', () => {
 
       expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledWith(
         OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
+        HISTORY_SYNC_ID,
       );
       expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('error handling', () => {
-    it('should handle errors gracefully and reset status', async () => {
+    it('should settle the umbrella when an operation fails', async () => {
       mockTransactionSync.syncTransactionsByChains.mockRejectedValue(new Error('Sync failed'));
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
+      await settleRefresh();
 
-      expect(mockStatusUpdater.setStatus).toHaveBeenCalledWith(Status.LOADED);
+      // The failure is swallowed inside `run`, so history still reads as loaded and, crucially,
+      // nothing is left in flight to block the next refresh.
+      expect(historySyncStatus().active).toBe(false);
+      expect(historySyncStatus().everCompleted).toBe(true);
     });
 
     it('should continue with other operations when one fails', async () => {
@@ -404,22 +504,11 @@ describe('useRefreshTransactions', () => {
 
       await refreshTransactions();
 
-      expect(mockHistoryTransactionDecoding.fetchUndecodedTransactionsBreakdown).toHaveBeenCalled();
-    });
-
-    it('should call resetStatus when executeOperations throws', async () => {
-      mockHistoryTransactionDecoding.fetchUndecodedTransactionsStatus.mockRejectedValueOnce(
-        new Error('Fatal error'),
-      );
-      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
-
-      await refreshTransactions();
-
-      expect(mockStatusUpdater.resetStatus).toHaveBeenCalled();
+      expect(mockUndecodedTransactionsStatus.fetchUndecodedTransactionsBreakdown).toHaveBeenCalled();
     });
 
     it('should still call finishRefresh and cleanup on error', async () => {
-      mockHistoryTransactionDecoding.fetchUndecodedTransactionsStatus.mockRejectedValueOnce(
+      mockUndecodedTransactionsStatus.fetchUndecodedTransactionsBreakdown.mockRejectedValueOnce(
         new Error('Fatal error'),
       );
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
@@ -444,6 +533,7 @@ describe('useRefreshTransactions', () => {
           expect.objectContaining({ chain: 'optimism' }),
         ]),
         true, // shouldShowSyncProgress is true because isFirstLoad() returns true
+        HISTORY_SYNC_ID,
       );
     });
 
@@ -457,6 +547,7 @@ describe('useRefreshTransactions', () => {
           expect.objectContaining({ chain: 'btc' }),
         ]),
         true, // shouldShowSyncProgress is true because isFirstLoad() returns true
+        HISTORY_SYNC_ID,
       );
     });
 
@@ -494,20 +585,30 @@ describe('useRefreshTransactions', () => {
   });
 
   describe('userInitiated parameter', () => {
-    it('should pass userInitiated to fetchDisabled check', async () => {
+    it('should refresh already loaded history when user initiated', async () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+      await refreshTransactions();
+      await settleRefresh();
+
+      markAttempted();
+      mockTransactionSync.syncTransactionsByChains.mockClear();
 
       await refreshTransactions({ userInitiated: true });
 
-      expect(mockStatusUpdater.fetchDisabled).toHaveBeenCalledWith(true);
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalled();
     });
 
-    it('should default userInitiated to false', async () => {
+    it('should default userInitiated to false and skip an already loaded refresh', async () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+      await refreshTransactions();
+      await settleRefresh();
+
+      markAttempted();
+      mockTransactionSync.syncTransactionsByChains.mockClear();
 
       await refreshTransactions();
 
-      expect(mockStatusUpdater.fetchDisabled).toHaveBeenCalledWith(false);
+      expect(mockTransactionSync.syncTransactionsByChains).not.toHaveBeenCalled();
     });
   });
 
@@ -567,11 +668,13 @@ describe('useRefreshTransactions', () => {
       expect(callOrder.indexOf('onHistoryStarted')).toBeLessThan(callOrder.indexOf('syncTransactionsByChains'));
     });
 
-    it('should wait for decoding to complete before stopping decoding sync progress', async () => {
+    it('should stop decoding sync progress only after the sync work has finished', async () => {
       const callOrder: string[] = [];
 
-      mockTransactionSync.waitForDecoding.mockImplementation(async () => {
-        callOrder.push('waitForDecoding');
+      // The umbrella awaits its children, so the WS progress updates decoding pushes cannot be
+      // dropped by an early `stopDecodingSyncProgress()`. This used to be `waitForDecoding()`.
+      mockTransactionSync.syncTransactionsByChains.mockImplementation(async () => {
+        callOrder.push('syncTransactionsByChains');
       });
       mockDecodingStatusStore.stopDecodingSyncProgress.mockImplementation(() => {
         callOrder.push('stopDecodingSyncProgress');
@@ -581,8 +684,7 @@ describe('useRefreshTransactions', () => {
 
       await refreshTransactions();
 
-      expect(mockTransactionSync.waitForDecoding).toHaveBeenCalledTimes(1);
-      expect(callOrder.indexOf('waitForDecoding')).toBeLessThan(callOrder.indexOf('stopDecodingSyncProgress'));
+      expect(callOrder.indexOf('syncTransactionsByChains')).toBeLessThan(callOrder.indexOf('stopDecodingSyncProgress'));
     });
 
     it('should call onHistoryFinished after all operations complete', async () => {
@@ -613,28 +715,26 @@ describe('useRefreshTransactions', () => {
       });
 
       // Only the known exchange should be passed (filtered against syncingExchanges)
-      expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledWith([mockExchanges[0]]);
+      expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledWith([mockExchanges[0]], HISTORY_SYNC_ID);
     });
   });
 
   describe('pending drain', () => {
-    it('should drain pending exchanges after refresh completes', async () => {
+    it('should not schedule a drain when nothing is left unattempted', async () => {
       vi.useFakeTimers();
 
+      // State the precondition rather than relying on this refresh to establish it: every account
+      // and exchange has been attempted, so the ledger has nothing novel left to report.
+      markAttempted();
+
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
-      const firstRefresh = refreshTransactions();
-
-      // Queue pending exchanges while first refresh is running
-      await refreshTransactions({
-        payload: { exchanges: mockExchanges },
-      });
-
-      await firstRefresh;
+      await refreshTransactions({ userInitiated: true });
+      await settleRefresh();
+      mockTransactionSync.syncTransactionsByChains.mockClear();
 
       await vi.advanceTimersByTimeAsync(150);
 
-      // queryAllExchangeEvents called in first refresh + pending drain
-      expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledTimes(2);
+      expect(mockTransactionSync.syncTransactionsByChains).not.toHaveBeenCalled();
 
       vi.useRealTimers();
     });
@@ -642,16 +742,14 @@ describe('useRefreshTransactions', () => {
 
   describe('sync progress', () => {
     it('should not initialize query status when not first load and no novel items', async () => {
-      mockStatusUpdater.isFirstLoad.mockReturnValue(false);
-
-      // First refresh to mark all accounts as known
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
-      await refreshTransactions({ userInitiated: true });
+      await refreshTransactions();
+      await settleRefresh();
 
-      vi.clearAllMocks();
-      mockStatusUpdater.isFirstLoad.mockReturnValue(false);
+      markAttempted();
+      mockTxQueryStatusStore.initializeQueryStatus.mockClear();
+      mockDecodingStatusStore.resetUndecodedTransactionsStatus.mockClear();
 
-      // Second refresh — not first load, no novel items
       await refreshTransactions({ userInitiated: true });
 
       expect(mockTxQueryStatusStore.initializeQueryStatus).not.toHaveBeenCalled();
@@ -661,15 +759,10 @@ describe('useRefreshTransactions', () => {
 
   describe('full refresh with no new accounts', () => {
     it('should not refresh accounts when all accounts are already known and not user initiated', async () => {
-      // First refresh to mark all accounts as known
+      // All accounts already attempted, so none are novel and it is not user initiated.
+      markAttempted();
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
-      await refreshTransactions();
 
-      vi.clearAllMocks();
-      mockStatusUpdater.fetchDisabled.mockReturnValue(false);
-
-      // Second refresh — all accounts known, not user initiated
-      // fetchDisabled returns false so it proceeds, but no new accounts
       await refreshTransactions();
 
       // No accounts to sync since none are new and not userInitiated
@@ -683,19 +776,21 @@ describe('useRefreshTransactions', () => {
 
       await refreshTransactions();
 
-      expect(mockHistoryTransactionDecoding.fetchUndecodedTransactionsBreakdown).toHaveBeenCalled();
+      expect(mockUndecodedTransactionsStatus.fetchUndecodedTransactionsBreakdown).toHaveBeenCalled();
     });
 
-    it('should queue fetchUndecodedTransactionsStatus for decodable accounts', async () => {
+    it('should read the breakdown twice for decodable accounts, not three times', async () => {
+      // Once before the operations and once after them. There used to be a third read: the final
+      // one was queued under two identifiers on a cap-1 queue, the second via an alias that only
+      // called the first, and the cap serialised them into the same request twice.
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
-      // Called once during executeOperations + once queued for final status
-      expect(mockHistoryTransactionDecoding.fetchUndecodedTransactionsStatus).toHaveBeenCalled();
+      expect(mockUndecodedTransactionsStatus.fetchUndecodedTransactionsBreakdown).toHaveBeenCalledTimes(2);
     });
 
-    it('should not queue final fetchUndecodedTransactionsStatus when no decodable accounts', async () => {
+    it('should still read the breakdown when no account is decodable', async () => {
       // Return only non-decodable accounts
       mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue(mockBitcoinAccounts);
 
@@ -703,9 +798,8 @@ describe('useRefreshTransactions', () => {
 
       await refreshTransactions();
 
-      // fetchUndecodedTransactionsStatus should still be called once for fullRefresh
-      // but NOT queued again for the final status check
-      expect(mockHistoryTransactionDecoding.fetchUndecodedTransactionsStatus).toHaveBeenCalledTimes(1);
+      // The pre-operation read is a full-refresh concern, the post-operation one is unconditional.
+      expect(mockUndecodedTransactionsStatus.fetchUndecodedTransactionsBreakdown).toHaveBeenCalledTimes(2);
     });
   });
 

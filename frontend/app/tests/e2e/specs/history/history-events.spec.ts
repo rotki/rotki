@@ -126,6 +126,11 @@ test.describe.serial('history events', () => {
       expect(rows).toBeGreaterThanOrEqual(rowsBeforeExpand + 3);
     }).toPass({ timeout: 10000 });
 
+    // An expanded swap renders its collapse header instead of a swap row, so it drops out of
+    // `getSwapRows` entirely while remaining a swap group. Asserted here so the difference is
+    // pinned at the point it is created, rather than only mattering in `delete swap event`.
+    expect(await page.getSwapGroups()).toBeGreaterThan(await page.getSwapRows());
+
     const rowsBefore = await page.getExpandedEventRows();
 
     // The fee is the 3rd sub-event (index 2) within the expanded swap rows.
@@ -332,12 +337,17 @@ test.describe.serial('history events', () => {
   });
 
   test('delete swap event', async () => {
-    const swapsBefore = await page.getSwapRows();
+    // Counted with `getSwapGroups`, not `getSwapRows`: an earlier test expands a swap and never
+    // collapses it, and expansion is keyed by position, so this delete re-indexes the list and
+    // flips that swap back to collapsed. Against `getSwapRows` the vanishing swap and the
+    // reappearing one cancel out and the count sits still while the delete plainly worked.
+    const swapsBefore = await page.getSwapGroups();
+    expect(swapsBefore).toBeGreaterThan(0);
 
     await page.deleteEvent('[data-cy=history-event-swap]', 0);
 
     await expect(async () => {
-      const swapsAfter = await page.getSwapRows();
+      const swapsAfter = await page.getSwapGroups();
       expect(swapsAfter).toBeLessThan(swapsBefore);
     }).toPass({ timeout: 10000 });
   });

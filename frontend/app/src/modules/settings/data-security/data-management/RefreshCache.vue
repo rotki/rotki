@@ -2,19 +2,19 @@
 import { assert, toCapitalCase, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { useCacheClear } from '@/modules/session/use-cache-clear';
 import { useSessionPurge } from '@/modules/session/use-purge';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import ActionStatusIndicator from '@/modules/shell/components/error/ActionStatusIndicator.vue';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const source = ref<string>();
 
 const { protocolCacheStatus } = storeToRefs(useProtocolCacheStatusStore());
-const { useIsTaskRunning } = useTaskStore();
+const { useIsActive } = useTaskCenter();
 
 const { getChainName } = useSupportedChains();
 const { refreshGeneralCache } = useSessionPurge();
@@ -48,8 +48,9 @@ const { pending, showConfirmation, status } = useCacheClear<string>(
   }),
 );
 
-const taskRunning = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
-const eventTaskLoading = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
+const taskRunning = useIsActive(ActivityKind.PROTOCOL_CACHE);
+// Transaction decoding runs native (Phase 2): aggregate liveness across every per-chain activity.
+const eventTaskLoading = useIsActive(ActivityKind.TX_DECODING);
 const loading = logicOr(pending, taskRunning, eventTaskLoading);
 
 const hint = computed<string>(() => {

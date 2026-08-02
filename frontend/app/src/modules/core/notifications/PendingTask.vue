@@ -1,57 +1,39 @@
 <script setup lang="ts">
-import type { Task, TaskMeta } from '@/modules/core/tasks/types';
-import { bigNumberify } from '@rotki/common';
 import dayjs from 'dayjs';
-import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
-import { calculatePercentage } from '@/modules/core/common/data/calculation';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useReportsStore } from '@/modules/reports/use-reports-store';
+import { type Activity, resolveText } from '@/modules/task-center/core/types';
 
-const { task } = defineProps<{ task: Task<TaskMeta> }>();
+const { activity } = defineProps<{ activity: Activity }>();
 const emit = defineEmits<{
-  cancel: [task: Task<TaskMeta>];
+  cancel: [activity: Activity];
 }>();
 
-const { progress: taskProgress } = storeToRefs(useReportsStore());
-const { historicalDailyPriceStatus } = storeToRefs(useHistoricCachePriceStore());
 const { t } = useI18n({ useScope: 'global' });
 
-const hasDeterminateProgress = computed<boolean>(() => {
-  const { type } = task;
-  return type === TaskType.TRADE_HISTORY || type === TaskType.FETCH_DAILY_HISTORIC_PRICE;
-});
+// `-1` is the orchestrator's "indeterminate": no producer reported steps for this activity.
+const hasDeterminateProgress = computed<boolean>(() => activity.percentage >= 0);
 
-const time = computed<string>(() => dayjs(task.time).format('LLL'));
+const time = computed<string>(() => (activity.startedAt ? dayjs(activity.startedAt).format('LLL') : ''));
 
-const progress = computed<number | undefined>(() => {
-  const { type } = task;
-  if (type === TaskType.TRADE_HISTORY) {
-    return parseInt(get(taskProgress));
-  }
-  else if (type === TaskType.FETCH_DAILY_HISTORIC_PRICE) {
-    if (!isDefined(historicalDailyPriceStatus)) {
-      return 0;
-    }
-    const { processed, total } = get(historicalDailyPriceStatus);
-    return parseInt(calculatePercentage(bigNumberify(processed), bigNumberify(total)));
-  }
-  return undefined;
-});
+// Resolved here rather than at submit time, so a language change updates work already in flight.
+const subtitle = computed<string | undefined>(() => resolveText(t, activity.subtitle));
 </script>
 
 <template>
   <div class="flex items-center justify-between flex-nowrap gap-4">
     <div class="flex flex-col flex-1 break-words">
       <div class="overflow-hidden text-ellipsis text-sm font-medium mb-1 leading-4">
-        {{ task.meta.title }}
+        {{ activity.title }}
       </div>
       <div
-        v-if="task.meta.description"
+        v-if="subtitle"
         class="text-xs text-rui-text-secondary mb-2"
       >
-        {{ task.meta.description }}
+        {{ subtitle }}
       </div>
-      <div class="text-caption text-xs">
+      <div
+        v-if="time"
+        class="text-caption text-xs"
+      >
         {{ time }}
       </div>
     </div>
@@ -60,7 +42,7 @@ const progress = computed<number | undefined>(() => {
       color="primary"
       circular
       variant="determinate"
-      :value="progress"
+      :value="activity.percentage"
       size="24"
       show-label
       thickness="2"
@@ -72,6 +54,7 @@ const progress = computed<number | undefined>(() => {
       class="text-rui-text-secondary shrink-0"
     />
     <RuiTooltip
+      v-if="activity.cancellable"
       :popper="{ placement: 'top' }"
       :open-delay="400"
     >
@@ -82,7 +65,7 @@ const progress = computed<number | undefined>(() => {
           class="shrink-0"
           size="sm"
           icon
-          @click="emit('cancel', task)"
+          @click="emit('cancel', activity)"
         >
           <RuiIcon name="lu-x" />
         </RuiButton>

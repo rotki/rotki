@@ -6,11 +6,11 @@ import { DialogType } from '@/modules/core/common/dialogs';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useBackendConnection } from '@/modules/shell/app/use-backend-connection';
 import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
 import ListItem from '@/modules/shell/components/ListItem.vue';
+import { ActivityPart } from '@/modules/task-center/core/types';
+import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { dropdown = false } = defineProps<{
   dropdown?: boolean;
@@ -28,8 +28,8 @@ const { restartBackend } = useBackendManagement();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { useIsTaskRunning } = useTaskStore();
-const loading = useIsTaskRunning(TaskType.RESET_ASSET);
+const { useIsActive } = useTaskCenter();
+const loading = useIsActive(ActivityKind.ASSETS, ActivityPart.RESET);
 
 async function restoreAssets(resetType: ResetType) {
   if (get(loading))

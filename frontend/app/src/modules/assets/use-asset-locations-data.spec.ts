@@ -18,13 +18,9 @@ const { spies } = vi.hoisted(() => ({
 }));
 
 const currencySymbol = ref<string>('USD');
-const detailsLoading = ref<boolean>(false);
 
 vi.mock('@/modules/settings/use-setting', () => ({
   useSetting: vi.fn(() => currencySymbol),
-}));
-vi.mock('@/modules/core/common/use-status-store', () => ({
-  useStatusStore: vi.fn(() => ({ detailsLoading })),
 }));
 vi.mock('@/modules/accounts/use-blockchain-accounts-store', () => ({
   useBlockchainAccountsStore: (): object => ({ getAccountByAddress: spies.getAccountByAddress }),

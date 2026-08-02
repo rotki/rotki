@@ -42,7 +42,14 @@ export function createScheduler(
   familyActive: LaneFamilyActiveCaps = {},
 ): Scheduler {
   const queue: ScheduledJob[] = [];
-  const running = new Map<string, Lane>();
+  /**
+   * Keyed by the job itself, not by its id: two live jobs can legitimately share an id. Cancelling
+   * a RUNNING activity settles it CANCELLED immediately while the scheduler still holds its job,
+   * and `rerun` then accepts that terminal status and schedules a second job under the same id.
+   * Keyed by id, the second `set` overwrote the first — `runningInLane` undercounted (the decode
+   * lane ran 3 jobs at a cap of 2) and whichever job finished first deleted the *other* one's slot.
+   */
+  const running = new Map<ScheduledJob, Lane>();
   // Longest first, so a more specific family wins over a broader one. Declared caps are partial,
   // so the entries are narrowed to the ones actually set rather than asserted.
   const declared = (entries: LaneFamilyCaps): [LaneFamily, number][] =>
@@ -91,12 +98,12 @@ export function createScheduler(
   }
 
   function start(job: ScheduledJob): void {
-    running.set(job.id, job.lane);
+    running.set(job, job.lane);
     // run() never rejects (orchestrator contract); when it settles, free the slot and pump.
     // The trailing catch keeps the fire-and-forget chain from floating.
     job.run()
       .finally(() => {
-        running.delete(job.id);
+        running.delete(job);
         pump();
       })
       .catch(() => {});
@@ -136,7 +143,7 @@ export function createScheduler(
       return true;
     },
     isQueued: (id: string): boolean => queue.some(job => job.id === id),
-    isRunning: (id: string): boolean => running.has(id),
+    isRunning: (id: string): boolean => [...running.keys()].some(job => job.id === id),
     pump,
     runningCount: (lane?: Lane): number => (lane === undefined ? running.size : runningInLane(lane)),
     submit(job: ScheduledJob): void {

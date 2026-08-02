@@ -68,9 +68,16 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
    * The single funnel for terminal transitions: set the status, write the completion ledger,
    * then emit. Guarded against post-reset orphans: an in-flight run settling after the record was
    * dropped writes nothing.
+   *
+   * The guard compares record *identity*, not just the presence of the id. `submitTask` resolves
+   * its caller a tick before the run reaches here, so a caller that awaits and immediately
+   * re-submits the same id replaces `records[id]` while the old run is still in flight. Testing
+   * `has(id)` let that stale run settle the *new* record's id: it wrote a COMPLETE ledger entry
+   * and fired `markStaleAfter` for work that had barely started, so `everCompleted` read true and
+   * downstream consumers were invalidated off a run that was not theirs.
    */
   function settleTerminal(record: ActivityRecord, status: ActivityStatus): void {
-    if (!records.has(record.spec.id))
+    if (records.get(record.spec.id) !== record)
       return;
 
     record.status = status;
@@ -239,6 +246,15 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
   }
 
   function submit<T>(spec: ActivitySpec<T>): ActivityId {
+    // Re-submitting an id whose previous run is still in flight abandons that run: `settleTerminal`
+    // will refuse it at the identity guard, so this is the last chance to release what it holds.
+    // Without it the identity guard would trade a corrupted ledger for a leaked producer resource.
+    const superseded = records.get(spec.id);
+    if (superseded && !isTerminalStatus(superseded.status) && !superseded.cleanedUp) {
+      superseded.cleanedUp = true;
+      superseded.spec.cleanup?.();
+    }
+
     const record: ActivityRecord = { cancelRequested: false, cleanedUp: false, spec, status: Status.PENDING };
     records.set(spec.id, record);
     if (spec.staleAfter?.length)
@@ -323,6 +339,18 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     reportProgressByPrefix,
     rerun,
     reset(): void {
+      // Tear down live producers before dropping their records. Clearing `records` first would
+      // make `settleTerminal` return at its identity guard when the abandoned run resolves, so
+      // `cleanup` never fired: a P&L report generated across a logout kept its 2s `getProgress()`
+      // poll hitting the backend for a session that had ended. Settled here rather than through
+      // `settleTerminal` because the ledger it would write is cleared on the next line anyway.
+      for (const record of records.values()) {
+        if (isTerminalStatus(record.status) || record.cleanedUp)
+          continue;
+        record.status = Status.CANCELLED;
+        record.cleanedUp = true;
+        record.spec.cleanup?.();
+      }
       records.clear();
       ledger.clear();
       staleEdges.clear();

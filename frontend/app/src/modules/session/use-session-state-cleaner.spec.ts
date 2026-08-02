@@ -7,7 +7,7 @@ const logged = ref<boolean>(false);
 const clearUploadStatus = vi.fn();
 const start = vi.fn();
 const stop = vi.fn();
-const resetInstance = vi.fn();
+const reset = vi.fn();
 const resetState = vi.fn();
 const cancelByTag = vi.fn();
 
@@ -23,8 +23,8 @@ vi.mock('@/modules/shell/app/use-monitor-service', () => ({
   useMonitorService: (): object => ({ start, stop }),
 }));
 
-vi.mock('@/modules/balances/services/balance-queue', () => ({
-  BalanceQueueService: { resetInstance: (): void => resetInstance() },
+vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
+  useTaskOrchestrator: (): object => ({ reset }),
 }));
 
 vi.mock('@/modules/shell/app/store-plugins', () => ({
@@ -63,7 +63,7 @@ describe('useSessionStateCleaner', () => {
     await nextTick();
     expect(stop).toHaveBeenCalledOnce();
     expect(clearUploadStatus).toHaveBeenCalledOnce();
-    expect(resetInstance).toHaveBeenCalledOnce();
+    expect(reset).toHaveBeenCalledOnce();
     expect(resetState).toHaveBeenCalledOnce();
     // The login-time suggestion probes are not awaited by the login, so they can outlive it.
     expect(cancelByTag).toHaveBeenCalledWith(SUGGESTION_PROBE_TAG);
@@ -74,6 +74,7 @@ describe('useSessionStateCleaner', () => {
     set(logged, true);
     await nextTick();
     expect(clearUploadStatus).not.toHaveBeenCalled();
+    expect(reset).not.toHaveBeenCalled();
     expect(resetState).not.toHaveBeenCalled();
   });
 });

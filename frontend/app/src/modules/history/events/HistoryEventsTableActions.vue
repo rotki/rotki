@@ -3,6 +3,7 @@ import type { SavedViewState } from '@/modules/core/table/pill/composables/use-s
 import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
+import type { DecodeScope } from '@/modules/history/events/event-payloads';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { IgnoreStatus } from '@/modules/history/events/use-history-events-selection-actions';
 import type { SelectionState } from '@/modules/history/events/use-selection-mode';
@@ -35,7 +36,7 @@ const { ignoreStatus } = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'redecode': [payload: 'all' | 'page' | string[]];
+  'redecode': [scope: DecodeScope];
   'selection:action': [action: 'toggle-mode' | 'delete' | 'exit' | 'toggle-all' | 'create-rule' | 'ignore' | 'unignore' | 'toggle-select-all-matching'];
 }>();
 

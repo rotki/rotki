@@ -1,5 +1,6 @@
-import type { TaskResult } from '@/modules/core/tasks/use-task-handler';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 import { useReportGeneration } from '@/modules/reports/use-report-generation';
 
 const mockGenerateReportCaller = vi.fn();
@@ -30,14 +31,20 @@ vi.mock('@/modules/reports/use-report-operations', () => ({
 
 const mockRunTask = vi.fn();
 
-vi.mock('@/modules/core/tasks/use-task-handler', () => ({
-  isActionableFailure: vi.fn((outcome: TaskResult<unknown>): boolean =>
-    !outcome.success && !('cancelled' in outcome && outcome.cancelled) && !('skipped' in outcome && outcome.skipped),
-  ),
-  useTaskHandler: vi.fn(() => ({
-    runTask: mockRunTask,
-  })),
-}));
+// Native producer path: useNativeTask + the real orchestrator drive submitTask; only the task
+// handler the facade delegates to is mocked, so runTask resolves from mockRunTask.
+vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    useTaskHandler: vi.fn(() => ({
+      runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
+        await taskFn();
+        return mockRunTask(taskFn, ...rest);
+      },
+    })),
+  };
+});
 
 describe('useReportGeneration', () => {
   let scope: ReturnType<typeof effectScope>;
@@ -47,6 +54,9 @@ describe('useReportGeneration', () => {
     scope = effectScope();
     vi.clearAllMocks();
     vi.useFakeTimers();
+    // Both api calls return a pending task; the activity records its id so a cancel can abort it.
+    mockGenerateReportCaller.mockResolvedValue({ taskId: 1 });
+    mockExportReportDataCaller.mockResolvedValue({ taskId: 2 });
   });
 
   afterEach(() => {
@@ -56,10 +66,7 @@ describe('useReportGeneration', () => {
 
   describe('generateReport', () => {
     it('should generate report and fetch reports on success', async () => {
-      mockRunTask.mockResolvedValue({
-        result: 42,
-        success: true,
-      });
+      mockRunTask.mockResolvedValue(ok(42));
       mockFetchReports.mockResolvedValue(undefined);
 
       const { generateReport } = scope.run(() => useReportGeneration())!;
@@ -71,14 +78,7 @@ describe('useReportGeneration', () => {
     });
 
     it('should return -1 on actionable failure', async () => {
-      mockRunTask.mockResolvedValue({
-        backendCancelled: false,
-        cancelled: false,
-        error: new Error('Failed'),
-        message: 'Generation failed',
-        skipped: false,
-        success: false,
-      });
+      mockRunTask.mockResolvedValue(err(TaskFailed({ cause: new Error('Failed'), message: 'Generation failed' })));
 
       const { generateReport } = scope.run(() => useReportGeneration())!;
       const result = await generateReport({ end: 2000, start: 1000 });
@@ -88,10 +88,7 @@ describe('useReportGeneration', () => {
     });
 
     it('should set report error on zero result', async () => {
-      mockRunTask.mockResolvedValue({
-        result: 0,
-        success: true,
-      });
+      mockRunTask.mockResolvedValue(ok(0));
 
       const { generateReport } = scope.run(() => useReportGeneration())!;
       const result = await generateReport({ end: 2000, start: 1000 });
@@ -104,10 +101,7 @@ describe('useReportGeneration', () => {
   describe('exportReportData', () => {
     it('should export report data on success', async () => {
       const mockData = { someData: true };
-      mockRunTask.mockResolvedValue({
-        result: mockData,
-        success: true,
-      });
+      mockRunTask.mockResolvedValue(ok(mockData));
 
       const { exportReportData } = scope.run(() => useReportGeneration())!;
       const result = await exportReportData({ fromTimestamp: 1000, toTimestamp: 2000 });
@@ -116,14 +110,7 @@ describe('useReportGeneration', () => {
     });
 
     it('should return empty object on failure', async () => {
-      mockRunTask.mockResolvedValue({
-        backendCancelled: false,
-        cancelled: false,
-        error: new Error('Export failed'),
-        message: 'Export failed',
-        skipped: false,
-        success: false,
-      });
+      mockRunTask.mockResolvedValue(err(TaskFailed({ cause: new Error('Export failed'), message: 'Export failed' })));
 
       const { exportReportData } = scope.run(() => useReportGeneration())!;
       const result = await exportReportData({ fromTimestamp: 1000, toTimestamp: 2000 });

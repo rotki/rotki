@@ -25,8 +25,10 @@ export const redecodeFlow: HistoryFlow<readonly string[], string> = {
    * constructor the mechanism submits under, so the parent gate cannot be broken by the two drifting
    * apart.
    */
+  // `true` because this flow always forces a re-decode; it must match the `ignoreCache` the
+  // mechanism submits with, or the children would not be gated by the parent that claims them.
   children: (chains: readonly string[]): readonly FlowChild<string>[] => chains.map(chain => ({
-    id: decodeActivityId(chain),
+    id: decodeActivityId(chain, true),
     kind: ActivityKind.TX_DECODING,
     payload: chain,
   })),

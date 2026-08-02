@@ -10,21 +10,21 @@ import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { useIsTaskRunning } = useTaskStore();
+const { useIsActive } = useTaskCenter();
 const { createOracleCache } = usePriceTaskManager();
 const { deletePriceCache, getPriceCache } = usePriceApi();
 const { getAssetField } = useAssetInfoRetrieval();
 const { notify } = useNotificationDispatcher();
 const { show } = useConfirmStore();
-const cachePending = useIsTaskRunning(TaskType.CREATE_PRICE_CACHE);
+const cachePending = useIsActive(ActivityKind.PRICES, ActivityPart.ORACLE_CACHE);
 
 const cacheSource = ref<PriceOracle>(PriceOracle.CRYPTOCOMPARE);
 const newFromAsset = ref<string>('');

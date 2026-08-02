@@ -208,6 +208,7 @@ export const FrontendSettings = z.object({
   answeredSuggestions: z.array(z.string()).default([]).catch([]),
   autoDetectTokensCooldownHours: AutoDetectTokensCooldownHours.default(24),
   autoDetectTokensOnLogin: z.boolean().default(false),
+  autoRerunOnEdit: z.boolean().default(false),
   balanceValueThreshold: BalanceValueThreshold.default({}),
   blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviourEnum.default(
     BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,

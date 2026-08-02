@@ -103,6 +103,7 @@ describe('user-types', () => {
       suppressNoIndexerChains: [],
       autoDetectTokensCooldownHours: 24,
       autoDetectTokensOnLogin: false,
+      autoRerunOnEdit: false,
       lastAutoDetectAt: 0,
       gnosisPaySafeMigrationLastNotified: 0,
       gnosisPaySafeMigrationNeverNotify: false,

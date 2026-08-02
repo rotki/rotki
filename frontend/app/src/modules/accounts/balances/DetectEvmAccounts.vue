@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { useIsTaskRunning } = useTaskStore();
-const isEvmAccountsDetecting = useIsTaskRunning(TaskType.DETECT_EVM_ACCOUNTS);
+const { useIsActive } = useTaskCenter();
+const isEvmAccountsDetecting = useIsActive(ActivityKind.ACCOUNTS, ActivityPart.DETECT);
 const { detectEvmAccounts } = useBlockchainAccountManagement();
 </script>
 

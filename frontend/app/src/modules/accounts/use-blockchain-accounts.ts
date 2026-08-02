@@ -7,8 +7,9 @@ import type {
 } from '@/modules/accounts/blockchain-accounts';
 import type { BlockchainBalances } from '@/modules/balances/types/blockchain-balances';
 import type { EvmAccountsResult } from '@/modules/core/api/types/accounts';
-import type { BlockchainMetadata } from '@/modules/core/tasks/types';
 import { Blockchain } from '@rotki/common';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { convertBtcAccounts } from '@/modules/accounts/account-helpers';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
@@ -20,8 +21,9 @@ import { type BtcChains, isBtcChain } from '@/modules/core/common/chains';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseBlockchainAccountsReturn {
   addAccount: (chain: string, payload: AccountPayload[] | XpubAccountPayload) => Promise<string>;
@@ -50,60 +52,64 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const { fetchEthStakingValidators } = useEthStaking();
   const { updateAccounts } = useBlockchainAccountsStore();
 
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
   const { notifyError } = useNotifications();
 
   const { resetAddressNamesData } = useAddressNameResolution();
   const { t } = useI18n({ useScope: 'global' });
-  const { getChainName, getNativeAsset } = useSupportedChains();
+  const { getNativeAsset } = useSupportedChains();
 
   const addAccount = async (chain: string, payload: AccountPayload[] | XpubAccountPayload): Promise<string> => {
     const address = Array.isArray(payload) ? payload.map(item => item.address).join(',\n') : payload.xpub.xpub;
-    const outcome = await runTask<string[] | true, BlockchainMetadata>(
-      async () => addBlockchainAccount(chain, payload),
-      {
-        type: TaskType.ADD_ACCOUNT,
-        meta: {
-          blockchain: chain,
-          description: t('actions.balances.blockchain_accounts_add.task.description', { address }),
-          title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: getChainName(chain) }),
-        },
-        unique: false,
-      },
-    );
+    const outcome = await submitTask<string[] | true>({
+      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.ADD, chain),
+      kind: ActivityKind.ACCOUNTS,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<string[] | true, TaskError>> => mapResult(
+        await runTask<string[] | true>(
+          async () => addBlockchainAccount(chain, payload),
+        ),
+        value => value,
+      ),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.accounts.add'), { address }),
+      title: t('task_center.group.accounts'),
+    });
 
-    if (!outcome.success) {
-      if (isActionableFailure(outcome))
-        throw new Error(outcome.message);
+    if (isErr(outcome)) {
+      if (isActionable(outcome.error))
+        throw new Error(outcome.error.message);
       return '';
     }
 
-    if (outcome.result === true) {
+    const result = outcome.value;
+    if (result === true) {
       return address;
     }
 
-    return outcome.result.length > 0 ? outcome.result[0] : '';
+    return result.length > 0 ? result[0] : '';
   };
 
   const addEvmAccount = async ({ address, label, tags }: AccountPayload): Promise<EvmAccountsResult> => {
     const blockchain = 'EVM';
-    const outcome = await runTask<EvmAccountsResult, BlockchainMetadata>(
-      async () => addEvmAccountCaller({ address, label, tags }),
-      {
-        type: TaskType.ADD_ACCOUNT,
-        meta: {
-          description: t('actions.balances.blockchain_accounts_add.task.description', { address }),
-          title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain }),
-        },
-        unique: false,
-      },
-    );
+    const outcome = await submitTask<EvmAccountsResult>({
+      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.ADD, blockchain),
+      kind: ActivityKind.ACCOUNTS,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<EvmAccountsResult, TaskError>> => mapResult(
+        await runTask<EvmAccountsResult>(
+          async () => addEvmAccountCaller({ address, label, tags }),
+        ),
+        value => value,
+      ),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.accounts.add'), { address }),
+      title: t('task_center.group.accounts'),
+    });
 
-    if (outcome.success)
-      return outcome.result;
+    if (!isErr(outcome))
+      return outcome.value;
 
-    if (isActionableFailure(outcome))
-      throw new Error(outcome.message);
+    if (isErr(outcome) && isActionable(outcome.error))
+      throw new Error(outcome.error.message);
 
     return {};
   };
@@ -157,48 +163,53 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
 
   const removeAccount = async (payload: DeleteBlockchainAccountParams): Promise<void> => {
     const { accounts, chain } = payload;
-    const outcome = await runTask<BlockchainBalances, BlockchainMetadata>(
-      async () => removeBlockchainAccount(chain, accounts),
-      {
-        type: TaskType.REMOVE_ACCOUNT,
-        meta: {
-          blockchain: chain,
-          description: t('actions.balances.blockchain_account_removal.task.description', { count: accounts.length }),
-          title: t('actions.balances.blockchain_account_removal.task.title', { blockchain: chain }),
-        },
-      },
-    );
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, chain),
+      kind: ActivityKind.ACCOUNTS,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<BlockchainBalances>(
+          async () => removeBlockchainAccount(chain, accounts),
+        ),
+        () => {},
+      ),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.accounts.remove_count'), { count: accounts.length }, accounts.length),
+      title: t('task_center.group.accounts'),
+    });
 
-    if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
+    if (isErr(outcome) && isActionable(outcome.error)) {
+      logger.error(outcome.error.message);
       const title = t('actions.balances.blockchain_account_removal.error.title', {
         blockchain: chain,
         count: accounts.length,
       });
       const description = t('actions.balances.blockchain_account_removal.error.description', {
-        error: outcome.message,
+        error: outcome.error.message,
       });
       notifyError(title, description);
     }
   };
 
   const removeAgnosticAccount = async (chainType: string, address: string): Promise<void> => {
-    const outcome = await runTask<BlockchainBalances, BlockchainMetadata>(
-      async () => removeAgnosticBlockchainAccount(chainType, [address]),
-      {
-        type: TaskType.REMOVE_ACCOUNT,
-        meta: {
-          description: t('actions.balances.blockchain_account_removal.agnostic.task.description', { address }),
-          title: t('actions.balances.blockchain_account_removal.agnostic.task.title'),
-        },
-      },
-    );
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, chainType),
+      kind: ActivityKind.ACCOUNTS,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<BlockchainBalances>(
+          async () => removeAgnosticBlockchainAccount(chainType, [address]),
+        ),
+        () => {},
+      ),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.accounts.remove'), { address }),
+      title: t('task_center.group.accounts'),
+    });
 
-    if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
+    if (isErr(outcome) && isActionable(outcome.error)) {
+      logger.error(outcome.error.message);
       const title = t('actions.balances.blockchain_account_removal.agnostic.error.title', { address });
       const description = t('actions.balances.blockchain_account_removal.error.description', {
-        error: outcome.message,
+        error: outcome.error.message,
       });
       notifyError(title, description);
     }
@@ -257,23 +268,25 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   };
 
   const deleteXpub = async (params: DeleteXpubParams): Promise<void> => {
-    const outcome = await runTask<boolean, BlockchainMetadata>(
-      async () => deleteXpubCaller(params),
-      {
-        type: TaskType.REMOVE_ACCOUNT,
-        meta: {
-          blockchain: params.chain,
-          description: t('actions.balances.xpub_removal.task.description', { xpub: params.xpub }),
-          title: t('actions.balances.xpub_removal.task.title'),
-        },
-      },
-    );
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, params.chain),
+      kind: ActivityKind.ACCOUNTS,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<boolean>(
+          async () => deleteXpubCaller(params),
+        ),
+        () => {},
+      ),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.accounts.remove_xpub'), { xpub: params.xpub }),
+      title: t('task_center.group.accounts'),
+    });
 
-    if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
+    if (isErr(outcome) && isActionable(outcome.error)) {
+      logger.error(outcome.error.message);
       const title = t('actions.balances.xpub_removal.error.title');
       const description = t('actions.balances.xpub_removal.error.description', {
-        error: outcome.message,
+        error: outcome.error.message,
         xpub: params.xpub,
       });
       notifyError(title, description);

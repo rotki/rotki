@@ -1,9 +1,9 @@
 import type { ComputedRef, MaybeRef } from 'vue';
 import type { AssetMap } from '@/modules/assets/types';
+import { chunk } from 'es-toolkit';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { useCollectionMappingStore } from '@/modules/assets/use-collection-mapping-store';
 import { useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
-import { chunkArray } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
 
 interface CollectionInfo {
@@ -40,8 +40,8 @@ export const useCollectionInfo = createSharedComposable((): UseCollectionInfoRet
     const assetToCollection: Record<string, string | null> = {};
     const collectionMainAsset: Record<string, string | null> = {};
     const ids = identifiers.map(id => resolveAssetIdentifier(id));
-    for (const chunk of chunkArray(ids, 50)) {
-      const mappings = await getAssetMapping(chunk);
+    for (const batch of chunk(ids, 50)) {
+      const mappings = await getAssetMapping(batch);
       if (mappings === undefined) {
         continue;
       }
@@ -56,7 +56,7 @@ export const useCollectionInfo = createSharedComposable((): UseCollectionInfoRet
       }
 
       const foundIdentifiers = Object.keys(assets);
-      const identifiers = [...chunk];
+      const identifiers = [...batch];
       const missingIdentifiers = identifiers.filter(id => !foundIdentifiers.includes(id));
 
       for (const identifier of missingIdentifiers) {

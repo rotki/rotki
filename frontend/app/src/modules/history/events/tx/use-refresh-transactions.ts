@@ -1,38 +1,22 @@
 import type { RefreshTransactionsParams } from './types';
-import type { Exchange } from '@/modules/balances/types/exchanges';
-import type { ChainAddress } from '@/modules/history/events/event-payloads';
+import type { TaskError } from '@/modules/core/tasks/task-result';
 import { startPromise } from '@shared/utils';
-import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
-import { LimitedParallelizationQueue } from '@/modules/core/common/async/limited-parallelization-queue';
+import { ok, type Result } from 'plainfp/result';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
+import { historySyncFlow } from '@/modules/history/events/tx/history-sync.flow';
+import { HISTORY_STALE_AFTER, type RefreshTargets, useHistoryRefreshPolicy } from '@/modules/history/events/tx/use-history-refresh-policy';
 import { useHistoryTransactionAccounts } from '@/modules/history/events/tx/use-history-transaction-accounts';
-import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
 import { useRefreshHandlers } from '@/modules/history/events/tx/use-refresh-handlers';
 import { useTransactionSync } from '@/modules/history/events/tx/use-transaction-sync';
+import { useUndecodedTransactionsStatus } from '@/modules/history/events/tx/use-undecoded-transactions-status';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
-import { useHistoryRefreshStateStore } from '@/modules/history/use-history-refresh-state-store';
 import { useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
 import { useSchedulerState } from '@/modules/session/use-scheduler-state';
-import { Section, Status, useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
-
-interface NoveltyDetection {
-  newAccounts: ChainAddress[];
-  newExchanges: Exchange[];
-}
-
-interface RefreshTargets {
-  accounts: ChainAddress[];
-  decodableAccounts: ChainAddress[];
-  exchanges: Exchange[];
-  fullRefresh: boolean;
-  queryExchanges: boolean;
-  shouldShowSyncProgress: boolean;
-  usedExchanges: Exchange[];
-}
+import { UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
+import { type ActivityId, ActivityKind, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseRefreshTransactionsReturn {
   refreshTransactions: (params?: RefreshTransactionsParams) => Promise<void>;
@@ -40,100 +24,25 @@ interface UseRefreshTransactionsReturn {
 
 export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   let timeout: NodeJS.Timeout;
-  const queue = new LimitedParallelizationQueue(1);
 
   const { initializeQueryStatus, resetQueryStatus, stopSyncing: stopTxSyncing } = useTxQueryStatusStore();
   const { initializeQueryStatus: initializeExchangeEventsQueryStatus, resetQueryStatus: resetExchangesQueryStatus, stopSyncing: stopEventsSyncing } = useEventsQueryStatusStore();
-  const { filterDisabledChainAccounts, getAllAccounts } = useHistoryTransactionAccounts();
-  const { fetchDisabled, isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
-  const { fetchUndecodedTransactionsBreakdown, fetchUndecodedTransactionsStatus } = useHistoryTransactionDecoding();
+  const { filterDisabledChainAccounts } = useHistoryTransactionAccounts();
+  const { statusOf, submitTask } = useNativeTask();
+  const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
   const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus, stopDecodingSyncProgress } = useDecodingStatusStore();
-  const { isDecodableChains } = useSupportedChains();
 
-  const { syncTransactionsByChains, waitForDecoding } = useTransactionSync();
+  const { syncTransactionsByChains } = useTransactionSync();
+  const {
+    detectNovelty,
+    filterSyncingExchanges,
+    resolveInputAccounts,
+    resolveRefreshTargets,
+    shouldNotRefresh,
+  } = useHistoryRefreshPolicy();
   const { queryAllExchangeEvents, queryOnlineEvent, resetOnlineWarnings } = useRefreshHandlers();
   const { onHistoryFinished, onHistoryStarted } = useSchedulerState();
-
-  const {
-    addPendingAccounts,
-    addPendingExchanges,
-    finishRefresh,
-    getNewAccounts,
-    getNewExchanges,
-    getPendingAccountsForRefresh,
-    getPendingExchangesForRefresh,
-    hasPendingAccounts,
-    hasPendingExchanges,
-    isRefreshing,
-    startRefresh,
-  } = useHistoryRefreshStateStore();
-
-  const { syncingExchanges, isSameExchange } = useExchangeData();
-
-  function filterSyncingExchanges(exchanges: Exchange[] | undefined): Exchange[] {
-    return exchanges
-      ? exchanges.filter(exchange => get(syncingExchanges).some(syncing => isSameExchange(syncing, exchange)))
-      : get(syncingExchanges);
-  }
-
-  function resolveInputAccounts(accounts: ChainAddress[] | undefined, fullRefresh: boolean, chains: string[]): ChainAddress[] {
-    if (accounts?.length)
-      return accounts;
-    if (fullRefresh)
-      return getAllAccounts(chains);
-    return [];
-  }
-
-  function detectNovelty(allAccounts: ChainAddress[], usedExchanges: Exchange[]): NoveltyDetection {
-    return {
-      newAccounts: getNewAccounts(allAccounts),
-      newExchanges: getNewExchanges(usedExchanges),
-    };
-  }
-
-  function resolveForFullRefresh(novelty: NoveltyDetection, chains: string[], userInitiated: boolean): { accounts: ChainAddress[]; exchanges: Exchange[] } {
-    return {
-      accounts: (novelty.newAccounts.length > 0 || userInitiated) ? getAllAccounts(chains) : [],
-      exchanges: get(syncingExchanges),
-    };
-  }
-
-  function resolveForNovelItems(novelty: NoveltyDetection): { accounts: ChainAddress[]; exchanges: Exchange[] } {
-    return {
-      accounts: novelty.newAccounts.length > 0 ? novelty.newAccounts : [],
-      exchanges: novelty.newExchanges.length > 0 ? novelty.newExchanges : [],
-    };
-  }
-
-  function resolveRefreshTargets(
-    payload: { accounts?: ChainAddress[]; exchanges?: Exchange[] },
-    novelty: NoveltyDetection,
-    opts: { chains: string[]; fullRefresh: boolean; usedExchanges: Exchange[]; userInitiated: boolean },
-  ): RefreshTargets {
-    const { chains, fullRefresh, usedExchanges, userInitiated } = opts;
-    const hasNovelty = novelty.newAccounts.length > 0 || novelty.newExchanges.length > 0;
-
-    let resolved: { accounts: ChainAddress[]; exchanges: Exchange[] };
-
-    if (fullRefresh)
-      resolved = resolveForFullRefresh(novelty, chains, userInitiated);
-    else if (hasNovelty)
-      resolved = resolveForNovelItems(novelty);
-    else
-      resolved = { accounts: payload.accounts ?? [], exchanges: payload.exchanges ?? [] };
-
-    const accounts = filterDisabledChainAccounts(resolved.accounts);
-
-    return {
-      accounts,
-      decodableAccounts: accounts.filter(account => isDecodableChains(account.chain)),
-      exchanges: resolved.exchanges,
-      fullRefresh,
-      queryExchanges: fullRefresh || !!payload.exchanges,
-      shouldShowSyncProgress: isFirstLoad() || hasNovelty,
-      usedExchanges,
-    };
-  }
+  const { t } = useI18n({ useScope: 'global' });
 
   function initializeRefresh(targets: RefreshTargets): void {
     resetQueryStatus();
@@ -143,7 +52,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       return;
     }
 
-    startRefresh(targets.accounts, targets.exchanges);
     onHistoryStarted();
 
     if (!(targets.accounts.length > 0 && targets.shouldShowSyncProgress)) {
@@ -169,25 +77,43 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     targets: RefreshTargets,
     disableEvmEvents: boolean,
     queries: OnlineHistoryEventsQueryType[] | undefined,
+    umbrella: ActivityId,
   ): Promise<void> {
     if (targets.fullRefresh || targets.decodableAccounts.length > 0)
-      await fetchUndecodedTransactionsStatus();
-
-    const asyncOperations: Promise<void>[] = [];
-
-    if (targets.accounts.length > 0)
-      asyncOperations.push(syncTransactionsByChains(targets.accounts, targets.shouldShowSyncProgress));
+      await fetchUndecodedTransactionsBreakdown();
 
     resetExchangesQueryStatus();
 
-    if (targets.queryExchanges) {
-      if (targets.shouldShowSyncProgress)
-        initializeExchangeEventsQueryStatus(targets.usedExchanges);
-      asyncOperations.push(queryAllExchangeEvents(targets.usedExchanges));
-    }
+    if (targets.queryExchanges && targets.shouldShowSyncProgress)
+      initializeExchangeEventsQueryStatus(targets.usedExchanges);
 
-    for (const query of resolveOnlineQueries(targets, disableEvmEvents, queries))
-      asyncOperations.push(queryOnlineEvent(query));
+    // The shape of the refresh comes off the declaration rather than being rebuilt here, so what a
+    // test asserts about `historySyncFlow` is what actually runs. Everything is a child of the
+    // umbrella — exchanges and online queries used to be submitted without a parent, which left
+    // them outside the tree and outside the umbrella's derived progress.
+    const children = historySyncFlow.children({
+      accounts: targets.accounts,
+      exchanges: targets.queryExchanges ? targets.usedExchanges : [],
+      queries: resolveOnlineQueries(targets, disableEvmEvents, queries),
+    });
+
+    const exchanges = children.flatMap(child => child.payload.type === 'exchange' ? [child.payload.exchange] : []);
+
+    // ⚠️ Two of the three kinds are dispatched as a batch rather than per declared child, because
+    // each owns a fan-out *shape* the declaration cannot express: chains group their accounts onto
+    // per-chain lanes and hand off to a decode, and exchanges run one location's accounts in
+    // sequence with two locations at a time. Driving those per child would silently discard both.
+    // The declaration still names every child, and names them with the same id constructors the
+    // producers submit under, so the tree and the umbrella's progress stay accurate.
+    const asyncOperations = [
+      ...(targets.accounts.length > 0
+        ? [syncTransactionsByChains(targets.accounts, targets.shouldShowSyncProgress, umbrella)]
+        : []),
+      ...(exchanges.length > 0 ? [queryAllExchangeEvents(exchanges, umbrella)] : []),
+      ...children.flatMap(child => child.payload.type === 'online'
+        ? [queryOnlineEvent(child.payload.query, umbrella)]
+        : []),
+    ];
 
     for (const operation of asyncOperations) {
       try {
@@ -198,47 +124,57 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       }
     }
 
-    // Wait for any queued decode tasks to finish before proceeding,
-    // so that WS progress updates are not dropped by stopDecodingSyncProgress()
-    await waitForDecoding();
-
-    queue.queue('fetch-undecoded-transactions-breakdown', fetchUndecodedTransactionsBreakdown);
-
-    if (targets.decodableAccounts.length > 0)
-      queue.queue('undecoded-transactions-status-final', fetchUndecodedTransactionsStatus);
+    // One read, not two. This was queued twice under two identifiers on a cap-1 queue — the second
+    // through a `fetchUndecodedTransactionsStatus` alias that only ever called this — so the cap
+    // serialised them into the same backend read twice, the second slipping past the in-flight
+    // guard precisely because the first had finished. Not awaited: the refresh is over and the
+    // count is a display concern. Re-entry is the activity's own to dedup.
+    startPromise(fetchUndecodedTransactionsBreakdown());
   }
 
+  /**
+   * Pick up whatever was added while this refresh was running.
+   *
+   * There is no pending set any more: an account added mid-refresh has never been attempted, and
+   * "never attempted" is exactly what the completion ledger answers. So the drain is the same
+   * novelty question asked once more, after the umbrella settles.
+   *
+   * ⚠️ Passes the novel items as an explicit payload rather than re-entering as a full refresh.
+   * A full refresh escalates any novelty into `getAllAccounts`, so draining that way would re-sync
+   * every account instead of the handful that arrived late.
+   *
+   * ⚠️ The delay is not cosmetic: `submitTask` resolves a tick before the record settles, so an
+   * immediate re-entry would read the umbrella as still active and take the early return, dropping
+   * the drain entirely.
+   *
+   * ⚠️ The drained run does not drain again. Asking the ledger is a *derived* question, unlike the
+   * old pending set which emptied as it was consumed — so without a bound, any account that never
+   * gets a `TX_SYNC` activity would read as novel forever and re-trigger a refresh every 100ms.
+   * One wave per run; a later arrival waits for the next refresh.
+   */
   function drainPending(params: RefreshTransactionsParams): void {
-    if (!get(hasPendingAccounts) && !get(hasPendingExchanges))
+    const { chains = [] } = params;
+    // Disabled chains are filtered before the novelty question, never after — an account the backend
+    // silently skips would otherwise read as novel forever and drain on every refresh.
+    const accounts = filterDisabledChainAccounts(resolveInputAccounts(undefined, true, chains));
+    const { newAccounts, newExchanges } = detectNovelty(accounts, filterSyncingExchanges(undefined));
+
+    if (newAccounts.length === 0 && newExchanges.length === 0)
       return;
 
-    const pendingAccounts = getPendingAccountsForRefresh();
-    const pendingExchanges = getPendingExchangesForRefresh();
-
     timeout = setTimeout(() => {
-      startPromise(refreshTransactions({
+      startPromise(refreshOnce({
         ...params,
         payload: {
           ...params.payload,
-          accounts: pendingAccounts.length > 0 ? pendingAccounts : undefined,
-          exchanges: pendingExchanges.length > 0 ? pendingExchanges : undefined,
+          accounts: newAccounts.length > 0 ? newAccounts : undefined,
+          exchanges: newExchanges.length > 0 ? newExchanges : undefined,
         },
-      }));
+      }, false));
     }, 100);
   }
 
-  function processNoveltyDetection({ newAccounts, newExchanges }: NoveltyDetection): void {
-    if (newAccounts.length > 0)
-      addPendingAccounts(newAccounts);
-    if (newExchanges.length > 0)
-      addPendingExchanges(newExchanges);
-  }
-
-  function shouldNotRefresh(userInitiated: boolean, { newAccounts, newExchanges }: NoveltyDetection): boolean {
-    return fetchDisabled(userInitiated) && newAccounts.length === 0 && newExchanges.length === 0;
-  }
-
-  async function refreshTransactions(params: RefreshTransactionsParams = {}): Promise<void> {
+  async function refreshOnce(params: RefreshTransactionsParams, mayDrain: boolean): Promise<void> {
     const { chains = [], disableEvmEvents = false, payload = {}, userInitiated = false } = params;
     const fullRefresh = Object.keys(payload).length === 0;
 
@@ -250,43 +186,63 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     );
     const novelty = detectNovelty(allCurrentAccounts, usedExchanges);
 
-    if (shouldNotRefresh(userInitiated, novelty))
+    const status = statusOf(ActivityKind.HISTORY_SYNC);
+    if (shouldNotRefresh({ alreadyLoaded: status.everCompleted && !userInitiated, novelty }))
       return;
 
-    setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING);
-
-    if (get(isRefreshing)) {
-      processNoveltyDetection(novelty);
+    // Outside the activity on purpose: `submitTask` dedups by id, so a second caller would be handed
+    // the in-flight promise and this would never run. Nothing needs recording here — whatever this
+    // caller brought is still unattempted when the running umbrella settles, and `drainPending`
+    // asks the ledger for exactly that.
+    if (status.active)
       return;
-    }
 
     const targets = resolveRefreshTargets(payload, novelty, {
       chains,
+      everRefreshed: status.everCompleted,
       fullRefresh,
       usedExchanges,
       userInitiated,
     });
 
-    initializeRefresh(targets);
+    const umbrellaId = makeActivityId(ActivityKind.HISTORY_SYNC);
 
-    try {
-      await executeOperations(targets, disableEvmEvents, payload.queries);
-    }
-    catch (error) {
-      logger.error(error);
-      resetStatus();
-    }
-    finally {
-      finishRefresh();
-      setStatus(Status.LOADED);
-      onHistoryFinished();
-      stopTxSyncing();
-      stopEventsSyncing();
-      stopDecodingSyncProgress();
-      sigilBus.emit('history:ready');
-    }
+    // One umbrella for the whole refresh: its liveness is the re-entrancy guard above, its freshness
+    // answers "has history ever loaded", and every chain, exchange and decode runs as its child.
+    await submitTask({
+      id: umbrellaId,
+      kind: ActivityKind.HISTORY_SYNC,
+      lane: UMBRELLA_LANE,
+      rerunnable: false,
+      staleAfter: HISTORY_STALE_AFTER,
+      run: async (): Promise<Result<void, TaskError>> => {
+        initializeRefresh(targets);
 
-    drainPending(params);
+        try {
+          await executeOperations(targets, disableEvmEvents, payload.queries, umbrellaId);
+        }
+        catch (error) {
+          logger.error(error);
+        }
+        finally {
+          onHistoryFinished();
+          stopTxSyncing();
+          stopEventsSyncing();
+          stopDecodingSyncProgress();
+          sigilBus.emit('history:ready');
+        }
+
+        return ok(undefined);
+      },
+      title: t('task_center.group.history_sync'),
+    });
+
+    if (mayDrain)
+      drainPending(params);
+  }
+
+  async function refreshTransactions(params: RefreshTransactionsParams = {}): Promise<void> {
+    await refreshOnce(params, true);
   }
 
   onScopeDispose(() => {

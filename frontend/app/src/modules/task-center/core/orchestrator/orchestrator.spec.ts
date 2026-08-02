@@ -787,4 +787,92 @@ describe('createTaskOrchestrator', () => {
       expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.RUNNING);
     });
   });
+
+  describe('superseded records', () => {
+    /**
+     * `submitTask` resolves its caller a tick before the run reaches `settleTerminal`, so a caller
+     * that awaits and immediately re-submits the same id (the price-refresh queue walks its work
+     * with exactly that shape) replaces the record while the old run is still in flight. Guarding
+     * on the presence of the id rather than on record identity let the old run write a COMPLETE
+     * ledger entry for the *new* activity — `everCompleted` read true for work barely started.
+     */
+    it('should not let a superseded run complete the record that replaced it', async () => {
+      const orchestrator = createTaskOrchestrator();
+      const first = controllable('shared');
+      orchestrator.submit(first.spec);
+      await flush();
+
+      const second = controllable('shared');
+      orchestrator.submit(second.spec);
+      await flush();
+
+      // The superseded run finishes successfully, but it is no longer the record for this id.
+      first.settle(ok(undefined));
+      await flush();
+
+      expect(orchestrator.statusOf(Kind.OTHER, 'shared')).toMatchObject({
+        everCompleted: false,
+        running: true,
+      });
+    });
+
+    /**
+     * The identity guard stops the abandoned run from settling, which would also stop its
+     * `cleanup` from ever firing — trading a corrupted ledger for a leaked producer resource. It
+     * is released at the point of supersession instead, and exactly once.
+     */
+    it('should release the superseded run once when its id is re-submitted', async () => {
+      const orchestrator = createTaskOrchestrator();
+      const cleanup = vi.fn();
+      const first = controllable('shared', { cleanup });
+      orchestrator.submit(first.spec);
+      await flush();
+
+      const second = controllable('shared');
+      orchestrator.submit(second.spec);
+      await flush();
+
+      expect(cleanup).toHaveBeenCalledOnce();
+
+      // The abandoned run resolving later must not fire it a second time.
+      first.settle(ok(undefined));
+      await flush();
+
+      expect(cleanup).toHaveBeenCalledOnce();
+      expect(byId(orchestrator, second.spec.id)?.status).toBe(Status.RUNNING);
+    });
+  });
+
+  describe('reset', () => {
+    /**
+     * Clearing `records` first made `settleTerminal` return at its identity guard when the
+     * abandoned run resolved, so producer teardown never fired: a P&L report generated across a
+     * logout kept polling `getProgress()` for a session that had ended.
+     */
+    it('should run cleanup for live activities on reset', async () => {
+      const orchestrator = createTaskOrchestrator();
+      const cleanup = vi.fn();
+      const live = controllable('live', { cleanup });
+      orchestrator.submit(live.spec);
+      await flush();
+
+      orchestrator.reset();
+
+      expect(cleanup).toHaveBeenCalledOnce();
+    });
+
+    it('should not run cleanup twice when the abandoned run settles after reset', async () => {
+      const orchestrator = createTaskOrchestrator();
+      const cleanup = vi.fn();
+      const live = controllable('live', { cleanup });
+      orchestrator.submit(live.spec);
+      await flush();
+
+      orchestrator.reset();
+      live.settle(ok(undefined));
+      await flush();
+
+      expect(cleanup).toHaveBeenCalledOnce();
+    });
+  });
 });

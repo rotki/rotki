@@ -1,11 +1,7 @@
-import type { HistoricalBalanceProcessingData, NegativeBalanceDetectedData } from '@/modules/core/messaging/types/status-types';
+import type { NegativeBalanceDetectedData } from '@/modules/core/messaging/types/status-types';
 import { bigNumberify } from '@rotki/common';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useHistoricalBalancesStore } from './use-historical-balances-store';
-
-function progress(processed: number, total: number): HistoricalBalanceProcessingData {
-  return { processed, total };
-}
 
 function negative(lastRunTs: number, eventIdentifier = 1): NegativeBalanceDetectedData {
   return {
@@ -21,38 +17,6 @@ function negative(lastRunTs: number, eventIdentifier = 1): NegativeBalanceDetect
 describe('useHistoricalBalancesStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-  });
-
-  it('should report processing state and percentage', () => {
-    const store = useHistoricalBalancesStore();
-    expect(get(store.isProcessing)).toBe(false);
-    expect(get(store.processingPercentage)).toBe(0);
-
-    store.setProcessingProgress(progress(25, 100));
-    expect(get(store.isProcessing)).toBe(true);
-    expect(get(store.processingPercentage)).toBe(25);
-
-    store.setProcessingProgress(progress(100, 100));
-    expect(get(store.isProcessing)).toBe(false);
-    expect(get(store.processingPercentage)).toBe(100);
-  });
-
-  it('should treat a zero total as not processing', () => {
-    const store = useHistoricalBalancesStore();
-    store.setProcessingProgress(progress(0, 0));
-    expect(get(store.isProcessing)).toBe(false);
-    expect(get(store.processingPercentage)).toBe(0);
-  });
-
-  it('should reset negative balances when a new processing cycle starts', () => {
-    const store = useHistoricalBalancesStore();
-    store.setProcessingProgress(progress(50, 100));
-    store.addNegativeBalance(negative(1000));
-    expect(get(store.negativeBalances)).toHaveLength(1);
-
-    // processed drops below the previous value -> new cycle -> reset
-    store.setProcessingProgress(progress(10, 100));
-    expect(get(store.negativeBalances)).toEqual([]);
   });
 
   it('should accumulate negative balances sharing a run timestamp', () => {

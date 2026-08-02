@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { useLogout } from '@/modules/auth/use-logout';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
@@ -16,6 +13,9 @@ import { useLinks } from '@/modules/shell/layout/use-links';
 import SyncButtons from '@/modules/shell/sync-progress/SyncButtons.vue';
 import SyncSettings from '@/modules/shell/sync-progress/SyncSettings.vue';
 import SyncUploadStatusAlert from '@/modules/shell/sync-progress/SyncUploadStatusAlert.vue';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const syncSettingMenuOpen = ref<boolean>(false);
 const pending = ref<boolean>(false);
@@ -38,12 +38,12 @@ const {
   uploadProgress,
   uploadStatus,
 } = useSync();
-const { cancelTaskByTaskType } = useTaskHandler();
-const { useIsTaskRunning } = useTaskStore();
+const { cancelActivity } = useNativeTask();
+const { useIsActive } = useTaskCenter();
 const { logout } = useLogout();
 const { href, onLinkClick } = useLinks();
 
-const isSyncing = useIsTaskRunning(TaskType.FORCE_SYNC);
+const isSyncing = useIsActive(ActivityKind.SYNC);
 
 const isDownload = computed<boolean>(() => get(syncAction) === SYNC_DOWNLOAD);
 
@@ -135,7 +135,7 @@ async function performSync() {
 }
 
 async function cancelForceSync() {
-  await cancelTaskByTaskType(TaskType.FORCE_SYNC);
+  cancelActivity(ActivityKind.SYNC);
   await nextTick(() => clearUploadStatus());
 }
 

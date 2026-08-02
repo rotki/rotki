@@ -1,6 +1,5 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { Collection } from '@/modules/core/common/collection';
-import type { HistoryEventAction } from '@/modules/history/events/action-types';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
 import { type Blockchain, HistoryEventEntryType, Severity } from '@rotki/common';
@@ -16,8 +15,8 @@ const mockNotify = vi.fn();
 const mockRouterPush = vi.fn();
 const mockFetchLocationLabels = vi.fn();
 const mockFetchAssociatedLocations = vi.fn();
-const mockPullAndRedecodeTransactions = vi.fn();
-const mockPullAndRecodeEthBlockEvents = vi.fn();
+const mockRedecodeTargeted = vi.fn();
+
 const mockRedecodeTransactions = vi.fn();
 const mockShowConfirm = vi.fn();
 
@@ -41,10 +40,15 @@ vi.mock('@/modules/history/events/tx/use-history-transactions', () => ({
 vi.mock('@/modules/history/events/tx/use-history-transaction-decoding', () => ({
   useHistoryTransactionDecoding: vi.fn(() => ({
     checkMissingEventsAndRedecode: mockCheckMissingEventsAndRedecode,
-    fetchUndecodedTransactionsStatus: vi.fn(),
-    pullAndRecodeEthBlockEvents: mockPullAndRecodeEthBlockEvents,
-    pullAndRedecodeTransactions: mockPullAndRedecodeTransactions,
+    fetchUndecodedTransactionsBreakdown: vi.fn(),
     redecodeTransactions: mockRedecodeTransactions,
+  })),
+}));
+
+vi.mock('@/modules/history/events/tx/use-targeted-redecode', () => ({
+  useTargetedRedecode: vi.fn(() => ({
+
+    redecodeTargeted: mockRedecodeTargeted,
   })),
 }));
 
@@ -91,14 +95,12 @@ vi.mock('@/modules/history/events/use-history-events-auto-fetch', () => ({
 
 describe('useHistoryEventsActions', () => {
   function createOptions(): {
-    currentAction: Ref<HistoryEventAction>;
     entryTypes: Ref<undefined>;
     refetch: Mock<() => Promise<void>>;
     groups: Ref<Collection<HistoryEventRow>>;
     onlyChains: Ref<Blockchain[]>;
   } {
     return {
-      currentAction: ref('query'),
       entryTypes: ref(undefined),
       refetch: vi.fn().mockResolvedValue(undefined),
       groups: ref<Collection<HistoryEventRow>>({ data: [], found: 0, limit: 10, total: 0 }),
@@ -112,8 +114,7 @@ describe('useHistoryEventsActions', () => {
     mockCheckMissingEventsAndRedecode.mockResolvedValue(undefined);
     mockFetchLocationLabels.mockResolvedValue(undefined);
     mockFetchAssociatedLocations.mockResolvedValue(undefined);
-    mockPullAndRedecodeTransactions.mockResolvedValue(undefined);
-    mockPullAndRecodeEthBlockEvents.mockResolvedValue(undefined);
+    mockRedecodeTargeted.mockResolvedValue(undefined);
     mockRedecodeTransactions.mockResolvedValue(undefined);
     mockShowConfirm.mockImplementation((_opts, onConfirm) => onConfirm());
   });
@@ -211,7 +212,7 @@ describe('useHistoryEventsActions', () => {
 
       await redecode.evm({ transactions: [{ location: 'ethereum', txRef: '0xabc' }] });
 
-      expect(mockPullAndRedecodeTransactions).toHaveBeenCalled();
+      expect(mockRedecodeTargeted).toHaveBeenCalled();
       expect(mockFetchLocationLabels).toHaveBeenCalled();
       expect(mockFetchAssociatedLocations).toHaveBeenCalled();
     });
@@ -222,7 +223,7 @@ describe('useHistoryEventsActions', () => {
 
       await redecode.blocks({ blockNumbers: [123] });
 
-      expect(mockPullAndRecodeEthBlockEvents).toHaveBeenCalled();
+      expect(mockRedecodeTargeted).toHaveBeenCalled();
       expect(mockFetchLocationLabels).toHaveBeenCalled();
       expect(mockFetchAssociatedLocations).toHaveBeenCalled();
     });
@@ -243,7 +244,7 @@ describe('useHistoryEventsActions', () => {
 
       await redecode.page();
 
-      expect(mockPullAndRedecodeTransactions).toHaveBeenCalled();
+      expect(mockRedecodeTargeted).toHaveBeenCalled();
       expect(mockFetchLocationLabels).toHaveBeenCalled();
       expect(mockFetchAssociatedLocations).toHaveBeenCalled();
     });
@@ -252,7 +253,7 @@ describe('useHistoryEventsActions', () => {
       const options = createOptions();
       const { redecode } = useHistoryEventsActions(options);
 
-      await redecode.by(['eth']);
+      await redecode.by({ chains: ['eth'], type: 'chains' });
 
       expect(mockRedecodeTransactions).toHaveBeenCalledWith(['eth']);
       expect(mockFetchLocationLabels).toHaveBeenCalled();
@@ -278,10 +279,12 @@ describe('useHistoryEventsActions', () => {
 
       await fetch.dataAndRedecode({ transactions: [{ location: 'ethereum', txRef: '0xabc' }] });
 
-      expect(mockPullAndRedecodeTransactions).toHaveBeenCalled();
-      // Once before redecode (initial fetchDataAndLocations) and once after (post-redecode in forceRedecodeEvmEvents).
-      expect(mockFetchLocationLabels.mock.calls.length).toBeGreaterThanOrEqual(2);
-      expect(mockFetchAssociatedLocations.mock.calls.length).toBeGreaterThanOrEqual(2);
+      expect(mockRedecodeTargeted).toHaveBeenCalled();
+      // Exactly once. This used to fetch before the redecode as well as after it, so one action
+      // read the table twice and the first read showed pre-redecode data that was immediately
+      // replaced. The redecode's own trailing fetch is the only one that can show a result.
+      expect(mockFetchLocationLabels).toHaveBeenCalledTimes(1);
+      expect(mockFetchAssociatedLocations).toHaveBeenCalledTimes(1);
     });
   });
 });

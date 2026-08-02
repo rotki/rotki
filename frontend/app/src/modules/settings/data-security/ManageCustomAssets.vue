@@ -2,9 +2,9 @@
 import { assert, Severity } from '@rotki/common';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
+import { ActivityPart } from '@/modules/task-center/core/types';
+import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
 import FileUpload from '@/modules/user-data/FileUpload.vue';
 
 const zip = ref<File>();
@@ -14,11 +14,11 @@ const uploaded = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
 const { notify } = useNotificationDispatcher();
-const { useIsTaskRunning } = useTaskStore();
+const { useIsActive } = useTaskCenter();
 const { exportCustomAssets, importCustomAssets } = useAssets();
 
 const importDisabled = computed<boolean>(() => !get(zip));
-const exporting = useIsTaskRunning(TaskType.EXPORT_ASSET);
+const exporting = useIsActive(ActivityKind.ASSETS, ActivityPart.EXPORT);
 
 async function importZip(): Promise<void> {
   const file = get(zip);

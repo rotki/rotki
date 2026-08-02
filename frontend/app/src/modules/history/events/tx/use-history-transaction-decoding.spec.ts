@@ -1,7 +1,8 @@
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
-import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
+import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { ActivityKind } from '@/modules/task-center/core/types';
 import { useHistoryTransactionDecoding } from './use-history-transaction-decoding';
 
 const mockNotifyError = vi.fn();
@@ -96,10 +97,25 @@ describe('useHistoryTransactionDecoding', () => {
 
       expect(mocks.submitTask).toHaveBeenCalledOnce();
       expect(mocks.submitTask.mock.calls[0][0]).toMatchObject({
-        id: makeActivityId(ActivityKind.TX_DECODING, 'ethereum'),
+        id: decodeActivityId('ethereum'),
         kind: ActivityKind.TX_DECODING,
         rerunnable: true,
       });
+    });
+
+    /**
+     * A refresh declares its per-chain decode up front with `deps` on every account sync, so it
+     * sits PENDING with `ignoreCache: false` for the whole sync window. Keyed by chain alone,
+     * "Redecode all transactions" pressed during that window was handed the pending run's
+     * promise: the forced decode never reached the backend and the umbrella settled COMPLETE.
+     */
+    it('should not share an identity between a cache decode and a forced one', async () => {
+      const { decodeTransactionsTask } = useHistoryTransactionDecoding();
+      await decodeTransactionsTask('ethereum', false);
+      await decodeTransactionsTask('ethereum', true);
+
+      const [cached, forced] = mocks.submitTask.mock.calls.map(call => call[0].id);
+      expect(cached).not.toBe(forced);
     });
 
     it('should mark decoding cancelled on a cancellation', async () => {

@@ -6,8 +6,8 @@ import Notification from '@/modules/core/notifications/Notification.vue';
 import PendingTasks from '@/modules/core/notifications/PendingTasks.vue';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useSilentNotifications } from '@/modules/core/notifications/use-silent-notifications';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import LazyLoader from '@/modules/shell/components/LazyLoader.vue';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const display = defineModel<boolean>({ required: true });
 
@@ -32,7 +32,7 @@ const { show } = confirmStore;
 const notificationStore = useNotificationsStore();
 const { messageOverflow, prioritized: allNotifications } = storeToRefs(notificationStore);
 const { remove } = notificationStore;
-const { hasRunningTasks } = storeToRefs(useTaskStore());
+const { isActive: hasRunningTasks } = useTaskCenter();
 const { silent, toggle: toggleSilent } = useSilentNotifications();
 const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
 const { y } = useScroll(contentWrapper);

@@ -12,7 +12,6 @@ const mockRefreshPrices = vi.fn();
 const mockSeedFromHistoric = vi.fn();
 const mockFetchTags = vi.fn();
 const mockFetchAllLocations = vi.fn();
-const mockSetStatus = vi.fn();
 const mockShouldFetchData = ref<boolean>(true);
 
 vi.mock('@/modules/session/use-scheduler-state', () => ({
@@ -79,12 +78,6 @@ vi.mock('@/modules/core/common/use-location-store', () => ({
 vi.mock('@/modules/auth/use-session-auth-store', () => ({
   useSessionAuthStore: vi.fn(() => ({
     shouldFetchData: mockShouldFetchData,
-  })),
-}));
-
-vi.mock('@/modules/shell/sync-progress/use-status-updater', () => ({
-  useStatusUpdater: vi.fn(() => ({
-    setStatus: mockSetStatus,
   })),
 }));
 

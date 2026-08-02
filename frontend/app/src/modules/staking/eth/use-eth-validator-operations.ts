@@ -5,10 +5,8 @@ import { Blockchain } from '@rotki/common';
 import { useAccountDelete } from '@/modules/accounts/blockchain/use-account-delete';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { Section } from '@/modules/core/common/status';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseEthValidatorOperationsReturn {
   accountOperation: ComputedRef<boolean>;
@@ -23,12 +21,12 @@ export function useEthValidatorOperations(): UseEthValidatorOperationsReturn {
   const { showConfirmation } = useAccountDelete();
   const { fetchEthStakingValidators } = useEthStaking();
   const { refreshBlockchainBalances } = useBlockchainBalances();
-  const { useIsTaskRunning } = useTaskStore();
-  const { isLoading: loading } = useSectionStatus(Section.BLOCKCHAIN, Blockchain.ETH2);
+  const { useIsActivePrefix } = useTaskCenter();
+  const loading = useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2);
 
   const accountOperation = logicOr(
-    useIsTaskRunning(TaskType.ADD_ACCOUNT),
-    useIsTaskRunning(TaskType.REMOVE_ACCOUNT),
+    useIsActivePrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD),
+    useIsActivePrefix(ActivityKind.ACCOUNTS, ActivityPart.REMOVE),
     loading,
   );
 

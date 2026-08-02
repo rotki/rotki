@@ -1,30 +1,40 @@
 import type { ERC20Token } from '@/modules/accounts/blockchain-accounts';
 import { HYPERLIQUID_TOKEN_ADDRESS } from '@test/utils/asset-test-data';
-import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
+import { runSpecWith } from '@test/utils/mocks/native-task';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { CUSTOM_ASSET, HYPERLIQUID_TOKEN } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
-import { TaskType } from '@/modules/core/tasks/task-type';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 
-const { runTaskMock, cancelTaskByTaskTypeMock } = vi.hoisted(() => ({
-  cancelTaskByTaskTypeMock: vi.fn(),
-  runTaskMock: vi.fn(),
+const { cancelActivityMock } = vi.hoisted(() => ({
+  cancelActivityMock: vi.fn(),
 }));
+
+const runTaskResult = vi.fn();
+
+/** Runs the submitted spec inline so assertions see the real `run` body. */
+const submitTask = vi.fn(runSpecWith(runTaskResult));
 
 vi.mock('@/modules/assets/api/use-asset-info-api', () => ({
   useAssetInfoApi: vi.fn().mockReturnValue({
-    erc20details: vi.fn().mockResolvedValue(1),
+    erc20details: vi.fn().mockResolvedValue({ taskId: 1 }),
   }),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
-  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), {
-    cancelTaskByTaskType: cancelTaskByTaskTypeMock,
-    runTask: runTaskMock,
-  }));
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: vi.fn(() => ({
+    cancelActivity: cancelActivityMock,
+    cancelByType: vi.fn(() => vi.fn()),
+    runTaskResult,
+    statusOf: vi.fn(),
+    submitTask,
+  })),
+}));
 
 vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
   useNotificationDispatcher: vi.fn().mockReturnValue({
@@ -69,7 +79,10 @@ describe('useAssetRetrieval', () => {
         symbol: 'RACA',
       };
 
-      runTaskMock.mockResolvedValue({ success: true, result: tokenDetail });
+      runTaskResult.mockImplementation(async (task: () => Promise<unknown>) => {
+        await task();
+        return ok(tokenDetail);
+      });
 
       const result = await assetInfoRetrieval.fetchTokenDetails(payload);
 
@@ -81,7 +94,10 @@ describe('useAssetRetrieval', () => {
     });
 
     it('should handle failure', async () => {
-      runTaskMock.mockResolvedValue({ success: false, message: 'failed', cancelled: false, backendCancelled: false, skipped: false });
+      runTaskResult.mockImplementation(async (task: () => Promise<unknown>) => {
+        await task();
+        return err(TaskFailed({ message: 'failed' }));
+      });
 
       const result = await assetInfoRetrieval.fetchTokenDetails(payload);
 
@@ -96,9 +112,9 @@ describe('useAssetRetrieval', () => {
       // Regression: a stalled ERC20 lookup (e.g. no RPC node answers) must not leave the
       // caller awaiting forever, which would keep the asset form fields disabled indefinitely.
       vi.useFakeTimers();
-      cancelTaskByTaskTypeMock.mockClear();
-      // Backend task that never settles.
-      runTaskMock.mockReturnValue(new Promise<never>(() => {}));
+      cancelActivityMock.mockClear();
+      // Native submission that never settles.
+      submitTask.mockReturnValueOnce(new Promise<never>(() => {}));
 
       try {
         const resultPromise = assetInfoRetrieval.fetchTokenDetails(payload);
@@ -106,7 +122,12 @@ describe('useAssetRetrieval', () => {
         await vi.advanceTimersByTimeAsync(15_000);
 
         await expect(resultPromise).resolves.toEqual({});
-        expect(cancelTaskByTaskTypeMock).toHaveBeenCalledWith(TaskType.ERC20_DETAILS);
+        expect(cancelActivityMock).toHaveBeenCalledWith(
+          ActivityKind.ASSETS,
+          ActivityPart.ERC20,
+          payload.evmChain,
+          payload.address,
+        );
         expect(useNotificationDispatcher().notify).toHaveBeenCalled();
       }
       finally {

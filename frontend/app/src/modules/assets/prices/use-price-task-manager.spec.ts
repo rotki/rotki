@@ -1,6 +1,7 @@
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
+import { ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
@@ -45,7 +46,7 @@ describe('usePriceTaskManager', () => {
       mockResponse: PriceResponse,
       expectedCurrency = 'USD',
     ): Promise<void> => {
-      runTaskMock.mockResolvedValue({ success: true, result: mockResponse });
+      runTaskMock.mockResolvedValue(ok(mockResponse));
 
       await priceTaskManager.fetchPrices({
         ignoreCache: false,
@@ -106,7 +107,7 @@ describe('usePriceTaskManager', () => {
       EUR: 1.5,
     };
 
-    runTaskMock.mockResolvedValue({ success: true, result: mockExchangeRatesResponse });
+    runTaskMock.mockResolvedValue(ok(mockExchangeRatesResponse));
 
     await priceTaskManager.fetchExchangeRates();
 
@@ -128,7 +129,7 @@ describe('usePriceTaskManager', () => {
         },
       };
 
-      runTaskMock.mockResolvedValue({ success: true, result: { assets: mockResponse, targetAsset: 'USD' } });
+      runTaskMock.mockResolvedValue(ok({ assets: mockResponse, targetAsset: 'USD' }));
 
       const price = await priceTaskManager.getHistoricPrice({
         fromAsset: 'DAI',
@@ -142,7 +143,7 @@ describe('usePriceTaskManager', () => {
     });
 
     it('should return minus one on failure', async () => {
-      runTaskMock.mockResolvedValue({ success: true, result: { assets: {}, targetAsset: 'USD' } });
+      runTaskMock.mockResolvedValue(ok({ assets: {}, targetAsset: 'USD' }));
 
       const price = await priceTaskManager.getHistoricPrice({
         fromAsset: 'DAI',
@@ -151,6 +152,27 @@ describe('usePriceTaskManager', () => {
       });
 
       expect(price).toEqual(bigNumberify(-1));
+    });
+
+    /**
+     * Two identical lookups legitimately share one activity, so the second caller's `run` never
+     * executes. While the price was smuggled out through a variable in the producer's closure,
+     * that caller was handed `-1` — which `use-snapshot-asset-price.ts` reads as "no historic
+     * price" and silently replaces with `usdValue/amount`, writing a fabricated number.
+     */
+    it('should give both concurrent callers of an identical lookup the real price', async () => {
+      runTaskMock.mockResolvedValue(ok({ assets: { DAI: { [timestamp]: '10' } }, targetAsset: 'USD' }));
+
+      const payload = { fromAsset: 'DAI', timestamp, toAsset: 'USD' };
+      const [first, second] = await Promise.all([
+        priceTaskManager.getHistoricPrice(payload),
+        priceTaskManager.getHistoricPrice(payload),
+      ]);
+
+      expect(first).toEqual(bigNumberify(10));
+      expect(second).toEqual(bigNumberify(10));
+      // Genuinely deduped: the shared id means the backend was queried once, not twice.
+      expect(usePriceApi().queryHistoricalRate).toHaveBeenCalledOnce();
     });
   });
 });

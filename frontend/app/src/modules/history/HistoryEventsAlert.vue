@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { Section } from '@/modules/core/common/status';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { t } = useI18n({ useScope: 'global' });
-const { isFirstLoad } = useStatusUpdater(Section.HISTORY);
+const { useWorkStatus } = useTaskCenter();
 
-const showAlert = computed<boolean>(() => isFirstLoad());
+// Nudge until a history refresh has completed at least once.
+const historySyncStatus = useWorkStatus(ActivityKind.HISTORY_SYNC);
+const showAlert = computed<boolean>(() => !get(historySyncStatus).everCompleted);
 </script>
 
 <template>

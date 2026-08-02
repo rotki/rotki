@@ -1,8 +1,6 @@
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { FetchError } from 'ofetch';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TaskType } from '@/modules/core/tasks/task-type';
 
 const mockQueryTasks = vi.fn();
 const mockQueryTaskResult = vi.fn();
@@ -21,10 +19,6 @@ vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
     handleResult: (...args: unknown[]): unknown => mockHandleResult(...args),
   }),
 }));
-
-function getMeta(overrides?: Partial<TaskMeta>): TaskMeta {
-  return { title: 'Test task', ...overrides };
-}
 
 describe('useTaskMonitor', () => {
   let monitor: ReturnType<typeof import('@/modules/core/tasks/use-task-monitor').useTaskMonitor>;
@@ -47,7 +41,7 @@ describe('useTaskMonitor', () => {
   });
 
   it('should process a completed task', async () => {
-    store.addTask(1, TaskType.TX, getMeta());
+    store.addTask(1, 'Test task');
     const taskResult = { result: 'done', message: '' };
 
     mockQueryTasks.mockResolvedValue({ pending: [], completed: [1] });
@@ -59,12 +53,12 @@ describe('useTaskMonitor', () => {
     expect(mockQueryTaskResult).toHaveBeenCalledWith(1);
     expect(mockHandleResult).toHaveBeenCalledWith(
       taskResult,
-      expect.objectContaining({ id: 1, type: TaskType.TX }),
+      1,
     );
   });
 
   it('should not process locked tasks', async () => {
-    store.addTask(1, TaskType.TX, getMeta());
+    store.addTask(1, 'Test task');
     store.lock(1);
 
     mockQueryTasks.mockResolvedValue({ pending: [], completed: [1] });
@@ -76,7 +70,7 @@ describe('useTaskMonitor', () => {
   });
 
   it('should handle TaskNotFoundError by removing task and calling error handler', async () => {
-    store.addTask(2, TaskType.MANUAL_BALANCES_ADD, getMeta());
+    store.addTask(2, 'Test task');
 
     const { TaskNotFoundError } = await import('@/modules/core/tasks/types');
     mockQueryTasks.mockResolvedValue({ pending: [], completed: [2] });
@@ -84,10 +78,10 @@ describe('useTaskMonitor', () => {
 
     await monitor.monitor();
 
-    expect(store.isTaskRunning(TaskType.MANUAL_BALANCES_ADD)).toBe(false);
+    expect(get(store.taskById)[2]).toBeUndefined();
     expect(mockHandleResult).toHaveBeenCalledWith(
       expect.objectContaining({ message: expect.stringContaining('Task 2 not found') }),
-      expect.objectContaining({ id: 2 }),
+      2,
     );
   });
 
@@ -98,7 +92,7 @@ describe('useTaskMonitor', () => {
     // unchanged.
     vi.useFakeTimers();
     try {
-      store.addTask(3, TaskType.QUERY_BALANCES, getMeta());
+      store.addTask(3, 'Test task');
 
       const timeoutError = new FetchError('The operation was aborted due to timeout');
       mockQueryTasks.mockResolvedValue({ pending: [], completed: [3] });
@@ -109,7 +103,7 @@ describe('useTaskMonitor', () => {
       await pending;
 
       // Task should still be running (not removed on timeout)
-      expect(store.isTaskRunning(TaskType.QUERY_BALANCES)).toBe(true);
+      expect(get(store.taskById)[3]).toBeDefined();
       // Handler should NOT be called for timeouts
       expect(mockHandleResult).not.toHaveBeenCalled();
       // Timeout count should be incremented
@@ -121,7 +115,7 @@ describe('useTaskMonitor', () => {
   });
 
   it('should remove task and call handler on generic errors', async () => {
-    store.addTask(4, TaskType.TX, getMeta());
+    store.addTask(4, 'Test task');
     const genericError = new Error('something broke');
 
     mockQueryTasks.mockResolvedValue({ pending: [], completed: [4] });
@@ -129,20 +123,20 @@ describe('useTaskMonitor', () => {
 
     await monitor.monitor();
 
-    expect(store.isTaskRunning(TaskType.TX)).toBe(false);
+    expect(get(store.taskById)[4]).toBeUndefined();
     expect(mockHandleResult).toHaveBeenCalledWith(
       expect.objectContaining({
         error: genericError,
         message: 'something broke',
         result: null,
       }),
-      expect.objectContaining({ id: 4 }),
+      4,
     );
   });
 
   it('should track unknown task ids and consume them past threshold', async () => {
     // Add a task so monitor runs (hasRunningTasks = true)
-    store.addTask(10, TaskType.TX, getMeta());
+    store.addTask(10, 'Test task');
 
     mockQueryTasks.mockResolvedValue({ pending: [], completed: [10, 999] });
     mockQueryTaskResult.mockResolvedValue({ result: 'ok', message: '' });
@@ -154,7 +148,7 @@ describe('useTaskMonitor', () => {
     expect(mockQueryTaskResult).toHaveBeenCalledWith(10);
 
     // Re-add a task so monitor has running tasks
-    store.addTask(11, TaskType.TX, getMeta());
+    store.addTask(11, 'Test task');
 
     // Manually set the unknown task timestamp to be past the threshold (> 30s ago)
     const pastTime = Math.floor(Date.now() / 1000) - 60;
@@ -170,8 +164,8 @@ describe('useTaskMonitor', () => {
   });
 
   it('should process multiple completed tasks', async () => {
-    store.addTask(20, TaskType.TX, getMeta());
-    store.addTask(21, TaskType.MANUAL_BALANCES_ADD, getMeta());
+    store.addTask(20, 'Test task');
+    store.addTask(21, 'Test task');
 
     mockQueryTasks.mockResolvedValue({ pending: [], completed: [20, 21] });
     mockQueryTaskResult.mockResolvedValue({ result: 'ok', message: '' });
@@ -184,7 +178,7 @@ describe('useTaskMonitor', () => {
   });
 
   it('should not run concurrently (re-entrancy guard)', async () => {
-    store.addTask(30, TaskType.TX, getMeta());
+    store.addTask(30, 'Test task');
 
     let resolveQuery: ((value: unknown) => void) | undefined;
     mockQueryTasks.mockImplementation(async (): Promise<unknown> => new Promise((resolve) => {

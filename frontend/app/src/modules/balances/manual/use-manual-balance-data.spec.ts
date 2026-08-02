@@ -2,6 +2,7 @@ import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import { bigNumberify } from '@rotki/common';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
+import { ok } from 'plainfp/result';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Currency, CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useManualBalancesApi } from '@/modules/balances/api/use-manual-balances-api';
@@ -71,7 +72,7 @@ const balances: ManualBalance[] = [{
 
 async function updateBalances(balances: ManualBalance[]): Promise<void> {
   const { fetchManualBalances } = useManualBalances();
-  runTaskMock.mockResolvedValue({ success: true, result: { balances } });
+  runTaskMock.mockResolvedValue(ok({ balances }));
 
   await fetchManualBalances(true);
   await nextTick();

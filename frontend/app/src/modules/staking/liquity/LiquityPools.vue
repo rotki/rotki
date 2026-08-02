@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import type { LiquityPoolDetailEntry } from '@rotki/common';
-import { Section } from '@/modules/core/common/status';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 defineProps<{ pool: LiquityPoolDetailEntry | null }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { isLoading: loading } = useSectionStatus(Section.DEFI_LIQUITY_STAKING_POOLS);
+const { useIsActive } = useTaskCenter();
+const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.POOLS);
 </script>
 
 <template>

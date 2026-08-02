@@ -25,6 +25,43 @@ describe('createScheduler', () => {
     expect(scheduler.isRunning('a')).toBe(true);
   });
 
+  /**
+   * Two live jobs may legitimately share an id: cancelling a RUNNING activity settles it terminal
+   * while the scheduler still holds its job, and `rerun` then schedules a second under that id.
+   * Slot accounting keyed by id collapsed the pair into one entry, so the lane ran over its cap.
+   */
+  it('should count two live jobs sharing an id as two occupied slots', async () => {
+    const scheduler = createScheduler({ decode: 2 }, 4);
+    const first = controllableJob('same', 'decode');
+    const second = controllableJob('same', 'decode');
+    const third = controllableJob('other', 'decode');
+
+    scheduler.submit(first.job);
+    scheduler.submit(second.job);
+    scheduler.submit(third.job);
+    await flush();
+
+    // The cap is 2, and the two same-id jobs already occupy it.
+    expect(scheduler.runningCount('decode')).toBe(2);
+    expect(scheduler.isQueued('other')).toBe(true);
+  });
+
+  it('should not free a slot still held by another job with the same id', async () => {
+    const scheduler = createScheduler({ decode: 2 }, 4);
+    const first = controllableJob('same', 'decode');
+    const second = controllableJob('same', 'decode');
+    scheduler.submit(first.job);
+    scheduler.submit(second.job);
+    await flush();
+
+    first.finish();
+    await flush();
+
+    // Only the finished job's slot is released; the second is still running under the same id.
+    expect(scheduler.runningCount('decode')).toBe(1);
+    expect(scheduler.isRunning('same')).toBe(true);
+  });
+
   it('should respect the per-lane cap and start queued jobs as slots free', async () => {
     const scheduler = createScheduler({ balances: 2 }, 4);
     const jobs = ['a', 'b', 'c'].map(id => controllableJob(id, 'balances'));

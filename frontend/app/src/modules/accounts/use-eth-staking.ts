@@ -1,21 +1,22 @@
 import type { Ref } from 'vue';
 import type { Eth2Validator } from '@/modules/balances/types/balances';
 import type { ActionStatus } from '@/modules/core/common/action';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import { type BigNumber, Blockchain, type EthValidatorFilter } from '@rotki/common';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
+import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { logger } from '@/modules/core/common/logging/logging';
-import { Section } from '@/modules/core/common/status';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { usePremium } from '@/modules/premium/use-premium';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 import { useEthValidatorFetching } from '@/modules/staking/eth/use-eth-validator-fetching';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseEthStakingReturn {
   validatorsLimitInfo: Readonly<Ref<{ showWarning: boolean; limit: number; total: number }>>;
@@ -40,10 +41,9 @@ export function useEthStaking(): UseEthStakingReturn {
   const { fetchEthStakingValidators } = useEthValidatorFetching();
 
   const premium = usePremium();
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
   const { showErrorMessage } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
-  const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
 
   const addEth2Validator = async (payload: Eth2Validator): Promise<ActionStatus<ValidationErrors | string>> => {
     if (!isEth2Enabled()) {
@@ -53,44 +53,41 @@ export function useEthStaking(): UseEthStakingReturn {
       };
     }
     const id = payload.publicKey ?? payload.validatorIndex;
-    const outcome = await runTask<boolean, TaskMeta>(
-      async () => addEth2ValidatorCaller(payload),
-      {
-        type: TaskType.ADD_ETH2_VALIDATOR,
-        meta: {
-          description: t('actions.add_eth2_validator.task.description', { id }),
-          title: t('actions.add_eth2_validator.task.title'),
-        },
-      },
-    );
+    // A validator add can succeed as a task yet return `false` (backend declined); that result is
+    // the activity's return value so a second, deduped add of the same validator is answered with
+    // the real outcome rather than a closure local's initial `false`.
+    const outcome = await submitTask<boolean>({
+      id: makeActivityId(ActivityKind.STAKING, ActivityPart.ADD, id ?? ''),
+      kind: ActivityKind.STAKING,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
+        await runTask<boolean>(
+          async () => addEth2ValidatorCaller(payload),
+        ),
+        result => result,
+      ),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.staking.add_validator'), { validator: id ? truncateAddress(String(id)) : '' }),
+      title: t('task_center.group.staking'),
+    });
 
-    if (outcome.success) {
-      if (outcome.result) {
-        resetStatus();
-        resetStatus({ section: Section.STAKING_ETH2_DEPOSITS });
-        resetStatus({ section: Section.STAKING_ETH2_STATS });
-      }
-
+    if (!isErr(outcome)) {
       return {
         message: '',
-        success: outcome.result,
+        success: outcome.value,
       };
     }
 
-    if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
+    if (!isActionable(outcome.error))
+      return { message: '', success: false };
 
-      let message: ValidationErrors | string = outcome.message;
-      if (outcome.error instanceof ApiValidationError)
-        message = outcome.error.getValidationErrors(payload);
+    logger.error(outcome.error.message);
 
-      return {
-        message,
-        success: false,
-      };
-    }
+    const cause = outcome.error.cause;
+    const message: ValidationErrors | string = cause instanceof ApiValidationError
+      ? cause.getValidationErrors(payload)
+      : outcome.error.message;
 
-    return { message: '', success: false };
+    return { message, success: false };
   };
 
   const editEth2Validator = async (payload: Eth2Validator): Promise<ActionStatus<ValidationErrors | string>> => {

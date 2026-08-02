@@ -24,6 +24,17 @@ export interface UseTaskOrchestratorReturn extends TaskOrchestrator {
    */
   readonly useWorkStatusPrefix: (kind: ActivityKind, ...parts: ActivityPartSource[]) => ComputedRef<WorkStatus>;
   /**
+   * Just the liveness of {@link useWorkStatus} — "is this work in flight right now".
+   *
+   * Most readers want a spinner, not the whole snapshot, and were each wrapping the composite in
+   * their own `computed(() => get(status).active)`. Reach for {@link useWorkStatus} when a reader
+   * needs more than one field: the fields describe one moment and belong together, which is why
+   * this returns a second computed rather than the status being split into independent refs.
+   */
+  readonly useIsActive: (kind: ActivityKind, ...parts: ActivityPartSource[]) => ComputedRef<boolean>;
+  /** Liveness of {@link useWorkStatusPrefix} — "is *any* activity under this prefix in flight". */
+  readonly useIsActivePrefix: (kind: ActivityKind, ...parts: ActivityPartSource[]) => ComputedRef<boolean>;
+  /**
    * Reactive live {@link Activity} for `makeActivityId(kind, ...parts)` — its `steps`/`percentage`
    * are the native progress channel for work whose progress is pushed via {@link reportProgress}.
    * Undefined while no such activity is registered.
@@ -79,6 +90,11 @@ export const useTaskOrchestrator = createSharedComposable((): UseTaskOrchestrato
     });
   }
 
+  function useIsActive(kind: ActivityKind, ...parts: ActivityPartSource[]): ComputedRef<boolean> {
+    const status = useWorkStatus(kind, ...parts);
+    return computed<boolean>(() => get(status).active);
+  }
+
   function useWorkStatusPrefix(kind: ActivityKind, ...parts: ActivityPartSource[]): ComputedRef<WorkStatus> {
     return computed<WorkStatus>(() => {
       get(version); // touch the change counter so the projection recomputes on every mutation
@@ -86,10 +102,15 @@ export const useTaskOrchestrator = createSharedComposable((): UseTaskOrchestrato
     });
   }
 
+  function useIsActivePrefix(kind: ActivityKind, ...parts: ActivityPartSource[]): ComputedRef<boolean> {
+    const status = useWorkStatusPrefix(kind, ...parts);
+    return computed<boolean>(() => get(status).active);
+  }
+
   function useActivity(kind: ActivityKind, ...parts: (string | number)[]): ComputedRef<Activity | undefined> {
     const id = makeActivityId(kind, ...parts);
     return computed<Activity | undefined>(() => get(activities).find(activity => activity.id === id));
   }
 
-  return { ...orchestrator, activities, useActivity, useWorkStatus, useWorkStatusPrefix, version };
+  return { ...orchestrator, activities, useActivity, useIsActive, useIsActivePrefix, useWorkStatus, useWorkStatusPrefix, version };
 });

@@ -1,15 +1,19 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/modules/assets/prices/price-types';
+import type { TaskError } from '@/modules/core/tasks/task-result';
 import { type BigNumber, Zero } from '@rotki/common';
+import { isErr, ok, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { isNft } from '@/modules/assets/nft-utils';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { Section } from '@/modules/core/common/status';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseLatestPricesReturn {
   items: ComputedRef<ManualPriceWithUsd[]>;
@@ -32,8 +36,8 @@ export function useLatestPrices(
   const { addLatestPrice, deleteLatestPrice, fetchLatestPrices } = useAssetPricesApi();
   const { getAssetPrice } = usePriceUtils();
   const { refreshPrices } = usePriceRefresh();
-  const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
   const { notifyError, showErrorMessage } = useNotifications();
+  const { submitTask } = useNativeTask();
 
   const latestAssets = computed<string[]>(() =>
     get(latestPrices)
@@ -88,19 +92,28 @@ export function useLatestPrices(
   };
 
   const save = async (data: ManualPriceFormPayload, update: boolean): Promise<boolean> => {
-    try {
-      return await addLatestPrice(data);
-    }
-    catch (error: unknown) {
-      const values = { message: getErrorMessage(error) };
-      const title = update ? t('price_management.edit.error.title') : t('price_management.add.error.title');
-      const description = update
-        ? t('price_management.edit.error.description', values)
-        : t('price_management.add.error.description', values);
+    // Runs as a `prices:manual:add` activity so consumers priced off manual values (NFT balances)
+    // can declare themselves stale after a hand edit without also firing on every automatic sweep.
+    const outcome = await submitTask<boolean>({
+      id: makeActivityId(ActivityKind.PRICES, ActivityPart.MANUAL, ActivityPart.ADD),
+      kind: ActivityKind.PRICES,
+      rerunnable: false,
+      run: async (): Promise<Result<boolean, TaskError>> => ok(await addLatestPrice(data)),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.prices.manual_add'), { asset: data.fromAsset }),
+      title: t('task_center.group.prices'),
+    });
 
-      showErrorMessage(title, description);
-      return false;
-    }
+    if (!isErr(outcome))
+      return outcome.value;
+
+    const values = { message: outcome.error.message };
+    const title = update ? t('price_management.edit.error.title') : t('price_management.add.error.title');
+    const description = update
+      ? t('price_management.edit.error.description', values)
+      : t('price_management.add.error.description', values);
+
+    showErrorMessage(title, description);
+    return false;
   };
 
   const refreshCurrentPrices = async (additionalAssets: string[] = []): Promise<void> => {
@@ -108,21 +121,31 @@ export function useLatestPrices(
     set(refreshing, true);
     const assetToRefresh = [...get(latestAssets), ...additionalAssets];
     await refreshPrices(false, assetToRefresh);
-    resetStatus();
     set(refreshing, false);
   };
 
   const deletePrice = async ({ fromAsset }: { fromAsset: string }): Promise<void> => {
-    try {
-      await deleteLatestPrice(fromAsset);
-      await refreshCurrentPrices([fromAsset]);
-    }
-    catch (error: unknown) {
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.PRICES, ActivityPart.MANUAL, ActivityPart.REMOVE),
+      kind: ActivityKind.PRICES,
+      rerunnable: false,
+      run: async (): Promise<Result<void, TaskError>> => {
+        await deleteLatestPrice(fromAsset);
+        return ok(undefined);
+      },
+      subtitle: activityLabelFor(msg.$t('task_center.activity.prices.manual_remove'), { asset: fromAsset }),
+      title: t('task_center.group.prices'),
+    });
+
+    if (isErr(outcome)) {
       notifyError(
         t('price_table.delete.failure.title'),
-        t('price_table.delete.failure.message', { message: getErrorMessage(error) }),
+        t('price_table.delete.failure.message', { message: outcome.error.message }),
       );
+      return;
     }
+
+    await refreshCurrentPrices([fromAsset]);
   };
 
   return {

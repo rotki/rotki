@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { HistoricalBalanceProcessingData } from '@/modules/core/messaging/types/status-types';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import BalanceQuerySection from '@/modules/dashboard/progress/components/BalanceQuerySection.vue';
@@ -6,7 +7,8 @@ import HistoricalBalanceProcessingSection from '@/modules/dashboard/progress/com
 import HistoryQuerySection from '@/modules/dashboard/progress/components/HistoryQuerySection.vue';
 import IdleQuerySection from '@/modules/dashboard/progress/components/IdleQuerySection.vue';
 import { useUnifiedProgress } from '@/modules/dashboard/progress/use-unified-progress';
-import { useHistoricalBalancesStore } from '@/modules/history/balances/use-historical-balances-store';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import { isMajorOrMinorUpdate } from './is-major-or-minor-update';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -14,11 +16,18 @@ const { t } = useI18n({ useScope: 'global' });
 const justUpdated = ref<boolean>(false);
 
 const { appVersion } = storeToRefs(useMainStore());
-const {
-  isProcessing: isHistoricalBalanceProcessing,
-  processingPercentage: historicalBalancePercentage,
-  processingProgress: historicalBalanceProgress,
-} = storeToRefs(useHistoricalBalancesStore());
+
+// Historical-balance processing runs as a native orchestrator activity; its progress/percentage
+// are pushed onto the activity by the websocket handler, so we read them straight off it.
+const { useActivity, useWorkStatus } = useTaskCenter();
+const historicalBalanceActivity = useActivity(ActivityKind.HISTORICAL_BALANCES);
+const historicalBalanceStatus = useWorkStatus(ActivityKind.HISTORICAL_BALANCES);
+const isHistoricalBalanceProcessing = computed<boolean>(() => get(historicalBalanceStatus).running);
+const historicalBalancePercentage = computed<number>(() => get(historicalBalanceActivity)?.percentage ?? 0);
+const historicalBalanceProgress = computed<HistoricalBalanceProcessingData | undefined>(() => {
+  const steps = get(historicalBalanceActivity)?.steps;
+  return steps ? { processed: steps.current, total: steps.total } : undefined;
+});
 
 const {
   balanceProgress,

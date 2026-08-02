@@ -1,6 +1,8 @@
-import type { TaskResult } from '@/modules/core/tasks/use-task-handler';
+import { runSpecWith } from '@test/utils/mocks/native-task';
 import { flushPromises } from '@vue/test-utils';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 
 const h = vi.hoisted(() => ({
@@ -12,10 +14,11 @@ const h = vi.hoisted(() => ({
   isEvm: vi.fn((chain: string): boolean => chain === 'eth' || chain === 'optimism'),
   notifyError: vi.fn(),
   refreshBlockchainBalances: vi.fn(),
-  resetStatus: vi.fn(),
-  runTask: vi.fn(),
+  runTaskResult: vi.fn(),
   supportsTransactions: vi.fn((): boolean => true),
 }));
+
+const submitTask = vi.fn(runSpecWith(h.runTaskResult));
 
 vi.mock('@/modules/accounts/use-blockchain-accounts', () => ({
   useBlockchainAccounts: vi.fn(() => ({ fetch: h.fetch })),
@@ -55,22 +58,14 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn(() => ({ notifyError: h.notifyError })),
 }));
 
-vi.mock('@/modules/shell/sync-progress/use-status-updater', () => ({
-  useStatusUpdater: vi.fn(() => ({ resetStatus: h.resetStatus })),
+vi.mock('@/modules/task-center/use-native-task', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useNativeTask: vi.fn(() => ({ cancelByType: vi.fn(() => vi.fn()), runTaskResult: h.runTaskResult, statusOf: vi.fn(), submitTask })),
 }));
-
-vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/modules/core/tasks/use-task-handler')>();
-  return { ...actual, useTaskHandler: vi.fn(() => ({ runTask: h.runTask })) };
-});
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: { debug: vi.fn(), error: vi.fn() },
 }));
-
-function actionable(message: string): TaskResult<never> {
-  return { backendCancelled: false, cancelled: false, error: new Error(message), message, skipped: false, success: false };
-}
 
 async function importModule(): Promise<typeof import('./use-account-operations')> {
   return import('./use-account-operations');
@@ -89,14 +84,6 @@ describe('useAccountOperations', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
-  });
-
-  describe('resetStatuses', () => {
-    it('should reset the nft section status', async () => {
-      const { useAccountOperations } = await importModule();
-      useAccountOperations().resetStatuses();
-      expect(h.resetStatus).toHaveBeenCalledOnce();
-    });
   });
 
   describe('fetchAccounts', () => {
@@ -157,14 +144,14 @@ describe('useAccountOperations', () => {
 
   describe('detectEvmAccounts', () => {
     it('should notify on an actionable failure', async () => {
-      h.runTask.mockResolvedValue(actionable('detect failed'));
+      h.runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'detect failed' })));
       const { useAccountOperations } = await importModule();
       await useAccountOperations().detectEvmAccounts();
       expect(h.notifyError).toHaveBeenCalledOnce();
     });
 
     it('should not notify on success', async () => {
-      h.runTask.mockResolvedValue({ result: undefined, success: true });
+      h.runTaskResult.mockResolvedValue(ok(undefined));
       const { useAccountOperations } = await importModule();
       await useAccountOperations().detectEvmAccounts();
       expect(h.notifyError).not.toHaveBeenCalled();

@@ -1,7 +1,8 @@
 import type { ExchangeBalancePayload } from '@/modules/accounts/blockchain-accounts';
-import type { ExchangeMeta } from '@/modules/core/tasks/types';
 import { assert, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { map as mapResult, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
@@ -10,12 +11,13 @@ import { type EditExchange, Exchange, type ExchangeFormData } from '@/modules/ba
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { Section, Status } from '@/modules/core/common/status';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { EXCHANGE_LANE } from '@/modules/task-center/core/orchestrator/spec';
+import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseExchangesReturn {
   fetchConnectedExchangeBalances: (refresh?: boolean) => Promise<void>;
@@ -30,7 +32,7 @@ interface UseExchangesReturn {
 export function useExchanges(): UseExchangesReturn {
   const { t } = useI18n({ useScope: 'global' });
 
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
   const { notifyError, showErrorMessage } = useNotifications();
   const { exchangeBalances } = storeToRefs(useBalancesStore());
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
@@ -44,38 +46,34 @@ export function useExchanges(): UseExchangesReturn {
     const { ignoreCache, location } = payload;
     const threshold = get(valueThreshold);
 
-    const { isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.EXCHANGES);
+    // One native activity per exchange location; liveness/freshness are read off the orchestrator
+    // (`useWorkStatus(ActivityKind.EXCHANGE_BALANCES)` globally, or with `location` per-exchange).
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.EXCHANGE_BALANCES, location),
+      kind: ActivityKind.EXCHANGE_BALANCES,
+      lane: EXCHANGE_LANE,
+      rerunnable: true,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<AssetBalances>(
+          async () => queryExchangeBalances(location, ignoreCache, threshold),
+        ),
+        (result) => {
+          set(exchangeBalances, {
+            ...get(exchangeBalances),
+            [location]: AssetBalances.parse(result),
+          });
+        },
+      ),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.exchange_balances.query'), { location: toSentenceCase(location) }),
+      title: t('task_center.group.exchange_balances'),
+    });
 
-    const newStatus = isFirstLoad() ? Status.LOADING : Status.REFRESHING;
-    setStatus(newStatus);
-
-    const outcome = await runTask<AssetBalances, ExchangeMeta>(
-      async () => queryExchangeBalances(location, ignoreCache, threshold),
-      { type: TaskType.QUERY_EXCHANGE_BALANCES, meta: {
-        location,
-        title: t('actions.balances.exchange_balances.task.title', { location }),
-      }, unique: false },
-    );
-
-    if (outcome.success) {
-      set(exchangeBalances, {
-        ...get(exchangeBalances),
-        [location]: AssetBalances.parse(outcome.result),
-      });
-      setStatus(Status.LOADED);
-    }
-    else if (isActionableFailure(outcome)) {
-      const message = t('actions.balances.exchange_balances.error.message', {
-        error: outcome.message,
-        location,
-      });
-      const title = t('actions.balances.exchange_balances.error.title', {
-        location: toSentenceCase(location),
-      });
-
-      notifyError(title, message);
-      resetStatus();
-    }
+    onActionableError(outcome, (error) => {
+      notifyError(
+        t('actions.balances.exchange_balances.error.title', { location: toSentenceCase(location) }),
+        t('actions.balances.exchange_balances.error.message', { error: error.message, location }),
+      );
+    });
   };
 
   const fetchConnectedExchangeBalances = async (refresh = false): Promise<void> => {

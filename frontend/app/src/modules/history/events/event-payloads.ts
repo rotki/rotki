@@ -41,6 +41,23 @@ export interface PullEthBlockEventPayload {
   readonly blockNumbers: number[];
 }
 
+/**
+ * What a re-decode request covers.
+ *
+ * Replaces a `'all' | 'page' | string[]` union that travelled through three components before
+ * anything interpreted it: a bare array meant "these chains", and the two strings were separate
+ * intents wearing the same type. Neither the emitting component nor the ones forwarding it could
+ * say which of the three it held, so the meaning only existed at the far end of the chain.
+ *
+ * `page` is a development-only convenience (`HistoryRedecodeButton` gates it on
+ * `checkIfDevelopment()`), kept here so the scopes stay in one place rather than because it is a
+ * user-facing intent.
+ */
+export type DecodeScope =
+  | { readonly type: 'all' }
+  | { readonly type: 'chains'; readonly chains: string[] }
+  | { readonly type: 'page' };
+
 export type PullEventPayload = {
   type: typeof HistoryEventEntryType.ETH_BLOCK_EVENT;
   data: number [];

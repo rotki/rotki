@@ -4,8 +4,8 @@ import { type BigNumber, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import TradeAssetDisplay from '@/modules/wallet/send/TradeAssetDisplay.vue';
 import { useBalanceQueries } from '@/modules/wallet/send/use-balance-queries';
 import { useInjectedTradableAsset } from '@/modules/wallet/use-tradable-asset';
@@ -32,9 +32,9 @@ const { t } = useI18n({ useScope: 'global' });
 const { allOwnedAssets, getAssetDetail } = useInjectedTradableAsset();
 
 const { connected, connectedAddress, supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
-const { useIsTaskRunning } = useTaskStore();
+const { useIsActive } = useTaskCenter();
 
-const isDetecting = useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
+const isDetecting = useIsActive(ActivityKind.TOKEN_DETECTION);
 
 const { useQueryingBalances } = useBalanceQueries(connected, connectedAddress);
 

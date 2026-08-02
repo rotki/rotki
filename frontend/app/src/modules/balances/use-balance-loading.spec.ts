@@ -1,18 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TaskType as Task, type TaskType } from '@/modules/core/tasks/task-type';
+import { ActivityKind, type WorkStatus } from '@/modules/task-center/core/types';
 import { useBalancesLoading } from './use-balance-loading';
 
-const running = ref<Set<TaskType>>(new Set());
+// Every balance source now runs native, so all liveness comes off the orchestrator.
+const activeKinds = ref<Set<ActivityKind>>(new Set());
 
-vi.mock('@/modules/core/tasks/use-task-store', () => ({
-  useTaskStore: (): object => ({
-    useIsTaskRunning: (type: TaskType) => computed<boolean>(() => get(running).has(type)),
+vi.mock('@/modules/task-center/use-task-center', () => ({
+  useTaskCenter: (): object => ({
+    useIsActive: (kind: ActivityKind) => computed<boolean>(() => get(activeKinds).has(kind)),
+    useWorkStatus: (kind: ActivityKind) => computed<Partial<WorkStatus>>(() => ({ active: get(activeKinds).has(kind) })),
   }),
 }));
 
 describe('useBalancesLoading', () => {
   beforeEach(() => {
-    set(running, new Set());
+    set(activeKinds, new Set());
   });
 
   afterEach(() => {
@@ -26,20 +28,20 @@ describe('useBalancesLoading', () => {
   });
 
   it.each([
-    Task.QUERY_BALANCES,
-    Task.QUERY_BLOCKCHAIN_BALANCES,
-    Task.QUERY_EXCHANGE_BALANCES,
-    Task.MANUAL_BALANCES,
-  ])('should flag loading when %s runs', (task) => {
+    ActivityKind.BLOCKCHAIN_BALANCES,
+    ActivityKind.EXCHANGE_BALANCES,
+    ActivityKind.ALL_BALANCES,
+    ActivityKind.MANUAL_BALANCES,
+  ])('should flag loading when activity %s is active', (kind) => {
     const { loadingBalances, loadingBalancesAndDetection } = useBalancesLoading();
-    set(running, new Set([task]));
+    set(activeKinds, new Set([kind]));
     expect(get(loadingBalances)).toBe(true);
     expect(get(loadingBalancesAndDetection)).toBe(true);
   });
 
   it('should include token detection only in the detection flag', () => {
     const { loadingBalances, loadingBalancesAndDetection } = useBalancesLoading();
-    set(running, new Set([Task.FETCH_DETECTED_TOKENS]));
+    set(activeKinds, new Set([ActivityKind.TOKEN_DETECTION]));
     expect(get(loadingBalances)).toBe(false);
     expect(get(loadingBalancesAndDetection)).toBe(true);
   });

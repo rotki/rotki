@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
 import { omit } from 'es-toolkit';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { activityLabel } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { filters, matchExactEvents } = defineProps<{
   matchExactEvents: boolean;
@@ -23,27 +25,36 @@ const { appSession, openDirectory } = useInterop();
 
 const { downloadHistoryEventsCSV, exportHistoryEventsCSV } = useHistoryEventsApi();
 
-const { runTask } = useTaskHandler();
-const { useIsTaskRunning } = useTaskStore();
+const { submitTask } = useNativeTask();
+const { useIsActive } = useTaskCenter();
 const { notify } = useNotificationDispatcher();
 
 async function createCsv(directoryPath?: string): Promise<{ result: boolean | { filePath: string }; message?: string } | null> {
-  const outcome = await runTask<boolean | { filePath: string }, TaskMeta>(
-    () => exportHistoryEventsCSV({
-      ...omit(filters, ['limit', 'offset', 'aggregateByGroupIds']),
-      matchExactEvents,
-    }, directoryPath),
-    { type: TaskType.EXPORT_HISTORY_EVENTS, meta: { title: t('actions.history_events_export.title') } },
-  );
+  const outcome = await submitTask<boolean | { filePath: string }>({
+    id: makeActivityId(ActivityKind.HISTORY_EVENTS, ActivityPart.EXPORT),
+    kind: ActivityKind.HISTORY_EVENTS,
+    rerunnable: false,
+    run: async ({ runTask }): Promise<Result<boolean | { filePath: string }, TaskError>> => mapResult(
+      await runTask<boolean | { filePath: string }>(
+        () => exportHistoryEventsCSV({
+          ...omit(filters, ['limit', 'offset', 'aggregateByGroupIds']),
+          matchExactEvents,
+        }, directoryPath),
+      ),
+      value => value,
+    ),
+    subtitle: activityLabel(ActivityKind.HISTORY_EVENTS, ActivityPart.EXPORT),
+    title: t('task_center.group.history_events'),
+  });
 
-  if (outcome.success)
-    return { result: outcome.result };
+  if (!isErr(outcome))
+    return { result: outcome.value };
 
-  if (!isActionableFailure(outcome))
+  if (!isActionable(outcome.error))
     return null;
 
   return {
-    message: outcome.message,
+    message: outcome.error.message,
     result: false,
   };
 }
@@ -122,7 +133,7 @@ function showConfirmation() {
   );
 }
 
-const taskRunning = useIsTaskRunning(TaskType.EXPORT_HISTORY_EVENTS);
+const taskRunning = useIsActive(ActivityKind.HISTORY_EVENTS, ActivityPart.EXPORT);
 </script>
 
 <template>

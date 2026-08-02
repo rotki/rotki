@@ -22,6 +22,8 @@ import { useCompleteEvents } from '@/modules/history/events/use-complete-events'
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useIgnore } from '@/modules/history/use-ignore';
+import { EditKind } from '@/modules/task-center/core/rerun/policy';
+import { taskCenterBus } from '@/modules/task-center/events/task-center-bus';
 
 interface UseHistoryEventsOperationsOptions {
   /** Events per group identifier including ignored-asset ones, so redecode and unlink act on the full group rather than what the table shows. */
@@ -143,8 +145,10 @@ export function useHistoryEventsOperations(
     }
     else {
       const { success } = await deleteHistoryEvent(payload.ids);
-      if (success)
+      if (success) {
         emit('refresh');
+        taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_DELETED });
+      }
     }
   }
 
@@ -161,6 +165,7 @@ export function useHistoryEventsOperations(
       await unlinkAssetMovement(payload.identifier);
       await refreshUnmatchedAssetMovements();
       emit('refresh');
+      taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_UNLINKED });
     }
     catch (error: unknown) {
       notifyError(
@@ -198,6 +203,7 @@ export function useHistoryEventsOperations(
       const chain = getChain(location);
       await deleteTransactions(chain, txRef);
       emit('refresh');
+      taskCenterBus.emit('event:mutated', { kind: EditKind.TRANSACTION_DELETED });
     }
     catch (error: unknown) {
       const title = t('transactions.dialog.delete.error.title');
@@ -220,9 +226,17 @@ export function useHistoryEventsOperations(
       || payload.type === HistoryEventEntryType.EVM_SWAP_EVENT;
   }
 
+  // Re-decoding rewrites a group's events, which makes any computed P&L / historical balances
+  // stale — let the Task Center offer to re-run them (issue #6825). Fired only at the points
+  // that actually trigger a redecode, not the ones that just open the confirmation dialog.
+  function notifyRedecoded(): void {
+    taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_REDECODED });
+  }
+
   function redecode(payload: PullEventPayload, groupIdentifier: string): void {
     if (payload.type === HistoryEventEntryType.ETH_BLOCK_EVENT) {
       emit('refresh:block-event', { blockNumbers: payload.data });
+      notifyRedecoded();
       return;
     }
 
@@ -245,11 +259,13 @@ export function useHistoryEventsOperations(
       linkedMovement: movementEvent ? buildLinkedMovement(movementEvent, groupEvents) : undefined,
       transactions: [payload.data],
     });
+    notifyRedecoded();
   }
 
   function redecodeWithOptions(payload: PullEventPayload, eventIdentifier: string): void {
     if (payload.type === HistoryEventEntryType.ETH_BLOCK_EVENT) {
       emit('refresh:block-event', { blockNumbers: payload.data });
+      notifyRedecoded();
       return;
     }
 
@@ -280,6 +296,7 @@ export function useHistoryEventsOperations(
         transactions: [payload.data],
       });
     }
+    notifyRedecoded();
     set(redecodePayload, undefined);
     set(pendingLinkedMovement, undefined);
   }

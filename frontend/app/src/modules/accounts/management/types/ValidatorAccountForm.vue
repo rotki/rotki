@@ -5,8 +5,8 @@ import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
 import Eth2Input from '@/modules/accounts/blockchain/Eth2Input.vue';
 import { useRefPropVModel } from '@/modules/core/common/validation/model';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { ActivityPart } from '@/modules/task-center/core/types';
+import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const modelValue = defineModel<StakingValidatorManage>({ required: true });
 
@@ -25,8 +25,8 @@ function validate(): Promise<boolean> {
   return get(input).validate();
 }
 
-const { useIsTaskRunning } = useTaskStore();
-const taskRunning = useIsTaskRunning(TaskType.ADD_ETH2_VALIDATOR);
+const { useIsActivePrefix } = useTaskCenter();
+const taskRunning = useIsActivePrefix(ActivityKind.STAKING, ActivityPart.ADD);
 
 defineExpose({
   validate,

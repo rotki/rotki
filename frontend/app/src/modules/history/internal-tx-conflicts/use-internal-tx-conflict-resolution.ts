@@ -1,12 +1,12 @@
 import type { Ref } from 'vue';
 import type { InternalTxConflict } from './types';
 import { NotificationGroup, Severity } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 import { logger } from '@/modules/core/common/logging/logging';
 import { createPersistentSharedComposable } from '@/modules/core/common/use-persistent-shared-composable';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
+import { useTargetedRedecode } from '@/modules/history/events/tx/use-targeted-redecode';
 import { useInternalTxConflictSelection } from './use-internal-tx-conflict-selection';
 import { getConflictKey } from './use-internal-tx-conflicts';
 
@@ -43,7 +43,8 @@ export interface ResolutionCallbacks {
 export const useInternalTxConflictResolution = createPersistentSharedComposable(({ acquireBusy, releaseBusy }): UseInternalTxConflictResolutionReturn => {
   const { t } = useI18n({ useScope: 'global' });
   const { getChain } = useSupportedChains();
-  const { cancelDecoding, pullAndDecodeTransactionsRaw } = useHistoryTransactionDecoding();
+  const { cancelDecoding } = useHistoryTransactionDecoding();
+  const { pullAndDecodeTransactionsRaw } = useTargetedRedecode();
   const { removeKeys } = useInternalTxConflictSelection();
   const { notify, removeMatching } = useNotifications();
 
@@ -185,7 +186,7 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
 
   function cancelResolution(): void {
     set(cancelRequested, true);
-    startPromise(cancelDecoding());
+    cancelDecoding();
   }
 
   return {

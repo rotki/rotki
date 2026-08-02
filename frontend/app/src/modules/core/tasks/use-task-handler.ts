@@ -1,215 +1,131 @@
 import type { ActionResult } from '@rotki/common';
 import { checkIfDevelopment } from '@shared/utils';
+import { err, ok, type Result } from 'plainfp/result';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
-import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { type Task, type TaskMeta, TaskNotFoundError } from '@/modules/core/tasks/types';
+import {
+  BackendCancelled,
+  Cancelled,
+  type TaskError,
+  TaskFailed,
+} from '@/modules/core/tasks/task-result';
+import { TaskNotFoundError } from '@/modules/core/tasks/types';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 
+// The task-result model now lives in its own leaf module; re-exported here so existing
+// consumers keep importing it from `use-task-handler`.
+export type { TaskError } from '@/modules/core/tasks/task-result';
+
 const USER_CANCELLED_TASK = 'task_cancelled_by_user';
-
-interface TaskSuccess<R> {
-  readonly success: true;
-  readonly result: R;
-  readonly message?: string;
-}
-
-export interface TaskFailure {
-  readonly success: false;
-  readonly message: string;
-  readonly error?: unknown;
-  readonly cancelled: boolean;
-  readonly backendCancelled: boolean;
-  readonly skipped: boolean;
-}
-
-export type TaskResult<R> = TaskSuccess<R> | TaskFailure;
-
-/**
- * Returns true when the failure represents an actual error that the consumer should handle
- * (i.e. not a cancellation or a guard skip).
- */
-export function isActionableFailure(outcome: TaskResult<unknown>): outcome is TaskFailure {
-  return !outcome.success && !outcome.cancelled && !outcome.skipped;
-}
-
-export interface RunTaskOptions<M extends TaskMeta> {
-  type: TaskType;
-  meta: M;
-  unique?: boolean;
-  guard?: boolean;
-}
 
 interface TaskActionResult<T> extends ActionResult<T> {
   error?: any;
 }
 
-function makeFailure(fields: Omit<TaskFailure, 'success'>): TaskFailure {
-  return { success: false, ...fields };
-}
-
-function makeSkipped(message: string): TaskFailure {
-  return makeFailure({ message, cancelled: false, backendCancelled: false, skipped: true });
-}
-
-function makeCancelled(message: string, backendCancelled = false): TaskFailure {
-  return makeFailure({ message, cancelled: true, backendCancelled, skipped: false });
-}
-
-function makeError(message: string, error?: unknown): TaskFailure {
-  return makeFailure({ message, error, cancelled: false, backendCancelled: false, skipped: false });
-}
-
 function useTaskHandlerInternal(): {
-  runTask: <R, M extends TaskMeta>(task: () => Promise<{ taskId: number }>, options: RunTaskOptions<M>) => Promise<TaskResult<R>>;
-  cancelTask: (task: Task<TaskMeta>) => Promise<boolean>;
-  cancelTaskByTaskType: (taskTypes: TaskType | TaskType[]) => Promise<void>;
-  handleResult: (result: TaskActionResult<any>, task: Task<TaskMeta>) => void;
+  runTask: <R>(task: () => Promise<{ taskId: number }>, label: string) => Promise<Result<R, TaskError>>;
+  cancelTaskById: (taskId: number) => Promise<boolean>;
+  handleResult: (result: TaskActionResult<any>, taskId: number) => void;
 } {
-  const handlers: Record<string, (result: ActionResult<any>, meta: any) => void> = {};
+  // Keyed by backend task id — the only identity the backend reports back. Keying by task *type*
+  // let two concurrent tasks of one type overwrite each other's handler, leaving the loser's
+  // promise pending forever.
+  const handlers = new Map<number, (result: TaskActionResult<any>) => void>();
   const store = useTaskStore();
   const api = useTaskApi();
 
-  function handlerKey(type: TaskType, taskId?: string): string {
-    return taskId ? `${type}-${taskId}` : `${type}`;
-  }
-
-  function registerHandler<R, M extends TaskMeta>(
-    type: TaskType,
-    handlerImpl: (actionResult: TaskActionResult<R>, meta: M) => void,
-    taskId?: string,
-  ): void {
-    const key = handlerKey(type, taskId);
-    if (!taskId && key in handlers && checkIfDevelopment()) {
-      logger.warn(
-        `[TaskHandler] Overwriting existing handler for ${TaskType[type]}. `
-        + `This may cause a leaked promise. Consider using unique: false if multiple tasks of this type run concurrently.`,
-      );
-    }
-    handlers[key] = handlerImpl;
-  }
-
-  function unregisterHandler(type: TaskType, taskId?: string): void {
-    const key = handlerKey(type, taskId);
-    delete handlers[key];
-  }
-
-  function handleResult(result: TaskActionResult<any>, task: Task<TaskMeta>): void {
-    if (task.meta.ignoreResult) {
-      store.remove(task.id);
-      return;
-    }
-
-    const handler = handlers[task.type] ?? handlers[handlerKey(task.type, `${task.id}`)];
+  /** Hand a completed backend result to the promise waiting on it, and drop the task. */
+  function handleResult(result: TaskActionResult<any>, taskId: number): void {
+    const handler = handlers.get(taskId);
 
     if (handler)
-      handler(result, task.meta);
+      handler(result);
     /* c8 ignore next 3 */
     else
-      logger.warn(`missing handler for ${TaskType[task.type]} with id ${task.id}`);
+      logger.warn(`missing handler for task ${taskId}`);
 
-    store.remove(task.id);
+    store.remove(taskId);
   }
 
-  async function runTask<R, M extends TaskMeta>(
+  /**
+   * Run a backend task and get its outcome as a value. Every way the task can end is a tag on
+   * {@link TaskError}: the caller never branches on a success flag. `label` names the task in the
+   * monitor's failure notification and in the dev logs; the orchestrator builds it from the
+   * activity that owns the run, so it carries the instance (address, asset, xpub) too.
+   */
+  async function runTask<R>(
     task: () => Promise<{ taskId: number }>,
-    options: RunTaskOptions<M>,
-  ): Promise<TaskResult<R>> {
-    const { type, meta, unique = true, guard = true } = options;
-
-    if (guard && store.isTaskRunning(type, meta))
-      return makeSkipped('Task already running');
-
+    label: string,
+  ): Promise<Result<R, TaskError>> {
     let taskId: number;
     try {
       ({ taskId } = await task());
     }
     catch (error: unknown) {
       if (isRequestCancellation(error))
-        return makeCancelled('Request cancelled');
+        return err(Cancelled({ message: 'Request cancelled' }));
       throw error;
     }
 
-    store.addTask(taskId, type, meta);
+    store.addTask(taskId, label);
 
-    return new Promise<TaskResult<R>>((resolve) => {
-      const resolverTaskId = unique ? undefined : taskId.toString();
+    return new Promise<Result<R, TaskError>>((resolve) => {
+      handlers.set(taskId, ({ error, message, result }) => {
+        handlers.delete(taskId);
 
-      registerHandler<R, M>(
-        type,
-        (actionResult, _meta) => {
-          unregisterHandler(type, resolverTaskId);
+        if (error) {
+          resolve(err(TaskFailed({ cause: error, message: error.message ?? '' })));
+        }
+        else if (result !== null) {
+          resolve(ok(result));
+        }
+        else if (message === USER_CANCELLED_TASK) {
+          if (checkIfDevelopment() && !import.meta.env.VITE_TEST)
+            logger.debug(`Request cancelled -> task_id: ${taskId}, task: ${label}`);
 
-          const { message, result, error } = actionResult;
-
-          if (error) {
-            resolve(makeError(error.message ?? '', error));
-          }
-          else if (result === null) {
-            if (message === USER_CANCELLED_TASK) {
-              if (checkIfDevelopment() && !import.meta.env.VITE_TEST)
-                logger.debug(`Request cancelled -> task_id: ${taskId}, task_type: ${TaskType[type]}`);
-
-              resolve(makeCancelled('Request cancelled'));
-            }
-            else if (message) {
-              resolve(makeError(message));
-            }
-            else {
-              resolve(makeCancelled(`Backend cancelled task_id: ${taskId}, task_type: ${TaskType[type]}`, true));
-            }
-          }
-          else {
-            resolve({ success: true, result, message: message || undefined });
-          }
-        },
-        resolverTaskId,
-      );
+          resolve(err(Cancelled({ message: 'Request cancelled' })));
+        }
+        else if (message) {
+          resolve(err(TaskFailed({ message })));
+        }
+        else {
+          resolve(err(BackendCancelled({ message: `Backend cancelled task_id: ${taskId}, task: ${label}` })));
+        }
+      });
     });
   }
 
-  async function cancelTask(task: Task<TaskMeta>): Promise<boolean> {
-    const { id, meta, type } = task;
-
-    if (!store.isTaskRunning(type, meta))
+  /**
+   * Abort one backend task by its id. The entry point for the orchestrator, whose activities know
+   * the task they spawned but not the `Task` record. `handlers` is the truthful liveness check:
+   * it is what an in-flight promise hangs off, so an unknown (already settled) id is a no-op.
+   */
+  async function cancelTaskById(taskId: number): Promise<boolean> {
+    if (!handlers.has(taskId))
       return false;
 
     try {
-      const deleted = await api.cancelAsyncTask(id);
+      const deleted = await api.cancelAsyncTask(taskId);
 
       if (deleted) {
-        const handler = handlers[type] ?? handlers[handlerKey(type, `${id}`)];
-        if (!handler) {
-          store.remove(id);
-        }
-        else {
-          store.lock(id);
-          handleResult({ message: USER_CANCELLED_TASK, result: null }, task);
-          store.unlock(id);
-        }
+        store.lock(taskId);
+        handleResult({ message: USER_CANCELLED_TASK, result: null }, taskId);
+        store.unlock(taskId);
       }
 
       return deleted;
     }
     catch (error_: any) {
       if (error_ instanceof TaskNotFoundError)
-        store.remove(id);
+        store.remove(taskId);
 
       return false;
     }
   }
 
-  async function cancelTaskByTaskType(taskTypes: TaskType | TaskType[]): Promise<void> {
-    const types = arrayify(taskTypes);
-    const taskList = get(store.tasks).filter(item => types.includes(item.type));
-    await Promise.allSettled(taskList.map(async task => cancelTask(task)));
-  }
-
   return {
-    cancelTask,
-    cancelTaskByTaskType,
+    cancelTaskById,
     handleResult,
     runTask,
   };

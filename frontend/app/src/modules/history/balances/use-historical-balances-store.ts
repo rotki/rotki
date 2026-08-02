@@ -1,31 +1,13 @@
-import type { HistoricalBalanceProcessingData, NegativeBalanceDetectedData } from '@/modules/core/messaging/types/status-types';
+import type { NegativeBalanceDetectedData } from '@/modules/core/messaging/types/status-types';
 
+/**
+ * Negative-balance findings reported during historical-balance processing. Processing *progress*
+ * is no longer kept here — it lives on the native HISTORICAL_BALANCES orchestrator activity (the
+ * websocket handler pushes it via `reportProgress`); this store only accumulates the per-run
+ * negative balances, resetting whenever a new run (`lastRunTs`) begins.
+ */
 export const useHistoricalBalancesStore = defineStore('balances/historical', () => {
-  const processingProgress = ref<HistoricalBalanceProcessingData>();
   const negativeBalances = ref<NegativeBalanceDetectedData[]>([]);
-
-  const isProcessing = computed<boolean>(() => {
-    const progress = get(processingProgress);
-    return !!progress && progress.total > 0 && progress.processed < progress.total;
-  });
-
-  const processingPercentage = computed<number>(() => {
-    const progress = get(processingProgress);
-    if (!progress || progress.total === 0)
-      return 0;
-    return Math.round((progress.processed / progress.total) * 100);
-  });
-
-  function setProcessingProgress(data: HistoricalBalanceProcessingData): void {
-    const current = get(processingProgress);
-
-    // If processed count is lower than before, it means a new cycle started - reset negative balances
-    if (current && data.processed < current.processed) {
-      set(negativeBalances, []);
-    }
-
-    set(processingProgress, data);
-  }
 
   function addNegativeBalance(data: NegativeBalanceDetectedData): void {
     const current = get(negativeBalances);
@@ -42,11 +24,7 @@ export const useHistoricalBalancesStore = defineStore('balances/historical', () 
 
   return {
     addNegativeBalance,
-    isProcessing,
     negativeBalances,
-    processingPercentage,
-    processingProgress,
-    setProcessingProgress,
   };
 });
 

@@ -1,19 +1,19 @@
 <script lang="ts" setup>
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
 import SummaryCardCreateButton from '@/modules/dashboard/summary/SummaryCardCreateButton.vue';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import ExchangeBox from './ExchangeBox.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { useIsTaskRunning } = useTaskStore();
+const { useIsActive } = useTaskCenter();
 const { refreshBalance } = useBalanceRefresh();
 const { exchanges } = useExchangeData();
 
-const isExchangeLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
+const isExchangeLoading = useIsActive(ActivityKind.EXCHANGE_BALANCES);
 </script>
 
 <template>

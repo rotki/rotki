@@ -1,6 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { ERC20Token } from '@/modules/accounts/blockchain-accounts';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import type { EvmChainAddress } from '@/modules/history/events/event-payloads';
 import {
   type AssetInfoWithId,
@@ -15,6 +14,7 @@ import {
   NotificationGroup,
   Severity,
 } from '@rotki/common';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { type AssetSearchParams, useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { type AssetsWithId, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
@@ -22,8 +22,10 @@ import { processAssetInfo, useResolveAssetIdentifier } from '@/modules/assets/us
 import { isAbortError } from '@/modules/core/common/helpers/is-of-enum';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { activityLabel } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { type TaskOutcome, useNativeTask } from '@/modules/task-center/use-native-task';
 
 export interface AssetResolutionOptions {
   associate?: boolean;
@@ -100,7 +102,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const { assetSearch: assetSearchCaller, erc20details } = useAssetInfoApi();
   const { fetchedAssetCollections, queueIdentifier, resolve: resolveAsset } = useAssetInfoCache();
   const { notify, notifyError } = useNotifications();
-  const { cancelTaskByTaskType, runTask } = useTaskHandler();
+  const { cancelActivity, submitTask } = useNativeTask();
 
   const { getChain } = useSupportedChains();
 
@@ -220,10 +222,22 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
       timer = setTimeout(resolve, ERC20_DETAILS_TIMEOUT_MS, timedOut);
     });
 
-    const task = runTask<ERC20Token, TaskMeta>(
-      async () => erc20details(payload),
-      { type: TaskType.ERC20_DETAILS, meta: { title: t('actions.assets.erc20.task.title', payload) } },
-    );
+    let details: ERC20Token = {};
+    const task: Promise<TaskOutcome> = submitTask({
+      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.ERC20, payload.evmChain, payload.address),
+      kind: ActivityKind.ASSETS,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<ERC20Token>(
+          async () => erc20details(payload),
+        ),
+        (result) => {
+          details = result;
+        },
+      ),
+      subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.ERC20, { address: payload.address, chain: payload.evmChain }),
+      title: t('task_center.group.assets'),
+    });
 
     try {
       const outcome = await Promise.race([task, timeout]);
@@ -231,17 +245,17 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
       // The lookup can stall when no RPC node answers (e.g. rate limiting). Bail out
       // instead of leaving the caller awaiting indefinitely, and cancel the backend task.
       if (outcome === timedOut) {
-        await cancelTaskByTaskType(TaskType.ERC20_DETAILS);
+        cancelActivity(ActivityKind.ASSETS, ActivityPart.ERC20, payload.evmChain, payload.address);
         notifyError(t('actions.assets.erc20.error.title', payload), t('actions.assets.erc20.error.timeout'));
         return {};
       }
 
-      if (outcome.success) {
-        return outcome.result;
+      if (!isErr(outcome)) {
+        return details;
       }
-      else if (isActionableFailure(outcome)) {
+      else if (isActionable(outcome.error)) {
         notifyError(t('actions.assets.erc20.error.title', payload), t('actions.assets.erc20.error.description', {
-          message: outcome.message,
+          message: outcome.error.message,
         }));
       }
       return {};

@@ -23,13 +23,12 @@ import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
+import { ActivityKind, ActivityPart, useNativeTask } from '@/modules/task-center/use-native-task';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 export function assetsApi(): AssetsApi {
   const { getAssetInfo, useAssetInfo, useTokenAddress } = useAssetInfoRetrieval();
@@ -61,23 +60,26 @@ export function statisticsApi(): StatisticsApi {
   } = useStatisticsApi();
   const { queryOwnedAssets } = useAssetManagementApi();
 
-  const { cancelTaskByTaskType } = useTaskHandler();
-  const { useIsTaskRunning } = useTaskStore();
+  const { cancelByPrefix } = useNativeTask();
+  const { useIsActivePrefix } = useTaskCenter();
 
   return {
     async assetValueDistribution(): Promise<TimedAssetBalances> {
       return queryLatestAssetValueDistribution();
     },
+    // Both stay `async` — they are part of the premium bundle's external StatisticsApi contract.
     async cancelDailyHistoricPriceTask(): Promise<void> {
-      await cancelTaskByTaskType(TaskType.FETCH_DAILY_HISTORIC_PRICE);
+      cancelByPrefix(ActivityKind.PRICES, ActivityPart.DAILY);
     },
     async cancelHistoricPriceTask(): Promise<void> {
-      await cancelTaskByTaskType(TaskType.FETCH_HISTORIC_PRICE);
+      // Covers both the per-lookup activities and the cache's batched fetches: every producer
+      // gives its work an id under the `prices:historic` prefix.
+      cancelByPrefix(ActivityKind.PRICES, ActivityPart.HISTORIC);
     },
     failedDailyPrices,
     fetchNetValue,
     historicalDailyPriceStatus,
-    isQueryingDailyPrices: useIsTaskRunning(TaskType.FETCH_DAILY_HISTORIC_PRICE),
+    isQueryingDailyPrices: useIsActivePrefix(ActivityKind.PRICES, ActivityPart.DAILY),
     async locationValueDistribution(): Promise<LocationData> {
       return queryLatestLocationValueDistribution();
     },

@@ -1,4 +1,5 @@
-import type { EffectScope, Ref } from 'vue';
+import type { ComputedRef, EffectScope } from 'vue';
+import type { WorkStatus } from '@/modules/task-center/core/types';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryWatchers } from './use-history-watchers';
@@ -93,9 +94,18 @@ vi.mock('@/modules/balances/exchanges/use-connected-exchanges-store', () => ({
 
 const mockIsTaskRunning = ref<boolean>(false);
 
-vi.mock('@/modules/core/tasks/use-task-store', () => ({
-  useTaskStore: vi.fn((): { useIsTaskRunning: () => Ref<boolean> } => ({
-    useIsTaskRunning: vi.fn((): Ref<boolean> => mockIsTaskRunning),
+vi.mock('@/modules/task-center/use-task-center', () => ({
+  useTaskCenter: vi.fn((): {
+    useIsActive: () => ComputedRef<boolean>;
+    useWorkStatus: () => ComputedRef<WorkStatus>;
+  } => ({
+    useIsActive: vi.fn((): ComputedRef<boolean> => computed<boolean>(() => get(mockIsTaskRunning))),
+    useWorkStatus: vi.fn((): ComputedRef<WorkStatus> => computed<WorkStatus>(() => ({
+      active: get(mockIsTaskRunning),
+      everCompleted: false,
+      pending: false,
+      running: get(mockIsTaskRunning),
+    }))),
   })),
 }));
 
