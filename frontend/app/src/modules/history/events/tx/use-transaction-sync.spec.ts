@@ -128,4 +128,36 @@ describe('useTransactionSync', () => {
       expect(mocks.setEvmlikeStatus).toHaveBeenNthCalledWith(2, account, 'finished');
     });
   });
+
+  /**
+   * Against the real store rather than the mock above.
+   *
+   * A failing evmlike query calls `markAddressFailed` and then the unconditional `finished` tail,
+   * and the defect was in what the second call did to the first one's result. Every assertion in
+   * this file's other tests is on the mock recording that a call happened, which is true either
+   * way, so none of them can see it. This one asserts the status the address is actually left in.
+   */
+  describe('evmlike failure against the real query-status store', () => {
+    const evmlikeAccount: ChainAddress = { address: '0xABC', chain: 'zksync_lite' };
+
+    beforeEach(() => {
+      vi.resetModules();
+      vi.doUnmock('@/modules/history/use-tx-query-status-store');
+      setActivePinia(createPinia());
+    });
+
+    it('should leave a failed evmlike address failed, not complete', async () => {
+      const { useTxQueryStatusStore } = await import('@/modules/history/use-tx-query-status-store');
+      const { TransactionsQueryStatus } = await import('@/modules/core/messaging/types');
+      const { useTransactionSync: useRealStoreSync } = await import('./use-transaction-sync');
+
+      mocks.runTask.mockResolvedValue(failure({}));
+      const store = useTxQueryStatusStore();
+
+      const { syncTransactionTask } = useRealStoreSync();
+      await syncTransactionTask(evmlikeAccount, TransactionChainType.EVMLIKE);
+
+      expect(get(store.queryStatus)['0xABCzksync_lite'].status).toBe(TransactionsQueryStatus.FAILED);
+    });
+  });
 });
