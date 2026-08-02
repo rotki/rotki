@@ -323,8 +323,12 @@ defineExpose({
       v-model:asset="asset"
       v-model:amount="amount"
       :location="location"
-      :v$="v$"
+      :error-messages="{
+        amount: toMessages(v$.amount),
+        asset: toMessages(v$.asset),
+      }"
       :timestamp="timestamp"
+      @blur="v$[$event].$touch()"
     />
 
     <RuiDivider class="mb-6 mt-2" />

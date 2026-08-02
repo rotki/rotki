@@ -219,10 +219,11 @@ defineExpose({
       ref="assetPriceForm"
       v-model:amount="amount"
       asset="ETH"
-      :v$="v$"
+      :error-messages="{ amount: toMessages(v$.amount) }"
       :timestamp="timestamp"
       location="ethereum"
       disable-asset
+      @blur="v$.amount.$touch()"
     />
 
     <RuiDivider class="mb-6" />

@@ -183,9 +183,13 @@ defineExpose({
           hide-price-fields
           :timestamp="timestamp"
           :disabled="disabled"
-          :v$="v$"
+          :error-messages="{
+            amount: toMessages(v$.amount),
+            asset: toMessages(v$.asset),
+          }"
           :location="location"
           :type="type"
+          @blur="v$[$event].$touch()"
         />
 
         <EventLocationLabel
