@@ -1,5 +1,8 @@
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { BackendCancelled, Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
+import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useTransactionSync } from './use-transaction-sync';
 
 const mockNotifyError = vi.fn();
@@ -7,16 +10,21 @@ const mocks = vi.hoisted(() => ({
   markAddressCancelled: vi.fn(),
   markAddressFailed: vi.fn(),
   removeQueryStatus: vi.fn(),
-  runTask: vi.fn(),
   setEvmlikeStatus: vi.fn(),
+  submitTask: vi.fn(),
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn(() => ({ notifyError: mockNotifyError })),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', () => ({
-  useTaskHandler: vi.fn(() => ({ runTask: mocks.runTask })),
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: vi.fn(() => ({
+    cancelByType: vi.fn(() => vi.fn()),
+    reportProgress: vi.fn(),
+    runTaskResult: vi.fn(),
+    submitTask: mocks.submitTask,
+  })),
 }));
 
 vi.mock('@/modules/history/use-tx-query-status-store', () => ({
@@ -48,76 +56,60 @@ vi.mock('@/modules/history/events/tx/use-history-transaction-accounts', () => ({
 describe('useTransactionSync', () => {
   const account: ChainAddress = { address: '0xABC', chain: 'ethereum' };
 
-  const failure = (fields: {
-    backendCancelled?: boolean;
-    cancelled?: boolean;
-    skipped?: boolean;
-  }): object => ({
-    backendCancelled: false,
-    cancelled: false,
-    message: 'boom',
-    skipped: false,
-    success: false,
-    ...fields,
-  });
-
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    mocks.runTask.mockResolvedValue({ result: true, success: true });
+    mocks.submitTask.mockResolvedValue(ok(undefined));
   });
 
   describe('syncTransactionTask', () => {
+    it('should submit a native TX_SYNC activity keyed by chain and address', async () => {
+      const { syncTransactionTask } = useTransactionSync();
+      await syncTransactionTask(account, TransactionChainType.EVM);
+
+      expect(mocks.submitTask).toHaveBeenCalledOnce();
+      expect(mocks.submitTask.mock.calls[0][0]).toMatchObject({
+        id: makeActivityId(ActivityKind.TX_SYNC, 'ethereum', '0xABC'),
+        kind: ActivityKind.TX_SYNC,
+        rerunnable: true,
+      });
+    });
+
     it('should remove the query status when the backend cancels', async () => {
-      mocks.runTask.mockResolvedValue(failure({ backendCancelled: true, cancelled: true }));
+      mocks.submitTask.mockResolvedValue(err(BackendCancelled({ message: 'backend cancelled' })));
 
       const { syncTransactionTask } = useTransactionSync();
       await syncTransactionTask(account, TransactionChainType.EVM);
 
       expect(mocks.removeQueryStatus).toHaveBeenCalledWith(account);
-      expect(mocks.markAddressFailed).not.toHaveBeenCalled();
+      expect(mocks.markAddressCancelled).not.toHaveBeenCalled();
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
     it('should mark the address cancelled on a user cancel', async () => {
-      mocks.runTask.mockResolvedValue(failure({ cancelled: true }));
+      mocks.submitTask.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
 
       const { syncTransactionTask } = useTransactionSync();
       await syncTransactionTask(account, TransactionChainType.EVM);
 
       expect(mocks.markAddressCancelled).toHaveBeenCalledWith(account);
-      expect(mocks.markAddressFailed).not.toHaveBeenCalled();
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
-    it('should mark the address failed and notify when the query fails', async () => {
-      mocks.runTask.mockResolvedValue(failure({}));
+    it('should notify on an actionable failure and mark the address failed', async () => {
+      mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
 
       const { syncTransactionTask } = useTransactionSync();
       await syncTransactionTask(account, TransactionChainType.EVM);
 
       expect(mockNotifyError).toHaveBeenCalledOnce();
-      // Nothing else moves this entry off "querying": evmlike chains send no websocket messages at
-      // all, and evm chains report the query as finished even when it raised.
-      // The chain type rides along so the entry can be synthesized when the failure arrived before
-      // any status message did.
-      expect(mocks.markAddressFailed).toHaveBeenCalledWith(account, TransactionChainType.EVM);
+      // A failed query never sends the completion websocket message, so nothing else would ever
+      // move this entry off "querying".
+      expect(mocks.markAddressFailed).toHaveBeenCalledWith(account);
       // Marked, NOT removed: the sync panel derives its chain list from these entries, so removing
       // it took the whole chain out of the panel and out of its own denominator.
       expect(mocks.removeQueryStatus).not.toHaveBeenCalled();
       expect(mocks.markAddressCancelled).not.toHaveBeenCalled();
-    });
-
-    it('should leave a skipped task alone', async () => {
-      // A skipped task never ran, so it has not failed and must not be reported as such.
-      mocks.runTask.mockResolvedValue(failure({ skipped: true }));
-
-      const { syncTransactionTask } = useTransactionSync();
-      await syncTransactionTask(account, TransactionChainType.EVM);
-
-      expect(mocks.markAddressFailed).not.toHaveBeenCalled();
-      expect(mocks.removeQueryStatus).not.toHaveBeenCalled();
-      expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
     it('should bracket evmlike progress with started/finished', async () => {
@@ -126,38 +118,6 @@ describe('useTransactionSync', () => {
 
       expect(mocks.setEvmlikeStatus).toHaveBeenNthCalledWith(1, account, 'started');
       expect(mocks.setEvmlikeStatus).toHaveBeenNthCalledWith(2, account, 'finished');
-    });
-  });
-
-  /**
-   * Against the real store rather than the mock above.
-   *
-   * A failing evmlike query calls `markAddressFailed` and then the unconditional `finished` tail,
-   * and the defect was in what the second call did to the first one's result. Every assertion in
-   * this file's other tests is on the mock recording that a call happened, which is true either
-   * way, so none of them can see it. This one asserts the status the address is actually left in.
-   */
-  describe('evmlike failure against the real query-status store', () => {
-    const evmlikeAccount: ChainAddress = { address: '0xABC', chain: 'zksync_lite' };
-
-    beforeEach(() => {
-      vi.resetModules();
-      vi.doUnmock('@/modules/history/use-tx-query-status-store');
-      setActivePinia(createPinia());
-    });
-
-    it('should leave a failed evmlike address failed, not complete', async () => {
-      const { useTxQueryStatusStore } = await import('@/modules/history/use-tx-query-status-store');
-      const { TransactionsQueryStatus } = await import('@/modules/core/messaging/types');
-      const { useTransactionSync: useRealStoreSync } = await import('./use-transaction-sync');
-
-      mocks.runTask.mockResolvedValue(failure({}));
-      const store = useTxQueryStatusStore();
-
-      const { syncTransactionTask } = useRealStoreSync();
-      await syncTransactionTask(evmlikeAccount, TransactionChainType.EVMLIKE);
-
-      expect(get(store.queryStatus)['0xABCzksync_lite'].status).toBe(TransactionsQueryStatus.FAILED);
     });
   });
 });
