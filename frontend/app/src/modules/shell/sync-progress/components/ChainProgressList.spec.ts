@@ -37,6 +37,25 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
     };
   }
 
+  /** A chain whose every address failed: terminal, but none of them completed. */
+  function createFailedChainProgress(chain: string, total: number): ChainProgress {
+    return {
+      addresses: Array.from({ length: total }, (_, i) => ({
+        address: `0x${chain}${i.toString().padStart(38, '0')}`,
+        status: AddressStatus.FAILED,
+        subtype: AddressSubtype.EVM,
+      })),
+      cancelled: 0,
+      chain,
+      completed: 0,
+      failed: total,
+      inProgress: 0,
+      pending: 0,
+      progress: 100,
+      total,
+    };
+  }
+
   function createWrapper(chains: ChainProgress[]): VueWrapper<InstanceType<typeof ChainProgressList>> {
     return mount(ChainProgressList, {
       global: {
@@ -91,6 +110,16 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
       wrapper = createWrapper(chains);
 
       expect(wrapper.findAll('[data-testid="chain-item"]')).toHaveLength(0);
+    });
+
+    it('should treat a chain whose addresses all failed as settled', () => {
+      // Failed is terminal, so this chain is finished, just not cleanly. Counting it as still in
+      // progress stranded it at 0/3 forever while the header reported the sync complete.
+      const chains = [createFailedChainProgress('gnosis', 3)];
+      wrapper = createWrapper(chains);
+
+      expect(wrapper.findAll('[data-testid="chain-item"]')).toHaveLength(0);
+      expect(wrapper.text()).toContain('sync_progress.completed_chains');
     });
   });
 

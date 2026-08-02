@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ChainProgress } from '../types';
+import { isChainSettled } from '../use-chain-progress';
 import ChainProgressItem from './ChainProgressItem.vue';
 
 const { chains } = defineProps<{
@@ -10,22 +11,28 @@ const { t } = useI18n({ useScope: 'global' });
 
 const showCompleted = ref<boolean>(false);
 
+// Split on the same definition of "settled" the rest of the panel uses, so a chain cannot be in
+// progress here while the header counts it complete.
 const inProgressChains = computed<ChainProgress[]>(() =>
-  chains.filter(c => (c.completed + c.cancelled) < c.total || c.total === 0),
+  chains.filter(chain => !isChainSettled(chain)),
 );
 
 const completedChains = computed<ChainProgress[]>(() =>
-  chains.filter(c => (c.completed + c.cancelled) === c.total && c.total > 0),
+  chains.filter(chain => isChainSettled(chain)),
 );
 
 const hasInProgress = computed<boolean>(() => get(inProgressChains).length > 0);
 const completedCount = computed<number>(() => get(completedChains).length);
 const hasCompleted = computed<boolean>(() => !!get(completedCount));
-const hasCancelledChains = computed<boolean>(() => get(completedChains).some(c => c.cancelled > 0));
+const hasFailedChains = computed<boolean>(() => get(completedChains).some(chain => chain.failed > 0));
+const hasCancelledChains = computed<boolean>(() => get(completedChains).some(chain => chain.cancelled > 0));
 
-const completedIconColor = computed<string>(() =>
-  get(hasCancelledChains) ? 'text-rui-warning' : 'text-rui-success',
-);
+const completedIconColor = computed<string>(() => {
+  if (get(hasFailedChains))
+    return 'text-rui-error';
+
+  return get(hasCancelledChains) ? 'text-rui-warning' : 'text-rui-success';
+});
 
 function toggleCompleted(): void {
   set(showCompleted, !get(showCompleted));
