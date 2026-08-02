@@ -34,29 +34,37 @@ vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/notifications/use-notifications', async () => {
-  const actual = await vi.importActual<typeof import('@/modules/core/notifications/use-notifications')>(
-    '@/modules/core/notifications/use-notifications',
-  );
-  return {
-    ...actual,
-    useNotifications: (): object => ({
-      removeMatching: spies.removeMatching,
-      showErrorMessage: spies.showErrorMessage,
-      showSuccessMessage: spies.showSuccessMessage,
-    }),
-  };
-});
+// Only `getErrorMessage` is needed besides the mocked composable, and it is a pure
+// helper re-exported from a light module. Taking it from its own home keeps the real
+// implementation without evaluating the notifications graph, which costs ~1.2s per
+// import - and this file re-imports once per test.
+vi.mock('@/modules/core/notifications/use-notifications', async () => ({
+  getErrorMessage: (await vi.importActual<typeof import('@/modules/core/common/logging/error-handling')>(
+    '@/modules/core/common/logging/error-handling',
+  )).getErrorMessage,
+  useNotifications: (): object => ({
+    removeMatching: spies.removeMatching,
+    showErrorMessage: spies.showErrorMessage,
+    showSuccessMessage: spies.showSuccessMessage,
+  }),
+}));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async () => {
-  const actual = await vi.importActual<typeof import('@/modules/core/tasks/use-task-handler')>(
-    '@/modules/core/tasks/use-task-handler',
-  );
-  return {
-    ...actual,
-    useTaskHandler: (): object => ({ runTask: spies.runTask }),
-  };
-});
+// Same reasoning: `isActionableFailure` is a two-line pure predicate over the task
+// outcome, so it is restated here rather than pulling in the real task handler.
+vi.mock('@/modules/core/tasks/use-task-handler', () => ({
+  isActionableFailure: (outcome: { success: boolean; cancelled?: boolean; skipped?: boolean }): boolean =>
+    !outcome.success && !outcome.cancelled && !outcome.skipped,
+  useTaskHandler: (): object => ({ runTask: spies.runTask }),
+}));
+
+// Read only by `useBridgeMatchingFlow`, which no test here exercises - but the static
+// import still pulls the settings registry in (~1.1s) on every re-import.
+vi.mock('@/modules/settings/use-bridge-match-settings', () => ({
+  useBridgeMatchSettings: (): object => ({
+    bridgeMatchAmountTolerance: ref(0.05),
+    bridgeMatchTimeRange: ref(3600),
+  }),
+}));
 
 vi.mock('@/modules/core/tasks/use-task-store', () => ({
   useTaskStore: (): object => ({ useIsTaskRunning: spies.useIsTaskRunning }),
@@ -66,18 +74,17 @@ vi.mock('@/modules/history/use-history-store', () => ({
   useHistoryStore: (): object => ({ signalEventsModified: spies.signalEventsModified }),
 }));
 
-vi.mock('@/modules/premium/use-feature-access', async () => {
-  const actual = await vi.importActual<typeof import('@/modules/premium/use-feature-access')>(
-    '@/modules/premium/use-feature-access',
-  );
-  return {
-    ...actual,
-    useFeatureAccess: (): object => ({
-      allowed: ref(true),
-      minimumTier: ref(null),
-    }),
-  };
-});
+// `PremiumFeature` is only re-exported by use-feature-access, so take it from the
+// types module it actually lives in.
+vi.mock('@/modules/premium/use-feature-access', async () => ({
+  PremiumFeature: (await vi.importActual<typeof import('@/modules/session/types')>(
+    '@/modules/session/types',
+  )).PremiumFeature,
+  useFeatureAccess: (): object => ({
+    allowed: ref(true),
+    minimumTier: ref(null),
+  }),
+}));
 
 describe('use-unmatched-bridge-transactions', () => {
   beforeEach(() => {
