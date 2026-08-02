@@ -205,6 +205,29 @@ export default rotki({
     }],
   },
 }, {
+  // Unit specs must never wait on the real clock. A fixed sleep is a race, not a wait: it passes on an
+  // idle laptop and fails on a loaded CI box, and it costs its full duration even when the work it
+  // waits for finished immediately. Use what vitest gives you instead - `vi.useFakeTimers()` plus
+  // `vi.advanceTimersByTimeAsync()` to drive a debounce or interval, `vi.waitUntil`/`vi.waitFor` to poll
+  // a condition, or a promise the test resolves itself to hold an async call open.
+  //
+  // Both selectors target *awaiting* a sleep, which is the only form that stalls a test:
+  // - `await wait(50)` - the real-clock sleep from `@shared/utils`. Under fake timers this deadlocks
+  //   anyway, so it is always wrong at test level. Passing `wait` as simulated work (`async () =>
+  //   wait(1500)`) or asserting on it when mocked is untouched, since neither is awaited here.
+  // - `await new Promise(resolve => setTimeout(resolve, n))` - the same sleep spelled out. Scheduling a
+  //   `setTimeout` inside a mock that fake timers then advance is untouched for the same reason.
+  files: ['**/src/**/*.spec.ts', '**/shared/**/*.spec.ts', '**/electron/**/*.spec.ts'],
+  rules: {
+    'no-restricted-syntax': ['error', {
+      message: 'Do not sleep on the real clock in a spec. Use fake timers (vi.advanceTimersByTimeAsync), poll a condition (vi.waitUntil/vi.waitFor), or resolve a promise the test controls.',
+      selector: 'AwaitExpression > CallExpression[callee.name=\'wait\']',
+    }, {
+      message: 'Do not sleep on the real clock in a spec. Use fake timers (vi.advanceTimersByTimeAsync), poll a condition (vi.waitUntil/vi.waitFor), or resolve a promise the test controls.',
+      selector: 'AwaitExpression > NewExpression[callee.name=\'Promise\']:has(CallExpression[callee.name=\'setTimeout\'])',
+    }],
+  },
+}, {
   files: ['**/locales/**/*.json'],
   rules: {
     'jsonc/sort-keys': ['error', 'asc', {
