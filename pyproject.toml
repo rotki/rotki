@@ -108,7 +108,7 @@ lint = [
     "mypy-extensions==1.1.0",
     "pylint==4.0.6",
     "astroid==4.0.2",  # engine of pylint, upgrade them together
-    "ruff==0.15.22",
+    "ruff==0.16.0",
     "double-indent-rotki==0.1.7",  # our fork of double indent
     "pyright==1.1.411",
     # type packages used by mypy
@@ -347,8 +347,7 @@ select = [
     #  "SLF",  # Private member access -- we unfortunately do that some times
     # "TD",  # this is just to detect todos
     # "FIX",  # this is just to detect todos
-    # "TID",  # tidy-imports -- we use relative imports from parent in some cases. Maybe stop?
-    "TID251",  # banned-api -- gevent was removed and must not creep back. See docs/designs/gevent_to_asyncio.md
+    "TID",  # tidy-imports -- includes TID251 banned-api, which keeps gevent from creeping back. See docs/designs/gevent_to_asyncio.md
     # "ARG",  # flake8-unused-arguments -- pylint already does this and we got ignores where needed
     "PL",  # all pylint rules
     "PIE",
@@ -379,7 +378,6 @@ extend-select = [
 ignore = [
     "A005",  # shadow builtin module is fine, since it's easy to differentiate and we can use names like csv.py, json.py, types.py under subdirectories
     "B028",  # no explicit stack level argument for warnings. Is fine due to the way we use them for now
-    "E402",  # module level import at file top. https://www.flake8rules.com/rules/E402.html
     "N818",  # error suffix in exception names
     "C901",  # function too complex
     "RUF005",  # Unpacking over concatenation -> https://github.com/charliermarsh/ruff/issues/2054#issuecomment-1399617413
@@ -413,7 +411,6 @@ ignore = [
     "S105",  # hard coded password checks got false positives
     "S106",  # hard coded password checks got false positives
     "S311",  # We know pseudo-random is not safe for cryptographic operations
-    "S324",  # insecure hash function. We use it for image md5 for etag. TODO: Change and enable?
     "S608",  # possible sql-injection is overkill since we control the variables in question
     "G004",  # Our logs do use f-strings everywhere at least for now
     # Some pytest-styles rules we don't check for
@@ -468,6 +465,7 @@ known-third-party = ["packaging"]  # packaging is otherwise detected as first-pa
     "RUF018",  # We have assignments in assert in tests and that's fine there
 ]
 "rotkehlchen/tests/conftest.py" = [
+    "E402",  # logging must be configured before importing the fixtures, which pull in modules that grab loggers
     "S602",  # test setup. No problem with shell=True
     "S605",  # test setup, can't inject in process
     "S607",  # test setup, partial path does not matter
@@ -481,6 +479,9 @@ known-third-party = ["packaging"]  # packaging is otherwise detected as first-pa
     "INP001",  # no need for __init__ here
     "S602",  # script called by us only when packaging. No problem with shell=True
     "S607",  # script called by us only when packaging. No problem with partial path
+]
+"tools/bench/launch_backend.py" = [
+    "E402",  # requests and the protocol cache are patched before importing the app on purpose
 ]
 "tools/scripts/pylint_useless_suppression.py" = [
     "S603",  # Script called by us. No variable input
