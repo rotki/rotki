@@ -16,9 +16,15 @@ import SolanaEventForm from '@/modules/history/management/forms/SolanaEventForm.
 import SolanaSwapEventForm from '@/modules/history/management/forms/SolanaSwapEventForm.vue';
 import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue';
 
+/**
+ * The seam every entry-type form is driven through. `save` is required; the error count is read from
+ * whichever channel the form provides, because the subtree is mid-migration from Vuelidate to zod:
+ * a zod form exposes `errorCount` directly, a Vuelidate one still exposes `v$`.
+ */
 interface FormComponent {
   save: () => Promise<boolean>;
-  v$: { $errors: unknown[] };
+  errorCount?: number;
+  v$?: { $errors: unknown[] };
 }
 
 interface HistoryEventFormProps {
@@ -76,9 +82,9 @@ const formComponents: Record<HistoryEventEntryType, Component> = {
 
 const errorCount = computed<number>(() => {
   const formRef = get(form);
-  if (!formRef?.v$)
+  if (!formRef)
     return 0;
-  return formRef.v$.$errors.length;
+  return formRef.errorCount ?? formRef.v$?.$errors.length ?? 0;
 });
 
 async function save() {
