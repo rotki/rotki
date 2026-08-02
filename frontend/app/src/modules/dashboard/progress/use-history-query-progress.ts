@@ -62,8 +62,14 @@ interface EventProgressData {
   currentOperationData: HistoryQueryProgressOperationData;
 }
 
+/** Cancelled and failed are both terminal: no further progress is coming for that address. */
+function isTerminal(status: TxQueryStatusData): boolean {
+  return status.status === TransactionsQueryStatus.CANCELLED
+    || status.status === TransactionsQueryStatus.FAILED;
+}
+
 function isTransactionActive(status: TxQueryStatusData): boolean {
-  if (status.status === TransactionsQueryStatus.CANCELLED)
+  if (isTerminal(status))
     return false;
 
   if (status.subtype === 'bitcoin') {
@@ -73,7 +79,7 @@ function isTransactionActive(status: TxQueryStatusData): boolean {
 }
 
 function isTransactionFinished(status: TxQueryStatusData): boolean {
-  if (status.status === TransactionsQueryStatus.CANCELLED)
+  if (isTerminal(status))
     return true;
 
   if (status.subtype === 'bitcoin') {
