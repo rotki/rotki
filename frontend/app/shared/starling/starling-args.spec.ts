@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describeResolvedCore } from './starling-args';
 
 // The dev launchers probe the filesystem (is the warm-up build there?) and shell
 // out to uv (which interpreter?). Both are mocked so these run identically on a
@@ -118,6 +119,11 @@ describe('buildStarlingInvocation (dev launchers)', () => {
       expect(args).toContain('--core-prefix=-m');
       expect(args).toContain('--core-prefix=rotkehlchen');
     });
+
+    it('should report the interpreter as the resolved core', async () => {
+      const { args } = await buildDevInvocation();
+      expect(describeResolvedCore(args)).toStrictEqual({ binary: VENV_PYTHON, kind: 'interpreter' });
+    });
   });
 
   // The e2e run ships a frozen core the same way it ships the Rust binaries, so
@@ -145,6 +151,15 @@ describe('buildStarlingInvocation (dev launchers)', () => {
       const { args } = await buildDevInvocation();
       expect(args).not.toContain('--core-prefix=-m');
       expect(args).not.toContain('--core-prefix=rotkehlchen');
+    });
+
+    // What the launcher logs, so a silent fall back to the interpreter is visible in a CI run
+    // rather than looking exactly like a frozen one.
+    it('should report the frozen binary as the resolved core', async () => {
+      const { args } = await buildDevInvocation();
+      const resolved = describeResolvedCore(args);
+      expect(resolved.kind).toBe('frozen');
+      expect(resolved.binary).toContain(path.join(frozenDir, FROZEN_CORE));
     });
 
     it('should run it from its own directory, as the packaged build does', async () => {
@@ -241,9 +256,8 @@ describe('buildStarlingInvocation (dev launchers)', () => {
       const invocation = await buildDevInvocation();
       expect(invocation.command).toBe('cargo');
       expect(invocation.args.slice(0, 4)).toEqual(['run', '--locked', '-p', 'starling']);
-      if (invocation.cwd === undefined)
-        throw new Error('Expected the cargo invocation to set a working directory');
-      expect(invocation.cwd.endsWith('crates')).toBe(false);
+      expect(invocation.cwd).toBeDefined();
+      expect(invocation.cwd?.endsWith('crates')).toBe(false);
     });
 
     it('should fall back to running colibri through cargo', async () => {
