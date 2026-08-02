@@ -25,10 +25,15 @@ vi.mock('@/modules/core/common/use-confirm-store', () => ({
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): object => ({ getChain: spies.getChain }),
 }));
-vi.mock('@/modules/core/notifications/use-notifications', async () => {
-  const actual = await vi.importActual<typeof import('@/modules/core/notifications/use-notifications')>('@/modules/core/notifications/use-notifications');
-  return { ...actual, useNotifications: (): object => ({ showErrorMessage: spies.showErrorMessage, showSuccessMessage: spies.showSuccessMessage }) };
-});
+// Mocked outright rather than spread over `...actual`: importActual evaluates the real
+// notifications graph, which costs ~1.2s to import.
+// `getErrorMessage` is a pure helper re-exported from a light module, so take it from there.
+vi.mock('@/modules/core/notifications/use-notifications', async () => ({
+  getErrorMessage: (await vi.importActual<typeof import('@/modules/core/common/logging/error-handling')>(
+    '@/modules/core/common/logging/error-handling',
+  )).getErrorMessage,
+  useNotifications: (): object => ({ showErrorMessage: spies.showErrorMessage, showSuccessMessage: spies.showSuccessMessage }),
+}));
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   useHistoryEventsApi: (): object => ({ deleteHistoryEvent: spies.deleteHistoryEventApi, deleteTransactions: spies.deleteTransactions }),
 }));

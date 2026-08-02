@@ -12,10 +12,11 @@ const { spies } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@/modules/core/notifications/use-notifications', async () => {
-  const actual = await vi.importActual<typeof import('@/modules/core/notifications/use-notifications')>('@/modules/core/notifications/use-notifications');
-  return { ...actual, useNotifications: (): object => ({ notifyError: spies.notifyError }) };
-});
+// Mocked outright rather than spread over `...actual`: importActual evaluates the real
+// notifications graph, which costs ~1.2s to import.
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
+  useNotifications: (): object => ({ notifyError: spies.notifyError }),
+}));
 vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
   useAssetPricesApi: (): object => ({ deleteLatestPrice: spies.deleteLatestPrice }),
 }));
