@@ -233,6 +233,29 @@ function prefixFlags(flag: string, tokens: string[]): string[] {
   return tokens.map(token => `${flag}=${token}`);
 }
 
+/** Which core a built invocation resolved to, for launchers that want to report it. */
+export interface ResolvedCore {
+  kind: 'frozen' | 'interpreter';
+  binary?: string;
+}
+
+/**
+ * Read back the core an invocation resolved to.
+ *
+ * `devCoreLauncherArgs` falls back to the interpreter silently when it finds no frozen build, and
+ * nothing downstream records which one ran, so a wrong artifact path yields a passing run that
+ * looks identical to a real one. The interpreter branch is the only one needing a prefix, since it
+ * has to say `-m rotkehlchen`; the frozen binary is its own entrypoint. Prefix tokens arrive one
+ * per flag as `--core-prefix=<token>`, so this matches the `=` form and not a bare flag.
+ */
+export function describeResolvedCore(args: string[]): ResolvedCore {
+  const index = args.indexOf('--core-binary');
+  return {
+    binary: index === -1 ? undefined : args[index + 1],
+    kind: args.some(arg => arg.startsWith('--core-prefix=')) ? 'interpreter' : 'frozen',
+  };
+}
+
 /**
  * The dev core launcher: a profiling command, the interpreter uv resolves, or a
  * bare `python -m rotkehlchen` - whichever the dev environment dictates. Every

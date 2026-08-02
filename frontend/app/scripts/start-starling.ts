@@ -2,7 +2,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { cac } from 'cac';
 import consola from 'consola';
-import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingBackendOptions, type StarlingInvocation } from '../shared/starling/starling-args';
+import { buildStarlingInvocation, describeResolvedCore, SHUTDOWN_GRACE_SECS, type StarlingBackendOptions, type StarlingInvocation } from '../shared/starling/starling-args';
 import { requestStarlingStart, spawnStarling } from '../shared/starling/starling-launch';
 import { StarlingRpc } from '../shared/starling/starling-rpc';
 
@@ -63,10 +63,29 @@ function resolveInvocation(options: StarlingE2eOptions, root: string): StarlingI
   return invocation;
 }
 
+/**
+ * Name the core the launcher actually resolved.
+ *
+ * The fallback to the interpreter is silent, so a wrong artifact path produces a run that looks
+ * exactly like a passing one. Nothing else records which was used: the backend log holds no
+ * executable path, and Playwright suppresses `webServer` stdout unless the run fails.
+ */
+function logResolvedCore(invocation: StarlingInvocation): void {
+  const { binary, kind } = describeResolvedCore(invocation.args);
+
+  if (binary === undefined) {
+    consola.warn('starling invocation names no core binary');
+    return;
+  }
+
+  consola.info(`Core: ${kind === 'frozen' ? 'frozen binary' : 'interpreter'} (${binary})`);
+}
+
 async function startStarling(options: StarlingE2eOptions): Promise<void> {
   const root = repoRoot();
   const invocation = resolveInvocation(options, root);
   consola.info(`Starting starling (proxy ${options.port}, core ${options.corePort}, colibri ${options.colibriPort}) via ${invocation.command}`);
+  logResolvedCore(invocation);
 
   const rpc = new StarlingRpc({ warn: message => consola.warn(message) }, (method) => {
     if (method === 'event.crashed')
