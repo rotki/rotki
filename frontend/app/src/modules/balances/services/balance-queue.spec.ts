@@ -1,4 +1,4 @@
-import { wait } from '@shared/utils';
+import { flushPromises } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BalanceQueueService, type QueueItem, type QueueItemMetadata } from '@/modules/balances/services/balance-queue';
 import { TaskType } from '@/modules/core/tasks/task-type';
@@ -6,6 +6,24 @@ import { TaskType } from '@/modules/core/tasks/task-type';
 interface TestMetadata extends QueueItemMetadata {
   chain: string;
   address?: string;
+}
+
+interface Gate {
+  promise: Promise<void>;
+  open: () => void;
+}
+
+/**
+ * A manually released execution, used instead of sleeping inside `executeFn`.
+ * The queue only ever suspends at `await item.executeFn()`, so holding that
+ * await open gives the test exact control over how long an item stays running.
+ */
+function createGate(): Gate {
+  let open!: () => void;
+  const promise = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  return { open, promise };
 }
 
 describe('balanceQueueService', () => {
@@ -68,11 +86,16 @@ describe('balanceQueueService', () => {
 
     it('should respect max concurrency', async () => {
       const executionOrder: string[] = [];
-      const createExecuteFn = (id: string): (() => Promise<void>) => vi.fn(async () => {
-        executionOrder.push(`start-${id}`);
-        await wait(50);
-        executionOrder.push(`end-${id}`);
-      });
+      const gates: Gate[] = [];
+      const createExecuteFn = (id: string): (() => Promise<void>) => {
+        const gate = createGate();
+        gates.push(gate);
+        return vi.fn(async () => {
+          executionOrder.push(`start-${id}`);
+          await gate.promise;
+          executionOrder.push(`end-${id}`);
+        });
+      };
 
       const items: QueueItem<TestMetadata>[] = [
         {
@@ -98,11 +121,14 @@ describe('balanceQueueService', () => {
       // Start enqueueing items
       const promises = items.map(async item => queue.enqueue(item));
 
-      // Wait a bit to check concurrency
-      await wait(10);
-      expect(queue.getStats().running).toBeLessThanOrEqual(2);
+      // enqueue runs the items synchronously up to their first await, so the
+      // concurrency window is already open here — no need to sample it later.
+      expect(queue.getStats()).toMatchObject({ pending: 1, running: 2 });
+      expect(executionOrder).toEqual(['start-1', 'start-2']);
 
       // Wait for all to complete
+      for (const gate of gates)
+        gate.open();
       await Promise.all(promises);
 
       expect(executionOrder).toHaveLength(6);
@@ -183,9 +209,10 @@ describe('balanceQueueService', () => {
 
   describe('queue management', () => {
     it('should clear queue', async () => {
-      const executeFns = new Array(5).fill(null).map(() =>
+      const gates = new Array(5).fill(null).map(() => createGate());
+      const executeFns = gates.map(gate =>
         vi.fn(async () => {
-          await wait(100);
+          await gate.promise;
         }),
       );
 
@@ -198,7 +225,11 @@ describe('balanceQueueService', () => {
 
       const batchPromise = queue.enqueueBatch(items);
 
-      await wait(10);
+      // Two items are already running and the rest are pending at this point
+      expect(queue.getStats()).toMatchObject({
+        pending: 3,
+        running: 2,
+      });
 
       queue.clear();
 
@@ -208,6 +239,11 @@ describe('balanceQueueService', () => {
         pending: 0,
         running: 0,
       });
+
+      // Release the two in-flight executions so nothing dangles past the test
+      for (const gate of gates)
+        gate.open();
+      await flushPromises();
     });
 
     it('should clear completed items', async () => {
@@ -264,12 +300,9 @@ describe('balanceQueueService', () => {
     it('should track processing state', async () => {
       expect(queue.isProcessing()).toBe(false);
 
-      let resolveWait: (() => void) | null = null;
-      const waitPromise = new Promise<void>((resolve) => {
-        resolveWait = resolve;
-      });
+      const gate = createGate();
       const item: QueueItem<TestMetadata> = {
-        executeFn: async () => waitPromise,
+        executeFn: async () => gate.promise,
         id: 'test-1',
         metadata: { chain: 'eth' },
         type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
@@ -277,18 +310,16 @@ describe('balanceQueueService', () => {
 
       const enqueuePromise = queue.enqueue(item);
 
-      // Wait a bit to ensure the item is running
-      await wait(10);
+      // The item is already running: enqueue does not yield before executeFn
       expect(queue.isProcessing()).toBe(true);
 
-      // Resolve the wait promise to complete the item
-      resolveWait!();
+      // Release the gate to complete the item
+      gate.open();
 
-      // Wait for the item to complete
+      // The item is removed from runningItems before its promise resolves,
+      // so awaiting it is enough — no cleanup delay needed.
       await enqueuePromise;
 
-      // Small delay to ensure cleanup
-      await wait(10);
       expect(queue.isProcessing()).toBe(false);
     });
   });
@@ -350,9 +381,8 @@ describe('balanceQueueService', () => {
       // Enqueue without awaiting since it will be blocked
       const enqueuePromise = queue.enqueue(item);
 
-      // Wait a bit to ensure processing attempt was made
-      await wait(50);
-
+      // The canProcess check happens synchronously inside enqueue, so the
+      // blocked state is observable immediately.
       // Item should be pending, not executed
       expect(executeFn).not.toHaveBeenCalled();
       expect(queue.getStats()).toMatchObject({
@@ -421,7 +451,6 @@ describe('balanceQueueService', () => {
       // Enqueue while "decoding" is true (canProcess returns false)
       const enqueuePromise = queue.enqueue(item);
 
-      await wait(50);
       expect(executeFn).not.toHaveBeenCalled();
 
       // Simulate decoding finished
@@ -438,15 +467,16 @@ describe('balanceQueueService', () => {
       queue.setCanProcess(() => canProcess);
 
       const executionOrder: string[] = [];
-      const createSlowExecuteFn = (id: string): (() => Promise<void>) => vi.fn(async () => {
-        executionOrder.push(`start-${id}`);
-        // First item takes time, during which we'll block
-        if (id === '1') {
-          await wait(50);
-          canProcess = false; // Block after first item starts
-        }
-        executionOrder.push(`end-${id}`);
-      });
+      const gates = new Map<string, Gate>();
+      const createSlowExecuteFn = (id: string): (() => Promise<void>) => {
+        const gate = createGate();
+        gates.set(id, gate);
+        return vi.fn(async () => {
+          executionOrder.push(`start-${id}`);
+          await gate.promise;
+          executionOrder.push(`end-${id}`);
+        });
+      };
 
       const items: QueueItem<TestMetadata>[] = [
         {
@@ -471,16 +501,26 @@ describe('balanceQueueService', () => {
 
       const batchPromise = queue.enqueueBatch(items);
 
-      // Wait for first two items to start (concurrency is 2)
-      await wait(100);
+      // The first two items start immediately (concurrency is 2), the third waits
+      expect(queue.getStats()).toMatchObject({ pending: 1, running: 2 });
 
-      // Third item should be blocked
-      const stats = queue.getStats();
-      expect(stats.pending).toBeGreaterThanOrEqual(0);
+      // Block, then let the first item finish: the slot it frees must not be
+      // filled while canProcess is false.
+      canProcess = false;
+      gates.get('1')!.open();
+      await flushPromises();
+
+      expect(queue.getStats()).toMatchObject({ completed: 1, pending: 1, running: 1 });
+      expect(executionOrder).not.toContain('start-3');
 
       // Unblock and complete
       canProcess = true;
       queue.retryProcessing();
+
+      expect(queue.getStats()).toMatchObject({ pending: 0, running: 2 });
+
+      gates.get('2')!.open();
+      gates.get('3')!.open();
 
       await batchPromise;
 

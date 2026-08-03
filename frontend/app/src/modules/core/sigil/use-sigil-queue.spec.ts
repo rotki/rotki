@@ -40,8 +40,8 @@ describe('use-sigil-queue', () => {
       await enqueue({ url: '/leftover', timestamp: Date.now() });
 
       startQueue();
-      // Allow the initial flush to settle
-      await new Promise<void>(resolve => setTimeout(resolve, 50));
+      // The initial flush is fire-and-forget: poll for it instead of sleeping
+      await vi.waitUntil(() => fetchSpy.mock.calls.length > 0, { interval: 1, timeout: 2000 });
 
       expect(fetchSpy).toHaveBeenCalled();
 
@@ -108,29 +108,35 @@ describe('use-sigil-queue', () => {
     it('should clear IndexedDB on stop for opt-out compliance', async () => {
       const { enqueue, stopQueue } = await import('@/modules/core/sigil/use-sigil-queue');
 
+      // Verify the DB was cleared by opening it and counting the records
+      async function countEvents(): Promise<number> {
+        const db = await new Promise<IDBDatabase>((resolve) => {
+          const req = indexedDB.open('sigil', 1);
+          req.onupgradeneeded = (): void => {
+            req.result.createObjectStore('events', { keyPath: 'id', autoIncrement: true });
+          };
+          req.onsuccess = (): void => resolve(req.result);
+        });
+
+        const count = await new Promise<number>((resolve) => {
+          const tx = db.transaction('events', 'readonly');
+          const req = tx.objectStore('events').count();
+          req.onsuccess = (): void => resolve(req.result);
+        });
+
+        db.close();
+        return count;
+      }
+
       await enqueue({ url: '/data', timestamp: Date.now() });
+      expect(await countEvents()).toBe(1);
+
       stopQueue();
 
-      // Allow the fire-and-forget clearAll to settle
-      await new Promise<void>(resolve => setTimeout(resolve, 50));
+      // clearAll is fire-and-forget: poll the store until it drains
+      await vi.waitUntil(async () => await countEvents() === 0, { interval: 1, timeout: 2000 });
 
-      // Verify DB was cleared by checking we can open and count 0 records
-      const db = await new Promise<IDBDatabase>((resolve) => {
-        const req = indexedDB.open('sigil', 1);
-        req.onupgradeneeded = (): void => {
-          req.result.createObjectStore('events', { keyPath: 'id', autoIncrement: true });
-        };
-        req.onsuccess = (): void => resolve(req.result);
-      });
-
-      const count = await new Promise<number>((resolve) => {
-        const tx = db.transaction('events', 'readonly');
-        const req = tx.objectStore('events').count();
-        req.onsuccess = (): void => resolve(req.result);
-      });
-
-      db.close();
-      expect(count).toBe(0);
+      expect(await countEvents()).toBe(0);
     });
   });
 
