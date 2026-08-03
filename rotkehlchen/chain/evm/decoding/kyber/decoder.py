@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.constants import SWAPPED_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
+    ActionItem,
     DecoderContext,
     EvmDecodingOutput,
 )
@@ -17,6 +18,7 @@ from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     CPT_KYBER,
+    ENSO_ROUTER_V2,
     KYBER_AGGREGATOR_CONTRACT,
     KYBER_CPT_DETAILS,
 )
@@ -42,7 +44,7 @@ class KyberCommonDecoder(EvmDecoderInterface):
             spent_amount: FVal,
             return_amount: FVal,
             counterparty: str,
-    ) -> None:
+    ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """
         Use the information from a trade transaction to modify the HistoryEvents from receive/send
         to trade if the conditions are correct.
@@ -95,6 +97,8 @@ class KyberCommonDecoder(EvmDecoderInterface):
                 events_list=decoded_events,
             )
 
+        return out_event, in_event
+
     def _decode_aggregator_trade(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes a kyber aggregator swap, updating the events with proper metadata"""
         if context.tx_log.topics[0] != SWAPPED_TOPIC:
@@ -103,8 +107,16 @@ class KyberCommonDecoder(EvmDecoderInterface):
         sender = bytes_to_address(context.tx_log.data[:32])
         receiver = bytes_to_address(context.tx_log.data[96:128])
 
+        is_enso_routed_swap = False
         if self.base.any_tracked([sender, receiver]) is False:
-            return DEFAULT_EVM_DECODING_OUTPUT
+            if (
+                    self.base.is_tracked(context.transaction.from_address) and
+                    context.transaction.to_address == ENSO_ROUTER_V2
+            ):
+                sender = context.transaction.from_address
+                is_enso_routed_swap = True
+            else:
+                return DEFAULT_EVM_DECODING_OUTPUT
 
         source_token_address = bytes_to_address(context.tx_log.data[32:64])
         destination_token_address = bytes_to_address(context.tx_log.data[64:96])
@@ -115,7 +127,7 @@ class KyberCommonDecoder(EvmDecoderInterface):
         destination_asset = self.base.get_or_create_evm_asset(destination_token_address)
         spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_asset)
         return_amount = asset_normalized_value(amount=return_amount_raw, asset=destination_asset)
-        self._maybe_update_events(
+        out_event, in_event = self._maybe_update_events(
             decoded_events=context.decoded_events,
             sender=sender,
             source_asset=source_asset,
@@ -125,7 +137,25 @@ class KyberCommonDecoder(EvmDecoderInterface):
             counterparty=CPT_KYBER,
         )
 
-        return EvmDecodingOutput(process_swaps=True)
+        action_items = []
+        if is_enso_routed_swap and out_event is not None and in_event is None:
+            out_event.notes = (
+                f'Swap {out_event.amount} {out_event.asset.symbol_or_name()} in kyber'
+            )
+            action_items.append(ActionItem(
+                action='transform',
+                from_event_type=HistoryEventType.RECEIVE,
+                from_event_subtype=HistoryEventSubType.NONE,
+                asset=destination_asset,
+                amount=return_amount,
+                location_label=sender,
+                to_event_type=HistoryEventType.TRADE,
+                to_event_subtype=HistoryEventSubType.RECEIVE,
+                to_notes='Receive {amount} {symbol} from kyber swap',
+                paired_events_data=((out_event,), True),
+            ))
+
+        return EvmDecodingOutput(action_items=action_items, process_swaps=True)
 
     # -- DecoderInterface methods
 

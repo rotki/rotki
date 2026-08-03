@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`12735` KittenSwap swaps on HyperEVM are now properly decoded.
+* :feature:`12735` Project X swaps and liquidity position activity on HyperEVM are now properly decoded.
 * :feature:`12657` Filtering history events has been redesigned. Each filter is now a pill in one filter bar, showing what it filters and how, with the icon of the asset, account, protocol or location it names, so a whole set of filters can be read at a glance instead of being spelled out as text. Typing in the bar narrows across every filter at once: type part of a protocol or location name, an asset symbol, an amount such as ``>100`` or ``10-50``, or a date, and apply what you meant in a single step. Values you have filtered by before are offered again, so a long address or transaction hash need not be pasted twice. The account, state, action and show-ignored filters that used to sit beside the bar are now pills inside it, so there is one place to filter from, and the whole bar can be driven from the keyboard.
 * :feature:`12657` A set of filters can now be saved as a named view and applied again later, from the star button in the history events filter bar. Views are stored with your account, so they follow you to your other machines, and any filters you had already saved are carried over the first time you open the views menu.
 * :feature:`11019` History events can now be filtered by everything *except* a value: switch a filter to "is not" and it excludes what it names instead of including it.
