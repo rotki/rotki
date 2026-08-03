@@ -1,4 +1,3 @@
-import { wait } from '@shared/utils';
 import { flushPromises } from '@vue/test-utils';
 import { get, set } from '@vueuse/core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -103,15 +102,20 @@ describe('useNewlyDetectedTokensDb', () => {
 
       const originalToken = await db().newlyDetectedTokens.where('tokenIdentifier').equals('eip155:1/erc20:0x1234').first();
       const originalDetectedAt = originalToken?.detectedAt;
+      expect(originalDetectedAt).toBeDefined();
 
-      // Wait a bit and update
-      await wait(10);
+      // `detectedAt` defaults to `Date.now()`, so the update can only be shown to
+      // preserve the original if a fresh default would differ. Move the clock
+      // rather than sleeping on it.
+      const advanced = vi.spyOn(Date, 'now').mockReturnValue(originalDetectedAt! + 10_000);
 
       await addToken({
         tokenIdentifier: 'eip155:1/erc20:0x1234',
         tokenKind: NewDetectedTokenKind.EVM,
         seenDescription: 'Updated',
       });
+
+      advanced.mockRestore();
 
       const updatedToken = await db().newlyDetectedTokens.where('tokenIdentifier').equals('eip155:1/erc20:0x1234').first();
       expect(updatedToken?.detectedAt).toBe(originalDetectedAt);

@@ -103,6 +103,7 @@ describe('useCalendarData', () => {
 
   afterEach(() => {
     scope.stop();
+    vi.useRealTimers();
   });
 
   it('should expose state, pagination and isLoading from useServerTable', () => {
@@ -153,12 +154,13 @@ describe('useCalendarData', () => {
 
   describe('options to useServerTable', () => {
     it('should pass extraParams with address#chain entries', async () => {
+      vi.useFakeTimers();
       const accounts = ref<BlockchainAccount[]>([makeAccount('0xabc', 'eth'), makeAccount('0xdef', 'optimism')]);
       const { modelRange } = createCalendarData(accounts);
 
       set(modelRange, [100, 200]);
-      // debounced by 300ms — use fake timers to flush
-      await new Promise(resolve => setTimeout(resolve, 320));
+      // `refDebounced(modelRange, 300)` — drive the debounce instead of sleeping
+      await vi.advanceTimersByTimeAsync(300);
 
       // Accounts are shareable and round-trip through the URL.
       expect(sourceValues('both', 'accounts').accounts).toEqual(['0xabc#eth', '0xdef#optimism']);

@@ -1,10 +1,21 @@
 import type { MissingMapping } from '@/modules/user-data/schemas';
-import { wait } from '@shared/utils';
 import { get, set } from '@vueuse/core';
 import Dexie, { type EntityTable } from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick, ref } from 'vue';
+import { nextTick, type Ref, ref } from 'vue';
 import { NewDetectedTokenKind } from '@/modules/assets/detection/types';
+
+// `isReady` is only flipped to true after both migrations settle, so polling it is a
+// stronger signal than a fixed sleep - and it returns as soon as the work is done.
+const POLL_OPTIONS = { interval: 5, timeout: 2000 } as const;
+
+async function waitUntilReady(isReady: Ref<boolean>): Promise<void> {
+  await vi.waitUntil(() => get(isReady), POLL_OPTIONS);
+}
+
+async function waitUntilNotReady(isReady: Ref<boolean>): Promise<void> {
+  await vi.waitUntil(() => !get(isReady), POLL_OPTIONS);
+}
 
 // Old database structure (before migration)
 interface OldUserDB extends Dexie {
@@ -114,7 +125,7 @@ describe('useDatabase', () => {
 
       // Wait for watch to execute
       await nextTick();
-      await wait(50);
+      await waitUntilReady(isReady);
 
       expect(get(isReady)).toBe(true);
     });
@@ -127,7 +138,7 @@ describe('useDatabase', () => {
       const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(50);
+      await waitUntilReady(isReady);
 
       expect(get(isReady)).toBe(true);
       expect(db().name).toMatch(/^rotki\.data\.[\da-z]{6}\.testuser$/);
@@ -141,7 +152,7 @@ describe('useDatabase', () => {
       const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(50);
+      await waitUntilReady(isReady);
 
       expect(get(isReady)).toBe(true);
 
@@ -161,7 +172,7 @@ describe('useDatabase', () => {
       const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(100);
+      await waitUntilReady(isReady);
 
       expect(get(isReady)).toBe(true);
       expect(await db().missingMappings.count()).toBe(0);
@@ -192,7 +203,7 @@ describe('useDatabase', () => {
       const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(100);
+      await waitUntilReady(isReady);
 
       expect(get(isReady)).toBe(true);
 
@@ -219,7 +230,7 @@ describe('useDatabase', () => {
       const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(100);
+      await waitUntilReady(isReady);
 
       expect(get(isReady)).toBe(true);
       expect(await db().missingMappings.count()).toBe(0);
@@ -243,7 +254,7 @@ describe('useDatabase', () => {
       const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(100);
+      await waitUntilReady(isReady);
 
       expect(get(isReady)).toBe(true);
 
@@ -273,7 +284,7 @@ describe('useDatabase', () => {
       const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(100);
+      await waitUntilReady(isReady);
 
       expect(get(isReady)).toBe(true);
       expect(await db().newlyDetectedTokens.count()).toBe(0);
@@ -290,7 +301,7 @@ describe('useDatabase', () => {
       const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(100);
+      await waitUntilReady(isReady);
 
       // Should still be ready (migration failure is caught)
       expect(get(isReady)).toBe(true);
@@ -314,7 +325,7 @@ describe('useDatabase', () => {
       const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(100);
+      await waitUntilReady(isReady);
 
       expect(get(isReady)).toBe(true);
       expect(await db().missingMappings.count()).toBe(0);
@@ -343,7 +354,7 @@ describe('useDatabase', () => {
       const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(100);
+      await waitUntilReady(isReady);
 
       expect(get(isReady)).toBe(true);
       expect(await db().missingMappings.count()).toBe(1);
@@ -365,7 +376,7 @@ describe('useDatabase', () => {
       const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(100);
+      await waitUntilReady(isReady);
 
       expect(get(isReady)).toBe(true);
       expect(await db().missingMappings.count()).toBe(0);
@@ -402,7 +413,7 @@ describe('useDatabase', () => {
       const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(100);
+      await waitUntilReady(isReady);
 
       expect(get(isReady)).toBe(true);
 
@@ -428,7 +439,7 @@ describe('useDatabase', () => {
       const database = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(50);
+      await waitUntilReady(database.isReady);
 
       expect(get(database.isReady)).toBe(true);
       const firstDbName = database.db.name;
@@ -444,7 +455,7 @@ describe('useDatabase', () => {
       set(mockUserIdentifier, 'differentuser');
 
       await nextTick();
-      await wait(50);
+      await waitUntilReady(database.isReady);
 
       expect(get(database.isReady)).toBe(true);
       // Access database.db to re-evaluate the getter
@@ -463,7 +474,7 @@ describe('useDatabase', () => {
       const { isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(50);
+      await waitUntilReady(isReady);
 
       expect(get(isReady)).toBe(true);
 
@@ -471,7 +482,7 @@ describe('useDatabase', () => {
       set(mockUserIdentifier, undefined);
 
       await nextTick();
-      await wait(50);
+      await waitUntilNotReady(isReady);
 
       expect(get(isReady)).toBe(false);
     });
@@ -487,7 +498,7 @@ describe('useDatabase', () => {
       const database = scope.run(() => useDatabase())!;
 
       await nextTick();
-      await wait(50);
+      await waitUntilReady(database.isReady);
 
       expect(get(database.isReady)).toBe(true);
       const firstDbName = database.db.name;
@@ -496,7 +507,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, '/path/two');
 
       await nextTick();
-      await wait(50);
+      await waitUntilReady(database.isReady);
 
       expect(get(database.isReady)).toBe(true);
       // Access database.db to re-evaluate the getter
