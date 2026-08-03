@@ -81,6 +81,22 @@ describe('evmSwapSchema', () => {
     expect(issuePaths(state)).toEqual(['fee']);
   });
 
+  it('should not validate the rows of a disabled fee', () => {
+    const state = validState();
+    state.fee = [{ amount: '', asset: '', locationLabel: '', userNotes: '' }];
+
+    // The rows are hidden while the fee is off, so an error on them would be unfixable.
+    expect(issuePaths(state)).toEqual([]);
+  });
+
+  it('should validate the rows of an enabled fee by their dotted path', () => {
+    const state = validState();
+    state.hasFee = true;
+    state.fee = [{ amount: '', asset: '', locationLabel: '', userNotes: '' }];
+
+    expect(issuePaths(state)).toEqual(['fee.0.amount', 'fee.0.asset']);
+  });
+
   it('should reject a transaction hash that is not an evm one', () => {
     expect(issuePaths({ ...validState(), txRef: '0xnope' })).toEqual(['txRef']);
   });

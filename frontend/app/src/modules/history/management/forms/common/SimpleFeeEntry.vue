@@ -1,82 +1,32 @@
 <script setup lang="ts">
-import type { FeeEntry } from '@/modules/history/events/schemas';
-import useVuelidate from '@vuelidate/core';
-import { isEqual } from 'es-toolkit';
-import { toMessages } from '@/modules/core/common/validation/validation';
-import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
+import type { SwapFeeState } from '@/modules/history/management/forms/swap-event-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 
-const modelValue = defineModel<FeeEntry>({ required: true });
+/** Mutated in place, so the form's touched state stays with the row across a removal. */
+const modelValue = defineModel<SwapFeeState>({ required: true });
 
 const { disabled, location } = defineProps<{
   index: number;
   disabled?: boolean;
   single: boolean;
   location?: string;
+  errorMessages: {
+    amount: string[];
+    asset: string[];
+  };
 }>();
 
 const emit = defineEmits<{
   remove: [index: number];
+  blur: [field: 'amount' | 'asset'];
 }>();
 
-const amount = ref<string>('');
-const asset = ref<string>('');
+const { t } = useI18n({ useScope: 'global' });
+
 const chain = ref<string>();
 
-const { t } = useI18n({ useScope: 'global' });
-const { createCommonRules } = useEventFormValidation();
-const commonRules = createCommonRules();
-
-const rules = computed(() => (disabled
-  ? {
-      amount: {},
-      asset: {},
-    }
-  : {
-      amount: commonRules.createRequiredAmountRule(),
-      asset: commonRules.createRequiredAssetRule(),
-    }));
-
-const v$ = useVuelidate(
-  rules,
-  {
-    amount,
-    asset,
-  },
-  {
-    $autoDirty: true,
-  },
-);
-
-function updateModel(): void {
-  set(modelValue, {
-    amount: get(amount),
-    asset: get(asset),
-  });
-}
-
-watch(modelValue, (model, oldModel) => {
-  if (isEqual(model, oldModel))
-    return;
-
-  set(amount, model.amount);
-  set(asset, model.asset);
-}, { immediate: true });
-
-watch(amount, (amount, oldAmount) => {
-  if (amount === oldAmount)
-    return;
-  updateModel();
-});
-
-watch(asset, (asset, oldAsset) => {
-  if (asset === oldAsset)
-    return;
-  updateModel();
-});
-
-watch(() => location, (newLocation) => {
+watchImmediate(() => location, (newLocation) => {
   if (newLocation)
     set(chain, newLocation);
 });
@@ -109,23 +59,23 @@ watch(() => location, (newLocation) => {
 
       <div class="grow grid md:grid-cols-2 gap-4">
         <AmountInput
-          v-model="amount"
+          v-model="modelValue.amount"
           variant="outlined"
           data-cy="fee-amount"
           :disabled="disabled"
           :label="t('common.amount')"
-          :error-messages="toMessages(v$.amount)"
-          @blur="v$.amount.$touch()"
+          :error-messages="errorMessages.amount"
+          @blur="emit('blur', 'amount')"
         />
         <AssetSelect
-          v-model="asset"
+          v-model="modelValue.asset"
           outlined
           show-ignored
           :disabled="disabled"
           data-cy="fee-asset"
           :chain="chain"
-          :error-messages="toMessages(v$.asset)"
-          @blur="v$.asset.$touch()"
+          :error-messages="errorMessages.asset"
+          @blur="emit('blur', 'asset')"
         />
       </div>
     </div>

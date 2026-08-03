@@ -409,6 +409,23 @@ describe('forms/SwapEventForm', () => {
     );
   });
 
+  it('should keep the seeded fees when the dialog is pointed at a group that has them', async () => {
+    // The dialog reuses the form by swapping `data`, so enabling the fee through seeding must not
+    // trip the has-fee watcher into replacing the rows that were just loaded.
+    wrapper = createWrapper({
+      props: { data: { eventsInGroup: data.eventsInGroup.slice(0, 2), type: 'edit-group' } },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.setProps({ data });
+    await vi.advanceTimersToNextTimerAsync();
+
+    // A blank value here means the watcher replaced the loaded row with an empty one.
+    const feeAmount = wrapper.findAll<HTMLInputElement>('[data-cy=fee-amount] input');
+    expect(feeAmount).toHaveLength(1);
+    expect(feeAmount[0].element.value).toBe('1');
+  });
+
   it('should auto-generate uniqueId when not provided on new event', async () => {
     const mockUUID = '550e8400-e29b-41d4-a716-446655440000';
     vi.spyOn(crypto, 'randomUUID').mockReturnValue(mockUUID);
