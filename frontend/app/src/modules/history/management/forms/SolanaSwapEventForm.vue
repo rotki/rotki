@@ -11,7 +11,7 @@ import {
   solanaSwapStateFromEvents,
   toSolanaSwapPayload,
 } from '@/modules/history/management/forms/solana-swap-event-form';
-import { emptySubEvent } from '@/modules/history/management/forms/swap/swap-sub-event';
+import { emptySubEvent, SUB_EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/swap/swap-sub-event';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
 import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
@@ -27,6 +27,7 @@ const location = ref<string>(SOLANA_CHAIN);
 
 const { form, save, seed } = useHistoryEventForm({
   initial: emptySolanaSwapForm,
+  priceIntentKeys: SUB_EVENT_PRICE_INTENT_KEYS,
   priceIntents: state => collectPriceIntents(state.spend, state.receive, state.fee),
   schema: solanaSwapSchema(),
   stateUpdated,

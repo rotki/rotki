@@ -178,6 +178,25 @@ describe('useForm', () => {
       expect(get(form.dirty)).toBe(false);
     });
 
+    it('should ignore a transient key at any depth', () => {
+      const form = useForm<SwapState, SwapState>({
+        initial: emptyState,
+        schema: SwapSchema,
+        submit: submitFn,
+        transform: state => state,
+        transientKeys: ['draftPrice'],
+      });
+
+      Reflect.set(form.state, 'draftPrice', '2000');
+      Reflect.set(form.state.spend[0], 'draftPrice', '3000');
+
+      expect(get(form.dirty)).toBe(false);
+
+      form.state.txRef = '0xabc';
+
+      expect(get(form.dirty)).toBe(true);
+    });
+
     it('should reset dirty after a successful submit', async () => {
       const form = createForm(() => ({
         spend: [{ amount: '1', asset: 'ETH' }],

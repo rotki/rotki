@@ -13,6 +13,10 @@ const { errorMessages } = defineProps<{
   };
 }>();
 
+const emit = defineEmits<{
+  blur: [field: 'fee' | 'feeAsset'];
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
@@ -21,7 +25,7 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiCheckbox
       v-model="hasFee"
       data-cy="has-fee"
-      label="Has Fee"
+      :label="t('transactions.events.form.has_fee.label')"
       color="primary"
     />
 
@@ -34,6 +38,7 @@ const { t } = useI18n({ useScope: 'global' });
         data-cy="fee-amount"
         :label="t('common.fee')"
         :error-messages="errorMessages.fee"
+        @blur="emit('blur', 'fee')"
       />
       <AssetSelect
         v-model="feeAsset"
@@ -43,6 +48,7 @@ const { t } = useI18n({ useScope: 'global' });
         data-cy="fee-asset"
         :label="t('transactions.events.form.fee_asset.label')"
         :error-messages="errorMessages.feeAsset"
+        @blur="emit('blur', 'feeAsset')"
       />
     </div>
   </div>

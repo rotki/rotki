@@ -23,6 +23,11 @@ interface UseHistoryEventFormOptions<TState extends object, TAdd, TEdit> {
   readonly toEditPayload: (payload: TAdd, identifiers: number[]) => TEdit;
   /** The historic prices to write before saving. Where they sit in the state is form specific. */
   readonly priceIntents?: (state: UnwrapNestedRefs<TState>) => PriceIntent[];
+  /**
+   * The state keys those intents live under. They are saved through their own call, so editing only
+   * a price must not make the form re-send the unchanged event.
+   */
+  readonly priceIntentKeys?: readonly string[];
   /** The dialog's `prompt-on-close` flag, kept in step with the form being dirty. */
   readonly stateUpdated: ModelRef<boolean>;
   /**
@@ -55,7 +60,7 @@ export function useHistoryEventForm<
 >(
   options: UseHistoryEventFormOptions<TState, TAdd, TEdit>,
 ): UseHistoryEventFormReturn<TState, TAdd> {
-  const { initial, priceIntents, schema, stateUpdated, toEditPayload, transform } = options;
+  const { initial, priceIntentKeys, priceIntents, schema, stateUpdated, toEditPayload, transform } = options;
   const errorMessages = options.errorMessages ?? ref<Record<string, string[]>>({});
 
   const { t } = useI18n({ useScope: 'global' });
@@ -75,6 +80,7 @@ export function useHistoryEventForm<
         : addHistoryEvent(payload);
     },
     transform,
+    transientKeys: priceIntentKeys,
   });
 
   function seed(state: TState, ids: number[] = []): void {

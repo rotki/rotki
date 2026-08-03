@@ -462,6 +462,22 @@ describe('forms/AssetMovementEventForm.vue', () => {
     );
   });
 
+  it('should keep a blank unique id when editing rather than assigning one', async () => {
+    // A movement whose extra data carries no reference must not be handed a fresh identifier on
+    // every save; only a new movement gets one generated.
+    const withoutReference: AssetMovementEvent = { ...event, extraData: null };
+    wrapper = createWrapper({
+      props: { data: { eventsInGroup: [withoutReference], type: 'edit-group' } },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.find('[data-cy=amount] input').setValue('250');
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+
+    expect(await wrapper.vm.save()).toBe(true);
+    expect(editHistoryEventMock).toHaveBeenCalledWith(expect.objectContaining({ uniqueId: '' }));
+  });
+
   it('should show eventTypes options correctly', async () => {
     wrapper = createWrapper({ props: { data: { eventsInGroup: [event], type: 'edit-group' } } });
     await vi.advanceTimersToNextTimerAsync();

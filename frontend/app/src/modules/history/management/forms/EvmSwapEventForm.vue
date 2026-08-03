@@ -12,7 +12,7 @@ import {
   toEvmSwapPayload,
 } from '@/modules/history/management/forms/evm-swap-event-form';
 import { collectPriceIntents } from '@/modules/history/management/forms/price-intent';
-import { emptySubEvent } from '@/modules/history/management/forms/swap/swap-sub-event';
+import { emptySubEvent, SUB_EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/swap/swap-sub-event';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
 import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
 import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
@@ -32,6 +32,7 @@ const { txChainsToLocation } = useSupportedChains();
 const { form, save, seed } = useHistoryEventForm({
   errorMessages,
   initial: emptyEvmSwapForm,
+  priceIntentKeys: SUB_EVENT_PRICE_INTENT_KEYS,
   priceIntents: state => collectPriceIntents(state.spend, state.receive, state.fee),
   schema: evmSwapSchema(),
   stateUpdated,

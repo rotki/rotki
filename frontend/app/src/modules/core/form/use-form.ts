@@ -24,6 +24,12 @@ export interface FormOptions<TState extends object, TPayload, TMessage = string>
   readonly transform: (state: UnwrapNestedRefs<TState>) => TPayload;
   /** Injected persistence, returning the store/API `ActionStatus`. */
   readonly submit: (payload: TPayload) => Promise<{ readonly message?: TMessage; readonly success: boolean }>;
+  /**
+   * State keys, at any depth, that must not count as an edit. For state the form carries but does
+   * not send: a pending price write is saved through its own call, so editing only a price must not
+   * make the form think the entity itself changed.
+   */
+  readonly transientKeys?: readonly string[];
 }
 
 export interface FormApi<TState extends object, TPayload, TMessage = string> {
@@ -84,7 +90,15 @@ export function useForm<TState extends object, TPayload, TMessage = string>(
   const submitted = shallowRef<boolean>(false);
   const touched = shallowRef<Map<object, ReadonlySet<string>>>(new Map());
   const server = shallowRef<Map<string, ServerError>>(new Map());
-  const snapshot = shallowRef<string>(JSON.stringify(state));
+
+  const transientKeys = new Set(options.transientKeys ?? []);
+
+  /** The state as it is compared for `dirty`, i.e. with the transient keys left out. */
+  function serialise(): string {
+    return JSON.stringify(state, (key, value) => (transientKeys.has(key) ? undefined : value));
+  }
+
+  const snapshot = shallowRef<string>(serialise());
 
   /** Resolves a dotted path to the object that owns its last segment. */
   function resolve(path: string): PathTarget | undefined {
@@ -162,7 +176,7 @@ export function useForm<TState extends object, TPayload, TMessage = string>(
     return count;
   });
 
-  const dirty = computed<boolean>(() => JSON.stringify(state) !== get(snapshot));
+  const dirty = computed<boolean>(() => serialise() !== get(snapshot));
 
   function touch(path: string): void {
     const target = resolve(path);
@@ -196,7 +210,7 @@ export function useForm<TState extends object, TPayload, TMessage = string>(
     set(touched, new Map());
     set(server, new Map());
     set(submitted, false);
-    set(snapshot, JSON.stringify(state));
+    set(snapshot, serialise());
   }
 
   function validate(): boolean {
@@ -215,7 +229,7 @@ export function useForm<TState extends object, TPayload, TMessage = string>(
       if (!status.success)
         return { message: status.message, outcome: 'error' };
 
-      set(snapshot, JSON.stringify(state));
+      set(snapshot, serialise());
       return { outcome: 'success', payload };
     }
     finally {
