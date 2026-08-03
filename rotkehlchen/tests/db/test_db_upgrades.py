@@ -4166,6 +4166,7 @@ def test_upgrade_db_52_to_53(
         current_price_oracles,
 ):
     """Test upgrading the DB from version 52 to version 53."""
+    lowercased_address = (checksummed_address := '0xaB19dE37aB19DE37AB19de37Ab19de37ab19de37').lower()  # noqa: E501
     _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
     db_v52 = _init_db_with_target_version(
         target_version=52,
@@ -4434,6 +4435,39 @@ def test_upgrade_db_52_to_53(
             })),
         )
 
+        # an identifier mirrored here while the globaldb still held it non canonical, used by
+        # an event, a balance and the ignored asset list
+        lowercased_id = f'eip155:1/erc20:{lowercased_address}'
+        write_cursor.execute('INSERT INTO assets(identifier) VALUES(?)', (lowercased_id,))
+        write_cursor.execute(
+            'INSERT INTO history_events('
+            'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
+            'asset, amount, notes, type, subtype'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db(),
+                'NON_CHECKSUMMED_ASSET_EVENT',
+                0,
+                1730000000000,
+                Location.BLOCKCHAIN.serialize_for_db(),
+                '0x0000000000000000000000000000000000000001',
+                lowercased_id,
+                '1',
+                'Receive a token whose address was never checksummed',
+                HistoryEventType.RECEIVE.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ),
+        )
+        write_cursor.execute(
+            'INSERT INTO timed_balances(category, timestamp, currency, amount, usd_value) '
+            "VALUES('A', 1730000000, ?, '1', '1')",
+            (lowercased_id,),
+        )
+        write_cursor.execute(
+            "INSERT INTO multisettings(name, value) VALUES('ignored_asset', ?)",
+            (lowercased_id,),
+        )
+
     airdrops_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
     airdrops_dir.mkdir(parents=True)
     (airdrop_parquet_path := airdrops_dir / 'obsolete.parquet').touch()
@@ -4453,6 +4487,26 @@ def test_upgrade_db_52_to_53(
             'gnosis': ['blockscout', 'etherscan'],
             'optimism': ['blockscout', 'etherscan'],
         }
+        # the mirrored identifier is canonical now, and so is every row that referenced it.
+        # GLOB compares case sensitively, unlike the = the assets table would use
+        checksummed_id = f'eip155:1/erc20:{checksummed_address}'
+        for table, column in (
+                ('assets', 'identifier'),
+                ('history_events', 'asset'),
+                ('timed_balances', 'currency'),
+        ):
+            assert cursor.execute(
+                f'SELECT COUNT(*) FROM {table} WHERE {column} GLOB ?',
+                (f'*{checksummed_address}*',),
+            ).fetchone()[0] == 1, f'{table}.{column} kept the non-canonical identifier'
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM multisettings WHERE name='ignored_asset' AND value GLOB ?",
+            (f'*{checksummed_address}*',),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (checksummed_id,),
+        ).fetchone()[0] == 1  # the rename did not leave a second row behind
+
         assert table_exists(cursor=cursor, name='event_metrics')
         assert table_exists(cursor=cursor, name='data_issues')
         for index_name in (

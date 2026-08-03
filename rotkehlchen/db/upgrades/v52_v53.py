@@ -2,6 +2,8 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
+from eth_utils import to_checksum_address
+
 from rotkehlchen.constants.misc import AIRDROPSDIR_NAME, APPDIR_NAME
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.oracles.structures import CurrentPriceOracle
@@ -424,6 +426,71 @@ CREATE TABLE IF NOT EXISTS bitcoin_tx_mappings (
         write_cursor.execute(
             "UPDATE settings SET value=? WHERE name='evm_indexers_order'",
             (json.dumps(orders),),
+        )
+
+    @progress_step(description='Canonicalize evm asset identifiers that were not checksummed.')
+    def _checksum_evm_asset_identifiers(write_cursor: DBCursor) -> None:
+        """Rewrite the evm asset identifiers whose address was never checksummed.
+
+        The globaldb upgrade running before this one canonicalizes the same identifiers there.
+        The transformation is the same on both sides and depends on nothing but the identifier
+        itself, so the two need no coordination, and this pass only has to find the identifiers
+        this db mirrored while they were still non canonical.
+
+        An address that was never checksummed is uniformly cased, so the keccak behind
+        to_checksum_address is only paid for a handful of the mirrored identifiers.
+        """
+        renames = []
+        for (identifier,) in write_cursor.execute(
+                "SELECT identifier FROM assets WHERE identifier LIKE 'eip155:%'",
+        ).fetchall():
+            if len(parts := identifier.split(':')) != 3:
+                continue
+
+            # an erc721 identifier appends /<collectible id> after the address
+            if (body := (address := parts[2].split('/')[0])[2:]) != body.lower() and body != body.upper():  # noqa: E501
+                continue
+
+            try:
+                checksummed = to_checksum_address(address)
+            except ValueError:
+                log.error('Skipping asset %s with an invalid evm address %s', identifier, address)
+                continue
+
+            if checksummed != address:
+                renames.append((identifier.replace(address, checksummed), identifier))
+
+        if len(renames) == 0:
+            return
+
+        log.debug('Canonicalizing %s evm asset identifiers', len(renames))
+        # assets.identifier is the parent of an ON UPDATE CASCADE foreign key from every asset
+        # column, but foreign keys are not guaranteed to be on during an upgrade, so each
+        # column is written explicitly instead of relying on the cascade. Which ones those are
+        # is asked of the db rather than listed here, so a column cannot be missed.
+        identifier_columns = [('assets', 'identifier')]
+        for (table,) in write_cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'",
+        ).fetchall():
+            identifier_columns.extend(
+                (table, fk_entry[3])
+                for fk_entry in write_cursor.execute(f'PRAGMA foreign_key_list("{table}")').fetchall()  # noqa: E501
+                if fk_entry[2] == 'assets' and fk_entry[4] == 'identifier'
+            )
+
+        identifier_columns.extend((  # these hold an identifier with no foreign key for it
+            ('data_issues', 'asset'),
+            ('event_metrics', 'asset'),
+        ))
+        for table, column in identifier_columns:
+            write_cursor.executemany(
+                f'UPDATE OR IGNORE {table} SET {column}=? WHERE {column}=?',
+                renames,
+            )
+
+        write_cursor.executemany(  # the ignored assets are kept in here, without a foreign key
+            "UPDATE OR IGNORE multisettings SET value=? WHERE value=? AND name='ignored_asset'",
+            renames,
         )
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)
