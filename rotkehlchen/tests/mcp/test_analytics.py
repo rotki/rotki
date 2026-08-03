@@ -111,16 +111,21 @@ def test_sanitize_should_hash_identifiers_and_redact_notes() -> None:
     assert sanitized['has_notes'] is True
 
 
-def test_sanitize_balanced_keeps_named_label_but_strict_hashes_it() -> None:
-    row = {'location_label': 'Kraken main', 'label': 'my tag'}
-    balanced = _sanitize_row(row, privacy_mode='balanced')
-    # a human-friendly account name (not address-shaped) stays readable in balanced mode
-    assert balanced['location_label'] == 'Kraken main'
-    # but an address-shaped location_label is hashed even in balanced mode
-    assert 'location_label' not in _sanitize_row({'location_label': ADDRESS}, 'balanced')
+def test_sanitize_balanced_keeps_venue_label_but_strict_hashes_it() -> None:
+    row = {'location_label': 'kraken', 'label': 'my tag'}
+    # a bare venue name carries no user-authored text, so it stays readable in balanced mode
+    assert _sanitize_row(row, privacy_mode='balanced')['location_label'] == 'kraken'
+    # capitalisation of the venue name is not user information either
+    assert _sanitize_row({'location_label': 'Kraken'}, 'balanced')['location_label'] == 'Kraken'
+    for user_assigned in ('Coinbase 1', 'Kraken main', ADDRESS):
+        # anything the user typed themselves is hashed only, even in balanced mode
+        assert 'location_label' not in (
+            sanitized := _sanitize_row({'location_label': user_assigned}, 'balanced')
+        )
+        assert sanitized['location_label_hash'].startswith('anon_')
 
     strict = _sanitize_row(row, privacy_mode='strict')
-    assert 'location_label' not in strict
+    assert 'location_label' not in strict  # not even the venue name in strict mode
     assert strict['location_label_hash'].startswith('anon_')
     assert 'label' not in strict  # user-authored label is an identifier in strict mode
 
@@ -519,7 +524,9 @@ def test_include_values_should_multiply_amount_by_cached_price(monkeypatch) -> N
     assert loaded['source']['unpriced_rows'] == 1
     assert loaded['source']['lookup_count'] == 3
     # only_cache_period must always be sent, so no remote oracle fetch can be triggered
-    assert all(call['max_seconds_distance'] == 3600 for call in calls)
+    assert all(
+        call['max_seconds_distance'] == analytics.PRICE_LOOKUP_RADIUS_SECONDS for call in calls
+    )
     assert all(call['target_asset'] == 'EUR' for call in calls)
 
     rows = session.query_sql(
@@ -840,6 +847,50 @@ def test_describe_should_list_enum_values_and_null_fractions(monkeypatch) -> Non
     assert columns['extra_data_cdp_id']['null_fraction'] == 1.0
 
 
+def test_describe_should_list_counterparty_values_beyond_the_general_scan_cap(
+        monkeypatch,
+) -> None:
+    """describe_table documents counterparty as one of the columns it lists values for, but
+    every real account has far more than the general cap, so it never got a listing at all.
+    """
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        {'identifier': index, 'asset': 'ETH', 'amount': '1', 'event_type': 'spend',
+         # one dominant counterparty so the column still reads as an enum, plus a long tail
+         # comfortably past MAX_DISTINCT_VALUES_SCANNED
+         'counterparty': 'gas' if index % 2 == 0 else f'protocol_{index}'}
+        for index in range(160)
+    ])
+    session = AnalyticsSession()
+    session.refresh(tables=None, from_timestamp=0, to_timestamp=0, include_ignored_assets=False)
+
+    assert (counterparty := _described(session)['counterparty'])['distinct_count'] == 81
+    assert counterparty['top_values'][0] == {'value': 'gas', 'rows': 80}
+    # the report cap still bounds the payload, so listing more does not make it bigger
+    assert len(counterparty['top_values']) == analytics.MAX_DISTINCT_VALUES_REPORTED
+
+
+def test_describe_should_not_list_values_of_a_column_where_nothing_repeats(
+        monkeypatch,
+) -> None:
+    """A sparse column holding a distinct amount per row is not an enum. Listing its "top
+    values" put per-row financial data in what is meant to be a schema summary.
+    """
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        {'identifier': index, 'asset': 'ETH', 'amount': '1', 'event_type': 'spend',
+         'extra_data_amount': f'{index}.38752450{index}'}
+        for index in range(28)
+    ])
+    session = AnalyticsSession()
+    session.refresh(tables=None, from_timestamp=0, to_timestamp=0, include_ignored_assets=False)
+
+    assert (column := _described(session)['extra_data_amount'])['distinct_count'] == 28
+    assert 'top_values' not in column  # the count is the useful part; the amounts are not
+    # a short domain is still listed even when nothing repeats -- it is the whole vocabulary
+    assert _described(session)['event_type']['top_values'] == [{'value': 'spend', 'rows': 28}]
+
+
 def test_describe_should_never_emit_hashed_values(monkeypatch) -> None:
     """Listing anon_ values would be noise at best and defeats the point at worst."""
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
@@ -886,6 +937,63 @@ def test_direction_column_should_use_rotki_resolution(monkeypatch) -> None:
     ]
 
 
+def test_event_group_should_separate_income_from_returned_principal(monkeypatch) -> None:
+    """The whole point of the column: every row below is event_type "staking" and direction
+    "in", so nothing else on the row tells earnings apart from principal coming back.
+    """
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        {'identifier': 1, 'asset': 'ETH', 'amount': '1', 'location': 'ethereum',
+         'event_type': 'staking', 'event_subtype': 'reward'},
+        {'identifier': 2, 'asset': 'ETH', 'amount': '32', 'location': 'ethereum',
+         'event_type': 'staking', 'event_subtype': 'remove asset'},
+        {'identifier': 3, 'asset': 'ETH', 'amount': '10', 'location': 'ethereum',
+         'event_type': 'staking', 'event_subtype': 'redeem wrapped'},
+    ])
+    session = AnalyticsSession()
+    session.refresh(tables=None, from_timestamp=0, to_timestamp=0, include_ignored_assets=False)
+
+    assert session.query_sql(
+        'select event_subtype, direction, event_group from history_events order by identifier',
+        max_rows=10,
+    )['rows'] == [
+        {'event_subtype': 'reward', 'direction': 'in', 'event_group': 'income'},
+        # an unstake returns principal: direction "in", but not income
+        {'event_subtype': 'remove asset', 'direction': 'in', 'event_group': 'staking'},
+        # so does an LST redemption -- its earnings are appreciation, not any row here
+        {'event_subtype': 'redeem wrapped', 'direction': 'in', 'event_group': 'staking'},
+    ]
+
+
+def test_partial_beacon_withdrawal_should_be_income_but_exit_should_not(monkeypatch) -> None:
+    """rotki files both under staking/remove asset, so only is_exit tells them apart. A
+    partial withdrawal is a skim of the balance above 32 ETH and therefore pure reward.
+    """
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    _mock_history_pages(monkeypatch, [
+        {'identifier': 1, 'asset': 'ETH', 'amount': '0.03', 'location': 'ethereum',
+         'event_type': 'staking', 'event_subtype': 'remove asset',
+         'entry_type': 'eth withdrawal event', 'validator_index': 42, 'is_exit': False},
+        {'identifier': 2, 'asset': 'ETH', 'amount': '32.1', 'location': 'ethereum',
+         'event_type': 'staking', 'event_subtype': 'remove asset',
+         'entry_type': 'eth withdrawal event', 'validator_index': 42, 'is_exit': True},
+        # a non-withdrawal row carries no is_exit at all and must keep its taxonomy group
+        {'identifier': 3, 'asset': 'ETH', 'amount': '5', 'location': 'ethereum',
+         'event_type': 'staking', 'event_subtype': 'remove asset', 'entry_type': 'evm event'},
+    ])
+    session = AnalyticsSession()
+    session.refresh(tables=None, from_timestamp=0, to_timestamp=0, include_ignored_assets=False)
+
+    assert session.query_sql(
+        'select identifier, event_group from history_events order by identifier',
+        max_rows=10,
+    )['rows'] == [
+        {'identifier': 1, 'event_group': 'income'},   # partial withdrawal: reward
+        {'identifier': 2, 'event_group': 'staking'},  # full exit: returned principal
+        {'identifier': 3, 'event_group': 'staking'},
+    ]
+
+
 def test_unparsable_event_should_not_fail_the_load(monkeypatch) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [
@@ -895,8 +1003,8 @@ def test_unparsable_event_should_not_fail_the_load(monkeypatch) -> None:
     session = AnalyticsSession()
     assert session.refresh(tables=None, from_timestamp=0, to_timestamp=0,
                            include_ignored_assets=False)['errors'] == {}
-    assert session.query_sql('select direction from history_events', 10)['rows'] == [
-        {'direction': None},
+    assert session.query_sql('select direction, event_group from history_events', 10)['rows'] == [
+        {'direction': None, 'event_group': None},
     ]
 
 
@@ -950,3 +1058,20 @@ def test_query_sql_without_loaded_tables_errors() -> None:
 
 def test_describe_unknown_table_errors() -> None:
     assert AnalyticsSession().describe_table('nope')['error']['type'] == 'unknown_table'
+
+
+def test_price_lookup_radius_should_cover_a_full_hour_around_every_bucketed_event() -> None:
+    """Timestamps are floored to the hour before being priced, but the backend centres its
+    ``BETWEEN queried - distance AND queried + distance`` search on what we send. An equal
+    radius therefore searched two hours *behind* an event late in its bucket and barely one
+    second ahead of it, missing cached prices minutes later than the event itself.
+    """
+    latest_offset = analytics.PRICE_TOLERANCE_SECONDS - 1  # the worst case within a bucket
+    window_start = -analytics.PRICE_LOOKUP_RADIUS_SECONDS
+    window_end = analytics.PRICE_LOOKUP_RADIUS_SECONDS
+
+    # relative to the bucket, the event wants prices from one hour before to one hour after
+    assert window_start <= latest_offset - analytics.PRICE_TOLERANCE_SECONDS
+    assert window_end >= latest_offset + analytics.PRICE_TOLERANCE_SECONDS
+    # and the equal radius the fix replaced could not cover that
+    assert latest_offset + analytics.PRICE_TOLERANCE_SECONDS > analytics.PRICE_TOLERANCE_SECONDS
