@@ -26,6 +26,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { form, save, seed } = useHistoryEventForm({
   initial: emptySwapForm,
+  priceIntentKeys: ['spendPriceIntent', 'receivePriceIntent'],
   priceIntents: (state) => {
     const intents: PriceIntent[] = [];
     if (state.spendPriceIntent)

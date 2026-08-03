@@ -48,6 +48,9 @@ export const NO_SUB_EVENT_ERRORS: SwapSubEventErrors = {
   userNotes: [],
 };
 
+/** Where a row keeps its pending price write, which is form state rather than an edit to the event. */
+export const SUB_EVENT_PRICE_INTENT_KEYS = ['priceIntent'] as const;
+
 export function emptySubEvent(): SwapSubEventState {
   return {
     amount: '',
