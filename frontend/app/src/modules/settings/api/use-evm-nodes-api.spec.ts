@@ -117,7 +117,7 @@ describe('composables/api/settings/evm-nodes-api', () => {
       });
     });
 
-    it('should strip isArchive from the payload', async () => {
+    it('should strip the read-only fields from the payload', async () => {
       let requestBody: DefaultBodyType = null;
 
       server.use(
@@ -139,11 +139,15 @@ describe('composables/api/settings/evm-nodes-api', () => {
         weight: 100,
         blockchain: 'ETH',
         isArchive: true,
+        runtimeStatus: 'cooling_down' as const,
+        cooldownUntil: 1785655945,
       };
 
       await addEvmNode(newNode);
 
       expect(requestBody).not.toHaveProperty('isArchive');
+      expect(requestBody).not.toHaveProperty('runtime_status');
+      expect(requestBody).not.toHaveProperty('cooldown_until');
     });
   });
 
@@ -186,7 +190,7 @@ describe('composables/api/settings/evm-nodes-api', () => {
       });
     });
 
-    it('should strip isArchive from the payload', async () => {
+    it('should strip the read-only fields from the payload', async () => {
       let requestBody: DefaultBodyType = null;
 
       server.use(
@@ -209,11 +213,15 @@ describe('composables/api/settings/evm-nodes-api', () => {
         weight: 100,
         blockchain: 'ETH',
         isArchive: true,
+        runtimeStatus: 'cooling_down',
+        cooldownUntil: 1785655945,
       };
 
       await editEvmNode(editedNode);
 
       expect(requestBody).not.toHaveProperty('isArchive');
+      expect(requestBody).not.toHaveProperty('runtime_status');
+      expect(requestBody).not.toHaveProperty('cooldown_until');
     });
   });
 
