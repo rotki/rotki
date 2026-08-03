@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import type { HistoryEventEntryType } from '@rotki/common';
-import type { Validation } from '@vuelidate/core';
 import type { LocationQueryRaw } from 'vue-router';
 import { startPromise } from '@shared/utils';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { toMessages } from '@/modules/core/common/validation/validation';
 import HistoryEventActionPicker from '@/modules/history/events/action-picker/HistoryEventActionPicker.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 
@@ -12,7 +10,15 @@ interface HistoryEventTypeFormProps {
   counterparty?: string | null;
   location?: string | null;
   disabled?: boolean;
-  v$: Validation;
+  /**
+   * Messages for the two fields this form owns, already resolved to strings. Deliberately not a
+   * validator instance: the parent owns validation, this component only renders what it is given,
+   * which is what lets Vuelidate and zod parents share it.
+   */
+  errorMessages: {
+    eventType: string[];
+    eventSubtype: string[];
+  };
   disableWarning?: boolean;
   entryType?: HistoryEventEntryType;
   showAccountingRuleLink?: boolean;
@@ -26,12 +32,16 @@ const {
   counterparty = null,
   location = null,
   disabled,
-  v$,
+  errorMessages,
   disableWarning,
   entryType,
   showAccountingRuleLink = false,
   dirty = false,
 } = defineProps<HistoryEventTypeFormProps>();
+
+const emit = defineEmits<{
+  touch: [];
+}>();
 
 const router = useRouter();
 const { show } = useConfirmStore();
@@ -49,8 +59,7 @@ const pickerValue = computed<{ eventType: string; eventSubtype: string } | undef
   set: (value) => {
     set(eventType, value?.eventType ?? '');
     set(eventSubType, value?.eventSubtype);
-    v$.eventType.$touch();
-    v$.eventSubtype.$touch();
+    emit('touch');
   },
 });
 
@@ -63,16 +72,20 @@ const historyTypeCombination = computed(() => findEventTypeData({
   location,
 }, false));
 
+/**
+ * Gated on the pair being set rather than on it having been touched: a fresh form has nothing to
+ * warn about yet, and an existing event with an unrecognised combination should say so on sight.
+ */
 const showHistoryEventTypeCombinationWarning = computed<boolean>(() => {
-  if (!v$.eventType.$dirty && !v$.eventSubtype.$dirty)
+  if (!get(eventType) || !get(eventSubType))
     return false;
 
   return !get(historyTypeCombination).identifier;
 });
 
 const pickerErrorMessages = computed<string[]>(() => [
-  ...toMessages(v$.eventType),
-  ...toMessages(v$.eventSubtype),
+  ...errorMessages.eventType,
+  ...errorMessages.eventSubtype,
 ]);
 
 const canLinkToAccountingRule = computed<boolean>(() =>

@@ -1,5 +1,3 @@
-import type { Validation } from '@vuelidate/core';
-import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
@@ -21,11 +19,6 @@ vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
   }),
 }));
 
-function fakeValidation(): Validation {
-  const field = { $dirty: false, $errors: [], $touch: vi.fn() };
-  return createMock<Validation>({ eventSubtype: field, eventType: field });
-}
-
 describe('forms/HistoryEventTypeForm.vue', () => {
   beforeEach(() => {
     push.mockClear();
@@ -40,7 +33,7 @@ describe('forms/HistoryEventTypeForm.vue', () => {
       props: {
         eventSubtype: 'reward',
         eventType: 'staking',
-        v$: fakeValidation(),
+        errorMessages: { eventSubtype: [], eventType: [] },
         ...props,
       },
     });
