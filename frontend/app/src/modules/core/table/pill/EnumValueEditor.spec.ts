@@ -34,8 +34,8 @@ describe('enumValueEditor', () => {
   it('should derive checklist options from the field suggestions', () => {
     const wrapper = createWrapper(enumField, { fieldKey: 'protocols', op: 'is', values: [] });
     expect(wrapper.findComponent(ValueSelectList).props('options')).toStrictEqual([
-      { caption: undefined, keywords: undefined, label: 'aave', value: 'aave' },
-      { caption: undefined, keywords: undefined, label: 'uniswap', value: 'uniswap' },
+      { caption: undefined, keywords: undefined, loading: undefined, label: 'aave', value: 'aave' },
+      { caption: undefined, keywords: undefined, loading: undefined, label: 'uniswap', value: 'uniswap' },
     ]);
   });
 
@@ -45,8 +45,8 @@ describe('enumValueEditor', () => {
       { fieldKey: 'protocols', op: 'is', values: [] },
     );
     expect(wrapper.findComponent(ValueSelectList).props('options')).toStrictEqual([
-      { caption: undefined, keywords: undefined, label: 'AAVE', value: 'aave' },
-      { caption: undefined, keywords: undefined, label: 'UNISWAP', value: 'uniswap' },
+      { caption: undefined, keywords: undefined, loading: undefined, label: 'AAVE', value: 'aave' },
+      { caption: undefined, keywords: undefined, loading: undefined, label: 'UNISWAP', value: 'uniswap' },
     ]);
   });
 
@@ -60,8 +60,8 @@ describe('enumValueEditor', () => {
       { fieldKey: 'protocols', op: 'is', values: [] },
     );
     expect(wrapper.findComponent(ValueSelectList).props('options')).toStrictEqual([
-      { caption: 'caption:aave', keywords: 'keywords:aave', label: 'aave', value: 'aave' },
-      { caption: 'caption:uniswap', keywords: 'keywords:uniswap', label: 'uniswap', value: 'uniswap' },
+      { caption: 'caption:aave', keywords: 'keywords:aave', loading: undefined, label: 'aave', value: 'aave' },
+      { caption: 'caption:uniswap', keywords: 'keywords:uniswap', loading: undefined, label: 'uniswap', value: 'uniswap' },
     ]);
   });
 

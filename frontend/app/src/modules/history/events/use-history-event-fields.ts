@@ -35,6 +35,11 @@ export function useHistoryEventFields(
   const accountKeywords = computed<Map<string, string | undefined>>(
     () => new Map(get(accountOptions).map(option => [option.value, option.keywords])),
   );
+  // The option list knows which names are still resolving; the field passes that on so the
+  // checklist keeps drawing a skeleton for them now that it builds its own rows.
+  const accountLoading = computed<Set<string>>(
+    () => new Set(get(accountOptions).filter(option => option.loading).map(option => option.value)),
+  );
   // Computed rather than mapped on each call: `suggest` is read once per field per keystroke while
   // the bar narrows, and this rebuilt the full address list every time.
   const accountValues = computed<string[]>(() => get(accountOptions).map(option => option.value));
@@ -42,6 +47,7 @@ export function useHistoryEventFields(
     resolveCaption,
     resolveKeywords: (value: string): string | undefined => get(accountKeywords).get(value),
     resolveLabel,
+    resolveLoading: (value: string): boolean => get(accountLoading).has(value),
     suggest: (): string[] => get(accountValues),
   });
   const ignoredField = toHistoryIgnoredField(t);

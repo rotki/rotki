@@ -29,6 +29,7 @@ const enumOptions = computed<SelectOption[]>(
     caption: field.resolveCaption?.(value),
     keywords: field.resolveKeywords?.(value),
     label: field.resolveLabel?.(value) ?? value,
+    loading: field.resolveLoading?.(value),
     value,
   })),
 );
