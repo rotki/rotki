@@ -82,6 +82,12 @@ export interface FieldDef {
    */
   readonly resolveIcon?: (value: string) => ValueIcon | undefined;
   /**
+   * Whether a value's label is still being resolved, drawn as a skeleton row instead of the label.
+   * An account is the case that needs it: its ENS name arrives after the list does, and showing
+   * the address first meant every named row visibly flipped a moment later.
+   */
+  readonly resolveLoading?: (value: string) => boolean;
+  /**
    * Maps a raw wire value to the human label shown on the collapsed pill (e.g. an account
    * address to its ENS/tracked name). Absent = the raw value is shown. Domain-specific
    * resolution lives with the field so the pure format layer stays domain-free.

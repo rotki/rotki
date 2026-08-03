@@ -243,6 +243,7 @@ describe('toHistoryAccountField', () => {
       resolveCaption: (address: string): string => `caption:${address}`,
       resolveKeywords: (address: string): string => `${address} alice.eth`,
       resolveLabel: (address: string): string => `label:${address}`,
+      resolveLoading: (): boolean => false,
       suggest: (): string[] => ['0xabc', '0xdef'],
     });
     expect(field).toMatchObject({
@@ -262,6 +263,7 @@ describe('toHistoryAccountField', () => {
       resolveCaption: (): undefined => undefined,
       resolveKeywords: (address: string): string => `${address} alice.eth`,
       resolveLabel: (address: string): string => `label:${address}`,
+      resolveLoading: (): boolean => false,
       suggest: (): string[] => ['0xabc', '0xdef'],
     });
     expect(field.suggest?.()).toStrictEqual(['0xabc', '0xdef']);

@@ -1,15 +1,15 @@
 import type { AssetsWithId } from '@/modules/assets/types';
+import type { FieldBinding, FieldDef, FilterOp, FilterValueType, TypedFilterDraft } from '@/modules/core/table/pill/core/types';
 import { FilterOps, FilterValueTypes, type SearchMatcher } from '@/modules/core/table/filtering';
 import { DEFAULT_OPERATORS } from '@/modules/core/table/pill/core/operators';
 import { parseDateQuery, parseRangeQuery, type ParseTimestamp } from '@/modules/core/table/pill/core/typed-filters';
-import { DisplayKinds, type FieldBinding, type FieldDef, type FilterOp, type FilterValueType, type TypedFilterDraft } from '@/modules/core/table/pill/core/types';
 
 /**
  * The pill editor a field renders in. `asset` is the dedicated asset picker (icon + symbol +
- * name, async search); `account` is the dedicated account picker (avatar + name), driven by
- * `display: 'account'`.
+ * name, async search); everything else that is picked from a list, accounts included, is the
+ * enum checklist, which draws each option from what its field resolves for the value.
  */
-export type EditorKind = 'enum' | 'range' | 'date' | 'boolean' | 'account' | 'asset' | 'text';
+export type EditorKind = 'enum' | 'range' | 'date' | 'boolean' | 'asset' | 'text';
 
 /**
  * An external (param-backed) filter described as a field, so the pill bar can render it
@@ -28,6 +28,7 @@ export interface ParamFieldSpec {
   readonly display?: FieldDef['display'];
   readonly excludes?: FieldDef['excludes'];
   readonly resolveIcon?: FieldDef['resolveIcon'];
+  readonly resolveLoading?: FieldDef['resolveLoading'];
   readonly resolveLabel?: (value: string) => string;
   readonly resolveCaption?: (value: string) => string | undefined;
   readonly resolveKeywords?: FieldDef['resolveKeywords'];
@@ -183,6 +184,7 @@ export function toParamFieldDef(spec: ParamFieldSpec): FieldDef {
     resolveIcon: spec.resolveIcon,
     resolveKeywords: spec.resolveKeywords,
     resolveLabel: spec.resolveLabel,
+    resolveLoading: spec.resolveLoading,
     searchAsset: spec.searchAsset,
     suggest: spec.suggest,
     valueType,
@@ -191,8 +193,6 @@ export function toParamFieldDef(spec: ParamFieldSpec): FieldDef {
 
 /** The editor a field renders in. */
 export function resolveEditor(field: FieldDef): EditorKind {
-  if (field.display === DisplayKinds.ACCOUNT)
-    return 'account';
   if (field.freeText)
     return 'text';
   switch (field.valueType) {

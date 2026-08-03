@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ActiveFilter, FieldDef } from '@/modules/core/table/pill/core/types';
-import AccountValueEditor from '@/modules/core/table/pill/AccountValueEditor.vue';
 import AssetValueEditor from '@/modules/core/table/pill/AssetValueEditor.vue';
 import { resolveEditor } from '@/modules/core/table/pill/core/field-adapter';
 import DateValueEditor from '@/modules/core/table/pill/DateValueEditor.vue';
@@ -54,13 +53,6 @@ const editor = computed(() => resolveEditor(field));
     @update="emit('update', $event)"
     @close="emit('close')"
     @persist="emit('persist', $event)"
-  />
-  <AccountValueEditor
-    v-else-if="editor === 'account'"
-    :field="field"
-    :filter="filter"
-    @update="emit('update', $event)"
-    @close="emit('close')"
   />
   <AssetValueEditor
     v-else-if="editor === 'asset'"

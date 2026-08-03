@@ -232,6 +232,8 @@ export interface AccountFieldOptions {
   readonly resolveCaption: (value: string) => string | undefined;
   /** Address -> `address name tags`, so the bar can find an account by any of them. */
   readonly resolveKeywords: (value: string) => string | undefined;
+  /** Address -> whether its name is still resolving, so the row is a skeleton rather than a flash of address. */
+  readonly resolveLoading: (value: string) => boolean;
 }
 
 /**
@@ -249,6 +251,7 @@ export function toHistoryAccountField(t: Translate, accounts: AccountFieldOption
     resolveCaption: accounts.resolveCaption,
     resolveKeywords: accounts.resolveKeywords,
     resolveLabel: accounts.resolveLabel,
+    resolveLoading: accounts.resolveLoading,
     suggest: accounts.suggest,
     to: 'request',
   });

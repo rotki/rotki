@@ -114,7 +114,7 @@ function createWrapper(
     global: {
       // The bar remembers committed free-text values through the settings repo.
       plugins: [createCustomPinia()],
-      stubs: { AccountValueEditor: true, AssetValueEditor: true, RuiAutoComplete: true, RuiMenu: RuiMenuStub },
+      stubs: { AssetValueEditor: true, RuiAutoComplete: true, RuiMenu: RuiMenuStub },
     },
     props: { fields: fieldSet, labels, matches, params },
     slots,
