@@ -462,11 +462,17 @@ class EvmTokens(ABC):  # noqa: B024
                     log.error(f'Skipping token {token} for address {address} due to failed ownerOf call')  # noqa: E501
                     continue
 
-                if erc721_contract.decode(
+                try:
+                    owner = erc721_contract.decode(
                         result=result,
                         method_name='ownerOf',
                         arguments=[int(tokenid_to_collectible_id(token.identifier))],  # type: ignore[arg-type]  # will always be available
-                )[0] != address:
+                    )[0]
+                except DeserializationError as e:
+                    log.error('Failed to read the owner of erc721 token %s due to %s', token, e)
+                    continue
+
+                if owner != address:
                     log.debug(
                         'Address %s no longer owns erc721 token %s. Skipping...',
                         address,

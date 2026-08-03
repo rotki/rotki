@@ -7,7 +7,6 @@ from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 import requests
-from eth_abi.exceptions import DecodingError
 from eth_utils.abi import get_abi_output_types
 from web3 import Web3
 from web3._utils.contracts import find_matching_event_abi
@@ -1326,7 +1325,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 contract=contract,
                 token_kind=TokenKind.ERC20,
             )
-        except (OverflowError, DecodingError) as e:
+        except (OverflowError, DeserializationError) as e:
             # This can happen when contract follows the ERC20 standard methods
             # but name and symbol return bytes instead of string. UNIV1 LP is such a case
             # It can also happen if the method is missing and they are all hitting
@@ -1344,7 +1343,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     contract=contract,
                     token_kind=TokenKind.ERC20,
                 )
-            except (OverflowError, DecodingError) as err:
+            except (OverflowError, DeserializationError) as err:
                 # if even the bytes abi fails, this definitely isn't a valid erc20 token
                 raise NotERC20Conformant from err
 
@@ -1424,7 +1423,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 contract=EvmContract(address=address, abi=self.contracts.erc721_abi, deployed_block=0),  # noqa: E501
                 token_kind=TokenKind.ERC721,
             )
-        except (OverflowError, DecodingError) as e:
+        except (OverflowError, DeserializationError) as e:
             raise NotERC721Conformant(f'{address} token does not conform to the ERC721 spec') from e  # noqa: E501
 
         info: dict[str, Any] = {}
@@ -1448,8 +1447,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         - `name` and `symbol` default to None.
         May raise:
         - OverflowError
-        - InsufficientDataBytes (subclass of eth_abi.exceptions.DecodingError)
-        - InvalidPointer (subclass of eth_abi.exceptions.DecodingError)
+        - DeserializationError if the output of a method can't be decoded as its abi type
         """
         decoded_contract_info = []
         for method_name, method_value in zip(properties, output, strict=True):

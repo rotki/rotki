@@ -342,11 +342,18 @@ def _query_curve_data_from_chain(
                 else:
                     break
 
-            decoded_pool_properties.append(metaregistry.decode(
-                result=result,
-                method_name=method_name,
-                arguments=[pool_address],
-            )[0])
+            try:
+                decoded_pool_properties.append(metaregistry.decode(
+                    result=result,
+                    method_name=method_name,
+                    arguments=[pool_address],
+                )[0])
+            except DeserializationError as e:
+                log.error(
+                    'Failed to decode the %s property of curve pool %s on %s due to %s',
+                    method_name, pool_address, evm_inquirer.chain_name, e,
+                )
+                break
 
         if len(decoded_pool_properties) != len(CURVE_METAREGISTRY_METHODS):
             log.error(
@@ -355,20 +362,11 @@ def _query_curve_data_from_chain(
             )
             continue
 
-        try:
-            pool_name, gauge_address, lp_token_address, coins_raw, underlying_coins_raw = decoded_pool_properties  # noqa: E501
-            gauge_address = deserialize_evm_address(gauge_address)
-            lp_token_address = deserialize_evm_address(lp_token_address)
-            coins = [deserialize_evm_address(x) for x in coins_raw if x != ZERO_ADDRESS]
-            u_coins = [deserialize_evm_address(x) for x in underlying_coins_raw if x != ZERO_ADDRESS]  # noqa: E501
-            underlying_coins = None if u_coins == coins or len(u_coins) == 0 else u_coins
-        except DeserializationError as e:
-            log.error(
-                f'Could not deserialize evm address while decoding curve pool {pool_address} '
-                f'information from metaregistry: {e}',
-            )
-            continue
-
+        # the decoded addresses are already checksummed by the contract decoding
+        pool_name, gauge_address, lp_token_address, coins_raw, underlying_coins_raw = decoded_pool_properties  # noqa: E501
+        coins = [x for x in coins_raw if x != ZERO_ADDRESS]
+        u_coins = [x for x in underlying_coins_raw if x != ZERO_ADDRESS]
+        underlying_coins = None if u_coins == coins or len(u_coins) == 0 else u_coins
         new_pools.append(CurvePoolData(
             pool_address=pool_address,
             pool_name=pool_name,

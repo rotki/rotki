@@ -90,10 +90,18 @@ class HopBalances(ProtocolWithBalance):
                 call_order=call_order,
                 calls_chunk_size=chunk_size,
             )
-            checksummed_staking_token, checksummed_rewards_token = (
-                staking_contract.decode(result=token_data[0], method_name='stakingToken')[0],
-                staking_contract.decode(result=token_data[1], method_name='rewardsToken')[0],
-            )
+            try:
+                checksummed_staking_token, checksummed_rewards_token = (
+                    staking_contract.decode(result=token_data[0], method_name='stakingToken')[0],
+                    staking_contract.decode(result=token_data[1], method_name='rewardsToken')[0],
+                )
+            except DeserializationError as e:
+                log.error(
+                    'Failed to read the staking or rewards token address for %s Hop contract '
+                    '%s due to %s. Skipping',
+                    self.evm_inquirer.chain_name, staking_contract.address, e,
+                )
+                continue
 
             try:
                 staking_token, rewards_token = EvmToken(evm_address_to_identifier(

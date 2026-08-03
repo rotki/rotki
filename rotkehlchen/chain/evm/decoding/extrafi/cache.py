@@ -5,6 +5,7 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.extrafi.constants import EXTRAFI_POOL_CONTRACT
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_values,
     globaldb_get_unique_cache_value,
@@ -100,11 +101,14 @@ def query_extrafi_data(
                 if status is False:
                     continue
 
-                reward_addresses.append(lending_contract.decode(
-                    result=encoded_data,
-                    method_name='getStakingAddress',
-                    arguments=[chunk[idx]],
-                )[0])
+                try:
+                    reward_addresses.append(lending_contract.decode(
+                        result=encoded_data,
+                        method_name='getStakingAddress',
+                        arguments=[chunk[idx]],
+                    )[0])
+                except DeserializationError as e:
+                    log.error('Failed to read extrafi pool for reserve id %s due to %s', chunk[idx], e)  # noqa: E501
 
         with GlobalDBHandler().conn.write_ctx() as write_cursor:  # save queried data to the db
             globaldb_set_general_cache_values_at_ts(
