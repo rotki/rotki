@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import type { EthDepositEvent, NewEthDepositEventPayload } from '@/modules/history/events/schemas';
+import type { EthDepositEvent } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import { Blockchain, HistoryEventEntryType, Zero } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import dayjs from 'dayjs';
-import { isEmpty } from 'es-toolkit/compat';
+import { Blockchain } from '@rotki/common';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { toMessages } from '@/modules/core/common/validation/validation';
-import { useEditModeStateTracker } from '@/modules/history/events/use-edit-mode-state-tracker';
-import { useHistoryEventsForm } from '@/modules/history/events/use-history-events-form';
+import { EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/eth-block-event-form';
+import {
+  emptyEthDepositForm,
+  ethDepositSchema,
+  ethDepositStateFromEvent,
+  ethDepositStateFromGroup,
+  toEthDepositPayload,
+} from '@/modules/history/management/forms/eth-deposit-event-form';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
-import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
+import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
@@ -24,64 +24,28 @@ interface EthDepositEventFormProps {
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
+
 const { data } = defineProps<EthDepositEventFormProps>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
-
-const txRef = ref<string>('');
-const groupIdentifier = ref<string>('');
-const hasActualGroupIdentifier = ref<boolean>(false);
-const timestamp = ref<number>(0);
-const amount = ref<string>('');
-const sequenceIndex = ref<string>('');
-const validatorIndex = ref<string>('');
-const depositor = ref<string>('');
-const extraData = ref<object>({});
-
+// Shared with the transaction lookup below, which reports its failures as field errors too.
 const errorMessages = ref<Record<string, string[]>>({});
 
-const { createCommonRules } = useEventFormValidation();
-const commonRules = createCommonRules();
-
-const rules = {
-  amount: commonRules.createRequiredAmountRule(),
-  depositor: commonRules.createRequiredValidDepositorRule(),
-  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => data.type === 'edit'),
-  sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
-  timestamp: commonRules.createExternalValidationRule(),
-  txRef: commonRules.createValidTxHashRule(),
-  validatorIndex: commonRules.createRequiredValidatorIndexRule(),
-};
-
-const numericAmount = bigNumberifyFromRef(amount);
-
-const { saveHistoryEventHandler } = useHistoryEventsForm();
 const { getAddresses } = useAccountAddresses();
-const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStateTracker();
 
-const states = {
-  amount,
-  depositor,
-  extraData,
-  groupIdentifier,
-  sequenceIndex,
-  timestamp,
-  txRef,
-  validatorIndex,
-};
+const { form, save, seed } = useHistoryEventForm({
+  errorMessages,
+  initial: () => emptyEthDepositForm(data.nextSequenceId),
+  priceIntentKeys: EVENT_PRICE_INTENT_KEYS,
+  priceIntents: state => (state.priceIntent ? [state.priceIntent] : []),
+  schema: computed(() => ethDepositSchema(data.type === 'edit')),
+  stateUpdated,
+  toEditPayload: (payload, identifiers) => ({ ...payload, identifier: identifiers[0] }),
+  transform: toEthDepositPayload,
+});
 
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
-
-useFormStateWatcher(states, stateUpdated);
+const { state } = form;
 
 const {
   canRetry: lookupCanRetry,
@@ -95,10 +59,10 @@ const {
   errorMessages,
   evmChain: 'ethereum',
   onResolved: (result) => {
-    set(timestamp, result.timestamp * 1000);
+    state.timestamp = result.timestamp * 1000;
   },
-  relatedAddress: depositor,
-  txHash: txRef,
+  relatedAddress: () => state.depositor,
+  txHash: () => state.txRef,
 });
 
 const txRefHint = computed<string>(() => {
@@ -109,106 +73,24 @@ const txRefHint = computed<string>(() => {
   return '';
 });
 
-const depositorSuggestions = computed(() => getAddresses(Blockchain.ETH));
+const depositorSuggestions = computed<string[]>(() => getAddresses(Blockchain.ETH));
 
-function reset() {
-  set(sequenceIndex, data?.nextSequenceId || '0');
-  set(txRef, '');
-  set(groupIdentifier, null);
-  set(hasActualGroupIdentifier, false);
-  set(timestamp, dayjs().valueOf());
-  set(amount, '0');
-  set(validatorIndex, '');
-  set(depositor, '');
-  set(extraData, {});
-  set(errorMessages, {});
-
+watchImmediate(() => data, (data) => {
   resetLookup();
-  get(assetPriceForm)?.reset();
-}
 
-function applyEditableData(entry: EthDepositEvent) {
-  resetLookup();
-  set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
-  set(txRef, entry.txRef);
-  const hasActual = !!entry.actualGroupIdentifier;
-  set(hasActualGroupIdentifier, hasActual);
-  set(groupIdentifier, hasActual ? entry.actualGroupIdentifier! : entry.groupIdentifier);
-  set(timestamp, entry.timestamp);
-  set(amount, entry.amount.toFixed());
-  set(validatorIndex, entry.validatorIndex.toString());
-  set(depositor, entry.locationLabel);
-  set(extraData, entry.extraData || {});
-
-  // Capture state snapshot for edit mode comparison
-  captureEditModeStateFromRefs(states);
-}
-
-function applyGroupHeaderData(entry: EthDepositEvent) {
-  resetLookup();
-  set(sequenceIndex, data?.nextSequenceId || '0');
-  set(groupIdentifier, entry.groupIdentifier);
-  set(txRef, entry.txRef);
-  set(validatorIndex, entry.validatorIndex.toString());
-  set(depositor, entry.locationLabel ?? '');
-  set(timestamp, entry.timestamp);
-}
-
-watch(errorMessages, (errors) => {
-  if (!isEmpty(errors))
-    get(v$).$validate();
-});
-
-async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate()))
-    return false;
-
-  const eventData = data;
-  const editable = eventData.type === 'edit' ? eventData.event : undefined;
-
-  const payload: NewEthDepositEventPayload = {
-    amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-    depositor: get(depositor),
-    entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
-    extraData: get(extraData) || null,
-    groupIdentifier: get(groupIdentifier) ?? null,
-    sequenceIndex: get(sequenceIndex) || '0',
-    timestamp: get(timestamp),
-    txRef: get(txRef),
-    validatorIndex: parseInt(get(validatorIndex)),
-  };
-
-  return await saveHistoryEventHandler(
-    editable ? { ...payload, identifier: editable.identifier } : payload,
-    assetPriceForm,
-    errorMessages,
-    reset,
-    shouldSkipSaveFromRefs(!!editable, states),
-  );
-}
-
-function checkPropsData() {
-  const formData = data;
-  if (formData.type === 'edit') {
-    applyEditableData(formData.event);
+  if (data.type === 'edit') {
+    seed(ethDepositStateFromEvent(data.event), [data.event.identifier]);
     return;
   }
-  if (formData.type === 'group-add') {
-    applyGroupHeaderData(formData.group);
-    return;
-  }
-  reset();
-}
 
-watch(() => data, checkPropsData);
-
-onMounted(() => {
-  checkPropsData();
+  seed(data.type === 'group-add'
+    ? ethDepositStateFromGroup(data.group, data.nextSequenceId)
+    : emptyEthDepositForm(data.nextSequenceId));
 });
 
 defineExpose({
+  errorCount: form.errorCount,
   save,
-  v$,
 });
 </script>
 
@@ -216,7 +98,7 @@ defineExpose({
   <div>
     <div class="grid md:grid-cols-2 gap-4 mb-4">
       <DateTimePicker
-        v-model="timestamp"
+        v-model="state.timestamp"
         :label="t('common.datetime')"
         required
         persistent-hint
@@ -225,31 +107,31 @@ defineExpose({
         accuracy="millisecond"
         data-cy="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
-        :error-messages="toMessages(v$.timestamp)"
-        @blur="v$.timestamp.$touch()"
+        :error-messages="form.errors('timestamp')"
+        @blur="form.touch('timestamp')"
       />
       <AmountInput
-        v-model="validatorIndex"
+        v-model="state.validatorIndex"
         variant="outlined"
         integer
         data-cy="validatorIndex"
         :label="t('transactions.events.form.validator_index.label')"
         required
-        :error-messages="toMessages(v$.validatorIndex)"
-        @blur="v$.validatorIndex.$touch()"
+        :error-messages="form.errors('validatorIndex')"
+        @blur="form.touch('validatorIndex')"
       />
     </div>
 
     <RuiTextField
-      v-model="txRef"
+      v-model="state.txRef"
       variant="outlined"
       color="primary"
       data-cy="tx-ref"
       :label="t('common.tx_hash')"
       required
       :hint="txRefHint"
-      :error-messages="toMessages(v$.txRef)"
-      @blur="v$.txRef.$touch()"
+      :error-messages="form.errors('txRef')"
+      @blur="form.touch('txRef')"
     >
       <template
         v-if="lookupLoading || lookupCanRetry"
@@ -286,39 +168,39 @@ defineExpose({
     <RuiDivider class="mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
-      ref="assetPriceForm"
-      v-model:amount="amount"
+      v-model:amount="state.amount"
+      v-model:price-intent="state.priceIntent"
       asset="ETH"
-      :error-messages="{ amount: toMessages(v$.amount) }"
-      :timestamp="timestamp"
+      :error-messages="{ amount: form.errors('amount') }"
+      :timestamp="state.timestamp"
       location="ethereum"
       disable-asset
-      @blur="v$.amount.$touch()"
+      @blur="form.touch('amount')"
     />
 
     <RuiDivider class="mb-6" />
 
     <div class="grid md:grid-cols-2 gap-4">
       <AutoCompleteWithSearchSync
-        v-model="depositor"
+        v-model="state.depositor"
         :items="depositorSuggestions"
         data-cy="depositor"
         :label="t('transactions.events.form.depositor.label')"
         required
-        :error-messages="toMessages(v$.depositor)"
+        :error-messages="form.errors('depositor')"
         auto-select-first
-        @blur="v$.depositor.$touch()"
+        @blur="form.touch('depositor')"
       />
 
       <AmountInput
-        v-model="sequenceIndex"
+        v-model="state.sequenceIndex"
         variant="outlined"
         integer
         data-cy="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
         required
-        :error-messages="toMessages(v$.sequenceIndex)"
-        @blur="v$.sequenceIndex.$touch()"
+        :error-messages="form.errors('sequenceIndex')"
+        @blur="form.touch('sequenceIndex')"
       />
     </div>
 
@@ -335,18 +217,18 @@ defineExpose({
         </template>
         <div class="py-2">
           <RuiTextField
-            v-model="groupIdentifier"
+            v-model="state.groupIdentifier"
             variant="outlined"
             color="primary"
             data-cy="groupIdentifier"
-            :disabled="hasActualGroupIdentifier"
+            :disabled="state.hasActualGroupIdentifier"
             :label="t('transactions.events.form.group_identifier.label')"
-            :error-messages="toMessages(v$.groupIdentifier)"
-            @blur="v$.groupIdentifier.$touch()"
+            :error-messages="form.errors('groupIdentifier')"
+            @blur="form.touch('groupIdentifier')"
           />
 
           <JsonInput
-            v-model="extraData"
+            v-model="state.extraData"
             :label="t('transactions.events.form.extra_data.label')"
           />
         </div>

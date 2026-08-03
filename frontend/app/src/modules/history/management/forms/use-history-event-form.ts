@@ -1,4 +1,4 @@
-import type { ModelRef, Ref, UnwrapNestedRefs } from 'vue';
+import type { MaybeRefOrGetter, ModelRef, Ref, UnwrapNestedRefs } from 'vue';
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { AddHistoryEventPayload, ModifyHistoryEventPayload } from '@/modules/history/events/schemas';
@@ -13,7 +13,7 @@ interface UseHistoryEventFormOptions<TState extends object, TAdd, TEdit> {
   /** Create-default or edit seed for the form state. */
   readonly initial: () => TState;
   /** The form's validation schema, whose issue paths address the state. */
-  readonly schema: ZodType;
+  readonly schema: MaybeRefOrGetter<ZodType>;
   /** Form state to the payload that creates the event. */
   readonly transform: (state: UnwrapNestedRefs<TState>) => TAdd;
   /**
