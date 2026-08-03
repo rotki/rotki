@@ -30,6 +30,7 @@ export interface ParamFieldSpec {
   readonly resolveIcon?: FieldDef['resolveIcon'];
   readonly resolveSwatch?: FieldDef['resolveSwatch'];
   readonly resolveLoading?: FieldDef['resolveLoading'];
+  readonly fromLegacy?: FieldDef['fromLegacy'];
   readonly resolveLabel?: (value: string) => string;
   readonly resolveCaption?: (value: string) => string | undefined;
   readonly resolveKeywords?: FieldDef['resolveKeywords'];
@@ -185,6 +186,7 @@ export function toParamFieldDef(spec: ParamFieldSpec): FieldDef {
     resolveIcon: spec.resolveIcon,
     resolveKeywords: spec.resolveKeywords,
     resolveLabel: spec.resolveLabel,
+    fromLegacy: spec.fromLegacy,
     resolveLoading: spec.resolveLoading,
     resolveSwatch: spec.resolveSwatch,
     searchAsset: spec.searchAsset,
