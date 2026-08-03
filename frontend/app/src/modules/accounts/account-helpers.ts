@@ -21,7 +21,7 @@ import type { Collection } from '@/modules/core/common/collection';
 import { type Balance, Zero } from '@rotki/common';
 import { camelCase, omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
-import { includes, isFilterEnabled, sortBy } from '@/modules/accounts/account-common';
+import { isFilterEnabled, sortBy } from '@/modules/accounts/account-common';
 import { getAccountAddress, getChain, getGroupId } from '@/modules/accounts/account-utils';
 import { createAccount, createXpubAccount } from '@/modules/accounts/create-account';
 import { objectKeys } from '@/modules/core/common/data/array';
@@ -46,30 +46,26 @@ export function isAccountWithBalanceValidator(
 
 function filterAccount<T extends BlockchainAccountBalance>(
   account: T,
-  filters: { tags?: string[]; label?: string; address?: string; chain?: string[]; category?: string },
-  resolvers: { getLabel: (account: BlockchainAccountBalance, chain?: string) => string | undefined },
+  filters: { tags?: string[]; addresses?: string[]; chain?: string[]; category?: string },
 ): boolean {
   const chains = account.type === 'group' ? account.chains : [account.chain];
-  const { getLabel } = resolvers;
   const {
-    address: addressFilter,
+    addresses: addressFilter,
     category: categoryFilter,
     chain: chainFilter,
-    label: labelFilter,
     tags: tagFilter,
   } = filters;
 
   // undefined means "this filter is not active", which is different from "active and did not match":
   // an account passes only when every active filter matches, and passes trivially when none are.
-  function matchesLabel(): boolean | undefined {
-    if (!labelFilter)
+  // The addresses within one filter are the exception: they are alternatives, since an account has
+  // exactly one address and requiring all of them would match nothing.
+  function matchesAddress(): boolean | undefined {
+    if (!addressFilter?.length)
       return undefined;
 
-    const resolvedLabel = getLabel(account, getChain(account))
-      ?? account.label
-      ?? getAccountAddress(account);
-
-    return resolvedLabel ? includes(resolvedLabel, labelFilter) : undefined;
+    const address = getAccountAddress(account).toLowerCase();
+    return addressFilter.some(picked => picked.toLowerCase() === address);
   }
 
   function matchesChain(): boolean | undefined {
@@ -87,8 +83,7 @@ function filterAccount<T extends BlockchainAccountBalance>(
   }
 
   const results = [
-    addressFilter ? includes(getAccountAddress(account), addressFilter) : undefined,
-    matchesLabel(),
+    matchesAddress(),
     matchesChain(),
     matchesTags(),
     categoryFilter ? account.category === categoryFilter : undefined,
@@ -131,12 +126,11 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
     getLabel,
   } = resolvers;
   const {
-    address,
+    addresses,
     ascending = [],
     category,
     chain,
     excluded = {},
-    label,
     limit,
     offset,
     orderByAttributes = [],
@@ -144,8 +138,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
   } = params;
 
   const hasFilter = isFilterEnabled(tags)
-    || isFilterEnabled(label)
-    || isFilterEnabled(address)
+    || isFilterEnabled(addresses)
     || isFilterEnabled(chain)
     || isFilterEnabled(category);
 
@@ -177,14 +170,13 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
     if (!groupAccounts)
       return undefined;
 
-    // Address and label apply to the group itself, so they are deliberately dropped here.
+    // The address applies to the group itself, so it is deliberately dropped here.
     const matchesWithoutChains = groupAccounts.filter(item => filterAccount(item, {
-      address: undefined,
-      label: undefined,
+      addresses: undefined,
       tags,
-    }, { getLabel }));
+    }));
 
-    const matches = matchesWithoutChains.filter(item => filterAccount(item, { chain }, { getLabel }));
+    const matches = matchesWithoutChains.filter(item => filterAccount(item, { chain }));
     if (matches.length === 0)
       return null;
 
@@ -206,12 +198,11 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
   const filtered = !hasFilter
     ? accounts.map(account => applyExclusionFilter(account, excluded, groupId => getAccounts?.(groupId) ?? []))
     : accounts.filter(account => filterAccount(account, {
-        address,
+        addresses,
         category,
         chain,
-        label,
         tags,
-      }, { getLabel })).map((account) => {
+      })).map((account) => {
         const refined = refineGroup(account);
         if (refined !== undefined)
           return refined;

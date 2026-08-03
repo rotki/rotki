@@ -11,7 +11,6 @@ import { fromUriEncoded, toUriEncoded } from '@/modules/core/common/helpers/rout
 import {
   AccountExternalFilterSchema,
   type Filters,
-  getAccountFilterParams,
   type Matcher,
   useBlockchainAccountFilter,
 } from '@/modules/core/table/filters/use-blockchain-account-filter';
@@ -28,6 +27,11 @@ interface UseAccountBalancesPaginationOptions {
    * when the route carries tags, so it is two-way: the caller owns the ref, the URL can overwrite it.
    */
   visibleTags: Ref<string[]>;
+  /**
+   * Accounts picked in the filter bar, sent as the `addresses` request param and mirrored in the
+   * URL. Written back by this composable when the route carries addresses, like `visibleTags`.
+   */
+  addresses: Ref<string[]>;
   /**
    * Per-group chain exclusions keyed by group id, forwarded as the `excluded` request param. Read only,
    * this composable never writes it.
@@ -67,6 +71,7 @@ export function useAccountBalancesPagination(
   const { t } = useI18n({ useScope: 'global' });
 
   const {
+    addresses,
     category,
     chainExclusionFilter,
     expanded,
@@ -79,6 +84,7 @@ export function useAccountBalancesPagination(
   const filterSchema = useBlockchainAccountFilter(t, category);
 
   const extraParams = computed<RawLocationQuery>(() => ({
+    addresses: get(addresses),
     category: toValue(category),
     tags: get(visibleTags),
   }));
@@ -98,14 +104,16 @@ export function useAccountBalancesPagination(
 
   const requestParams = computed<Record<string, unknown>>(() => ({
     excluded: get(chainExclusionFilter),
-    ...getAccountFilterParams(get(filterSchema.filters).account),
   }));
 
   function onUpdateFilters(filterQuery: LocationQuery): void {
-    const { expanded: expandedIds, q, tab: qTab, tags } = AccountExternalFilterSchema.parse(filterQuery);
+    const { addresses: queryAddresses, expanded: expandedIds, q, tab: qTab, tags } = AccountExternalFilterSchema.parse(filterQuery);
 
     if (tags)
       set(visibleTags, tags);
+
+    if (queryAddresses)
+      set(addresses, queryAddresses);
 
     if (qTab !== undefined)
       set(tab, qTab);

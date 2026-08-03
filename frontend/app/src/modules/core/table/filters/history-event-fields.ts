@@ -1,9 +1,10 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
+import type { FieldDef, ValueIcon } from '@/modules/core/table/pill/core/types';
 import { FilterValueTypes } from '@/modules/core/table/filtering';
+import { type AccountFieldOptions, toAccountField } from '@/modules/core/table/filters/shared/account-field';
 import { decorateSharedField, type SharedFieldKind, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';
 import { HistoryEventFilterValueKeys, type Matcher } from '@/modules/core/table/filters/use-events-filter';
 import { toDateFieldDef, toFieldDef, toParamFieldDef, toRangeFieldDef } from '@/modules/core/table/pill/core/field-adapter';
-import { DisplayKinds, type FieldDef, type ValueIcon } from '@/modules/core/table/pill/core/types';
 
 type Translate = (key: string) => string;
 
@@ -222,37 +223,12 @@ export function toHistoryActionField(t: Translate, actions: () => ActionFieldOpt
   });
 }
 
-/** What the account field needs from the account store, grouped so the argument list stays short. */
-export interface AccountFieldOptions {
-  /** Tracked addresses, offered as the field's values. */
-  readonly suggest: () => string[];
-  /** Address -> the name shown on the pill, else the shortened address. */
-  readonly resolveLabel: (value: string) => string;
-  /** Address -> the muted address shown beside a name. */
-  readonly resolveCaption: (value: string) => string | undefined;
-  /** Address -> `address name tags`, so the bar can find an account by any of them. */
-  readonly resolveKeywords: (value: string) => string | undefined;
-  /** Address -> whether its name is still resolving, so the row is a skeleton rather than a flash of address. */
-  readonly resolveLoading: (value: string) => boolean;
-}
-
 /**
- * It offers its tracked addresses as values, so an account can be applied straight from the bar's
- * inline input the way a location or protocol can — matched on its address, name or ENS, none of
- * which the pill's own label reliably shows (it is a name, or a shortened, scrambled address).
+ * History's account pill: the shared account field bound to the `locationLabels` request param.
  */
 export function toHistoryAccountField(t: Translate, accounts: AccountFieldOptions): FieldDef {
-  return toParamFieldDef({
-    display: DisplayKinds.ACCOUNT,
-    key: 'account',
-    label: t('transactions.filter_field_labels.account'),
-    multiple: true,
-    paramKey: 'locationLabels',
-    resolveCaption: accounts.resolveCaption,
-    resolveKeywords: accounts.resolveKeywords,
-    resolveLabel: accounts.resolveLabel,
-    resolveLoading: accounts.resolveLoading,
-    suggest: accounts.suggest,
-    to: 'request',
-  });
+  return toAccountField(
+    { label: t('transactions.filter_field_labels.account'), paramKey: 'locationLabels', to: 'request' },
+    accounts,
+  );
 }

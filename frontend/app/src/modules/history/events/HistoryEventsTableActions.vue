@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { SavedViewState } from '@/modules/core/table/pill/composables/use-saved-views';
 import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
-import type { FieldDef, PillBarLabels } from '@/modules/core/table/pill/core/types';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { IgnoreStatus } from '@/modules/history/events/use-history-events-selection-actions';
@@ -9,6 +9,7 @@ import type { SelectionState } from '@/modules/history/events/use-selection-mode
 import { arrayify } from '@/modules/core/common/data/array';
 import { useRefPropVModel } from '@/modules/core/common/validation/model';
 import { type MatchedKeywordWithBehaviour, SavedFilterLocation } from '@/modules/core/table/filtering';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import PillViewsMenu from '@/modules/core/table/pill/PillViewsMenu.vue';
 import HistoryEventsExport from '@/modules/history/events/HistoryEventsExport.vue';
@@ -43,15 +44,7 @@ const { t } = useI18n({ useScope: 'global' });
 // Not a pill: it constrains how the other filters apply instead of filtering anything itself.
 const matchExactEvents = useRefPropVModel(toggles, 'matchExactEvents');
 
-const pillLabels = computed<PillBarLabels>(() => ({
-  add: t('transactions.filter.pill_add'),
-  clear: t('transactions.filter.pill_clear'),
-  empty: t('transactions.filter.pill_empty'),
-  narrow: t('transactions.filter.pill_narrow'),
-  narrowEmpty: t('transactions.filter.pill_narrow_empty'),
-  remove: t('transactions.filter.pill_remove'),
-  search: t('transactions.filter.pill_search'),
-}));
+const pillLabels = usePillBarLabels();
 
 // The account, state and show-ignored filters are param-bound pills in the bar (paramKeys
 // `locationLabels`, `stateMarkers`, `showIgnoredAssets`). Bridge the bar's param bag to the models

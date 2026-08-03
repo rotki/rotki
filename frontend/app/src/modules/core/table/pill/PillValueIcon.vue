@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { type DisplayKind, DisplayKinds, type FieldDef, type ValueIcon } from '@/modules/core/table/pill/core/types';
+import { type DisplayKind, DisplayKinds, type FieldDef, type ValueIcon, type ValueSwatch } from '@/modules/core/table/pill/core/types';
 import { useScramble } from '@/modules/settings/use-scramble';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
+import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
@@ -15,11 +16,13 @@ import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
  * The asset icon's own chain badge is suppressed: at this size it hangs outside its box. The
  * chain is shown separately, next to the value.
  */
-const { display, value, icon, size = '16px' } = defineProps<{
+const { display, value, icon, swatch, size = '16px' } = defineProps<{
   display: FieldDef['display'];
   value: string;
   /** A field-resolved plain icon (`FieldDef.resolveIcon`), for values that are neither identities nor a display kind. */
   icon?: ValueIcon;
+  /** A field-resolved colour pair (`FieldDef.resolveSwatch`), for a value that is itself a colour (a tag). */
+  swatch?: ValueSwatch;
   size?: string;
 }>();
 
@@ -31,7 +34,7 @@ const { scrambleAddress } = useScramble();
 const iconSize = computed<number>(() => Number.parseInt(size, 10));
 
 /** What the template draws. Several kinds share a mark: an account and a bare address both get one. */
-type IconMark = 'asset' | 'avatar' | 'location' | 'counterparty' | 'none';
+type IconMark = 'asset' | 'avatar' | 'chain' | 'location' | 'counterparty' | 'none';
 
 /**
  * Chosen in the script rather than by a chain of comparisons in the template, so that adding a
@@ -45,6 +48,8 @@ function markFor(kind: DisplayKind | undefined): IconMark {
     case DisplayKinds.ACCOUNT:
     case DisplayKinds.ADDRESS:
       return 'avatar';
+    case DisplayKinds.CHAIN:
+      return 'chain';
     case DisplayKinds.LOCATION:
       return 'location';
     case DisplayKinds.COUNTERPARTY:
@@ -64,6 +69,13 @@ const mark = computed<IconMark>(() => markFor(display));
     :color="icon.color"
     :size="iconSize"
   />
+  <!-- A tag is recognised by its own two colours, so the swatch carries both: the border is the
+       tag's foreground, which is what keeps a light tag visible on a light pill. -->
+  <span
+    v-else-if="swatch"
+    class="rounded-sm border shrink-0"
+    :style="{ backgroundColor: swatch.background, borderColor: swatch.foreground, height: size, width: size }"
+  />
   <AssetIcon
     v-else-if="mark === 'asset'"
     :identifier="value"
@@ -74,6 +86,11 @@ const mark = computed<IconMark>(() => markFor(display));
     v-else-if="mark === 'avatar'"
     :address="scrambleAddress(value)"
     avatar
+    :size="size"
+  />
+  <ChainIcon
+    v-else-if="mark === 'chain'"
+    :chain="value"
     :size="size"
   />
   <LocationIcon

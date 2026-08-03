@@ -63,8 +63,12 @@
     "enter_selection_mode": "Enter selection mode to bulk ignore or mark assets as spam",
     "exit_selection_mode": "Exit selection mode",
     "filter": {
-      "account": "filter by address / label",
       "chain": "filter by the chain"
+    },
+    "filter_field_labels": {
+      "account": "Account",
+      "chain": "Chain",
+      "tags": "Tags"
     },
     "per_chain": "Per chain",
     "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries"
@@ -5991,6 +5995,15 @@
       "is_not": "is not",
       "less_than": "less than"
     },
+    "pill": {
+      "add": "Add filter",
+      "clear": "Clear all",
+      "empty": "No filters match",
+      "narrow": "Filter…",
+      "narrow_empty": "No matches",
+      "remove": "Remove filter",
+      "search": "Filter by…"
+    },
     "press_enter_to_apply": "Press enter to apply:",
     "saved_filters": {
       "actions": {
@@ -6587,13 +6600,6 @@
       "max_amount": "filter by maximum amount",
       "min_amount": "filter by minimum amount",
       "notes": "filter by notes content",
-      "pill_add": "Add filter",
-      "pill_clear": "Clear all",
-      "pill_empty": "No filters match",
-      "pill_narrow": "Filter…",
-      "pill_narrow_empty": "No matches",
-      "pill_remove": "Remove filter",
-      "pill_search": "Filter by…",
       "protocol": "filter by the protocol of the events",
       "range_max": "Max",
       "range_max_below_min": "Max must be greater than min",

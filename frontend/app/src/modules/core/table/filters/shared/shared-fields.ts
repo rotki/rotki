@@ -19,6 +19,7 @@ import { DisplayKinds, type FieldDef } from '@/modules/core/table/pill/core/type
 export const SharedFieldKinds = {
   ADDRESS: 'address',
   ASSET: 'asset',
+  CHAIN: 'chain',
   LOCATION: 'location',
   PROTOCOL: 'protocol',
   TOKEN: 'token',
@@ -42,6 +43,8 @@ function sharedFieldDecoration(kind: SharedFieldKind, resolvers: SharedFieldReso
         resolveChain: resolvers.resolveAssetChain,
         resolveLabel: resolvers.resolveAssetSymbol,
       };
+    case SharedFieldKinds.CHAIN:
+      return { display: DisplayKinds.CHAIN, resolveLabel: resolvers.resolveChainName };
     case SharedFieldKinds.LOCATION:
       return { display: DisplayKinds.LOCATION, resolveLabel: resolvers.resolveLocationName };
     case SharedFieldKinds.PROTOCOL:
