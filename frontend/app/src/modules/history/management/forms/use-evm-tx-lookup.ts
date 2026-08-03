@@ -18,7 +18,7 @@ export interface EvmTxAutoFillOptions {
   relatedAddress: MaybeRefOrGetter<string>;
   enabled: MaybeRefOrGetter<boolean>;
   errorMessages: Ref<Record<string, string[]>>;
-  /** Form-specific keys to write lookup errors into (so they flow through vuelidate `$externalResults`). */
+  /** Form-specific keys to write lookup errors into, so they surface as that field's server errors. */
   errorFields: { txHash: string; relatedAddress: string };
   onResolved: (result: EvmTransactionLookupResult) => void;
   debounce?: number;

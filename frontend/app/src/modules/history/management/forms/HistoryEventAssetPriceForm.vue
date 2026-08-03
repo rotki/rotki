@@ -1,11 +1,6 @@
 <script setup lang="ts">
-import type { ActionStatus } from '@/modules/core/common/action';
-import type { NewHistoryEventPayload } from '@/modules/history/events/schemas';
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
-import { assert, toSentenceCase } from '@rotki/common';
-import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useEventPriceUpdate } from '@/modules/history/events/prices/use-event-price-update';
+import { toSentenceCase } from '@rotki/common';
 import ToggleLocationLink from '@/modules/history/management/forms/common/ToggleLocationLink.vue';
 import { useEventPriceConversion } from '@/modules/history/management/forms/use-event-price-conversion';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
@@ -17,8 +12,7 @@ interface HistoryEventAssetPriceFormProps {
   disableAsset?: boolean;
   /**
    * Errors for the two fields this form owns, already resolved to strings. Deliberately not a
-   * validator instance: the parent owns validation, this component only renders what it is given,
-   * which is what lets Vuelidate and zod parents share it while the subtree migrates.
+   * validator instance: the parent owns validation, this component only renders what it is given.
    */
   errorMessages: {
     amount: string[];
@@ -35,9 +29,8 @@ interface HistoryEventAssetPriceFormProps {
 const amount = defineModel<string>('amount', { required: true });
 const asset = defineModel<string | undefined>('asset', { required: true });
 /**
- * The price write this form would perform, reported up so the parent can run it as part of saving
+ * The price write this form would perform, reported up so the parent runs it as part of saving
  * rather than reaching back in through a template ref. `undefined` means there is nothing to write.
- * Parents that still call {@link submitPrice} simply do not bind it.
  */
 const priceIntent = defineModel<PriceIntent | undefined>('priceIntent', { required: false });
 
@@ -76,11 +69,9 @@ const {
   timestamp: () => timestamp,
 });
 
-const { updatePrice } = useEventPriceUpdate();
-
 /**
- * Mirrors the condition {@link submitPrice} applies: only a price the user actually changed, for an
- * asset that is not the display currency, is worth writing.
+ * Only a price the user actually changed, for an asset that is not the display currency, is worth
+ * writing.
  */
 const pendingPriceIntent = computed<PriceIntent | undefined>(() => {
   if (noPriceFields || disabled)
@@ -96,43 +87,12 @@ const pendingPriceIntent = computed<PriceIntent | undefined>(() => {
   return { fromAsset, price, timestampMs: timestamp, toAsset };
 });
 
-async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> {
-  if (noPriceFields || disabled)
-    return { success: true };
-
-  const assetVal = get(asset);
-  assert(assetVal);
-
-  try {
-    const currency = get(currencySymbol);
-    if (get(modelAssetToFiatPrice) !== get(fetchedAssetToFiatPrice) && assetVal !== currency) {
-      await updatePrice({
-        fromAsset: assetVal,
-        mode: 'manual',
-        price: get(modelAssetToFiatPrice),
-        timestampMs: timestamp,
-        toAsset: currency,
-      });
-    }
-
-    return { success: true };
-  }
-  catch (error: unknown) {
-    let message: ValidationErrors | string = getErrorMessage(error);
-    if (error instanceof ApiValidationError && payload)
-      message = error.getValidationErrors(payload);
-
-    return { message, success: false };
-  }
-}
-
 watchImmediate(pendingPriceIntent, (intent) => {
   set(priceIntent, intent);
 });
 
 defineExpose({
   reset,
-  submitPrice,
 });
 </script>
 
