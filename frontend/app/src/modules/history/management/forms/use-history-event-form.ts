@@ -1,32 +1,29 @@
 import type { ModelRef, Ref, UnwrapNestedRefs } from 'vue';
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import type { AddEvmSwapEventPayload, AddSolanaSwapEventPayload } from '@/modules/history/events/schemas';
-import type { SwapSubEventState } from '@/modules/history/management/forms/swap/swap-sub-event';
+import type { AddHistoryEventPayload, ModifyHistoryEventPayload } from '@/modules/history/events/schemas';
+import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { type FormApi, useForm } from '@/modules/core/form/use-form';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
-import { collectPriceIntents, usePriceIntents } from '@/modules/history/management/forms/price-intent';
+import { usePriceIntents } from '@/modules/history/management/forms/price-intent';
 
-type SwapPayload = AddEvmSwapEventPayload | AddSolanaSwapEventPayload;
+type FormMessage = ValidationErrors | string;
 
-type SwapFormMessage = ValidationErrors | string;
-
-/** The part of a swap form's state this composable itself reads: the three sub-event lists. */
-interface SwapFormState {
-  fee: SwapSubEventState[];
-  hasFee: boolean;
-  receive: SwapSubEventState[];
-  spend: SwapSubEventState[];
-}
-
-interface UseSwapEventFormOptions<TState extends SwapFormState> {
+interface UseHistoryEventFormOptions<TState extends object, TAdd, TEdit> {
   /** Create-default or edit seed for the form state. */
   readonly initial: () => TState;
   /** The form's validation schema, whose issue paths address the state. */
   readonly schema: ZodType;
-  /** Form state to API payload. */
-  readonly transform: (state: UnwrapNestedRefs<TState>) => SwapPayload;
+  /** Form state to the payload that creates the event. */
+  readonly transform: (state: UnwrapNestedRefs<TState>) => TAdd;
+  /**
+   * The same payload, addressed at the events being edited. Not always a spread: the swap endpoint
+   * takes a `uniqueId` when creating and rejects it when editing.
+   */
+  readonly toEditPayload: (payload: TAdd, identifiers: number[]) => TEdit;
+  /** The historic prices to write before saving. Where they sit in the state is form specific. */
+  readonly priceIntents?: (state: UnwrapNestedRefs<TState>) => PriceIntent[];
   /** The dialog's `prompt-on-close` flag, kept in step with the form being dirty. */
   readonly stateUpdated: ModelRef<boolean>;
   /**
@@ -38,25 +35,28 @@ interface UseSwapEventFormOptions<TState extends SwapFormState> {
   readonly errorMessages?: Ref<Record<string, string[]>>;
 }
 
-interface UseSwapEventFormReturn<TState extends SwapFormState> {
-  readonly form: FormApi<TState, SwapPayload, SwapFormMessage>;
+interface UseHistoryEventFormReturn<TState extends object, TAdd> {
+  readonly form: FormApi<TState, TAdd, FormMessage>;
   /** Loads an existing group into the form. Without identifiers the form stays in add mode. */
   readonly seed: (state: TState, identifiers?: number[]) => void;
   readonly save: () => Promise<boolean>;
 }
 
 /**
- * The shared behaviour of the EVM and Solana swap forms, which differ only in their state shape,
- * schema and payload.
+ * The save pipeline every migrated history event form is driven through.
  *
- * The save pipeline is deliberately explicit about its order: validate, then persist the pending
- * historic prices, then decide whether the event itself needs saving at all. Prices run even when
- * the event is unchanged, because editing only a price is a legitimate edit.
+ * Its order is deliberate: validate, then persist the pending historic prices, then decide whether
+ * the event itself needs saving at all. Prices run even when the event is unchanged, because
+ * editing only a price is a legitimate edit.
  */
-export function useSwapEventForm<TState extends SwapFormState>(
-  options: UseSwapEventFormOptions<TState>,
-): UseSwapEventFormReturn<TState> {
-  const { initial, schema, stateUpdated, transform } = options;
+export function useHistoryEventForm<
+  TState extends object,
+  TAdd extends AddHistoryEventPayload,
+  TEdit extends ModifyHistoryEventPayload,
+>(
+  options: UseHistoryEventFormOptions<TState, TAdd, TEdit>,
+): UseHistoryEventFormReturn<TState, TAdd> {
+  const { initial, priceIntents, schema, stateUpdated, toEditPayload, transform } = options;
   const errorMessages = options.errorMessages ?? ref<Record<string, string[]>>({});
 
   const { t } = useI18n({ useScope: 'global' });
@@ -66,13 +66,13 @@ export function useSwapEventForm<TState extends SwapFormState>(
 
   const identifiers = ref<number[]>([]);
 
-  const form = useForm<TState, SwapPayload, SwapFormMessage>({
+  const form = useForm<TState, TAdd, FormMessage>({
     initial,
     schema,
     submit: async (payload) => {
       const ids = get(identifiers);
       return ids.length > 0
-        ? editHistoryEvent({ ...payload, identifiers: ids })
+        ? editHistoryEvent(toEditPayload(payload, ids))
         : addHistoryEvent(payload);
     },
     transform,
@@ -84,8 +84,10 @@ export function useSwapEventForm<TState extends SwapFormState>(
   }
 
   async function persistPrices(): Promise<boolean> {
-    const { fee, receive, spend } = form.state;
-    const status = await runPriceIntents(collectPriceIntents(spend, receive, fee));
+    if (!priceIntents)
+      return true;
+
+    const status = await runPriceIntents(priceIntents(form.state));
     if (status.success)
       return true;
 

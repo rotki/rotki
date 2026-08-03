@@ -10,9 +10,10 @@ import {
   solanaSwapStateFromEvents,
   toSolanaSwapPayload,
 } from '@/modules/history/management/forms/solana-swap-event-form';
+import { collectPriceIntents } from '@/modules/history/management/forms/price-intent';
 import { emptySubEvent } from '@/modules/history/management/forms/swap/swap-sub-event';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
-import { useSwapEventForm } from '@/modules/history/management/forms/use-swap-event-form';
+import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
@@ -24,10 +25,12 @@ const { t } = useI18n({ useScope: 'global' });
 // A Solana swap is always on Solana, so the location is displayed but never edited or sent.
 const location = ref<string>(SOLANA_CHAIN);
 
-const { form, save, seed } = useSwapEventForm({
+const { form, save, seed } = useHistoryEventForm({
   initial: emptySolanaSwapForm,
+  priceIntents: state => collectPriceIntents(state.spend, state.receive, state.fee),
   schema: solanaSwapSchema(),
   stateUpdated,
+  toEditPayload: (payload, identifiers) => ({ ...payload, identifiers }),
   transform: toSolanaSwapPayload,
 });
 
