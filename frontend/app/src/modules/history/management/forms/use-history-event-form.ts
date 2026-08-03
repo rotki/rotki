@@ -2,11 +2,10 @@ import type { ModelRef, Ref, UnwrapNestedRefs } from 'vue';
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { AddHistoryEventPayload, ModifyHistoryEventPayload } from '@/modules/history/events/schemas';
-import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { type FormApi, useForm } from '@/modules/core/form/use-form';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
-import { usePriceIntents } from '@/modules/history/management/forms/price-intent';
+import { type PriceIntent, usePriceIntents } from '@/modules/history/management/forms/price-intent';
 
 type FormMessage = ValidationErrors | string;
 

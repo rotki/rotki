@@ -2,7 +2,6 @@ import type { AddEvmSwapEventPayload, EvmSwapEvent } from '@/modules/history/eve
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import { z, type ZodType } from 'zod';
-import { msg } from '@/message-key';
 import {
   optionalEthAddress,
   requiredEvmTxHash,
@@ -10,7 +9,7 @@ import {
   requiredSequenceIndex,
   serverValidatedOnly,
 } from '@/modules/history/management/forms/event-field-schemas';
-import { emptySubEvent, swapSubEventListSchema, swapSubEventSchema, type SwapSubEventState, toSubEventPayload, toSubEventState } from '@/modules/history/management/forms/swap/swap-sub-event';
+import { emptySubEvent, swapSubEventListSchema, type SwapSubEventState, toSubEventPayload, toSubEventState } from '@/modules/history/management/forms/swap/swap-sub-event';
 
 /**
  * The EVM swap form's state, held as one object so templates bind straight into it.
@@ -46,29 +45,33 @@ export function emptyEvmSwapForm(): EvmSwapFormState {
   };
 }
 
+/**
+ * Branching on `hasFee` rather than refining after the fact keeps the disabled case honestly
+ * unvalidated: a leftover fee row must not make the form unsavable through inputs the user cannot
+ * see, and "the fee is on, so there has to be one" is then just the same list schema as the sides.
+ */
 export function evmSwapSchema(): ZodType {
-  return z
-    .object({
-      address: optionalEthAddress(),
-      counterparty: serverValidatedOnly(),
-      fee: z.array(swapSubEventSchema('evm')),
-      hasFee: z.boolean(),
-      location: requiredLocation(),
-      receive: swapSubEventListSchema('evm'),
-      sequenceIndex: requiredSequenceIndex(),
-      spend: swapSubEventListSchema('evm'),
-      timestamp: z.number(),
-      txRef: requiredEvmTxHash(),
-    })
-    .superRefine((state, ctx) => {
-      if (state.hasFee && state.fee.length === 0) {
-        ctx.addIssue({
-          code: 'custom',
-          message: msg.$t('swap_event_form.validation.at_least_one'),
-          path: ['fee'],
-        });
-      }
-    });
+  const base = z.object({
+    address: optionalEthAddress(),
+    counterparty: serverValidatedOnly(),
+    location: requiredLocation(),
+    receive: swapSubEventListSchema('evm'),
+    sequenceIndex: requiredSequenceIndex(),
+    spend: swapSubEventListSchema('evm'),
+    timestamp: z.number(),
+    txRef: requiredEvmTxHash(),
+  });
+
+  return z.discriminatedUnion('hasFee', [
+    base.extend({
+      fee: z.array(z.unknown()),
+      hasFee: z.literal(false),
+    }),
+    base.extend({
+      fee: swapSubEventListSchema('evm'),
+      hasFee: z.literal(true),
+    }),
+  ]);
 }
 
 /** Seeds the form from the events of an existing swap group, i.e. edit mode. */

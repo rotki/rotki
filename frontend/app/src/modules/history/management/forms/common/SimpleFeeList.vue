@@ -1,32 +1,53 @@
 <script setup lang="ts">
-import type { FeeEntry } from '@/modules/history/events/schemas';
 import SimpleFeeEntry from '@/modules/history/management/forms/common/SimpleFeeEntry.vue';
+import { emptySwapFee, type SwapFeeState } from '@/modules/history/management/forms/swap-event-form';
 
-const modelValue = defineModel<FeeEntry[]>({ required: true });
+const modelValue = defineModel<SwapFeeState[]>({ required: true });
 
+/**
+ * `errors` and `touch` are the form's own accessors, passed down rather than reimplemented, because
+ * validation lives in one schema on the parent. `path` is this list's key in that schema, which is
+ * what turns a row index into a dotted path like `fees.1.amount`.
+ */
 const {
   disabled = false,
+  errors,
   location,
+  path,
+  touch,
 } = defineProps<{
   disabled?: boolean;
   location?: string;
+  path: string;
+  errors: (path: string) => string[];
+  touch: (path: string) => void;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const placeholder: FeeEntry = {
-  amount: '',
-  asset: '',
-};
+const placeholder = emptySwapFee();
 
+const noErrors = { amount: [], asset: [] };
+
+function fieldErrors(index: number): { amount: string[]; asset: string[] } {
+  return {
+    amount: errors(`${path}.${index}.amount`),
+    asset: errors(`${path}.${index}.asset`),
+  };
+}
+
+function onBlur(index: number, field: 'amount' | 'asset'): void {
+  touch(`${path}.${index}.${field}`);
+}
+
+// Both mutate the array in place: the rows the form has already recorded touched-state against must
+// keep their identity, which replacing the array would destroy.
 function remove(index: number): void {
-  const newModelValue = [...get(modelValue)];
-  newModelValue.splice(index, 1);
-  set(modelValue, newModelValue);
+  get(modelValue).splice(index, 1);
 }
 
 function add(): void {
-  set(modelValue, [...get(modelValue), { amount: '', asset: '' }]);
+  get(modelValue).push(emptySwapFee());
 }
 </script>
 
@@ -59,6 +80,7 @@ function add(): void {
       v-if="disabled"
       :model-value="placeholder"
       :disabled="disabled"
+      :error-messages="noErrors"
       :location="location"
       :index="0"
       single
@@ -72,9 +94,11 @@ function add(): void {
         v-model="modelValue[index]"
         :index="index"
         :disabled="disabled"
+        :error-messages="fieldErrors(index)"
         :single="modelValue.length === 1"
         :location="location"
         @remove="remove($event)"
+        @blur="onBlur(index, $event)"
       />
 
       <RuiDivider

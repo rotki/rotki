@@ -4,13 +4,13 @@ import type { GroupEventData, StandaloneEventData } from '@/modules/history/mana
 import { SOLANA_CHAIN } from '@/modules/assets/types';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
+import { collectPriceIntents } from '@/modules/history/management/forms/price-intent';
 import {
   emptySolanaSwapForm,
   solanaSwapSchema,
   solanaSwapStateFromEvents,
   toSolanaSwapPayload,
 } from '@/modules/history/management/forms/solana-swap-event-form';
-import { collectPriceIntents } from '@/modules/history/management/forms/price-intent';
 import { emptySubEvent } from '@/modules/history/management/forms/swap/swap-sub-event';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
 import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';

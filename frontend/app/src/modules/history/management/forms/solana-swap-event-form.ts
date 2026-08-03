@@ -2,14 +2,13 @@ import type { AddSolanaSwapEventPayload, SolanaSwapEvent } from '@/modules/histo
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import { z, type ZodType } from 'zod';
-import { msg } from '@/message-key';
 import {
   optionalSolanaAddress,
   requiredSequenceIndex,
   requiredSolanaSignature,
   serverValidatedOnly,
 } from '@/modules/history/management/forms/event-field-schemas';
-import { emptySubEvent, swapSubEventListSchema, swapSubEventSchema, type SwapSubEventState, toSubEventPayload, toSubEventState } from '@/modules/history/management/forms/swap/swap-sub-event';
+import { emptySubEvent, swapSubEventListSchema, type SwapSubEventState, toSubEventPayload, toSubEventState } from '@/modules/history/management/forms/swap/swap-sub-event';
 
 /**
  * The Solana swap form's state. Mirrors {@link EvmSwapFormState} minus `location`: a Solana swap is
@@ -42,28 +41,28 @@ export function emptySolanaSwapForm(): SolanaSwapFormState {
   };
 }
 
+/** Branches on `hasFee` for the reason {@link evmSwapSchema} does. */
 export function solanaSwapSchema(): ZodType {
-  return z
-    .object({
-      address: optionalSolanaAddress(),
-      counterparty: serverValidatedOnly(),
-      fee: z.array(swapSubEventSchema('solana')),
-      hasFee: z.boolean(),
-      receive: swapSubEventListSchema('solana'),
-      sequenceIndex: requiredSequenceIndex(),
-      spend: swapSubEventListSchema('solana'),
-      timestamp: z.number(),
-      txRef: requiredSolanaSignature(),
-    })
-    .superRefine((state, ctx) => {
-      if (state.hasFee && state.fee.length === 0) {
-        ctx.addIssue({
-          code: 'custom',
-          message: msg.$t('swap_event_form.validation.at_least_one'),
-          path: ['fee'],
-        });
-      }
-    });
+  const base = z.object({
+    address: optionalSolanaAddress(),
+    counterparty: serverValidatedOnly(),
+    receive: swapSubEventListSchema('solana'),
+    sequenceIndex: requiredSequenceIndex(),
+    spend: swapSubEventListSchema('solana'),
+    timestamp: z.number(),
+    txRef: requiredSolanaSignature(),
+  });
+
+  return z.discriminatedUnion('hasFee', [
+    base.extend({
+      fee: z.array(z.unknown()),
+      hasFee: z.literal(false),
+    }),
+    base.extend({
+      fee: swapSubEventListSchema('solana'),
+      hasFee: z.literal(true),
+    }),
+  ]);
 }
 
 /** Seeds the form from the events of an existing swap group, i.e. edit mode. */
