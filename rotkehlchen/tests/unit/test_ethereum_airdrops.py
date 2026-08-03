@@ -643,3 +643,49 @@ def test_check_linea_airdrop(database: DBHandler) -> None:
             'cutoff_time': 1765324740,
         }},
     }
+
+
+def test_airdrop_index_token_address_is_checksummed(database: DBHandler) -> None:
+    """The index is remote data and is not guaranteed to hold a checksummed address.
+
+    Identifiers are compared exactly, so a token created from a lowercased address builds an
+    identifier that never matches the canonical one for the same token.
+    """
+    address = '0xe485E2f1bab389C08721B291f6b59780feC83Fd7'
+    airdrops = _parse_airdrops(database=database, airdrops_data={'shutter': {
+        'file_path': 'airdrops/shutter.csv.gz',
+        'file_hash': 'a' * 64,
+        'asset_identifier': f'eip155:1/erc20:{address}',
+        'url': 'https://shutter.network/',
+        'name': 'SHU',
+        'icon': 'shutter.svg',
+        'new_asset_data': {
+            'asset_type': 'EVM_TOKEN',
+            'address': address.lower(),
+            'name': 'Shutter',
+            'symbol': 'SHU',
+            'chain_id': 1,
+            'decimals': 18,
+        },
+    }})
+    assert airdrops['shutter'].asset.identifier == f'eip155:1/erc20:{address}'
+
+
+def test_airdrop_index_with_invalid_token_address_is_skipped(database: DBHandler) -> None:
+    """An address the index cannot provide correctly must skip that airdrop, not raise"""
+    assert _parse_airdrops(database=database, airdrops_data={'shutter': {
+        'file_path': 'airdrops/shutter.csv.gz',
+        'file_hash': 'a' * 64,
+        'asset_identifier': 'eip155:1/erc20:0xe485E2f1bab389C08721B291f6b59780feC83Fd7',
+        'url': 'https://shutter.network/',
+        'name': 'SHU',
+        'icon': 'shutter.svg',
+        'new_asset_data': {
+            'asset_type': 'EVM_TOKEN',
+            'address': 'not an address',
+            'name': 'Shutter',
+            'symbol': 'SHU',
+            'chain_id': 1,
+            'decimals': 18,
+        },
+    }}) == {}

@@ -38,7 +38,7 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_int
+from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_int
 from rotkehlchen.types import (
     CacheType,
     ChainID,
@@ -157,9 +157,16 @@ def _parse_airdrops(database: DBHandler, airdrops_data: dict[str, Any]) -> dict[
                         log.error(f'Airdrops Index contains an invalid ChainID of a token for {protocol_name}. {e!s}')  # noqa: E501
                         continue
 
+                    try:  # the index is not guaranteed to hold a checksummed address, and an
+                        # identifier built from one that is not never matches the canonical one
+                        token_address = deserialize_evm_address(new_asset_data['address'])
+                    except DeserializationError as e:
+                        log.error('Airdrops Index contains an invalid token address for %s. %s', protocol_name, e)  # noqa: E501
+                        continue
+
                     crypto_asset: CryptoAsset = get_or_create_evm_token(
                         userdb=database,
-                        evm_address=new_asset_data['address'],
+                        evm_address=token_address,
                         chain_id=chain_id,
                         decimals=new_asset_data['decimals'],
                         name=new_asset_data['name'],

@@ -13,7 +13,6 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     CPT_YEARN_V2,
     CPT_YEARN_V3,
 )
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
@@ -24,7 +23,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_int
+from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_int
 from rotkehlchen.types import (
     CacheType,
     ChainID,
@@ -212,7 +211,7 @@ def query_yearn_vaults(db: DBHandler, ethereum_inquirer: EvmNodeInquirer) -> Non
         try:
             underlying_token = get_or_create_evm_token(
                 userdb=db,
-                evm_address=string_to_evm_address(vault['token']['address']),
+                evm_address=deserialize_evm_address(vault['token']['address']),
                 chain_id=chain_id,
                 decimals=vault['token']['decimals'],
                 name=vault['token']['name'],
@@ -221,7 +220,7 @@ def query_yearn_vaults(db: DBHandler, ethereum_inquirer: EvmNodeInquirer) -> Non
             )
             vault_token = get_or_create_evm_token(
                 userdb=db,
-                evm_address=string_to_evm_address(vault['address']),
+                evm_address=deserialize_evm_address(vault['address']),
                 chain_id=chain_id,
                 protocol=vault_type,
                 decimals=vault['decimals'],
@@ -237,7 +236,7 @@ def query_yearn_vaults(db: DBHandler, ethereum_inquirer: EvmNodeInquirer) -> Non
             if (staking_address := vault.get('staking')) is not None:  # check if the vault has a staking contract where the user can deposit vault tokens. Shares are 1:1  # noqa: E501
                 get_or_create_evm_token(
                     userdb=db,
-                    evm_address=staking_address,
+                    evm_address=deserialize_evm_address(staking_address),
                     evm_inquirer=ethereum_inquirer,
                     chain_id=chain_id,
                     protocol=CPT_YEARN_STAKING,
@@ -252,10 +251,11 @@ def query_yearn_vaults(db: DBHandler, ethereum_inquirer: EvmNodeInquirer) -> Non
                     encounter=encounter,
                 )
 
-        except KeyError as e:
+        except (KeyError, DeserializationError) as e:
+            msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
             log.error(
                 f'Failed to store token information for yearn {vault_type} vault due to '
-                f'missing key {e!s}. Vault: {vault}. Skipping...',
+                f'{msg}. Vault: {vault}. Skipping...',
             )
             continue
 
