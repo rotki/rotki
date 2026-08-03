@@ -206,6 +206,53 @@ describe('starlingHandler', () => {
     expect(methods).toContain('stopService');
   });
 
+  it('should restart a live MCP service to clear its session on logout', async () => {
+    let mcpState = 'Ready';
+    const methods: string[] = [];
+    const child = makeFakeChild((message, stdout) => {
+      if (message.method)
+        methods.push(message.method);
+      if (message.method === 'stopService')
+        mcpState = 'Stopped';
+      else if (message.method === 'startService')
+        mcpState = 'Ready';
+
+      const result = message.method === 'status'
+        ? { services: [{ name: 'mcp', state: mcpState }] }
+        : null;
+      writeMessage(stdout, { id: message.id, result });
+    });
+    spawnMock.mockImplementation(() => child);
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    await handler.restartBackend({}, { onProcessError: vi.fn() });
+
+    await handler.resetMcpSession();
+
+    expect(methods.filter(method => method === 'stopService')).toHaveLength(1);
+    expect(methods.filter(method => method === 'startService')).toHaveLength(1);
+    expect(methods.indexOf('stopService')).toBeLessThan(methods.indexOf('startService'));
+  });
+
+  it('should preserve an intentionally stopped MCP service on logout', async () => {
+    const methods: string[] = [];
+    const child = makeFakeChild((message, stdout) => {
+      if (message.method)
+        methods.push(message.method);
+      const result = message.method === 'status'
+        ? { services: [{ name: 'mcp', state: 'Stopped' }] }
+        : null;
+      writeMessage(stdout, { id: message.id, result });
+    });
+    spawnMock.mockImplementation(() => child);
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    await handler.restartBackend({}, { onProcessError: vi.fn() });
+
+    await handler.resetMcpSession();
+
+    expect(methods).not.toContain('stopService');
+    expect(methods).not.toContain('startService');
+  });
+
   it('should report MCP as unavailable when starling is not running', async () => {
     const handler = new StarlingHandler(makeLogger(), makeConfig());
 

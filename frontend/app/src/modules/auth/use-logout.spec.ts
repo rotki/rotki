@@ -8,6 +8,7 @@ const mockCallLogout = vi.fn();
 const mockGetLoggedUsers = vi.fn();
 const mockDisconnectWallet = vi.fn();
 const mockNotifyUserLogout = vi.fn();
+const mockResetMcpSession = vi.fn();
 const mockResetTray = vi.fn();
 const mockSetMessage = vi.fn();
 const mockLogged = ref<boolean>(true);
@@ -41,6 +42,7 @@ vi.mock('@/modules/wallet/use-wallet-store', () => ({
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
   useInterop: vi.fn(() => ({
     notifyUserLogout: mockNotifyUserLogout,
+    resetMcpSession: mockResetMcpSession,
     resetTray: mockResetTray,
   })),
 }));
@@ -91,6 +93,7 @@ describe('modules::account::use-logout', () => {
     mockDisconnectWallet.mockResolvedValue(undefined);
     mockNavigateToUserLogin.mockResolvedValue(undefined);
     mockGetLoggedUsers.mockResolvedValue([]);
+    mockResetMcpSession.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -139,6 +142,22 @@ describe('modules::account::use-logout', () => {
       await flushPromises();
 
       expect(mockResetSchedulerState).toHaveBeenCalledTimes(1);
+    });
+
+    it('should reset the MCP session after backend logout', async () => {
+      const callOrder: string[] = [];
+      mockCallLogout.mockImplementation(async () => {
+        callOrder.push('backendLogout');
+      });
+      mockResetMcpSession.mockImplementation(async () => {
+        callOrder.push('resetMcpSession');
+      });
+
+      const { logout } = useLogout();
+
+      await logout();
+
+      expect(callOrder).toEqual(['backendLogout', 'resetMcpSession']);
     });
   });
 });
