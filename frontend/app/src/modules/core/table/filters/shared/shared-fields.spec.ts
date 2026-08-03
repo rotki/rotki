@@ -8,6 +8,7 @@ const resolvers: SharedFieldResolvers = {
   parseDate: (value: string): string | undefined => `ts:${value}`,
   resolveAssetChain: (value: string): string | undefined => (value.startsWith('eip155:8453') ? 'base' : undefined),
   resolveAssetSymbol: (value: string): string => `symbol:${value}`,
+  resolveChainName: (value: string): string => `chain:${value}`,
   resolveHex: (value: string): string => `short:${value}`,
   resolveLocationName: (value: string): string => `location:${value}`,
   resolveProtocolName: (value: string): string => `protocol:${value}`,

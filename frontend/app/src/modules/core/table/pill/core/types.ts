@@ -15,6 +15,8 @@ export const DisplayKinds = {
   /** A bare address: the same avatar, but the address itself is the label. */
   ADDRESS: 'address',
   ASSET: 'asset',
+  /** A blockchain: its chain logo, e.g. the account filter's chain values. */
+  CHAIN: 'chain',
   COUNTERPARTY: 'counterparty',
   LOCATION: 'location',
 } as const;
@@ -25,6 +27,16 @@ export type DisplayKind = typeof DisplayKinds[keyof typeof DisplayKinds];
 export interface ValueIcon {
   readonly icon: RuiIcons;
   readonly color?: ContextColorsType;
+}
+
+/**
+ * The colours one value is drawn in when the value *is* a colour, which today means a tag: a tag
+ * carries its own pair and is recognised by it everywhere else in the app. CSS colours, not an
+ * `RuiIcons`/`ContextColorsType` pair like `ValueIcon`, because the pair is the user's own choice.
+ */
+export interface ValueSwatch {
+  readonly background: string;
+  readonly foreground: string;
 }
 
 /**
@@ -81,6 +93,13 @@ export interface FieldDef {
    * the shared icon component stays domain-free. Takes precedence over `display`.
    */
   readonly resolveIcon?: (value: string) => ValueIcon | undefined;
+  /**
+   * Maps a value to the colour pair it is drawn in, for a field whose values carry colours of the
+   * user's own choosing (tags). Rendered as a small swatch before the value, the same colours the
+   * tag chip uses elsewhere. Takes precedence over `display`, and `resolveIcon` takes precedence
+   * over it.
+   */
+  readonly resolveSwatch?: (value: string) => ValueSwatch | undefined;
   /**
    * Whether a value's label is still being resolved, drawn as a skeleton row instead of the label.
    * An account is the case that needs it: its ENS name arrives after the list does, and showing

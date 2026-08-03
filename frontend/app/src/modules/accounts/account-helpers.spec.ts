@@ -88,26 +88,30 @@ describe('sortAndFilterAccounts', () => {
     expect(result.totalValue?.toNumber()).toBe(600);
   });
 
-  it('should filter by address partially', () => {
-    const result = sortAndFilterAccounts(accounts(), payload({ address: '0xbbb' }), { getLabel: noLabel });
+  it('should filter by a picked address', () => {
+    const result = sortAndFilterAccounts(accounts(), payload({ addresses: ['0xbbb'] }), { getLabel: noLabel });
     expect(result.data).toHaveLength(1);
     expect(result.data[0].data).toMatchObject({ address: '0xbbb' });
   });
 
-  it('should filter by label falling back to the account label', () => {
-    const result = sortAndFilterAccounts(accounts(), payload({ label: 'gamma' }), { getLabel: noLabel });
-    expect(result.data).toHaveLength(1);
-    expect(result.data[0].label).toBe('Gamma');
+  // An account has exactly one address, so several picked ones are alternatives rather than
+  // requirements: requiring all of them would match nothing.
+  it('should keep every account among several picked addresses', () => {
+    const result = sortAndFilterAccounts(accounts(), payload({ addresses: ['0xaaa', '0xccc'] }), { getLabel: noLabel });
+    expect(result.data.map(item => item.data)).toMatchObject([{ address: '0xaaa' }, { address: '0xccc' }]);
   });
 
-  it('should prefer the resolver label over the account label when filtering', () => {
-    const result = sortAndFilterAccounts(
-      accounts(),
-      payload({ label: 'resolved' }),
-      { getLabel: acc => (getAddress(acc) === '0xaaa' ? 'Resolved Name' : undefined) },
-    );
+  it('should match a picked address regardless of case', () => {
+    const result = sortAndFilterAccounts(accounts(), payload({ addresses: ['0xBBB'] }), { getLabel: noLabel });
     expect(result.data).toHaveLength(1);
-    expect(result.data[0].label).toBe('Alpha');
+    expect(result.data[0].data).toMatchObject({ address: '0xbbb' });
+  });
+
+  // The address is picked from a list, so a fragment of one is not a filter: it would silently
+  // widen what the user chose.
+  it('should not match a picked address by fragment', () => {
+    const result = sortAndFilterAccounts(accounts(), payload({ addresses: ['0xbb'] }), { getLabel: noLabel });
+    expect(result.data).toHaveLength(0);
   });
 
   it('should filter by chain', () => {

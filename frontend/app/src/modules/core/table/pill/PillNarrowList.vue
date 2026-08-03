@@ -73,9 +73,10 @@ watch(() => highlighted, (index) => {
       <!-- A value row carries the same icon its pill will: the asset's mark up front, its chain
            after it, so `USDC` on five chains reads as five distinct rows. -->
       <PillValueIcon
-        v-if="suggestion.kind === 'value' && (suggestion.field.display || suggestion.field.resolveIcon)"
+        v-if="suggestion.kind === 'value' && (suggestion.field.display || suggestion.field.resolveIcon || suggestion.field.resolveSwatch)"
         :display="suggestion.field.display"
         :icon="suggestion.field.resolveIcon?.(suggestion.value)"
+        :swatch="suggestion.field.resolveSwatch?.(suggestion.value)"
         :value="suggestion.value"
         size="18px"
       />

@@ -6,6 +6,7 @@ import { capitalizeAcronyms } from '@/modules/core/common/display/acronyms';
 import { assetDisplayLabel } from '@/modules/core/common/display/assets';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useLocations } from '@/modules/core/common/use-locations';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 import { useScramble } from '@/modules/settings/use-scramble';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -21,6 +22,8 @@ import { useSetting } from '@/modules/settings/use-setting';
 export interface SharedFieldResolvers {
   /** Raw location id (e.g. `polygon_pos`) -> its display name (e.g. `Polygon PoS`). */
   readonly resolveLocationName: (value: string) => string;
+  /** Raw chain id (e.g. `optimism`) -> its display name (e.g. `Optimism`). */
+  readonly resolveChainName: (value: string) => string;
   /** Raw counterparty id (e.g. `uniswap-v2`) -> its display label (e.g. `Uniswap V2`). */
   readonly resolveProtocolName: (value: string) => string;
   /** Asset identifier -> its symbol, or a shortened address when it has no metadata. */
@@ -45,6 +48,7 @@ export interface SharedFieldResolvers {
  */
 export function useSharedFieldResolvers(): SharedFieldResolvers {
   const { getLocationData } = useLocations();
+  const { getChainName } = useSupportedChains();
   const { getCounterpartyData } = useHistoryEventCounterpartyMappings();
   const { getAssetField, getAssetInfo } = useAssetInfoRetrieval();
   const { scrambleAddress } = useScramble();
@@ -80,6 +84,7 @@ export function useSharedFieldResolvers(): SharedFieldResolvers {
     parseDate: dateBoundParser(dateInputFormat),
     resolveAssetChain,
     resolveAssetSymbol,
+    resolveChainName: getChainName,
     resolveHex,
     resolveLocationName,
     resolveProtocolName,

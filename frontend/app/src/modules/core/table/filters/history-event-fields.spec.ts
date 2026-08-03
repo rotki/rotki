@@ -13,6 +13,7 @@ const resolvers = {
   resolveHex: (value: string): string => `hex:${value}`,
   resolveAssetChain: (value: string): string | undefined => (value.startsWith('eip155:8453') ? 'base' : undefined),
   resolveAssetSymbol: (value: string): string => `symbol:${value}`,
+  resolveChainName: (value: string): string => `chain:${value}`,
   resolveEventSubTypeName: (value: string): string => `subtype:${value}`,
   resolveEventTypeName: (value: string): string => `type:${value}`,
   resolveLocationName: (value: string): string => `name:${value}`,

@@ -85,9 +85,9 @@ export type BlockchainAccountBalance<
 > = BlockchainAccountWithBalance<T> | BlockchainAccountGroupWithBalance<T>;
 
 export interface BlockchainAccountRequestPayload extends PaginationRequestPayload<BlockchainAccountBalance> {
-  readonly address?: string;
+  /** Picked account addresses; a row matches when it is one of them. */
+  readonly addresses?: string[];
   readonly chain?: string[];
-  readonly label?: string;
   readonly tags?: string[];
   readonly category?: string;
   readonly excluded?: Record<string, string[]>;
