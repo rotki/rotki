@@ -10,7 +10,9 @@ from rotkehlchen.assets.utils import (
     asset_normalized_value,
     get_or_create_evm_token,
 )
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.types import get_versioned_counterparty_label
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.oracles.constants import UNISWAP_FACTORY_ADDRESSES
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecoderContext, EvmDecodingOutput
@@ -19,6 +21,7 @@ from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -33,7 +36,8 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import Asset, EvmToken
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import EvmTransaction
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -45,6 +49,112 @@ class CryptoAssetAmount(NamedTuple):
     """This is used to represent a pair of resolved crypto asset to an amount."""
     asset: EvmToken
     amount: FVal
+
+
+def _get_single_asset_events_data(
+        events: list[EvmEvent],
+) -> tuple[Asset, FVal] | None:
+    """Return the common asset and total amount for events involving exactly one asset."""
+    if len(events) == 0:
+        return None
+
+    asset = events[0].asset
+    if any(event.asset != asset for event in events[1:]):
+        return None
+
+    return asset, sum((event.amount for event in events), start=FVal(0))
+
+
+def decode_uniswap_v3_like_router_swap(
+        transaction: EvmTransaction,
+        decoded_events: list[EvmEvent],
+        counterparty: str,
+        spend_notes: str,
+        receive_notes: str,
+        source_counterparties: set[str] | None = None,
+        retain_non_swap_events: bool = True,
+) -> list[EvmEvent]:
+    """Consolidate the tracked endpoints of a Uniswap V3-like router swap.
+
+    Supports split and multi-hop routes with a single source and destination asset, and subtracts
+    same-asset refunds from the amount spent. ``spend_notes`` and ``receive_notes`` may contain
+    ``{amount}`` and ``{symbol}`` placeholders.
+    """
+    allowed_counterparties = source_counterparties or set()
+    spend_events, receive_events = [], []
+    for event in decoded_events:
+        if (
+                event.location_label != transaction.from_address or
+                (
+                    event.counterparty is not None and
+                    event.counterparty not in allowed_counterparties
+                )
+        ):
+            continue
+
+        if (
+                (event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE) or  # noqa: E501
+                (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND)  # noqa: E501
+        ):
+            spend_events.append(event)
+        elif (
+                (event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE) or  # noqa: E501
+                (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE)  # noqa: E501
+        ):
+            receive_events.append(event)
+
+    if (spend_data := _get_single_asset_events_data(spend_events)) is None:
+        return decoded_events
+
+    source_asset, spend_amount = spend_data
+    refund_events = [event for event in receive_events if event.asset == source_asset]
+    destination_events = [event for event in receive_events if event.asset != source_asset]
+    if (receive_data := _get_single_asset_events_data(destination_events)) is None:
+        return decoded_events
+
+    if len(refund_events) != 0:
+        spend_amount -= sum((event.amount for event in refund_events), start=FVal(0))
+        if spend_amount <= FVal(0):
+            return decoded_events
+
+    gas_event = next(
+        (event for event in decoded_events if event.counterparty == CPT_GAS),
+        None,
+    )
+    if retain_non_swap_events is False and gas_event is None:
+        return decoded_events
+
+    _, receive_amount = receive_data
+    spend_event, receive_event = spend_events[0], destination_events[0]
+    for event, event_subtype, amount, notes in (
+            (spend_event, HistoryEventSubType.SPEND, spend_amount, spend_notes),
+            (receive_event, HistoryEventSubType.RECEIVE, receive_amount, receive_notes),
+    ):
+        event.event_type = HistoryEventType.TRADE
+        event.event_subtype = event_subtype
+        event.amount = amount
+        event.location_label = transaction.from_address
+        event.counterparty = counterparty
+        event.address = transaction.to_address
+        event.notes = notes.format(amount=amount, symbol=event.asset.symbol_or_name())
+
+    if retain_non_swap_events is False:
+        assert gas_event is not None
+        gas_event.sequence_index = 0
+        spend_event.sequence_index = 1
+        receive_event.sequence_index = 2
+        return [gas_event, spend_event, receive_event]
+
+    removed_event_ids = {
+        id(event)
+        for event in (*spend_events[1:], *destination_events[1:], *refund_events)
+    }
+    result = [event for event in decoded_events if id(event) not in removed_event_ids]
+    maybe_reshuffle_events(
+        ordered_events=[spend_event, receive_event],
+        events_list=result,
+    )
+    return result
 
 
 def _compute_pool_address(
@@ -156,6 +266,7 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
         amount1_raw: int,
         position_id: int,
         evm_inquirer: EvmNodeInquirer,
+        display_name: str | None = None,
 ) -> EvmDecodingOutput:
     """This method decodes a Uniswap V3 like LP liquidity increase or decrease.
 
@@ -164,7 +275,8 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
     https://etherscan.io/tx/0x76c312fe1c8604de5175c37dcbbb99cc8699336f3e4840e9e29e3383970f6c6d (withdrawal)
     """  # noqa: E501
     new_action_items = []
-    display_name = get_versioned_counterparty_label(counterparty)
+    if display_name is None:
+        display_name = get_versioned_counterparty_label(counterparty)
     if is_deposit:
         notes = f'Deposit {{amount}} {{asset}} to {display_name} LP {position_id}'
         from_event_type = HistoryEventType.SPEND

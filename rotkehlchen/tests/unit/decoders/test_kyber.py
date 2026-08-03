@@ -7,14 +7,19 @@ from rotkehlchen.chain.evm.decoding.kyber.constants import CPT_KYBER
 from rotkehlchen.chain.evm.decoding.kyber.decoder import KYBER_AGGREGATOR_CONTRACT
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ARB, A_CRV, A_ETH, A_POL, A_USDC
+from rotkehlchen.constants.assets import A_ARB, A_CRV, A_ETH, A_HYPE, A_POL, A_USDC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.tests.utils.hyperliquid import HYPERLIQUID_PUBLIC_RPC_NODES
+from rotkehlchen.types import (
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -290,6 +295,58 @@ def test_kyber_aggregator_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_
             notes=f'Receive {receive_amount} AIDOGE from kyber swap',
             counterparty=CPT_KYBER,
             address=string_to_evm_address('0x11ddD59C33c73C44733b4123a86Ea5ce57F6e854'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('hyperliquid_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+@pytest.mark.parametrize('hyperliquid_manager_connect_at_start', [HYPERLIQUID_PUBLIC_RPC_NODES])
+def test_kyber_aggregator_swap_hyperliquid_enso(
+        hyperliquid_inquirer,
+        hyperliquid_accounts,
+):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=hyperliquid_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x7ab6a00b4d4c4e7b5c9528595c76073f19292ae2fb00d92fbbff1df0bae7f523')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1761149132000)),
+            location=Location.HYPERLIQUID,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_HYPE,
+            amount=FVal(gas_amount := '0.0000922903756'),
+            location_label=(user_address := hyperliquid_accounts[0]),
+            notes=f'Burn {gas_amount} HYPE for gas',
+            counterparty=CPT_GAS,
+        ), EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.HYPERLIQUID,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_HYPE,
+            amount=FVal(spend_amount := '10'),
+            location_label=user_address,
+            notes=f'Swap {spend_amount} HYPE in kyber',
+            counterparty=CPT_KYBER,
+            address=string_to_evm_address('0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf'),
+        ), EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.HYPERLIQUID,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:999/erc20:0xfD739d4e423301CE9385c1fb8850539D657C296D'),
+            amount=FVal(receive_amount := '9.960716400101319643'),
+            location_label=user_address,
+            notes=f'Receive {receive_amount} kHYPE from kyber swap',
+            counterparty=CPT_KYBER,
+            address=string_to_evm_address('0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf'),
         ),
     ]
 

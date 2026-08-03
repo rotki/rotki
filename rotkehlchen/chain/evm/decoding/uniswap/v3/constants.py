@@ -9,6 +9,7 @@ DIRECT_SWAP_SIGNATURE: Final = b'\xd2\xd7=\xa2\xb5\xfdR\xcdeM\x8f\xd1\xb5\x14\xa
 # https://www.4byte.directory/api/v1/event-signatures/?hex_signature=0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67
 # https://docs.uniswap.org/protocol/reference/core/interfaces/pool/IUniswapV3PoolEvents#swap
 INCREASE_LIQUIDITY_SIGNATURE: Final = b'0g\x04\x8b\xee\xe3\x1b%\xb2\xf1h\x1f\x88\xda\xc88\xc8\xbb\xa3j\xf2[\xfb+|\xf7G:XG\xe3_'  # noqa: E501
+DECREASE_LIQUIDITY_SIGNATURE: Final = b'&\xf6\xa0H\xee\x918\xf2\xc0\xce&o2,\xb9\x92(\xe8\xd6\x19\xae+\xff0\xc6\x7f\x8d\xcf\x9d#w\xb4'  # noqa: E501
 COLLECT_LIQUIDITY_SIGNATURE: Final = b"@\xd0\xef\xd1\xa5=`\xec\xbf@\x97\x1b\x9d\xaf}\xc9\x01x\xc3\xaa\xdcz\xab\x17ec'8\xfa\x8b\x8f\x01"  # noqa: E501
 
 UNISWAP_V3_NFT_MANAGER_ADDRESSES: Final = {

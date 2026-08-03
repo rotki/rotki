@@ -239,6 +239,7 @@ def decode_uniswap_v3_like_position_create_or_exit(
         counterparty: str,
         token_symbol: str,
         token_name: str,
+        display_name: str | None = None,
 ) -> list[EvmEvent]:
     """Decode Uniswap V3 like position create/exit events.
     Args:
@@ -251,6 +252,9 @@ def decode_uniswap_v3_like_position_create_or_exit(
         token_name: the name to set for the token. Will also have the position id appended to it,
             so if `Uniswap V3 Positions` is specified, it will be `Uniswap V3 Positions #1234`.
     """
+    if display_name is None:
+        display_name = get_versioned_counterparty_label(counterparty)
+
     deposit_events, withdrawal_events, receive_events, return_events = [], [], [], []
     for event in decoded_events:
         if (
@@ -290,7 +294,7 @@ def decode_uniswap_v3_like_position_create_or_exit(
                 )
 
             event.counterparty = counterparty
-            event.notes = f'{verb} {get_versioned_counterparty_label(counterparty)} LP with id {position_id}'  # noqa: E501
+            event.notes = f'{verb} {display_name} LP with id {position_id}'
         elif event.counterparty == counterparty:
             if (
                     event.event_type == HistoryEventType.DEPOSIT and
