@@ -2,8 +2,9 @@ import type { AppConfig } from '@electron/main/app-config';
 import type { LogService } from '@electron/main/log-service';
 import { EventEmitter } from 'node:events';
 import { PassThrough, Writable } from 'node:stream';
-import { BackendCode } from '@shared/ipc';
+import { BackendCode, StarlingServiceStatus } from '@shared/ipc';
 import { LogLevel } from '@shared/log-level';
+import { StarlingEvent, StarlingMethod, StarlingService } from '@shared/starling/starling-protocol';
 import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { StarlingHandler } from './starling-handler';
@@ -86,7 +87,10 @@ const nullResponder: RequestHandler = (message, stdout): void => {
 
 /** Push the controller's initial `ready` event, as starling does once the tree is up. */
 function emitReady(child: FakeChild): void {
-  writeMessage(child.stdout, { method: 'event.ready', params: { services: ['core', 'colibri'] } });
+  writeMessage(child.stdout, {
+    method: StarlingEvent.READY,
+    params: { services: [StarlingService.CORE, StarlingService.COLIBRI] },
+  });
 }
 
 function makeLogger(): LogService {
@@ -135,7 +139,7 @@ describe('starlingHandler', () => {
     await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
 
     expect(spawnMock).toHaveBeenCalledTimes(1);
-    expect(methods).toContain('start'); // renderer drives the first bring-up
+    expect(methods).toContain(StarlingMethod.START); // renderer drives the first bring-up
     expect(onProcessError).not.toHaveBeenCalled();
     // Single-origin posture: both URLs point at the proxy port; colibri sits
     // under /colibri. The direct core/colibri ports are the proxy's upstreams.
@@ -168,7 +172,7 @@ describe('starlingHandler', () => {
   it('should forward the MCP auto-start option during initial bring-up', async () => {
     let startParams: Record<string, unknown> | undefined;
     const child = makeFakeChild((message, stdout) => {
-      if (message.method === 'start')
+      if (message.method === StarlingMethod.START)
         startParams = message.params;
       writeMessage(stdout, { id: message.id, result: null });
     });
@@ -181,18 +185,23 @@ describe('starlingHandler', () => {
   });
 
   it('should start and stop MCP independently through starling', async () => {
-    let mcpState = 'Idle';
+    let mcpState: StarlingServiceStatus = StarlingServiceStatus.IDLE;
     const methods: string[] = [];
     const child = makeFakeChild((message, stdout) => {
       if (message.method)
         methods.push(message.method);
-      if (message.method === 'startService')
-        mcpState = 'Ready';
-      else if (message.method === 'stopService')
-        mcpState = 'Stopped';
+      if (message.method === StarlingMethod.START_SERVICE)
+        mcpState = StarlingServiceStatus.READY;
+      else if (message.method === StarlingMethod.STOP_SERVICE)
+        mcpState = StarlingServiceStatus.STOPPED;
 
-      const result = message.method === 'status'
-        ? { services: [{ name: 'core', state: 'Ready' }, { name: 'mcp', state: mcpState }] }
+      const result = message.method === StarlingMethod.STATUS
+        ? {
+            services: [
+              { name: StarlingService.CORE, state: StarlingServiceStatus.READY },
+              { name: StarlingService.MCP, state: mcpState },
+            ],
+          }
         : null;
       writeMessage(stdout, { id: message.id, result });
     });
@@ -200,25 +209,25 @@ describe('starlingHandler', () => {
     const handler = new StarlingHandler(makeLogger(), makeConfig());
     await handler.restartBackend({}, { onProcessError: vi.fn() });
 
-    expect(await handler.setMcpServerRunning(true)).toBe('Ready');
-    expect(await handler.setMcpServerRunning(false)).toBe('Stopped');
-    expect(methods).toContain('startService');
-    expect(methods).toContain('stopService');
+    expect(await handler.setMcpServerRunning(true)).toBe(StarlingServiceStatus.READY);
+    expect(await handler.setMcpServerRunning(false)).toBe(StarlingServiceStatus.STOPPED);
+    expect(methods).toContain(StarlingMethod.START_SERVICE);
+    expect(methods).toContain(StarlingMethod.STOP_SERVICE);
   });
 
   it('should restart a live MCP service to clear its session on logout', async () => {
-    let mcpState = 'Ready';
+    let mcpState: StarlingServiceStatus = StarlingServiceStatus.READY;
     const methods: string[] = [];
     const child = makeFakeChild((message, stdout) => {
       if (message.method)
         methods.push(message.method);
-      if (message.method === 'stopService')
-        mcpState = 'Stopped';
-      else if (message.method === 'startService')
-        mcpState = 'Ready';
+      if (message.method === StarlingMethod.STOP_SERVICE)
+        mcpState = StarlingServiceStatus.STOPPED;
+      else if (message.method === StarlingMethod.START_SERVICE)
+        mcpState = StarlingServiceStatus.READY;
 
-      const result = message.method === 'status'
-        ? { services: [{ name: 'mcp', state: mcpState }] }
+      const result = message.method === StarlingMethod.STATUS
+        ? { services: [{ name: StarlingService.MCP, state: mcpState }] }
         : null;
       writeMessage(stdout, { id: message.id, result });
     });
@@ -228,9 +237,9 @@ describe('starlingHandler', () => {
 
     await handler.resetMcpSession();
 
-    expect(methods.filter(method => method === 'stopService')).toHaveLength(1);
-    expect(methods.filter(method => method === 'startService')).toHaveLength(1);
-    expect(methods.indexOf('stopService')).toBeLessThan(methods.indexOf('startService'));
+    expect(methods.filter(method => method === StarlingMethod.STOP_SERVICE)).toHaveLength(1);
+    expect(methods.filter(method => method === StarlingMethod.START_SERVICE)).toHaveLength(1);
+    expect(methods.indexOf(StarlingMethod.STOP_SERVICE)).toBeLessThan(methods.indexOf(StarlingMethod.START_SERVICE));
   });
 
   it('should preserve an intentionally stopped MCP service on logout', async () => {
@@ -238,8 +247,8 @@ describe('starlingHandler', () => {
     const child = makeFakeChild((message, stdout) => {
       if (message.method)
         methods.push(message.method);
-      const result = message.method === 'status'
-        ? { services: [{ name: 'mcp', state: 'Stopped' }] }
+      const result = message.method === StarlingMethod.STATUS
+        ? { services: [{ name: StarlingService.MCP, state: StarlingServiceStatus.STOPPED }] }
         : null;
       writeMessage(stdout, { id: message.id, result });
     });
@@ -249,16 +258,16 @@ describe('starlingHandler', () => {
 
     await handler.resetMcpSession();
 
-    expect(methods).not.toContain('stopService');
-    expect(methods).not.toContain('startService');
+    expect(methods).not.toContain(StarlingMethod.STOP_SERVICE);
+    expect(methods).not.toContain(StarlingMethod.START_SERVICE);
   });
 
   it('should report MCP as unavailable when starling is not running', async () => {
     const handler = new StarlingHandler(makeLogger(), makeConfig());
 
-    expect(await handler.getMcpServerState()).toBe('Unavailable');
-    expect(await handler.setMcpServerRunning(true)).toBe('Unavailable');
-    expect(await handler.setMcpServerRunning(false)).toBe('Unavailable');
+    expect(await handler.getMcpServerState()).toBe(StarlingServiceStatus.UNAVAILABLE);
+    expect(await handler.setMcpServerRunning(true)).toBe(StarlingServiceStatus.UNAVAILABLE);
+    expect(await handler.setMcpServerRunning(false)).toBe(StarlingServiceStatus.UNAVAILABLE);
   });
 
   it('should map an unsupported macOS version to MACOS_VERSION', async () => {
@@ -295,7 +304,7 @@ describe('starlingHandler', () => {
     const onProcessError = vi.fn();
 
     await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
-    writeMessage(child.stdout, { method: 'event.crashed', params: { lastError: 'core died' } });
+    writeMessage(child.stdout, { method: StarlingEvent.CRASHED, params: { lastError: 'core died' } });
 
     await vi.waitFor(() => expect(onProcessError).toHaveBeenCalledWith('core died', BackendCode.TERMINATED));
   });
@@ -309,13 +318,32 @@ describe('starlingHandler', () => {
 
     await handler.restartBackend({}, { onMcpState, onProcessError });
     writeMessage(child.stdout, {
-      method: 'event.crashed',
-      params: { lastError: 'mcp died', service: 'mcp' },
+      method: StarlingEvent.CRASHED,
+      params: { lastError: 'mcp died', service: StarlingService.MCP },
     });
     await new Promise<void>(resolve => queueMicrotask(() => resolve()));
 
-    expect(onMcpState).toHaveBeenCalledWith('Failed');
+    expect(onMcpState).toHaveBeenCalledWith(StarlingServiceStatus.FAILED);
     expect(onProcessError).not.toHaveBeenCalled();
+  });
+
+  it('should handle every lifecycle event starling can push', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => child);
+    const logger = makeLogger();
+    const handler = new StarlingHandler(logger, makeConfig());
+
+    await handler.restartBackend({}, { onProcessError: vi.fn() });
+    // The crash event has its own tests; the rest are informational, so the log
+    // line is the only evidence they were routed rather than falling through.
+    for (const method of [StarlingEvent.READY, StarlingEvent.RESTARTING, StarlingEvent.STOPPED])
+      writeMessage(child.stdout, { method });
+    writeMessage(child.stdout, { method: 'event.unknown' });
+
+    await vi.waitFor(() => expect(logger.debug).toHaveBeenCalledWith('Unhandled control event: event.unknown'));
+    expect(logger.info).toHaveBeenCalledWith(`Backend event: ${StarlingEvent.READY}`);
+    expect(logger.info).toHaveBeenCalledWith(`Backend event: ${StarlingEvent.RESTARTING}`);
+    expect(logger.info).toHaveBeenCalledWith(`Backend event: ${StarlingEvent.STOPPED}`);
   });
 
   it('should surface the data-dir-in-use exit code as a TERMINATED error', async () => {
@@ -345,7 +373,7 @@ describe('starlingHandler', () => {
     const reason = 'failed to start the backend: service \'core\' exited before becoming ready: '
       + 'ERROR at initialization: Tables {\'asset_flags\'} are missing from your global database';
     const child = makeFakeChild((message, stdout) => {
-      if (message.method === 'start') {
+      if (message.method === StarlingMethod.START) {
         writeMessage(stdout, { id: message.id, error: { message: reason } });
         return;
       }

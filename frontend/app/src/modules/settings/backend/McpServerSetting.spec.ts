@@ -1,4 +1,4 @@
-import type { McpServerStatus } from '@shared/ipc';
+import { type McpServerStatus, StarlingServiceStatus } from '@shared/ipc';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import McpServerSetting from '@/modules/settings/backend/McpServerSetting.vue';
@@ -28,7 +28,7 @@ vi.mock('@/modules/shell/app/use-electron-interop', () => ({
 const stoppedStatus: McpServerStatus = {
   autoStart: false,
   endpoint: 'http://127.0.0.1:4445/mcp',
-  state: 'Idle',
+  state: StarlingServiceStatus.IDLE,
 };
 
 function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
@@ -80,7 +80,7 @@ describe('mcpServerSetting', () => {
       ...stoppedStatus,
       autoStart: enabled,
     }));
-    mocks.startMcpServer.mockResolvedValue({ ...stoppedStatus, state: 'Ready' });
+    mocks.startMcpServer.mockResolvedValue({ ...stoppedStatus, state: StarlingServiceStatus.READY });
     mocks.stopMcpServer.mockResolvedValue(stoppedStatus);
   });
 
@@ -119,7 +119,7 @@ describe('mcpServerSetting', () => {
   });
 
   it('should disable lifecycle control when MCP is unavailable', async () => {
-    mocks.getMcpServerStatus.mockResolvedValueOnce({ ...stoppedStatus, state: 'Unavailable' });
+    mocks.getMcpServerStatus.mockResolvedValueOnce({ ...stoppedStatus, state: StarlingServiceStatus.UNAVAILABLE });
     const wrapper = createWrapper();
     await flushPromises();
 
@@ -135,7 +135,7 @@ describe('mcpServerSetting', () => {
     const wrapper = createWrapper();
     await flushPromises();
 
-    setMcpServerState('Failed');
+    setMcpServerState(StarlingServiceStatus.FAILED);
     await nextTick();
 
     expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.status.failed');
