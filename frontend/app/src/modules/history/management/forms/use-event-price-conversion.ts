@@ -62,8 +62,13 @@ export function useEventPriceConversion({
   async function fetchHistoricPrices(): Promise<void> {
     const time = toValue(timestamp);
     const assetVal = get(asset);
-    if (!time || !assetVal)
+    if (!time || !assetVal) {
+      // There is nothing to price, so the fields have to be cleared rather than left showing the
+      // last asset's number. The parent used to do this by reaching in through a template ref once
+      // its own reset had run.
+      reset();
       return;
+    }
 
     const price: BigNumber = await getHistoricPrice({
       fromAsset: assetVal,
