@@ -1,20 +1,26 @@
 <script setup lang="ts">
-import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/modules/history/events/schemas';
+import type { EvmHistoryEvent } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import { HistoryEventEntryType, toSnakeCase, Zero } from '@rotki/common';
-import dayjs from 'dayjs';
-import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
+import { HistoryEventEntryType, toSnakeCase } from '@rotki/common';
 import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
-import { useHistoryEventsForm } from '@/modules/history/events/use-history-events-form';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import EvmLocation from '@/modules/history/management/forms/common/EvmLocation.vue';
+import { EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/eth-block-event-form';
+import {
+  emptyEvmEventForm,
+  evmEventSchema,
+  evmEventStateFromEvent,
+  evmEventStateFromGroup,
+  toEvmEventEditPayload,
+  toEvmEventPayload,
+} from '@/modules/history/management/forms/evm-event-form';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
-import { toMessages, useEventFormBase } from '@/modules/history/management/forms/use-event-form-base';
 import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
+import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import JsonInput from '@/modules/shell/components/inputs/JsonInput.vue';
 
@@ -28,74 +34,32 @@ const { data } = defineProps<HistoryEventFormProps>();
 
 const { t } = useI18n({ useScope: 'global' });
 
+// Shared with the transaction lookup below, which reports its failures as field errors too.
+const errorMessages = ref<Record<string, string[]>>({});
+
 const { counterparties } = useHistoryEventCounterpartyMappings();
+const { txChainsToLocation } = useSupportedChains();
 
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
 
-const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
+function defaults(): { location: string; nextSequenceId: string } {
+  return { location: get(lastLocation) ?? TRADE_LOCATION_EXTERNAL, nextSequenceId: data.nextSequenceId };
+}
 
-const txRef = ref<string>('');
-const groupIdentifier = ref<string>('');
-const hasActualGroupIdentifier = ref<boolean>(false);
-const sequenceIndex = ref<string>('');
-const timestamp = ref<number>(0);
-const location = ref<string>('');
-const eventType = ref<string>('');
-const eventSubtype = ref<string>('none');
-const asset = ref<string>('');
-const amount = ref<string>('');
-const address = ref<string>('');
-const locationLabel = ref<string>('');
-const notes = ref<string>('');
-const counterparty = ref<string>('');
-const extraData = ref<object>({});
-
-const errorMessages = ref<Record<string, string[]>>({});
-
-const isInformationalEvent = computed<boolean>(() => get(eventType) === 'informational');
-
-const numericAmount = bigNumberifyFromRef(amount);
-
-const { saveHistoryEventHandler } = useHistoryEventsForm();
-const { txChainsToLocation } = useSupportedChains();
-
-const states = {
-  address,
-  amount,
-  asset,
-  counterparty,
-  eventSubtype,
-  eventType,
-  extraData,
-  groupIdentifier,
-  location,
-  locationLabel,
-  notes,
-  sequenceIndex,
-  timestamp,
-  txRef,
-};
-
-const { v$, captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEventFormBase({
-  rules: commonRules => ({
-    address: commonRules.createValidEthAddressRule(),
-    amount: commonRules.createRequiredAmountRule(),
-    asset: commonRules.createRequiredAssetRule(),
-    counterparty: commonRules.createValidCounterpartyRule(counterparties),
-    eventSubtype: commonRules.createRequiredEventSubtypeRule(),
-    eventType: commonRules.createRequiredEventTypeRule(),
-    groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => data.type === 'edit'),
-    location: commonRules.createRequiredLocationRule(),
-    locationLabel: commonRules.createExternalValidationRule(),
-    notes: commonRules.createExternalValidationRule(),
-    sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
-    timestamp: commonRules.createExternalValidationRule(),
-    txRef: commonRules.createValidTxHashRule(),
-  }),
-  states,
+const { form, save, seed } = useHistoryEventForm({
   errorMessages,
+  initial: () => emptyEvmEventForm(defaults()),
+  priceIntentKeys: EVENT_PRICE_INTENT_KEYS,
+  priceIntents: state => (state.priceIntent ? [state.priceIntent] : []),
+  schema: computed(() => evmEventSchema(data.type === 'edit', () => get(counterparties))),
   stateUpdated,
+  toEditPayload: toEvmEventEditPayload,
+  transform: toEvmEventPayload,
 });
+
+const { state } = form;
+
+const isInformationalEvent = computed<boolean>(() => state.eventType === 'informational');
 
 const {
   canRetry: lookupCanRetry,
@@ -108,13 +72,13 @@ const {
   errorFields: { relatedAddress: 'locationLabel', txHash: 'txRef' },
   errorMessages,
   // Backend expects the canonical chain key (e.g. 'polygon_pos'); the form's
-  // `location` ref carries the human-readable form from `txChainsToLocation`.
-  evmChain: () => toSnakeCase(get(location)),
+  // `location` carries the human-readable form from `txChainsToLocation`.
+  evmChain: () => toSnakeCase(state.location),
   onResolved: (result) => {
-    set(timestamp, result.timestamp * 1000);
+    state.timestamp = result.timestamp * 1000;
   },
-  relatedAddress: locationLabel,
-  txHash: txRef,
+  relatedAddress: () => state.locationLabel,
+  txHash: () => state.txRef,
 });
 
 const txRefHint = computed<string>(() => {
@@ -125,164 +89,69 @@ const txRefHint = computed<string>(() => {
   return '';
 });
 
-function reset() {
-  set(sequenceIndex, data?.nextSequenceId || '0');
-  set(txRef, '');
-  set(groupIdentifier, null);
-  set(hasActualGroupIdentifier, false);
-  set(timestamp, dayjs().valueOf());
-  set(location, get(lastLocation));
-  set(address, '');
-  set(locationLabel, '');
-  set(eventType, '');
-  set(eventSubtype, 'none');
-  set(asset, '');
-  set(amount, '0');
-  set(notes, '');
-  set(counterparty, '');
-  set(extraData, {});
-  set(errorMessages, {});
+function touchEventType(): void {
+  form.touch('eventType');
+  form.touch('eventSubtype');
+}
 
+watchImmediate(() => data, (data) => {
   resetLookup();
-  get(assetPriceForm)?.reset();
-}
 
-function applyEditableData(entry: EvmHistoryEvent) {
-  resetLookup();
-  set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
-  set(txRef, entry.txRef);
-  const hasActual = !!entry.actualGroupIdentifier;
-  set(hasActualGroupIdentifier, hasActual);
-  set(groupIdentifier, hasActual ? entry.actualGroupIdentifier! : entry.groupIdentifier);
-  set(timestamp, entry.timestamp);
-  set(location, entry.location);
-  set(eventType, entry.eventType);
-  set(eventSubtype, entry.eventSubtype || 'none');
-  set(asset, entry.asset);
-  set(amount, entry.amount.toFixed());
-  set(address, entry.address ?? '');
-  set(locationLabel, entry.locationLabel ?? '');
-  set(notes, entry.userNotes ?? '');
-  set(counterparty, entry.counterparty ?? '');
-  set(extraData, entry.extraData || {});
-
-  // Capture state snapshot for edit mode comparison
-  captureEditModeStateFromRefs(states);
-}
-
-function applyGroupHeaderData(entry: EvmHistoryEvent) {
-  resetLookup();
-  set(sequenceIndex, data?.nextSequenceId || '0');
-  set(groupIdentifier, entry.groupIdentifier);
-  set(location, entry.location || get(lastLocation));
-  set(address, entry.address ?? '');
-  set(locationLabel, entry.locationLabel ?? '');
-  set(txRef, entry.txRef);
-  set(timestamp, entry.timestamp);
-}
-
-/** Empty form fields are normalised to the nulls and defaults the backend expects. */
-function buildPayload(): NewEvmHistoryEventPayload {
-  const userNotes = get(notes).trim();
-
-  return {
-    address: get(address) || null,
-    amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-    asset: get(asset),
-    counterparty: get(counterparty) || null,
-    entryType: HistoryEventEntryType.EVM_EVENT,
-    eventSubtype: get(eventSubtype),
-    eventType: get(eventType),
-    extraData: get(extraData) || null,
-    groupIdentifier: get(groupIdentifier) ?? null,
-    location: get(location),
-    locationLabel: get(locationLabel) || null,
-    sequenceIndex: get(sequenceIndex) || '0',
-    timestamp: get(timestamp),
-    txRef: get(txRef),
-    userNotes: userNotes.length > 0 ? userNotes : undefined,
-  };
-}
-
-async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate())) {
-    return false;
-  }
-
-  const eventData = data;
-  const editable = eventData.type === 'edit' ? eventData.event : undefined;
-  const payload = buildPayload();
-
-  return await saveHistoryEventHandler(
-    editable ? { ...payload, identifier: editable.identifier } : payload,
-    assetPriceForm,
-    errorMessages,
-    reset,
-    shouldSkipSaveFromRefs(!!editable, states),
-  );
-}
-
-function checkPropsData() {
-  const formData = data;
-  if (formData.type === 'edit') {
-    applyEditableData(formData.event);
+  if (data.type === 'edit') {
+    seed(evmEventStateFromEvent(data.event, defaults()), [data.event.identifier]);
     return;
   }
 
-  if (formData.type === 'group-add') {
-    applyGroupHeaderData(formData.group);
-    return;
-  }
-  reset();
-}
+  seed(data.type === 'group-add'
+    ? evmEventStateFromGroup(data.group, defaults())
+    : emptyEvmEventForm(defaults()));
+});
 
-watch(location, (location: string) => {
+watch(() => state.location, (location: string) => {
   if (location)
     set(lastLocation, location);
 });
 
-watch(() => data, checkPropsData);
-
-onMounted(() => {
-  checkPropsData();
-});
-
 defineExpose({
+  errorCount: form.errorCount,
   save,
-  v$,
 });
 </script>
 
 <template>
   <div>
     <HistoryEventTypeForm
-      v-model:event-type="eventType"
-      v-model:event-subtype="eventSubtype"
-      :counterparty="counterparty"
+      v-model:event-type="state.eventType"
+      v-model:event-subtype="state.eventSubtype"
+      :counterparty="state.counterparty"
       :entry-type="HistoryEventEntryType.EVM_EVENT"
-      :v$="v$"
+      :error-messages="{
+        eventType: form.errors('eventType'),
+        eventSubtype: form.errors('eventSubtype'),
+      }"
       show-accounting-rule-link
       :dirty="stateUpdated"
       class="mb-4"
+      @touch="touchEventType()"
     />
 
     <div class="grid md:grid-cols-2 gap-4 mb-4">
       <EventDateLocation
-        v-model:timestamp="timestamp"
-        v-model:location="location"
+        v-model:timestamp="state.timestamp"
+        v-model:location="state.location"
         class="col-span-2"
         :location-disabled="data.type !== 'add'"
         :locations="txChainsToLocation"
         :error-messages="{
-          location: toMessages(v$.location),
-          timestamp: toMessages(v$.timestamp),
+          location: form.errors('location'),
+          timestamp: form.errors('timestamp'),
         }"
-        @blur="v$[$event].$touch()"
+        @blur="form.touch($event)"
       />
     </div>
 
     <RuiTextField
-      v-model="txRef"
+      v-model="state.txRef"
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
@@ -290,8 +159,8 @@ defineExpose({
       :label="t('common.tx_hash')"
       required
       :hint="txRefHint"
-      :error-messages="toMessages(v$.txRef)"
-      @blur="v$.txRef.$touch()"
+      :error-messages="form.errors('txRef')"
+      @blur="form.touch('txRef')"
     >
       <template
         v-if="lookupLoading || lookupCanRetry"
@@ -328,56 +197,56 @@ defineExpose({
     <RuiDivider class="mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
-      ref="assetPriceForm"
-      v-model:asset="asset"
-      v-model:amount="amount"
-      :location="location"
+      v-model:asset="state.asset"
+      v-model:amount="state.amount"
+      v-model:price-intent="state.priceIntent"
+      :location="state.location"
       :error-messages="{
-        amount: toMessages(v$.amount),
-        asset: toMessages(v$.asset),
+        amount: form.errors('amount'),
+        asset: form.errors('asset'),
       }"
-      :timestamp="timestamp"
+      :timestamp="state.timestamp"
       :no-price-fields="isInformationalEvent"
-      @blur="v$[$event].$touch()"
+      @blur="form.touch($event)"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <EvmLocation
-      v-model:location-label="locationLabel"
-      v-model:address="address"
-      :location="location"
+      v-model:location-label="state.locationLabel"
+      v-model:address="state.address"
+      :location="state.location"
       :error-messages="{
-        locationLabel: toMessages(v$.locationLabel),
-        address: toMessages(v$.address),
+        locationLabel: form.errors('locationLabel'),
+        address: form.errors('address'),
       }"
-      @blur="v$[$event].$touch()"
+      @blur="form.touch($event)"
     />
 
     <div class="grid md:grid-cols-2 gap-4">
       <AmountInput
-        v-model="sequenceIndex"
+        v-model="state.sequenceIndex"
         variant="outlined"
         integer
         data-cy="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
         required
-        :error-messages="toMessages(v$.sequenceIndex)"
-        @blur="v$.sequenceIndex.$touch()"
+        :error-messages="form.errors('sequenceIndex')"
+        @blur="form.touch('sequenceIndex')"
       />
       <CounterpartyInput
-        v-model="counterparty"
+        v-model="state.counterparty"
         :label="t('common.counterparty')"
         data-cy="counterparty"
-        :error-messages="toMessages(v$.counterparty)"
-        @blur="v$.counterparty.$touch()"
+        :error-messages="form.errors('counterparty')"
+        @blur="form.touch('counterparty')"
       />
     </div>
 
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiTextArea
-      v-model="notes"
+      v-model="state.notes"
       prepend-icon="lu-sticky-note"
       data-cy="notes"
       variant="outlined"
@@ -387,8 +256,8 @@ defineExpose({
       auto-grow
       :label="t('common.notes')"
       :hint="t('transactions.events.form.notes.hint')"
-      :error-messages="toMessages(v$.notes)"
-      @blur="v$.notes.$touch()"
+      :error-messages="form.errors('notes')"
+      @blur="form.touch('notes')"
     />
 
     <RuiDivider class="mb-2 mt-6" />
@@ -404,18 +273,18 @@ defineExpose({
         </template>
         <div class="py-2">
           <RuiTextField
-            v-model="groupIdentifier"
+            v-model="state.groupIdentifier"
             variant="outlined"
             color="primary"
             data-cy="groupIdentifier"
-            :disabled="hasActualGroupIdentifier"
+            :disabled="state.hasActualGroupIdentifier"
             :label="t('transactions.events.form.group_identifier.label')"
-            :error-messages="toMessages(v$.groupIdentifier)"
-            @blur="v$.groupIdentifier.$touch()"
+            :error-messages="form.errors('groupIdentifier')"
+            @blur="form.touch('groupIdentifier')"
           />
 
           <JsonInput
-            v-model="extraData"
+            v-model="state.extraData"
             :label="t('transactions.events.form.extra_data.label')"
           />
         </div>

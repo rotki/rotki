@@ -1,4 +1,4 @@
-import type { ComputedRef, UnwrapNestedRefs } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, UnwrapNestedRefs } from 'vue';
 import type { ZodType } from 'zod';
 import { isEqual } from 'es-toolkit';
 
@@ -18,8 +18,12 @@ export type FormOutcome<TPayload, TMessage = string> =
 export interface FormOptions<TState extends object, TPayload, TMessage = string> {
   /** Create-default or edit seed. Called on construction and by `reset()`. */
   readonly initial: () => TState;
-  /** The single validation source of truth. Messages carry i18n keys, resolved here via `t()`. */
-  readonly schema: ZodType;
+  /**
+   * The single validation source of truth. Messages carry i18n keys, resolved here via `t()`.
+   * Accepts a getter for the forms whose rules depend on something outside the state, such as a
+   * field that is only required while editing.
+   */
+  readonly schema: MaybeRefOrGetter<ZodType>;
   /** UI state -> API payload (trim, empty->null, BigNumber, ...). Pure. */
   readonly transform: (state: UnwrapNestedRefs<TState>) => TPayload;
   /** Injected persistence, returning the store/API `ActionStatus`. */
@@ -136,7 +140,7 @@ export function useForm<TState extends object, TPayload, TMessage = string>(
     return Boolean(get(touched).get(target.owner)?.has(target.key));
   }
 
-  const parsed = computed(() => options.schema.safeParse(state));
+  const parsed = computed(() => toValue(options.schema).safeParse(state));
 
   const valid = computed<boolean>(() => get(parsed).success);
 

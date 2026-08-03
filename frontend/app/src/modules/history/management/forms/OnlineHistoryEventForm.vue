@@ -1,17 +1,23 @@
 <script setup lang="ts">
 import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import { HistoryEventEntryType, Zero } from '@rotki/common';
+import { HistoryEventEntryType } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
-import dayjs from 'dayjs';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
-import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
 import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
-import { useHistoryEventsForm } from '@/modules/history/events/use-history-events-form';
+import { EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/eth-block-event-form';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
-import { toMessages, useEventFormBase } from '@/modules/history/management/forms/use-event-form-base';
+import {
+  emptyOnlineHistoryForm,
+  onlineHistorySchema,
+  onlineHistoryStateFromEvent,
+  onlineHistoryStateFromGroup,
+  toOnlineHistoryEditPayload,
+  toOnlineHistoryPayload,
+} from '@/modules/history/management/forms/online-history-event-form';
+import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
@@ -24,192 +30,79 @@ const { t } = useI18n({ useScope: 'global' });
 
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
 
-const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
-
-const groupIdentifier = ref<string>('');
-const hasActualGroupIdentifier = ref<boolean>(false);
-const sequenceIndex = ref<string>('');
-const timestamp = ref<number>(0);
-const location = ref<string>('');
-const eventType = ref<string>('');
-const eventSubtype = ref<string>('none');
-const asset = ref<string>('');
-const amount = ref<string>('');
-const locationLabel = ref<string>('');
-const notes = ref<string>('');
-
-const errorMessages = ref<Record<string, string[]>>({});
-
-const states = {
-  amount,
-  asset,
-  eventSubtype,
-  eventType,
-  groupIdentifier,
-  location,
-  locationLabel,
-  notes,
-  sequenceIndex,
-  timestamp,
-};
-
-const {
-  v$,
-  captureEditModeStateFromRefs,
-  shouldSkipSaveFromRefs,
-} = useEventFormBase({
-  rules: commonRules => ({
-    amount: commonRules.createRequiredAmountRule(),
-    asset: commonRules.createRequiredAssetRule(),
-    eventSubtype: commonRules.createRequiredEventSubtypeRule(),
-    eventType: commonRules.createRequiredEventTypeRule(),
-    groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => data.type === 'edit'),
-    location: commonRules.createRequiredLocationRule(),
-    locationLabel: commonRules.createExternalValidationRule(),
-    notes: commonRules.createExternalValidationRule(),
-    sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
-    timestamp: commonRules.createExternalValidationRule(),
-  }),
-  states,
-  errorMessages,
-  stateUpdated,
-});
-
-const numericAmount = bigNumberifyFromRef(amount);
-
-const { saveHistoryEventHandler } = useHistoryEventsForm();
 const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 
-const locationLabelSuggestions = computed(() =>
+function defaults(): { location: string; nextSequenceId: string } {
+  return { location: get(lastLocation) ?? TRADE_LOCATION_EXTERNAL, nextSequenceId: data.nextSequenceId };
+}
+
+const { form, save, seed } = useHistoryEventForm({
+  initial: () => emptyOnlineHistoryForm(defaults()),
+  priceIntentKeys: EVENT_PRICE_INTENT_KEYS,
+  priceIntents: state => (state.priceIntent ? [state.priceIntent] : []),
+  schema: computed(() => onlineHistorySchema(data.type === 'edit')),
+  stateUpdated,
+  toEditPayload: toOnlineHistoryEditPayload,
+  // A new event needs a group of its own, which a pure transform cannot produce.
+  transform: (state): NewOnlineHistoryEventPayload =>
+    toOnlineHistoryPayload(state, state.groupIdentifier || generateUUID()),
+});
+
+const { state } = form;
+
+const locationLabelSuggestions = computed<string[]>(() =>
   get(connectedExchanges)
     .map(item => item.name)
     .filter(item => !!item),
 );
 
-function reset() {
-  set(sequenceIndex, data?.nextSequenceId || '0');
-  set(groupIdentifier, '');
-  set(hasActualGroupIdentifier, false);
-  set(timestamp, dayjs().valueOf());
-  set(location, get(lastLocation));
-  set(locationLabel, '');
-  set(eventType, '');
-  set(eventSubtype, 'none');
-  set(asset, '');
-  set(amount, '0');
-  set(notes, '');
-  set(errorMessages, {});
-
-  get(assetPriceForm)?.reset();
+function touchEventType(): void {
+  form.touch('eventType');
+  form.touch('eventSubtype');
 }
 
-function applyEditableData(entry: OnlineHistoryEvent) {
-  set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
-  const hasActual = !!entry.actualGroupIdentifier;
-  set(hasActualGroupIdentifier, hasActual);
-  set(groupIdentifier, hasActual ? entry.actualGroupIdentifier! : entry.groupIdentifier);
-  set(timestamp, entry.timestamp);
-  set(location, entry.location);
-  set(eventType, entry.eventType);
-  set(eventSubtype, entry.eventSubtype || 'none');
-  set(asset, entry.asset);
-  set(amount, entry.amount.toFixed());
-  set(locationLabel, entry.locationLabel ?? '');
-  set(notes, entry.userNotes ?? '');
-
-  // Capture state snapshot for edit mode comparison
-  captureEditModeStateFromRefs(states);
-}
-
-function applyGroupHeaderData(entry: OnlineHistoryEvent) {
-  set(sequenceIndex, data?.nextSequenceId || '0');
-  set(location, entry.location || get(lastLocation));
-  set(locationLabel, entry.locationLabel ?? '');
-  set(groupIdentifier, entry.groupIdentifier);
-  set(timestamp, entry.timestamp);
-}
-
-async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate())) {
-    return false;
-  }
-
-  const eventData = data;
-  const editable = eventData.type === 'edit' ? eventData.event : undefined;
-  const userNotes = get(notes).trim();
-
-  // Generate UUID for groupIdentifier if not present and not in edit mode
-  const generatedGroupIdentifier = !editable && !get(groupIdentifier) ? generateUUID() : get(groupIdentifier);
-
-  const payload: NewOnlineHistoryEventPayload = {
-    amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-    asset: get(asset),
-    entryType: HistoryEventEntryType.HISTORY_EVENT,
-    eventSubtype: get(eventSubtype),
-    eventType: get(eventType),
-    groupIdentifier: generatedGroupIdentifier,
-    location: get(location),
-    locationLabel: get(locationLabel) || null,
-    sequenceIndex: get(sequenceIndex) || '0',
-    timestamp: get(timestamp),
-    userNotes: userNotes.length > 0 ? userNotes : undefined,
-  };
-
-  return await saveHistoryEventHandler(
-    editable ? { ...payload, identifier: editable.identifier } : payload,
-    assetPriceForm,
-    errorMessages,
-    reset,
-    shouldSkipSaveFromRefs(!!editable, states),
-  );
-}
-
-function checkPropsData() {
-  const formData = data;
-  if (formData.type === 'edit') {
-    applyEditableData(formData.event);
+watchImmediate(() => data, (data) => {
+  if (data.type === 'edit') {
+    seed(onlineHistoryStateFromEvent(data.event, defaults()), [data.event.identifier]);
     return;
   }
-  if (formData.type === 'group-add') {
-    applyGroupHeaderData(formData.group);
-    return;
-  }
-  reset();
-}
 
-watch(location, (location: string) => {
+  seed(data.type === 'group-add'
+    ? onlineHistoryStateFromGroup(data.group, defaults())
+    : emptyOnlineHistoryForm(defaults()));
+});
+
+watch(() => state.location, (location: string) => {
   if (location)
     set(lastLocation, location);
 });
 
-watch(() => data, checkPropsData);
-
-onMounted(() => {
-  checkPropsData();
-});
-
 defineExpose({
+  errorCount: form.errorCount,
   save,
-  v$,
 });
 </script>
 
 <template>
   <div>
     <HistoryEventTypeForm
-      v-model:event-type="eventType"
-      v-model:event-subtype="eventSubtype"
-      :location="location"
+      v-model:event-type="state.eventType"
+      v-model:event-subtype="state.eventSubtype"
+      :location="state.location"
       :entry-type="HistoryEventEntryType.HISTORY_EVENT"
-      :v$="v$"
+      :error-messages="{
+        eventType: form.errors('eventType'),
+        eventSubtype: form.errors('eventSubtype'),
+      }"
       show-accounting-rule-link
       :dirty="stateUpdated"
       class="mb-4"
+      @touch="touchEventType()"
     />
 
     <div class="grid md:grid-cols-2 gap-4 mb-4">
       <DateTimePicker
-        v-model="timestamp"
+        v-model="state.timestamp"
         :label="t('common.datetime')"
         required
         persistent-hint
@@ -218,76 +111,76 @@ defineExpose({
         accuracy="millisecond"
         data-cy="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
-        :error-messages="toMessages(v$.timestamp)"
-        @blur="v$.timestamp.$touch()"
+        :error-messages="form.errors('timestamp')"
+        @blur="form.touch('timestamp')"
       />
       <LocationSelector
-        v-model="location"
+        v-model="state.location"
         :disabled="data.type !== 'add'"
         data-cy="location"
         :label="t('common.location')"
         required
-        :error-messages="toMessages(v$.location)"
-        @blur="v$.location.$touch()"
+        :error-messages="form.errors('location')"
+        @blur="form.touch('location')"
       />
     </div>
 
     <RuiTextField
-      v-model="groupIdentifier"
+      v-model="state.groupIdentifier"
       variant="outlined"
       color="primary"
-      :disabled="data.type !== 'add' || hasActualGroupIdentifier"
+      :disabled="data.type !== 'add' || state.hasActualGroupIdentifier"
       data-cy="groupIdentifier"
       :label="t('transactions.events.form.group_identifier.label')"
       :required="data.type === 'edit'"
-      :error-messages="toMessages(v$.groupIdentifier)"
-      @blur="v$.groupIdentifier.$touch()"
+      :error-messages="form.errors('groupIdentifier')"
+      @blur="form.touch('groupIdentifier')"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
-      ref="assetPriceForm"
-      v-model:asset="asset"
-      v-model:amount="amount"
-      :location="location"
+      v-model:asset="state.asset"
+      v-model:amount="state.amount"
+      v-model:price-intent="state.priceIntent"
+      :location="state.location"
       :error-messages="{
-        amount: toMessages(v$.amount),
-        asset: toMessages(v$.asset),
+        amount: form.errors('amount'),
+        asset: form.errors('asset'),
       }"
-      :timestamp="timestamp"
-      @blur="v$[$event].$touch()"
+      :timestamp="state.timestamp"
+      @blur="form.touch($event)"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <div class="grid md:grid-cols-2 gap-4">
       <AutoCompleteWithSearchSync
-        v-model="locationLabel"
+        v-model="state.locationLabel"
         :items="locationLabelSuggestions"
         clearable
         data-cy="locationLabel"
         :label="t('transactions.events.form.location_label.label')"
-        :error-messages="toMessages(v$.locationLabel)"
+        :error-messages="form.errors('locationLabel')"
         auto-select-first
-        @blur="v$.locationLabel.$touch()"
+        @blur="form.touch('locationLabel')"
       />
       <AmountInput
-        v-model="sequenceIndex"
+        v-model="state.sequenceIndex"
         variant="outlined"
         integer
         data-cy="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
         required
-        :error-messages="toMessages(v$.sequenceIndex)"
-        @blur="v$.sequenceIndex.$touch()"
+        :error-messages="form.errors('sequenceIndex')"
+        @blur="form.touch('sequenceIndex')"
       />
     </div>
 
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiTextArea
-      v-model="notes"
+      v-model="state.notes"
       prepend-icon="lu-sticky-note"
       data-cy="notes"
       variant="outlined"
@@ -297,8 +190,8 @@ defineExpose({
       auto-grow
       :label="t('common.notes')"
       :hint="t('transactions.events.form.notes.hint')"
-      :error-messages="toMessages(v$.notes)"
-      @blur="v$.notes.$touch()"
+      :error-messages="form.errors('notes')"
+      @blur="form.touch('notes')"
     />
   </div>
 </template>

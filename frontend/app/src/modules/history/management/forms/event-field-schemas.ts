@@ -49,6 +49,40 @@ export function requiredEventSubtype(): z.ZodString {
   return z.string().min(1, msg.$t('transactions.events.form.event_subtype.validation.non_empty'));
 }
 
+/**
+ * The three required-and-valid EVM address fields. They are separate functions rather than one
+ * parameterised by its messages because the unused-key lint only counts literal `msg.$t` arguments.
+ */
+export function requiredFeeRecipient(): z.ZodType<string> {
+  return z
+    .string()
+    .min(1, msg.$t('transactions.events.form.fee_recipient.validation.non_empty'))
+    .refine(
+      value => !value || isValidEthAddress(value),
+      msg.$t('transactions.events.form.fee_recipient.validation.valid'),
+    );
+}
+
+export function requiredWithdrawalAddress(): z.ZodType<string> {
+  return z
+    .string()
+    .min(1, msg.$t('transactions.events.form.withdrawal_address.validation.non_empty'))
+    .refine(
+      value => !value || isValidEthAddress(value),
+      msg.$t('transactions.events.form.withdrawal_address.validation.valid'),
+    );
+}
+
+export function requiredDepositor(): z.ZodType<string> {
+  return z
+    .string()
+    .min(1, msg.$t('transactions.events.form.depositor.validation.non_empty'))
+    .refine(
+      value => !value || isValidEthAddress(value),
+      msg.$t('transactions.events.form.depositor.validation.valid'),
+    );
+}
+
 /** An optional EVM address: blank is allowed, anything present must be a valid address. */
 export function optionalEthAddress(): z.ZodType<string> {
   return z.string().refine(
