@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { NewHistoryEventPayload } from '@/modules/history/events/schemas';
+import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { assert, toSentenceCase } from '@rotki/common';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -33,6 +34,12 @@ interface HistoryEventAssetPriceFormProps {
 
 const amount = defineModel<string>('amount', { required: true });
 const asset = defineModel<string | undefined>('asset', { required: true });
+/**
+ * The price write this form would perform, reported up so the parent can run it as part of saving
+ * rather than reaching back in through a template ref. `undefined` means there is nothing to write.
+ * Parents that still call {@link submitPrice} simply do not bind it.
+ */
+const priceIntent = defineModel<PriceIntent | undefined>('priceIntent', { required: false });
 
 const {
   timestamp,
@@ -71,6 +78,24 @@ const {
 
 const { updatePrice } = useEventPriceUpdate();
 
+/**
+ * Mirrors the condition {@link submitPrice} applies: only a price the user actually changed, for an
+ * asset that is not the display currency, is worth writing.
+ */
+const pendingPriceIntent = computed<PriceIntent | undefined>(() => {
+  if (noPriceFields || disabled)
+    return undefined;
+
+  const fromAsset = get(asset);
+  const toAsset = get(currencySymbol);
+  const price = get(modelAssetToFiatPrice);
+
+  if (!fromAsset || fromAsset === toAsset || price === get(fetchedAssetToFiatPrice))
+    return undefined;
+
+  return { fromAsset, price, timestampMs: timestamp, toAsset };
+});
+
 async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> {
   if (noPriceFields || disabled)
     return { success: true };
@@ -100,6 +125,10 @@ async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStat
     return { message, success: false };
   }
 }
+
+watchImmediate(pendingPriceIntent, (intent) => {
+  set(priceIntent, intent);
+});
 
 defineExpose({
   reset,
