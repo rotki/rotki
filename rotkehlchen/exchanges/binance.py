@@ -119,6 +119,15 @@ REJECTED_MBX_KEY: Final = -2015
 
 
 BINANCE_API_TYPE = Literal['api', 'sapi', 'dapi', 'fapi']
+BINANCE_HISTORY_METHOD = Literal[
+    'capital/deposit/hisrec',
+    'capital/withdraw/history',
+    'convert/tradeFlow',
+    'fiat/orders',
+    'fiat/payments',
+    'simple-earn/flexible/history/rewardsRecord',
+    'simple-earn/locked/history/rewardsRecord',
+]
 
 BINANCE_BASE_URL: Final = 'binance.com/'
 BINANCEUS_BASE_URL: Final = 'binance.us/'
@@ -1051,7 +1060,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             end_ts: Timestamp,
             force_refresh: bool = False,
             event_queue: HistoryEventQueue | None = None,
-    ) -> list[SwapEvent]:
+    ) -> list[HistoryBaseEntry]:
         """
         For trades coming from api/myTrades this function won't respect the provided range and
         will always query all the trades until now. The reason is that binance forces us to query
@@ -1078,7 +1087,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             if symbol in self._symbols_to_pair
         ]
         log.debug(f'Will query the following binance markets: {iter_markets}')
-        events: list[SwapEvent] = []
+        events: list[HistoryBaseEntry] = []
         pending_pair_cursors: dict[str, str] = {}
         # Limit of results to return. 1000 is max limit according to docs
         limit = 1000
@@ -1192,10 +1201,20 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         queried_pair=symbol,
                     )
 
-        if len(fiat_payments := self._query_online_fiat_payments(start_ts=start_ts, end_ts=end_ts)) != 0:  # noqa: E501
+        if len(fiat_payments := self._query_online_fiat_payments(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            force_refresh=force_refresh,
+            event_queue=event_queue,
+        )) != 0:
             events.extend(fiat_payments)
 
-        if len(convert_trades := self._query_online_convert_trades(start_ts=start_ts, end_ts=end_ts)) != 0:  # noqa: E501
+        if len(convert_trades := self._query_online_convert_trades(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            force_refresh=force_refresh,
+            event_queue=event_queue,
+        )) != 0:
             events.extend(convert_trades)
 
         events.sort(key=lambda event: event.timestamp)
@@ -1206,39 +1225,38 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[SwapEvent]:
+            force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
+    ) -> list[HistoryBaseEntry]:
         if self.location == Location.BINANCEUS:
             return []  # dont exist for Binance US: https://github.com/rotki/rotki/issues/3664
 
-        fiat_buys = self._api_query_list_within_time_delta(
+        events = self._query_history_event_source(
             start_ts=start_ts,
             end_ts=end_ts,
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
             api_type='sapi',
             method='fiat/payments',
+            source_type='trades',
+            source_name='fiat_buys',
+            deserializer=partial(self._deserialize_fiat_payment, is_buy=True),
+            force_refresh=force_refresh,
+            event_queue=event_queue,
             additional_options={'transactionType': 0},
         )
-        log.debug(f'{self.name} fiat buys history result', results_num=len(fiat_buys))
-        fiat_sells = self._api_query_list_within_time_delta(
+        events.extend(self._query_history_event_source(
             start_ts=start_ts,
             end_ts=end_ts,
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
             api_type='sapi',
             method='fiat/payments',
+            source_type='trades',
+            source_name='fiat_sells',
+            deserializer=partial(self._deserialize_fiat_payment, is_buy=False),
+            force_refresh=force_refresh,
+            event_queue=event_queue,
             additional_options={'transactionType': 1},
-        )
-        log.debug(f'{self.name} fiat sells history result', results_num=len(fiat_sells))
-
-        events = []
-        for is_buy, fiat_events in (
-            (True, fiat_buys),
-            (False, fiat_sells),
-        ):
-            for raw_fiat in fiat_events:
-                events.extend(self._deserialize_fiat_payment(
-                    raw_data=raw_fiat,
-                    is_buy=is_buy,
-                ))
+        ))
 
         return events
 
@@ -1246,28 +1264,28 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[SwapEvent]:
+            force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
+    ) -> list[HistoryBaseEntry]:
         """Query Binance Convert trades using the convert/tradeFlow endpoint.
         Docs: https://developers.binance.com/docs/convert/trade/Get-Convert-Trade-History
         """
         if self.location == Location.BINANCEUS:
             return []  # Binance US does not support the convert API endpoint as of 2025-12-17
 
-        convert_trades = self._api_query_list_within_time_delta(
+        return self._query_history_event_source(
             start_ts=start_ts,
             end_ts=end_ts,
             time_delta=CONVERT_API_TIME_DELTA,
             api_type='sapi',
             method='convert/tradeFlow',
+            source_type='trades',
+            source_name='convert',
+            deserializer=self._deserialize_convert_trade,
+            force_refresh=force_refresh,
+            event_queue=event_queue,
             additional_options={'limit': CONVERT_API_MAX_LIMIT},
         )
-        log.debug(f'{self.name} convert trades history result', results_num=len(convert_trades))
-
-        events = []
-        for raw_convert in convert_trades:
-            events.extend(self._deserialize_convert_trade(raw_data=raw_convert))
-
-        return events
 
     @staticmethod
     def handle_deserialization_errors(
@@ -1440,22 +1458,87 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             ),
         )
 
+    def _checkpoint_history_event_source_results(
+            self,
+            raw_results: list[dict[str, Any]],
+            query_start_ts: Timestamp,
+            query_end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+            range_name: str,
+            deserializer: Callable[[dict[str, Any]], list[HistoryBaseEntry]],
+    ) -> None:
+        events: list[HistoryBaseEntry] = []
+        for raw_result in raw_results:
+            events.extend(deserializer(raw_result))
+
+        event_queue.flush(
+            events=events,
+            cursor_update=partial(
+                DBQueryRanges(self.db).update_used_query_range,
+                location_string=range_name,
+                queried_ranges=[(query_start_ts, query_end_ts)],
+            ),
+        )
+
+    def _query_history_event_source(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            time_delta: int,
+            api_type: BINANCE_API_TYPE,
+            method: BINANCE_HISTORY_METHOD,
+            source_type: Literal['asset_movements', 'trades'],
+            source_name: str,
+            deserializer: Callable[[dict[str, Any]], list[HistoryBaseEntry]],
+            force_refresh: bool,
+            event_queue: HistoryEventQueue | None,
+            additional_options: dict | None = None,
+    ) -> list[HistoryBaseEntry]:
+        """Query one Binance history source and checkpoint every completed time window."""
+        range_name = f'{self.location!s}_{source_type}_{source_name}_{self.name}'
+        ranges_to_query = [(start_ts, end_ts)]
+        if event_queue is not None and force_refresh is False:
+            with self.db.conn.read_ctx() as cursor:
+                ranges_to_query = DBQueryRanges(self.db).get_location_query_ranges(
+                    cursor=cursor,
+                    location_string=range_name,
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                )
+
+        events: list[HistoryBaseEntry] = []
+        for query_start_ts, query_end_ts in ranges_to_query:
+            raw_results = self._api_query_list_within_time_delta(
+                start_ts=query_start_ts,
+                end_ts=query_end_ts,
+                time_delta=time_delta,
+                api_type=api_type,
+                method=method,
+                additional_options=additional_options,
+                on_new_results=partial(
+                    self._checkpoint_history_event_source_results,
+                    event_queue=event_queue,
+                    range_name=range_name,
+                    deserializer=deserializer,
+                ) if event_queue is not None else None,
+            )
+            if event_queue is None:
+                for raw_result in raw_results:
+                    events.extend(deserializer(raw_result))
+
+        return events
+
     def _api_query_list_within_time_delta(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
             time_delta: int,
             api_type: BINANCE_API_TYPE,
-            method: Literal[
-                'capital/deposit/hisrec',
-                'capital/withdraw/history',
-                'convert/tradeFlow',
-                'fiat/orders',
-                'fiat/payments',
-                'simple-earn/flexible/history/rewardsRecord',
-                'simple-earn/locked/history/rewardsRecord',
-            ],
+            method: BINANCE_HISTORY_METHOD,
             additional_options: dict | None = None,
+            on_new_results: Callable[
+                [list[dict[str, Any]], Timestamp, Timestamp], None,
+            ] | None = None,
     ) -> list[dict[str, Any]]:
         """Request via `api_query_dict()` from `start_ts` `end_ts` using a time
         delta (offset) less than `time_delta`.
@@ -1467,6 +1550,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
           - Timestamps are converted to milliseconds.
         """
         results: list[dict[str, Any]] = []
+        query_start_ts = start_ts
         # Create required time references in milliseconds
         start_ts = Timestamp(start_ts * 1000)
         end_ts = Timestamp(end_ts * 1000)
@@ -1490,7 +1574,16 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             if additional_options:
                 options.update(additional_options)
 
-            results.extend(self.api_query_list(api_type, method, options=options))
+            new_results = self.api_query_list(api_type, method, options=options)
+            query_end_ts = Timestamp(to_ts // 1000)
+            if on_new_results is None:
+                results.extend(new_results)
+            else:
+                on_new_results(
+                    new_results,
+                    query_start_ts,
+                    query_end_ts,
+                )
 
             # Case stop requesting
             if to_ts >= end_ts:
@@ -1498,6 +1591,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
             from_ts = to_ts + 1
             to_ts = min(to_ts + offset, end_ts)
+            query_start_ts = Timestamp(query_end_ts + 1)
 
         return results
 
@@ -1515,6 +1609,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 start_ts=start_ts,
                 end_ts=end_ts,
                 force_refresh=force_refresh,
+                event_queue=event_queue,
             )
             if event_queue is None:
                 events.extend(asset_movements)
@@ -1599,7 +1694,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            force_refresh: bool = False,  # no-op for asset movements.
+            force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> Sequence[HistoryBaseEntry]:
         """
         Be aware of:
@@ -1610,59 +1706,64 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         https://binance-docs.github.io/apidocs/spot/en/#deposit-history-user_data
         https://binance-docs.github.io/apidocs/spot/en/#withdraw-history-user_data
         """
-        deposits = self._api_query_list_within_time_delta(
+        movements = self._query_history_event_source(
             start_ts=start_ts,
             end_ts=end_ts,
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
             api_type='sapi',
             method='capital/deposit/hisrec',
+            source_type='asset_movements',
+            source_name='deposits',
+            deserializer=self._deserialize_asset_movement,
+            force_refresh=force_refresh,
+            event_queue=event_queue,
         )
-        log.debug(f'{self.name} deposit history result', results_num=len(deposits))
-
-        withdraws = self._api_query_list_within_time_delta(
+        movements.extend(self._query_history_event_source(
             start_ts=start_ts,
             end_ts=end_ts,
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
             api_type='sapi',
             method='capital/withdraw/history',
-        )
-        log.debug(f'{self.name} withdraw history result', results_num=len(withdraws))
+            source_type='asset_movements',
+            source_name='withdrawals',
+            deserializer=self._deserialize_asset_movement,
+            force_refresh=force_refresh,
+            event_queue=event_queue,
+        ))
 
         if self.location != Location.BINANCEUS:
             # dont exist for Binance US: https://github.com/rotki/rotki/issues/3664
-            fiat_deposits = self._api_query_list_within_time_delta(
+            movements.extend(self._query_history_event_source(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
                 api_type='sapi',
                 method='fiat/orders',
-                additional_options={'transactionType': 0},
-            )
-            log.debug(f'{self.name} fiat deposit history result', results_num=len(fiat_deposits))
-            fiat_withdraws = self._api_query_list_within_time_delta(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
-                api_type='sapi',
-                method='fiat/orders',
-                additional_options={'transactionType': 1},
-            )
-            log.debug(f'{self.name} fiat withdraw history result', results_num=len(fiat_withdraws))
-        else:
-            fiat_deposits, fiat_withdraws = [], []
-
-        movements = []
-        for raw_movement in deposits + withdraws:
-            movements.extend(self._deserialize_asset_movement(raw_movement))
-
-        for idx, fiat_movement in enumerate(fiat_deposits + fiat_withdraws):
-            movements.extend(self._deserialize_fiat_movement(
-                raw_data=fiat_movement,
-                event_subtype=(
-                    HistoryEventSubType.RECEIVE
-                    if idx < len(fiat_deposits) else
-                    HistoryEventSubType.SPEND
+                source_type='asset_movements',
+                source_name='fiat_deposits',
+                deserializer=partial(
+                    self._deserialize_fiat_movement,
+                    event_subtype=HistoryEventSubType.RECEIVE,
                 ),
+                force_refresh=force_refresh,
+                event_queue=event_queue,
+                additional_options={'transactionType': 0},
+            ))
+            movements.extend(self._query_history_event_source(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+                api_type='sapi',
+                method='fiat/orders',
+                source_type='asset_movements',
+                source_name='fiat_withdrawals',
+                deserializer=partial(
+                    self._deserialize_fiat_movement,
+                    event_subtype=HistoryEventSubType.SPEND,
+                ),
+                force_refresh=force_refresh,
+                event_queue=event_queue,
+                additional_options={'transactionType': 1},
             ))
 
         return movements
