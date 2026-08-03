@@ -62,6 +62,27 @@ describe('valueSelectList', () => {
     expect(shown[0].text()).toContain('Uniswap');
   });
 
+  // An address is the case that needs it: the option's keywords come straight from a checksummed
+  // value, while the search box lowercases what is typed, so matching had to lowercase both.
+  it('should match the search text against keywords regardless of case', async () => {
+    const wrapper = mount(ValueSelectList, {
+      props: {
+        emptyText: 'no match',
+        modelValue: [],
+        multiple: true,
+        options: [
+          { keywords: '0xAbCdEf', label: 'My wallet', value: 'My wallet (0xAbCdEf)' },
+          { label: 'Uniswap', value: 'uniswap' },
+        ],
+        searchPlaceholder: 'Search',
+      },
+    });
+    await wrapper.find('input').setValue('0xabcdef');
+    const shown = wrapper.findAll('[data-testid^=value-select-option-]');
+    expect(shown).toHaveLength(1);
+    expect(shown[0].text()).toContain('My wallet');
+  });
+
   it('should toggle the highlighted option via keyboard', async () => {
     const wrapper = createWrapper([]);
     const input = wrapper.find('input');
