@@ -1,71 +1,42 @@
 <script lang="ts" setup>
-import type { AddEvmSwapEventPayload, EvmHistoryEvent, EvmSwapEvent } from '@/modules/history/events/schemas';
-import type { EvmSwapFormData } from '@/modules/history/management/forms/evm-swap-event-form';
+import type { EvmHistoryEvent, EvmSwapEvent } from '@/modules/history/events/schemas';
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import { assert, HistoryEventEntryType, toSnakeCase } from '@rotki/common';
-import dayjs from 'dayjs';
+import { toSnakeCase } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
+import {
+  emptyEvmSwapForm,
+  evmSwapSchema,
+  evmSwapStateFromEvents,
+  toEvmSwapPayload,
+} from '@/modules/history/management/forms/evm-swap-event-form';
+import { emptySubEvent } from '@/modules/history/management/forms/swap/swap-sub-event';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
-import { toMessages, useEventFormBase } from '@/modules/history/management/forms/use-event-form-base';
 import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
 import { useSwapEventForm } from '@/modules/history/management/forms/use-swap-event-form';
-import { toSubEvent } from '@/modules/history/management/forms/utils';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const { data } = defineProps<{ data: StandaloneEventData<EvmHistoryEvent> | GroupEventData<EvmSwapEvent> }>();
 
-const { txChainsToLocation } = useSupportedChains();
-const { emptySubEvent, handleValidationErrors, submitAllPrices, addHistoryEvent, editHistoryEvent } = useSwapEventForm();
-
-function emptyEvent(): EvmSwapFormData {
-  return {
-    address: '',
-    counterparty: '',
-    entryType: HistoryEventEntryType.EVM_SWAP_EVENT,
-    fee: [],
-    location: '',
-    receive: [emptySubEvent()],
-    sequenceIndex: '0',
-    spend: [emptySubEvent()],
-    timestamp: dayjs().valueOf(),
-    txRef: '',
-  };
-}
-
-const states = ref<EvmSwapFormData>(emptyEvent());
-const hasFee = ref<boolean>(false);
-const identifiers = ref<number[]>([]);
-const errorMessages = ref<Record<string, string[]>>({});
-
-const spendListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('spendListRef');
-const receiveListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('receiveListRef');
-const feeListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('feeListRef');
-
-const timestamp = useRefPropVModel(states, 'timestamp');
-
 const { t } = useI18n({ useScope: 'global' });
 
-const { v$, captureEditModeState, shouldSkipSave } = useEventFormBase({
-  rules: commonRules => computed(() => ({
-    address: commonRules.createValidEthAddressRule(),
-    counterparty: commonRules.createExternalValidationRule(),
-    fee: get(hasFee) ? commonRules.createRequiredAtLeastOne() : {},
-    location: commonRules.createRequiredLocationRule(),
-    receive: commonRules.createRequiredAtLeastOne(),
-    sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
-    spend: commonRules.createRequiredAtLeastOne(),
-    timestamp: commonRules.createExternalValidationRule(),
-    txRef: commonRules.createValidTxHashRule(),
-  })),
-  states,
+// Shared with the transaction lookup below, which reports its failures as field errors too.
+const errorMessages = ref<Record<string, string[]>>({});
+
+const { txChainsToLocation } = useSupportedChains();
+
+const { form, save, seed } = useSwapEventForm({
   errorMessages,
+  initial: emptyEvmSwapForm,
+  schema: evmSwapSchema(),
   stateUpdated,
+  transform: toEvmSwapPayload,
 });
+
+const { state } = form;
 
 const {
   canRetry: lookupCanRetry,
@@ -79,13 +50,13 @@ const {
   // errors to the tx-hash field with a hint pointing the user at the spend list.
   errorFields: { relatedAddress: 'txRef', txHash: 'txRef' },
   errorMessages,
-  evmChain: () => toSnakeCase(get(states).location),
+  evmChain: () => toSnakeCase(state.location),
   onResolved: (result) => {
-    set(states, { ...get(states), timestamp: result.timestamp * 1000 });
+    state.timestamp = result.timestamp * 1000;
   },
   // Use the first spend sub-event's locationLabel as the user's tracked address.
-  relatedAddress: () => get(states).spend[0]?.locationLabel ?? '',
-  txHash: () => get(states).txRef,
+  relatedAddress: () => state.spend[0]?.locationLabel ?? '',
+  txHash: () => state.txRef,
 });
 
 const txRefHint = computed<string>(() => {
@@ -96,65 +67,13 @@ const txRefHint = computed<string>(() => {
   return '';
 });
 
-async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate())) {
-    return false;
-  }
-
-  const isEditMode = get(identifiers).length > 0;
-
-  // Submit prices from all nested HistoryEventAssetPriceForm components
-  const pricesSubmitted = await submitAllPrices({ spendListRef, receiveListRef, feeListRef });
-  if (!pricesSubmitted) {
-    return false;
-  }
-
-  if (shouldSkipSave(isEditMode, get(states))) {
-    return true;
-  }
-
-  const payload: AddEvmSwapEventPayload = { ...get(states) };
-
-  if (!get(hasFee)) {
-    delete payload.fee;
-  }
-
-  if (payload.address === '') {
-    payload.address = undefined;
-  }
-
-  const result = isEditMode
-    ? await editHistoryEvent({
-        ...payload,
-        ...{
-          identifiers: get(identifiers),
-        },
-      })
-    : await addHistoryEvent(payload);
-
-  if (result.success) {
-    set(states, emptyEvent());
-    set(identifiers, []);
-    set(hasFee, false);
-  }
-  else {
-    const message = result.message;
-    if (message) {
-      handleValidationErrors(message);
-      set(errorMessages, typeof message === 'string' ? {} : message);
-    }
-  }
-
-  return result.success;
-}
-
 watchImmediate(() => data, (data) => {
   resetLookup();
   if (data.type === 'group-add') {
     const group = data.group;
 
-    set(states, {
-      ...get(states),
+    seed({
+      ...emptyEvmSwapForm(),
       location: group.location ?? '',
       sequenceIndex: data.nextSequenceId.toString(),
       timestamp: group.timestamp,
@@ -162,62 +81,46 @@ watchImmediate(() => data, (data) => {
     });
   }
   else if (data.type === 'edit-group') {
-    const spend = data.eventsInGroup.filter(item => item.eventSubtype === 'spend');
-    const receive = data.eventsInGroup.filter(item => item.eventSubtype === 'receive');
-    const fee = data.eventsInGroup.filter(item => item.eventSubtype === 'fee');
-
-    assert(spend.length > 0);
-    assert(receive.length > 0);
-
-    set(hasFee, fee.length > 0);
-    set(identifiers, data.eventsInGroup.map(item => item.identifier));
-
-    const firstSpend = spend[0];
-    set(states, {
-      address: firstSpend.address ?? '',
-      counterparty: firstSpend.counterparty ?? '',
-      entryType: HistoryEventEntryType.EVM_SWAP_EVENT,
-      fee: fee.map(event => toSubEvent(event)),
-      location: firstSpend.location,
-      receive: receive.map(event => toSubEvent(event)),
-      sequenceIndex: firstSpend.sequenceIndex.toString(),
-      spend: spend.map(event => toSubEvent(event)),
-      timestamp: firstSpend.timestamp,
-      txRef: firstSpend.txRef,
-    });
-
-    captureEditModeState(get(states));
+    seed(evmSwapStateFromEvents(data.eventsInGroup), data.eventsInGroup.map(item => item.identifier));
   }
 });
 
-watch(hasFee, (hasFee) => {
-  set(states, { ...get(states), fee: hasFee ? [emptySubEvent()] : [] });
+watch(() => state.hasFee, (hasFee) => {
+  if (!hasFee) {
+    state.fee = [];
+    return;
+  }
+
+  // Seeding an existing group sets the flag and the rows together, so only an empty list wants a
+  // blank row; replacing it unconditionally would discard what was just loaded.
+  if (state.fee.length === 0)
+    state.fee.push(emptySubEvent());
 });
 
 defineExpose({
+  errorCount: form.errorCount,
   save,
-  v$,
 });
 </script>
 
 <template>
   <div>
     <EventDateLocation
-      v-model:timestamp="timestamp"
-      v-model:location="states.location"
+      v-model:timestamp="state.timestamp"
+      v-model:location="state.location"
       :location-disabled="data.type !== 'add'"
       :locations="txChainsToLocation"
       :error-messages="{
-        location: toMessages(v$.location),
-        timestamp: toMessages(v$.timestamp),
+        location: form.errors('location'),
+        timestamp: form.errors('timestamp'),
       }"
-      @blur="v$[$event].$touch()"
+      @blur="form.touch($event)"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiTextField
-      v-model="states.txRef"
+      v-model="state.txRef"
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
@@ -225,8 +128,8 @@ defineExpose({
       :label="t('common.tx_hash')"
       required
       :hint="txRefHint"
-      :error-messages="toMessages(v$.txRef)"
-      @blur="v$.txRef.$touch()"
+      :error-messages="form.errors('txRef')"
+      @blur="form.touch('txRef')"
     >
       <template
         v-if="lookupLoading || lookupCanRetry"
@@ -263,75 +166,81 @@ defineExpose({
     <RuiDivider class="mb-6 mt-2" />
 
     <SwapSubEventList
-      ref="spendListRef"
-      v-model="states.spend"
+      v-model="state.spend"
       data-cy="spend"
-      :location="states.location"
-      :timestamp="timestamp"
+      path="spend"
+      :errors="form.errors"
+      :touch="form.touch"
+      :location="state.location"
+      :timestamp="state.timestamp"
       type="spend"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <SwapSubEventList
-      ref="receiveListRef"
-      v-model="states.receive"
+      v-model="state.receive"
       data-cy="receive"
-      :location="states.location"
-      :timestamp="timestamp"
+      path="receive"
+      :errors="form.errors"
+      :touch="form.touch"
+      :location="state.location"
+      :timestamp="state.timestamp"
       type="receive"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiCheckbox
-      v-model="hasFee"
+      v-model="state.hasFee"
       :label="t('transactions.events.form.has_fee.label')"
       data-cy="has-fee"
       color="primary"
     />
 
     <SwapSubEventList
-      ref="feeListRef"
-      v-model="states.fee"
+      v-model="state.fee"
       data-cy="fee"
-      :location="states.location"
-      :disabled="!hasFee"
-      :timestamp="timestamp"
+      path="fee"
+      :errors="form.errors"
+      :touch="form.touch"
+      :location="state.location"
+      :disabled="!state.hasFee"
+      :timestamp="state.timestamp"
       type="fee"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiTextField
-      v-model="states.address"
+      v-model="state.address"
       clearable
       variant="outlined"
       data-cy="address"
       :label="t('transactions.events.form.contract_address.label')"
-      :error-messages="toMessages(v$.address)"
-      @blur="v$.address.$touch()"
+      :error-messages="form.errors('address')"
+      @blur="form.touch('address')"
     />
 
     <div class="grid md:grid-cols-2 gap-4">
       <AmountInput
-        v-model="states.sequenceIndex"
+        v-model="state.sequenceIndex"
         variant="outlined"
         integer
         :disabled="data.type === 'edit-group'"
         data-cy="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
         required
-        :error-messages="toMessages(v$.sequenceIndex)"
-        @blur="v$.sequenceIndex.$touch()"
+        :error-messages="form.errors('sequenceIndex')"
+        @blur="form.touch('sequenceIndex')"
       />
 
       <CounterpartyInput
-        v-model="states.counterparty"
+        v-model="state.counterparty"
         :label="t('common.counterparty')"
         data-cy="counterparty"
-        :error-messages="toMessages(v$.counterparty)"
-        @blur="v$.counterparty.$touch()"
+        :error-messages="form.errors('counterparty')"
+        @blur="form.touch('counterparty')"
       />
     </div>
   </div>

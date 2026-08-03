@@ -1,274 +1,177 @@
 <script lang="ts" setup>
-import type { AddSolanaSwapEventPayload, SolanaEvent, SolanaSwapEvent } from '@/modules/history/events/schemas';
+import type { SolanaEvent, SolanaSwapEvent } from '@/modules/history/events/schemas';
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import type { SolanaSwapFormData } from '@/modules/history/management/forms/solana-swap-event-form';
-import { assert, HistoryEventEntryType } from '@rotki/common';
-import dayjs from 'dayjs';
 import { SOLANA_CHAIN } from '@/modules/assets/types';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
+import {
+  emptySolanaSwapForm,
+  solanaSwapSchema,
+  solanaSwapStateFromEvents,
+  toSolanaSwapPayload,
+} from '@/modules/history/management/forms/solana-swap-event-form';
+import { emptySubEvent } from '@/modules/history/management/forms/swap/swap-sub-event';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
-import { toMessages, useEventFormBase } from '@/modules/history/management/forms/use-event-form-base';
 import { useSwapEventForm } from '@/modules/history/management/forms/use-swap-event-form';
-import { toSubEvent } from '@/modules/history/management/forms/utils';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const { data } = defineProps<{ data: StandaloneEventData<SolanaEvent> | GroupEventData<SolanaSwapEvent> }>();
 
-const { emptySubEvent, handleValidationErrors, submitAllPrices, addHistoryEvent, editHistoryEvent } = useSwapEventForm();
-
-function emptyEvent(): SolanaSwapFormData {
-  return {
-    address: '',
-    counterparty: '',
-    entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT,
-    fee: [],
-    receive: [emptySubEvent()],
-    sequenceIndex: '0',
-    spend: [emptySubEvent()],
-    timestamp: dayjs().valueOf(),
-    txRef: '',
-  };
-}
-
-const states = ref<SolanaSwapFormData>(emptyEvent());
-const location = ref<string>(SOLANA_CHAIN);
-const hasFee = ref<boolean>(false);
-const identifiers = ref<number[]>([]);
-const errorMessages = ref<Record<string, string[]>>({});
-
-const spendListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('spendListRef');
-const receiveListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('receiveListRef');
-const feeListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('feeListRef');
-
-const timestamp = useRefPropVModel(states, 'timestamp');
-
 const { t } = useI18n({ useScope: 'global' });
 
-const { v$, captureEditModeState, shouldSkipSave } = useEventFormBase({
-  rules: commonRules => computed(() => ({
-    address: commonRules.createValidSolanaAddressRule(),
-    counterparty: commonRules.createExternalValidationRule(),
-    fee: get(hasFee) ? commonRules.createRequiredAtLeastOne() : {},
-    location: commonRules.createExternalValidationRule(),
-    receive: commonRules.createRequiredAtLeastOne(),
-    sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
-    spend: commonRules.createRequiredAtLeastOne(),
-    timestamp: commonRules.createExternalValidationRule(),
-    txRef: commonRules.createValidSolanaSignatureRule(),
-  })),
-  states: computed(() => ({ ...get(states), location: get(location) })),
-  errorMessages,
+// A Solana swap is always on Solana, so the location is displayed but never edited or sent.
+const location = ref<string>(SOLANA_CHAIN);
+
+const { form, save, seed } = useSwapEventForm({
+  initial: emptySolanaSwapForm,
+  schema: solanaSwapSchema(),
   stateUpdated,
-  formStates: { states },
+  transform: toSolanaSwapPayload,
 });
 
-async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate())) {
-    return false;
-  }
-
-  const isEditMode = get(identifiers).length > 0;
-
-  // Submit prices from all nested HistoryEventAssetPriceForm components
-  const pricesSubmitted = await submitAllPrices({ spendListRef, receiveListRef, feeListRef });
-  if (!pricesSubmitted) {
-    return false;
-  }
-
-  if (shouldSkipSave(isEditMode, get(states))) {
-    return true;
-  }
-
-  const payload: AddSolanaSwapEventPayload = { ...get(states) };
-
-  if (!get(hasFee)) {
-    delete payload.fee;
-  }
-
-  if (payload.address === '') {
-    payload.address = undefined;
-  }
-
-  const result = isEditMode
-    ? await editHistoryEvent({
-        ...payload,
-        ...{
-          identifiers: get(identifiers),
-        },
-      })
-    : await addHistoryEvent(payload);
-
-  if (result.success) {
-    set(states, emptyEvent());
-    set(identifiers, []);
-    set(hasFee, false);
-  }
-  else {
-    const message = result.message;
-    if (message) {
-      handleValidationErrors(message);
-      set(errorMessages, typeof message === 'string' ? {} : message);
-    }
-  }
-
-  return result.success;
-}
+const { state } = form;
 
 watchImmediate(() => data, (data) => {
   if (data.type === 'group-add') {
     const group = data.group;
 
-    set(states, {
-      ...get(states),
+    seed({
+      ...emptySolanaSwapForm(),
       sequenceIndex: data.nextSequenceId.toString(),
       timestamp: group.timestamp,
       txRef: group.txRef,
     });
   }
   else if (data.type === 'edit-group') {
-    const spend = data.eventsInGroup.filter(item => item.eventSubtype === 'spend');
-    const receive = data.eventsInGroup.filter(item => item.eventSubtype === 'receive');
-    const fee = data.eventsInGroup.filter(item => item.eventSubtype === 'fee');
-
-    assert(spend.length > 0);
-    assert(receive.length > 0);
-
-    set(hasFee, fee.length > 0);
-    set(identifiers, data.eventsInGroup.map(item => item.identifier));
-
-    const firstSpend = spend[0];
-    set(states, {
-      address: firstSpend.address ?? '',
-      counterparty: firstSpend.counterparty ?? '',
-      entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT,
-      fee: fee.map(event => toSubEvent(event)),
-      receive: receive.map(event => toSubEvent(event)),
-      sequenceIndex: firstSpend.sequenceIndex.toString(),
-      spend: spend.map(event => toSubEvent(event)),
-      timestamp: firstSpend.timestamp,
-      txRef: firstSpend.txRef,
-    });
-
-    captureEditModeState(get(states));
+    seed(solanaSwapStateFromEvents(data.eventsInGroup), data.eventsInGroup.map(item => item.identifier));
   }
 });
 
-watch(hasFee, (hasFee) => {
-  set(states, { ...get(states), fee: hasFee ? [emptySubEvent()] : [] });
+watch(() => state.hasFee, (hasFee) => {
+  if (!hasFee) {
+    state.fee = [];
+    return;
+  }
+
+  // Seeding an existing group sets the flag and the rows together, so only an empty list wants a
+  // blank row; replacing it unconditionally would discard what was just loaded.
+  if (state.fee.length === 0)
+    state.fee.push(emptySubEvent());
 });
 
 defineExpose({
+  errorCount: form.errorCount,
   save,
-  v$,
 });
 </script>
 
 <template>
   <div>
     <EventDateLocation
-      v-model:timestamp="timestamp"
+      v-model:timestamp="state.timestamp"
       v-model:location="location"
       location-disabled
       :error-messages="{
-        location: toMessages(v$.location),
-        timestamp: toMessages(v$.timestamp),
+        location: form.errors('location'),
+        timestamp: form.errors('timestamp'),
       }"
-      @blur="v$[$event].$touch()"
+      @blur="form.touch($event)"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiTextField
-      v-model="states.txRef"
+      v-model="state.txRef"
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
       data-cy="tx-ref"
       :label="t('common.signature')"
       required
-      :error-messages="toMessages(v$.txRef)"
-      @blur="v$.txRef.$touch()"
+      :error-messages="form.errors('txRef')"
+      @blur="form.touch('txRef')"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <SwapSubEventList
-      ref="spendListRef"
-      v-model="states.spend"
+      v-model="state.spend"
       data-cy="spend"
+      path="spend"
+      :errors="form.errors"
+      :touch="form.touch"
       :location="location"
-      :timestamp="timestamp"
+      :timestamp="state.timestamp"
       type="spend"
-      solana
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <SwapSubEventList
-      ref="receiveListRef"
-      v-model="states.receive"
+      v-model="state.receive"
       data-cy="receive"
+      path="receive"
+      :errors="form.errors"
+      :touch="form.touch"
       :location="location"
-      :timestamp="timestamp"
+      :timestamp="state.timestamp"
       type="receive"
-      solana
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiCheckbox
-      v-model="hasFee"
+      v-model="state.hasFee"
       :label="t('transactions.events.form.has_fee.label')"
       data-cy="has-fee"
       color="primary"
     />
 
     <SwapSubEventList
-      ref="feeListRef"
-      v-model="states.fee"
+      v-model="state.fee"
       data-cy="fee"
+      path="fee"
+      :errors="form.errors"
+      :touch="form.touch"
       :location="location"
-      :disabled="!hasFee"
-      :timestamp="timestamp"
+      :disabled="!state.hasFee"
+      :timestamp="state.timestamp"
       type="fee"
-      solana
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiTextField
-      v-model="states.address"
+      v-model="state.address"
       clearable
       variant="outlined"
       data-cy="address"
       :label="t('transactions.events.form.contract_address.label')"
-      :error-messages="toMessages(v$.address)"
-      @blur="v$.address.$touch()"
+      :error-messages="form.errors('address')"
+      @blur="form.touch('address')"
     />
 
     <div class="grid md:grid-cols-2 gap-4">
       <AmountInput
-        v-model="states.sequenceIndex"
+        v-model="state.sequenceIndex"
         variant="outlined"
         integer
         :disabled="data.type === 'edit-group'"
         data-cy="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
         required
-        :error-messages="toMessages(v$.sequenceIndex)"
-        @blur="v$.sequenceIndex.$touch()"
+        :error-messages="form.errors('sequenceIndex')"
+        @blur="form.touch('sequenceIndex')"
       />
 
       <CounterpartyInput
-        v-model="states.counterparty"
+        v-model="state.counterparty"
         :label="t('common.counterparty')"
         data-cy="counterparty"
-        :error-messages="toMessages(v$.counterparty)"
-        @blur="v$.counterparty.$touch()"
+        :error-messages="form.errors('counterparty')"
+        @blur="form.touch('counterparty')"
       />
     </div>
   </div>

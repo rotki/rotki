@@ -1,16 +1,28 @@
 <script setup lang="ts">
-import type { ComponentPublicInstance } from 'vue';
-import type { SwapSubEventModel } from '@/modules/history/events/schemas';
+import {
+  emptySubEvent,
+  NO_SUB_EVENT_ERRORS,
+  type SwapSubEventErrors,
+  type SwapSubEventField,
+  type SwapSubEventState,
+} from '@/modules/history/management/forms/swap/swap-sub-event';
 import SwapSubEvent from '@/modules/history/management/forms/swap/SwapSubEvent.vue';
 
-const modelValue = defineModel<SwapSubEventModel[]>({ required: true });
+const modelValue = defineModel<SwapSubEventState[]>({ required: true });
 
-const { type } = defineProps<{
+/**
+ * `errors` and `touch` are the form's own accessors, passed down rather than reimplemented, because
+ * validation lives in one schema on the parent. `path` is this list's key in that schema (`spend`,
+ * `receive` or `fee`), which is what turns a row index into a dotted path like `spend.1.amount`.
+ */
+const { path, errors, touch, type } = defineProps<{
   location: string;
   disabled?: boolean;
   timestamp: number;
-  solana?: boolean;
   type: 'receive' | 'spend' | 'fee';
+  path: string;
+  errors: (path: string) => string[];
+  touch: (path: string) => void;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -26,44 +38,30 @@ const label = computed<string>(() => {
   }
 });
 
-const placeholder: SwapSubEventModel = {
-  amount: '',
-  asset: '',
-};
+const placeholder = emptySubEvent();
 
-function remove(index: number) {
-  const newModelValue = [...get(modelValue)];
-  newModelValue.splice(index, 1);
-  set(modelValue, newModelValue);
+function fieldErrors(index: number): SwapSubEventErrors {
+  return {
+    amount: errors(`${path}.${index}.amount`),
+    asset: errors(`${path}.${index}.asset`),
+    locationLabel: errors(`${path}.${index}.locationLabel`),
+    userNotes: errors(`${path}.${index}.userNotes`),
+  };
 }
 
-function add() {
-  set(modelValue, [...get(modelValue), { amount: '', asset: '' }]);
+function onBlur(index: number, field: SwapSubEventField): void {
+  touch(`${path}.${index}.${field}`);
 }
 
-interface SwapSubEventRef extends ComponentPublicInstance {
-  submitPrice: () => Promise<any>;
+// Both mutate the array in place: the rows the form has already recorded touched-state against must
+// keep their identity, which replacing the array would destroy.
+function remove(index: number): void {
+  get(modelValue).splice(index, 1);
 }
 
-const subEventRefs = ref<SwapSubEventRef[]>([]);
-
-function isSwapSubEventComponent(el: Element | ComponentPublicInstance | null): el is SwapSubEventRef {
-  return el !== null && typeof el === 'object' && '$el' in el && 'submitPrice' in el;
+function add(): void {
+  get(modelValue).push(emptySubEvent());
 }
-
-function setSubEventRef(el: Element | ComponentPublicInstance | null, index: number) {
-  if (isSwapSubEventComponent(el)) {
-    subEventRefs.value[index] = el;
-  }
-}
-
-function getSubEventRefs(): SwapSubEventRef[] {
-  return get(subEventRefs).filter(Boolean);
-}
-
-defineExpose({
-  getSubEventRefs,
-});
 </script>
 
 <template>
@@ -95,12 +93,12 @@ defineExpose({
       v-if="disabled"
       :model-value="placeholder"
       :disabled="disabled"
+      :error-messages="NO_SUB_EVENT_ERRORS"
       :location="location"
       :timestamp="timestamp"
       :type="type"
       :index="0"
       single
-      :solana="solana"
     />
 
     <template
@@ -108,16 +106,16 @@ defineExpose({
       :key="index"
     >
       <SwapSubEvent
-        :ref="(el) => setSubEventRef(el, index)"
         v-model="modelValue[index]"
         :type="type"
         :timestamp="timestamp"
         :location="location"
         :index="index"
         :disabled="disabled"
+        :error-messages="fieldErrors(index)"
         :single="modelValue.length === 1"
-        :solana="solana"
         @remove="remove($event)"
+        @blur="onBlur(index, $event)"
       />
 
       <RuiDivider
