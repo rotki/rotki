@@ -11,10 +11,11 @@ import {
   evmSwapStateFromEvents,
   toEvmSwapPayload,
 } from '@/modules/history/management/forms/evm-swap-event-form';
+import { collectPriceIntents } from '@/modules/history/management/forms/price-intent';
 import { emptySubEvent } from '@/modules/history/management/forms/swap/swap-sub-event';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
 import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
-import { useSwapEventForm } from '@/modules/history/management/forms/use-swap-event-form';
+import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
@@ -28,11 +29,13 @@ const errorMessages = ref<Record<string, string[]>>({});
 
 const { txChainsToLocation } = useSupportedChains();
 
-const { form, save, seed } = useSwapEventForm({
+const { form, save, seed } = useHistoryEventForm({
   errorMessages,
   initial: emptyEvmSwapForm,
+  priceIntents: state => collectPriceIntents(state.spend, state.receive, state.fee),
   schema: evmSwapSchema(),
   stateUpdated,
+  toEditPayload: (payload, identifiers) => ({ ...payload, identifiers }),
   transform: toEvmSwapPayload,
 });
 
