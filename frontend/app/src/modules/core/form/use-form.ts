@@ -10,7 +10,7 @@ function isRecord(value: unknown): value is object {
  * Result of a submit attempt. A plain discriminated union rather than a `Result` type, so the core
  * carries no dependency of its own; the API edge can wrap it if it wants to.
  */
-export type FormOutcome<TPayload, TMessage = string> =
+type FormOutcome<TPayload, TMessage = string> =
   | { readonly outcome: 'success'; readonly payload: TPayload }
   | { readonly outcome: 'invalid' }
   | { readonly message?: TMessage; readonly outcome: 'error' };

@@ -61,7 +61,6 @@ const {
   fetching,
   modelFiatValue,
   modelFiatValueFocused,
-  reset,
 } = useEventPriceConversion({
   amount,
   asset,
@@ -89,10 +88,6 @@ const pendingPriceIntent = computed<PriceIntent | undefined>(() => {
 
 watchImmediate(pendingPriceIntent, (intent) => {
   set(priceIntent, intent);
-});
-
-defineExpose({
-  reset,
 });
 </script>
 

@@ -7,7 +7,7 @@ import type { VueWrapper } from '@vue/test-utils';
  * already moved and one that has not are both covered, and when the rest migrate this list is the
  * only thing that changes.
  */
-export const TEST_ID_ATTRIBUTES = ['data-cy', 'data-testid'] as const;
+const TEST_ID_ATTRIBUTES = ['data-cy', 'data-testid'] as const;
 
 /**
  * The test-id selectors a component renders, as `attribute=value`, deduplicated and sorted.

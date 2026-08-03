@@ -138,7 +138,7 @@ export const HistoryEvent = z.union([
 
 export type GroupEditableHistoryEvents = AssetMovementEvent | SwapEvent | EvmSwapEvent | SolanaSwapEvent;
 
-export interface FeeEntry {
+interface FeeEntry {
   amount: string;
   asset: string;
 }
@@ -310,7 +310,7 @@ export type EditHistoryEventPayload =
   | EditSolanaEventPayload
   | EditBitcoinEventPayload;
 
-export type NewHistoryEventPayload =
+type NewHistoryEventPayload =
   | NewEvmHistoryEventPayload
   | NewOnlineHistoryEventPayload
   | NewEthBlockEventPayload
