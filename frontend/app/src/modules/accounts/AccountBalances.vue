@@ -27,6 +27,7 @@ const emit = defineEmits<{
 
 const visibleTags = ref<string[]>([]);
 const addresses = ref<string[]>([]);
+const chains = ref<string[]>([]);
 const chainExclusionFilter = ref<Record<string, string[]>>({});
 const expandedRowContent = useTemplateRef<ComponentExposed<typeof AccountExpandedRowContent>>('expandedRowContent');
 const tab = ref<number>(0);
@@ -39,12 +40,11 @@ const { accounts: accountsState } = storeToRefs(useBlockchainAccountsStore());
 const {
   accounts,
   fetchData,
-  filters,
-  matchers,
   pagination,
   sort,
 } = useAccountBalancesPagination({
   addresses,
+  chains,
   category: () => category,
   chainExclusionFilter,
   expanded,
@@ -132,9 +132,8 @@ defineExpose({
         <AccountBalancesFilterBar
           v-model:visible-tags="visibleTags"
           v-model:addresses="addresses"
-          v-model:filters="filters"
+          v-model:chains="chains"
           :category="category"
-          :matchers="matchers"
         />
       </template>
     </div>

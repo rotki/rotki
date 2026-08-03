@@ -1,7 +1,6 @@
-import type { SearchMatcher } from '@/modules/core/table/filtering';
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { describe, expect, it } from 'vitest';
-import { type TagFieldOption, toAccountTagsField, toBlockchainAccountFields } from '@/modules/core/table/filters/blockchain-account-fields';
+import { type TagFieldOption, toAccountChainField, toAccountTagsField } from '@/modules/core/table/filters/blockchain-account-fields';
 
 const t = (key: string): string => key;
 
@@ -18,34 +17,26 @@ const resolvers: SharedFieldResolvers & { t: (key: string) => string } = {
   t,
 };
 
-function matcher(key: string, multiple = false): SearchMatcher<string, string> {
-  return {
-    description: `filter by ${key}`,
-    key,
-    keyValue: key,
-    multiple,
-    string: true,
-    suggestions: (): string[] => [],
-    validate: (): boolean => true,
-  };
-}
-
-describe('toBlockchainAccountFields', () => {
-  it('should draw the chain field with its chain logo and name', () => {
-    const [field] = toBlockchainAccountFields([matcher('chain', true)], resolvers);
+describe('toAccountChainField', () => {
+  it('should bind the chain field to the chain param', () => {
+    const field = toAccountChainField(t, resolvers, () => ['eth', 'optimism']);
     expect(field).toMatchObject({
-      display: 'chain',
+      binding: { kind: 'param', paramKey: 'chain', to: 'both' },
       key: 'chain',
       label: 'account_balances.filter_field_labels.chain',
       multiple: true,
     });
+  });
+
+  it('should draw a chain with its logo and display name', () => {
+    const field = toAccountChainField(t, resolvers, () => ['optimism']);
+    expect(field.display).toBe('chain');
     expect(field.resolveLabel?.('optimism')).toBe('chain:optimism');
   });
 
-  it('should leave a field it does not know alone', () => {
-    const [field] = toBlockchainAccountFields([matcher('other')], resolvers);
-    expect(field).toMatchObject({ key: 'other', label: 'filter by other' });
-    expect(field.display).toBeUndefined();
+  it('should offer the chains of the shown category', () => {
+    const field = toAccountChainField(t, resolvers, () => ['eth', 'optimism']);
+    expect(field.suggest?.()).toStrictEqual(['eth', 'optimism']);
   });
 });
 
