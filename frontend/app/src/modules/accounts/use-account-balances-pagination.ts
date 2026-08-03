@@ -1,25 +1,21 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
+import type { MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type {
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
 import type { LocationQuery, RawLocationQuery } from '@/modules/core/table/route';
+import { AccountExternalFilterSchema } from '@/modules/accounts/account-route-schema';
+import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { fromUriEncoded, toUriEncoded } from '@/modules/core/common/helpers/route-uri';
-import {
-  AccountExternalFilterSchema,
-  type Filters,
-  type Matcher,
-  useBlockchainAccountFilter,
-} from '@/modules/core/table/filters/use-blockchain-account-filter';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 
 interface UseAccountBalancesPaginationOptions {
   /**
-   * Account category the page is showing (`evm`, `solana`, ...). It selects the filter matchers and is
-   * sent as a request param, so changing it refetches with a different matcher set.
+   * Account category the page is showing (`evm`, `solana`, ...). It decides which chains the chain
+   * pill offers and is sent as a request param, so changing it refetches.
    */
   category: MaybeRefOrGetter<string>;
   /**
@@ -32,6 +28,11 @@ interface UseAccountBalancesPaginationOptions {
    * URL. Written back by this composable when the route carries addresses, like `visibleTags`.
    */
   addresses: Ref<string[]>;
+  /**
+   * Chains picked in the filter bar, sent as the `chain` request param and mirrored in the URL.
+   * Written back by this composable when the route carries chains, like `visibleTags`.
+   */
+  chains: Ref<string[]>;
   /**
    * Per-group chain exclusions keyed by group id, forwarded as the `excluded` request param. Read only,
    * this composable never writes it.
@@ -57,8 +58,6 @@ interface UseAccountBalancesPaginationOptions {
 interface UseAccountBalancesPaginationReturn {
   accounts: Ref<Collection<BlockchainAccountGroupWithBalance>>;
   fetchData: () => Promise<void>;
-  filters: WritableComputedRef<Filters>;
-  matchers: ComputedRef<Matcher[]>;
   pagination: WritableComputedRef<TablePaginationData>;
   sort: WritableComputedRef<DataTableSortData<BlockchainAccountGroupWithBalance>>;
 }
@@ -68,11 +67,10 @@ type QueryParams = Record<string, string | string[] | number>;
 export function useAccountBalancesPagination(
   options: UseAccountBalancesPaginationOptions,
 ): UseAccountBalancesPaginationReturn {
-  const { t } = useI18n({ useScope: 'global' });
-
   const {
     addresses,
     category,
+    chains,
     chainExclusionFilter,
     expanded,
     query,
@@ -81,11 +79,12 @@ export function useAccountBalancesPagination(
   } = options;
 
   const { fetchAccounts: fetchAccountsPage } = useBlockchainAccountData();
-  const filterSchema = useBlockchainAccountFilter(t, category);
+  const { chainIds } = useAccountCategoryHelper(category);
 
   const extraParams = computed<RawLocationQuery>(() => ({
     addresses: get(addresses),
     category: toValue(category),
+    chain: get(chains),
     tags: get(visibleTags),
   }));
 
@@ -107,13 +106,17 @@ export function useAccountBalancesPagination(
   }));
 
   function onUpdateFilters(filterQuery: LocationQuery): void {
-    const { addresses: queryAddresses, expanded: expandedIds, q, tab: qTab, tags } = AccountExternalFilterSchema.parse(filterQuery);
+    const { addresses: queryAddresses, chain, expanded: expandedIds, q, tab: qTab, tags } = AccountExternalFilterSchema.parse(filterQuery);
 
     if (tags)
       set(visibleTags, tags);
 
     if (queryAddresses)
       set(addresses, queryAddresses);
+
+    // A chain the current category does not have would filter every row away, and the URL is the
+    // one source that can carry one (a stale link, or a hand-edited query).
+    set(chains, chain.filter(id => get(chainIds).includes(id)));
 
     if (qTab !== undefined)
       set(tab, qTab);
@@ -124,22 +127,16 @@ export function useAccountBalancesPagination(
     set(query, q ? fromUriEncoded(q) : {});
   }
 
-  const { matchers } = filterSchema;
-
   const {
     collection: accounts,
-    filter: filters,
     pagination,
     refetch: fetchData,
     sort,
   } = useServerTable<
     BlockchainAccountGroupWithBalance,
-    BlockchainAccountRequestPayload,
-    Filters,
-    Matcher
+    BlockchainAccountRequestPayload
   >({
     fetch: fetchAccountsPage,
-    filterSchema,
     params: [
       { to: 'both', values: extraParams },
       { skipEmpty: true, to: 'request', values: requestParams },
@@ -157,8 +154,6 @@ export function useAccountBalancesPagination(
   return {
     accounts,
     fetchData,
-    filters,
-    matchers,
     pagination,
     sort,
   };

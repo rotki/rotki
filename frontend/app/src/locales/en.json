@@ -63,7 +63,7 @@
     "enter_selection_mode": "Enter selection mode to bulk ignore or mark assets as spam",
     "exit_selection_mode": "Exit selection mode",
     "filter": {
-      "chain": "filter by the chain"
+
     },
     "filter_field_labels": {
       "account": "Account",
