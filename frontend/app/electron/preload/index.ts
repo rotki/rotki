@@ -88,6 +88,7 @@ contextBridge.exposeInMainWorld('interop', {
   setMcpAutoStart: async (enabled: boolean) => ipcRenderer.invoke(IpcCommands.INVOKE_MCP_AUTOSTART, enabled),
   startMcpServer: async () => ipcRenderer.invoke(IpcCommands.INVOKE_MCP_START),
   stopMcpServer: async () => ipcRenderer.invoke(IpcCommands.INVOKE_MCP_STOP),
+  resetMcpSession: async () => ipcRenderer.invoke(IpcCommands.INVOKE_MCP_RESET_SESSION),
   notifyUserLogout: () => ipcRenderer.send(IpcCommands.USER_LOGOUT),
   // Synchronously get any startup error that occurred before renderer was ready
   getStartupError: (): StartupError | null => ipcRenderer.sendSync(IpcCommands.SYNC_GET_STARTUP_ERROR),

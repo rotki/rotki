@@ -19,7 +19,7 @@ export function useLogout(): UseLogoutReturn {
   const { navigateToUserLogin } = useAppNavigation();
   const { logged, username } = storeToRefs(useSessionAuthStore());
   const { showErrorMessage } = useNotifications();
-  const { notifyUserLogout, resetTray } = useInterop();
+  const { notifyUserLogout, resetMcpSession, resetTray } = useInterop();
   const { loggedUsers: getLoggedUsers, logout: callLogout } = useUsersApi();
   const { disconnect: disconnectWallet } = useWalletStore();
   const { reset: resetSchedulerState } = useSchedulerState();
@@ -50,6 +50,14 @@ export function useLogout(): UseLogoutReturn {
       showErrorMessage('Logout failed', getErrorMessage(error));
     }
 
+    try {
+      await resetMcpSession();
+    }
+    catch (error: unknown) {
+      logger.error(error);
+      showErrorMessage('MCP logout failed', getErrorMessage(error));
+    }
+
     if (navigate)
       await navigateToUserLogin();
   };
@@ -64,6 +72,7 @@ export function useLogout(): UseLogoutReturn {
       const loggedUsers = await getLoggedUsers();
       for (const user of loggedUsers)
         await callLogout(user);
+      await resetMcpSession();
 
       return { success: true };
     }

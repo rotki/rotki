@@ -198,6 +198,7 @@ export class Application {
       },
       startMcpServer: async () => this.getMcpServerStatus(await this.processHandler.setMcpServerRunning(true)),
       stopMcpServer: async () => this.getMcpServerStatus(await this.processHandler.setMcpServerRunning(false)),
+      resetMcpSession: async () => this.processHandler.resetMcpSession(),
     });
     await this.window.create();
     this.window.setListener({

@@ -159,6 +159,7 @@ export interface Interop {
   setMcpAutoStart: (enabled: boolean) => Promise<McpServerStatus>;
   startMcpServer: () => Promise<McpServerStatus>;
   stopMcpServer: () => Promise<McpServerStatus>;
+  resetMcpSession: () => Promise<void>;
   openWalletConnectBridge: () => Promise<void>;
   notifyUserLogout: () => void;
   /** Synchronously get any startup error that occurred before the renderer was ready */

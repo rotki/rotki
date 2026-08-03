@@ -32,6 +32,7 @@ interface Callbacks {
   setMcpAutoStart: (enabled: boolean) => Promise<McpServerStatus>;
   startMcpServer: () => Promise<McpServerStatus>;
   stopMcpServer: () => Promise<McpServerStatus>;
+  resetMcpSession: () => Promise<void>;
 }
 
 export class IpcManager {
@@ -173,6 +174,7 @@ export class IpcManager {
     this.handle(IpcCommands.INVOKE_MCP_AUTOSTART, async (_event, enabled: boolean) => callbacks.setMcpAutoStart(enabled));
     this.handle(IpcCommands.INVOKE_MCP_START, callbacks.startMcpServer);
     this.handle(IpcCommands.INVOKE_MCP_STOP, callbacks.stopMcpServer);
+    this.handle(IpcCommands.INVOKE_MCP_RESET_SESSION, callbacks.resetMcpSession);
 
     // Wallet import handlers
     this.handle(IpcCommands.INVOKE_WALLET_IMPORT, this.walletImportHandlers.importFromWallet);

@@ -281,6 +281,19 @@ export class StarlingHandler {
   }
 
   /**
+   * Drop data cached by the MCP process and terminate its protocol sessions on user logout.
+   * Preserve an intentionally stopped service: only a live MCP process is restarted.
+   */
+  async resetMcpSession(): Promise<void> {
+    const state = await this.getMcpServerState();
+    if (state !== 'Ready' && state !== 'Degraded')
+      return;
+
+    await this.setMcpServerRunning(false);
+    await this.setMcpServerRunning(true);
+  }
+
+  /**
    * Stop the running child: ask it to shut the backend tree down gracefully via
    * `stop`, then wait for exit (killing it if it does not go). starling does the
    * ordered teardown + Windows Job Objects, so there is no taskkill/ps-list here.

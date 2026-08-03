@@ -45,6 +45,7 @@ interface UseInteropReturn {
   setMcpAutoStart: (enabled: boolean) => Promise<McpServerStatus>;
   startMcpServer: () => Promise<McpServerStatus>;
   stopMcpServer: () => Promise<McpServerStatus>;
+  resetMcpSession: () => Promise<void>;
   /**
    * Synchronously get any startup error that occurred before the renderer was ready.
    * This should be called before setupListeners to catch errors that occurred during app startup.
@@ -150,6 +151,10 @@ const interop: UseInteropReturn = {
 
   notifyUserLogout: (): void => {
     window.interop?.notifyUserLogout();
+  },
+
+  resetMcpSession: async (): Promise<void> => {
+    await window.interop?.resetMcpSession();
   },
 
   openDirectory: async (title: string): Promise<string | undefined> =>
