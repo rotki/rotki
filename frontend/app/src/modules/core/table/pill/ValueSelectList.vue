@@ -56,8 +56,10 @@ const filtered = computed<SelectOption[]>(() => {
   const query = get(search).toLowerCase().trim();
   if (noFilter || !query)
     return options;
+  // Lowercased here rather than trusted from the producer: the needle already is, and a field
+  // resolving its keywords from raw values (a checksummed address) would otherwise never match.
   return options.filter(option =>
-    option.label.toLowerCase().includes(query) || (option.keywords?.includes(query) ?? false),
+    option.label.toLowerCase().includes(query) || (option.keywords?.toLowerCase().includes(query) ?? false),
   );
 });
 
