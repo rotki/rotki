@@ -37,6 +37,26 @@ describe('toAccountField', () => {
     expect(field.resolveLoading?.('0xbbb')).toBe(true);
   });
 
+  describe('fromLegacy', () => {
+    const field = toAccountField({ label: 'Account', paramKey: 'addresses', to: 'both' }, accounts);
+
+    it('should take the address out of the old `label (address)` suggestion', () => {
+      expect(field.fromLegacy?.('Main (0xaaa)')).toBe('0xaaa');
+    });
+
+    it('should keep a bare address, which is what a nameless account was stored as', () => {
+      expect(field.fromLegacy?.('0xaaa')).toBe('0xaaa');
+    });
+
+    it('should take the trailing address when the label itself has brackets', () => {
+      expect(field.fromLegacy?.('Main (cold) (0xaaa)')).toBe('0xaaa');
+    });
+
+    it('should keep a value it cannot read rather than dropping the filter', () => {
+      expect(field.fromLegacy?.('Main (')).toBe('Main (');
+    });
+  });
+
   it('should offer only the is operator, since a param cannot express exclusion', () => {
     const field = toAccountField({ label: 'Account', paramKey: 'addresses', to: 'both' }, accounts);
     expect(field.operators).toStrictEqual(['is']);

@@ -107,6 +107,14 @@ export interface FieldDef {
    */
   readonly resolveLoading?: (value: string) => boolean;
   /**
+   * Reads a value stored by the old filter bar into the form this field now takes, for a field
+   * that used to be matcher-bound and is now param-bound. Returning nothing drops the value.
+   * Only the accounts table needs it, whose account filter stored `label (address)` where the
+   * field now wants the address alone. Lives on the field because it is the only thing that knows
+   * both forms; without it a converted saved filter would lose that pill silently.
+   */
+  readonly fromLegacy?: (value: string) => string | undefined;
+  /**
    * Maps a raw wire value to the human label shown on the collapsed pill (e.g. an account
    * address to its ENS/tracked name). Absent = the raw value is shown. Domain-specific
    * resolution lives with the field so the pure format layer stays domain-free.

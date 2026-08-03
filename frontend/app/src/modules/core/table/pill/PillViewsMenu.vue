@@ -34,7 +34,7 @@ const rows = useTemplateRef<HTMLDivElement[]>('rows');
 // neither an element nor a focus method.
 const activator = useTemplateRef<{ $el?: { focus?: () => void } }>('activator');
 
-const { addView, deleteView, ensureConverted, views } = useSavedViews(() => location);
+const { addView, deleteView, ensureConverted, views } = useSavedViews(() => location, () => fields);
 const operatorLabels = useOperatorLabels();
 
 const hasFilters = computed<boolean>(() =>

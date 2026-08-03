@@ -2,6 +2,7 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { BaseSuggestion, SavedFilterLocation } from '@/modules/core/table/filtering';
 import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
@@ -24,30 +25,62 @@ interface SavedViewsReturn {
 }
 
 /**
- * Folds one legacy saved filter into a view's `matches`. The old shape is a flat list of one
- * suggestion per value, so several entries can share a key: they become that key's value list,
- * which is the form the codec reads.
+ * Folds one legacy saved filter into a view's two halves.
+ *
+ * The old shape is a flat list of one suggestion per value, all of them matcher-bound, so several
+ * entries can share a key and become that key's value list. Where the field that key belongs to has
+ * since become param-bound (the accounts table's account and chain pills), the value is routed to
+ * `params` instead, through the field's own `fromLegacy` when its stored form differs from what the
+ * field now takes. Without that routing the entry would land in `matches`, which a param field
+ * never reads, and the filter would vanish from the converted view without a word.
  */
-function matchesFromSuggestions(suggestions: BaseSuggestion[]): SavedView['matches'] {
-  const grouped = new Map<string, (string | boolean)[]>();
+function stateFromSuggestions(suggestions: BaseSuggestion[], fields: FieldDef[]): SavedViewState {
+  const fieldByKey = new Map(fields.map(field => [field.key, field]));
+  const grouped = new Map<string, BaseSuggestion[]>();
 
-  for (const suggestion of suggestions) {
-    const raw = suggestion.value;
-    // An asset suggestion stored its whole info object; the identifier is what goes on the wire.
-    const value = typeof raw === 'string' || typeof raw === 'boolean' ? raw : raw.identifier;
-    // Exclusion was a flag per value; the codec expresses it as the `!` prefix it already parses.
-    const marked = suggestion.exclude && typeof value === 'string' ? `!${value}` : value;
-    grouped.set(suggestion.key, [...(grouped.get(suggestion.key) ?? []), marked]);
+  for (const suggestion of suggestions)
+    grouped.set(suggestion.key, [...(grouped.get(suggestion.key) ?? []), suggestion]);
+
+  const matches: SavedView['matches'] = {};
+  const params: SavedView['params'] = {};
+
+  for (const [key, entries] of grouped) {
+    const field = fieldByKey.get(key);
+
+    if (field?.binding.kind === 'param') {
+      const { paramKey } = field.binding;
+      // A param carries a plain list of values and has no form for exclusion, so an excluded
+      // value is dropped rather than silently turned into an included one.
+      const values = entries
+        .filter(entry => !entry.exclude)
+        .map(entry => legacyValue(entry))
+        .filter((value): value is string => typeof value === 'string')
+        .map(value => (field.fromLegacy ? field.fromLegacy(value) : value))
+        .filter((value): value is string => value !== undefined);
+
+      if (values.length > 0)
+        params[paramKey] = field.multiple ? values : values[0];
+      continue;
+    }
+
+    const values = entries.map((entry) => {
+      const value = legacyValue(entry);
+      // Exclusion was a flag per value; the codec expresses it as the `!` prefix it already parses.
+      return entry.exclude && typeof value === 'string' ? `!${value}` : value;
+    });
+
+    // A single value stays a scalar, as the codec writes it; only a list of them becomes a list,
+    // and a list has no room for a boolean (a boolean field is one flag).
+    matches[key] = values.length === 1 ? values[0] : values.filter(value => typeof value === 'string');
   }
 
-  return Object.fromEntries(
-    Array.from(grouped, ([key, values]) => [
-      key,
-      // A single value stays a scalar, as the codec writes it; only a list of them becomes a list,
-      // and a list has no room for a boolean (a boolean field is one flag).
-      values.length === 1 ? values[0] : values.filter(value => typeof value === 'string'),
-    ]),
-  );
+  return { matches, params };
+}
+
+/** An asset suggestion stored its whole info object; the identifier is what goes on the wire. */
+function legacyValue(suggestion: BaseSuggestion): string | boolean {
+  const raw = suggestion.value;
+  return typeof raw === 'string' || typeof raw === 'boolean' ? raw : raw.identifier;
 }
 
 /**
@@ -61,7 +94,10 @@ function matchesFromSuggestions(suggestions: BaseSuggestion[]): SavedView['match
  * since one location moving would otherwise version every frontend setting, and every later table
  * would add another version to the chain.
  */
-export function useSavedViews(location: MaybeRefOrGetter<SavedFilterLocation>): SavedViewsReturn {
+export function useSavedViews(
+  location: MaybeRefOrGetter<SavedFilterLocation>,
+  fields: MaybeRefOrGetter<FieldDef[]>,
+): SavedViewsReturn {
   const { updateFrontendSetting } = useSettingsOperations();
 
   const allViews = useSetting('savedViews');
@@ -142,10 +178,8 @@ export function useSavedViews(location: MaybeRefOrGetter<SavedFilterLocation>): 
     // The old filters had no names, so each gets a generated one the user can recognise by its
     // pill summary and rename by re-saving.
     const converted = legacy.slice(0, room).map((suggestions, index) => ({
-      matches: matchesFromSuggestions(suggestions),
+      ...stateFromSuggestions(suggestions, toValue(fields)),
       name: t('table_filter.saved_views.converted_name', { number: existing.length + index + 1 }),
-      // The old shape could not express a param-bound filter, so there is nothing to carry.
-      params: {},
     }));
 
     const remaining = { ...get(allFilters) };
