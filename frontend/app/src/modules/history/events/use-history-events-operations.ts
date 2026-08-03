@@ -2,7 +2,9 @@ import type { ComputedRef, Ref } from 'vue';
 import type {
   LinkedMovementMatch,
   LocationAndTxRef,
+  PullEthBlockEventPayload,
   PullEventPayload,
+  PullLocationTransactionPayload,
 } from '@/modules/history/events/event-payloads';
 import type {
   HistoryEventEntry,
@@ -23,7 +25,14 @@ import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useIgnore } from '@/modules/history/use-ignore';
 
-interface UseHistoryEventsOperationsOptions {
+export interface HistoryEventRedecodeHandlers {
+  /** Runs the targeted redecode and resolves after the refreshed event data has settled. */
+  onRedecode?: (payload: PullLocationTransactionPayload) => Promise<void>;
+  /** Runs the targeted block-event redecode and resolves after the refreshed event data has settled. */
+  onRedecodeBlock?: (payload: PullEthBlockEventPayload) => Promise<void>;
+}
+
+interface UseHistoryEventsOperationsOptions extends HistoryEventRedecodeHandlers {
   /** Events per group identifier including ignored-asset ones, so redecode and unlink act on the full group rather than what the table shows. */
   completeEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
   /** Flat list of all loaded events, scanned to find the highest sequence index within a group when suggesting the next one. */
@@ -39,14 +48,15 @@ interface UseHistoryEventsOperationsReturn {
 
   // Functions
   getItemClass: (item: HistoryEventEntry) => '' | 'opacity-50';
+  isRedecodePending: (groupIdentifier: string) => boolean;
   confirmDelete: (payload: HistoryEventDeletePayload) => void;
   confirmUnlink: (payload: HistoryEventUnlinkPayload) => void;
   unlinkGroup: (groupId: string) => void;
   suggestNextSequenceId: (group: HistoryEventEntry) => string;
   confirmTxAndEventsDelete: (payload: LocationAndTxRef) => void;
-  redecode: (payload: PullEventPayload, eventIdentifier: string) => void;
+  redecode: (payload: PullEventPayload, groupIdentifier: string) => Promise<void>;
   redecodeWithOptions: (payload: PullEventPayload, groupIdentifier: string) => void;
-  confirmRedecode: (event: { payload: PullEventPayload; deleteCustom: boolean; customIndexersOrder?: string[] }) => void;
+  confirmRedecode: (event: { payload: PullEventPayload; deleteCustom: boolean; customIndexersOrder?: string[] }) => Promise<void>;
   toggle: (event: HistoryEventEntry) => Promise<void>;
 }
 
@@ -56,6 +66,14 @@ export function useHistoryEventsOperations(
 ): UseHistoryEventsOperationsReturn {
   const { completeEventsMapped, flattenedEvents } = options;
   const { getGroupEvents } = useCompleteEvents(completeEventsMapped);
+  const onRedecode = options.onRedecode ?? (async (payload: PullLocationTransactionPayload): Promise<void> => {
+    emit('refresh', payload);
+    return Promise.resolve();
+  });
+  const onRedecodeBlock = options.onRedecodeBlock ?? (async (payload: PullEthBlockEventPayload): Promise<void> => {
+    emit('refresh:block-event', payload);
+    return Promise.resolve();
+  });
 
   const selected = ref<HistoryEventEntry[]>([]);
   const modelShowRedecodeConfirmation = shallowRef<boolean>(false);
@@ -63,6 +81,8 @@ export function useHistoryEventsOperations(
   const hasCustomEvents = shallowRef<boolean>(false);
   const showIndexerOptions = shallowRef<boolean>(false);
   const pendingLinkedMovement = ref<LinkedMovementMatch>();
+  const redecodeGroupIdentifier = ref<string>();
+  const pendingRedecodeGroupIdentifiers = shallowRef<Set<string>>(new Set());
 
   const { t } = useI18n({ useScope: 'global' });
 
@@ -116,6 +136,32 @@ export function useHistoryEventsOperations(
 
   function getItemClass(item: HistoryEventEntry): '' | 'opacity-50' {
     return item.ignoredInAccounting ? 'opacity-50' : '';
+  }
+
+  function isRedecodePending(groupIdentifier: string): boolean {
+    return get(pendingRedecodeGroupIdentifiers).has(groupIdentifier);
+  }
+
+  function setRedecodePending(groupIdentifier: string, pending: boolean): void {
+    const identifiers = new Set(get(pendingRedecodeGroupIdentifiers));
+    if (pending)
+      identifiers.add(groupIdentifier);
+    else
+      identifiers.delete(groupIdentifier);
+    set(pendingRedecodeGroupIdentifiers, identifiers);
+  }
+
+  async function executeRedecode(
+    groupIdentifier: string,
+    handler: () => Promise<void>,
+  ): Promise<void> {
+    setRedecodePending(groupIdentifier, true);
+    try {
+      await handler();
+    }
+    finally {
+      setRedecodePending(groupIdentifier, false);
+    }
   }
 
   function confirmDelete(payload: HistoryEventDeletePayload): void {
@@ -220,9 +266,9 @@ export function useHistoryEventsOperations(
       || payload.type === HistoryEventEntryType.EVM_SWAP_EVENT;
   }
 
-  function redecode(payload: PullEventPayload, groupIdentifier: string): void {
+  async function redecode(payload: PullEventPayload, groupIdentifier: string): Promise<void> {
     if (payload.type === HistoryEventEntryType.ETH_BLOCK_EVENT) {
-      emit('refresh:block-event', { blockNumbers: payload.data });
+      await executeRedecode(groupIdentifier, async () => onRedecodeBlock({ blockNumbers: payload.data }));
       return;
     }
 
@@ -235,25 +281,26 @@ export function useHistoryEventsOperations(
       set(hasCustomEvents, true);
       set(showIndexerOptions, false);
       set(redecodePayload, payload);
+      set(redecodeGroupIdentifier, groupIdentifier);
       set(modelShowRedecodeConfirmation, true);
       return;
     }
 
     // No custom events - just redecode directly without dialog
-    emit('refresh', {
+    await executeRedecode(groupIdentifier, async () => onRedecode({
       deleteCustom: false,
       linkedMovement: movementEvent ? buildLinkedMovement(movementEvent, groupEvents) : undefined,
       transactions: [payload.data],
-    });
+    }));
   }
 
-  function redecodeWithOptions(payload: PullEventPayload, eventIdentifier: string): void {
+  function redecodeWithOptions(payload: PullEventPayload, groupIdentifier: string): void {
     if (payload.type === HistoryEventEntryType.ETH_BLOCK_EVENT) {
       emit('refresh:block-event', { blockNumbers: payload.data });
       return;
     }
 
-    const groupEvents = getGroupEvents(eventIdentifier);
+    const groupEvents = getGroupEvents(groupIdentifier);
     const isAnyCustom = groupEvents.some(item => isCustomizedEvent(item));
     const movementEvent = groupEvents.find(item => isAssetMovementEvent(item));
     set(pendingLinkedMovement, movementEvent ? buildLinkedMovement(movementEvent, groupEvents) : undefined);
@@ -262,26 +309,35 @@ export function useHistoryEventsOperations(
     set(hasCustomEvents, isAnyCustom);
     set(showIndexerOptions, isEvmPayload(payload));
     set(redecodePayload, payload);
+    set(redecodeGroupIdentifier, groupIdentifier);
     set(modelShowRedecodeConfirmation, true);
   }
 
-  function confirmRedecode(event: { payload: PullEventPayload; deleteCustom: boolean; customIndexersOrder?: string[] }): void {
+  async function confirmRedecode(event: { payload: PullEventPayload; deleteCustom: boolean; customIndexersOrder?: string[] }): Promise<void> {
     const { customIndexersOrder, deleteCustom, payload } = event;
-    if (payload.type === HistoryEventEntryType.ETH_BLOCK_EVENT) {
-      emit('refresh:block-event', {
-        blockNumbers: payload.data,
-      });
+    try {
+      if (payload.type === HistoryEventEntryType.ETH_BLOCK_EVENT) {
+        emit('refresh:block-event', {
+          blockNumbers: payload.data,
+        });
+      }
+      else {
+        const groupIdentifier = get(redecodeGroupIdentifier);
+        if (groupIdentifier) {
+          await executeRedecode(groupIdentifier, async () => onRedecode({
+            customIndexersOrder,
+            deleteCustom,
+            linkedMovement: get(pendingLinkedMovement),
+            transactions: [payload.data],
+          }));
+        }
+      }
     }
-    else {
-      emit('refresh', {
-        customIndexersOrder,
-        deleteCustom,
-        linkedMovement: get(pendingLinkedMovement),
-        transactions: [payload.data],
-      });
+    finally {
+      set(redecodePayload, undefined);
+      set(redecodeGroupIdentifier, undefined);
+      set(pendingLinkedMovement, undefined);
     }
-    set(redecodePayload, undefined);
-    set(pendingLinkedMovement, undefined);
   }
 
   return {
@@ -290,6 +346,7 @@ export function useHistoryEventsOperations(
     confirmTxAndEventsDelete,
     confirmUnlink,
     getItemClass,
+    isRedecodePending,
     unlinkGroup,
     hasCustomEvents: readonly(hasCustomEvents),
     redecode,

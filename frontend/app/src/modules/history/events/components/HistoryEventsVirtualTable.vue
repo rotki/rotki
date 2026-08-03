@@ -9,7 +9,7 @@ import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/even
 import UpgradeRow from '@/modules/history/UpgradeRow.vue';
 import { useHistoryEventsData } from '../use-history-events-data';
 import { useHistoryEventsForms } from '../use-history-events-forms';
-import { useHistoryEventsOperations } from '../use-history-events-operations';
+import { type HistoryEventRedecodeHandlers, useHistoryEventsOperations } from '../use-history-events-operations';
 import { useVirtualRows } from '../use-virtual-rows';
 import { useVirtualScrollHighlight } from '../use-virtual-scroll-highlight';
 import HistoryEventsDetailItem from './HistoryEventsDetailItem.vue';
@@ -38,6 +38,7 @@ const {
   hideActions,
   selection,
   duplicateHandlingStatus,
+  redecodeHandlers,
 } = defineProps<{
   groups: Collection<HistoryEventRow>;
   requestPayload: HistoryEventRequestPayload | undefined;
@@ -53,6 +54,7 @@ const {
   hideActions?: boolean;
   selection?: UseHistoryEventsSelectionModeReturn;
   duplicateHandlingStatus?: DuplicateHandlingStatus;
+  redecodeHandlers?: HistoryEventRedecodeHandlers;
 }>();
 
 const emit = defineEmits<HistoryEventsTableEmits>();
@@ -138,6 +140,7 @@ const {
   confirmRedecode,
   confirmTxAndEventsDelete,
   confirmUnlink,
+  isRedecodePending,
   unlinkGroup,
   hasCustomEvents,
   redecode,
@@ -150,6 +153,7 @@ const {
 } = useHistoryEventsOperations({
   completeEventsMapped,
   flattenedEvents: events,
+  ...(redecodeHandlers ?? {}),
 }, emit);
 
 // Form operations
@@ -295,7 +299,7 @@ function ignoredAssetsState(groupId: string): 'hidden' | 'showing' | undefined {
             :group="row.data"
             :group-events="getGroupEvents(row.groupId)"
             :hide-actions="hideActions"
-            :loading="eventsLoading"
+            :loading="eventsLoading || isRedecodePending(row.data.groupIdentifier)"
             :duplicate-handling-status="duplicateHandlingStatus"
             :ignored-assets="ignoredAssetsState(row.groupId)"
             :highlight-type="isGroupHighlighted(row.groupId) ? getHighlightType(row.data) : undefined"

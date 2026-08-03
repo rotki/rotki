@@ -244,6 +244,11 @@ async function handleRedecode(event?: PullLocationTransactionPayload): Promise<v
   }
 }
 
+const redecodeHandlers = {
+  onRedecode: handleRedecode,
+  onRedecodeBlock: actions.redecode.blocks,
+};
+
 async function handleMovementChanged(): Promise<void> {
   await refreshUnmatchedAssetMovements();
   await actions.fetch.dataAndLocations();
@@ -384,6 +389,7 @@ watchDebounced(route, async () => {
               :highlight-types="highlightTypes"
               :selection="selectionMode"
               :duplicate-handling-status="duplicateHandlingStatus"
+              :redecode-handlers="redecodeHandlers"
               @clear-filters="clearFilters()"
               @show:dialog="dialogContainer?.show($event)"
               @refresh="handleRedecode($event)"

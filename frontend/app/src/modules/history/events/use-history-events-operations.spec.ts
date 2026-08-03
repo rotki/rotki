@@ -1,4 +1,8 @@
-import type { PullEventPayload } from '@/modules/history/events/event-payloads';
+import type {
+  PullEthBlockEventPayload,
+  PullEventPayload,
+  PullLocationTransactionPayload,
+} from '@/modules/history/events/event-payloads';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
@@ -58,15 +62,29 @@ vi.mock('@/modules/history/event-utils', async () => {
 
 const emit: HistoryEventsTableEmitFn = vi.fn();
 
-function setup(flattened: HistoryEventEntry[] = []): ReturnType<typeof useHistoryEventsOperations> {
+function setup(
+  flattened: HistoryEventEntry[] = [],
+  onRedecode: (payload: PullLocationTransactionPayload) => Promise<void> = async () => Promise.resolve(),
+  onRedecodeBlock?: (payload: PullEthBlockEventPayload) => Promise<void>,
+): ReturnType<typeof useHistoryEventsOperations> {
   return useHistoryEventsOperations({
     completeEventsMapped: computed<Record<string, HistoryEventRow[]>>(() => ({})),
     flattenedEvents: computed<HistoryEventEntry[]>(() => flattened),
+    onRedecode,
+    onRedecodeBlock,
   }, emit);
 }
 
 const evmPayload: PullEventPayload = { data: { location: 'ethereum', txRef: '0x1' }, type: HistoryEventEntryType.EVM_EVENT };
 const blockPayload: PullEventPayload = { data: [123], type: HistoryEventEntryType.ETH_BLOCK_EVENT };
+
+function createDeferredPromise(): { promise: Promise<void>; resolve: () => void } {
+  let resolvePromise = (): void => {};
+  const promise = new Promise<void>((resolve) => {
+    resolvePromise = (): void => resolve();
+  });
+  return { promise, resolve: resolvePromise };
+}
 
 describe('useHistoryEventsOperations', () => {
   beforeEach(() => {
@@ -103,30 +121,79 @@ describe('useHistoryEventsOperations', () => {
     expect(ops.suggestNextSequenceId(createMock<HistoryEventEntry>({ groupIdentifier: 'g1', sequenceIndex: 7 }))).toBe('8');
   });
 
-  it('should emit a block-event refresh when redecoding a block payload', () => {
-    setup().redecode(blockPayload, 'g1');
+  it('should emit a block-event refresh when redecoding a block payload', async () => {
+    await setup().redecode(blockPayload, 'g1');
     expect(emit).toHaveBeenCalledWith('refresh:block-event', { blockNumbers: [123] });
   });
 
-  it('should open the confirmation dialog when the group has custom events', () => {
+  it('should keep only the target block-event group pending until redecode succeeds', async () => {
+    const { promise, resolve } = createDeferredPromise();
+    const onRedecodeBlock = vi.fn(async () => promise);
+    const ops = setup([], undefined, onRedecodeBlock);
+
+    const request = ops.redecode(blockPayload, 'g1');
+
+    expect(ops.isRedecodePending('g1')).toBe(true);
+    expect(ops.isRedecodePending('g2')).toBe(false);
+    expect(onRedecodeBlock).toHaveBeenCalledWith({ blockNumbers: [123] });
+
+    resolve();
+    await request;
+
+    expect(ops.isRedecodePending('g1')).toBe(false);
+  });
+
+  it('should clear the target block-event pending state when redecode fails', async () => {
+    const ops = setup([], undefined, vi.fn(async () => Promise.reject(new Error('boom'))));
+
+    await expect(ops.redecode(blockPayload, 'g1')).rejects.toThrow('boom');
+
+    expect(ops.isRedecodePending('g1')).toBe(false);
+  });
+
+  it('should open the confirmation dialog when the group has custom events', async () => {
     spies.getGroupEvents.mockReturnValue([createMock<HistoryEventEntry>({})]);
     spies.isCustomizedEvent.mockReturnValue(true);
     const ops = setup();
-    ops.redecode(evmPayload, 'g1');
+    await ops.redecode(evmPayload, 'g1');
     expect(get(ops.hasCustomEvents)).toBe(true);
     expect(get(ops.modelShowRedecodeConfirmation)).toBe(true);
     expect(get(ops.redecodePayload)).toEqual(evmPayload);
     expect(emit).not.toHaveBeenCalledWith('refresh', expect.anything());
   });
 
-  it('should redecode directly when there are no custom events', () => {
+  it('should redecode directly when there are no custom events', async () => {
     spies.getGroupEvents.mockReturnValue([createMock<HistoryEventEntry>({})]);
-    setup().redecode(evmPayload, 'g1');
-    expect(emit).toHaveBeenCalledWith('refresh', {
+    const onRedecode = vi.fn(async () => Promise.resolve());
+    await setup([], onRedecode).redecode(evmPayload, 'g1');
+    expect(onRedecode).toHaveBeenCalledWith({
       deleteCustom: false,
       linkedMovement: undefined,
       transactions: [evmPayload.data],
     });
+  });
+
+  it('should only mark the target group pending until a direct redecode succeeds', async () => {
+    const { promise, resolve } = createDeferredPromise();
+    const ops = setup([], vi.fn(async () => promise));
+
+    const request = ops.redecode(evmPayload, 'g1');
+
+    expect(ops.isRedecodePending('g1')).toBe(true);
+    expect(ops.isRedecodePending('g2')).toBe(false);
+
+    resolve();
+    await request;
+
+    expect(ops.isRedecodePending('g1')).toBe(false);
+  });
+
+  it('should clear the target pending state when a direct redecode fails', async () => {
+    const ops = setup([], vi.fn(async () => Promise.reject(new Error('boom'))));
+
+    await expect(ops.redecode(evmPayload, 'g1')).rejects.toThrow('boom');
+
+    expect(ops.isRedecodePending('g1')).toBe(false);
   });
 
   it('should show indexer options for EVM redecode-with-options', () => {
@@ -138,13 +205,35 @@ describe('useHistoryEventsOperations', () => {
     expect(get(ops.redecodePayload)).toEqual(evmPayload);
   });
 
-  it('should emit refresh and reset payload on confirm-redecode', () => {
-    const ops = setup();
-    ops.confirmRedecode({ deleteCustom: true, payload: evmPayload });
-    expect(emit).toHaveBeenCalledWith('refresh', expect.objectContaining({
+  it('should redecode the target group and reset payload on confirm', async () => {
+    const { promise, resolve } = createDeferredPromise();
+    const onRedecode = vi.fn(async () => promise);
+    const ops = setup([], onRedecode);
+    ops.redecodeWithOptions(evmPayload, 'g1');
+
+    const request = ops.confirmRedecode({ deleteCustom: true, payload: evmPayload });
+
+    expect(ops.isRedecodePending('g1')).toBe(true);
+    expect(ops.isRedecodePending('g2')).toBe(false);
+    expect(onRedecode).toHaveBeenCalledWith(expect.objectContaining({
       deleteCustom: true,
       transactions: [evmPayload.data],
     }));
+
+    resolve();
+    await request;
+
+    expect(ops.isRedecodePending('g1')).toBe(false);
+    expect(get(ops.redecodePayload)).toBeUndefined();
+  });
+
+  it('should clear target state when a confirmed redecode fails', async () => {
+    const ops = setup([], vi.fn(async () => Promise.reject(new Error('boom'))));
+    ops.redecodeWithOptions(evmPayload, 'g1');
+
+    await expect(ops.confirmRedecode({ deleteCustom: false, payload: evmPayload })).rejects.toThrow('boom');
+
+    expect(ops.isRedecodePending('g1')).toBe(false);
     expect(get(ops.redecodePayload)).toBeUndefined();
   });
 

@@ -263,6 +263,8 @@ function confirmIgnoreDuplicate(): void {
           icon
           size="sm"
           class="!p-2"
+          :disabled="loading"
+          :loading="loading"
           v-bind="attrs"
         >
           <RuiIcon
