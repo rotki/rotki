@@ -17,22 +17,25 @@ export interface StartupError {
 
 export interface ApiUrls { coreApiUrl: string; colibriApiUrl: string }
 
-export type McpServiceState =
-  | 'Degraded'
-  | 'Failed'
-  | 'Idle'
-  | 'Ready'
-  | 'Restarting'
-  | 'Spawning'
-  | 'Stopped'
-  | 'Stopping'
-  | 'Unavailable'
-  | 'WaitingReady';
+export const StarlingServiceStatus = {
+  DEGRADED: 'Degraded',
+  FAILED: 'Failed',
+  IDLE: 'Idle',
+  READY: 'Ready',
+  RESTARTING: 'Restarting',
+  SPAWNING: 'Spawning',
+  STOPPED: 'Stopped',
+  STOPPING: 'Stopping',
+  UNAVAILABLE: 'Unavailable',
+  WAITING_READY: 'WaitingReady',
+} as const;
+
+export type StarlingServiceStatus = typeof StarlingServiceStatus[keyof typeof StarlingServiceStatus];
 
 export interface McpServerStatus {
   autoStart: boolean;
   endpoint: string;
-  state: McpServiceState;
+  state: StarlingServiceStatus;
 }
 
 interface MetamaskImportError {
@@ -121,7 +124,7 @@ export interface Listeners {
   onError: (backendOutput: string, code: BackendCode) => void;
   onAbout: () => void;
   onRestart: () => void;
-  onMcpState?: (state: McpServiceState) => void;
+  onMcpState?: (state: StarlingServiceStatus) => void;
   onOAuthCallback?: (oAuthResult: OAuthResult) => void;
   /**
    * Invoked when the main process is about to quit, before the backend

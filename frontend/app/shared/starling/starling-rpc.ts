@@ -1,4 +1,5 @@
 import type { Writable } from 'node:stream';
+import type { StarlingMethod } from './starling-protocol';
 
 /** One decoded line of the control channel: a response, or an event notification. */
 interface JsonRpcResponse {
@@ -56,7 +57,7 @@ export class StarlingRpc {
   }
 
   /** Send a JSON-RPC request over stdin and await its correlated response. */
-  async request<T = unknown>(method: string, params?: Record<string, unknown>): Promise<T> {
+  async request<T = unknown>(method: StarlingMethod, params?: Record<string, unknown>): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       const stdin = this.stdin;
       if (!stdin) {

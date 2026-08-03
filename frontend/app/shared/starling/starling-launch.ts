@@ -3,6 +3,7 @@ import type { StarlingRpc } from './starling-rpc';
 import { type ChildProcess, spawn } from 'node:child_process';
 import process from 'node:process';
 import readline from 'node:readline';
+import { StarlingMethod } from './starling-protocol';
 
 /** How the supervisor went away: an exit code, or the signal that killed it. */
 interface StarlingExit {
@@ -85,7 +86,7 @@ export async function requestStarlingStart(
   options: StarlingBackendOptions,
   loglevel: string,
 ): Promise<void> {
-  await rpc.request('start', { ...definedOptions(options), loglevel });
+  await rpc.request(StarlingMethod.START, { ...definedOptions(options), loglevel });
 }
 
 /**

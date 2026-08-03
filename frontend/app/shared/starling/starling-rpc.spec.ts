@@ -1,5 +1,6 @@
 import { PassThrough } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
+import { StarlingEvent, StarlingMethod } from './starling-protocol';
 import { StarlingRpc, type StarlingRpcLogger } from './starling-rpc';
 
 function makeLogger(): StarlingRpcLogger {
@@ -21,7 +22,7 @@ describe('starlingRpc', () => {
     rpc.attach(stdin);
     autoRespond(stdin, rpc, () => ({ result: { ok: true } }));
 
-    await expect(rpc.request('status')).resolves.toEqual({ ok: true });
+    await expect(rpc.request(StarlingMethod.STATUS)).resolves.toEqual({ ok: true });
   });
 
   it('should reject a request when the response carries an error', async () => {
@@ -30,16 +31,16 @@ describe('starlingRpc', () => {
     rpc.attach(stdin);
     autoRespond(stdin, rpc, () => ({ error: { code: 1, message: 'boom' } }));
 
-    await expect(rpc.request('start')).rejects.toThrow('boom');
+    await expect(rpc.request(StarlingMethod.START)).rejects.toThrow('boom');
   });
 
   it('should forward an id-less notification to the handler', () => {
     const onNotification = vi.fn();
     const rpc = new StarlingRpc(makeLogger(), onNotification);
 
-    rpc.handleLine(JSON.stringify({ jsonrpc: '2.0', method: 'event.crashed', params: { lastError: 'x' } }));
+    rpc.handleLine(JSON.stringify({ jsonrpc: '2.0', method: StarlingEvent.CRASHED, params: { lastError: 'x' } }));
 
-    expect(onNotification).toHaveBeenCalledWith('event.crashed', { lastError: 'x' });
+    expect(onNotification).toHaveBeenCalledWith(StarlingEvent.CRASHED, { lastError: 'x' });
   });
 
   it('should reject a request once detached from the child', async () => {
@@ -47,14 +48,14 @@ describe('starlingRpc', () => {
     rpc.attach(new PassThrough());
     rpc.detach();
 
-    await expect(rpc.request('status')).rejects.toThrow('starling is not running');
+    await expect(rpc.request(StarlingMethod.STATUS)).rejects.toThrow('starling is not running');
   });
 
   it('should reject every in-flight request on rejectAll', async () => {
     const rpc = new StarlingRpc(makeLogger(), () => {});
     rpc.attach(new PassThrough());
 
-    const pending = rpc.request('status');
+    const pending = rpc.request(StarlingMethod.STATUS);
     rpc.rejectAll(new Error('starling exited'));
 
     await expect(pending).rejects.toThrow('starling exited');
@@ -70,7 +71,7 @@ describe('starlingRpc', () => {
     rpc.attach(stdin);
     stdin.destroy();
 
-    await expect(rpc.request('start')).rejects.toThrow();
+    await expect(rpc.request(StarlingMethod.START)).rejects.toThrow();
   });
 
   it('should report a broken pipe through the logger', async () => {

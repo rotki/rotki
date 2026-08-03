@@ -1,41 +1,38 @@
-import type { McpServiceState } from '@shared/ipc';
+import { StarlingServiceStatus } from '@shared/ipc';
+import { StarlingMethod, StarlingService } from '@shared/starling/starling-protocol';
 
 type StarlingRequest = (
-  method: string,
+  method: StarlingMethod,
   params?: Record<string, unknown>,
 ) => Promise<unknown>;
 
-const MCP_SERVICE_STATES: ReadonlySet<string> = new Set([
-  'Degraded',
-  'Failed',
-  'Idle',
-  'Ready',
-  'Restarting',
-  'Spawning',
-  'Stopped',
-  'Stopping',
-  'WaitingReady',
-]);
+/**
+ * Statuses starling itself reports. `Unavailable` is our own sentinel for
+ * "starling is not running", so it never arrives over the wire.
+ */
+const REPORTED_STATUSES: ReadonlySet<string> = new Set(
+  Object.values(StarlingServiceStatus).filter(status => status !== StarlingServiceStatus.UNAVAILABLE),
+);
 
-function isMcpServiceState(value: unknown): value is McpServiceState {
-  return typeof value === 'string' && MCP_SERVICE_STATES.has(value);
+function isServiceStatus(value: unknown): value is StarlingServiceStatus {
+  return typeof value === 'string' && REPORTED_STATUSES.has(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
 }
 
-function mcpState(service: unknown): McpServiceState | undefined {
-  if (!isRecord(service) || service.name !== 'mcp')
+function mcpState(service: unknown): StarlingServiceStatus | undefined {
+  if (!isRecord(service) || service.name !== StarlingService.MCP)
     return undefined;
-  return isMcpServiceState(service.state) ? service.state : undefined;
+  return isServiceStatus(service.state) ? service.state : undefined;
 }
 
 export function isMcpCrash(params: unknown): boolean {
   return params !== null
     && typeof params === 'object'
     && 'service' in params
-    && params.service === 'mcp';
+    && params.service === StarlingService.MCP;
 }
 
 export function eventLastError(params: unknown): string {
@@ -51,23 +48,34 @@ export function eventLastError(params: unknown): string {
   return 'The rotki backend stopped unexpectedly. Please check the logs for more details.';
 }
 
-export async function getMcpServerState(request: StarlingRequest): Promise<McpServiceState> {
-  const status = await request('status');
+export async function getMcpServerState(request: StarlingRequest): Promise<StarlingServiceStatus> {
+  const status = await request(StarlingMethod.STATUS);
   if (!isRecord(status) || !Array.isArray(status.services))
-    return 'Unavailable';
+    return StarlingServiceStatus.UNAVAILABLE;
 
   for (const service of status.services) {
     const state = mcpState(service);
     if (state)
       return state;
   }
-  return 'Unavailable';
+  return StarlingServiceStatus.UNAVAILABLE;
+}
+
+/**
+ * A service is live once starling has it serving requests. `Degraded` still
+ * counts: the process is up, just not fully healthy.
+ */
+export function isServiceLive(status: StarlingServiceStatus): boolean {
+  return status === StarlingServiceStatus.READY || status === StarlingServiceStatus.DEGRADED;
 }
 
 export async function setMcpServerRunning(
   request: StarlingRequest,
   running: boolean,
-): Promise<McpServiceState> {
-  await request(running ? 'startService' : 'stopService', { service: 'mcp' });
+): Promise<StarlingServiceStatus> {
+  await request(
+    running ? StarlingMethod.START_SERVICE : StarlingMethod.STOP_SERVICE,
+    { service: StarlingService.MCP },
+  );
   return getMcpServerState(request);
 }

@@ -7,11 +7,12 @@ import path from 'node:path';
 import process from 'node:process';
 import { resolveLogLevel } from '@electron/main/resolve-log-level';
 import { forwardStarlingLine } from '@electron/main/starling-log';
-import { eventLastError, getMcpServerState, isMcpCrash, setMcpServerRunning } from '@electron/main/starling-mcp';
-import { BackendCode, type BackendOptions, type McpServiceState } from '@shared/ipc';
+import { eventLastError, getMcpServerState, isMcpCrash, isServiceLive, setMcpServerRunning } from '@electron/main/starling-mcp';
+import { BackendCode, type BackendOptions, StarlingServiceStatus } from '@shared/ipc';
 import { selectPort } from '@shared/port-utils';
 import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingInvocation } from '@shared/starling/starling-args';
 import { definedOptions, spawnStarling } from '@shared/starling/starling-launch';
+import { StarlingEvent, StarlingMethod, StarlingService } from '@shared/starling/starling-protocol';
 import { StarlingRpc } from '@shared/starling/starling-rpc';
 import { wait } from '@shared/utils';
 
@@ -110,7 +111,7 @@ export class StarlingHandler {
   private async restartInPlace(options: Partial<BackendOptions>, listener: StarlingErrorListener): Promise<void> {
     this.logger.info('Restarting backend in place via control RPC');
     try {
-      await this.rpc.request('restart', this.restartParams(options));
+      await this.rpc.request(StarlingMethod.RESTART, this.restartParams(options));
     }
     catch (error: any) {
       this.logger.error('Backend restart failed', error);
@@ -132,10 +133,10 @@ export class StarlingHandler {
     this.logger.updateLogDirectory(options.logDirectory);
     this.exiting = false;
 
-    const corePort = await this.resolvePort('core');
-    const colibriPort = await this.resolvePort('colibri');
-    const mcpPort = await this.resolvePort('mcp');
-    const proxyPort = await this.resolvePort('proxy');
+    const corePort = await this.resolvePort(StarlingService.CORE);
+    const colibriPort = await this.resolvePort(StarlingService.COLIBRI);
+    const mcpPort = await this.resolvePort(StarlingService.MCP);
+    const proxyPort = await this.resolvePort(StarlingService.PROXY);
     const logsDir = this.logsDirectory();
 
     // Collapse the renderer onto the single proxy origin: `/api/1/*` and `/ws/`
@@ -167,7 +168,7 @@ export class StarlingHandler {
     // (log level, tunables, data dir) the CLI no longer passes. It resolves once
     // the whole tree is ready, and rejects on a failed bring-up or early exit.
     try {
-      await this.rpc.request('start', this.startParams(options));
+      await this.rpc.request(StarlingMethod.START, this.startParams(options));
     }
     catch (error) {
       // Report only while the child is still alive: an already-exited child had its
@@ -240,23 +241,23 @@ export class StarlingHandler {
   private onEvent(method: string, params: unknown): void {
     const listener = this.currentListener;
     switch (method) {
-      case 'event.ready':
+      case StarlingEvent.READY:
         // The whole backend tree is up. Initial readiness is gated on the `start`
         // request's reply, not this event, so this is purely informational (it
         // also fires after a restart brings the tree back up).
         this.logger.info('Backend event: event.ready');
         break;
-      case 'event.crashed': {
+      case StarlingEvent.CRASHED: {
         const lastError = eventLastError(params);
         this.logger.error(`Backend service crashed: ${lastError}`);
         if (isMcpCrash(params))
-          listener?.onMcpState?.('Failed');
+          listener?.onMcpState?.(StarlingServiceStatus.FAILED);
         else if (!this.exiting)
           listener?.onProcessError(lastError, BackendCode.TERMINATED);
         break;
       }
-      case 'event.restarting':
-      case 'event.stopped':
+      case StarlingEvent.RESTARTING:
+      case StarlingEvent.STOPPED:
         this.logger.info(`Backend event: ${method}`);
         break;
       default:
@@ -264,20 +265,20 @@ export class StarlingHandler {
     }
   }
 
-  async getMcpServerState(): Promise<McpServiceState> {
+  async getMcpServerState(): Promise<StarlingServiceStatus> {
     return this.child
       ? getMcpServerState(async (method, params) => this.rpc.request(method, params))
-      : 'Unavailable';
+      : StarlingServiceStatus.UNAVAILABLE;
   }
 
   getMcpServerEndpoint(): string {
     return `http://${API_HOST}:${this.config.ports.mcpPort}/mcp`;
   }
 
-  async setMcpServerRunning(running: boolean): Promise<McpServiceState> {
+  async setMcpServerRunning(running: boolean): Promise<StarlingServiceStatus> {
     return this.child
       ? setMcpServerRunning(async (method, params) => this.rpc.request(method, params), running)
-      : 'Unavailable';
+      : StarlingServiceStatus.UNAVAILABLE;
   }
 
   /**
@@ -285,8 +286,7 @@ export class StarlingHandler {
    * Preserve an intentionally stopped service: only a live MCP process is restarted.
    */
   async resetMcpSession(): Promise<void> {
-    const state = await this.getMcpServerState();
-    if (state !== 'Ready' && state !== 'Degraded')
+    if (!isServiceLive(await this.getMcpServerState()))
       return;
 
     await this.setMcpServerRunning(false);
@@ -310,7 +310,7 @@ export class StarlingHandler {
     this.exiting = true;
     this.logger.debug('Stopping starling');
     try {
-      await Promise.race([this.rpc.request('stop').catch(() => undefined), wait(STOP_REQUEST_TIMEOUT)]);
+      await Promise.race([this.rpc.request(StarlingMethod.STOP).catch(() => undefined), wait(STOP_REQUEST_TIMEOUT)]);
     }
     catch {
       // best-effort; fall through to wait/kill
@@ -338,12 +338,12 @@ export class StarlingHandler {
    * The renderer-facing origins are set from the proxy port by the caller; here
    * only `mcp` records its resolved port, which `mcpServerUrl()` reads back.
    */
-  private async resolvePort(name: 'core' | 'colibri' | 'mcp' | 'proxy'): Promise<number> {
+  private async resolvePort(name: StarlingService): Promise<number> {
     const defaultPort = this.config.ports[`${name}Port`];
     const port = await selectPort(defaultPort, API_HOST);
     if (port !== defaultPort)
       this.logger.warn(`Using non-default port ${port} for ${name}`);
-    if (name === 'mcp')
+    if (name === StarlingService.MCP)
       this.config.ports.mcpPort = port;
     return port;
   }

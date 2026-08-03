@@ -1,5 +1,5 @@
 import type { AppConfig } from '@electron/main/app-config';
-import type { McpServerStatus, McpServiceState } from '@shared/ipc';
+import type { McpServerStatus, StarlingServiceStatus } from '@shared/ipc';
 import process from 'node:process';
 import { IpcCommands } from '@electron/ipc-commands';
 import { protectHtmlAssociation } from '@electron/main/html-mime-protection';
@@ -211,7 +211,7 @@ export class Application {
     });
   }
 
-  private async getMcpServerStatus(state?: McpServiceState): Promise<McpServerStatus> {
+  private async getMcpServerStatus(state?: StarlingServiceStatus): Promise<McpServerStatus> {
     return {
       autoStart: this.settings.appSettings.mcpAutoStart,
       endpoint: this.processHandler.getMcpServerEndpoint(),

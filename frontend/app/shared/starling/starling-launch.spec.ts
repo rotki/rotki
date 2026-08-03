@@ -4,6 +4,7 @@ import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { definedOptions, requestStarlingStart, spawnStarling } from './starling-launch';
+import { StarlingMethod } from './starling-protocol';
 import { StarlingRpc } from './starling-rpc';
 
 const { spawnMock } = vi.hoisted(() => ({ spawnMock: vi.fn() }));
@@ -95,7 +96,7 @@ describe('spawnStarling', () => {
       child.stdin.once('data', chunk => resolve(chunk.toString()));
     });
     // Nothing answers it, so it is settled by hand once the write is observed.
-    const pending = rpc.request('status').catch(() => undefined);
+    const pending = rpc.request(StarlingMethod.STATUS).catch(() => undefined);
 
     expect(JSON.parse(await written)).toMatchObject({ method: 'status' });
 
@@ -126,7 +127,7 @@ describe('spawnStarling', () => {
     const rpc = makeRpc();
     spawnStarling({ invocation, rpc, onStderr: vi.fn() });
 
-    const pending = rpc.request('start');
+    const pending = rpc.request(StarlingMethod.START);
     child.emit('exit', 1, null);
 
     await expect(pending).rejects.toThrow('starling exited');
@@ -138,7 +139,7 @@ describe('spawnStarling', () => {
 
     child.emit('exit', 0, null);
 
-    await expect(rpc.request('status')).rejects.toThrow('starling is not running');
+    await expect(rpc.request(StarlingMethod.STATUS)).rejects.toThrow('starling is not running');
   });
 
   it('should refuse a child that came back without its stdio pipes', () => {

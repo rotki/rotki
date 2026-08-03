@@ -4,6 +4,7 @@ import { cac } from 'cac';
 import consola from 'consola';
 import { buildStarlingInvocation, describeResolvedCore, SHUTDOWN_GRACE_SECS, type StarlingBackendOptions, type StarlingInvocation } from '../shared/starling/starling-args';
 import { requestStarlingStart, spawnStarling } from '../shared/starling/starling-launch';
+import { StarlingMethod } from '../shared/starling/starling-protocol';
 import { StarlingRpc } from '../shared/starling/starling-rpc';
 
 /**
@@ -112,7 +113,7 @@ async function startStarling(options: StarlingE2eOptions): Promise<void> {
     // and killing the supervisor early strands both. Escalate only once its own
     // grace has elapsed. The `exited` await below holds this process open until
     // the tree is actually down.
-    rpc.request('stop').catch(() => undefined);
+    rpc.request(StarlingMethod.STOP).catch(() => undefined);
     setTimeout(() => {
       if (child.exitCode === null) {
         consola.warn('starling did not exit within its grace period, killing it');

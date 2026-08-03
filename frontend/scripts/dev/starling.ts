@@ -3,6 +3,7 @@ import process from 'node:process';
 import { DEFAULT_MCP_PORT, DEFAULT_PROXY_PORT, selectPort } from '../../app/shared/port-utils';
 import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingBackendOptions } from '../../app/shared/starling/starling-args';
 import { requestStarlingStart, spawnStarling } from '../../app/shared/starling/starling-launch';
+import { StarlingMethod } from '../../app/shared/starling/starling-protocol';
 import { StarlingRpc } from '../../app/shared/starling/starling-rpc';
 import { createDevLogger, formatDevLine } from './logger';
 import { registerShutdownHook } from './process-pool';
@@ -110,7 +111,7 @@ export async function startStarlingSupervisor(options: StarlingDevOptions): Prom
     logger.info('stopping starling');
     // Ask for the ordered teardown, then outwait the grace starling gives its
     // own children. Killing it earlier orphans the very processes it reaps.
-    await Promise.race([rpc.request('stop').catch(() => undefined), wait(STOP_REQUEST_TIMEOUT_MS)]);
+    await Promise.race([rpc.request(StarlingMethod.STOP).catch(() => undefined), wait(STOP_REQUEST_TIMEOUT_MS)]);
     if (child.exitCode === null)
       child.kill('SIGKILL');
   });

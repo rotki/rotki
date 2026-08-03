@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { McpServerStatus, McpServiceState } from '@shared/ipc';
 import type { McpToken } from '@/modules/settings/types/mcp';
+import { type McpServerStatus, StarlingServiceStatus } from '@shared/ipc';
 import { startPromise } from '@shared/utils';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useMcpApi } from '@/modules/settings/api/use-mcp-api';
@@ -29,14 +29,14 @@ const tokenError = ref<string>();
 const tokenVisible = ref<boolean>(false);
 const mcpServerState = useMcpServerState();
 
-const transitioningStates: ReadonlySet<McpServiceState> = new Set([
-  'Restarting',
-  'Spawning',
-  'Stopping',
-  'WaitingReady',
+const transitioningStates: ReadonlySet<StarlingServiceStatus> = new Set([
+  StarlingServiceStatus.RESTARTING,
+  StarlingServiceStatus.SPAWNING,
+  StarlingServiceStatus.STOPPING,
+  StarlingServiceStatus.WAITING_READY,
 ]);
 
-const isRunning = computed<boolean>(() => get(status)?.state === 'Ready');
+const isRunning = computed<boolean>(() => get(status)?.state === StarlingServiceStatus.READY);
 const dockerEndpoint = computed<string>(() => `${window.location.origin}/mcp`);
 const tokenDisplay = computed<string>(() => (
   get(tokenVisible) ? get(token)?.accessToken ?? '' : '••••••••••••••••'
@@ -46,27 +46,27 @@ const tokenVisibilityLabel = computed<string>(() => (
     ? t('backend_settings.settings.mcp_server.hide_token')
     : t('backend_settings.settings.mcp_server.reveal_token')
 ));
-const statusLabels = computed<Record<McpServiceState, string>>(() => ({
-  Degraded: t('backend_settings.settings.mcp_server.status.failed'),
-  Failed: t('backend_settings.settings.mcp_server.status.failed'),
-  Idle: t('backend_settings.settings.mcp_server.status.stopped'),
-  Ready: t('backend_settings.settings.mcp_server.status.running'),
-  Restarting: t('backend_settings.settings.mcp_server.status.starting'),
-  Spawning: t('backend_settings.settings.mcp_server.status.starting'),
-  Stopped: t('backend_settings.settings.mcp_server.status.stopped'),
-  Stopping: t('backend_settings.settings.mcp_server.status.stopping'),
-  Unavailable: t('backend_settings.settings.mcp_server.status.unavailable'),
-  WaitingReady: t('backend_settings.settings.mcp_server.status.starting'),
+const statusLabels = computed<Record<StarlingServiceStatus, string>>(() => ({
+  [StarlingServiceStatus.DEGRADED]: t('backend_settings.settings.mcp_server.status.failed'),
+  [StarlingServiceStatus.FAILED]: t('backend_settings.settings.mcp_server.status.failed'),
+  [StarlingServiceStatus.IDLE]: t('backend_settings.settings.mcp_server.status.stopped'),
+  [StarlingServiceStatus.READY]: t('backend_settings.settings.mcp_server.status.running'),
+  [StarlingServiceStatus.RESTARTING]: t('backend_settings.settings.mcp_server.status.starting'),
+  [StarlingServiceStatus.SPAWNING]: t('backend_settings.settings.mcp_server.status.starting'),
+  [StarlingServiceStatus.STOPPED]: t('backend_settings.settings.mcp_server.status.stopped'),
+  [StarlingServiceStatus.STOPPING]: t('backend_settings.settings.mcp_server.status.stopping'),
+  [StarlingServiceStatus.UNAVAILABLE]: t('backend_settings.settings.mcp_server.status.unavailable'),
+  [StarlingServiceStatus.WAITING_READY]: t('backend_settings.settings.mcp_server.status.starting'),
 }));
 const isLifecycleDisabled = computed<boolean>(() => {
   const state = get(status)?.state;
-  return state === undefined || state === 'Unavailable' || transitioningStates.has(state);
+  return state === undefined || state === StarlingServiceStatus.UNAVAILABLE || transitioningStates.has(state);
 });
 
-function statusLabel(state: McpServiceState | undefined): string {
+function statusLabel(state: StarlingServiceStatus | undefined): string {
   if (!state && get(loading))
     return t('backend_settings.settings.mcp_server.status.loading');
-  return get(statusLabels)[state ?? 'Unavailable'];
+  return get(statusLabels)[state ?? StarlingServiceStatus.UNAVAILABLE];
 }
 
 async function loadStatus(): Promise<void> {
