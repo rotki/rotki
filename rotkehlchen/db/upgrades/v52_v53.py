@@ -1,10 +1,13 @@
 import json
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from eth_utils import to_checksum_address
 
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.misc import AIRDROPSDIR_NAME, APPDIR_NAME
+from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.types import Location
@@ -17,6 +20,72 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def _merge_onto_canonical_identifier(
+        write_cursor: DBCursor,
+        child_columns: list[tuple[str, str]],
+        merges: list[tuple[str, str]],
+) -> None:
+    """Collapse each non canonical evm identifier onto the canonical one already in assets.
+
+    A rename is not possible for these since the row they would become exists, so every row
+    referencing the non canonical identifier is moved instead, and whatever collides with a
+    row the canonical identifier already has is dropped.
+
+    timed_balances is summed rather than moved: a row of each identifier can share a
+    (timestamp, category), and dropping one of those would silently take that amount out of
+    the netvalue graph. The summation is done here instead of in sqlite because amount and
+    usd_value are TEXT columns holding arbitrary precision values that SUM() would coerce to
+    floats. Same reasoning as DBHandler.replace_asset_identifier.
+    """
+    log.debug('Merging %s non canonical evm asset identifiers onto their canonical row', len(merges))  # noqa: E501
+    merged: dict[tuple[str, int, str], list[FVal]] = defaultdict(lambda: [ZERO, ZERO])
+    for new_identifier, identifier in merges:
+        for category, timestamp, amount, usd_value in write_cursor.execute(
+                'SELECT category, timestamp, amount, usd_value FROM timed_balances '
+                'WHERE currency IN (?, ?)',
+                (identifier, new_identifier),
+        ).fetchall():
+            totals = merged[category, timestamp, new_identifier]
+            totals[0] += FVal(amount)
+            totals[1] += FVal(usd_value)
+
+    write_cursor.executemany('DELETE FROM timed_balances WHERE currency IN (?, ?)', merges)
+    write_cursor.executemany(
+        'INSERT INTO timed_balances(category, timestamp, currency, amount, usd_value) '
+        'VALUES(?, ?, ?, ?, ?)',
+        [
+            (category, timestamp, currency, str(amount), str(usd_value))
+            for (category, timestamp, currency), (amount, usd_value) in merged.items()
+        ],
+    )
+    stale = [(identifier,) for _, identifier in merges]
+    for table, column in child_columns:
+        if table == 'timed_balances':
+            continue  # summed above, since moving it can only drop one of the two amounts
+
+        write_cursor.executemany(
+            f'UPDATE OR IGNORE {table} SET {column}=? WHERE {column}=?',
+            merges,
+        )
+        write_cursor.executemany(  # whatever stayed behind collides with a row the canonical
+            f'DELETE FROM {table} WHERE {column}=?',  # identifier already has
+            stale,
+        )
+
+    write_cursor.executemany(
+        "UPDATE OR IGNORE multisettings SET value=? WHERE value=? AND name='ignored_asset'",
+        merges,
+    )
+    write_cursor.executemany(
+        "DELETE FROM multisettings WHERE value=? AND name='ignored_asset'",
+        stale,
+    )
+    write_cursor.executemany(  # last, nothing references it anymore
+        'DELETE FROM assets WHERE identifier=?',
+        stale,
+    )
 
 
 @enter_exit_debug_log(name='UserDB v52->v53 upgrade')
@@ -440,10 +509,12 @@ CREATE TABLE IF NOT EXISTS bitcoin_tx_mappings (
         An address that was never checksummed is uniformly cased, so the keccak behind
         to_checksum_address is only paid for a handful of the mirrored identifiers.
         """
-        renames = []
-        for (identifier,) in write_cursor.execute(
-                "SELECT identifier FROM assets WHERE identifier LIKE 'eip155:%'",
-        ).fetchall():
+        identifiers = {identifier for (identifier,) in write_cursor.execute(
+            "SELECT identifier FROM assets WHERE identifier LIKE 'eip155:%'",
+        )}
+        renames: list[tuple[str, str]] = []
+        merges: list[tuple[str, str]] = []
+        for identifier in sorted(identifiers):  # a snapshot, identifiers is added to below
             if len(parts := identifier.split(':')) != 3:
                 continue
 
@@ -457,32 +528,41 @@ CREATE TABLE IF NOT EXISTS bitcoin_tx_mappings (
                 log.error('Skipping asset %s with an invalid evm address %s', identifier, address)
                 continue
 
-            if checksummed != address:
-                renames.append((identifier.replace(address, checksummed), identifier))
+            if checksummed == address:
+                continue
 
-        if len(renames) == 0:
+            # unlike the globaldb's, this table's identifier is case sensitive, so both casings
+            # can sit in it: the mirror of the globaldb inserts the identifier as the globaldb
+            # spelled it, while an asset built straight from a checksummed address inserts its
+            # own. A rename would hit the primary key here and be ignored, leaving the two
+            # apart, which is what this step exists to end, so those are merged instead.
+            if (new_identifier := identifier.replace(address, checksummed)) in identifiers:
+                merges.append((new_identifier, identifier))
+            else:
+                renames.append((new_identifier, identifier))
+                identifiers.add(new_identifier)  # so a second casing of it merges onto this
+
+        if len(renames) == 0 and len(merges) == 0:
             return
 
-        log.debug('Canonicalizing %s evm asset identifiers', len(renames))
+        log.debug('Canonicalizing %s evm asset identifiers', len(renames) + len(merges))
         # assets.identifier is the parent of an ON UPDATE CASCADE foreign key from every asset
         # column, but foreign keys are not guaranteed to be on during an upgrade, so each
         # column is written explicitly instead of relying on the cascade. Which ones those are
-        # is asked of the db rather than listed here, so a column cannot be missed.
-        identifier_columns = [('assets', 'identifier')]
+        # is asked of the db rather than listed here, so a column cannot be missed. The only
+        # asset columns with no foreign key are data_issues and event_metrics, both of which
+        # this same upgrade creates, and multisettings, handled below.
+        child_columns: list[tuple[str, str]] = []
         for (table,) in write_cursor.execute(
                 "SELECT name FROM sqlite_master WHERE type='table'",
         ).fetchall():
-            identifier_columns.extend(
+            child_columns.extend(
                 (table, fk_entry[3])
                 for fk_entry in write_cursor.execute(f'PRAGMA foreign_key_list("{table}")').fetchall()  # noqa: E501
                 if fk_entry[2] == 'assets' and fk_entry[4] == 'identifier'
             )
 
-        identifier_columns.extend((  # these hold an identifier with no foreign key for it
-            ('data_issues', 'asset'),
-            ('event_metrics', 'asset'),
-        ))
-        for table, column in identifier_columns:
+        for table, column in (('assets', 'identifier'), *child_columns):
             write_cursor.executemany(
                 f'UPDATE OR IGNORE {table} SET {column}=? WHERE {column}=?',
                 renames,
@@ -492,5 +572,11 @@ CREATE TABLE IF NOT EXISTS bitcoin_tx_mappings (
             "UPDATE OR IGNORE multisettings SET value=? WHERE value=? AND name='ignored_asset'",
             renames,
         )
+        if len(merges) != 0:
+            _merge_onto_canonical_identifier(
+                write_cursor=write_cursor,
+                child_columns=child_columns,
+                merges=merges,
+            )
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)

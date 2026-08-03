@@ -385,7 +385,7 @@ def deserialize_evm_address(symbol: str) -> ChecksumEvmAddress:
     """
     try:
         return to_checksum_address(symbol)
-    except ValueError as e:
+    except (ValueError, TypeError) as e:  # eth_utils raises TypeError for a non address type
         raise DeserializationError(f'Invalid evm address: {symbol}') from e
 
 

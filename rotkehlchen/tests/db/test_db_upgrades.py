@@ -4167,6 +4167,7 @@ def test_upgrade_db_52_to_53(
 ):
     """Test upgrading the DB from version 52 to version 53."""
     lowercased_address = (checksummed_address := '0xaB19dE37aB19DE37AB19de37Ab19de37ab19de37').lower()  # noqa: E501
+    both_lowercased_address = (both_checksummed_address := '0xCe37CE37ce37CE37Ce37CE37cE37Ce37CE37Ce37').lower()  # noqa: E501
     _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
     db_v52 = _init_db_with_target_version(
         target_version=52,
@@ -4468,6 +4469,48 @@ def test_upgrade_db_52_to_53(
             (lowercased_id,),
         )
 
+        # a second token this db holds under both casings, since assets.identifier is case
+        # sensitive here unlike in the globaldb. The two have a balance at a shared timestamp,
+        # which no rename can merge, and one at a timestamp only the stale casing has
+        both_lowercased_id = f'eip155:1/erc20:{both_lowercased_address}'
+        both_checksummed_id = f'eip155:1/erc20:{both_checksummed_address}'
+        write_cursor.executemany(
+            'INSERT INTO assets(identifier) VALUES(?)',
+            [(both_lowercased_id,), (both_checksummed_id,)],
+        )
+        write_cursor.executemany(
+            'INSERT INTO timed_balances(category, timestamp, currency, amount, usd_value) '
+            'VALUES(?, ?, ?, ?, ?)',
+            [
+                ('A', 1730000000, both_lowercased_id, '1.5', '3'),
+                ('A', 1730000000, both_checksummed_id, '2.5', '5'),
+                ('A', 1730000100, both_lowercased_id, '4', '8'),
+            ],
+        )
+        write_cursor.executemany(  # the event moves, the ignored asset entry is deduplicated
+            'INSERT INTO history_events('
+            'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
+            'asset, amount, notes, type, subtype'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [(
+                HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db(),
+                'DOUBLE_CASED_ASSET_EVENT',
+                0,
+                1730000000000,
+                Location.BLOCKCHAIN.serialize_for_db(),
+                '0x0000000000000000000000000000000000000001',
+                both_lowercased_id,
+                '1',
+                'Receive a token this db holds under both casings',
+                HistoryEventType.RECEIVE.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            )],
+        )
+        write_cursor.executemany(
+            "INSERT INTO multisettings(name, value) VALUES('ignored_asset', ?)",
+            [(both_lowercased_id,), (both_checksummed_id,)],
+        )
+
     airdrops_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
     airdrops_dir.mkdir(parents=True)
     (airdrop_parquet_path := airdrops_dir / 'obsolete.parquet').touch()
@@ -4506,6 +4549,36 @@ def test_upgrade_db_52_to_53(
         assert cursor.execute(
             'SELECT COUNT(*) FROM assets WHERE identifier=?', (checksummed_id,),
         ).fetchone()[0] == 1  # the rename did not leave a second row behind
+
+        # the casing that could not be renamed, because its canonical form was already in the
+        # assets table, was merged onto it instead of being left behind
+        both_lowercased_id = f'eip155:1/erc20:{both_lowercased_address}'
+        both_checksummed_id = f'eip155:1/erc20:{both_checksummed_address}'
+        for table, column in (
+                ('assets', 'identifier'),
+                ('history_events', 'asset'),
+                ('timed_balances', 'currency'),
+        ):
+            assert cursor.execute(
+                f'SELECT COUNT(*) FROM {table} WHERE {column} GLOB ?',
+                (f'*{both_lowercased_address}*',),
+            ).fetchone()[0] == 0, f'{table}.{column} kept the stale casing'
+
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM multisettings WHERE name='ignored_asset' AND value=?",
+            (both_checksummed_id,),
+        ).fetchone()[0] == 1  # the two ignored entries collapsed into one
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM multisettings WHERE name='ignored_asset' AND value=?",
+            (both_lowercased_id,),
+        ).fetchone()[0] == 0
+        # the balance the two shared a timestamp on was summed, not dropped, and the one only
+        # the stale casing had was carried over
+        assert cursor.execute(
+            'SELECT timestamp, amount, usd_value FROM timed_balances WHERE currency=? '
+            'ORDER BY timestamp',
+            (both_checksummed_id,),
+        ).fetchall() == [(1730000000, '4', '8'), (1730000100, '4', '8')]
 
         assert table_exists(cursor=cursor, name='event_metrics')
         assert table_exists(cursor=cursor, name='data_issues')

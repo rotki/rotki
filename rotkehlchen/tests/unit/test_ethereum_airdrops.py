@@ -671,8 +671,16 @@ def test_airdrop_index_token_address_is_checksummed(database: DBHandler) -> None
     assert airdrops['shutter'].asset.identifier == f'eip155:1/erc20:{address}'
 
 
-def test_airdrop_index_with_invalid_token_address_is_skipped(database: DBHandler) -> None:
-    """An address the index cannot provide correctly must skip that airdrop, not raise"""
+@pytest.mark.parametrize('address', ['not an address', None, 42, ['0x0']])
+def test_airdrop_index_with_invalid_token_address_is_skipped(
+        database: DBHandler,
+        address: object,
+) -> None:
+    """An address the index cannot provide correctly must skip that airdrop, not raise.
+
+    eth_utils answers a malformed string with a ValueError but a value of the wrong type
+    with a TypeError, and remote data can hold either.
+    """
     assert _parse_airdrops(database=database, airdrops_data={'shutter': {
         'file_path': 'airdrops/shutter.csv.gz',
         'file_hash': 'a' * 64,
@@ -682,7 +690,7 @@ def test_airdrop_index_with_invalid_token_address_is_skipped(database: DBHandler
         'icon': 'shutter.svg',
         'new_asset_data': {
             'asset_type': 'EVM_TOKEN',
-            'address': 'not an address',
+            'address': address,
             'name': 'Shutter',
             'symbol': 'SHU',
             'chain_id': 1,
