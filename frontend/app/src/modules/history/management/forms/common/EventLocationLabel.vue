@@ -23,6 +23,18 @@ const { getAddressName } = useAddressNameResolution();
 
 const chain = computed<string | undefined>(() => matchChain(location));
 
+/**
+ * Clearing the autocomplete emits `undefined`, but the form state types this field as a string and
+ * validates it as one. Normalise on the way out so a cleared field reads as empty rather than
+ * missing.
+ */
+const label = computed<string | undefined>({
+  get: () => get(modelValue),
+  set: (value: string | undefined) => {
+    set(modelValue, value ?? '');
+  },
+});
+
 const addressSuggestions = computed<string[]>(() => {
   const matched = get(chain);
   if (!matched)
@@ -53,7 +65,7 @@ function filterAddress(item: string, queryText: string): boolean {
 
 <template>
   <RuiAutoComplete
-    v-model="modelValue"
+    v-model="label"
     :options="addressSuggestions"
     :filter="filterAddress"
     clearable
