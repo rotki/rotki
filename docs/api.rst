@@ -685,6 +685,9 @@ Querying premium capabilities
    - `asset_movement_matching`: Object with:
      - `enabled` (Boolean): Enables automatic matching of exchange asset movements with onchain events when triggering the matching task. Also gates the automatic matching of the two legs of cross-chain bridge transfers.
      - `minimum_tier` (String): The minimum tier required to unlock this capability.
+   - `mcp`: Object with:
+     - `enabled` (Boolean): Enables the MCP server's tools. The `info` tool is always available; every other tool refuses to answer without this capability.
+     - `minimum_tier` (String): The minimum tier required to unlock this capability.
    - `minimum_tier` can be `null` if the key is not present in the unlocks response from the server.
    - `current_tier`: String. Current user tier name. As of this writing the possible values are `Free` (no active subscription), `Supporter`, `Basic` and `Advanced`. The tier names are defined server-side, not in this repository, so the authoritative and up-to-date list can be fetched with an unauthenticated ``GET`` at ``https://rotki.com/webapi/2/available-tiers`` (the ``tier_name`` field of each entry). Paid tiers are ordered `Supporter` < `Basic` < `Advanced`.
    - `limit_of_devices`: Integer. Maximum number of connected devices.
@@ -730,6 +733,10 @@ Querying premium capabilities
               "minimum_tier": "Basic"
             },
             "asset_movement_matching": {
+              "enabled": true,
+              "minimum_tier": "Basic"
+            },
+            "mcp": {
               "enabled": true,
               "minimum_tier": "Basic"
             }
