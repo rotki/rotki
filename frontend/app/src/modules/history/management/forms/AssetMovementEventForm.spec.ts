@@ -330,6 +330,27 @@ describe('forms/AssetMovementEventForm.vue', () => {
     expect(editHistoryEventMock).not.toHaveBeenCalled();
   });
 
+  it('should not save the event when the historic price fails to write', async () => {
+    wrapper = createWrapper({
+      props: { data: { eventsInGroup: [event], type: 'edit-group' } },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
+    // The event itself is edited too, so the save is only held back by the failed price write and
+    // not by the unchanged-in-edit-mode short circuit.
+    await wrapper.find('[data-cy=primary] input').setValue('1000');
+    await wrapper.find('[data-cy=amount] input').setValue('250');
+
+    addHistoricalPriceMock.mockRejectedValueOnce(new Error('price rejected'));
+
+    const saved = await wrapper.vm.save();
+    await nextTick();
+
+    expect(addHistoricalPriceMock).toHaveBeenCalled();
+    expect(editHistoryEventMock).not.toHaveBeenCalled();
+    expect(saved).toBe(false);
+  });
+
   it('should call editHistoryEvent when editing an event', async () => {
     wrapper = createWrapper({
       props: { data: { eventsInGroup: [event], type: 'edit-group' } },
