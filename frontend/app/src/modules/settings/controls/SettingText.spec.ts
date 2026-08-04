@@ -1,7 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { helpers } from '@vuelidate/validators';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
+import { z } from 'zod';
 import SettingText from '@/modules/settings/controls/SettingText.vue';
 
 const { flushMock, useSettingModelMock } = vi.hoisted(() => ({ flushMock: vi.fn(), useSettingModelMock: vi.fn() }));
@@ -64,9 +64,9 @@ describe('settingText', () => {
     expect(wrapper.find('.error').text()).not.toBe('');
   });
 
-  it('should gate on a custom rules escape hatch', async () => {
-    const rules = { value: { onlyDash: helpers.withMessage('dash only', (v: string) => v === '-') } };
-    const wrapper = createWrapper({ rules });
+  it('should gate on a custom schema escape hatch', async () => {
+    const schema = z.object({ value: z.string().refine(value => value === '-', 'dash only') });
+    const wrapper = createWrapper({ schema });
     await wrapper.findComponent(RuiTextFieldStub).vm.$emit('update:model-value', 'x');
     await nextTick();
     expect(get(model)).toBe(',');

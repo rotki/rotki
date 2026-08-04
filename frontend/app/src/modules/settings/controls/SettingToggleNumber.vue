@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import type { ZodType } from 'zod';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
-import useVuelidate from '@vuelidate/core';
-import { between, helpers, minValue, requiredIf } from '@vuelidate/validators';
-import { useValidation } from '@/modules/core/common/use-validation';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useForm } from '@/modules/core/form/use-form';
+import { numberSettingSchema, SETTING_FIELD, type SettingFieldState } from '@/modules/settings/controls/setting-field-schemas';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
 
@@ -69,24 +68,38 @@ function fieldFor(value: number | null | undefined): string {
 
 const initial = get(model);
 const enabled = ref<boolean>(!!initial && initial > 0);
-const field = ref<string>(fieldFor(initial));
 const pendingSuccess = ref<string>('');
 
-const rules = {
-  field: {
-    ...(max !== undefined
-      ? { between: helpers.withMessage(validation.invalid, between(min, max)) }
-      : { minValue: helpers.withMessage(validation.invalid, minValue(min)) }),
-    required: helpers.withMessage(validation.empty, requiredIf(enabled)),
+/**
+ * The value is only required while the toggle is on, and the toggle is not part of the field state,
+ * so the schema is a getter rather than a value.
+ */
+const schema = computed<ZodType>(() => numberSettingSchema({
+  max,
+  messages: {
+    between: validation.invalid,
+    max: validation.invalid,
+    min: validation.invalid,
+    required: validation.empty,
   },
-};
+  min,
+  required: get(enabled),
+}));
 
-const v$ = useVuelidate(rules, { field }, { $autoDirty: true });
-const { callIfValid } = useValidation(v$);
+const form = useForm<SettingFieldState, SettingFieldState>({
+  initial: (): SettingFieldState => ({ value: fieldFor(initial) }),
+  schema,
+  submit: async (payload: SettingFieldState): Promise<{ success: boolean }> => {
+    set(pendingSuccess, success?.onValue ? success.onValue(payload.value) : '');
+    set(model, payload.value ? fromField(payload.value) : offValue);
+    return Promise.resolve({ success: true });
+  },
+  transform: (state): SettingFieldState => ({ value: state.value }),
+});
 
 watch(model, (value) => {
   set(enabled, !!value && value > 0);
-  set(field, fieldFor(value));
+  form.state.value = fieldFor(value);
 });
 
 watch(writeSuccess, (saved) => {
@@ -106,12 +119,11 @@ async function toggle(value: boolean): Promise<void> {
   await flush();
 }
 
-function updateField(value: string): void {
+/** Submitting is the persist: the core runs it only when the field parses, as `callIfValid` did. */
+async function updateField(value: string): Promise<void> {
   clearAll();
-  callIfValid(value, (input: string) => {
-    set(pendingSuccess, success?.onValue ? success.onValue(input) : '');
-    set(model, input ? fromField(input) : offValue);
-  });
+  form.state.value = value;
+  await form.submit();
 }
 </script>
 
@@ -127,7 +139,7 @@ function updateField(value: string): void {
       @update:model-value="toggle($event)"
     />
     <RuiTextField
-      v-model="field"
+      v-model="form.state.value"
       variant="outlined"
       color="primary"
       :data-testid="fieldTestId"
@@ -139,7 +151,7 @@ function updateField(value: string): void {
       :label="fieldLabel"
       :hint="fieldHint"
       :success-messages="successMessage"
-      :error-messages="enabled ? (error || toMessages(v$.field)) : []"
+      :error-messages="enabled ? (error || form.errors(SETTING_FIELD)) : []"
       @update:model-value="updateField($event)"
     />
   </div>
