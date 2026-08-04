@@ -79,13 +79,20 @@ class BinanceSingleEntry(BinanceEntry, abc.ABC):
     """
     AVAILABLE_OPERATIONS: tuple[str, ...]
 
-    def is_entry(self, requested_operation: str, account: str, change: FVal) -> bool:  # pylint: disable=unused-argument
+    def is_entry(  # pylint: disable=unused-argument
+            self,
+            requested_operation: str,
+            account: str,
+            change: FVal,
+            remark: str,
+    ) -> bool:
         """This method checks whether row with "requested_operation" could be processed
         by a class on which this method has been called.
         Some subclasses require combined checks with the "account" and "change" to
         check if a row can be processed.
         - "account" maps to the "Account" field on the csv
         - "change" maps to the "Change" field on the csv
+        - "remark" maps to the "Remark" field on the csv
         The default implementation can also be used in a subclass"""
         return requested_operation in self.AVAILABLE_OPERATIONS
 
@@ -423,9 +430,26 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
 class BinanceDistributionEntry(BinanceSingleEntry):
     """Used to handle the distributions on Binance"""
     AVAILABLE_OPERATIONS = (
+        'Asset - Transfer',  # legacy label for staking/airdrop distributions
         'Cash Voucher Distribution',
+        'Distribution',
         'Mission Reward Distribution',
     )
+
+    def is_entry(
+            self,
+            requested_operation: str,
+            account: str,
+            change: FVal,
+            remark: str,
+    ) -> bool:
+        if requested_operation != 'Asset - Transfer':
+            return requested_operation in self.AVAILABLE_OPERATIONS
+
+        normalized_remark = remark.casefold()
+        return account == 'Spot' and change > 0 and any(
+            marker in normalized_remark for marker in ('airdrop', 'distribution', '分发', '空投')
+        )
 
     def process_entry(
             self,
@@ -435,11 +459,14 @@ class BinanceDistributionEntry(BinanceSingleEntry):
             data: BinanceCsvRow,
     ) -> None:
         """
-        Process distributions from binance. It includes
+        Process distributions from binance. It includes legacy asset/staking distributions,
         Cash Voucher Distribution and Mission Reward Distribution. May raise:
         - KeyError
         - DeserializationError: if the event is malformed when being stored in the db
         """
+        is_legacy_airdrop = data['Operation'] == 'Asset - Transfer' and any(
+            marker in data['Remark'].casefold() for marker in ('airdrop', '空投')
+        )
         importer.add_history_events(write_cursor, history_events=[
             HistoryEvent(
                 group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
@@ -447,13 +474,61 @@ class BinanceDistributionEntry(BinanceSingleEntry):
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.BINANCE,
                 event_type=HistoryEventType.RECEIVE,
-                event_subtype=HistoryEventSubType.REWARD,
+                event_subtype=(
+                    HistoryEventSubType.AIRDROP
+                    if is_legacy_airdrop else
+                    HistoryEventSubType.REWARD
+                ),
                 asset=data['Coin'],
                 amount=data['Change'],
                 location_label='CSV import',
-                notes=f'Reward from {data["Operation"]}',
+                notes=(
+                    f'Airdrop from Binance. {data["Remark"]}'
+                    if is_legacy_airdrop else
+                    f'Reward from {data["Operation"]}'
+                ),
             ),
         ])
+
+
+class BinanceBalanceAdjustmentEntry(BinanceSingleEntry):
+    """Process airdrops and balance adjustments reported as standalone rows."""
+    AVAILABLE_OPERATIONS = (
+        'Airdrop Assets',
+        'Asset Recovery',
+        'Token Swap - Distribution',
+    )
+
+    def process_entry(
+            self,
+            write_cursor: DBCursor,
+            importer: BaseExchangeImporter,
+            timestamp: Timestamp,
+            data: BinanceCsvRow,
+    ) -> None:
+        operation = data['Operation']
+        if operation == 'Airdrop Assets':
+            event_type = HistoryEventType.RECEIVE
+            event_subtype = HistoryEventSubType.AIRDROP
+        elif operation == 'Asset Recovery':
+            event_type = HistoryEventType.SPEND if data['Change'] < 0 else HistoryEventType.RECEIVE
+            event_subtype = HistoryEventSubType.NONE
+        else:  # Token Swap - Distribution
+            event_type = HistoryEventType.RECEIVE
+            event_subtype = HistoryEventSubType.NONE
+
+        importer.add_history_events(write_cursor, history_events=[HistoryEvent(
+            group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(timestamp),
+            location=Location.BINANCE,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            asset=data['Coin'],
+            amount=abs(data['Change']),
+            location_label='CSV import',
+            notes=f'Imported from binance CSV file. Binance operation: {operation}',
+        )])
 
 
 class BinanceStakingRewardsEntry(BinanceSingleEntry):
@@ -587,7 +662,13 @@ class BinanceUSDMProgram(BinanceSingleEntry):
         'Realized Profit and Loss',
     )
 
-    def is_entry(self, requested_operation: str, account: str, change: FVal) -> bool:
+    def is_entry(  # pylint: disable=unused-argument
+            self,
+            requested_operation: str,
+            account: str,
+            change: FVal,
+            remark: str,
+    ) -> bool:
         if requested_operation in {'Fee', 'Funding Fee'} and change == abs(change):
             return False
         return requested_operation in self.AVAILABLE_OPERATIONS and account == self.ACCOUNT
@@ -683,6 +764,7 @@ SINGLE_BINANCE_ENTRIES: list[BinanceSingleEntry] = [
     BinanceEarnProgram(),
     BinanceUSDMProgram(),
     BinanceDistributionEntry(),
+    BinanceBalanceAdjustmentEntry(),
 ]
 
 MULTIPLE_BINANCE_ENTRIES: list[BinanceMultipleEntry] = [
@@ -760,6 +842,7 @@ class BinanceImporter(BaseExchangeImporter):
                         requested_operation=row['Operation'],
                         account=row['Account'],
                         change=row['Change'],
+                        remark=row['Remark'],
                     ):
                         single_entry_class.process_entry(
                             write_cursor=write_cursor,
