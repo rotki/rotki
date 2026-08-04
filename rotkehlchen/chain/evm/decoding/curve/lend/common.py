@@ -18,7 +18,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
     globaldb_set_unique_cache_value,
@@ -26,7 +25,6 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import CacheType, ChecksumEvmAddress
 
 from .constants import BORROW_TOPIC, CURVE_VAULT_ABI, REMOVE_COLLATERAL_TOPIC, REPAY_TOPIC
@@ -89,12 +87,12 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
                 return string_to_evm_address(value)
 
         try:
-            value = deserialize_evm_address(self.node_inquirer.call_contract(
+            value = self.node_inquirer.call_contract(
                 contract_address=contract_address,
                 abi=contract_abi,
                 method_name=contract_method,
-            ))
-        except (RemoteError, DeserializationError) as e:
+            )
+        except RemoteError as e:
             log.error(
                 f'Failed to retrieve an evm address from the {contract_method} method on the '
                 f'{self.node_inquirer.chain_name} Curve contract {contract_address} due to {e!s}',

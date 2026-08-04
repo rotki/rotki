@@ -1,4 +1,5 @@
 import datetime
+import json
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 from unittest.mock import patch
@@ -32,6 +33,48 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.inquirer import Inquirer
+
+
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('run_globaldb_migrations', [False])
+@pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])
+def test_yearn_api_addresses_are_checksummed(database, ethereum_inquirer):
+    """A vault the api reports with a non-checksummed address is still stored canonically.
+
+    Identifiers are compared exactly, so a token created from a lowercased address builds an
+    identifier that never matches the canonical one for the same token.
+    """
+    vault_address = '0x4c2dF8adB2B14e1d5FDBD9d11A2cf7562b67adC9'
+    underlying_address = '0x9b77bd0a665F05995b68e36fC1053AFFfAf0d4B5'
+
+    def mock_yearn_api(url, timeout):  # pylint: disable=unused-argument
+        if f'{YDAEMON_API}/count' in url:
+            return MockResponse(HTTPStatus.OK, '{"numberOfVaults":1}')
+
+        return MockResponse(HTTPStatus.OK, json.dumps([{
+            'address': vault_address.lower(),
+            'version': '0.4.6',
+            'decimals': 18,
+            'name': 'Curve mevETHfrxE-f Factory yVault',
+            'symbol': 'yvCurve-mevETHfrxE-f',
+            'token': {
+                'address': underlying_address.lower(),
+                'decimals': 18,
+                'name': 'Curve.fi Factory Crypto Pool: mevETH/frxETH',
+                'symbol': 'mevETHfrxE-f',
+            },
+        }]))
+
+    with patch.object(requests, 'get', wraps=mock_yearn_api):
+        query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
+
+    # queried by the checksummed address, which the address column only matches exactly
+    assert (token := GlobalDBHandler.get_evm_token(
+        address=string_to_evm_address(vault_address),
+        chain_id=ChainID.ETHEREUM,
+    )) is not None
+    assert token.protocol == CPT_YEARN_V2
+    assert token.underlying_tokens[0].address == underlying_address
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

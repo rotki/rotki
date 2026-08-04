@@ -239,7 +239,7 @@ def test_kyber_aggregator_swap_ethereum_with_refund(ethereum_inquirer, ethereum_
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.RECEIVE,
-            asset=Asset('eip155:1/erc20:0xF0Bb20865277aBd641a307EcE5Ee04E79073416C'),
+            asset=Asset('eip155:1/erc20:0xf0bb20865277aBd641a307eCe5Ee04E79073416C'),
             amount=FVal(receive_amount := '1.872813330450180743'),
             location_label=ethereum_accounts[0],
             notes=f'Receive {receive_amount} liquidETH from kyber swap',
@@ -482,8 +482,8 @@ def test_kyber_aggregator_swap_polygon(polygon_pos_inquirer, polygon_pos_account
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xfd32220a3dfad3a74b0e172b88f0052670cd60b72f4b0cf19ded4a4145ba4a2b')),  # noqa: E501
     )
     gas, spend_amount, receive_amount = '0.029364910546207', '11.419216', '3.214374219088998048'
-    a_bal_poly = Asset('eip155:137/erc20:0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3')
-    a_usdc_poly = Asset('eip155:137/erc20:0x3c499c542cef5e3811e1192ce70d8cc03d5c3359')
+    a_bal_poly = Asset('eip155:137/erc20:0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3')
+    a_usdc_poly = Asset('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359')
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,

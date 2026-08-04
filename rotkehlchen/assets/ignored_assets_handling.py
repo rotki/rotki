@@ -24,6 +24,11 @@ class IgnoredAssetsHandling(SerializableEnumNameMixin):
         this function to include/exclude the ignored assets. This is because the ignored assets are
         stored in a different database and we avoid attaching/detaching the DB here due to:
         #7533 and https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=69334133
+
+        The returned callable takes the asset identifier as a str, not an Asset, deliberately.
+        All call sites pass raw identifiers straight out of the DB, so there is nothing to
+        resolve and no Asset object needs to be built.
+
         TODO: Improve this to avoid loading the entire ignored assets in memory"""
         if self == IgnoredAssetsHandling.EXCLUDE:
             return lambda asset, ignored_assets: asset in ignored_assets

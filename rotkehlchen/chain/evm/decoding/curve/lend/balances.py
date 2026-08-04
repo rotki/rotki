@@ -14,7 +14,6 @@ from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, Rem
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
@@ -181,18 +180,18 @@ class CurveLendBalances(CurveControllerCommonBalances):
             return (
                 get_or_create_evm_token(
                     userdb=self.evm_inquirer.database,
-                    evm_address=deserialize_evm_address(controller_contract.decode(
+                    evm_address=controller_contract.decode(
                         result=call_output[0],
                         method_name='collateral_token',
-                    )[0]),
+                    )[0],
                     chain_id=self.evm_inquirer.chain_id,
                 ),
                 get_or_create_evm_token(
                     userdb=self.evm_inquirer.database,
-                    evm_address=deserialize_evm_address(controller_contract.decode(
+                    evm_address=controller_contract.decode(
                         result=call_output[1],
                         method_name='borrowed_token',
-                    )[0]),
+                    )[0],
                     chain_id=self.evm_inquirer.chain_id,
                 ),
             )

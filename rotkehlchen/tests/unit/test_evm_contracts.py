@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING
 import pytest
 from eth_utils import is_checksum_address
 
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.contracts import EvmContract, checksum_decoded_addresses
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChainID
 
@@ -68,3 +71,50 @@ def test_fallback_to_packaged_db(ethereum_inquirer: EthereumInquirer):
             (address, abi),
         )
         assert cursor.fetchone()[0] == 1
+
+
+def test_checksum_decoded_addresses() -> None:
+    """Test that address outputs get checksummed at any array/tuple nesting depth.
+
+    Gnosis Pay's admins helper returns address[][] and gitcoin's getRecipient returns a
+    struct holding an address, so both containers need to be walked.
+    """
+    assert checksum_decoded_addresses(
+        values=(
+            '0x37f18a82493cdf80675ff01e58c1a1b39637cf50',
+            ['0xc37b40abdb939635068d3c5f13e7faf686f03b65'],
+            ((), ('0x37f18a82493cdf80675ff01e58c1a1b39637cf50',)),
+            (False, '0x37f18a82493cdf80675ff01e58c1a1b39637cf50', (1, 'ipfs://example')),
+            (('0xc37b40abdb939635068d3c5f13e7faf686f03b65', 5),),
+            42,
+        ),
+        output_types=[
+            'address',
+            'address[]',
+            'address[][]',
+            '(bool,address,(uint256,string))',
+            '(address,uint256)[]',
+            'uint256',
+        ],
+    ) == (
+        '0x37f18A82493cdF80675fF01e58c1A1b39637cf50',
+        ['0xc37b40ABdB939635068d3c5f13E7faF686F03B65'],
+        ((), ('0x37f18A82493cdF80675fF01e58c1A1b39637cf50',)),
+        (False, '0x37f18A82493cdF80675fF01e58c1A1b39637cf50', (1, 'ipfs://example')),
+        (('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 5),),
+        42,
+    )
+
+
+def test_decode_of_unexpected_output_raises_deserialization_error() -> None:
+    """An answer that does not match the abi must surface as a DeserializationError.
+
+    A call that a node reports as successful can still come back with data that does not
+    decode, a contract hitting its fallback function being the common case, and every caller
+    of decode() is written to handle a DeserializationError.
+    """
+    with pytest.raises(DeserializationError):
+        EvmContract(
+            address=ZERO_ADDRESS,
+            abi=[{'inputs': [], 'name': 'token', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}],  # noqa: E501
+        ).decode(result=b'', method_name='token')

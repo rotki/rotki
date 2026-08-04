@@ -14,7 +14,6 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import get_chunks, ts_now
 
@@ -103,13 +102,13 @@ def query_extrafi_data(
                     continue
 
                 try:
-                    reward_addresses.append(deserialize_evm_address(lending_contract.decode(
+                    reward_addresses.append(lending_contract.decode(
                         result=encoded_data,
                         method_name='getStakingAddress',
                         arguments=[chunk[idx]],
-                    )[0]))
-                except DeserializationError:
-                    log.error(f'Failed to deserialize extrafi pool for reserve id {chunk[idx]}')
+                    )[0])
+                except DeserializationError as e:
+                    log.error('Failed to read extrafi pool for reserve id %s due to %s', chunk[idx], e)  # noqa: E501
 
         with GlobalDBHandler().conn.write_ctx() as write_cursor:  # save queried data to the db
             globaldb_set_general_cache_values_at_ts(

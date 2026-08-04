@@ -23,6 +23,11 @@ from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.migrations.manager import LAST_GLOBALDB_DATA_MIGRATION
 from rotkehlchen.tests.conftest import TestEnvironment, requires_env
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
+from rotkehlchen.tests.utils.globaldb import (
+    UNLINKED_IDENTIFIER_COLUMNS,
+    find_non_checksummed_addresses,
+    find_non_checksummed_addresses_in_db,
+)
 from rotkehlchen.types import (
     SPAM_PROTOCOL,
     ChainID,
@@ -399,6 +404,19 @@ def test_asset_updates_consistency_with_packaged_db(
     if missing_in_packaged_db != []:
         warn('\n'.join(missing_in_packaged_db))
 
+    # the asset updates are sql we execute as given, so an address the remote data spells
+    # wrongly reaches the db as is and builds an identifier nothing canonical ever matches.
+    # The mapping tables are skipped: nothing here writes them, they come with the base db
+    # above and from the mapping updates, which test_remote_updates_consistency checks.
+    with globaldb.conn.read_ctx() as cursor:
+        non_checksummed = find_non_checksummed_addresses_in_db(
+            cursor=cursor,
+            skip_columns=UNLINKED_IDENTIFIER_COLUMNS,
+        )
+
+    if len(non_checksummed) > 0:
+        pytest.fail('Applying the asset updates left non checksummed evm addresses behind:\n' + '\n'.join(non_checksummed))  # noqa: E501
+
     if missing_in_updates != []:
         pytest.fail('Found entries that are missing in remote updates:\n' + '\n'.join(missing_in_updates))  # noqa: E501
 
@@ -466,6 +484,11 @@ def test_remote_updates_consistency_with_packaged_db(
     """Test that the remote updates are consistent with the packaged db for:
     - Location asset mappings
     - Counterparty asset mappings
+
+    Also that no mapping the remote updates leave behind points at a non checksummed asset
+    identifier. local_id declares no foreign key to assets, so nothing else ever checks it,
+    and the globaldb's NOCASE identifier hides a wrongly cased one from every lookup that
+    resolves through it, until something compares the raw string instead.
     """
     temp_data_dir = Path(tmpdir_factory.mktemp(GLOBALDIR_NAME))
     (old_db_dir := temp_data_dir / GLOBALDIR_NAME).mkdir(parents=True, exist_ok=True)
@@ -572,6 +595,19 @@ def test_remote_updates_consistency_with_packaged_db(
         # warning here instead of failing because we generally keep adding remote updates without
         # adding them in packaged db and add all of them together right before releasing.
         warn('Found entries that are missing in packaged db:\n' + '\n'.join(missing_in_packaged_db))  # noqa: E501
+
+    if len(non_checksummed := find_non_checksummed_addresses(
+        (f'{mapping_type} mapping {key}', identifier)
+        for mapping_type, mappings in (
+            ('location', updated_location_asset_mappings),
+            ('counterparty', updated_counterparty_asset_mappings),
+        )
+        for key, identifier in mappings.items()
+    )) > 0:
+        # warning rather than failing until the data repo is corrected, same as above. These
+        # have to be fixed there: the packaged db is rewritten from it and an update carrying
+        # one puts it back into every user's globaldb.
+        warn('Found mappings pointing at a non checksummed identifier:\n' + '\n'.join(non_checksummed))  # noqa: E501
 
     if len(missing_in_remote_updates) > 0:
         pytest.fail('Found entries that are missing in remote updates:\n' + json.dumps(missing_in_remote_updates, indent=4))  # noqa: E501

@@ -123,8 +123,8 @@ class EventsAccountant:
 
             in_event = cast('HistoryBaseEntry', next(events_iterator))  # consume the paired event
             if (
-                event.asset in self.pot.ignored_asset_ids or
-                in_event.asset in self.pot.ignored_asset_ids
+                event.asset.identifier in self.pot.ignored_asset_ids or
+                in_event.asset.identifier in self.pot.ignored_asset_ids
             ):
                 return 2
 
@@ -187,9 +187,9 @@ class EventsAccountant:
                 processed_event_count += 1
 
             if (
-                    event.asset in self.pot.ignored_asset_ids or
-                    in_event.asset in self.pot.ignored_asset_ids or
-                    any(fee_event.asset in self.pot.ignored_asset_ids for fee_event in fee_events)
+                    event.asset.identifier in self.pot.ignored_asset_ids or
+                    in_event.asset.identifier in self.pot.ignored_asset_ids or
+                    any(fee_event.asset.identifier in self.pot.ignored_asset_ids for fee_event in fee_events)  # noqa: E501
             ):  # return early if any events in the swap group have ignored assets.
                 return processed_event_count
 

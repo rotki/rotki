@@ -39,7 +39,7 @@ class Compoundv3Balances(ProtocolWithBalance):
 
     The underlying token of the cometContract is what is primarily borrowed
     from it. For example for:
-    https://basescan.org/address/0xb125e6687d4313864e53df431d5425969c15eb2f#readProxyContract
+    https://basescan.org/address/0xb125E6687d4313864e53df431d5425969c15Eb2F#readProxyContract
     it's USDC.
 
     If you supply USDC to it you can get the balance of your supplied collateral by

@@ -2,8 +2,6 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Final
 
-from eth_utils import to_checksum_address
-
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
@@ -66,11 +64,11 @@ class EfpCommonDecoder(EvmDecoderInterface, ABC):
                 return string_to_evm_address(address)
 
         try:
-            if (address := to_checksum_address(self.node_inquirer.contracts.contract(self.list_records_contract).call(  # noqa: E501
+            if (address := self.node_inquirer.contracts.contract(self.list_records_contract).call(
                 node_inquirer=self.node_inquirer,
                 method_name='getListUser',
                 arguments=[slot],
-            ))) == ZERO_ADDRESS:
+            )) == ZERO_ADDRESS:
                 log.error(f'Failed to retrieve address for EFP slot {slot} on {chain}')
                 return None
         except RemoteError as e:

@@ -1600,7 +1600,7 @@ def test_swap_via_settler_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accou
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         event_subtype=HistoryEventSubType.RECEIVE,
-        asset=Asset('eip155:137/erc20:0x3c499c542cef5e3811e1192ce70d8cc03d5c3359'),
+        asset=Asset('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'),
         amount=FVal(received_amount),
         location_label=user_address,
         notes=f'Receive {received_amount} USDC as the result of a swap via the 0x protocol',

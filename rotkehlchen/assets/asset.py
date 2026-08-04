@@ -2,10 +2,11 @@ import abc
 import logging
 from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
-from typing import Any, NamedTuple
+from typing import Any, Final, NamedTuple
 
 from eth_utils import to_checksum_address
 
+from rotkehlchen.assets.case_diagnostics import is_case_diagnostics_enabled, report_case_mismatch
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import DEBT_TOKEN_SYMBOL_REGEX
@@ -34,6 +35,10 @@ from .types import ASSETS_WITH_NO_CRYPTO_ORACLES, NON_CRYPTO_ASSETS, AssetType
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# Read once at import so that Asset.__eq__'s miss path only pays a global lookup for it.
+# Patched by the test suite, which turns the diagnostics into hard failures.
+ASSET_CASE_DIAGNOSTICS: Final = is_case_diagnostics_enabled()
 
 UnderlyingTokenDBTuple = tuple[str, str, str]
 
@@ -258,15 +263,32 @@ class Asset:
         return f'<Asset identifier:{self.identifier}>'
 
     def __eq__(self, other: object) -> bool:
+        """Compare identifiers exactly.
+
+        Casing is tolerated at the boundaries (the globaldb is COLLATE NOCASE and the
+        resolver returns the canonical identifier), so an identifier that differs only in
+        casing here means a boundary failed to normalize it. Comparing exactly keeps this
+        consistent with __hash__ and __lt__, which are both case sensitive.
+        """
         if other is None:
             return False
 
         if isinstance(other, Asset):
-            # fast path: identifiers are normally already-normalized and identical,
-            # so avoid lowercasing both sides on every comparison
-            return self.identifier == other.identifier or self.identifier.lower() == other.identifier.lower()  # noqa: E501
+            if self.identifier == other.identifier:
+                return True
+
+            if ASSET_CASE_DIAGNOSTICS:
+                report_case_mismatch(self.identifier, other.identifier)
+
+            return False
         if isinstance(other, str):
-            return self.identifier == other or self.identifier.lower() == other.lower()
+            if self.identifier == other:
+                return True
+
+            if ASSET_CASE_DIAGNOSTICS:
+                report_case_mismatch(self.identifier, other)
+
+            return False
 
         return False
 

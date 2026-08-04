@@ -15,7 +15,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_HEDGEY, VOTING_TOKEN_LOCKUPS, VOTING_TOKEN_LOCKUPS_ABI
@@ -63,12 +62,12 @@ class HedgeyDecoder(EvmDecoderInterface):
     def _decode_vault_creation(self, context: DecoderContext) -> EvmDecodingOutput:
         vault_address = bytes_to_address(context.tx_log.data[:32])
         plan_id = int.from_bytes(context.tx_log.topics[1])
-        owner_address = deserialize_evm_address(self.node_inquirer.call_contract(
+        owner_address = self.node_inquirer.call_contract(
             contract_address=VOTING_TOKEN_LOCKUPS,
             abi=VOTING_TOKEN_LOCKUPS_ABI,
             method_name='ownerOf',
             arguments=[plan_id],
-        ))
+        )
         if not self.base.is_tracked(owner_address):
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -113,12 +112,12 @@ class HedgeyDecoder(EvmDecoderInterface):
             (contract.address, contract.encode(method_name='ownerOf', arguments=[plan_id])),
         ]
         output = self.node_inquirer.multicall(calls=calls)
-        token_address = deserialize_evm_address(
-            contract.decode(result=output[0], method_name='plans', arguments=[plan_id])[0],
-        )
-        owner_address = deserialize_evm_address(
-            contract.decode(result=output[1], method_name='ownerOf', arguments=[plan_id])[0],
-        )
+        token_address = contract.decode(
+            result=output[0], method_name='plans', arguments=[plan_id],
+        )[0]
+        owner_address = contract.decode(
+            result=output[1], method_name='ownerOf', arguments=[plan_id],
+        )[0]
         if not self.base.is_tracked(owner_address):
             return DEFAULT_EVM_DECODING_OUTPUT
 

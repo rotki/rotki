@@ -18,10 +18,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
@@ -282,12 +280,12 @@ class YearnvestingDecoder(EvmDecoderInterface):
             return token
 
         try:
-            token_address = deserialize_evm_address(self.node_inquirer.call_contract(
+            token_address = self.node_inquirer.call_contract(
                 contract_address=escrow,
                 abi=VESTING_ESCROW_ABI,
                 method_name='token',
-            ))
-        except (RemoteError, DeserializationError) as e:
+            )
+        except RemoteError as e:
             log.error('Failed to query the token of yearn vesting escrow %s due to %s', escrow, e)
             return None
 
@@ -300,12 +298,12 @@ class YearnvestingDecoder(EvmDecoderInterface):
             return recipient
 
         try:
-            recipient = deserialize_evm_address(self.node_inquirer.call_contract(
+            recipient = self.node_inquirer.call_contract(
                 contract_address=escrow,
                 abi=VESTING_ESCROW_ABI,
                 method_name='recipient',
-            ))
-        except (RemoteError, DeserializationError) as e:
+            )
+        except RemoteError as e:
             log.error('Failed to query the recipient of yearn vesting escrow %s due to %s', escrow, e)  # noqa: E501
             return None
 

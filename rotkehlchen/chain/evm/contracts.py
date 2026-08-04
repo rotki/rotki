@@ -1,7 +1,10 @@
 import json
 import logging
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeVar, overload
 
+from eth_abi.exceptions import DecodingError
+from eth_utils import to_checksum_address
 from eth_utils.abi import get_abi_output_types
 from web3 import Web3
 from web3._utils.contracts import find_matching_event_abi
@@ -32,6 +35,82 @@ WEB3 = Web3()
 
 
 _WEB3_CONTRACT_CACHE: dict[tuple[ChecksumEvmAddress, int], Any] = {}
+
+
+@lru_cache(maxsize=1024)
+def _split_tuple_components(tuple_type: str) -> list[str]:
+    """Split a collapsed abi tuple type into the types of its components.
+
+    '(bool,address,(uint256,string))' -> ['bool', 'address', '(uint256,string)']
+
+    Cached since an array of structs re-splits the same type once per element and the
+    types come from a fixed set of abis. The result is only ever read, never mutated.
+    """
+    components: list[str] = []
+    depth, start, inner = 0, 0, tuple_type[1:-1]
+    for idx, char in enumerate(inner):
+        if char == '(':
+            depth += 1
+        elif char == ')':
+            depth -= 1
+        elif char == ',' and depth == 0:
+            components.append(inner[start:idx])
+            start = idx + 1
+
+    if len(last := inner[start:]) != 0:
+        components.append(last)
+
+    return components
+
+
+def _checksum_address_output(value: Any, output_type: str) -> Any:
+    """Checksum the address typed parts of one decoded output value.
+
+    Recurses through arrays of any dimension and through tuples (structs) at any nesting
+    depth, since either can hold addresses.
+    """
+    if output_type == 'address':
+        return to_checksum_address(value)
+
+    if output_type.endswith(']'):
+        # an abi array type spells its outermost dimension last, so stripping the trailing
+        # [] or [n] gives the element type. Keep whatever container the codec produced
+        inner_type = output_type[:output_type.rindex('[')]
+        return type(value)(_checksum_address_output(item, inner_type) for item in value)
+
+    return tuple(  # a tuple (struct), which the codec decodes into a plain python tuple
+        _checksum_address_output(item, component_type) if 'address' in component_type else item
+        for item, component_type in zip(
+            value,
+            _split_tuple_components(output_type),
+            strict=True,
+        )
+    )
+
+
+def checksum_decoded_addresses(
+        values: tuple[Any, ...],
+        output_types: list[str],
+) -> tuple[Any, ...]:
+    """Checksum any address typed value decoded from a contract call.
+
+    web3's raw abi codec returns addresses lowercased, unlike its higher level contract api.
+    Decoders feed these straight into token creation and asset identifiers are compared
+    exactly, so a lowercased address here builds an identifier that never matches the
+    canonical one. Everything downstream is annotated ChecksumEvmAddress already.
+
+    An address can sit at any nesting depth of an array or a tuple (struct), so all of those
+    are walked. `address` only ever appears in an abi type as the elementary type itself, so
+    a substring check is enough to tell an output that needs walking from one that does not.
+    """
+    if not any('address' in output_type for output_type in output_types):
+        return values  # nothing to do, which is the common case
+
+    return tuple(
+        _checksum_address_output(value, output_type)
+        if 'address' in output_type else value
+        for value, output_type in zip(values, output_types, strict=False)
+    )
 
 
 def _get_web3_contract(address: ChecksumEvmAddress, abi: ABI) -> Any:
@@ -107,7 +186,15 @@ class EvmContract(NamedTuple):
             *(arguments or []),
         )
         output_types = get_abi_output_types(fn_abi)
-        return WEB3.codec.decode(output_types, result)
+        try:
+            values = WEB3.codec.decode(output_types, result)
+        except DecodingError as e:
+            raise DeserializationError(
+                f'Failed to decode the {method_name} result of contract {self.address} '
+                f'as {output_types} due to {e!s}',
+            ) from e
+
+        return checksum_decoded_addresses(values=values, output_types=output_types)
 
     def decode_event(
             self,

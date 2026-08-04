@@ -41,7 +41,7 @@ class MetamaskCommonDecoder(EvmDecoderInterface):
         """
         This function is used to decode the swap done by metamask.
 
-        By reading the contract code: https://etherscan.io/address/0x881d40237659c251811cec9c364ef91dc08d300c#code#F18#L95
+        By reading the contract code: https://etherscan.io/address/0x881D40237659C251811CEC9c364ef91dC08D300C#code#F18#L95
         the spending address and the receiving address seems to always be the same,
         so it doesn't check for that.
         """
