@@ -16,9 +16,10 @@ import SolanaEventForm from '@/modules/history/management/forms/SolanaEventForm.
 import SolanaSwapEventForm from '@/modules/history/management/forms/SolanaSwapEventForm.vue';
 import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue';
 
+/** The seam every entry-type form is driven through. */
 interface FormComponent {
   save: () => Promise<boolean>;
-  v$: { $errors: unknown[] };
+  errorCount: number;
 }
 
 interface HistoryEventFormProps {
@@ -76,9 +77,9 @@ const formComponents: Record<HistoryEventEntryType, Component> = {
 
 const errorCount = computed<number>(() => {
   const formRef = get(form);
-  if (!formRef?.v$)
+  if (!formRef)
     return 0;
-  return formRef.v$.$errors.length;
+  return formRef.errorCount;
 });
 
 async function save() {

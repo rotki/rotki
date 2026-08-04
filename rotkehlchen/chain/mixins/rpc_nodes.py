@@ -444,11 +444,23 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
             try:  # Also make sure we are actually connected to the right network
                 if connectivity_check:
                     try:
-                        network_id = int(web3.net.version, 0)  # version can be in hex too. base 0 triggers the prefix check  # noqa: E501
+                        version = web3.net.version
                     except requests.RequestException as e:
                         msg = (
                             f'Connected to node {node} at endpoint {rpc_endpoint} but'
                             f'failed to request node version due to {e!s}'
+                        )
+                        log.warning(msg)
+                        return False, msg
+
+                    try:  # version can be in hex too. base 0 triggers the prefix check
+                        network_id = int(version, 0)
+                    except (TypeError, ValueError):
+                        # a broken node can answer net_version with a non-string result such
+                        # as an error object: {'code': 503, 'message': 'server unavailable'}
+                        msg = (
+                            f'Connected to node {node} at endpoint {rpc_endpoint} but '
+                            f'got an unexpected node version response: {version}'
                         )
                         log.warning(msg)
                         return False, msg

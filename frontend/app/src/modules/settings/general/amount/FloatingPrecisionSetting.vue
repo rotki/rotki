@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { helpers, required } from '@vuelidate/validators';
+import { numberSettingSchema } from '@/modules/settings/controls/setting-field-schemas';
 import SettingNumber from '@/modules/settings/controls/SettingNumber.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const rules = {
-  value: {
-    required: helpers.withMessage(t('general_settings.validation.floating_precision.non_empty'), required),
-  },
-};
+const schema = numberSettingSchema({
+  messages: { required: t('general_settings.validation.floating_precision.non_empty') },
+});
 
 function errorMessage(precision: number): string {
   return t('general_settings.validation.floating_precision.error', { precision });
@@ -23,7 +21,7 @@ function successMessage(precision: number): string {
   <SettingNumber
     setting="floatingPrecision"
     data-testid="floating-precision-settings"
-    :rules="rules"
+    :schema="schema"
     :label="t('general_settings.amount.labels.floating_precision')"
     :error-message="errorMessage"
     :success-message="successMessage"

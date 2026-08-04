@@ -1,10 +1,12 @@
 import type { MaybeRefOrGetter } from 'vue';
 import { Blockchain } from '@rotki/common';
-import { omit } from 'es-toolkit';
 import { api } from '@/modules/core/api/rotki-api';
-import { type BlockchainRpcNode, BlockchainRpcNodeList } from '@/modules/settings/types/rpc';
-
-const READ_ONLY_FIELDS = ['isArchive'] as const;
+import {
+  type BlockchainRpcNode,
+  BlockchainRpcNodeAddPayload,
+  BlockchainRpcNodeEditPayload,
+  BlockchainRpcNodeList,
+} from '@/modules/settings/types/rpc';
 
 interface UseEvmNodesApiReturn {
   fetchEvmNodes: () => Promise<BlockchainRpcNodeList>;
@@ -22,9 +24,9 @@ export function useEvmNodesApi(chain: MaybeRefOrGetter<string> = Blockchain.ETH)
     return BlockchainRpcNodeList.parse(response);
   };
 
-  const addEvmNode = async (node: Omit<BlockchainRpcNode, 'identifier'>): Promise<boolean> => api.put<boolean>(get(url), omit(node, READ_ONLY_FIELDS));
+  const addEvmNode = async (node: Omit<BlockchainRpcNode, 'identifier'>): Promise<boolean> => api.put<boolean>(get(url), BlockchainRpcNodeAddPayload.parse(node));
 
-  const editEvmNode = async (node: BlockchainRpcNode): Promise<boolean> => api.patch<boolean>(get(url), omit(node, READ_ONLY_FIELDS));
+  const editEvmNode = async (node: BlockchainRpcNode): Promise<boolean> => api.patch<boolean>(get(url), BlockchainRpcNodeEditPayload.parse(node));
 
   const deleteEvmNode = async (identifier: number): Promise<boolean> => api.delete<boolean>(get(url), {
     body: { identifier },

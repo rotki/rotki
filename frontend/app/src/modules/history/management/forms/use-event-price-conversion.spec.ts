@@ -139,6 +139,34 @@ describe('useEventPriceConversion', () => {
     );
   });
 
+  it('should clear the price when the asset is cleared', async () => {
+    mockGetHistoricPrice.mockResolvedValueOnce(bigNumberify('2500'));
+
+    const amount = ref<string>('1');
+    const asset = ref<string | undefined>('ETH');
+    const showPriceFields = ref<boolean>(true);
+    const timestamp = ref<number>(1700000000000);
+
+    const { result } = withSetup(() => useEventPriceConversion({
+      amount,
+      asset,
+      showPriceFields,
+      timestamp,
+    }));
+
+    await flushPromises();
+    expect(get(result.modelAssetToFiatPrice)).toBe('2500');
+
+    // A form that resets after a save clears its asset; the price of the previous one must not
+    // stay on screen.
+    set(asset, undefined);
+    await flushPromises();
+
+    expect(get(result.modelAssetToFiatPrice)).toBe('');
+    expect(get(result.fetchedAssetToFiatPrice)).toBe('');
+    expect(get(result.modelFiatValue)).toBe('');
+  });
+
   it('should reset all values', async () => {
     mockGetHistoricPrice.mockResolvedValueOnce(bigNumberify('2500'));
 

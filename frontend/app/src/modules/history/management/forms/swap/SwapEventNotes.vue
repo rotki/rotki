@@ -1,13 +1,17 @@
 <script lang="ts" setup>
-import type { SwapEventUserNotes } from '@/modules/history/events/schemas';
+import type { SwapFeeState } from '@/modules/history/management/forms/swap-event-form';
 
-const userNotes = defineModel<SwapEventUserNotes>({ required: true });
+const spendNotes = defineModel<string>('spendNotes', { required: true });
+const receiveNotes = defineModel<string>('receiveNotes', { required: true });
 
-// Array indices: [0] = spend, [1] = receive, [2+] = fee(s)
+/**
+ * The fee rows themselves, so each note is edited on the fee it belongs to. The payload still sends
+ * one flat array, but assembling it is the transform's job, not this component's.
+ */
+const fees = defineModel<SwapFeeState[]>('fees', { required: true });
 
 defineProps<{
   errorMessages: string[];
-  feeCount: number;
 }>();
 
 const emit = defineEmits<{
@@ -15,6 +19,12 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+function feeLabel(index: number): string {
+  return get(fees).length > 1
+    ? t('swap_event_form.fee_notes_indexed', { index: index + 1 })
+    : t('swap_event_form.fee_notes');
+}
 </script>
 
 <template>
@@ -30,7 +40,7 @@ const { t } = useI18n({ useScope: 'global' });
 
       <div class="py-2">
         <RuiTextArea
-          v-model="userNotes[0]"
+          v-model="spendNotes"
           prepend-icon="lu-sticky-note"
           data-cy="spend-notes"
           variant="outlined"
@@ -43,7 +53,7 @@ const { t } = useI18n({ useScope: 'global' });
           @blur="emit('blur')"
         />
         <RuiTextArea
-          v-model="userNotes[1]"
+          v-model="receiveNotes"
           prepend-icon="lu-sticky-note"
           data-cy="receive-notes"
           variant="outlined"
@@ -56,17 +66,17 @@ const { t } = useI18n({ useScope: 'global' });
           @blur="emit('blur')"
         />
         <RuiTextArea
-          v-for="feeIndex in feeCount"
-          :key="`fee-${feeIndex}`"
-          v-model="userNotes[1 + feeIndex]"
+          v-for="(fee, index) in fees"
+          :key="index"
+          v-model="fee.userNotes"
           prepend-icon="lu-sticky-note"
-          :data-cy="`fee-notes-${feeIndex}`"
+          :data-cy="`fee-notes-${index + 1}`"
           variant="outlined"
           color="primary"
           max-rows="5"
           min-rows="3"
           auto-grow
-          :label="feeCount > 1 ? t('swap_event_form.fee_notes_indexed', { index: feeIndex }) : t('swap_event_form.fee_notes')"
+          :label="feeLabel(index)"
           :error-messages="errorMessages"
           @blur="emit('blur')"
         />

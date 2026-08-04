@@ -421,21 +421,21 @@ def test_globaldb_pragma_foreign_keys(globaldb):
     cursor.execute(
         """
         INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES(
-        'eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017', 'A', 'A',
+        'eip155:100/erc20:0xD178b20C6007572bD1FD01D205cC20D32B4a6017', 'A', 'A',
         '0xD178b20c6007572bD1FD01D205cC20D32B4A6017', 18, NULL)
         """,
     )
     cursor.execute(
         """
         INSERT INTO assets(identifier, name, type) VALUES(
-        'eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017', 'Aidus', 'C')
+        'eip155:100/erc20:0xD178b20C6007572bD1FD01D205cC20D32B4a6017', 'Aidus', 'C')
         """,
     )
     cursor.execute(
         """
         INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare,
         forked, started, swapped_for)
-        VALUES('eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017',
+        VALUES('eip155:100/erc20:0xD178b20C6007572bD1FD01D205cC20D32B4a6017',
         NULL, 'AIDU', '', NULL, 123, NULL);
         """,
     )

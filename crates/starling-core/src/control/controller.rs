@@ -58,20 +58,42 @@ pub struct ControllerSnapshot {
 }
 
 impl ControllerSnapshot {
-    /// The minimal boolean health safe for the public surface (§S3): `ok` once
-    /// every service is `Ready`, `degraded` if any has failed or degraded while
-    /// the supervisor is still alive to answer.
+    /// The minimal boolean health safe for the public surface (§S3).
+    ///
+    /// `ok` means "serving": every autostarted service is `Ready`, or is
+    /// `Degraded`, which by definition is a service the tree keeps running
+    /// without (today only `mcp`, whose `OnCrash` is `ReportOnly`). Treating that
+    /// as not-ok would have a container marked unhealthy — and restarted — over
+    /// an optional service, while rotki itself served every request fine.
+    ///
+    /// `degraded` means "something that should be up is down": a service is dead
+    /// (`Degraded`/`Failed`) or bouncing (`Restarting`). Those three states are
+    /// only reachable by a service that was actually started, which is what makes
+    /// this "down" rather than "not enabled" — a service nobody started is `Idle`
+    /// and one deliberately stopped is `Stopped`, and neither is a complaint.
+    /// Note that it is therefore **not** filtered by `autostart`: an optional
+    /// service started by hand and since dead is exactly the case this reports.
+    ///
+    /// The two flags are independent, and the pair is what separates a tree in
+    /// trouble (`false`/`true`) from one merely still starting (`false`/`false`).
+    ///
+    /// core and colibri carry the default `ExitSupervisor` policy, so their death
+    /// ends the supervisor and this endpoint stops answering entirely rather than
+    /// reporting on it.
     pub fn health(&self) -> HealthResult {
-        let autostart_services = self.services.iter().filter(|service| service.autostart);
-        let ok = autostart_services.clone().next().is_some()
-            && autostart_services
-                .clone()
-                .all(|service| service.state == ServiceState::Ready);
-        let degraded = self
+        let mut autostart = self
             .services
             .iter()
             .filter(|service| service.autostart)
-            .any(|s| matches!(s.state, ServiceState::Failed | ServiceState::Degraded));
+            .peekable();
+        let ok = autostart.peek().is_some()
+            && autostart.all(|s| matches!(s.state, ServiceState::Ready | ServiceState::Degraded));
+        let degraded = self.services.iter().any(|s| {
+            matches!(
+                s.state,
+                ServiceState::Degraded | ServiceState::Failed | ServiceState::Restarting
+            )
+        });
         HealthResult { ok, degraded }
     }
 
@@ -529,14 +551,18 @@ impl<S: Spawner> Controller<S> {
                                     policy.on_crash,
                                     OnCrash::Restart | OnCrash::RestartOrReport
                                 ) {
+                                    // `ReportOnly`: it is staying down and the tree
+                                    // carries on, which is `Degraded`, not `Failed`.
+                                    self.degrade(&service).await;
                                     continue;
                                 }
                                 if policy.max_retries == 0 {
                                     if policy.on_crash == OnCrash::RestartOrReport {
                                         error!(
                                             service,
-                                            "restart policy has no attempts; leaving service failed",
+                                            "restart policy has no attempts; leaving service degraded",
                                         );
+                                        self.degrade(&service).await;
                                         continue;
                                     }
                                     error!(service, "restart policy has no attempts");
@@ -588,8 +614,9 @@ impl<S: Spawner> Controller<S> {
                                         error!(
                                             service,
                                             max_retries = policy.max_retries,
-                                            "restart attempts exhausted; leaving service failed",
+                                            "restart attempts exhausted; leaving service degraded",
                                         );
+                                        self.degrade(&service).await;
                                         continue;
                                     }
                                     error!(
@@ -881,6 +908,18 @@ impl<S: Spawner> Controller<S> {
     }
 
     /// Emit a `crashed` event per newly-dead service, carrying its last error.
+    /// Move a crashed service the tree survives without from `Failed` to
+    /// `Degraded`, and republish so the health surface sees it. The crash was
+    /// already logged and emitted by the caller; this only records that we are
+    /// done reacting to it.
+    async fn degrade(&mut self, service: &str) {
+        if let Err(err) = self.supervisor.mark_degraded(service, self.grace).await {
+            error!(service, %err, "failed to mark crashed service degraded");
+            return;
+        }
+        self.publish();
+    }
+
     fn emit_crashes(&self, dead: &[String]) {
         for status in self.supervisor.status() {
             if dead.contains(&status.name) {
@@ -1050,6 +1089,62 @@ mod tests {
                 .depends_on("core")
                 .readiness(Readiness::Immediate),
         ]
+    }
+
+    fn snapshot_of(services: &[(ServiceState, bool)]) -> ControllerSnapshot {
+        ControllerSnapshot {
+            services: services
+                .iter()
+                .enumerate()
+                .map(|(index, (state, autostart))| ServiceStatus {
+                    name: format!("service-{index}"),
+                    state: *state,
+                    pid: None,
+                    restarts: 0,
+                    last_error: None,
+                    autostart: *autostart,
+                })
+                .collect(),
+            started_at: None,
+            proxy_url: None,
+        }
+    }
+
+    #[test]
+    fn health_separates_serving_from_troubled_from_starting() {
+        use ServiceState::{Degraded, Failed, Idle, Ready, Restarting, Stopped, WaitingReady};
+
+        /// `(services as (state, autostart), expected ok, expected degraded)`.
+        type Case = (&'static [(ServiceState, bool)], bool, bool);
+
+        let cases: [Case; 10] = [
+            // Nothing configured is not "healthy" — an empty tree serves nothing.
+            (&[], false, false),
+            (&[(Ready, true), (Ready, true)], true, false),
+            // Still coming up: not ready, but nothing is wrong yet. This is the
+            // case a readiness gate must not confuse with a broken tree.
+            (&[(Ready, true), (WaitingReady, true)], false, false),
+            // An optional service down for good: still serving, but say so.
+            (&[(Ready, true), (Degraded, true)], true, true),
+            // Dead and awaiting a retry, or bouncing: not serving right now.
+            (&[(Ready, true), (Failed, true)], false, true),
+            (&[(Ready, true), (Restarting, true)], false, true),
+            // Disabled (mcp with `mcp_autostart` off) is `Idle`, and deliberately
+            // stopped is `Stopped`. Neither is "down" — nothing should be running.
+            (&[(Ready, true), (Idle, false)], true, false),
+            (&[(Ready, true), (Stopped, false)], true, false),
+            // But an optional service that WAS started and has since died is down
+            // when it should be up, so it is reported even though it is not
+            // autostarted and does not hold `ok` back.
+            (&[(Ready, true), (Degraded, false)], true, true),
+            (&[(Ready, true), (Failed, false)], true, true),
+        ];
+
+        for (services, ok, degraded) in cases {
+            let health = snapshot_of(services).health();
+            assert_eq!(health.ok, ok, "ok for {services:?}");
+            assert_eq!(health.degraded, degraded, "degraded for {services:?}");
+        }
     }
 
     fn specs_with_optional_mcp() -> Vec<ServiceSpec> {
@@ -1762,7 +1857,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn exhausted_mcp_restarts_leave_only_mcp_failed() {
+    async fn exhausted_mcp_restarts_leave_only_mcp_degraded() {
         let spawner = TestSpawner::new();
         let mut services = specs_with_optional_mcp();
         let mcp = services
@@ -1803,7 +1898,7 @@ mod tests {
                         let status = status_handle.status(Transport::Stdio).unwrap();
                         if status.services.iter().any(|service| {
                             service.name == "mcp"
-                                && service.state == ServiceState::Failed
+                                && service.state == ServiceState::Degraded
                                 && service.restarts == 3
                         }) {
                             break;
@@ -1825,6 +1920,14 @@ mod tests {
             .iter()
             .filter(|service| service.name != "mcp")
             .all(|service| service.state == ServiceState::Ready));
+
+        // The whole point of `Degraded`: with an optional service down for good,
+        // the tree is still serving, so health stays `ok` and says why it is not
+        // clean. Reporting `ok: false` here would have a container restarted over
+        // a service rotki does not need to answer requests.
+        let health = handle.health(Transport::PublicHealth).unwrap();
+        assert!(health.ok, "an optional service being down is still serving");
+        assert!(health.degraded, "but it is not a clean bill of health");
     }
 
     #[tokio::test]
@@ -1868,7 +1971,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn zero_mcp_restart_attempts_leave_service_failed() {
+    async fn zero_mcp_restart_attempts_leave_service_degraded() {
         let spawner = TestSpawner::new();
         let mut services = specs_with_optional_mcp();
         let mcp = services
@@ -1907,7 +2010,7 @@ mod tests {
                     loop {
                         let status = status_handle.status(Transport::Stdio).unwrap();
                         if status.services.iter().any(|service| {
-                            service.name == "mcp" && service.state == ServiceState::Failed
+                            service.name == "mcp" && service.state == ServiceState::Degraded
                         }) {
                             break;
                         }
@@ -1931,7 +2034,7 @@ mod tests {
                 .find(|service| service.name == "mcp")
                 .unwrap()
                 .state,
-            ServiceState::Failed,
+            ServiceState::Degraded,
         );
     }
 

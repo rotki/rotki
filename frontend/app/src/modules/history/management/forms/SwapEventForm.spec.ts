@@ -3,6 +3,7 @@ import type { TradeLocationData } from '@/modules/core/common/location';
 import type { AddSwapEventPayload, EditSwapEventPayload, SwapEvent } from '@/modules/history/events/schemas';
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { selectorContract } from '@test/utils/selector-contract';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -130,6 +131,29 @@ describe('forms/SwapEventForm', () => {
       plugins: [pinia],
     },
     ...options,
+  });
+
+  it('should render the documented e2e selector contract', () => {
+    wrapper = createWrapper();
+    // The e2e suite finds every field through these selectors; losing one is an e2e break.
+    expect(selectorContract(wrapper)).toMatchInlineSnapshot(`
+      [
+        "data-cy=advanced-accordion",
+        "data-cy=datetime",
+        "data-cy=fee-add",
+        "data-cy=fee-amount",
+        "data-cy=fee-asset",
+        "data-cy=has-fee",
+        "data-cy=location",
+        "data-cy=receive-amount",
+        "data-cy=receive-asset",
+        "data-cy=receive-notes",
+        "data-cy=spend-amount",
+        "data-cy=spend-asset",
+        "data-cy=spend-notes",
+        "data-cy=unique-id",
+      ]
+    `);
   });
 
   it('should render the form correctly', () => {
@@ -383,6 +407,23 @@ describe('forms/SwapEventForm', () => {
         userNotes: ['spend note', 'receive note', 'updated fee note 1', 'updated fee note 2'],
       } satisfies EditSwapEventPayload),
     );
+  });
+
+  it('should keep the seeded fees when the dialog is pointed at a group that has them', async () => {
+    // The dialog reuses the form by swapping `data`, so enabling the fee through seeding must not
+    // trip the has-fee watcher into replacing the rows that were just loaded.
+    wrapper = createWrapper({
+      props: { data: { eventsInGroup: data.eventsInGroup.slice(0, 2), type: 'edit-group' } },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.setProps({ data });
+    await vi.advanceTimersToNextTimerAsync();
+
+    // A blank value here means the watcher replaced the loaded row with an empty one.
+    const feeAmount = wrapper.findAll<HTMLInputElement>('[data-cy=fee-amount] input');
+    expect(feeAmount).toHaveLength(1);
+    expect(feeAmount[0].element.value).toBe('1');
   });
 
   it('should auto-generate uniqueId when not provided on new event', async () => {

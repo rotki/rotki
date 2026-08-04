@@ -16,7 +16,6 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, TokenKind
 
 if TYPE_CHECKING:
@@ -92,13 +91,16 @@ class HopBalances(ProtocolWithBalance):
                 calls_chunk_size=chunk_size,
             )
             try:
-                checksummed_staking_token, checksummed_rewards_token = deserialize_evm_address(
+                checksummed_staking_token, checksummed_rewards_token = (
                     staking_contract.decode(result=token_data[0], method_name='stakingToken')[0],
-                ), deserialize_evm_address(
                     staking_contract.decode(result=token_data[1], method_name='rewardsToken')[0],
                 )
-            except DeserializationError:
-                log.error(f'Failed to deserialize staking or rewards token address for {self.evm_inquirer.chain_name} Hop contract {staking_contract.address}. Skipping')  # noqa: E501
+            except DeserializationError as e:
+                log.error(
+                    'Failed to read the staking or rewards token address for %s Hop contract '
+                    '%s due to %s. Skipping',
+                    self.evm_inquirer.chain_name, staking_contract.address, e,
+                )
                 continue
 
             try:

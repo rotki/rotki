@@ -1794,6 +1794,29 @@ def test_upgrade_v16_v17(
         messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test the global DB upgrade from v16 to v17."""
+    # a token created from an address that reached the db without being checksummed, plus a
+    # reference to it from a child of assets and one from a child of evm_tokens
+    lowercased = (checksummed := '0xaB19dE37aB19DE37AB19de37Ab19de37ab19de37').lower()
+    old_identifier, new_identifier = f'eip155:1/erc20:{lowercased}', f'eip155:1/erc20:{checksummed}'  # noqa: E501
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            "INSERT INTO assets(identifier, name, type) VALUES(?, 'Lowercased', 'C')",
+            (old_identifier,),
+        )
+        write_cursor.execute(
+            'INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals) '
+            "VALUES(?, 'A', 1, ?, 18)",
+            (old_identifier, lowercased),
+        )
+        write_cursor.execute(
+            'INSERT INTO user_owned_assets(asset_id) VALUES(?)', (old_identifier,),
+        )
+        write_cursor.execute(
+            'INSERT INTO underlying_tokens_list(identifier, weight, parent_token_entry) '
+            "VALUES(?, '1', ?)",
+            (A_STETH.identifier, old_identifier),
+        )
+
     assert globaldb.get_setting_value('version', 0) == 14
     with globaldb.conn.read_ctx() as cursor:
         assert table_exists(cursor=cursor, name='location_unsupported_assets') is True
@@ -1832,6 +1855,22 @@ def test_upgrade_v16_v17(
         ).fetchone()[0] == 10
         assert index_exists(cursor=cursor, name='idx_price_history_identifier') is False
         assert index_exists(cursor=cursor, name='idx_price_history_pair_timestamp') is True
+        # the non-checksummed token is now canonical, in the assets table, in its own row and
+        # in every column referencing it. A case only change does not cascade, so each of
+        # those had to be written by the upgrade itself
+        assert cursor.execute(
+            'SELECT address FROM evm_tokens WHERE identifier=?', (new_identifier,),
+        ).fetchone() == (checksummed,)
+        for table, column in (
+                ('assets', 'identifier'),
+                ('evm_tokens', 'identifier'),
+                ('user_owned_assets', 'asset_id'),
+                ('underlying_tokens_list', 'parent_token_entry'),
+        ):
+            assert cursor.execute(
+                f'SELECT COUNT(*) FROM {table} WHERE {column}=? AND {column} GLOB ?',
+                (new_identifier, f'*{checksummed}*'),  # GLOB is the case sensitive comparison
+            ).fetchone()[0] == 1, f'{table}.{column} kept the non-canonical identifier'
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

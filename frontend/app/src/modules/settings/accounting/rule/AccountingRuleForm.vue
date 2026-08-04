@@ -75,9 +75,13 @@ defineExpose({
     v-model:event-type="eventType"
     v-model:event-subtype="eventSubtype"
     :counterparty="counterparty"
-    :v$="v$"
+    :error-messages="{
+      eventType: toMessages(v$.eventType),
+      eventSubtype: toMessages(v$.eventSubtype),
+    }"
     :disabled="isEventSpecificRule"
     disable-warning
+    @touch="v$.eventType.$touch(); v$.eventSubtype.$touch()"
   />
 
   <CounterpartyInput

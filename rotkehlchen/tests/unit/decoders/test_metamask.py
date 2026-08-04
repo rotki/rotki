@@ -41,9 +41,9 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.types import ChecksumEvmAddress
 
-A_LUX = Asset('eip155:1/erc20:0x88dafebb769311d7fbbeb9a21431fa026d4100d0')
+A_LUX = Asset('eip155:1/erc20:0x88DAfEBb769311D7Fbbeb9a21431FA026D4100d0')
 A_OTACON = Asset('eip155:1/erc20:0x0F17eeCcc84739b9450C88dE0429020e2DEC05eb')
-A_INU = Asset('eip155:1/erc20:0xc76d53f988820fe70e01eccb0248b312c2f1c7ca')
+A_INU = Asset('eip155:1/erc20:0xC76D53F988820fe70E01eCCb0248B312c2f1c7cA')
 A_MOG = Asset('eip155:1/erc20:0xaaeE1A9723aaDB7afA2810263653A34bA2C21C7a')
 A_INJ = Asset('eip155:1/erc20:0xe28b3B32B6c345A34Ff64674606124Dd5Aceca30')
 A_ARBITRUM_USDC = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')

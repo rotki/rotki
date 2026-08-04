@@ -6,7 +6,7 @@ from http import HTTPStatus
 from itertools import starmap
 from typing import TYPE_CHECKING, Any
 from unittest import mock
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 import requests
@@ -1302,6 +1302,31 @@ def test_connect_rpc_with_hex_chainid(ethereum_inquirer: EthereumInquirer):
     assert success is True and msg == ''
 
 
+@pytest.mark.parametrize('network_mocking', [False])
+def test_connect_rpc_with_broken_version_response(ethereum_inquirer: EthereumInquirer):
+    """Test that a node replying to net_version with a non-string result, such as an error
+    object, only fails the connection instead of raising and killing the querying task"""
+    with (
+        patch('web3.main.Web3.is_connected', return_value=True),
+        patch(
+            'web3.net.Net.version',
+            new_callable=PropertyMock,
+            return_value={'code': 503, 'message': 'server unavailable'},
+        ),
+    ):
+        success, msg = ethereum_inquirer.attempt_connect(
+            node=NodeName(
+                name='broken node',
+                endpoint='https://1rpc.io/eth',
+                owned=False,
+                blockchain=SupportedBlockchain.ETHEREUM,
+            ),
+        )
+
+    assert success is False
+    assert 'unexpected node version response' in msg
+
+
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_fake_symbol_doesnt_query_cc(inquirer: Inquirer):
     """Test that a token that has the symbol of another token (like USDC) doesn't trigger
@@ -1505,7 +1530,7 @@ def test_find_balancer_v3_pool_price(database: DBHandler, inquirer_defi: Inquire
     )
     fluid_wsteth_weth_token = get_or_create_evm_token(  # another v3 pool
         userdb=database,
-        evm_address=string_to_evm_address('0x6b31a94029fd7840d780191b6d63fa0d269bd883'),
+        evm_address=string_to_evm_address('0x6b31a94029fd7840d780191B6D63Fa0D269bd883'),
         chain_id=ChainID.ETHEREUM,
         token_kind=TokenKind.ERC20,
         symbol='Surge Fluid wstETH-wETH',
@@ -1749,7 +1774,7 @@ def test_find_beefy_finance_boost_vault_price(
             weight=ONE,
         )],
     )
-    assert inquirer_defi.find_usd_price(rmoo_token) == FVal('199.06067619344672271996351206958275405755224768387246')  # noqa: E501
+    assert inquirer_defi.find_usd_price(rmoo_token) == FVal('58.80633126452384511790859841155348819836104460605700')  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

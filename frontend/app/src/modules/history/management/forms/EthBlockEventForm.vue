@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import type { EthBlockEvent, NewEthBlockEventPayload } from '@/modules/history/events/schemas';
+import type { EthBlockEvent } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import { Blockchain, HistoryEventEntryType, Zero } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import dayjs from 'dayjs';
-import { isEmpty } from 'es-toolkit/compat';
+import { Blockchain } from '@rotki/common';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { toMessages } from '@/modules/core/common/validation/validation';
-import { useEditModeStateTracker } from '@/modules/history/events/use-edit-mode-state-tracker';
-import { useHistoryEventsForm } from '@/modules/history/events/use-history-events-form';
+import {
+  emptyEthBlockForm,
+  ethBlockSchema,
+  ethBlockStateFromEvent,
+  ethBlockStateFromGroup,
+  EVENT_PRICE_INTENT_KEYS,
+  toEthBlockPayload,
+} from '@/modules/history/management/forms/eth-block-event-form';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
-import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
+import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
@@ -26,151 +26,34 @@ const { data } = defineProps<EthBlockEventFormProps>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
-
-const groupIdentifier = ref<string>('');
-const hasActualGroupIdentifier = ref<boolean>(false);
-const timestamp = ref<number>(0);
-const amount = ref<string>('');
-const blockNumber = ref<string>('');
-const validatorIndex = ref<string>('');
-const feeRecipient = ref<string>('');
-const isMevReward = ref<boolean>(false);
-
-const errorMessages = ref<Record<string, string[]>>({});
-
-const { createCommonRules } = useEventFormValidation();
-const commonRules = createCommonRules();
-
-const rules = {
-  amount: commonRules.createRequiredAmountRule(),
-  blockNumber: commonRules.createRequiredBlockNumberRule(),
-  feeRecipient: commonRules.createRequiredValidFeeRecipientRule(),
-  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => data.type === 'edit'),
-  timestamp: commonRules.createExternalValidationRule(),
-  validatorIndex: commonRules.createRequiredValidatorIndexRule(),
-};
-
-const numericAmount = bigNumberifyFromRef(amount);
-
-const { saveHistoryEventHandler } = useHistoryEventsForm();
-const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStateTracker();
-
-const states = {
-  amount,
-  blockNumber,
-  feeRecipient,
-  groupIdentifier,
-  isMevReward,
-  timestamp,
-  validatorIndex,
-};
-
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
-useFormStateWatcher(states, stateUpdated);
-
-function reset() {
-  set(groupIdentifier, null);
-  set(hasActualGroupIdentifier, false);
-  set(timestamp, dayjs().valueOf());
-  set(amount, '0');
-  set(blockNumber, '');
-  set(validatorIndex, '');
-  set(feeRecipient, '');
-  set(isMevReward, false);
-  set(errorMessages, {});
-
-  get(assetPriceForm)?.reset();
-}
-
-function applyEditableData(entry: EthBlockEvent) {
-  const hasActual = !!entry.actualGroupIdentifier;
-  set(hasActualGroupIdentifier, hasActual);
-  set(groupIdentifier, hasActual ? entry.actualGroupIdentifier! : entry.groupIdentifier);
-  set(timestamp, entry.timestamp);
-  set(amount, entry.amount.toFixed());
-  set(blockNumber, entry.blockNumber.toString());
-  set(validatorIndex, entry.validatorIndex.toString());
-  set(feeRecipient, entry.locationLabel);
-  set(isMevReward, entry.eventSubtype === 'mev reward');
-
-  // Capture state snapshot for edit mode comparison
-  captureEditModeStateFromRefs(states);
-}
-
-function applyGroupHeaderData(entry: EthBlockEvent) {
-  set(groupIdentifier, entry.groupIdentifier);
-  set(feeRecipient, entry.locationLabel ?? '');
-  set(blockNumber, entry.blockNumber.toString());
-  set(validatorIndex, entry.validatorIndex.toString());
-  set(timestamp, entry.timestamp);
-}
-
-watch(errorMessages, (errors) => {
-  if (!isEmpty(errors))
-    get(v$).$validate();
-});
-
-async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate())) {
-    return false;
-  }
-
-  const eventData = data;
-  const editable = eventData.type === 'edit' ? eventData.event : undefined;
-
-  const payload: NewEthBlockEventPayload = {
-    amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-    blockNumber: parseInt(get(blockNumber)),
-    entryType: HistoryEventEntryType.ETH_BLOCK_EVENT,
-    feeRecipient: get(feeRecipient),
-    groupIdentifier: get(groupIdentifier),
-    isMevReward: get(isMevReward),
-    timestamp: get(timestamp),
-    validatorIndex: parseInt(get(validatorIndex)),
-  };
-
-  return await saveHistoryEventHandler(
-    editable ? { ...payload, identifier: editable.identifier } : payload,
-    assetPriceForm,
-    errorMessages,
-    reset,
-    shouldSkipSaveFromRefs(!!editable, states),
-  );
-}
-
-function checkPropsData() {
-  const formData = data;
-  if (formData.type === 'edit') {
-    applyEditableData(formData.event);
-    return;
-  }
-  if (formData.type === 'group-add') {
-    applyGroupHeaderData(formData.group);
-    return;
-  }
-  reset();
-}
-
-watch(() => data, checkPropsData);
-onMounted(() => {
-  checkPropsData();
-});
-
 const { getAddresses } = useAccountAddresses();
 
-const feeRecipientSuggestions = computed(() => getAddresses(Blockchain.ETH));
+const { form, save, seed } = useHistoryEventForm({
+  initial: emptyEthBlockForm,
+  priceIntentKeys: EVENT_PRICE_INTENT_KEYS,
+  priceIntents: state => (state.priceIntent ? [state.priceIntent] : []),
+  schema: computed(() => ethBlockSchema(data.type === 'edit')),
+  stateUpdated,
+  toEditPayload: (payload, identifiers) => ({ ...payload, identifier: identifiers[0] }),
+  transform: toEthBlockPayload,
+});
+
+const { state } = form;
+
+const feeRecipientSuggestions = computed<string[]>(() => getAddresses(Blockchain.ETH));
+
+watchImmediate(() => data, (data) => {
+  if (data.type === 'edit') {
+    seed(ethBlockStateFromEvent(data.event), [data.event.identifier]);
+    return;
+  }
+
+  seed(data.type === 'group-add' ? ethBlockStateFromGroup(data.group) : emptyEthBlockForm());
+});
 
 defineExpose({
+  errorCount: form.errorCount,
   save,
-  v$,
 });
 </script>
 
@@ -178,7 +61,7 @@ defineExpose({
   <div>
     <div class="grid md:grid-cols-4 gap-4 mb-4">
       <DateTimePicker
-        v-model="timestamp"
+        v-model="state.timestamp"
         class="md:col-span-2"
         :label="t('common.datetime')"
         required
@@ -188,58 +71,59 @@ defineExpose({
         accuracy="millisecond"
         data-cy="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
-        :error-messages="toMessages(v$.timestamp)"
-        @blur="v$.timestamp.$touch()"
+        :error-messages="form.errors('timestamp')"
+        @blur="form.touch('timestamp')"
       />
       <AmountInput
-        v-model="blockNumber"
+        v-model="state.blockNumber"
         variant="outlined"
         integer
         data-cy="blockNumber"
         :label="t('transactions.events.form.block_number.label')"
         required
-        :error-messages="toMessages(v$.blockNumber)"
-        @blur="v$.blockNumber.$touch()"
+        :error-messages="form.errors('blockNumber')"
+        @blur="form.touch('blockNumber')"
       />
       <AmountInput
-        v-model="validatorIndex"
+        v-model="state.validatorIndex"
         variant="outlined"
         integer
         data-cy="validatorIndex"
         :label="t('transactions.events.form.validator_index.label')"
         required
-        :error-messages="toMessages(v$.validatorIndex)"
-        @blur="v$.validatorIndex.$touch()"
+        :error-messages="form.errors('validatorIndex')"
+        @blur="form.touch('validatorIndex')"
       />
     </div>
 
     <RuiDivider class="mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
-      ref="assetPriceForm"
-      v-model:amount="amount"
+      v-model:amount="state.amount"
+      v-model:price-intent="state.priceIntent"
       asset="ETH"
-      :v$="v$"
-      :timestamp="timestamp"
+      :error-messages="{ amount: form.errors('amount') }"
+      :timestamp="state.timestamp"
       location="ethereum"
       disable-asset
+      @blur="form.touch('amount')"
     />
 
     <RuiDivider class="mb-6" />
 
     <AutoCompleteWithSearchSync
-      v-model="feeRecipient"
+      v-model="state.feeRecipient"
       :items="feeRecipientSuggestions"
       data-cy="feeRecipient"
       :label="t('transactions.events.form.fee_recipient.label')"
       required
-      :error-messages="toMessages(v$.feeRecipient)"
+      :error-messages="form.errors('feeRecipient')"
       auto-select-first
-      @blur="v$.feeRecipient.$touch()"
+      @blur="form.touch('feeRecipient')"
     />
 
     <RuiCheckbox
-      v-model="isMevReward"
+      v-model="state.isMevReward"
       color="primary"
       data-cy="isMevReward"
     >
@@ -259,14 +143,14 @@ defineExpose({
         </template>
         <div class="py-2">
           <RuiTextField
-            v-model="groupIdentifier"
+            v-model="state.groupIdentifier"
             variant="outlined"
             color="primary"
             data-cy="groupIdentifier"
-            :disabled="hasActualGroupIdentifier"
+            :disabled="state.hasActualGroupIdentifier"
             :label="t('transactions.events.form.group_identifier.label')"
-            :error-messages="toMessages(v$.groupIdentifier)"
-            @blur="v$.groupIdentifier.$touch()"
+            :error-messages="form.errors('groupIdentifier')"
+            @blur="form.touch('groupIdentifier')"
           />
         </div>
       </RuiAccordion>

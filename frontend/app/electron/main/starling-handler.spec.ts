@@ -93,12 +93,17 @@ function emitReady(child: FakeChild): void {
   });
 }
 
-function makeLogger(): LogService {
+/**
+ * Accepts overrides so a test that asserts on a log line can hold the spy itself rather than
+ * reaching for `logger.info`, which would be an unbound method reference.
+ */
+function makeLogger(overrides: Partial<LogService> = {}): LogService {
   return createMock<LogService>({
     getLogLevel: vi.fn(() => LogLevel.INFO),
     get coreProcessLogPath(): string {
       return '/tmp/logs/rotkehlchen.log';
     },
+    ...overrides,
   });
 }
 
@@ -330,8 +335,9 @@ describe('starlingHandler', () => {
   it('should handle every lifecycle event starling can push', async () => {
     const child = makeFakeChild(nullResponder);
     spawnMock.mockImplementation(() => child);
-    const logger = makeLogger();
-    const handler = new StarlingHandler(logger, makeConfig());
+    const debug = vi.fn();
+    const info = vi.fn();
+    const handler = new StarlingHandler(makeLogger({ debug, info }), makeConfig());
 
     await handler.restartBackend({}, { onProcessError: vi.fn() });
     // The crash event has its own tests; the rest are informational, so the log
@@ -340,10 +346,10 @@ describe('starlingHandler', () => {
       writeMessage(child.stdout, { method });
     writeMessage(child.stdout, { method: 'event.unknown' });
 
-    await vi.waitFor(() => expect(logger.debug).toHaveBeenCalledWith('Unhandled control event: event.unknown'));
-    expect(logger.info).toHaveBeenCalledWith(`Backend event: ${StarlingEvent.READY}`);
-    expect(logger.info).toHaveBeenCalledWith(`Backend event: ${StarlingEvent.RESTARTING}`);
-    expect(logger.info).toHaveBeenCalledWith(`Backend event: ${StarlingEvent.STOPPED}`);
+    await vi.waitFor(() => expect(debug).toHaveBeenCalledWith('Unhandled control event: event.unknown'));
+    expect(info).toHaveBeenCalledWith(`Backend event: ${StarlingEvent.READY}`);
+    expect(info).toHaveBeenCalledWith(`Backend event: ${StarlingEvent.RESTARTING}`);
+    expect(info).toHaveBeenCalledWith(`Backend event: ${StarlingEvent.STOPPED}`);
   });
 
   it('should surface the data-dir-in-use exit code as a TERMINATED error', async () => {

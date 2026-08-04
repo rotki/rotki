@@ -3,6 +3,7 @@ import type { TradeLocationData } from '@/modules/core/common/location';
 import type { AddEvmSwapEventPayload, EditEvmSwapEventPayload, EvmSwapEvent } from '@/modules/history/events/schemas';
 import type { GroupAddEventData, GroupEventData } from '@/modules/history/management/forms/form-types';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { selectorContract } from '@test/utils/selector-contract';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
@@ -175,6 +176,39 @@ describe('forms/EvmSwapEventForm', () => {
       plugins: [pinia],
     },
     ...options,
+  });
+
+  it('should render the documented e2e selector contract', () => {
+    wrapper = createWrapper();
+    // The e2e suite finds every field through these selectors; losing one is an e2e break.
+    expect(selectorContract(wrapper)).toMatchInlineSnapshot(`
+      [
+        "data-cy=address",
+        "data-cy=advanced-accordion",
+        "data-cy=counterparty",
+        "data-cy=datetime",
+        "data-cy=fee",
+        "data-cy=fee-add",
+        "data-cy=fee-amount",
+        "data-cy=fee-asset",
+        "data-cy=fee-notes",
+        "data-cy=has-fee",
+        "data-cy=location",
+        "data-cy=location-label",
+        "data-cy=receive",
+        "data-cy=receive-add",
+        "data-cy=receive-amount",
+        "data-cy=receive-asset",
+        "data-cy=receive-notes",
+        "data-cy=sequence-index",
+        "data-cy=spend",
+        "data-cy=spend-add",
+        "data-cy=spend-amount",
+        "data-cy=spend-asset",
+        "data-cy=spend-notes",
+        "data-cy=tx-ref",
+      ]
+    `);
   });
 
   it('should render the form correctly', () => {

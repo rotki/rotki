@@ -2,6 +2,7 @@ import type { AssetMap } from '@/modules/assets/types';
 import type { TradeLocationData } from '@/modules/core/common/location';
 import type { AssetMovementEvent } from '@/modules/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
+import { selectorContract } from '@test/utils/selector-contract';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import flushPromises from 'flush-promises';
@@ -156,6 +157,33 @@ describe('forms/AssetMovementEventForm.vue', () => {
     ...options,
   });
 
+  it('should render the documented e2e selector contract', () => {
+    wrapper = createWrapper();
+    // The e2e suite finds every field through these selectors; losing one is an e2e break.
+    expect(selectorContract(wrapper)).toMatchInlineSnapshot(`
+      [
+        "data-cy=amount",
+        "data-cy=asset",
+        "data-cy=asset-movement-event-form__advance",
+        "data-cy=blockchain-id",
+        "data-cy=datetime",
+        "data-cy=eventSubtype",
+        "data-cy=fee-amount",
+        "data-cy=fee-asset",
+        "data-cy=groupIdentifier",
+        "data-cy=grouped-amount-input__swap-button",
+        "data-cy=has-fee",
+        "data-cy=location",
+        "data-cy=locationLabel",
+        "data-cy=notes",
+        "data-cy=primary",
+        "data-cy=secondary",
+        "data-cy=tx-ref",
+        "data-cy=unique-id",
+      ]
+    `);
+  });
+
   it('should show the default state when adding a new event', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
@@ -302,6 +330,27 @@ describe('forms/AssetMovementEventForm.vue', () => {
     expect(editHistoryEventMock).not.toHaveBeenCalled();
   });
 
+  it('should not save the event when the historic price fails to write', async () => {
+    wrapper = createWrapper({
+      props: { data: { eventsInGroup: [event], type: 'edit-group' } },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
+    // The event itself is edited too, so the save is only held back by the failed price write and
+    // not by the unchanged-in-edit-mode short circuit.
+    await wrapper.find('[data-cy=primary] input').setValue('1000');
+    await wrapper.find('[data-cy=amount] input').setValue('250');
+
+    addHistoricalPriceMock.mockRejectedValueOnce(new Error('price rejected'));
+
+    const saved = await wrapper.vm.save();
+    await nextTick();
+
+    expect(addHistoricalPriceMock).toHaveBeenCalled();
+    expect(editHistoryEventMock).not.toHaveBeenCalled();
+    expect(saved).toBe(false);
+  });
+
   it('should call editHistoryEvent when editing an event', async () => {
     wrapper = createWrapper({
       props: { data: { eventsInGroup: [event], type: 'edit-group' } },
@@ -432,6 +481,22 @@ describe('forms/AssetMovementEventForm.vue', () => {
         uniqueId: mockUUID,
       }),
     );
+  });
+
+  it('should keep a blank unique id when editing rather than assigning one', async () => {
+    // A movement whose extra data carries no reference must not be handed a fresh identifier on
+    // every save; only a new movement gets one generated.
+    const withoutReference: AssetMovementEvent = { ...event, extraData: null };
+    wrapper = createWrapper({
+      props: { data: { eventsInGroup: [withoutReference], type: 'edit-group' } },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.find('[data-cy=amount] input').setValue('250');
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+
+    expect(await wrapper.vm.save()).toBe(true);
+    expect(editHistoryEventMock).toHaveBeenCalledWith(expect.objectContaining({ uniqueId: '' }));
   });
 
   it('should show eventTypes options correctly', async () => {

@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import type { EthWithdrawalEvent, NewEthWithdrawalEventPayload } from '@/modules/history/events/schemas';
+import type { EthWithdrawalEvent } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import { Blockchain, HistoryEventEntryType, Zero } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import dayjs from 'dayjs';
-import { isEmpty } from 'es-toolkit/compat';
+import { Blockchain } from '@rotki/common';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { toMessages } from '@/modules/core/common/validation/validation';
-import { useEditModeStateTracker } from '@/modules/history/events/use-edit-mode-state-tracker';
-import { useHistoryEventsForm } from '@/modules/history/events/use-history-events-form';
+import { EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/eth-block-event-form';
+import {
+  emptyEthWithdrawalForm,
+  ethWithdrawalSchema,
+  ethWithdrawalStateFromEvent,
+  ethWithdrawalStateFromGroup,
+  toEthWithdrawalPayload,
+} from '@/modules/history/management/forms/eth-withdrawal-event-form';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
-import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
+import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
@@ -27,142 +27,34 @@ const { data } = defineProps<EthWithdrawalEventFormProps>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
-
-const groupIdentifier = ref<string>('');
-const hasActualGroupIdentifier = ref<boolean>(false);
-const timestamp = ref<number>(0);
-const amount = ref<string>('');
-const validatorIndex = ref<string>('');
-const withdrawalAddress = ref<string>('');
-const isExit = ref<boolean>(false);
-
-const errorMessages = ref<Record<string, string[]>>({});
-
-const { createCommonRules } = useEventFormValidation();
-const commonRules = createCommonRules();
-
-const rules = {
-  amount: commonRules.createRequiredAmountRule(),
-  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => data.type === 'edit'),
-  timestamp: commonRules.createExternalValidationRule(),
-  validatorIndex: commonRules.createRequiredValidatorIndexRule(),
-  withdrawalAddress: commonRules.createRequiredValidWithdrawalAddressRule(),
-};
-
-const numericAmount = bigNumberifyFromRef(amount);
-
-const { saveHistoryEventHandler } = useHistoryEventsForm();
 const { getAddresses } = useAccountAddresses();
-const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStateTracker();
 
-const states = {
-  amount,
-  groupIdentifier,
-  isExit,
-  timestamp,
-  validatorIndex,
-  withdrawalAddress,
-};
-
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
-useFormStateWatcher(states, stateUpdated);
-
-const withdrawalAddressSuggestions = computed(() => getAddresses(Blockchain.ETH));
-
-function reset() {
-  set(groupIdentifier, null);
-  set(hasActualGroupIdentifier, false);
-  set(timestamp, dayjs().valueOf());
-  set(amount, '0');
-  set(validatorIndex, '');
-  set(withdrawalAddress, '');
-  set(isExit, false);
-  set(errorMessages, {});
-
-  get(assetPriceForm)?.reset();
-}
-
-function applyEditableData(entry: EthWithdrawalEvent) {
-  const hasActual = !!entry.actualGroupIdentifier;
-  set(hasActualGroupIdentifier, hasActual);
-  set(groupIdentifier, hasActual ? entry.actualGroupIdentifier! : entry.groupIdentifier);
-  set(timestamp, entry.timestamp);
-  set(amount, entry.amount.toFixed());
-  set(validatorIndex, entry.validatorIndex.toString());
-  set(withdrawalAddress, entry.locationLabel);
-  set(isExit, entry.isExit);
-
-  // Capture state snapshot for edit mode comparison
-  captureEditModeStateFromRefs(states);
-}
-
-function applyGroupHeaderData(entry: EthWithdrawalEvent) {
-  set(groupIdentifier, entry.groupIdentifier);
-  set(withdrawalAddress, entry.locationLabel ?? '');
-  set(validatorIndex, entry.validatorIndex.toString());
-  set(timestamp, entry.timestamp);
-}
-
-watch(errorMessages, (errors) => {
-  if (!isEmpty(errors))
-    get(v$).$validate();
+const { form, save, seed } = useHistoryEventForm({
+  initial: emptyEthWithdrawalForm,
+  priceIntentKeys: EVENT_PRICE_INTENT_KEYS,
+  priceIntents: state => (state.priceIntent ? [state.priceIntent] : []),
+  schema: computed(() => ethWithdrawalSchema(data.type === 'edit')),
+  stateUpdated,
+  toEditPayload: (payload, identifiers) => ({ ...payload, identifier: identifiers[0] }),
+  transform: toEthWithdrawalPayload,
 });
 
-async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate()))
-    return false;
+const { state } = form;
 
-  const eventData = data;
-  const editable = eventData.type === 'edit' ? eventData.event : undefined;
+const withdrawalAddressSuggestions = computed<string[]>(() => getAddresses(Blockchain.ETH));
 
-  const payload: NewEthWithdrawalEventPayload = {
-    amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-    entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
-    groupIdentifier: get(groupIdentifier),
-    isExit: get(isExit),
-    timestamp: get(timestamp),
-    validatorIndex: parseInt(get(validatorIndex)),
-    withdrawalAddress: get(withdrawalAddress),
-  };
-
-  return await saveHistoryEventHandler(
-    editable ? { ...payload, identifier: editable.identifier } : payload,
-    assetPriceForm,
-    errorMessages,
-    reset,
-    shouldSkipSaveFromRefs(!!editable, states),
-  );
-}
-
-function checkPropsData() {
-  const formData = data;
-  if (formData.type === 'edit') {
-    applyEditableData(formData.event);
+watchImmediate(() => data, (data) => {
+  if (data.type === 'edit') {
+    seed(ethWithdrawalStateFromEvent(data.event), [data.event.identifier]);
     return;
   }
-  if (formData.type === 'group-add') {
-    applyGroupHeaderData(formData.group);
-    return;
-  }
-  reset();
-}
 
-watch(() => data, checkPropsData);
-onMounted(() => {
-  checkPropsData();
+  seed(data.type === 'group-add' ? ethWithdrawalStateFromGroup(data.group) : emptyEthWithdrawalForm());
 });
 
 defineExpose({
+  errorCount: form.errorCount,
   save,
-  v$,
 });
 </script>
 
@@ -170,7 +62,7 @@ defineExpose({
   <div>
     <div class="grid md:grid-cols-2 gap-4 mb-4">
       <DateTimePicker
-        v-model="timestamp"
+        v-model="state.timestamp"
         :label="t('common.datetime')"
         required
         persistent-hint
@@ -179,49 +71,50 @@ defineExpose({
         accuracy="millisecond"
         data-cy="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
-        :error-messages="toMessages(v$.timestamp)"
-        @blur="v$.timestamp.$touch()"
+        :error-messages="form.errors('timestamp')"
+        @blur="form.touch('timestamp')"
       />
 
       <AmountInput
-        v-model="validatorIndex"
+        v-model="state.validatorIndex"
         variant="outlined"
         integer
         data-cy="validatorIndex"
         :label="t('transactions.events.form.validator_index.label')"
         required
-        :error-messages="toMessages(v$.validatorIndex)"
-        @blur="v$.validatorIndex.$touch()"
+        :error-messages="form.errors('validatorIndex')"
+        @blur="form.touch('validatorIndex')"
       />
     </div>
 
     <RuiDivider class="mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
-      ref="assetPriceForm"
-      v-model:amount="amount"
+      v-model:amount="state.amount"
+      v-model:price-intent="state.priceIntent"
       asset="ETH"
-      :v$="v$"
-      :timestamp="timestamp"
+      :error-messages="{ amount: form.errors('amount') }"
+      :timestamp="state.timestamp"
       location="ethereum"
       disable-asset
+      @blur="form.touch('amount')"
     />
 
     <RuiDivider class="mb-6" />
 
     <AutoCompleteWithSearchSync
-      v-model="withdrawalAddress"
+      v-model="state.withdrawalAddress"
       :items="withdrawalAddressSuggestions"
       data-cy="withdrawalAddress"
       :label="t('transactions.events.form.withdrawal_address.label')"
       required
-      :error-messages="toMessages(v$.withdrawalAddress)"
+      :error-messages="form.errors('withdrawalAddress')"
       auto-select-first
-      @blur="v$.withdrawalAddress.$touch()"
+      @blur="form.touch('withdrawalAddress')"
     />
 
     <RuiCheckbox
-      v-model="isExit"
+      v-model="state.isExit"
       color="primary"
       data-cy="is-exit"
     >
@@ -241,14 +134,14 @@ defineExpose({
         </template>
         <div class="py-2">
           <RuiTextField
-            v-model="groupIdentifier"
+            v-model="state.groupIdentifier"
             variant="outlined"
             color="primary"
             data-cy="groupIdentifier"
-            :disabled="hasActualGroupIdentifier"
+            :disabled="state.hasActualGroupIdentifier"
             :label="t('transactions.events.form.group_identifier.label')"
-            :error-messages="toMessages(v$.groupIdentifier)"
-            @blur="v$.groupIdentifier.$touch()"
+            :error-messages="form.errors('groupIdentifier')"
+            @blur="form.touch('groupIdentifier')"
           />
         </div>
       </RuiAccordion>

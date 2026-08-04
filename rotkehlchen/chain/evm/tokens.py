@@ -20,7 +20,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Price,
@@ -464,15 +463,21 @@ class EvmTokens(ABC):  # noqa: B024
                     continue
 
                 try:
-                    if deserialize_evm_address(erc721_contract.decode(
-                            result=result,
-                            method_name='ownerOf',
-                            arguments=[int(tokenid_to_collectible_id(token.identifier))],  # type: ignore[arg-type]  # will always be available
-                    )[0]) != address:
-                        log.debug(f'Address {address} no longer owns erc721 token {token}. Skipping...')  # noqa: E501
-                        continue
+                    owner = erc721_contract.decode(
+                        result=result,
+                        method_name='ownerOf',
+                        arguments=[int(tokenid_to_collectible_id(token.identifier))],  # type: ignore[arg-type]  # will always be available
+                    )[0]
                 except DeserializationError as e:
-                    log.error(f'Failed to deserialize owner address of erc721 token {token} due to {e!s}')  # noqa: E501
+                    log.error('Failed to read the owner of erc721 token %s due to %s', token, e)
+                    continue
+
+                if owner != address:
+                    log.debug(
+                        'Address %s no longer owns erc721 token %s. Skipping...',
+                        address,
+                        token,
+                    )
                     continue
 
                 valid_tokens.append(token)

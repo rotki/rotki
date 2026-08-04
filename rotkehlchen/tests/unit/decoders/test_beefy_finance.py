@@ -492,7 +492,7 @@ def test_beefy_base_deposit_no_rogue_aerodrome_receive(
         location=Location.BASE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-        asset=Asset('eip155:8453/erc20:0xc005b9833debcf5fe6cc5bc9ba4fd74bb382ae55'),
+        asset=Asset('eip155:8453/erc20:0xc005B9833deBcF5fe6cc5bC9ba4fD74Bb382ae55'),
         amount=FVal(moo_receive_amount := '0.000000584391176883'),
         location_label=user_address,
         notes=f'Receive {moo_receive_amount} mooAeroUSDC-AERO after depositing in a Beefy vault',

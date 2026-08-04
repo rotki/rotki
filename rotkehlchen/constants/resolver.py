@@ -1,3 +1,9 @@
+from typing import Final
+
+from rotkehlchen.assets.case_diagnostics import (
+    is_case_diagnostics_enabled,
+    report_non_checksummed_address,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
@@ -14,6 +20,9 @@ ETHEREUM_DIRECTIVE_LENGTH = len(ETHEREUM_DIRECTIVE)
 EVM_CHAIN_DIRECTIVE = 'eip155'
 SOLANA_CHAIN_DIRECTIVE = 'solana'
 
+# Read once at import. See rotkehlchen/assets/case_diagnostics.py
+ASSET_CASE_DIAGNOSTICS: Final = is_case_diagnostics_enabled()
+
 
 def evm_address_to_identifier(
         address: str,
@@ -21,7 +30,14 @@ def evm_address_to_identifier(
         token_type: EVM_TOKEN_KINDS_TYPE = TokenKind.ERC20,
         collectible_id: str | None = None,
 ) -> str:
-    """Format EVM token information into the CAIPs identifier format"""
+    """Format EVM token information into the CAIPs identifier format
+
+    The address must already be checksummed. Identifiers are compared exactly, so an
+    unchecksummed address here produces an identifier that never matches the canonical one.
+    """
+    if ASSET_CASE_DIAGNOSTICS:
+        report_non_checksummed_address(address)
+
     ident = f'{EVM_CHAIN_DIRECTIVE}:{chain_id.value}/{token_type!s}:{address}'
     if collectible_id is not None:
         return ident + f'/{collectible_id}'

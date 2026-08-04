@@ -21,9 +21,12 @@ import freezegun
 import freezegun.config
 import py
 import pytest
+from eth_utils import to_checksum_address
 
+from rotkehlchen.assets import asset as asset_module
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconNode
 from rotkehlchen.config import default_data_directory
+from rotkehlchen.constants import resolver as resolver_module
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.coingecko import Coingecko
@@ -195,6 +198,51 @@ def pytest_addoption(parser):
         help='If set then all tests that are aware of their mocking the network will not do that. Use this in order to easily skip mocks and test that using the network, the remote queries are still working fine and mocks dont need any changing.',  # noqa: E501
     )
     parser.addoption('--profiler', default=None, choices=['flamegraph-trace'])
+
+
+@pytest.fixture(scope='session', autouse=True)
+def _asset_case_diagnostics() -> Iterator[None]:
+    """Turn asset identifier casing diagnostics into hard failures for the whole suite.
+
+    Asset identifiers are compared exactly, so one that reaches the core without having been
+    normalized silently matches nothing. This catches both halves of that: an unchecksummed
+    EVM address at the point it is formatted into an identifier (the cause), and two
+    identifiers differing only in casing at the point they are compared (the symptom).
+
+    Catching the cause matters more than catching the symptom, since the symptom additionally
+    needs the bad identifier to meet its correctly-cased twin, while the cause fires on its own.
+    """
+    def raise_on_case_mismatch(first: str, second: str) -> None:
+        if first.lower() == second.lower():
+            raise AssertionError(
+                f'Asset identifiers {first} and {second} differ only in casing. An identifier '
+                f'reached comparison without being normalized. Normalize it at the boundary '
+                f'via check_existence()/resolve_*()/to_checksum_address().',
+            )
+
+    def raise_on_non_checksummed_address(address: str) -> None:
+        try:
+            checksummed = to_checksum_address(address)
+        except (ValueError, TypeError):
+            return  # not an EVM address at all, which is not what this check is about
+
+        if address != checksummed:
+            raise AssertionError(
+                f'Non-checksummed EVM address {address} used to build an asset identifier. '
+                f'Expected {checksummed}. The identifier built from it will not compare equal '
+                f'to the canonical one for the same address.',
+            )
+
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setattr(asset_module, 'ASSET_CASE_DIAGNOSTICS', True)
+        monkeypatch.setattr(asset_module, 'report_case_mismatch', raise_on_case_mismatch)
+        monkeypatch.setattr(resolver_module, 'ASSET_CASE_DIAGNOSTICS', True)
+        monkeypatch.setattr(
+            resolver_module,
+            'report_non_checksummed_address',
+            raise_on_non_checksummed_address,
+        )
+        yield
 
 
 @pytest.fixture(autouse=True)

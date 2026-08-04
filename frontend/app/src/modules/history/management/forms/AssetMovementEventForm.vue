@@ -1,21 +1,23 @@
 <script setup lang="ts">
-import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/modules/history/events/schemas';
+import type { AssetMovementEvent } from '@/modules/history/events/schemas';
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
-import { HistoryEventEntryType, Zero } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
-import { requiredIf } from '@vuelidate/validators';
-import dayjs from 'dayjs';
 import { isEqual } from 'es-toolkit';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
-import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
 import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
-import { refIsTruthy } from '@/modules/core/common/use-ref-truthy';
-import { useHistoryEventsForm } from '@/modules/history/events/use-history-events-form';
+import {
+  ASSET_MOVEMENT_PRICE_INTENT_KEYS,
+  assetMovementSchema,
+  assetMovementStateFromEvents,
+  emptyAssetMovementForm,
+  toAssetMovementEditPayload,
+  toAssetMovementPayload,
+} from '@/modules/history/management/forms/asset-movement-event-form';
 import AssetMovementFeeEntry from '@/modules/history/management/forms/common/AssetMovementFeeEntry.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
-import { toMessages, useEventFormBase } from '@/modules/history/management/forms/use-event-form-base';
+import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
@@ -37,74 +39,33 @@ const historyEventTypesData = [{
   label: `${t('backend_mappings.events.history_event_subtype.spend')} (${t('backend_mappings.events.history_event_type.withdrawal')})`,
 }];
 
-const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
-
-const groupIdentifier = ref<string>('');
-const timestamp = ref<number>(0);
-const location = ref<string>('');
-const locationLabel = ref<string>('');
-const eventSubtype = ref<string>('');
-const asset = ref<string>('');
-const amount = ref<string>('');
-const notes = ref<[string, string] | [string]>(['']);
-const hasFee = ref<boolean>(false);
-const fee = ref<string>('');
-const feeAsset = ref<string>('');
-const uniqueId = ref<string>('');
-const transactionId = ref<string>('');
-const blockchain = ref<string>('');
-const hasActualGroupIdentifier = ref<boolean>(false);
-
-const errorMessages = ref<Record<string, string[]>>({});
-
-const states = {
-  amount,
-  asset,
-  blockchain,
-  eventSubtype,
-  fee,
-  feeAsset,
-  groupIdentifier,
-  hasFee,
-  location,
-  locationLabel,
-  notes,
-  timestamp,
-  transactionId,
-  uniqueId,
-};
-
-const { v$, captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEventFormBase({
-  rules: commonRules => ({
-    amount: commonRules.createRequiredAmountRule(),
-    asset: commonRules.createRequiredAssetRule(),
-    blockchain: commonRules.createExternalValidationRule(),
-    eventSubtype: commonRules.createRequiredEventTypeRule(),
-    fee: commonRules.createRequiredFeeRule(requiredIf(logicAnd(hasFee, refIsTruthy(feeAsset)))),
-    feeAsset: commonRules.createRequiredFeeAssetRule(requiredIf(logicAnd(hasFee, refIsTruthy(fee)))),
-    groupIdentifier: commonRules.createExternalValidationRule(),
-    location: commonRules.createRequiredLocationRule(),
-    locationLabel: commonRules.createExternalValidationRule(),
-    notes: commonRules.createExternalValidationRule(),
-    timestamp: commonRules.createExternalValidationRule(),
-    transactionId: commonRules.createExternalValidationRule(),
-    uniqueId: commonRules.createExternalValidationRule(),
-  }),
-  states,
-  errorMessages,
-  stateUpdated,
-});
+const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
 
 const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
-const { saveHistoryEventHandler } = useHistoryEventsForm();
 
-const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
-const numericAmount = bigNumberifyFromRef(amount);
+const { form, save, seed } = useHistoryEventForm({
+  initial: () => emptyAssetMovementForm(get(lastLocation) ?? TRADE_LOCATION_EXTERNAL),
+  priceIntentKeys: ASSET_MOVEMENT_PRICE_INTENT_KEYS,
+  priceIntents: state => (state.priceIntent ? [state.priceIntent] : []),
+  schema: assetMovementSchema(),
+  stateUpdated,
+  toEditPayload: toAssetMovementEditPayload,
+  // A new movement needs an identifier of its own, which a pure transform cannot produce. An edit
+  // keeps whatever it already had, blank included: a movement whose extra data carries no reference
+  // must not be handed a fresh one on every save.
+  transform: state => toAssetMovementPayload(
+    state,
+    data.type === 'edit-group' ? state.uniqueId : state.uniqueId || generateUUID(),
+  ),
+});
+
+const { state } = form;
+
 const locationLabelSuggestions = computed<string[]>(() => {
   const suggestions: string[] = [];
 
-  for (const { location: connectedLocation, name } of get(connectedExchanges)) {
-    if (connectedLocation !== get(location) || !name) {
+  for (const { location, name } of get(connectedExchanges)) {
+    if (location !== state.location || !name) {
       continue;
     }
     suggestions.push(name);
@@ -112,156 +73,39 @@ const locationLabelSuggestions = computed<string[]>(() => {
   return suggestions;
 });
 
-function reset() {
-  set(groupIdentifier, '');
-  set(timestamp, dayjs().valueOf());
-  set(location, get(lastLocation));
-  set(locationLabel, '');
-  set(eventSubtype, 'receive');
-  set(asset, '');
-  set(amount, '0');
-  set(notes, ['']);
-  set(errorMessages, {});
-  set(uniqueId, '');
-  set(blockchain, '');
-  set(transactionId, '');
-  set(hasActualGroupIdentifier, false);
-
-  get(assetPriceForm)?.reset();
-}
-
-function applyCoreFields(entry: AssetMovementEvent): void {
-  // Use actualGroupIdentifier if it exists (linked event), otherwise use groupIdentifier
-  const hasActual = !!entry.actualGroupIdentifier;
-  set(hasActualGroupIdentifier, hasActual);
-  set(groupIdentifier, hasActual ? entry.actualGroupIdentifier! : entry.groupIdentifier);
-  set(timestamp, entry.timestamp);
-  set(location, entry.location);
-  set(locationLabel, entry.locationLabel ?? '');
-  set(eventSubtype, entry.eventSubtype);
-  set(asset, entry.asset ?? '');
-  set(amount, entry.amount.toFixed());
-}
-
-/** The fee is a sibling event, so its presence is what decides whether the form shows a fee at all. */
-function applyFeeFields(entry: AssetMovementEvent, feeEvent?: AssetMovementEvent): void {
-  const eventNotes = entry.userNotes ?? '';
-
-  if (!feeEvent) {
-    set(hasFee, false);
-    set(notes, [eventNotes]);
-    return;
-  }
-
-  set(fee, feeEvent.amount.toFixed());
-  set(feeAsset, feeEvent.asset ?? '');
-  set(hasFee, true);
-  set(notes, [eventNotes, feeEvent.userNotes ?? '']);
-}
-
-function applyExtraData(extraData: AssetMovementEvent['extraData']): void {
-  if (extraData?.reference)
-    set(uniqueId, extraData.reference);
-
-  if (extraData?.transactionId)
-    set(transactionId, extraData.transactionId);
-
-  if (extraData?.blockchain)
-    set(blockchain, extraData.blockchain);
-}
-
-function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEvent) {
-  applyCoreFields(entry);
-  applyFeeFields(entry, feeEvent);
-  applyExtraData(entry.extraData);
-
-  // Capture state snapshot for edit mode comparison
-  captureEditModeStateFromRefs(states);
-}
-
-async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate())) {
-    return false;
-  }
-
-  const eventData = data;
-  const editable = eventData.type === 'edit-group' ? eventData.eventsInGroup[0] : undefined;
-
-  // Generate UUID for uniqueId if not present and not in edit mode
-  const generatedUniqueId = !editable && !get(uniqueId) ? generateUUID() : get(uniqueId);
-
-  let payload: NewAssetMovementEventPayload = {
-    amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-    asset: get(asset),
-    blockchain: get(blockchain),
-    entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-    eventSubtype: get(eventSubtype),
-    fee: null,
-    feeAsset: null,
-    groupIdentifier: get(groupIdentifier),
-    location: get(location),
-    locationLabel: get(locationLabel),
-    timestamp: get(timestamp),
-    transactionId: get(transactionId),
-    uniqueId: generatedUniqueId,
-    userNotes: get(notes),
-  };
-
-  if (get(hasFee)) {
-    payload = {
-      ...payload,
-      fee: get(fee) || null,
-      feeAsset: get(feeAsset) || null,
-    };
-  }
-
-  return await saveHistoryEventHandler(
-    editable ? { ...payload, identifier: editable.identifier } : payload,
-    assetPriceForm,
-    errorMessages,
-    reset,
-    shouldSkipSaveFromRefs(!!editable, states),
-  );
-}
-
-function checkPropsData() {
-  const formData = data;
-
-  if (formData.type === 'edit-group') {
-    const editable = formData.eventsInGroup[0];
-    const feeEvent = formData.eventsInGroup.find(event => event.eventSubtype === 'fee');
-    applyEditableData(editable, feeEvent);
-    return;
-  }
-  reset();
-}
-
 watchImmediate(() => data, (newData, oldData) => {
   if (isEqual(newData, oldData)) {
     return;
   }
-  checkPropsData();
+
+  if (newData.type === 'edit-group') {
+    seed(
+      assetMovementStateFromEvents(newData.eventsInGroup),
+      newData.eventsInGroup.map(event => event.identifier),
+    );
+    return;
+  }
+
+  seed(emptyAssetMovementForm(get(lastLocation) ?? TRADE_LOCATION_EXTERNAL));
 });
 
-watch(location, (location: string) => {
+watch(() => state.location, (location: string) => {
   if (location)
     set(lastLocation, location);
 });
 
-watch(hasFee, (hasFee: boolean) => {
-  if (!hasFee) {
-    set(fee, '');
-    set(feeAsset, '');
-    set(notes, [get(notes)[0]]);
-  }
-  else {
-    set(notes, [get(notes)[0], '']);
-  }
+watch(() => state.hasFee, (hasFee: boolean) => {
+  if (hasFee)
+    return;
+
+  state.fee = '';
+  state.feeAsset = '';
+  state.feeNotes = '';
 });
 
 defineExpose({
+  errorCount: form.errorCount,
   save,
-  v$,
 });
 </script>
 
@@ -269,7 +113,7 @@ defineExpose({
   <div>
     <div class="grid md:grid-cols-2 gap-4 mb-4">
       <DateTimePicker
-        v-model="timestamp"
+        v-model="state.timestamp"
         :label="t('common.datetime')"
         required
         persistent-hint
@@ -278,32 +122,32 @@ defineExpose({
         accuracy="millisecond"
         data-cy="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
-        :error-messages="toMessages(v$.timestamp)"
-        @blur="v$.timestamp.$touch()"
+        :error-messages="form.errors('timestamp')"
+        @blur="form.touch('timestamp')"
       />
       <LocationSelector
-        v-model="location"
+        v-model="state.location"
         :disabled="data.type === 'edit-group'"
         data-cy="location"
         :label="t('common.location')"
         required
-        :error-messages="toMessages(v$.location)"
-        @blur="v$.location.$touch()"
+        :error-messages="form.errors('location')"
+        @blur="form.touch('location')"
       />
       <AutoCompleteWithSearchSync
-        v-model="locationLabel"
+        v-model="state.locationLabel"
         :items="locationLabelSuggestions"
         clearable
         data-cy="locationLabel"
         :label="t('transactions.events.form.location_label.label')"
-        :error-messages="toMessages(v$.locationLabel)"
+        :error-messages="form.errors('locationLabel')"
         auto-select-first
-        @blur="v$.locationLabel.$touch()"
+        @blur="form.touch('locationLabel')"
       />
     </div>
 
     <RuiAutoComplete
-      v-model="eventSubtype"
+      v-model="state.eventSubtype"
       variant="outlined"
       :label="t('transactions.events.form.event_type.label')"
       required
@@ -312,34 +156,39 @@ defineExpose({
       text-attr="label"
       data-cy="eventSubtype"
       auto-select-first
-      :error-messages="toMessages(v$.eventSubtype)"
-      @blur="v$.eventSubtype.$touch()"
+      :error-messages="form.errors('eventSubtype')"
+      @blur="form.touch('eventSubtype')"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
-      ref="assetPriceForm"
-      v-model:asset="asset"
-      v-model:amount="amount"
-      :location="location"
-      :v$="v$"
-      :timestamp="timestamp"
+      v-model:asset="state.asset"
+      v-model:amount="state.amount"
+      v-model:price-intent="state.priceIntent"
+      :location="state.location"
+      :error-messages="{
+        amount: form.errors('amount'),
+        asset: form.errors('asset'),
+      }"
+      :timestamp="state.timestamp"
+      @blur="form.touch($event)"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <AssetMovementFeeEntry
-      v-model:has-fee="hasFee"
-      v-model:fee="fee"
-      v-model:fee-asset="feeAsset"
-      :error-messages="{ fee: toMessages(v$.fee), feeAsset: toMessages(v$.feeAsset) }"
+      v-model:has-fee="state.hasFee"
+      v-model:fee="state.fee"
+      v-model:fee-asset="state.feeAsset"
+      :error-messages="{ fee: form.errors('fee'), feeAsset: form.errors('feeAsset') }"
+      @blur="form.touch($event)"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiTextArea
-      v-model="notes[0]"
+      v-model="state.notes"
       prepend-icon="lu-sticky-note"
       data-cy="notes"
       variant="outlined"
@@ -349,13 +198,13 @@ defineExpose({
       auto-grow
       :label="t('common.notes')"
       :hint="t('transactions.events.form.notes.hint')"
-      :error-messages="toMessages(v$.notes)"
-      @blur="v$.notes.$touch()"
+      :error-messages="form.errors('notes')"
+      @blur="form.touch('notes')"
     />
 
     <RuiTextArea
-      v-if="notes.length === 2"
-      v-model="notes[1]"
+      v-if="state.hasFee"
+      v-model="state.feeNotes"
       prepend-icon="lu-sticky-note"
       data-cy="fee-notes"
       variant="outlined"
@@ -366,8 +215,8 @@ defineExpose({
       class="mt-4"
       :label="t('swap_event_form.fee_notes')"
       :hint="t('transactions.events.form.notes.hint')"
-      :error-messages="toMessages(v$.notes)"
-      @blur="v$.notes.$touch()"
+      :error-messages="form.errors('feeNotes')"
+      @blur="form.touch('feeNotes')"
     />
 
     <RuiDivider class="mb-2 mt-6" />
@@ -383,45 +232,45 @@ defineExpose({
         </template>
         <div class="py-2">
           <RuiTextField
-            v-model="groupIdentifier"
+            v-model="state.groupIdentifier"
             variant="outlined"
             color="primary"
             data-cy="groupIdentifier"
-            :disabled="hasActualGroupIdentifier"
+            :disabled="state.hasActualGroupIdentifier"
             :label="t('transactions.events.form.group_identifier.label')"
-            :error-messages="toMessages(v$.groupIdentifier)"
-            @blur="v$.groupIdentifier.$touch()"
+            :error-messages="form.errors('groupIdentifier')"
+            @blur="form.touch('groupIdentifier')"
           />
 
           <RuiTextField
-            v-model="uniqueId"
+            v-model="state.uniqueId"
             variant="outlined"
             data-cy="unique-id"
             color="primary"
             :label="t('transactions.events.form.unique_id.label')"
-            :error-messages="toMessages(v$.uniqueId)"
-            @blur="v$.uniqueId.$touch()"
+            :error-messages="form.errors('uniqueId')"
+            @blur="form.touch('uniqueId')"
           />
 
           <RuiTextField
-            v-model="transactionId"
+            v-model="state.transactionId"
             variant="outlined"
             color="primary"
             data-cy="tx-ref"
             :label="t('common.tx_hash')"
-            :error-messages="toMessages(v$.transactionId)"
-            @blur="v$.transactionId.$touch()"
+            :error-messages="form.errors('transactionId')"
+            @blur="form.touch('transactionId')"
           />
 
           <ChainSelect
-            v-model="blockchain"
+            v-model="state.blockchain"
             variant="outlined"
             data-cy="blockchain-id"
             color="primary"
             custom-value
             :label="t('common.blockchain')"
-            :error-messages="toMessages(v$.blockchain)"
-            @blur="v$.blockchain.$touch()"
+            :error-messages="form.errors('blockchain')"
+            @blur="form.touch('blockchain')"
           />
         </div>
       </RuiAccordion>

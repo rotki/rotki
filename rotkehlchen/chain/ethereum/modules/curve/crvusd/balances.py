@@ -7,7 +7,6 @@ from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveControllerCo
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.contracts import EvmContract
@@ -43,11 +42,11 @@ class CurveCrvusdBalances(CurveControllerCommonBalances):
             return (
                 get_or_create_evm_token(
                     userdb=self.evm_inquirer.database,
-                    evm_address=deserialize_evm_address(self.evm_inquirer.call_contract(
+                    evm_address=self.evm_inquirer.call_contract(
                         contract_address=controller_address,
                         abi=controller_contract.abi,
                         method_name='collateral_token',
-                    )),
+                    ),
                     chain_id=self.evm_inquirer.chain_id,
                 ),
                 EvmToken('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),  # crvUSD

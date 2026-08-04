@@ -15,7 +15,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import SWAP_TOPIC
@@ -131,11 +130,11 @@ class SparksavingsCommonDecoder(SparkCommonDecoder):
             encounter=(encounter := TokenEncounterInfo(should_notify=False)),
         )
         underlying_token = self.base.get_or_create_evm_token(
-            address=deserialize_evm_address(self.node_inquirer.call_contract(
+            address=self.node_inquirer.call_contract(
                 contract_address=vault_token.evm_address,
                 abi=ERC4626_ABI,
                 method_name='asset',
-            )),
+            ),
             encounter=encounter,
         )
 

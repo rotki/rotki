@@ -1,35 +1,36 @@
-import type { SearchMatcher } from '@/modules/core/table/filtering';
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import type { FieldDef, ValueSwatch } from '@/modules/core/table/pill/core/types';
 import { decorateSharedField, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';
-import { toFieldDef, toParamFieldDef } from '@/modules/core/table/pill/core/field-adapter';
+import { toParamFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 
 type Translate = (key: string) => string;
 
-/** The blockchain account table's own wire keys. */
-const CHAIN_KEY = 'chain';
-
 /**
- * The matcher-backed pill-bar fields for the blockchain accounts table, which today is the chain
- * matcher alone: its long "filter by …" description becomes a short pill label and its values are
- * drawn with their chain logo. The account and tag pills are param-bound and built separately.
+ * The chain pill: which chains of the shown category an account has to be on. Param-bound like the
+ * account and tag pills, so this table declares no matchers at all — every filter it has reaches
+ * the request the same way.
+ *
+ * The values are the category's own chain ids (evm has around fifteen, bitcoin two, solana one),
+ * and a group that survives is narrowed to the chains that matched, which is what makes its value
+ * add up to the chains being shown rather than all of them.
  */
-export function toBlockchainAccountFields(
-  matchers: SearchMatcher<string, string>[],
-  resolvers: SharedFieldResolvers & { readonly t: Translate },
-): FieldDef[] {
-  const { t } = resolvers;
-
-  return matchers.map((field) => {
-    const mapped = toFieldDef(field);
-    if (mapped.key !== CHAIN_KEY)
-      return mapped;
-
-    return {
-      ...decorateSharedField(mapped, SharedFieldKinds.CHAIN, resolvers),
+export function toAccountChainField(
+  t: Translate,
+  resolvers: SharedFieldResolvers,
+  chains: () => string[],
+): FieldDef {
+  return decorateSharedField(
+    toParamFieldDef({
+      key: 'chain',
       label: t('account_balances.filter_field_labels.chain'),
-    };
-  });
+      multiple: true,
+      paramKey: 'chain',
+      suggest: chains,
+      to: 'both',
+    }),
+    SharedFieldKinds.CHAIN,
+    resolvers,
+  );
 }
 
 /** One selectable tag: its name is the wire value, its colours are how it is recognised. */

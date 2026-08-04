@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.stakedao.constants import CPT_STAKEDAO
 from rotkehlchen.chain.evm.utils import maybe_notify_cache_query_status
 from rotkehlchen.constants import ONE
@@ -126,15 +127,31 @@ def ensure_gauge_token(
             abi=GAUGE_COMPACT_ABI,
             method_name='staking_token',
         )
-        underlying_addr = evm_inquirer.call_contract(
-            contract_address=staking_token,
-            abi=LIQUITY_GAUGE_ABI,
-            method_name='token',
-        )
+        # A strategy gauge stakes a vault, whose token() is the protocol's pool token, while
+        # a locker gauge stakes a plain token that has no token() and reverts. Probe through
+        # a multicall that tolerates the revert, so we get an answer either way instead of
+        # burning a failed query against every indexer.
+        success, output = evm_inquirer.multicall_2(
+            require_success=False,
+            calls=[(staking_token, (vault := EvmContract(
+                address=staking_token,
+                abi=LIQUITY_GAUGE_ABI,
+                deployed_block=0,
+            )).encode(method_name='token'))],
+        )[0]
     except RemoteError as e:
         log.error(
             f'Failed to pull stakedao token information for {gauge_address} at '
             f'{evm_inquirer.chain_id} due to {e}',
+        )
+        return
+
+    try:
+        underlying_addr = vault.decode(output, 'token')[0] if success else staking_token
+    except DeserializationError as e:
+        log.error(
+            'Failed to read the underlying token of stakedao gauge %s at %s due to %s',
+            gauge_address, evm_inquirer.chain_id, e,
         )
         return
 

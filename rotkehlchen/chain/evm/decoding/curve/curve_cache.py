@@ -257,12 +257,12 @@ def _query_curve_data_from_chain(
         return []
 
     try:
-        metaregistry_address = deserialize_evm_address(address_provider.call(
+        metaregistry_address = address_provider.call(
             node_inquirer=evm_inquirer,
             method_name='get_address',
             arguments=[7],
-        ))
-    except (RemoteError, DeserializationError) as e:
+        )
+    except RemoteError as e:
         log.error(
             f'Failed to retrieve metaregistry address from the Curve '
             f'address provider on {evm_inquirer.chain_name} due to {e!s}',
@@ -308,11 +308,11 @@ def _query_curve_data_from_chain(
         )
 
         try:
-            if (pool_address := deserialize_evm_address(metaregistry.call(
+            if (pool_address := metaregistry.call(
                 node_inquirer=evm_inquirer,
                 method_name='pool_list',
                 arguments=[pool_index],
-            ))) in pools_to_skip:
+            )) in pools_to_skip:
                 continue
 
             log.debug(
@@ -326,7 +326,7 @@ def _query_curve_data_from_chain(
                 ) for method_name in CURVE_METAREGISTRY_METHODS],
                 require_success=False,
             )
-        except (RemoteError, DeserializationError) as e:
+        except RemoteError as e:
             log.error(
                 f'Failed to retrieve Curve pool address for index {pool_index} '
                 f'from the metaregistry on {evm_inquirer.chain_name} due to {e!s}',
@@ -342,11 +342,18 @@ def _query_curve_data_from_chain(
                 else:
                     break
 
-            decoded_pool_properties.append(metaregistry.decode(
-                result=result,
-                method_name=method_name,
-                arguments=[pool_address],
-            )[0])
+            try:
+                decoded_pool_properties.append(metaregistry.decode(
+                    result=result,
+                    method_name=method_name,
+                    arguments=[pool_address],
+                )[0])
+            except DeserializationError as e:
+                log.error(
+                    'Failed to decode the %s property of curve pool %s on %s due to %s',
+                    method_name, pool_address, evm_inquirer.chain_name, e,
+                )
+                break
 
         if len(decoded_pool_properties) != len(CURVE_METAREGISTRY_METHODS):
             log.error(
@@ -355,20 +362,11 @@ def _query_curve_data_from_chain(
             )
             continue
 
-        try:
-            pool_name, gauge_address, lp_token_address, coins_raw, underlying_coins_raw = decoded_pool_properties  # noqa: E501
-            gauge_address = deserialize_evm_address(gauge_address)
-            lp_token_address = deserialize_evm_address(lp_token_address)
-            coins = [deserialize_evm_address(x) for x in coins_raw if x != ZERO_ADDRESS]
-            u_coins = [deserialize_evm_address(x) for x in underlying_coins_raw if x != ZERO_ADDRESS]  # noqa: E501
-            underlying_coins = None if u_coins == coins or len(u_coins) == 0 else u_coins
-        except DeserializationError as e:
-            log.error(
-                f'Could not deserialize evm address while decoding curve pool {pool_address} '
-                f'information from metaregistry: {e}',
-            )
-            continue
-
+        # the decoded addresses are already checksummed by the contract decoding
+        pool_name, gauge_address, lp_token_address, coins_raw, underlying_coins_raw = decoded_pool_properties  # noqa: E501
+        coins = [x for x in coins_raw if x != ZERO_ADDRESS]
+        u_coins = [x for x in underlying_coins_raw if x != ZERO_ADDRESS]
+        underlying_coins = None if u_coins == coins or len(u_coins) == 0 else u_coins
         new_pools.append(CurvePoolData(
             pool_address=pool_address,
             pool_name=pool_name,

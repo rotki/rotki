@@ -183,12 +183,12 @@ class GnosisInquirer(EvmNodeInquirer):
             )) in (ZERO_ADDRESS, SAFE_SENTINEL_ADDRESS):
                 return []
 
-            return [deserialize_evm_address(admin) for admin in self.call_contract(
+            return list(self.call_contract(
                 contract_address=delay_module,  # the Delay module proxy itself is not frozen
                 abi=SAFE_MODULES_PAGINATED_ABI,
                 method_name='getModulesPaginated',
                 arguments=[SAFE_SENTINEL_ADDRESS, GNOSIS_PAY_SAFE_QUERY_CHUNK_SIZE],
-            )[0]]
+            )[0])
         except (RemoteError, BlockchainQueryError, DeserializationError) as e:
             log.error('Failed to recover gnosis pay admins for frozen safe %s: %s', safe_address, e)  # noqa: E501
             return []

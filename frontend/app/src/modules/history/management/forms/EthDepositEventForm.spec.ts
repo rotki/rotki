@@ -1,6 +1,7 @@
 import type { AssetMap } from '@/modules/assets/types';
 import type { EthDepositEvent } from '@/modules/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { selectorContract } from '@test/utils/selector-contract';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
@@ -110,6 +111,27 @@ describe('form/EthDepositEventForm.vue', () => {
       },
       ...options,
     });
+
+  it('should render the documented e2e selector contract', () => {
+    wrapper = createWrapper();
+    // The e2e suite finds every field through these selectors; losing one is an e2e break.
+    expect(selectorContract(wrapper)).toMatchInlineSnapshot(`
+      [
+        "data-cy=amount",
+        "data-cy=asset",
+        "data-cy=datetime",
+        "data-cy=depositor",
+        "data-cy=eth-deposit-event-form__advance",
+        "data-cy=groupIdentifier",
+        "data-cy=grouped-amount-input__swap-button",
+        "data-cy=primary",
+        "data-cy=secondary",
+        "data-cy=sequence-index",
+        "data-cy=tx-ref",
+        "data-cy=validatorIndex",
+      ]
+    `);
+  });
 
   it('should show the default state when adding a new event', async () => {
     wrapper = createWrapper();

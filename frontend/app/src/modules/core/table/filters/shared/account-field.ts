@@ -37,6 +37,9 @@ export interface AccountFieldBinding {
  */
 export function toAccountField(binding: AccountFieldBinding, accounts: AccountFieldOptions): FieldDef {
   return toParamFieldDef({
+    // The accounts table's old matcher stored `label (address)`, or a bare address when the
+    // account had no name. Only the address survives into the field's own form.
+    fromLegacy: (value: string): string => value.match(/^.+?\s*\(([^)]+)\)$/)?.[1] ?? value,
     display: DisplayKinds.ACCOUNT,
     key: 'account',
     label: binding.label,

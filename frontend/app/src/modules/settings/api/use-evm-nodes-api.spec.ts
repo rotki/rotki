@@ -117,7 +117,7 @@ describe('composables/api/settings/evm-nodes-api', () => {
       });
     });
 
-    it('should strip isArchive from the payload', async () => {
+    it('should only send the writable fields, dropping any other server field', async () => {
       let requestBody: DefaultBodyType = null;
 
       server.use(
@@ -139,11 +139,22 @@ describe('composables/api/settings/evm-nodes-api', () => {
         weight: 100,
         blockchain: 'ETH',
         isArchive: true,
+        runtimeStatus: 'cooling_down' as const,
+        cooldownUntil: 1785655945,
+        // a runtime field the backend may add later, which the frontend knows nothing about
+        lastErrorKind: 'connection',
       };
 
       await addEvmNode(newNode);
 
-      expect(requestBody).not.toHaveProperty('isArchive');
+      expect(requestBody).toEqual({
+        name: 'Archive Node',
+        endpoint: 'https://archive.example.com',
+        active: true,
+        owned: true,
+        weight: 100,
+        blockchain: 'ETH',
+      });
     });
   });
 
@@ -186,7 +197,7 @@ describe('composables/api/settings/evm-nodes-api', () => {
       });
     });
 
-    it('should strip isArchive from the payload', async () => {
+    it('should only send the writable fields, dropping any other server field', async () => {
       let requestBody: DefaultBodyType = null;
 
       server.use(
@@ -200,7 +211,7 @@ describe('composables/api/settings/evm-nodes-api', () => {
       );
 
       const { editEvmNode } = useEvmNodesApi();
-      const editedNode: BlockchainRpcNode = {
+      const editedNode = {
         identifier: 1,
         name: 'Archive Node',
         endpoint: 'https://archive.example.com',
@@ -209,11 +220,23 @@ describe('composables/api/settings/evm-nodes-api', () => {
         weight: 100,
         blockchain: 'ETH',
         isArchive: true,
+        runtimeStatus: 'cooling_down' as const,
+        cooldownUntil: 1785655945,
+        // a runtime field the backend may add later, which the frontend knows nothing about
+        lastErrorKind: 'connection',
       };
 
       await editEvmNode(editedNode);
 
-      expect(requestBody).not.toHaveProperty('isArchive');
+      expect(requestBody).toEqual({
+        identifier: 1,
+        name: 'Archive Node',
+        endpoint: 'https://archive.example.com',
+        active: true,
+        owned: true,
+        weight: 100,
+        blockchain: 'ETH',
+      });
     });
   });
 
