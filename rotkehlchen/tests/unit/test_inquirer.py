@@ -6,7 +6,7 @@ from http import HTTPStatus
 from itertools import starmap
 from typing import TYPE_CHECKING, Any
 from unittest import mock
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 import requests
@@ -1300,6 +1300,31 @@ def test_connect_rpc_with_hex_chainid(ethereum_inquirer: EthereumInquirer):
         ),
     )
     assert success is True and msg == ''
+
+
+@pytest.mark.parametrize('network_mocking', [False])
+def test_connect_rpc_with_broken_version_response(ethereum_inquirer: EthereumInquirer):
+    """Test that a node replying to net_version with a non-string result, such as an error
+    object, only fails the connection instead of raising and killing the querying task"""
+    with (
+        patch('web3.main.Web3.is_connected', return_value=True),
+        patch(
+            'web3.net.Net.version',
+            new_callable=PropertyMock,
+            return_value={'code': 503, 'message': 'server unavailable'},
+        ),
+    ):
+        success, msg = ethereum_inquirer.attempt_connect(
+            node=NodeName(
+                name='broken node',
+                endpoint='https://1rpc.io/eth',
+                owned=False,
+                blockchain=SupportedBlockchain.ETHEREUM,
+            ),
+        )
+
+    assert success is False
+    assert 'unexpected node version response' in msg
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])

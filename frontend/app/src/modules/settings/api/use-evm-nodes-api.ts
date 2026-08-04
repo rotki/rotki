@@ -4,7 +4,8 @@ import { omit } from 'es-toolkit';
 import { api } from '@/modules/core/api/rotki-api';
 import { type BlockchainRpcNode, BlockchainRpcNodeList } from '@/modules/settings/types/rpc';
 
-const READ_ONLY_FIELDS = ['isArchive'] as const;
+// server-derived fields that come back on GET but are rejected by the add/edit schemas
+const READ_ONLY_FIELDS = ['isArchive', 'runtimeStatus', 'cooldownUntil'] as const;
 
 interface UseEvmNodesApiReturn {
   fetchEvmNodes: () => Promise<BlockchainRpcNodeList>;
