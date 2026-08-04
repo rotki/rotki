@@ -3195,31 +3195,50 @@ class DBHandler:
             from_ts: Timestamp,
             include_nfts: bool = True,
     ) -> tuple[list[str], list[str]]:
-        """Get all entries of net value data from the DB"""
+        """Get all entries of net value data from the DB
+
+        Ignored assets are subtracted from the stored snapshot totals here, at query time,
+        instead of being left out when the snapshot is taken. Ignoring is reversible, so the
+        per-asset rows have to stay in timed_balances for the value to come back if the asset
+        is unignored later.
+        """
         with self.conn.read_ctx() as cursor:
             cursor.execute(  # Get the total location ("H") entries in ascending time
                 "SELECT timestamp, usd_value FROM timed_location_data "
                 "WHERE location='H' AND timestamp >= ? ORDER BY timestamp ASC;",
                 (from_ts,),
             )
-            if not include_nfts:
-                with self.conn.read_ctx() as nft_cursor:
-                    nft_cursor.execute(
-                        'SELECT timestamp, SUM(usd_value) FROM timed_balances WHERE '
-                        'timestamp >= ? AND currency LIKE ? GROUP BY timestamp',
-                        (from_ts, f'{NFT_DIRECTIVE}%'),
-                    )
-                    nft_values = dict(nft_cursor)
+            # An ignored NFT matches both conditions but each row is still returned once, so
+            # its value can't get subtracted twice. The subtraction itself is exact since the
+            # "H" total and these rows are written by save_balances_data in the same call with
+            # the same usd rate, and that total is exactly the asset rows minus the liability
+            # rows of the snapshot.
+            query = (
+                'SELECT timestamp, category, usd_value FROM timed_balances WHERE timestamp >= ? '
+                "AND (currency IN (SELECT value FROM multisettings WHERE name='ignored_asset')"
+            )
+            bindings: list[Any] = [from_ts]
+            if include_nfts is False:
+                query += ' OR currency LIKE ?'
+                bindings.append(f'{NFT_DIRECTIVE}%')
+
+            asset_category = BalanceType.ASSET.serialize_for_db()  # pylint: disable=no-member
+            excluded_values: defaultdict[Timestamp, FVal] = defaultdict(FVal)
+            with self.conn.read_ctx() as excluded_cursor:
+                for timestamp, category, usd_value in excluded_cursor.execute(f'{query})', bindings):  # noqa: E501
+                    # the total is assets minus liabilities, so an excluded liability adds back
+                    if category == asset_category:
+                        excluded_values[timestamp] += FVal(usd_value)
+                    else:
+                        excluded_values[timestamp] -= FVal(usd_value)
 
             data, times_int = [], []
             for entry in cursor:
                 times_int.append(entry[0])
-                if include_nfts:
-                    total = entry[1]
-                else:
-                    total = str(FVal(entry[1]) - FVal(nft_values.get(entry[0], 0)))  # pyright: ignore  # nft_values is populated when include_nfts is False
-
-                data.append(total)
+                data.append(
+                    entry[1] if (excluded := excluded_values.get(entry[0])) is None
+                    else str(FVal(entry[1]) - excluded),
+                )
 
         return times_int, data
 
