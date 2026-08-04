@@ -38,9 +38,15 @@ export function useDataLoader(): UseDataLoaderReturn {
   const refreshData = async (): Promise<void> => {
     logger.info('Refreshing data');
 
+    // The ignored/whitelisted lists decide which assets are counted towards the totals, so
+    // they have to be in place before the balances land. Fetching them alongside the balances
+    // makes the net worth briefly include the ignored assets, until the lists arrive.
+    // https://github.com/rotki/rotki/issues/12764
     await Promise.allSettled([
       fetchIgnoredAssets(),
       fetchWhitelistedAssets(),
+    ]);
+    await Promise.allSettled([
       fetchCached(),
       fetchNetValue(),
     ]);

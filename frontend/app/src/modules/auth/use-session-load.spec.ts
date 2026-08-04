@@ -150,6 +150,42 @@ describe('composables::session::load', () => {
       expect(seedOrder).toBeLessThan(chainOrder);
     });
 
+    it('should not fetch the balances until the ignored assets have arrived', async () => {
+      // the balances must not land before the lists that decide what they count, otherwise the
+      // net worth briefly includes ignored assets. https://github.com/rotki/rotki/issues/12764
+      let resolveIgnoredAssets: () => void = (): void => {};
+      mockFetchIgnoredAssets.mockReturnValue(new Promise<void>((resolve) => {
+        resolveIgnoredAssets = (): void => {
+          resolve();
+        };
+      }));
+
+      const { load } = useDataLoader();
+
+      load();
+      await flushPromises();
+
+      expect(mockFetchCached).not.toHaveBeenCalled();
+
+      resolveIgnoredAssets();
+      await flushPromises();
+
+      expect(mockFetchCached).toHaveBeenCalled();
+      expect(mockOnBalancesLoaded).toHaveBeenCalledTimes(1);
+    });
+
+    it('should still fetch the balances when the ignored assets fetch fails', async () => {
+      mockFetchIgnoredAssets.mockRejectedValue(new Error('Fetch failed'));
+
+      const { load } = useDataLoader();
+
+      load();
+      await flushPromises();
+
+      expect(mockFetchCached).toHaveBeenCalled();
+      expect(mockOnBalancesLoaded).toHaveBeenCalledTimes(1);
+    });
+
     it('should not call onBalancesLoaded when shouldFetchData is false', async () => {
       set(mockShouldFetchData, false);
 
