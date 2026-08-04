@@ -117,10 +117,30 @@ revert on the next restart. To change configuration, recreate the container.
 HEALTHCHECK CMD ["/opt/rotki/starling", "healthcheck"]
 ```
 
-The probe goes through starling's own proxy to `/api/1/ping`, so a pass means the
-external listener is up *and* successfully reaching core. It needs no `curl`, and
-resolves `ROTKI_HTTP_PORT` the same way the server does, so a custom port keeps
-the two in agreement automatically.
+The probe checks two things on starling's own listener, and both must pass:
+
+- `/health`, the supervisor's view of the tree. It answers `200` only once every
+  service has passed its readiness probe, so a colibri that died is reported —
+  which a core-only check never saw.
+- `/api/1/ping`, through the proxy to core, so a pass also means the external
+  listener is actually routing.
+
+It needs no `curl`, and resolves `ROTKI_HTTP_PORT` the same way the server does,
+so a custom port keeps the two in agreement automatically. `--url` overrides both
+with a single target of your choosing.
+
+`/health` is also reachable directly, unauthenticated, for an external monitor:
+
+```
+$ curl -s localhost/health
+{"ok":true,"degraded":false}
+```
+
+It is `200` when every service is up and `503` otherwise, with `degraded` marking
+a tree that is answering but has a service down. It deliberately carries nothing
+else — pids, per-service state and error text stay on the authenticated control
+socket (`starling ctl status`), since anything on the published port is readable
+by whoever can reach it.
 
 ## Logs
 
