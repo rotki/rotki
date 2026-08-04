@@ -204,20 +204,28 @@ impl<S: Spawner> Supervisor<S> {
         self.start_one(name).await
     }
 
-    /// Mark a crashed service as `Degraded`: dead, and staying that way because
-    /// its policy says the tree carries on without it.
+    /// Mark a service as `Degraded`: down, and staying that way because its
+    /// policy says the tree carries on without it.
     ///
-    /// The process handle is dropped along with the state, which is load-bearing:
-    /// [`poll_exits`](Self::poll_exits) re-reports any service it finds exited, so
-    /// a `Degraded` service that kept its handle would be rediscovered as newly
-    /// dead on every poll tick, forever.
-    pub fn mark_degraded(&mut self, name: &str) -> Result<()> {
-        let rt = self
-            .services
+    /// It stops the service first, because it cannot assume the process is
+    /// already gone. `RestartOrReport` also exhausts its attempts on a *readiness
+    /// timeout*, and that path leaves the last spawn **running** (`start_one`
+    /// records `Failed` without touching the process). Reporting a service as
+    /// down while its process still runs would leave it unwatched, holding its
+    /// port.
+    ///
+    /// Stopping goes through [`stop_one`](Self::stop_one) for the tree-aware
+    /// terminate → drain → kill path. Simply dropping the handle instead would
+    /// fall back to `kill_on_drop` (`process.rs`), which signals only the direct
+    /// child — for a service started through a launcher (`uv run …`) that strands
+    /// every descendant, which is the whole reason the supervisor tracks trees.
+    /// An already-exited process makes this a no-op.
+    pub async fn mark_degraded(&mut self, name: &str, grace: Duration) -> Result<()> {
+        self.stop_one(name, Instant::now() + grace).await?;
+        self.services
             .get_mut(name)
-            .ok_or_else(|| SupervisorError::NotFound(name.to_string()))?;
-        rt.state = ServiceState::Degraded;
-        rt.process.take();
+            .ok_or_else(|| SupervisorError::NotFound(name.to_string()))?
+            .state = ServiceState::Degraded;
         Ok(())
     }
 
@@ -1139,13 +1147,44 @@ mod tests {
         assert_eq!(sup.poll_exits().await.unwrap(), vec!["core"]);
 
         // Once the crash has been reacted to, every later tick must stay quiet:
-        // the process is gone for good, so a `Degraded` service that still held
-        // its handle would be rediscovered as newly dead forever.
-        sup.mark_degraded("core").unwrap();
+        // `poll_exits` only reports a service that was `Ready`, so an
+        // already-known-dead one is never rediscovered as newly dead.
+        sup.mark_degraded("core", Duration::from_secs(1))
+            .await
+            .unwrap();
         assert_eq!(sup.status()[0].state, ServiceState::Degraded);
         assert!(sup.poll_exits().await.unwrap().is_empty());
         assert!(sup.poll_exits().await.unwrap().is_empty());
         assert_eq!(sup.status()[0].state, ServiceState::Degraded);
+    }
+
+    #[tokio::test]
+    async fn degrading_a_still_running_service_stops_its_tree() {
+        // `RestartOrReport` also gives up on a *readiness timeout*, and that path
+        // leaves the last spawn running. Degrading it must go through the
+        // tree-aware stop: dropping the handle would fall back to
+        // `kill_on_drop`, which signals the direct child only and strands a
+        // launcher's descendants.
+        let log: EventLog = Arc::new(Mutex::new(Vec::new()));
+        let specs = vec![spec("core", &[])];
+        let mut sup = Supervisor::new(MockSpawner::new(log.clone()), specs).unwrap();
+        sup.start_all().await.unwrap();
+        assert!(
+            sup.status()[0].pid.is_some(),
+            "the process is still running"
+        );
+
+        sup.mark_degraded("core", Duration::from_secs(1))
+            .await
+            .unwrap();
+
+        assert!(
+            log.lock().unwrap().iter().any(|e| e == "terminate:core"),
+            "a live process must be terminated, not dropped: {:?}",
+            log.lock().unwrap(),
+        );
+        assert_eq!(sup.status()[0].state, ServiceState::Degraded);
+        assert!(sup.status()[0].pid.is_none(), "and its handle released");
     }
 
     #[tokio::test]
@@ -1157,7 +1196,9 @@ mod tests {
         sup.start_all().await.unwrap();
         sup.shutdown_one_for_test("mcp").await;
         sup.poll_exits().await.unwrap();
-        sup.mark_degraded("mcp").unwrap();
+        sup.mark_degraded("mcp", Duration::from_secs(1))
+            .await
+            .unwrap();
 
         // `Degraded` is a dead service, so the manual control that exists for the
         // optional services has to accept it as startable.

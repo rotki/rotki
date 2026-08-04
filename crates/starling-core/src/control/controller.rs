@@ -553,7 +553,7 @@ impl<S: Spawner> Controller<S> {
                                 ) {
                                     // `ReportOnly`: it is staying down and the tree
                                     // carries on, which is `Degraded`, not `Failed`.
-                                    self.degrade(&service);
+                                    self.degrade(&service).await;
                                     continue;
                                 }
                                 if policy.max_retries == 0 {
@@ -562,7 +562,7 @@ impl<S: Spawner> Controller<S> {
                                             service,
                                             "restart policy has no attempts; leaving service degraded",
                                         );
-                                        self.degrade(&service);
+                                        self.degrade(&service).await;
                                         continue;
                                     }
                                     error!(service, "restart policy has no attempts");
@@ -616,7 +616,7 @@ impl<S: Spawner> Controller<S> {
                                             max_retries = policy.max_retries,
                                             "restart attempts exhausted; leaving service degraded",
                                         );
-                                        self.degrade(&service);
+                                        self.degrade(&service).await;
                                         continue;
                                     }
                                     error!(
@@ -912,8 +912,8 @@ impl<S: Spawner> Controller<S> {
     /// `Degraded`, and republish so the health surface sees it. The crash was
     /// already logged and emitted by the caller; this only records that we are
     /// done reacting to it.
-    fn degrade(&mut self, service: &str) {
-        if let Err(err) = self.supervisor.mark_degraded(service) {
+    async fn degrade(&mut self, service: &str) {
+        if let Err(err) = self.supervisor.mark_degraded(service, self.grace).await {
             error!(service, %err, "failed to mark crashed service degraded");
             return;
         }
