@@ -246,10 +246,13 @@ export default defineConfig({
     },
     {
       // One supervisor brings up core and colibri and fronts both behind its
-      // proxy. The probe hits core through that proxy, so a pass means the whole
-      // tree plus the routing is live.
+      // proxy. The gate is the supervisor's own `/health`, which answers 200 only
+      // once every service has passed its readiness probe (core `/api/1/ping`,
+      // colibri `/health`). Probing core through the proxy instead let the suite
+      // start with colibri still coming up: the proxy binds and serves before the
+      // tree is brought up, so core answering says nothing about the rest.
       command: `tsx scripts/start-starling.ts --port ${PROXY_PORT} --core-port ${BACKEND_PORT} --colibri-port ${COLIBRI_PORT} --mcp-port ${MCP_PORT} --data ${dataDir} --logs ${logDir}`,
-      url: `${backendUrl}/api/1/ping`,
+      url: `${backendUrl}/health`,
       reuseExistingServer: !process.env.CI,
       // Covers a cold `cargo run` for both Rust services on a fresh checkout.
       timeout: 180_000,

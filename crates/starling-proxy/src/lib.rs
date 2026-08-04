@@ -11,6 +11,7 @@
 //! | `/ws/*`      | `core` (127.0.0.1:4242)   | preserved + WS upgrade |
 //! | `/colibri/*` | `colibri` (127.0.0.1:4343)| prefix **stripped**    |
 //! | `/mcp`       | `mcp` (127.0.0.1:4445)    | preserved              |
+//! | `/health`    | served here               | supervisor liveness    |
 //! | everything   | static SPA on disk        | SPA fallback to index  |
 //!
 //! Unlike nginx, the proxy **streams** request/response bodies without buffering,
@@ -40,7 +41,7 @@ use axum::{
     http::{HeaderMap, HeaderName, HeaderValue, StatusCode, Uri},
     middleware::{from_fn, from_fn_with_state, Next},
     response::{IntoResponse, Response},
-    routing::any,
+    routing::{any, get},
     Router,
 };
 
@@ -97,6 +98,45 @@ const MAX_CONCURRENT_CONNECTIONS: usize = 1024;
 /// never cut off. `/ws` is exempt (it carries no request body).
 const BODY_READ_TIMEOUT: Duration = Duration::from_secs(60);
 
+/// The public, unauthenticated view of the supervised tree: two booleans and
+/// nothing else. Deliberately not the detailed status — pids, per-service state
+/// and `lastError` stay on the authenticated control surfaces (§S3), because
+/// this one answers anyone who can reach the published port.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Health {
+    /// True once every autostarted service is ready.
+    pub ok: bool,
+    /// True if any of them has failed or is restarting while the supervisor is
+    /// still alive to answer.
+    pub degraded: bool,
+}
+
+/// Reads the current [`Health`] on demand. Boxed rather than typed as the
+/// supervisor's control handle so this crate keeps its independence from
+/// `starling-core`, the same arrangement the access log's probe agent uses.
+#[derive(Clone)]
+pub struct HealthProbe(Arc<dyn Fn() -> Health + Send + Sync>);
+
+impl HealthProbe {
+    /// Wrap a closure reading the supervisor's health.
+    pub fn new<F>(probe: F) -> Self
+    where
+        F: Fn() -> Health + Send + Sync + 'static,
+    {
+        Self(Arc::new(probe))
+    }
+
+    fn read(&self) -> Health {
+        (self.0)()
+    }
+}
+
+impl std::fmt::Debug for HealthProbe {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("HealthProbe(..)")
+    }
+}
+
 /// Where to bind and what to proxy to.
 #[derive(Clone, Debug)]
 pub struct ProxyConfig {
@@ -126,6 +166,10 @@ pub struct ProxyConfig {
     /// is passed in rather than imported so this crate keeps its independence
     /// from `starling-core`, which owns the probe.
     pub access_log: access_log::AccessLog,
+    /// Source for the public `/health` endpoint. `None` leaves the route
+    /// unregistered entirely, so a config that cannot answer honestly serves a
+    /// 404 rather than a hardcoded "fine".
+    pub health: Option<HealthProbe>,
 }
 
 /// A pooled HTTP/1 client whose request body is the same streaming `Body` axum
@@ -139,6 +183,7 @@ struct ProxyState {
     colibri_addr: String,
     mcp_addr: String,
     mcp_enabled: bool,
+    health: Option<HealthProbe>,
 }
 
 /// Bind the proxy listener on `host`. Done before serving so a bind failure
@@ -270,6 +315,7 @@ fn router(config: &ProxyConfig) -> Router {
         colibri_addr: format!("127.0.0.1:{}", config.colibri_port),
         mcp_addr: format!("127.0.0.1:{}", config.mcp_port),
         mcp_enabled: config.mcp_enabled,
+        health: config.health.clone(),
     };
 
     // nginx `location /prefix/` is a prefix match that also matches the bare
@@ -309,6 +355,17 @@ fn router(config: &ProxyConfig) -> Router {
         .route("/ws", any(proxy_ws))
         .route("/ws/", any(proxy_ws))
         .route("/ws/{*rest}", any(proxy_ws));
+
+    // The public health endpoint, answered here rather than proxied: it reports
+    // on the *supervisor's* view of the tree, which no backend can speak for.
+    // Registered only when a probe was supplied, and after the body layers above
+    // (it takes no request body, and the ceilings stay scoped to the proxied
+    // routes). It precedes the SPA fallback, so in docker `/health` is the
+    // endpoint and not the index page.
+    let routes = match &config.health {
+        Some(_) => routes.route("/health", get(health)),
+        None => routes,
+    };
 
     // SPA static serving with history-mode fallback: unknown paths return
     // index.html so client-side routing works (mirrors nginx `try_files`).
@@ -440,6 +497,41 @@ fn is_fingerprinted(file: &str) -> bool {
     bytes[dot - 8..dot]
         .iter()
         .all(|&b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
+}
+
+/// `GET /health` → the supervisor's boolean health, served by the proxy itself.
+///
+/// `200` once the tree is up, `503` while it is still coming up or after a
+/// service has died, which is the contract a container `HEALTHCHECK` and a test
+/// harness's readiness gate both want: the listener answers from the moment it
+/// binds, but it does not claim readiness until the supervisor has it. `degraded`
+/// rides along for a tree that is answering but has a service down.
+///
+/// The body is written by hand instead of via `serde_json` to keep that
+/// dependency out of the crate's build for two booleans.
+async fn health(State(state): State<ProxyState>) -> Response {
+    // Unreachable while the route is registered only alongside a probe; kept
+    // total so a future caller cannot turn a missing probe into a claim of
+    // health.
+    let Some(probe) = state.health.as_ref() else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let Health { ok, degraded } = probe.read();
+    let status = if ok {
+        StatusCode::OK
+    } else {
+        StatusCode::SERVICE_UNAVAILABLE
+    };
+    (
+        status,
+        [
+            (header::CONTENT_TYPE, "application/json"),
+            // A cached health answer is a wrong health answer.
+            (header::CACHE_CONTROL, "no-store"),
+        ],
+        format!("{{\"ok\":{ok},\"degraded\":{degraded}}}"),
+    )
+        .into_response()
 }
 
 /// `/api/1/*` → core, path preserved.
@@ -817,6 +909,7 @@ mod tests {
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
+            health: None,
         });
         let resp = app
             .oneshot(
@@ -890,6 +983,150 @@ mod tests {
         String::from_utf8(bytes.to_vec()).unwrap()
     }
 
+    /// A proxy pointed at no backends, configured with a fixed health answer.
+    fn health_router(health: Option<Health>, frontend_dir: Option<PathBuf>) -> Router {
+        router(&ProxyConfig {
+            port: 0,
+            core_port: 1,
+            colibri_port: 1,
+            mcp_port: 1,
+            mcp_enabled: true,
+            frontend_dir,
+            max_body_bytes: 50 * 1024 * 1024,
+            access_log: Default::default(),
+            health: health.map(|health| HealthProbe::new(move || health)),
+        })
+    }
+
+    async fn get_health(app: Router) -> Response {
+        app.oneshot(
+            Request::builder()
+                .uri("/health")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap()
+    }
+
+    #[tokio::test]
+    async fn health_is_200_when_the_tree_is_up() {
+        let resp = get_health(health_router(
+            Some(Health {
+                ok: true,
+                degraded: false,
+            }),
+            None,
+        ))
+        .await;
+
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(
+            resp.headers().get(header::CACHE_CONTROL).unwrap(),
+            "no-store"
+        );
+        assert_eq!(
+            resp.headers().get(header::CONTENT_TYPE).unwrap(),
+            "application/json"
+        );
+        assert_eq!(body_string(resp).await, r#"{"ok":true,"degraded":false}"#);
+    }
+
+    #[tokio::test]
+    async fn a_serving_tree_with_an_optional_service_down_is_still_200() {
+        // `ok` and `degraded` are independent: an optional service being dead is
+        // reported, but it must not fail the probe and get the container
+        // restarted while rotki is answering every request.
+        let resp = get_health(health_router(
+            Some(Health {
+                ok: true,
+                degraded: true,
+            }),
+            None,
+        ))
+        .await;
+
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(body_string(resp).await, r#"{"ok":true,"degraded":true}"#);
+    }
+
+    #[tokio::test]
+    async fn health_is_503_before_the_tree_is_ready() {
+        // The listener answers from the moment it binds, which is exactly why a
+        // readiness gate needs this to be a failure rather than a 200.
+        let resp = get_health(health_router(
+            Some(Health {
+                ok: false,
+                degraded: false,
+            }),
+            None,
+        ))
+        .await;
+
+        assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
+        assert_eq!(body_string(resp).await, r#"{"ok":false,"degraded":false}"#);
+    }
+
+    #[tokio::test]
+    async fn health_reports_a_degraded_tree() {
+        let resp = get_health(health_router(
+            Some(Health {
+                ok: false,
+                degraded: true,
+            }),
+            None,
+        ))
+        .await;
+
+        assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
+        assert_eq!(body_string(resp).await, r#"{"ok":false,"degraded":true}"#);
+    }
+
+    #[tokio::test]
+    async fn health_is_not_served_without_a_probe() {
+        let resp = get_health(health_router(None, None)).await;
+
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn health_wins_over_the_spa_fallback() {
+        // In docker every unknown path returns index.html, so the route has to be
+        // registered ahead of the static service or `/health` silently serves the
+        // SPA shell with a 200 — the worst possible answer for a probe.
+        let dir = unique_temp_dir();
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("index.html"), "<html>SPA</html>").unwrap();
+
+        let app = health_router(
+            Some(Health {
+                ok: true,
+                degraded: false,
+            }),
+            Some(dir.clone()),
+        );
+
+        // Negative control: an unknown path really does fall through to the SPA.
+        let spa = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/some/client/route")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(spa.status(), StatusCode::OK);
+        assert_eq!(body_string(spa).await, "<html>SPA</html>");
+
+        let resp = get_health(app).await;
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(body_string(resp).await, r#"{"ok":true,"degraded":false}"#);
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
     #[tokio::test]
     async fn api_path_is_preserved() {
         let port = spawn_echo_upstream().await;
@@ -902,6 +1139,7 @@ mod tests {
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
+            health: None,
         });
         let resp = app
             .oneshot(
@@ -928,6 +1166,7 @@ mod tests {
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
+            health: None,
         });
         let resp = app
             .oneshot(
@@ -982,6 +1221,7 @@ mod tests {
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
+            health: None,
         });
 
         let response = app
@@ -1016,6 +1256,7 @@ mod tests {
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
+            health: None,
         });
 
         let response = app
@@ -1044,6 +1285,7 @@ mod tests {
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
+            health: None,
         });
 
         let response = app
@@ -1072,6 +1314,7 @@ mod tests {
             frontend_dir: Some(dir.clone()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
+            health: None,
         });
 
         // Fingerprinted asset → immutable + security headers.
@@ -1145,6 +1388,7 @@ mod tests {
             frontend_dir: Some(dir.clone()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
+            health: None,
         });
         let resp = app
             .oneshot(
@@ -1175,6 +1419,7 @@ mod tests {
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
+            health: None,
         });
         let resp = app
             .oneshot(
@@ -1208,6 +1453,7 @@ mod tests {
             frontend_dir: Some(dir.clone()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
+            health: None,
         });
         let resp = app
             .oneshot(
@@ -1240,6 +1486,7 @@ mod tests {
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 16,
             access_log: Default::default(),
+            health: None,
         });
         let resp = app
             .oneshot(
@@ -1267,6 +1514,7 @@ mod tests {
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
+            health: None,
         });
         let resp = app
             .oneshot(
@@ -1334,6 +1582,7 @@ mod tests {
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
+            health: None,
         };
         tokio::spawn(async move {
             serve(proxy_listener, config, std::future::pending::<()>())
@@ -1373,6 +1622,7 @@ mod tests {
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
+            health: None,
         };
         tokio::spawn(async move {
             serve_with_header_timeout(

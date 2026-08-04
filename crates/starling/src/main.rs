@@ -31,7 +31,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use clap::{Parser, Subcommand, ValueEnum};
 use starling_core::{
     build_services, Controller, Launcher, OnCrash, OsSpawner, Outcome, RestartPolicy,
-    ServiceLayout, ServiceSpec, Startup, StdioMode, Supervisor,
+    ServiceLayout, ServiceSpec, Startup, StdioMode, Supervisor, Transport,
 };
 use starling_proxy::ProxyConfig;
 use std::sync::Arc;
@@ -810,6 +810,29 @@ async fn main() -> std::process::ExitCode {
     // Serve the SPA + reverse-proxy on the already-bound listener.
     let proxy = if let Some((listener, port)) = bound {
         controller.set_proxy_url(Some(format!("http://127.0.0.1:{port}")));
+        // The public `/health` endpoint reads the supervisor's own view of the
+        // tree through the ordinary control handle, on the public-health
+        // transport — so the §S9 matrix gates it exactly as it gates every other
+        // surface, and this route can never widen to `status`. An authorization
+        // error is impossible for `health` there, but it is reported as unhealthy
+        // rather than unwrapped: a health endpoint must not be able to panic the
+        // supervisor.
+        let health_handle = controller.handle();
+        let health = starling_proxy::HealthProbe::new(move || {
+            match health_handle.health(Transport::PublicHealth) {
+                Ok(health) => starling_proxy::Health {
+                    ok: health.ok,
+                    degraded: health.degraded,
+                },
+                Err(err) => {
+                    error!(%err, "health probe was refused by the control gate");
+                    starling_proxy::Health {
+                        ok: false,
+                        degraded: true,
+                    }
+                }
+            }
+        });
         let config = ProxyConfig {
             port,
             core_port: cli.core_port,
@@ -840,6 +863,11 @@ async fn main() -> std::process::ExitCode {
                 // entries a day and bury the real traffic.
                 probe_user_agent: Some(starling_core::PROBE_USER_AGENT.to_string()),
             },
+            // Both modes: docker's HEALTHCHECK probes it, and the e2e harness
+            // gates the suite on it (embedded starling boots idle, so a route
+            // that only answers after `start` is what tells the runner the whole
+            // tree is up, not just the listener).
+            health: Some(health),
         };
         let notify = Arc::new(Notify::new());
         let stop = notify.clone();
