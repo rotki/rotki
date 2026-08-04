@@ -22,10 +22,18 @@ use crate::readiness::probe_once;
 /// The per-service state machine:
 ///
 /// ```text
-/// Idle → Spawning → WaitingReady → Ready → (Degraded ⇄ Restarting) → Stopping → Stopped
-///                        │
+/// Idle → Spawning → WaitingReady → Ready → (Failed ⇄ Restarting) → Stopping → Stopped
+///                        │            │
+///                        │            └─ crashed, policy says do not restart → Degraded
 ///                        └─ ping-gate fails / exits early → Failed
 /// ```
+///
+/// `Failed` and `Degraded` are both "dead", and differ only in what the policy
+/// says to do about it: `Failed` is on its way to a restart or to taking the
+/// supervisor down, while `Degraded` is a service the tree is expected to keep
+/// running without ([`OnCrash::ReportOnly`], or `RestartOrReport` once its
+/// attempts are spent). The distinction is what lets the public health endpoint
+/// answer "up, minus an optional service" instead of "down".
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub enum ServiceState {
@@ -178,7 +186,10 @@ impl<S: Spawner> Supervisor<S> {
         }
         if !matches!(
             rt.state,
-            ServiceState::Idle | ServiceState::Stopped | ServiceState::Failed
+            ServiceState::Idle
+                | ServiceState::Stopped
+                | ServiceState::Failed
+                | ServiceState::Degraded
         ) {
             return Err(SupervisorError::AlreadyRunning(name.to_string()));
         }
@@ -191,6 +202,23 @@ impl<S: Spawner> Supervisor<S> {
             }
         }
         self.start_one(name).await
+    }
+
+    /// Mark a crashed service as `Degraded`: dead, and staying that way because
+    /// its policy says the tree carries on without it.
+    ///
+    /// The process handle is dropped along with the state, which is load-bearing:
+    /// [`poll_exits`](Self::poll_exits) re-reports any service it finds exited, so
+    /// a `Degraded` service that kept its handle would be rediscovered as newly
+    /// dead on every poll tick, forever.
+    pub fn mark_degraded(&mut self, name: &str) -> Result<()> {
+        let rt = self
+            .services
+            .get_mut(name)
+            .ok_or_else(|| SupervisorError::NotFound(name.to_string()))?;
+        rt.state = ServiceState::Degraded;
+        rt.process.take();
+        Ok(())
     }
 
     /// Restart a service already marked `Failed` by the crash poll.
@@ -321,10 +349,10 @@ impl<S: Spawner> Supervisor<S> {
             if name == gating {
                 continue;
             }
-            // Only services that got up: the ones after this in the graph are
-            // still `Idle` and have no process yet.
-            let state = self.services[name].state;
-            if !matches!(state, ServiceState::Ready | ServiceState::Degraded) {
+            // Only services that got up and are still up: the ones after this in
+            // the graph are still `Idle` and have no process yet, and a `Degraded`
+            // one is already known to be dead.
+            if self.services[name].state != ServiceState::Ready {
                 continue;
             }
             if self.process_exited(name).await? {
@@ -390,7 +418,9 @@ impl<S: Spawner> Supervisor<S> {
                 continue;
             }
             let rt = self.services.get_mut(&name).expect("service exists");
-            if rt.state == ServiceState::Ready || rt.state == ServiceState::Degraded {
+            // `Ready` only: a `Degraded` service is already-known-dead, and
+            // re-reporting it here would re-emit its crash on every tick.
+            if rt.state == ServiceState::Ready {
                 let info = match &rt.process {
                     Some(p) => p.try_status().await.ok().flatten(),
                     None => None,
@@ -437,12 +467,13 @@ impl<S: Spawner> Supervisor<S> {
         if let Some(dependent) = self.order.iter().find(|candidate| {
             let rt = &self.services[*candidate];
             rt.spec.deps.iter().any(|dependency| dependency == name)
+                // A `Degraded` dependent is dead, so it needs nothing kept alive
+                // on its behalf.
                 && matches!(
                     rt.state,
                     ServiceState::Spawning
                         | ServiceState::WaitingReady
                         | ServiceState::Ready
-                        | ServiceState::Degraded
                         | ServiceState::Restarting
                 )
         }) {
@@ -1095,6 +1126,43 @@ mod tests {
             "a tree that outlasts the grace must be force-killed: {events:?}",
         );
         assert_eq!(sup.status()[0].state, ServiceState::Stopped);
+    }
+
+    #[tokio::test]
+    async fn a_degraded_service_is_not_re_reported_as_newly_dead() {
+        let log: EventLog = Arc::new(Mutex::new(Vec::new()));
+        let specs = vec![spec("core", &[])];
+        let mut sup = Supervisor::new(MockSpawner::new(log), specs).unwrap();
+        sup.start_all().await.unwrap();
+
+        sup.shutdown_one_for_test("core").await;
+        assert_eq!(sup.poll_exits().await.unwrap(), vec!["core"]);
+
+        // Once the crash has been reacted to, every later tick must stay quiet:
+        // the process is gone for good, so a `Degraded` service that still held
+        // its handle would be rediscovered as newly dead forever.
+        sup.mark_degraded("core").unwrap();
+        assert_eq!(sup.status()[0].state, ServiceState::Degraded);
+        assert!(sup.poll_exits().await.unwrap().is_empty());
+        assert!(sup.poll_exits().await.unwrap().is_empty());
+        assert_eq!(sup.status()[0].state, ServiceState::Degraded);
+    }
+
+    #[tokio::test]
+    async fn a_degraded_service_can_be_started_again() {
+        let log: EventLog = Arc::new(Mutex::new(Vec::new()));
+        let mut spec = spec("mcp", &[]);
+        spec.allow_manual_control = true;
+        let mut sup = Supervisor::new(MockSpawner::new(log), vec![spec]).unwrap();
+        sup.start_all().await.unwrap();
+        sup.shutdown_one_for_test("mcp").await;
+        sup.poll_exits().await.unwrap();
+        sup.mark_degraded("mcp").unwrap();
+
+        // `Degraded` is a dead service, so the manual control that exists for the
+        // optional services has to accept it as startable.
+        sup.start_service("mcp").await.unwrap();
+        assert_eq!(sup.status()[0].state, ServiceState::Ready);
     }
 
     #[tokio::test]

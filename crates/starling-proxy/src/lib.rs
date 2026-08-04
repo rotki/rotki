@@ -1033,6 +1033,24 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_serving_tree_with_an_optional_service_down_is_still_200() {
+        // `ok` and `degraded` are independent: an optional service being dead is
+        // reported, but it must not fail the probe and get the container
+        // restarted while rotki is answering every request.
+        let resp = get_health(health_router(
+            Some(Health {
+                ok: true,
+                degraded: true,
+            }),
+            None,
+        ))
+        .await;
+
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(body_string(resp).await, r#"{"ok":true,"degraded":true}"#);
+    }
+
+    #[tokio::test]
     async fn health_is_503_before_the_tree_is_ready() {
         // The listener answers from the moment it binds, which is exactly why a
         // readiness gate needs this to be a failure rather than a 200.

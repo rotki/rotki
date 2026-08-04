@@ -136,11 +136,27 @@ $ curl -s localhost/health
 {"ok":true,"degraded":false}
 ```
 
-It is `200` when every service is up and `503` otherwise, with `degraded` marking
-a tree that is answering but has a service down. It deliberately carries nothing
-else — pids, per-service state and error text stay on the authenticated control
-socket (`starling ctl status`), since anything on the published port is readable
-by whoever can reach it.
+The two flags are independent:
+
+| Answer | Meaning |
+|---|---|
+| `200 {"ok":true,"degraded":false}` | everything up |
+| `200 {"ok":true,"degraded":true}` | serving, but something that should be up is down |
+| `503 {"ok":false,"degraded":true}` | a service is dead or bouncing |
+| `503 {"ok":false,"degraded":false}` | still starting |
+| no answer | the container is down, or a required service took the supervisor with it |
+
+`degraded` means a service that *was* running is now down, not that a service is
+switched off: an mcp you never enabled is simply not running, and reports
+nothing.
+
+An optional service staying down keeps the container **healthy** on purpose:
+rotki answers every request without it, and failing the probe would have the
+container restarted over something it does not need.
+
+The endpoint deliberately carries nothing else — pids, per-service state and
+error text stay on the authenticated control socket (`starling ctl status`),
+since anything on the published port is readable by whoever can reach it.
 
 ## Logs
 
