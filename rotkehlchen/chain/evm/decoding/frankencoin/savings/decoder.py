@@ -1,13 +1,13 @@
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.evm.decoding.frankencoin.constants import CPT_FRANKENCOIN, ZCHF_ADDRESS
 from rotkehlchen.chain.evm.decoding.frankencoin.decoder import FrankencoinCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_EVM_DECODING_OUTPUT
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.utils.misc import bytes_to_address
 
-from ..constants import CPT_FRANKENCOIN, ZCHF_ADDRESS
 from .constants import (
     INTEREST_COLLECTED_TOPIC,
     SAVED_TOPIC,

@@ -9,13 +9,13 @@ if TYPE_CHECKING:
     from rotkehlchen.types import ChecksumEvmAddress
 
 SAVINGS_CONTRACT_ADDRESS: Final[dict[ChainID, ChecksumEvmAddress]] = {
-    ChainID.ETHEREUM: string_to_evm_address('0x27d9ad987bde08a0d083ef7e0e4043c857a17b38'),
-    ChainID.ARBITRUM_ONE: string_to_evm_address('0xb41715e54e9f0827821a149ae8ec1af70aa70180'),
-    ChainID.BASE: string_to_evm_address('0x6426324af1b14df3cd03b2d500529083c5ea61bc'),
-    ChainID.POLYGON_POS: string_to_evm_address('0xb519bae359727e69990c27241bef29b394a0acbd'),
-    ChainID.GNOSIS: string_to_evm_address('0xbf594d0fed79ae56d910cb01b5dd4f4c57b04402'),
-    ChainID.AVALANCHE: string_to_evm_address('0x8e7c2a697751a1ce7a8db51f01b883a27c5c8325'),
-    ChainID.OPTIMISM: string_to_evm_address('0x6426324af1b14df3cd03b2d500529083c5ea61bc'),
+    ChainID.ETHEREUM: string_to_evm_address('0x27d9AD987BdE08a0d083ef7e0e4043C857A17B38'),
+    ChainID.ARBITRUM_ONE: string_to_evm_address('0xb41715e54e9f0827821A149AE8eC1aF70aa70180'),
+    ChainID.BASE: string_to_evm_address('0x6426324Af1b14Df3cd03b2d500529083c5ea61BC'),
+    ChainID.POLYGON_POS: string_to_evm_address('0xB519BAE359727e69990C27241Bef29b394A0ACbD'),
+    ChainID.GNOSIS: string_to_evm_address('0xbF594D0feD79AE56d910Cb01b5dD4f4c57B04402'),
+    ChainID.AVALANCHE: string_to_evm_address('0x8e7c2a697751a1cE7a8DB51f01B883A27c5c8325'),
+    ChainID.OPTIMISM: string_to_evm_address('0x6426324Af1b14Df3cd03b2d500529083c5ea61BC'),
 }
 
 SAVINGS_CONTRACT_ABI: ABI = [

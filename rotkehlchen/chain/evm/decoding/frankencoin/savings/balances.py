@@ -10,9 +10,9 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.decoding.frankencoin.constants import CPT_FRANKENCOIN
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 
-from ..constants import CPT_FRANKENCOIN
 from .constants import SAVINGS_CONTRACT_ABI, SAVINGS_CONTRACT_ADDRESS
 
 if TYPE_CHECKING:
