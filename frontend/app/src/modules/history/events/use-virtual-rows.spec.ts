@@ -1,7 +1,17 @@
+import type { ComputedRef } from 'vue';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryEventRow } from '@/modules/history/events/schemas';
-import { ROW_HEIGHTS, useVirtualRows } from './use-virtual-rows';
+import { ROW_HEIGHTS, useVirtualRows, type VirtualRow } from './use-virtual-rows';
+
+/** Subgroup keys as the composable minted them — the specs must not encode the key format. */
+function swapKeys(rows: ComputedRef<VirtualRow[]>): string[] {
+  return get(rows).flatMap(row => (row.type === 'swap-row' ? [row.swapKey] : []));
+}
+
+function movementKeys(rows: ComputedRef<VirtualRow[]>): string[] {
+  return get(rows).flatMap(row => (row.type === 'matched-movement-row' ? [row.movementKey] : []));
+}
 
 describe('use-virtual-rows', () => {
   function createMockEvent(overrides: Omit<Partial<HistoryEventEntry>, 'entryType'> = {}): HistoryEventEntry {
@@ -321,7 +331,7 @@ describe('use-virtual-rows', () => {
 
       const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
-      toggleSwapExpanded('group1-0');
+      toggleSwapExpanded(swapKeys(flattenedRows)[0]);
       await nextTick();
 
       const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
@@ -348,8 +358,9 @@ describe('use-virtual-rows', () => {
       const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Expand both swap subgroups
-      toggleSwapExpanded('group1-0');
-      toggleSwapExpanded('group1-1');
+      const [firstSwap, secondSwap] = swapKeys(flattenedRows);
+      toggleSwapExpanded(firstSwap);
+      toggleSwapExpanded(secondSwap);
       await nextTick();
 
       const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
@@ -392,6 +403,41 @@ describe('use-virtual-rows', () => {
       expect(eventRows[1].type === 'event-row' && eventRows[1].data.identifier).toBe(3);
     });
 
+    /**
+     * The bug this guards: expansion used to be keyed by the subgroup's position, so anything that
+     * shifted the index — an event added or deleted above it, or just a refetch returning a
+     * different set — collapsed an expanded swap, or handed its expanded state to whichever
+     * subgroup landed on that index.
+     */
+    it('should keep a swap expanded when an event above it is removed', async () => {
+      const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
+      const leading = createMockEvent({ groupIdentifier: 'group1', identifier: 2 });
+      const swapEventA = createMockEvent({ groupIdentifier: 'group1', identifier: 3 });
+      const swapEventB = createMockEvent({ groupIdentifier: 'group1', identifier: 4 });
+
+      const leadingPresent = ref<boolean>(true);
+      const groups = computed<HistoryEventEntry[]>(() => [group]);
+      const eventsByGroup = computed<Record<string, HistoryEventRow[]>>(() => ({
+        group1: get(leadingPresent)
+          ? [leading, [swapEventA, swapEventB]]
+          : [[swapEventA, swapEventB]],
+      }));
+
+      const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
+
+      const swapRow = get(flattenedRows).find(r => r.type === 'swap-row');
+      toggleSwapExpanded(swapRow?.type === 'swap-row' ? swapRow.swapKey : '');
+      await nextTick();
+      expect(get(flattenedRows).filter(r => r.type === 'swap-collapse')).toHaveLength(1);
+
+      // The event above the swap goes away, so the swap moves from index 1 to index 0.
+      set(leadingPresent, false);
+      await nextTick();
+
+      expect(get(flattenedRows).filter(r => r.type === 'swap-collapse')).toHaveLength(1);
+      expect(get(flattenedRows).filter(r => r.type === 'swap-row')).toHaveLength(0);
+    });
+
     it('should collapse expanded swap back to swap-row', async () => {
       const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
       const swapEvent1 = createMockEvent({ groupIdentifier: 'group1', identifier: 2 });
@@ -405,7 +451,8 @@ describe('use-virtual-rows', () => {
       const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Get swap key and expand
-      const swapKey = 'group1-0';
+      const swapRow = get(flattenedRows).find(r => r.type === 'swap-row');
+      const swapKey = swapRow?.type === 'swap-row' ? swapRow.swapKey : '';
       toggleSwapExpanded(swapKey);
       await nextTick();
 
@@ -619,7 +666,7 @@ describe('use-virtual-rows', () => {
 
       const { flattenedRows, toggleMovementExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
-      toggleMovementExpanded('group1-0');
+      toggleMovementExpanded(movementKeys(flattenedRows)[0]);
       await nextTick();
 
       const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
@@ -644,7 +691,8 @@ describe('use-virtual-rows', () => {
       const { flattenedRows, toggleMovementExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Get movement key and expand
-      const movementKey = 'group1-0';
+      const movementRow = get(flattenedRows).find(r => r.type === 'matched-movement-row');
+      const movementKey = movementRow?.type === 'matched-movement-row' ? movementRow.movementKey : '';
       toggleMovementExpanded(movementKey);
       await nextTick();
 
@@ -717,7 +765,7 @@ describe('use-virtual-rows', () => {
       const { flattenedRows, getRowHeight, toggleMovementExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Expand the movement
-      toggleMovementExpanded('group1-0');
+      toggleMovementExpanded(movementKeys(flattenedRows)[0]);
       await nextTick();
 
       // Find matched-movement-collapse row index
