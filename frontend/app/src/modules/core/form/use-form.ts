@@ -86,7 +86,7 @@ interface ServerError {
 export function useForm<TState extends object, TPayload, TMessage = string>(
   options: FormOptions<TState, TPayload, TMessage>,
 ): FormApi<TState, TPayload, TMessage> {
-  const { t } = useI18n({ useScope: 'global' });
+  const i18n = useI18n({ useScope: 'global' });
 
   const state = reactive(options.initial());
   const busy = shallowRef<boolean>(false);
@@ -152,7 +152,9 @@ export function useForm<TState extends object, TPayload, TMessage = string>(
     const map: Record<string, string[]> = {};
     for (const issue of result.error.issues) {
       const path = issue.path.map(segment => String(segment)).join('.');
-      (map[path] ??= []).push(t(issue.message));
+      // Schema messages are i18n keys, but zod's own defaults are plain English. Translating those
+      // blindly asks intlify for a key that cannot exist and logs a warning for every keystroke.
+      (map[path] ??= []).push(i18n.te(issue.message) ? i18n.t(issue.message) : issue.message);
     }
     return map;
   });
