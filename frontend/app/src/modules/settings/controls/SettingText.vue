@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import type { ZodType } from 'zod';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
-import useVuelidate, { type ValidationArgs } from '@vuelidate/core';
-import { helpers, maxLength as maxLengthRule, required as requiredRule } from '@vuelidate/validators';
-import { useValidation } from '@/modules/core/common/use-validation';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useForm } from '@/modules/core/form/use-form';
+import { SETTING_FIELD, type SettingFieldState, textSettingSchema } from '@/modules/settings/controls/setting-field-schemas';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
@@ -12,8 +11,8 @@ import { useSettingModel } from '@/modules/settings/use-setting-model';
  * Generic owning component for a string setting. Bakes in optional `required` + `maxLength` validation
  * from props and persists through `useSettingModel` (debounced while typing, immediate on reset). Renders
  * only the field + optional reset button; put it inside a `SettingsItem` for the header. For settings
- * with bespoke validation (format directives, custom checks), pass a full vuelidate `rules` object keyed
- * under `value` to replace the baked rules.
+ * with bespoke validation (format directives, custom checks), pass a `schema` addressing the value
+ * under `SETTING_FIELD` to replace the baked one.
  */
 defineOptions({ inheritAttrs: false });
 
@@ -23,7 +22,7 @@ const {
   default: defaultValue,
   required = false,
   maxLength,
-  rules,
+  schema,
   transform = (value: string): string => value,
   successMessage = '',
   errorMessage = '',
@@ -35,8 +34,8 @@ const {
   default?: string;
   required?: boolean;
   maxLength?: number;
-  /** Escape hatch: a vuelidate rules object keyed under `value`, replacing the baked required/maxLength. */
-  rules?: ValidationArgs;
+  /** Escape hatch: a zod schema addressing the field under `SETTING_FIELD`, replacing the baked one. */
+  schema?: ZodType;
   /** Maps the field string to the stored value. Defaults to identity. */
   transform?: (value: string) => string;
   /** Static text, or a callback given the persisted value. */
@@ -55,32 +54,31 @@ const { t } = useI18n({ useScope: 'global' });
 const { error: writeError, flush, model, success: writeSuccess } = useSettingModel(setting, { debounce });
 const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
 
-const input = ref<string>(get(model));
+const bakedSchema = computed<ZodType>(() => textSettingSchema({
+  maxLength,
+  messages: {
+    maxLength: t('settings.validation.text.max_length', { max: maxLength }),
+    required: t('settings.validation.text.non_empty'),
+  },
+  required,
+}));
 
-const bakedRules = computed<ValidationArgs>(() => {
-  const valueRules: Record<string, ReturnType<typeof helpers.withMessage>> = {};
-  if (required)
-    valueRules.required = helpers.withMessage(t('settings.validation.text.non_empty'), requiredRule);
-
-  if (maxLength !== undefined)
-    valueRules.maxLength = helpers.withMessage(t('settings.validation.text.max_length', { max: maxLength }), maxLengthRule(maxLength));
-
-  return { value: valueRules };
+const form = useForm<SettingFieldState, SettingFieldState>({
+  initial: (): SettingFieldState => ({ value: get(model) }),
+  schema: () => schema ?? get(bakedSchema),
+  submit: async (payload: SettingFieldState): Promise<{ success: boolean }> => {
+    set(model, transform(payload.value));
+    return Promise.resolve({ success: true });
+  },
+  transform: (state): SettingFieldState => ({ value: state.value }),
 });
-
-const activeRules = computed<ValidationArgs>(() => rules ?? get(bakedRules));
-
-const states = computed(() => ({ value: get(input) }));
-
-const v$ = useVuelidate(activeRules, states, { $autoDirty: true });
-const { callIfValid } = useValidation(v$);
 
 const hasDefault = computed<boolean>(() => defaultValue !== undefined);
 
 // Reflect external changes into the field, but ignore the echo of our own writes (same string).
 watch(model, (value) => {
-  if (value !== get(input))
-    set(input, value);
+  if (value !== form.state.value)
+    form.state.value = value;
 });
 
 watch(writeSuccess, (saved) => {
@@ -95,20 +93,18 @@ watch(writeError, (message) => {
     setError(errorMessage ? `${errorMessage}: ${message}` : message, true);
 });
 
-function persistValue(value: string): void {
-  set(model, transform(value));
-}
-
-function onInput(value: string): void {
+/** Submitting is the persist: the core runs it only when the field parses, as `callIfValid` did. */
+async function onInput(value: string): Promise<void> {
   clearAll();
-  callIfValid(value, persistValue);
+  form.state.value = value;
+  await form.submit();
 }
 
 async function reset(): Promise<void> {
   if (defaultValue === undefined)
     return;
 
-  set(input, defaultValue);
+  form.state.value = defaultValue;
   set(model, transform(defaultValue));
   await flush();
 }
@@ -118,14 +114,14 @@ async function reset(): Promise<void> {
   <div class="flex items-start w-full">
     <RuiTextField
       v-bind="$attrs"
-      v-model="input"
+      v-model="form.state.value"
       type="text"
       variant="outlined"
       color="primary"
       class="w-full"
       :label="label"
       :success-messages="success"
-      :error-messages="error || toMessages(v$.value)"
+      :error-messages="error || form.errors(SETTING_FIELD)"
       @update:model-value="onInput($event)"
     />
 
