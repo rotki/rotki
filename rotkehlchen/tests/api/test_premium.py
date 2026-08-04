@@ -10,6 +10,7 @@ import requests
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
+from rotkehlchen.premium.premium import get_free_capabilities
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -321,6 +322,7 @@ def test_get_premium_capabilities(rotkehlchen_api_server: APIServer) -> None:
             'asset_movement_matching': True,
             'gnosispay': True,
             'monerium': False,
+            'mcp': True,
             'unlocks': {
                 'eth_staking_view': 'Basic',
                 'graphs_view': 'Basic',
@@ -328,6 +330,7 @@ def test_get_premium_capabilities(rotkehlchen_api_server: APIServer) -> None:
                 'asset_movement_matching': 'Basic',
                 'gnosispay': 'Advanced',
                 'monerium': 'Advanced',
+                'mcp': 'Basic',
             },
         },
     ):
@@ -368,6 +371,10 @@ def test_get_premium_capabilities(rotkehlchen_api_server: APIServer) -> None:
             'monerium': {
                 'enabled': False,
                 'minimum_tier': 'Advanced',
+            },
+            'mcp': {
+                'enabled': True,
+                'minimum_tier': 'Basic',
             },
         }
 
@@ -452,3 +459,32 @@ def test_get_free_user_capabilities(rotkehlchen_api_server: APIServer) -> None:
                 'minimum_tier': 'Advanced',
             },
         }
+
+
+def test_free_capabilities_expose_every_unlock() -> None:
+    """get_free_capabilities() must surface a block for each known capability.
+
+    The endpoint test above patches this function out, so without this test the real
+    implementation never runs and a capability missing from it goes unnoticed.
+    """
+    unlocks = {
+        'eth_staking_view': 'Supporter',
+        'graphs_view': 'Basic',
+        'event_analysis_view': 'Basic',
+        'asset_movement_matching': 'Basic',
+        'gnosispay': 'Basic',
+        'monerium': 'Basic',
+        'mcp': 'Basic',
+    }
+    with patch(
+        'rotkehlchen.premium.premium.fetch_capability_unlocks',
+        return_value=unlocks,
+    ):
+        capabilities = get_free_capabilities()
+
+    assert capabilities['current_tier'] == 'Free'
+    for name, minimum_tier in unlocks.items():
+        assert capabilities[name] == {  # type: ignore[literal-required]  # keys are capability names
+            'enabled': False,
+            'minimum_tier': minimum_tier,
+        }, f'free capability {name} missing or not matching its unlock tier'

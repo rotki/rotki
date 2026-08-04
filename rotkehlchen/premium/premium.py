@@ -61,6 +61,7 @@ UNKNOWN_CONTAINER_FALLBACK_ID_PREFIX: Final = 'unknown-container'
 ASSET_MOVEMENT_MATCHING_CAPABILITY: Final = 'asset_movement_matching'
 GNOSIS_PAY_CAPABILITY: Final = 'gnosispay'
 MONERIUM_CAPABILITY: Final = 'monerium'
+MCP_CAPABILITY: Final = 'mcp'
 
 
 class RemoteMetadata(NamedTuple):
@@ -97,6 +98,7 @@ class UserLimits(TypedDict):
     asset_movement_matching: bool
     gnosispay: bool
     monerium: bool
+    mcp: bool
     # minimum tier required to unlock each capability
     unlocks: dict[str, str]
 
@@ -121,6 +123,7 @@ class PremiumCapabilities(TypedDict):
     asset_movement_matching: PremiumFeatureCapability
     gnosispay: PremiumFeatureCapability
     monerium: PremiumFeatureCapability
+    mcp: PremiumFeatureCapability
 
 
 class UserLimitType(Enum):
@@ -270,6 +273,10 @@ def get_free_capabilities() -> PremiumCapabilities:
         monerium=PremiumFeatureCapability(
             enabled=False,
             minimum_tier=unlocks.get(MONERIUM_CAPABILITY),
+        ),
+        mcp=PremiumFeatureCapability(
+            enabled=False,
+            minimum_tier=unlocks.get(MCP_CAPABILITY),
         ),
     )
 
@@ -1054,6 +1061,10 @@ class Premium:
             monerium=PremiumFeatureCapability(
                 enabled=limits.get(MONERIUM_CAPABILITY, False),
                 minimum_tier=unlocks.get(MONERIUM_CAPABILITY),
+            ),
+            mcp=PremiumFeatureCapability(
+                enabled=limits.get(MCP_CAPABILITY, False),
+                minimum_tier=unlocks.get(MCP_CAPABILITY),
             ),
         )
 

@@ -893,6 +893,7 @@ def test_limits_caching(rotkehlchen_instance: Rotkehlchen) -> None:
         'history_events_limit': 10000,
         'limit_of_devices': 3,
         'max_backup_size_mb': 100,
+        'mcp': True,
         'monerium': True,
         'pnl_events_limit': 10000,
         'reports_lookup_limit': 50,
