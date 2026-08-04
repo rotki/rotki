@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { helpers, minValue, required } from '@vuelidate/validators';
+import type { ZodType } from 'zod';
+import { numberSettingSchema } from '@/modules/settings/controls/setting-field-schemas';
 import SettingNumber from '@/modules/settings/controls/SettingNumber.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import { useMonitorService } from '@/modules/shell/app/use-monitor-service';
@@ -24,12 +25,10 @@ const {
 
 const { restart } = useMonitorService();
 
-const rules = {
-  value: {
-    min: helpers.withMessage(minValueMessage(min), minValue(min)),
-    required: helpers.withMessage(requiredMessage, required),
-  },
-};
+const schema = computed<ZodType>(() => numberSettingSchema({
+  messages: { min: minValueMessage(min), required: requiredMessage },
+  min,
+}));
 </script>
 
 <template>
@@ -43,7 +42,7 @@ const rules = {
     <SettingNumber
       class="mt-1"
       :setting="setting"
-      :rules="rules"
+      :schema="schema"
       :default="defaultValue"
       @updated="restart()"
     />
