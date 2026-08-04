@@ -8,12 +8,14 @@ if TYPE_CHECKING:
 
     from rotkehlchen.types import ChecksumEvmAddress
 
-
-# Deployments share contract behavior, so only their addresses vary by chain.
 SAVINGS_CONTRACT_ADDRESS: Final[dict[ChainID, ChecksumEvmAddress]] = {
     ChainID.ETHEREUM: string_to_evm_address('0x27d9ad987bde08a0d083ef7e0e4043c857a17b38'),
-    ChainID.ARBITRUM_ONE: string_to_evm_address('0x27d9ad987bde08a0d083ef7e0e4043c857a17b38'),
-    ChainID.BASE: string_to_evm_address('0x27d9ad987bde08a0d083ef7e0e4043c857a17b38'),
+    ChainID.ARBITRUM_ONE: string_to_evm_address('0xb41715e54e9f0827821a149ae8ec1af70aa70180'),
+    ChainID.BASE: string_to_evm_address('0x6426324af1b14df3cd03b2d500529083c5ea61bc'),
+    ChainID.POLYGON_POS: string_to_evm_address('0xb519bae359727e69990c27241bef29b394a0acbd'),
+    ChainID.GNOSIS: string_to_evm_address('0xbf594d0fed79ae56d910cb01b5dd4f4c57b04402'),
+    ChainID.AVALANCHE: string_to_evm_address('0x8e7c2a697751a1ce7a8db51f01b883a27c5c8325'),
+    ChainID.OPTIMISM: string_to_evm_address('0x6426324af1b14df3cd03b2d500529083c5ea61bc'),
 }
 
 SAVINGS_CONTRACT_ABI: ABI = [
