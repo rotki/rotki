@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Locator } from '@playwright/test';
 import {
   assetMovementEventFixture,
   ethBlockEventFixture,
@@ -20,6 +20,17 @@ import { seedEvmTransaction, seedHistoricPrices } from '../../helpers/seed-db';
 import { HistoryEventsPage } from '../../pages/history-events-page';
 import { PillFilterBar } from '../../pages/pill-filter-bar';
 import { RotkiApp } from '../../pages/rotki-app';
+
+/**
+ * The asset movement renders either as a matched movement or as a regular event row depending on
+ * whether it pairs with another movement, so both selectors are in play. Its notes are unique to
+ * this fixture, which makes them a stable anchor across either rendering and across re-sorts.
+ */
+function assetMovementRow(ctx: SharedTestContext): Locator {
+  return ctx.sharedPage
+    .locator('[data-cy=history-event-row], [data-cy=history-event-movement]')
+    .filter({ hasText: assetMovementEventFixture.notes });
+}
 
 test.describe.serial('history events', () => {
   let ctx: SharedTestContext;
@@ -139,38 +150,29 @@ test.describe.serial('history events', () => {
     await page.fillAssetMovementForm(assetMovementEventFixture);
     await page.saveForm();
 
-    // Asset movements may show as matched movements or regular event rows
-    await expect(async () => {
-      const movements = await page.getMovementRows();
-      const events = await page.getEventRows();
-      expect(movements + events).toBeGreaterThanOrEqual(2);
-    }).toPass({ timeout: 10000 });
+    // Wait for the deposit itself. A row count cannot serve as the gate here: the swap expanded by
+    // the previous test leaves its sub-events in the table under the same `history-event-row`
+    // selector, so any `>= n` guard is already satisfied before this event arrives.
+    await expect(assetMovementRow(ctx)).toHaveCount(1);
   });
 
   test('edit asset movement event', async () => {
     const updatedAmount = '0.75';
 
-    // Find the event that contains our deposit notes
-    const movementRows = await page.getMovementRows();
-    const eventRows = await page.getEventRows();
-
-    if (movementRows > 0) {
-      await page.editEvent('[data-cy=history-event-movement]', 0);
-    }
-    else if (eventRows > 0) {
-      // The last event row should be the deposit event
-      await page.editEvent('[data-cy=history-event-row]', eventRows - 1);
-    }
+    // Anchor on the deposit's notes rather than on a row index. The movement sorts to the top of the
+    // table (it is the newest timestamp), so every index shifts by one the moment it renders, and an
+    // index picked before that would land on a swap sub-event, which carries no edit action.
+    const row = assetMovementRow(ctx);
+    await row.hover();
+    await row.locator('[data-cy=row-edit]').click();
+    await ctx.sharedPage.locator('[data-cy=bottom-dialog]').waitFor({ state: 'visible' });
 
     await ctx.sharedPage.locator('[data-cy=amount] input').clear();
     await ctx.sharedPage.locator('[data-cy=amount] input').fill(updatedAmount);
 
     await page.saveForm();
 
-    if (movementRows > 0)
-      await page.verifyEventAmount('[data-cy=history-event-movement]', 0, updatedAmount);
-    else
-      await page.verifyEventAmount('[data-cy=history-event-row]', eventRows - 1, updatedAmount);
+    await expect(row.locator('[data-cy=event-amount]').first()).toContainText(updatedAmount);
   });
 
   test('delete history event', async () => {
