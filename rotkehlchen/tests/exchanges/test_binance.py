@@ -553,20 +553,27 @@ def test_binance_history_query_persists_completed_pairs_on_rate_limit(
             side_effect=(
                 [first_trade],
                 RemoteError('HTTP status code: 429 after exhausting the retries'),
-                [],
                 RemoteError('HTTP status code: 429 after exhausting the retries'),
-                [],
                 [second_trade],
             ),
         ) as mock_api_query,
+        patch('rotkehlchen.exchanges.exchange.ts_now', return_value=Timestamp(1800000000)),
     ):
         binance.query_history_events()
         binance.query_history_events()
 
         assert [
-            (entry.kwargs['options']['symbol'], entry.kwargs['options']['fromId'])
+            (
+                entry.kwargs['options']['symbol'],
+                entry.kwargs['options'].get('fromId'),
+                entry.kwargs['options'].get('startTime'),
+            )
             for entry in mock_api_query.call_args_list
-        ] == [('BNBBTC', 0), ('ETHBTC', 0), ('BNBBTC', 1), ('ETHBTC', 0)]
+        ] == [
+            ('BNBBTC', 0, None),
+            ('ETHBTC', 0, None),
+            ('ETHBTC', 0, None),
+        ]
 
         with binance.db.conn.read_ctx() as cursor:
             assert cursor.execute(
@@ -583,6 +590,13 @@ def test_binance_history_query_persists_completed_pairs_on_rate_limit(
                 location_name=binance.name,
                 queried_pair='BNBBTC',
             ) == 1
+            assert binance.db.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
+                location=binance.location.serialize(),
+                location_name=binance.name,
+                queried_pair='BNBBTC',
+            ) == Timestamp(1800000000)
             assert binance.db.get_dynamic_cache(
                 cursor=cursor,
                 name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
@@ -618,6 +632,13 @@ def test_binance_history_query_persists_completed_pairs_on_rate_limit(
             location_name=binance.name,
             queried_pair='ETHBTC',
         ) == 2
+        assert binance.db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
+            location=binance.location.serialize(),
+            location_name=binance.name,
+            queried_pair='ETHBTC',
+        ) == Timestamp(1800000000)
         assert cursor.execute(
             'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
             (f'{Location.BINANCE!s}_history_events_{binance.name}',),
@@ -1167,6 +1188,184 @@ def test_binance_query_trade_history_custom_markets(function_scope_binance):
         binance.query_online_history_events(start_ts=Timestamp(0), end_ts=Timestamp(1564301134))
 
     assert count == len(markets)
+
+
+@pytest.mark.parametrize('binance_location', [Location.BINANCE, Location.BINANCEUS])
+def test_binance_new_pair_trade_query_starts_at_history_range(
+        function_scope_binance: Binance,
+) -> None:
+    """New and empty pairs use their own durable history progress instead of the shared range."""
+    function_scope_binance.selected_pairs = ['BNBBTC']
+    function_scope_binance.history_start_ts = Timestamp(1600000000)
+    first_end_ts = Timestamp(1800000000)
+    second_end_ts = Timestamp(1900000000)
+    with (
+        patch.object(function_scope_binance, '_query_online_fiat_payments', return_value=[]),
+        patch.object(function_scope_binance, '_query_online_convert_trades', return_value=[]),
+        patch.object(function_scope_binance, 'api_query_list', return_value=[]) as query,
+    ):
+        function_scope_binance._query_online_trade_history(
+            start_ts=Timestamp(1700000000),
+            end_ts=first_end_ts,
+        )
+        # The same range is already complete for this pair, even though the shared range may be
+        # retried because another Binance source failed.
+        function_scope_binance._query_online_trade_history(
+            start_ts=Timestamp(1700000000),
+            end_ts=first_end_ts,
+        )
+        function_scope_binance._query_online_trade_history(
+            start_ts=Timestamp(first_end_ts + 1),
+            end_ts=second_end_ts,
+        )
+        function_scope_binance._query_online_trade_history(
+            start_ts=Timestamp(1650000000),
+            end_ts=Timestamp(1650000100),
+            force_refresh=True,
+        )
+
+    assert query.call_args_list == [call(
+        'api',
+        'myTrades',
+        options={
+            'symbol': 'BNBBTC',
+            'limit': 1000,
+            'startTime': 1600000000000,
+        },
+    ), call(
+        'api',
+        'myTrades',
+        options={
+            'symbol': 'BNBBTC',
+            'limit': 1000,
+            'startTime': 1800000001000,
+        },
+    ), call(
+        'api',
+        'myTrades',
+        options={
+            'symbol': 'BNBBTC',
+            'limit': 1000,
+            'startTime': 1650000000000,
+        },
+    )]
+    with function_scope_binance.db.conn.read_ctx() as cursor:
+        assert function_scope_binance.db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
+            location=function_scope_binance.location.serialize(),
+            location_name=function_scope_binance.name,
+            queried_pair='BNBBTC',
+        ) == second_end_ts
+
+
+def test_binance_batches_empty_pair_query_progress(function_scope_binance: Binance) -> None:
+    """Empty pair checkpoints share a single DB transaction when an event queue is provided."""
+    function_scope_binance.selected_pairs = ['BNBBTC', 'ETHBTC']
+    function_scope_binance.history_start_ts = Timestamp(1600000000)
+    event_queue = MagicMock(spec=HistoryEventQueue)
+    with (
+        patch.object(function_scope_binance, '_query_online_fiat_payments', return_value=[]),
+        patch.object(function_scope_binance, '_query_online_convert_trades', return_value=[]),
+        patch.object(function_scope_binance, 'api_query_list', return_value=[]),
+    ):
+        function_scope_binance._query_online_trade_history(
+            start_ts=Timestamp(1600000000),
+            end_ts=Timestamp(1600000100),
+            event_queue=event_queue,
+        )
+
+    assert event_queue.flush.call_count == 1
+    assert event_queue.flush.call_args.args == ()
+    assert event_queue.flush.call_args.kwargs['cursor_update'].keywords['pairs_progress'] == {
+        'BNBBTC': (None, Timestamp(1600000100)),
+        'ETHBTC': (None, Timestamp(1600000100)),
+    }
+
+
+def test_binance_cursorless_pair_finds_later_trade_with_start_time(
+        function_scope_binance: Binance,
+) -> None:
+    """A start-only bootstrap returns the oldest trade without scanning empty daily windows."""
+    function_scope_binance.selected_pairs = ['BNBBTC']
+    function_scope_binance.history_start_ts = Timestamp(1600000000)
+    trade = json.loads(BINANCE_MYTRADES_RESPONSE)[0] | {
+        'commission': '0',
+        'id': 1,
+        'time': 1600086401000,
+    }
+    with (
+        patch.object(function_scope_binance, '_query_online_fiat_payments', return_value=[]),
+        patch.object(function_scope_binance, '_query_online_convert_trades', return_value=[]),
+        patch.object(
+            function_scope_binance,
+            'api_query_list',
+            return_value=[trade],
+        ) as query,
+    ):
+        events = function_scope_binance._query_online_trade_history(
+            start_ts=Timestamp(1600000000),
+            end_ts=Timestamp(1600172800),
+        )
+
+    assert len(events) == 2
+    assert [entry.kwargs['options'] for entry in query.call_args_list] == [{
+        'symbol': 'BNBBTC',
+        'limit': 1000,
+        'startTime': 1600000000000,
+    }]
+    with function_scope_binance.db.conn.read_ctx() as cursor:
+        assert function_scope_binance.db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
+            location=function_scope_binance.location.serialize(),
+            location_name=function_scope_binance.name,
+            queried_pair='BNBBTC',
+        ) == Timestamp(1600172800)
+
+
+def test_binance_trade_id_pagination_stops_at_query_end(
+        function_scope_binance: Binance,
+) -> None:
+    """ID pagination after a full bootstrap page excludes trades beyond the requested range."""
+    function_scope_binance.selected_pairs = ['BNBBTC']
+    start_ts = Timestamp(1600000000)
+    end_ts = Timestamp(start_ts + 2)
+    base_trade = json.loads(BINANCE_MYTRADES_RESPONSE)[0] | {'commission': '0'}
+    first_page = [
+        base_trade | {'id': trade_id, 'time': start_ts * 1000 + trade_id}
+        for trade_id in range(1000)
+    ]
+    second_page = [
+        base_trade | {'id': 1000, 'time': end_ts * 1000},
+        base_trade | {'id': 1001, 'time': end_ts * 1000 + 1},
+    ]
+    with (
+        patch.object(function_scope_binance, '_query_online_fiat_payments', return_value=[]),
+        patch.object(function_scope_binance, '_query_online_convert_trades', return_value=[]),
+        patch.object(
+            function_scope_binance,
+            'api_query_list',
+            side_effect=(first_page, second_page),
+        ) as query,
+    ):
+        events = function_scope_binance._query_online_trade_history(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            force_refresh=True,
+        )
+
+    assert len(events) == 2002
+    assert all(event.timestamp <= TimestampMS(end_ts * 1000) for event in events)
+    assert [entry.kwargs['options'] for entry in query.call_args_list] == [{
+        'symbol': 'BNBBTC',
+        'limit': 1000,
+        'startTime': start_ts * 1000,
+    }, {
+        'symbol': 'BNBBTC',
+        'limit': 1000,
+        'fromId': 1000,
+    }]
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])

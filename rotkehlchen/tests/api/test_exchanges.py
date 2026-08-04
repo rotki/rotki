@@ -11,7 +11,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheDynamic
-from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
+from rotkehlchen.db.constants import BINANCE_HISTORY_START_TS_KEY, KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS, DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
@@ -58,6 +58,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -343,6 +344,22 @@ def test_setup_exchange_errors(rotkehlchen_api_server: APIServer) -> None:
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'exchangesresource'),
+        json={
+            'api_key': 'ddddd',
+            'api_secret': 'ZmZmZmZmZg==',
+            'binance_history_start_ts': ts_now() + 60,
+            'binance_markets': ['BTCUSDT'],
+            'location': 'binance',
+            'name': 'binance',
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='must not be in the future',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
     # Provide invalid type for api key
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
@@ -366,7 +383,6 @@ def test_setup_exchange_errors(rotkehlchen_api_server: APIServer) -> None:
         contained_in_msg='Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
-
     # Provide invalid type for api secret
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
@@ -390,6 +406,66 @@ def test_setup_exchange_errors(rotkehlchen_api_server: APIServer) -> None:
         contained_in_msg='Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_binance_history_start_timestamp(rotkehlchen_api_server: APIServer) -> None:
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with (
+        patch.object(
+            database,
+            'get_latest_binance_csv_import_timestamp',
+            return_value=Timestamp(1700000000),
+        ),
+        patch('rotkehlchen.api.services.exchanges.ts_now', return_value=Timestamp(1800000000)),
+    ):
+        response = requests.get(
+            api_url_for(rotkehlchen_api_server, 'binancehistorystarttimestampresource'),
+        )
+
+    assert assert_proper_response_with_result(
+        response,
+        rotkehlchen_api_server,
+    ) == 1700000000
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('location', [Location.BINANCE, Location.BINANCEUS])
+def test_setup_binance_with_custom_history_start(
+        rotkehlchen_api_server: APIServer,
+        location: Location,
+) -> None:
+    with mock_validate_api_key_success(location):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'),
+            json={
+                'api_key': 'api_key',
+                'api_secret': 'api_secret',
+                'binance_history_start_ts': 1700000000,
+                'binance_markets': ['BTCUSDT'],
+                'location': location.serialize(),
+                'name': 'my_binance',
+            },
+        )
+    assert_simple_ok_response(response)
+
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with database.conn.read_ctx() as cursor:
+        assert database.get_used_query_range(
+            cursor,
+            f'{location!s}_history_events_my_binance',
+        ) == (Timestamp(0), Timestamp(1699999999))
+    assert database.get_exchange_credentials_extras(
+        name='my_binance',
+        location=location,
+    )[BINANCE_HISTORY_START_TS_KEY] == Timestamp(1700000000)
+    assert cast(
+        'Binance',
+        rotkehlchen_api_server.rest_api.rotkehlchen.exchange_manager.get_exchange(
+            name='my_binance',
+            location=location,
+        ),
+    ).history_start_ts == Timestamp(1700000000)
 
 
 def test_binance_api_without_markets_error(rotkehlchen_api_server: APIServer) -> None:

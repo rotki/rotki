@@ -249,6 +249,7 @@ class ExchangeManager:
             database: DBHandler,
             passphrase: str | None = None,
             kraken_account_type: KrakenAccountType | None = None,
+            binance_history_start_ts: Timestamp | None = None,
             **kwargs: Any,
     ) -> tuple[bool, str]:
         """
@@ -309,9 +310,15 @@ class ExchangeManager:
                 kraken_futures_api_key=kwargs.get('kraken_futures_api_key'),
                 kraken_futures_api_secret=kwargs.get('kraken_futures_api_secret'),
                 binance_selected_trade_pairs=kwargs.get('binance_selected_trade_pairs'),
+                binance_history_start_ts=binance_history_start_ts,
                 okx_location=kwargs.get('okx_location'),
                 gate_location=kwargs.get('gate_location'),
             )
+            if (
+                    location in (Location.BINANCE, Location.BINANCEUS) and
+                    isinstance(exchange, ExchangeWithExtras)
+            ):
+                exchange.reset_to_db_extras()
             self.connected_exchanges[location].append(exchange)
         return True, ''
 

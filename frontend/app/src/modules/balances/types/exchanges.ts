@@ -93,6 +93,7 @@ interface ExchangePayload {
   readonly krakenFuturesApiKey?: string;
   readonly krakenFuturesApiSecret?: string;
   readonly binanceMarkets?: string[];
+  readonly binanceHistoryStartTs?: number;
   readonly gateLocation?: GateLocation;
   readonly okxLocation?: OkxLocation;
 }

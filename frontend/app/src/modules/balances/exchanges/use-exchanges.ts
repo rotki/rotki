@@ -163,13 +163,16 @@ export function useExchanges(): UseExchangesReturn {
   };
 
   const setupExchange = async (exchange: ExchangeFormData): Promise<boolean> => {
-    const { gateLocation, krakenAccountType, krakenFuturesApiKey, krakenFuturesApiSecret, location, mode, newName, okxLocation } = exchange;
+    const { binanceHistoryStartTs, gateLocation, krakenAccountType, krakenFuturesApiKey, krakenFuturesApiSecret, location, mode, newName, okxLocation } = exchange;
 
     const filteredPayload: ExchangeFormData = {
       ...exchange,
       krakenAccountType: location === 'kraken' ? krakenAccountType : undefined,
       krakenFuturesApiKey: location === 'kraken' ? krakenFuturesApiKey : undefined,
       krakenFuturesApiSecret: location === 'kraken' ? krakenFuturesApiSecret : undefined,
+      binanceHistoryStartTs: ['binance', 'binanceus'].includes(location) && mode === 'add'
+        ? binanceHistoryStartTs
+        : undefined,
       gateLocation: location === 'gate' ? gateLocation : undefined,
       okxLocation: location === 'okx' ? okxLocation : undefined,
     };

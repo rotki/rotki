@@ -19,7 +19,7 @@ from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import DAY_IN_SECONDS, ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
-from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
+from rotkehlchen.db.constants import BINANCE_HISTORY_START_TS_KEY, BINANCE_MARKETS_KEY
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
@@ -212,7 +212,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             msg_aggregator: MessagesAggregator,
             uri: str = BINANCE_BASE_URL,
             binance_selected_trade_pairs: list[str] | None = None,
-    ):
+            binance_history_start_ts: Timestamp | None = None,
+    ) -> None:
         exchange_location = Location.BINANCE
         if uri == BINANCEUS_BASE_URL:
             exchange_location = Location.BINANCEUS
@@ -232,6 +233,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         })
         self.offset_ms = 0
         self.selected_pairs = binance_selected_trade_pairs
+        self.history_start_ts = (
+            binance_history_start_ts
+            if binance_history_start_ts is not None else Timestamp(0)
+        )
 
     def first_connection(self) -> None:
         if self.first_connection_made:
@@ -260,6 +265,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         return changed
 
     def edit_exchange_extras(self, extras: dict) -> tuple[bool, str]:
+        if (history_start_ts := extras.get(BINANCE_HISTORY_START_TS_KEY)) is not None:
+            self.history_start_ts = history_start_ts
+
         binance_markets = extras.get(BINANCE_MARKETS_KEY)
         if binance_markets is None:
             return False, 'No binance markets provided'
@@ -1045,6 +1053,47 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         )
         return dict(returned_balances), ''
 
+    def _set_pair_query_progress(
+            self,
+            write_cursor: DBCursor,
+            queried_pair: str,
+            last_trade_id: int | None,
+            last_query_ts: Timestamp,
+    ) -> None:
+        """Persist all progress for a successfully queried Binance pair."""
+        cache_args = {
+            'location': self.location.serialize(),
+            'location_name': self.name,
+            'queried_pair': queried_pair,
+        }
+        self.db.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
+            value=last_query_ts,
+            **cache_args,
+        )
+        if last_trade_id is not None:
+            self.db.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                value=last_trade_id,
+                **cache_args,
+            )
+
+    def _set_pairs_query_progress(
+            self,
+            write_cursor: DBCursor,
+            pairs_progress: dict[str, tuple[int | None, Timestamp]],
+    ) -> None:
+        """Persist progress for multiple successfully queried Binance pairs."""
+        for queried_pair, (last_trade_id, last_query_ts) in pairs_progress.items():
+            self._set_pair_query_progress(
+                write_cursor=write_cursor,
+                queried_pair=queried_pair,
+                last_trade_id=last_trade_id,
+                last_query_ts=last_query_ts,
+            )
+
     def _query_online_trade_history(
             self,
             start_ts: Timestamp,
@@ -1053,11 +1102,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             event_queue: HistoryEventQueue | None = None,
     ) -> list[SwapEvent]:
         """
-        For trades coming from api/myTrades this function won't respect the provided range and
-        will always query all the trades until now. The reason is that binance forces us to query
-        all the pairs and we use the cache at BINANCE_PAIR_LAST_ID to remember which one was the
-        last trade queried on each market speeding up the queries. For fiat payments the time
-        range is respected.
+        For trades coming from api/myTrades we query each selected pair separately. A new pair
+        starts at the exchange's original history boundary. Subsequent cursorless queries resume
+        after the pair's last successful query timestamp, while pairs with trades use the cached
+        trade ID at BINANCE_PAIR_LAST_ID. For fiat payments the full time range is respected.
 
         May raise due to api query, unexpected id, or missing market pairs:
         - RemoteError
@@ -1079,14 +1127,15 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         ]
         log.debug(f'Will query the following binance markets: {iter_markets}')
         events: list[SwapEvent] = []
-        pending_pair_cursors: dict[str, str] = {}
+        pending_pair_progress: dict[str, tuple[int | None, Timestamp]] = {}
+        pending_empty_pair_progress: dict[str, tuple[int | None, Timestamp]] = {}
         # Limit of results to return. 1000 is max limit according to docs
         limit = 1000
         for symbol in iter_markets:
-            raw_data = []
-            if force_refresh:
-                last_trade_id = 0  # Bypass cache when force_refresh is True
-            else:
+            raw_data: list[dict[str, Any]] = []
+            last_trade_id: int | None = None
+            last_query_ts: Timestamp | None = None
+            if force_refresh is False:
                 with self.db.conn.read_ctx() as cursor:
                     last_trade_id = self.db.get_dynamic_cache(  # api returns trades with id >= last_trade_id  # noqa: E501
                         cursor=cursor,
@@ -1094,24 +1143,52 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         location=self.location.serialize(),
                         location_name=self.name,
                         queried_pair=symbol,
-                    ) or 0
+                    )
+                    last_query_ts = self.db.get_dynamic_cache(
+                        cursor=cursor,
+                        name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
+                        location=self.location.serialize(),
+                        location_name=self.name,
+                        queried_pair=symbol,
+                    )
+
+                if last_query_ts is not None and last_query_ts >= end_ts:
+                    log.debug(
+                        'Skipping Binance trades on %s for %s because it was already queried '
+                        'to %s',
+                        self.name,
+                        symbol,
+                        last_query_ts,
+                    )
+                    continue
 
             log.debug(
                 f'Will query binance trades on {self.name} for {symbol=} after {last_trade_id=}',
             )
-            len_result = limit
-            while len_result == limit:
+            query_start_ts = (
+                start_ts if force_refresh else
+                Timestamp(last_query_ts + 1) if last_query_ts is not None else
+                self.history_start_ts
+            )
+            if query_start_ts == 0:
+                # Existing users have no stored history boundary. Preserve the old bootstrap
+                # cursor instead of querying from the Unix epoch.
+                last_trade_id = 0
+            query_start_ms = query_start_ts * 1000
+            query_end_ms = end_ts * 1000
+            while True:
+                options: dict[str, str | int] = {'symbol': symbol, 'limit': limit}
+                if last_trade_id is None:
+                    options['startTime'] = query_start_ms
+                else:
+                    options['fromId'] = last_trade_id
+
                 # We know that myTrades returns a list from the api docs
                 result = self.api_query_list(
                     'api',
                     'myTrades',
-                    options={
-                        'symbol': symbol,
-                        'fromId': last_trade_id,
-                        'limit': limit,
-                        # Not specifying them since binance does not seem to
-                        # respect them and always return all trades
-                    })
+                    options=options,
+                )
                 if result:
                     try:
                         last_trade_id = int(result[-1]['id']) + 1
@@ -1120,11 +1197,23 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                             f'Could not parse id from Binance myTrades api query result: {result}',
                         ) from e
 
-                len_result = len(result)
-                log.debug(f'{self.name} myTrades query result', results_num=len_result)
+                log.debug('%s myTrades query result', self.name, results_num=len(result))
+                reached_query_end = False
                 for r in result:
+                    try:
+                        trade_timestamp = int(r['time'])
+                    except (KeyError, TypeError, ValueError):
+                        raw_data.append(r)
+                        continue
+
+                    if trade_timestamp > query_end_ms:
+                        reached_query_end = True
+                        break
                     r['symbol'] = symbol
-                raw_data.extend(result)
+                    raw_data.append(r)
+
+                if reached_query_end or len(result) < limit:
+                    break
 
             raw_data.sort(key=operator.itemgetter('time'))
             pair_events: list[SwapEvent] = []
@@ -1161,36 +1250,46 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
                 pair_events.extend(swap_events)
 
-            if force_refresh or last_unique_id is None:
+            if force_refresh:
                 events.extend(pair_events)
                 continue
 
-            update = partial(
-                self.db.set_dynamic_cache,
-                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                value=int(last_unique_id),
-                location=self.location.serialize(),
-                location_name=self.name,
-                queried_pair=symbol,
-            )
+            # If Binance returned data but none of it could be decoded, keep the pair retryable.
+            # Empty successful responses are checkpointed so that cursorless pairs stay
+            # incremental.
+            if len(raw_data) != 0 and last_unique_id is None:
+                events.extend(pair_events)
+                continue
+
+            progress = (int(last_unique_id) if last_unique_id is not None else None, end_ts)
             if event_queue is None:
                 events.extend(pair_events)
-                pending_pair_cursors[symbol] = last_unique_id
+                pending_pair_progress[symbol] = progress
+            elif len(pair_events) == 0:
+                pending_empty_pair_progress[symbol] = progress
             else:
-                event_queue.events.extend(pair_events)
-                event_queue.flush(cursor_update=update)
-
-        if len(pending_pair_cursors) != 0:
-            with self.db.user_write() as write_cursor:
-                for symbol, unique_id in pending_pair_cursors.items():
-                    self.db.set_dynamic_cache(
-                        write_cursor=write_cursor,
-                        name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                        value=int(unique_id),
-                        location=self.location.serialize(),
-                        location_name=self.name,
+                event_queue.flush(
+                    events=pair_events,
+                    cursor_update=partial(
+                        self._set_pair_query_progress,
                         queried_pair=symbol,
-                    )
+                        last_trade_id=progress[0],
+                        last_query_ts=progress[1],
+                    ),
+                )
+
+        if len(pending_pair_progress) != 0:
+            with self.db.user_write() as write_cursor:
+                self._set_pairs_query_progress(
+                    write_cursor=write_cursor,
+                    pairs_progress=pending_pair_progress,
+                )
+        elif len(pending_empty_pair_progress) != 0:
+            assert event_queue is not None
+            event_queue.flush(cursor_update=partial(
+                self._set_pairs_query_progress,
+                pairs_progress=pending_empty_pair_progress,
+            ))
 
         if len(fiat_payments := self._query_online_fiat_payments(start_ts=start_ts, end_ts=end_ts)) != 0:  # noqa: E501
             events.extend(fiat_payments)

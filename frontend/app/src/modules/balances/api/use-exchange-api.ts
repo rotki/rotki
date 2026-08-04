@@ -18,6 +18,7 @@ export interface UseExchangeApiReturn {
   queryExchangeBalances: (location: string, ignoreCache?: boolean, valueThreshold?: string) => Promise<PendingTask>;
   callSetupExchange: (payload: ExchangeFormData) => Promise<boolean>;
   getExchanges: () => Promise<Exchanges>;
+  queryBinanceHistoryStartTimestamp: () => Promise<number>;
   queryBinanceMarkets: (location: string) => Promise<string[]>;
   queryBinanceUserMarkets: (name: string, location: string) => Promise<string[]>;
   deleteExchangeData: (
@@ -86,6 +87,9 @@ export function useExchangeApi(): UseExchangeApiReturn {
     query: { location },
   });
 
+  const queryBinanceHistoryStartTimestamp = async (): Promise<number> =>
+    api.get<number>('/exchanges/binance/history-start');
+
   const queryBinanceUserMarkets = async (name: string, location: string): Promise<string[]> => api.get<string[]>(`/exchanges/binance/pairs/${name}`, {
     query: { location },
   });
@@ -139,6 +143,7 @@ export function useExchangeApi(): UseExchangeApiReturn {
     getExchanges,
     getExchangeSavings,
     getExchangeSavingsTask,
+    queryBinanceHistoryStartTimestamp,
     queryBinanceMarkets,
     queryBinanceUserMarkets,
     queryExchangeBalances,

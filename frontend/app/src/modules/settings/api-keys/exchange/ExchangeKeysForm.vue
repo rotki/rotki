@@ -12,10 +12,12 @@ import { useLocations } from '@/modules/core/common/use-locations';
 import { refOptional, useRefPropVModel } from '@/modules/core/common/validation/model';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import BinancePairsSelector from '@/modules/settings/api-keys/BinancePairsSelector.vue';
+import BinanceHistoryStartDate from '@/modules/settings/api-keys/exchange/BinanceHistoryStartDate.vue';
 import ExchangeKeysFormStructure from '@/modules/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
 import GateRegionSelectorItem from '@/modules/settings/api-keys/exchange/GateRegionSelectorItem.vue';
 import OkxRegionSelectorItem from '@/modules/settings/api-keys/exchange/OkxRegionSelectorItem.vue';
 import ExchangeInput from '@/modules/shell/components/inputs/ExchangeInput.vue';
+import InternalLink from '@/modules/shell/components/InternalLink.vue';
 
 const modelValue = defineModel<ExchangeFormData>({ required: true });
 
@@ -88,6 +90,9 @@ const historyLimitMessage = computed<string>(() => {
 });
 
 const editMode = computed<boolean>(() => get(modelValue).mode === 'edit');
+const showBinanceHistoryImport = computed<boolean>(() => (
+  get(isBinance) && !get(editMode)
+));
 
 const nameProp = useRefPropVModel(modelValue, 'name');
 const newNameProp = useRefPropVModel(modelValue, 'newName');
@@ -132,6 +137,7 @@ const krakenAccountType = useRefPropVModel(modelValue, 'krakenAccountType');
 const krakenFuturesApiKey = useRefPropVModel(modelValue, 'krakenFuturesApiKey');
 const krakenFuturesApiSecret = useRefPropVModel(modelValue, 'krakenFuturesApiSecret');
 const binanceMarkets = useRefPropVModel(modelValue, 'binanceMarkets');
+const binanceHistoryStartTs = useRefPropVModel(modelValue, 'binanceHistoryStartTs');
 const gateLocation = useRefPropVModel(modelValue, 'gateLocation');
 const okxLocation = useRefPropVModel(modelValue, 'okxLocation');
 
@@ -151,6 +157,10 @@ const name = computed<string>({
 
 const krakenFuturesApiKeyComputed = refOptional(krakenFuturesApiKey, '');
 const krakenFuturesApiSecretComputed = refOptional(krakenFuturesApiSecret, '');
+const binanceHistoryStartTsModel = refOptional(
+  binanceHistoryStartTs,
+  Math.floor(Date.now() / 1000),
+);
 
 const krakenFuturesApiKeyModel = createRefWithAsterisk(krakenFuturesApiKeyComputed, editFuturesKeys);
 const krakenFuturesApiSecretModel = createRefWithAsterisk(krakenFuturesApiSecretComputed, editFuturesKeys);
@@ -159,6 +169,7 @@ const futuresSensitiveInputComponent = createSensitiveInputComponent(editFutures
 useFormStateWatcher({
   apiKey,
   apiSecret,
+  binanceHistoryStartTs,
   binanceMarkets,
   gateLocation,
   krakenAccountType,
@@ -270,6 +281,12 @@ const v$ = useVuelidate({
       requiredIf(isBinance),
     ),
   },
+  binanceHistoryStartTs: {
+    required: helpers.withMessage(
+      t('exchange_keys_form.validation.non_empty'),
+      requiredIf(showBinanceHistoryImport),
+    ),
+  },
   name: {
     required: helpers.withMessage(
       t('exchange_keys_form.name.non_empty'),
@@ -303,6 +320,7 @@ const v$ = useVuelidate({
 }, {
   apiKey,
   apiSecret,
+  binanceHistoryStartTs,
   krakenFuturesApiKey,
   krakenFuturesApiSecret,
   binanceMarkets,
@@ -320,6 +338,7 @@ function onExchangeChange(exchange?: string) {
   set(modelValue, {
     apiKey: '',
     apiSecret: '',
+    binanceHistoryStartTs: undefined,
     binanceMarkets: undefined,
     krakenAccountType: isKraken ? 'starter' : undefined,
     krakenFuturesApiKey: isKraken ? '' : undefined,
@@ -524,9 +543,35 @@ defineExpose({
 
     <RuiAlert
       v-if="isBinance"
-      type="info"
+      data-testid="binance-warning"
+      type="warning"
     >
       {{ t('exchange_keys_form.binance_markets_required') }}
+      <div
+        v-if="showBinanceHistoryImport"
+        class="mt-2"
+      >
+        <i18n-t
+          keypath="exchange_keys_form.binance_history_import.description"
+          scope="global"
+          tag="span"
+        >
+          <template #csvImport>
+            <InternalLink
+              :to="{
+                name: '/import/',
+                query: { source: 'binance' },
+              }"
+            >
+              {{ t('exchange_keys_form.binance_history_import.link') }}
+            </InternalLink>
+          </template>
+        </i18n-t>
+        <BinanceHistoryStartDate
+          v-model="binanceHistoryStartTsModel"
+          :error-messages="toMessages(v$.binanceHistoryStartTs)"
+        />
+      </div>
     </RuiAlert>
     <template v-if="isKraken">
       <div

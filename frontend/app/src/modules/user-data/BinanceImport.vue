@@ -16,6 +16,7 @@ const { t } = useI18n({ useScope: 'global' });
       <strong>{{ t('import_data.binance.name') }}</strong>
     </i18n-t>
     <ul class="list-disc">
+      <li>{{ t('import_data.binance.api_history_note') }}</li>
       <li>{{ t('import_data.binance.line_one') }}</li>
       <li>
         <i18n-t

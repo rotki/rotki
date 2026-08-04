@@ -2129,6 +2129,7 @@ class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSche
     kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
     okx_location = SerializableEnumField(enum_class=OkxLocation, load_default=None)
     gate_location = SerializableEnumField(enum_class=GateLocation, load_default=None)
+    binance_history_start_ts = TimestampField(load_default=None)
 
     @validates_schema
     def validate_schema(
@@ -2138,6 +2139,19 @@ class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSche
     ) -> None:
         super().validate_schema(data)
         location = data['location']
+        if (
+            (binance_history_start_ts := data['binance_history_start_ts']) is not None and
+            (
+                location not in (Location.BINANCE, Location.BINANCEUS) or
+                binance_history_start_ts > ts_now()
+            )
+        ):
+            raise ValidationError(
+                'The Binance history start timestamp must not be in the future and is only '
+                'valid for Binance or Binance US.',
+                field_name='binance_history_start_ts',
+            )
+
         if data['api_secret'] is None and location not in EXCHANGES_WITHOUT_API_SECRET:
             raise ValidationError(
                 f'{location.name.title()} requires an API secret',
