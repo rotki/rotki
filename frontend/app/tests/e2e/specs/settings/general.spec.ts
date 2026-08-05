@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test';
 import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { confirmInlineSuccess } from '../../helpers/utils';
 import { GeneralSettingsPage } from '../../pages/general-settings-page';
@@ -75,5 +76,26 @@ test.describe.serial('settings::general', () => {
     await ctx.app.relogin(ctx.username);
     await pageGeneral.visit();
     await pageGeneral.verify(settings);
+  });
+
+  // A rejected separator stays in its input. If the other field is validated against that value
+  // rather than against the pair, both settings can be walked into the same character, which makes
+  // every amount ambiguous. Runs last: it deliberately leaves the separators changed.
+  test('cannot persist identical separators through a rejected value', async () => {
+    await pageGeneral.setThousandSeparator(settings.decimalSeparator);
+    await expect
+      .poll(async () => pageGeneral.separatorMessages('thousand'))
+      .toContain('cannot be the same as the decimal separator');
+
+    // The rejected '.' is still sitting in the thousand field. Setting the decimal separator to the
+    // thousand one must not slip past on that stale value.
+    await pageGeneral.setDecimalSeparator(settings.thousandSeparator);
+    await confirmInlineSuccess(ctx.sharedPage, '[data-cy=decimal-separator-input] .details');
+
+    await pageGeneral.navigateAway();
+    await pageGeneral.visit();
+
+    const persisted = await pageGeneral.separatorValues();
+    expect(persisted.thousand).not.toBe(persisted.decimal);
   });
 });
