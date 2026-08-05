@@ -1,8 +1,9 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
+from rotkehlchen.chain.evm.decoding.frankencoin.constants import CPT_FRANKENCOIN, ZCHF_ADDRESS
 from rotkehlchen.chain.evm.decoding.frankencoin.savings.balances import (
     FrankencoinSavingsBalances,
 )
@@ -32,6 +33,29 @@ def _make_balances_module(addresses):
     module.savings_contract = MagicMock(address=make_evm_address())
     module.zchf = MagicMock(decimals=18)
     return module
+
+
+def test_frankencoin_savings_balances_initialization():
+    evm_inquirer = MagicMock(chain_id=ChainID.ETHEREUM)
+    with patch(
+        'rotkehlchen.chain.evm.decoding.frankencoin.savings.balances.get_or_create_evm_token',
+        return_value=(zchf := MagicMock()),
+    ) as get_token:
+        module = FrankencoinSavingsBalances(
+            evm_inquirer=evm_inquirer,
+            tx_decoder=(tx_decoder := MagicMock()),
+        )
+
+    assert module.counterparty == CPT_FRANKENCOIN
+    assert module.evm_inquirer is evm_inquirer
+    assert module.tx_decoder is tx_decoder
+    assert module.savings_contract.address == SAVINGS_CONTRACT_ADDRESS[ChainID.ETHEREUM]
+    assert module.zchf is zchf
+    get_token.assert_called_once_with(
+        userdb=evm_inquirer.database,
+        evm_address=ZCHF_ADDRESS[ChainID.ETHEREUM],
+        chain_id=ChainID.ETHEREUM,
+    )
 
 
 def test_query_frankencoin_savings_balances():
@@ -76,4 +100,12 @@ def test_query_frankencoin_savings_balances_remote_error():
 
     assert module.query_balances() == {}
 
+    module._add_priced_balances.assert_not_called()
+
+
+def test_query_frankencoin_savings_balances_empty_multicall():
+    module = _make_balances_module([make_evm_address()])
+    module.evm_inquirer.multicall.return_value = []
+
+    assert module.query_balances() == {}
     module._add_priced_balances.assert_not_called()

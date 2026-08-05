@@ -4,8 +4,14 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
-from rotkehlchen.chain.evm.decoding.frankencoin.constants import CPT_FRANKENCOIN, ZCHF_ADDRESS
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.evm.decoding.frankencoin.constants import (
+    CPT_FRANKENCOIN,
+    FRANKENCOIN_COUNTERPARTY_DETAILS,
+    ZCHF_ADDRESS,
+)
 from rotkehlchen.chain.evm.decoding.frankencoin.savings.constants import (
+    INTEREST_COLLECTED_TOPIC,
     SAVED_TOPIC,
     SAVINGS_CONTRACT_ADDRESS,
     WITHDRAWN_TOPIC,
@@ -23,6 +29,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
 
 
@@ -113,6 +120,87 @@ def test_savings_event_handles_invalid_preceding_log():
         'address': decoder.savings,
         'extra_data': None,
     }
+
+
+@pytest.mark.parametrize(('topic', 'initial_type', 'expected_type', 'expected_subtype', 'party_key', 'notes_connector'), [  # noqa: E501
+    (SAVED_TOPIC, HistoryEventType.SPEND, HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL, 'payer', 'by'),  # noqa: E501
+    (WITHDRAWN_TOPIC, HistoryEventType.RECEIVE, HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL, 'receiver', 'to'),  # noqa: E501
+])
+def test_savings_event_attributes_existing_transfer_to_owner(
+        topic,
+        initial_type,
+        expected_type,
+        expected_subtype,
+        party_key,
+        notes_connector,
+):
+    decoder = _make_savings_decoder(tracked=True)
+    event = MagicMock(
+        event_type=initial_type,
+        event_subtype=HistoryEventSubType.NONE,
+        amount=FVal(1),
+        address=decoder.savings,
+        asset=decoder.zchf,
+        location_label=(party_address := make_evm_address()),
+    )
+    context = _make_context(topic=topic, decoded_events=[event])
+
+    assert decoder._decode_savings_event(context) == DEFAULT_EVM_DECODING_OUTPUT
+    assert event.event_type == expected_type
+    assert event.event_subtype == expected_subtype
+    assert event.counterparty == CPT_FRANKENCOIN
+    assert event.location_label == '0x1111111111111111111111111111111111111111'
+    assert event.extra_data == {party_key: party_address}
+    assert f'{notes_connector} {party_address}' in event.notes
+
+
+def test_savings_event_rejects_unrelated_preceding_transfer():
+    decoder = _make_savings_decoder(tracked=True)
+    context = _make_context(topic=SAVED_TOPIC)
+    context.all_logs.insert(0, EvmTxReceiptLog(
+        log_index=0,
+        data=(10**18).to_bytes(32),
+        address=make_evm_address(),
+        topics=[
+            ERC20_OR_ERC721_TRANSFER,
+            bytes.fromhex('00' * 12 + '22' * 20),
+            bytes.fromhex('00' * 12 + decoder.savings[2:]),
+        ],
+    ))
+    decoder.base.make_event_from_transaction.return_value = expected_event = MagicMock()
+
+    assert decoder._decode_savings_event(context) == DEFAULT_EVM_DECODING_OUTPUT
+    assert context.decoded_events == [expected_event]
+    assert decoder.base.make_event_from_transaction.call_args.kwargs['extra_data'] is None
+
+
+def test_interest_collection_subtracts_referral_fee():
+    decoder = _make_savings_decoder(tracked=True)
+    context = _make_context(topic=INTEREST_COLLECTED_TOPIC)
+    context.tx_log.data = (2 * 10**18).to_bytes(32) + (5 * 10**17).to_bytes(32)
+    decoder.base.make_event_from_transaction.return_value = expected_event = MagicMock()
+
+    assert decoder._decode_savings_event(context) == DEFAULT_EVM_DECODING_OUTPUT
+    assert context.decoded_events == [expected_event]
+    assert decoder.base.make_event_from_transaction.call_args.kwargs == {
+        'transaction': context.transaction,
+        'tx_log': context.tx_log,
+        'event_type': HistoryEventType.RECEIVE,
+        'event_subtype': HistoryEventSubType.INTEREST,
+        'asset': decoder.zchf,
+        'amount': FVal('1.5'),
+        'location_label': '0x1111111111111111111111111111111111111111',
+        'notes': 'Received 1.5 zCHF as interests in Frankencoin Savings Module',
+        'counterparty': CPT_FRANKENCOIN,
+        'address': decoder.savings,
+    }
+
+
+def test_savings_decoder_metadata():
+    decoder = _make_savings_decoder(tracked=True)
+
+    assert decoder.counterparties() == (FRANKENCOIN_COUNTERPARTY_DETAILS,)
+    assert decoder.addresses_to_decoders() == {decoder.savings: (decoder._decode_savings_event,)}
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
