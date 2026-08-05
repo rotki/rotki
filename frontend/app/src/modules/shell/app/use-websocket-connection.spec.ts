@@ -2,6 +2,11 @@ import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
 
+// `api.serverUrl` is a read-only getter on the real client, so the mock exposes
+// one over a cell the tests can move; assigning to the property directly would
+// not typecheck.
+const { mockServerUrl } = vi.hoisted(() => ({ mockServerUrl: { value: 'http://localhost:4242' } }));
+
 const mockHandleMessage = vi.fn();
 const mockDelay = vi.fn();
 const mockLoggerDebug = vi.fn();
@@ -9,7 +14,9 @@ const mockLoggerError = vi.fn();
 
 vi.mock('@/modules/core/api/rotki-api', () => ({
   api: {
-    serverUrl: 'http://localhost:4242',
+    get serverUrl(): string {
+      return mockServerUrl.value;
+    },
   },
 }));
 
@@ -75,9 +82,12 @@ function createMockWebSocket(): MockWebSocketInstance {
   return ws;
 }
 
+let latestWsUrl: string | undefined;
+
 // Use a class-based mock so `new WebSocket()` works correctly
 class MockWebSocket {
-  constructor() {
+  constructor(url?: string) {
+    latestWsUrl = url;
     const ws = createMockWebSocket();
     latestMockWs = ws;
     return ws;
@@ -98,6 +108,8 @@ describe('useWebsocketConnection', () => {
     vi.clearAllMocks();
     mockDelay.mockResolvedValue(undefined);
     latestMockWs = null;
+    latestWsUrl = undefined;
+    mockServerUrl.value = 'http://localhost:4242';
     vi.stubGlobal('WebSocket', MockWebSocket);
     scope = effectScope();
   });
@@ -106,6 +118,60 @@ describe('useWebsocketConnection', () => {
     scope.stop();
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  describe('the websocket url', () => {
+    /**
+     * Same-origin deployments (docker, plain web) resolve the base to
+     * `location.host + location.pathname`, and with hash routing the pathname is
+     * `/`. Appending `/ws/` to that produced `ws://host//ws/`, which matches no
+     * route: in docker it fell through to the SPA history fallback, so the
+     * handshake was answered with 200/index.html and the socket never connected.
+     *
+     * Negative control: dropping the trailing-slash strip makes this assert
+     * `ws://localhost:3000//ws/`.
+     */
+    it('should not double the slash when the app is served from the origin root', async () => {
+      mockServerUrl.value = '';
+      const { useWebsocketConnection } = await loadComposable();
+
+      await scope.run(async () => {
+        const connectPromise = useWebsocketConnection().connect();
+        latestMockWs?.triggerOpen();
+        await connectPromise;
+      });
+
+      expect(latestWsUrl).not.toContain('//ws/');
+      expect(latestWsUrl).toBe(`ws://${window.location.host}/ws/`);
+    });
+
+    it('should build the url from an explicit backend url', async () => {
+      mockServerUrl.value = 'http://localhost:4242';
+      const { useWebsocketConnection } = await loadComposable();
+
+      await scope.run(async () => {
+        const connectPromise = useWebsocketConnection().connect();
+        latestMockWs?.triggerOpen();
+        await connectPromise;
+      });
+
+      expect(latestWsUrl).toBe('ws://localhost:4242/ws/');
+    });
+
+    // Only *trailing* slashes are stripped, so an instance served under a
+    // sub-path still addresses its own socket rather than the origin root.
+    it('should keep a sub-path when one is configured', async () => {
+      mockServerUrl.value = 'http://localhost:4242/rotki/';
+      const { useWebsocketConnection } = await loadComposable();
+
+      await scope.run(async () => {
+        const connectPromise = useWebsocketConnection().connect();
+        latestMockWs?.triggerOpen();
+        await connectPromise;
+      });
+
+      expect(latestWsUrl).toBe('ws://localhost:4242/rotki/ws/');
+    });
   });
 
   it('should create a WebSocket connection and resolve true on open', async () => {
