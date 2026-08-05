@@ -62,9 +62,7 @@
     "edit_tooltip": "Edit account",
     "enter_selection_mode": "Enter selection mode to bulk ignore or mark assets as spam",
     "exit_selection_mode": "Exit selection mode",
-    "filter": {
-
-    },
+    "filter": {},
     "filter_field_labels": {
       "account": "Account",
       "chain": "Chain",
@@ -1611,6 +1609,12 @@
       "commodities": "Commodities",
       "equities": "Equities",
       "external": "External"
+    }
+  },
+  "backend_reload": {
+    "failed": {
+      "message": "The backend could not be restarted, so it is still using the previous data. Restart it and sign in again to apply the changes. {message}",
+      "title": "Backend restart failed"
     }
   },
   "backend_settings": {
