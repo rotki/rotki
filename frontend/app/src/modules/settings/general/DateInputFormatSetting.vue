@@ -60,6 +60,7 @@ watch(writeError, (message) => {
 <template>
   <DateInputFormatSelector
     v-model="form.state.value"
+    data-testid="date-input-format-input"
     :label="t('general_settings.labels.date_input_format')"
     :success-messages="success ? [success] : []"
     :error-messages="error ? [error] : form.errors(SETTING_FIELD)"

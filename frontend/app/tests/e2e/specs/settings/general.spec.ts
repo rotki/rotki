@@ -13,6 +13,7 @@ test.describe.serial('settings::general', () => {
     currency: 'JPY',
     balanceSaveFrequency: '48',
     dateDisplayFormat: '%d-%m-%Y %H:%M:%S %z',
+    dateInputFormat: '%m/%d/%Y %H:%M:%S',
     thousandSeparator: ',',
     decimalSeparator: '.',
     currencyLocation: 'after' as const,
@@ -63,6 +64,15 @@ test.describe.serial('settings::general', () => {
       ctx.sharedPage,
       '[data-cy=date-display-format-input] .details',
       settings.dateDisplayFormat,
+    );
+  });
+
+  test('change date input format and validate UI message', async () => {
+    await pageGeneral.selectDateInputFormat(settings.dateInputFormat);
+    await confirmInlineSuccess(
+      ctx.sharedPage,
+      '[data-testid=date-input-format-input] .details',
+      settings.dateInputFormat,
     );
   });
 
