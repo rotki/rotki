@@ -996,6 +996,72 @@ describe('modules/api/rotki-api', () => {
     });
   });
 
+  describe('cancellation reaches the connection', () => {
+    /**
+     * The queue attached a per-request abort signal that `fetchDirect` then overwrote with the
+     * api-wide one, so cancelling rejected the caller's promise while the request carried on. The
+     * queue freed its slot at the same moment, so it could dispatch a replacement and hold more
+     * connections than the browser allows per host.
+     */
+    it('should abort the in-flight request, not just reject the caller', async () => {
+      let handlerSignal: AbortSignal | undefined;
+      let release = (): void => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+
+      server.use(
+        http.get(`${backendUrl}/api/1/slow`, async ({ request }) => {
+          handlerSignal = request.signal;
+          await held;
+          return HttpResponse.json({ message: '', result: true });
+        }),
+      );
+
+      const pending = api.get('slow', { tags: ['cancel-me'] });
+      const settled = expect(pending).rejects.toThrow(RequestCancelledError);
+
+      // The handler must have started: `active` flips before the request reaches the server, and
+      // cancelling a request the server has not seen proves nothing about the connection.
+      await vi.waitFor(() => {
+        expect(handlerSignal).toBeDefined();
+      });
+
+      api.cancelByTag('cancel-me');
+
+      await settled;
+      await vi.waitFor(() => {
+        expect(handlerSignal?.aborted).toBe(true);
+      });
+
+      release();
+    });
+
+    it('should abort a request that outlives its timeout', async () => {
+      let handlerSignal: AbortSignal | undefined;
+      let release = (): void => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+
+      server.use(
+        http.get(`${backendUrl}/api/1/slow`, async ({ request }) => {
+          handlerSignal = request.signal;
+          await held;
+          return HttpResponse.json({ message: '', result: true });
+        }),
+      );
+
+      await expect(api.get('slow', { timeout: 50 })).rejects.toThrow();
+
+      await vi.waitFor(() => {
+        expect(handlerSignal?.aborted).toBe(true);
+      });
+
+      release();
+    });
+  });
+
   describe('default request priority', () => {
     /**
      * Derived centrally rather than tagged at ~295 call sites: a rule nobody has to remember is the

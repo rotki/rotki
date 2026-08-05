@@ -2,8 +2,9 @@ import type { ActionResult } from '@rotki/common';
 import type { QueueState } from '@/modules/core/api/request-queue/types';
 import type { RotkiFetchOptions } from '@/modules/core/api/types';
 import { ofetch } from 'ofetch';
+import { combineAbortSignals } from '@/modules/core/api/abort-signals';
 import { apiUrls, defaultApiUrls } from '@/modules/core/api/api-urls';
-import { DEFAULT_TIMEOUT } from '@/modules/core/api/constants';
+import { DEFAULT_TIMEOUT, DOWNLOAD_TIMEOUT } from '@/modules/core/api/constants';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { RequestQueue } from '@/modules/core/api/request-queue/queue';
 import { defaultPriorityFor } from '@/modules/core/api/request-queue/request-priority';
@@ -244,23 +245,24 @@ export class RotkiApi {
       filterEmptyProperties,
       retry,
       skipAuthHandler,
+      timeout = DEFAULT_TIMEOUT,
       ...fetchOptions
     } = options;
-
     const doFetch = async (): Promise<T> => {
       const body = transformRequestBody(fetchOptions.body, { skipSnakeCase, filterEmptyProperties });
       const query = transformRequestQuery(fetchOptions.query, { skipSnakeCase, filterEmptyProperties });
+      const { dispose, signal } = combineAbortSignals(this.abortController.signal, fetchOptions.signal, timeout);
 
       const response = await ofetch.raw<ActionResult<T>>(url, {
         ...fetchOptions,
         baseURL: fetchOptions.baseURL ?? this._baseURL,
-        timeout: fetchOptions.timeout ?? DEFAULT_TIMEOUT,
-        signal: this.abortController.signal,
+        timeout,
+        signal,
         ignoreResponseError: true,
         body,
         query,
         parseResponse: createResponseParser({ skipCamelCase, skipRootCamelCase }),
-      });
+      }).finally(dispose);
 
       this.checkResponseStatus<T>(response, { validStatuses, skipAuthHandler });
 
@@ -311,14 +313,14 @@ export class RotkiApi {
     if (this._stopped)
       throw new RequestCancelledError('Application is quitting');
 
-    const { validStatuses, skipSnakeCase, query: rawQuery, baseURL, timeout } = options;
+    const { validStatuses, skipSnakeCase, query: rawQuery, baseURL, timeout = DEFAULT_TIMEOUT } = options;
     const query = transformRequestQuery(rawQuery, { skipSnakeCase });
 
     const response = await ofetch.raw(url, {
       method: 'HEAD',
       baseURL: baseURL ?? this._baseURL,
-      timeout: timeout ?? DEFAULT_TIMEOUT,
-      signal: this.abortController.signal,
+      timeout,
+      signal: combineAbortSignals(this.abortController.signal, undefined, timeout).signal,
       ignoreResponseError: true,
       query,
     });
@@ -342,15 +344,15 @@ export class RotkiApi {
     if (this._stopped)
       throw new RequestCancelledError('Application is quitting');
 
-    const { validStatuses, skipSnakeCase, ...fetchOptions } = options;
+    const { validStatuses, skipSnakeCase, timeout = DOWNLOAD_TIMEOUT, ...fetchOptions } = options;
     const body = transformRequestBody(fetchOptions.body, { skipSnakeCase });
     const query = transformRequestQuery(fetchOptions.query, { skipSnakeCase });
 
     const response = await ofetch.raw<Blob, 'blob'>(url, {
       method: fetchOptions.method,
       baseURL: fetchOptions.baseURL ?? this._baseURL,
-      timeout: fetchOptions.timeout ?? DEFAULT_TIMEOUT,
-      signal: this.abortController.signal,
+      timeout,
+      signal: combineAbortSignals(this.abortController.signal, fetchOptions.signal, timeout).signal,
       responseType: 'blob',
       ignoreResponseError: true,
       body,
