@@ -26,7 +26,7 @@ const { isMdAndUp } = useBreakpoint();
 
 <template>
   <div
-    data-testid="swap-collapse"
+    :data-testid="isMovement ? 'movement-collapse' : 'swap-collapse'"
     class="h-9 flex items-center gap-2 border-default pr-4 pl-2 bg-gradient-to-b from-rui-grey-300 to-transparent dark:from-rui-grey-900 group/row relative mx-2 rounded-t-2xl mt-[3px]"
   >
     <!-- Collapse button (absolute top-left like expand) -->

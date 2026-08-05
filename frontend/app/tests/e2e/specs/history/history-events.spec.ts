@@ -341,14 +341,17 @@ test.describe.serial('history events', () => {
     // collapses it, and expansion is keyed by position, so this delete re-indexes the list and
     // flips that swap back to collapsed. Against `getSwapRows` the vanishing swap and the
     // reappearing one cancel out and the count sits still while the delete plainly worked.
-    const swapsBefore = await page.getSwapGroups();
-    expect(swapsBefore).toBeGreaterThan(0);
+    const before = await page.getSwapGroupBreakdown();
+    expect(before.total).toBeGreaterThan(0);
 
     await page.deleteEvent('[data-cy=history-event-swap]', 0);
 
     await expect(async () => {
-      const swapsAfter = await page.getSwapGroups();
-      expect(swapsAfter).toBeLessThan(swapsBefore);
+      const after = await page.getSwapGroupBreakdown();
+      // Both halves are named: which half a swap is counted in changes when expansion state
+      // changes, and a bare total cannot tell that apart from a swap actually disappearing.
+      expect(after.total, `swap groups before=${JSON.stringify(before)} after=${JSON.stringify(after)}`)
+        .toBeLessThan(before.total);
     }).toPass({ timeout: 10000 });
   });
 });
