@@ -9,6 +9,10 @@ const mockSetWsConnectionEnabled = vi.fn();
 const mockRestartBackend = vi.fn();
 const mockConfig = vi.fn();
 const mockGetBackendUrl = vi.fn();
+const mockControlProbe = vi.fn();
+const mockControlRestart = vi.fn();
+/** Flipped per test: `false` is the docker/web build, where the app owns no backend process. */
+let packaged = true;
 
 vi.mock('@/modules/shell/app/use-backend-connection', () => ({
   useBackendConnection: vi.fn(() => ({
@@ -32,11 +36,22 @@ vi.mock('@/modules/shell/app/use-websocket-connection', () => ({
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
   useInterop: vi.fn(() => ({
     get isPackaged(): boolean {
-      return true;
+      return packaged;
     },
     config: mockConfig,
     restartBackend: mockRestartBackend,
     setLogLevel: vi.fn(),
+  })),
+}));
+
+vi.mock('@/modules/core/control/use-control', () => ({
+  useControl: vi.fn(() => ({
+    available: ref(true),
+    probe: mockControlProbe,
+    restart: mockControlRestart,
+    serviceState: vi.fn(),
+    setServiceRunning: vi.fn(),
+    supportsOptions: false,
   })),
 }));
 
@@ -76,6 +91,9 @@ describe('useBackendManagement', () => {
     mockConfig.mockResolvedValue({});
     mockRestartBackend.mockResolvedValue(true);
     mockGetBackendUrl.mockReturnValue({ sessionOnly: false, url: '' });
+    packaged = true;
+    mockControlProbe.mockResolvedValue(true);
+    mockControlRestart.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -197,6 +215,48 @@ describe('useBackendManagement', () => {
 
       expect(mockRestartBackend).not.toHaveBeenCalled();
       expect(mockConnect).toHaveBeenCalledWith('http://custom:4242');
+    });
+  });
+
+  describe('docker control', () => {
+    it('should not restart the backend while merely setting up at boot', async () => {
+      // Regression: with the electron-only guard removed from restartBackend,
+      // setupBackend's boot path started issuing a real /_control restart, so
+      // docker bounced its whole backend tree on every page load - and before
+      // login the endpoint refuses, which stranded the user short of the login
+      // screen because setupBackend rejected before reaching connect().
+      packaged = false;
+
+      const { useBackendManagement } = await importModule();
+      const { setupBackend } = create(useBackendManagement);
+      await setupBackend();
+
+      expect(mockControlRestart).not.toHaveBeenCalled();
+      expect(mockConnect).toHaveBeenCalled();
+    });
+
+    it('should restart through the control endpoint when asked explicitly', async () => {
+      packaged = false;
+
+      const { useBackendManagement } = await importModule();
+      const { restartBackend } = create(useBackendManagement);
+      await restartBackend();
+
+      expect(mockControlRestart).toHaveBeenCalledOnce();
+      expect(mockRestartBackend).not.toHaveBeenCalled();
+      expect(mockConnect).toHaveBeenCalled();
+    });
+
+    it('should stay a no-op where no control endpoint is served', async () => {
+      // The plain web build: probing says no, so the old behaviour stands.
+      packaged = false;
+      mockControlProbe.mockResolvedValue(false);
+
+      const { useBackendManagement } = await importModule();
+      const { restartBackend } = create(useBackendManagement);
+      await restartBackend();
+
+      expect(mockControlRestart).not.toHaveBeenCalled();
     });
   });
 });

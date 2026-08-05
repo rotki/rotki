@@ -108,10 +108,13 @@ describe('useAssetUpdateSteps', () => {
   });
 
   describe('requestRestart', () => {
-    it('should be a no-op on web (not packaged)', async () => {
+    it('should ask for a restart without deciding whether one is possible', async () => {
+      // The runtime check moved into restartBackend, which drives Electron, the
+      // docker control endpoint, or nothing at all. Guarding again here is what
+      // kept docker on the old silent no-op.
       const result = await useAssetUpdateSteps().requestRestart();
 
-      expect(restartBackend).not.toHaveBeenCalled();
+      expect(restartBackend).toHaveBeenCalled();
       expect(result).toEqual({ ok: true, value: undefined });
     });
 

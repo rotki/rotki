@@ -4,6 +4,7 @@ import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import { deleteBackendUrl, getBackendUrl } from '@/modules/auth/account-management';
 import { getDefaultLogLevel, logger, setLevel } from '@/modules/core/common/logging/logging';
 import { useMainStore } from '@/modules/core/common/use-main-store';
+import { useControl } from '@/modules/core/control/use-control';
 import { clearUserOptions, loadUserOptions, saveUserOptions } from '@/modules/shell/app/backend-options';
 import { useBackendConnection } from '@/modules/shell/app/use-backend-connection';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
@@ -31,6 +32,7 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   const { setConnected } = store;
   const { connect } = useBackendConnection();
   const { setConnectionEnabled: setWsConnectionEnabled } = useWebsocketConnection();
+  const { probe: controlProbe, restart: controlRestart } = useControl();
 
   const defaultLogLevel = computed<LogLevel>(() => getDefaultLogLevel());
   const modelLogLevel = ref<LogLevel>(get(defaultLogLevel));
@@ -95,11 +97,35 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   };
 
   const restartBackend = async (forceRestart = false): Promise<void> => {
-    if (!interop.isPackaged)
+    if (interop.isPackaged) {
+      await load();
+      await restartBackendWithOptions(get(options), forceRestart);
+      return;
+    }
+
+    // Docker: no Electron to ask, but starling exposes the same `restart` over
+    // `/_control` once a session cookie is configured (#2807). Until this
+    // existed the call simply returned, so every flow that needs a bounced
+    // backend — the asset-update unlock step, AssetUpdate, RestoreAssetDbButton
+    // — silently did nothing in a container. `available` is false where there is
+    // no control endpoint, which keeps the old no-op for the plain web build.
+    if (!await controlProbe())
       return;
 
-    await load();
-    await restartBackendWithOptions(get(options), forceRestart);
+    setConnected(false);
+    try {
+      await controlRestart();
+    }
+    catch (error: unknown) {
+      // Never propagate: callers treat a restart as a step in a longer sequence
+      // and follow it with a reconnect, so throwing here would strand the UI
+      // mid-flow. The common cause is a caller that logged out first, which
+      // revokes the cookie the control endpoint authorises against.
+      logger.error(error);
+    }
+    set(connectionEnabled, true);
+    setWsConnectionEnabled(true);
+    connect();
   };
 
   const resetSessionBackend = async (): Promise<void> => {
@@ -123,10 +149,17 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
       return;
 
     const { sessionOnly, url } = getBackendUrl();
-    if (!!url && !sessionOnly)
+    if (!!url && !sessionOnly) {
       await backendChanged(url);
-    else
+    }
+    // Boot only *starts* a backend where the app owns one. In docker the tree is
+    // already up before the page loads, so restarting here would bounce it on
+    // every reload — and before login the control endpoint would refuse anyway,
+    // stranding the user short of the login screen. Explicit restart flows call
+    // `restartBackend` directly; boot is not one of them.
+    else if (interop.isPackaged) {
       await restartBackend();
+    }
 
     if (!interop.isPackaged)
       connect();

@@ -1663,8 +1663,8 @@
           "stop": "Stop server"
         },
         "auto_start": "Start MCP automatically with rotki",
+        "control_unavailable": "MCP lifecycle controls are unavailable because this deployment was started without session authentication.",
         "desktop_only": "MCP lifecycle controls are available in the rotki desktop app.",
-        "docker_description": "MCP is started automatically by Starling in authenticated Docker deployments. Generate a bearer token to connect an MCP client.",
         "endpoint": "Endpoint",
         "error": "Failed to update the MCP server: {message}",
         "generate_token": "Generate bearer token",
@@ -2095,6 +2095,14 @@
     "logging_out": "Signing out…",
     "message": "Connecting to rotki backend",
     "restarting": "Restarting the rotki backend"
+  },
+  "control": {
+    "errors": {
+      "failed": "The request to manage the rotki backend failed.",
+      "not_supported": "This rotki deployment does not support managing the backend from the app.",
+      "unauthorized": "Your session is no longer valid. Please log in again.",
+      "unavailable": "The rotki backend could not be reached to authorise this action. Please try again shortly."
+    }
   },
   "cost_basis_table": {
     "complete": "Complete",

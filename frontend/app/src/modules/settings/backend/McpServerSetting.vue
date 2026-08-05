@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { McpToken } from '@/modules/settings/types/mcp';
-import { type McpServerStatus, StarlingServiceStatus } from '@shared/ipc';
+import { StarlingServiceStatus } from '@shared/ipc';
+import { StarlingService } from '@shared/starling/starling-protocol';
 import { startPromise } from '@shared/utils';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { useControl } from '@/modules/core/control/use-control';
 import { useMcpApi } from '@/modules/settings/api/use-mcp-api';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
@@ -12,18 +14,14 @@ import { useMcpServerState } from './use-mcp-server-state';
 const { t } = useI18n({ useScope: 'global' });
 const isDocker = import.meta.env.VITE_DOCKER === 'true';
 
-const {
-  getMcpServerStatus,
-  isPackaged,
-  setMcpAutoStart,
-  startMcpServer,
-  stopMcpServer,
-} = useInterop();
+const { getMcpServerStatus, isPackaged, setMcpAutoStart } = useInterop();
+const { available, probe, serviceState, setServiceRunning, supportsOptions } = useControl();
 const { generateMcpToken } = useMcpApi();
 
-const status = ref<McpServerStatus>();
+const state = ref<StarlingServiceStatus>();
+const autoStart = ref<boolean>(false);
 const serverError = ref<string>();
-const loading = ref<boolean>(isPackaged);
+const loading = ref<boolean>(true);
 const token = ref<McpToken>();
 const tokenError = ref<string>();
 const tokenVisible = ref<boolean>(false);
@@ -36,8 +34,11 @@ const transitioningStates: ReadonlySet<StarlingServiceStatus> = new Set([
   StarlingServiceStatus.WAITING_READY,
 ]);
 
-const isRunning = computed<boolean>(() => get(status)?.state === StarlingServiceStatus.READY);
-const dockerEndpoint = computed<string>(() => `${window.location.origin}/mcp`);
+// Docker reaches MCP through the proxy on the page's own origin; the desktop
+// binds it on loopback, and only Electron knows the address it actually used.
+const endpoint = ref<string>(isDocker ? `${window.location.origin}/mcp` : '');
+
+const isRunning = computed<boolean>(() => get(state) === StarlingServiceStatus.READY);
 const tokenDisplay = computed<string>(() => (
   get(tokenVisible) ? get(token)?.accessToken ?? '' : '••••••••••••••••'
 ));
@@ -59,24 +60,41 @@ const statusLabels = computed<Record<StarlingServiceStatus, string>>(() => ({
   [StarlingServiceStatus.WAITING_READY]: t('backend_settings.settings.mcp_server.status.starting'),
 }));
 const isLifecycleDisabled = computed<boolean>(() => {
-  const state = get(status)?.state;
-  return state === undefined || state === StarlingServiceStatus.UNAVAILABLE || transitioningStates.has(state);
+  const current = get(state);
+  return current === undefined
+    || current === StarlingServiceStatus.UNAVAILABLE
+    || transitioningStates.has(current);
 });
+// Nothing to drive the server with. In the plain web build that is simply the
+// truth (no supervisor is reachable); in docker it means the deployment has no
+// session cookie configured, so starling never mounted `/_control`.
+const unavailableMessage = computed<string>(() => (
+  isPackaged || isDocker
+    ? t('backend_settings.settings.mcp_server.control_unavailable')
+    : t('backend_settings.settings.mcp_server.desktop_only')
+));
 
-function statusLabel(state: StarlingServiceStatus | undefined): string {
-  if (!state && get(loading))
+function statusLabel(current: StarlingServiceStatus | undefined): string {
+  if (!current && get(loading))
     return t('backend_settings.settings.mcp_server.status.loading');
-  return get(statusLabels)[state ?? StarlingServiceStatus.UNAVAILABLE];
+  return get(statusLabels)[current ?? StarlingServiceStatus.UNAVAILABLE];
 }
 
 async function loadStatus(): Promise<void> {
-  if (!isPackaged)
-    return;
-
   set(loading, true);
   set(serverError, undefined);
   try {
-    set(status, await getMcpServerStatus());
+    if (!await probe())
+      return;
+
+    set(state, await serviceState(StarlingService.MCP));
+    // Auto-start and the loopback endpoint are Electron app settings, readable
+    // only where a restart may carry options at all.
+    if (supportsOptions) {
+      const status = await getMcpServerStatus();
+      set(autoStart, status.autoStart);
+      set(endpoint, status.endpoint);
+    }
   }
   catch (error_: unknown) {
     set(serverError, getErrorMessage(error_));
@@ -90,7 +108,9 @@ async function updateAutoStart(enabled: boolean): Promise<void> {
   set(loading, true);
   set(serverError, undefined);
   try {
-    set(status, await setMcpAutoStart(enabled));
+    const status = await setMcpAutoStart(enabled);
+    set(autoStart, status.autoStart);
+    set(state, status.state);
   }
   catch (error_: unknown) {
     set(serverError, getErrorMessage(error_));
@@ -104,7 +124,7 @@ async function toggleServer(): Promise<void> {
   set(loading, true);
   set(serverError, undefined);
   try {
-    set(status, await (get(isRunning) ? stopMcpServer() : startMcpServer()));
+    set(state, await setServiceRunning(StarlingService.MCP, !get(isRunning)));
   }
   catch (error_: unknown) {
     const message = getErrorMessage(error_);
@@ -135,10 +155,9 @@ function toggleTokenVisibility(): void {
   set(tokenVisible, !get(tokenVisible));
 }
 
-watch(mcpServerState, (state) => {
-  const currentStatus = get(status);
-  if (state && currentStatus)
-    set(status, { ...currentStatus, state });
+watch(mcpServerState, (pushed) => {
+  if (pushed)
+    set(state, pushed);
 });
 
 onBeforeMount(() => {
@@ -155,119 +174,11 @@ onBeforeMount(() => {
       {{ t('backend_settings.settings.mcp_server.hint') }}
     </template>
 
-    <div
-      v-if="isDocker"
-      class="flex flex-col gap-4"
-    >
-      <RuiAlert type="info">
-        {{ t('backend_settings.settings.mcp_server.docker_description') }}
-      </RuiAlert>
-
-      <RuiAlert
-        v-if="tokenError"
-        type="error"
-      >
-        {{ t('backend_settings.settings.mcp_server.token_error', { message: tokenError }) }}
-      </RuiAlert>
-
-      <div class="flex flex-col gap-1">
-        <span class="text-sm text-rui-text-secondary">
-          {{ t('backend_settings.settings.mcp_server.endpoint') }}
-        </span>
-        <div class="flex items-center gap-2 rounded border border-default bg-rui-grey-50 dark:bg-rui-grey-900 p-3">
-          <code class="flex-1 min-w-0 text-sm break-all font-mono">
-            {{ dockerEndpoint }}
-          </code>
-          <CopyTooltip :value="dockerEndpoint">
-            <RuiButton
-              icon
-              variant="text"
-              color="primary"
-              size="sm"
-            >
-              <RuiIcon
-                name="lu-copy"
-                size="16"
-              />
-            </RuiButton>
-            <template #label>
-              {{ t('common.actions.copy_to_clipboard') }}
-            </template>
-          </CopyTooltip>
-        </div>
-      </div>
-
-      <RuiButton
-        data-testid="mcp-generate-token"
-        type="button"
-        color="primary"
-        :loading="loading"
-        @click="createToken()"
-      >
-        {{ t('backend_settings.settings.mcp_server.generate_token') }}
-      </RuiButton>
-
-      <div
-        v-if="token"
-        class="flex flex-col gap-1"
-      >
-        <span class="text-sm text-rui-text-secondary">
-          {{ t('backend_settings.settings.mcp_server.token') }}
-        </span>
-        <div class="flex items-center gap-2 rounded border border-default bg-rui-grey-50 dark:bg-rui-grey-900 p-3">
-          <code
-            data-testid="mcp-token"
-            class="flex-1 min-w-0 text-sm break-all font-mono"
-          >
-            {{ tokenDisplay }}
-          </code>
-          <RuiButton
-            data-testid="mcp-toggle-token"
-            icon
-            variant="text"
-            color="primary"
-            size="sm"
-            :aria-label="tokenVisibilityLabel"
-            @click="toggleTokenVisibility()"
-          >
-            <RuiIcon
-              :name="tokenVisible ? 'lu-eye-off' : 'lu-eye'"
-              size="16"
-            />
-          </RuiButton>
-          <CopyTooltip :value="token.accessToken">
-            <RuiButton
-              icon
-              variant="text"
-              color="primary"
-              size="sm"
-            >
-              <RuiIcon
-                name="lu-copy"
-                size="16"
-              />
-            </RuiButton>
-            <template #label>
-              {{ t('common.actions.copy_to_clipboard') }}
-            </template>
-          </CopyTooltip>
-        </div>
-        <span class="text-xs text-rui-text-secondary">
-          {{ t('backend_settings.settings.mcp_server.token_expires', {
-            timestamp: new Date(token.expiresAt * 1000).toLocaleString(),
-          }) }}
-        </span>
-        <RuiAlert type="warning">
-          {{ t('backend_settings.settings.mcp_server.token_expiry_hint') }}
-        </RuiAlert>
-      </div>
-    </div>
-
     <RuiAlert
-      v-else-if="!isPackaged"
+      v-if="!available && !loading"
       type="info"
     >
-      {{ t('backend_settings.settings.mcp_server.desktop_only') }}
+      {{ unavailableMessage }}
     </RuiAlert>
 
     <div
@@ -286,42 +197,49 @@ onBeforeMount(() => {
           {{ t('backend_settings.settings.mcp_server.status.label') }}
         </span>
         <RuiChip
+          data-testid="mcp-status"
           size="sm"
           :color="isRunning ? 'success' : 'secondary'"
         >
-          {{ statusLabel(status?.state) }}
+          {{ statusLabel(state) }}
         </RuiChip>
       </div>
 
       <div
-        v-if="status"
-        class="flex items-center gap-2 rounded border border-default bg-rui-grey-50 dark:bg-rui-grey-900 p-3"
+        v-if="endpoint"
+        class="flex flex-col gap-1"
       >
-        <code class="flex-1 min-w-0 text-sm break-all font-mono">
-          {{ status.endpoint }}
-        </code>
-        <CopyTooltip :value="status.endpoint">
-          <RuiButton
-            icon
-            variant="text"
-            color="primary"
-            size="sm"
-          >
-            <RuiIcon
-              name="lu-copy"
-              size="16"
-            />
-          </RuiButton>
-          <template #label>
-            {{ t('common.actions.copy_to_clipboard') }}
-          </template>
-        </CopyTooltip>
+        <span class="text-sm text-rui-text-secondary">
+          {{ t('backend_settings.settings.mcp_server.endpoint') }}
+        </span>
+        <div class="flex items-center gap-2 rounded border border-default bg-rui-grey-50 dark:bg-rui-grey-900 p-3">
+          <code class="flex-1 min-w-0 text-sm break-all font-mono">
+            {{ endpoint }}
+          </code>
+          <CopyTooltip :value="endpoint">
+            <RuiButton
+              icon
+              variant="text"
+              color="primary"
+              size="sm"
+            >
+              <RuiIcon
+                name="lu-copy"
+                size="16"
+              />
+            </RuiButton>
+            <template #label>
+              {{ t('common.actions.copy_to_clipboard') }}
+            </template>
+          </CopyTooltip>
+        </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-4">
         <RuiSwitch
+          v-if="supportsOptions"
           data-testid="mcp-auto-start"
-          :model-value="status?.autoStart ?? false"
+          :model-value="autoStart"
           :disabled="loading"
           hide-details
           color="primary"
@@ -340,6 +258,80 @@ onBeforeMount(() => {
             : t('backend_settings.settings.mcp_server.actions.start') }}
         </RuiButton>
       </div>
+
+      <template v-if="isDocker">
+        <RuiAlert
+          v-if="tokenError"
+          type="error"
+        >
+          {{ t('backend_settings.settings.mcp_server.token_error', { message: tokenError }) }}
+        </RuiAlert>
+
+        <RuiButton
+          data-testid="mcp-generate-token"
+          type="button"
+          color="primary"
+          :loading="loading"
+          @click="createToken()"
+        >
+          {{ t('backend_settings.settings.mcp_server.generate_token') }}
+        </RuiButton>
+
+        <div
+          v-if="token"
+          class="flex flex-col gap-1"
+        >
+          <span class="text-sm text-rui-text-secondary">
+            {{ t('backend_settings.settings.mcp_server.token') }}
+          </span>
+          <div class="flex items-center gap-2 rounded border border-default bg-rui-grey-50 dark:bg-rui-grey-900 p-3">
+            <code
+              data-testid="mcp-token"
+              class="flex-1 min-w-0 text-sm break-all font-mono"
+            >
+              {{ tokenDisplay }}
+            </code>
+            <RuiButton
+              data-testid="mcp-toggle-token"
+              icon
+              variant="text"
+              color="primary"
+              size="sm"
+              :aria-label="tokenVisibilityLabel"
+              @click="toggleTokenVisibility()"
+            >
+              <RuiIcon
+                :name="tokenVisible ? 'lu-eye-off' : 'lu-eye'"
+                size="16"
+              />
+            </RuiButton>
+            <CopyTooltip :value="token.accessToken">
+              <RuiButton
+                icon
+                variant="text"
+                color="primary"
+                size="sm"
+              >
+                <RuiIcon
+                  name="lu-copy"
+                  size="16"
+                />
+              </RuiButton>
+              <template #label>
+                {{ t('common.actions.copy_to_clipboard') }}
+              </template>
+            </CopyTooltip>
+          </div>
+          <span class="text-xs text-rui-text-secondary">
+            {{ t('backend_settings.settings.mcp_server.token_expires', {
+              timestamp: new Date(token.expiresAt * 1000).toLocaleString(),
+            }) }}
+          </span>
+          <RuiAlert type="warning">
+            {{ t('backend_settings.settings.mcp_server.token_expiry_hint') }}
+          </RuiAlert>
+        </div>
+      </template>
     </div>
   </SettingsItem>
 </template>
