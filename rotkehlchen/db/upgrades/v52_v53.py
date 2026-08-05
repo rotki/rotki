@@ -600,4 +600,12 @@ ON bitcointx_address_mappings(address, tx_id);
                 merges=merges,
             )
 
+    @progress_step(description='Create timed balances netvalue index.')
+    def _create_timed_balances_netvalue_index(write_cursor: DBCursor) -> None:
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS '
+            'idx_timed_balances_currency_timestamp_category_value '
+            'ON timed_balances(currency, timestamp, category, usd_value)',
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)

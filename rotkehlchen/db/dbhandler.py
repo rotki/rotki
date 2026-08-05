@@ -3208,31 +3208,39 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             excluded_values: defaultdict[Timestamp, FVal] = defaultdict(FVal)
-            # scanning timed_balances is the expensive part of this query, so skip it when
-            # there is nothing to take out. Note a fresh DB already ships with the default
-            # spam assets ignored, so this mostly helps users who cleared that list.
-            if len(self.get_ignored_asset_ids(cursor)) != 0 or include_nfts is False:
-                # An ignored NFT matches both conditions but is still summed once, so its value
-                # can't get subtracted twice.
+            if include_nfts:
                 query = (
                     'SELECT timestamp, category, SUM(usd_value) FROM timed_balances '
-                    'WHERE timestamp >= ? AND (currency IN '
-                    "(SELECT value FROM multisettings WHERE name='ignored_asset')"
+                    'WHERE timestamp >= ? AND currency IN '
+                    "(SELECT value FROM multisettings WHERE name='ignored_asset') "
+                    'GROUP BY timestamp, category'
                 )
-                bindings: list[Any] = [from_ts]
-                if include_nfts is False:
-                    query += ' OR currency LIKE ?'
-                    bindings.append(f'{NFT_DIRECTIVE}%')
+                bindings: tuple[Timestamp | str, ...] = (from_ts,)
+            else:
+                # Keep ignored assets and NFTs in separate indexable scans. An ignored NFT is
+                # excluded from the second arm so it cannot be subtracted twice.
+                query = (
+                    'SELECT timestamp, category, SUM(usd_value) FROM ('
+                    'SELECT timestamp, category, usd_value FROM timed_balances '
+                    'WHERE timestamp >= ? AND currency IN '
+                    "(SELECT value FROM multisettings WHERE name='ignored_asset') "
+                    'UNION ALL '
+                    'SELECT timestamp, category, usd_value '
+                    'FROM timed_balances AS nft_balances '
+                    'WHERE timestamp >= ? AND currency GLOB ? AND NOT EXISTS ('
+                    'SELECT 1 FROM multisettings '
+                    "WHERE name='ignored_asset' AND value=nft_balances.currency)) "
+                    'GROUP BY timestamp, category'
+                )
+                bindings = (from_ts, from_ts, f'{NFT_DIRECTIVE}*')
 
-                asset_category = BalanceType.ASSET.serialize_for_db()  # pylint: disable=no-member
-                for timestamp, category, usd_value in cursor.execute(
-                    f'{query}) GROUP BY timestamp, category',
-                    bindings,
-                ):  # the total is assets minus liabilities, so an excluded liability adds back
-                    if category == asset_category:
-                        excluded_values[timestamp] += FVal(usd_value)
-                    else:
-                        excluded_values[timestamp] -= FVal(usd_value)
+            asset_category = BalanceType.ASSET.serialize_for_db()  # pylint: disable=no-member
+            for timestamp, category, usd_value in cursor.execute(query, bindings):
+                # The total is assets minus liabilities, so an excluded liability adds back.
+                if category == asset_category:
+                    excluded_values[timestamp] += FVal(usd_value)
+                else:
+                    excluded_values[timestamp] -= FVal(usd_value)
 
             data, times_int = [], []
             for entry in cursor.execute(  # the total ("H") entries in ascending time
