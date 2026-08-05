@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useTaskPollingScheduler } from './use-task-polling-scheduler';
 
@@ -19,6 +20,10 @@ describe('useTaskPollingScheduler', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     monitor.mockResolvedValue(undefined);
+    // The store starts disconnected, and polling is gated on the connection, so
+    // every test that expects a poll needs the connected baseline the app has
+    // by the time the scheduler is started (after login).
+    useMainStore().setConnected(true);
   });
 
   afterEach(() => {
@@ -28,6 +33,42 @@ describe('useTaskPollingScheduler', () => {
   const runTask = (): void => {
     useTaskStore().add({ id: 1, label: 'test' });
   };
+
+  /**
+   * A backend restart clears `connected` and takes seconds to come back. Polling
+   * through that window at the active pace produced a wall of failed requests in
+   * the console (CORS/502/FetchError, one every 500ms) with nothing to show for
+   * it.
+   *
+   * Negative control: dropping the `connected` guard in `tick` makes this see
+   * repeated calls while disconnected.
+   */
+  it('should not poll while the backend is deliberately down', async () => {
+    const { start } = useTaskPollingScheduler();
+    runTask();
+    start(false);
+
+    useMainStore().setConnected(false);
+
+    await vi.advanceTimersByTimeAsync(ACTIVE_POLLING_MS * 10);
+    expect(monitor).not.toHaveBeenCalled();
+  });
+
+  // Skipping, not stopping: nothing has to restart the scheduler once the
+  // backend is back, which is what makes it safe to gate on the connection.
+  it('should resume polling on its own once the backend is back', async () => {
+    const { start } = useTaskPollingScheduler();
+    runTask();
+    start(false);
+
+    useMainStore().setConnected(false);
+    await vi.advanceTimersByTimeAsync(ACTIVE_POLLING_MS * 4);
+    expect(monitor).not.toHaveBeenCalled();
+
+    useMainStore().setConnected(true);
+    await vi.advanceTimersByTimeAsync(IDLE_POLLING_MS);
+    expect(monitor).toHaveBeenCalled();
+  });
 
   it('should poll slowly while nothing is outstanding', async () => {
     const { start } = useTaskPollingScheduler();

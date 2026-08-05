@@ -1,4 +1,5 @@
 import { startPromise } from '@shared/utils';
+import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useTaskMonitor } from '@/modules/core/tasks/use-task-monitor';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 
@@ -48,6 +49,7 @@ interface UseTaskPollingSchedulerReturn {
 export function useTaskPollingScheduler(): UseTaskPollingSchedulerReturn {
   const { monitor } = useTaskMonitor();
   const { hasRunningTasks, hasUnknownTasks, tasks } = storeToRefs(useTaskStore());
+  const { connected } = storeToRefs(useMainStore());
 
   let timeoutId: NodeJS.Timeout | undefined;
   let running = false;
@@ -90,7 +92,14 @@ export function useTaskPollingScheduler(): UseTaskPollingSchedulerReturn {
 
   async function tick(): Promise<void> {
     try {
-      await monitor();
+      // Skip the pass while the backend is deliberately down — a restart in
+      // flight, or a backend being switched. It cannot answer, so polling it
+      // only fills the console with failed requests for the whole window (a
+      // core restart takes seconds, and the active pace is twice a second).
+      // Skipping rather than stopping means polling resumes on its own when the
+      // connection returns, with no one having to restart the scheduler.
+      if (get(connected))
+        await monitor();
     }
     finally {
       // Rescheduled even when the pass throws, or one failed poll ends polling for the session.
