@@ -4,10 +4,13 @@ import type { OraclePriceEntry, OraclePricesQuery } from '@/modules/assets/price
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import OraclePriceEditDialog from '@/modules/assets/prices/components/oracle/OraclePriceEditDialog.vue';
+import { getOracleSourceLabel } from '@/modules/assets/prices/oracle-source-labels';
+import { useOraclePriceFields } from '@/modules/assets/prices/use-oracle-price-fields';
 import { useOraclePrices } from '@/modules/assets/prices/use-oracle-prices';
 import { type Filters, type Matcher, useOraclePricesFilter } from '@/modules/assets/prices/use-oracle-prices-filter';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import TableFilter from '@/modules/core/table/TableFilter.vue';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -18,7 +21,8 @@ const { t } = useI18n({ useScope: 'global' });
 const { deletePrice, fetchData } = useOraclePrices();
 
 const filterSchema = useOraclePricesFilter();
-const matchers = filterSchema.matchers;
+const fields = useOraclePriceFields(filterSchema.matchers);
+const pillLabels = usePillBarLabels();
 
 const {
   collection,
@@ -71,19 +75,6 @@ const headers = computed<DataTableColumn<OraclePriceEntry>[]>(() => [
   },
 ]);
 
-const sourceLabels: Record<string, string> = {
-  [PriceOracle.ALCHEMY]: 'Alchemy',
-  [PriceOracle.BLOCKCHAIN]: 'Blockchain',
-  [PriceOracle.COINGECKO]: 'CoinGecko',
-  [PriceOracle.CRYPTOCOMPARE]: 'CryptoCompare',
-  [PriceOracle.DEFILLAMA]: 'DefiLlama',
-  [PriceOracle.FIAT]: 'Fiat',
-  [PriceOracle.MANUAL]: 'Manual',
-  [PriceOracle.MORALIS]: 'Moralis',
-  [PriceOracle.UNISWAP2]: 'Uniswap V2',
-  [PriceOracle.UNISWAP3]: 'Uniswap V3',
-};
-
 const sourceBrandColors: Record<string, string> = {
   [PriceOracle.ALCHEMY]: '#363ff9',
   [PriceOracle.COINGECKO]: '#8dc63f',
@@ -102,10 +93,6 @@ const sourceContextColors: Record<string, ChipColor> = {
   [PriceOracle.MANUAL]: 'warning',
   [PriceOracle.MANUALCURRENT]: 'warning',
 };
-
-function getSourceLabel(source: string): string {
-  return sourceLabels[source] ?? source;
-}
 
 function getSourceBgColor(source: string): string | undefined {
   return sourceBrandColors[source];
@@ -162,12 +149,12 @@ onMounted(async () => {
           </template>
           {{ t('oracle_prices.refresh_tooltip') }}
         </RuiTooltip>
-        <div class="w-full sm:max-w-[25rem]">
-          <TableFilter
-            v-model:matches="filter"
-            :matchers="matchers"
-          />
-        </div>
+        <PillFilterBar
+          v-model:matches="filter"
+          class="flex-1 min-w-[12rem] md:min-w-[24rem]"
+          :fields="fields"
+          :labels="pillLabels"
+        />
       </div>
 
       <RuiDataTable
@@ -200,7 +187,7 @@ onMounted(async () => {
             :variant="getSourceBgColor(row.sourceType) ? 'filled' : 'outlined'"
             :color="getSourceColor(row.sourceType)"
           >
-            {{ getSourceLabel(row.sourceType) }}
+            {{ getOracleSourceLabel(row.sourceType) }}
           </RuiChip>
         </template>
         <template #item.actions="{ row }">

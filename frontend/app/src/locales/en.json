@@ -1597,6 +1597,10 @@
       "type": "Filter by the type of the custom asset",
       "type_hint": "Search using the asset type"
     },
+    "filter_field_labels": {
+      "name": "Name",
+      "type": "Type"
+    },
     "go_to_asset_detail": "Asset details",
     "multi_chain_assets": "Multi Chain Assets",
     "refresh_price": "Refresh price",
@@ -5112,6 +5116,12 @@
       "source_type": "Filter by oracle source",
       "to_asset": "Filter by target asset",
       "to_date": "Filter by end date"
+    },
+    "filter_field_labels": {
+      "from_asset": "Source asset",
+      "period": "Period",
+      "source": "Source",
+      "to_asset": "Target asset"
     },
     "headers": {
       "source": "Source"

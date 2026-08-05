@@ -3,12 +3,12 @@ import type { MatchedKeyword, SearchMatcher } from '@/modules/core/table/filteri
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
 import { z } from 'zod';
 
-enum CustomAssetFilterKeys {
+export enum CustomAssetFilterKeys {
   NAME = 'name',
   CUSTOM_ASSET_TYPE = 'type',
 }
 
-enum CustomAssetFilterValueKeys {
+export enum CustomAssetFilterValueKeys {
   NAME = 'name',
   CUSTOM_ASSET_TYPE = 'custom_asset_type',
 }
