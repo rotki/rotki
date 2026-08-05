@@ -126,11 +126,6 @@ test.describe.serial('history events', () => {
       expect(rows).toBeGreaterThanOrEqual(rowsBeforeExpand + 3);
     }).toPass({ timeout: 10000 });
 
-    // An expanded swap renders its collapse header instead of a swap row, so it drops out of
-    // `getSwapRows` entirely while remaining a swap group. Asserted here so the difference is
-    // pinned at the point it is created, rather than only mattering in `delete swap event`.
-    expect(await page.getSwapGroups()).toBeGreaterThan(await page.getSwapRows());
-
     const rowsBefore = await page.getExpandedEventRows();
 
     // The fee is the 3rd sub-event (index 2) within the expanded swap rows.
@@ -337,22 +332,20 @@ test.describe.serial('history events', () => {
   });
 
   test('delete swap event', async () => {
-    // Counted with `getSwapGroups`, not `getSwapRows`: an earlier test expands a swap and never
-    // collapses it, and expansion is keyed by position, so this delete re-indexes the list and
-    // flips that swap back to collapsed. Against `getSwapRows` the vanishing swap and the
-    // reappearing one cancel out and the count sits still while the delete plainly worked.
-    const before = await page.getSwapGroupBreakdown();
-    expect(before.total).toBeGreaterThan(0);
+    // Named, not counted. A total over every swap on the page cannot say *which* swap went away,
+    // so any compensating change reads as success or failure at random — an earlier test leaves a
+    // swap expanded, and an expanded swap renders its collapse header instead of a swap row.
+    // `data-subgroup-id` is on both of those, so it survives a re-render and only a real deletion
+    // takes it out of the DOM.
+    // Addressed by event id throughout. Reading a row and then re-querying `nth(0)` to delete it
+    // deleted a *different* swap: the list is timestamp DESC and re-renders under the test, so the
+    // index no longer names the row that was read. The id is on both the collapsed row and the
+    // collapse header, so a swap that merely expands still matches and only a deletion clears it.
+    const target = page.rowById(await page.eventIdOf('[data-cy=history-event-swap]'));
 
-    await page.deleteEvent('[data-cy=history-event-swap]', 0);
+    await page.deleteEventRow(target);
 
-    await expect(async () => {
-      const after = await page.getSwapGroupBreakdown();
-      // Both halves are named: which half a swap is counted in changes when expansion state
-      // changes, and a bare total cannot tell that apart from a swap actually disappearing.
-      expect(after.total, `swap groups before=${JSON.stringify(before)} after=${JSON.stringify(after)}`)
-        .toBeLessThan(before.total);
-    }).toPass({ timeout: 10000 });
+    await expect(target).toHaveCount(0, { timeout: 10000 });
   });
 });
 

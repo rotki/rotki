@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { getValidSelectorFromEvmAddress } from '@rotki/common';
 import {
   type AssetMovementEventFixture,
@@ -183,23 +183,18 @@ export class HistoryEventsPage {
   }
 
   /**
-   * Swap groups, counted whether or not they are expanded.
-   *
-   * An expanded swap renders its collapse header instead of a `history-event-swap` row, so
-   * {@link getSwapRows} counts only the collapsed ones — useless for "did a swap disappear", since
-   * expansion is keyed by position (`use-virtual-rows.ts`) and any delete re-indexes the list.
+   * A row addressed by the id of the event it stands for — the only stable handle. The table sorts
+   * timestamp DESC and re-renders, so `nth(i)` names a different row from one query to the next.
    */
-  async getSwapGroups(): Promise<number> {
-    return (await this.getSwapGroupBreakdown()).total;
+  rowById(eventId: string): Locator {
+    return this.page.locator(`[data-event-id="${eventId}"]`);
   }
 
-  /** The same count, split by how each swap renders, so a failure can name both halves. */
-  async getSwapGroupBreakdown(): Promise<{ collapsed: number; expanded: number; total: number }> {
-    const [collapsed, expanded] = await Promise.all([
-      this.page.locator('[data-cy=history-event-swap]').count(),
-      this.page.locator('[data-testid=swap-collapse]').count(),
-    ]);
-    return { collapsed, expanded, total: collapsed + expanded };
+  /** The event id of the first row matching `rowSelector`. */
+  async eventIdOf(rowSelector: string): Promise<string> {
+    const id = await this.page.locator(rowSelector).first().getAttribute('data-event-id');
+    expect(id, `${rowSelector} carries no data-event-id`).toBeTruthy();
+    return id ?? '';
   }
 
   async getMovementRows(): Promise<number> {
@@ -233,7 +228,11 @@ export class HistoryEventsPage {
   }
 
   async deleteEvent(rowSelector: string, index: number): Promise<void> {
-    const row = this.page.locator(rowSelector).nth(index);
+    return this.deleteEventRow(this.page.locator(rowSelector).nth(index));
+  }
+
+  /** Deletes an already-resolved row — `deleteEvent` re-queries by index and the list re-sorts. */
+  async deleteEventRow(row: Locator): Promise<void> {
     await row.hover();
     await row.locator('[data-cy=row-delete]').click();
     // Confirm the delete dialog
