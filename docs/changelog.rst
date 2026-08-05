@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`12764` Ignored assets should now be ignored from the snapshot values shown in the dashboard. 
 * :feature:`12735` KittenSwap swaps on HyperEVM are now properly decoded.
 * :feature:`12735` Project X swaps and liquidity position activity on HyperEVM are now properly decoded.
 * :feature:`-` Filtering blockchain accounts now uses the same filter bar as history events: each filter is a pill, the tag selector that sat beside the bar is a tag pill inside it, and a set of filters can be saved as a named view. Filters you had already saved for this table are carried over the first time you open the views menu. Accounts are now picked from a list that shows each one's avatar, name and address, and several accounts can be filtered at once, where before you typed part of an address or label and could filter by only one account at a time. A saved link to the accounts page that carried an account filter needs to be taken again, since the filters are written into the address differently now.

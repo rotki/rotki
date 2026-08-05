@@ -1259,6 +1259,99 @@ def test_get_netvalue_without_nfts(data_dir, username, sql_vm_instructions_cb):
     data.logout()
 
 
+def test_get_netvalue_data_with_ignored_assets(data_dir, username, sql_vm_instructions_cb):
+    """Test that ignored assets are subtracted from the stored snapshot totals at query time.
+
+    Regression test for https://github.com/rotki/rotki/issues/12764 where the net value graph
+    kept showing the value of an asset that the user had already ignored. The subtraction has
+    to happen when reading, so that unignoring the asset brings the value back.
+    """
+    data = DataHandler(data_dir, MessagesAggregator(), sql_vm_instructions_cb)
+    data.unlock(username, '123', create_new=True, resume_from_backup=False)
+    with data.db.user_write() as write_cursor:
+        data.db.add_multiple_balances(write_cursor, [DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1488326400),
+            asset=A_BTC,
+            amount=FVal('1'),
+            usd_value=FVal('1000'),
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1488326400),
+            asset=A_ETH,
+            amount=FVal('10'),
+            usd_value=FVal('500'),
+        ), DBAssetBalance(
+            category=BalanceType.LIABILITY,
+            time=Timestamp(1488326400),
+            asset=A_EUR,
+            amount=FVal('100'),
+            usd_value=FVal('100'),
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1488426400),
+            asset=A_BTC,
+            amount=FVal('1'),
+            usd_value=FVal('1200'),
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1488426400),
+            asset=A_ETH,
+            amount=FVal('10'),
+            usd_value=FVal('600'),
+        )])
+        data.db.add_multiple_location_data(write_cursor, [LocationData(
+            time=Timestamp(1488326400),
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+            usd_value='1400',  # 1000 + 500 - 100 of liability
+        ), LocationData(
+            time=Timestamp(1488426400),
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+            usd_value='1800',
+        )])
+
+    assert data.db.get_netvalue_data(Timestamp(0)) == (
+        [1488326400, 1488426400], ['1400', '1800'],
+    )
+    with data.db.user_write() as write_cursor:  # ignoring an asset removes it from the totals
+        data.db.add_to_ignored_assets(write_cursor=write_cursor, asset=A_ETH)
+
+    assert data.db.get_netvalue_data(Timestamp(0)) == (
+        [1488326400, 1488426400], ['900', '1200'],
+    )
+    with data.db.user_write() as write_cursor:  # an ignored liability adds back to the total
+        data.db.add_to_ignored_assets(write_cursor=write_cursor, asset=A_EUR)
+
+    assert data.db.get_netvalue_data(Timestamp(0)) == (
+        [1488326400, 1488426400], ['1000', '1200'],
+    )
+    with data.db.user_write() as write_cursor:  # unignoring restores the original totals
+        data.db.remove_from_ignored_assets(write_cursor=write_cursor, asset=A_ETH)
+        data.db.remove_from_ignored_assets(write_cursor=write_cursor, asset=A_EUR)
+
+    assert data.db.get_netvalue_data(Timestamp(0)) == (
+        [1488326400, 1488426400], ['1400', '1800'],
+    )
+    data.logout()
+
+
+def test_get_netvalue_data_with_ignored_nft(data_dir, username, sql_vm_instructions_cb):
+    """Test that an ignored NFT is only subtracted once when NFTs are also excluded"""
+    data = DataHandler(data_dir, MessagesAggregator(), sql_vm_instructions_cb)
+    data.unlock(username, '123', create_new=True, resume_from_backup=False)
+    add_starting_nfts(data)
+    with data.db.user_write() as write_cursor:
+        data.db.add_to_ignored_assets(write_cursor=write_cursor, asset=Asset('_nft_pickle'))
+
+    start_ts = Timestamp(1488326400)
+    assert data.db.get_netvalue_data(start_ts)[1] == ['2000', '3000', '3000', '4500']
+    assert data.db.get_netvalue_data(
+        from_ts=start_ts,
+        include_nfts=False,
+    )[1] == ['2000', '3000', '3000', '4500']
+    data.logout()
+
+
 def test_add_margin_positions(data_dir, username, caplog, sql_vm_instructions_cb):
     """Test that adding and retrieving margin positions from the DB works fine.
 
