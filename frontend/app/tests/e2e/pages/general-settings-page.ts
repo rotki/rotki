@@ -43,6 +43,12 @@ export class GeneralSettingsPage {
     await this.setInputFieldValue('[data-cy=date-display-format-input]', value);
   }
 
+  /** The input format is a menu select, not a free-text field: pick the option by its value. */
+  async selectDateInputFormat(value: string): Promise<void> {
+    await this.page.locator('[data-testid=date-input-format-input]').click();
+    await this.page.locator('[role=menu]').getByText(value, { exact: true }).click();
+  }
+
   async setThousandSeparator(value: string): Promise<void> {
     await this.setInputFieldValue('[data-cy=thousand-separator-input]', value);
   }
@@ -67,6 +73,7 @@ export class GeneralSettingsPage {
     anonymousUsageStatistics: boolean;
     floatingPrecision: string;
     dateDisplayFormat: string;
+    dateInputFormat: string;
     thousandSeparator: string;
     decimalSeparator: string;
     currencyLocation: 'after' | 'before';
@@ -86,6 +93,7 @@ export class GeneralSettingsPage {
     await expect(this.page.locator('[data-testid=balance-save-frequency-input] input')).toHaveValue(settings.balanceSaveFrequency);
 
     await expect(this.page.locator('[data-cy=date-display-format-input] input')).toHaveValue(settings.dateDisplayFormat);
+    await expect(this.page.locator('[data-testid=date-input-format-input] input')).toHaveValue(settings.dateInputFormat);
     await expect(this.page.locator('[data-cy=thousand-separator-input] input')).toHaveValue(settings.thousandSeparator);
     await expect(this.page.locator('[data-cy=decimal-separator-input] input')).toHaveValue(settings.decimalSeparator);
 
