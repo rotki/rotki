@@ -5,6 +5,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { QueueOverflowError, QueueTimeoutError, RequestCancelledError } from './errors';
 import { createDedupeKey, generateId } from './request-identity';
 import { RequestPriority } from './request-priority';
+import { findEligibleIndex } from './slot-policy';
 
 export type QueueFetchFn = <T>(url: string, options?: BaseFetchOptions) => Promise<T>;
 
@@ -23,6 +24,7 @@ export class RequestQueue {
   constructor(fetchFn: QueueFetchFn, options?: QueueOptions) {
     this.fetchFn = fetchFn;
     this.options = {
+      maxBackgroundConcurrent: 2,
       maxConcurrent: 6,
       maxPerSecond: 30,
       maxQueueSize: 100,
@@ -231,6 +233,10 @@ export class RequestQueue {
     }
   }
 
+  private nextEligibleIndex(): number {
+    return findEligibleIndex(this.queue, this.activeRequests.values(), this.options.maxBackgroundConcurrent);
+  }
+
   private async processQueue(): Promise<void> {
     if (this.isProcessing)
       return;
@@ -244,7 +250,10 @@ export class RequestQueue {
           this.scheduleRateLimitRecovery();
           break;
         }
-        const request = this.queue.shift();
+        const index = this.nextEligibleIndex();
+        if (index === -1)
+          break;
+        const [request] = this.queue.splice(index, 1);
         if (!request)
           break;
         this.activeRequests.set(request.id, request);

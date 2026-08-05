@@ -1,8 +1,10 @@
 import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { apiUrls, defaultApiUrls } from '@/modules/core/api/api-urls';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
+import { RequestQueue } from '@/modules/core/api/request-queue/queue';
+import { RequestPriority } from '@/modules/core/api/request-queue/request-priority';
 import { RotkiApi } from '@/modules/core/api/rotki-api';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { HTTPStatus } from '@/modules/core/api/types/http';
@@ -991,6 +993,54 @@ describe('modules/api/rotki-api', () => {
       api.setup(defaultApiUrls.coreApiUrl);
 
       await expect(api.get('test')).resolves.toEqual({ ok: true });
+    });
+  });
+
+  describe('default request priority', () => {
+    /**
+     * Derived centrally rather than tagged at ~295 call sites: a rule nobody has to remember is the
+     * only one that holds. The queue's background cap keys off priority, so a request that lands in
+     * the wrong band silently loses its protection.
+     */
+    let enqueue: MockInstance<RequestQueue['enqueue']>;
+
+    beforeEach(() => {
+      enqueue = vi.spyOn(RequestQueue.prototype, 'enqueue').mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+      enqueue.mockRestore();
+    });
+
+    it.each([
+      ['put', RequestPriority.CRITICAL],
+      ['patch', RequestPriority.CRITICAL],
+      ['delete', RequestPriority.CRITICAL],
+    ] as const)('should treat %s as a user action', async (method, expected) => {
+      await api[method]('/test');
+
+      expect(enqueue).toHaveBeenCalledWith('/test', expect.objectContaining({ priority: expected }));
+    });
+
+    it.each([
+      ['get'],
+      ['post'],
+    ] as const)('should treat %s as a normal read', async (method) => {
+      await api[method]('/test');
+
+      expect(enqueue).toHaveBeenCalledWith(
+        '/test',
+        expect.objectContaining({ priority: RequestPriority.NORMAL }),
+      );
+    });
+
+    it('should let an explicit priority win', async () => {
+      await api.delete('/test', { priority: RequestPriority.BACKGROUND });
+
+      expect(enqueue).toHaveBeenCalledWith(
+        '/test',
+        expect.objectContaining({ priority: RequestPriority.BACKGROUND }),
+      );
     });
   });
 });

@@ -53,6 +53,13 @@ export interface QueuedRequest<T = any> {
 export interface QueueOptions {
   /** Maximum concurrent requests (default: 6, browser optimal) */
   maxConcurrent?: number;
+  /**
+   * How many of {@link maxConcurrent} may be held at once by requests at or below
+   * {@link RequestPriority.LOW} (default: 2). Priority alone cannot prevent starvation - it
+   * orders the queue, and a queue cannot reorder slots that are already occupied - so this is
+   * what keeps advisory background work from taking the whole budget and stopping the app.
+   */
+  maxBackgroundConcurrent?: number;
   /** Maximum requests per second (default: 30) */
   maxPerSecond?: number;
   /** Base retry delay in ms (default: 1000) */
