@@ -599,6 +599,31 @@ class APIServer:
                     )
                 else:
                     claims = internal_claims
+
+                # A credential is only good for the user it was issued to. Validating it
+                # proves the session is live, not that it belongs to the data behind this
+                # request: core unlocks one user at a time and scopes nothing by the
+                # caller, so without this a credential for one user reads whichever
+                # database happens to be unlocked.
+                #
+                # That is reachable because a user change is not always preceded by a
+                # logout. A restart clears `user_is_logged_in` without revoking anything,
+                # so the next login can be a different user while the previous one's
+                # session row is still live and its bearer still in an MCP client.
+                #
+                # Only checked while a user is unlocked. With none, the credential can
+                # reach no user data anyway, and the checks that run then (session
+                # validation for the Docker control endpoint) have to keep working after
+                # a restart, which is exactly when nobody is logged in.
+                if (
+                        self.rest_api.rotkehlchen.user_is_logged_in and
+                        claims.username != self.rest_api.rotkehlchen.data.username
+                ):
+                    return api_response(
+                        wrap_in_fail_result('Authentication required'),
+                        HTTPStatus.UNAUTHORIZED,
+                    )
+
                 g.rotki_session_user = claims.username
                 g.rotki_session_sid = claims.sid
                 if cookie_is_active:

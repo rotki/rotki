@@ -94,7 +94,11 @@ class SessionStore:
 
     def login(self, username: str) -> str:
         """Start (or take over) the active session for ``username`` and return its token.
-        The UPSERT overwrites the user's prior session, so its old cookie is revoked."""
+        The UPSERT overwrites the user's prior session, so its old cookie is revoked, and
+        every other user's row goes with it: core unlocks one user at a time, so a second
+        row can only ever be a session that is no longer reachable. Leaving them behind is
+        what let a previous user's cookie and MCP bearer outlive the login that displaced
+        them, since the UPSERT alone only ever rewrites the row of the user logging in."""
         current_time = int(time.time())
         sid = secrets.token_hex(16)
         absolute_exp = current_time + SESSION_ABSOLUTE_TTL
@@ -103,6 +107,7 @@ class SessionStore:
         # logins can't leave one sid in memory and a different one in the DB. Write the
         # DB first, so a failed commit never leaves memory ahead of the durable mirror.
         with self._lock:
+            self._conn.execute('DELETE FROM active_sessions WHERE user != ?', (username,))
             self._conn.execute(
                 'INSERT INTO active_sessions(user, sid, abs) VALUES(?, ?, ?) '
                 'ON CONFLICT(user) DO UPDATE SET '
@@ -110,6 +115,8 @@ class SessionStore:
                 (username, sid, absolute_exp),
             )
             self._conn.commit()
+            for other in [user for user in self._active if user != username]:
+                del self._active[other]
             self._active[username] = ActiveSession(
                 sid=sid,
                 absolute_exp=absolute_exp,
