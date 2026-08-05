@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, not, numeric, sameAs } from '@vuelidate/validators';
-import { useValidation } from '@/modules/core/common/use-validation';
-import { isSingleVisualCharacter, toMessages } from '@/modules/core/common/validation/validation';
+import type { ZodType } from 'zod';
+import { useForm } from '@/modules/core/form/use-form';
+import { numericSeparatorsSchema, type NumericSeparatorsState } from '@/modules/settings/general/amount/numeric-separators';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
 
@@ -13,67 +12,36 @@ const { error: decimalWriteError, model: decimalModel, success: decimalWriteSucc
 const { clearAll: clearThousandMessages, error: thousandError, setError: setThousandError, setSuccess: setThousandSuccess, success: thousandSuccess } = useClearableMessages();
 const { clearAll: clearDecimalMessages, error: decimalError, setError: setDecimalError, setSuccess: setDecimalSuccess, success: decimalSuccess } = useClearableMessages();
 
-const thousandSeparator = ref<string>(get(thousandModel));
-const decimalSeparator = ref<string>(get(decimalModel));
-
-// Custom validator that allows spaces but not empty strings
-const notEmpty = (value: any): boolean => value?.length > 0;
-
-// Custom validator for single visual character
-const singleVisualChar = (value: any): boolean => isSingleVisualCharacter(value);
-
-const rules = {
-  decimalSeparator: {
-    notANumber: helpers.withMessage(
-      t('general_settings.decimal_separator.validation.cannot_be_numeric_character'),
-      not(numeric),
-    ),
-    notEmpty: helpers.withMessage(t('general_settings.decimal_separator.validation.empty'), notEmpty),
-    notTheSame: helpers.withMessage(
-      t('general_settings.decimal_separator.validation.cannot_be_the_same'),
-      not(sameAs(thousandSeparator)),
-    ),
-    singleChar: helpers.withMessage(
-      t('general_settings.decimal_separator.validation.single_character'),
-      singleVisualChar,
-    ),
+const schema = computed<ZodType>(() => numericSeparatorsSchema({
+  decimal: {
+    empty: t('general_settings.decimal_separator.validation.empty'),
+    numeric: t('general_settings.decimal_separator.validation.cannot_be_numeric_character'),
+    sameAsOther: t('general_settings.decimal_separator.validation.cannot_be_the_same'),
+    singleCharacter: t('general_settings.decimal_separator.validation.single_character'),
   },
-  thousandSeparator: {
-    notANumber: helpers.withMessage(
-      t('general_settings.thousand_separator.validation.cannot_be_numeric_character'),
-      not(numeric),
-    ),
-    notEmpty: helpers.withMessage(t('general_settings.thousand_separator.validation.empty'), notEmpty),
-    notTheSame: helpers.withMessage(
-      t('general_settings.thousand_separator.validation.cannot_be_the_same'),
-      not(sameAs(decimalSeparator)),
-    ),
-    singleChar: helpers.withMessage(
-      t('general_settings.thousand_separator.validation.single_character'),
-      singleVisualChar,
-    ),
+  thousand: {
+    empty: t('general_settings.thousand_separator.validation.empty'),
+    numeric: t('general_settings.thousand_separator.validation.cannot_be_numeric_character'),
+    sameAsOther: t('general_settings.thousand_separator.validation.cannot_be_the_same'),
+    singleCharacter: t('general_settings.thousand_separator.validation.single_character'),
   },
-};
+}));
 
-const v$ = useVuelidate(rules, { decimalSeparator, thousandSeparator }, { $autoDirty: true });
-
-const { callIfValid } = useValidation(v$);
-
-function onThousandInput(value: string): void {
-  clearThousandMessages();
-  const validator = get(v$);
-  callIfValid(value, (separator: string) => {
-    set(thousandModel, separator);
-  }, () => validator.thousandSeparator.$error);
-}
-
-function onDecimalInput(value: string): void {
-  clearDecimalMessages();
-  const validator = get(v$);
-  callIfValid(value, (separator: string) => {
-    set(decimalModel, separator);
-  }, () => validator.decimalSeparator.$error);
-}
+/**
+ * One form for both separators. Submitting writes both models: the pair only persists when it
+ * parses as a pair, which is what stops a rejected draft of one field from being the value the
+ * other is compared against. The write of the unchanged field is a no-op in `useSettingModel`.
+ */
+const form = useForm<NumericSeparatorsState, NumericSeparatorsState>({
+  initial: (): NumericSeparatorsState => ({ decimal: get(decimalModel), thousand: get(thousandModel) }),
+  schema,
+  submit: async (payload: NumericSeparatorsState): Promise<{ success: boolean }> => {
+    set(thousandModel, payload.thousand);
+    set(decimalModel, payload.decimal);
+    return Promise.resolve({ success: true });
+  },
+  transform: (state): NumericSeparatorsState => ({ decimal: state.decimal, thousand: state.thousand }),
+});
 
 function thousandsSuccessMessage(thousandSeparator: string): string {
   return t('general_settings.validation.thousand_separator.success', {
@@ -87,14 +55,27 @@ function decimalsSuccessMessage(decimalSeparator: string): string {
   });
 }
 
+async function onThousandInput(value: string): Promise<void> {
+  clearThousandMessages();
+  form.state.thousand = value;
+  await form.submit();
+}
+
+async function onDecimalInput(value: string): Promise<void> {
+  clearDecimalMessages();
+  form.state.decimal = value;
+  await form.submit();
+}
+
+// Reflect external changes into the fields, but ignore the echo of our own writes (same string).
 watch(thousandModel, (value) => {
-  if (value !== get(thousandSeparator))
-    set(thousandSeparator, value);
+  if (value !== form.state.thousand)
+    form.state.thousand = value;
 });
 
 watch(decimalModel, (value) => {
-  if (value !== get(decimalSeparator))
-    set(decimalSeparator, value);
+  if (value !== form.state.decimal)
+    form.state.decimal = value;
 });
 
 watch(thousandWriteSuccess, (saved) => {
@@ -120,26 +101,26 @@ watch(decimalWriteError, (message) => {
 
 <template>
   <RuiTextField
-    v-model="thousandSeparator"
+    v-model="form.state.thousand"
     variant="outlined"
     color="primary"
     data-cy="thousand-separator-input"
     :label="t('general_settings.amount.label.thousand_separator')"
     type="text"
     :success-messages="thousandSuccess"
-    :error-messages="thousandError || toMessages(v$.thousandSeparator)"
+    :error-messages="thousandError || form.errors('thousand')"
     @update:model-value="onThousandInput($event)"
   />
 
   <RuiTextField
-    v-model="decimalSeparator"
+    v-model="form.state.decimal"
     variant="outlined"
     color="primary"
     data-cy="decimal-separator-input"
     :label="t('general_settings.amount.label.decimal_separator')"
     type="text"
     :success-messages="decimalSuccess"
-    :error-messages="decimalError || toMessages(v$.decimalSeparator)"
+    :error-messages="decimalError || form.errors('decimal')"
     @update:model-value="onDecimalInput($event)"
   />
 </template>

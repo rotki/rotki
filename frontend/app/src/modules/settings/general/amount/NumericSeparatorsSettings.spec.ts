@@ -117,6 +117,17 @@ describe('numericSeparatorsSettings', () => {
     expect(messages(wrapper, 0)).toContain('general_settings.thousand_separator.validation.cannot_be_the_same');
   });
 
+  // Regression: a rejected value stays in the field it was typed into. If that draft is what the
+  // other field is compared against, the pair can be walked into two identical separators.
+  it('should not persist identical separators through a rejected draft', async () => {
+    const wrapper = createWrapper();
+    await input(wrapper, 0, '.');
+    expect(get(thousandModel)).toBe(',');
+
+    await input(wrapper, 1, ',');
+    expect(get(thousandModel)).not.toBe(get(decimalModel));
+  });
+
   it('should keep the two fields error messages apart', async () => {
     const wrapper = createWrapper();
     await input(wrapper, 0, '1');
