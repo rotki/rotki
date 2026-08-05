@@ -33,6 +33,9 @@ use hyper::server::conn::http1;
 use hyper::service::service_fn;
 
 pub mod access_log;
+pub mod control;
+
+pub use control::ControlDispatch;
 
 use axum::http::header;
 use axum::{
@@ -170,6 +173,11 @@ pub struct ProxyConfig {
     /// unregistered entirely, so a config that cannot answer honestly serves a
     /// 404 rather than a hardcoded "fine".
     pub health: Option<HealthProbe>,
+    /// Dispatcher behind the cookie-gated `/_control` endpoint. `Some` only in
+    /// docker with the session cookie configured; `None` everywhere else leaves
+    /// the route unregistered, so a deployment that cannot authorize anyone never
+    /// exposes a control surface at all. See [`control`].
+    pub control: Option<ControlDispatch>,
 }
 
 /// A pooled HTTP/1 client whose request body is the same streaming `Body` axum
@@ -177,13 +185,14 @@ pub struct ProxyConfig {
 type HttpClient = Client<HttpConnector, Body>;
 
 #[derive(Clone)]
-struct ProxyState {
-    client: HttpClient,
-    core_addr: String,
+pub(crate) struct ProxyState {
+    pub(crate) client: HttpClient,
+    pub(crate) core_addr: String,
     colibri_addr: String,
     mcp_addr: String,
     mcp_enabled: bool,
     health: Option<HealthProbe>,
+    pub(crate) control: Option<ControlDispatch>,
 }
 
 /// Bind the proxy listener on `host`. Done before serving so a bind failure
@@ -316,6 +325,7 @@ fn router(config: &ProxyConfig) -> Router {
         mcp_addr: format!("127.0.0.1:{}", config.mcp_port),
         mcp_enabled: config.mcp_enabled,
         health: config.health.clone(),
+        control: config.control.clone(),
     };
 
     // nginx `location /prefix/` is a prefix match that also matches the bare
@@ -366,6 +376,19 @@ fn router(config: &ProxyConfig) -> Router {
         Some(_) => routes.route("/health", get(health)),
         None => routes,
     };
+
+    // The cookie-gated control surface. It bounds its own (tiny) body, so like
+    // `/health` it sits after the proxied-route body layers and before the SPA
+    // fallback; the leading underscore keeps it out of the SPA's own namespace.
+    //
+    // Registered **unconditionally**, unlike `/health`, and the handlers answer
+    // 404 when `config.control` is `None`. Leaving the path unclaimed would let
+    // the SPA history fallback answer it with `index.html` and a 200 — docker
+    // serves the SPA from the same listener, and a control-less deployment is a
+    // real production state (no `ROTKI_SESSION_KEY`), not just a test shape. The
+    // frontend probes this path to decide whether to offer its controls, so it
+    // has to be able to get a truthful "no" rather than the app shell.
+    let routes = routes.route("/_control", get(control::capabilities).post(control::rpc));
 
     // SPA static serving with history-mode fallback: unknown paths return
     // index.html so client-side routing works (mirrors nginx `try_files`).
@@ -559,7 +582,7 @@ async fn proxy_mcp(State(state): State<ProxyState>, mut req: Request) -> Respons
     if !state.mcp_enabled {
         return StatusCode::NOT_FOUND.into_response();
     }
-    if !mcp_origin_matches_host(req.headers()) {
+    if !origin_matches_host(req.headers()) {
         return StatusCode::FORBIDDEN.into_response();
     }
     if let Ok(host) = HeaderValue::from_str(&state.mcp_addr) {
@@ -577,7 +600,11 @@ async fn proxy_mcp(State(state): State<ProxyState>, mut req: Request) -> Respons
     forward(&state, req).await
 }
 
-fn mcp_origin_matches_host(headers: &HeaderMap) -> bool {
+/// Whether an `Origin`, if the client sent one, names the same authority as
+/// `Host`. Absent `Origin` passes: plain `GET`s and non-browser clients omit it,
+/// and the callers that care ([`proxy_mcp`]'s DNS-rebinding guard and
+/// [`control::rpc`]) both have a stronger primary defence.
+pub(crate) fn origin_matches_host(headers: &HeaderMap) -> bool {
     let Some(origin) = headers.get(header::ORIGIN) else {
         return true;
     };
@@ -822,12 +849,14 @@ async fn forward_upgrade(state: &ProxyState, mut req: Request) -> Response {
 #[cfg(test)]
 mod tests {
     use std::sync::atomic::{AtomicU32, Ordering};
+    use std::sync::Mutex;
 
     use axum::routing::any;
     use http_body_util::BodyExt;
     use tower::ServiceExt; // for `oneshot`
 
     use super::*;
+    use crate::control::AUTH_BURST;
 
     #[test]
     fn colibri_prefix_is_stripped() {
@@ -910,6 +939,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: None,
+            control: None,
         });
         let resp = app
             .oneshot(
@@ -995,6 +1025,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: health.map(|health| HealthProbe::new(move || health)),
+            control: None,
         })
     }
 
@@ -1140,6 +1171,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: None,
+            control: None,
         });
         let resp = app
             .oneshot(
@@ -1167,6 +1199,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: None,
+            control: None,
         });
         let resp = app
             .oneshot(
@@ -1222,6 +1255,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: None,
+            control: None,
         });
 
         let response = app
@@ -1257,6 +1291,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: None,
+            control: None,
         });
 
         let response = app
@@ -1286,6 +1321,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: None,
+            control: None,
         });
 
         let response = app
@@ -1315,6 +1351,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: None,
+            control: None,
         });
 
         // Fingerprinted asset → immutable + security headers.
@@ -1389,6 +1426,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: None,
+            control: None,
         });
         let resp = app
             .oneshot(
@@ -1420,6 +1458,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: None,
+            control: None,
         });
         let resp = app
             .oneshot(
@@ -1454,6 +1493,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: None,
+            control: None,
         });
         let resp = app
             .oneshot(
@@ -1487,6 +1527,7 @@ mod tests {
             max_body_bytes: 16,
             access_log: Default::default(),
             health: None,
+            control: None,
         });
         let resp = app
             .oneshot(
@@ -1515,6 +1556,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: None,
+            control: None,
         });
         let resp = app
             .oneshot(
@@ -1583,6 +1625,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: None,
+            control: None,
         };
         tokio::spawn(async move {
             serve(proxy_listener, config, std::future::pending::<()>())
@@ -1623,6 +1666,7 @@ mod tests {
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
             health: None,
+            control: None,
         };
         tokio::spawn(async move {
             serve_with_header_timeout(
@@ -1664,5 +1708,537 @@ mod tests {
         } else {
             assert_eq!(first, 0, "expected the connection to be closed");
         }
+    }
+
+    // ---- /_control ------------------------------------------------------
+
+    /// A stub core that answers `/api/1/session/validate` with `status` and
+    /// everything else with 200, recording how many validations it was asked for.
+    async fn spawn_validating_core(status: StatusCode) -> (u16, Arc<AtomicU32>) {
+        let listener = TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
+            .await
+            .unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let calls = Arc::new(AtomicU32::new(0));
+        let seen = calls.clone();
+        let app = Router::new().fallback(any(move |req: Request| {
+            let seen = seen.clone();
+            async move {
+                if req.uri().path() == "/api/1/session/validate" {
+                    seen.fetch_add(1, Ordering::Relaxed);
+                    return status.into_response();
+                }
+                StatusCode::OK.into_response()
+            }
+        }));
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        (port, calls)
+    }
+
+    /// A proxy with `/_control` wired to a dispatcher that echoes the line it was
+    /// handed, so a test can prove the frame reached the controller unaltered.
+    fn control_router(core_port: u16, control: Option<ControlDispatch>) -> Router {
+        router(&ProxyConfig {
+            port: 0,
+            core_port,
+            colibri_port: 1,
+            mcp_port: 1,
+            mcp_enabled: true,
+            frontend_dir: None,
+            max_body_bytes: 50 * 1024 * 1024,
+            access_log: Default::default(),
+            health: None,
+            control,
+        })
+    }
+
+    fn echo_dispatch() -> ControlDispatch {
+        ControlDispatch::new(vec!["status", "restart"], |line| async move {
+            format!("dispatched:{line}")
+        })
+    }
+
+    fn control_post(body: &str) -> Request {
+        Request::builder()
+            .method("POST")
+            .uri("/_control")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, "rotki_session=token")
+            .body(Body::from(body.to_owned()))
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn control_is_absent_without_a_dispatcher() {
+        // The desktop/no-cookie configuration must not expose the surface at all,
+        // rather than expose one that has to decide who to trust.
+        let app = control_router(1, None);
+        for req in [
+            Request::builder()
+                .uri("/_control")
+                .body(Body::empty())
+                .unwrap(),
+            control_post("{}"),
+        ] {
+            let resp = app.clone().oneshot(req).await.unwrap();
+            assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+        }
+    }
+
+    #[tokio::test]
+    async fn control_404s_rather_than_falling_through_to_the_spa() {
+        // Regression: with the route registered only alongside a dispatcher, the
+        // SPA history fallback answered `/_control` with index.html and a 200.
+        // Docker serves the SPA from this same listener and a control-less
+        // deployment is a real production state, so the frontend's availability
+        // probe would have been told "yes" by the app shell.
+        let dir = unique_temp_dir();
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("index.html"), "<!doctype html><title>spa</title>").unwrap();
+
+        let app = router(&ProxyConfig {
+            port: 0,
+            core_port: 1,
+            colibri_port: 1,
+            mcp_port: 1,
+            mcp_enabled: true,
+            frontend_dir: Some(dir.clone()),
+            max_body_bytes: 50 * 1024 * 1024,
+            access_log: Default::default(),
+            health: None,
+            control: None,
+        });
+
+        let resp = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/_control")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+        assert!(
+            !body_string(resp).await.contains("<!doctype html"),
+            "the SPA shell must not stand in for a control answer",
+        );
+
+        // An unrelated path still gets the SPA, so the fallback itself is intact.
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/balances")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[tokio::test]
+    async fn control_capabilities_are_readable_without_a_cookie() {
+        let app = control_router(1, Some(echo_dispatch()));
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/_control")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(resp.headers()[header::CACHE_CONTROL], "no-store");
+        assert_eq!(
+            body_string(resp).await,
+            r#"{"available":true,"methods":["status","restart"]}"#
+        );
+    }
+
+    #[tokio::test]
+    async fn control_dispatches_when_core_accepts_the_cookie() {
+        let (port, calls) = spawn_validating_core(StatusCode::OK).await;
+        let app = control_router(port, Some(echo_dispatch()));
+        let resp = app
+            .oneshot(control_post(r#"{"method":"status"}"#))
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(calls.load(Ordering::Relaxed), 1, "core was not asked");
+        assert_eq!(
+            body_string(resp).await,
+            r#"dispatched:{"method":"status"}"#,
+            "the frame must reach the controller verbatim"
+        );
+    }
+
+    #[tokio::test]
+    async fn control_is_401_when_core_rejects_the_cookie() {
+        let (port, calls) = spawn_validating_core(StatusCode::UNAUTHORIZED).await;
+        let app = control_router(port, Some(echo_dispatch()));
+        let resp = app
+            .oneshot(control_post(r#"{"method":"restart"}"#))
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+        assert_eq!(calls.load(Ordering::Relaxed), 1);
+    }
+
+    #[tokio::test]
+    async fn control_without_a_cookie_never_troubles_core() {
+        let (port, calls) = spawn_validating_core(StatusCode::OK).await;
+        let app = control_router(port, Some(echo_dispatch()));
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/_control")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+        assert_eq!(calls.load(Ordering::Relaxed), 0);
+    }
+
+    /// Authorization runs before the dispatcher, so the controller's §S10 limit
+    /// is downstream of it: without its own budget, anyone reaching the port
+    /// could force a `/session/validate` into core on every request, for free
+    /// and forever. Each request here carries a *different* cookie, which is
+    /// what defeats any per-cookie memoisation — only a budget on the subrequest
+    /// itself bounds it.
+    ///
+    /// Negative control: removing the `budget.take()` guard makes core see all
+    /// 40 calls and every response become 200.
+    #[tokio::test]
+    async fn control_budgets_the_authorization_subrequests_into_core() {
+        let (port, calls) = spawn_validating_core(StatusCode::OK).await;
+        let control = echo_dispatch();
+        let mut throttled = 0;
+
+        for nonce in 0..40 {
+            let resp = control_router(port, Some(control.clone()))
+                .oneshot(
+                    Request::builder()
+                        .method("POST")
+                        .uri("/_control")
+                        .header(header::CONTENT_TYPE, "application/json")
+                        // A fresh cookie each time: an attacker varying the
+                        // value must not buy extra subrequests.
+                        .header(header::COOKIE, format!("rotki_session=nonce-{nonce}"))
+                        .body(Body::from("{}"))
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            if resp.status() == StatusCode::SERVICE_UNAVAILABLE {
+                throttled += 1;
+            }
+        }
+
+        let reached_core = calls.load(Ordering::Relaxed);
+        assert!(
+            reached_core <= AUTH_BURST + 5,
+            "the budget should bound what reaches core, but {reached_core} calls got through",
+        );
+        assert!(
+            throttled > 0,
+            "a 40-request flood should have been throttled at least once",
+        );
+    }
+
+    /// Exhaustion must read as "could not ask", never as "you were refused":
+    /// a load spike must not surface to the SPA as an expired login.
+    #[tokio::test]
+    async fn control_budget_exhaustion_is_503_not_401() {
+        let (port, _) = spawn_validating_core(StatusCode::OK).await;
+        let control = echo_dispatch();
+        let mut statuses = Vec::new();
+
+        for nonce in 0..40 {
+            let resp = control_router(port, Some(control.clone()))
+                .oneshot(
+                    Request::builder()
+                        .method("POST")
+                        .uri("/_control")
+                        .header(header::CONTENT_TYPE, "application/json")
+                        .header(header::COOKIE, format!("rotki_session=nonce-{nonce}"))
+                        .body(Body::from("{}"))
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            statuses.push(resp.status());
+        }
+
+        assert!(
+            statuses.contains(&StatusCode::SERVICE_UNAVAILABLE),
+            "the flood should have exhausted the budget",
+        );
+        assert!(
+            !statuses.contains(&StatusCode::UNAUTHORIZED),
+            "core accepted every cookie, so nothing may report as unauthorized",
+        );
+    }
+
+    #[tokio::test]
+    async fn control_is_503_when_core_cannot_answer() {
+        // Nothing is listening on port 1, so the subrequest fails outright. A
+        // wedged core must not read to the SPA as an expired login.
+        let app = control_router(1, Some(echo_dispatch()));
+        let resp = app.oneshot(control_post("{}")).await.unwrap();
+        assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
+    }
+
+    #[tokio::test]
+    async fn control_is_503_when_core_answers_something_unexpected() {
+        // e.g. a core too old to have the validate route: fail closed, but as a
+        // deployment problem rather than a rejected user.
+        let (port, _) = spawn_validating_core(StatusCode::NOT_FOUND).await;
+        let app = control_router(port, Some(echo_dispatch()));
+        let resp = app.oneshot(control_post("{}")).await.unwrap();
+        assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
+    }
+
+    #[tokio::test]
+    async fn control_refuses_non_json_and_cross_origin_posts() {
+        let (port, calls) = spawn_validating_core(StatusCode::OK).await;
+        let app = control_router(port, Some(echo_dispatch()));
+
+        // A form content type is the CSRF shape that needs no preflight.
+        let resp = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/_control")
+                    .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
+                    .header(header::COOKIE, "rotki_session=token")
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE);
+
+        let resp = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/_control")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .header(header::HOST, "rotki.local")
+                    .header(header::ORIGIN, "http://evil.example")
+                    .header(header::COOKIE, "rotki_session=token")
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::FORBIDDEN);
+
+        // Neither rejection reached core, so neither can be mistaken for a denial.
+        assert_eq!(calls.load(Ordering::Relaxed), 0);
+    }
+
+    #[tokio::test]
+    async fn control_rejects_an_oversized_frame() {
+        let (port, _) = spawn_validating_core(StatusCode::OK).await;
+        let app = control_router(port, Some(echo_dispatch()));
+        let resp = app
+            .oneshot(control_post(&"x".repeat(9 * 1024)))
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE);
+    }
+
+    /// A stub core whose verdict can be flipped, and which can be made to stop
+    /// answering entirely — the failed-restart shape.
+    #[derive(Clone)]
+    struct SwitchableCore {
+        status: Arc<Mutex<Option<StatusCode>>>,
+    }
+
+    impl SwitchableCore {
+        fn set(&self, status: Option<StatusCode>) {
+            *self.status.lock().unwrap() = status;
+        }
+    }
+
+    async fn spawn_switchable_core(initial: StatusCode) -> (u16, SwitchableCore) {
+        let listener = TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
+            .await
+            .unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let core = SwitchableCore {
+            status: Arc::new(Mutex::new(Some(initial))),
+        };
+        let served = core.clone();
+        let app = Router::new().fallback(any(move |_req: Request| {
+            let served = served.clone();
+            async move {
+                // `None` = core is down: never answer, so the proxy's subrequest
+                // hits its timeout the way it would against a dead backend.
+                let Some(status) = *served.status.lock().unwrap() else {
+                    std::future::pending::<()>().await;
+                    unreachable!()
+                };
+                status.into_response()
+            }
+        }));
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        (port, core)
+    }
+
+    fn control_post_with(cookie: &str, body: &str) -> Request {
+        Request::builder()
+            .method("POST")
+            .uri("/_control")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, cookie)
+            .body(Body::from(body.to_owned()))
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn a_recent_validation_authorizes_a_retry_while_core_is_down() {
+        // The failed-restart path: core validated us, the restart killed core,
+        // and the retry must still get through or the UI is a dead end.
+        let (port, core) = spawn_switchable_core(StatusCode::OK).await;
+        let app = control_router(port, Some(echo_dispatch()));
+
+        let resp = app
+            .clone()
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+
+        core.set(None);
+        let resp = app
+            .clone()
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.status(),
+            StatusCode::OK,
+            "the retry that recovers a failed restart must be authorized"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_grace_survives_an_unrelated_cookie_on_the_same_origin() {
+        // Fingerprinting the whole Cookie header meant any other cookie set
+        // between the validation and the outage changed it, so the recovery this
+        // mechanism exists for would have 503'd instead.
+        let (port, core) = spawn_switchable_core(StatusCode::OK).await;
+        let app = control_router(port, Some(echo_dispatch()));
+
+        app.clone()
+            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .await
+            .unwrap();
+
+        core.set(None);
+        let resp = app
+            .oneshot(control_post_with("theme=dark; rotki_session=live", "{}"))
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.status(),
+            StatusCode::OK,
+            "an unrelated cookie must not invalidate the remembered session",
+        );
+    }
+
+    #[tokio::test]
+    async fn the_grace_does_not_cover_a_cookie_core_never_validated() {
+        let (port, core) = spawn_switchable_core(StatusCode::OK).await;
+        let app = control_router(port, Some(echo_dispatch()));
+
+        app.clone()
+            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .await
+            .unwrap();
+
+        // A different cookie was never blessed, so the outage must not launder it.
+        core.set(None);
+        let resp = app
+            .clone()
+            .oneshot(control_post_with("rotki_session=other", "{}"))
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
+    }
+
+    #[tokio::test]
+    async fn a_denial_clears_the_grace_before_core_goes_down() {
+        // Revoked between two calls, then core dies: the window must already be
+        // closed, or logout would be undone by an outage.
+        let (port, core) = spawn_switchable_core(StatusCode::OK).await;
+        let app = control_router(port, Some(echo_dispatch()));
+
+        app.clone()
+            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .await
+            .unwrap();
+
+        core.set(Some(StatusCode::UNAUTHORIZED));
+        let resp = app
+            .clone()
+            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+
+        core.set(None);
+        let resp = app
+            .clone()
+            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.status(),
+            StatusCode::SERVICE_UNAVAILABLE,
+            "a revoked session must not be resurrected by core going down"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_grace_never_overrides_a_live_core() {
+        // Steady state is unchanged: while core answers, core decides.
+        let (port, core) = spawn_switchable_core(StatusCode::OK).await;
+        let app = control_router(port, Some(echo_dispatch()));
+
+        app.clone()
+            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .await
+            .unwrap();
+
+        core.set(Some(StatusCode::UNAUTHORIZED));
+        let resp = app
+            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
     }
 }

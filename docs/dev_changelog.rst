@@ -27,6 +27,25 @@ When rotki is set up with the ``ROTKI_SESSION_KEY`` environment variable (the Do
   - Returns ``true`` when the caller holds a valid, currently active session **cookie**, and ``401`` otherwise. Intended as an authorization subrequest: the Docker proxy forwards a caller's cookie here and only then dispatches a control operation, since core alone knows whether a newer login has retired that session.
   - An internal MCP bearer is rejected here even though it authorizes ordinary data routes, so MCP access never confers backend control.
 
+Docker Control Endpoint
+-----------------------
+
+The Docker deployment gains ``/_control``, served by the starling proxy on the published port. It lets the frontend restart the backend and start or stop the MCP server, which previously had no path at all outside the desktop app (closes ``#2807``).
+
+* **New Endpoint**: ``GET /_control``
+
+  - Returns ``{"available": true, "methods": [...]}`` when the endpoint is mounted, and ``404`` when it is not. Unauthenticated, so the frontend can decide whether to offer the controls before a user has logged in.
+  - Mounted **only** in Docker with ``ROTKI_SESSION_KEY`` set. A deployment with no session authentication serves no control surface at all.
+
+* **New Endpoint**: ``POST /_control``
+
+  - JSON-RPC 2.0, carrying ``status``, ``restart``, ``startService`` and ``stopService``. ``start`` and ``stop`` are refused: ``stop`` would exit PID 1 and take the container with it.
+  - Authorized per request by forwarding the caller's session cookie to ``GET /api/1/session/validate``. ``401`` when core refuses, ``503`` when core cannot be reached.
+  - ``restart`` accepts ``loglevel`` and nothing else. A caller-chosen ``data_directory``/``log_directory`` is refused rather than ignored, since in a container those are fixed mounts.
+  - ``startService``/``stopService`` only address services that allow manual control, which today means ``mcp`` alone; core and colibri are not independently stoppable.
+
+  A validation core granted within the last two minutes is honoured if core later becomes unreachable, so a ``restart`` whose bring-up fails can still be retried from the UI. It is dropped immediately on a ``401``, and never overrides a core that is answering.
+
 Spam Token Endpoint Renamed
 ----------------------------
 
