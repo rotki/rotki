@@ -32,7 +32,14 @@ function resolveBaseUrl(serverUrl: string): string {
 function buildWebsocketUrl(): string {
   const serverUrl = api.serverUrl;
   const protocol = isSecureConnection(serverUrl) ? 'wss' : 'ws';
-  const baseUrl = resolveBaseUrl(serverUrl);
+  // The trailing slash has to go before `/ws/` is appended. Same-origin
+  // deployments (docker, plain web) resolve the base to
+  // `location.host + location.pathname`, and with hash routing the pathname is
+  // `/` — which produced `ws://host//ws/`. No route matches that doubled slash,
+  // so in docker it fell through to the SPA history fallback and the handshake
+  // got 200/index.html instead of an upgrade: websockets never connected.
+  // Stripping only *trailing* slashes keeps a sub-path deployment working.
+  const baseUrl = resolveBaseUrl(serverUrl).replace(/\/+$/, '');
   return `${protocol}://${baseUrl}/ws/`;
 }
 
