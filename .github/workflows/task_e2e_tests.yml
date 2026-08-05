@@ -257,9 +257,16 @@ jobs:
       - name: Make frozen core executable
         run: chmod +x target/backend/rotki-core/rotki-core-*
 
-      # No Playwright browser install: the config points executablePath at the Chromium the
-      # runner image already ships (/usr/bin/chromium), so there is nothing to download and
-      # no apt step to stall on.
+      # No browser install: the config points executablePath at the Chromium the runner image
+      # already ships (/usr/bin/chromium), so there is nothing to download and no apt step to
+      # stall on. ffmpeg is the exception. `video: retain-on-failure` needs Playwright's own
+      # build, which the runner image does not provide, and specs that use the built-in `page`
+      # fixture fail at context creation without it. This is a 2.3 MB CDN download, not apt.
+      - name: Install Playwright ffmpeg
+        timeout-minutes: 5
+        working-directory: ./frontend/app
+        run: npx playwright install ffmpeg
+
       - name: Run e2e tests
         timeout-minutes: 20
         env:
