@@ -186,3 +186,48 @@ async fn terminate_targets_the_child_process_group() {
 
     let _ = std::fs::remove_dir_all(&temp);
 }
+
+/// Respawning must work once the supervisor has already dropped itself to the
+/// uid it spawns backends as.
+///
+/// Docker runs starling as root, spawns the backends with `run_as` so they drop
+/// in the forked child, and then drops *itself* to that same uid. From that
+/// point on the child-side `setgroups`/`setgid` are `EPERM` for an unprivileged
+/// process, so every later respawn — a control `restart`, or a crash-loop
+/// backoff — failed with "Operation not permitted" and left the tree down for
+/// good. Nothing caught it because the drop is skipped entirely when not root,
+/// which is every test and every non-container run.
+///
+/// This reproduces it without root: spawning as our *own* uid is the same
+/// already-dropped situation. Negative control — restoring the unconditional
+/// `pre_exec` drop makes this fail with EPERM.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn spawns_when_already_running_as_the_target_uid() {
+    let temp = unique_temp_dir("run-as-self");
+    let pidfile = temp.join("graceful.pid");
+
+    let exe = env!("CARGO_BIN_EXE_fake_bootloader");
+    let spec = ServiceSpec::new("fake_bootloader", exe)
+        .args([
+            "--graceful".to_string(),
+            pidfile.to_string_lossy().to_string(),
+        ])
+        .run_as(starling_core::RunAs {
+            uid: nix::unistd::geteuid().as_raw(),
+            gid: nix::unistd::getegid().as_raw(),
+        });
+
+    let proc = OsSpawner
+        .spawn(&spec)
+        .await
+        .expect("spawning as the uid we already run as must not attempt a drop");
+    wait_for_file(&pidfile, Duration::from_secs(10)).await;
+
+    proc.terminate().await.expect("terminate");
+    tokio::time::timeout(Duration::from_secs(10), proc.wait())
+        .await
+        .expect("child did not exit")
+        .expect("wait");
+
+    let _ = std::fs::remove_dir_all(&temp);
+}
