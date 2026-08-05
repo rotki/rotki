@@ -49,11 +49,17 @@ function envKeysDiverge(
 }
 
 function computeDesiredManagedEnv(name: string, slot: number, ports: PortSet, useProxy: boolean): Record<string, string> {
+  // Nothing addresses core or colibri directly any more: starling fronts both
+  // behind its reverse proxy, and the premium dev-proxy (when on) fronts that
+  // in turn. Only the core API URL is routed through the dev-proxy; colibri is
+  // always addressed as `<starling proxy>/colibri` (the dev-proxy forwards
+  // every path, so this is a routing choice here, not a limit of the proxy).
+  const starlingOrigin = `http://127.0.0.1:${ports.starlingProxy}`;
   return {
     INSTANCE_NAME: name,
     INSTANCE_PORT_SLOT: String(slot),
-    VITE_BACKEND_URL: `http://127.0.0.1:${useProxy ? ports.proxy : ports.restApi}`,
-    VITE_COLIBRI_URL: `http://127.0.0.1:${ports.colibri}`,
+    VITE_BACKEND_URL: useProxy ? `http://127.0.0.1:${ports.proxy}` : starlingOrigin,
+    VITE_COLIBRI_URL: `${starlingOrigin}/colibri`,
     DEV_PORT: String(ports.dev),
   };
 }
@@ -66,7 +72,7 @@ async function refuseIfSlotLive(name: string, slot: number): Promise<void> {
     `Instance "${name}" is already live on slot ${slot}:`,
     ...live.map((entry) => {
       const pid = entry.pid !== undefined ? ` (PID ${entry.pid})` : '';
-      return `  ${entry.name.padEnd(8)} ${formatHostPort('localhost', entry.port)}${pid}`;
+      return `  ${entry.name.padEnd(14)} ${formatHostPort('localhost', entry.port)}${pid}`;
     }),
     'Pass --instance <other-name> for a fresh slot or stop the running one.',
   ];
@@ -82,7 +88,7 @@ function refuseOnEnvDivergence(
   desiredEnv: Record<string, string>,
 ): void {
   const { name, slot, ports } = context;
-  const portLine = `backend=${formatPort(ports.restApi)} proxy=${formatPort(ports.proxy)} colibri=${formatPort(ports.colibri)} dev=${formatPort(ports.dev)}`;
+  const portLine = `backend=${formatPort(ports.restApi)} proxy=${formatPort(ports.proxy)} colibri=${formatPort(ports.colibri)} dev=${formatPort(ports.dev)} starling=${formatPort(ports.starlingProxy)} mcp=${formatPort(ports.mcp)}`;
   const lines = [
     `Instance "${name}" → slot ${slot} (${portLine})`,
     `Detected user-customized managed env keys in ${envFile}:`,
