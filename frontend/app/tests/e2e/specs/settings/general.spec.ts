@@ -92,10 +92,14 @@ test.describe.serial('settings::general', () => {
     await pageGeneral.setDecimalSeparator(settings.thousandSeparator);
     await confirmInlineSuccess(ctx.sharedPage, '[data-cy=decimal-separator-input] .details');
 
-    await pageGeneral.navigateAway();
+    // Re-login rather than navigate: navigating re-reads the in-memory settings repo, which merges
+    // both patches locally even if what reached the backend did not. Only a fresh login proves what
+    // was persisted.
+    await ctx.app.relogin(ctx.username);
     await pageGeneral.visit();
 
     const persisted = await pageGeneral.separatorValues();
     expect(persisted.thousand).not.toBe(persisted.decimal);
+    expect(persisted).toStrictEqual({ decimal: settings.thousandSeparator, thousand: settings.decimalSeparator });
   });
 });
