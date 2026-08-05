@@ -125,12 +125,16 @@ async function updateComplete() {
 
   set(restarting, true);
 
-  // Only logout if the user is actually logged in
-  if (get(logged))
-    await logout(true);
-
+  // Restart *before* logging out. The restart is itself a logout — core's
+  // graceful shutdown runs the same Rotkehlchen.logout() that settles the user
+  // DB — and doing it first keeps the session alive, which docker's control
+  // endpoint needs to authorise the call at all. Logging out first revoked that
+  // credential and the restart was refused.
   setConnected(false);
   await restartBackend();
+  if (get(logged))
+    await logout(true, { skipBackendCall: true });
+
   connect();
   set(restarting, false);
 }

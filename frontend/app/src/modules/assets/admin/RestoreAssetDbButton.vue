@@ -56,9 +56,11 @@ async function restoreAssets(resetType: ResetType) {
 }
 
 async function updateComplete() {
-  await logout();
+  // Restart first: it is already a logout (core settles the user DB on its
+  // graceful shutdown), and it needs the session that logging out would revoke.
   setConnected(false);
   await restartBackend();
+  await logout(true, { skipBackendCall: true });
   await connect();
 }
 
