@@ -1,24 +1,25 @@
-"""Current Frankencoin savings positions.
-
-This is deliberately only a scaffold. Unlike the decoder, which explains past
-transactions, this module will query current contract state for open positions.
-"""
-
+"""Current Frankencoin savings positions."""
+import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import BalanceSheet
+from rotkehlchen.assets.utils import get_or_create_evm_token, token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.chain.evm.decoding.frankencoin.constants import CPT_FRANKENCOIN
+from rotkehlchen.chain.evm.decoding.frankencoin.constants import CPT_FRANKENCOIN, ZCHF_ADDRESS
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 from .constants import SAVINGS_CONTRACT_ABI, SAVINGS_CONTRACT_ADDRESS
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.types import ChecksumEvmAddress
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class FrankencoinSavingsBalances(ProtocolWithBalance):
@@ -37,37 +38,74 @@ class FrankencoinSavingsBalances(ProtocolWithBalance):
                 (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
             },
         )
-        self.savings_contract = SAVINGS_CONTRACT_ADDRESS[evm_inquirer.chain_id]
+        self.savings_contract = EvmContract(
+            address=SAVINGS_CONTRACT_ADDRESS[evm_inquirer.chain_id],
+            abi=SAVINGS_CONTRACT_ABI,
+            deployed_block=0,  # not used for calls
+        )
+        self.zchf = get_or_create_evm_token(
+            userdb=evm_inquirer.database,
+            evm_address=ZCHF_ADDRESS[evm_inquirer.chain_id],
+            chain_id=evm_inquirer.chain_id,
+        )
 
     def query_balances(self) -> BalancesSheetType:
-        """Return current savings positions for addresses with decoded deposits.
-
-        TODO: Use addresses_with_deposits() to discover relevant users, query
-        their current position from self.savings, convert internal units to
-        redeemable ZCHF, and add priced ZCHF balances via _add_priced_balances().
-        """
-
+        """Return deposited ZCHF plus accrued interest for addresses with prior deposits."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(addresses_with_deposits := self.addresses_with_deposits()) == 0:
+        if len(addresses := list(self.addresses_with_deposits())) == 0:
             return balances
 
-        addresses_with_savings_chf = set()
-        for address, events in addresses_with_deposits.items():
-            for event in events:
-                if event.event_type == HistoryEventType.DEPOSIT_TO_PROTOCOL:
-                    None
-                    # TODO
+        # Calls are interleaved so every two responses belong to the same address.
+        calls = [
+            (
+                self.savings_contract.address,
+                self.savings_contract.encode(method_name=method_name, arguments=[address]),
+            )
+            for address in addresses
+            for method_name in ('savings', 'accruedInterest')
+        ]
 
-        savings_contract = EvmContract(
-            address=self.savings_contract,
-            abi=SAVINGS_CONTRACT_ABI,
-            deployed_block=0,  # is not used here
-        )
-        return defaultdict(BalanceSheet)
+        try:
+            results = self.evm_inquirer.multicall(calls=calls)
+            if len(results) == 0:
+                log.error(
+                    f'Empty response from Frankencoin Savings contract '
+                    f'{self.savings_contract.address} '
+                    f'on {self.evm_inquirer.chain_name}',
+                )
+                return balances
+        except RemoteError as e:
+            log.error(
+                f'Failed to query Frankencoin Savings balances on '
+                f'{self.evm_inquirer.chain_name} due to {e!s}',
+            )
+            return balances
 
-    def _query_savings_zchf_balances(
-                self,
-                balances: BalancesSheetType,
-                addresses: list[ChecksumEvmAddress],
-        ) -> BalancesSheetType:
-        return defaultdict(BalanceSheet)
+        amounts = []
+        for address, savings_result, interest_result in zip(
+            addresses,
+            results[::2],
+            results[1::2],
+            strict=True,
+        ):
+            saved_raw, _, _, _ = self.savings_contract.decode(
+                result=savings_result,
+                method_name='savings',
+                arguments=[address],
+            )
+            (interest_raw,) = self.savings_contract.decode(
+                result=interest_result,
+                method_name='accruedInterest',
+                arguments=[address],
+            )
+            # Pending interest is part of the current redeemable ZCHF position.
+            if (balance_raw := saved_raw + interest_raw) == 0:
+                continue
+
+            amounts.append((address, self.zchf, token_normalized_value_decimals(
+                token_amount=balance_raw,
+                token_decimals=self.zchf.decimals,
+            )))
+
+        self._add_priced_balances(balances=balances, amounts=amounts)
+        return balances
