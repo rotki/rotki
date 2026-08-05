@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { type APIRequestContext, test as base, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { isCoverageEnabled, startCoverage, stopCoverage } from '../coverage';
 import { apiCreateAccount, apiDisableModules, apiLogout } from '../helpers/api';
@@ -53,6 +54,61 @@ export interface LoginOptions {
 }
 
 /**
+ * Set by the auto fixture below whenever a test in the current file does not end in its
+ * expected state, and cleared when a suite builds its context. `retain-on-failure` is a
+ * per-test decision Playwright can only make for contexts it owns; a shared context spans the
+ * whole file, so the file is the smallest unit we can decide on.
+ */
+let suiteHadFailure = false;
+
+/**
+ * The directory Playwright should record this suite's video into, or undefined when video is
+ * off for the run.
+ *
+ * `use.video` is only applied to contexts Playwright builds itself for the `page`/`context`
+ * fixtures. These suites build their own context in beforeAll so it can outlive a single
+ * test, which silently opted every one of them out of video capture: the setting looked
+ * repo-wide but only ever covered the specs driving the built-in fixture. Read the resolved
+ * project setting and pass `recordVideo` by hand so the config means what it reads like.
+ */
+function videoRecordingDir(): string | undefined {
+  const info = test.info();
+  const video = info.project.use.video;
+  const mode = typeof video === 'string' ? video : video?.mode;
+
+  if (!mode || mode === 'off')
+    return undefined;
+
+  return path.join(info.project.outputDir, 'videos');
+}
+
+/**
+ * Keeps the suite's video only when it is worth keeping, mirroring what `retain-on-failure`
+ * does for fixture-owned contexts. Named after the spec file, since one video now covers the
+ * whole file rather than a single test.
+ */
+async function retainSuiteVideo(sharedPage: Page): Promise<void> {
+  const video = sharedPage.video();
+  if (!video)
+    return;
+
+  const mode = test.info().project.use.video;
+  const keepAlways = (typeof mode === 'string' ? mode : mode?.mode) === 'on';
+
+  if (!keepAlways && !suiteHadFailure) {
+    await video.delete();
+    return;
+  }
+
+  const specName = path.basename(test.info().file).replace(/\.spec\.ts$/, '');
+  const target = path.join(path.dirname(await video.path()), `${specName}.webm`);
+
+  // saveAs waits for the recording to be fully written, which a plain rename would not.
+  await video.saveAs(target);
+  await video.delete();
+}
+
+/**
  * Creates a shared test context with a logged-in user.
  * Use this in beforeAll to set up shared state for serial tests.
  *
@@ -84,8 +140,11 @@ export async function createLoggedInContext(
 ): Promise<SharedTestContext> {
   const username = generateUsername();
 
+  suiteHadFailure = false;
+
   // Create shared browser context and page
-  const sharedContext = await browser.newContext();
+  const recordVideoDir = videoRecordingDir();
+  const sharedContext = await browser.newContext(recordVideoDir ? { recordVideo: { dir: recordVideoDir } } : {});
   const sharedPage = await sharedContext.newPage();
 
   // Start coverage collection if enabled
@@ -160,6 +219,11 @@ export async function cleanupContext(ctx: SharedTestContext | undefined): Promis
   }
 
   await sharedContext?.close();
+
+  // Only after close: the recording is not complete until the context that owns it is gone.
+  if (sharedPage) {
+    await retainSuiteVideo(sharedPage);
+  }
 }
 
 /**
@@ -170,7 +234,7 @@ export async function cleanupContext(ctx: SharedTestContext | undefined): Promis
  * fixture here means a spec only has to import `test` from this module to be counted, and a spec
  * that does not touch `page` never instantiates it, so this costs those nothing.
  */
-export const test = base.extend({
+export const test = base.extend<{ trackSuiteFailures: void }>({
   page: async ({ page }: { page: Page }, use: (page: Page) => Promise<void>): Promise<void> => {
     if (isCoverageEnabled())
       await startCoverage(page);
@@ -180,4 +244,16 @@ export const test = base.extend({
     if (isCoverageEnabled())
       await stopCoverage(page);
   },
+
+  /**
+   * Records whether anything in the file failed, so `cleanupContext` can decide in afterAll
+   * whether the suite's video is worth keeping. Automatic because a spec cannot opt into it:
+   * the tests that most need the video are the ones failing before they reach any fixture.
+   */
+  trackSuiteFailures: [async ({}, use: () => Promise<void>, testInfo): Promise<void> => {
+    await use();
+
+    if (testInfo.status !== testInfo.expectedStatus)
+      suiteHadFailure = true;
+  }, { auto: true }],
 });
