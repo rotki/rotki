@@ -530,6 +530,103 @@ def test_binance_flushes_asset_movements_before_trade_failure(
     assert actual_end_ts == Timestamp(1)
 
 
+def test_binance_asset_movements_resume_from_failed_source_window(
+        function_scope_binance: Binance,
+) -> None:
+    """Persist completed source windows and retry only the failed Binance window."""
+    binance = function_scope_binance
+    start_ts = Timestamp(0)
+    first_window_start_ts = BINANCE_LAUNCH_TS
+    end_ts = Timestamp(first_window_start_ts + 2 * API_TIME_INTERVAL_CONSTRAINT_TS - 1)
+    second_window_start_ts = Timestamp(
+        first_window_start_ts + API_TIME_INTERVAL_CONSTRAINT_TS,
+    )
+    event_queue = HistoryEventQueue(
+        database=binance.db,
+        location_string=f'{binance.location!s}_history_events_{binance.name}',
+        query_start_ts=start_ts,
+    )
+    with patch.object(
+        binance,
+        'api_query_list',
+        side_effect=(
+            [json.loads(BINANCE_DEPOSITS_HISTORY_RESPONSE)[0]],
+            [],
+            [],
+            [],
+            [],
+            RemoteError('failed fiat deposit window'),
+            [],
+            [],
+            [],
+        ),
+    ) as mock_api_query:
+        with pytest.raises(RemoteError, match='failed fiat deposit window'):
+            binance._query_online_asset_movements(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                event_queue=event_queue,
+            )
+
+        with binance.db.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM history_events WHERE location=?',
+                (binance.location.serialize_for_db(),),
+            ).fetchone()[0] == 1
+            assert binance.db.get_used_query_range(
+                cursor,
+                f'{binance.location!s}_asset_movements_deposits_{binance.name}',
+            ) == (start_ts, end_ts)
+            assert binance.db.get_used_query_range(
+                cursor,
+                f'{binance.location!s}_asset_movements_withdrawals_{binance.name}',
+            ) == (start_ts, end_ts)
+            assert binance.db.get_used_query_range(
+                cursor,
+                f'{binance.location!s}_asset_movements_fiat_deposits_{binance.name}',
+            ) == (start_ts, Timestamp(second_window_start_ts - 1))
+            assert binance.db.get_used_query_range(
+                cursor,
+                f'{binance.location!s}_history_events_{binance.name}',
+            ) is None
+
+        assert binance._query_online_asset_movements(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=HistoryEventQueue(
+                database=binance.db,
+                location_string=f'{binance.location!s}_history_events_{binance.name}',
+                query_start_ts=start_ts,
+            ),
+        ) == []
+
+    assert [
+        (
+            entry.args[1],
+            entry.kwargs['options'].get('transactionType'),
+            entry.kwargs['options']['startTime'],
+        )
+        for entry in mock_api_query.call_args_list
+    ] == [
+        ('capital/deposit/hisrec', None, first_window_start_ts * 1000),
+        ('capital/deposit/hisrec', None, second_window_start_ts * 1000),
+        ('capital/withdraw/history', None, first_window_start_ts * 1000),
+        ('capital/withdraw/history', None, second_window_start_ts * 1000),
+        ('fiat/orders', 0, first_window_start_ts * 1000),
+        ('fiat/orders', 0, second_window_start_ts * 1000),
+        ('fiat/orders', 0, second_window_start_ts * 1000),
+        ('fiat/orders', 1, first_window_start_ts * 1000),
+        ('fiat/orders', 1, second_window_start_ts * 1000),
+    ]
+
+    with binance.db.conn.read_ctx() as cursor:
+        for source in ('deposits', 'withdrawals', 'fiat_deposits', 'fiat_withdrawals'):
+            assert binance.db.get_used_query_range(
+                cursor,
+                f'{binance.location!s}_asset_movements_{source}_{binance.name}',
+            ) == (start_ts, end_ts)
+
+
 def test_binance_history_query_persists_completed_pairs_on_rate_limit(
         function_scope_binance: Binance,
 ) -> None:
