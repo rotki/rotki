@@ -2,7 +2,8 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/modules/core/common/collection';
-import type { Filters, Matcher } from '@/modules/core/table/filters/use-assets-filter';
+import type { Filters } from '@/modules/core/table/filters/use-assets-filter';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import AssetUnderlyingTokens from '@/modules/assets/admin/AssetUnderlyingTokens.vue';
 import ManagedAssetActions from '@/modules/assets/admin/managed/ManagedAssetActions.vue';
 import ManagedAssetIgnoreSwitch from '@/modules/assets/admin/managed/ManagedAssetIgnoreSwitch.vue';
@@ -35,10 +36,9 @@ const ignoredFilter = defineModel<IgnoredFilter>('ignoredFilter', { required: tr
 
 const expanded = defineModel<SupportedAsset[]>('expanded', { required: true });
 
-const { collection, ignoredAssets, loading = false, matchers } = defineProps<{
+const { collection, loading = false } = defineProps<{
   collection: Collection<SupportedAsset>;
-  matchers: Matcher[];
-  ignoredAssets: string[];
+  fields: FieldDef[];
   loading?: boolean;
 }>();
 
@@ -111,8 +111,7 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
       v-model:ignored-filter="ignoredFilter"
       v-model:selected="selected"
       v-model:matches="filtersModel"
-      :ignored-assets="ignoredAssets"
-      :matchers="matchers"
+      :fields="fields"
       :spam-disabled="spamDisabled"
       @ignore="massIgnore($event)"
       @mark-spam="massSpam()"

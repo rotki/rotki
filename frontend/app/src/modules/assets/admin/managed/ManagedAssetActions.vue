@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { Filters, Matcher } from '@/modules/core/table/filters/use-assets-filter';
-import AssetStatusFilter from '@/modules/assets/admin/AssetStatusFilter.vue';
-import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
-import TableFilter from '@/modules/core/table/TableFilter.vue';
+import type { Filters } from '@/modules/core/table/filters/use-assets-filter';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType, isIgnoredAssetsHandling } from '@/modules/assets/types';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import IgnoreButtons from '@/modules/history/IgnoreButtons.vue';
 
 interface IgnoredFilter {
@@ -16,8 +17,7 @@ const selected = defineModel<string[]>('selected', { required: true });
 const filtersModel = defineModel<Filters>('matches', { required: true });
 
 const { spamDisabled = false } = defineProps<{
-  ignoredAssets: string[];
-  matchers: Matcher[];
+  fields: FieldDef[];
   spamDisabled?: boolean;
 }>();
 
@@ -29,12 +29,40 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const pillLabels = usePillBarLabels();
+
 const disabledIgnoreActions = computed<{ ignore: boolean; unIgnore: boolean }>(() => {
   const { ignoredAssetsHandling } = get(ignoredFilter);
   return {
     ignore: ignoredAssetsHandling === IgnoredAssetHandlingType.SHOW_ONLY,
     unIgnore: ignoredAssetsHandling === IgnoredAssetHandlingType.EXCLUDE,
   };
+});
+
+// The owned, whitelisted and ignored filters are param-bound pills in the bar (paramKeys
+// `showUserOwnedAssetsOnly`, `showWhitelistedAssetsOnly`, `ignoredAssetsHandling`). Bridge the
+// bar's param bag to the model backing them, so the bar drives the same source the status dropdown
+// used to. An absent param clears its part of the model: removing the pill is how the filter is
+// turned off, and for the ignored handling "off" is the table's default, `exclude`.
+const pillParams = computed<Record<string, string | string[] | boolean>>({
+  get(): Record<string, string | string[] | boolean> {
+    const { ignoredAssetsHandling, onlyShowOwned, onlyShowWhitelisted } = get(ignoredFilter);
+    return {
+      ...(onlyShowOwned ? { showUserOwnedAssetsOnly: true } : {}),
+      ...(onlyShowWhitelisted ? { showWhitelistedAssetsOnly: true } : {}),
+      ...(ignoredAssetsHandling === IgnoredAssetHandlingType.EXCLUDE ? {} : { ignoredAssetsHandling }),
+    };
+  },
+  set(value: Record<string, string | string[] | boolean>): void {
+    const handling = value.ignoredAssetsHandling;
+    set(ignoredFilter, {
+      ignoredAssetsHandling: typeof handling === 'string' && isIgnoredAssetsHandling(handling)
+        ? handling
+        : IgnoredAssetHandlingType.EXCLUDE,
+      onlyShowOwned: value.showUserOwnedAssetsOnly === true,
+      onlyShowWhitelisted: value.showWhitelistedAssetsOnly === true,
+    });
+  },
 });
 
 function clearSelection() {
@@ -49,9 +77,13 @@ function handleMarkSpam(): void {
   emit('mark-spam');
 }
 
-function handleRefreshIgnored(): void {
-  emit('refresh:ignored');
-}
+// The ignored list is what the "only ignored" filter shows, and it is only fetched on demand, so
+// asking for it has to be what refreshes it. The radio group used to say so itself; now the pill
+// does, and the request follows from the value rather than from the control that set it.
+watch(() => get(ignoredFilter).ignoredAssetsHandling, (handling) => {
+  if (handling === IgnoredAssetHandlingType.SHOW_ONLY)
+    emit('refresh:ignored');
+});
 </script>
 
 <template>
@@ -108,19 +140,12 @@ function handleRefreshIgnored(): void {
       </div>
     </div>
 
-    <div class="grow" />
-
-    <AssetStatusFilter
-      v-model="ignoredFilter"
-      :count="ignoredAssets.length"
-      @refresh:ignored="handleRefreshIgnored()"
+    <PillFilterBar
+      v-model:matches="filtersModel"
+      v-model:params="pillParams"
+      class="flex-1 min-w-[12rem] lg:min-w-[24rem]"
+      :fields="fields"
+      :labels="pillLabels"
     />
-
-    <div class="w-full lg:w-[25rem]">
-      <TableFilter
-        v-model:matches="filtersModel"
-        :matchers="matchers"
-      />
-    </div>
   </div>
 </template>

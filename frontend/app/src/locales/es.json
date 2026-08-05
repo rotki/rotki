@@ -367,9 +367,6 @@
       "subtitle": "Puede vincular símbolos de activos en una bolsa centralizada con activos reconocidos por rotki. Esto es necesario para que rotki pueda procesar activos en las bolsas."
     }
   },
-  "asset_table": {
-    "only_show_whitelisted": "Mostrar sólo los activos de la lista blanca"
-  },
   "asset_update": {
     "advanced": "Opciones avanzadas"
   },
