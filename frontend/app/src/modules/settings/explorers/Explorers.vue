@@ -134,6 +134,7 @@ onMounted(() => {
 
       <ExplorerInput
         v-model="address"
+        data-testid="explorer-address-input"
         :label="t('explorers.address')"
         :hint="t('explorers.address_url', { addressUrl })"
         :placeholder="addressUrl"
@@ -143,6 +144,7 @@ onMounted(() => {
       <ExplorerInput
         v-if="txUrl"
         v-model="tx"
+        data-testid="explorer-tx-input"
         :label="t('explorers.tx')"
         :hint="t('explorers.tx_url', { txUrl })"
         :placeholder="txUrl"
@@ -152,6 +154,7 @@ onMounted(() => {
       <ExplorerInput
         v-if="blockUrl"
         v-model="block"
+        data-testid="explorer-block-input"
         :label="t('explorers.block')"
         :hint="t('explorers.block_url', { blockUrl })"
         :placeholder="blockUrl"
@@ -161,6 +164,7 @@ onMounted(() => {
       <ExplorerInput
         v-if="tokenUrl"
         v-model="token"
+        data-testid="explorer-token-input"
         :label="t('explorers.token')"
         :hint="t('explorers.token_url', { tokenUrl })"
         :placeholder="tokenUrl"
