@@ -2558,6 +2558,70 @@ Purging locally saved data for exchanges
 Managing blockchain transactions
 ==================================
 
+Get latest raw blockchain transaction timestamps
+------------------------------------------------
+
+.. http:get:: /api/(version)/blockchains/transactions/latest
+
+   Returns the latest locally saved raw transaction timestamp for every blockchain that supports
+   transaction history, together with the latest timestamp for each address associated with those
+   transactions. This reads the raw transaction and transaction-address mapping tables, so deleting
+   decoded history events does not change the result. A chain without raw transactions has a
+   ``latest_timestamp`` of ``0`` and an empty ``addresses`` object.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/transactions/latest HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": false}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "eth": {
+            "latest_timestamp": 1754300000,
+            "addresses": {
+              "0x9531c059098e3d194ff87febb587ab07b30b1306": 1754200000
+            }
+          },
+          "optimism": {"latest_timestamp": 0, "addresses": {}},
+          "polygon_pos": {"latest_timestamp": 0, "addresses": {}},
+          "arbitrum_one": {"latest_timestamp": 0, "addresses": {}},
+          "base": {"latest_timestamp": 0, "addresses": {}},
+          "hyperliquid": {"latest_timestamp": 0, "addresses": {}},
+          "gnosis": {"latest_timestamp": 0, "addresses": {}},
+          "scroll": {"latest_timestamp": 0, "addresses": {}},
+          "binance_sc": {"latest_timestamp": 0, "addresses": {}},
+          "monad": {"latest_timestamp": 0, "addresses": {}},
+          "zksync_lite": {"latest_timestamp": 0, "addresses": {}},
+          "btc": {"latest_timestamp": 0, "addresses": {}},
+          "bch": {"latest_timestamp": 0, "addresses": {}},
+          "solana": {"latest_timestamp": 0, "addresses": {}}
+        },
+        "message": ""
+      }
+
+   :query boolean async_query: If true, the endpoint returns an asynchronous task identifier.
+   :resjson object result: Mapping of serialized blockchain identifiers to timestamp information.
+   :resjson integer result[chain].latest_timestamp: Latest raw transaction timestamp for the chain in Unix seconds, or ``0`` if none is saved.
+   :resjson object result[chain].addresses: Mapping of associated addresses to their latest raw transaction timestamp in Unix seconds.
+   :statuscode 200: Timestamps were returned successfully.
+   :statuscode 401: No user is logged in.
+   :statuscode 500: Internal rotki error.
+
 .. http:delete:: /api/(version)/blockchains/transactions
 
    Doing a DELETE on the blockchain transactions endpoint will delete locally saved transaction data. If nothing is given all transaction data will be deleted. Can specify the chain to only delete all transactions of that chain. Or even further chain and tx_hash to delete only a specific transaction's data (although this is only supported for EVM and EVM-like chains). If chain is Bitcoin or Bitcoin Cash, the cached last queried block will also be deleted to allow all txs to be requeried.

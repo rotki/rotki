@@ -763,6 +763,15 @@ class EvmTransactionsStatusResource(BaseMethodView):
         return self.rest_api.get_evm_transactions_status(async_query=async_query)
 
 
+class LatestBlockchainTransactionTimestampsResource(BaseMethodView):
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_latest_transaction_timestamps(async_query=async_query)
+
+
 class EvmTransactionLookupResource(BaseMethodView):
     def make_get_schema(self) -> EvmTransactionLookupSchema:
         return EvmTransactionLookupSchema(

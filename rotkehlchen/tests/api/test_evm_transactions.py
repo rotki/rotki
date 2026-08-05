@@ -37,6 +37,7 @@ from rotkehlchen.tests.utils.ethereum import (
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.optimism import OPTIMISM_MAINNET_NODE
 from rotkehlchen.types import (
+    CHAINS_WITH_TRANSACTIONS,
     ChainID,
     ChecksumEvmAddress,
     Location,
@@ -467,6 +468,102 @@ def test_history_status_summary(
         'undecoded_tx_count': 0,
         'has_evm_accounts': False,
         'has_exchanges_accounts': False,
+    }
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+@pytest.mark.parametrize('async_query', [False, True])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_latest_blockchain_transaction_timestamps(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        async_query: bool,
+) -> None:
+    """The endpoint reads raw transactions and their address mappings, not history events."""
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    evm_address = ethereum_accounts[0]
+    zksync_address = make_evm_address()
+    solana_address = '3nLtkK8knvR6V9x6YdQW1fJ3uV6d2W9V8M9QpJc5mN7H'
+    btc_address = 'bc1qdlt2jrplkf0v7ucvhhjhs0qf7cqr0j27k7j7p0'
+    bch_address = 'qrfec2pytp47p5drvfsdexqd0ue4r3hrhv9tq7vj5z'
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+            (SupportedBlockchain.ZKSYNC_LITE.value, zksync_address),
+        )
+        write_cursor.execute(
+            'INSERT INTO evm_transactions(tx_hash, chain_id, timestamp, block_number, '
+            'from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (b'evm-older', ChainID.ETHEREUM.value, 100, 1, evm_address, None, '0', '0', '0', '0', b'', 0),  # noqa: E501
+        )
+        write_cursor.execute(
+            'INSERT INTO evmtx_address_mappings(tx_id, address) VALUES (?, ?)',
+            (write_cursor.lastrowid, evm_address),
+        )
+        write_cursor.execute(
+            'INSERT INTO evm_transactions(tx_hash, chain_id, timestamp, block_number, '
+            'from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (b'evm-newer', ChainID.ETHEREUM.value, 120, 2, evm_address, None, '0', '0', '0', '0', b'', 1),  # noqa: E501
+        )
+        write_cursor.execute(
+            'INSERT INTO zksynclite_transactions(tx_hash, timestamp, block_number, from_address, '
+            'to_address, asset, amount) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (b'zksync', 200, 1, zksync_address, make_evm_address(), 'ETH', '1'),
+        )
+        write_cursor.execute(
+            'INSERT INTO solana_transactions(slot, fee, block_time, success, signature) '
+            'VALUES (?, ?, ?, ?, ?)',
+            (1, 1, 300, 1, b'solana'),
+        )
+        write_cursor.execute(
+            'INSERT INTO solanatx_address_mappings(tx_id, address) VALUES (?, ?)',
+            (write_cursor.lastrowid, solana_address),
+        )
+        for location, tx_id, timestamp, address in (
+            (Location.BITCOIN, 'btc-tx', 400, btc_address),
+            (Location.BITCOIN_CASH, 'bch-tx', 500, bch_address),
+        ):
+            write_cursor.execute(
+                'INSERT INTO bitcoin_transactions(location, tx_id, timestamp, block_height, fee) '
+                'VALUES (?, ?, ?, ?, ?)',
+                (location.serialize_for_db(), tx_id, timestamp, 1, 1),
+            )
+            write_cursor.execute(
+                'INSERT INTO bitcointx_address_mappings(tx_id, address) VALUES (?, ?)',
+                (write_cursor.lastrowid, address),
+            )
+
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server, 'latestblockchaintransactiontimestampsresource'),
+        json={'async_query': async_query},
+    )
+    result = assert_proper_response_with_result(response, rotkehlchen_api_server, async_query)
+    assert result == {
+        chain.serialize(): {'latest_timestamp': 0, 'addresses': {}}
+        for chain in CHAINS_WITH_TRANSACTIONS
+    } | {
+        SupportedBlockchain.ETHEREUM.serialize(): {
+            'latest_timestamp': 120,
+            'addresses': {evm_address: 100},
+        },
+        SupportedBlockchain.ZKSYNC_LITE.serialize(): {
+            'latest_timestamp': 200,
+            'addresses': {zksync_address: 200},
+        },
+        SupportedBlockchain.SOLANA.serialize(): {
+            'latest_timestamp': 300,
+            'addresses': {solana_address: 300},
+        },
+        SupportedBlockchain.BITCOIN.serialize(): {
+            'latest_timestamp': 400,
+            'addresses': {btc_address: 400},
+        },
+        SupportedBlockchain.BITCOIN_CASH.serialize(): {
+            'latest_timestamp': 500,
+            'addresses': {bch_address: 500},
+        },
     }
 
 
