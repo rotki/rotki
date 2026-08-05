@@ -146,7 +146,26 @@ function detectSystemChromium(): string | undefined {
   return undefined;
 }
 
-const systemChromium = detectSystemChromium();
+/**
+ * CI runs against the browser the runner image already ships. runner-images symlinks its
+ * Chromium to /usr/bin/chromium, so detectSystemChromium() finds it and no `playwright
+ * install` step is needed. That binary tracks the runner image rather than the Playwright
+ * release, so the browser version is deliberately not pinned. If a future image drops the
+ * symlink, fail here with a named error instead of silently falling back to a bundled
+ * browser that CI never downloads.
+ */
+function resolveChromium(): string | undefined {
+  const detected = detectSystemChromium();
+  if (!detected && process.env.CI) {
+    throw new Error(
+      'No system Chromium found. CI runs against the runner-provided browser at '
+      + '/usr/bin/chromium and does not run `playwright install`.',
+    );
+  }
+  return detected;
+}
+
+const systemChromium = resolveChromium();
 
 /**
  * Interactive runs (`--ui`, `--headed`, `--debug`) keep the Vite dev server so HMR and
