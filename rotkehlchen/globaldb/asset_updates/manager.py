@@ -79,6 +79,11 @@ def _replace_assets_from_db_cursor(
         int(result[0]) >= FIRST_GLOBAL_DB_VERSION_WITH_SOLANA_TOKENS
     ):
         required_tables.append('solana_tokens')
+    if write_cursor.execute(
+        "SELECT COUNT(*) FROM other_db.sqlite_master WHERE type='table' AND name=?",
+        ('hyperliquid_tokens',),
+    ).fetchone()[0] == 1:
+        required_tables.append('hyperliquid_tokens')
 
     write_cursor.execute(
         """SELECT COUNT(*) FROM sqlite_master
@@ -123,7 +128,7 @@ def _replace_assets_from_db(
 ) -> None:
     """Replace asset-related tables with data from source database.
 
-    Handles: token_kinds, asset_types, assets, evm_tokens, solana_tokens,
+    Handles: token_kinds, asset_types, assets, evm_tokens, solana_tokens, hyperliquid_tokens,
     underlying_tokens_list, common_asset_details, asset_collections, multiasset_mappings.
     """
     with connection.write_ctx() as write_cursor:

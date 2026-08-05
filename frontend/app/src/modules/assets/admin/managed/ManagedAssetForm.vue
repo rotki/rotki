@@ -13,10 +13,11 @@ import { externalLinks } from '@shared/external-links';
 import { omit, pick } from 'es-toolkit';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';
+import { prepareNonEvmAssetPayload } from '@/modules/assets/admin/managed/managed-asset-payload';
 import { useManagedAssetFormValidation } from '@/modules/assets/admin/managed/use-managed-asset-form-validation';
 import UnderlyingTokenManager from '@/modules/assets/admin/UnderlyingTokenManager.vue';
 import { type ManagedAssetPayload, useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
-import { CUSTOM_ASSET, EVM_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
+import { CUSTOM_ASSET, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { evmTokenKindsData, solanaTokenKindsData } from '@/modules/core/common/chains';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -83,10 +84,11 @@ const { fetchTokenDetails } = useAssetInfoRetrieval();
 const { addAsset, editAsset } = useAssetManagementApi();
 
 const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
+const isHyperliquidToken = computed<boolean>(() => get(assetType) === HYPERLIQUID_TOKEN);
 const isSolanaToken = computed<boolean>(() => get(assetType) === SOLANA_TOKEN);
 const isNft = computed<boolean>(() => get(tokenKind) === EvmTokenKind.ERC721);
 
-const isTokenRequiresAddress = logicOr(isEvmToken, isSolanaToken);
+const isTokenRequiresAddress = logicOr(isEvmToken, isHyperliquidToken, isSolanaToken);
 
 const states = {
   address,
@@ -109,6 +111,7 @@ const states = {
 const { toMessages, v$ } = useManagedAssetFormValidation({
   errors,
   isEvmToken,
+  isHyperliquidToken,
   isNft,
   isSolanaToken,
   isTokenRequiresAddress,
@@ -152,17 +155,9 @@ async function saveAsset() {
 
   if (!get(isEvmToken)) {
     assetPayload = {
-      ...omit(assetPayload, [
-        'collectibleId',
-        'evmChain',
-        'underlyingTokens',
-      ]),
+      ...prepareNonEvmAssetPayload(assetPayload),
       isRebasing: false,
     };
-
-    if (!get(isSolanaToken)) {
-      assetPayload = omit(assetPayload, ['decimals', 'address', 'tokenKind']);
-    }
   }
   else if (get(isNft)) {
     assetPayload = {
@@ -415,6 +410,22 @@ defineExpose({
           />
         </div>
       </template>
+
+      <div
+        v-else-if="isHyperliquidToken"
+        class="col-span-2"
+        data-testid="address-input"
+      >
+        <RuiTextField
+          v-model="address"
+          variant="outlined"
+          color="primary"
+          :error-messages="toMessages(v$.address)"
+          :label="t('common.address')"
+          :disabled="loading || editMode"
+          @blur="v$.address.$touch()"
+        />
+      </div>
 
       <div class="col-span-2 grid md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
         <RuiTextField

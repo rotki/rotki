@@ -10,6 +10,7 @@ from rotkehlchen.assets.asset import (
     CustomAsset,
     EvmToken,
     FiatAsset,
+    HyperliquidToken,
     SolanaToken,
     UnderlyingToken,
 )
@@ -109,6 +110,18 @@ def deserialize_asset_with_oracles_from_db(
             coingecko=asset_data[9],
             cryptocompare=asset_data[10],
             protocol=asset_data[11],
+        )
+    if asset_type == AssetType.HYPERLIQUID_TOKEN:
+        return HyperliquidToken.initialize(
+            address=asset_data[2],
+            decimals=asset_data[3],
+            name=identifier if asset_data[4] is None else asset_data[4],
+            symbol=asset_data[5],
+            started=Timestamp(asset_data[6]),
+            forked=CryptoAsset(asset_data[7]) if asset_data[7] is not None else None,
+            swapped_for=CryptoAsset(asset_data[8]) if asset_data[8] is not None else None,
+            coingecko=asset_data[9],
+            cryptocompare=asset_data[10],
         )
     if asset_type == AssetType.FIAT:
         return FiatAsset.initialize(

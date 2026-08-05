@@ -1,0 +1,1 @@
+export const HYPERLIQUID_TOKEN_ADDRESS = '0x6781b92b6ea5d8ed37d275eb201f64af';

@@ -53,6 +53,7 @@ Changelog
 * :feature:`7618` Li.fi activity in the supported EVM chains is now properly decoded.
 * :feature:`9316` Searching for an asset in the asset manager now shows the closest matches first, so the asset you are looking for appears at the top instead of being buried under similarly-named or spam tokens.
 * :feature:`12219` Add Moralis as a price Oracle.
+* :feature:`-` Hyperliquid Core native tokens can now be managed as first class assets: add or edit their metadata in the asset manager, search for them by name, symbol, or token ID, and use them in asset mappings.
 * :bug:`12277` If your main currency is not USD, editing a balance snapshot now shows and saves each value converted at the exchange rate from that snapshot's own date. Previously it used today's exchange rate, so the values you saw and saved were off, especially for assets pegged to a fiat currency such as EUR stablecoins.
 * :bug:`12306` Chain locations (e.g. ``ethereum``, ``optimism``) with on-chain balances are now reachable via global search, even when no manual balance is tagged with that label.
 * :bug:`12304` Opening a location breakdown page for a blockchain (e.g. ``/locations/ethereum``) now shows that chain's on-chain assets and total — previously the page rendered as 0 value with an empty/loading table whenever the location identifier was a chain alias.

@@ -33,6 +33,7 @@ pub enum AssetType {
     SolanaToken = 25,
     Nft = 26,
     CustomAsset = 27,
+    HyperliquidToken = 28,
 }
 
 impl SerializableDBEnum for AssetType {
@@ -69,6 +70,7 @@ impl AssetType {
             AssetType::SolanaToken,
             AssetType::Nft,
             AssetType::CustomAsset,
+            AssetType::HyperliquidToken,
         ]
         .into_iter()
         .find(|asset_type| AssetType::serialize(*asset_type) == name)
@@ -123,6 +125,7 @@ impl AssetType {
             25 => Ok(AssetType::SolanaToken),
             26 => Ok(AssetType::Nft),
             27 => Ok(AssetType::CustomAsset),
+            28 => Ok(AssetType::HyperliquidToken),
             _ => Err(format!("Failed to deserialize AssetType DB value {value}")),
         }
     }
@@ -154,6 +157,7 @@ impl AssetType {
             AssetType::SolanaToken => "solana token".to_string(),
             AssetType::Nft => "nft".to_string(),
             AssetType::CustomAsset => "custom asset".to_string(),
+            AssetType::HyperliquidToken => "hyperliquid token".to_string(),
         }
     }
 }
@@ -390,6 +394,10 @@ mod tests {
             AssetType::deserialize_from_db("C").unwrap(),
             AssetType::EvmToken
         ); // 'C' = 67, 67-64 = 3
+        assert_eq!(
+            AssetType::deserialize_from_db("\\").unwrap(),
+            AssetType::HyperliquidToken
+        );
         assert!(AssetType::deserialize_from_db("abc").is_err()); // Multi-character
         assert!(AssetType::deserialize_from_db("@").is_err()); // ASCII 64, too low
     }
@@ -398,6 +406,10 @@ mod tests {
     fn test_asset_type_from_name() {
         assert_eq!(AssetType::from_name("fiat"), Some(AssetType::Fiat));
         assert_eq!(AssetType::from_name("evm token"), Some(AssetType::EvmToken));
+        assert_eq!(
+            AssetType::from_name("hyperliquid token"),
+            Some(AssetType::HyperliquidToken)
+        );
         assert_eq!(AssetType::from_name("non-existent"), None);
     }
 
@@ -406,6 +418,7 @@ mod tests {
         assert_eq!(AssetType::Fiat.serialize_for_db(), "A");
         assert_eq!(AssetType::OwnChain.serialize_for_db(), "B");
         assert_eq!(AssetType::EvmToken.serialize_for_db(), "C");
+        assert_eq!(AssetType::HyperliquidToken.serialize_for_db(), "\\");
     }
 
     #[test]

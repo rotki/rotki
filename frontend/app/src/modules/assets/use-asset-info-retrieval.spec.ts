@@ -1,8 +1,9 @@
 import type { ERC20Token } from '@/modules/accounts/blockchain-accounts';
+import { HYPERLIQUID_TOKEN_ADDRESS } from '@test/utils/asset-test-data';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
-import { CUSTOM_ASSET } from '@/modules/assets/types';
+import { CUSTOM_ASSET, HYPERLIQUID_TOKEN } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
@@ -247,6 +248,21 @@ describe('useAssetRetrieval', () => {
 
       expect(assetInfoRetrieval.getAssetField(identifier, 'name')).toEqual(fallbackName);
       expect(assetInfoRetrieval.getAssetField(identifier, 'symbol')).toEqual(fallbackName);
+    });
+  });
+
+  describe('getAssetContractInfo', () => {
+    it('should extract a normalized Hyperliquid Core token address without an EVM location', () => {
+      const mixedCaseAddress = HYPERLIQUID_TOKEN_ADDRESS.toUpperCase().replace('0X', '0x');
+      vi.mocked(assetInfoCache.resolve).mockReturnValue({
+        assetType: HYPERLIQUID_TOKEN,
+        name: 'MAX',
+        symbol: 'MAX',
+      });
+
+      expect(assetInfoRetrieval.getAssetContractInfo(`hyperc:${mixedCaseAddress}`)).toEqual({
+        address: HYPERLIQUID_TOKEN_ADDRESS,
+      });
     });
   });
 });

@@ -97,6 +97,35 @@ describe('composables/api/assets/management', () => {
       expect(capturedBody).toHaveProperty('asset_type', 'solana token');
     });
 
+    it('should convert Hyperliquid Core chain to its distinct asset type', async () => {
+      let capturedBody: DefaultBodyType = null;
+
+      server.use(
+        http.post(`${backendUrl}/api/1/assets/all`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            result: {
+              entries: [],
+              entries_found: 0,
+              entries_limit: 100,
+              entries_total: 0,
+            },
+            message: '',
+          });
+        }),
+      );
+
+      const { queryAllAssets } = useAssetManagementApi();
+      await queryAllAssets({
+        limit: 100,
+        offset: 0,
+        evmChain: 'hyperliquid core',
+      });
+
+      expect(capturedBody).not.toHaveProperty('evm_chain');
+      expect(capturedBody).toHaveProperty('asset_type', 'hyperliquid token');
+    });
+
     it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/all`, () =>

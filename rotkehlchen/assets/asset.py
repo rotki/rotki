@@ -15,6 +15,7 @@ from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
 from rotkehlchen.constants.resolver import (
     ChainID,
     evm_address_to_identifier,
+    hyperliquid_token_address_to_identifier,
     solana_address_to_identifier,
     tokenid_to_collectible_id,
 )
@@ -26,6 +27,7 @@ from rotkehlchen.types import (
     EVM_TOKEN_KINDS_TYPE,
     SOLANA_TOKEN_KINDS_TYPE,
     ChecksumEvmAddress,
+    HyperliquidTokenAddress,
     SolanaAddress,
     Timestamp,
     TokenKind,
@@ -172,6 +174,9 @@ class Asset:
     def is_solana_token(self) -> bool:
         return self.get_asset_type() == AssetType.SOLANA_TOKEN
 
+    def is_hyperliquid_token(self) -> bool:
+        return self.get_asset_type() == AssetType.HYPERLIQUID_TOKEN
+
     def is_crypto(self) -> bool:
         return self.get_asset_type() not in NON_CRYPTO_ASSETS
 
@@ -221,6 +226,12 @@ class Asset:
         return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=SolanaToken,
+        )
+
+    def resolve_to_hyperliquid_token(self) -> HyperliquidToken:
+        return AssetResolver.resolve_asset_to_class(
+            identifier=self.identifier,
+            expected_type=HyperliquidToken,
         )
 
     def resolve_to_asset_with_oracles(self) -> AssetWithOracles:
@@ -571,6 +582,18 @@ SolanaTokenDBTuple = tuple[
     str | None,        # protocol
 ]
 
+HyperliquidTokenDBTuple = tuple[
+    str,                  # identifier
+    str,                  # address
+    int | None,           # decimals
+    str | None,           # name
+    str | None,           # symbol
+    int | None,           # started
+    str | None,           # swapped_for
+    str | None,           # coingecko
+    str | None,           # cryptocompare
+]
+
 
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True, slots=True)  # noqa: E501
 class EvmToken(CryptoAsset):
@@ -861,4 +884,83 @@ class SolanaToken(CryptoAsset):
             'token_kind': self.token_kind.serialize(),
             'decimals': self.decimals,
             'protocol': self.protocol,
+        }
+
+
+@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True, slots=True)  # noqa: E501
+class HyperliquidToken(CryptoAsset):
+    address: HyperliquidTokenAddress = field(init=False)
+    decimals: int | None = field(init=False)
+
+    def __post_init__(self, direct_field_initialization: bool) -> None:
+        super(HyperliquidToken, self).__post_init__(direct_field_initialization)
+        if direct_field_initialization is True:
+            return
+
+        resolved = AssetResolver().resolve_asset_to_class(
+            identifier=self.identifier,
+            expected_type=HyperliquidToken,
+        )
+        self._set_attributes(
+            asset_type=AssetType.HYPERLIQUID_TOKEN,
+            address=resolved.address,
+            decimals=resolved.decimals,
+        )
+
+    @classmethod
+    def initialize(  # type: ignore  # signature is incompatible with super type
+            cls: type[HyperliquidToken],
+            address: HyperliquidTokenAddress,
+            name: str | None = None,
+            symbol: str | None = None,
+            started: Timestamp | None = None,
+            forked: CryptoAsset | None = None,
+            swapped_for: CryptoAsset | None = None,
+            coingecko: str | None = None,
+            cryptocompare: str | None = '',
+            decimals: int | None = None,
+    ) -> HyperliquidToken:
+        normalized_address = HyperliquidTokenAddress(address.lower())
+        asset = HyperliquidToken(
+            identifier=hyperliquid_token_address_to_identifier(normalized_address),
+            direct_field_initialization=True,
+        )
+        asset._set_attributes(
+            asset_type=AssetType.HYPERLIQUID_TOKEN,
+            name=name,
+            symbol=symbol,
+            cryptocompare=cryptocompare,
+            coingecko=coingecko,
+            started=started,
+            forked=forked,
+            swapped_for=swapped_for,
+            address=normalized_address,
+            decimals=decimals,
+        )
+        return asset
+
+    @classmethod
+    def deserialize_from_db(
+            cls: type[HyperliquidToken],
+            entry: HyperliquidTokenDBTuple,
+    ) -> HyperliquidToken:
+        return HyperliquidToken.initialize(
+            address=HyperliquidTokenAddress(entry[1]),
+            decimals=entry[2],
+            name=entry[3],
+            symbol=entry[4] if entry[4] is not None else '',
+            started=Timestamp(entry[5]),  # type: ignore
+            swapped_for=CryptoAsset(entry[6]) if entry[6] is not None else None,
+            coingecko=entry[7],
+            cryptocompare=entry[8],
+        )
+
+    @property
+    def db_table(self) -> str:
+        return 'hyperliquid_tokens'
+
+    def to_dict(self) -> dict[str, Any]:
+        return super(HyperliquidToken, self).to_dict() | {
+            'address': self.address,
+            'decimals': self.decimals,
         }

@@ -123,11 +123,12 @@ def test_asset_updates_consistency_with_packaged_db(
         globaldb.conn.read_ctx() as old_globaldb_cursor,
         globaldb.packaged_db_conn().read_ctx() as packaged_db_cursor,
     ):
-        # Assets version here is 36 because:
+        # Assets version here is 40 because:
         # - Global DB v9->v10 & v12 -> v13 includes breaking schema changes
-        # - `apply_pending_compatible_updates` runs during create_globaldb() and pulls all compatible asset updates up to v32 and then v36 (max compatible)  # noqa: E501
-        # - At this point we are sure that assets updates up until 36 are applied
-        assert old_globaldb_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '36'  # noqa: E501
+        # - Global DB v16->v17 adds Hyperliquid tokens, which also breaks compatibility
+        # - `apply_pending_compatible_updates` runs during create_globaldb() and pulls all compatible asset updates up to v32, then v36, and finally v40 (max compatible)  # noqa: E501
+        # - At this point we are sure that assets updates up until 40 are applied
+        assert old_globaldb_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '40'  # noqa: E501
         assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '40'  # noqa: E501
 
         assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='last_data_migration'").fetchone()[0] == str(LAST_GLOBALDB_DATA_MIGRATION)  # noqa: E501

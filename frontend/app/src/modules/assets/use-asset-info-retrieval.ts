@@ -5,16 +5,18 @@ import type { EvmChainAddress } from '@/modules/history/events/event-payloads';
 import {
   type AssetInfoWithId,
   getAddressFromEvmIdentifier,
+  getAddressFromHyperliquidTokenIdentifier,
   getAddressFromSolanaIdentifier,
   getNftAssetIdDetail,
   isEvmIdentifier,
   isEvmIdentifierWithNftId,
+  isHyperliquidTokenIdentifier,
   isSolanaTokenIdentifier,
   NotificationGroup,
   Severity,
 } from '@rotki/common';
 import { type AssetSearchParams, useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
-import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
+import { type AssetsWithId, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { processAssetInfo, useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
 import { isAbortError } from '@/modules/core/common/helpers/is-of-enum';
@@ -42,9 +44,31 @@ interface AssetWithResolutionStatus extends AssetInfoWithId {
 }
 
 interface AssetContractInfo {
-  location: string;
   address: string;
+  location?: string;
   nftId?: string;
+}
+
+function getEvmAssetContractInfo(identifier: string, location?: string): AssetContractInfo | undefined {
+  if (isEvmIdentifier(identifier)) {
+    return {
+      address: getAddressFromEvmIdentifier(identifier),
+      location,
+    };
+  }
+
+  if (!isEvmIdentifierWithNftId(identifier))
+    return undefined;
+
+  const nftDetail = getNftAssetIdDetail(identifier);
+  if (!nftDetail)
+    return undefined;
+
+  return {
+    address: nftDetail.contractAddress,
+    location,
+    nftId: nftDetail.nftId,
+  };
 }
 
 export type AssetStringField = 'symbol' | 'name';
@@ -151,32 +175,19 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
 
     const { assetType, evmChain, identifier: usedId } = asset;
 
-    if (assetType === EVM_TOKEN) {
-      const location = evmChain ?? undefined;
-      if (isEvmIdentifier(usedId)) {
-        return {
-          address: getAddressFromEvmIdentifier(usedId),
-          location,
-        };
-      }
-
-      if (isEvmIdentifierWithNftId(usedId)) {
-        const nftDetail = getNftAssetIdDetail(usedId);
-        if (!nftDetail) {
-          return undefined;
-        }
-        return {
-          address: nftDetail.contractAddress,
-          location,
-          nftId: nftDetail.nftId,
-        };
-      }
-    }
+    if (assetType === EVM_TOKEN)
+      return getEvmAssetContractInfo(usedId, evmChain ?? undefined);
 
     if (isSolanaTokenIdentifier(usedId) && assetType === SOLANA_TOKEN) {
       return {
         address: getAddressFromSolanaIdentifier(usedId),
         location: SOLANA_CHAIN,
+      };
+    }
+
+    if (isHyperliquidTokenIdentifier(usedId) && assetType === HYPERLIQUID_TOKEN) {
+      return {
+        address: getAddressFromHyperliquidTokenIdentifier(usedId),
       };
     }
 

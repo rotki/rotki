@@ -8,6 +8,7 @@ import {
   isValidBtcTxHash,
   isValidEthAddress,
   isValidEvmTxHash,
+  isValidHyperliquidTokenAddress,
   isValidSolanaAddress,
   isValidSolanaSignature,
   isValidTxHashOrSignature,
@@ -18,6 +19,7 @@ import {
   toSnakeCase,
   transformCase,
 } from '@rotki/common';
+import { HYPERLIQUID_TOKEN_ADDRESS } from '@test/utils/asset-test-data';
 import { describe, expect, it } from 'vitest';
 import { groupConsecutiveNumbers } from './text-utils';
 
@@ -97,6 +99,14 @@ describe('text-utils', () => {
     expect(isValidEthAddress('742d35Cc6634C0532925a3b844Bc9e7595f0bEbB')).toBe(false); // Missing 0x
     expect(isValidEthAddress('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEbBG')).toBe(false); // Invalid hex char
     expect(isValidEthAddress('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEbB0')).toBe(false); // Too long
+  });
+
+  it('should validate Hyperliquid Core token addresses', () => {
+    expect(isValidHyperliquidTokenAddress(HYPERLIQUID_TOKEN_ADDRESS)).toBe(true);
+    expect(isValidHyperliquidTokenAddress(HYPERLIQUID_TOKEN_ADDRESS.toUpperCase().replace('0X', '0x'))).toBe(true);
+    expect(isValidHyperliquidTokenAddress('0x6781b92b6ea5d8ed37d275eb201f64a')).toBe(false);
+    expect(isValidHyperliquidTokenAddress('0x6781b92b6ea5d8ed37d275eb201f64ag')).toBe(false);
+    expect(isValidHyperliquidTokenAddress()).toBe(false);
   });
 
   it('should validate Bitcoin addresses', () => {

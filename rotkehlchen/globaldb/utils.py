@@ -28,6 +28,7 @@ MIN_SUPPORTED_GLOBAL_DB_VERSION = 2
 GLOBAL_DB_ASSETS_BREAKING_VERSIONS = {
     9,  # v9 to v10 breaks asset collections schema
     12,  # v12 to v13 introduces solana tokens.
+    16,  # v16 to v17 introduces hyperliquid tokens.
 }
 # Some functions that split the logic out of some GlobalDB query functions that are
 # complicated enough to be abstracted and are used in multiple places. The main reason
