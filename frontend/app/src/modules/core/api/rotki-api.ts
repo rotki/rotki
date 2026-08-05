@@ -6,7 +6,7 @@ import { apiUrls, defaultApiUrls } from '@/modules/core/api/api-urls';
 import { DEFAULT_TIMEOUT } from '@/modules/core/api/constants';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { RequestQueue } from '@/modules/core/api/request-queue/queue';
-import { RequestPriority } from '@/modules/core/api/request-queue/request-priority';
+import { defaultPriorityFor } from '@/modules/core/api/request-queue/request-priority';
 import { transformRequestBody, transformRequestQuery } from '@/modules/core/api/request-transformers';
 import { createResponseParser, createStatusError, tryParseJson } from '@/modules/core/api/response-handlers';
 import { queryTransformer } from '@/modules/core/api/transformers';
@@ -165,7 +165,7 @@ export class RotkiApi {
 
     return queue.enqueue<T>(url, {
       ...restOptions,
-      priority: priority ?? RequestPriority.NORMAL,
+      priority: priority ?? defaultPriorityFor(restOptions.method),
       tags,
       dedupe,
       maxQueueTime,
