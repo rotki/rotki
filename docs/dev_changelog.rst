@@ -22,6 +22,11 @@ When rotki is set up with the ``ROTKI_SESSION_KEY`` environment variable (the Do
   - Issues an MCP-only bearer linked to the authenticated active session for the streamable HTTP transport exposed by Docker at ``/mcp``. It cannot be used as a REST API session cookie.
   - The MCP server validates the bearer token before protocol handling and checks the durable active-session record, so logout and session takeover revoke MCP access.
 
+* **New Endpoint**: ``GET /api/(version)/session/validate``
+
+  - Returns ``true`` when the caller holds a valid, currently active session **cookie**, and ``401`` otherwise. Intended as an authorization subrequest: the Docker proxy forwards a caller's cookie here and only then dispatches a control operation, since core alone knows whether a newer login has retired that session.
+  - An internal MCP bearer is rejected here even though it authorizes ordinary data routes, so MCP access never confers backend control.
+
 Spam Token Endpoint Renamed
 ----------------------------
 

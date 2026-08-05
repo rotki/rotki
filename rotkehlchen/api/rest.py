@@ -1263,6 +1263,33 @@ class RestAPI:
         response.headers['Pragma'] = 'no-cache'
         return response
 
+    @staticmethod
+    def validate_session() -> Response:
+        """Answer whether the caller holds a valid, currently active session cookie.
+
+        This is the authorization subrequest behind starling's `/_control`: the proxy
+        forwards the caller's cookie here and only dispatches the control RPC on a 200.
+        Core is asked rather than starling deciding for itself because only core knows
+        `active_session_id` — a signature check could prove "signed and unexpired" but
+        not that a newer login has since kicked this session (#3156).
+
+        The cookie gate in `APIServer.before_request_callback` has already run (this
+        rule is deliberately absent from `_cookie_less_rules`), so reaching the handler
+        means *some* credential passed. `rotki_session_exp` narrows that to the cookie
+        path specifically: it is set only when a cookie authenticated the request, never
+        on the internal MCP-bearer path. An MCP client must not be able to restart the
+        backend just because it may read data.
+        """
+        if getattr(g, 'rotki_session_exp', None) is None:
+            return api_response(
+                wrap_in_fail_result('Authentication required'),
+                status_code=HTTPStatus.UNAUTHORIZED,
+            )
+
+        response = api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+
     @async_api_call(session_token=True)
     @login_lock()
     def create_new_user(
