@@ -33,7 +33,7 @@ class FrankencoinSavingsBalances(ProtocolWithBalance):
         super().__init__(
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
-            counterparty=CPT_FRANKENCOIN,  # type: ignore[arg-type]
+            counterparty=CPT_FRANKENCOIN,
             deposit_event_types={
                 (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
             },

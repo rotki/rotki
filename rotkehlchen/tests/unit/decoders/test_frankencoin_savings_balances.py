@@ -1,11 +1,27 @@
 from unittest.mock import MagicMock
 
+import pytest
+
+from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.evm.decoding.frankencoin.savings.balances import (
     FrankencoinSavingsBalances,
+)
+from rotkehlchen.chain.evm.decoding.frankencoin.savings.constants import (
+    SAVINGS_CONTRACT_ADDRESS,
 )
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.types import ChainID
+
+
+@pytest.mark.parametrize('chain_id', SAVINGS_CONTRACT_ADDRESS)
+def test_frankencoin_savings_balances_registration(chain_id):
+    assert FrankencoinSavingsBalances in CHAIN_TO_BALANCE_PROTOCOLS[chain_id]
+
+
+def test_frankencoin_savings_balances_not_registered_on_avalanche():
+    assert FrankencoinSavingsBalances not in CHAIN_TO_BALANCE_PROTOCOLS.get(ChainID.AVALANCHE, ())
 
 
 def _make_balances_module(addresses):
