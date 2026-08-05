@@ -11,6 +11,8 @@ minimumReleaseAgeExclude:
   - app-builder-lib@26.15.3
   - electron-builder-squirrel-windows@26.15.3
   - electron-publish@26.15.3
+  # Renovate security update: postcss@8.5.23
+  - postcss@8.5.23
 saveExact: true
 shamefullyHoist: true
 shellEmulator: true
@@ -102,7 +104,7 @@ catalog:
   ofetch: 1.5.1
   pinia: 4.0.2
   plainfp: 0.1.1
-  postcss: 8.5.18
+  postcss: 8.5.23
   postcss-html: 1.8.1
   qrcode: 1.5.4
   rimraf: 6.1.3
