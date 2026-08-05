@@ -1515,6 +1515,11 @@ class MCPTokenResource(BaseMethodView):
         return self.rest_api.issue_mcp_token()
 
 
+class SessionValidateResource(BaseMethodView):
+    def get(self) -> Response:
+        return self.rest_api.validate_session()
+
+
 class UserPasswordChangeResource(BaseMethodView):
     patch_schema = UserPasswordChangeSchema
 

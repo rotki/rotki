@@ -226,6 +226,54 @@ def test_cookie_gate(rotkehlchen_api_server: APIServer, username: str) -> None:
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_session_validate(rotkehlchen_api_server: APIServer, username: str) -> None:
+    """The control authorization subrequest answers only for a live *cookie* session.
+
+    starling's `/_control` dispatches on a 200 here, so every way of holding a
+    credential that must not confer control has to come back 401: no cookie, a cookie
+    whose sid a newer login retired, and an internal MCP bearer (which is otherwise
+    good enough to read data).
+    """
+    store = _enable_session(rotkehlchen_api_server)
+    validate_url = api_url_for(rotkehlchen_api_server, 'sessionvalidateresource')
+    settings_url = api_url_for(rotkehlchen_api_server, 'settingsresource')
+    try:
+        assert_error_response(
+            response=requests.get(validate_url),
+            status_code=HTTPStatus.UNAUTHORIZED,
+        )
+
+        session = requests.Session()
+        session.cookies.set(SESSION_COOKIE_NAME, store.login(username))
+        response = session.get(validate_url)
+        assert assert_proper_sync_response_with_result(response) is True
+        assert response.headers['Cache-Control'] == 'no-store'
+
+        # an MCP bearer reads data fine but must never authorize control
+        token_url = api_url_for(rotkehlchen_api_server, 'mcptokenresource')
+        token = assert_proper_sync_response_with_result(session.post(token_url))['access_token']
+        internal_headers = {
+            'Authorization': f'Bearer {token}',
+            MCP_BACKEND_PROOF_HEADER: create_mcp_backend_proof(key=SESSION_KEY, token=token),
+        }
+        assert requests.get(settings_url, headers=internal_headers).status_code == HTTPStatus.OK
+        assert_error_response(
+            response=requests.get(validate_url, headers=internal_headers),
+            status_code=HTTPStatus.UNAUTHORIZED,
+        )
+
+        # a newer login retires the old sid, so the stale cookie loses control
+        stale_cookies = {SESSION_COOKIE_NAME: session.cookies[SESSION_COOKIE_NAME]}
+        store.login(username)
+        assert_error_response(
+            response=requests.get(validate_url, cookies=stale_cookies),
+            status_code=HTTPStatus.UNAUTHORIZED,
+        )
+    finally:
+        _disable_session(rotkehlchen_api_server)
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_issue_mcp_bearer_token(
         rotkehlchen_api_server: APIServer,
         username: str,
