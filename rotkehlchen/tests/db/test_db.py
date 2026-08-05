@@ -1259,6 +1259,38 @@ def test_get_netvalue_without_nfts(data_dir, username, sql_vm_instructions_cb):
     data.logout()
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_get_netvalue_without_nfts_uses_exact_prefix(
+        data_dir,
+        username,
+        sql_vm_instructions_cb,
+):
+    """Assets which only match the old SQL LIKE wildcard pattern are not NFTs."""
+    data = DataHandler(data_dir, MessagesAggregator(), sql_vm_instructions_cb)
+    data.unlock(username, '123', create_new=True, resume_from_backup=False)
+    with data.db.user_write() as write_cursor:
+        write_cursor.execute('INSERT INTO assets(identifier) VALUES(?)', ('AnftXfoo',))
+        write_cursor.execute(
+            'INSERT INTO timed_balances(category, timestamp, currency, amount, usd_value) '
+            'VALUES(?, ?, ?, ?, ?)',
+            (
+                BalanceType.ASSET.serialize_for_db(),  # pylint: disable=no-member
+                (timestamp := Timestamp(1488326400)),
+                'AnftXfoo',
+                '1',
+                '250',
+            ),
+        )
+        data.db.add_multiple_location_data(write_cursor, [LocationData(
+            time=timestamp,
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+            usd_value='250',
+        )])
+
+    assert data.db.get_netvalue_data(timestamp, include_nfts=False) == ([timestamp], ['250'])
+    data.logout()
+
+
 def test_get_netvalue_data_with_ignored_assets(data_dir, username, sql_vm_instructions_cb):
     """Test that ignored assets are subtracted from the stored snapshot totals at query time.
 

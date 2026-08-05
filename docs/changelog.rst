@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :bug:`12764` Ignored assets should now be ignored from the snapshot values shown in the dashboard. 
+* :bug:`12764` Ignored assets should now be ignored from the snapshot values shown in the dashboard.
 * :feature:`12735` KittenSwap swaps on HyperEVM are now properly decoded.
 * :feature:`12735` Project X swaps and liquidity position activity on HyperEVM are now properly decoded.
 * :feature:`-` Filtering the assets in the asset manager now uses the same filter bar as history events and blockchain accounts: each filter is a pill showing what it filters, chains and asset types are picked from a list rather than typed, and typing in the bar narrows across every filter at once. The status dropdown that sat beside the bar is gone: showing only owned or only whitelisted assets, and showing or hiding ignored ones, are now pills in the same bar, so there is one place to filter from. A saved link to a filtered asset manager still works unchanged.
