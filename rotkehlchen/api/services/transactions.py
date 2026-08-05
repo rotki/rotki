@@ -691,6 +691,84 @@ class TransactionsService:
             'status_code': HTTPStatus.OK,
         }
 
+    def get_latest_transaction_timestamps(self) -> dict[str, Any]:
+        """Return the latest raw transaction timestamp per chain and tracked address."""
+        result: dict[str, dict[str, Any]] = {
+            chain.serialize(): {'latest_timestamp': 0, 'addresses': {}}
+            for chain in CHAINS_WITH_TRANSACTIONS
+        }
+        evm_chains = {
+            chain.to_chain_id().serialize_for_db(): chain.serialize()
+            for chain in EVM_CHAINS_WITH_TRANSACTIONS
+        }
+        bitcoin_chains = {
+            Location.BITCOIN.serialize_for_db(): SupportedBlockchain.BITCOIN.serialize(),
+            Location.BITCOIN_CASH.serialize_for_db(): SupportedBlockchain.BITCOIN_CASH.serialize(),
+        }
+
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            for chain_id, timestamp in cursor.execute(
+                    'SELECT chain_id, MAX(timestamp) FROM evm_transactions GROUP BY chain_id',
+            ):
+                if (chain := evm_chains.get(chain_id)) is not None:
+                    result[chain]['latest_timestamp'] = timestamp
+
+            for chain_id, address, timestamp in cursor.execute(
+                    'SELECT T.chain_id, M.address, MAX(T.timestamp) '
+                    'FROM evmtx_address_mappings AS M INNER JOIN evm_transactions AS T '
+                    'ON T.identifier=M.tx_id GROUP BY T.chain_id, M.address',
+            ):
+                if (chain := evm_chains.get(chain_id)) is not None:
+                    addresses = result[chain]['addresses']
+                    addresses[address] = timestamp
+
+            result[SupportedBlockchain.ZKSYNC_LITE.serialize()]['latest_timestamp'] = (
+                cursor.execute(
+                    'SELECT MAX(timestamp) FROM zksynclite_transactions',
+                ).fetchone()[0] or 0
+            )
+            for address, timestamp in cursor.execute(
+                    'SELECT account, MAX(timestamp) FROM ('
+                    'SELECT A.account, T.timestamp FROM blockchain_accounts AS A '
+                    'INNER JOIN zksynclite_transactions AS T ON T.from_address=A.account '
+                    'WHERE A.blockchain=? UNION ALL '
+                    'SELECT A.account, T.timestamp FROM blockchain_accounts AS A '
+                    'INNER JOIN zksynclite_transactions AS T ON T.to_address=A.account '
+                    'WHERE A.blockchain=?) GROUP BY account',
+                    (SupportedBlockchain.ZKSYNC_LITE.value, SupportedBlockchain.ZKSYNC_LITE.value),
+            ):
+                addresses = result[SupportedBlockchain.ZKSYNC_LITE.serialize()]['addresses']
+                addresses[address] = timestamp
+
+            solana = SupportedBlockchain.SOLANA.serialize()
+            result[solana]['latest_timestamp'] = cursor.execute(
+                'SELECT MAX(block_time) FROM solana_transactions',
+            ).fetchone()[0] or 0
+            for address, timestamp in cursor.execute(
+                    'SELECT M.address, MAX(T.block_time) FROM solanatx_address_mappings AS M '
+                    'INNER JOIN solana_transactions AS T ON T.identifier=M.tx_id '
+                    'GROUP BY M.address',
+            ):
+                addresses = result[solana]['addresses']
+                addresses[address] = timestamp
+
+            for location, timestamp in cursor.execute(
+                    'SELECT location, MAX(timestamp) FROM bitcoin_transactions GROUP BY location',
+            ):
+                if (chain := bitcoin_chains.get(location)) is not None:
+                    result[chain]['latest_timestamp'] = timestamp
+
+            for location, address, timestamp in cursor.execute(
+                    'SELECT T.location, M.address, MAX(T.timestamp) '
+                    'FROM bitcointx_address_mappings AS M INNER JOIN bitcoin_transactions AS T '
+                    'ON T.identifier=M.tx_id GROUP BY T.location, M.address',
+            ):
+                if (chain := bitcoin_chains.get(location)) is not None:
+                    addresses = result[chain]['addresses']
+                    addresses[address] = timestamp
+
+        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+
     def get_count_transactions_not_decoded(self) -> dict[str, Any]:
         tx_info: dict[str, dict[str, int]] = defaultdict(dict)
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)

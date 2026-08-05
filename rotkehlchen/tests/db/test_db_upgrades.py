@@ -4593,6 +4593,14 @@ def test_upgrade_db_52_to_53(
             'idx_data_issues_state',
             'idx_data_issues_kind_state',
             'idx_data_issues_location_label_asset',
+            'idx_evm_transactions_chain_timestamp',
+            'idx_evmtx_address_mappings_address',
+            'idx_zksynclite_transactions_from_timestamp',
+            'idx_zksynclite_transactions_to_timestamp',
+            'idx_solana_transactions_block_time',
+            'idx_solanatx_address_mappings_address',
+            'idx_bitcoin_transactions_location_timestamp',
+            'idx_bitcointx_address_mappings_address',
         ):
             assert index_exists(cursor=cursor, name=index_name)
 

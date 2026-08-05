@@ -378,6 +378,27 @@ CREATE TABLE IF NOT EXISTS bitcoin_tx_mappings (
             'CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_io_address ON bitcoin_tx_io(address);',
         )
 
+    @progress_step(description='Index raw transaction timestamps and address mappings.')
+    def _create_transaction_timestamp_indexes(write_cursor: DBCursor) -> None:
+        write_cursor.executescript("""
+CREATE INDEX IF NOT EXISTS idx_evm_transactions_chain_timestamp
+ON evm_transactions(chain_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_evmtx_address_mappings_address
+ON evmtx_address_mappings(address, tx_id);
+CREATE INDEX IF NOT EXISTS idx_zksynclite_transactions_from_timestamp
+ON zksynclite_transactions(from_address, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_zksynclite_transactions_to_timestamp
+ON zksynclite_transactions(to_address, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_solana_transactions_block_time
+ON solana_transactions(block_time DESC);
+CREATE INDEX IF NOT EXISTS idx_solanatx_address_mappings_address
+ON solanatx_address_mappings(address, tx_id);
+CREATE INDEX IF NOT EXISTS idx_bitcoin_transactions_location_timestamp
+ON bitcoin_transactions(location, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_bitcointx_address_mappings_address
+ON bitcointx_address_mappings(address, tx_id);
+""")
+
     @progress_step(description='Turn bitcoin events into chain events.')
     def _migrate_bitcoin_events(write_cursor: DBCursor) -> None:
         """Bitcoin events were plain history events that identified their transaction only by
