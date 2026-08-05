@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common';
 import { useAssets } from '@/modules/assets/use-assets';
-import { useLogout } from '@/modules/auth/use-logout';
 import { DialogType } from '@/modules/core/common/dialogs';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
-import { useBackendConnection } from '@/modules/shell/app/use-backend-connection';
-import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
+import { useBackendReload } from '@/modules/shell/app/use-backend-reload';
 import ListItem from '@/modules/shell/components/ListItem.vue';
 import { ActivityPart } from '@/modules/task-center/core/types';
 import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
@@ -19,12 +16,8 @@ const { dropdown = false } = defineProps<{
 type ResetType = 'soft' | 'hard';
 
 const { notify } = useNotificationDispatcher();
-const { setConnected } = useMainStore();
-const { connect } = useBackendConnection();
-const { logout } = useLogout();
 const { restoreAssetsDatabase } = useAssets();
-
-const { restartBackend } = useBackendManagement();
+const { reload } = useBackendReload();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -56,12 +49,7 @@ async function restoreAssets(resetType: ResetType) {
 }
 
 async function updateComplete() {
-  // Restart first: it is already a logout (core settles the user DB on its
-  // graceful shutdown), and it needs the session that logging out would revoke.
-  setConnected(false);
-  await restartBackend();
-  await logout(true, { skipBackendCall: true });
-  await connect();
+  await reload();
 }
 
 const { show } = useConfirmStore();

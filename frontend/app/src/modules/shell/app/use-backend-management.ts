@@ -2,6 +2,7 @@ import type { BackendOptions } from '@shared/ipc';
 import type { LogLevel } from '@shared/log-level';
 import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import { deleteBackendUrl, getBackendUrl } from '@/modules/auth/account-management';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { getDefaultLogLevel, logger, setLevel } from '@/modules/core/common/logging/logging';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useControl } from '@/modules/core/control/use-control';
@@ -9,6 +10,28 @@ import { clearUserOptions, loadUserOptions, saveUserOptions } from '@/modules/sh
 import { useBackendConnection } from '@/modules/shell/app/use-backend-connection';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useWebsocketConnection } from '@/modules/shell/app/use-websocket-connection';
+
+/**
+ * What a restart request actually did, so a caller reporting an outcome can tell the
+ * difference between the three.
+ *
+ * `unavailable` is not a failure: the plain web build serves no control endpoint, so
+ * there is nothing to restart and never was. Reporting it as an error would turn that
+ * deployment's normal state into one.
+ */
+export const BackendRestartStatus = {
+  failed: 'failed',
+  restarted: 'restarted',
+  unavailable: 'unavailable',
+} as const;
+
+export type BackendRestartStatus = (typeof BackendRestartStatus)[keyof typeof BackendRestartStatus];
+
+export interface BackendRestartResult {
+  status: BackendRestartStatus;
+  /** The supervisor's own message. Only set on `failed`, for display. */
+  message?: string;
+}
 
 interface UseBackendManagementReturn {
   applyUserOptions: (config: Partial<BackendOptions>, skipRestart: boolean) => Promise<void>;
@@ -19,7 +42,7 @@ interface UseBackendManagementReturn {
   fileConfig: DeepReadonly<Ref<Partial<BackendOptions>>>;
   saveOptions: (opts: Partial<BackendOptions>) => Promise<void>;
   resetOptions: () => Promise<void>;
-  restartBackend: (forceRestart?: boolean) => Promise<void>;
+  restartBackend: (forceRestart?: boolean) => Promise<BackendRestartResult>;
   resetSessionBackend: () => Promise<void>;
   setupBackend: () => Promise<void>;
   backendChanged: (url: string | null) => Promise<void>;
@@ -96,11 +119,30 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
     await restartBackendWithOptions(get(options), true);
   };
 
-  const restartBackend = async (forceRestart = false): Promise<void> => {
+  /**
+   * Restart the backend on whichever runtime this is, and say what happened.
+   *
+   * The runtime is the caller's business only in that it decides whether a restart is
+   * possible at all: Electron drives its managed process, Docker goes through
+   * `/_control`, and the plain web build has neither. Callers get one contract for all
+   * three.
+   *
+   * A failure is reported rather than thrown. Every caller follows a restart with a
+   * reconnect and some session settling, so throwing would strand the UI mid-sequence -
+   * but swallowing it, as this did, let a flow report success after a restart that never
+   * happened, leaving the backend holding data it was supposed to reload.
+   */
+  const restartBackend = async (forceRestart = false): Promise<BackendRestartResult> => {
     if (interop.isPackaged) {
       await load();
-      await restartBackendWithOptions(get(options), forceRestart);
-      return;
+      try {
+        await restartBackendWithOptions(get(options), forceRestart);
+      }
+      catch (error: unknown) {
+        logger.error(error);
+        return { message: getErrorMessage(error), status: BackendRestartStatus.failed };
+      }
+      return { status: BackendRestartStatus.restarted };
     }
 
     // Docker: no Electron to ask, but starling exposes the same `restart` over
@@ -110,22 +152,23 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
     // — silently did nothing in a container. `available` is false where there is
     // no control endpoint, which keeps the old no-op for the plain web build.
     if (!await controlProbe())
-      return;
+      return { status: BackendRestartStatus.unavailable };
 
     setConnected(false);
+    let result: BackendRestartResult = { status: BackendRestartStatus.restarted };
     try {
       await controlRestart();
     }
     catch (error: unknown) {
-      // Never propagate: callers treat a restart as a step in a longer sequence
-      // and follow it with a reconnect, so throwing here would strand the UI
-      // mid-flow. The common cause is a caller that logged out first, which
-      // revokes the cookie the control endpoint authorises against.
       logger.error(error);
+      result = { message: getErrorMessage(error), status: BackendRestartStatus.failed };
     }
+    // Reconnect either way. A refused restart leaves the backend up and serving, so
+    // staying disconnected would break an app that has nothing wrong with it.
     set(connectionEnabled, true);
     setWsConnectionEnabled(true);
     connect();
+    return result;
   };
 
   const resetSessionBackend = async (): Promise<void> => {
