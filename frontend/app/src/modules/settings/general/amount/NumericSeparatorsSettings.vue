@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
+import { startPromise } from '@shared/utils';
 import { useForm } from '@/modules/core/form/use-form';
 import { numericSeparatorsSchema, type NumericSeparatorsState } from '@/modules/settings/general/amount/numeric-separators';
+import { useSettingsWriter } from '@/modules/settings/settings-writer';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
-import { useSettingModel } from '@/modules/settings/use-setting-model';
+import { useSetting } from '@/modules/settings/use-setting';
+
+/** Matches the debounce the shared text setting controls persist with. */
+const PERSIST_DEBOUNCE = 1500;
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { error: thousandWriteError, model: thousandModel, success: thousandWriteSuccess } = useSettingModel('thousandSeparator', { debounce: 1500 });
-const { error: decimalWriteError, model: decimalModel, success: decimalWriteSuccess } = useSettingModel('decimalSeparator', { debounce: 1500 });
+const { writeMany } = useSettingsWriter();
+const thousandSource = useSetting('thousandSeparator');
+const decimalSource = useSetting('decimalSeparator');
 const { clearAll: clearThousandMessages, error: thousandError, setError: setThousandError, setSuccess: setThousandSuccess, success: thousandSuccess } = useClearableMessages();
 const { clearAll: clearDecimalMessages, error: decimalError, setError: setDecimalError, setSuccess: setDecimalSuccess, success: decimalSuccess } = useClearableMessages();
 
@@ -28,20 +34,54 @@ const schema = computed<ZodType>(() => numericSeparatorsSchema({
 }));
 
 /**
- * One form for both separators. Submitting writes both models: the pair only persists when it
- * parses as a pair, which is what stops a rejected draft of one field from being the value the
- * other is compared against. The write of the unchanged field is a no-op in `useSettingModel`.
+ * One form for both separators: the pair only persists when it parses as a pair, which is what stops
+ * a rejected draft of one field from being the value the other is compared against. Persistence is
+ * driven from the input handlers rather than `submit`, so the write can be debounced without the
+ * form and the writer having to reference each other.
  */
 const form = useForm<NumericSeparatorsState, NumericSeparatorsState>({
-  initial: (): NumericSeparatorsState => ({ decimal: get(decimalModel), thousand: get(thousandModel) }),
+  initial: (): NumericSeparatorsState => ({ decimal: get(decimalSource), thousand: get(thousandSource) }),
   schema,
-  submit: async (payload: NumericSeparatorsState): Promise<{ success: boolean }> => {
-    set(thousandModel, payload.thousand);
-    set(decimalModel, payload.decimal);
-    return Promise.resolve({ success: true });
-  },
+  // Unused: `submitPair` below owns the write so it can be debounced. The core requires a submit.
+  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
   transform: (state): NumericSeparatorsState => ({ decimal: state.decimal, thousand: state.thousand }),
 });
+
+/**
+ * Persists the pair in ONE patch. Two independent writes cannot be used here: each snapshots the
+ * whole frontend-settings blob before its request and merges only its own key, so two in flight at
+ * once both send the other key's pre-edit value and the later response wins. Swapping the separators
+ * that way put two identical characters on the backend while the merged local repo looked correct.
+ */
+async function persist(state: NumericSeparatorsState): Promise<void> {
+  if (state.thousand === get(thousandSource) && state.decimal === get(decimalSource))
+    return;
+
+  const status = await writeMany({
+    decimalSeparator: state.decimal,
+    thousandSeparator: state.thousand,
+  });
+
+  if (status.success) {
+    setThousandSuccess(thousandsSuccessMessage(state.thousand), true);
+    setDecimalSuccess(decimalsSuccessMessage(state.decimal), true);
+    return;
+  }
+
+  // Keep the fields showing what is stored rather than a pair that was rejected.
+  form.state.thousand = get(thousandSource);
+  form.state.decimal = get(decimalSource);
+  setThousandError(`${t('general_settings.validation.thousand_separator.error')}: ${status.message ?? ''}`, true);
+  setDecimalError(`${t('general_settings.validation.decimal_separator.error')}: ${status.message ?? ''}`, true);
+}
+
+const schedulePersist = useDebounceFn(persist, PERSIST_DEBOUNCE);
+
+/** Reveals the pair's errors and schedules the write only when it parses, as `callIfValid` did. */
+function submitPair(): void {
+  if (form.validate())
+    startPromise(schedulePersist({ decimal: form.state.decimal, thousand: form.state.thousand }));
+}
 
 function thousandsSuccessMessage(thousandSeparator: string): string {
   return t('general_settings.validation.thousand_separator.success', {
@@ -55,47 +95,27 @@ function decimalsSuccessMessage(decimalSeparator: string): string {
   });
 }
 
-async function onThousandInput(value: string): Promise<void> {
+function onThousandInput(value: string): void {
   clearThousandMessages();
   form.state.thousand = value;
-  await form.submit();
+  submitPair();
 }
 
-async function onDecimalInput(value: string): Promise<void> {
+function onDecimalInput(value: string): void {
   clearDecimalMessages();
   form.state.decimal = value;
-  await form.submit();
+  submitPair();
 }
 
 // Reflect external changes into the fields, but ignore the echo of our own writes (same string).
-watch(thousandModel, (value) => {
+watch(thousandSource, (value) => {
   if (value !== form.state.thousand)
     form.state.thousand = value;
 });
 
-watch(decimalModel, (value) => {
+watch(decimalSource, (value) => {
   if (value !== form.state.decimal)
     form.state.decimal = value;
-});
-
-watch(thousandWriteSuccess, (saved) => {
-  if (saved)
-    setThousandSuccess(thousandsSuccessMessage(get(thousandModel)), true);
-});
-
-watch(thousandWriteError, (message) => {
-  if (message)
-    setThousandError(`${t('general_settings.validation.thousand_separator.error')}: ${message}`, true);
-});
-
-watch(decimalWriteSuccess, (saved) => {
-  if (saved)
-    setDecimalSuccess(decimalsSuccessMessage(get(decimalModel)), true);
-});
-
-watch(decimalWriteError, (message) => {
-  if (message)
-    setDecimalError(`${t('general_settings.validation.decimal_separator.error')}: ${message}`, true);
 });
 </script>
 
