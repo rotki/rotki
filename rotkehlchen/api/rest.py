@@ -2526,6 +2526,10 @@ class RestAPI:
         return self.transactions_service.get_evm_transactions_status()
 
     @async_api_call()
+    def get_latest_transaction_timestamps(self) -> dict[str, Any]:
+        return self.transactions_service.get_latest_transaction_timestamps()
+
+    @async_api_call()
     def lookup_evm_transaction(
             self,
             tx_hash: EVMTxHash,

@@ -3,15 +3,22 @@ import {
   type AssetBalance,
   type AssetInfoWithId,
   getAddressFromEvmIdentifier,
+  getAddressFromHyperliquidTokenIdentifier,
   getAddressFromSolanaIdentifier,
   getTextToken,
   isEvmIdentifier,
+  isHyperliquidTokenIdentifier,
   isSolanaTokenIdentifier,
   isValidEthAddress,
+  isValidHyperliquidTokenAddress,
   isValidSolanaAddress,
   type Nullable,
 } from '@rotki/common';
-import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
+import {
+  type AssetsWithId,
+  EVM_TOKEN,
+  NON_EVM_CHAIN_ASSET_TYPES,
+} from '@/modules/assets/types';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { getAssetNameFallback } from '@/modules/assets/use-resolve-asset-identifier';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
@@ -42,7 +49,14 @@ export function hasAssetMetadata(identifier: string, value?: Nullable<string>): 
 export function assetDisplayLabel(identifier: string, symbol?: Nullable<string>): string {
   if (hasAssetMetadata(identifier, symbol))
     return symbol!.trim();
-  return truncateAddress(getAddressFromEvmIdentifier(identifier) || identifier, 4);
+
+  let label = identifier;
+  if (isEvmIdentifier(identifier))
+    label = getAddressFromEvmIdentifier(identifier);
+  else if (isHyperliquidTokenIdentifier(identifier))
+    label = getAddressFromHyperliquidTokenIdentifier(identifier);
+
+  return truncateAddress(label, 4);
 }
 
 /**
@@ -63,7 +77,7 @@ interface ParsedAssetKeyword {
 
 /**
  * Parses an asset search keyword to extract value and address.
- * Handles EVM identifiers, Solana addresses, and Ethereum addresses.
+ * Handles EVM, Solana, and Hyperliquid Core identifiers and addresses.
  */
 export function parseAssetSearchKeyword(keyword: string): ParsedAssetKeyword {
   if (isEvmIdentifier(keyword)) {
@@ -80,7 +94,18 @@ export function parseAssetSearchKeyword(keyword: string): ParsedAssetKeyword {
     };
   }
 
-  if (isValidEthAddress(keyword) || isValidSolanaAddress(keyword)) {
+  if (isHyperliquidTokenIdentifier(keyword)) {
+    return {
+      address: getAddressFromHyperliquidTokenIdentifier(keyword),
+      value: '',
+    };
+  }
+
+  if (
+    isValidEthAddress(keyword)
+    || isValidHyperliquidTokenAddress(keyword)
+    || isValidSolanaAddress(keyword)
+  ) {
     return {
       address: keyword,
       value: '',
@@ -103,6 +128,9 @@ export function getSanitizedChain(
     return undefined;
   }
 
+  if (NON_EVM_CHAIN_ASSET_TYPES[chain])
+    return chain;
+
   const matchedChain = matchChain(chain);
   if (!matchedChain) {
     return undefined;
@@ -115,15 +143,11 @@ export function getSanitizedChain(
  * Gets asset search parameters based on chain type.
  */
 export function getAssetSearchTypeParams(usedChain: string | undefined): { assetType?: string; evmChain?: string } {
-  let assetType: string | undefined;
-  if (usedChain === SOLANA_CHAIN)
-    assetType = SOLANA_TOKEN;
-  else if (usedChain)
-    assetType = EVM_TOKEN;
+  const nonEvmAssetType = usedChain ? NON_EVM_CHAIN_ASSET_TYPES[usedChain] : undefined;
 
   return {
-    assetType,
-    evmChain: usedChain === SOLANA_CHAIN ? undefined : usedChain,
+    assetType: nonEvmAssetType ?? (usedChain ? EVM_TOKEN : undefined),
+    evmChain: nonEvmAssetType ? undefined : usedChain,
   };
 }
 

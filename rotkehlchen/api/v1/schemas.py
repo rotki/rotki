@@ -45,6 +45,7 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.ens.utils import is_valid_ens_name
 from rotkehlchen.chain.evm.types import EvmIndexer, SerializableChainIndexerOrder
+from rotkehlchen.chain.hyperliquid.validation import is_valid_hyperliquid_token_address
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
 from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
@@ -2850,14 +2851,17 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        if (address := data['address']) is not None and not is_valid_solana_address(address):
-            try:
-                address = to_checksum_address(data['address'])
-            except (ValueError, TypeError) as e:
-                raise ValidationError(
-                    message=f'Given value {address} is not a valid EVM or Solana address',
-                    field_name='address',
-                ) from e
+        if (address := data['address']) is not None:
+            if is_valid_hyperliquid_token_address(address):
+                address = address.lower()
+            elif not is_valid_solana_address(address):
+                try:
+                    address = to_checksum_address(address)
+                except (ValueError, TypeError) as e:
+                    raise ValidationError(
+                        message=f'Given value {address} is not a valid EVM, Solana, or Hyperliquid Core token address',  # noqa: E501
+                        field_name='address',
+                    ) from e
 
         filter_query = AssetsFilterQuery.make(
             and_op=True,
@@ -2924,14 +2928,17 @@ class AssetsSearchLevenshteinSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        if (address := data['address']) is not None and not is_valid_solana_address(address):
-            try:
-                address = deserialize_evm_address(address)
-            except DeserializationError as e:
-                raise ValidationError(
-                    message=f'Given value {address} is not a valid EVM or Solana address',
-                    field_name='address',
-                ) from e
+        if (address := data['address']) is not None:
+            if is_valid_hyperliquid_token_address(address):
+                address = address.lower()
+            elif not is_valid_solana_address(address):
+                try:
+                    address = deserialize_evm_address(address)
+                except DeserializationError as e:
+                    raise ValidationError(
+                        message=f'Given value {address} is not a valid EVM, Solana, or Hyperliquid Core token address',  # noqa: E501
+                        field_name='address',
+                    ) from e
 
         filter_query = LevenshteinFilterQuery.make(
             and_op=True,

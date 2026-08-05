@@ -164,8 +164,8 @@ export interface DevEnvironmentOptions {
  * Bring the backend tree up for web mode. starling supervises core and colibri
  * and fronts both behind its own proxy, so there is no readiness polling here:
  * the `start` control request it is driven with resolves only once the whole
- * tree is up. In instance mode the reserved core/colibri ports are handed down
- * so the slot still owns them; starling's proxy port is probed from its default.
+ * tree is up. In instance mode every port starling binds — core, colibri, its
+ * own proxy and mcp — comes from the reserved slot, so the slot owns them all.
  */
 async function startBackendForMode(
   instance: InstanceRuntime | null,
@@ -180,6 +180,8 @@ async function startBackendForMode(
     dataDir: instance?.dir,
     corePort: instance ? instance.ports.restApi : opts.webPort,
     colibriPort: instance ? instance.ports.colibri : opts.colibriPort,
+    proxyPort: instance ? instance.ports.starlingProxy : DEFAULT_PORTS.starlingProxy,
+    mcpPort: instance ? instance.ports.mcp : DEFAULT_PORTS.mcp,
     // An instance owns its slot outright; otherwise the defaults are only a
     // starting point and a busy port walks up, as it did before starling.
     strictPorts: instance !== null,
@@ -224,6 +226,8 @@ function instanceEnvForElectron(instance: InstanceRuntime | null): Record<string
   return {
     ROTKI_INSTANCE_CORE_PORT: String(instance.ports.restApi),
     ROTKI_INSTANCE_COLIBRI_PORT: String(instance.ports.colibri),
+    ROTKI_INSTANCE_PROXY_PORT: String(instance.ports.starlingProxy),
+    ROTKI_INSTANCE_MCP_PORT: String(instance.ports.mcp),
     ROTKI_INSTANCE_DATA_DIR: instance.dir,
   };
 }

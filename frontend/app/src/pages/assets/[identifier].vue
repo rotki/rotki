@@ -156,7 +156,7 @@ function goToEdit(): void {
             :location="contractInfo.location"
             type="token"
             :text="contractInfo.address"
-            display-mode="link"
+            :display-mode="contractInfo.location ? 'link' : 'copy'"
             hide-text
             size="18"
             class="[&_a]:!p-2.5"

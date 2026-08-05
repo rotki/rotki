@@ -14,6 +14,7 @@ from rotkehlchen.assets.asset import (
     CryptoAsset,
     CustomAsset,
     EvmToken,
+    HyperliquidToken,
     Nft,
     SolanaToken,
     UnderlyingToken,
@@ -51,6 +52,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
+    HyperliquidTokenAddress,
     Location,
     LocationAssetMappingDeleteEntry,
     LocationAssetMappingUpdateEntry,
@@ -89,15 +91,16 @@ FROM assets LEFT JOIN common_asset_details on assets.identifier=common_asset_det
 LEFT JOIN evm_tokens ON evm_tokens.identifier=assets.identifier
 LEFT JOIN custom_assets ON custom_assets.identifier=assets.identifier
 LEFT JOIN solana_tokens ON solana_tokens.identifier=assets.identifier
+LEFT JOIN hyperliquid_tokens ON hyperliquid_tokens.identifier=assets.identifier
 """
 
 
 ALL_ASSETS_TABLES_QUERY = """
-SELECT assets.identifier, name, symbol, chain, assets.type, custom_assets.type, evm_tokens.address, solana_tokens.address """ + _ALL_ASSETS_TABLES_JOINS  # noqa: E501
+SELECT assets.identifier, name, symbol, chain, assets.type, custom_assets.type, evm_tokens.address, solana_tokens.address, hyperliquid_tokens.address """ + _ALL_ASSETS_TABLES_JOINS  # noqa: E501
 
 
 ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS = (
-    'SELECT assets.identifier, assets.name, common_asset_details.symbol, chain, assets.type, custom_assets.type, collection_id, asset_collections.name, asset_collections.symbol, asset_collections.main_asset, evm_tokens.protocol, common_asset_details.coingecko, common_asset_details.cryptocompare, solana_tokens.protocol' +  # noqa: E501
+    'SELECT assets.identifier, assets.name, common_asset_details.symbol, chain, assets.type, custom_assets.type, collection_id, asset_collections.name, asset_collections.symbol, asset_collections.main_asset, evm_tokens.protocol, common_asset_details.coingecko, common_asset_details.cryptocompare, solana_tokens.protocol, hyperliquid_tokens.address' +  # noqa: E501
     _ALL_ASSETS_TABLES_JOINS +
     'LEFT JOIN multiasset_mappings ON assets.identifier=multiasset_mappings.asset LEFT JOIN asset_collections ON multiasset_mappings.collection_id=asset_collections.id'  # noqa: E501
 )
@@ -293,6 +296,9 @@ class GlobalDBHandler:
                     elif asset.is_solana_token():
                         asset = cast('SolanaToken', asset)
                         GlobalDBHandler.add_solana_token_data(write_cursor, asset)
+                    elif asset.is_hyperliquid_token():
+                        asset = cast('HyperliquidToken', asset)
+                        GlobalDBHandler.add_hyperliquid_token_data(write_cursor, asset)
                     else:
                         asset = cast('CryptoAsset', asset)
 
@@ -336,8 +342,8 @@ class GlobalDBHandler:
         prepared_filter_query, bindings = filter_query.prepare(with_pagination=False)
         parent_query = """
         SELECT A.identifier AS identifier, A.type,
-        COALESCE(B.address, S.address) AS address,
-        COALESCE(B.decimals, S.decimals) AS decimals,
+        COALESCE(B.address, S.address, H.address) AS address,
+        COALESCE(B.decimals, S.decimals, H.decimals) AS decimals,
         A.name, C.symbol, C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare,
         COALESCE(B.protocol, S.protocol) AS protocol,
         B.chain,
@@ -348,6 +354,7 @@ class GlobalDBHandler:
         LEFT JOIN evm_tokens as B ON B.identifier = A.identifier
         LEFT JOIN custom_assets as D ON D.identifier = A.identifier
         LEFT JOIN solana_tokens as S ON S.identifier = A.identifier
+        LEFT JOIN hyperliquid_tokens as H ON H.identifier = A.identifier
         """
         query = f'SELECT * FROM ({parent_query}) {prepared_filter_query}'
         should_skip = filter_query.ignored_assets_handling.get_should_skip_handler()
@@ -401,6 +408,12 @@ class GlobalDBHandler:
                     data.update({
                         'protocol': entry[11],
                         'token_kind': TokenKind.deserialize_solana_from_db(entry[13]).serialize(),
+                        'address': entry[2],
+                        'decimals': entry[3],
+                    })
+                    data.update(common_data)
+                elif asset_type == AssetType.HYPERLIQUID_TOKEN:
+                    data.update({
                         'address': entry[2],
                         'decimals': entry[3],
                     })
@@ -600,6 +613,8 @@ class GlobalDBHandler:
                 query = 'SELECT decimals, protocol, address, token_kind, chain from evm_tokens WHERE identifier=?'  # noqa: E501
             elif asset_type == AssetType.SOLANA_TOKEN:
                 query = 'SELECT decimals, protocol, address, token_kind, NULL from solana_tokens WHERE identifier=?'  # noqa: E501
+            elif asset_type == AssetType.HYPERLIQUID_TOKEN:
+                query = 'SELECT decimals, NULL, address, NULL, NULL from hyperliquid_tokens WHERE identifier=?'  # noqa: E501
 
             if query is not None:
                 if (token_result := cursor.execute(query, (saved_identifier,)).fetchone()) is None:
@@ -611,7 +626,11 @@ class GlobalDBHandler:
 
                 decimals, protocol, address, token_kind_raw, chain_raw = token_result
                 chain_id = ChainID.deserialize_from_db(chain_raw) if chain_raw is not None else None  # noqa: E501
-                token_kind = TokenKind.deserialize_from_db(token_kind_raw)
+                token_kind = (
+                    TokenKind.deserialize_from_db(token_kind_raw)
+                    if token_kind_raw is not None
+                    else None
+                )
                 missing_basic_data = name is None or symbol is None or decimals is None
                 if missing_basic_data and form_with_incomplete_data is False:
                     log.debug(
@@ -1098,11 +1117,24 @@ class GlobalDBHandler:
         )
 
     @staticmethod
+    def add_hyperliquid_token_data(
+            write_cursor: DBCursor,
+            entry: HyperliquidToken,
+    ) -> None:
+        """Add Hyperliquid Core token-specific information to the global DB."""
+        GlobalDBHandler._add_token_data(
+            write_cursor=write_cursor,
+            query='INSERT INTO hyperliquid_tokens (identifier, decimals, address) VALUES (?,?,?)',
+            bindings=(entry.identifier, entry.decimals, entry.address),
+            token_type='hyperliquid',
+        )
+
+    @staticmethod
     def _add_token_data(
             write_cursor: DBCursor,
             query: str,
             bindings: tuple,
-            token_type: Literal['evm', 'solana'],
+            token_type: Literal['evm', 'solana', 'hyperliquid'],
             post_insert_callback: Callable | None = None,
     ) -> None:
         """Generic function to add token-specific data to the global DB"""
@@ -1191,11 +1223,24 @@ class GlobalDBHandler:
         )
 
     @staticmethod
+    def edit_hyperliquid_token(entry: HyperliquidToken) -> str:
+        """Edit a Hyperliquid Core token and clear its resolver cache entry."""
+        return GlobalDBHandler._edit_token(
+            entry=entry,
+            token_specific_update_callback=lambda write_cursor, token: write_cursor.execute(
+                'UPDATE hyperliquid_tokens SET address=?, decimals=? WHERE identifier=?',
+                (token.address, token.decimals, token.identifier),
+            ),
+            address=entry.address,
+            check_rowcount=True,
+        )
+
+    @staticmethod
     def _edit_token(
-            entry: SolanaToken | EvmToken,
+            entry: SolanaToken | EvmToken | HyperliquidToken,
             check_rowcount: bool,
             token_specific_update_callback: Callable,
-            address: SolanaAddress | ChecksumEvmAddress | None,
+            address: SolanaAddress | ChecksumEvmAddress | HyperliquidTokenAddress | None,
     ) -> str:
         """Generic token editing function that handles the common pattern."""
         try:
@@ -1272,6 +1317,10 @@ class GlobalDBHandler:
 
         if asset.is_solana_token():
             GlobalDBHandler.edit_solana_token(asset)   # type: ignore[arg-type]  # it is definitely a solana token
+            return
+
+        if asset.is_hyperliquid_token():
+            GlobalDBHandler.edit_hyperliquid_token(asset)  # type: ignore[arg-type]  # it is definitely a Hyperliquid token
             return
 
         details_update_query = 'UPDATE common_asset_details SET symbol=?, coingecko=?, cryptocompare=?'  # noqa: E501
@@ -1385,6 +1434,10 @@ class GlobalDBHandler:
         extra_check_evm = ''
         evm_query_list: list[int | str] = [evm_token_type, symbol]
         solana_query_list: list[int | str] = [AssetType.SOLANA_TOKEN.serialize_for_db(), symbol]
+        hyperliquid_query_list: list[int | str] = [
+            AssetType.HYPERLIQUID_TOKEN.serialize_for_db(),
+            symbol,
+        ]
         if chain_id is not None:
             extra_check_evm += ' AND B.chain=? '
             evm_query_list.append(chain_id.serialize_for_db())
@@ -1394,6 +1447,7 @@ class GlobalDBHandler:
             evm_token_type,
             AssetType.CUSTOM_ASSET.serialize_for_db(),
             AssetType.SOLANA_TOKEN.serialize_for_db(),
+            AssetType.HYPERLIQUID_TOKEN.serialize_for_db(),
             symbol,
         ]
         if asset_type is not None:
@@ -1405,14 +1459,20 @@ class GlobalDBHandler:
         ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND C.symbol = ? COLLATE NOCASE{extra_check_evm}
         UNION ALL
         SELECT A.identifier, A.type, null, null, A.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null, null, null, null, null from assets as A JOIN common_asset_details as B
-        ON B.identifier = A.identifier WHERE A.type NOT IN (?, ?, ?) AND B.symbol = ? COLLATE NOCASE{extra_check_common}
+        ON B.identifier = A.identifier WHERE A.type NOT IN (?, ?, ?, ?) AND B.symbol = ? COLLATE NOCASE{extra_check_common}
         UNION ALL
         SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, null, B.token_kind, null, null from assets as A JOIN solana_tokens as B
+        ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND C.symbol = ? COLLATE NOCASE
+        UNION ALL
+        SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, null, null, null, null, null from assets as A JOIN hyperliquid_tokens as B
         ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND C.symbol = ? COLLATE NOCASE
         """  # noqa: E501
         assets = []
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(querystr, evm_query_list + common_query_list + solana_query_list)
+            cursor.execute(
+                querystr,
+                evm_query_list + common_query_list + solana_query_list + hyperliquid_query_list,
+            )
             for entry in cursor.fetchall():
                 asset_type = AssetType.deserialize_from_db(entry[1])
                 underlying_tokens: list[UnderlyingToken] | None = None
@@ -1929,6 +1989,11 @@ class GlobalDBHandler:
                         )
                         return False, msg
 
+                    clean_db_has_hyperliquid_tokens = read_cursor.execute(
+                        "SELECT COUNT(*) FROM clean_db.sqlite_master "
+                        "WHERE type='table' AND name='hyperliquid_tokens'",
+                    ).fetchone()[0] == 1
+
                     # Take the user DB transaction before the global one. Every other
                     # path holding both simultaneously (e.g. update_owned_assets_in_globaldb
                     # called inside a user_write at login) nests the global write inside
@@ -1944,6 +2009,8 @@ class GlobalDBHandler:
                             write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')  # noqa: E501
                             write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
                             write_cursor.execute('INSERT INTO solana_tokens SELECT * FROM clean_db.solana_tokens;')  # noqa: E501
+                            if clean_db_has_hyperliquid_tokens:
+                                write_cursor.execute('INSERT INTO hyperliquid_tokens SELECT * FROM clean_db.hyperliquid_tokens;')  # noqa: E501
                             write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
                             write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
                             write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
@@ -2009,6 +2076,11 @@ class GlobalDBHandler:
                         )
                         return False, msg
 
+                    clean_db_has_hyperliquid_tokens = read_cursor.execute(
+                        "SELECT COUNT(*) FROM clean_db.sqlite_master "
+                        "WHERE type='table' AND name='hyperliquid_tokens'",
+                    ).fetchone()[0] == 1
+
                     # Get the list of ids that we will restore
                     query = read_cursor.execute('SELECT identifier from clean_db.assets;')
                     shipped_asset_ids = set(query.fetchall())
@@ -2023,6 +2095,7 @@ class GlobalDBHandler:
                     write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({asset_ids});')
                     write_cursor.execute(f'DELETE FROM evm_tokens WHERE identifier IN ({asset_ids});')  # noqa: E501
                     write_cursor.execute(f'DELETE FROM solana_tokens WHERE identifier IN ({asset_ids});')  # noqa: E501
+                    write_cursor.execute(f'DELETE FROM hyperliquid_tokens WHERE identifier IN ({asset_ids});')  # noqa: E501
                     write_cursor.execute(f'DELETE FROM underlying_tokens_list WHERE parent_token_entry IN ({asset_ids});')  # noqa: E501
                     write_cursor.execute(f'DELETE FROM common_asset_details WHERE identifier IN ({asset_ids});')  # noqa: E501
                     write_cursor.execute(f'DELETE FROM asset_collections WHERE id IN ({collection_ids})')  # noqa: E501
@@ -2031,6 +2104,8 @@ class GlobalDBHandler:
                     write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
                     write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
                     write_cursor.execute('INSERT INTO solana_tokens SELECT * FROM clean_db.solana_tokens;')  # noqa: E501
+                    if clean_db_has_hyperliquid_tokens:
+                        write_cursor.execute('INSERT INTO hyperliquid_tokens SELECT * FROM clean_db.hyperliquid_tokens;')  # noqa: E501
                     write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
                     write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
                     write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
@@ -2112,8 +2187,11 @@ class GlobalDBHandler:
                 SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, null, B.token_kind, null, null FROM assets as A JOIN solana_tokens as B
                 ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND A.identifier IN ({placeholders})
                 UNION ALL
+                SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, null, null, null, null, null FROM assets as A JOIN hyperliquid_tokens as B
+                ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND A.identifier IN ({placeholders})
+                UNION ALL
                 SELECT A.identifier, A.type, null, null, A.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null, null, null, null, null from assets as A JOIN common_asset_details as B
-                ON B.identifier = A.identifier WHERE A.type != ? AND A.type != ? AND A.type != ? AND A.identifier IN ({placeholders})
+                ON B.identifier = A.identifier WHERE A.type != ? AND A.type != ? AND A.type != ? AND A.type != ? AND A.identifier IN ({placeholders})
                 UNION ALL
                 SELECT A.identifier, A.type, null, null, A.name, null, null, null, null, null, null, null, null, null, B.notes, B.type FROM assets AS A JOIN custom_assets AS B on A.identifier=B.identifier WHERE A.type = ? AND A.identifier IN ({placeholders})
                 """  # noqa: E501
@@ -2124,8 +2202,11 @@ class GlobalDBHandler:
                         *ids_chunk,
                         AssetType.SOLANA_TOKEN.serialize_for_db(),
                         *ids_chunk,
+                        AssetType.HYPERLIQUID_TOKEN.serialize_for_db(),
+                        *ids_chunk,
                         AssetType.EVM_TOKEN.serialize_for_db(),
                         AssetType.SOLANA_TOKEN.serialize_for_db(),
+                        AssetType.HYPERLIQUID_TOKEN.serialize_for_db(),
                         AssetType.CUSTOM_ASSET.serialize_for_db(),
                         *ids_chunk,
                         AssetType.CUSTOM_ASSET.serialize_for_db(),
@@ -2202,8 +2283,11 @@ class GlobalDBHandler:
         SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, null, B.token_kind, null, null FROM assets as A JOIN solana_tokens as B
         ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND A.identifier = ?
         UNION ALL
+        SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, null, null, null, null, null FROM assets as A JOIN hyperliquid_tokens as B
+        ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND A.identifier = ?
+        UNION ALL
         SELECT A.identifier, A.type, null, null, A.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null, null, null, null, null from assets as A JOIN common_asset_details as B
-        ON B.identifier = A.identifier WHERE A.type != ? AND A.type != ? AND A.identifier = ?
+        ON B.identifier = A.identifier WHERE A.type != ? AND A.type != ? AND A.type != ? AND A.type != ? AND A.identifier = ?
         UNION ALL
         SELECT A.identifier, A.type, null, null, A.name, null, null, null, null, null, null, null, null, null, B.notes, B.type FROM assets AS A JOIN custom_assets AS B on A.identifier=B.identifier WHERE A.identifier = ?
         """  # noqa: E501
@@ -2216,7 +2300,11 @@ class GlobalDBHandler:
                     identifier,
                     AssetType.SOLANA_TOKEN.serialize_for_db(),
                     identifier,
+                    AssetType.HYPERLIQUID_TOKEN.serialize_for_db(),
+                    identifier,
                     AssetType.EVM_TOKEN.serialize_for_db(),
+                    AssetType.SOLANA_TOKEN.serialize_for_db(),
+                    AssetType.HYPERLIQUID_TOKEN.serialize_for_db(),
                     AssetType.CUSTOM_ASSET.serialize_for_db(),
                     identifier,
                     identifier,
@@ -2268,6 +2356,8 @@ class GlobalDBHandler:
             self.edit_evm_token(cast('EvmToken', asset))
         elif asset.asset_type == AssetType.SOLANA_TOKEN:
             self.edit_solana_token(cast('SolanaToken', asset))
+        elif asset.asset_type == AssetType.HYPERLIQUID_TOKEN:
+            self.edit_hyperliquid_token(cast('HyperliquidToken', asset))
         else:
             self.edit_user_asset(cast('CryptoAsset', asset))
 

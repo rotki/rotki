@@ -3,11 +3,19 @@ import re
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.types import AssetData, AssetType
+from rotkehlchen.chain.hyperliquid.validation import is_valid_hyperliquid_token_address
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, SolanaAddress, Timestamp, TokenKind
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    HyperliquidTokenAddress,
+    SolanaAddress,
+    Timestamp,
+    TokenKind,
+)
 
 from .types import VersionRange
 
@@ -100,9 +108,11 @@ class AssetParser(BaseAssetParser[AssetData]):
         self._common_details_re = re.compile(r'.*INSERT +INTO +common_asset_details *\( *identifier *, *symbol *, *coingecko *, *cryptocompare *, *forked *, *started *, *swapped_for *\) *VALUES *\((.*?),(.*?),(.*?),(.*?),(.*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
         self._evm_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens *\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) *VALUES *\(([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
         self._solana_tokens_re = re.compile(r'.*INSERT +INTO +solana_tokens *\( *identifier *, *token_kind *, *address *, *decimals *, *protocol *\) *VALUES *\(([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
+        self._hyperliquid_tokens_re = re.compile(r'.*INSERT +INTO +hyperliquid_tokens *\( *identifier *, *address *, *decimals *\) *VALUES *\(([^,]*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
         self._version_parsers = [
             (VersionRange(15, 36), self._parse_legacy_format),
-            (VersionRange(37, None), self._parse_latest_format),
+            (VersionRange(37, 40), self._parse_latest_format),
+            (VersionRange(41, None), self._parse_hyperliquid_format),
         ]
 
     def _parse_legacy_format(self, connection: DBConnection, insert_text: str) -> AssetData:
@@ -141,6 +151,19 @@ class AssetParser(BaseAssetParser[AssetData]):
                 protocol=protocol,
                 token_kind=token_kind,
             )
+
+        return asset_data
+
+    def _parse_hyperliquid_format(
+            self,
+            connection: DBConnection,
+            insert_text: str,
+    ) -> AssetData:
+        """Parse assets for versions 41+ with Hyperliquid Core token support."""
+        asset_data = self._parse_latest_format(connection, insert_text)
+        if asset_data.asset_type == AssetType.HYPERLIQUID_TOKEN:
+            address, decimals = self._parse_hyperliquid_token_data(insert_text)
+            return asset_data._replace(address=address, decimals=decimals)
 
         return asset_data
 
@@ -278,6 +301,33 @@ class AssetParser(BaseAssetParser[AssetData]):
             self._parse_optional_int(match.group(4), 'decimals', insert_text),
             self._parse_optional_str(match.group(5), 'protocol', insert_text),
             token_kind,
+        )
+
+    def _parse_hyperliquid_token_data(
+            self,
+            insert_text: str,
+    ) -> tuple[HyperliquidTokenAddress, int | None]:
+        """Read Hyperliquid Core token data from an asset update insert."""
+        if (match := self._hyperliquid_tokens_re.match(insert_text)) is None:
+            raise DeserializationError(
+                f'At asset DB update could not parse hyperliquid token data out of {insert_text}',
+            )
+
+        if len(match.groups()) != 3:
+            raise DeserializationError(
+                f'At asset DB update could not parse hyperliquid token data out of {insert_text}',
+            )
+
+        if is_valid_hyperliquid_token_address(
+            address := self._parse_str(match.group(2), 'address', insert_text),
+        ) is False:
+            raise DeserializationError(
+                f'At asset DB update got invalid Hyperliquid Core token address {address}',
+            )
+
+        return (
+            HyperliquidTokenAddress(address.lower()),
+            self._parse_optional_int(match.group(3), 'decimals', insert_text),
         )
 
 

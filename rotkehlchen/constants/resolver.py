@@ -19,6 +19,7 @@ ETHEREUM_DIRECTIVE = '_ceth_'
 ETHEREUM_DIRECTIVE_LENGTH = len(ETHEREUM_DIRECTIVE)
 EVM_CHAIN_DIRECTIVE = 'eip155'
 SOLANA_CHAIN_DIRECTIVE = 'solana'
+HYPERLIQUID_CHAIN_DIRECTIVE = 'hyperc'
 
 # Read once at import. See rotkehlchen/assets/case_diagnostics.py
 ASSET_CASE_DIAGNOSTICS: Final = is_case_diagnostics_enabled()
@@ -118,3 +119,8 @@ def solana_address_to_identifier(
     See: https://namespaces.chainagnostic.org/solana/caip19
     """
     return f'{SOLANA_CHAIN_DIRECTIVE}/{str(token_type)[4:]}:{address}'
+
+
+def hyperliquid_token_address_to_identifier(address: str) -> str:
+    """Convert a Hyperliquid Core token address into a rotki identifier."""
+    return f'{HYPERLIQUID_CHAIN_DIRECTIVE}:{address.lower()}'

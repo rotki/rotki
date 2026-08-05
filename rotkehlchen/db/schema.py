@@ -1084,6 +1084,14 @@ CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype)
 CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);
 CREATE INDEX IF NOT EXISTS idx_bitcoin_events_addresses_address ON bitcoin_events_addresses(address);
 CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_io_address ON bitcoin_tx_io(address);
+CREATE INDEX IF NOT EXISTS idx_evm_transactions_chain_timestamp ON evm_transactions(chain_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_evmtx_address_mappings_address ON evmtx_address_mappings(address, tx_id);
+CREATE INDEX IF NOT EXISTS idx_zksynclite_transactions_from_timestamp ON zksynclite_transactions(from_address, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_zksynclite_transactions_to_timestamp ON zksynclite_transactions(to_address, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_solana_transactions_block_time ON solana_transactions(block_time DESC);
+CREATE INDEX IF NOT EXISTS idx_solanatx_address_mappings_address ON solanatx_address_mappings(address, tx_id);
+CREATE INDEX IF NOT EXISTS idx_bitcoin_transactions_location_timestamp ON bitcoin_transactions(location, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_bitcointx_address_mappings_address ON bitcointx_address_mappings(address, tx_id);
 CREATE INDEX IF NOT EXISTS idx_history_event_links_right ON history_event_links(right_event_id);
 CREATE INDEX IF NOT EXISTS idx_history_event_links_composite ON history_event_links(link_type, left_event_id, right_event_id);
 CREATE INDEX IF NOT EXISTS idx_history_event_link_ignores_type ON history_event_link_ignores(link_type);

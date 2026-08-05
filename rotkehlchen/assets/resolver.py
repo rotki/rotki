@@ -16,6 +16,7 @@ if TYPE_CHECKING:
         CryptoAsset,
         EvmToken,
         FiatAsset,
+        HyperliquidToken,
         Nft,
         SolanaToken,
     )
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-T = TypeVar('T', 'FiatAsset', 'CryptoAsset', 'EvmToken', 'Nft', 'SolanaToken', 'AssetWithNameAndType', 'AssetWithSymbol', 'AssetWithOracles')  # noqa: E501
+T = TypeVar('T', 'FiatAsset', 'CryptoAsset', 'EvmToken', 'Nft', 'SolanaToken', 'HyperliquidToken', 'AssetWithNameAndType', 'AssetWithSymbol', 'AssetWithOracles')  # noqa: E501
 
 
 class AssetResolver:

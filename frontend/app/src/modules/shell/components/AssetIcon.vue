@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
+import { Blockchain, getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
 import { useBlockie } from '@/modules/accounts/use-blockie';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
-import { SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
+import { HYPERLIQUID_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useAssetIconCheck } from '@/modules/assets/use-asset-icon-check';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
@@ -95,6 +95,10 @@ const chain = computed(() => {
 
   if (info.assetType === SOLANA_TOKEN) {
     return SOLANA_CHAIN;
+  }
+
+  if (info.assetType === HYPERLIQUID_TOKEN) {
+    return Blockchain.HYPERLIQUID;
   }
 
   return undefined;

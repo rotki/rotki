@@ -305,7 +305,8 @@ async function runDevAction(options: DevCliOptions): Promise<void> {
     logger.info(`Instance "${instance.name}" → slot ${instance.slot}, dir ${instance.dir}`);
     logger.info(
       `  ports: backend=${formatPort(instance.ports.restApi)} proxy=${formatPort(instance.ports.proxy)} `
-      + `colibri=${formatPort(instance.ports.colibri)} dev=${formatPort(instance.ports.dev)}`,
+      + `colibri=${formatPort(instance.ports.colibri)} dev=${formatPort(instance.ports.dev)} `
+      + `starling=${formatPort(instance.ports.starlingProxy)} mcp=${formatPort(instance.ports.mcp)}`,
     );
     propagateInstanceEnv();
   }

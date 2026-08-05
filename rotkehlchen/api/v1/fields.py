@@ -21,6 +21,7 @@ from rotkehlchen.assets.asset import (
     CryptoAsset,
     CustomAsset,
     EvmToken,
+    HyperliquidToken,
     Nft,
     SolanaToken,
 )
@@ -28,6 +29,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
 from rotkehlchen.chain.evm.types import EvmIndexer
+from rotkehlchen.chain.hyperliquid.validation import is_valid_hyperliquid_token_address
 from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
 from rotkehlchen.constants import ZERO
@@ -56,6 +58,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
     HexColorCode,
+    HyperliquidTokenAddress,
     Location,
     Price,
     SolanaAddress,
@@ -611,6 +614,7 @@ ASSET_DESERIALIZERS: Final[dict[type, Callable[[str], Asset]]] = {
     CryptoAsset: CryptoAsset,
     CustomAsset: CustomAsset,
     EvmToken: EvmToken,
+    HyperliquidToken: HyperliquidToken,
     SolanaToken: SolanaToken,
 }
 
@@ -620,7 +624,7 @@ class AssetField(fields.Field):
     def __init__(
             self,
             *,
-            expected_type: type[Asset | (AssetWithNameAndType | (AssetWithOracles | (CryptoAsset | (EvmToken | (SolanaToken | CustomAsset)))))],  # noqa: E501
+            expected_type: type[Asset | (AssetWithNameAndType | (AssetWithOracles | (CryptoAsset | (EvmToken | (SolanaToken | (HyperliquidToken | CustomAsset))))))],  # noqa: E501
             form_with_incomplete_data: bool = False,
             **kwargs: Any,
     ) -> None:
@@ -787,6 +791,34 @@ class SolanaAddressField(fields.Field):
             )
 
         return SolanaAddress(value)
+
+
+class HyperliquidTokenAddressField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: HyperliquidTokenAddress | None,
+            attr: str | None,  # pylint: disable=unused-argument
+            obj: Any,
+            **_kwargs: Any,
+    ) -> str:
+        assert value, 'should never be called with None'  # type kept due to Liskov principle
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **_kwargs: Any,
+    ) -> HyperliquidTokenAddress:
+        if is_valid_hyperliquid_token_address(value) is False:
+            raise ValidationError(
+                f'Given value {value} is not a Hyperliquid Core token address',
+                field_name='address',
+            )
+
+        return HyperliquidTokenAddress(value.lower())
 
 
 class BaseTransactionHashField[T_TxHash: EVMTxHash | Signature | BTCTxId](fields.Field, ABC):

@@ -1793,7 +1793,8 @@ def test_upgrade_v16_v17(
         globaldb: GlobalDBHandler,
         messages_aggregator: MessagesAggregator,
 ) -> None:
-    """Test the global DB upgrade from v16 to v17."""
+    """Test the global DB upgrade from v16 to v17, including address canonicalization
+    and Hyperliquid Core token storage."""
     # a token created from an address that reached the db without being checksummed, plus a
     # reference to it from a child of assets and one from a child of evm_tokens
     lowercased = (checksummed := '0xaB19dE37aB19DE37AB19de37Ab19de37ab19de37').lower()
@@ -1830,6 +1831,8 @@ def test_upgrade_v16_v17(
                 (CPT_COMPOUND_V3,),
             )
         }
+        assert table_exists(cursor=cursor, name='hyperliquid_tokens') is False
+        assert index_exists(cursor=cursor, name='idx_hyperliquid_tokens_identifier') is False
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 17)
@@ -1871,6 +1874,13 @@ def test_upgrade_v16_v17(
                 f'SELECT COUNT(*) FROM {table} WHERE {column}=? AND {column} GLOB ?',
                 (new_identifier, f'*{checksummed}*'),  # GLOB is the case sensitive comparison
             ).fetchone()[0] == 1, f'{table}.{column} kept the non-canonical identifier'
+
+        assert table_exists(cursor=cursor, name='hyperliquid_tokens') is True
+        assert index_exists(cursor=cursor, name='idx_hyperliquid_tokens_identifier') is True
+        assert cursor.execute(
+            'SELECT seq FROM asset_types WHERE type=?',
+            ('\\',),
+        ).fetchone()[0] == 28
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
@@ -2014,10 +2024,8 @@ def test_foreign_keys_enabled_without_assets_update(tmp_path, messages_aggregato
 
 
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
-def test_asset_upgrade_only_run_on_breaking_version(tmp_path, messages_aggregator):
-    """Ensure that the asset upgrade is only run when the actual globaldb version is a
-    breaking version. Regression test for a bug where it was always run.
-    """
+def test_asset_upgrade_run_before_breaking_versions(tmp_path, messages_aggregator):
+    """Ensure asset updates run before each schema version that breaks their compatibility."""
     (data_dir := tmp_path / GLOBALDIR_NAME).mkdir(parents=True, exist_ok=True)
     shutil.copy(
         src=Path(__file__).resolve().parent.parent.parent.parent / 'data' / GLOBALDB_NAME,
@@ -2029,7 +2037,7 @@ def test_asset_upgrade_only_run_on_breaking_version(tmp_path, messages_aggregato
         sql_vm_instructions_cb=0,
     )
     try:
-        for version, expected_calls in (('12', 1), ('13', 0)):  # 12 is a breaking version, 13 is not  # noqa: E501
+        for version, expected_calls in (('12', 2), ('13', 1), ('16', 1), ('17', 0)):
             with connection.write_ctx() as cursor:
                 cursor.execute(
                     'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?);',

@@ -2,15 +2,23 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { z } from 'zod/v4';
+import { DEFAULT_COLIBRI_PORT, DEFAULT_MCP_PORT, DEFAULT_PORT, DEFAULT_PROXY_PORT } from '../../app/shared/port-utils';
 import { createDevLogger } from '../dev/logger';
 import { errorCode, errorMessage } from './format';
 import { ensureInstanceParent, resolveInstanceParent, sanitizeName } from './paths';
 
+/**
+ * Note the two distinct proxies: `proxy` is the optional premium dev-proxy
+ * (@rotki/dev-proxy), `starlingProxy` is the reverse proxy starling itself
+ * serves — the single origin the renderer talks to. Both need their own port.
+ */
 export const DEFAULT_PORTS = {
-  restApi: 4242,
+  restApi: DEFAULT_PORT,
   proxy: 4243,
-  colibri: 4343,
+  colibri: DEFAULT_COLIBRI_PORT,
   dev: 8080,
+  starlingProxy: DEFAULT_PROXY_PORT,
+  mcp: DEFAULT_MCP_PORT,
 } as const;
 
 export type PortName = keyof typeof DEFAULT_PORTS;
@@ -30,10 +38,10 @@ export const MAX_PORT = 65_535;
 export const INSTANCE_BASE_PORT = 13_000;
 
 /**
- * Each slot owns 4 contiguous ports (backend, proxy, colibri, dev). A step of
- * 10 leaves 6 ports of slack between neighbours so TIME_WAIT sockets from one
- * slot can't bleed into the next. With the 1000-slot cap below, the highest
- * port we'd ever pick is 13_000 + 999*10 + 3 = 22_993.
+ * Each slot owns 6 contiguous ports (dev, backend, dev-proxy, colibri, starling
+ * proxy, mcp). A step of 10 leaves 4 ports of slack between neighbours so
+ * TIME_WAIT sockets from one slot can't bleed into the next. With the 1000-slot
+ * cap below, the highest port we'd ever pick is 13_000 + 999*10 + 5 = 22_995.
  */
 export const INSTANCE_SLOT_STEP = 10;
 
@@ -59,6 +67,10 @@ export interface PortSet {
   proxy: number;
   colibri: number;
   dev: number;
+  /** starling's own reverse proxy — the origin the renderer addresses. */
+  starlingProxy: number;
+  /** starling's MCP server. */
+  mcp: number;
 }
 
 const PortIndexSchema = z.object({
@@ -75,14 +87,18 @@ export function portsForSlot(slot: number): PortSet {
     return { ...DEFAULT_PORTS };
   }
   // Layout within a slot's block: dev sits on the base port so the URL you
-  // open in the browser is the "round" number (e.g. 13000), and the three
-  // backend services follow in order python → proxy → colibri.
+  // open in the browser is the "round" number (e.g. 13000), and the backend
+  // services follow in order python → dev-proxy → colibri → starling proxy →
+  // mcp. The first four keep the offsets they have always had, so an instance
+  // created before starling joined the block stays on the same ports.
   const base = INSTANCE_BASE_PORT + (slot - 1) * INSTANCE_SLOT_STEP;
   return {
     dev: base,
     restApi: base + 1,
     proxy: base + 2,
     colibri: base + 3,
+    starlingProxy: base + 4,
+    mcp: base + 5,
   };
 }
 

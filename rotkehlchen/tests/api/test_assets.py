@@ -8,13 +8,16 @@ import requests
 from polyleven import levenshtein
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, HyperliquidToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetFlag, AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_OP, A_SAI, A_USD, A_USDC, A_WSOL
 from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ONE
-from rotkehlchen.constants.resolver import solana_address_to_identifier
+from rotkehlchen.constants.resolver import (
+    hyperliquid_token_address_to_identifier,
+    solana_address_to_identifier,
+)
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -48,8 +51,10 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
+    HyperliquidTokenAddress,
     Location,
     SolanaAddress,
+    Timestamp,
     TimestampMS,
     TokenKind,
 )
@@ -593,7 +598,9 @@ def test_get_all_assets(rotkehlchen_api_server: APIServer) -> None:
             api_url_for(rotkehlchen_api_server, 'allassetsresource'),
             json={'address': 'xxxxxxxxx'},
         ),
-        contained_in_msg='Given value xxxxxxxxx is not a valid EVM or Solana address',
+        contained_in_msg=(
+            'Given value xxxxxxxxx is not a valid EVM, Solana, or Hyperliquid Core token address'
+        ),
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -1649,3 +1656,118 @@ def test_edit_solana_token(
     assert token_after_edit.name == 'Some Token'
     assert token_after_edit.symbol == 'ST'
     assert token_after_edit.coingecko == 'some-token'
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_add_and_retrieve_hyperliquid_token(rotkehlchen_api_server: APIServer) -> None:
+    token_address = '0x6781b92b6ea5d8ed37d275eb201f64af'
+    payload: dict[str, Any] = {
+        'asset_type': 'hyperliquid token',
+        'address': token_address,
+        'name': '$MAX',
+        'symbol': 'MAX',
+        'decimals': 6,
+        'coingecko': None,
+        'cryptocompare': None,
+        'started': 1749829092,
+        'forked': A_BTC.identifier,
+    }
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json=payload,
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['identifier'] == (
+        token_identifier := hyperliquid_token_address_to_identifier(token_address)
+    )
+
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json={'address': token_address.upper().replace('0X', '0x')},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['entries_found'] == 1
+    assert result['entries'] == [{
+        'address': token_address,
+        'identifier': token_identifier,
+        'is_rebasing': False,
+        'asset_type': payload['asset_type'],
+        'coingecko': None,
+        'cryptocompare': None,
+        'decimals': payload['decimals'],
+        'name': payload['name'],
+        'symbol': payload['symbol'],
+        'started': payload['started'],
+        'forked': payload['forked'],
+        'swapped_for': None,
+    }]
+    assert Asset(token_identifier).resolve_to_hyperliquid_token().forked == A_BTC
+    assert next(
+        asset for asset in GlobalDBHandler.get_assets_with_symbol(payload['symbol'])
+        if asset.identifier == token_identifier
+    ).resolve_to_hyperliquid_token().forked == A_BTC
+    assert next(
+        GlobalDBHandler.retrieve_assets_optimized([token_identifier]),
+    ).resolve_to_hyperliquid_token().forked == A_BTC
+
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json=payload | {'address': 123},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='is not a Hyperliquid Core token address',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('coingecko_cache_coinlist', [{'some-token': {}}])
+@pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'MAX': {}}])
+def test_edit_hyperliquid_token(
+        rotkehlchen_api_server: APIServer,
+        cache_coinlist: list[dict[str, dict]],
+) -> None:
+    token = HyperliquidToken.initialize(
+        address=HyperliquidTokenAddress('0x6781b92b6ea5d8ed37d275eb201f64af'),
+        name='$MAX',
+        symbol='MAX',
+        decimals=6,
+        started=Timestamp(1749829092),
+        cryptocompare='MAX',
+    )
+    GlobalDBHandler.add_asset(token)
+
+    token_dict = Asset(token.identifier).resolve_to_hyperliquid_token().to_dict()
+    del token_dict['identifier']
+    del token_dict['forked']
+    token_dict['name'] = 'Some Token'
+    token_dict['symbol'] = 'ST'
+    token_dict['decimals'] = 8
+    token_dict['coingecko'] = 'some-token'
+    assert_proper_response(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json=token_dict,
+    ))
+
+    token_after_edit = Asset(token.identifier).resolve_to_hyperliquid_token()
+    assert token_after_edit.asset_type == AssetType.HYPERLIQUID_TOKEN
+    assert token_after_edit.address == token.address
+    assert token_after_edit.cryptocompare == 'MAX'
+    assert token_after_edit.decimals == 8
+    assert token_after_edit.name == 'Some Token'
+    assert token_after_edit.symbol == 'ST'
+    assert token_after_edit.coingecko == 'some-token'
+
+    GlobalDBHandler.add_asset(incomplete_token := HyperliquidToken.initialize(
+        address=HyperliquidTokenAddress('0x00000000000000000000000000000001'),
+    ))
+    incomplete_token_dict = Asset(
+        incomplete_token.identifier,
+    ).resolve_to_hyperliquid_token().to_dict()
+    del incomplete_token_dict['identifier']
+    del incomplete_token_dict['forked']
+    assert_proper_response(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json=incomplete_token_dict,
+    ))

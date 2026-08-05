@@ -1,6 +1,6 @@
 import type { ComputedRef, ModelRef, Ref } from 'vue';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import { isValidEthAddress, isValidSolanaAddress } from '@rotki/common';
+import { isValidEthAddress, isValidHyperliquidTokenAddress, isValidSolanaAddress } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { useFormStateWatcher } from '@/modules/core/common/use-form';
@@ -29,11 +29,13 @@ interface UseManagedAssetFormValidationOptions {
   errors: Ref<ValidationErrors>;
   /** Selects the ethereum address format check for the `address` field. */
   isEvmToken: ComputedRef<boolean>;
+  /** Selects the Hyperliquid Core token-address format check for the `address` field. */
+  isHyperliquidToken: ComputedRef<boolean>;
   /** True for ERC721 token kinds, which is what makes `collectibleId` required. */
   isNft: ComputedRef<boolean>;
   /** Selects the solana address format check for the `address` field. */
   isSolanaToken: ComputedRef<boolean>;
-  /** True for EVM or Solana tokens. Makes `address` required and turns on the format check. */
+  /** True for EVM, Solana, or Hyperliquid Core tokens. Makes `address` required and turns on the format check. */
   isTokenRequiresAddress: ComputedRef<boolean>;
   /** The form's field refs, bound to the edited asset. Serves both as the Vuelidate state object and as the source watched for dirty tracking. */
   states: AssetFormStates;
@@ -47,7 +49,7 @@ interface UseManagedAssetFormValidationReturn {
 }
 
 export function useManagedAssetFormValidation(options: UseManagedAssetFormValidationOptions): UseManagedAssetFormValidationReturn {
-  const { errors, isEvmToken, isNft, isSolanaToken, isTokenRequiresAddress, states, stateUpdated } = options;
+  const { errors, isEvmToken, isHyperliquidToken, isNft, isSolanaToken, isTokenRequiresAddress, states, stateUpdated } = options;
 
   const { t } = useI18n({ useScope: 'global' });
 
@@ -58,7 +60,12 @@ export function useManagedAssetFormValidation(options: UseManagedAssetFormValida
       required: requiredIf(isTokenRequiresAddress),
       validated: helpers.withMessage(
         t('asset_form.validation.valid_address'),
-        (v: string) => !get(isTokenRequiresAddress) || (get(isEvmToken) && isValidEthAddress(v)) || (get(isSolanaToken) && isValidSolanaAddress(v)),
+        (v: string) => (
+          !get(isTokenRequiresAddress)
+          || (get(isEvmToken) && isValidEthAddress(v))
+          || (get(isHyperliquidToken) && isValidHyperliquidTokenAddress(v))
+          || (get(isSolanaToken) && isValidSolanaAddress(v))
+        ),
       ),
     },
     assetType: { required },

@@ -119,13 +119,24 @@ export type ConflictResolution = Readonly<Record<string, ConflictResolutionStrat
 
 export const EVM_TOKEN = 'evm token';
 
-export const SOLANA_TOKEN = 'solana token';
+export const HYPERLIQUID_CORE_CHAIN = 'hyperliquid core';
+
+export const HYPERLIQUID_TOKEN = 'hyperliquid token';
 
 export const SOLANA_CHAIN = 'solana';
 
+export const SOLANA_TOKEN = 'solana token';
+
 export const CUSTOM_ASSET = 'custom asset';
 
+export const NON_EVM_CHAIN_ASSET_TYPES: Readonly<Record<string, string | undefined>> = {
+  [HYPERLIQUID_CORE_CHAIN]: HYPERLIQUID_TOKEN,
+  [SOLANA_CHAIN]: SOLANA_TOKEN,
+};
+
 export function isSpammableAssetType(assetType?: string | null): boolean {
+  // Hyperliquid Core tokens do not have protocol storage in the backend yet, so exposing the spam
+  // actions would make them fail validation instead of marking the asset as spam.
   return assetType === EVM_TOKEN || assetType === SOLANA_TOKEN;
 }
 
