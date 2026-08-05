@@ -62,6 +62,8 @@ interface SwapCollapseRow {
   type: 'swap-collapse';
   groupId: string;
   swapKey: string;
+  /** Primary event id — the subgroup's identity in the DOM, so a test can name one swap. */
+  subgroupId?: number;
   eventCount: number;
   /** True when the subgroup is a matched bridge transfer rather than a swap. */
   bridge: boolean;
@@ -246,6 +248,7 @@ export function useVirtualRows(
                   type: 'swap-collapse',
                   groupId,
                   swapKey,
+                  subgroupId: event[0]?.identifier,
                   eventCount: event.length,
                   bridge,
                 });
