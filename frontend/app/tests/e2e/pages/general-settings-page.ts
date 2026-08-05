@@ -43,6 +43,26 @@ export class GeneralSettingsPage {
     await this.setInputFieldValue('[data-cy=date-display-format-input]', value);
   }
 
+  async setThousandSeparator(value: string): Promise<void> {
+    await this.setInputFieldValue('[data-cy=thousand-separator-input]', value);
+  }
+
+  async setDecimalSeparator(value: string): Promise<void> {
+    await this.setInputFieldValue('[data-cy=decimal-separator-input]', value);
+  }
+
+  /** The messages shown under a separator field, validation or writer alike. */
+  async separatorMessages(field: 'thousand' | 'decimal'): Promise<string> {
+    return this.page.locator(`[data-cy=${field}-separator-input] .details`).innerText();
+  }
+
+  async separatorValues(): Promise<{ thousand: string; decimal: string }> {
+    return {
+      decimal: await this.page.locator('[data-cy=decimal-separator-input] input').inputValue(),
+      thousand: await this.page.locator('[data-cy=thousand-separator-input] input').inputValue(),
+    };
+  }
+
   async verify(settings: {
     anonymousUsageStatistics: boolean;
     floatingPrecision: string;
