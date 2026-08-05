@@ -12,6 +12,21 @@ export interface UseFrontendSettingsWriterReturn {
 }
 
 /**
+ * Serialises every frontend-settings write, app-wide.
+ *
+ * The wire format is the whole settings blob, rebuilt from the repo, and the repo is only updated
+ * once the request resolves. Two writes in flight at the same time would therefore both build the
+ * blob from the pre-update repo, each carrying the other's stale value, and the later response
+ * would win. That needs no unusual timing: any two settings changed within one round trip hit it,
+ * including from different components, and it leaves the merged local repo looking correct while
+ * the backend holds the loser.
+ *
+ * Module scope on purpose - the callers are separate composable instances and the queue has to be
+ * shared by all of them.
+ */
+let pendingWrite: Promise<unknown> = Promise.resolve();
+
+/**
  * Persists a patch of frontend settings.
  *
  * Split out of `useSettingsOperations` because that composable resolves the notification surface,
@@ -24,10 +39,10 @@ export function useFrontendSettingsWriter(): UseFrontendSettingsWriterReturn {
   const repo = useSettingsRepo();
   const api = useSettingsApi();
 
-  async function updateFrontendSetting(payload: FrontendSettingsPayload): Promise<ActionStatus> {
-    const props = Object.keys(payload);
-    assert(props.length > 0, 'Payload must be not-empty');
+  async function write(payload: FrontendSettingsPayload): Promise<ActionStatus> {
     try {
+      // Read the repo here, inside the queued turn, so this write builds on whatever the previous
+      // one persisted rather than on a snapshot taken before it ran.
       const updatedSettings = { ...repo.frontend, ...payload };
       await api.setSettings({
         frontendSettings: JSON.stringify(snakeCaseTransformer(updatedSettings)),
@@ -48,6 +63,17 @@ export function useFrontendSettingsWriter(): UseFrontendSettingsWriterReturn {
         success: false,
       };
     }
+  }
+
+  async function updateFrontendSetting(payload: FrontendSettingsPayload): Promise<ActionStatus> {
+    const props = Object.keys(payload);
+    // Rejects before queueing, so a caller's bug cannot stall every later write.
+    assert(props.length > 0, 'Payload must be not-empty');
+
+    const queued = pendingWrite.then(async () => write(payload));
+    // `write` never rejects, but keep the chain alive regardless: one failure must not block the app.
+    pendingWrite = queued.catch(() => undefined);
+    return queued;
   }
 
   return { updateFrontendSetting };
