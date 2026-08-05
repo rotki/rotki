@@ -1,6 +1,6 @@
 import path from 'node:path';
 import process from 'node:process';
-import { DEFAULT_MCP_PORT, DEFAULT_PROXY_PORT, selectPort } from '../../app/shared/port-utils';
+import { selectPort } from '../../app/shared/port-utils';
 import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingBackendOptions } from '../../app/shared/starling/starling-args';
 import { requestStarlingStart, spawnStarling } from '../../app/shared/starling/starling-launch';
 import { StarlingMethod } from '../../app/shared/starling/starling-protocol';
@@ -22,9 +22,13 @@ export interface StarlingDevOptions {
   corePort: number;
   /** Port colibri binds, or starts probing from when `strictPorts` is false. */
   colibriPort: number;
+  /** Port starling's reverse proxy binds, or starts probing from. */
+  proxyPort: number;
+  /** Port starling's MCP server binds, or starts probing from. */
+  mcpPort: number;
   /**
-   * Bind the given core/colibri ports exactly rather than probing upward. Set
-   * for `--instance` runs, which reserve a slot and must land on it.
+   * Bind the given ports exactly rather than probing upward. Set for
+   * `--instance` runs, which reserve a slot and must land on it.
    */
   strictPorts: boolean;
 }
@@ -50,14 +54,32 @@ async function wait(ms: number): Promise<void> {
  * tree is up — so there is nothing here to poll.
  */
 export async function startStarlingSupervisor(options: StarlingDevOptions): Promise<StarlingDevEnv> {
-  const corePort = options.strictPorts ? options.corePort : await selectPort(options.corePort, API_HOST);
-  const colibriPort = options.strictPorts ? options.colibriPort : await selectPort(options.colibriPort, API_HOST);
-  // The two ports the caller does not choose come from the same defaults the
-  // Electron main process uses. Both are probed, so a busy default walks up,
-  // which is how two concurrent dev:web runs stay off each other without
-  // reserving a slot in the instance port registry.
-  const mcpPort = await selectPort(DEFAULT_MCP_PORT, API_HOST);
-  const proxyPort = await selectPort(DEFAULT_PROXY_PORT, API_HOST);
+  // In instance mode every port is reserved by the slot, so bind it exactly and
+  // fail loudly if something else holds it. Otherwise the caller's values are
+  // only a starting point and a busy port walks up, which is how two concurrent
+  // plain `dev:web` runs stay off each other without reserving a slot.
+  //
+  // `selectPort` closes its probe socket before returning and nothing binds
+  // until starling spawns, so two services whose start values converge would
+  // otherwise be handed the same port (e.g. `--web-port 4141`, which collides
+  // with the proxy default). Track what we've handed out and keep walking.
+  const taken = new Set<number>();
+  const resolve = async (port: number): Promise<number> => {
+    if (options.strictPorts) {
+      taken.add(port);
+      return port;
+    }
+    let candidate = await selectPort(port, API_HOST);
+    while (taken.has(candidate))
+      candidate = await selectPort(candidate + 1, API_HOST);
+    taken.add(candidate);
+    return candidate;
+  };
+
+  const corePort = await resolve(options.corePort);
+  const colibriPort = await resolve(options.colibriPort);
+  const proxyPort = await resolve(options.proxyPort);
+  const mcpPort = await resolve(options.mcpPort);
 
   const backendOptions: StarlingBackendOptions = {
     logDirectory: options.logDir,

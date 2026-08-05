@@ -106,7 +106,7 @@ export async function refuseIfLive(name: string, slot: number): Promise<boolean>
     `Instance "${name}" is live on slot ${slot}:`,
     ...live.map((entry) => {
       const pid = entry.pid !== undefined ? ` (PID ${entry.pid})` : '';
-      return `  ${entry.name.padEnd(8)} ${formatHostPort('localhost', entry.port)}${pid}`;
+      return `  ${entry.name.padEnd(14)} ${formatHostPort('localhost', entry.port)}${pid}`;
     }),
     'Stop the running instance before continuing.',
   ];

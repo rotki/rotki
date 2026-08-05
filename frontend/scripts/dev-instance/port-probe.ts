@@ -52,7 +52,7 @@ export interface LiveProbeResult {
   pid?: number;
 }
 
-const ALL_PORT_NAMES: readonly PortName[] = ['restApi', 'proxy', 'colibri', 'dev'];
+const ALL_PORT_NAMES: readonly PortName[] = ['restApi', 'proxy', 'colibri', 'dev', 'starlingProxy', 'mcp'];
 
 export async function probePortsLive(slot: number): Promise<LiveProbeResult[]> {
   const ports = portsForSlot(slot);
