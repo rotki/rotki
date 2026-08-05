@@ -1,7 +1,8 @@
 import type { AddressBookEntry, AddressBookLocation, AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RequestPriority } from '@/modules/core/api/request-queue/request-priority';
 import { api } from '@/modules/core/api/rotki-api';
 import { useAddressesNamesApi } from './use-addresses-names-api';
 
@@ -10,6 +11,12 @@ const backendUrl = process.env.VITE_BACKEND_URL;
 describe('composables/api/blockchain/addresses-names', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  // Restored here rather than at the end of each test: a failing assertion throws past an inline
+  // restore, and the leaked spy then fails unrelated tests further down the file.
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('getEnsNamesTask', () => {
@@ -561,17 +568,32 @@ describe('composables/api/blockchain/addresses-names', () => {
       expect(post).toHaveBeenLastCalledWith(
         '/names/ens/reverse',
         expect.anything(),
-        expect.objectContaining({ dedupe: true, timeout: expect.any(Number) }),
+        expect.objectContaining({
+          dedupe: true,
+          priority: RequestPriority.LOW,
+          timeout: expect.any(Number),
+        }),
       );
 
       await getEnsNamesTask(['0x123']).catch(() => {});
       expect(post).toHaveBeenLastCalledWith(
         '/names/ens/reverse',
         expect.anything(),
-        expect.objectContaining({ dedupe: false, timeout: undefined }),
+        expect.objectContaining({ dedupe: false, priority: undefined, timeout: undefined }),
       );
+    });
 
-      post.mockRestore();
+    it('should resolve address names as background work', async () => {
+      const post = vi.spyOn(api, 'post').mockResolvedValue([]);
+
+      const { getAddressesNames } = useAddressesNamesApi();
+      await getAddressesNames([{ address: '0x123', blockchain: 'eth' }]).catch(() => {});
+
+      expect(post).toHaveBeenLastCalledWith(
+        '/names',
+        expect.anything(),
+        expect.objectContaining({ priority: RequestPriority.LOW }),
+      );
     });
   });
 });

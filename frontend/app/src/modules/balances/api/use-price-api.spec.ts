@@ -3,7 +3,7 @@ import type { HistoricPricesPayload } from '@/modules/assets/prices/price-types'
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 
 vi.unmock('@/modules/balances/api/use-price-api');
@@ -13,6 +13,12 @@ const backendUrl = process.env.VITE_BACKEND_URL;
 describe('composables/api/balances/price', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  // Restored here rather than at the end of each test: a failing assertion throws past an inline
+  // restore, and the leaked spy then fails unrelated tests further down the file.
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   async function getApi(): Promise<ReturnType<typeof import('./use-price-api').usePriceApi>> {
@@ -336,6 +342,25 @@ describe('composables/api/balances/price', () => {
       expect(result.assets.ETH['1700100000']).toBeInstanceOf(BigNumber);
       expect(result.assets.ETH['1700100000'].toString()).toBe('1520');
       expect(result.targetAsset).toBe('USD');
+    });
+
+    it('should seed the cache as background work', async () => {
+      const { api } = await import('@/modules/core/api/rotki-api');
+      const { RequestPriority } = await import('@/modules/core/api/request-queue/request-priority');
+      const post = vi.spyOn(api, 'post').mockResolvedValue({ assets: {}, targetAsset: 'USD' });
+
+      const { queryOnlyCacheHistoricalRates } = await getApi();
+      await queryOnlyCacheHistoricalRates({
+        assetsTimestamp: [['ETH', '1700000000']],
+        onlyCachePeriod: 3600,
+        targetAsset: 'USD',
+      }).catch(() => {});
+
+      expect(post).toHaveBeenLastCalledWith(
+        '/assets/prices/historical',
+        expect.anything(),
+        expect.objectContaining({ priority: RequestPriority.LOW }),
+      );
     });
 
     it('should throw error on failure', async () => {

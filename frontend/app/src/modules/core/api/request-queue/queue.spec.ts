@@ -162,6 +162,38 @@ describe('requestQueue', () => {
     });
   });
 
+  describe('retry backoff', () => {
+    it('should release the slot while a request waits to be retried', async () => {
+      const started: string[] = [];
+      const retrying = new RequestQueue(mockFetchWrapper, {
+        maxConcurrent: 1,
+        maxPerSecond: 100,
+        maxRetries: 1,
+        retryDelay: 1000,
+      });
+
+      mockFetch.mockImplementation(async (url: string) => {
+        started.push(url);
+        if (url === '/flaky' && started.filter(u => u === '/flaky').length === 1)
+          throw new TypeError('network down');
+
+        return new Promise(() => {}); // holds the slot once it does run
+      });
+
+      startPromise(retrying.enqueue('/flaky').catch(() => {}));
+      await vi.advanceTimersByTimeAsync(10);
+      expect(started).toEqual(['/flaky']);
+
+      // Still inside the 1000ms backoff: the slot the retry is waiting for must be usable.
+      startPromise(retrying.enqueue('/other'));
+      await vi.advanceTimersByTimeAsync(10);
+
+      expect(started).toContain('/other');
+
+      retrying.destroy();
+    });
+  });
+
   describe('background slot cap', () => {
     /**
      * Six identical ENS reverse lookups once hung for ~100s each and filled every slot, so the
