@@ -1,6 +1,9 @@
 """Pure conversion helpers for Frankencoin savings positions."""
 
-from rotkehlchen.fval import FVal
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.fval import FVal
 
 
 def savings_position_to_zchf(

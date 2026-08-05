@@ -33,7 +33,7 @@ class FrankencoinSavingsBalances(ProtocolWithBalance):
         super().__init__(
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
-            counterparty=CPT_FRANKENCOIN,  # type: ignore[arg-type]  # TODO: add to PROTOCOLS_WITH_BALANCES when registering this class  # noqa: E501
+            counterparty=CPT_FRANKENCOIN,  # type: ignore[arg-type]
             deposit_event_types={
                 (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
             },
@@ -69,15 +69,16 @@ class FrankencoinSavingsBalances(ProtocolWithBalance):
             results = self.evm_inquirer.multicall(calls=calls)
             if len(results) == 0:
                 log.error(
-                    f'Empty response from Frankencoin Savings contract '
-                    f'{self.savings_contract.address} '
-                    f'on {self.evm_inquirer.chain_name}',
+                    'Empty response from Frankencoin Savings contract %s on %s',
+                    self.savings_contract.address,
+                    self.evm_inquirer.chain_name,
                 )
                 return balances
         except RemoteError as e:
             log.error(
-                f'Failed to query Frankencoin Savings balances on '
-                f'{self.evm_inquirer.chain_name} due to {e!s}',
+                'Failed to query Frankencoin Savings balances on %s due to %s',
+                self.evm_inquirer.chain_name,
+                e,
             )
             return balances
 

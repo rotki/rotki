@@ -98,7 +98,9 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
                 else:
                     # Attribute a withdrawal sent elsewhere to its savings owner.
                     receiver = event.location_label
-                    event.notes = f'Withdraw {amount} zCHF from Frankencoin Savings Module to {receiver}'
+                    event.notes = (
+                        f'Withdraw {amount} zCHF from Frankencoin Savings Module to {receiver}'
+                    )
                     event.extra_data = {'receiver': receiver}
                     event.location_label = user_address
 

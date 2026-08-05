@@ -11,7 +11,7 @@ from rotkehlchen.tests.utils.factories import make_evm_address
 def _make_balances_module(addresses):
     module = object.__new__(FrankencoinSavingsBalances)
     module.evm_inquirer = MagicMock(chain_name='ethereum')
-    module.addresses_with_deposits = MagicMock(return_value=dict.fromkeys(addresses, []))
+    module.addresses_with_deposits = MagicMock(return_value={address: [] for address in addresses})
     module._add_priced_balances = MagicMock()
     module.savings_contract = MagicMock(address=make_evm_address())
     module.zchf = MagicMock(decimals=18)

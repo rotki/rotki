@@ -21,6 +21,5 @@ ZCHF_ADDRESS: Final[dict[ChainID, ChecksumEvmAddress]] = {
     ChainID.BASE: string_to_evm_address('0xD4dD9e2F021BB459D5A5f6c24C12fE09c5D45553'),
     ChainID.GNOSIS: string_to_evm_address('0xD4dD9e2F021BB459D5A5f6c24C12fE09c5D45553'),
     ChainID.POLYGON_POS: string_to_evm_address('0x02567e4b14b25549331fCEe2B56c647A8bAB16FD'),
-    ChainID.AVALANCHE: string_to_evm_address('0xD4dD9e2F021BB459D5A5f6c24C12fE09c5D45553'),
     ChainID.OPTIMISM: string_to_evm_address('0x4F8a84C442F9675610c680990EdDb2CCDDB8aB6f'),
 }
