@@ -922,9 +922,7 @@
       "subtitle": "Inspecter la liste des jetons détectés récemment et ajouter tous les jetons spam à la liste des jetons ignorés"
     },
     "only_show_ignored": "Seuls les actifs ignorés ({length}) visibles | Seuls les actifs ignorés",
-    "only_show_owned": "Seuls les actifs possédés visibles",
     "only_show_unignored": "Seuls les actifs non ignorés visibles",
-    "only_show_whitelisted": "Seuls les actifs approuvés visibles",
     "selected": "{count} actif(s) sélectionné(s)",
     "show_all": "Afficher tout",
     "underlying_tokens": "Jetons sous-jacents"

@@ -3,10 +3,11 @@ import type { Nullable, SupportedAsset } from '@rotki/common';
 import { isEqual, keyBy } from 'es-toolkit';
 import ManagedAssetFormDialog from '@/modules/assets/admin/managed/ManagedAssetFormDialog.vue';
 import ManagedAssetTable from '@/modules/assets/admin/managed/ManagedAssetTable.vue';
+import { useManagedAssetFields } from '@/modules/assets/admin/managed/use-managed-asset-fields';
 import MergeDialog from '@/modules/assets/admin/MergeDialog.vue';
 import RestoreAssetDbButton from '@/modules/assets/admin/RestoreAssetDbButton.vue';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
-import { type AssetRequestPayload, EVM_TOKEN, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
+import { type AssetRequestPayload, EVM_TOKEN, IgnoredAssetHandlingType, type IgnoredAssetsHandlingType, isIgnoredAssetsHandling } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -30,7 +31,7 @@ const ignoredFilter = ref<{
   onlyShowWhitelisted: boolean;
   ignoredAssetsHandling: IgnoredAssetsHandlingType;
 }>({
-  ignoredAssetsHandling: 'exclude',
+  ignoredAssetsHandling: IgnoredAssetHandlingType.EXCLUDE,
   onlyShowOwned: false,
   onlyShowWhitelisted: false,
 });
@@ -61,7 +62,7 @@ const { getAssetTypes } = useAssetManagementApi();
 const { deleteCacheKey } = useAssetInfoCache();
 
 const filterSchema = useAssetFilter(assetTypes);
-const matchers = filterSchema.matchers;
+const fields = useManagedAssetFields(filterSchema.matchers, () => get(ignoredAssets).length);
 
 const {
   collection: assets,
@@ -81,8 +82,14 @@ const {
   filterSchema,
   params: [{
     fromQuery(query): void {
+      // A url is anyone's to write, and the handling reaches both the request and the ignored
+      // pill's label. An unrecognised one would be sent on while the pill claimed something else,
+      // so it falls back to the default rather than being trusted.
+      const handling = query.ignoredAssetsHandling;
       set(ignoredFilter, {
-        ignoredAssetsHandling: query.ignoredAssetsHandling || 'exclude',
+        ignoredAssetsHandling: typeof handling === 'string' && isIgnoredAssetsHandling(handling)
+          ? handling
+          : IgnoredAssetHandlingType.EXCLUDE,
         onlyShowOwned: query.showUserOwnedAssetsOnly === 'true',
         onlyShowWhitelisted: query.showWhitelistedAssetsOnly === 'true',
       });
@@ -278,8 +285,7 @@ onBeforeMount(async () => {
         :collection="assets"
         :loading="loading"
         :change="!loading"
-        :matchers="matchers"
-        :ignored-assets="ignoredAssets"
+        :fields="fields"
         @refresh="refetch()"
         @edit="edit($event)"
         @delete-asset="showDeleteConfirmation($event)"

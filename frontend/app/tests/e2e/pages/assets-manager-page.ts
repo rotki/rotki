@@ -1,111 +1,101 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_LONG, TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
+import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
+/** The ignored-handling pill's field key, and the value that shows ignored assets alongside the rest. */
+const IGNORED_FIELD = 'ignored';
+const SHOW_ALL = 'none';
+const ONLY_IGNORED = 'show_only';
+
 export class AssetsManagerPage {
-  constructor(private readonly page: Page) {}
+  private readonly pill: PillFilterBar;
+
+  constructor(private readonly page: Page) {
+    this.pill = new PillFilterBar(page);
+  }
 
   async visit(submenu: string): Promise<void> {
     await RotkiApp.navigateTo(this.page, 'asset-manager', submenu);
   }
 
-  async openStatusFilter(): Promise<void> {
-    await this.page.locator('[data-cy=status-filter]').scrollIntoViewIfNeeded();
-    await this.page.locator('[data-cy=status-filter]').waitFor({ state: 'visible' });
-    await this.page.locator('[data-cy=status-filter]').click();
-    await this.page.locator('[data-cy=asset-filter-menu]').waitFor({ state: 'attached' });
-  }
+  /**
+   * Opens the ignored-handling pill's value list, adding the pill first when it is not there yet.
+   *
+   * Reading the ignored count means reading the "only ignored" option's own label, which is where
+   * the count lives now that the status dropdown is gone. A pill added just to read it carries no
+   * value, so closing the editor drops it again.
+   */
+  private async openIgnoredValues(): Promise<void> {
+    if (await this.pill.pill(IGNORED_FIELD).count() > 0)
+      await this.pill.openPillEditor(IGNORED_FIELD);
+    else
+      await this.pill.addField(IGNORED_FIELD);
 
-  async closeStatusFilter(): Promise<void> {
-    await this.page.locator('[data-cy=status-filter]').click();
-    await this.page.locator('[data-cy=asset-filter-menu]').waitFor({ state: 'detached' });
+    await this.page
+      .locator(`[data-testid="value-select-option-${ONLY_IGNORED}"]`)
+      .waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
   }
 
   async ignoredAssets(): Promise<string> {
-    await this.openStatusFilter();
-    const text = await this.page.locator('[data-cy=asset-filter-show_only]').textContent();
-    await this.closeStatusFilter();
+    await this.openIgnoredValues();
+    const text = await this.page.locator(`[data-testid="value-select-option-${ONLY_IGNORED}"]`).textContent();
+    await this.pill.closeEditor(IGNORED_FIELD);
     return (text ?? '').replace(/[^\d.]/g, '');
   }
 
   async ignoredAssetCount(number: number): Promise<void> {
-    await this.openStatusFilter();
-    await expect(this.page.locator('[data-cy=asset-filter-show_only]')).toContainText(number.toString());
-    await this.closeStatusFilter();
+    await this.openIgnoredValues();
+    await expect(
+      this.page.locator(`[data-testid="value-select-option-${ONLY_IGNORED}"]`),
+    ).toContainText(number.toString(), { timeout: TIMEOUT_MEDIUM });
+    await this.pill.closeEditor(IGNORED_FIELD);
   }
 
   async visibleEntries(visible: number): Promise<void> {
     await expect(this.page.locator('[data-cy=managed-assets-table] tbody tr')).toHaveCount(visible);
   }
 
-  async clearAllFilters(): Promise<void> {
-    const maxIterations = 20;
+  /**
+   * Drops every pill except the ones named.
+   *
+   * The ignored handling is a pill of its own now, and a test that says "show ignored assets too"
+   * then filters to one symbol means both at once — clearing the bar wholesale would silently put
+   * ignored assets back out of sight.
+   */
+  private async clearFiltersExcept(keep: string[]): Promise<void> {
+    const fields = await this.page.locator('[data-testid=filter-pill]').evaluateAll(pills =>
+      pills.map(pill => pill.getAttribute('data-field')).filter((field): field is string => field !== null));
 
-    for (let i = 0; i < maxIterations; i++) {
-      // Find filter chips by their accessible name pattern (e.g., "symbol = X" or "address = 0x...")
-      const symbolChip = this.page.getByRole('button', { name: /^symbol = / });
-      const addressChip = this.page.getByRole('button', { name: /^address = / });
-
-      const symbolCount = await symbolChip.count();
-      const addressCount = await addressChip.count();
-
-      if (symbolCount === 0 && addressCount === 0)
-        break;
-
-      // Pick whichever chip exists
-      const chip = symbolCount > 0 ? symbolChip.first() : addressChip.first();
-
-      // Scroll chip into view and wait for it to be visible
-      await chip.scrollIntoViewIfNeeded();
-      await chip.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-
-      // The close button is a nested button inside the chip
-      const closeButton = chip.locator('button');
-      await closeButton.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-      await closeButton.click();
-
-      // Wait for chip to be removed
-      await expect(chip).toBeHidden({ timeout: TIMEOUT_SHORT });
-
-      // Wait for table to update
-      await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
+    for (const field of fields.filter(field => !keep.includes(field))) {
+      await this.pill.removePill(field);
+      await this.pill.expectNoPill(field);
     }
+
+    await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
   }
 
-  async focusOnTableFilter(): Promise<void> {
-    // Clear any existing filter chips first
-    await this.clearAllFilters();
-
-    // Wait for any pending table updates after clearing filters
-    await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
-
-    const activator = this.page.locator('[data-cy=table-filter] [data-id=activator]');
-    const arrowButton = activator.locator('> span:last-child');
-    await arrowButton.click();
+  /**
+   * Filters to one asset by a free-text field (symbol, address), replacing whatever was filtered
+   * before but leaving the ignored handling as the test set it.
+   */
+  private async filterBy(fieldKey: string, value: string): Promise<void> {
+    await this.clearFiltersExcept([IGNORED_FIELD]);
+    await this.pill.addField(fieldKey);
+    await this.pill.typeTextValue(value);
+    await this.pill.closeEditor(fieldKey);
+    await this.pill.expectPillVisible(fieldKey);
+    await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0, { timeout: TIMEOUT_LONG });
   }
 
   async searchAsset(asset: string): Promise<void> {
-    await this.focusOnTableFilter();
-    const input = this.page.locator('[data-cy=table-filter] input');
-    await input.fill(`symbol: ${asset}`);
-    await input.press('Enter');
-    await input.press('Escape');
+    await this.filterBy('symbol', asset);
 
-    // Wait for the filter chip to appear (confirms filter was applied)
-    // The chip appears as a button containing text like "symbol = 1SG"
-    const filterChip = this.page.getByRole('button', { name: `symbol = ${asset}` });
-    await filterChip.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-
-    // Wait for loader to detach (it may or may not appear)
-    await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0, { timeout: TIMEOUT_LONG });
-
-    // Poll until the results are filtered (pagination shows small total, not thousands)
+    // Poll until the results are filtered (pagination shows a small total, not thousands)
     await expect(async () => {
-      // Check pagination shows a small count (filtered results)
       const paginationText = await this.page.locator('[data-cy=managed-assets-table]').locator('text=/of \\d+/').first().textContent();
       const totalMatch = paginationText?.match(/of\s+(\d+)/);
       const total = totalMatch ? Number.parseInt(totalMatch[1]) : 0;
-      // Filtered results should be less than 100
       expect(total).toBeLessThan(100);
       expect(total).toBeGreaterThan(0);
     }).toPass({ timeout: 30000 });
@@ -122,12 +112,7 @@ export class AssetsManagerPage {
   }
 
   async searchAssetByAddress(address: string): Promise<void> {
-    await this.focusOnTableFilter();
-    const input = this.page.locator('[data-cy=table-filter] input');
-    await input.fill(`address: ${address}`);
-    await input.press('Enter');
-    await input.press('Escape');
-    await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0);
+    await this.filterBy('address', address);
     await this.visibleEntries(1);
   }
 
@@ -148,11 +133,21 @@ export class AssetsManagerPage {
     await this.page.locator('[data-cy=confirm-dialog]').waitFor({ state: 'detached' });
   }
 
+  /**
+   * Shows ignored assets alongside the rest. Idempotent: the pill survives between tests in a
+   * serial group, and re-picking a value it already holds would toggle it back off.
+   */
   async selectShowAll(): Promise<void> {
-    await this.openStatusFilter();
-    await this.page.locator('[data-cy=asset-filter-none]').scrollIntoViewIfNeeded();
-    await this.page.locator('[data-cy=asset-filter-none]').click();
-    await this.closeStatusFilter();
+    await this.openIgnoredValues();
+    // Clicked directly rather than through the bar's search box: the box narrows on an option's
+    // label, and this list is two entries long, so searching would only risk hiding the one wanted.
+    const option = this.page.locator(`[data-testid="value-select-option-${SHOW_ALL}"]`);
+    await option.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+    if (await option.getAttribute('aria-checked') !== 'true')
+      await option.click();
+    await this.pill.closeEditor(IGNORED_FIELD);
+    await this.pill.expectPillVisible(IGNORED_FIELD);
+    await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
   }
 
   async removeIgnoredAsset(asset: string): Promise<void> {

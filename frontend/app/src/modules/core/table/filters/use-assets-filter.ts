@@ -8,7 +8,7 @@ import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 const assetFlags: string[] = Object.values(AssetFlag);
 
-enum AssetFilterKeys {
+export enum AssetFilterKeys {
   ASSET_FLAG = 'flag',
   IDENTIFIER = 'identifier',
   ASSET_TYPE = 'type',
@@ -18,7 +18,7 @@ enum AssetFilterKeys {
   ADDRESS = 'address',
 }
 
-enum AssetFilterValueKeys {
+export enum AssetFilterValueKeys {
   ASSET_FLAG = 'assetFlag',
   IDENTIFIER = 'identifiers',
   ASSET_TYPE = 'assetType',
@@ -49,17 +49,15 @@ export function useAssetFilter(assetTypes: MaybeRefOrGetter<string[]>): FilterSc
       suggestions: (): string[] => [],
       validate: (): true => true,
     },
-    ...(!get(modelFilters).evmChain
-      ? [{
-        description: t('assets.filter.asset_type'),
-        key: AssetFilterKeys.ASSET_TYPE,
-        keyValue: AssetFilterValueKeys.ASSET_TYPE,
-        string: true,
-        suggestions: (): string[] => toValue(assetTypes),
-        suggestionsToShow: -1,
-        validate: (): true => true,
-      }] satisfies Matcher[]
-      : []),
+    {
+      description: t('assets.filter.asset_type'),
+      key: AssetFilterKeys.ASSET_TYPE,
+      keyValue: AssetFilterValueKeys.ASSET_TYPE,
+      string: true,
+      suggestions: (): string[] => toValue(assetTypes),
+      suggestionsToShow: -1,
+      validate: (): true => true,
+    },
     {
       description: t('assets.filter.asset_flag'),
       hint: t('assets.filter.asset_flag_hint'),
@@ -89,20 +87,18 @@ export function useAssetFilter(assetTypes: MaybeRefOrGetter<string[]>): FilterSc
       suggestions: (): string[] => [],
       validate: (): true => true,
     },
-    ...(!get(modelFilters).assetType
-      ? [{
-        description: t('assets.filter.chain'),
-        key: AssetFilterKeys.CHAIN,
-        keyValue: AssetFilterValueKeys.CHAIN,
-        string: true,
-        suggestions: (): string[] => [
-          ...get(allEvmChains).map(x => x.name),
-          HYPERLIQUID_CORE_CHAIN,
-          SOLANA_CHAIN,
-        ],
-        validate: (chain: string): boolean => !!chain,
-      }] satisfies Matcher[]
-      : []),
+    {
+      description: t('assets.filter.chain'),
+      key: AssetFilterKeys.CHAIN,
+      keyValue: AssetFilterValueKeys.CHAIN,
+      string: true,
+      suggestions: (): string[] => [
+        ...get(allEvmChains).map(x => x.name),
+        HYPERLIQUID_CORE_CHAIN,
+        SOLANA_CHAIN,
+      ],
+      validate: (chain: string): boolean => !!chain,
+    },
     {
       description: t('assets.filter.address'),
       hint: t('assets.filter.address_hint'),
