@@ -2,6 +2,7 @@ import type {
   GasFeeEstimation,
   PrepareERC20TransferResponse,
   PrepareNativeTransferResponse,
+  RecentTransaction,
   TransactionParams,
 } from '@/modules/wallet/types';
 import { assert } from '@rotki/common';
@@ -51,7 +52,7 @@ export const useWalletStore = defineStore('wallet', () => {
 
   // Transaction management
   const transactionManager = useTransactionManager();
-  const { recentTransactions, updateTransactionStatus } = transactionManager;
+  const { recentTransactions, reset: resetTransactions, updateTransactionStatus } = transactionManager;
 
   const { getChainFromChainId, getChainIdFromNamespace } = useWalletHelper();
   const { prepareERC20Transfer, prepareNativeTransfer } = useTradeApi();
@@ -201,6 +202,13 @@ export const useWalletStore = defineStore('wallet', () => {
     set(supportedChainIds, []);
   };
 
+  // Called by the store reset plugin on logout. `$patch` cannot clear the recent
+  // transactions since they are exposed as a getter, so they are reset here.
+  const reset = (): void => {
+    resetState();
+    resetTransactions();
+  };
+
   const disconnect = async (): Promise<void> => {
     set(isDisconnecting, true);
     try {
@@ -346,7 +354,8 @@ export const useWalletStore = defineStore('wallet', () => {
     isDisconnecting,
     isWalletConnect,
     preparing: logicOr(preparing, isConnecting),
-    recentTransactions,
+    recentTransactions: computed<RecentTransaction[]>(() => get(recentTransactions)),
+    reset,
     sendTransaction,
     supportedChainsForConnectedAccount,
     switchNetwork,

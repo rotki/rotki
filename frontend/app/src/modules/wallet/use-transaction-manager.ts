@@ -14,6 +14,7 @@ export function useTransactionManager(): {
   getRecentTransactionByTxHash: (hash: string) => RecentTransaction | undefined;
   handleTransactionSuccess: (client: ViemWalletClient, hash: Hash, chainId: number, params: TransactionParams, initiatorAddress: string | undefined, getChainFromChainId: (chainId: number) => string) => Promise<void>;
   recentTransactions: Readonly<Ref<RecentTransaction[]>>;
+  reset: () => void;
   updateTransactionStatus: (hash: string, status: 'completed' | 'failed') => void;
 } {
   const recentTransactions = ref<RecentTransaction[]>([]);
@@ -93,11 +94,16 @@ export function useTransactionManager(): {
     startPromise(updateStatePostTransaction(getRecentTransactionByTxHash(hash)));
   };
 
+  const reset = (): void => {
+    set(recentTransactions, []);
+  };
+
   return {
     addRecentTransaction,
     getRecentTransactionByTxHash,
     handleTransactionSuccess,
     recentTransactions: shallowReadonly(recentTransactions),
+    reset,
     updateTransactionStatus,
   };
 }
