@@ -102,6 +102,7 @@ describe('modules/wallet/use-wallet-store', () => {
       transactionManager: {
         handleTransactionSuccess: vi.fn(async () => {}),
         recentTransactions: ref([]),
+        reset: vi.fn(),
         updateTransactionStatus: vi.fn(),
       },
       unifiedProviders: {
@@ -214,6 +215,27 @@ describe('modules/wallet/use-wallet-store', () => {
       expect(providers().clearProvider).toHaveBeenCalled();
       expect(get(store.connected)).toBe(false);
       expect(get(store.isDisconnecting)).toBe(false);
+    });
+  });
+
+  describe('reset', () => {
+    it('should clear the connection state and the recent transactions', async () => {
+      const store = await getStore();
+      await store.connect();
+
+      store.reset();
+
+      expect(get(store.connected)).toBe(false);
+      expect(get(store.connectedAddress)).toBeUndefined();
+      expect(mocks.state.transactionManager.reset).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not expose the recent transactions as patchable state', async () => {
+      const store = await getStore();
+
+      // they are a getter over the transaction manager's readonly ref, so the store
+      // reset plugin must not try to `$patch` them
+      expect(store.$state).not.toHaveProperty('recentTransactions');
     });
   });
 
