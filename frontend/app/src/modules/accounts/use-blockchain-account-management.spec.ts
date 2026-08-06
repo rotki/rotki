@@ -1,8 +1,10 @@
 import type { ComputedRef } from 'vue';
 import type { WorkStatus } from '@/modules/task-center/core/types';
 import { flushPromises } from '@vue/test-utils';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type AddAccountsPayload, type XpubAccountPayload, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 
 const h = vi.hoisted(() => ({
@@ -79,7 +81,7 @@ describe('useBlockchainAccountManagement', () => {
 
   describe('addEvmAccounts', () => {
     it('should add a single evm address and complete the addition', async () => {
-      h.addSingleEvmAddress.mockResolvedValue({ accounts: [{ address: '0xabc', chain: 'eth' }], type: 'success' });
+      h.addSingleEvmAddress.mockResolvedValue(ok([{ address: '0xabc', chain: 'eth' }]));
       const { useBlockchainAccountManagement } = await importModule();
       await useBlockchainAccountManagement().addEvmAccounts({ modules: undefined, payload: [{ address: '0xabc', tags: null }] });
       expect(h.addSingleEvmAddress).toHaveBeenCalledWith({ address: '0xabc', tags: null });
@@ -92,7 +94,7 @@ describe('useBlockchainAccountManagement', () => {
     });
 
     it('should throw when a single evm addition fails', async () => {
-      h.addSingleEvmAddress.mockResolvedValue({ account: { address: '0xabc', tags: null }, error: new Error('boom'), type: 'error' });
+      h.addSingleEvmAddress.mockResolvedValue(err({ account: { address: '0xabc', tags: null }, error: TaskFailed({ message: 'boom' }) }));
       const { useBlockchainAccountManagement } = await importModule();
       await expect(
         useBlockchainAccountManagement().addEvmAccounts({ modules: undefined, payload: [{ address: '0xabc', tags: null }] }),
@@ -128,7 +130,7 @@ describe('useBlockchainAccountManagement', () => {
 
     it('should add a single new account and complete the addition', async () => {
       h.getNewAccountPayload.mockReturnValue([{ address: '0xabc', tags: null }]);
-      h.addSingleAccount.mockResolvedValue({ address: '0xabc', type: 'success' });
+      h.addSingleAccount.mockResolvedValue(ok('0xabc'));
       const { useBlockchainAccountManagement } = await importModule();
       await useBlockchainAccountManagement().addAccounts('eth', { modules: undefined, payload: [{ address: '0xabc', tags: null }] });
       expect(h.addSingleAccount).toHaveBeenCalledWith({ address: '0xabc', tags: null }, 'eth');
@@ -141,7 +143,7 @@ describe('useBlockchainAccountManagement', () => {
         tags: null,
         xpub: { derivationPath: '', xpub: 'xpub123', xpubType: XpubKeyType.XPUB },
       };
-      h.addSingleAccount.mockResolvedValue({ address: 'xpub123', type: 'success' });
+      h.addSingleAccount.mockResolvedValue(ok('xpub123'));
       const { useBlockchainAccountManagement } = await importModule();
       await useBlockchainAccountManagement().addAccounts('btc', xpubPayload);
       expect(h.addSingleAccount).toHaveBeenCalledWith(xpubPayload, 'btc');
@@ -150,11 +152,23 @@ describe('useBlockchainAccountManagement', () => {
 
     it('should throw when a single account addition fails', async () => {
       h.getNewAccountPayload.mockReturnValue([{ address: '0xabc', tags: null }]);
-      h.addSingleAccount.mockResolvedValue({ account: { address: '0xabc', tags: null }, error: new Error('nope'), type: 'error' });
+      h.addSingleAccount.mockResolvedValue(err({ account: { address: '0xabc', tags: null }, error: TaskFailed({ message: 'nope' }) }));
       const { useBlockchainAccountManagement } = await importModule();
       await expect(
         useBlockchainAccountManagement().addAccounts('eth', { modules: undefined, payload: [{ address: '0xabc', tags: null }] }),
       ).rejects.toThrow('nope');
+    });
+
+    // A cancellation is not a failure: the user asked for it, so surfacing an error dialog for
+    // work they deliberately stopped is wrong. Only actionable failures reach the form.
+    it('should not throw when a single account addition is cancelled', async () => {
+      h.getNewAccountPayload.mockReturnValue([{ address: '0xabc', tags: null }]);
+      h.addSingleAccount.mockResolvedValue(err({ account: { address: '0xabc', tags: null }, error: Cancelled({ message: 'Request cancelled' }) }));
+      const { useBlockchainAccountManagement } = await importModule();
+      await expect(
+        useBlockchainAccountManagement().addAccounts('eth', { modules: undefined, payload: [{ address: '0xabc', tags: null }] }),
+      ).resolves.toBeUndefined();
+      expect(h.completeAccountAddition).not.toHaveBeenCalled();
     });
   });
 

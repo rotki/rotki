@@ -1,6 +1,6 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
-import { err, ok, type Result } from 'plainfp/result';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { err, isErr, ok, type Result } from 'plainfp/result';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type AccountPayload, type XpubAccountPayload, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
@@ -112,7 +112,7 @@ describe('useBlockchainAccounts', () => {
       const { useBlockchainAccounts } = await importModule();
       const result = await useBlockchainAccounts().addAccount('eth', payload);
       expect(mocks.addBlockchainAccount).toHaveBeenCalledWith('eth', payload);
-      expect(result).toBe('0xdef');
+      expect(result).toStrictEqual(ok('0xdef'));
     });
 
     it('should return the joined addresses when the result is true', async () => {
@@ -122,13 +122,15 @@ describe('useBlockchainAccounts', () => {
         { address: '0xabc', tags: null },
         { address: '0xdef', tags: null },
       ]);
-      expect(result).toBe('0xabc,\n0xdef');
+      expect(result).toStrictEqual(ok('0xabc,\n0xdef'));
     });
 
-    it('should return an empty string when the result array is empty', async () => {
+    // An empty array means nothing was added, so it must not read as a successful addition:
+    // `ok('')` put `{ address: '' }` into `addedAccounts` and refreshed on a blank address.
+    it('should return an error when the result array is empty', async () => {
       whenOk<string[] | true>([]);
       const { useBlockchainAccounts } = await importModule();
-      expect(await useBlockchainAccounts().addAccount('eth', payload)).toBe('');
+      expect(isErr(await useBlockchainAccounts().addAccount('eth', payload))).toBe(true);
     });
 
     it('should use the xpub as the address for an xpub payload', async () => {
@@ -158,16 +160,20 @@ describe('useBlockchainAccounts', () => {
       expect(first).not.toBe(second);
     });
 
-    it('should throw on an actionable failure', async () => {
+    it('should return the failure as a value on an actionable failure', async () => {
       whenActionable('boom');
       const { useBlockchainAccounts } = await importModule();
-      await expect(useBlockchainAccounts().addAccount('eth', payload)).rejects.toThrow('boom');
+      expect(isErr(await useBlockchainAccounts().addAccount('eth', payload))).toBe(true);
     });
 
-    it('should return an empty string on a cancelled task', async () => {
+    // The regression guard: `''` used to mean cancelled, failed AND empty-but-successful, so the
+    // caller pushed a cancelled addition into `addedAccounts` as though it had been added.
+    it('should return an error, not an empty string, on a cancelled task', async () => {
       whenCancelled();
       const { useBlockchainAccounts } = await importModule();
-      expect(await useBlockchainAccounts().addAccount('eth', payload)).toBe('');
+      const result = await useBlockchainAccounts().addAccount('eth', payload);
+      assert(isErr(result));
+      expect(result).not.toStrictEqual(ok(''));
     });
   });
 
@@ -179,19 +185,22 @@ describe('useBlockchainAccounts', () => {
       const { useBlockchainAccounts } = await importModule();
       const result = await useBlockchainAccounts().addEvmAccount(payload);
       expect(mocks.addEvmAccount).toHaveBeenCalledWith(payload);
-      expect(result).toStrictEqual({ added: { eth: ['0xabc'] } });
+      expect(result).toStrictEqual(ok({ added: { eth: ['0xabc'] } }));
     });
 
-    it('should throw on an actionable failure', async () => {
+    it('should return the failure as a value on an actionable failure', async () => {
       whenActionable('nope');
       const { useBlockchainAccounts } = await importModule();
-      await expect(useBlockchainAccounts().addEvmAccount(payload)).rejects.toThrow('nope');
+      expect(isErr(await useBlockchainAccounts().addEvmAccount(payload))).toBe(true);
     });
 
-    it('should return an empty object on a cancelled task', async () => {
+    // As above: `{}` was indistinguishable from a genuinely empty result.
+    it('should return an error, not an empty object, on a cancelled task', async () => {
       whenCancelled();
       const { useBlockchainAccounts } = await importModule();
-      expect(await useBlockchainAccounts().addEvmAccount(payload)).toStrictEqual({});
+      const result = await useBlockchainAccounts().addEvmAccount(payload);
+      assert(isErr(result));
+      expect(result).not.toStrictEqual(ok({}));
     });
   });
 

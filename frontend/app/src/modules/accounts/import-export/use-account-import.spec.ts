@@ -1,13 +1,16 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type { AccountPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
 import type { Tag } from '@/modules/tags/tags';
 import { Blockchain } from '@rotki/common';
 import { createMockCSV } from '@test/mocks/file';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountManage } from '@/modules/accounts/blockchain/use-account-manage';
 import { createValidatorAccount } from '@/modules/accounts/create-account';
 import { useAccountImport } from '@/modules/accounts/import-export/use-account-import';
 import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useTagsApi } from '@/modules/tags/use-tags-api';
 
 const VALIDATOR_1 = '0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda';
@@ -35,26 +38,23 @@ vi.mock('@/modules/tags/use-tags-api', async () => {
   };
 });
 
-function mockAddAccount(failOnAddress?: string[]): (_chain: string, payload: AccountPayload[] | XpubAccountPayload) => Promise<string> {
+// A failed addition is an `err` value now, not a rejection: `addAccount` no longer throws.
+function mockAddAccount(failOnAddress?: string[]): (_chain: string, payload: AccountPayload[] | XpubAccountPayload) => ResultAsync<string, TaskError> {
   return async (_chain, payload) => {
     if (Array.isArray(payload)) {
-      if (failOnAddress && payload.length === 1 && failOnAddress.includes(payload[0].address)) {
-        throw new Error(`Failed to add account: ${payload[0].address}`);
-      }
-      else {
-        return payload[0].address;
-      }
+      if (failOnAddress && payload.length === 1 && failOnAddress.includes(payload[0].address))
+        return err(TaskFailed({ message: `Failed to add account: ${payload[0].address}` }));
+
+      return ok(payload[0].address);
     }
-    else {
-      return Promise.resolve(payload.xpub.xpub);
-    }
+    return ok(payload.xpub.xpub);
   };
 }
 
 vi.mock('@/modules/accounts/use-blockchain-accounts', () => {
   const mock = {
     addAccount: vi.fn().mockImplementation(mockAddAccount()),
-    addEvmAccount: vi.fn().mockImplementation(async (address: string) => Promise.resolve({
+    addEvmAccount: vi.fn().mockImplementation(async (address: string) => ok({
       added: {
         [address]: ['eth', 'optimism', 'gnosis'],
       },

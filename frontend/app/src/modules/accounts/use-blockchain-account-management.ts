@@ -1,11 +1,13 @@
 import type { AddAccountsPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import { startPromise } from '@shared/utils';
+import { isErr } from 'plainfp/result';
 import { useAccountAdditionService } from '@/modules/accounts/use-account-addition-service';
 import { type RefreshAccountsParams, useAccountOperations } from '@/modules/accounts/use-account-operations';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { throwIfActionable } from '@/modules/core/tasks/task-result';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
@@ -39,10 +41,15 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
 
     if (payload.payload.length === 1) {
       const addResult = await accountAdditionService.addSingleEvmAddress(payload.payload[0]);
-      if (addResult.type === 'error')
-        throw addResult.error;
+      // The form awaits this call to keep its dialog open on failure, so a real error is still
+      // raised as a throw; only the internal plumbing carries it as a value. A cancellation
+      // returns silently: the user asked for it, so an error dialog would be wrong.
+      if (isErr(addResult)) {
+        throwIfActionable(addResult.error.error);
+        return;
+      }
 
-      startPromise(onComplete({ addedAccounts: addResult.accounts, modulesToEnable: payload.modules }));
+      startPromise(onComplete({ addedAccounts: addResult.value, modulesToEnable: payload.modules }));
     }
     else {
       if (options?.wait)
@@ -93,11 +100,13 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
     if (filteredPayload.length === 1 || isXpub) {
       // The `in` check rather than `isXpub`, so `payload` narrows to the xpub variant here.
       const addResult = await accountAdditionService.addSingleAccount('xpub' in payload ? payload : filteredPayload[0], chain);
-      if (addResult.type === 'error')
-        throw addResult.error;
+      if (isErr(addResult)) {
+        throwIfActionable(addResult.error.error);
+        return;
+      }
 
       startPromise(onComplete({
-        addedAccounts: [{ address: addResult.address, chain }],
+        addedAccounts: [{ address: addResult.value, chain }],
         chain,
         isXpub,
         modulesToEnable: modules,

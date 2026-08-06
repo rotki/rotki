@@ -1,8 +1,11 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
 import type { RefreshAccountsParams } from '@/modules/accounts/use-account-operations';
 import type { Module } from '@/modules/core/common/modules';
 import { type Account, assert, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { pipe } from 'plainfp';
+import { err, isErr, mapError, ok } from 'plainfp/result';
 import { useAccountAdditionNotifications } from '@/modules/accounts/use-account-addition-notifications';
 import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -10,32 +13,21 @@ import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-a
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
 import { isBlockchain } from '@/modules/core/common/chains';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useTagOperations } from '@/modules/tags/use-tag-operations';
 
-interface EvmAccountAdditionSuccess {
-  type: 'success';
-  accounts: Account[];
-}
-
-interface EvmAccountAdditionFailure {
-  type: 'error';
-  error: Error;
-  account: AccountPayload;
-}
-
-interface AccountAdditionSuccess {
-  type: 'success';
-  address: string;
-}
-
-interface AccountAdditionFailure {
-  type: 'error';
-  error: Error;
-  account: AccountPayload | XpubAccountPayload;
+/**
+ * A failed addition, carrying the payload that failed so the caller can report it without
+ * correlating by index. The old `{ type: 'success' | 'error' }` unions were a `Result` spelled by
+ * hand, and (because `addAccount` signalled failure with `''`) the success branch also absorbed
+ * cancellations.
+ */
+interface AccountAdditionFailure<T = AccountPayload | XpubAccountPayload> {
+  error: TaskError;
+  account: T;
 }
 
 // Callback types for account addition completion
@@ -68,8 +60,8 @@ type ChainCompletionCallback = (params: ChainAccountAdditionParams) => Promise<v
 interface UseAccountAdditionServiceReturn {
   addMultipleAccounts: (payload: AccountPayload[], chain: string, modules: Module[] | undefined, onComplete: ChainCompletionCallback) => Promise<void>;
   addMultipleEvmAccounts: (payload: AddAccountsPayload, onComplete: EvmCompletionCallback) => Promise<void>;
-  addSingleAccount: (account: AccountPayload | XpubAccountPayload, chain: string) => Promise<AccountAdditionSuccess | AccountAdditionFailure>;
-  addSingleEvmAddress: (account: AccountPayload) => Promise<EvmAccountAdditionSuccess | EvmAccountAdditionFailure>;
+  addSingleAccount: (account: AccountPayload | XpubAccountPayload, chain: string) => ResultAsync<string, AccountAdditionFailure>;
+  addSingleEvmAddress: (account: AccountPayload) => ResultAsync<Account[], AccountAdditionFailure<AccountPayload>>;
   completeAccountAddition: (params: AccountAdditionParams, onRefreshAccounts: RefreshAccountsCallback, onFetchAccounts?: FetchAccountsCallback) => Promise<void>;
   getNewAccountPayload: (chain: string, payload: AccountPayload[]) => AccountPayload[];
 }
@@ -151,47 +143,40 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
     }
   };
 
-  const addSingleEvmAddress = async (account: AccountPayload): Promise<EvmAccountAdditionSuccess | EvmAccountAdditionFailure> => {
+  const addSingleEvmAddress = async (account: AccountPayload): ResultAsync<Account[], AccountAdditionFailure<AccountPayload>> => {
     const addedAccounts: Account[] = [];
 
-    try {
-      const { added, ...result } = await addEvmAccount(account);
+    const outcome = await addEvmAccount(account);
+    if (isErr(outcome)) {
+      logger.error(outcome.error.message);
+      return err({ account, error: outcome.error });
+    }
 
-      if (added) {
-        const [address, chains] = Object.entries(added)[0];
-        const isAll = chains.length === 1 && chains[0] === 'all';
-        const usedChains = isAll ? get(evmChains) : chains;
+    const { added, ...result } = outcome.value;
 
-        usedChains.forEach((chain) => {
-          if (!isBlockchain(chain)) {
-            logger.error(`${chain.toString()} was not a valid blockchain`);
-            return;
-          }
+    if (added) {
+      const [address, chains] = Object.entries(added)[0];
+      const isAll = chains.length === 1 && chains[0] === 'all';
+      const usedChains = isAll ? get(evmChains) : chains;
 
-          addedAccounts.push({
-            address,
-            chain,
-          });
+      usedChains.forEach((chain) => {
+        if (!isBlockchain(chain)) {
+          logger.error(`${chain.toString()} was not a valid blockchain`);
+          return;
+        }
+
+        addedAccounts.push({
+          address,
+          chain,
         });
+      });
 
-        notifyUser({ account, chains, isAll });
-      }
-
-      createFailureNotification(result, account);
-
-      return {
-        accounts: addedAccounts,
-        type: 'success',
-      };
+      notifyUser({ account, chains, isAll });
     }
-    catch (error: unknown) {
-      logger.error(getErrorMessage(error));
-      return {
-        account,
-        error: error instanceof Error ? error : new Error(getErrorMessage(error)),
-        type: 'error',
-      };
-    }
+
+    createFailureNotification(result, account);
+
+    return ok(addedAccounts);
   };
 
   const addMultipleEvmAccounts = async (
@@ -206,11 +191,15 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       account => account.address,
       async (account) => {
         const result = await addSingleEvmAddress(account);
-        if (result.type === 'success')
-          addedAccounts.push(...result.accounts);
-
-        else
-          failedToAddAccounts.push(result.account);
+        // Only a real failure is reported. Cancelling the group mid-add would otherwise raise
+        // "failed to add N of M addresses" for work the user deliberately stopped.
+        if (isErr(result)) {
+          if (isActionable(result.error.error))
+            failedToAddAccounts.push(result.error.account);
+        }
+        else {
+          addedAccounts.push(...result.value);
+        }
       },
       2,
     );
@@ -224,24 +213,13 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   const addSingleAccount = async (
     account: AccountPayload | XpubAccountPayload,
     chain: string,
-  ): Promise<AccountAdditionSuccess | AccountAdditionFailure> => {
-    const isXpub = 'xpub' in account;
-    try {
-      const address = await addAccount(chain, isXpub ? account : [account]);
-      return {
-        address,
-        type: 'success',
-      };
-    }
-    catch (error: unknown) {
-      logger.error(getErrorMessage(error));
-      return {
-        account,
-        error: error instanceof Error ? error : new Error(getErrorMessage(error)),
-        type: 'error',
-      };
-    }
-  };
+  ): ResultAsync<string, AccountAdditionFailure> => pipe(
+    await addAccount(chain, 'xpub' in account ? account : [account]),
+    mapError((error: TaskError) => {
+      logger.error(error.message);
+      return { account, error };
+    }),
+  );
 
   const addMultipleAccounts = async (
     payload: AccountPayload[],
@@ -257,12 +235,15 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       account => account.address,
       async (account) => {
         const result = await addSingleAccount(account, chain);
-        if (result.type === 'success') {
-          addedAccounts.push({ address: result.address, chain });
+        // As above: a cancellation is not a failure to report.
+        if (isErr(result)) {
+          if (isActionable(result.error.error)) {
+            assert(!('xpub' in result.error.account));
+            failedToAddAccounts.push(result.error.account);
+          }
         }
         else {
-          assert(!('xpub' in result.account));
-          failedToAddAccounts.push(result.account);
+          addedAccounts.push({ address: result.value, chain });
         }
       },
       2,

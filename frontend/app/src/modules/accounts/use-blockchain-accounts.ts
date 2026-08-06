@@ -8,7 +8,7 @@ import type {
 import type { BlockchainBalances } from '@/modules/balances/types/blockchain-balances';
 import type { EvmAccountsResult } from '@/modules/core/api/types/accounts';
 import { Blockchain } from '@rotki/common';
-import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { err, flatMap as flatMapResult, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { convertBtcAccounts } from '@/modules/accounts/account-helpers';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
@@ -21,13 +21,17 @@ import { type BtcChains, isBtcChain } from '@/modules/core/common/chains';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseBlockchainAccountsReturn {
-  addAccount: (chain: string, payload: AccountPayload[] | XpubAccountPayload) => Promise<string>;
-  addEvmAccount: ({ address, label, tags }: AccountPayload) => Promise<EvmAccountsResult>;
+  /**
+   * The added address on success. Failure stays a value: `TaskError` distinguishes a cancelled
+   * add from a failed one, which a bare string could not.
+   */
+  addAccount: (chain: string, payload: AccountPayload[] | XpubAccountPayload) => Promise<Result<string, TaskError>>;
+  addEvmAccount: ({ address, label, tags }: AccountPayload) => Promise<Result<EvmAccountsResult, TaskError>>;
   editAccount: (payload: AccountPayload | XpubAccountPayload, chain: string) => Promise<BlockchainAccount[]>;
   editAgnosticAccount: (chainType: string, payload: AccountPayload) => Promise<boolean>;
   removeAccount: (payload: DeleteBlockchainAccountParams) => Promise<void>;
@@ -59,12 +63,18 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { getNativeAsset } = useSupportedChains();
 
-  const addAccount = async (chain: string, payload: AccountPayload[] | XpubAccountPayload): Promise<string> => {
+  const addAccount = async (chain: string, payload: AccountPayload[] | XpubAccountPayload): Promise<Result<string, TaskError>> => {
     const address = Array.isArray(payload) ? payload.map(item => item.address).join(',\n') : payload.xpub.xpub;
     // The address belongs in the id, not just the subtitle: `addMultipleAccounts` fans out over one
     // chain at parallelism 2, and `submitTask` dedups on id identity. A chain-only id collapses the
     // second address onto the first's promise, so it is reported added without ever being sent.
-    const key = Array.isArray(payload) ? payload.map(item => item.address).join(',') : payload.xpub.xpub;
+    //
+    // The xpub key carries the derivation path too: the same xpub added under two paths is two
+    // distinct additions, and keying on the xpub alone would dedup them exactly as the chain-only
+    // id deduped two addresses.
+    const key = Array.isArray(payload)
+      ? payload.map(item => item.address).join(',')
+      : `${payload.xpub.xpub}/${payload.xpub.derivationPath}`;
     const outcome = await submitTask<string[] | true>({
       id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.ADD, chain, key),
       kind: ActivityKind.ACCOUNTS,
@@ -79,21 +89,22 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
       title: t('task_center.group.accounts'),
     });
 
-    if (isErr(outcome)) {
-      if (isActionable(outcome.error))
-        throw new Error(outcome.error.message);
-      return '';
-    }
+    // `''` used to mean three different things at once: cancelled, non-actionable failure, and a
+    // genuinely empty result. The caller read all three as a successful addition, so a cancelled
+    // add was reported as added. Cancellation and failure are now the error branch, and an empty
+    // result joins them: nothing was added, so there is no address to hand back, and returning
+    // `ok('')` would put `{ address: '' }` into `addedAccounts` and refresh on a blank address.
+    return flatMapResult(outcome, (result) => {
+      if (result === true)
+        return ok(address);
 
-    const result = outcome.value;
-    if (result === true) {
-      return address;
-    }
-
-    return result.length > 0 ? result[0] : '';
+      return result.length > 0
+        ? ok(result[0])
+        : err(TaskFailed({ message: `no account was added for ${address}` }));
+    });
   };
 
-  const addEvmAccount = async ({ address, label, tags }: AccountPayload): Promise<EvmAccountsResult> => {
+  const addEvmAccount = async ({ address, label, tags }: AccountPayload): Promise<Result<EvmAccountsResult, TaskError>> => {
     const blockchain = 'EVM';
     const outcome = await submitTask<EvmAccountsResult>({
       // Same reasoning as `addAccount`: `addMultipleEvmAccounts` fans out over one pseudo-chain.
@@ -110,13 +121,8 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
       title: t('task_center.group.accounts'),
     });
 
-    if (!isErr(outcome))
-      return outcome.value;
-
-    if (isErr(outcome) && isActionable(outcome.error))
-      throw new Error(outcome.error.message);
-
-    return {};
+    // As in `addAccount`: `{}` conflated a cancelled/failed add with an empty result.
+    return outcome;
   };
 
   const resetAddressesData = (chain: string | null, payload: AccountPayload): void => {
