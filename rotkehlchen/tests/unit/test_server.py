@@ -88,7 +88,7 @@ def test_main_logs_shutdown_error_and_exits_nonzero() -> None:
     server.api_server = MagicMock()
 
     with (
-        patch.object(os, 'name', 'posix'),
+        patch.object(server, '_register_windows_console_ctrl_handler'),
         patch('rotkehlchen.server.signal.signal'),
         patch('rotkehlchen.server.importlib.metadata.version', return_value='test'),
         patch('rotkehlchen.server.get_sqlcipher_version_string', return_value='test'),
