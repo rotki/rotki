@@ -1927,6 +1927,12 @@
   "chain_account_multi_select": {
     "label": "Accounts"
   },
+  "chain_settings": {
+    "chain_queries": {
+      "subtitle": "Two independent controls: which chains and addresses rotki queries for data, and which chains it checks when detecting where an address is active.",
+      "title": "Chain queries & detection"
+    }
+  },
   "change_password": {
     "button": "Change Password",
     "labels": {
@@ -2987,11 +2993,11 @@
   "evm_settings": {
     "general": {
       "chains_to_skip_detection": {
-        "search_keywords": "skip token detection",
-        "subtitle": "Select EVM chains to exclude from automatic cross-chain account activity detection. Tracked addresses will not be checked for activity on the selected chains.",
-        "title": "Skip Account Activity Detection"
+        "search_keywords": "skip account detection, cross-chain detection, chain activity",
+        "subtitle": "When checking a tracked address for activity on other EVM chains, leave these out, so the address is not added to them. This does not stop querying chains you already track.",
+        "title": "Skip account activity detection"
       },
-      "title": "EVM General Setting",
+      "title": "EVM",
       "treat_eth2_as_eth": {
         "subtitle": "When enabled, staked ETH (ETH2) will be displayed and counted as regular ETH.",
         "title": "Treat ETH2 as ETH"
@@ -3574,11 +3580,11 @@
         "entire_chain": "entire chain",
         "no_chains": "no chains selected"
       },
-      "subtitle": "Skip chains entirely, or exclude specific addresses (on all chains or a subset) when querying balances, transactions, and history.",
-      "title": "Disabled chain queries",
+      "subtitle": "rotki will not query balances, transactions or history for these. Anything skipped is treated as not tracked. This does not affect which chains new addresses are detected on.",
+      "title": "Skip chains and addresses",
       "validation": {
-        "error": "Error updating the disabled chain queries setting",
-        "success": "Disabled chain queries updated"
+        "error": "Error updating the skipped chains and addresses",
+        "success": "Skipped chains and addresses updated"
       }
     },
     "display_date_in_localtime": {
@@ -4672,8 +4678,8 @@
     "settings_sub": {
       "account": "Account",
       "accounting": "Accounting",
+      "chains": "Chains",
       "database": "Database",
-      "evm": "EVM",
       "general": "General",
       "interface": "Interface-only",
       "mcp": "MCP",
