@@ -335,9 +335,10 @@ export const useWalletStore = defineStore('wallet', () => {
     }
   };
 
-  // Watch for changes in wallet mode
+  // Watch for changes in wallet mode. The immediate run has no previous mode and nothing is
+  // connected yet, so disconnecting there would only clear the remembered provider.
   watch(walletMode, async (walletMode, previousWalletMode) => {
-    if (walletMode !== previousWalletMode) {
+    if (previousWalletMode !== undefined && walletMode !== previousWalletMode) {
       await disconnect();
       resetState();
     }

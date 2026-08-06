@@ -133,6 +133,23 @@ describe('modules/wallet/use-wallet-store', () => {
     expect(get(store.isWalletConnect)).toBe(false);
   });
 
+  it('should not clear the selected provider when the store is created', async () => {
+    await getStore();
+    await nextTick();
+
+    expect(providers().clearProvider).not.toHaveBeenCalled();
+  });
+
+  it('should disconnect when the wallet mode changes', async () => {
+    const store = await getStore();
+
+    store.walletMode = WALLET_MODES.WALLET_CONNECT;
+    await nextTick();
+    // back to local bridge, the mode disconnect() clears the provider for
+    store.walletMode = WALLET_MODES.LOCAL_BRIDGE;
+    await vi.waitFor(() => expect(providers().clearProvider).toHaveBeenCalledTimes(1));
+  });
+
   it('should reflect walletconnect mode in isWalletConnect', async () => {
     const store = await getStore();
     store.walletMode = WALLET_MODES.WALLET_CONNECT;
