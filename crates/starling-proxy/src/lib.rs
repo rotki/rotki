@@ -1755,9 +1755,13 @@ mod tests {
     }
 
     fn echo_dispatch() -> ControlDispatch {
-        ControlDispatch::new(vec!["status", "restart"], |line| async move {
-            format!("dispatched:{line}")
-        })
+        ControlDispatch::new(
+            vec!["status", "restart"],
+            |line| async move { format!("dispatched:{line}") },
+            // Mirrors what `starling`'s dispatcher answers, without pulling a JSON
+            // parser into this crate's tests: these frames are built here.
+            |line: &str| line.contains("\"method\":\"restart\""),
+        )
     }
 
     fn control_post(body: &str) -> Request {
@@ -2154,13 +2158,19 @@ mod tests {
         let app = control_router(port, Some(echo_dispatch()));
 
         app.clone()
-            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
 
         core.set(None);
         let resp = app
-            .oneshot(control_post_with("theme=dark; rotki_session=live", "{}"))
+            .oneshot(control_post_with(
+                "theme=dark; rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
         assert_eq!(
@@ -2176,7 +2186,10 @@ mod tests {
         let app = control_router(port, Some(echo_dispatch()));
 
         app.clone()
-            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
 
@@ -2184,7 +2197,10 @@ mod tests {
         core.set(None);
         let resp = app
             .clone()
-            .oneshot(control_post_with("rotki_session=other", "{}"))
+            .oneshot(control_post_with(
+                "rotki_session=other",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
@@ -2198,14 +2214,20 @@ mod tests {
         let app = control_router(port, Some(echo_dispatch()));
 
         app.clone()
-            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
 
         core.set(Some(StatusCode::UNAUTHORIZED));
         let resp = app
             .clone()
-            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
@@ -2213,7 +2235,10 @@ mod tests {
         core.set(None);
         let resp = app
             .clone()
-            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
         assert_eq!(
@@ -2221,6 +2246,71 @@ mod tests {
             StatusCode::SERVICE_UNAVAILABLE,
             "a revoked session must not be resurrected by core going down"
         );
+    }
+
+    #[tokio::test]
+    async fn a_status_call_does_not_arm_the_grace() {
+        // The window exists for the retry that recovers a failed restart, so only a
+        // restart may arm it. Arming on any allowed call meant the SPA's routine status
+        // poll left a fallback behind that a later, different method could spend.
+        let (port, core) = spawn_switchable_core(StatusCode::OK).await;
+        let app = control_router(port, Some(echo_dispatch()));
+
+        app.clone()
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"status"}"#,
+            ))
+            .await
+            .unwrap();
+
+        core.set(None);
+        let resp = app
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.status(),
+            StatusCode::SERVICE_UNAVAILABLE,
+            "only a restart may leave a window behind"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_grace_authorizes_nothing_but_a_restart() {
+        // Even a window a restart armed itself must not be spendable on another method:
+        // during an outage the only capability it may confer is restarting something
+        // that is already down.
+        let (port, core) = spawn_switchable_core(StatusCode::OK).await;
+        let app = control_router(port, Some(echo_dispatch()));
+
+        app.clone()
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
+            .await
+            .unwrap();
+
+        core.set(None);
+        for method in ["status", "startService", "stopService"] {
+            let resp = app
+                .clone()
+                .oneshot(control_post_with(
+                    "rotki_session=live",
+                    &format!(r#"{{"method":"{method}"}}"#),
+                ))
+                .await
+                .unwrap();
+            assert_eq!(
+                resp.status(),
+                StatusCode::SERVICE_UNAVAILABLE,
+                "{method} must not ride the restart grace window"
+            );
+        }
     }
 
     #[tokio::test]

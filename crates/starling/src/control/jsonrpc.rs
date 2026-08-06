@@ -111,6 +111,19 @@ fn to_value<T: Serialize>(value: T) -> Value {
     serde_json::to_value(value).unwrap_or(Value::Null)
 }
 
+/// Whether `line` asks for `restart`.
+///
+/// The HTTP control endpoint needs this *before* it authorizes, to scope its
+/// unreachable-core grace window to the one method that window exists for. It is
+/// decided by the same parse `handle_line` uses, so what authorization believes it is
+/// allowing and what the dispatcher then executes cannot drift apart. A frame that does
+/// not parse is not a restart, which is the safe answer: it neither seeds nor spends the
+/// window, and the dispatcher still rejects it on its own terms.
+pub fn is_restart_frame(line: &str) -> bool {
+    serde_json::from_str::<Request>(line)
+        .is_ok_and(|request| request.method == Method::Restart.wire())
+}
+
 /// Parse one NDJSON line, route it to the control handle, and render the reply
 /// line. Returns the serialized response (always, for our request/response
 /// clients). Never panics: malformed input becomes a JSON-RPC error response.
@@ -308,6 +321,29 @@ mod tests {
         let out = parse(&handle_line(&handle, Transport::Stdio, "{not json").await);
         assert_eq!(out["error"]["code"], PARSE_ERROR);
         assert_eq!(out["id"], Value::Null);
+    }
+
+    #[test]
+    fn only_a_restart_frame_is_recognised_as_one() {
+        // What the HTTP control endpoint scopes its grace window on. A frame it cannot
+        // read has to answer `false`: that neither arms nor spends the window, which is
+        // the safe direction, and the dispatcher still refuses the frame on its own.
+        assert!(is_restart_frame(
+            &json!({"jsonrpc":"2.0","id":1,"method":"restart"}).to_string()
+        ));
+        assert!(is_restart_frame(&json!({"method":"restart"}).to_string()));
+
+        for line in [
+            json!({"method":"status"}).to_string(),
+            json!({"method":"startService"}).to_string(),
+            json!({"method":"stopService"}).to_string(),
+            json!({"method":"Restart"}).to_string(),
+            json!({"id":1}).to_string(),
+            "{not json".to_owned(),
+            String::new(),
+        ] {
+            assert!(!is_restart_frame(&line), "{line} is not a restart");
+        }
     }
 
     #[tokio::test]

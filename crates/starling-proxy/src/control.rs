@@ -219,6 +219,7 @@ fn session_cookie(header: &HeaderValue) -> Option<&str> {
 pub struct ControlDispatch {
     methods: Arc<[&'static str]>,
     dispatch: Arc<dyn Fn(String) -> BoxFuture + Send + Sync>,
+    is_restart: Arc<dyn Fn(&str) -> bool + Send + Sync>,
     grace: AuthGrace,
     budget: AuthBudget,
 }
@@ -231,14 +232,22 @@ impl ControlDispatch {
     /// `methods` is what the capability document advertises. The caller derives
     /// it from the authorization matrix rather than restating a list here, so the
     /// advertised surface cannot drift from the enforced one.
-    pub fn new<F, Fut>(methods: Vec<&'static str>, dispatch: F) -> Self
+    ///
+    /// `is_restart` answers "is this frame a `restart`?", which scopes the
+    /// [`AuthGrace`] window to the method it exists for. It is supplied rather than
+    /// decided here for the same reason `dispatch` is: this crate stays free of
+    /// `starling-core` and `serde_json`, and the caller can answer with the very parse
+    /// the dispatcher performs, so the two cannot disagree about what a frame is.
+    pub fn new<F, Fut, R>(methods: Vec<&'static str>, dispatch: F, is_restart: R) -> Self
     where
         F: Fn(String) -> Fut + Send + Sync + 'static,
         Fut: Future<Output = String> + Send + 'static,
+        R: Fn(&str) -> bool + Send + Sync + 'static,
     {
         Self {
             methods: methods.into(),
             dispatch: Arc::new(move |line| Box::pin(dispatch(line)) as BoxFuture),
+            is_restart: Arc::new(is_restart),
             grace: AuthGrace::default(),
             budget: AuthBudget::default(),
         }
@@ -326,7 +335,13 @@ pub(crate) async fn rpc(State(state): State<ProxyState>, req: Request) -> Respon
         return (StatusCode::BAD_REQUEST, "control frame must be utf-8").into_response();
     };
 
-    match authorize(&state, &control.grace, &control.budget, cookie).await {
+    // The grace window exists for one sequence: a `restart` tore core down, so the retry
+    // that would fix it can no longer be authorized by core. Deciding that here, before
+    // authorization, keeps the window to that sequence — an ordinary `status` poll can no
+    // longer arm it, and it can no longer be spent on `startService`/`stopService`.
+    let is_restart = (control.is_restart)(&line);
+
+    match authorize(&state, &control.grace, &control.budget, cookie, is_restart).await {
         Authorization::Allowed => {}
         Authorization::Denied => {
             return (StatusCode::UNAUTHORIZED, "authentication required").into_response()
@@ -365,11 +380,15 @@ enum Authorization {
 
 /// Ask core whether `cookie` is a live session, falling back to [`AuthGrace`]
 /// only when core cannot answer at all.
+///
+/// `is_restart` scopes that fallback to the method it exists for: only a `restart`
+/// seeds the window, and only a `restart` may be authorized by it.
 async fn authorize(
     state: &ProxyState,
     grace: &AuthGrace,
     budget: &AuthBudget,
     cookie: Option<HeaderValue>,
+    is_restart: bool,
 ) -> Authorization {
     // No cookie at all is a denial we can make without troubling core. It also
     // never reaches the grace check: there is nothing to match against.
@@ -389,7 +408,12 @@ async fn authorize(
 
     match ask_core(state, &cookie).await {
         Authorization::Allowed => {
-            grace.remember(&cookie);
+            // Only a `restart` can leave core unreachable, so only a `restart` arms the
+            // window. Remembering every allowed call let a `status` poll arm a fallback
+            // that a later, different method could then spend.
+            if is_restart {
+                grace.remember(&cookie);
+            }
             Authorization::Allowed
         }
         // Core is alive and said no. Drop any remembered validation immediately,
@@ -403,8 +427,10 @@ async fn authorize(
         // down and the one useful action is to retry the restart. Honour a
         // validation core itself granted moments ago, and nothing else.
         Authorization::Unavailable => {
-            if grace.honours(&cookie) {
-                warn!("core is unreachable; authorizing control from the recent-validation grace");
+            if is_restart && grace.honours(&cookie) {
+                warn!(
+                    "core is unreachable; authorizing a restart from the recent-validation grace"
+                );
                 Authorization::Allowed
             } else {
                 Authorization::Unavailable

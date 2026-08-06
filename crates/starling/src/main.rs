@@ -880,12 +880,16 @@ async fn main() -> std::process::ExitCode {
         let control = cookie_auth.then(|| {
             let methods = http_control_methods();
             let control_handle = controller.handle();
-            starling_proxy::ControlDispatch::new(methods, move |line| {
-                let handle = control_handle.clone();
-                async move {
-                    control::jsonrpc::handle_line(&handle, Transport::HttpControl, &line).await
-                }
-            })
+            starling_proxy::ControlDispatch::new(
+                methods,
+                move |line| {
+                    let handle = control_handle.clone();
+                    async move {
+                        control::jsonrpc::handle_line(&handle, Transport::HttpControl, &line).await
+                    }
+                },
+                control::jsonrpc::is_restart_frame,
+            )
         });
         let config = ProxyConfig {
             port,
