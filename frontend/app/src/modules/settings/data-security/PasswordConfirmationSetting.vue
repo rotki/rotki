@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { between, helpers, required } from '@vuelidate/validators';
+import type { ZodType } from 'zod';
 import { Constraints } from '@/modules/core/common/constraints';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useForm } from '@/modules/core/form/use-form';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
+import {
+  type PasswordConfirmationFormState,
+  passwordConfirmationSchema,
+  toIntervalDays,
+  toIntervalSeconds,
+} from '@/modules/settings/data-security/password-confirmation-form';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
+
+interface PasswordConfirmationPayload {
+  enablePasswordConfirmation: boolean;
+  passwordConfirmationInterval: number;
+}
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -14,47 +24,43 @@ const { updateFrontendSetting } = useSettingsOperations();
 const enablePasswordConfirmation = useSetting('enablePasswordConfirmation');
 const passwordConfirmationInterval = useSetting('passwordConfirmationInterval');
 
-const passwordConfirmationIntervalDays = ref<string>('7');
 const enabled = ref<boolean>(true);
-const loading = ref<boolean>(false);
 const showDisableWarning = ref<boolean>(false);
 
-const rules = {
-  passwordConfirmationIntervalDays: {
-    between: helpers.withMessage(
-      t('password_confirmation_setting.validation.range'),
-      between(Constraints.MIN_PASSWORD_CONFIRMATION_DAYS, Constraints.MAX_PASSWORD_CONFIRMATION_DAYS),
-    ),
-    required: helpers.withMessage(
-      t('password_confirmation_setting.validation.range'),
-      required,
-    ),
+const schema = computed<ZodType>(() => passwordConfirmationSchema(
+  get(enabled),
+  t('password_confirmation_setting.validation.range'),
+));
+
+const form = useForm<PasswordConfirmationFormState, PasswordConfirmationPayload>({
+  initial: (): PasswordConfirmationFormState => ({ intervalDays: toIntervalDays(get(passwordConfirmationInterval)) }),
+  schema,
+  submit: async (payload: PasswordConfirmationPayload): Promise<{ success: boolean }> => {
+    await updateFrontendSetting(payload);
+    return { success: true };
   },
-};
-
-const v$ = useVuelidate(rules, { passwordConfirmationIntervalDays }, { $autoDirty: true });
-
-watchImmediate([passwordConfirmationInterval, enablePasswordConfirmation], ([intervalInSeconds, enable]) => {
-  set(passwordConfirmationIntervalDays, String(intervalInSeconds / Constraints.SECONDS_PER_DAY));
-  set(enabled, enable);
+  transform: (state): PasswordConfirmationPayload => ({
+    enablePasswordConfirmation: get(enabled),
+    passwordConfirmationInterval: toIntervalSeconds(state.intervalDays),
+  }),
 });
 
+const invalid = computed<boolean>(() => !get(form.valid));
+
+const loading = computed<boolean>(() => get(form.submitting));
+
 const hasChanged = computed<boolean>(() => {
-  const currentDays = Number.parseFloat(get(passwordConfirmationIntervalDays));
+  const currentDays = Number.parseFloat(form.state.intervalDays);
   const storedDays = get(passwordConfirmationInterval) / Constraints.SECONDS_PER_DAY;
-  const intervalChanged = currentDays !== storedDays;
-  const enabledChanged = get(enabled) !== get(enablePasswordConfirmation);
-  return intervalChanged || enabledChanged;
+  return currentDays !== storedDays || get(enabled) !== get(enablePasswordConfirmation);
 });
 
 function handleToggleChange(value: boolean): void {
-  if (!value) {
-    // User is trying to disable password confirmation, show warning
+  // Turning the confirmation off weakens the account, so it is confirmed rather than just applied.
+  if (!value)
     set(showDisableWarning, true);
-  }
-  else {
+  else
     set(enabled, value);
-  }
 }
 
 function confirmDisable(): void {
@@ -66,20 +72,10 @@ function cancelDisable(): void {
   set(showDisableWarning, false);
 }
 
-async function saveSettings(): Promise<void> {
-  const isEnabled = get(enabled);
-  if (isEnabled && !await get(v$).$validate())
-    return;
-
-  set(loading, true);
-  const days = Number.parseFloat(get(passwordConfirmationIntervalDays));
-  const intervalInSeconds = Math.round(days * Constraints.SECONDS_PER_DAY);
-  await updateFrontendSetting({
-    enablePasswordConfirmation: isEnabled,
-    passwordConfirmationInterval: intervalInSeconds,
-  });
-  set(loading, false);
-}
+watchImmediate([passwordConfirmationInterval, enablePasswordConfirmation], ([intervalInSeconds, enable]) => {
+  form.state.intervalDays = toIntervalDays(intervalInSeconds);
+  set(enabled, enable);
+});
 </script>
 
 <template>
@@ -104,7 +100,7 @@ async function saveSettings(): Promise<void> {
     />
 
     <RuiTextField
-      v-model="passwordConfirmationIntervalDays"
+      v-model="form.state.intervalDays"
       variant="outlined"
       color="primary"
       type="number"
@@ -113,9 +109,10 @@ async function saveSettings(): Promise<void> {
       :max="Constraints.MAX_PASSWORD_CONFIRMATION_DAYS"
       :label="t('password_confirmation_setting.label')"
       :hint="t('password_confirmation_setting.hint')"
-      :error-messages="toMessages(v$.passwordConfirmationIntervalDays)"
+      :error-messages="form.errors('intervalDays')"
       :disabled="!enabled"
       data-cy="password-confirmation-interval-input"
+      @update:model-value="form.touch('intervalDays')"
     />
 
     <div class="flex justify-end mt-4">
@@ -123,8 +120,8 @@ async function saveSettings(): Promise<void> {
         data-cy="save-password-confirmation-settings"
         color="primary"
         :loading="loading"
-        :disabled="loading || !hasChanged || (enabled && v$.$invalid)"
-        @click="saveSettings()"
+        :disabled="loading || !hasChanged || invalid"
+        @click="form.submit()"
       >
         {{ t('common.actions.save') }}
       </RuiButton>
