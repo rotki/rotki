@@ -83,11 +83,13 @@ describe('useAccountLoading', () => {
     expect(get(loading)).toBe(true);
   });
 
+  // Add ids end in the address, so the per-chain gate has to match by prefix or it never fires;
+  // remove ids are chain-only and stay an exact lookup.
   it('should pass the blockchain filter to the task lookup', async () => {
     const { useAccountLoading } = await importModule();
     const { isAccountOperationRunning } = useAccountLoading();
     isAccountOperationRunning('eth');
-    expect(useWorkStatus).toHaveBeenCalledWith('accounts', 'add', 'eth');
+    expect(useWorkStatusPrefix).toHaveBeenCalledWith('accounts', 'add', 'eth');
     expect(useWorkStatus).toHaveBeenCalledWith('accounts', 'remove', 'eth');
   });
 });

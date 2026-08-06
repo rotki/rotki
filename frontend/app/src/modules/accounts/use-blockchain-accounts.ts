@@ -61,8 +61,12 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
 
   const addAccount = async (chain: string, payload: AccountPayload[] | XpubAccountPayload): Promise<string> => {
     const address = Array.isArray(payload) ? payload.map(item => item.address).join(',\n') : payload.xpub.xpub;
+    // The address belongs in the id, not just the subtitle: `addMultipleAccounts` fans out over one
+    // chain at parallelism 2, and `submitTask` dedups on id identity. A chain-only id collapses the
+    // second address onto the first's promise, so it is reported added without ever being sent.
+    const key = Array.isArray(payload) ? payload.map(item => item.address).join(',') : payload.xpub.xpub;
     const outcome = await submitTask<string[] | true>({
-      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.ADD, chain),
+      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.ADD, chain, key),
       kind: ActivityKind.ACCOUNTS,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<string[] | true, TaskError>> => mapResult(
@@ -92,7 +96,8 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const addEvmAccount = async ({ address, label, tags }: AccountPayload): Promise<EvmAccountsResult> => {
     const blockchain = 'EVM';
     const outcome = await submitTask<EvmAccountsResult>({
-      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.ADD, blockchain),
+      // Same reasoning as `addAccount`: `addMultipleEvmAccounts` fans out over one pseudo-chain.
+      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.ADD, blockchain, address),
       kind: ActivityKind.ACCOUNTS,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<EvmAccountsResult, TaskError>> => mapResult(
