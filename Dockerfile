@@ -135,7 +135,7 @@ RUN set -eux; \
 #     the PyInstaller bundle -- confirmed by reading the running process's memory
 #     maps, which resolve to _internal/, never /usr/lib. Copying the bundle keeps
 #     TLS working without shipping a CVE-tracked library nothing loads.
-FROM gcr.io/distroless/cc-debian12 AS runtime
+FROM gcr.io/distroless/cc-debian12:latest@sha256:e8e7ee4b8b106d4c5fde9e422a321b2b8a2d5cca546c97adcce927f3e1d36e36 AS runtime
 
 LABEL maintainer="Rotki Solutions GmbH <info@rotki.com>"
 
