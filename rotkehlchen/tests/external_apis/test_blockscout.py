@@ -12,7 +12,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.filtering import EthWithdrawalFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.blockscout import Blockscout
+from rotkehlchen.externalapis.blockscout import BLOCKSCOUT_PAGINATION_LIMIT, Blockscout
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
@@ -407,3 +407,44 @@ def test_keyless_pro_query_is_skipped_without_a_request(blockscout: Blockscout) 
 def test_keyed_pro_query_is_allowed(blockscout: Blockscout) -> None:
     """With a key present the PRO url is returned as normal (the fixtures add one by default)"""
     assert blockscout._get_url(chain_id=ChainID.GNOSIS) == 'https://api.blockscout.com/100/api'
+
+
+def test_blockscout_uses_account_pagination_limit(blockscout: Blockscout) -> None:
+    """The account endpoints must ask for the page size explicitly.
+
+    Without it blockscout picks its own, and _maybe_paginate then reads the mismatch as
+    "the server ignored our page size" and stops after the first page, silently dropping
+    everything past it.
+    """
+    for action in ('txlist', 'txlistinternal', 'tokentx'):
+        assert blockscout._get_account_pagination_options(action=action, options={}) == {
+            'page': '1',
+            'offset': str(BLOCKSCOUT_PAGINATION_LIMIT),
+        }
+
+    # blockscout disregards the block range for getminedblocks, so it must keep its own paging
+    assert blockscout._get_account_pagination_options(
+        action='getminedblocks',
+        options={},
+    ) is None
+    assert blockscout._get_account_pagination_options(action='getLogs', options={}) is None
+
+
+def test_blockscout_internal_by_txhash_keeps_server_paging(blockscout: Blockscout) -> None:
+    """Internal txs of one parent hash paginate by page number, not by block range.
+
+    Blockscout rejects any request where PageNo * Offset exceeds its cap, and no single
+    transaction has anywhere near a full page of internal txs, so this path leaves the page
+    size to the server and never paginates.
+    """
+    with patch.object(Blockscout, '_query', return_value=[]) as query_mock:
+        list(blockscout.get_transactions(
+            chain_id=ChainID.GNOSIS,
+            account=None,
+            action='txlistinternal',
+            period_or_hash=make_evm_tx_hash(),
+        ))
+
+    query_options = query_mock.call_args.kwargs['options']
+    assert 'page' not in query_options
+    assert 'offset' not in query_options
