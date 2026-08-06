@@ -54,7 +54,7 @@ const api = useEvmNodesApi(chain);
 const { setMessage } = useMessageStore();
 
 async function save() {
-  if (!(await get(form)?.validate()))
+  if (!get(form)?.validate())
     return;
 
   const state = get(model);

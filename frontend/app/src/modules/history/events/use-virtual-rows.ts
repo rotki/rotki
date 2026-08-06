@@ -62,6 +62,8 @@ interface SwapCollapseRow {
   type: 'swap-collapse';
   groupId: string;
   swapKey: string;
+  /** Primary event id — the subgroup's identity in the DOM, so a test can name one swap. */
+  subgroupId?: number;
   eventCount: number;
   /** True when the subgroup is a matched bridge transfer rather than a swap. */
   bridge: boolean;
@@ -108,6 +110,23 @@ function isMatchedBridgeGroup(events: HistoryEventEntry[]): boolean {
   return events.some(e => e.eventSubtype === 'bridge');
 }
 
+/**
+ * Identity of a subgroup (a swap or a matched movement), for remembering that it is expanded.
+ *
+ * Keyed by the primary event rather than by the subgroup's position in its group. A positional key
+ * does not survive the list changing underneath it: adding or deleting any event that shifts the
+ * index silently collapsed an expanded subgroup — or handed its expanded state to whichever
+ * subgroup landed on that index. Anything that refetches the table could do it, so a swap the user
+ * had opened would snap shut on its own after a background refresh.
+ *
+ * The primary event is the one the collapsed row represents, and it outlives the edits that used to
+ * break this: deleting a swap's fee leaves the swap (and this key) intact, while deleting the
+ * primary event takes the whole subgroup with it.
+ */
+function subgroupKey(groupId: string, events: HistoryEventEntry[]): string {
+  return `${groupId}-${events[0]?.identifier ?? 0}`;
+}
+
 interface UseVirtualRowsReturn {
   flattenedRows: ComputedRef<VirtualRow[]>;
   groupVisibleCounts: DeepReadonly<Ref<Map<string, number>>>;
@@ -127,9 +146,9 @@ export function useVirtualRows(
 ): UseVirtualRowsReturn {
   // Track how many items are visible per group (beyond initial limit)
   const groupVisibleCounts = shallowRef<Map<string, number>>(new Map());
-  // Track which swap rows are expanded (key: groupId-index)
+  // Track which swap rows are expanded (key: see `subgroupKey`)
   const expandedSwaps = shallowRef<Set<string>>(new Set());
-  // Track which matched movement rows are expanded (key: groupId-index)
+  // Track which matched movement rows are expanded (key: see `subgroupKey`)
   const expandedMovements = shallowRef<Set<string>>(new Set());
 
   const flattenedRows = computed<VirtualRow[]>(() => {
@@ -179,7 +198,7 @@ export function useVirtualRows(
 
           // Check if this is a matched asset movement (not a swap)
           if (isMatchedMovementGroup(event)) {
-            const movementKey = `${groupId}-${i}`;
+            const movementKey = subgroupKey(groupId, event);
             const isMovementExpanded = incomplete || expandedMovementsSet.has(movementKey);
 
             if (isMovementExpanded) {
@@ -218,7 +237,7 @@ export function useVirtualRows(
           }
           else {
             // Regular swap or matched bridge transfer
-            const swapKey = `${groupId}-${i}`;
+            const swapKey = subgroupKey(groupId, event);
             const isSwapExpanded = incomplete || expandedSwapsSet.has(swapKey);
             const bridge = isMatchedBridgeGroup(event);
 
@@ -229,6 +248,7 @@ export function useVirtualRows(
                   type: 'swap-collapse',
                   groupId,
                   swapKey,
+                  subgroupId: event[0]?.identifier,
                   eventCount: event.length,
                   bridge,
                 });

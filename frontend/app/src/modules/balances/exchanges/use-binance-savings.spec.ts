@@ -5,9 +5,20 @@ import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRe
 import type { Collection } from '@/modules/core/common/collection';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
+import { err, ok } from 'plainfp/result';
 import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useServerTable } from '@/modules/core/table/use-server-table';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
+import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
+
+const mocks = vi.hoisted(() => ({
+  submitTask: vi.fn(),
+  workStatus: { active: false, everCompleted: false, pending: false, running: false },
+}));
+
+const notifyError = vi.fn();
 
 vi.mock('vue', async (): Promise<Record<string, unknown>> => {
   const mod = await vi.importActual<typeof Vue>('vue');
@@ -17,6 +28,31 @@ vi.mock('vue', async (): Promise<Record<string, unknown>> => {
     onBeforeMount: vi.fn().mockImplementation((fn: () => void): void => fn()),
   };
 });
+
+// Producer-only isolation: capture the native submission instead of driving the real orchestrator,
+// and feed a controllable work status. The pagination tests below don't touch either seam.
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: vi.fn(() => ({
+    cancelByType: vi.fn(() => vi.fn()),
+    reportProgress: vi.fn(),
+    runTaskResult: vi.fn(),
+    submitTask: mocks.submitTask,
+  })),
+}));
+
+vi.mock('@/modules/task-center/use-task-center', async () => {
+  const vue = await import('vue');
+  return {
+    useTaskCenter: vi.fn(() => ({
+      useWorkStatus: (): unknown => vue.computed(() => mocks.workStatus),
+    })),
+  };
+});
+
+vi.mock('@/modules/core/notifications/use-notifications', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useNotifications: vi.fn(() => ({ notifyError, showErrorMessage: vi.fn() })),
+}));
 
 describe('useBinanceSavings', () => {
   let fetchExchangeSavings: (payload: MaybeRef<ExchangeSavingsRequestPayload>) => Promise<ExchangeSavingsCollection>;
@@ -170,6 +206,59 @@ describe('useBinanceSavings', () => {
         column: 'timestamp',
         direction: 'desc',
       }]);
+    });
+  });
+
+  describe('refreshExchangeSavings', () => {
+    beforeEach((): void => {
+      setActivePinia(createPinia());
+      mocks.submitTask.mockResolvedValue(ok(undefined));
+      mocks.workStatus.active = false;
+      mocks.workStatus.everCompleted = false;
+      useConnectedExchangesStore().setConnectedExchanges([
+        { location: 'binance', name: 'binance' },
+        { location: 'binanceus', name: 'binanceus' },
+        { location: 'kraken', name: 'kraken' },
+      ]);
+    });
+
+    it('should submit one native activity per binance location', async () => {
+      await useBinanceSavings().refreshExchangeSavings(true);
+
+      expect(mocks.submitTask).toHaveBeenCalledTimes(2);
+      const ids = mocks.submitTask.mock.calls.map(([spec]) => spec.id);
+      expect(ids).toStrictEqual([
+        makeActivityId(ActivityKind.EXCHANGE_SAVINGS, 'binance'),
+        makeActivityId(ActivityKind.EXCHANGE_SAVINGS, 'binanceus'),
+      ]);
+      expect(mocks.submitTask.mock.calls[0][0]).toMatchObject({
+        kind: ActivityKind.EXCHANGE_SAVINGS,
+        rerunnable: true,
+      });
+    });
+
+    it('should skip an automatic refresh once savings have loaded', async () => {
+      mocks.workStatus.everCompleted = true;
+
+      await useBinanceSavings().refreshExchangeSavings(false);
+
+      expect(mocks.submitTask).not.toHaveBeenCalled();
+    });
+
+    it('should skip while a sync is already in flight', async () => {
+      mocks.workStatus.active = true;
+
+      await useBinanceSavings().refreshExchangeSavings(true);
+
+      expect(mocks.submitTask).not.toHaveBeenCalled();
+    });
+
+    it('should notify on an actionable failure', async () => {
+      mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
+
+      await useBinanceSavings().refreshExchangeSavings(true);
+
+      expect(notifyError).toHaveBeenCalledTimes(2);
     });
   });
 });

@@ -10,12 +10,12 @@ import { useManualBalances } from '@/modules/balances/manual/use-manual-balances
 import { BalanceType } from '@/modules/balances/types/balances';
 import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
 import { NoteLocation } from '@/modules/core/common/notes';
-import { Section } from '@/modules/core/common/status';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 definePage({
   meta: {
@@ -37,7 +37,8 @@ const route = useRoute('/balances/manual/[[tab]]');
 
 const { fetchManualBalances } = useManualBalances();
 const { fetchAssociatedLocations } = useHistoryDataFetching();
-const { isLoading: loading } = useSectionStatus(Section.MANUAL_BALANCES);
+const { useIsActive } = useTaskCenter();
+const loading = useIsActive(ActivityKind.MANUAL_BALANCES);
 
 function add() {
   set(balance, {

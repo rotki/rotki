@@ -73,6 +73,7 @@ function createNewExchange(): ExchangeFormData {
   return {
     apiKey: '',
     apiSecret: '',
+    binanceHistoryStartTs: undefined,
     binanceMarkets: undefined,
     gateLocation: 'global',
     krakenAccountType: 'starter',

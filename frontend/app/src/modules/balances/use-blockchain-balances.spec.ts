@@ -2,6 +2,7 @@ import type { EvmChainInfo, SupportedChains } from '@/modules/core/api/types/cha
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { runSpecWith } from '@test/utils/mocks/native-task';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -30,21 +31,39 @@ vi.mock('@/modules/balances/api/use-blockchain-balances-api', () => ({
 vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useTaskHandler: vi.fn().mockReturnValue({
-    runTask: vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>) => {
+    // Blockchain balances run native via runTaskResult (plainfp Result).
+    runTaskResult: vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>) => {
       await taskFn();
-      return {
-        success: true,
-        result: {
-          perAccount: {},
-          totals: {
-            assets: {},
-            liabilities: {},
-          },
+      const { ok } = await import('plainfp/result');
+      return ok({
+        perAccount: {},
+        totals: {
+          assets: {},
+          liabilities: {},
         },
-      };
+      });
     }),
   }),
 }));
+
+// The balance processing service takes its runner from the activity, so the stub passes one that
+// resolves like the backend task would.
+const { runTask } = vi.hoisted(() => ({ runTask: vi.fn() }));
+
+vi.mock('@/modules/task-center/use-native-task', async () => {
+  const { ok } = await import('plainfp/result');
+  runTask.mockImplementation(async (taskFn: () => Promise<unknown>) => {
+    await taskFn();
+    return ok({ perAccount: {}, totals: { assets: {}, liabilities: {} } });
+  });
+
+  return {
+    useNativeTask: vi.fn(() => ({
+      reportProgress: vi.fn(),
+      submitTask: vi.fn(runSpecWith(runTask)),
+    })),
+  };
+});
 
 vi.mock('@/modules/core/common/use-supported-chains', async () => {
   const { computed } = await import('vue');
@@ -75,17 +94,6 @@ vi.mock('@/modules/core/common/use-supported-chains', async () => {
     }),
   });
 });
-
-vi.mock('@/modules/balances/use-balance-queue', () => ({
-  useBalanceQueue: vi.fn().mockReturnValue({
-    queueBalanceQueries: vi.fn().mockImplementation(async (chains, fn) => {
-      // Execute the functions immediately for testing
-      for (const chain of chains) {
-        await fn(chain);
-      }
-    }),
-  }),
-}));
 
 describe('useBlockchainBalances', () => {
   let api: ReturnType<typeof useBlockchainBalancesApi>;

@@ -142,11 +142,17 @@ export function dateSerializer(dateInputFormat: Ref<DateFormat>): (date: string)
  * A written date read into the unix-second string a filter bound stores, or `undefined` when the
  * text is not a date. `dateSerializer` cannot say no: dayjs parses leniently and yields NaN for
  * nonsense, which would otherwise reach a filter as the literal string `NaN`.
+ *
+ * A date in the future is refused for the same reason `dateRangeValidator` refuses one: nothing has
+ * happened yet after it, and the backend rejects a `from_timestamp` past its default `to_timestamp`
+ * of now with a 400. The bar offers no filter for such a date rather than one that cannot load.
  */
 export function dateBoundParser(dateInputFormat: Ref<DateFormat>): (value: string) => string | undefined {
   return (value: string): string | undefined => {
     const timestamp = convertToTimestamp(value, get(dateInputFormat));
-    return Number.isFinite(timestamp) && timestamp > 0 ? timestamp.toString() : undefined;
+    if (!Number.isFinite(timestamp) || timestamp <= 0 || timestamp > dayjs().unix())
+      return undefined;
+    return timestamp.toString();
   };
 }
 

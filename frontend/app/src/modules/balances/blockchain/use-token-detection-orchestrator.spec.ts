@@ -1,9 +1,14 @@
+import { runSpecWith } from '@test/utils/mocks/native-task';
+import { ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Activity, ActivityKind, ActivityStatus, makeActivityId } from '@/modules/task-center/core/types';
 
-const mockFetchDetectedTokens = vi.fn();
+const mockDetectTokensForAddress = vi.fn().mockResolvedValue(ok(undefined));
+const mockFetchCachedDetectedTokens = vi.fn().mockResolvedValue(ok(undefined));
 vi.mock('@/modules/balances/blockchain/use-token-detection-api', () => ({
   useTokenDetectionApi: vi.fn().mockReturnValue({
-    fetchDetectedTokens: mockFetchDetectedTokens,
+    detectTokensForAddress: mockDetectTokensForAddress,
+    fetchCachedDetectedTokens: mockFetchCachedDetectedTokens,
   }),
 }));
 
@@ -23,6 +28,7 @@ vi.mock('@/modules/balances/blockchain/use-account-addresses', () => ({
 
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: vi.fn().mockReturnValue({
+    getChainName: (chain: string): string => chain,
     supportsTransactions: (chain: string): boolean => chain !== 'btc',
     txEvmChains: computed(() => [
       { id: 'eth' },
@@ -38,24 +44,35 @@ vi.mock('@/modules/balances/use-blockchain-balances', () => ({
   }),
 }));
 
-const mockQueueTokenDetection = vi.fn().mockImplementation(
-  async (_chain: string, addrs: string[], fn: (addr: string) => Promise<void>): Promise<void> => {
-    for (const addr of addrs)
-      await fn(addr);
-  },
-);
-vi.mock('@/modules/balances/use-balance-queue', () => ({
-  useBalanceQueue: vi.fn().mockReturnValue({
-    queueTokenDetection: mockQueueTokenDetection,
+// submitTask runs the spec body so the detection call is reached, mirroring an immediate run.
+const mockRunTask = vi.fn();
+const mockSubmitTask = vi.fn(runSpecWith(mockRunTask));
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: vi.fn().mockReturnValue({
+    reportProgress: vi.fn(),
+    submitTask: mockSubmitTask,
   }),
 }));
 
-const mockIsTaskRunning = vi.fn().mockReturnValue(false);
-vi.mock('@/modules/core/tasks/use-task-store', () => ({
-  useTaskStore: vi.fn().mockReturnValue({
-    isTaskRunning: mockIsTaskRunning,
+const mockActivities = ref<Activity[]>([]);
+vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
+  useTaskOrchestrator: vi.fn().mockReturnValue({
+    activities: mockActivities,
   }),
 }));
+
+function detectionActivity(chain: string, address: string, status: ActivityStatus = ActivityStatus.RUNNING): Activity {
+  return {
+    cancellable: true,
+    id: makeActivityId(ActivityKind.TOKEN_DETECTION, chain, address),
+    kind: ActivityKind.TOKEN_DETECTION,
+    percentage: -1,
+    rerunnable: true,
+    source: { type: 'native' },
+    status,
+    title: 'Token detection',
+  };
+}
 
 // Must use dynamic import + resetModules because createSharedComposable caches the instance
 async function loadOrchestrator(): Promise<typeof import('./use-token-detection-orchestrator')> {
@@ -66,61 +83,38 @@ async function loadOrchestrator(): Promise<typeof import('./use-token-detection-
 describe('useTokenDetectionOrchestrator', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockIsTaskRunning.mockReturnValue(false);
     set(mockAddresses, {});
+    set(mockActivities, []);
   });
 
   describe('detectTokens', () => {
-    it('should queue detection and reload cached balances for a single chain', async () => {
+    it('should submit a native detection activity per address and reload cached balances', async () => {
       const { useTokenDetectionOrchestrator } = await loadOrchestrator();
       const { detectTokens } = useTokenDetectionOrchestrator();
 
       await detectTokens('eth', ['0xaddr1', '0xaddr2']);
 
-      expect(mockQueueTokenDetection).toHaveBeenCalledOnce();
-      expect(mockQueueTokenDetection).toHaveBeenCalledWith('eth', ['0xaddr1', '0xaddr2'], expect.any(Function));
-      expect(mockFetchDetectedTokens).toHaveBeenCalledWith('eth', '0xaddr1');
-      expect(mockFetchDetectedTokens).toHaveBeenCalledWith('eth', '0xaddr2');
+      expect(mockSubmitTask).toHaveBeenCalledTimes(2);
+      expect(mockSubmitTask.mock.calls[0][0]).toMatchObject({
+        id: makeActivityId(ActivityKind.TOKEN_DETECTION, 'eth', '0xaddr1'),
+        kind: ActivityKind.TOKEN_DETECTION,
+        rerunnable: true,
+      });
+      expect(mockDetectTokensForAddress).toHaveBeenCalledWith(mockRunTask, 'eth', '0xaddr1');
+      expect(mockDetectTokensForAddress).toHaveBeenCalledWith(mockRunTask, 'eth', '0xaddr2');
       expect(mockFetchBlockchainBalances).toHaveBeenCalledWith({
         blockchain: 'eth',
       });
     });
 
-    it('should queue detection for multiple chains', async () => {
+    it('should submit detection for multiple chains', async () => {
       const { useTokenDetectionOrchestrator } = await loadOrchestrator();
       const { detectTokens } = useTokenDetectionOrchestrator();
 
       await detectTokens(['eth', 'optimism'], ['0xaddr1']);
 
-      expect(mockQueueTokenDetection).toHaveBeenCalledTimes(2);
+      expect(mockSubmitTask).toHaveBeenCalledTimes(2);
       expect(mockFetchBlockchainBalances).toHaveBeenCalledTimes(2);
-    });
-
-    it('should filter out addresses already being detected', async () => {
-      mockIsTaskRunning.mockImplementation((_type: unknown, meta: { address?: string }): boolean =>
-        meta.address === '0xaddr1',
-      );
-
-      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
-      const { detectTokens } = useTokenDetectionOrchestrator();
-
-      await detectTokens('eth', ['0xaddr1', '0xaddr2']);
-
-      // Only 0xaddr2 should be queued since 0xaddr1 is already detecting
-      expect(mockQueueTokenDetection).toHaveBeenCalledWith('eth', ['0xaddr2'], expect.any(Function));
-    });
-
-    it('should skip queueing when all addresses are already detecting', async () => {
-      mockIsTaskRunning.mockReturnValue(true);
-
-      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
-      const { detectTokens } = useTokenDetectionOrchestrator();
-
-      await detectTokens('eth', ['0xaddr1']);
-
-      // No addresses left to queue, but cached balance reload still happens
-      expect(mockQueueTokenDetection).not.toHaveBeenCalled();
-      expect(mockFetchBlockchainBalances).toHaveBeenCalledOnce();
     });
   });
 
@@ -136,7 +130,7 @@ describe('useTokenDetectionOrchestrator', () => {
 
       await detectAllTokens();
 
-      expect(mockQueueTokenDetection).toHaveBeenCalledTimes(2);
+      expect(mockSubmitTask).toHaveBeenCalledTimes(2);
       expect(mockFetchBlockchainBalances).toHaveBeenCalledTimes(2);
     });
 
@@ -151,8 +145,8 @@ describe('useTokenDetectionOrchestrator', () => {
 
       await detectAllTokens('eth');
 
-      expect(mockQueueTokenDetection).toHaveBeenCalledOnce();
-      expect(mockQueueTokenDetection).toHaveBeenCalledWith('eth', ['0xaddr1'], expect.any(Function));
+      expect(mockSubmitTask).toHaveBeenCalledOnce();
+      expect(mockDetectTokensForAddress).toHaveBeenCalledWith(mockRunTask, 'eth', '0xaddr1');
     });
 
     it('should skip chains without addresses', async () => {
@@ -166,7 +160,7 @@ describe('useTokenDetectionOrchestrator', () => {
 
       await detectAllTokens();
 
-      expect(mockQueueTokenDetection).toHaveBeenCalledOnce();
+      expect(mockSubmitTask).toHaveBeenCalledOnce();
     });
 
     it('should skip chains that do not support transactions', async () => {
@@ -180,13 +174,13 @@ describe('useTokenDetectionOrchestrator', () => {
 
       await detectAllTokens(['btc', 'eth']);
 
-      // Only eth should be queued — btc does not support transactions
-      expect(mockQueueTokenDetection).toHaveBeenCalledOnce();
-      expect(mockQueueTokenDetection).toHaveBeenCalledWith('eth', ['0xaddr1'], expect.any(Function));
+      // Only eth should be submitted — btc does not support transactions
+      expect(mockSubmitTask).toHaveBeenCalledOnce();
+      expect(mockDetectTokensForAddress).toHaveBeenCalledWith(mockRunTask, 'eth', '0xaddr1');
     });
   });
 
-  describe('useIsDetecting', () => {
+  describe('isDetecting / useIsDetecting', () => {
     it('should return false when no detection is running', async () => {
       const { useTokenDetectionOrchestrator } = await loadOrchestrator();
       const { useIsDetecting } = useTokenDetectionOrchestrator();
@@ -195,41 +189,43 @@ describe('useTokenDetectionOrchestrator', () => {
       expect(get(detecting)).toBe(false);
     });
 
-    it('should return true when detection is running for the chain', async () => {
-      mockIsTaskRunning.mockReturnValue(true);
+    it('should return true when a detection activity is running for the chain', async () => {
+      set(mockActivities, [detectionActivity('eth', '0xaddr1')]);
 
       const { useTokenDetectionOrchestrator } = await loadOrchestrator();
       const { useIsDetecting } = useTokenDetectionOrchestrator();
 
-      const detecting = useIsDetecting('eth');
-      expect(get(detecting)).toBe(true);
+      expect(get(useIsDetecting('eth'))).toBe(true);
     });
 
-    it('should check specific address when provided', async () => {
-      mockIsTaskRunning.mockImplementation((_type: unknown, meta: { address?: string }): boolean =>
-        meta.address === '0xaddr1',
-      );
+    it('should ignore terminal detection activities', async () => {
+      set(mockActivities, [detectionActivity('eth', '0xaddr1', ActivityStatus.COMPLETE)]);
 
       const { useTokenDetectionOrchestrator } = await loadOrchestrator();
       const { useIsDetecting } = useTokenDetectionOrchestrator();
 
-      const detecting = useIsDetecting('eth', '0xaddr1');
-      expect(get(detecting)).toBe(true);
+      expect(get(useIsDetecting('eth'))).toBe(false);
+    });
 
-      const notDetecting = useIsDetecting('eth', '0xaddr2');
-      expect(get(notDetecting)).toBe(false);
+    it('should check a specific address when provided', async () => {
+      set(mockActivities, [detectionActivity('eth', '0xaddr1')]);
+
+      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
+      const { isDetecting, useIsDetecting } = useTokenDetectionOrchestrator();
+
+      expect(get(useIsDetecting('eth', '0xaddr1'))).toBe(true);
+      expect(get(useIsDetecting('eth', '0xaddr2'))).toBe(false);
+      expect(isDetecting('eth', '0xaddr1')).toBe(true);
+      expect(isDetecting('eth', '0xaddr2')).toBe(false);
     });
 
     it('should check across multiple chains', async () => {
-      mockIsTaskRunning.mockImplementation((_type: unknown, meta: { chain: string }): boolean =>
-        meta.chain === 'optimism',
-      );
+      set(mockActivities, [detectionActivity('optimism', '0xaddr1')]);
 
       const { useTokenDetectionOrchestrator } = await loadOrchestrator();
       const { useIsDetecting } = useTokenDetectionOrchestrator();
 
-      const detecting = useIsDetecting(['eth', 'optimism']);
-      expect(get(detecting)).toBe(true);
+      expect(get(useIsDetecting(['eth', 'optimism']))).toBe(true);
     });
   });
 });

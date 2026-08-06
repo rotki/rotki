@@ -22,7 +22,7 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
 
     const actions: NotificationAction[] = [
       {
-        action: async () => router.push({ name: '/settings/evm/', hash: '#indexer' }),
+        action: async () => router.push({ name: '/settings/chains/', hash: '#indexer' }),
         label: t('notification_messages.no_available_indexers.action'),
         persist: true,
       },

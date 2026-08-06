@@ -1,6 +1,7 @@
 import type { SupportedCurrency } from '@/modules/assets/amount-display/currencies';
 import type { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { AssetPriceResponse, HistoricPrices, type HistoricPricesPayload, type OracleCacheMeta } from '@/modules/assets/prices/price-types';
+import { RequestPriority } from '@/modules/core/api/request-queue/request-priority';
 import { api } from '@/modules/core/api/rotki-api';
 import {
   VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
@@ -87,6 +88,9 @@ export function usePriceApi(): UsePriceApiReturn {
       '/assets/prices/historical',
       payload,
       {
+        // Seeds the price cache at session load, when the rest of the app is competing for the
+        // same slots. Prefetching by definition: nothing on screen is waiting for it.
+        priority: RequestPriority.LOW,
         validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
       },
     );

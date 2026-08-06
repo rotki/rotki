@@ -1,27 +1,34 @@
 import type { BlockchainAccount, ValidatorData } from '@/modules/accounts/blockchain-accounts';
-import type { TaskResult } from '@/modules/core/tasks/use-task-handler';
 import { Blockchain } from '@rotki/common';
+import { runSpecWith } from '@test/utils/mocks/native-task';
 import { createPinia, setActivePinia } from 'pinia';
+import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { Module } from '@/modules/core/common/modules';
+import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 
 const h = vi.hoisted(() => {
   const activeModules: string[] = [];
+  const runTask = vi.fn();
   return {
     addEth2Validator: vi.fn(),
     deleteEth2Validators: vi.fn(),
     editEth2Validator: vi.fn(),
     fetchEthStakingValidators: vi.fn(),
-    resetStatus: vi.fn(),
-    runTask: vi.fn(),
+    runTask,
     showErrorMessage: vi.fn(),
+    submitTask: vi.fn(),
     // plain holder: the SUT only reads these, so the mocks expose them via computed()
     state: { activeModules, premium: false },
   };
 });
+
+// `runSpecWith` is a real import, so the stub cannot be built inside `vi.hoisted` (that runs
+// before imports are initialised) — wire it up here instead.
+h.submitTask.mockImplementation(runSpecWith(h.runTask));
 
 vi.mock('@/modules/accounts/api/use-blockchain-accounts-api', () => ({
   useBlockchainAccountsApi: vi.fn(() => ({
@@ -45,38 +52,32 @@ vi.mock('@/modules/settings/use-setting', async () => {
   return { useSetting: vi.fn(() => computed(() => h.state.activeModules)) };
 });
 
-vi.mock('@/modules/shell/sync-progress/use-status-updater', () => ({
-  useStatusUpdater: vi.fn(() => ({ resetStatus: h.resetStatus })),
-}));
-
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: (e: unknown): string => (e instanceof Error ? e.message : String(e)),
   useNotifications: vi.fn(() => ({ showErrorMessage: h.showErrorMessage })),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/modules/core/tasks/use-task-handler')>();
-  return { ...actual, useTaskHandler: vi.fn(() => ({ runTask: h.runTask })) };
+vi.mock('@/modules/task-center/use-native-task', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/modules/task-center/use-native-task')>();
+  return {
+    ...actual,
+    useNativeTask: vi.fn(() => ({
+      statusOf: vi.fn(),
+      submitTask: h.submitTask,
+    })),
+  };
 });
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: { debug: vi.fn(), error: vi.fn() },
 }));
 
-function success<R>(result: R): TaskResult<R> {
-  return { result, success: true };
-}
-
-function actionable(message: string, error: unknown = new Error(message)): TaskResult<never> {
-  return { backendCancelled: false, cancelled: false, error, message, skipped: false, success: false };
-}
-
-function cancelled(): TaskResult<never> {
-  return { backendCancelled: false, cancelled: true, message: 'cancelled', skipped: false, success: false };
-}
-
-function whenTask<R>(outcome: TaskResult<R>, invoke = true): void {
-  h.runTask.mockImplementation(async (task: () => Promise<unknown>): Promise<TaskResult<R>> => {
+/**
+ * Drives the add producer's native `run`: `runTaskResult` invokes the api call (unless the outcome
+ * is a pre-run failure) and yields a plainfp {@link Result} the orchestrator contract expects.
+ */
+function whenAdd(outcome: Result<boolean, TaskError>, invoke = true): void {
+  h.runTask.mockImplementation(async (task: () => Promise<unknown>): Promise<Result<boolean, TaskError>> => {
     if (invoke)
       await task();
     return outcome;
@@ -111,28 +112,26 @@ describe('useEthStaking', () => {
       const { useEthStaking } = await importModule();
       const result = await useEthStaking().addEth2Validator(payload);
       expect(result).toStrictEqual({ message: '', success: false });
-      expect(h.runTask).not.toHaveBeenCalled();
+      expect(h.submitTask).not.toHaveBeenCalled();
     });
 
-    it('should reset statuses and return success when the validator is added', async () => {
-      whenTask(success(true));
+    it('should return success when the validator is added', async () => {
+      whenAdd(ok(true));
       const { useEthStaking } = await importModule();
       const result = await useEthStaking().addEth2Validator(payload);
       expect(h.addEth2Validator).toHaveBeenCalledWith(payload);
       expect(result).toStrictEqual({ message: '', success: true });
-      expect(h.resetStatus).toHaveBeenCalledTimes(3);
     });
 
-    it('should not reset statuses when the result is falsy', async () => {
-      whenTask(success(false));
+    it('should report failure when the backend reports the validator was not added', async () => {
+      whenAdd(ok(false));
       const { useEthStaking } = await importModule();
       const result = await useEthStaking().addEth2Validator(payload);
       expect(result).toStrictEqual({ message: '', success: false });
-      expect(h.resetStatus).not.toHaveBeenCalled();
     });
 
     it('should surface validation errors from an actionable failure', async () => {
-      whenTask(actionable('bad', new ApiValidationError('{"publicKey":["Invalid key"]}')), false);
+      whenAdd(err(TaskFailed({ cause: new ApiValidationError('{"publicKey":["Invalid key"]}'), message: 'bad' })), false);
       const { useEthStaking } = await importModule();
       const result = await useEthStaking().addEth2Validator(payload);
       assert(!result.success);
@@ -140,14 +139,14 @@ describe('useEthStaking', () => {
     });
 
     it('should return the failure message for a plain actionable failure', async () => {
-      whenTask(actionable('some error'), false);
+      whenAdd(err(TaskFailed({ message: 'some error' })), false);
       const { useEthStaking } = await importModule();
       const result = await useEthStaking().addEth2Validator(payload);
       expect(result).toStrictEqual({ message: 'some error', success: false });
     });
 
     it('should return a generic failure on a cancelled task', async () => {
-      whenTask(cancelled(), false);
+      whenAdd(err(Cancelled({ message: 'cancelled' })), false);
       const { useEthStaking } = await importModule();
       const result = await useEthStaking().addEth2Validator(payload);
       expect(result).toStrictEqual({ message: '', success: false });

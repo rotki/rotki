@@ -1,17 +1,17 @@
 import type { ComputedRef, MaybeRef, Ref } from 'vue';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import { assert, Blockchain, type EthStakingPayload, type EthStakingPerformance, type EthStakingPerformanceResponse } from '@rotki/common';
 import { omit } from 'es-toolkit';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { isAccountWithBalanceValidator } from '@/modules/accounts/account-helpers';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { logger } from '@/modules/core/common/logging/logging';
-import { Section, Status } from '@/modules/core/common/status';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { usePremium } from '@/modules/premium/use-premium';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 import { useEth2Api } from '@/modules/staking/api/use-eth2-api';
+import { activityLabel } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseEth2StakingReturn {
   performance: ComputedRef<EthStakingPerformance>;
@@ -30,7 +30,7 @@ export function useEth2Staking(): UseEth2StakingReturn {
   const modelPagination = ref<EthStakingPayload>(defaultPagination());
 
   const premium = usePremium();
-  const { runTask } = useTaskHandler();
+  const { statusOf, submitTask } = useNativeTask();
   const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -42,11 +42,9 @@ export function useEth2Staking(): UseEth2StakingReturn {
     if (!get(premium))
       return false;
 
-    const taskType = TaskType.STAKING_ETH2;
-
-    const { fetchDisabled, resetStatus, setStatus } = useStatusUpdater(Section.STAKING_ETH2);
-
-    if (fetchDisabled(userInitiated))
+    // `fetchDisabled(refresh)` on the orchestrator projection: skip cached loads and re-entrancy.
+    const status = statusOf(ActivityKind.STAKING, ActivityPart.PERFORMANCE);
+    if ((status.everCompleted && !userInitiated) || status.active)
       return false;
 
     const defaults: EthStakingPayload = {
@@ -54,28 +52,38 @@ export function useEth2Staking(): UseEth2StakingReturn {
       offset: 0,
     };
 
-    setStatus(userInitiated ? Status.REFRESHING : Status.LOADING);
-    const outcome = await runTask<EthStakingPerformanceResponse, TaskMeta>(
-      async () => api.refreshStakingPerformance(defaults),
-      { type: taskType, meta: { title: t('actions.staking.eth2.task.title') } },
-    );
+    // The performance data itself is read separately via `fetchPerformance`; this activity only
+    // refreshes the backend cache, so the success mapper has no store side effect.
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.STAKING, ActivityPart.PERFORMANCE),
+      kind: ActivityKind.STAKING,
+      rerunnable: true,
+      // Adding a validator changes whose performance this is. Replaces the `resetStatus` on
+      // STAKING_ETH2 / STAKING_ETH2_STATS that `addEth2Validator` used to call: without it the
+      // `everCompleted && !userInitiated` guard below short-circuits, and the table keeps
+      // excluding the new validator until the user refreshes by hand.
+      staleAfter: [{ kind: ActivityKind.STAKING, parts: [ActivityPart.ADD] }],
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<EthStakingPerformanceResponse>(
+          async () => api.refreshStakingPerformance(defaults),
+        ),
+        () => {},
+      ),
+      subtitle: activityLabel(ActivityKind.STAKING, ActivityPart.PERFORMANCE),
+      title: t('task_center.group.staking'),
+    });
 
-    if (outcome.success) {
-      setStatus(Status.LOADED);
-      return true;
-    }
-
-    if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
+    onActionableError(outcome, (error) => {
+      logger.error(error.message);
       notifyError(
         t('actions.staking.eth2.error.title'),
         t('actions.staking.eth2.error.description', {
-          error: outcome.message,
+          error: error.message,
         }),
       );
-    }
-    resetStatus();
-    return false;
+    });
+
+    return !isErr(outcome);
   }
 
   const fetchStakingPerformance = async (

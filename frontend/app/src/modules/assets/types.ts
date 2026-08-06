@@ -85,6 +85,17 @@ export const IgnoredAssetHandlingType = {
 
 export type IgnoredAssetsHandlingType = (typeof IgnoredAssetHandlingType)[keyof typeof IgnoredAssetHandlingType];
 
+const ignoredAssetsHandlingValues: string[] = Object.values(IgnoredAssetHandlingType);
+
+/**
+ * Whether a string is one of the three handling modes. Needed where the value arrives untyped —
+ * from the filter bar's param bag or the URL — so an unknown one falls back to the default rather
+ * than reaching the request.
+ */
+export function isIgnoredAssetsHandling(value: string): value is IgnoredAssetsHandlingType {
+  return ignoredAssetsHandlingValues.includes(value);
+}
+
 export const AssetFlag = {
   REBASING: 'rebasing',
 } as const;

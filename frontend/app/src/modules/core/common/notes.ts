@@ -48,6 +48,8 @@ export enum NoteLocation {
   SETTINGS_ACCOUNT = 'SETTINGS_ACCOUNT',
   SETTINGS_GENERAL = 'SETTINGS_GENERAL',
   SETTINGS_DATABASE = 'SETTINGS_DATA_SECURITY',
+  // The tab moved to /settings/chains, but this value is persisted in user_notes.location, so
+  // renaming it would orphan every note a user attached to the page. Keep it as is.
   SETTINGS_EVM = 'SETTINGS_EVM',
   SETTINGS_ACCOUNTING = 'SETTINGS_ACCOUNTING',
   SETTINGS_ORACLE = 'SETTINGS_ORACLE',

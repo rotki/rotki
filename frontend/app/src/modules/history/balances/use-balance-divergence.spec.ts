@@ -2,7 +2,9 @@ import { bigNumberify } from '@rotki/common';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import { get } from '@vueuse/core';
 import flushPromises from 'flush-promises';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 
 const { runTaskMock } = vi.hoisted(() => ({ runTaskMock: vi.fn() }));
 const mockFindDivergence = vi.fn();
@@ -68,7 +70,7 @@ describe('useBalanceDivergence', () => {
   });
 
   it('should run the divergence task and expose the derived boundaries and summary', async () => {
-    runTaskMock.mockReturnValue({ result: divergedResult(), success: true });
+    runTaskMock.mockReturnValue(ok(divergedResult()));
     const divergence = useBalanceDivergence();
 
     await divergence.find({ address: '0xA', asset: 'ETH', evmChain: 'ethereum' });
@@ -82,7 +84,7 @@ describe('useBalanceDivergence', () => {
   });
 
   it('should surface the failure message on an actionable failure', async () => {
-    runTaskMock.mockReturnValue({ backendCancelled: false, cancelled: false, message: 'boom', skipped: false, success: false });
+    runTaskMock.mockReturnValue(err(TaskFailed({ message: 'boom' })));
     const divergence = useBalanceDivergence();
 
     await divergence.find({ address: '0xA', asset: 'ETH', evmChain: 'ethereum' });
@@ -93,7 +95,7 @@ describe('useBalanceDivergence', () => {
   });
 
   it('should not set an error when the task is cancelled', async () => {
-    runTaskMock.mockReturnValue({ backendCancelled: false, cancelled: true, message: 'cancelled', skipped: false, success: false });
+    runTaskMock.mockReturnValue(err(Cancelled({ message: 'cancelled' })));
     const divergence = useBalanceDivergence();
 
     await divergence.find({ address: '0xA', asset: 'ETH', evmChain: 'ethereum' });
@@ -146,7 +148,7 @@ describe('useBalanceDivergence', () => {
   });
 
   it('should clear a previous result and error', async () => {
-    runTaskMock.mockReturnValue({ result: divergedResult(), success: true });
+    runTaskMock.mockReturnValue(ok(divergedResult()));
     const divergence = useBalanceDivergence();
 
     await divergence.find({ address: '0xA', asset: 'ETH', evmChain: 'ethereum' });

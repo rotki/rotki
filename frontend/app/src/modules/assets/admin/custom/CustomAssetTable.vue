@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { CustomAsset } from '@/modules/assets/types';
-import type { Filters, Matcher } from '@/modules/core/table/filters/use-custom-assets-filter';
+import type { Filters } from '@/modules/core/table/filters/use-custom-assets-filter';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { some } from 'es-toolkit/compat';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
-import TableFilter from '@/modules/core/table/TableFilter.vue';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
@@ -19,9 +21,9 @@ const expandedModel = defineModel<CustomAsset[]>('expanded', { required: true })
 
 const filtersModel = defineModel<Filters>('filters', { required: true });
 
-const { assets, matchers, loading = false } = defineProps<{
+const { assets, fields, loading = false } = defineProps<{
   assets: CustomAsset[];
-  matchers: Matcher[];
+  fields: FieldDef[];
   loading?: boolean;
 }>();
 
@@ -31,6 +33,8 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const pillLabels = usePillBarLabels();
 
 const cols = computed<DataTableColumn<CustomAsset>[]>(() => [
   {
@@ -81,16 +85,16 @@ function expand(item: CustomAsset) {
 <template>
   <RuiCard>
     <template #custom-header>
-      <div class="flex justify-between px-4 pt-4">
+      <div class="flex items-center gap-3 px-4 pt-4">
         <HintMenuIcon>
           {{ t('asset_table.custom.subtitle') }}
         </HintMenuIcon>
-        <div class="w-full sm:max-w-[25rem] self-center">
-          <TableFilter
-            v-model:matches="filtersModel"
-            :matchers="matchers"
-          />
-        </div>
+        <PillFilterBar
+          v-model:matches="filtersModel"
+          class="flex-1 min-w-[12rem] md:min-w-[24rem]"
+          :fields="fields"
+          :labels="pillLabels"
+        />
       </div>
     </template>
     <RuiDataTable

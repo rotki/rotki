@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { getValidSelectorFromEvmAddress } from '@rotki/common';
 import {
   type AssetMovementEventFixture,
@@ -182,6 +182,21 @@ export class HistoryEventsPage {
     return rows.count();
   }
 
+  /**
+   * A row addressed by the id of the event it stands for — the only stable handle. The table sorts
+   * timestamp DESC and re-renders, so `nth(i)` names a different row from one query to the next.
+   */
+  rowById(eventId: string): Locator {
+    return this.page.locator(`[data-event-id="${eventId}"]`);
+  }
+
+  /** The event id of the first row matching `rowSelector`. */
+  async eventIdOf(rowSelector: string): Promise<string> {
+    const id = await this.page.locator(rowSelector).first().getAttribute('data-event-id');
+    expect(id, `${rowSelector} carries no data-event-id`).toBeTruthy();
+    return id ?? '';
+  }
+
   async getMovementRows(): Promise<number> {
     const rows = this.page.locator('[data-cy=history-event-movement]');
     return rows.count();
@@ -213,7 +228,11 @@ export class HistoryEventsPage {
   }
 
   async deleteEvent(rowSelector: string, index: number): Promise<void> {
-    const row = this.page.locator(rowSelector).nth(index);
+    return this.deleteEventRow(this.page.locator(rowSelector).nth(index));
+  }
+
+  /** Deletes an already-resolved row — `deleteEvent` re-queries by index and the list re-sorts. */
+  async deleteEventRow(row: Locator): Promise<void> {
     await row.hover();
     await row.locator('[data-cy=row-delete]').click();
     // Confirm the delete dialog

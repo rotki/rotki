@@ -1,12 +1,11 @@
 import type { DeepReadonly, Ref } from 'vue';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import { Priority, Severity } from '@rotki/common';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, isCancellation, type TaskError } from '@/modules/core/tasks/task-result';
 import { useReportGeneration } from '@/modules/reports/use-report-generation';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { useReportsApi } from '@/modules/reports/use-reports-api';
@@ -14,6 +13,9 @@ import { PinnedNames } from '@/modules/session/types';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
+import { activityLabel } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseReportsPageActionsOptions {
   /** Resolves a local file path from a File object (Electron only) */
@@ -36,7 +38,7 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
   const { exportReportData, generateReport } = useReportGeneration();
   const { fetchReports } = useReportOperations();
   const { unpin: unpinReportCard } = usePinnedPanel(PinnedNames.REPORT_ACTIONABLE_CARD);
@@ -116,13 +118,22 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
     const file = get(reportDebugData);
     const path = getPath(file);
 
-    const outcome = await runTask<boolean, TaskMeta>(
-      async () => path ? importReportData(path) : uploadReportData(file),
-      { type: TaskType.IMPORT_PNL_REPORT_DATA, meta: { title: t('profit_loss_reports.debug.import_message.title') } },
-    );
+    const outcome = await submitTask<boolean>({
+      id: makeActivityId(ActivityKind.PNL_REPORT, ActivityPart.IMPORT),
+      kind: ActivityKind.PNL_REPORT,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
+        await runTask<boolean>(
+          async () => path ? importReportData(path) : uploadReportData(file),
+        ),
+        value => value,
+      ),
+      subtitle: activityLabel(ActivityKind.PNL_REPORT, ActivityPart.IMPORT),
+      title: t('profit_loss_reports.debug.import_message.title'),
+    });
 
-    if (outcome.success) {
-      if (outcome.result) {
+    if (!isErr(outcome)) {
+      if (outcome.value) {
         showSuccessMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.success'));
         await fetchReports();
       }
@@ -130,11 +141,11 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
         showErrorMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.failure', { message: '' }));
       }
     }
-    else if (outcome.cancelled) {
+    else if (isCancellation(outcome.error)) {
       await fetchReports();
     }
-    else if (!outcome.skipped) {
-      showErrorMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.failure', { message: outcome.message }));
+    else if (isActionable(outcome.error)) {
+      showErrorMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.failure', { message: outcome.error.message }));
     }
 
     set(importDataLoading, false);

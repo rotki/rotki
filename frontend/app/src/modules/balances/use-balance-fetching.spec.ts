@@ -1,3 +1,4 @@
+import { runSpecWith } from '@test/utils/mocks/native-task';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBalanceFetching } from './use-balance-fetching';
 import '@test/i18n';
@@ -48,15 +49,24 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: vi.fn(),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
-  ...(await importOriginal<Record<string, unknown>>()),
-  useTaskHandler: vi.fn().mockReturnValue({
-    runTask: vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>): Promise<unknown> => {
-      await taskFn();
-      return { success: true, result: {} };
+// The activity's task runner, handed to `run` by the stubbed `submitTask` below.
+const { runTask } = vi.hoisted(() => ({ runTask: vi.fn() }));
+
+vi.mock('@/modules/task-center/use-native-task', async () => {
+  const { ok } = await import('plainfp/result');
+  runTask.mockImplementation(async (taskFn: () => Promise<unknown>): Promise<unknown> => {
+    await taskFn();
+    return ok({});
+  });
+
+  return {
+    useNativeTask: vi.fn().mockReturnValue({
+      statusOf: vi.fn().mockReturnValue({ active: false, everCompleted: false, pending: false, running: false }),
+      // Run the submitted spec inline so `queryBalancesAsync` is actually reached.
+      submitTask: vi.fn(runSpecWith(runTask)),
     }),
-  }),
-}));
+  };
+});
 
 vi.mock('@/modules/balances/api/use-balances-api', () => ({
   useBalancesApi: vi.fn().mockReturnValue({

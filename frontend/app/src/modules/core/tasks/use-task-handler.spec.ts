@@ -1,8 +1,7 @@
-import type { Task, TaskMeta } from '@/modules/core/tasks/types';
-import { assert } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TaskType } from '@/modules/core/tasks/task-type';
+import { isErr, isOk } from 'plainfp/result';
+import { hasTag } from 'plainfp/tagged';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockCancelAsyncTask = vi.fn();
 
@@ -11,14 +10,6 @@ vi.mock('@/modules/core/tasks/use-task-api', () => ({
     cancelAsyncTask: (...args: unknown[]): unknown => mockCancelAsyncTask(...args),
   }),
 }));
-
-function getMeta(overrides?: Partial<TaskMeta>): TaskMeta {
-  return { title: 'Test task', ...overrides };
-}
-
-function makeTask(id: number, type: TaskType, meta: TaskMeta = getMeta()): Task<TaskMeta> {
-  return { id, type, meta, time: Date.now() };
-}
 
 describe('useTaskHandler', () => {
   let handler: ReturnType<typeof import('@/modules/core/tasks/use-task-handler').useTaskHandler>;
@@ -41,357 +32,234 @@ describe('useTaskHandler', () => {
   });
 
   describe('runTask', () => {
-    it('should return TaskSuccess on successful task', async () => {
+    it('should resolve ok carrying the result on a successful task', async () => {
       const taskFn = vi.fn().mockResolvedValue({ taskId: 1 });
 
-      const promise = handler.runTask<string, TaskMeta>(taskFn, {
-        type: TaskType.TX,
-        meta: getMeta(),
-      });
+      const promise = handler.runTask<string>(taskFn, 'Test task');
 
       await nextTick();
-      handler.handleResult({ result: 'hello', message: '' }, makeTask(1, TaskType.TX));
+      handler.handleResult({ result: 'hello', message: '' }, 1);
 
       const outcome = await promise;
 
-      expect(outcome).toEqual({
-        success: true,
-        result: 'hello',
-        message: undefined,
-      });
+      assert(isOk(outcome));
+      expect(outcome.value).toBe('hello');
       expect(taskFn).toHaveBeenCalledOnce();
     });
 
-    it('should return a cancelled outcome when the task start is cancelled', async () => {
+    it('should resolve ok and drop the message when a result carries one', async () => {
+      const taskFn = vi.fn().mockResolvedValue({ taskId: 2 });
+
+      const promise = handler.runTask<number>(taskFn, 'Test task');
+
+      await nextTick();
+      handler.handleResult({ result: 42, message: 'completed with info' }, 2);
+
+      const outcome = await promise;
+
+      assert(isOk(outcome));
+      expect(outcome.value).toBe(42);
+    });
+
+    it('should return a Cancelled error when the task start is cancelled', async () => {
       const taskFn = vi.fn().mockRejectedValue(cancellationError('All requests cancelled'));
 
-      const outcome = await handler.runTask<string, TaskMeta>(taskFn, {
-        type: TaskType.TX,
-        meta: getMeta(),
-      });
+      const outcome = await handler.runTask<string>(taskFn, 'Test task');
 
-      assert(!outcome.success);
-      expect(outcome.cancelled).toBe(true);
-      expect(outcome.skipped).toBe(false);
+      assert(isErr(outcome));
+      expect(hasTag(outcome.error, 'Cancelled')).toBe(true);
       expect(store.hasRunningTasks).toBe(false);
     });
 
-    it('should return a cancelled outcome when the task start is aborted', async () => {
+    it('should return a Cancelled error when the task start is aborted', async () => {
       const taskFn = vi.fn().mockRejectedValue(new DOMException('aborted', 'AbortError'));
 
-      const outcome = await handler.runTask<string, TaskMeta>(taskFn, {
-        type: TaskType.TX,
-        meta: getMeta(),
-      });
+      const outcome = await handler.runTask<string>(taskFn, 'Test task');
 
-      assert(!outcome.success);
-      expect(outcome.cancelled).toBe(true);
+      assert(isErr(outcome));
+      expect(hasTag(outcome.error, 'Cancelled')).toBe(true);
     });
 
     it('should rethrow non-cancellation errors from the task start', async () => {
       const taskFn = vi.fn().mockRejectedValue(new Error('backend exploded'));
 
-      await expect(handler.runTask<string, TaskMeta>(taskFn, {
-        type: TaskType.TX,
-        meta: getMeta(),
-      })).rejects.toThrow('backend exploded');
+      await expect(handler.runTask<string>(taskFn, 'Test task')).rejects.toThrow('backend exploded');
     });
 
-    it('should return TaskSuccess with message when present', async () => {
-      const taskFn = vi.fn().mockResolvedValue({ taskId: 2 });
-
-      const promise = handler.runTask<number, TaskMeta>(taskFn, {
-        type: TaskType.MANUAL_BALANCES_ADD,
-        meta: getMeta(),
-      });
-
-      await nextTick();
-      handler.handleResult(
-        { result: 42, message: 'completed with info' },
-        makeTask(2, TaskType.MANUAL_BALANCES_ADD),
-      );
-
-      const outcome = await promise;
-
-      expect(outcome).toEqual({
-        success: true,
-        result: 42,
-        message: 'completed with info',
-      });
-    });
-
-    it('should return TaskFailure with error when result has error field', async () => {
+    it('should return a TaskFailed error carrying the cause when the result has an error', async () => {
       const taskFn = vi.fn().mockResolvedValue({ taskId: 3 });
       const error = new Error('backend exploded');
 
-      const promise = handler.runTask<string, TaskMeta>(taskFn, {
-        type: TaskType.QUERY_BALANCES,
-        meta: getMeta(),
-      });
+      const promise = handler.runTask<string>(taskFn, 'Test task');
 
       await nextTick();
-      handler.handleResult(
-        { result: null, message: '', error },
-        makeTask(3, TaskType.QUERY_BALANCES),
-      );
+      handler.handleResult({ result: null, message: '', error }, 3);
 
       const outcome = await promise;
 
-      assert(!outcome.success);
-      expect(outcome.message).toBe('backend exploded');
-      expect(outcome.error).toBe(error);
-      expect(outcome.cancelled).toBe(false);
-      expect(outcome.backendCancelled).toBe(false);
-      expect(outcome.skipped).toBe(false);
+      assert(isErr(outcome));
+      assert(hasTag(outcome.error, 'TaskFailed'));
+      expect(outcome.error.message).toBe('backend exploded');
+      expect(outcome.error.cause).toBe(error);
     });
 
-    it('should return cancelled when user cancels task', async () => {
+    it('should return a Cancelled error when the user cancels the task', async () => {
       const taskFn = vi.fn().mockResolvedValue({ taskId: 4 });
 
-      const promise = handler.runTask<string, TaskMeta>(taskFn, {
-        type: TaskType.IMPORT_CSV,
-        meta: getMeta(),
-      });
+      const promise = handler.runTask<string>(taskFn, 'Test task');
 
       await nextTick();
-      handler.handleResult(
-        { result: null, message: 'task_cancelled_by_user' },
-        makeTask(4, TaskType.IMPORT_CSV),
-      );
+      handler.handleResult({ result: null, message: 'task_cancelled_by_user' }, 4);
 
       const outcome = await promise;
 
-      assert(!outcome.success);
-      expect(outcome.cancelled).toBe(true);
-      expect(outcome.backendCancelled).toBe(false);
-      expect(outcome.skipped).toBe(false);
+      assert(isErr(outcome));
+      expect(hasTag(outcome.error, 'Cancelled')).toBe(true);
     });
 
-    it('should return backendCancelled when result is null with no message', async () => {
+    it('should return a BackendCancelled error when the result is null with no message', async () => {
       const taskFn = vi.fn().mockResolvedValue({ taskId: 5 });
 
-      const promise = handler.runTask<string, TaskMeta>(taskFn, {
-        type: TaskType.QUERY_EXCHANGE_BALANCES,
-        meta: getMeta(),
-      });
+      const promise = handler.runTask<string>(taskFn, 'Test task');
 
       await nextTick();
-      handler.handleResult(
-        { result: null, message: '' },
-        makeTask(5, TaskType.QUERY_EXCHANGE_BALANCES),
-      );
+      handler.handleResult({ result: null, message: '' }, 5);
 
       const outcome = await promise;
 
-      assert(!outcome.success);
-      expect(outcome.cancelled).toBe(true);
-      expect(outcome.backendCancelled).toBe(true);
-      expect(outcome.skipped).toBe(false);
+      assert(isErr(outcome));
+      expect(hasTag(outcome.error, 'BackendCancelled')).toBe(true);
     });
 
-    it('should return error when result is null with a non-cancel message', async () => {
+    it('should return a TaskFailed error when the result is null with a non-cancel message', async () => {
       const taskFn = vi.fn().mockResolvedValue({ taskId: 6 });
 
-      const promise = handler.runTask<string, TaskMeta>(taskFn, {
-        type: TaskType.TX,
-        meta: getMeta(),
-      });
+      const promise = handler.runTask<string>(taskFn, 'Test task');
 
       await nextTick();
-      handler.handleResult(
-        { result: null, message: 'something went wrong' },
-        makeTask(6, TaskType.TX),
-      );
+      handler.handleResult({ result: null, message: 'something went wrong' }, 6);
 
       const outcome = await promise;
 
-      assert(!outcome.success);
-      expect(outcome.message).toBe('something went wrong');
-      expect(outcome.cancelled).toBe(false);
-      expect(outcome.backendCancelled).toBe(false);
-      expect(outcome.skipped).toBe(false);
+      assert(isErr(outcome));
+      assert(hasTag(outcome.error, 'TaskFailed'));
+      expect(outcome.error.message).toBe('something went wrong');
     });
 
-    it('should skip when guard detects duplicate task', async () => {
-      const taskFn = vi.fn().mockResolvedValue({ taskId: 7 });
-
-      store.addTask(99, TaskType.TX, getMeta());
-
-      const outcome = await handler.runTask<string, TaskMeta>(taskFn, {
-        type: TaskType.TX,
-        meta: getMeta(),
-      });
-
-      assert(!outcome.success);
-      expect(outcome.skipped).toBe(true);
-      expect(outcome.cancelled).toBe(false);
-      expect(outcome.backendCancelled).toBe(false);
-      expect(taskFn).not.toHaveBeenCalled();
-    });
-
-    it('should not skip when guard is disabled', async () => {
-      const taskFn = vi.fn().mockResolvedValue({ taskId: 8 });
-
-      store.addTask(99, TaskType.TX, getMeta());
-
-      const promise = handler.runTask<string, TaskMeta>(taskFn, {
-        type: TaskType.TX,
-        meta: getMeta(),
-        guard: false,
-      });
-
-      expect(taskFn).toHaveBeenCalledOnce();
-
-      await nextTick();
-      handler.handleResult({ result: 'ok', message: '' }, makeTask(8, TaskType.TX));
-
-      const outcome = await promise;
-      expect(outcome.success).toBe(true);
-    });
-
-    it('should use per-taskId handler when unique is false', async () => {
+    it('should resolve each concurrent task from its own handler', async () => {
       const taskFnA = vi.fn().mockResolvedValue({ taskId: 10 });
       const taskFnB = vi.fn().mockResolvedValue({ taskId: 11 });
-      const meta = getMeta();
 
-      const promiseA = handler.runTask<string, TaskMeta>(taskFnA, {
-        type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
-        meta,
-        unique: false,
-        guard: false,
-      });
-
-      const promiseB = handler.runTask<string, TaskMeta>(taskFnB, {
-        type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
-        meta,
-        unique: false,
-        guard: false,
-      });
+      const promiseA = handler.runTask<string>(taskFnA, 'Test task');
+      const promiseB = handler.runTask<string>(taskFnB, 'Test task');
 
       await nextTick();
 
-      handler.handleResult(
-        { result: 'B', message: '' },
-        makeTask(11, TaskType.QUERY_BLOCKCHAIN_BALANCES, meta),
-      );
+      handler.handleResult({ result: 'B', message: '' }, 11);
 
       const outcomeB = await promiseB;
-      expect(outcomeB).toEqual({ success: true, result: 'B', message: undefined });
+      assert(isOk(outcomeB));
+      expect(outcomeB.value).toBe('B');
 
-      handler.handleResult(
-        { result: 'A', message: '' },
-        makeTask(10, TaskType.QUERY_BLOCKCHAIN_BALANCES, meta),
-      );
+      handler.handleResult({ result: 'A', message: '' }, 10);
 
       const outcomeA = await promiseA;
-      expect(outcomeA).toEqual({ success: true, result: 'A', message: undefined });
+      assert(isOk(outcomeA));
+      expect(outcomeA.value).toBe('A');
     });
 
     it('should add task to store after task function resolves', async () => {
       const taskFn = vi.fn().mockResolvedValue({ taskId: 20 });
 
-      const promise = handler.runTask<string, TaskMeta>(taskFn, {
-        type: TaskType.TX,
-        meta: getMeta(),
-      });
+      const promise = handler.runTask<string>(taskFn, 'Test task');
 
       await nextTick();
 
-      expect(store.isTaskRunning(TaskType.TX)).toBe(true);
+      expect(get(store.taskById)[20]).toBeDefined();
 
       // Clean up the pending promise
-      handler.handleResult({ result: '', message: '' }, makeTask(20, TaskType.TX));
+      handler.handleResult({ result: '', message: '' }, 20);
       await promise;
     });
 
-    it('should skip ignoreResult tasks in handleResult', () => {
-      const meta: TaskMeta = { title: 'ignored', ignoreResult: true };
-      store.addTask(30, TaskType.TX, meta);
+    it('should drop the task when nothing is awaiting its result', () => {
+      store.addTask(30, 'orphan');
 
-      handler.handleResult({ result: 'anything', message: '' }, makeTask(30, TaskType.TX, meta));
+      handler.handleResult({ result: 'anything', message: '' }, 30);
 
-      expect(store.isTaskRunning(TaskType.TX)).toBe(false);
+      expect(get(store.taskById)[30]).toBeUndefined();
     });
   });
 
-  describe('cancelTask', () => {
-    it('should cancel a running task and trigger handler', async () => {
+  describe('cancelTaskById', () => {
+    it('should cancel a running task and settle its promise cancelled', async () => {
       const taskFn = vi.fn().mockResolvedValue({ taskId: 40 });
       mockCancelAsyncTask.mockResolvedValue(true);
 
-      const promise = handler.runTask<string, TaskMeta>(taskFn, {
-        type: TaskType.TX,
-        meta: getMeta(),
-      });
+      const promise = handler.runTask<string>(taskFn, 'Test task');
 
       await nextTick();
 
-      const task = get(store.tasks).find(t => t.id === 40)!;
-      expect(task).toBeDefined();
-
-      const deleted = await handler.cancelTask(task);
+      const deleted = await handler.cancelTaskById(40);
 
       expect(deleted).toBe(true);
       expect(mockCancelAsyncTask).toHaveBeenCalledWith(40);
+      expect(get(store.taskById)[40]).toBeUndefined();
 
       const outcome = await promise;
-      assert(!outcome.success);
-      expect(outcome.cancelled).toBe(true);
+      assert(isErr(outcome));
+      expect(hasTag(outcome.error, 'Cancelled')).toBe(true);
     });
 
-    it('should return false when task is not running', async () => {
-      const task = makeTask(999, TaskType.TX);
-      const deleted = await handler.cancelTask(task);
+    it('should ignore an id with no task in flight', async () => {
+      const deleted = await handler.cancelTaskById(999);
+
       expect(deleted).toBe(false);
       expect(mockCancelAsyncTask).not.toHaveBeenCalled();
     });
 
-    it('should handle TaskNotFoundError by removing task', async () => {
-      store.addTask(50, TaskType.TX, getMeta());
+    it('should ignore a task the store knows but nothing is awaiting', async () => {
+      // Only `runTask` registers a handler, so a store entry on its own is not cancellable.
+      store.addTask(60, 'Test task');
+
+      const deleted = await handler.cancelTaskById(60);
+
+      expect(deleted).toBe(false);
+      expect(mockCancelAsyncTask).not.toHaveBeenCalled();
+    });
+
+    it('should handle TaskNotFoundError by removing the task', async () => {
+      const taskFn = vi.fn().mockResolvedValue({ taskId: 50 });
       const { TaskNotFoundError: TNFError } = await import('@/modules/core/tasks/types');
       mockCancelAsyncTask.mockRejectedValue(new TNFError('not found'));
 
-      const task = get(store.tasks).find(t => t.id === 50)!;
-      const deleted = await handler.cancelTask(task);
+      const pending = handler.runTask<string>(taskFn, 'Test task');
+      await nextTick();
+
+      const deleted = await handler.cancelTaskById(50);
 
       expect(deleted).toBe(false);
-      expect(store.isTaskRunning(TaskType.TX)).toBe(false);
+      expect(get(store.taskById)[50]).toBeUndefined();
+
+      // The promise is still live: only a reported result settles it.
+      handler.handleResult({ result: null, message: 'gone' }, 50);
+      await pending;
     });
 
-    it('should remove task without handler when cancel succeeds but no handler registered', async () => {
-      store.addTask(60, TaskType.MANUAL_BALANCES_ADD, getMeta());
-      mockCancelAsyncTask.mockResolvedValue(true);
+    it('should leave the task alone when the backend refuses the cancel', async () => {
+      const taskFn = vi.fn().mockResolvedValue({ taskId: 55 });
+      mockCancelAsyncTask.mockResolvedValue(false);
 
-      const task = get(store.tasks).find(t => t.id === 60)!;
-      const deleted = await handler.cancelTask(task);
+      const pending = handler.runTask<string>(taskFn, 'Test task');
+      await nextTick();
 
-      expect(deleted).toBe(true);
-      expect(store.isTaskRunning(TaskType.MANUAL_BALANCES_ADD)).toBe(false);
-    });
-  });
+      const deleted = await handler.cancelTaskById(55);
 
-  describe('cancelTaskByTaskType', () => {
-    it('should cancel all tasks of given types', async () => {
-      mockCancelAsyncTask.mockResolvedValue(true);
+      expect(deleted).toBe(false);
+      expect(get(store.taskById)[55]).toBeDefined();
 
-      store.addTask(70, TaskType.TX, getMeta());
-      store.addTask(71, TaskType.TX, getMeta());
-      store.addTask(72, TaskType.MANUAL_BALANCES_ADD, getMeta());
-
-      await handler.cancelTaskByTaskType([TaskType.TX]);
-
-      expect(mockCancelAsyncTask).toHaveBeenCalledTimes(2);
-      expect(mockCancelAsyncTask).toHaveBeenCalledWith(70);
-      expect(mockCancelAsyncTask).toHaveBeenCalledWith(71);
-    });
-
-    it('should accept single task type', async () => {
-      mockCancelAsyncTask.mockResolvedValue(true);
-      store.addTask(80, TaskType.IMPORT_CSV, getMeta());
-
-      await handler.cancelTaskByTaskType(TaskType.IMPORT_CSV);
-
-      expect(mockCancelAsyncTask).toHaveBeenCalledWith(80);
+      handler.handleResult({ result: 'landed anyway', message: '' }, 55);
+      await pending;
     });
   });
 });

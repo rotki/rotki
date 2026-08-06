@@ -1,13 +1,15 @@
 import type { AddressBookSimplePayload, EthNames } from '@/modules/accounts/address-book/eth-names';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import { isValidEthAddress } from '@rotki/common';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { activityLabel } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseEnsOperationsReturn {
   fetchEnsNames: (payload: AddressBookSimplePayload[], forceUpdate?: boolean) => Promise<void>;
@@ -15,7 +17,7 @@ interface UseEnsOperationsReturn {
 }
 
 export function useEnsOperations(): UseEnsOperationsReturn {
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
   const { notifyError } = useNotifications();
   const { updateEnsNamesAndReset } = useAddressNameResolution();
@@ -39,16 +41,24 @@ export function useEnsOperations(): UseEnsOperationsReturn {
     let newResult: Record<string, string | null> = {};
 
     if (forceUpdate) {
-      const outcome = await runTask<EthNames, TaskMeta>(
-        async () => getEnsNamesTask(filteredAddresses),
-        { type: TaskType.FETCH_ENS_NAMES, meta: { title: t('ens_names.task.title') } },
-      );
+      const outcome = await submitTask({
+        id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.ENS),
+        kind: ActivityKind.ACCOUNTS,
+        rerunnable: true,
+        run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+          await runTask<EthNames>(
+            async () => getEnsNamesTask(filteredAddresses),
+          ),
+          (value) => {
+            newResult = value;
+          },
+        ),
+        subtitle: activityLabel(ActivityKind.ACCOUNTS, ActivityPart.ENS, { count: filteredAddresses.length }, filteredAddresses.length),
+        title: t('task_center.group.accounts'),
+      });
 
-      if (outcome.success) {
-        newResult = outcome.result;
-      }
-      else if (isActionableFailure(outcome)) {
-        notifyError(t('ens_names.task.title'), t('ens_names.error.message', { message: outcome.message }));
+      if (isErr(outcome) && isActionable(outcome.error)) {
+        notifyError(t('ens_names.task.title'), t('ens_names.error.message', { message: outcome.error.message }));
       }
     }
     else {

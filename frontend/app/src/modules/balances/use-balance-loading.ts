@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseBalancesLoadingReturn {
   loadingBalances: ComputedRef<boolean>;
@@ -8,18 +8,21 @@ interface UseBalancesLoadingReturn {
 }
 
 export function useBalancesLoading(): UseBalancesLoadingReturn {
-  const { useIsTaskRunning } = useTaskStore();
+  const { useIsActive } = useTaskCenter();
+
+  // Every balance source now runs native, so liveness comes entirely off the orchestrator
+  // (which also covers the queued/pending window the task store could not see).
 
   const loadingBalances = logicOr(
-    useIsTaskRunning(TaskType.QUERY_BALANCES),
-    useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
-    useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES),
-    useIsTaskRunning(TaskType.MANUAL_BALANCES),
+    useIsActive(ActivityKind.ALL_BALANCES),
+    useIsActive(ActivityKind.BLOCKCHAIN_BALANCES),
+    useIsActive(ActivityKind.EXCHANGE_BALANCES),
+    useIsActive(ActivityKind.MANUAL_BALANCES),
   );
 
   const loadingBalancesAndDetection = logicOr(
     loadingBalances,
-    useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS),
+    useIsActive(ActivityKind.TOKEN_DETECTION),
   );
 
   return {

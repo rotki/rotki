@@ -1,133 +1,98 @@
-import type { TaskMeta } from '@/modules/core/tasks/types';
-import { groupBy } from 'es-toolkit';
-import { snakeCaseTransformer } from '@/modules/core/api/transformers';
-import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
+import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { logger } from '@/modules/core/common/logging/logging';
-import { Section } from '@/modules/core/common/status';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { EvmUndecodedTransactionResponse } from '@/modules/core/messaging/types';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { isActionable, isCancellation, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import {
-  type PullEthBlockEventPayload,
-  type PullLocationTransactionPayload,
-  type PullTransactionPayload,
   TransactionChainType,
   TransactionChainTypeNeedDecoding,
 } from '@/modules/history/events/event-payloads';
+import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { redecodeFlow } from '@/modules/history/events/tx/redecode.flow';
+import { useUndecodedTransactionsStatus } from '@/modules/history/events/tx/use-undecoded-transactions-status';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { DECODE_LANE, UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
+import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
+/**
+ * Where a decode sits in a pre-declared tree: which syncs must finish before it may start, whose
+ * child it is, and when it has nothing to do. Absent for the imperative re-decode entry points,
+ * which submit a decode on its own and run it straight away.
+ */
+export interface DecodePlacement {
+  readonly deps?: readonly ActivityId[];
+  readonly parent?: ActivityId;
+  readonly skipWhen?: () => boolean;
+}
+
+/**
+ * Decoding a chain's transactions: the per-chain mechanism, and the flow that runs it over a set.
+ *
+ * Deliberately not everything decode-shaped. Re-decoding a *named* set of transactions or block
+ * events lives in `useTargetedRedecode` (payload-specific, never rerunnable, pulls before
+ * decoding), and the undecoded counts these consult live in `useUndecodedTransactionsStatus`.
+ */
 export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { t } = useI18n({ useScope: 'global' });
   const { notifyError } = useNotifications();
 
-  const {
-    decodeTransactions,
-    getUndecodedTransactionsBreakdown,
-    pullAndRecodeEthBlockEventRequest,
-    pullAndRecodeTransactionRequest,
-  } = useHistoryEventsApi();
-
-  const { cancelTaskByTaskType, runTask } = useTaskHandler();
-  const { isTaskRunning } = useTaskStore();
-  const {
-    markDecodingCancelled,
-    resetUndecodedTransactionsStatus,
-    getUndecodedTransactionStatus,
-    updateUndecodedTransactionsStatus,
-  } = useDecodingStatusStore();
-
-  const { decodableTxChainsInfo, getChain, getChainName, isEvmLikeChains, isSolanaChains } = useSupportedChains();
-
-  const { resetStatus } = useStatusUpdater(Section.HISTORY);
-
-  const fetchUndecodedTransactionsBreakdown = async (): Promise<void> => {
-    if (isTaskRunning(TaskType.FETCH_UNDECODED_TXS)) {
-      logger.debug(`was already fetching undecoded transactions`);
-      return;
-    }
-
-    const title = t('actions.history.fetch_undecoded_transactions.task.title');
-
-    const outcome = await runTask<EvmUndecodedTransactionResponse, TaskMeta>(
-      async () => getUndecodedTransactionsBreakdown(),
-      { type: TaskType.FETCH_UNDECODED_TXS, meta: { title }, guard: false },
-    );
-
-    if (outcome.success) {
-      const breakdown = EvmUndecodedTransactionResponse.parse(snakeCaseTransformer(outcome.result));
-
-      if (Object.keys(breakdown).length > 0) {
-        updateUndecodedTransactionsStatus(
-          Object.fromEntries(
-            Object.entries(breakdown).map(([chain, entry]) => [
-              chain,
-              {
-                chain,
-                processed: 0,
-                total: entry.undecoded,
-              },
-            ]),
-          ),
-        );
-      }
-      else {
-        resetUndecodedTransactionsStatus();
-      }
-    }
-    else if (isActionableFailure(outcome)) {
-      const description = t('actions.history.fetch_undecoded_transactions.error.message', {
-        message: outcome.message,
-      });
-      notifyError(title, description);
-    }
-  };
-
-  const fetchUndecodedTransactionsStatus = async (): Promise<void> => {
-    await fetchUndecodedTransactionsBreakdown();
-  };
-
-  const clearDependedSection = (): void => {
-    resetStatus({ section: Section.DEFI_LIQUITY_STAKING });
-    resetStatus({ section: Section.DEFI_LIQUITY_STAKING_POOLS });
-    resetStatus({ section: Section.DEFI_LIQUITY_STATISTICS });
-  };
+  const { decodeTransactions } = useHistoryEventsApi();
+  const { cancelByKind, submitTask } = useNativeTask();
+  const { getUndecodedTransactionStatus, markDecodingCancelled, resetUndecodedTransactionsStatus } = useDecodingStatusStore();
+  const { decodableTxChainsInfo, getChain, getChainName, isEvmLikeChains } = useSupportedChains();
+  const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
 
   const decodeTransactionsTask = async (
     chain: string,
     ignoreCache = false,
+    placement: DecodePlacement = {},
   ): Promise<void> => {
-    const taskMeta = {
-      all: false,
-      chain,
-      description: t('actions.transactions_redecode_by_chain.task.description', { chain: getChainName(chain) }),
-      title: t('actions.transactions_redecode_by_chain.task.title'),
-    };
+    // One native TX_DECODING activity per chain; the orchestrator owns liveness
+    // (`useWorkStatus(ActivityKind.TX_DECODING)`), cancellation and per-chain re-run.
+    const outcome = await submitTask({
+      deps: placement.deps,
+      id: decodeActivityId(chain, ignoreCache),
+      kind: ActivityKind.TX_DECODING,
+      lane: DECODE_LANE,
+      parent: placement.parent,
+      rerunnable: true,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => {
+        // Declared up front alongside the syncs it waits on, so the shape of a refresh does not
+        // depend on what the data turns out to be. When there is nothing left to decode it
+        // completes without calling the backend, rather than never appearing.
+        if (placement.skipWhen?.())
+          return ok(undefined);
 
-    const outcome = await runTask(
-      async () => decodeTransactions(chain, ignoreCache),
-      { type: TaskType.TRANSACTIONS_DECODING, meta: taskMeta, unique: false },
-    );
+        return mapResult(
+          await runTask<boolean>(
+            async () => decodeTransactions(chain, ignoreCache),
+          ),
+          () => {},
+        );
+      },
+      subtitle: activityLabelFor(msg.$t('task_center.activity.tx_decoding.chain'), { chain: getChainName(chain) }),
+      title: t('task_center.group.tx_decoding'),
+    });
 
-    if (outcome.success) {
-      clearDependedSection();
-    }
-    else if (outcome.cancelled) {
-      markDecodingCancelled(chain);
-    }
-    else if (!outcome.skipped) {
-      logger.error(outcome.error);
-      notifyError(
-        t('actions.transactions_redecode_by_chain.error.title'),
-        t('actions.transactions_redecode_by_chain.error.description', {
-          chain: getChainName(chain),
-          error: outcome.message,
-        }),
-      );
+    if (isErr(outcome)) {
+      const { error } = outcome;
+      if (isCancellation(error)) {
+        markDecodingCancelled(chain);
+      }
+      else if (isActionable(error)) {
+        logger.error(error.message);
+        notifyError(
+          t('actions.transactions_redecode_by_chain.error.title'),
+          t('actions.transactions_redecode_by_chain.error.description', {
+            chain: getChainName(chain),
+            error: error.message,
+          }),
+        );
+      }
     }
   };
 
@@ -140,207 +105,95 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         return processed < total && isEvmType === !isEvmLike;
       })
       .map(({ chain }) => getChain(chain));
-    await awaitParallelExecution(
-      chains,
-      item => item,
-      async item => decodeTransactionsTask(item),
-      2,
-    );
+    // No wrapper: each of these submits onto DECODE_LANE, which is what bounds how many chains
+    // decode at once. Wrapping them in a second limiter only hid that.
+    await Promise.all(chains.map(async chain => decodeTransactionsTask(chain)));
   };
 
   const checkMissingEventsAndRedecode = async (): Promise<void> => {
     resetUndecodedTransactionsStatus();
-    await fetchUndecodedTransactionsStatus();
+    await fetchUndecodedTransactionsBreakdown();
     await Promise.allSettled(TransactionChainTypeNeedDecoding.map(async item => checkMissingEventsAndRedecodeHandler(item)));
   };
 
+  /**
+   * The user-facing re-decode flow, as one activity with the per-chain decodes as its children. The
+   * umbrella is what the task center names and what dedups re-entry; the chains are what actually
+   * run, bounded by {@link DECODE_LANE}.
+   *
+   * This resolves the scope and then reads the shape off {@link redecodeFlow} rather than rebuilding
+   * it, so what a test asserts about the declaration is what runs. ⚠️ The id carries the scope: a
+   * scoped request identifying itself as the full run would be deduped onto a concurrent
+   * redecode-all and silently handed that broader run's promise. A request naming every decodable
+   * chain *is* the full run, so it takes the canonical id and dedups deliberately.
+   */
   const redecodeTransactions = async (chains: string[] = []): Promise<void> => {
-    const decodeChains = chains.length > 0 ? chains : get(decodableTxChainsInfo).map(chain => chain.id);
+    const allChains = get(decodableTxChainsInfo).map(chain => chain.id);
+    const decodeChains = chains.length > 0 ? chains : allChains;
+    const coversEverything = allChains.every(chain => decodeChains.includes(chain));
+    const flowId = redecodeFlow.id(coversEverything ? undefined : decodeChains);
+    const children = redecodeFlow.children(decodeChains);
 
-    await awaitParallelExecution(
-      decodeChains,
-      item => item,
-      async item => decodeTransactionsTask(item, true),
-      2,
-    );
-  };
-
-  /**
-   * Core decode function that throws on failure instead of notifying.
-   * Used by callers that need to handle errors themselves (e.g. conflict resolution).
-   */
-  const pullAndDecodeTransactionsRaw = async (payload: PullTransactionPayload): Promise<void> => {
-    let taskMeta = {
-      description: t('actions.transactions_redecode.task.single_description', {
-        chain: getChainName(payload.chain),
-        number: payload.txRefs.length,
-      }),
-      title: t('actions.transactions_redecode.task.title'),
-    };
-
-    if (payload.txRefs.length === 1) {
-      taskMeta = {
-        description: t('actions.transactions_redecode.task.description', {
-          chain: payload.chain,
-          tx: payload.txRefs[0],
-        }),
-        title: t('actions.transactions_redecode.task.title'),
-      };
-    }
-
-    const outcome = await runTask<boolean, TaskMeta>(
-      async () => pullAndRecodeTransactionRequest(payload),
-      { type: TaskType.TRANSACTIONS_DECODING, meta: taskMeta, unique: false },
-    );
-
-    if (outcome.success) {
-      if (outcome.result) {
-        clearDependedSection();
-      }
-      else {
-        throw new Error(outcome.message ?? t('actions.transactions_redecode.error.title'));
-      }
-    }
-    else if (isActionableFailure(outcome)) {
-      throw new Error(outcome.message);
-    }
-  };
-
-  /**
-   * Notifying wrapper — catches errors and shows notifications to the user.
-   * Used by the UI redecode flow where errors are displayed as toast messages.
-   */
-  const pullAndDecodeTransactions = async (payload: PullTransactionPayload): Promise<void> => {
-    try {
-      await pullAndDecodeTransactionsRaw(payload);
-    }
-    catch (error: any) {
-      logger.error(error);
-      notifyError(
-        t('actions.transactions_redecode.error.title'),
-        t('actions.transactions_redecode.error.description', {
-          error: error.message ?? error,
-        }),
-      );
-    }
-  };
-
-  const pullAndRedecodeTransactions = async ({ customIndexersOrder, deleteCustom, transactions }: PullLocationTransactionPayload): Promise<void> => {
-    resetUndecodedTransactionsStatus();
-
-    const grouped = groupBy(transactions, item => item.location);
-    Object.entries(grouped).forEach(([chain, transactions]) => {
-      updateUndecodedTransactionsStatus({
-        [chain]: {
-          chain,
-          processed: 0,
-          total: transactions.length,
-        },
-      });
+    // The flow is submitted before its children so the parent gate applies to them, but its `run`
+    // needs their promises — which only exist once submitted. It waits on this rather than on an
+    // array that would still be empty when the run body first executes.
+    let declared!: (work: readonly Promise<void>[]) => void;
+    const subtree = new Promise<readonly Promise<void>[]>((resolve) => {
+      declared = resolve;
     });
 
-    // Group transactions by chain type
-    const chainMaps = {
-      evm: new Map<string, string[]>(),
-      evmLike: new Map<string, string[]>(),
-      solana: new Map<string, string[]>(),
-    };
+    const flow = submitTask({
+      id: flowId,
+      kind: redecodeFlow.kind,
+      lane: UMBRELLA_LANE,
+      rerunnable: false,
+      // Declared, not hardcoded: the flow is what knows it deletes before re-deriving, and the
+      // eligibility rules are what act on it by holding matching off the same rows.
+      resets: redecodeFlow.resets,
+      run: async (): Promise<Result<void, TaskError>> => {
+        // allSettled, never all: one chain failing must not abandon the others.
+        //
+        // The flow settles COMPLETE even when chains failed. A failure marks the child, never the
+        // parent: to an observer the flow did run to completion, and the chain that failed carries
+        // its own FAILED status and keeps its stale freshness, so a later run retries exactly that
+        // chain and leaves the ones that succeeded alone. Failing the umbrella instead would say
+        // the whole re-decode did not happen, and would leave nothing able to distinguish the
+        // chains that need retrying from the ones that do not.
+        const outcomes = await Promise.allSettled(await subtree);
+        const failed = outcomes.filter(outcome => outcome.status === 'rejected').length;
 
-    transactions.forEach((item) => {
-      const chain = getChain(item.location);
-      let targetMap: Map<string, string[]>;
+        if (failed > 0)
+          logger.debug(`redecode finished with ${failed} of ${outcomes.length} chains failed`);
 
-      if (isEvmLikeChains(chain)) {
-        targetMap = chainMaps.evmLike;
-      }
-      else if (isSolanaChains(chain)) {
-        targetMap = chainMaps.solana;
-      }
-      else {
-        targetMap = chainMaps.evm;
-      }
-
-      if (!targetMap.has(chain))
-        targetMap.set(chain, []);
-
-      targetMap.get(chain)!.push(item.txRef);
+        return ok(undefined);
+      },
+      // The title names the flow; the scope only shows up as a subtitle, so a two-chain run is not
+      // presented identically to the full one.
+      subtitle: coversEverything
+        ? undefined
+        : activityLabelFor(msg.$t('task_center.activity.redecode.chains'), { chains: decodeChains.map(chain => getChainName(chain)).join(', ') }),
+      title: t(redecodeFlow.titleKey),
     });
 
-    // Process all chain types in parallel
-    // Note: customIndexersOrder is only passed for EVM chains
-    const processChainMap = async (chainMap: Map<string, string[]>, includeIndexerOrder: boolean): Promise<void> => {
-      if (chainMap.size === 0)
-        return;
+    declared(children.map(async child => decodeTransactionsTask(child.payload, true, { parent: flowId })));
 
-      await awaitParallelExecution(
-        Array.from(chainMap.entries()),
-        ([chain]) => chain,
-        async ([chain, txRefs]) => pullAndDecodeTransactions({
-          chain,
-          customIndexersOrder: includeIndexerOrder ? customIndexersOrder : undefined,
-          deleteCustom,
-          txRefs,
-        }),
-        2,
-      );
-    };
-
-    await processChainMap(chainMaps.evm, true);
-    await processChainMap(chainMaps.solana, false);
-    await processChainMap(chainMaps.evmLike, false);
+    await flow;
   };
 
-  const pullAndRecodeEthBlockEvents = async (payload: PullEthBlockEventPayload): Promise<void> => {
-    let taskMeta = {
-      description: t('actions.eth_block_events_redecoding.task.single_description', {
-        number: payload.blockNumbers.length,
-      }),
-      title: t('actions.eth_block_events_redecoding.task.title'),
-    };
-
-    if (payload.blockNumbers.length === 1) {
-      const data = payload.blockNumbers[0];
-      taskMeta = {
-        description: t('actions.eth_block_events_redecoding.task.description', {
-          block: data,
-        }),
-        title: t('actions.eth_block_events_redecoding.task.title'),
-      };
-    }
-
-    const outcome = await runTask<boolean, TaskMeta>(
-      async () => pullAndRecodeEthBlockEventRequest(payload),
-      { type: TaskType.ETH_BLOCK_EVENTS_DECODING, meta: taskMeta, unique: false },
-    );
-
-    if (outcome.success) {
-      if (outcome.result)
-        clearDependedSection();
-    }
-    else if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
-      notifyError(
-        t('actions.eth_block_events_redecoding.error.title'),
-        t('actions.eth_block_events_redecoding.error.description', {
-          error: outcome.message,
-        }),
-      );
-    }
-  };
-
-  async function cancelDecoding(): Promise<void> {
-    await cancelTaskByTaskType(TaskType.TRANSACTIONS_DECODING);
+  // Decoding submits under two id shapes at once (`tx_decoding:<chain>` for a chain sweep,
+  // `tx_decoding:<chain>:pull` for a targeted re-decode), so this cancels the whole kind.
+  function cancelDecoding(): void {
+    cancelByKind(ActivityKind.TX_DECODING);
   }
 
   return {
     cancelDecoding,
     checkMissingEventsAndRedecode,
     decodeTransactionsTask,
+    // Re-exported, not owned: a decode is always preceded by reading what is left to decode, so
+    // callers that drive one need both. Consumers that only want the counts take
+    // `useUndecodedTransactionsStatus` directly.
     fetchUndecodedTransactionsBreakdown,
-    fetchUndecodedTransactionsStatus,
-    pullAndDecodeTransactionsRaw,
-    pullAndRecodeEthBlockEvents,
-    pullAndRedecodeTransactions,
     redecodeTransactions,
   };
 });

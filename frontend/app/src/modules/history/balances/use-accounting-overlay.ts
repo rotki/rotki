@@ -1,11 +1,11 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, type TaskResult, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import {
   mergeSameScopeBuckets,
   pairKey,
@@ -16,6 +16,9 @@ import {
 } from '@/modules/history/balances/accounting-overlay-helpers';
 import { downsample, SPARKLINE_MAX_POINTS } from '@/modules/history/balances/sparkline';
 import { type HistoricalBalanceSeriesPayload, HistoricalBalanceSeriesResponse } from '@/modules/history/balances/types';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 // Re-exported so existing imports of these from this module keep working.
 export { PairOverlayStatus };
@@ -103,7 +106,7 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
 
   const { t } = useI18n({ useScope: 'global' });
   const { fetchHistoricalBalanceSeries } = useHistoricalBalancesApi();
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
 
   // pairKey -> series state.
   const cache = shallowRef<Map<string, PairSeries>>(new Map());
@@ -139,21 +142,25 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
    * Maps a finished task outcome to the entry to store, or `null` when the current state
    * should be kept (the task was cancelled / skipped rather than failing for real).
    */
-  function entryFromOutcome(outcome: TaskResult<HistoricalBalanceSeriesResponse>): PairSeries | null {
-    if (!outcome.success) {
-      if (!isActionableFailure(outcome))
+  function entryFromOutcome(outcome: Result<HistoricalBalanceSeriesResponse, TaskError>): PairSeries | null {
+    const response = isErr(outcome) ? undefined : outcome.value;
+    if (isErr(outcome)) {
+      if (!isActionable(outcome.error))
         return null;
-      if (outcome.message.includes(NO_DATA_MESSAGE))
+      if (outcome.error.message.includes(NO_DATA_MESSAGE))
         return { status: PairOverlayStatus.EMPTY, buckets: [] };
 
       return {
         status: PairOverlayStatus.ERROR,
         buckets: [],
-        error: outcome.error instanceof Error ? outcome.error.message : outcome.message,
+        error: outcome.error.message,
       };
     }
 
-    const parsed = HistoricalBalanceSeriesResponse.parse(outcome.result);
+    if (!response)
+      return null;
+
+    const parsed = HistoricalBalanceSeriesResponse.parse(response);
     const buckets = mergeSameScopeBuckets(parsed.entries.map<PreparedBucket>(entry => ({
       location: entry.location,
       // The backend tags plain-wallet series as either null or '' (empty string) — normalise
@@ -180,19 +187,24 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
     };
 
     try {
-      const outcome = await runTask<HistoricalBalanceSeriesResponse, TaskMeta>(
-        async () => fetchHistoricalBalanceSeries(payload),
-        {
-          type: TaskType.QUERY_HISTORICAL_BALANCE_SERIES,
-          meta: { title: t('accounting_overlay.task.title', { asset: pair.asset }) },
-          // We fan out one task per (account, asset) pair concurrently. `unique: false`
-          // keys the resolver by task id (not type) so concurrent same-type tasks each get
-          // their handler; `guard: false` avoids skipping pairs that share a meta title
-          // (e.g. the same asset across two accounts) — our own cache already dedupes.
-          unique: false,
-          guard: false,
-        },
-      );
+      // Per-request id keyed by the (account, asset) pair *and the date range*: we fan out one
+      // task per pair concurrently, so the ids must differ or `submitTask` would dedup distinct
+      // pairs — and a range change is a different question about the same pair. Without the
+      // timestamps, changing the range while a series was in flight deduped onto the old request,
+      // so the series never re-fetched and the cell sat on LOADING forever.
+      const outcome = await submitTask<HistoricalBalanceSeriesResponse>({
+        id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.SERIES, pair.locationLabel, pair.asset, from ?? 0, to ?? 0),
+        kind: ActivityKind.HISTORICAL_BALANCES,
+        rerunnable: false,
+        run: async ({ runTask }): Promise<Result<HistoricalBalanceSeriesResponse, TaskError>> => mapResult(
+          await runTask<HistoricalBalanceSeriesResponse>(
+            async () => fetchHistoricalBalanceSeries(payload),
+          ),
+          value => value,
+        ),
+        subtitle: activityLabelFor(msg.$t('task_center.activity.historical_balances.series'), { asset: pair.asset }),
+        title: t('task_center.group.historical_balances'),
+      });
 
       if (get(scopeId) !== currentScope)
         return; // scope changed while awaiting; drop stale result

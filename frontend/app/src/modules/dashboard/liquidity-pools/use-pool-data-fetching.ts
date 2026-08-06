@@ -1,18 +1,19 @@
-import type { TaskMeta } from '@/modules/core/tasks/types';
+import type { Ref } from 'vue';
 import { Blockchain } from '@rotki/common';
 import { isEqual } from 'es-toolkit';
+import { map as mapResult, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Module } from '@/modules/core/common/modules';
-import { Section, Status } from '@/modules/core/common/status';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useSetting } from '@/modules/settings/use-setting';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { PoolBalances } from './types';
 import { usePoolApi } from './use-pool-api';
 import { usePoolBalancesStore } from './use-pool-balances-store';
@@ -33,78 +34,83 @@ export function usePoolDataFetching(): UsePoolDataFetchingReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const { getSushiswapBalances, getUniswapV2Balances } = usePoolApi();
-  const { runTask } = useTaskHandler();
-  const { isTaskRunning } = useTaskStore();
+  const { statusOf, submitTask } = useNativeTask();
+  const { notifyError } = useNotifications();
 
-  function handleFailure(taskType: TaskType, outcome: { message: string; error?: unknown }, title: string, protocol: string): void {
-    logger.error(`action failure for task ${TaskType[taskType]}:`, outcome.error);
-    const { notifyError } = useNotifications();
-    notifyError(title, t('modules.dashboard.liquidity_pools.task.error_message', { message: outcome.message, protocol }));
+  /**
+   * The two protocols differ only in module gate, task type, endpoint and target ref, so they
+   * share one native submission. Each is a singleton activity (`liquidity-pools:<protocol>`);
+   * the old `isTaskRunning || (LOADED && !refresh)` gate becomes the orchestrator's `active` and
+   * `everCompleted`.
+   */
+  interface Protocol {
+    readonly module: Module;
+    readonly part: ActivityPart;
+    readonly label: string;
+    readonly query: () => Promise<{ taskId: number }>;
+    readonly target: Ref<PoolBalances>;
   }
 
-  async function retrieveUniswapV2Balances(refresh = false): Promise<void> {
-    if (!get(activeModules).includes(Module.UNISWAP))
+  async function retrievePoolBalances(protocol: Protocol, refresh: boolean): Promise<void> {
+    if (!get(activeModules).includes(protocol.module))
       return;
 
-    const { getStatus, setStatus } = useStatusUpdater(Section.POOLS_UNISWAP_V2);
-
-    if (isTaskRunning(TaskType.UNISWAP_V2_BALANCES) || (getStatus() === Status.LOADED && !refresh))
+    const status = statusOf(ActivityKind.LIQUIDITY_POOLS, protocol.part);
+    if (status.active || (status.everCompleted && !refresh))
       return;
 
-    setStatus(refresh ? Status.REFRESHING : Status.LOADING);
+    const title = t('modules.dashboard.liquidity_pools.task.title', { protocol: protocol.label });
 
-    const title = t('modules.dashboard.liquidity_pools.task.title', { protocol: 'Uniswap V2' });
-    const outcome = await runTask<PoolBalances, TaskMeta>(
-      async () => getUniswapV2Balances(),
-      { type: TaskType.UNISWAP_V2_BALANCES, meta: { title }, guard: false },
-    );
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.LIQUIDITY_POOLS, protocol.part),
+      kind: ActivityKind.LIQUIDITY_POOLS,
+      rerunnable: true,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<PoolBalances>(
+          async () => protocol.query(),
+        ),
+        (result) => {
+          set(protocol.target, PoolBalances.parse(result));
+        },
+      ),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.liquidity_pools.protocol'), { protocol: protocol.label }),
+      title: t('task_center.group.liquidity_pools'),
+    });
 
-    if (outcome.success) {
-      set(uniswapPoolBalances, PoolBalances.parse(outcome.result));
-    }
-    else if (isActionableFailure(outcome)) {
-      handleFailure(TaskType.UNISWAP_V2_BALANCES, outcome, title, 'Uniswap V2');
-    }
-
-    setStatus(Status.LOADED);
+    onActionableError(outcome, (error) => {
+      logger.error(`action failure for ${protocol.label}:`, error.message);
+      notifyError(title, t('modules.dashboard.liquidity_pools.task.error_message', {
+        message: error.message,
+        protocol: protocol.label,
+      }));
+    });
   }
 
-  async function retrieveSushiswapBalances(refresh = false): Promise<void> {
-    if (!get(activeModules).includes(Module.SUSHISWAP))
-      return;
+  const uniswapV2: Protocol = {
+    label: 'Uniswap V2',
+    module: Module.UNISWAP,
+    part: ActivityPart.UNISWAP_V2,
+    query: getUniswapV2Balances,
+    target: uniswapPoolBalances,
+  };
 
-    const { getStatus, setStatus } = useStatusUpdater(Section.POOLS_SUSHISWAP);
-
-    if (isTaskRunning(TaskType.SUSHISWAP_BALANCES) || (getStatus() === Status.LOADED && !refresh))
-      return;
-
-    setStatus(refresh ? Status.REFRESHING : Status.LOADING);
-
-    const title = t('modules.dashboard.liquidity_pools.task.title', { protocol: 'Sushiswap' });
-    const outcome = await runTask<PoolBalances, TaskMeta>(
-      async () => getSushiswapBalances(),
-      { type: TaskType.SUSHISWAP_BALANCES, meta: { title }, guard: false },
-    );
-
-    if (outcome.success) {
-      set(sushiswapPoolBalances, PoolBalances.parse(outcome.result));
-    }
-    else if (isActionableFailure(outcome)) {
-      handleFailure(TaskType.SUSHISWAP_BALANCES, outcome, title, 'Sushiswap');
-    }
-
-    setStatus(Status.LOADED);
-  }
+  const sushiswap: Protocol = {
+    label: 'Sushiswap',
+    module: Module.SUSHISWAP,
+    part: ActivityPart.SUSHISWAP,
+    query: getSushiswapBalances,
+    target: sushiswapPoolBalances,
+  };
 
   async function fetch(refresh = false): Promise<void> {
     if (get(ethAddresses).length === 0)
       return;
 
-    await retrieveUniswapV2Balances(refresh);
+    await retrievePoolBalances(uniswapV2, refresh);
     if (!get(premium))
       return;
 
-    await retrieveSushiswapBalances(refresh);
+    await retrievePoolBalances(sushiswap, refresh);
   }
 
   watch(ethAddresses, async (current, previous) => {

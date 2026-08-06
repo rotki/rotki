@@ -6,7 +6,6 @@ import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { AccountingOverlayToggle, BalanceDivergenceToggle } from '@/modules/history/balances/components';
 import { OverlayMode, type OverlayPair, useAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay';
 import { provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
-import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/modules/history/events/action-types';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import {
   getDefaultToggles,
@@ -77,7 +76,6 @@ const toggles = ref<HistoryEventsToggles>(getDefaultToggles());
 // Synced through the router query by useHistoryEventsFilters' queryParamsOnly (see below).
 const overlayMode = ref<OverlayMode>(OverlayMode.NONE);
 
-const currentAction = ref<HistoryEventAction>(HISTORY_EVENT_ACTIONS.QUERY);
 const eventPriceUpdatePayload = ref<EventPriceUpdatePayload>();
 
 const syncProgressPanelEl = useTemplateRef<ComponentPublicInstance>('syncProgressPanel');
@@ -187,7 +185,6 @@ watch(syncCompleted, async () => {
 });
 
 const actions = useHistoryEventsActions({
-  currentAction,
   entryTypes: () => entryTypes,
   refetch,
   groups,
@@ -402,7 +399,6 @@ watchDebounced(route, async () => {
         <HistoryEventsDialogContainer
           ref="dialogContainer"
           v-model:accounting-rule-to-edit="modelAccountingRuleToEdit"
-          v-model:current-action="currentAction"
           :loading="processing"
           :refreshing="refreshing"
           :section-loading="sectionLoading"

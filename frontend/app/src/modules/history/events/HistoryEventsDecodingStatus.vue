@@ -3,12 +3,12 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/modules/core/messaging/types';
 import { toSentenceCase } from '@rotki/common';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import SuccessDisplay from '@/modules/shell/components/display/SuccessDisplay.vue';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface LocationData {
   evmChain: string;
@@ -30,17 +30,13 @@ defineSlots<{
   default: () => any;
 }>();
 
-const { useIsTaskRunning } = useTaskStore();
-const fetching = useIsTaskRunning(TaskType.FETCH_UNDECODED_TXS);
-const isDecoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
+const { useIsActive } = useTaskCenter();
+const fetching = useIsActive(ActivityKind.HISTORY_EVENTS, ActivityPart.UNDECODED);
+// Transaction decoding runs native (Phase 2): aggregate liveness across every per-chain activity.
+const isDecoding = useIsActive(ActivityKind.TX_DECODING);
 const usedIsDecoding = useRefWithDebounce(isDecoding, 500);
-const isTransactionsLoading = useIsTaskRunning(TaskType.TX);
-const isPartiallyDecoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING, {
-  all: false,
-});
-const isFullyDecoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING, {
-  all: true,
-});
+// Transaction sync runs native (Phase 2): aggregate liveness across every {chain, address} activity.
+const isTransactionsLoading = useIsActive(ActivityKind.TX_SYNC);
 
 function redecodeAllEvents() {
   emit('redecode-all-events');
@@ -84,7 +80,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
   };
 }>();
 
-watch(isFullyDecoding, (loading) => {
+watch(isDecoding, (loading) => {
   if (!loading) {
     refresh();
     emit('reset-undecoded-transactions');
@@ -254,7 +250,7 @@ onMounted(() => refresh());
       >
         <template #prepend>
           <RuiIcon
-            v-if="!isPartiallyDecoding"
+            v-if="!isDecoding"
             name="lu-layout-list"
           />
           <RuiProgress
@@ -274,7 +270,7 @@ onMounted(() => refresh());
       >
         <template #prepend>
           <RuiIcon
-            v-if="!isFullyDecoding"
+            v-if="!isDecoding"
             name="lu-rotate-ccw"
           />
           <RuiProgress

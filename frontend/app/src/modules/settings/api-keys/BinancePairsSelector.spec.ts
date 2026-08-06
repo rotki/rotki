@@ -34,6 +34,7 @@ describe('binance-pairs-selector', () => {
       getExchangeSavings: vi.fn<UseExchangeApiReturn['getExchangeSavings']>(),
       getExchangeSavingsTask: vi.fn<UseExchangeApiReturn['getExchangeSavingsTask']>(),
       getExchanges: vi.fn<UseExchangeApiReturn['getExchanges']>(),
+      queryBinanceHistoryStartTimestamp: vi.fn<UseExchangeApiReturn['queryBinanceHistoryStartTimestamp']>(),
       queryBinanceMarkets: queryBinanceMarketsMock,
       queryBinanceUserMarkets: queryBinanceUserMarketsMock,
       queryExchangeBalances: vi.fn<UseExchangeApiReturn['queryExchangeBalances']>(),

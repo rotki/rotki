@@ -1,5 +1,7 @@
 import type { EvmTokensRecord } from '@/modules/balances/types/balances';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 
 const mockSetState = vi.fn();
@@ -24,14 +26,9 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   }),
 }));
 
+// The task runner is now handed to the producer by its activity, so the spec passes its own
+// instead of faking the handler module.
 const mockRunTask = vi.fn();
-vi.mock('@/modules/core/tasks/use-task-handler', () => ({
-  useTaskHandler: vi.fn().mockReturnValue({
-    runTask: mockRunTask,
-  }),
-  isActionableFailure: (outcome: { success: boolean; cancelled?: boolean; skipped?: boolean }): boolean =>
-    !outcome.success && !outcome.cancelled && !outcome.skipped,
-}));
 
 const mockNotifyError = vi.fn();
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
@@ -54,9 +51,9 @@ describe('useTokenDetectionApi', () => {
     mockFetchDetectedTokens.mockResolvedValue(cachedResult);
 
     const { useTokenDetectionApi } = await import('./use-token-detection-api');
-    const { fetchDetectedTokens } = useTokenDetectionApi();
+    const { fetchCachedDetectedTokens } = useTokenDetectionApi();
 
-    await fetchDetectedTokens('eth');
+    await fetchCachedDetectedTokens('eth');
 
     expect(mockFetchDetectedTokens).toHaveBeenCalledWith('eth', null);
     expect(mockSetState).toHaveBeenCalledWith('eth', cachedResult);
@@ -67,46 +64,36 @@ describe('useTokenDetectionApi', () => {
     const taskResult: EvmTokensRecord = {
       '0xaddr1': { lastUpdateTimestamp: 2000, tokens: ['USDC'] },
     };
-    mockRunTask.mockResolvedValue({ success: true, result: taskResult });
+    mockRunTask.mockResolvedValue(ok(taskResult));
 
     const { useTokenDetectionApi } = await import('./use-token-detection-api');
-    const { fetchDetectedTokens } = useTokenDetectionApi();
+    const { detectTokensForAddress } = useTokenDetectionApi();
 
-    await fetchDetectedTokens('eth', '0xaddr1');
+    await detectTokensForAddress(mockRunTask, 'eth', '0xaddr1');
 
     expect(mockRunTask).toHaveBeenCalledOnce();
     expect(mockSetState).toHaveBeenCalledWith('eth', taskResult);
   });
 
   it('should notify on task failure', async () => {
-    mockRunTask.mockResolvedValue({
-      success: false,
-      cancelled: false,
-      skipped: false,
-      message: 'Network error',
-      error: new Error('Network error'),
-    });
+    mockRunTask.mockResolvedValue(err(TaskFailed({ message: 'Network error' })));
 
     const { useTokenDetectionApi } = await import('./use-token-detection-api');
-    const { fetchDetectedTokens } = useTokenDetectionApi();
+    const { detectTokensForAddress } = useTokenDetectionApi();
 
-    await fetchDetectedTokens('eth', '0xaddr1');
+    await detectTokensForAddress(mockRunTask, 'eth', '0xaddr1');
 
     expect(mockSetState).not.toHaveBeenCalled();
     expect(mockNotifyError).toHaveBeenCalledOnce();
   });
 
   it('should not notify on cancelled task', async () => {
-    mockRunTask.mockResolvedValue({
-      success: false,
-      cancelled: true,
-      skipped: false,
-    });
+    mockRunTask.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
 
     const { useTokenDetectionApi } = await import('./use-token-detection-api');
-    const { fetchDetectedTokens } = useTokenDetectionApi();
+    const { detectTokensForAddress } = useTokenDetectionApi();
 
-    await fetchDetectedTokens('eth', '0xaddr1');
+    await detectTokensForAddress(mockRunTask, 'eth', '0xaddr1');
 
     expect(mockSetState).not.toHaveBeenCalled();
     expect(mockNotifyError).not.toHaveBeenCalled();
@@ -116,9 +103,9 @@ describe('useTokenDetectionApi', () => {
     mockFetchDetectedTokens.mockRejectedValue(new Error('API error'));
 
     const { useTokenDetectionApi } = await import('./use-token-detection-api');
-    const { fetchDetectedTokens } = useTokenDetectionApi();
+    const { fetchCachedDetectedTokens } = useTokenDetectionApi();
 
-    await fetchDetectedTokens('eth');
+    await fetchCachedDetectedTokens('eth');
 
     expect(mockSetState).not.toHaveBeenCalled();
     expect(mockNotifyError).toHaveBeenCalledOnce();

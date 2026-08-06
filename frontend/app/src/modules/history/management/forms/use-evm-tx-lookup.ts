@@ -1,16 +1,19 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import { isValidEvmTxHash } from '@rotki/common';
+import { err, isErr, map as mapResult, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import {
   type EvmTransactionLookupPayload,
   type EvmTransactionLookupResult,
   EvmTransactionLookupResultSchema,
   useHistoryEventsApi,
 } from '@/modules/history/api/events/use-history-events-api';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 export interface EvmTxAutoFillOptions {
   txHash: MaybeRefOrGetter<string>;
@@ -51,7 +54,7 @@ export function useEvmTxAutoFill(options: EvmTxAutoFillOptions): UseEvmTxAutoFil
   } = options;
   const { t } = useI18n({ useScope: 'global' });
   const { lookupEvmTransaction } = useHistoryEventsApi();
-  const { cancelTaskByTaskType, runTask } = useTaskHandler();
+  const { cancelByPrefix, submitTask } = useNativeTask();
 
   const loading = shallowRef<boolean>(false);
   const canRetry = shallowRef<boolean>(false);
@@ -126,56 +129,59 @@ export function useEvmTxAutoFill(options: EvmTxAutoFillOptions): UseEvmTxAutoFil
 
   async function performLookup(payload: EvmTransactionLookupPayload): Promise<void> {
     const requestId = ++currentRequestId;
-    // Cancel any in-flight lookup so the backend stops working on a stale hash.
-    await cancelTaskByTaskType(TaskType.LOOKUP_EVM_TRANSACTION);
+    // Supersede any in-flight lookup so the backend stops working on a stale hash. Each
+    // invocation carries its own `requestId` in the activity id, so this cancels by prefix.
+    cancelByPrefix(ActivityKind.HISTORY_EVENTS, ActivityPart.LOOKUP);
 
     set(loading, true);
     set(canRetry, false);
     writeError(errorFields.txHash, '');
     writeError(errorFields.relatedAddress, '');
 
-    try {
-      const outcome = await runTask<EvmTransactionLookupResult, TaskMeta>(
-        async () => lookupEvmTransaction(payload),
-        {
-          guard: false,
-          meta: { title: t('actions.evm_tx_lookup.title') },
-          type: TaskType.LOOKUP_EVM_TRANSACTION,
-          unique: false,
-        },
-      );
+    const outcome = await submitTask<EvmTransactionLookupResult>({
+      // `requestId` keeps every invocation a distinct activity so a superseding lookup never dedups
+      // onto an in-flight one.
+      id: makeActivityId(ActivityKind.HISTORY_EVENTS, ActivityPart.LOOKUP, requestId, payload.txHash),
+      kind: ActivityKind.HISTORY_EVENTS,
+      rerunnable: false,
+      // The api call can throw an ApiValidationError synchronously; catch it here so its cause rides
+      // on the tagged error instead of being flattened to a generic failure by the submission bridge.
+      run: async ({ runTask }): Promise<Result<EvmTransactionLookupResult, TaskError>> => {
+        try {
+          return mapResult(
+            await runTask<EvmTransactionLookupResult>(
+              async () => lookupEvmTransaction(payload),
+            ),
+            value => value,
+          );
+        }
+        catch (error_: unknown) {
+          return err(TaskFailed({ cause: error_, message: getErrorMessage(error_) }));
+        }
+      },
+      subtitle: activityLabelFor(msg.$t('task_center.activity.history_events.lookup'), { tx: payload.txHash }),
+      title: t('task_center.group.history_events'),
+    });
 
-      // Discard stale results — only the latest invocation may touch form state.
-      if (requestId !== currentRequestId) {
-        return;
+    // Discard stale results — only the latest invocation may touch form state (and own `loading`).
+    if (requestId !== currentRequestId) {
+      return;
+    }
+
+    if (!isErr(outcome)) {
+      onResolved(EvmTransactionLookupResultSchema.parse(outcome.value));
+    }
+    else if (isActionable(outcome.error)) {
+      const cause = outcome.error.cause;
+      if (cause instanceof ApiValidationError) {
+        applyApiValidationError(cause);
       }
-
-      if (outcome.success) {
-        onResolved(EvmTransactionLookupResultSchema.parse(outcome.result));
-        return;
-      }
-
-      if (isActionableFailure(outcome)) {
-        applyFailure(outcome.message);
+      else {
+        applyFailure(outcome.error.message);
       }
     }
-    catch (error_: unknown) {
-      if (requestId !== currentRequestId) {
-        return;
-      }
 
-      if (error_ instanceof ApiValidationError) {
-        applyApiValidationError(error_);
-        return;
-      }
-
-      applyFailure(getErrorMessage(error_));
-    }
-    finally {
-      if (requestId === currentRequestId) {
-        set(loading, false);
-      }
-    }
+    set(loading, false);
   }
 
   function reset(): void {

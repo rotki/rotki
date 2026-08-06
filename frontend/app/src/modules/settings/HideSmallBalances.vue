@@ -3,12 +3,12 @@ import useVuelidate from '@vuelidate/core';
 import { minValue, required } from '@vuelidate/validators';
 import { omit } from 'es-toolkit';
 import { toMessages } from '@/modules/core/common/validation/validation';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { BalanceSource, type BalanceValueThreshold } from '@/modules/settings/types/frontend-settings';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { source } = defineProps<{
   source: BalanceSource;
@@ -25,10 +25,10 @@ const currencySymbol = useSetting('currencySymbol');
 const balanceValueThreshold = useSetting('balanceValueThreshold');
 const { updateFrontendSetting } = useSettingsOperations();
 
-const { useIsTaskRunning } = useTaskStore();
-const isManualBalancesLoading = useIsTaskRunning(TaskType.MANUAL_BALANCES);
-const isExchangeLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
-const isQueryingBlockchain = useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+const { useIsActive } = useTaskCenter();
+const isManualBalancesLoading = useIsActive(ActivityKind.MANUAL_BALANCES);
+const isExchangeLoading = useIsActive(ActivityKind.EXCHANGE_BALANCES);
+const isQueryingBlockchain = useIsActive(ActivityKind.BLOCKCHAIN_BALANCES);
 
 const v$ = useVuelidate(
   {

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, minValue } from '@vuelidate/validators';
-import { useValidation } from '@/modules/core/common/use-validation';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import type { ZodType } from 'zod';
+import { useForm } from '@/modules/core/form/use-form';
+import { numberSettingSchema, SETTING_FIELD, type SettingFieldState } from '@/modules/settings/controls/setting-field-schemas';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
@@ -17,20 +16,33 @@ const balanceSaveFrequency = useSetting('balanceSaveFrequency');
 const { error: writeError, model, success: writeSuccess } = useSettingModel('ssfGraphMultiplier', { debounce: 1500 });
 const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
 
-const multiplier = ref<string>(String(get(model)));
-
-const rules = {
-  multiplier: {
-    min: helpers.withMessage(t('statistics_graph_settings.multiplier.validations.positive_number'), minValue(0)),
+// A blank field is not an error: it persists as zero, which turns the graph off.
+const schema = computed<ZodType>(() => numberSettingSchema({
+  messages: {
+    min: t('statistics_graph_settings.multiplier.validations.positive_number'),
+    required: t('statistics_graph_settings.multiplier.validations.positive_number'),
   },
-};
-const v$ = useVuelidate(rules, { multiplier }, { $autoDirty: true });
-const { callIfValid } = useValidation(v$);
+  min: 0,
+  required: false,
+}));
 
-const numericMultiplier = computed<number>(() => {
-  const multi = Number.parseInt(get(multiplier));
+function toMultiplier(value: string): number {
+  const multi = Number.parseInt(value);
   return isNaN(multi) ? 0 : multi;
+}
+
+/** Submitting is the persist: the core runs it only when the field parses, as `callIfValid` did. */
+const form = useForm<SettingFieldState, SettingFieldState>({
+  initial: (): SettingFieldState => ({ value: String(get(model)) }),
+  schema,
+  submit: async (payload: SettingFieldState): Promise<{ success: boolean }> => {
+    set(model, toMultiplier(payload.value));
+    return Promise.resolve({ success: true });
+  },
+  transform: (state): SettingFieldState => ({ value: state.value }),
 });
+
+const numericMultiplier = computed<number>(() => toMultiplier(form.state.value));
 
 const period = computed<number>(() => {
   const multi = get(numericMultiplier);
@@ -40,18 +52,16 @@ const period = computed<number>(() => {
   return multi * get(balanceSaveFrequency);
 });
 
-function persist(): void {
-  set(model, get(numericMultiplier));
-}
-
-function onInput(value: string): void {
+async function onInput(value: string): Promise<void> {
   clearAll();
-  callIfValid(value, persist);
+  form.state.value = value;
+  await form.submit();
 }
 
+// Reflect external changes into the field, but ignore the echo of our own writes (same string).
 watch(model, (value) => {
-  if (String(value) !== get(multiplier))
-    set(multiplier, String(value));
+  if (String(value) !== form.state.value)
+    form.state.value = String(value);
 });
 
 watch(writeSuccess, (saved) => {
@@ -78,14 +88,14 @@ watch(writeError, (message) => {
       </template>
     </RuiCardHeader>
     <RuiTextField
-      v-model="multiplier"
+      v-model="form.state.value"
       variant="outlined"
       color="primary"
       min="0"
       :label="t('statistics_graph_settings.multiplier.label')"
       type="number"
       :success-messages="success"
-      :error-messages="error || toMessages(v$.multiplier)"
+      :error-messages="error || form.errors(SETTING_FIELD)"
       @update:model-value="onInput($event)"
     />
 

@@ -3,8 +3,7 @@ import dayjs from 'dayjs';
 import { isTimeoutError } from '@/modules/core/api/with-retry';
 import { delay } from '@/modules/core/common/async/async-utilities';
 import { logger } from '@/modules/core/common/logging/logging';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { type Task, type TaskMeta, TaskNotFoundError } from '@/modules/core/tasks/types';
+import { type Task, TaskNotFoundError } from '@/modules/core/tasks/types';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
@@ -13,7 +12,7 @@ const UNKNOWN_TASK_THRESHOLD_SECONDS = 30;
 const INITIAL_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 8000;
 
-type ErrorHandler = (task: Task<TaskMeta>, message?: string) => ActionResult<unknown>;
+type ErrorHandler = (task: Task, message?: string) => ActionResult<unknown>;
 
 function useError(): { error: ErrorHandler } {
   const { t } = useI18n({ useScope: 'global' });
@@ -21,7 +20,7 @@ function useError(): { error: ErrorHandler } {
     message: t('task_manager.error', {
       error,
       taskId: task.id,
-      title: task.meta.title,
+      title: task.label,
     }),
     result: {},
   });
@@ -41,30 +40,30 @@ function useTaskMonitorInternal(): {
     return Math.min(INITIAL_BACKOFF_MS * 2 ** timeoutCount, MAX_BACKOFF_MS);
   }
 
-  async function processTask(task: Task<TaskMeta>): Promise<void> {
+  async function processTask(task: Task): Promise<void> {
     store.lock(task.id);
     store.removeFromUnknownTasks(task.id);
 
     try {
       const result = await api.queryTaskResult(task.id);
       assert(result !== null);
-      handleResult(result, task);
+      handleResult(result, task.id);
     }
     catch (error_: any) {
       if (error_ instanceof TaskNotFoundError) {
         store.remove(task.id);
-        handleResult(error(task, error_.message), task);
+        handleResult(error(task, error_.message), task.id);
       }
       else if (isTimeoutError(error_)) {
         const count = store.getTimeoutCount(task.id);
         store.setTimeoutCount(task.id, count + 1);
         const backoffMs = computeBackoff(count);
-        logger.debug(`[TaskMonitor] Timeout for task ${task.id} (${TaskType[task.type]}), retry in ${backoffMs}ms`);
+        logger.debug(`[TaskMonitor] Timeout for task ${task.id} (${task.label}), retry in ${backoffMs}ms`);
         await delay(backoffMs);
       }
       else {
         store.remove(task.id);
-        handleResult({ error: error_, message: error_.message, result: null }, task);
+        handleResult({ error: error_, message: error_.message, result: null }, task.id);
       }
     }
     store.unlock(task.id);

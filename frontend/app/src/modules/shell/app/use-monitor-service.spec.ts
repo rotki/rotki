@@ -1,5 +1,6 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useMainStore } from '@/modules/core/common/use-main-store';
 
 const mockConnect = vi.fn();
 const mockDisconnect = vi.fn();
@@ -67,12 +68,17 @@ vi.mock('@/modules/shell/app/use-websocket-connection', () => ({
 }));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
+  // The task scheduler reads the connection from the main store, which pulls the
+  // rest of this module in; a partial mock fails at import time rather than in
+  // an assertion, so the whole surface has to be stubbed.
+  getDefaultLogLevel: vi.fn(() => 'debug'),
   logger: {
     debug: vi.fn(),
     error: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
   },
+  setLevel: vi.fn(),
 }));
 
 async function loadMonitorService(): Promise<typeof import('@/modules/shell/app/use-monitor-service')> {
@@ -99,6 +105,10 @@ describe('useMonitorService', () => {
     mockCheckIfPasswordConfirmationNeeded.mockResolvedValue(undefined);
 
     setActivePinia(createCustomPinia());
+    // Task polling is gated on the backend connection, and the store starts
+    // disconnected. The monitor is only ever started after login, when the app
+    // is connected, so that is the baseline these tests need.
+    useMainStore().setConnected(true);
 
     const { useMonitorService } = await loadMonitorService();
     scope.run(() => {

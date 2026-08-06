@@ -3,9 +3,9 @@ import type { DeepReadonly, MaybeRefOrGetter, Ref, ShallowRef } from 'vue';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
 import { millisecondsToSeconds } from '@/modules/core/common/data/date';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useSetting } from '@/modules/settings/use-setting';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseEventPriceConversionOptions {
   /** The amount of the asset being priced */
@@ -39,11 +39,11 @@ export function useEventPriceConversion({
   const modelFiatValueFocused = shallowRef<boolean>(false);
   const fetchedAssetToFiatPrice = shallowRef<string>('');
 
-  const { useIsTaskRunning } = useTaskStore();
+  const { useIsActivePrefix } = useTaskCenter();
   const { getHistoricPrice } = usePriceTaskManager();
   const currencySymbol = useSetting('currencySymbol');
 
-  const fetching = useIsTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
+  const fetching = useIsActivePrefix(ActivityKind.PRICES, ActivityPart.HISTORIC);
 
   const numericAssetToFiatPrice = bigNumberifyFromRef(modelAssetToFiatPrice);
   const numericFiatValue = bigNumberifyFromRef(modelFiatValue);

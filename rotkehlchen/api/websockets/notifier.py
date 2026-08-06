@@ -81,6 +81,34 @@ class RotkiNotifier:
 
         log.info('Websocket with hash id %s unsubscribed from rotki notifier', hash(websocket))
 
+    def disconnect_deauthorized(
+            self,
+            is_authorized: Callable[[str | None, str | None], bool],
+    ) -> None:
+        """Close every connection whose handshake credential no longer authorizes it.
+
+        The /ws gate runs once, at the handshake, and nothing re-reads the cookie for
+        the life of the socket. Without this an accepted connection outlives the
+        session that opened it and keeps receiving every broadcast -- including, after
+        a takeover, the next user's. Asking the predicate per connection means one
+        path covers logout, same-user takeover and displacement by a different user.
+
+        Connections drop themselves from the subscriber list through their normal
+        teardown once the close lands, so nothing is unsubscribed here.
+        """
+        with self.subscribers_lock:
+            subscribers = list(self.subscribers)
+
+        for websocket in subscribers:
+            if is_authorized(websocket.username, websocket.sid):
+                continue
+
+            log.info(
+                'Disconnecting websocket with hash id %s: its session is no longer active',
+                hash(websocket),
+            )
+            websocket.disconnect()
+
     def broadcast(
             self,
             message_type: WSMessageType,

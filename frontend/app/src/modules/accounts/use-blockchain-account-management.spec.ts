@@ -1,3 +1,5 @@
+import type { ComputedRef } from 'vue';
+import type { WorkStatus } from '@/modules/task-center/core/types';
 import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type AddAccountsPayload, type XpubAccountPayload, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
@@ -12,10 +14,11 @@ const h = vi.hoisted(() => ({
   detectEvmAccounts: vi.fn(),
   fetchAccounts: vi.fn(),
   getNewAccountPayload: vi.fn(),
-  isTaskRunning: vi.fn((): boolean => false),
   notifyInfo: vi.fn(),
   refreshAccounts: vi.fn(),
 }));
+
+const mockAddRunning = ref<boolean>(false);
 
 vi.mock('@/modules/accounts/use-account-addition-service', () => ({
   useAccountAdditionService: vi.fn(() => ({
@@ -40,8 +43,13 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: vi.fn(() => ({ getChainName: (chain: string): string => chain })),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-store', () => ({
-  useTaskStore: vi.fn(() => ({ isTaskRunning: h.isTaskRunning })),
+vi.mock('@/modules/task-center/use-task-center', () => ({
+  useTaskCenter: (): Record<string, unknown> => ({
+    useWorkStatusPrefix: (_kind: string, part?: string): ComputedRef<WorkStatus> => computed<WorkStatus>(() => {
+      const active = part === 'add' ? get(mockAddRunning) : false;
+      return { active, everCompleted: false, pending: false, running: active };
+    }),
+  }),
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
@@ -59,7 +67,7 @@ async function importModule(): Promise<typeof import('./use-blockchain-account-m
 describe('useBlockchainAccountManagement', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    h.isTaskRunning.mockReturnValue(false);
+    set(mockAddRunning, false);
     h.completeAccountAddition.mockResolvedValue(undefined);
     h.addMultipleEvmAccounts.mockResolvedValue(undefined);
     h.addMultipleAccounts.mockResolvedValue(undefined);
@@ -104,7 +112,7 @@ describe('useBlockchainAccountManagement', () => {
 
   describe('addAccounts', () => {
     it('should skip when an add-account task is already running', async () => {
-      h.isTaskRunning.mockReturnValue(true);
+      set(mockAddRunning, true);
       const { useBlockchainAccountManagement } = await importModule();
       await useBlockchainAccountManagement().addAccounts('eth', { modules: undefined, payload: [{ address: '0xabc', tags: null }] });
       expect(h.addSingleAccount).not.toHaveBeenCalled();

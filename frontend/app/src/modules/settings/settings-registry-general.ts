@@ -58,7 +58,7 @@ export const generalRegistry = {
   disabledChainQueries: general('disabledChainQueries', {
     anchor: SettingsHighlightIds.DISABLED_CHAIN_QUERIES,
     search: {
-      category: SettingsCategoryIds.GENERAL,
+      category: SettingsCategoryIds.CHAIN_QUERIES,
       keywords: [msg.$t('general_settings.disabled_chain_queries.subtitle')],
       titleKey: msg.$t('general_settings.disabled_chain_queries.title'),
     },
@@ -72,7 +72,7 @@ export const generalRegistry = {
   evmchainsToSkipDetection: general('evmchainsToSkipDetection', {
     anchor: SettingsHighlightIds.CHAINS_TO_SKIP_DETECTION,
     search: {
-      category: SettingsCategoryIds.CHAINS,
+      category: SettingsCategoryIds.CHAIN_QUERIES,
       keywords: [
         msg.$t('evm_settings.general.chains_to_skip_detection.subtitle'),
         msg.$t('evm_settings.general.chains_to_skip_detection.search_keywords'),

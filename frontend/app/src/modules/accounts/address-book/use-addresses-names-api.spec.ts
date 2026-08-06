@@ -1,7 +1,9 @@
 import type { AddressBookEntry, AddressBookLocation, AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RequestPriority } from '@/modules/core/api/request-queue/request-priority';
+import { api } from '@/modules/core/api/rotki-api';
 import { useAddressesNamesApi } from './use-addresses-names-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
@@ -9,6 +11,12 @@ const backendUrl = process.env.VITE_BACKEND_URL;
 describe('composables/api/blockchain/addresses-names', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  // Restored here rather than at the end of each test: a failing assertion throws past an inline
+  // restore, and the leaked spy then fails unrelated tests further down the file.
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('getEnsNamesTask', () => {
@@ -494,6 +502,98 @@ describe('composables/api/blockchain/addresses-names', () => {
       await expect(clearEnsAvatarCache(null))
         .rejects
         .toThrow('Cache clear failed');
+    });
+  });
+
+  describe('queue pressure', () => {
+    /**
+     * Reverse lookups fire on every render that shows an address, so a table that refetches
+     * repeatedly asks for the same address over and over. The request queue allows six requests in
+     * flight; a slow backend once parked all six on identical lookups and every other request in
+     * the app stopped, including the DELETE behind a user's confirmed delete
+     * (`history-events.spec.ts:334`, CI only). Identical lookups must therefore share one request.
+     */
+    it('should share one request between identical concurrent lookups', async () => {
+      let started = 0;
+      let release = (): void => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+
+      server.use(
+        http.post(`${backendUrl}/api/1/names/ens/reverse`, async () => {
+          started += 1;
+          await held;
+          return HttpResponse.json({
+            message: '',
+            result: { '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045': 'vitalik.eth' },
+          });
+        }),
+        http.get(`${backendUrl}/api/1/ping`, () => HttpResponse.json({
+          message: '',
+          result: true,
+        })),
+      );
+
+      const { getEnsNames } = useAddressesNamesApi();
+      const lookups = Array.from(
+        { length: 6 },
+        async () => getEnsNames(['0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045']),
+      );
+
+      await vi.waitFor(() => {
+        expect(started).toBeGreaterThan(0);
+      });
+
+      // The lookups are still unresolved, so this is the assertion that matters: an unrelated
+      // request must not be stuck behind them. Raced rather than awaited outright, so starvation
+      // reports itself instead of hanging until the test times out.
+      const starved = new Promise<string>((resolve) => {
+        setTimeout(resolve, 1000, 'starved behind the ens lookups');
+      });
+      await expect(Promise.race([api.get<boolean>('/ping'), starved])).resolves.toBe(true);
+
+      expect(started).toBe(1);
+
+      release();
+      await Promise.all(lookups);
+    });
+
+    it('should bound how long a synchronous lookup can hold its slot', async () => {
+      const post = vi.spyOn(api, 'post').mockResolvedValue({});
+
+      const { getEnsNames, getEnsNamesTask } = useAddressesNamesApi();
+
+      await getEnsNames(['0x123']).catch(() => {});
+      expect(post).toHaveBeenLastCalledWith(
+        '/names/ens/reverse',
+        expect.anything(),
+        expect.objectContaining({
+          dedupe: true,
+          priority: RequestPriority.LOW,
+          timeout: expect.any(Number),
+        }),
+      );
+
+      await getEnsNamesTask(['0x123']).catch(() => {});
+      expect(post).toHaveBeenLastCalledWith(
+        '/names/ens/reverse',
+        expect.anything(),
+        expect.objectContaining({ dedupe: false, priority: undefined, timeout: undefined }),
+      );
+    });
+
+    it('should resolve address names as background work', async () => {
+      const post = vi.spyOn(api, 'post').mockResolvedValue([]);
+
+      const { getAddressesNames } = useAddressesNamesApi();
+      await getAddressesNames([{ address: '0x123', blockchain: 'eth' }]).catch(() => {});
+
+      expect(post).toHaveBeenLastCalledWith(
+        '/names',
+        expect.anything(),
+        expect.objectContaining({ priority: RequestPriority.LOW }),
+      );
     });
   });
 });

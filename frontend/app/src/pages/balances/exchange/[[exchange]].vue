@@ -10,13 +10,13 @@ import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balance
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { NoteLocation } from '@/modules/core/common/notes';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 definePage({
   meta: {
@@ -30,7 +30,7 @@ const { exchange } = defineProps<{ exchange?: string }>();
 
 const { t } = useI18n({ useScope: 'global' });
 const selectedTab = ref<string | undefined>(exchange ?? undefined);
-const { useIsTaskRunning } = useTaskStore();
+const { useIsActive } = useTaskCenter();
 const { getExchangeBalances } = useAggregatedBalances();
 const { refreshExchangeSavings } = useBinanceSavings();
 const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
@@ -54,7 +54,7 @@ const usedExchanges = computed<string[]>(() =>
     .filter(uniqueStrings),
 );
 
-const isExchangeLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
+const isExchangeLoading = useIsActive(ActivityKind.EXCHANGE_BALANCES);
 
 const router = useRouter();
 const route = useRoute();

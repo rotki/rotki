@@ -6,11 +6,11 @@ import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { useSetting } from '@/modules/settings/use-setting';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseSnapshotAssetPriceOptions {
   /** The asset amount (two-way; the form's v-model). */
@@ -72,12 +72,12 @@ export function useSnapshotAssetPrice(
 
   const { resetHistoricalPricesData } = useHistoricPriceCache();
   const currencySymbol = useSetting('currencySymbol');
-  const { useIsTaskRunning } = useTaskStore();
+  const { useIsActivePrefix } = useTaskCenter();
   const { getHistoricPrice } = usePriceTaskManager();
   const { addHistoricalPrice } = useAssetPricesApi();
 
   const isCurrentCurrencyUsd = computed<boolean>(() => get(currencySymbol) === CURRENCY_USD);
-  const fetching = useIsTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
+  const fetching = useIsActivePrefix(ActivityKind.PRICES, ActivityPart.HISTORIC);
 
   // The historic USD -> display-currency rate, fetched directly — the SAME rate
   // every snapshot display (SnapshotFiatDisplay) uses to convert the stored USD

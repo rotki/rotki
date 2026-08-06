@@ -7,14 +7,17 @@ import type {
   AssetUpdateResult,
 } from '@/modules/assets/types';
 import type { ActionStatus } from '@/modules/core/common/action';
-import type { TaskMeta } from '@/modules/core/tasks/types';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { activityLabel, activityLabelFor } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface ExportCustomAssetsResult {
   directory?: string;
@@ -31,7 +34,7 @@ interface UseAssetsReturn {
 }
 
 export function useAssets(): UseAssetsReturn {
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
   const { appSession, getPath, openDirectory } = useInterop();
   const {
@@ -47,21 +50,31 @@ export function useAssets(): UseAssetsReturn {
   const { notifyError } = useNotifications();
 
   const checkForUpdate = async (): Promise<AssetUpdateCheckResult> => {
-    const outcome = await runTask<AssetDBVersion, TaskMeta>(
-      async () => checkForAssetUpdate(),
-      { type: TaskType.ASSET_UPDATE, meta: { title: t('actions.assets.versions.task.title') } },
-    );
+    const outcome = await submitTask<AssetDBVersion>({
+      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.VERSIONS),
+      kind: ActivityKind.ASSETS,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<AssetDBVersion, TaskError>> => mapResult(
+        await runTask<AssetDBVersion>(
+          async () => checkForAssetUpdate(),
+        ),
+        result => result,
+      ),
+      subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.VERSIONS),
+      title: t('task_center.group.assets'),
+    });
 
-    if (outcome.success) {
+    if (!isErr(outcome)) {
+      const versions = outcome.value;
       return {
-        updateAvailable: outcome.result.local < outcome.result.remote && outcome.result.newChanges > 0,
-        versions: outcome.result,
+        updateAvailable: versions.local < versions.remote && versions.newChanges > 0,
+        versions,
       };
     }
-    else if (isActionableFailure(outcome)) {
+    if (isErr(outcome) && isActionable(outcome.error)) {
       const title = t('actions.assets.versions.task.title');
       const description = t('actions.assets.versions.error.description', {
-        message: outcome.message,
+        message: outcome.error.message,
       }).toString();
 
       notifyError(title, description);
@@ -72,26 +85,40 @@ export function useAssets(): UseAssetsReturn {
   };
 
   const applyUpdates = async ({ resolution, version }: AssetUpdatePayload): Promise<ApplyUpdateResult> => {
-    const outcome = await runTask<AssetUpdateResult, TaskMeta>(
-      async () => performUpdate(version, resolution),
-      { type: TaskType.ASSET_UPDATE_PERFORM, meta: { title: t('actions.assets.update.task.title') } },
-    );
+    // The result is the activity's return value: a deduped caller's `run` never executes, so a
+    // closure local stayed `undefined` and fell past the `typeof === 'boolean'` check into the
+    // conflicts branch — reporting `{ conflicts: undefined, done: false }`, which the caller reads
+    // as "the update produced conflicts" and hands to the conflict-resolution UI.
+    const outcome = await submitTask<AssetUpdateResult>({
+      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.UPDATE),
+      kind: ActivityKind.ASSETS,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<AssetUpdateResult, TaskError>> => mapResult(
+        await runTask<AssetUpdateResult>(
+          async () => performUpdate(version, resolution),
+        ),
+        result => result,
+      ),
+      subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.UPDATE, { version }),
+      title: t('task_center.group.assets'),
+    });
 
-    if (outcome.success) {
-      if (typeof outcome.result === 'boolean') {
+    if (!isErr(outcome)) {
+      const updateResult = outcome.value;
+      if (typeof updateResult === 'boolean') {
         return {
           done: true,
         };
       }
       return {
-        conflicts: outcome.result,
+        conflicts: updateResult,
         done: false,
       };
     }
-    else if (isActionableFailure(outcome)) {
+    if (isActionable(outcome.error)) {
       const title = t('actions.assets.update.task.title');
       const description = t('actions.assets.update.error.description', {
-        message: outcome.message,
+        message: outcome.error.message,
       }).toString();
       notifyError(title, description);
     }
@@ -124,20 +151,26 @@ export function useAssets(): UseAssetsReturn {
 
   const importCustomAssets = async (file: File): Promise<ActionStatus> => {
     const path = getPath(file);
-    const outcome = await runTask<boolean, TaskMeta>(
-      async () => importCustom(path ?? file),
-      { type: TaskType.IMPORT_ASSET, meta: { title: t('actions.assets.import.task.title') } },
-    );
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.IMPORT),
+      kind: ActivityKind.ASSETS,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<boolean>(
+          async () => importCustom(path ?? file),
+        ),
+        () => {},
+      ),
+      subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.IMPORT, { file: file.name }),
+      title: t('task_center.group.assets'),
+    });
 
-    if (outcome.success) {
-      return {
-        success: true,
-      };
-    }
+    if (!isErr(outcome))
+      return { success: true };
 
-    if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
-      return { message: outcome.message, success: false };
+    if (isActionable(outcome.error)) {
+      logger.error(outcome.error.message);
+      return { message: outcome.error.message, success: false };
     }
 
     return { message: '', success: false };
@@ -156,42 +189,60 @@ export function useAssets(): UseAssetsReturn {
       directory = selectedDirectory;
     }
 
-    const outcome = await runTask<{ filePath: string }, TaskMeta>(
-      async () => exportCustom(directory),
-      { type: TaskType.EXPORT_ASSET, meta: { title: t('actions.assets.export.task.title') } },
-    );
+    const outcome = await submitTask<string>({
+      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.EXPORT),
+      kind: ActivityKind.ASSETS,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<string, TaskError>> => mapResult(
+        await runTask<{ filePath: string }>(
+          async () => exportCustom(directory),
+        ),
+        result => result.filePath,
+      ),
+      subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.EXPORT),
+      title: t('task_center.group.assets'),
+    });
 
-    if (outcome.success) {
+    if (!isErr(outcome)) {
+      const filePath = outcome.value;
       // For web case (no directory selected), download the file using the returned file path
       if (!directory)
-        await downloadCustomAssets(outcome.result.filePath);
+        await downloadCustomAssets(filePath);
 
-      return { directory, filePath: outcome.result.filePath };
+      return { directory, filePath };
     }
 
-    if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
-      return { message: outcome.message, success: false };
+    if (isErr(outcome) && isActionable(outcome.error)) {
+      logger.error(outcome.error.message);
+      return { message: outcome.error.message, success: false };
     }
 
     return { message: '', success: false };
   };
 
   const restoreAssetsDatabase = async (resetType: 'hard' | 'soft'): Promise<ActionStatus> => {
-    const outcome = await runTask<boolean, TaskMeta>(
-      async () => restoreAssetsDatabaseCaller(resetType, resetType === 'hard'),
-      { type: TaskType.RESET_ASSET, meta: { title: t('actions.assets.reset.task.title') } },
-    );
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.RESET),
+      kind: ActivityKind.ASSETS,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<boolean>(
+          async () => restoreAssetsDatabaseCaller(resetType, resetType === 'hard'),
+        ),
+        () => {},
+      ),
+      subtitle: activityLabelFor(resetType === 'hard'
+        ? msg.$t('task_center.activity.assets.reset_hard')
+        : msg.$t('task_center.activity.assets.reset_soft')),
+      title: t('task_center.group.assets'),
+    });
 
-    if (outcome.success) {
-      return {
-        success: true,
-      };
-    }
+    if (!isErr(outcome))
+      return { success: true };
 
-    if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
-      return { message: outcome.message, success: false };
+    if (isActionable(outcome.error)) {
+      logger.error(outcome.error.message);
+      return { message: outcome.error.message, success: false };
     }
 
     return { message: '', success: false };

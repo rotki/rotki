@@ -257,23 +257,15 @@ jobs:
       - name: Make frozen core executable
         run: chmod +x target/backend/rotki-core/rotki-core-*
 
-      - name: Cache Playwright browsers
-        id: playwright-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/pnpm-lock.yaml') }}
-
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        timeout-minutes: 10
+      # No browser install: the config points executablePath at the Chromium the runner image
+      # already ships (/usr/bin/chromium), so there is nothing to download and no apt step to
+      # stall on. ffmpeg is the exception. `video: retain-on-failure` needs Playwright's own
+      # build, which the runner image does not provide, and specs that use the built-in `page`
+      # fixture fail at context creation without it. This is a 2.3 MB CDN download, not apt.
+      - name: Install Playwright ffmpeg
+        timeout-minutes: 5
         working-directory: ./frontend/app
-        run: npx playwright install chromium
-
-      - name: Install Playwright system dependencies
-        timeout-minutes: 10
-        working-directory: ./frontend/app
-        run: npx playwright install-deps chromium
+        run: npx playwright install ffmpeg
 
       - name: Run e2e tests
         timeout-minutes: 20

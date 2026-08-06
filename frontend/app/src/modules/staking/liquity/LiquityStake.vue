@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { LiquityStakingDetailEntry } from '@rotki/common';
-import { Section } from '@/modules/core/common/status';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { stake = null } = defineProps<{
   stake?: LiquityStakingDetailEntry | null;
@@ -10,7 +10,8 @@ const { stake = null } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { isLoading: loading } = useSectionStatus(Section.DEFI_LIQUITY_STAKING);
+const { useIsActive } = useTaskCenter();
+const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STAKING);
 </script>
 
 <template>

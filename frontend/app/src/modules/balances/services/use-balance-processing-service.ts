@@ -1,4 +1,5 @@
-import type { BlockchainMetadata } from '@/modules/core/tasks/types';
+import type { RunBackendTask } from '@/modules/task-center/use-native-task';
+import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { convertBtcBalances } from '@/modules/accounts/account-helpers';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
@@ -11,32 +12,31 @@ import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-s
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-blockchain-refresh-timestamps-store';
 import { logger } from '@/modules/core/common/logging/logging';
-import { Section, Status } from '@/modules/core/common/status';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 function isBtcBalances(data?: BtcBalances | any): data is BtcBalances {
   return !!data && (!!data.standalone || !!data.xpubs);
 }
 
 interface UseBalanceProcessingServiceReturn {
-  handleCachedFetch: (payload: FetchBlockchainBalancePayload, threshold: string | undefined) => Promise<void>;
-  handleRefresh: (payload: FetchBlockchainBalancePayload) => Promise<void>;
+  /** Empties a chain's balances and marks it loaded. No backend task, so no activity involved. */
+  clearChainBalances: (blockchain: string) => void;
+  handleCachedFetch: (runTask: RunBackendTask, payload: FetchBlockchainBalancePayload, threshold: string | undefined) => Promise<Result<void, TaskError>>;
+  handleRefresh: (runTask: RunBackendTask, payload: FetchBlockchainBalancePayload) => Promise<Result<void, TaskError>>;
+  hasAccounts: (blockchain: string) => boolean;
 }
 
 export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn {
-  const { runTask } = useTaskHandler();
   const { notifyError } = useNotifications();
   const { queryBlockchainBalances, refreshBlockchainBalances, queryXpubBalances } = useBlockchainBalancesApi();
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { updateBalances } = useBalancesStore();
   const { updateTimestamps } = useBlockchainRefreshTimestampsStore();
-  const { getChainName } = useSupportedChains();
   const { t } = useI18n({ useScope: 'global' });
-  const { getStatus, resetStatus, setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
+  const { invalidate, markCompleted } = useTaskOrchestrator();
   const refreshState = useBalanceRefreshState();
 
   const processBalanceResult = (blockchain: string, result: unknown): void => {
@@ -53,66 +53,93 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
       updateBalances(blockchain, parsedBalances);
   };
 
+  const hasAccounts = (blockchain: string): boolean => {
+    const account = get(accounts)[blockchain];
+    return Boolean(account && account.length > 0);
+  };
+
+  /**
+   * Whether this chain's account set is *known*, as opposed to merely absent.
+   *
+   * `fetchBlockchainAccounts` writes the key even when the chain has no accounts, so an empty
+   * array means "fetched, genuinely empty" while a missing key means "not fetched yet". The
+   * difference matters below: `hasAccounts` cannot tell them apart, and both read as false.
+   */
+  const accountsKnown = (blockchain: string): boolean => get(accounts)[blockchain] !== undefined;
+
+  const clearChainBalances = (blockchain: string): void => {
+    updateBalances(blockchain, {
+      perAccount: {},
+      totals: {
+        assets: {},
+        liabilities: {},
+      },
+    });
+    // No accounts means no activity was submitted, so nothing would otherwise record that this
+    // chain is settled. Without it an empty chain reads as perpetually unloaded.
+    //
+    // Only once the account set is known, though: a refresh that races the accounts fetch sees
+    // every chain as empty, and recording completions there marked the whole app "ever loaded"
+    // with no balances — dropping the initial-loading state while the real data was still coming.
+    if (accountsKnown(blockchain))
+      markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
+  };
+
   const executeBalanceQuery = async (
+    runTask: RunBackendTask,
     blockchain: string,
     apiCall: () => Promise<{ taskId: number }>,
-  ): Promise<void> => {
-    const account = get(accounts)[blockchain];
+  ): Promise<Result<void, TaskError>> => {
+    if (!hasAccounts(blockchain)) {
+      clearChainBalances(blockchain);
+      return ok(undefined);
+    }
 
-    if (account && account.length > 0) {
-      const meta: BlockchainMetadata = {
-        blockchain,
-        title: t('actions.balances.blockchain.task.title', {
-          chain: getChainName(blockchain),
-        }),
-      };
+    const result = await runTask<BlockchainBalances>(apiCall);
 
-      const outcome = await runTask<BlockchainBalances, BlockchainMetadata>(
-        apiCall,
-        { type: TaskType.QUERY_BLOCKCHAIN_BALANCES, meta, unique: false },
-      );
-
-      if (outcome.success) {
-        processBalanceResult(blockchain, outcome.result);
-        setStatus(Status.LOADED, { subsection: blockchain });
+    if (isErr(result)) {
+      if (isActionable(result.error)) {
+        logger.error(result.error.message);
+        notifyError(
+          t('actions.balances.blockchain.error.title'),
+          t('actions.balances.blockchain.error.description', {
+            error: result.error.message,
+          }),
+        );
       }
-      else {
-        if (isActionableFailure(outcome)) {
-          logger.error(outcome.error);
-          notifyError(
-            t('actions.balances.blockchain.error.title'),
-            t('actions.balances.blockchain.error.description', {
-              error: outcome.message,
-            }),
-          );
-        }
-        resetStatus({ subsection: blockchain });
-      }
+      // Forget any earlier success for this chain, so a failed query reads as "no data" rather
+      // than leaving the last good load standing. Runs before the activity settles, so the FAILED
+      // record it writes has no sticky `lastSuccessAt` to inherit.
+      invalidate(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
     }
     else {
-      updateBalances(blockchain, {
-        perAccount: {},
-        totals: {
-          assets: {},
-          liabilities: {},
-        },
-      });
-      setStatus(Status.LOADED, { subsection: blockchain });
+      processBalanceResult(blockchain, result.value);
+      // The activity's own completion would say the same, but only for the id it ran under; the
+      // service is what knows the chain has data, whichever of the two ids fetched it.
+      markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
     }
+
+    return mapResult(result, () => {});
   };
 
-  const handleCachedFetch = async (payload: FetchBlockchainBalancePayload, threshold: string | undefined): Promise<void> => {
+  const handleCachedFetch = async (
+    runTask: RunBackendTask,
+    payload: FetchBlockchainBalancePayload,
+    threshold: string | undefined,
+  ): Promise<Result<void, TaskError>> => {
     const { blockchain } = payload;
-    if (getStatus({ subsection: blockchain }) !== Status.LOADED)
-      setStatus(Status.LOADING, { subsection: blockchain });
-    await executeBalanceQuery(blockchain, async () => queryBlockchainBalances(payload, threshold));
+    return executeBalanceQuery(runTask, blockchain, async () => queryBlockchainBalances(payload, threshold));
   };
 
-  const handleRefresh = async (payload: FetchBlockchainBalancePayload): Promise<void> => {
+  const handleRefresh = async (
+    runTask: RunBackendTask,
+    payload: FetchBlockchainBalancePayload,
+  ): Promise<Result<void, TaskError>> => {
     const { blockchain, isXpub } = payload;
     refreshState.start(blockchain);
     try {
-      await executeBalanceQuery(
+      return await executeBalanceQuery(
+        runTask,
         blockchain,
         async () => !isXpub ? refreshBlockchainBalances(payload) : queryXpubBalances(payload),
       );
@@ -123,7 +150,9 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   };
 
   return {
+    clearChainBalances,
     handleCachedFetch,
     handleRefresh,
+    hasAccounts,
   };
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
+import { useMainStore } from '@/modules/core/common/use-main-store';
 import NotificationPopup from '@/modules/core/notifications/NotificationPopup.vue';
 import SettingsSuggestionsDialog from '@/modules/settings/suggestions/SettingsSuggestionsDialog.vue';
 import { useSettingsSuggestions } from '@/modules/settings/suggestions/use-settings-suggestions';
@@ -19,7 +20,27 @@ const visibilityStore = useAreaVisibilityStore();
 const { expanded, isMini, pinnedDragging, pinnedWidth, showPinned } = storeToRefs(visibilityStore);
 const { overall } = storeToRefs(useStatisticsStore());
 const { logged } = storeToRefs(useSessionAuthStore());
+const { connected } = storeToRefs(useMainStore());
 const { toggleDrawer } = visibilityStore;
+
+/**
+ * The blocking overlay covers two situations, not one.
+ *
+ * Signing out is the obvious one. The other is a backend that is deliberately
+ * down: every restart path clears `connected` before bouncing the tree, and
+ * until it comes back the page behind is inert — its data is stale and every
+ * request it makes fails. Leaving it visible and interactive for the whole
+ * window (seconds, for a core restart) reads as a frozen app rather than a
+ * deliberate operation.
+ */
+const busy = computed<boolean>(() => !get(logged) || !get(connected));
+
+// `logged` is still true across a restart that keeps the session (the desktop
+// settings form, and the window before the asset-update flows log out), so the
+// message has to follow the reason rather than assume a sign-out.
+const busyMessage = computed<string>(() =>
+  get(logged) ? t('connection_loading.restarting') : t('connection_loading.logging_out'),
+);
 
 const { updateTray } = useInterop();
 const { scrollToTop, shouldShowScrollToTopButton } = useCoreScroll();
@@ -95,7 +116,7 @@ onBeforeMount(() => {
             leave-active-class="transition duration-100 h-0"
           >
             <div
-              v-if="!logged"
+              v-if="busy"
               class="fixed top-0 left-0 w-full h-full bg-white dark:bg-rui-grey-900 z-[999] flex items-center justify-center"
             >
               <div class="flex flex-col gap-4 justify-center items-center">
@@ -105,8 +126,11 @@ onBeforeMount(() => {
                   circular
                   size="48"
                 />
-                <p class="mb-0 text-rui-text-secondary text-center">
-                  {{ t('connection_loading.logging_out') }}
+                <p
+                  class="mb-0 text-rui-text-secondary text-center"
+                  data-testid="app-busy-message"
+                >
+                  {{ busyMessage }}
                 </p>
               </div>
             </div>

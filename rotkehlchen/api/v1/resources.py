@@ -622,6 +622,7 @@ class ExchangesResource(BaseMethodView):
             kraken_futures_api_key: ApiKey | None,
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
+            binance_history_start_ts: Timestamp | None,
             okx_location: OkxLocation | None,
             gate_location: GateLocation | None,
     ) -> Response:
@@ -635,6 +636,7 @@ class ExchangesResource(BaseMethodView):
             kraken_futures_api_key=kraken_futures_api_key,
             kraken_futures_api_secret=kraken_futures_api_secret,
             binance_markets=binance_markets,
+            binance_history_start_ts=binance_history_start_ts,
             okx_location=okx_location,
             gate_location=gate_location,
         )
@@ -1511,6 +1513,11 @@ class UserAuthenticateResource(BaseMethodView):
 class MCPTokenResource(BaseMethodView):
     def post(self) -> Response:
         return self.rest_api.issue_mcp_token()
+
+
+class SessionValidateResource(BaseMethodView):
+    def get(self) -> Response:
+        return self.rest_api.validate_session()
 
 
 class UserPasswordChangeResource(BaseMethodView):
@@ -2828,6 +2835,13 @@ class BinanceAvailableMarkets(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, location: Location) -> Response:
         return self.rest_api.get_all_binance_pairs(location=location)
+
+
+class BinanceHistoryStartTimestampResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_binance_history_start_timestamp()
 
 
 class BinanceUserMarkets(BaseMethodView):

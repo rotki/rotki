@@ -1,70 +1,20 @@
-import type { Task, TaskMap, TaskMeta } from '@/modules/core/tasks/types';
+import type { Task, TaskMap } from '@/modules/core/tasks/types';
 import { assert } from '@rotki/common';
-import dayjs from 'dayjs';
 import { toArray } from 'es-toolkit/compat';
 import { removeKey } from '@/modules/core/common/data/data';
-import { TaskType } from '@/modules/core/tasks/task-type';
 
 export const useTaskStore = defineStore('tasks', () => {
-  const tasks = shallowRef<TaskMap<TaskMeta>>({});
+  const tasks = shallowRef<TaskMap>({});
   const locked = shallowRef<Set<number>>(new Set());
   const unknownTasks = shallowRef<Record<number, number>>({});
   const timeouts = shallowRef<Record<number, number>>({});
 
-  const tasksByType = computed<Map<TaskType, Task<TaskMeta>[]>>(() => {
-    const map = new Map<TaskType, Task<TaskMeta>[]>();
-    for (const task of Object.values(get(tasks))) {
-      const list = map.get(task.type);
-      if (list)
-        list.push(task);
-      else
-        map.set(task.type, [task]);
-    }
-    return map;
-  });
-
   const hasRunningTasks = computed<boolean>(() => Object.keys(get(tasks)).length > 0);
   const hasUnknownTasks = computed<boolean>(() => Object.keys(get(unknownTasks)).length > 0);
-  const taskList = computed<Task<TaskMeta>[]>(() => toArray(get(tasks)));
+  const taskList = computed<Task[]>(() => toArray(get(tasks)));
 
-  function checkIfTaskIsRunning(
-    groupedTasks: Map<TaskType, Task<TaskMeta>[]>,
-    type: TaskType,
-    meta: Record<string, any> = {},
-  ): boolean {
-    const typeTasks = groupedTasks.get(type);
-    if (!typeTasks)
-      return false;
-
-    const keys = Object.keys(meta);
-    if (keys.length === 0)
-      return true;
-
-    return typeTasks.some(item =>
-      keys.every(
-        key =>
-        // @ts-expect-error meta key has any type
-          key in item.meta && item.meta[key] === meta[key],
-      ),
-    );
-  }
-
-  function isTaskRunning(
-    type: TaskType,
-    meta: Record<string, any> = {},
-  ): boolean {
-    return checkIfTaskIsRunning(get(tasksByType), type, meta);
-  }
-
-  function useIsTaskRunning(
-    type: TaskType,
-    meta: MaybeRef<Record<string, any>> = {},
-  ): ComputedRef<boolean> {
-    return computed<boolean>(() => checkIfTaskIsRunning(get(tasksByType), type, get(meta)));
-  }
-
-  function add(task: Task<TaskMeta>): void {
-    const update: TaskMap<TaskMeta> = {};
+  function add(task: Task): void {
+    const update: TaskMap = {};
     update[task.id] = task;
     set(tasks, { ...get(tasks), ...update });
   }
@@ -87,14 +37,9 @@ export const useTaskStore = defineStore('tasks', () => {
     unlock(taskId);
   }
 
-  function addTask<M extends TaskMeta>(id: number, type: TaskType, meta: M): void {
-    assert(!(id === null || id === undefined), `missing id for ${TaskType[type]} with ${JSON.stringify(meta)}`);
-    add({
-      id,
-      meta,
-      time: dayjs().valueOf(),
-      type,
-    });
+  function addTask(id: number, label: string): void {
+    assert(!(id === null || id === undefined), `missing id for task ${label}`);
+    add({ id, label });
   }
 
   function removeFromUnknownTasks(taskId: number): void {
@@ -134,7 +79,6 @@ export const useTaskStore = defineStore('tasks', () => {
     getTimeoutCount,
     hasRunningTasks,
     hasUnknownTasks,
-    isTaskRunning,
     lock,
     locked,
     remove,
@@ -145,7 +89,6 @@ export const useTaskStore = defineStore('tasks', () => {
     tasks: taskList,
     unknownTasks,
     unlock,
-    useIsTaskRunning,
   };
 });
 

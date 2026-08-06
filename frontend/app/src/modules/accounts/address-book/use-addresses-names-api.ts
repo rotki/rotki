@@ -11,6 +11,7 @@ import {
   type EthNames,
   EthNamesSchema,
 } from '@/modules/accounts/address-book/eth-names';
+import { RequestPriority } from '@/modules/core/api/request-queue/request-priority';
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_TASK_STATUS, VALID_WITH_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/core/api/utils';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
@@ -29,6 +30,14 @@ interface UseAddressesNamesApiReturn {
   resolveEnsNames: (name: string) => Promise<string>;
 }
 
+/**
+ * A resolved name is advisory - the row already renders the raw address - so the lookup is not
+ * worth holding a request slot for the default 30s. The request queue allows six requests in
+ * flight, and reverse lookups fire on every render that shows an address, so a slow backend can
+ * park all six and stop every other request in the app, user actions included.
+ */
+const ENS_REVERSE_TIMEOUT = 10_000;
+
 export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
   const internalEnsNames = async <T>(ethereumAddresses: string[], asyncQuery = false): Promise<T> => api.post<T>(
     '/names/ens/reverse',
@@ -38,6 +47,12 @@ export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
       ignoreCache: asyncQuery,
     },
     {
+      // Only the synchronous read is bounded and shared. The task variant is user-initiated
+      // (an explicit refresh), returns a task id rather than the names, and is not what a
+      // re-render repeats.
+      dedupe: !asyncQuery,
+      priority: asyncQuery ? undefined : RequestPriority.LOW,
+      timeout: asyncQuery ? undefined : ENS_REVERSE_TIMEOUT,
       validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
     },
   );
@@ -113,6 +128,9 @@ export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
       '/names',
       { addresses },
       {
+        // Decoration for rows that already render without it, resolved on every render that
+        // shows an address. It must never be the reason a user action waits.
+        priority: RequestPriority.LOW,
         validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
       },
     );

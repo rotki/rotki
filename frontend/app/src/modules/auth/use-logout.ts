@@ -10,8 +10,23 @@ import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 
+interface LogoutOptions {
+  navigate?: boolean;
+  /**
+   * Skip the backend logout call, for callers that have just restarted the
+   * backend.
+   *
+   * A restart is already a logout: starling terminates core gracefully, and
+   * core's SIGTERM path runs the very same `Rotkehlchen.logout()` the HTTP
+   * endpoint would, so the user DB is settled either way. Calling it afterwards
+   * would only reach a backend with nobody logged in, which answers 409 and
+   * surfaces a spurious "Logout failed" to the user.
+   */
+  skipBackendCall?: boolean;
+}
+
 interface UseLogoutReturn {
-  logout: (navigate?: boolean) => Promise<void>;
+  logout: (navigate?: boolean, options?: LogoutOptions) => Promise<void>;
   logoutRemoteSession: () => Promise<ActionStatus>;
 }
 
@@ -24,7 +39,7 @@ export function useLogout(): UseLogoutReturn {
   const { disconnect: disconnectWallet } = useWalletStore();
   const { reset: resetSchedulerState } = useSchedulerState();
 
-  const logout = async (navigate: boolean = true): Promise<void> => {
+  const logout = async (navigate: boolean = true, options: LogoutOptions = {}): Promise<void> => {
     // Cancel all pending API requests first to prevent race conditions
     api.cancelAllQueued();
     api.cancel();
@@ -42,12 +57,14 @@ export function useLogout(): UseLogoutReturn {
     await promiseTimeout(1500);
     resetTray();
 
-    try {
-      await callLogout(user);
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      showErrorMessage('Logout failed', getErrorMessage(error));
+    if (!options.skipBackendCall) {
+      try {
+        await callLogout(user);
+      }
+      catch (error: unknown) {
+        logger.error(error);
+        showErrorMessage('Logout failed', getErrorMessage(error));
+      }
     }
 
     try {

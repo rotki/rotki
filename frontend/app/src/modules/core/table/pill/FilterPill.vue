@@ -43,7 +43,7 @@ const isAddress = computed<boolean>(() => field.display === DisplayKinds.ADDRESS
 // same icon the value checklist uses, so a value looks the same wherever it appears. A field that
 // resolves a plain icon per value (e.g. the event state markers) renders the same way.
 const hasValueIcons = computed<boolean>(() =>
-  Boolean(field.display) || Boolean(field.resolveIcon) || Boolean(field.resolveSwatch),
+  Boolean(field.display) || Boolean(field.resolveDisplay) || Boolean(field.resolveIcon) || Boolean(field.resolveSwatch),
 );
 const iconValues = computed<string[]>(() => (get(hasValueIcons) ? filter.values.slice(0, ICON_VALUE_CAP) : []));
 const extraValues = computed<number>(() => Math.max(0, filter.values.length - ICON_VALUE_CAP));
@@ -110,6 +110,7 @@ function valueLabel(value: string): string {
             >
               <PillValueIcon
                 :display="field.display"
+                :value-display="field.resolveDisplay?.(value)"
                 :icon="field.resolveIcon?.(value)"
                 :swatch="field.resolveSwatch?.(value)"
                 :value="value"

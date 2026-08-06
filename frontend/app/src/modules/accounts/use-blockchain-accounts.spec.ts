@@ -1,6 +1,8 @@
-import type { TaskResult } from '@/modules/core/tasks/use-task-handler';
+import { runSpecWith } from '@test/utils/mocks/native-task';
+import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type AccountPayload, type XpubAccountPayload, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
+import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 
 const mocks = vi.hoisted(() => ({
@@ -17,7 +19,6 @@ const mocks = vi.hoisted(() => ({
   removeAgnosticBlockchainAccount: vi.fn(),
   removeBlockchainAccount: vi.fn(),
   resetAddressNamesData: vi.fn(),
-  runTask: vi.fn(),
   updateAccounts: vi.fn(),
   deleteXpub: vi.fn(),
 }));
@@ -61,37 +62,33 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn(() => ({ notifyError: mocks.notifyError })),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/modules/core/tasks/use-task-handler')>();
-  return {
-    ...actual,
-    useTaskHandler: vi.fn(() => ({ runTask: mocks.runTask })),
-  };
-});
+const runTaskResult = vi.fn();
+const submitTask = vi.fn(runSpecWith(runTaskResult));
+
+vi.mock('@/modules/task-center/use-native-task', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useNativeTask: vi.fn(() => ({ cancelByType: vi.fn(() => vi.fn()), runTaskResult, statusOf: vi.fn(), submitTask })),
+}));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: { debug: vi.fn(), error: vi.fn() },
 }));
 
-function success<R>(result: R): TaskResult<R> {
-  return { result, success: true };
-}
-
-function actionable(message: string): TaskResult<never> {
-  return { backendCancelled: false, cancelled: false, error: new Error(message), message, skipped: false, success: false };
-}
-
-function cancelled(): TaskResult<never> {
-  return { backendCancelled: false, cancelled: true, message: 'cancelled', skipped: false, success: false };
-}
-
-// runTask is mocked and does not invoke its callback; opt into invoking it when the API call must run.
-function whenTask<R>(outcome: TaskResult<R>, invoke = true): void {
-  mocks.runTask.mockImplementation(async (task: () => Promise<unknown>): Promise<TaskResult<R>> => {
+// runTaskResult is mocked and does not invoke its api callback; opt into invoking it when the API call must run.
+function whenOk<R>(value: R, invoke = true): void {
+  runTaskResult.mockImplementation(async (task: () => Promise<unknown>): Promise<Result<R, TaskError>> => {
     if (invoke)
       await task();
-    return outcome;
+    return ok(value);
   });
+}
+
+function whenActionable(message: string): void {
+  runTaskResult.mockResolvedValue(err(TaskFailed({ message })));
+}
+
+function whenCancelled(): void {
+  runTaskResult.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
 }
 
 async function importModule(): Promise<typeof import('./use-blockchain-accounts')> {
@@ -111,7 +108,7 @@ describe('useBlockchainAccounts', () => {
     const payload: AccountPayload[] = [{ address: '0xabc', tags: null }];
 
     it('should return the first result address on success', async () => {
-      whenTask(success(['0xdef']));
+      whenOk<string[] | true>(['0xdef']);
       const { useBlockchainAccounts } = await importModule();
       const result = await useBlockchainAccounts().addAccount('eth', payload);
       expect(mocks.addBlockchainAccount).toHaveBeenCalledWith('eth', payload);
@@ -119,7 +116,7 @@ describe('useBlockchainAccounts', () => {
     });
 
     it('should return the joined addresses when the result is true', async () => {
-      whenTask(success<string[] | true>(true));
+      whenOk<string[] | true>(true);
       const { useBlockchainAccounts } = await importModule();
       const result = await useBlockchainAccounts().addAccount('eth', [
         { address: '0xabc', tags: null },
@@ -129,13 +126,13 @@ describe('useBlockchainAccounts', () => {
     });
 
     it('should return an empty string when the result array is empty', async () => {
-      whenTask(success<string[]>([]));
+      whenOk<string[] | true>([]);
       const { useBlockchainAccounts } = await importModule();
       expect(await useBlockchainAccounts().addAccount('eth', payload)).toBe('');
     });
 
     it('should use the xpub as the address for an xpub payload', async () => {
-      whenTask(success(['0xdef']));
+      whenOk<string[] | true>(['0xdef']);
       const xpubPayload: XpubAccountPayload = {
         tags: null,
         xpub: { derivationPath: '', xpub: 'xpub123', xpubType: XpubKeyType.XPUB },
@@ -146,13 +143,13 @@ describe('useBlockchainAccounts', () => {
     });
 
     it('should throw on an actionable failure', async () => {
-      whenTask(actionable('boom'), false);
+      whenActionable('boom');
       const { useBlockchainAccounts } = await importModule();
       await expect(useBlockchainAccounts().addAccount('eth', payload)).rejects.toThrow('boom');
     });
 
     it('should return an empty string on a cancelled task', async () => {
-      whenTask(cancelled(), false);
+      whenCancelled();
       const { useBlockchainAccounts } = await importModule();
       expect(await useBlockchainAccounts().addAccount('eth', payload)).toBe('');
     });
@@ -162,7 +159,7 @@ describe('useBlockchainAccounts', () => {
     const payload: AccountPayload = { address: '0xabc', tags: null };
 
     it('should return the result on success', async () => {
-      whenTask(success({ added: { eth: ['0xabc'] } }));
+      whenOk({ added: { eth: ['0xabc'] } });
       const { useBlockchainAccounts } = await importModule();
       const result = await useBlockchainAccounts().addEvmAccount(payload);
       expect(mocks.addEvmAccount).toHaveBeenCalledWith(payload);
@@ -170,13 +167,13 @@ describe('useBlockchainAccounts', () => {
     });
 
     it('should throw on an actionable failure', async () => {
-      whenTask(actionable('nope'), false);
+      whenActionable('nope');
       const { useBlockchainAccounts } = await importModule();
       await expect(useBlockchainAccounts().addEvmAccount(payload)).rejects.toThrow('nope');
     });
 
     it('should return an empty object on a cancelled task', async () => {
-      whenTask(cancelled(), false);
+      whenCancelled();
       const { useBlockchainAccounts } = await importModule();
       expect(await useBlockchainAccounts().addEvmAccount(payload)).toStrictEqual({});
     });
@@ -225,14 +222,14 @@ describe('useBlockchainAccounts', () => {
 
   describe('removeAccount', () => {
     it('should not notify on success', async () => {
-      whenTask(success({ perAccount: {}, totals: { assets: {}, liabilities: {} } }), false);
+      whenOk({ perAccount: {}, totals: { assets: {}, liabilities: {} } }, false);
       const { useBlockchainAccounts } = await importModule();
       await useBlockchainAccounts().removeAccount({ accounts: ['0xabc'], chain: 'eth' });
       expect(mocks.notifyError).not.toHaveBeenCalled();
     });
 
     it('should notify on an actionable failure', async () => {
-      whenTask(actionable('remove failed'), false);
+      whenActionable('remove failed');
       const { useBlockchainAccounts } = await importModule();
       await useBlockchainAccounts().removeAccount({ accounts: ['0xabc'], chain: 'eth' });
       expect(mocks.notifyError).toHaveBeenCalledOnce();
@@ -241,7 +238,7 @@ describe('useBlockchainAccounts', () => {
 
   describe('removeAgnosticAccount', () => {
     it('should notify on an actionable failure', async () => {
-      whenTask(actionable('agnostic failed'), false);
+      whenActionable('agnostic failed');
       const { useBlockchainAccounts } = await importModule();
       await useBlockchainAccounts().removeAgnosticAccount('evm', '0xabc');
       expect(mocks.notifyError).toHaveBeenCalledOnce();
@@ -250,14 +247,14 @@ describe('useBlockchainAccounts', () => {
 
   describe('deleteXpub', () => {
     it('should notify on an actionable failure', async () => {
-      whenTask(actionable('xpub failed'), false);
+      whenActionable('xpub failed');
       const { useBlockchainAccounts } = await importModule();
       await useBlockchainAccounts().deleteXpub({ chain: 'btc', xpub: 'xpub123' });
       expect(mocks.notifyError).toHaveBeenCalledOnce();
     });
 
     it('should not notify on success', async () => {
-      whenTask(success(true), false);
+      whenOk(true, false);
       const { useBlockchainAccounts } = await importModule();
       await useBlockchainAccounts().deleteXpub({ chain: 'btc', xpub: 'xpub123' });
       expect(mocks.notifyError).not.toHaveBeenCalled();

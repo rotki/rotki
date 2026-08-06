@@ -1,36 +1,47 @@
-import type { Ref } from 'vue';
+import type { ComputedRef } from 'vue';
+import type { WorkStatus } from '@/modules/task-center/core/types';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { TaskType } from '@/modules/core/tasks/task-type';
 
-const h = vi.hoisted(() => ({ useIsTaskRunning: vi.fn() }));
+const mockAddRunning = ref<boolean>(false);
+const mockRemoveRunning = ref<boolean>(false);
 
 vi.mock('@vueuse/core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@vueuse/core')>();
   return { ...actual, createSharedComposable: <T>(fn: T): T => fn };
 });
 
-vi.mock('@/modules/core/tasks/use-task-store', () => ({
-  useTaskStore: vi.fn(() => ({ useIsTaskRunning: h.useIsTaskRunning })),
-}));
+function activeFor(part?: string): boolean {
+  if (part === 'add')
+    return get(mockAddRunning);
+  if (part === 'remove')
+    return get(mockRemoveRunning);
+  return false;
+}
 
-let addRunning: Ref<boolean>;
-let removeRunning: Ref<boolean>;
+const useWorkStatus = vi.fn((_kind: string, part?: string, _chain?: string): ComputedRef<WorkStatus> =>
+  computed<WorkStatus>(() => {
+    const active = activeFor(part);
+    return { active, everCompleted: false, pending: false, running: active };
+  }));
+
+const useWorkStatusPrefix = vi.fn((_kind: string, part?: string): ComputedRef<WorkStatus> =>
+  computed<WorkStatus>(() => {
+    const active = activeFor(part);
+    return { active, everCompleted: false, pending: false, running: active };
+  }));
+
+vi.mock('@/modules/task-center/use-task-center', () => ({
+  useTaskCenter: (): Record<string, unknown> => ({ useWorkStatus, useWorkStatusPrefix }),
+}));
 
 describe('useAccountLoading', () => {
   beforeEach(async () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    addRunning = ref<boolean>(false);
-    removeRunning = ref<boolean>(false);
-    h.useIsTaskRunning.mockImplementation((type: TaskType): Ref<boolean> => {
-      if (type === TaskType.ADD_ACCOUNT)
-        return addRunning;
-      if (type === TaskType.REMOVE_ACCOUNT)
-        return removeRunning;
-      return ref<boolean>(false);
-    });
+    set(mockAddRunning, false);
+    set(mockRemoveRunning, false);
   });
 
   async function importModule(): Promise<typeof import('./use-account-loading')> {
@@ -46,7 +57,7 @@ describe('useAccountLoading', () => {
   it('should be loading while an add-account task runs', async () => {
     const { useAccountLoading } = await importModule();
     const { isAccountOperationRunning, loading } = useAccountLoading();
-    set(addRunning, true);
+    set(mockAddRunning, true);
     expect(get(loading)).toBe(true);
     expect(get(isAccountOperationRunning())).toBe(true);
   });
@@ -54,7 +65,7 @@ describe('useAccountLoading', () => {
   it('should be loading while a remove-account task runs', async () => {
     const { useAccountLoading } = await importModule();
     const { loading } = useAccountLoading();
-    set(removeRunning, true);
+    set(mockRemoveRunning, true);
     expect(get(loading)).toBe(true);
   });
 
@@ -76,7 +87,7 @@ describe('useAccountLoading', () => {
     const { useAccountLoading } = await importModule();
     const { isAccountOperationRunning } = useAccountLoading();
     isAccountOperationRunning('eth');
-    expect(h.useIsTaskRunning).toHaveBeenCalledWith(TaskType.ADD_ACCOUNT, { blockchain: 'eth' });
-    expect(h.useIsTaskRunning).toHaveBeenCalledWith(TaskType.REMOVE_ACCOUNT, { blockchain: 'eth' });
+    expect(useWorkStatus).toHaveBeenCalledWith('accounts', 'add', 'eth');
+    expect(useWorkStatus).toHaveBeenCalledWith('accounts', 'remove', 'eth');
   });
 });

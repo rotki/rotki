@@ -5,6 +5,7 @@ import type {
   HistoryEventRow,
 } from '@/modules/history/events/schemas';
 import { assert, type Blockchain } from '@rotki/common';
+import { runSpecWith } from '@test/utils/mocks/native-task';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { isOfEventType } from '@/modules/history/event-utils';
@@ -21,6 +22,22 @@ vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
     }),
   }),
 }));
+
+vi.mock(import('@/modules/task-center/use-native-task'), async (importOriginal) => {
+  const actual = await importOriginal();
+  const { ok } = await import('plainfp/result');
+  return {
+    // Keeps the real `ActivityKind`/`makeActivityId` the producers build their ids from; only the
+    // task-running surface is stubbed.
+    ...actual,
+    useNativeTask: vi.fn().mockReturnValue({
+      cancelByType: vi.fn(() => vi.fn()),
+      reportProgress: vi.fn(),
+      statusOf: vi.fn(() => ({ active: false, everCompleted: false, pending: false, running: false })),
+      submitTask: vi.fn(runSpecWith(vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>) => ok(await taskFn())))),
+    }),
+  };
+});
 
 vi.mock('@/modules/core/tasks/use-task-store', async () => {
   const { ref } = await import('vue');

@@ -4178,6 +4178,10 @@ def test_upgrade_db_52_to_53(
     with db_v52.conn.write_ctx() as write_cursor:
         assert not table_exists(cursor=write_cursor, name='event_metrics')
         assert not table_exists(cursor=write_cursor, name='data_issues')
+        assert index_exists(
+            cursor=write_cursor,
+            name='idx_timed_balances_currency_timestamp_category_value',
+        ) is False
         for table_name in (
             'bitcoin_transactions',
             'bitcoin_tx_io',
@@ -4601,6 +4605,7 @@ def test_upgrade_db_52_to_53(
             'idx_solanatx_address_mappings_address',
             'idx_bitcoin_transactions_location_timestamp',
             'idx_bitcointx_address_mappings_address',
+            'idx_timed_balances_currency_timestamp_category_value',
         ):
             assert index_exists(cursor=cursor, name=index_name)
 

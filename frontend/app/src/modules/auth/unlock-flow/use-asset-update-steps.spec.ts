@@ -1,6 +1,8 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { BackendRestartStatus } from '@/modules/shell/app/use-backend-management';
 import { useAssetUpdateSteps } from './use-asset-update-steps';
+import { UnlockErrorKind } from './use-unlock-flow';
 
 const { applyUpdates, checkForUpdate, interopState, restartBackend } = vi.hoisted(() => ({
   applyUpdates: vi.fn(),
@@ -13,7 +15,10 @@ vi.mock('@/modules/assets/use-assets', () => ({
   useAssets: vi.fn(() => ({ applyUpdates, checkForUpdate })),
 }));
 
-vi.mock('@/modules/shell/app/use-backend-management', () => ({
+vi.mock('@/modules/shell/app/use-backend-management', async importOriginal => ({
+  // The status constants are values the code under test compares against, so the real
+  // ones have to come through; only the composable is replaced.
+  ...(await importOriginal<typeof import('@/modules/shell/app/use-backend-management')>()),
   useBackendManagement: vi.fn(() => ({ restartBackend })),
 }));
 
@@ -108,19 +113,51 @@ describe('useAssetUpdateSteps', () => {
   });
 
   describe('requestRestart', () => {
-    it('should be a no-op on web (not packaged)', async () => {
+    it('should ask for a restart without deciding whether one is possible', async () => {
+      // The runtime check moved into restartBackend, which drives Electron, the
+      // docker control endpoint, or nothing at all. Guarding again here is what
+      // kept docker on the old silent no-op.
+      restartBackend.mockResolvedValue({ status: BackendRestartStatus.restarted });
+
       const result = await useAssetUpdateSteps().requestRestart();
 
-      expect(restartBackend).not.toHaveBeenCalled();
+      expect(restartBackend).toHaveBeenCalled();
       expect(result).toEqual({ ok: true, value: undefined });
     });
 
     it('should restart the managed backend on Electron (packaged)', async () => {
       interopState.isPackaged = true;
+      restartBackend.mockResolvedValue({ status: BackendRestartStatus.restarted });
 
       const result = await useAssetUpdateSteps().requestRestart();
 
       expect(restartBackend).toHaveBeenCalled();
+      expect(result).toEqual({ ok: true, value: undefined });
+    });
+
+    /**
+     * The update is already written to the global database by this point, so carrying on
+     * would unlock a backend still holding the assets it was told to reload, and report
+     * success for it. A refused restart has to stop the flow.
+     */
+    it('should fail the step when the restart is refused', async () => {
+      restartBackend.mockResolvedValue({
+        message: 'authentication required',
+        status: BackendRestartStatus.failed,
+      });
+
+      const result = await useAssetUpdateSteps().requestRestart();
+
+      expect(result).toEqual({ error: { kind: UnlockErrorKind.restartFailed }, ok: false });
+    });
+
+    // Not a failure: no runtime could restart anything, which is how the plain web build
+    // has always behaved, so the unlock has to continue rather than block login.
+    it('should continue when no runtime can restart at all', async () => {
+      restartBackend.mockResolvedValue({ status: BackendRestartStatus.unavailable });
+
+      const result = await useAssetUpdateSteps().requestRestart();
+
       expect(result).toEqual({ ok: true, value: undefined });
     });
   });

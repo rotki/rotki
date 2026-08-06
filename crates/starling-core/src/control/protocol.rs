@@ -41,9 +41,12 @@ pub enum Transport {
     /// The Docker admin Unix socket, behind a uid-0 `SO_PEERCRED` gate. The
     /// connecting peer is already container-root, so full control is allowed.
     Uds,
-    /// The opt-in HTTP control bind (Docker), reachable only through the
-    /// operator's auth proxy after the shared-secret gate. Mutating control is
-    /// allowed once that gate passes; this surface is never the public `:80`.
+    /// The `/_control` endpoint on the Docker proxy, reachable by the SPA on the
+    /// published port. It is registered only when the session cookie is
+    /// configured, and every request is authorized by asking core to validate the
+    /// caller's cookie — core owns `active_session_id`, so a session a newer
+    /// login retired is refused. Reads plus the restart/service-toggle
+    /// mutations; never `start`, `stop`, or any [`BackendOptions`].
     HttpControl,
     /// The unauthenticated public health endpoint folded onto the proxy
     /// `/health`. Read-only **boolean** health only, never detailed status or
@@ -131,10 +134,14 @@ pub fn is_authorized(transport: Transport, method: Method) -> bool {
         (Stdio, Health | Status | Start | Restart | Stop | StartService | StopService) => true,
         // Docker admin socket (uid-0 gated): the whole surface.
         (Uds, Health | Status | Start | Restart | Stop | StartService | StopService) => true,
-        // Opt-in authenticated HTTP control bind: reads + mutations.
-        (HttpControl, Health | Status | Start | Restart | Stop | StartService | StopService) => {
-            true
-        }
+        // The cookie-gated `/_control` surface: reads, a bare `restart`, and the
+        // optional-service toggles the settings page drives.
+        (HttpControl, Health | Status | Restart | StartService | StopService) => true,
+        // `stop` exits PID 1, so the container dies with code 0 and both
+        // `restart: no` and `on-failure` leave it dead — recovery would then need
+        // docker-level access the SPA does not have. `start` is the renderer's
+        // first-boot call, meaningless in docker where the tree autostarts.
+        (HttpControl, Start | Stop) => false,
         // Public unauthenticated surface: boolean health ONLY (§S3).
         (PublicHealth, Health) => true,
         (PublicHealth, Status | Start | Restart | Stop | StartService | StopService) => false,
@@ -351,8 +358,9 @@ pub fn authorize(transport: Transport, method: Method) -> Result<(), ControlErro
 ///   transport their presence is rejected outright, in a container these are
 ///   fixed volume mounts and a caller-chosen path is at best a DoS.
 ///
-/// Returns the options to actually apply: identical on stdio, and on every other
-/// transport **no options at all**, any that are set is an error.
+/// Returns the options to actually apply: identical on stdio, `loglevel` alone on
+/// [`Transport::HttpControl`], and nothing at all elsewhere — any other option
+/// being set is an error rather than a silent drop.
 ///
 /// Docker config is declarative (`/config/rotki_config.json` + env, read once at
 /// boot), so there is nothing for an RPC option to usefully mutate. It could not
@@ -362,9 +370,15 @@ pub fn authorize(transport: Transport, method: Method) -> Result<(), ControlErro
 /// means recreate the container; UDS `restart` means "bounce the backends with the
 /// boot-time layout" for un-wedging, not for reconfiguration.
 ///
-/// `loglevel` is the arguable exception, and is rejected too: `-e LOGLEVEL=debug`
-/// plus a recreate is cheap and normal in docker, and core already exposes a live
-/// log-level change through `PUT /api/1/settings/configuration`.
+/// `loglevel` is the one exception, and only on `/_control`. Core already changes
+/// its level live through `PUT /api/1/settings/configuration`, which is the better
+/// route whenever core is answering — but the case that wants a debug restart is
+/// precisely the one where it is *not*: the connection-failure screen, with core
+/// down and the container log the only place left to look. The hidden-TTL argument
+/// above does not bite here either; a debugging level that lapses on the next
+/// recreate is the desired behaviour, not a surprise. It names no path, so unlike
+/// the two directories it cannot be pointed anywhere harmful, and it is validated
+/// against the allowlist above on every transport.
 pub fn sanitize_restart_options(
     transport: Transport,
     options: BackendOptions,
@@ -378,13 +392,28 @@ pub fn sanitize_restart_options(
         }
     }
 
-    if transport != Transport::Stdio && options.any_set() {
-        return Err(ControlError::OptionsNotAllowed {
+    match transport {
+        Transport::Stdio => Ok(options),
+        Transport::HttpControl => {
+            let loglevel_only = BackendOptions {
+                loglevel: options.loglevel.clone(),
+                ..BackendOptions::default()
+            };
+            // Compared rather than blanket-dropped, so a caller that sends a data
+            // directory is told no instead of quietly getting a restart that
+            // ignored it.
+            if options != loglevel_only {
+                return Err(ControlError::OptionsNotAllowed {
+                    transport: transport.label(),
+                });
+            }
+            Ok(loglevel_only)
+        }
+        _ if options.any_set() => Err(ControlError::OptionsNotAllowed {
             transport: transport.label(),
-        });
+        }),
+        _ => Ok(options),
     }
-
-    Ok(options)
 }
 
 #[cfg(test)]
@@ -440,7 +469,7 @@ mod tests {
 
     #[test]
     fn authorize_matrix_allows_full_surface_on_trusted_transports() {
-        for transport in [Transport::Stdio, Transport::Uds, Transport::HttpControl] {
+        for transport in [Transport::Stdio, Transport::Uds] {
             for method in [
                 Method::Health,
                 Method::Status,
@@ -457,6 +486,31 @@ mod tests {
                     method.wire()
                 );
             }
+        }
+    }
+
+    #[test]
+    fn authorize_matrix_denies_start_and_stop_on_http_control() {
+        for method in [
+            Method::Health,
+            Method::Status,
+            Method::Restart,
+            Method::StartService,
+            Method::StopService,
+        ] {
+            assert!(
+                is_authorized(Transport::HttpControl, method),
+                "/_control should allow {}",
+                method.wire()
+            );
+        }
+        // Killing PID 1 or re-running first boot is not the SPA's to do.
+        for method in [Method::Start, Method::Stop] {
+            assert!(
+                !is_authorized(Transport::HttpControl, method),
+                "/_control must deny {}",
+                method.wire()
+            );
         }
     }
 
@@ -571,8 +625,8 @@ mod tests {
     #[test]
     fn sanitize_rejects_every_option_off_stdio() {
         // Docker config is declarative and read once at boot, so no option is
-        // settable over a remote transport -- not even loglevel, which core can
-        // already change live through its own settings API.
+        // settable over the admin socket. `/_control` carves out `loglevel`
+        // alone; see `sanitize_allows_loglevel_only_on_http_control`.
         let one_option_each = [
             BackendOptions {
                 loglevel: Some("warning".to_string()),
@@ -605,6 +659,74 @@ mod tests {
         ];
         for opts in one_option_each {
             let err = sanitize_restart_options(Transport::Uds, opts).unwrap_err();
+            assert!(matches!(err, ControlError::OptionsNotAllowed { .. }));
+        }
+    }
+
+    #[test]
+    fn sanitize_allows_loglevel_only_on_http_control() {
+        // The SPA's "retry with debug" needs to bring core back up talking, and
+        // core's live log-level API is unreachable in exactly that state.
+        let out = sanitize_restart_options(
+            Transport::HttpControl,
+            BackendOptions {
+                loglevel: Some("DEBUG".to_string()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(out.loglevel.as_deref(), Some("DEBUG"));
+
+        // A bare restart stays the ordinary case.
+        assert!(
+            sanitize_restart_options(Transport::HttpControl, BackendOptions::default()).is_ok()
+        );
+
+        // An unknown level is refused here as everywhere.
+        assert!(matches!(
+            sanitize_restart_options(
+                Transport::HttpControl,
+                BackendOptions {
+                    loglevel: Some("chatty".to_string()),
+                    ..Default::default()
+                },
+            ),
+            Err(ControlError::InvalidLogLevel(_)),
+        ));
+    }
+
+    #[test]
+    fn sanitize_rejects_every_other_option_on_http_control() {
+        // Paths especially: in a container they are fixed mounts, so honouring a
+        // caller-chosen one is at best a way to make the backend unstartable.
+        // Each is refused outright rather than dropped, so a caller is never told
+        // a restart applied something it ignored.
+        let refused = [
+            BackendOptions {
+                data_directory: Some("/tmp/elsewhere".to_string()),
+                ..Default::default()
+            },
+            BackendOptions {
+                log_directory: Some("/tmp/logs".to_string()),
+                ..Default::default()
+            },
+            BackendOptions {
+                sqlite_instructions: Some(5000),
+                ..Default::default()
+            },
+            BackendOptions {
+                mcp_auto_start: Some(true),
+                ..Default::default()
+            },
+            // Even alongside an otherwise acceptable loglevel.
+            BackendOptions {
+                loglevel: Some("debug".to_string()),
+                data_directory: Some("/tmp/elsewhere".to_string()),
+                ..Default::default()
+            },
+        ];
+        for opts in refused {
+            let err = sanitize_restart_options(Transport::HttpControl, opts).unwrap_err();
             assert!(matches!(err, ControlError::OptionsNotAllowed { .. }));
         }
     }

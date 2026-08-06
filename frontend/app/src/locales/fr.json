@@ -190,30 +190,11 @@
     }
   },
   "actions": {
-    "add_eth2_validator": {
-      "task": {
-        "description": "Ajout d'un validateur de staking ETH",
-        "title": "Ajout du validateur : {id}"
-      }
-    },
     "assets": {
       "erc20": {
         "error": {
           "description": "Il y a eu une erreur lors de la récupération des détails du token : {message}",
           "title": "Récupération des détails du token pour {address} ({evmChain})"
-        },
-        "task": {
-          "title": "Récupération des détails du token pour {address} ({evmChain})"
-        }
-      },
-      "import": {
-        "task": {
-          "title": "Importation des actifs de l'utilisateur"
-        }
-      },
-      "reset": {
-        "task": {
-          "title": "Réinitialisation de la base de données des actifs"
         }
       },
       "update": {
@@ -241,27 +222,19 @@
         },
         "task": {
           "description": "Requête de tous les soldes et enregistrement d'un instantané pour les statistiques.",
-          "ignore_errors_note": "Les erreurs survenues pendant la requête seront ignorées.",
-          "title": "Enregistrement de l'instantané des soldes"
+          "ignore_errors_note": "Les erreurs survenues pendant la requête seront ignorées."
         }
       },
       "blockchain": {
         "error": {
           "description": "Erreur lors de la requête des soldes de la blockchain : {error}",
           "title": "Requête des soldes de la blockchain"
-        },
-        "task": {
-          "title": "Requête des soldes {chain}"
         }
       },
       "blockchain_account_removal": {
         "error": {
           "description": "Échec de la suppression du compte : {error}",
           "title": "Suppression de {count} compte(s) {blockchain}"
-        },
-        "task": {
-          "description": "Suppression de {count} comptes en cours",
-          "title": "Suppression de compte {blockchain}"
         }
       },
       "blockchain_accounts_add": {
@@ -282,7 +255,6 @@
           "description": "L'adresse {address} a été ajoutée avec succès pour toutes les chaînes EVM | L'adresse {address} a été ajoutée avec succès pour ces chaînes :\n {list}"
         },
         "task": {
-          "description": "Ajout de {address}",
           "title": "Ajout de compte {blockchain}"
         }
       },
@@ -297,7 +269,6 @@
       },
       "detect_tokens": {
         "task": {
-          "description": "Récupération des jetons détectés pour {address} ({chain})",
           "title": "Récupération des jetons détectés"
         }
       },
@@ -305,17 +276,11 @@
         "error": {
           "message": "Échec de la requête des soldes de {location} : {error}",
           "title": "Requête des soldes de {location}"
-        },
-        "task": {
-          "title": "Récupération des soldes de {location}"
         }
       },
       "exchange_rates": {
         "error": {
           "message": "Échec de la récupération des taux de change : {message}",
-          "title": "Taux de Change"
-        },
-        "task": {
           "title": "Taux de Change"
         }
       },
@@ -327,9 +292,6 @@
         "error": {
           "message": "Échec de la requête des informations d'intérêt d'épargne de {location} : {error}",
           "title": "Requête des informations d'intérêt d'épargne de {location}"
-        },
-        "task": {
-          "title": "Récupération des informations d'intérêt d'épargne de {location}"
         }
       },
       "exchange_setup": {
@@ -360,9 +322,6 @@
         "error": {
           "description": "Échec de la suppression de {xpub} : {error}",
           "title": "Suppression de Xpub"
-        },
-        "task": {
-          "title": "Suppression de xpub"
         }
       }
     },
@@ -370,14 +329,6 @@
       "airdrops": {
         "error": {
           "description": "Échec de la récupération des airdrops : {error}"
-        },
-        "task": {
-          "title": "Interrogation des airdrops"
-        }
-      },
-      "liquity": {
-        "task": {
-          "title": "Interrogation des soldes Liquity"
         }
       },
       "liquity_balances": {
@@ -390,27 +341,18 @@
         "error": {
           "description": "Échec de la requête des pools Liquity : {message}",
           "title": "Pools Liquity"
-        },
-        "task": {
-          "title": "Interrogation des pools Liquity"
         }
       },
       "liquity_staking": {
         "error": {
           "description": "Échec de la récupération du staking Liquity : {message}",
           "title": "Staking Liquity"
-        },
-        "task": {
-          "title": "Interrogation du staking Liquity"
         }
       },
       "liquity_statistics": {
         "error": {
           "description": "Échec de la requête des statistiques Liquity : {message}",
           "title": "Statistiques Liquity"
-        },
-        "task": {
-          "title": "Interrogation des statistiques Liquity"
         }
       }
     },
@@ -424,18 +366,12 @@
       "error": {
         "message": "Échec de la détection des comptes EVM avec l'erreur suivante : {message}",
         "title": "Détection des comptes EVM"
-      },
-      "task": {
-        "title": "Détection des comptes EVM"
       }
     },
     "get_accounts": {
       "error": {
         "description": "Échec de la requête des comptes pour {blockchain} : {message}",
         "title": "Interrogation des comptes"
-      },
-      "task": {
-        "title": "Interrogation des comptes {blockchain}"
       }
     },
     "history": {
@@ -484,9 +420,6 @@
       "error": {
         "message": "Une erreur s'est produite lors de l'interrogation des événements de staking Kraken : {message}",
         "title": "Interrogation des événements de staking Kraken"
-      },
-      "task": {
-        "title": "Interrogation des événements de staking Kraken"
       }
     },
     "manual_balances": {
@@ -505,19 +438,11 @@
         "task": {
           "title": "Modification de soldes manuels"
         }
-      },
-      "fetch": {
-        "task": {
-          "title": "Récupération de soldes manuels"
-        }
       }
     },
     "nft_balances": {
       "error": {
         "message": "Une erreur s'est produite lors de l'interrogation des soldes NFT : {message}",
-        "title": "Interrogation des soldes NFT"
-      },
-      "task": {
         "title": "Interrogation des soldes NFT"
       }
     },
@@ -539,10 +464,6 @@
           },
           "title": "Exportation CSV"
         }
-      },
-      "task": {
-        "description": "Demande de nouveaux événements {queryType}",
-        "title": "Interrogation des événements"
       }
     },
     "reports": {
@@ -568,9 +489,6 @@
       "generate": {
         "error": {
           "description": "Une réponse inattendue a été reçue lors de la génération du rapport de profit et perte. Cela pourrait indiquer un problème avec le mécanisme de génération. Veuillez vérifier les journaux pour tout message d'erreur (vous devrez peut-être activer la journalisation de débogage en premier) et créer un problème."
-        },
-        "task": {
-          "title": "Créer un rapport fiscal"
         }
       }
     },
@@ -585,17 +503,9 @@
           "message": "Échec de la suppression d'une adresse interrogeable : {message}"
         }
       },
-      "fetch_nfts": {
-        "task": {
-          "title": "Interrogation des NFTs"
-        }
-      },
       "fetch_prices": {
         "error": {
           "message": "Échec de la récupération des prix : {error}",
-          "title": "Récupération des prix"
-        },
-        "task": {
           "title": "Récupération des prix"
         }
       },
@@ -611,9 +521,6 @@
         },
         "success": {
           "message": "L'opération de synchronisation des données a été complétée avec succès.",
-          "title": "Synchronisation forcée"
-        },
-        "task": {
           "title": "Synchronisation forcée"
         }
       },
@@ -677,9 +584,6 @@
         "error": {
           "description": "Échec de la requête des détails du staking ETH : {error}",
           "title": "Interrogation des détails du staking ETH"
-        },
-        "task": {
-          "title": "Interrogation des détails du staking ETH"
         }
       }
     },
@@ -695,30 +599,18 @@
       "error": {
         "description": "Échec de la requête pour {address} ({chain}) : {error}",
         "title": "Requête des transactions Blockchain"
-      },
-      "task": {
-        "description": "Récupération des transactions pour {address} ({chain})",
-        "title": "Transactions Blockchain"
       }
     },
     "transactions_redecode": {
       "error": {
         "description": "Échec du décodage des événements des transactions : {error}",
         "title": "Décodage des événements des transactions"
-      },
-      "task": {
-        "description": "Décodage des événements des transactions : {tx} ({chain})",
-        "title": "Décodage des événements de transaction"
       }
     },
     "transactions_redecode_by_chain": {
       "error": {
         "description": "Échec du décodage des événements de {chain} : {error}",
         "title": "Décodage des événements des transactions"
-      },
-      "task": {
-        "description": "Décodage des transactions pour les événements {chain}",
-        "title": "Décodage des événements de transaction"
       }
     },
     "unignore": {
@@ -922,9 +814,7 @@
       "subtitle": "Inspecter la liste des jetons détectés récemment et ajouter tous les jetons spam à la liste des jetons ignorés"
     },
     "only_show_ignored": "Seuls les actifs ignorés ({length}) visibles | Seuls les actifs ignorés",
-    "only_show_owned": "Seuls les actifs possédés visibles",
     "only_show_unignored": "Seuls les actifs non ignorés visibles",
-    "only_show_whitelisted": "Seuls les actifs approuvés visibles",
     "selected": "{count} actif(s) sélectionné(s)",
     "show_all": "Afficher tout",
     "underlying_tokens": "Jetons sous-jacents"
@@ -1852,10 +1742,7 @@
     "import_complete": "L'importation a été effectuée avec succès.",
     "loading": "Chargement",
     "many_files_selected": "Un seul fichier doit être sélectionné",
-    "only_files": "Seuls les fichiers {fileFilter} sont autorisés",
-    "task": {
-      "title": "Importation d'un fichier csv pour la source : {source}"
-    }
+    "only_files": "Seuls les fichiers {fileFilter} sont autorisés"
   },
   "frontend_settings": {
     "subtitle": {

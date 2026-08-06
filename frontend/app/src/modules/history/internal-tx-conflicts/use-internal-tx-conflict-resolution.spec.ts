@@ -23,6 +23,11 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 vi.mock('@/modules/history/events/tx/use-history-transaction-decoding', () => ({
   useHistoryTransactionDecoding: (): object => ({
     cancelDecoding: spies.cancelDecoding,
+  }),
+}));
+
+vi.mock('@/modules/history/events/tx/use-targeted-redecode', () => ({
+  useTargetedRedecode: (): object => ({
     pullAndDecodeTransactionsRaw: spies.pullAndDecodeTransactionsRaw,
   }),
 }));

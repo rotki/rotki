@@ -1,29 +1,35 @@
-import type { TaskFailure } from '@/modules/core/tasks/use-task-handler';
+import { runSpecWith } from '@test/utils/mocks/native-task';
+import { err } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiKeyMissingError } from '@/modules/core/api/types/errors';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { SyncWarningSource, useSyncWarningsStore } from '@/modules/shell/sync-progress/use-sync-warnings-store';
 import { useRefreshHandlers } from './use-refresh-handlers';
 
 const mockNotifyError = vi.fn();
-const mockRunTask = vi.fn();
+const runTaskResult = vi.fn();
+
+/** Runs the submitted spec inline so assertions see the real `run` body. */
+const submitTask = vi.fn(runSpecWith(runTaskResult));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn(() => ({ notifyError: mockNotifyError })),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/modules/core/tasks/use-task-handler')>();
-  return {
-    ...actual,
-    useTaskHandler: vi.fn(() => ({
-      runTask: mockRunTask,
-      cancelTask: vi.fn(),
-      cancelTaskByTaskType: vi.fn(),
-      handleResult: vi.fn(),
-    })),
-  };
-});
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: vi.fn(() => ({
+    cancelByType: vi.fn(() => vi.fn()),
+    runTaskResult,
+    statusOf: vi.fn(),
+    submitTask,
+  })),
+}));
+
+// Exchange-events querying lives in useExchangeEventsRefresh (tested separately); stub it out here.
+vi.mock('@/modules/history/events/tx/use-exchange-events-refresh', () => ({
+  useExchangeEventsRefresh: vi.fn(() => ({ queryAllExchangeEvents: vi.fn() })),
+}));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   useHistoryEventsApi: vi.fn(() => ({
@@ -63,17 +69,6 @@ vi.mock('@/modules/settings/api-keys/external/use-external-api-keys', () => ({
   useExternalApiKeys: vi.fn(() => ({ getApiKey: vi.fn(() => 'fake-key') })),
 }));
 
-function makeFailure(overrides: Partial<TaskFailure>): TaskFailure {
-  return {
-    backendCancelled: false,
-    cancelled: false,
-    message: 'failure',
-    skipped: false,
-    success: false,
-    ...overrides,
-  };
-}
-
 describe('useRefreshHandlers', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -83,7 +78,7 @@ describe('useRefreshHandlers', () => {
   describe('queryOnlineEvent', () => {
     it('should add a warning instead of notifying on ApiKeyMissingError', async () => {
       const error = new ApiKeyMissingError('Querying beaconcha.in failed due to missing API key');
-      mockRunTask.mockResolvedValueOnce(makeFailure({ error, message: error.message }));
+      runTaskResult.mockResolvedValueOnce(err(TaskFailed({ cause: error, message: error.message })));
 
       const { queryOnlineEvent } = useRefreshHandlers();
       await queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);
@@ -100,7 +95,7 @@ describe('useRefreshHandlers', () => {
     });
 
     it('should notifyError on a generic failure (no warning added)', async () => {
-      mockRunTask.mockResolvedValueOnce(makeFailure({ error: new Error('boom'), message: 'boom' }));
+      runTaskResult.mockResolvedValueOnce(err(TaskFailed({ cause: new Error('boom'), message: 'boom' })));
 
       const { queryOnlineEvent } = useRefreshHandlers();
       await queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);
@@ -111,7 +106,7 @@ describe('useRefreshHandlers', () => {
     });
 
     it('should ignore cancelled outcomes', async () => {
-      mockRunTask.mockResolvedValueOnce(makeFailure({ cancelled: true, message: 'cancelled' }));
+      runTaskResult.mockResolvedValueOnce(err(Cancelled({ message: 'cancelled' })));
 
       const { queryOnlineEvent } = useRefreshHandlers();
       await queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);

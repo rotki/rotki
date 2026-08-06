@@ -1,5 +1,6 @@
 import type { AllBalancePayload } from '@/modules/accounts/blockchain-accounts';
 import { startPromise } from '@shared/utils';
+import { map as mapResult, type Result } from 'plainfp/result';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
@@ -11,9 +12,10 @@ import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balance
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
+import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 export const useBalanceFetching = createSharedComposable(() => {
   const { fetchManualBalances } = useManualBalances();
@@ -23,7 +25,7 @@ export const useBalanceFetching = createSharedComposable(() => {
   const { fetchExchangeRates } = usePriceTaskManager();
   const { refreshPrices } = usePriceRefresh();
   const { notifyError } = useNotifications();
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchNetValue } = useStatisticsDataFetching();
   const { refreshBlockchainBalances } = useBlockchainBalances();
@@ -42,25 +44,25 @@ export const useBalanceFetching = createSharedComposable(() => {
       ? `${t('actions.balances.all_balances.task.description')} ${t('actions.balances.all_balances.task.ignore_errors_note')}`
       : t('actions.balances.all_balances.task.description');
 
-    const outcome = await runTask(
-      async () => queryBalancesAsync(payload),
-      {
-        type: TaskType.QUERY_BALANCES,
-        meta: {
-          description,
-          title: t('actions.balances.all_balances.task.title'),
-        },
-      },
-    );
+    // Singleton all-balances snapshot query; liveness is read off the orchestrator.
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.ALL_BALANCES),
+      kind: ActivityKind.ALL_BALANCES,
+      rerunnable: true,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask(async () => queryBalancesAsync(payload)),
+        () => {},
+      ),
+      subtitle: description,
+      title: t('task_center.group.all_balances'),
+    });
 
-    if (isActionableFailure(outcome)) {
-      notifyError(
-        t('actions.balances.all_balances.error.title'),
-        t('actions.balances.all_balances.error.message', {
-          message: outcome.message,
-        }),
-      );
-    }
+    onActionableError(outcome, error => notifyError(
+      t('actions.balances.all_balances.error.title'),
+      t('actions.balances.all_balances.error.message', {
+        message: error.message,
+      }),
+    ));
   };
 
   const fetchCached = async (): Promise<void> => {

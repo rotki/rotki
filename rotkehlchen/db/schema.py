@@ -1082,6 +1082,7 @@ CREATE INDEX IF NOT EXISTS idx_history_events_asset ON history_events(asset);
 CREATE INDEX IF NOT EXISTS idx_history_events_type ON history_events(type);
 CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype);
 CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);
+CREATE INDEX IF NOT EXISTS idx_timed_balances_currency_timestamp_category_value ON timed_balances(currency, timestamp, category, usd_value);
 CREATE INDEX IF NOT EXISTS idx_bitcoin_events_addresses_address ON bitcoin_events_addresses(address);
 CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_io_address ON bitcoin_tx_io(address);
 CREATE INDEX IF NOT EXISTS idx_evm_transactions_chain_timestamp ON evm_transactions(chain_id, timestamp DESC);

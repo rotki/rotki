@@ -4,11 +4,12 @@ import type {
   BalanceQueryQueueItem,
   CommonQueryProgressData,
 } from '@/modules/dashboard/progress/types';
-import { get } from '@vueuse/shared';
-import { useBalanceQueue } from '@/modules/balances/use-balance-queue';
+import { get, set } from '@vueuse/shared';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { isTerminalStatus } from '@/modules/task-center/core/status';
+import { type Activity, type ActivityId, ActivityKind, activityParts, ActivityStatus } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 interface BalanceQueryProgressOperationData {
   type: BalanceQueryProgressType;
@@ -24,6 +25,8 @@ interface UseBalanceQueryProgressReturn {
   isBalanceQuerying: ComputedRef<boolean>;
 }
 
+const BALANCE_KINDS = new Set<ActivityKind>([ActivityKind.BLOCKCHAIN_BALANCES, ActivityKind.TOKEN_DETECTION]);
+
 function createPendingItemProgress(
   item: BalanceQueryQueueItem,
   completed: number,
@@ -31,7 +34,7 @@ function createPendingItemProgress(
   progress: number,
   t: ReturnType<typeof useI18n>['t'],
 ): BalanceQueryProgress {
-  const isTokenDetection = item.type === TaskType.FETCH_DETECTED_TOKENS;
+  const isTokenDetection = item.type === ActivityKind.TOKEN_DETECTION;
   return {
     currentOperation: isTokenDetection
       ? t('dashboard.history_query_indicator.token_detection_status.detecting')
@@ -68,7 +71,7 @@ function createTokenDetectionProgress(
       address: item.address,
       chain: item.chain,
       status: t('dashboard.history_query_indicator.token_detection_status.detecting'),
-      type: TaskType.FETCH_DETECTED_TOKENS,
+      type: ActivityKind.TOKEN_DETECTION,
     },
     currentStep,
     percentage: progress,
@@ -99,7 +102,7 @@ function createBalanceQueryProgress(
     currentOperationData: {
       chain: item.chain,
       status: t('dashboard.history_query_indicator.balance_status.querying_chain_balances', { chain: chainName }),
-      type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
+      type: ActivityKind.BLOCKCHAIN_BALANCES,
     },
     currentStep,
     percentage: progress,
@@ -116,7 +119,7 @@ function createRunningItemProgress(
   t: ReturnType<typeof useI18n>['t'],
 ): BalanceQueryProgress {
   const currentStep = completed + 1;
-  const isTokenDetection = item.type === TaskType.FETCH_DETECTED_TOKENS;
+  const isTokenDetection = item.type === ActivityKind.TOKEN_DETECTION;
 
   if (isTokenDetection) {
     return createTokenDetectionProgress(item, currentStep, total, progress, t);
@@ -126,26 +129,99 @@ function createRunningItemProgress(
   return createBalanceQueryProgress(item, currentStep, total, progress, chainName, t);
 }
 
-export function useBalanceQueryProgress(): UseBalanceQueryProgressReturn {
+function statusLabel(status: ActivityStatus): BalanceQueryQueueItem['status'] {
+  if (status === ActivityStatus.RUNNING)
+    return 'running';
+  if (status === ActivityStatus.PENDING)
+    return 'pending';
+  return 'completed';
+}
+
+function toQueueItem(activity: Activity): BalanceQueryQueueItem {
+  const parts = activityParts(activity.id);
+  const isDetection = activity.kind === ActivityKind.TOKEN_DETECTION;
+  const status = statusLabel(activity.status);
+  return {
+    addedAt: activity.startedAt ?? 0,
+    chain: parts[0] ?? '',
+    id: activity.id,
+    status,
+    type: isDetection ? ActivityKind.TOKEN_DETECTION : ActivityKind.BLOCKCHAIN_BALANCES,
+    ...(isDetection && parts[1] ? { address: parts[1] } : {}),
+  };
+}
+
+/**
+ * Per-batch progress for blockchain-balance + token-detection activities, rebuilt from the
+ * orchestrator snapshot (the old `BalanceQueueService` is gone). A "wave" is the set of activity
+ * ids seen active since the orchestrator was last idle for these kinds; terminal members stay in
+ * the wave (so `completed / total` is exact) until the wave drains, then it clears after a short
+ * debounce — mirroring the queue's clear-after-drain.
+ */
+export const useBalanceQueryProgress = createSharedComposable((): UseBalanceQueryProgressReturn => {
   const { t } = useI18n({ useScope: 'global' });
   const { getChainName } = useSupportedChains();
-  const { useIsTaskRunning } = useTaskStore();
-  const {
-    completedItems,
-    progress,
-    queueItems,
-    runningItems,
-    totalItems,
-  } = useBalanceQueue();
+  const { useIsActive } = useTaskCenter();
+  const { activities } = useTaskOrchestrator();
+
+  const balanceActivities = computed<Activity[]>(() =>
+    get(activities).filter(activity => BALANCE_KINDS.has(activity.kind)),
+  );
+
+  const waveIds = ref<Set<ActivityId>>(new Set());
+  let clearTimer: ReturnType<typeof setTimeout> | undefined;
+
+  watch(balanceActivities, (items) => {
+    const active = items.filter(activity => !isTerminalStatus(activity.status));
+
+    if (active.length > 0) {
+      if (clearTimer) {
+        clearTimeout(clearTimer);
+        clearTimer = undefined;
+      }
+      const next = new Set(get(waveIds));
+      let changed = false;
+      for (const activity of active) {
+        if (!next.has(activity.id)) {
+          next.add(activity.id);
+          changed = true;
+        }
+      }
+      if (changed)
+        set(waveIds, next);
+    }
+    else if (get(waveIds).size > 0 && !clearTimer) {
+      clearTimer = setTimeout(() => {
+        set(waveIds, new Set());
+        clearTimer = undefined;
+      }, 1000);
+    }
+  }, { immediate: true });
+
+  onScopeDispose(() => {
+    if (clearTimer)
+      clearTimeout(clearTimer);
+  });
+
+  const waveItems = computed<Activity[]>(() => {
+    const ids = get(waveIds);
+    return get(balanceActivities).filter(activity => ids.has(activity.id));
+  });
+
+  const totalItems = computed<number>(() => get(waveItems).length);
+  const completedItems = computed<number>(() => get(waveItems).filter(activity => isTerminalStatus(activity.status)).length);
+  const progress = computed<number>(() => {
+    const total = get(totalItems);
+    return total === 0 ? 0 : Math.round((get(completedItems) / total) * 100);
+  });
 
   const isBalanceQuerying = logicOr(
-    useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
-    useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS),
-    computed<boolean>(() => get(runningItems) > 0),
+    useIsActive(ActivityKind.BLOCKCHAIN_BALANCES),
+    useIsActive(ActivityKind.TOKEN_DETECTION),
   );
 
   const balanceProgress = computed<BalanceQueryProgress | undefined>(() => {
-    const items = get(queueItems);
+    const items = get(waveItems);
     const total = get(totalItems);
     const completed = get(completedItems);
     const progressValue = get(progress);
@@ -154,16 +230,14 @@ export function useBalanceQueryProgress(): UseBalanceQueryProgressReturn {
       return undefined;
     }
 
-    // Find current running item
-    const runningItem = items.find(item => item.status === 'running');
+    const runningItem = items.find(activity => activity.status === ActivityStatus.RUNNING);
     if (runningItem) {
-      return createRunningItemProgress(runningItem, completed, total, progressValue, getChainName, t);
+      return createRunningItemProgress(toQueueItem(runningItem), completed, total, progressValue, getChainName, t);
     }
 
-    // Check for pending items
-    const firstPending = items.find(item => item.status === 'pending');
+    const firstPending = items.find(activity => activity.status === ActivityStatus.PENDING);
     if (firstPending) {
-      return createPendingItemProgress(firstPending, completed, total, progressValue, t);
+      return createPendingItemProgress(toQueueItem(firstPending), completed, total, progressValue, t);
     }
 
     return undefined;
@@ -173,4 +247,4 @@ export function useBalanceQueryProgress(): UseBalanceQueryProgressReturn {
     balanceProgress,
     isBalanceQuerying,
   };
-}
+});

@@ -1,8 +1,11 @@
+import { runSpecWith } from '@test/utils/mocks/native-task';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, nextTick } from 'vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 import BalanceDivergenceView from '@/modules/history/balances/BalanceDivergenceView.vue';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 
@@ -35,14 +38,17 @@ vi.mock('@/modules/balances/api/use-historical-balances-api', () => ({
 
 const { taskControl } = vi.hoisted<{ taskControl: { failure: Record<string, unknown> | null } }>(() => ({ taskControl: { failure: null } }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', () => ({
-  isActionableFailure: (outcome: { success: boolean; cancelled: boolean; skipped: boolean }): boolean =>
-    !outcome.success && !outcome.cancelled && !outcome.skipped,
-  useTaskHandler: (): object => ({
-    runTask: async (task: () => Promise<unknown>): Promise<object> => {
-      await task();
-      return taskControl.failure ?? makeDivergenceResult();
-    },
+const runTask = vi.fn();
+runTask.mockImplementation(async (task: () => Promise<unknown>): Promise<unknown> => {
+  await task();
+  const failure = taskControl.failure;
+  return failure ? err(TaskFailed({ message: String(failure.message) })) : ok(makeDivergenceResult().result);
+});
+
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: (): object => ({
+    statusOf: () => ({ active: false, everCompleted: false, pending: false, running: false }),
+    submitTask: runSpecWith(runTask),
   }),
 }));
 
@@ -106,7 +112,7 @@ const stubs = {
   HistoryEventNote: { props: ['notes'], template: '<div class="notes">{{ notes }}</div>' },
 };
 
-function makeDivergenceResult(): object {
+function makeDivergenceResult(): { result: Record<string, unknown>; success: boolean } {
   return {
     result: {
       address: '0xA',

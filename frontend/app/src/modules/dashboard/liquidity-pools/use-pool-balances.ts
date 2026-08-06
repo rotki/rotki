@@ -3,8 +3,8 @@ import { type BigNumber, createEvmIdentifierFromAddress, type Writeable } from '
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { balanceSum, bigNumberSum } from '@/modules/core/common/data/calculation';
-import { Section } from '@/modules/core/common/status';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import { type PoolBalance, type PoolBalances, type PoolLiquidityBalance, PoolType } from './types';
 import { usePoolBalancesStore } from './use-pool-balances-store';
 import { usePoolDataFetching } from './use-pool-data-fetching';
@@ -51,10 +51,10 @@ export function usePoolBalances(): UsePoolBalancesReturn {
   const { sushiswapPoolBalances, uniswapPoolBalances } = storeToRefs(usePoolBalancesStore());
   const { getAssetField } = useAssetInfoRetrieval();
   const { fetch } = usePoolDataFetching();
+  const { useIsActive } = useTaskCenter();
 
-  const { isLoading: uniswapLoading } = useSectionStatus(Section.POOLS_UNISWAP_V2);
-  const { isLoading: sushiswapLoading } = useSectionStatus(Section.POOLS_SUSHISWAP);
-  const loading = logicOr(uniswapLoading, sushiswapLoading);
+  // Both protocols are one LIQUIDITY_POOLS kind; the aggregate covers either being in flight.
+  const loading = useIsActive(ActivityKind.LIQUIDITY_POOLS);
 
   function toArray(poolBalances: PoolBalances): PoolBalance[] {
     const aggregatedBalances = new Map<string, Writeable<PoolBalance>>();

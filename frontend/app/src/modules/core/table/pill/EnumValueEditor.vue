@@ -82,11 +82,12 @@ function setOperator(op: FilterOp | FilterOp[] | undefined): void {
       @close="emit('close')"
     >
       <template
-        v-if="field.display || field.resolveIcon || field.resolveSwatch"
+        v-if="field.display || field.resolveDisplay || field.resolveIcon || field.resolveSwatch"
         #icon="{ value }"
       >
         <PillValueIcon
           :display="field.display"
+          :value-display="field.resolveDisplay?.(value)"
           :icon="field.resolveIcon?.(value)"
           :swatch="field.resolveSwatch?.(value)"
           :value="value"

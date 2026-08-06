@@ -5,19 +5,19 @@ import BlockchainBalanceRefreshBehaviourMenu
 import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import BlockchainBalanceCardList from './BlockchainBalanceCardList.vue';
 import BlockchainSummaryCardCreateButton from './BlockchainSummaryCardCreateButton.vue';
 
 const { blockchainTotals } = useBlockchainTotalSummary();
-const { useIsTaskRunning } = useTaskStore();
+const { useIsActive } = useTaskCenter();
 const { refreshBalance } = useBalanceRefresh();
 const { isRefreshing } = useBalanceStatus();
 const { t } = useI18n({ useScope: 'global' });
 
-const isTokenDetecting = useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
+const isTokenDetecting = useIsActive(ActivityKind.TOKEN_DETECTION);
 const isLoading = logicOr(isRefreshing, isTokenDetecting);
 </script>
 

@@ -294,9 +294,9 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             # Can't mock unknown assets in binance trade query since
             # only all known pairs are queried
             payload = '[]'
-            # ensure that if the endpoint gets queried twice we don't return new trades.
-            # The first time it's always queried with fromId = 0
-            if params['fromId'] == 0:
+            # Ensure that if the endpoint gets queried twice we don't return new trades.
+            # Test exchanges use the legacy history boundary and first query from trade ID 0.
+            if params.get('fromId') == 0:
                 if params.get('symbol') == 'ETHBTC':
                     payload = """[{
                     "symbol": "ETHBTC",

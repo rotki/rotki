@@ -9,8 +9,6 @@ import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balance
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { uniqueStrings } from '@/modules/core/common/data/data';
-import { Section, Status } from '@/modules/core/common/status';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 interface PriceRefreshTask {
   ignoreCache: boolean;
@@ -37,7 +35,6 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
   const { assets: regularAssets } = useAggregatedBalances();
   const { hasCachedPrice } = usePriceUtils();
   const { fetchExchangeRates, fetchPrices } = usePriceTaskManager();
-  const { setStatus } = useStatusUpdater(Section.PRICES);
 
   const assets = computed<string[]>(() => [...get(regularAssets), ...get(collectionMainAssets)]);
 
@@ -56,23 +53,18 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
     ignoreCache: boolean,
     selectedAssets: string[],
   ): Promise<void> => {
-    try {
-      setStatus(Status.LOADING);
-
-      if (ignoreCache) {
-        await fetchExchangeRates();
-      }
-
-      await fetchPrices({
-        ignoreCache,
-        selectedAssets: filterMissingAssets(selectedAssets),
-      });
-
-      adjustPrices(get(prices));
+    // Loading status is owned by the native PRICES activity (see use-fetch-prices); no manual
+    // setStatus here. Read it via `useTaskCenter().useWorkStatus(ActivityKind.PRICES)`.
+    if (ignoreCache) {
+      await fetchExchangeRates();
     }
-    finally {
-      setStatus(Status.LOADED);
-    }
+
+    await fetchPrices({
+      ignoreCache,
+      selectedAssets: filterMissingAssets(selectedAssets),
+    });
+
+    adjustPrices(get(prices));
   };
 
   const processQueue = async (): Promise<void> => {

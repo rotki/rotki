@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
-import { Section } from '@/modules/core/common/status';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const emit = defineEmits<{
   click: [];
@@ -11,7 +11,8 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { refreshPrices } = usePriceRefresh();
-const { isLoading: refreshing } = useSectionStatus(Section.PRICES);
+const { useIsActive } = useTaskCenter();
+const refreshing = useIsActive(ActivityKind.PRICES);
 const { loadingBalances } = useBalancesLoading();
 const disabled = computed<boolean>(() => get(refreshing) || get(loadingBalances));
 

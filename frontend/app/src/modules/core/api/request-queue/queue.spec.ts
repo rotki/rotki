@@ -162,6 +162,127 @@ describe('requestQueue', () => {
     });
   });
 
+  describe('retry backoff', () => {
+    it('should release the slot while a request waits to be retried', async () => {
+      const started: string[] = [];
+      const retrying = new RequestQueue(mockFetchWrapper, {
+        maxConcurrent: 1,
+        maxPerSecond: 100,
+        maxRetries: 1,
+        retryDelay: 1000,
+      });
+
+      mockFetch.mockImplementation(async (url: string) => {
+        started.push(url);
+        if (url === '/flaky' && started.filter(u => u === '/flaky').length === 1)
+          throw new TypeError('network down');
+
+        return new Promise(() => {}); // holds the slot once it does run
+      });
+
+      startPromise(retrying.enqueue('/flaky').catch(() => {}));
+      await vi.advanceTimersByTimeAsync(10);
+      expect(started).toEqual(['/flaky']);
+
+      // Still inside the 1000ms backoff: the slot the retry is waiting for must be usable.
+      startPromise(retrying.enqueue('/other'));
+      await vi.advanceTimersByTimeAsync(10);
+
+      expect(started).toContain('/other');
+
+      retrying.destroy();
+    });
+  });
+
+  describe('background slot cap', () => {
+    /**
+     * Six identical ENS reverse lookups once hung for ~100s each and filled every slot, so the
+     * DELETE behind a user's confirmed delete never left the queue and the app went silent
+     * (`history-events.spec.ts:334`, CI only). Priority cannot fix that on its own: it orders the
+     * queue, and by then there was nothing left to order. Background work must not be able to take
+     * the whole budget in the first place.
+     */
+    it('should keep a slot for other work while background requests hang', async () => {
+      const started: string[] = [];
+      mockFetch.mockImplementation(async (url: string) => {
+        started.push(url);
+        return new Promise(() => {}); // never settles, like the hanging lookups
+      });
+
+      const capped = new RequestQueue(mockFetchWrapper, {
+        maxBackgroundConcurrent: 2,
+        maxConcurrent: 6,
+        maxPerSecond: 100,
+      });
+
+      for (let i = 0; i < 6; i++)
+        startPromise(capped.enqueue(`/background${i}`, { priority: RequestPriority.LOW }));
+
+      await vi.advanceTimersByTimeAsync(10);
+
+      expect(started).toHaveLength(2);
+
+      startPromise(capped.enqueue('/user-action', { priority: RequestPriority.CRITICAL }));
+      await vi.advanceTimersByTimeAsync(10);
+
+      expect(started).toContain('/user-action');
+
+      capped.destroy();
+    });
+
+    it('should let background requests use every slot when nothing competes', async () => {
+      const started: string[] = [];
+      mockFetch.mockImplementation(async (url: string) => {
+        started.push(url);
+        return new Promise(() => {});
+      });
+
+      const capped = new RequestQueue(mockFetchWrapper, {
+        maxBackgroundConcurrent: 2,
+        maxConcurrent: 6,
+        maxPerSecond: 100,
+      });
+
+      for (let i = 0; i < 4; i++)
+        startPromise(capped.enqueue(`/normal${i}`, { priority: RequestPriority.NORMAL }));
+
+      await vi.advanceTimersByTimeAsync(10);
+      expect(started).toHaveLength(4);
+
+      capped.destroy();
+    });
+
+    it('should release the cap as background requests finish', async () => {
+      const started: string[] = [];
+      const resolvers = new Map<string, (value: { data: string }) => void>();
+      mockFetch.mockImplementation(async (url: string) => {
+        started.push(url);
+        return new Promise((resolve) => {
+          resolvers.set(url, resolve);
+        });
+      });
+
+      const capped = new RequestQueue(mockFetchWrapper, {
+        maxBackgroundConcurrent: 2,
+        maxConcurrent: 6,
+        maxPerSecond: 100,
+      });
+
+      for (let i = 0; i < 3; i++)
+        startPromise(capped.enqueue(`/background${i}`, { priority: RequestPriority.LOW }));
+
+      await vi.advanceTimersByTimeAsync(10);
+      expect(started).toHaveLength(2);
+
+      resolvers.get('/background0')!({ data: 'done' });
+      await vi.advanceTimersByTimeAsync(10);
+
+      expect(started).toContain('/background2');
+
+      capped.destroy();
+    });
+  });
+
   describe('deduplication', () => {
     it('should deduplicate identical requests', async () => {
       const promise1 = queue.enqueue('/test', { dedupe: true });

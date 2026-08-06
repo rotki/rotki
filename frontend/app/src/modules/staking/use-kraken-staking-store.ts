@@ -29,6 +29,12 @@ function defaultEventState(): KrakenStakingEvents {
 export const useKrakenStakingStore = defineStore('staking/kraken', () => {
   const pagination = ref<KrakenStakingPagination>(defaultPagination());
   const rawEvents = ref<KrakenStakingEvents>(defaultEventState());
+  // Kraken's page spinner spans an orchestrator refresh AND a plain (task-less) events read, so it
+  // cannot be derived from a single work status; it lives here instead of in a Section.
+  const loading = shallowRef<boolean>(false);
+  const loadedOnce = shallowRef<boolean>(false);
+
+  const isInitialLoading = computed<boolean>(() => get(loading) && !get(loadedOnce));
 
   const resolveAssetIdentifier = useResolveAssetIdentifier();
 
@@ -56,6 +62,9 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
 
   return {
     events,
+    isInitialLoading,
+    loadedOnce,
+    loading,
     pagination,
     rawEvents,
   };

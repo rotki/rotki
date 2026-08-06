@@ -332,14 +332,20 @@ test.describe.serial('history events', () => {
   });
 
   test('delete swap event', async () => {
-    const swapsBefore = await page.getSwapRows();
+    // Named, not counted. A total over every swap on the page cannot say *which* swap went away,
+    // so any compensating change reads as success or failure at random — an earlier test leaves a
+    // swap expanded, and an expanded swap renders its collapse header instead of a swap row.
+    // `data-subgroup-id` is on both of those, so it survives a re-render and only a real deletion
+    // takes it out of the DOM.
+    // Addressed by event id throughout. Reading a row and then re-querying `nth(0)` to delete it
+    // deleted a *different* swap: the list is timestamp DESC and re-renders under the test, so the
+    // index no longer names the row that was read. The id is on both the collapsed row and the
+    // collapse header, so a swap that merely expands still matches and only a deletion clears it.
+    const target = page.rowById(await page.eventIdOf('[data-cy=history-event-swap]'));
 
-    await page.deleteEvent('[data-cy=history-event-swap]', 0);
+    await page.deleteEventRow(target);
 
-    await expect(async () => {
-      const swapsAfter = await page.getSwapRows();
-      expect(swapsAfter).toBeLessThan(swapsBefore);
-    }).toPass({ timeout: 10000 });
+    await expect(target).toHaveCount(0, { timeout: 10000 });
   });
 });
 

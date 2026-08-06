@@ -1,22 +1,49 @@
-import type { Ref } from 'vue';
+import type { ComputedRef } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { TaskType } from '@/modules/core/tasks/task-type';
+import { type Activity, ActivityKind, ActivitySourceType, ActivityStatus, makeActivityId, type WorkStatus } from '@/modules/task-center/core/types';
 
-const h = vi.hoisted(() => ({
-  getIsLoading: vi.fn((): boolean => false),
-  isTaskRunning: vi.fn((): boolean => false),
-  useIsTaskRunning: vi.fn(),
+const mockAddRunning = ref<boolean>(false);
+const mockRemoveRunning = ref<boolean>(false);
+
+// Balance fetching is read off the live orchestrator activities now, not the task store.
+const mockActivities = ref<Activity[]>([]);
+
+vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
+  useTaskOrchestrator: (): Record<string, unknown> => ({ activities: mockActivities }),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-store', () => ({
-  useTaskStore: vi.fn(() => ({ isTaskRunning: h.isTaskRunning, useIsTaskRunning: h.useIsTaskRunning })),
-}));
+function fetchingActivity(chain: string): Activity {
+  return {
+    cancellable: true,
+    id: makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain),
+    kind: ActivityKind.BLOCKCHAIN_BALANCES,
+    percentage: -1,
+    rerunnable: true,
+    source: { type: ActivitySourceType.NATIVE },
+    status: ActivityStatus.RUNNING,
+    title: 'balances',
+  };
+}
 
-vi.mock('@/modules/core/common/use-status-store', () => ({
-  useStatusStore: vi.fn(() => ({ getIsLoading: h.getIsLoading })),
+function activeFor(part?: string): boolean {
+  if (part === 'add')
+    return get(mockAddRunning);
+  if (part === 'remove')
+    return get(mockRemoveRunning);
+  return false;
+}
+
+vi.mock('@/modules/task-center/use-task-center', () => ({
+  useTaskCenter: (): Record<string, unknown> => ({
+    useIsActivePrefix: (_kind: string, part?: string): ComputedRef<boolean> => computed<boolean>(() => activeFor(part)),
+    useWorkStatusPrefix: (_kind: string, part?: string): ComputedRef<WorkStatus> => computed<WorkStatus>(() => {
+      const active = activeFor(part);
+      return { active, everCompleted: false, pending: false, running: active };
+    }),
+  }),
 }));
 
 vi.mock('@/modules/core/common/use-supported-chains', async () => {
@@ -35,9 +62,9 @@ describe('useBlockchainAccountLoading', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    h.isTaskRunning.mockReturnValue(false);
-    h.getIsLoading.mockReturnValue(false);
-    h.useIsTaskRunning.mockImplementation((): Ref<boolean> => ref<boolean>(false));
+    set(mockActivities, []);
+    set(mockAddRunning, false);
+    set(mockRemoveRunning, false);
   });
 
   async function importModule(): Promise<typeof import('./use-blockchain-account-loading')> {
@@ -55,8 +82,8 @@ describe('useBlockchainAccountLoading', () => {
     expect(get(loading.isLoadingActive)).toBe(false);
   });
 
-  it('should be section loading when the blockchain section loads', async () => {
-    h.getIsLoading.mockReturnValue(true);
+  it('should be section loading while any chain is fetching balances', async () => {
+    set(mockActivities, [fetchingActivity('eth')]);
     const { useBlockchainAccountLoading } = await importModule();
     const loading = useBlockchainAccountLoading();
     expect(get(loading.isSectionLoading)).toBe(true);
@@ -72,8 +99,7 @@ describe('useBlockchainAccountLoading', () => {
   });
 
   it('should flag a running add/remove operation', async () => {
-    h.useIsTaskRunning.mockImplementation((type: TaskType): Ref<boolean> =>
-      ref<boolean>(type === TaskType.ADD_ACCOUNT));
+    set(mockAddRunning, true);
     const { useBlockchainAccountLoading } = await importModule();
     const loading = useBlockchainAccountLoading();
     expect(get(loading.operationRunning)).toBe(true);
@@ -82,7 +108,7 @@ describe('useBlockchainAccountLoading', () => {
   });
 
   it('should disable delete while balances are fetching', async () => {
-    h.isTaskRunning.mockReturnValue(true);
+    set(mockActivities, [fetchingActivity('eth')]);
     const { useBlockchainAccountLoading } = await importModule();
     const loading = useBlockchainAccountLoading();
     expect(get(loading.deleteDisabled)).toBe(true);

@@ -1,28 +1,32 @@
+import type { WorkStatus } from '@/modules/task-center/core/types';
+import { runSpecWith } from '@test/utils/mocks/native-task';
 import { createPinia, setActivePinia } from 'pinia';
+import { err } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Module } from '@/modules/core/common/modules';
-import { Section, Status } from '@/modules/core/common/status';
-import { TaskType } from '@/modules/core/tasks/task-type';
+import { Cancelled } from '@/modules/core/tasks/task-result';
 import { useLiquityDataFetching } from './use-liquity-data-fetching';
 import '@test/i18n';
 
-const mockRunTask = vi.fn();
-const mockIsTaskRunning = vi.fn().mockReturnValue(false);
 const mockFetchLiquityBalances = vi.fn();
 const mockFetchLiquityStaking = vi.fn();
 const mockFetchLiquityStakingPools = vi.fn();
 const mockFetchLiquityStatistics = vi.fn();
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
-  ...(await importOriginal<Record<string, unknown>>()),
-  useTaskHandler: vi.fn((): Record<string, unknown> => ({
-    runTask: mockRunTask,
-  })),
-}));
+const IDLE: WorkStatus = { active: false, everCompleted: false, pending: false, running: false };
+let workStatus: WorkStatus = { ...IDLE };
+const statusOf = vi.fn((): WorkStatus => workStatus);
+const runTaskResult = vi.fn();
 
-vi.mock('@/modules/core/tasks/use-task-store', () => ({
-  useTaskStore: vi.fn((): Record<string, unknown> => ({
-    isTaskRunning: mockIsTaskRunning,
+/** Runs the submitted spec inline so assertions see the real `run` body. */
+const submitTask = vi.fn(runSpecWith(runTaskResult));
+
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: vi.fn(() => ({
+    cancelByType: vi.fn(() => vi.fn()),
+    runTaskResult,
+    statusOf,
+    submitTask,
   })),
 }));
 
@@ -49,8 +53,10 @@ describe('useLiquityDataFetching', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     set(mockActiveModules, [Module.LIQUITY]);
-    mockIsTaskRunning.mockReturnValue(false);
-    mockRunTask.mockResolvedValue({ success: false, cancelled: true });
+    workStatus = { ...IDLE };
+    // Default to a cancelled outcome so the success mapper (schema parse) never runs unless a test
+    // opts in; a cancellation is non-actionable, so it also asserts no error notification.
+    runTaskResult.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
   });
 
   afterEach(() => {
@@ -58,67 +64,66 @@ describe('useLiquityDataFetching', () => {
   });
 
   describe('fetchBalances', () => {
-    it('should call runTask with correct task type and section', async () => {
+    it('should submit a native task with the correct task type', async () => {
       mockFetchLiquityBalances.mockResolvedValue({ taskId: 1 });
 
       const { fetchBalances } = useLiquityDataFetching();
       await fetchBalances();
 
-      expect(mockRunTask).toHaveBeenCalledOnce();
-      const [, options] = mockRunTask.mock.calls[0];
-      expect(options.type).toBe(TaskType.LIQUITY_BALANCES);
+      expect(submitTask).toHaveBeenCalledOnce();
+      expect(runTaskResult).toHaveBeenCalledOnce();
     });
 
-    it('should pass refresh flag', async () => {
+    it('should proceed on refresh even when the activity already completed', async () => {
       mockFetchLiquityBalances.mockResolvedValue({ taskId: 1 });
-
-      const { useStatusStore } = await import('@/modules/core/common/use-status-store');
-      const statusStore = useStatusStore();
-      statusStore.setStatus({ status: Status.LOADED, section: Section.DEFI_LIQUITY_BALANCES });
+      workStatus = { ...IDLE, everCompleted: true };
 
       const { fetchBalances } = useLiquityDataFetching();
       await fetchBalances(true);
 
-      expect(mockRunTask).toHaveBeenCalledOnce();
+      expect(submitTask).toHaveBeenCalledOnce();
+    });
+
+    it('should skip a non-refresh fetch when the activity already completed', async () => {
+      workStatus = { ...IDLE, everCompleted: true };
+
+      const { fetchBalances } = useLiquityDataFetching();
+      await fetchBalances();
+
+      expect(submitTask).not.toHaveBeenCalled();
     });
   });
 
   describe('fetchPools', () => {
-    it('should call runTask with correct task type', async () => {
+    it('should submit a native task with the correct task type', async () => {
       mockFetchLiquityStakingPools.mockResolvedValue({ taskId: 1 });
 
       const { fetchPools } = useLiquityDataFetching();
       await fetchPools();
 
-      expect(mockRunTask).toHaveBeenCalledOnce();
-      const [, options] = mockRunTask.mock.calls[0];
-      expect(options.type).toBe(TaskType.LIQUITY_STAKING_POOLS);
+      expect(submitTask).toHaveBeenCalledOnce();
     });
   });
 
   describe('fetchStaking', () => {
-    it('should call runTask with correct task type', async () => {
+    it('should submit a native task with the correct task type', async () => {
       mockFetchLiquityStaking.mockResolvedValue({ taskId: 1 });
 
       const { fetchStaking } = useLiquityDataFetching();
       await fetchStaking();
 
-      expect(mockRunTask).toHaveBeenCalledOnce();
-      const [, options] = mockRunTask.mock.calls[0];
-      expect(options.type).toBe(TaskType.LIQUITY_STAKING);
+      expect(submitTask).toHaveBeenCalledOnce();
     });
   });
 
   describe('fetchStatistics', () => {
-    it('should call runTask with correct task type', async () => {
+    it('should submit a native task with the correct task type', async () => {
       mockFetchLiquityStatistics.mockResolvedValue({ taskId: 1 });
 
       const { fetchStatistics } = useLiquityDataFetching();
       await fetchStatistics();
 
-      expect(mockRunTask).toHaveBeenCalledOnce();
-      const [, options] = mockRunTask.mock.calls[0];
-      expect(options.type).toBe(TaskType.LIQUITY_STATISTICS);
+      expect(submitTask).toHaveBeenCalledOnce();
     });
   });
 
@@ -129,18 +134,18 @@ describe('useLiquityDataFetching', () => {
       const { fetchBalances } = useLiquityDataFetching();
       await fetchBalances();
 
-      expect(mockRunTask).not.toHaveBeenCalled();
+      expect(submitTask).not.toHaveBeenCalled();
     });
   });
 
   describe('task running guard', () => {
-    it('should skip fetch when task is already running', async () => {
-      mockIsTaskRunning.mockReturnValue(true);
+    it('should skip fetch when an activity is already active', async () => {
+      workStatus = { ...IDLE, active: true, running: true };
 
       const { fetchBalances } = useLiquityDataFetching();
       await fetchBalances();
 
-      expect(mockRunTask).not.toHaveBeenCalled();
+      expect(submitTask).not.toHaveBeenCalled();
     });
   });
 });

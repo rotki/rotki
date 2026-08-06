@@ -11,14 +11,20 @@ const mockAddresses = ref<Record<string, string[]>>({
   optimism: ['0xaddr2'],
 });
 
-const mockIsTaskRunning = vi.fn().mockReturnValue(false);
-const mockUseIsTaskRunning = vi.fn().mockReturnValue(computed(() => false));
+const mockIsDetecting = vi.fn().mockReturnValue(false);
+const tokenDetectionStatus = ref<{ active: boolean }>({ active: false });
 const mockMassDetectTokens = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('@/modules/core/tasks/use-task-store', () => ({
-  useTaskStore: vi.fn().mockReturnValue({
-    isTaskRunning: (...args: unknown[]): boolean => mockIsTaskRunning(...args),
-    useIsTaskRunning: (...args: unknown[]): unknown => mockUseIsTaskRunning(...args),
+vi.mock('@/modules/balances/blockchain/use-token-detection-orchestrator', () => ({
+  useTokenDetectionOrchestrator: vi.fn().mockReturnValue({
+    isDetecting: (...args: unknown[]): boolean => mockIsDetecting(...args),
+  }),
+}));
+
+vi.mock('@/modules/task-center/use-task-center', () => ({
+  useTaskCenter: vi.fn().mockReturnValue({
+    useWorkStatus: vi.fn().mockReturnValue(tokenDetectionStatus),
+    useIsActive: vi.fn(() => computed<boolean>(() => get(tokenDetectionStatus).active)),
   }),
 }));
 
@@ -45,7 +51,8 @@ const { useDetectTokenChainsSelection } = await import('./use-detect-token-chain
 describe('useDetectTokenChainsSelection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockIsTaskRunning.mockReturnValue(false);
+    mockIsDetecting.mockReturnValue(false);
+    set(tokenDetectionStatus, { active: false });
     set(mockAddresses, {
       eth: ['0xaddr1'],
       optimism: ['0xaddr2'],
@@ -133,7 +140,7 @@ describe('useDetectTokenChainsSelection', () => {
     });
 
     it('should not toggle a chain when detection is running for it', () => {
-      mockIsTaskRunning.mockReturnValue(true);
+      mockIsDetecting.mockReturnValue(true);
       const { isSelected, toggle } = useDetectTokenChainsSelection('');
 
       toggle('eth');
@@ -142,7 +149,7 @@ describe('useDetectTokenChainsSelection', () => {
     });
 
     it('should not toggle all when detection is running globally', () => {
-      mockIsTaskRunning.mockReturnValue(true);
+      set(tokenDetectionStatus, { active: true });
       const { hasSelection, toggle } = useDetectTokenChainsSelection('');
 
       toggle();

@@ -102,7 +102,7 @@ const [DefineOptionBlock, ReuseOptionBlock] = createReusableTemplate<{
       <ReuseOptionBlock
         v-if="service === 'etherscan'"
         :button-text="t('external_services.etherscan.change_indexer.action')"
-        :route="{ name: '/settings/evm/' }"
+        :route="{ name: '/settings/chains/' }"
       />
     </template>
   </div>

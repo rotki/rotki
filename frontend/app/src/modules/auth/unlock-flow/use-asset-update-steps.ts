@@ -1,7 +1,6 @@
 import { err, none, ok, type OptionType as Option, type ResultType as Result, some } from 'plainfp';
 import { useAssets } from '@/modules/assets/use-assets';
-import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
-import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { BackendRestartStatus, useBackendManagement } from '@/modules/shell/app/use-backend-management';
 import { useAssetUpdateThrottle } from './use-asset-update-throttle';
 import {
   type ApplyOutcome,
@@ -27,7 +26,6 @@ export interface AssetUpdateSteps {
 export function useAssetUpdateSteps(): AssetUpdateSteps {
   const { applyUpdates, checkForUpdate } = useAssets();
   const { restartBackend } = useBackendManagement();
-  const { isPackaged } = useInterop();
   const updateThrottle = useAssetUpdateThrottle();
   // A specific remote version the user permanently skipped (shared with AssetUpdateMessage).
   const skipped = useLocalStorage<number>('rotki_skip_asset_db_version', 0);
@@ -63,15 +61,25 @@ export function useAssetUpdateSteps(): AssetUpdateSteps {
       }));
     },
     requestRestart: async (): Promise<Result<void, UnlockError>> => {
-      // Electron restarts its managed process; on web the restart is a no-op until
-      // the orchestrator's HTTP control endpoint lands. `restarting` is a flow phase
-      // either way — it never tears the app down to the global "connecting" state.
-      if (isPackaged)
-        await restartBackend();
+      // One call for every runtime: Electron restarts its managed process, docker
+      // goes through `/_control`, and the plain web build reports `unavailable`
+      // because no control endpoint is served there.
+      const result = await restartBackend();
+      // A refused restart has to stop the flow. The update is already written to
+      // the global database, so carrying on would unlock a backend still holding
+      // the assets it was supposed to reload, and report success for it.
+      // `unavailable` is not that: nothing could restart, which is how this
+      // runtime has always behaved, so the unlock continues.
+      // `restartFailed` rather than `updateFailed`: the update itself succeeded, and
+      // the flow controller already renders a localized message for this kind. The
+      // supervisor's own reason is logged where the restart was attempted.
+      if (result.status === BackendRestartStatus.failed)
+        return err({ kind: UnlockErrorKind.restartFailed });
+
       return ok(undefined);
     },
-    // No real wait needed yet: web restart is a no-op and Electron's restartBackend
-    // already reconnects before it resolves.
+    // No real wait needed: every restart path reconnects before it resolves, and
+    // where none is available the restart did not happen at all.
     waitReady: async (): Promise<Result<void, UnlockError>> => ok(undefined),
   };
 }

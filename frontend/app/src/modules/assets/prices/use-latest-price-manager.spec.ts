@@ -20,12 +20,6 @@ vi.mock('@/modules/assets/prices/use-price-refresh', () => ({
   }),
 }));
 
-vi.mock('@/modules/shell/sync-progress/use-status-updater', () => ({
-  useStatusUpdater: vi.fn().mockReturnValue({
-    resetStatus: vi.fn(),
-  }),
-}));
-
 function t(key: string): string {
   return key;
 }

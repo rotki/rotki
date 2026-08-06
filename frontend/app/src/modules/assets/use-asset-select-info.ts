@@ -3,9 +3,9 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { AssetMap } from '@/modules/assets/types';
 import type { AssetStringField } from '@/modules/assets/use-asset-info-retrieval';
 import { startPromise } from '@shared/utils';
+import { chunk } from 'es-toolkit';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { processAssetInfo, useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
-import { chunkArray } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
 
 interface AssetWithResolutionStatus extends AssetInfo {
@@ -45,8 +45,8 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
     const collectionInfoMap: Record<string, AssetInfo | null> = {};
     const ids = identifiers.map(id => resolveAssetIdentifier(id));
 
-    for (const chunk of chunkArray(ids, 50)) {
-      const mappings = await getAssetMapping(chunk);
+    for (const batch of chunk(ids, 50)) {
+      const mappings = await getAssetMapping(batch);
       if (mappings === undefined) {
         continue;
       }
@@ -61,7 +61,7 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
       }
 
       const foundIdentifiers = Object.keys(assets);
-      const missingIdentifiers = chunk.filter(id => !foundIdentifiers.includes(id));
+      const missingIdentifiers = batch.filter(id => !foundIdentifiers.includes(id));
 
       for (const identifier of missingIdentifiers) {
         if (assetInfoMap[identifier] === undefined) {

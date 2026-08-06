@@ -73,6 +73,10 @@ export const SettingsCategoryIds = {
   ASSET_DATABASE: 'asset_database',
   BACKEND: 'backend',
   CACHE_MANAGEMENT: 'cache_management',
+  // Querying (disabledChainQueries) and detection (evmchainsToSkipDetection) grouped together: both
+  // read as "skip this chain" and were previously a page apart. CHAINS below is a different thing -
+  // the EVM-only category next to it.
+  CHAIN_QUERIES: 'chain_queries',
   CHAINS: 'chains',
   DATABASE_INFO: 'database_info',
   EXTERNAL_SERVICE: 'external_service',

@@ -7,14 +7,14 @@ import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { logger } from '@/modules/core/common/logging/logging';
-import { Section, Status } from '@/modules/core/common/status';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
 import { useHistoryApi } from '@/modules/history/api/use-history-api';
 import { useSchedulerState } from '@/modules/session/use-scheduler-state';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useTagOperations } from '@/modules/tags/use-tag-operations';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 const isAutoFetchDisabled = import.meta.env.VITE_NO_AUTO_FETCH === 'true';
 
@@ -31,16 +31,32 @@ export function useDataLoader(): UseDataLoaderReturn {
   const { fetchCached, refreshFromChain } = useBalanceFetching();
   const { refreshPrices } = usePriceRefresh();
   const { seedFromHistoric } = usePriceSeed();
-  const { setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
+  const { markCompleted } = useTaskOrchestrator();
+
+  /**
+   * Nothing is fetched on this path: the balances are already in the DB and were restored with the
+   * session. The ledger has to be told so, or every reader would treat a restored session as
+   * "never loaded" and show a loading screen over data that is right there.
+   */
+  const markRestored = (): void => {
+    markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH);
+    markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.BTC);
+  };
 
   const { onBalancesLoaded } = useSchedulerState();
 
   const refreshData = async (): Promise<void> => {
     logger.info('Refreshing data');
 
+    // The ignored/whitelisted lists decide which assets are counted towards the totals, so
+    // they have to be in place before the balances land. Fetching them alongside the balances
+    // makes the net worth briefly include the ignored assets, until the lists arrive.
+    // https://github.com/rotki/rotki/issues/12764
     await Promise.allSettled([
       fetchIgnoredAssets(),
       fetchWhitelistedAssets(),
+    ]);
+    await Promise.allSettled([
       fetchCached(),
       fetchNetValue(),
     ]);
@@ -59,15 +75,13 @@ export function useDataLoader(): UseDataLoaderReturn {
 
     if (isAutoFetchDisabled) {
       logger.warn('Auto-fetch disabled by VITE_NO_AUTO_FETCH');
-      setStatus(Status.LOADED, { subsection: Blockchain.ETH });
-      setStatus(Status.LOADED, { subsection: Blockchain.BTC });
+      markRestored();
     }
     else if (get(shouldFetchData)) {
       startPromise(refreshData());
     }
     else {
-      setStatus(Status.LOADED, { subsection: Blockchain.ETH });
-      setStatus(Status.LOADED, { subsection: Blockchain.BTC });
+      markRestored();
     }
   };
 

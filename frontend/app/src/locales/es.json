@@ -119,19 +119,10 @@
     }
   },
   "actions": {
-    "add_eth2_validator": {
-      "task": {
-        "description": "Agregando validador de ETH",
-        "title": "Agregando validador: {id}"
-      }
-    },
     "assets": {
       "erc20": {
         "error": {
           "description": "Hubo un error al consultar los detalles del token: {message}",
-          "title": "Consultando detalles del token {address} ({evmChain})"
-        },
-        "task": {
           "title": "Consultando detalles del token {address} ({evmChain})"
         }
       },
@@ -160,27 +151,19 @@
         },
         "task": {
           "description": "Consultando todos los balances y guardando una instantánea para las estadísticas.",
-          "ignore_errors_note": "Se ignorarán los errores durante la consulta.",
-          "title": "Guardando instantánea de balances"
+          "ignore_errors_note": "Se ignorarán los errores durante la consulta."
         }
       },
       "blockchain": {
         "error": {
           "description": "Error al consultar los balances en blockchain.: {error}",
           "title": "Consultando balances en blockchains"
-        },
-        "task": {
-          "title": "Consultar balances en {chain}"
         }
       },
       "blockchain_account_removal": {
         "error": {
           "description": "Error al eliminar la cuenta: {error}",
           "title": "Eliminando {count} cuentas(s) en {blockchain} "
-        },
-        "task": {
-          "description": "{count} cuentas están siendo eliminadas",
-          "title": "Eliminando cuenta de {blockchain}"
         }
       },
       "blockchain_accounts_add": {
@@ -188,7 +171,6 @@
           "description": "Las direcciones seleccionadas ya están siendo rastreadas por rotki"
         },
         "task": {
-          "description": "Agregando {address}",
           "title": "Agregando cuenta de {blockchain}"
         }
       },
@@ -199,7 +181,6 @@
       },
       "detect_tokens": {
         "task": {
-          "description": "Recuperando tokens detectados para {address} ({chain})",
           "title": "Recuperando tokens detectados"
         }
       },
@@ -207,17 +188,11 @@
         "error": {
           "message": "Error al consultar los balances de {location}: {error}",
           "title": "Consulta de balances de {location}"
-        },
-        "task": {
-          "title": "Recuperando balances de {location}"
         }
       },
       "exchange_rates": {
         "error": {
           "message": "Error al consultar los tipos de cambio: {message}",
-          "title": "Tipos de cambio"
-        },
-        "task": {
           "title": "Tipos de cambio"
         }
       },
@@ -250,9 +225,6 @@
         "error": {
           "description": "Falló al eliminar {xpub}: {error}",
           "title": "Eliminación de Xpub"
-        },
-        "task": {
-          "title": "Eliminando xpub"
         }
       }
     },
@@ -292,10 +264,6 @@
           },
           "title": "Exportación CSV"
         }
-      },
-      "task": {
-        "description": "Solicitando nuevos eventos {queryType}",
-        "title": "Consulta de Eventos"
       }
     },
     "session": {
@@ -312,20 +280,12 @@
       "error": {
         "description": "Fallo al decodificar eventos de transacciones: {error}",
         "title": "Descodificando eventos de transacciones"
-      },
-      "task": {
-        "description": "Decodificación de eventos de transacciones para transacciones: {tx} ({cadena})",
-        "title": "Descodificación de eventos de transacción"
       }
     },
     "transactions_redecode_by_chain": {
       "error": {
         "description": "Falló la decodificación de eventos de {cadena}: {error}",
         "title": "Descodificando eventos de transacciones"
-      },
-      "task": {
-        "description": "Descodificación de transacciones para eventos de {cadena}",
-        "title": "Decodificación de eventos de transacción"
       }
     }
   },
@@ -366,9 +326,6 @@
       "save_for_all": "Guardar esta asignación para todas las bolsas",
       "subtitle": "Puede vincular símbolos de activos en una bolsa centralizada con activos reconocidos por rotki. Esto es necesario para que rotki pueda procesar activos en las bolsas."
     }
-  },
-  "asset_table": {
-    "only_show_whitelisted": "Mostrar sólo los activos de la lista blanca"
   },
   "asset_update": {
     "advanced": "Opciones avanzadas"

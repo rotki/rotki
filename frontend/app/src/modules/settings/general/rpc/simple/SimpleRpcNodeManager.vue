@@ -37,7 +37,7 @@ function edit(item: string) {
 }
 
 async function save(force: boolean = false) {
-  if (!(await get(form)?.validate()) && !force)
+  if (!get(form)?.validate() && !force)
     return;
 
   const value = get(inputUrl);

@@ -43,6 +43,7 @@ export const frontendRegistry = {
       titleKey: msg.$t('general_settings.auto_detect_tokens_on_login.title'),
     },
   }),
+  autoRerunOnEdit: frontend('autoRerunOnEdit'),
   balanceValueThreshold: frontend('balanceValueThreshold'),
   blockchainRefreshButtonBehaviour: frontend('blockchainRefreshButtonBehaviour'),
   currencyLocation: frontend('currencyLocation', {

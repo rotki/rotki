@@ -4,6 +4,7 @@ import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createProgressUpdateHandler } from '@/modules/core/messaging/handlers/progress-updates';
 import { SocketMessageProgressUpdateSubType } from '@/modules/core/messaging/types/base';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 
 const mockSetUndecodedTransactionsStatus = vi.fn();
 const mockSetProtocolCacheStatus = vi.fn();
@@ -11,8 +12,7 @@ const mockSetReceivingProtocolCacheStatus = vi.fn();
 const mockSetHistoricalDailyPriceStatus = vi.fn();
 const mockSetHistoricalPriceStatus = vi.fn();
 const mockSetStatsPriceQueryStatus = vi.fn();
-const mockSetStakingQueryStatus = vi.fn();
-const mockSetProcessingProgress = vi.fn();
+const mockReportProgress = vi.fn();
 
 vi.mock('@/modules/history/use-decoding-status-store', () => ({
   useDecodingStatusStore: vi.fn(() => ({
@@ -35,15 +35,9 @@ vi.mock('@/modules/assets/prices/use-historic-cache-price-store', () => ({
   })),
 }));
 
-vi.mock('@/modules/staking/liquity/use-liquity-store', () => ({
-  useLiquityStore: vi.fn(() => ({
-    setStakingQueryStatus: mockSetStakingQueryStatus,
-  })),
-}));
-
-vi.mock('@/modules/history/balances/use-historical-balances-store', () => ({
-  useHistoricalBalancesStore: vi.fn(() => ({
-    setProcessingProgress: mockSetProcessingProgress,
+vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
+  useTaskOrchestrator: vi.fn(() => ({
+    reportProgress: mockReportProgress,
   })),
 }));
 
@@ -79,11 +73,18 @@ describe('createProgressUpdateHandler', () => {
     expect(mockSetHistoricalDailyPriceStatus).toHaveBeenCalledOnce();
   });
 
-  it('should route liquity staking query updates', async () => {
+  it('should report liquity staking query progress onto its activity', async () => {
     const handler = createProgressUpdateHandler(mockT);
-    await handler.handle(data(SocketMessageProgressUpdateSubType.LIQUITY_STAKING_QUERY));
+    await handler.handle(createMock<ProgressUpdateResultData>({
+      processed: 1,
+      subtype: SocketMessageProgressUpdateSubType.LIQUITY_STAKING_QUERY,
+      total: 2,
+    }));
 
-    expect(mockSetStakingQueryStatus).toHaveBeenCalledOnce();
+    expect(mockReportProgress).toHaveBeenCalledWith(
+      makeActivityId(ActivityKind.LIQUITY, ActivityPart.STAKING),
+      { current: 1, total: 2 },
+    );
   });
 
   it('should route stats price query updates', async () => {
@@ -104,7 +105,11 @@ describe('createProgressUpdateHandler', () => {
     const handler = createProgressUpdateHandler(mockT);
     await handler.handle(data(SocketMessageProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING));
 
-    expect(mockSetProcessingProgress).toHaveBeenCalledOnce();
+    expect(mockReportProgress).toHaveBeenCalledOnce();
+    expect(mockReportProgress).toHaveBeenCalledWith(
+      makeActivityId(ActivityKind.HISTORICAL_BALANCES),
+      expect.objectContaining({ current: expect.anything(), total: expect.anything() }),
+    );
   });
 
   it('should delegate csv import results to the csv handler', async () => {
@@ -126,6 +131,6 @@ describe('createProgressUpdateHandler', () => {
 
     expect(result).toBeNull();
     expect(mockSetProtocolCacheStatus).not.toHaveBeenCalled();
-    expect(mockSetProcessingProgress).not.toHaveBeenCalled();
+    expect(mockReportProgress).not.toHaveBeenCalled();
   });
 });

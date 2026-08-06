@@ -1,8 +1,8 @@
 import type { MaybeRef } from 'vue';
 import type { AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts';
@@ -11,12 +11,11 @@ import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balance
 import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
-import { Section } from '@/modules/core/common/status';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { activityLabel } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
 
 export interface RefreshAccountsParams {
   blockchain?: MaybeRef<string>;
@@ -29,7 +28,6 @@ interface UseAccountOperationsReturn {
   detectEvmAccounts: () => Promise<void>;
   fetchAccounts: (blockchain?: string | string[], refreshEns?: boolean) => Promise<void>;
   refreshAccounts: (params?: RefreshAccountsParams) => Promise<void>;
-  resetStatuses: () => void;
 }
 
 export function useAccountOperations(): UseAccountOperationsReturn {
@@ -40,15 +38,9 @@ export function useAccountOperations(): UseAccountOperationsReturn {
   const { isEvm, supportedChains, supportsTransactions } = useSupportedChains();
   const { getAddresses } = useAccountAddresses();
 
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
   const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
-
-  const { resetStatus: resetNftSectionStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
-
-  const resetStatuses = (): void => {
-    resetNftSectionStatus();
-  };
 
   const fetchAccounts = async (blockchain?: string | string[], refreshEns: boolean = false): Promise<void> => {
     let chains: string[];
@@ -106,17 +98,26 @@ export function useAccountOperations(): UseAccountOperationsReturn {
   };
 
   const detectEvmAccounts = async (): Promise<void> => {
-    const outcome = await runTask<unknown, TaskMeta>(
-      async () => detectEvmAccountsCaller(),
-      { type: TaskType.DETECT_EVM_ACCOUNTS, meta: { title: t('actions.detect_evm_accounts.task.title') } },
-    );
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.DETECT),
+      kind: ActivityKind.ACCOUNTS,
+      rerunnable: true,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<unknown>(
+          async () => detectEvmAccountsCaller(),
+        ),
+        () => {},
+      ),
+      subtitle: activityLabel(ActivityKind.ACCOUNTS, ActivityPart.DETECT),
+      title: t('task_center.group.accounts'),
+    });
 
-    if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
+    if (isErr(outcome) && isActionable(outcome.error)) {
+      logger.error(outcome.error.message);
       notifyError(
         t('actions.detect_evm_accounts.error.title'),
         t('actions.detect_evm_accounts.error.message', {
-          message: outcome.message,
+          message: outcome.error.message,
         }),
       );
     }
@@ -126,6 +127,5 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     detectEvmAccounts,
     fetchAccounts,
     refreshAccounts,
-    resetStatuses,
   };
 }

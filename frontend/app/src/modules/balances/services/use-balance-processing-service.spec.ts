@@ -1,9 +1,13 @@
 import { Blockchain } from '@rotki/common';
+import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
+import { Cancelled, type TaskError } from '@/modules/core/tasks/task-result';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({}),
@@ -35,10 +39,6 @@ vi.mock('@/modules/balances/api/use-blockchain-balances-api', () => ({
   }),
 }));
 
-type TaskOutcome =
-  | { success: true; result: unknown }
-  | { success: false; message: string; cancelled: boolean; backendCancelled: boolean; skipped: boolean };
-
 interface Deferred<T> {
   promise: Promise<T>;
   resolve: (value: T) => void;
@@ -52,20 +52,17 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve };
 }
 
-const pendingTasks = new Map<number, Deferred<TaskOutcome>>();
+const pendingTasks = new Map<number, Deferred<Result<unknown, TaskError>>>();
 let nextTaskId = 1;
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
-  ...(await importOriginal<Record<string, unknown>>()),
-  useTaskHandler: vi.fn().mockReturnValue({
-    runTask: vi.fn().mockImplementation(async (taskFn: () => Promise<{ taskId: number }>) => {
-      const { taskId } = await taskFn();
-      const d = deferred<TaskOutcome>();
-      pendingTasks.set(taskId, d);
-      return d.promise;
-    }),
-  }),
-}));
+// The service takes its runner from the activity that called it, so the spec passes this one in
+// rather than faking the handler module.
+const runTask = vi.fn().mockImplementation(async (taskFn: () => Promise<{ taskId: number }>) => {
+  const { taskId } = await taskFn();
+  const d = deferred<Result<unknown, TaskError>>();
+  pendingTasks.set(taskId, d);
+  return d.promise;
+});
 
 const { useBalanceProcessingService } = await import('@/modules/balances/services/use-balance-processing-service');
 
@@ -90,6 +87,35 @@ describe('useBalanceProcessingService', () => {
     ]);
   });
 
+  describe('clearChainBalances', () => {
+    /**
+     * A refresh that races the accounts fetch sees every chain as empty. Recording a completion
+     * there marked the chain "ever loaded" with no balances, so the initial-loading state dropped
+     * while the real data was still on its way.
+     */
+    it('should not record a completion for a chain whose accounts are not loaded yet', () => {
+      const service = useBalanceProcessingService();
+      const { statusOf } = useTaskOrchestrator();
+
+      // `optimism` was never written by the accounts fetch — its set is unknown, not empty.
+      service.clearChainBalances('optimism');
+
+      expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, 'optimism').everCompleted).toBe(false);
+    });
+
+    it('should record a completion for a chain fetched with no accounts', () => {
+      const service = useBalanceProcessingService();
+      const { statusOf } = useTaskOrchestrator();
+      const { updateAccounts } = useBlockchainAccountsStore();
+
+      // The accounts fetch writes the key even when the chain has none: known, and genuinely empty.
+      updateAccounts('optimism', []);
+      service.clearChainBalances('optimism');
+
+      expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, 'optimism').everCompleted).toBe(true);
+    });
+  });
+
   it('should flip hasCachedData when the cached GET resolves, before refresh POST completes', async () => {
     mockQueryBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
     mockRefreshBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
@@ -98,10 +124,12 @@ describe('useBalanceProcessingService', () => {
     const { hasCachedData, isRefreshing } = useBalanceStatus(Blockchain.ETH);
 
     const cachedPromise = service.handleCachedFetch(
+      runTask,
       { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false },
       undefined,
     );
     const refreshPromise = service.handleRefresh(
+      runTask,
       { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false },
     );
 
@@ -114,14 +142,14 @@ describe('useBalanceProcessingService', () => {
     expect(get(isRefreshing)).toBe(true);
 
     // resolve the cached GET task first (taskId 1)
-    pendingTasks.get(1)!.resolve({ success: true, result: emptyBalances(Blockchain.ETH) });
+    pendingTasks.get(1)!.resolve(ok(emptyBalances(Blockchain.ETH)));
     await cachedPromise;
 
     expect(get(hasCachedData)).toBe(true);
     expect(get(isRefreshing)).toBe(true); // refresh POST still in flight
 
     // resolve the refresh POST task
-    pendingTasks.get(2)!.resolve({ success: true, result: emptyBalances(Blockchain.ETH) });
+    pendingTasks.get(2)!.resolve(ok(emptyBalances(Blockchain.ETH)));
     await refreshPromise;
 
     expect(get(hasCachedData)).toBe(true);
@@ -136,6 +164,7 @@ describe('useBalanceProcessingService', () => {
     const isEthRefreshing = refreshState.useIsRefreshing(Blockchain.ETH);
 
     const refreshPromise = service.handleRefresh(
+      runTask,
       { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false },
     );
 
@@ -144,13 +173,7 @@ describe('useBalanceProcessingService', () => {
     });
     expect(get(isEthRefreshing)).toBe(true);
 
-    pendingTasks.get(1)!.resolve({
-      success: false,
-      message: 'cancelled',
-      cancelled: true,
-      backendCancelled: false,
-      skipped: false,
-    });
+    pendingTasks.get(1)!.resolve(err(Cancelled({ message: 'cancelled' })));
     await refreshPromise;
 
     expect(get(isEthRefreshing)).toBe(false);

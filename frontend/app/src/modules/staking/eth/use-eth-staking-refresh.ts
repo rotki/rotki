@@ -5,13 +5,10 @@ import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { logger } from '@/modules/core/common/logging/logging';
-import { Section } from '@/modules/core/common/status';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
-import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
+import { ActivityPart } from '@/modules/task-center/core/types';
+import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface RefreshCallbacks {
   getPerformance: () => { entriesTotal: number };
@@ -28,14 +25,18 @@ interface UseEthStakingRefreshReturn {
 }
 
 export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStakingRefreshReturn {
-  const performanceSection = Section.STAKING_ETH2;
-
   const { username } = storeToRefs(useSessionAuthStore());
-  const { useIsTaskRunning } = useTaskStore();
   const { stakingValidatorsLimits } = storeToRefs(useBlockchainValidatorsStore());
   const { fetchEthStakingValidators } = useEthStaking();
   const { fetchBlockchainBalances, refreshBlockchainBalances } = useBlockchainBalances();
-  const { isFirstLoad } = useStatusUpdater(performanceSection);
+  const { useIsActive, useWorkStatus, useIsActivePrefix } = useTaskCenter();
+
+  const performanceStatus = useWorkStatus(ActivityKind.STAKING, ActivityPart.PERFORMANCE);
+
+  // `isFirstLoad()` on the performance section is now the orchestrator's freshness ledger.
+  function isFirstLoad(): boolean {
+    return !get(performanceStatus).everCompleted;
+  }
 
   function createLastRefreshStorage(username: string): Ref<number> {
     return useSessionStorage(`rotki.staking.last_refresh.${username}`, 0);
@@ -44,11 +45,9 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
   const lastRefresh = createLastRefreshStorage(get(username));
 
   // Loading states
-  const { isLoading: performanceRefreshing } = useSectionStatus(performanceSection);
-  const { isLoading: eth2Loading } = useSectionStatus(Section.BLOCKCHAIN, Blockchain.ETH2);
-  const blockProductionLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS, {
-    queryType: OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
-  });
+  const performanceRefreshing = computed<boolean>(() => get(performanceStatus).active);
+  const eth2Loading = useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2);
+  const blockProductionLoading = useIsActive(ActivityKind.ONLINE_EVENTS, OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);
 
   const refreshing = logicOr(
     performanceRefreshing,

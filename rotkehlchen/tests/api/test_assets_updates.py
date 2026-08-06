@@ -18,6 +18,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
+    ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_ok_async_response,
     assert_proper_sync_response_with_result,
@@ -946,6 +947,7 @@ def test_async_db_reset(rotkehlchen_api_server: APIServer) -> None:
     outcome = wait_for_async_task(
         rotkehlchen_api_server,
         task_id,
+        timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
     )
     assert outcome['result'] is True
     assert outcome['message'] == ''

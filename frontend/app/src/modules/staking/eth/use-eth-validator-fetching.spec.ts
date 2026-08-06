@@ -1,5 +1,7 @@
-import type { TaskResult } from '@/modules/core/tasks/use-task-handler';
+import { runSpecWith } from '@test/utils/mocks/native-task';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useEthValidatorFetching } from '@/modules/staking/eth/use-eth-validator-fetching';
 
 const mockGetEth2Validators = vi.fn();
@@ -32,14 +34,16 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   })),
 }));
 
-const mockRunTask = vi.fn();
+const runTaskResult = vi.fn();
+/** Runs the submitted spec inline so assertions see the real `run` body. */
+const submitTask = vi.fn(runSpecWith(runTaskResult));
 
-vi.mock('@/modules/core/tasks/use-task-handler', () => ({
-  isActionableFailure: vi.fn((outcome: TaskResult<unknown>): boolean =>
-    !outcome.success && !('cancelled' in outcome && outcome.cancelled) && !('skipped' in outcome && outcome.skipped),
-  ),
-  useTaskHandler: vi.fn(() => ({
-    runTask: mockRunTask,
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: vi.fn(() => ({
+    cancelByType: vi.fn(() => vi.fn()),
+    runTaskResult,
+    statusOf: vi.fn(),
+    submitTask,
   })),
 }));
 
@@ -68,7 +72,7 @@ describe('useEthValidatorFetching', () => {
       const { fetchEthStakingValidators } = useEthValidatorFetching();
       await fetchEthStakingValidators();
 
-      expect(mockRunTask).not.toHaveBeenCalled();
+      expect(submitTask).not.toHaveBeenCalled();
     });
 
     it('should fetch and update accounts on success', async () => {
@@ -80,29 +84,23 @@ describe('useEthValidatorFetching', () => {
         entriesLimit: 100,
       };
 
-      mockRunTask.mockResolvedValue({
-        result: mockValidators,
-        success: true,
-      });
+      runTaskResult.mockResolvedValue(ok(mockValidators));
 
       const { fetchEthStakingValidators } = useEthValidatorFetching();
       await fetchEthStakingValidators();
 
-      expect(mockRunTask).toHaveBeenCalledOnce();
+      expect(submitTask).toHaveBeenCalledOnce();
       expect(mockUpdateAccounts).toHaveBeenCalledOnce();
     });
 
     it('should update staking validators limits on success', async () => {
       mockIsEth2Enabled.mockReturnValue(true);
 
-      mockRunTask.mockResolvedValue({
-        result: {
-          entries: [],
-          entriesFound: 50,
-          entriesLimit: 100,
-        },
-        success: true,
-      });
+      runTaskResult.mockResolvedValue(ok({
+        entries: [],
+        entriesFound: 50,
+        entriesLimit: 100,
+      }));
 
       const { fetchEthStakingValidators } = useEthValidatorFetching();
       await fetchEthStakingValidators();
@@ -113,14 +111,7 @@ describe('useEthValidatorFetching', () => {
     it('should notify on actionable failure', async () => {
       mockIsEth2Enabled.mockReturnValue(true);
 
-      mockRunTask.mockResolvedValue({
-        backendCancelled: false,
-        cancelled: false,
-        error: new Error('Network error'),
-        message: 'Network error',
-        skipped: false,
-        success: false,
-      });
+      runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'Network error' })));
 
       const { fetchEthStakingValidators } = useEthValidatorFetching();
       await fetchEthStakingValidators();
@@ -132,13 +123,7 @@ describe('useEthValidatorFetching', () => {
     it('should not notify on cancelled task', async () => {
       mockIsEth2Enabled.mockReturnValue(true);
 
-      mockRunTask.mockResolvedValue({
-        backendCancelled: false,
-        cancelled: true,
-        message: 'cancelled',
-        skipped: false,
-        success: false,
-      });
+      runTaskResult.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
 
       const { fetchEthStakingValidators } = useEthValidatorFetching();
       await fetchEthStakingValidators();
@@ -149,12 +134,9 @@ describe('useEthValidatorFetching', () => {
     it('should pass filter payload to API', async () => {
       mockIsEth2Enabled.mockReturnValue(true);
 
-      mockRunTask.mockImplementation(async (fn: () => Promise<unknown>) => {
+      runTaskResult.mockImplementation(async (fn: () => Promise<unknown>) => {
         await fn();
-        return {
-          result: { entries: [], entriesFound: 0, entriesLimit: 100 },
-          success: true,
-        };
+        return ok({ entries: [], entriesFound: 0, entriesLimit: 100 });
       });
 
       const { fetchEthStakingValidators } = useEthValidatorFetching();

@@ -29,8 +29,9 @@ use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use clap::{Parser, Subcommand, ValueEnum};
+use starling_core::control::is_authorized;
 use starling_core::{
-    build_services, Controller, Launcher, OnCrash, OsSpawner, Outcome, RestartPolicy,
+    build_services, Controller, Launcher, Method, OnCrash, OsSpawner, Outcome, RestartPolicy,
     ServiceLayout, ServiceSpec, Startup, StdioMode, Supervisor, Transport,
 };
 use starling_proxy::ProxyConfig;
@@ -318,6 +319,40 @@ fn proxy_bind_addr(
         Mode::Docker => Some((IpAddr::V4(Ipv4Addr::UNSPECIFIED), docker_http_port)),
         Mode::Embedded => embedded_proxy_port.map(|port| (IpAddr::V4(Ipv4Addr::LOCALHOST), port)),
     }
+}
+
+/// The one condition behind every cookie-dependent surface: docker, with a
+/// session key to validate against.
+///
+/// It gates the externally reachable `/mcp` route and whether `/_control` is
+/// registered at all. Off docker the key is forced empty upstream of this call,
+/// but the mode is checked here too: a control endpoint that authorizes by asking
+/// core about a cookie is meaningless where no cookie is ever issued, and a
+/// deployment that cannot authorize anybody must serve no control surface rather
+/// than one that has to improvise a policy.
+fn cookie_auth_enabled(docker: bool, session_key: &str) -> bool {
+    docker && !session_key.is_empty()
+}
+
+/// The control methods `/_control` advertises, derived from the §S9 matrix rather
+/// than restated, so the capability document can never promise a method the
+/// dispatcher would then refuse. Listing every variant here is deliberate: adding
+/// a `Method` without deciding its `/_control` policy leaves it silently
+/// unadvertised, which the matrix test catches.
+fn http_control_methods() -> Vec<&'static str> {
+    [
+        Method::Health,
+        Method::Status,
+        Method::Start,
+        Method::Restart,
+        Method::Stop,
+        Method::StartService,
+        Method::StopService,
+    ]
+    .into_iter()
+    .filter(|method| is_authorized(Transport::HttpControl, *method))
+    .map(Method::wire)
+    .collect()
 }
 
 #[tokio::main]
@@ -625,8 +660,8 @@ async fn main() -> std::process::ExitCode {
     } else {
         String::new()
     };
-    let authenticated_mcp = docker && !session_key.is_empty();
-    if authenticated_mcp {
+    let cookie_auth = cookie_auth_enabled(docker, &session_key);
+    if cookie_auth {
         info!("session cookie auth enabled");
         layout.mcp_autostart = true;
     }
@@ -635,7 +670,7 @@ async fn main() -> std::process::ExitCode {
         for spec in &mut specs {
             spec.env
                 .insert("ROTKI_SESSION_KEY".to_string(), session_key.clone());
-            if authenticated_mcp && spec.name == "mcp" {
+            if cookie_auth && spec.name == "mcp" {
                 spec.restart = RestartPolicy {
                     max_retries: 3,
                     backoff: Duration::from_secs(1),
@@ -833,12 +868,31 @@ async fn main() -> std::process::ExitCode {
                 }
             }
         });
+        // `/_control` — the SPA's control channel, and the only one it has in
+        // docker. Registered only under `cookie_auth`, because the endpoint
+        // authorizes by asking core to validate the caller's session cookie: with
+        // no cookie configured there is nobody to authorize, so the route must not
+        // exist rather than exist and improvise a policy.
+        //
+        // The advertised method list is *derived* from the §S9 matrix rather than
+        // restated, so the capability document can never promise a method the
+        // dispatcher would then refuse.
+        let control = cookie_auth.then(|| {
+            let methods = http_control_methods();
+            let control_handle = controller.handle();
+            starling_proxy::ControlDispatch::new(methods, move |line| {
+                let handle = control_handle.clone();
+                async move {
+                    control::jsonrpc::handle_line(&handle, Transport::HttpControl, &line).await
+                }
+            })
+        });
         let config = ProxyConfig {
             port,
             core_port: cli.core_port,
             colibri_port: cli.colibri_port,
             mcp_port: cli.mcp_port,
-            mcp_enabled: authenticated_mcp,
+            mcp_enabled: cookie_auth,
             // Docker serves the built SPA from disk; embedded loads it from
             // `app://localhost` in Electron, so the proxy is data-plane only there
             // (no `ServeDir`).
@@ -868,6 +922,7 @@ async fn main() -> std::process::ExitCode {
             // that only answers after `start` is what tells the runner the whole
             // tree is up, not just the listener).
             health: Some(health),
+            control,
         };
         let notify = Arc::new(Notify::new());
         let stop = notify.clone();
@@ -1097,6 +1152,24 @@ async fn shutdown_signal() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn control_is_enabled_only_in_docker_with_a_session_key() {
+        assert!(cookie_auth_enabled(true, "a-key"));
+        // No key to validate against, so nobody could be authorized.
+        assert!(!cookie_auth_enabled(true, ""));
+        // The desktop never issues a cookie, so a key alone must not open it.
+        assert!(!cookie_auth_enabled(false, "a-key"));
+        assert!(!cookie_auth_enabled(false, ""));
+    }
+
+    #[test]
+    fn advertised_control_methods_match_the_authorization_matrix() {
+        assert_eq!(
+            http_control_methods(),
+            vec!["health", "status", "restart", "startService", "stopService"],
+        );
+    }
 
     #[test]
     fn docker_binds_all_interfaces_on_the_external_port() {

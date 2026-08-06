@@ -1,9 +1,11 @@
-import type { TaskResult } from '@/modules/core/tasks/use-task-handler';
 import type {
   AccountingRuleConflictRequestPayload,
   AccountingRuleRequestPayload,
 } from '@/modules/settings/types/accounting';
+import { runSpecWith } from '@test/utils/mocks/native-task';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useAccountingSettings } from './use-accounting-settings';
 
 const rulePayload: AccountingRuleRequestPayload = { limit: 10, offset: 0 };
@@ -22,8 +24,10 @@ const notifyError = vi.fn();
 const showErrorMessage = vi.fn();
 const showSuccessMessage = vi.fn();
 
-const runTask = vi.fn();
+const runTaskResult = vi.fn();
 const downloadFileByTextContent = vi.fn();
+
+const submitTask = vi.fn(runSpecWith(runTaskResult));
 
 const openDirectory = vi.fn();
 const getPath = vi.fn();
@@ -47,10 +51,9 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: (): object => ({ notifyError, showErrorMessage, showSuccessMessage }),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/modules/core/tasks/use-task-handler')>();
-  return { ...actual, useTaskHandler: (): object => ({ runTask }) };
-});
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: (): object => ({ cancelByType: (): (() => void) => vi.fn(), runTaskResult, statusOf: vi.fn(), submitTask }),
+}));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
   useInterop: (): object => ({ appSession, getPath, openDirectory }),
@@ -64,25 +67,8 @@ vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: { debug: vi.fn(), error: vi.fn() },
 }));
 
-function success<R>(result: R): TaskResult<R> {
-  return { success: true, result };
-}
-
-const actionableFailure: TaskResult<never> = {
-  success: false,
-  message: 'boom',
-  cancelled: false,
-  backendCancelled: false,
-  skipped: false,
-};
-
-const cancelledFailure: TaskResult<never> = {
-  success: false,
-  message: '',
-  cancelled: true,
-  backendCancelled: false,
-  skipped: false,
-};
+const actionableFailure = err(TaskFailed({ message: 'boom' }));
+const cancelledFailure = err(Cancelled({ message: '' }));
 
 const collectionResponse = {
   entries: [{ identifier: 1 }],
@@ -165,7 +151,7 @@ describe('useAccountingSettings', () => {
   describe('exportJSON', () => {
     it('should download the exported rules in a web session', async () => {
       appSession = false;
-      runTask.mockResolvedValue(success({ rules: [] }));
+      runTaskResult.mockResolvedValue(ok({ rules: [] }));
       await useAccountingSettings().exportJSON();
       expect(downloadFileByTextContent).toHaveBeenCalledOnce();
     });
@@ -174,14 +160,14 @@ describe('useAccountingSettings', () => {
       appSession = true;
       openDirectory.mockResolvedValue(undefined);
       await useAccountingSettings().exportJSON();
-      expect(runTask).not.toHaveBeenCalled();
+      expect(submitTask).not.toHaveBeenCalled();
       expect(downloadFileByTextContent).not.toHaveBeenCalled();
     });
 
     it('should show a success message in an app session', async () => {
       appSession = true;
       openDirectory.mockResolvedValue('/tmp');
-      runTask.mockResolvedValue(success(true));
+      runTaskResult.mockResolvedValue(ok(true));
       await useAccountingSettings().exportJSON();
       expect(showSuccessMessage).toHaveBeenCalledOnce();
     });
@@ -189,14 +175,14 @@ describe('useAccountingSettings', () => {
     it('should show an error message when the app-session export fails', async () => {
       appSession = true;
       openDirectory.mockResolvedValue('/tmp');
-      runTask.mockResolvedValue(success(false));
+      runTaskResult.mockResolvedValue(ok(false));
       await useAccountingSettings().exportJSON();
       expect(showErrorMessage).toHaveBeenCalledOnce();
     });
 
     it('should stop silently when the export task is not actionable', async () => {
       appSession = false;
-      runTask.mockResolvedValue(cancelledFailure);
+      runTaskResult.mockResolvedValue(cancelledFailure);
       await useAccountingSettings().exportJSON();
       expect(downloadFileByTextContent).not.toHaveBeenCalled();
       expect(showErrorMessage).not.toHaveBeenCalled();
@@ -208,9 +194,9 @@ describe('useAccountingSettings', () => {
 
     it('should import via path when interop resolves one', async () => {
       getPath.mockReturnValue('/tmp/rules.json');
-      runTask.mockImplementation(async (task: () => Promise<unknown>) => {
+      runTaskResult.mockImplementation(async (task: () => Promise<unknown>) => {
         await task();
-        return success(true);
+        return ok(true);
       });
       const result = await useAccountingSettings().importJSON(file);
       expect(importAccountingRulesData).toHaveBeenCalledWith('/tmp/rules.json');
@@ -219,9 +205,9 @@ describe('useAccountingSettings', () => {
 
     it('should upload the file when no path is available', async () => {
       getPath.mockReturnValue(undefined);
-      runTask.mockImplementation(async (task: () => Promise<unknown>) => {
+      runTaskResult.mockImplementation(async (task: () => Promise<unknown>) => {
         await task();
-        return success(true);
+        return ok(true);
       });
       await useAccountingSettings().importJSON(file);
       expect(uploadAccountingRulesData).toHaveBeenCalledWith(file);
@@ -229,14 +215,14 @@ describe('useAccountingSettings', () => {
 
     it('should return the failure message on an actionable failure', async () => {
       getPath.mockReturnValue(undefined);
-      runTask.mockResolvedValue(actionableFailure);
+      runTaskResult.mockResolvedValue(actionableFailure);
       const result = await useAccountingSettings().importJSON(file);
       expect(result).toEqual({ message: 'boom', success: false });
     });
 
     it('should return null on a non-actionable failure', async () => {
       getPath.mockReturnValue(undefined);
-      runTask.mockResolvedValue(cancelledFailure);
+      runTaskResult.mockResolvedValue(cancelledFailure);
       const result = await useAccountingSettings().importJSON(file);
       expect(result).toBeNull();
     });
@@ -244,21 +230,21 @@ describe('useAccountingSettings', () => {
 
   describe('resetToDefaults', () => {
     it('should show a success message and return success', async () => {
-      runTask.mockResolvedValue(success(true));
+      runTaskResult.mockResolvedValue(ok(true));
       const result = await useAccountingSettings().resetToDefaults();
       expect(showSuccessMessage).toHaveBeenCalledOnce();
       expect(result).toEqual({ message: '', success: true });
     });
 
     it('should show an error message on an actionable failure', async () => {
-      runTask.mockResolvedValue(actionableFailure);
+      runTaskResult.mockResolvedValue(actionableFailure);
       const result = await useAccountingSettings().resetToDefaults();
       expect(showErrorMessage).toHaveBeenCalledOnce();
       expect(result).toEqual({ message: 'boom', success: false });
     });
 
     it('should return null on a non-actionable failure', async () => {
-      runTask.mockResolvedValue(cancelledFailure);
+      runTaskResult.mockResolvedValue(cancelledFailure);
       const result = await useAccountingSettings().resetToDefaults();
       expect(result).toBeNull();
     });

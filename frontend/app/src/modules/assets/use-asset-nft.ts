@@ -1,11 +1,13 @@
 import type { ActionResult } from '@rotki/common';
-import type { TaskMeta } from '@/modules/core/tasks/types';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
 import { NftResponse } from '@/modules/assets/nfts';
 import { getDomain } from '@/modules/core/common/helpers/url';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSetting } from '@/modules/settings/use-setting';
+import { activityLabel } from '@/modules/task-center/activity-labels';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseNftsReturn {
   fetchNfts: (ignoreCache: boolean) => Promise<ActionResult<NftResponse | null>>;
@@ -13,7 +15,7 @@ interface UseNftsReturn {
 }
 
 export function useNfts(): UseNftsReturn {
-  const { runTask } = useTaskHandler();
+  const { submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
 
   const assetsApi = useAssetsApi();
@@ -22,20 +24,30 @@ export function useNfts(): UseNftsReturn {
   const whitelist = useSetting('whitelistedDomainsForNftImages');
 
   const fetchNfts = async (ignoreCache: boolean): Promise<ActionResult<NftResponse | null>> => {
-    const outcome = await runTask<NftResponse, TaskMeta>(
-      async () => assetsApi.fetchNfts(ignoreCache),
-      { type: TaskType.FETCH_NFTS, meta: { title: t('actions.session.fetch_nfts.task.title') } },
-    );
+    // `ignoreCache` is part of the identity: a force-refresh and a cache read are different work,
+    // and sharing one id handed the force-refresh the cache read's in-flight promise — the cache
+    // was never bypassed. The response is the activity's return value for the same reason: a
+    // deduped caller's `run` never executes, so a closure local stayed `null` and the caller
+    // reported `{ message: '', result: null }` — no data, no error, nothing to act on.
+    const outcome = await submitTask<NftResponse>({
+      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.NFTS, ignoreCache ? ActivityPart.PULL : ActivityPart.CACHED),
+      kind: ActivityKind.ASSETS,
+      rerunnable: true,
+      run: async ({ runTask }): Promise<Result<NftResponse, TaskError>> => mapResult(
+        await runTask<NftResponse>(
+          async () => assetsApi.fetchNfts(ignoreCache),
+        ),
+        result => NftResponse.parse(result),
+      ),
+      subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.NFTS),
+      title: t('task_center.group.assets'),
+    });
 
-    if (outcome.success) {
-      return {
-        message: '',
-        result: NftResponse.parse(outcome.result),
-      };
-    }
+    if (!isErr(outcome))
+      return { message: '', result: outcome.value };
 
     return {
-      message: isActionableFailure(outcome) ? outcome.message : '',
+      message: isActionable(outcome.error) ? outcome.error.message : '',
       result: null,
     };
   };

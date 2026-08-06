@@ -7,7 +7,7 @@ from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.utils.misc import combine_dicts
+from rotkehlchen.utils.misc import combine_dicts, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.balance import Balance
@@ -38,6 +38,7 @@ class ExchangesService:
             kraken_futures_api_key: ApiKey | None,
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
+            binance_history_start_ts: Timestamp | None,
             okx_location: OkxLocation | None,
             gate_location: GateLocation | None,
     ) -> tuple[bool | None, str, HTTPStatus]:
@@ -51,12 +52,24 @@ class ExchangesService:
             kraken_futures_api_key=kraken_futures_api_key,
             kraken_futures_api_secret=kraken_futures_api_secret,
             binance_selected_trade_pairs=binance_markets,
+            binance_history_start_ts=binance_history_start_ts,
             okx_location=okx_location,
             gate_location=gate_location,
         )
         if not result:
             return None, msg, HTTPStatus.CONFLICT
         return True, msg, HTTPStatus.OK
+
+    def get_binance_history_start_timestamp(self) -> Timestamp:
+        """Return the inclusive API start timestamp suggested for a new Binance key."""
+        now = ts_now()
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            if (timestamp := self.rotkehlchen.data.db.get_latest_binance_csv_import_timestamp(
+                    cursor,
+            )) is None:
+                return now
+
+        return min(timestamp, now)
 
     def edit_exchange(
             self,

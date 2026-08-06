@@ -141,6 +141,7 @@ describe('composables/api/balances/exchanges', () => {
         location: 'binance',
         apiKey: 'key123',
         apiSecret: 'secret456',
+        binanceHistoryStartTs: 1700000000,
         passphrase: '',
       };
 
@@ -152,6 +153,7 @@ describe('composables/api/balances/exchanges', () => {
         location: 'binance',
         api_key: 'key123',
         api_secret: 'secret456',
+        binance_history_start_ts: 1700000000,
       });
       expect(result).toBe(true);
     });
@@ -277,6 +279,21 @@ describe('composables/api/balances/exchanges', () => {
 
       expect(capturedParams!.get('location')).toBe('binance');
       expect(result).toEqual(['BTCUSDT', 'ETHUSDT', 'BNBUSDT']);
+    });
+  });
+
+  describe('queryBinanceHistoryStartTimestamp', () => {
+    it('should fetch the suggested Binance API history start timestamp', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/exchanges/binance/history-start`, () =>
+          HttpResponse.json({
+            result: 1700000001,
+            message: '',
+          })),
+      );
+
+      const { queryBinanceHistoryStartTimestamp } = useExchangeApi();
+      await expect(queryBinanceHistoryStartTimestamp()).resolves.toBe(1700000001);
     });
   });
 

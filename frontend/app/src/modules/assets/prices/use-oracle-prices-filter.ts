@@ -17,7 +17,7 @@ const OraclePriceFilterKeys = {
 
 type OraclePriceFilterKey = typeof OraclePriceFilterKeys[keyof typeof OraclePriceFilterKeys];
 
-const OraclePriceFilterValueKeys = {
+export const OraclePriceFilterValueKeys = {
   END: 'toTimestamp',
   FROM_ASSET: 'fromAsset',
   SOURCE: 'sourceType',

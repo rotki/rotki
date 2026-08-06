@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { HistoryEventAction } from '@/modules/history/events/action-types';
 import type { AddTransactionHashPayload } from '@/modules/history/events/event-payloads';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
@@ -9,7 +8,6 @@ import { useHistoryEventsDialogManager } from '@/modules/history/events/dialog-m
 import { DIALOG_TYPES, type DialogEventHandlers } from './dialog-types';
 
 const accountingRuleToEdit = defineModel<AccountingRuleEntry | undefined>('accountingRuleToEdit', { required: true });
-const currentAction = defineModel<HistoryEventAction>('currentAction', { required: true });
 
 const { eventHandlers, selectedEventIds } = defineProps<{
   eventHandlers: DialogEventHandlers;
@@ -214,7 +212,6 @@ defineExpose({
     <RepullingTransactionFormDialog
       v-if="currentDialog.type === DIALOG_TYPES.REPULLING_TRANSACTION"
       v-model="dialogIsOpen"
-      v-model:current-action="currentAction"
       :loading="sectionLoading"
       :repull-transactions="eventHandlers.onRepullTransactions"
       :repull-exchange-events="eventHandlers.onRepullExchangeEvents"

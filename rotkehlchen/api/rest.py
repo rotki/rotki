@@ -488,6 +488,26 @@ class RestAPI:
                 session_key=self.session_key,
             ) if self.session_key is not None else None
         )
+        if self.session_store is not None:
+            # The /ws gate only runs at the handshake, so a socket accepted under a
+            # session that is later revoked or displaced would keep receiving
+            # broadcasts. Sweeping on every store change covers logout, same-user
+            # takeover and displacement by another user in one place.
+            self.session_store.on_sessions_changed = self._disconnect_revoked_websockets
+
+    def _disconnect_revoked_websockets(self) -> None:
+        """Drop every websocket whose session is no longer the live one for its user.
+
+        A connection carries the username/sid its handshake was accepted under; None
+        for both means the cookie gate was off when it connected, so there is nothing
+        to revoke it against.
+        """
+        def is_authorized(username: str | None, sid: str | None) -> bool:
+            if username is None or sid is None:
+                return True
+            return self.session_store is not None and self.session_store.is_active(username, sid)
+
+        self.rotkehlchen.rotki_notifier.disconnect_deauthorized(is_authorized)
 
     @contextmanager
     def session_usage(self) -> Iterator[bool]:
@@ -789,6 +809,7 @@ class RestAPI:
             kraken_futures_api_key: ApiKey | None,
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
+            binance_history_start_ts: Timestamp | None,
             okx_location: OkxLocation | None,
             gate_location: GateLocation | None,
     ) -> Response:
@@ -802,10 +823,17 @@ class RestAPI:
             kraken_futures_api_key=kraken_futures_api_key,
             kraken_futures_api_secret=kraken_futures_api_secret,
             binance_markets=binance_markets,
+            binance_history_start_ts=binance_history_start_ts,
             okx_location=okx_location,
             gate_location=gate_location,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
+
+    def get_binance_history_start_timestamp(self) -> Response:
+        return api_response(
+            _wrap_in_ok_result(self.exchanges_service.get_binance_history_start_timestamp()),
+            status_code=HTTPStatus.OK,
+        )
 
     def edit_exchange(
             self,
@@ -1233,6 +1261,33 @@ class RestAPI:
         )
         response.headers['Cache-Control'] = 'no-store'
         response.headers['Pragma'] = 'no-cache'
+        return response
+
+    @staticmethod
+    def validate_session() -> Response:
+        """Answer whether the caller holds a valid, currently active session cookie.
+
+        This is the authorization subrequest behind starling's `/_control`: the proxy
+        forwards the caller's cookie here and only dispatches the control RPC on a 200.
+        Core is asked rather than starling deciding for itself because only core knows
+        `active_session_id` — a signature check could prove "signed and unexpired" but
+        not that a newer login has since kicked this session (#3156).
+
+        The cookie gate in `APIServer.before_request_callback` has already run (this
+        rule is deliberately absent from `_cookie_less_rules`), so reaching the handler
+        means *some* credential passed. `rotki_session_exp` narrows that to the cookie
+        path specifically: it is set only when a cookie authenticated the request, never
+        on the internal MCP-bearer path. An MCP client must not be able to restart the
+        backend just because it may read data.
+        """
+        if getattr(g, 'rotki_session_exp', None) is None:
+            return api_response(
+                wrap_in_fail_result('Authentication required'),
+                status_code=HTTPStatus.UNAUTHORIZED,
+            )
+
+        response = api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+        response.headers['Cache-Control'] = 'no-store'
         return response
 
     @async_api_call(session_token=True)

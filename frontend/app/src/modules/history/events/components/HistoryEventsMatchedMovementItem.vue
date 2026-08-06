@@ -68,6 +68,7 @@ const isCard = computed<boolean>(() => variant === 'card');
   <div
     v-if="isCard"
     data-cy="history-event-movement"
+    :data-event-id="eventsProp[0]?.identifier"
     class="p-3 border-b border-default bg-white dark:bg-dark-surface contain-content group transition-all"
     :class="[
       { 'opacity-50': primaryEvent.ignoredInAccounting },
@@ -148,6 +149,7 @@ const isCard = computed<boolean>(() => variant === 'card');
   <div
     v-else
     data-cy="history-event-movement"
+    :data-event-id="eventsProp[0]?.identifier"
     class="h-[72px] flex items-center gap-4 border-b border-default px-4 pl-6 group/row relative contain-content"
     :class="{ 'opacity-50': primaryEvent.ignoredInAccounting }"
   >

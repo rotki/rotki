@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ChainInfo } from '@/modules/core/api/types/chains';
+import type { DecodeScope } from '@/modules/history/events/event-payloads';
 import { getTextToken } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import HistoryRedecodeChainItem from '@/modules/history/redecode/HistoryRedecodeChainItem.vue';
@@ -15,7 +16,7 @@ const {
 }>();
 
 const emit = defineEmits<{
-  redecode: [payload: string[] | 'page'];
+  redecode: [scope: DecodeScope];
 }>();
 
 const open = ref<boolean>(false);
@@ -75,7 +76,7 @@ function reset() {
 }
 
 function redecode() {
-  emit('redecode', get(selection));
+  emit('redecode', { chains: get(selection), type: 'chains' });
   reset();
 }
 </script>
@@ -169,7 +170,7 @@ function redecode() {
         variant="text"
         size="sm"
         class="w-full !justify-start"
-        @click="emit('redecode', 'page'); reset()"
+        @click="emit('redecode', { type: 'page' }); reset()"
       >
         <template #prepend>
           <RuiIcon

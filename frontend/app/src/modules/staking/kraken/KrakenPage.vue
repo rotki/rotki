@@ -5,14 +5,12 @@ import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
-import { Section } from '@/modules/core/common/status';
 import { usePremium } from '@/modules/premium/use-premium';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import FullSizeContent from '@/modules/shell/components/FullSizeContent.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
 import KrakenStaking from '@/modules/staking/kraken/KrakenStaking.vue';
 import KrakenStakingPagePlaceholder from '@/modules/staking/kraken/KrakenStakingPagePlaceholder.vue';
 import { useKrakenStakingOperations } from '@/modules/staking/kraken/use-kraken-staking-operations';
@@ -39,7 +37,7 @@ const addKrakenApiKeysLink: RouteLocationRaw = {
   },
 };
 
-const { isInitialLoading: loading, isLoading: refreshing } = useSectionStatus(Section.STAKING_KRAKEN);
+const { isInitialLoading: loading, loading: refreshing } = storeToRefs(useKrakenStakingStore());
 
 const isKrakenConnected = computed<boolean>(() => {
   const exchanges = get(connectedExchanges);

@@ -18,7 +18,7 @@ const tabs = useNavTabs([
   '/settings/general/',
   '/settings/database/',
   '/settings/accounting/',
-  '/settings/evm/',
+  '/settings/chains/',
   '/settings/oracle/',
   '/settings/rpc/',
   '/settings/modules/',

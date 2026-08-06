@@ -2,12 +2,12 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { ProtocolCacheUpdatesData } from '@/modules/core/messaging/types';
 import { useProtocolMetadata } from '@/modules/balances/protocols/use-protocol-metadata';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import DefiIcon from '@/modules/settings/modules/DefiIcon.vue';
 import SuccessDisplay from '@/modules/shell/components/display/SuccessDisplay.vue';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 type Data = ProtocolCacheUpdatesData & {
   key: string;
@@ -28,8 +28,8 @@ defineSlots<{
 const protocolCacheStatusStore = useProtocolCacheStatusStore();
 const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(protocolCacheStatusStore);
 
-const { useIsTaskRunning } = useTaskStore();
-const taskRunning = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
+const { useIsActive } = useTaskCenter();
+const taskRunning = useIsActive(ActivityKind.PROTOCOL_CACHE);
 
 const { t } = useI18n({ useScope: 'global' });
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { DecodeScope } from '@/modules/history/events/event-payloads';
 import { checkIfDevelopment } from '@shared/utils';
 import HistoryRedecodeSelection from '@/modules/history/redecode/HistoryRedecodeSelection.vue';
 
@@ -6,7 +7,7 @@ defineProps<{
   processing: boolean;
 }>();
 
-const emit = defineEmits<{ redecode: [payload: 'all' | 'page' | string[]] }>();
+const emit = defineEmits<{ redecode: [scope: DecodeScope] }>();
 
 const { t } = useI18n({ useScope: 'global' });
 const isDemoMode = import.meta.env.VITE_DEMO_MODE !== undefined;
@@ -23,7 +24,7 @@ const isDevelopment = checkIfDevelopment();
   >
     <RuiButton
       class="!py-2"
-      @click="emit('redecode', 'all')"
+      @click="emit('redecode', { type: 'all' })"
     >
       <template #prepend>
         <RuiIcon

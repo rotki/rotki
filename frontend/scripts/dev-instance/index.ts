@@ -12,14 +12,19 @@ export {
   writeManagedEnv,
 } from './env-file';
 
+export { humanBytes } from './format';
+
 export {
+  buildSeedSkip,
   copyTree,
   type CopyTreeOptions,
   estimateSeedSize,
   freeDiskBytes,
   seedInstance,
   type SeedProgress,
+  type SeedSkipOptions,
   shouldSkipSeedEntry,
+  type WalkSkip,
 } from './fs-walk';
 
 export { type InstanceRuntime, prepareInstance, type PrepareInstanceOptions } from './instance';

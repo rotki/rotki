@@ -27,6 +27,7 @@ from rotkehlchen.api.session_token import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
 
 SESSION_DB_NAME: Final = 'session.db'
@@ -55,6 +56,11 @@ class SessionStore:
         self._lock = Semaphore()
         # user -> ActiveSession; the hot authority (session.db is the durable mirror).
         self._active: dict[str, ActiveSession] = {}
+        # Invoked after any change to which sessions are live, so holders of a
+        # credential that is checked only once -- websockets, which are gated at the
+        # handshake and never again -- can be dropped. Wired by RestAPI at startup;
+        # None in tests that exercise the store on its own.
+        self.on_sessions_changed: Callable[[], None] | None = None
         with self._lock:
             self._conn.execute('PRAGMA journal_mode=WAL')
             self._initialize_schema()
@@ -94,7 +100,11 @@ class SessionStore:
 
     def login(self, username: str) -> str:
         """Start (or take over) the active session for ``username`` and return its token.
-        The UPSERT overwrites the user's prior session, so its old cookie is revoked."""
+        The UPSERT overwrites the user's prior session, so its old cookie is revoked, and
+        every other user's row goes with it: core unlocks one user at a time, so a second
+        row can only ever be a session that is no longer reachable. Leaving them behind is
+        what let a previous user's cookie and MCP bearer outlive the login that displaced
+        them, since the UPSERT alone only ever rewrites the row of the user logging in."""
         current_time = int(time.time())
         sid = secrets.token_hex(16)
         absolute_exp = current_time + SESSION_ABSOLUTE_TTL
@@ -103,6 +113,7 @@ class SessionStore:
         # logins can't leave one sid in memory and a different one in the DB. Write the
         # DB first, so a failed commit never leaves memory ahead of the durable mirror.
         with self._lock:
+            self._conn.execute('DELETE FROM active_sessions WHERE user != ?', (username,))
             self._conn.execute(
                 'INSERT INTO active_sessions(user, sid, abs) VALUES(?, ?, ?) '
                 'ON CONFLICT(user) DO UPDATE SET '
@@ -110,13 +121,20 @@ class SessionStore:
                 (username, sid, absolute_exp),
             )
             self._conn.commit()
+            for other in [user for user in self._active if user != username]:
+                del self._active[other]
             self._active[username] = ActiveSession(
                 sid=sid,
                 absolute_exp=absolute_exp,
                 exp=exp,
                 mcp_sid=None,
             )
+        self._notify_sessions_changed()  # outside the lock: the callback closes sockets
         return mint_session_token(self.session_key, username, sid, expires_at=exp)['token']
+
+    def _notify_sessions_changed(self) -> None:
+        if self.on_sessions_changed is not None:
+            self.on_sessions_changed()
 
     def reissue(self, username: str, sid: str) -> str | None:
         """Rolling refresh: re-mint the *same* sid with a fresh idle ``exp`` capped at
@@ -193,6 +211,7 @@ class SessionStore:
             self._conn.execute('DELETE FROM active_sessions WHERE user = ?', (username,))
             self._conn.commit()
             self._active.pop(username, None)
+        self._notify_sessions_changed()
 
     def close(self) -> None:
         """Close the underlying connection (test cleanup; the process shares one store)."""

@@ -1,23 +1,22 @@
 <script setup lang="ts">
 import type { ImportSourceType } from '@/modules/core/common/upload-types';
-import type { TaskMeta } from '@/modules/core/tasks/types';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { DateFormat } from '@/modules/core/common/date-format';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { refIsTruthy } from '@/modules/core/common/use-ref-truthy';
 import { toMessages } from '@/modules/core/common/validation/validation';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import DateFormatHelp from '@/modules/settings/controls/DateFormatHelp.vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import FileUpload from '@/modules/user-data/FileUpload.vue';
 import { useImportDataApi } from '@/modules/user-data/use-import-data-api';
-
-interface ImportTaskMeta extends TaskMeta {
-  readonly source: ImportSourceType;
-}
 
 const { source } = defineProps<{ source: ImportSourceType }>();
 
@@ -67,34 +66,38 @@ const dateInputFormatExample = computed(() => {
   return displayDateFormatter.format(now, get(dateInputFormat)!);
 });
 
-const taskType = TaskType.IMPORT_CSV;
-const { runTask } = useTaskHandler();
-const { useIsTaskRunning } = useTaskStore();
+const { submitTask } = useNativeTask();
+const { useIsActive } = useTaskCenter();
 
-const loading = useIsTaskRunning(taskType, { source });
+const loading = useIsActive(ActivityKind.CSV_IMPORT, source);
 const { importDataFrom, importFile } = useImportDataApi();
 
 async function uploadPackaged(file: string): Promise<void> {
-  const outcome = await runTask<boolean, ImportTaskMeta>(
-    () => importDataFrom({
-      file,
-      source,
-      timestampFormat: get(dateInputFormat) || null,
-      timezone: get(timezone) || null,
-    }),
-    {
-      type: taskType,
-      meta: { source, title: t('file_upload.task.title', { source }) },
-      unique: false,
-    },
-  );
+  const outcome = await submitTask<boolean>({
+    id: makeActivityId(ActivityKind.CSV_IMPORT, source),
+    kind: ActivityKind.CSV_IMPORT,
+    rerunnable: false,
+    run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
+      await runTask<boolean>(
+        () => importDataFrom({
+          file,
+          source,
+          timestampFormat: get(dateInputFormat) || null,
+          timezone: get(timezone) || null,
+        }),
+      ),
+      value => value,
+    ),
+    subtitle: activityLabelFor(msg.$t('task_center.activity.csv_import.source'), { source }),
+    title: t('task_center.group.csv_import'),
+  });
 
-  if (outcome.success) {
-    if (outcome.result)
+  if (!isErr(outcome)) {
+    if (outcome.value)
       set(uploaded, true);
   }
-  else if (isActionableFailure(outcome)) {
-    set(errorMessage, outcome.message);
+  else if (isActionable(outcome.error)) {
+    set(errorMessage, outcome.error.message);
   }
 }
 
@@ -117,20 +120,26 @@ async function uploadFile(): Promise<void> {
       if (timezoneVal)
         formData.append('timezone', timezoneVal);
 
-      const outcome = await runTask<boolean, ImportTaskMeta>(
-        () => importFile(formData),
-        {
-          type: taskType,
-          meta: { source, title: t('file_upload.task.title', { source }) },
-        },
-      );
+      const outcome = await submitTask<boolean>({
+        id: makeActivityId(ActivityKind.CSV_IMPORT, source),
+        kind: ActivityKind.CSV_IMPORT,
+        rerunnable: false,
+        run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
+          await runTask<boolean>(
+            () => importFile(formData),
+          ),
+          value => value,
+        ),
+        subtitle: activityLabelFor(msg.$t('task_center.activity.csv_import.source'), { source }),
+        title: t('task_center.group.csv_import'),
+      });
 
-      if (outcome.success) {
-        if (outcome.result)
+      if (!isErr(outcome)) {
+        if (outcome.value)
           set(uploaded, true);
       }
-      else if (isActionableFailure(outcome)) {
-        set(errorMessage, outcome.message);
+      else if (isActionable(outcome.error)) {
+        set(errorMessage, outcome.error.message);
       }
     }
   }

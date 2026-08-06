@@ -1,19 +1,15 @@
 <script setup lang="ts">
 import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/modules/assets/types';
 import { useAssets } from '@/modules/assets/use-assets';
-import { useLogout } from '@/modules/auth/use-logout';
 import { useRestartingStatus } from '@/modules/auth/use-restarting-status';
-import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import AssetConflictDialog from '@/modules/shell/app/AssetConflictDialog.vue';
 import AssetUpdateInlineConfirm from '@/modules/shell/app/AssetUpdateInlineConfirm.vue';
 import AssetUpdateMessage from '@/modules/shell/app/AssetUpdateMessage.vue';
 import AssetUpdateSetting from '@/modules/shell/app/AssetUpdateSetting.vue';
 import AssetUpdateStatus from '@/modules/shell/app/AssetUpdateStatus.vue';
-import { useBackendConnection } from '@/modules/shell/app/use-backend-connection';
-import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
+import { useBackendReload } from '@/modules/shell/app/use-backend-reload';
 
 const { headless = false } = defineProps<{ headless?: boolean }>();
 
@@ -45,12 +41,8 @@ const status = computed(() => {
   return null;
 });
 
-const { logout } = useLogout();
 const { applyUpdates, checkForUpdate } = useAssets();
-const { setConnected } = useMainStore();
-const { connect } = useBackendConnection();
-const { restartBackend } = useBackendManagement();
-const { logged } = storeToRefs(useSessionAuthStore());
+const { reload } = useBackendReload();
 
 const { t } = useI18n({ useScope: 'global' });
 const { setMessage } = useMessageStore();
@@ -124,15 +116,14 @@ async function updateComplete() {
     return;
 
   set(restarting, true);
-
-  // Only logout if the user is actually logged in
-  if (get(logged))
-    await logout(true);
-
-  setConnected(false);
-  await restartBackend();
-  connect();
-  set(restarting, false);
+  try {
+    await reload();
+  }
+  finally {
+    // Always cleared: a reload that reports a failure still ends this attempt, and
+    // leaving the flag set would block every later one.
+    set(restarting, false);
+  }
 }
 
 const { show } = useConfirmStore();

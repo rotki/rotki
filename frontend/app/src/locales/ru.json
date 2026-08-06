@@ -268,12 +268,6 @@
         "title": "Импорт правил учета"
       }
     },
-    "add_eth2_validator": {
-      "task": {
-        "description": "Добавление валидатора стейкинга ETH",
-        "title": "Добавление валидатора: {id}"
-      }
-    },
     "asset_movement_matching": {
       "error": {
         "description": "Не удалось сопоставить движение активов: {message}",
@@ -293,19 +287,6 @@
         "error": {
           "description": "Ошибка при получении данных токена: {message}",
           "title": "Получение данных токена для {address} ({evmChain})"
-        },
-        "task": {
-          "title": "Получение данных токена для {address} ({evmChain})"
-        }
-      },
-      "import": {
-        "task": {
-          "title": "Импорт активов пользователя"
-        }
-      },
-      "reset": {
-        "task": {
-          "title": "Сброс базы данных активов"
         }
       },
       "update": {
@@ -333,36 +314,24 @@
         },
         "task": {
           "description": "Запрос всех балансов и сохранение снимка для статистики.",
-          "ignore_errors_note": "Ошибки во время запроса будут проигнорированы.",
-          "title": "Сохранение снимка балансов"
+          "ignore_errors_note": "Ошибки во время запроса будут проигнорированы."
         }
       },
       "blockchain": {
         "error": {
           "description": "Ошибка при запросе балансов блокчейна: {error}",
           "title": "Запрос балансов блокчейна"
-        },
-        "task": {
-          "title": "Запрос балансов {chain}"
         }
       },
       "blockchain_account_removal": {
         "agnostic": {
           "error": {
             "title": "Удаление аккаунта для адреса {address}"
-          },
-          "task": {
-            "description": "Аккаунты {address} удаляются",
-            "title": "Удаление блокчейн-аккаунта"
           }
         },
         "error": {
           "description": "Не удалось удалить аккаунт: {error}",
           "title": "Удаление {count} аккаунтов {blockchain}"
-        },
-        "task": {
-          "description": "Удаление {count} аккаунтов",
-          "title": "Удаление аккаунта {blockchain}"
         }
       },
       "blockchain_accounts_add": {
@@ -383,7 +352,6 @@
           "description": "Адрес {address} успешно добавлен для всех EVM-сетей | Адрес {address} успешно добавлен для сетей: \n {list}"
         },
         "task": {
-          "description": "Добавление {address}",
           "title": "Добавление аккаунта {blockchain}"
         }
       },
@@ -401,7 +369,6 @@
           "message": "Не удалось обнаружить токены для {address} ({chain}): {error}"
         },
         "task": {
-          "description": "Получение обнаруженных токенов для {address} ({chain})",
           "title": "Получение обнаруженных токенов"
         }
       },
@@ -409,17 +376,11 @@
         "error": {
           "message": "Не удалось запросить балансы {location}: {error}",
           "title": "Запрос баланса {location}"
-        },
-        "task": {
-          "title": "Получение балансов {location}"
         }
       },
       "exchange_rates": {
         "error": {
           "message": "Не удалось получить курсы обмена: {message}",
-          "title": "Курсы обмена"
-        },
-        "task": {
           "title": "Курсы обмена"
         }
       },
@@ -431,9 +392,6 @@
         "error": {
           "message": "Не удалось запросить информацию о процентах по вкладам {location}: {error}",
           "title": "Запрос процентов {location}"
-        },
-        "task": {
-          "title": "Получение информации о процентах {location}"
         }
       },
       "exchange_setup": {
@@ -446,7 +404,6 @@
             "message": "Не удалось получить исторические дневные цены: {message}"
           },
           "task": {
-            "detail": "Получение исторических дневных цен для актива: {asset}",
             "title": "Получение исторических дневных цен"
           }
         },
@@ -473,9 +430,6 @@
         "error": {
           "description": "Не удалось удалить {xpub}: {error}",
           "title": "Удаление Xpub"
-        },
-        "task": {
-          "title": "Удаление xpub"
         }
       }
     },
@@ -485,14 +439,6 @@
         "error": {
           "description": "Не удалось получить аирдропы: {error}",
           "title": "Аирдропы"
-        },
-        "task": {
-          "title": "Запрос аирдропов"
-        }
-      },
-      "liquity": {
-        "task": {
-          "title": "Запрос балансов Liquity"
         }
       },
       "liquity_balances": {
@@ -505,27 +451,18 @@
         "error": {
           "description": "Не удалось запросить пулы Liquity: {message}",
           "title": "Пулы Liquity"
-        },
-        "task": {
-          "title": "Запрос пулов Liquity"
         }
       },
       "liquity_staking": {
         "error": {
           "description": "Не удалось получить стейкинг Liquity: {message}",
           "title": "Стейкинг Liquity"
-        },
-        "task": {
-          "title": "Запрос стейкинга Liquity"
         }
       },
       "liquity_statistics": {
         "error": {
           "description": "Не удалось запросить статистику Liquity: {message}",
           "title": "Статистика Liquity"
-        },
-        "task": {
-          "title": "Запрос статистики Liquity"
         }
       }
     },
@@ -539,29 +476,17 @@
       "error": {
         "message": "Не удалось обнаружить EVM-аккаунты из-за ошибки: {message}",
         "title": "Обнаружение EVM-аккаунтов"
-      },
-      "task": {
-        "title": "Обнаружение EVM-аккаунтов"
       }
     },
     "eth_block_events_redecoding": {
       "error": {
         "description": "Не удалось декодировать события блоков ETH: {error}",
         "title": "Декодирование событий блоков ETH"
-      },
-      "task": {
-        "description": "Декодирование событий блоков ETH для блока: {block}",
-        "single_description": "Декодирование событий блоков ETH для {number} блоков",
-        "title": "Декодирование событий блоков ETH"
       }
     },
     "exchange_events": {
       "error": {
         "description": "Не удалось запросить события биржи для {location} с именем '{name}': {error}",
-        "title": "Запрос событий биржи"
-      },
-      "task": {
-        "description": "Запрос новых событий для {location} с именем '{name}'",
         "title": "Запрос событий биржи"
       }
     },
@@ -578,9 +503,6 @@
       "error": {
         "description": "Не удалось запросить аккаунты для {blockchain}: {message}",
         "title": "Запрос аккаунтов"
-      },
-      "task": {
-        "title": "Запрос аккаунтов {blockchain}"
       }
     },
     "history": {
@@ -647,9 +569,6 @@
       "error": {
         "message": "Ошибка при запросе событий стейкинга Kraken: {message}",
         "title": "Запрос событий стейкинга Kraken"
-      },
-      "task": {
-        "title": "Запрос событий стейкинга Kraken"
       }
     },
     "manual_balances": {
@@ -668,19 +587,11 @@
         "task": {
           "title": "Редактирование ручных балансов"
         }
-      },
-      "fetch": {
-        "task": {
-          "title": "Получение ручных балансов"
-        }
       }
     },
     "nft_balances": {
       "error": {
         "message": "Ошибка при запросе балансов NFT: {message}",
-        "title": "Запрос балансов NFT"
-      },
-      "task": {
         "title": "Запрос балансов NFT"
       }
     },
@@ -702,10 +613,6 @@
           },
           "title": "Экспорт CSV"
         }
-      },
-      "task": {
-        "description": "Запрос новых событий {queryType}",
-        "title": "Запрос событий"
       },
       "warning": {
         "missing_api_key": {
@@ -745,9 +652,6 @@
       "generate": {
         "error": {
           "description": "Непредвиденный ответ при создании отчета PnL. Проверьте логи и создайте тикет."
-        },
-        "task": {
-          "title": "Создание налогового отчета"
         }
       }
     },
@@ -790,18 +694,9 @@
           "message": "Ошибка удаления запрашиваемого адреса: {message}"
         }
       },
-      "fetch_nfts": {
-        "task": {
-          "title": "Запрос NFT"
-        }
-      },
       "fetch_prices": {
         "error": {
           "message": "Не удалось получить цены: {error}",
-          "title": "Получение цен"
-        },
-        "task": {
-          "description": "Получение цены для {count} актива | Получение цен для {count} активов",
           "title": "Получение цен"
         }
       },
@@ -817,9 +712,6 @@
         },
         "success": {
           "message": "Синхронизация данных успешно завершена.",
-          "title": "Принудительная синхронизация"
-        },
-        "task": {
           "title": "Принудительная синхронизация"
         }
       },
@@ -883,9 +775,6 @@
         "error": {
           "description": "Не удалось запросить детали стейкинга ETH: {error}",
           "title": "Запрос деталей стейкинга ETH"
-        },
-        "task": {
-          "title": "Запрос деталей стейкинга ETH"
         }
       }
     },
@@ -901,30 +790,17 @@
       "error": {
         "description": "Ошибка запроса для {address} ({chain}): {error}",
         "title": "Запрос транзакций блокчейна"
-      },
-      "task": {
-        "description": "Получение транзакций для {address} ({chain})",
-        "title": "Транзакции блокчейна"
       }
     },
     "transactions_redecode": {
       "error": {
         "description": "Не удалось декодировать события транзакций: {error}",
         "title": "Декодирование событий транзакций"
-      },
-      "task": {
-        "description": "Декодирование событий для транзакций: {tx} ({chain})",
-        "single_description": "Декодирование событий {chain} для {number} транзакций",
-        "title": "Декодирование событий транзакций"
       }
     },
     "transactions_redecode_by_chain": {
       "error": {
         "description": "Не удалось декодировать события {chain}: {error}",
-        "title": "Декодирование событий транзакций"
-      },
-      "task": {
-        "description": "Декодирование транзакций для событий {chain}",
         "title": "Декодирование событий транзакций"
       }
     },
@@ -1228,9 +1104,7 @@
       "subtitle": "Просмотрите список новых обнаруженных токенов и добавьте любые активы в список спам-токенов"
     },
     "only_show_ignored": "Показать только игнорируемые активы ({length}) | Показать только игнорируемые активы",
-    "only_show_owned": "Показать только имеющиеся активы",
     "only_show_unignored": "Показать только неигнорируемые активы",
-    "only_show_whitelisted": "Показать только активы из белого списка",
     "selected": "Выбрано {count} актив(ов)",
     "show_all": "Показать все",
     "underlying_tokens": "Базовые токены"
@@ -2314,10 +2188,8 @@
   "evm_settings": {
     "general": {
       "chains_to_skip_detection": {
-        "subtitle": "Выберите EVM-сети, которые следует исключить из автоматического обнаружения активности счетов между сетями. Отслеживаемые адреса не будут проверяться на активность в выбранных сетях.",
         "title": "Пропустить обнаружение активности счетов"
       },
-      "title": "Общие настройки EVM",
       "treat_eth2_as_eth": {
         "subtitle": "Если включено, стейкнутый ETH (ETH2) будет отображаться и учитываться как обычный ETH.",
         "title": "Считать ETH2 как ETH"
@@ -2508,7 +2380,6 @@
         "disconnect": "Отключить кошелек",
         "explanation": "Для аутентификации в Gnosis Pay вам необходимо подписать сообщение кошельком Ethereum, который является контроллером Gnosis Pay Safe.",
         "failed": "Не удалось аутентифицироваться в Gnosis Pay",
-        "fetching_nonce": "Получение nonce аутентификации",
         "sign_explanation": "Подпишите сообщение вашим кошельком для аутентификации и генерации токена сессии.",
         "sign_message": "Подписать сообщение для аутентификации",
         "step1_title": "Выберите режим кошелька и подключитесь",
@@ -2517,7 +2388,6 @@
         "success_message": "Успешная аутентификация в Gnosis Pay",
         "switch_to_gnosis": "Переключиться на Gnosis",
         "validating_address": "Проверка адреса...",
-        "verifying_signature": "Проверка подписи и генерация токена",
         "wrong_chain": "Вы не подключены к сети Gnosis. Пожалуйста, переключитесь, чтобы продолжить."
       }
     },
@@ -2599,10 +2469,7 @@
     "loading": "Загрузка",
     "many_files_selected": "Должен быть выбран только один файл",
     "only_files": "Разрешены только файлы {fileFilter}",
-    "replace_file": "Заменить файл",
-    "task": {
-      "title": "Импорт csv для источника: {source}"
-    }
+    "replace_file": "Заменить файл"
   },
   "frontend_settings": {
     "abbreviate_number": {

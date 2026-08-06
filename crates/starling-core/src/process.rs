@@ -122,7 +122,22 @@ impl Spawner for OsSpawner {
             // child before exec, so the backend runs unprivileged even though
             // the supervisor spawned it as root. Order matters — supplementary
             // groups and gid must be set before uid, while still privileged.
-            if let Some(run_as) = spec.run_as {
+            //
+            // Only meaningful while the supervisor is still root. Docker drops
+            // starling itself to the same uid once the tree is up, and from then
+            // on setgroups/setgid are EPERM for an unprivileged process — which
+            // made every *re*spawn (restart, or a crash-loop backoff) fail with
+            // "Operation not permitted" and tear the tree down for good. The
+            // child inherits our ids anyway, so once we already are `run_as`
+            // there is nothing left to drop.
+            //
+            // Both ids are compared, not just the uid: skipping on a uid match
+            // alone would silently leave a mismatched gid in place, and this is
+            // the check that decides whether a privilege drop happens.
+            if let Some(run_as) = spec.run_as.filter(|target| {
+                nix::unistd::geteuid().as_raw() != target.uid
+                    || nix::unistd::getegid().as_raw() != target.gid
+            }) {
                 let (uid, gid) = (run_as.uid, run_as.gid);
                 // SAFETY: `pre_exec` runs in the child after fork, before exec.
                 // Only async-signal-safe syscalls are used (setgroups/setgid/

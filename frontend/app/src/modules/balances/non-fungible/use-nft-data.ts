@@ -7,14 +7,14 @@ import { type BigNumber, Zero } from '@rotki/common';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
 import { calculatePercentage } from '@/modules/core/common/data/calculation';
 import { getCollectionData } from '@/modules/core/common/data/collection-utils';
-import { Section } from '@/modules/core/common/status';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import { useSetting } from '@/modules/settings/use-setting';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseNftDataOptions {
   /**
@@ -54,7 +54,8 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
     ignoredAssetsHandling: get(modelIgnoredAssetsHandling),
   }));
 
-  const { isLoading: sectionLoading } = useSectionStatus(Section.NON_FUNGIBLE_BALANCES);
+  const { useIsActive } = useTaskCenter();
+  const sectionLoading = useIsActive(ActivityKind.NFT_BALANCES);
 
   const {
     collection: balances,

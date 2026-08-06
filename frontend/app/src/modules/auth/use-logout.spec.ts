@@ -160,4 +160,21 @@ describe('modules::account::use-logout', () => {
       expect(callOrder).toEqual(['backendLogout', 'resetMcpSession']);
     });
   });
+
+  it('should skip the backend call but still clean up locally after a restart', async () => {
+    // A restart already ended the session and settled the user DB (core runs the
+    // same logout on its graceful shutdown). Calling the endpoint again would
+    // reach a backend with nobody logged in, which 409s and shows the user a
+    // spurious "Logout failed".
+    const { logout } = useLogout();
+    await logout(true, { skipBackendCall: true });
+    await flushPromises();
+
+    expect(mockCallLogout).not.toHaveBeenCalled();
+    expect(mockDisconnectWallet).toHaveBeenCalled();
+    expect(mockResetSchedulerState).toHaveBeenCalled();
+    expect(mockResetTray).toHaveBeenCalled();
+    expect(mockNavigateToUserLogin).toHaveBeenCalled();
+    expect(get(mockLogged)).toBe(false);
+  });
 });

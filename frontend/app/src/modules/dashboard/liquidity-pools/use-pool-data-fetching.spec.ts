@@ -1,28 +1,31 @@
+import { runSpecWith } from '@test/utils/mocks/native-task';
 import { createPinia, setActivePinia } from 'pinia';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Module } from '@/modules/core/common/modules';
-import { Section, Status } from '@/modules/core/common/status';
-import { TaskType } from '@/modules/core/tasks/task-type';
+import { Cancelled } from '@/modules/core/tasks/task-result';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { usePoolDataFetching } from './use-pool-data-fetching';
 import '@test/i18n';
 
-const mockRunTask = vi.fn();
-const mockIsTaskRunning = vi.fn();
+const mockRunTaskResult = vi.fn();
+const mockStatusOf = vi.fn();
 const mockGetUniswapV2Balances = vi.fn();
 const mockGetSushiswapBalances = vi.fn();
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
-  ...(await importOriginal<Record<string, unknown>>()),
-  useTaskHandler: vi.fn((): Record<string, unknown> => ({
-    runTask: mockRunTask,
+/** Runs the submitted spec inline so assertions see the real `run` body. */
+const mockSubmitTask = vi.fn(runSpecWith(mockRunTaskResult));
+
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: vi.fn((): Record<string, unknown> => ({
+    cancelByType: vi.fn(() => vi.fn()),
+    runTaskResult: mockRunTaskResult,
+    statusOf: mockStatusOf,
+    submitTask: mockSubmitTask,
   })),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-store', () => ({
-  useTaskStore: vi.fn((): Record<string, unknown> => ({
-    isTaskRunning: mockIsTaskRunning,
-  })),
-}));
+const IDLE = { active: false, everCompleted: false, pending: false, running: false };
 
 vi.mock('./use-pool-api', () => ({
   usePoolApi: vi.fn((): Record<string, unknown> => ({
@@ -57,8 +60,8 @@ describe('usePoolDataFetching', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    mockIsTaskRunning.mockReturnValue(false);
-    mockRunTask.mockResolvedValue({ success: false, cancelled: true });
+    mockStatusOf.mockReturnValue(IDLE);
+    mockRunTaskResult.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
     mockIsPremium.mockReturnValue(ref<boolean>(true));
     mockActiveModules.mockReturnValue(ref<string[]>([Module.UNISWAP, Module.SUSHISWAP]));
   });
@@ -72,11 +75,34 @@ describe('usePoolDataFetching', () => {
       const { fetch } = usePoolDataFetching();
       await fetch();
 
-      expect(mockRunTask).toHaveBeenCalledTimes(2);
-      const [, uniOptions] = mockRunTask.mock.calls[0];
-      const [, sushiOptions] = mockRunTask.mock.calls[1];
-      expect(uniOptions.type).toBe(TaskType.UNISWAP_V2_BALANCES);
-      expect(sushiOptions.type).toBe(TaskType.SUSHISWAP_BALANCES);
+      expect(mockRunTaskResult).toHaveBeenCalledTimes(2);
+    });
+
+    it('should submit one native activity per protocol', async () => {
+      const { fetch } = usePoolDataFetching();
+      await fetch();
+
+      expect(mockSubmitTask).toHaveBeenCalledTimes(2);
+      const [uniSpec] = mockSubmitTask.mock.calls[0];
+      const [sushiSpec] = mockSubmitTask.mock.calls[1];
+      expect(uniSpec.kind).toBe(ActivityKind.LIQUIDITY_POOLS);
+      expect(uniSpec.id).toBe(`${ActivityKind.LIQUIDITY_POOLS}:${ActivityPart.UNISWAP_V2}`);
+      expect(sushiSpec.id).toBe(`${ActivityKind.LIQUIDITY_POOLS}:${ActivityPart.SUSHISWAP}`);
+    });
+
+    it('should store parsed balances on success', async () => {
+      const balances = { '0x123': [{ address: '0x456', assets: [], totalAmount: '1', usdPrice: '2', userBalance: { amount: '1', usdValue: '2' } }] };
+      mockRunTaskResult.mockResolvedValue(ok(balances));
+
+      const { usePoolBalancesStore } = await import('./use-pool-balances-store');
+      const store = usePoolBalancesStore();
+
+      const { fetch } = usePoolDataFetching();
+      await fetch();
+
+      // The parsed payload lands in the store for both protocols, not just the task being run.
+      expect(Object.keys(get(store.uniswapPoolBalances))).toEqual(['0x123']);
+      expect(Object.keys(get(store.sushiswapPoolBalances))).toEqual(['0x123']);
     });
 
     it('should skip sushiswap when not premium', async () => {
@@ -85,9 +111,7 @@ describe('usePoolDataFetching', () => {
       const { fetch } = usePoolDataFetching();
       await fetch();
 
-      expect(mockRunTask).toHaveBeenCalledOnce();
-      const [, options] = mockRunTask.mock.calls[0];
-      expect(options.type).toBe(TaskType.UNISWAP_V2_BALANCES);
+      expect(mockRunTaskResult).toHaveBeenCalledOnce();
     });
 
     it('should skip when uniswap module is not active', async () => {
@@ -96,40 +120,34 @@ describe('usePoolDataFetching', () => {
       const { fetch } = usePoolDataFetching();
       await fetch();
 
-      expect(mockRunTask).not.toHaveBeenCalled();
+      expect(mockRunTaskResult).not.toHaveBeenCalled();
     });
 
-    it('should skip when task is already running', async () => {
-      mockIsTaskRunning.mockReturnValue(true);
+    it('should skip when the activity is already active', async () => {
+      mockStatusOf.mockReturnValue({ ...IDLE, active: true, running: true });
 
       const { fetch } = usePoolDataFetching();
       await fetch();
 
-      expect(mockRunTask).not.toHaveBeenCalled();
+      expect(mockSubmitTask).not.toHaveBeenCalled();
     });
 
-    it('should skip when already loaded and not refreshing', async () => {
-      const { useStatusStore } = await import('@/modules/core/common/use-status-store');
-      const statusStore = useStatusStore();
-      statusStore.setStatus({ status: Status.LOADED, section: Section.POOLS_UNISWAP_V2 });
-      statusStore.setStatus({ status: Status.LOADED, section: Section.POOLS_SUSHISWAP });
+    it('should skip when already completed and not refreshing', async () => {
+      mockStatusOf.mockReturnValue({ ...IDLE, everCompleted: true });
 
       const { fetch } = usePoolDataFetching();
       await fetch();
 
-      expect(mockRunTask).not.toHaveBeenCalled();
+      expect(mockSubmitTask).not.toHaveBeenCalled();
     });
 
-    it('should fetch when refreshing even if already loaded', async () => {
-      const { useStatusStore } = await import('@/modules/core/common/use-status-store');
-      const statusStore = useStatusStore();
-      statusStore.setStatus({ status: Status.LOADED, section: Section.POOLS_UNISWAP_V2 });
-      statusStore.setStatus({ status: Status.LOADED, section: Section.POOLS_SUSHISWAP });
+    it('should fetch when refreshing even if already completed', async () => {
+      mockStatusOf.mockReturnValue({ ...IDLE, everCompleted: true });
 
       const { fetch } = usePoolDataFetching();
       await fetch(true);
 
-      expect(mockRunTask).toHaveBeenCalledTimes(2);
+      expect(mockSubmitTask).toHaveBeenCalledTimes(2);
     });
   });
 });

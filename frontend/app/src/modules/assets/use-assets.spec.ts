@@ -1,14 +1,27 @@
 import type { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
 import type { AssetMergePayload, AssetUpdatePayload } from '@/modules/assets/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
-import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
+import { runSpecWith } from '@test/utils/mocks/native-task';
+import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
+import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
-const { runTaskMock } = vi.hoisted(() => ({ runTaskMock: vi.fn() }));
+const runTaskResult = vi.fn();
+
+/** Runs the submitted spec inline so assertions see the real `run` body. */
+const submitTask = vi.fn(runSpecWith(runTaskResult));
+
+/** Drives the native `run`: invoke the api call, then yield the given plainfp outcome. */
+function whenTask<R>(outcome: Result<R, TaskError>): void {
+  runTaskResult.mockImplementation(async (task: () => Promise<unknown>): Promise<Result<R, TaskError>> => {
+    await task();
+    return outcome;
+  });
+}
 
 vi.mock('@/modules/assets/api/use-assets-api', () => ({
   useAssetsApi: vi.fn().mockReturnValue({
@@ -26,8 +39,14 @@ vi.mock('@/modules/assets/api/use-asset-icon-api', () => ({
   } satisfies Partial<ReturnType<typeof useAssetIconApi>>),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
-  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), { runTask: runTaskMock }));
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: vi.fn(() => ({
+    cancelByType: vi.fn(() => vi.fn()),
+    runTaskResult,
+    statusOf: vi.fn(),
+    submitTask,
+  })),
+}));
 
 vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
   useNotificationDispatcher: vi.fn().mockReturnValue({
@@ -72,7 +91,7 @@ describe('useAssets', () => {
         newChanges: 2,
       };
 
-      runTaskMock.mockResolvedValue({ success: true, result: versions });
+      whenTask(ok(versions));
 
       const result = await store.checkForUpdate();
 
@@ -91,7 +110,7 @@ describe('useAssets', () => {
         newChanges: 2,
       };
 
-      runTaskMock.mockResolvedValue({ success: true, result: versions });
+      whenTask(ok(versions));
 
       const result = await store.checkForUpdate();
 
@@ -104,7 +123,7 @@ describe('useAssets', () => {
     });
 
     it('should handle error', async () => {
-      runTaskMock.mockResolvedValue({ success: false, message: 'failed', cancelled: false, backendCancelled: false, skipped: false });
+      whenTask(err(TaskFailed({ message: 'failed' })));
 
       const result = await store.checkForUpdate();
 
@@ -126,7 +145,7 @@ describe('useAssets', () => {
     };
 
     it('should complete successfully', async () => {
-      runTaskMock.mockResolvedValue({ success: true, result: true });
+      whenTask(ok(true));
 
       const result = await store.applyUpdates(payload);
 
@@ -146,7 +165,7 @@ describe('useAssets', () => {
         },
       ];
 
-      runTaskMock.mockResolvedValue({ success: true, result: conflicts });
+      whenTask(ok(conflicts));
 
       const result = await store.applyUpdates(payload);
 
@@ -159,7 +178,7 @@ describe('useAssets', () => {
     });
 
     it('should handle error', async () => {
-      runTaskMock.mockResolvedValue({ success: false, message: 'failed', cancelled: false, backendCancelled: false, skipped: false });
+      whenTask(err(TaskFailed({ message: 'failed' })));
 
       const result = await store.applyUpdates(payload);
 
@@ -208,7 +227,7 @@ describe('useAssets', () => {
     const file = new File(['0'], 'test.csv');
 
     it('should succeed', async () => {
-      runTaskMock.mockResolvedValue({ success: true, result: true });
+      whenTask(ok(true));
 
       const result = await store.importCustomAssets(file);
 
@@ -220,7 +239,7 @@ describe('useAssets', () => {
     });
 
     it('should handle failure', async () => {
-      runTaskMock.mockResolvedValue({ success: false, message: 'failed', cancelled: false, backendCancelled: false, skipped: false });
+      whenTask(err(TaskFailed({ message: 'failed' })));
 
       const result = await store.importCustomAssets(file);
 
@@ -241,7 +260,7 @@ describe('useAssets', () => {
 
     it('should succeed', async () => {
       vi.mocked(api.exportCustom).mockResolvedValue({ taskId: 1 });
-      runTaskMock.mockResolvedValue({ success: true, result: { filePath: 'export.csv' } });
+      whenTask(ok({ filePath: 'export.csv' }));
 
       const result = await store.exportCustomAssets();
 
@@ -255,7 +274,7 @@ describe('useAssets', () => {
 
     it('should handle failure', async () => {
       vi.mocked(api.exportCustom).mockResolvedValue({ taskId: 1 });
-      runTaskMock.mockResolvedValue({ success: false, message: 'failed', cancelled: false, backendCancelled: false, skipped: false });
+      whenTask(err(TaskFailed({ message: 'failed' })));
 
       const result = await store.exportCustomAssets();
 

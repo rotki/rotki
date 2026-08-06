@@ -1,5 +1,4 @@
 import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
-import type { Section, Status } from '@/modules/core/common/status';
 import { z } from 'zod';
 
 interface ActionFailure<T = string> {
@@ -12,12 +11,6 @@ interface ActionSuccess {
 }
 
 export type ActionStatus<T = string> = ActionFailure<T> | ActionSuccess;
-
-export interface StatusPayload {
-  readonly status: Status;
-  readonly subsection?: string;
-  readonly section: Section;
-}
 
 export interface Version {
   readonly version: string;

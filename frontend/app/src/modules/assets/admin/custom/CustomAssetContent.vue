@@ -3,6 +3,7 @@ import type { Nullable } from '@rotki/common';
 import type { CustomAsset, CustomAssetRequestPayload } from '@/modules/assets/types';
 import CustomAssetFormDialog from '@/modules/assets/admin/custom/CustomAssetFormDialog.vue';
 import CustomAssetTable from '@/modules/assets/admin/custom/CustomAssetTable.vue';
+import { useCustomAssetFields } from '@/modules/assets/admin/custom/use-custom-asset-fields';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { type Filters, type Matcher, useCustomAssetFilter } from '@/modules/core/table/filters/use-custom-assets-filter';
@@ -41,7 +42,7 @@ const { showDeleteConfirmation } = useTableRowDeletion<CustomAsset>({
 });
 
 const filterSchema = useCustomAssetFilter(types);
-const matchers = filterSchema.matchers;
+const fields = useCustomAssetFields(filterSchema.matchers);
 
 const {
   collection,
@@ -145,7 +146,7 @@ watch(() => identifier, (assetId) => {
       :assets="collection.data"
       :loading="loading"
       :server-item-length="collection.found"
-      :matchers="matchers"
+      :fields="fields"
       @edit="edit($event)"
       @delete-asset="showDeleteConfirmation($event)"
     />

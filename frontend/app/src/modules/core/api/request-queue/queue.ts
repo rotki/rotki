@@ -5,6 +5,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { QueueOverflowError, QueueTimeoutError, RequestCancelledError } from './errors';
 import { createDedupeKey, generateId } from './request-identity';
 import { RequestPriority } from './request-priority';
+import { findEligibleIndex } from './slot-policy';
 
 export type QueueFetchFn = <T>(url: string, options?: BaseFetchOptions) => Promise<T>;
 
@@ -23,6 +24,7 @@ export class RequestQueue {
   constructor(fetchFn: QueueFetchFn, options?: QueueOptions) {
     this.fetchFn = fetchFn;
     this.options = {
+      maxBackgroundConcurrent: 2,
       maxConcurrent: 6,
       maxPerSecond: 30,
       maxQueueSize: 100,
@@ -231,6 +233,10 @@ export class RequestQueue {
     }
   }
 
+  private nextEligibleIndex(): number {
+    return findEligibleIndex(this.queue, this.activeRequests.values(), this.options.maxBackgroundConcurrent);
+  }
+
   private async processQueue(): Promise<void> {
     if (this.isProcessing)
       return;
@@ -244,7 +250,10 @@ export class RequestQueue {
           this.scheduleRateLimitRecovery();
           break;
         }
-        const request = this.queue.shift();
+        const index = this.nextEligibleIndex();
+        if (index === -1)
+          break;
+        const [request] = this.queue.splice(index, 1);
         if (!request)
           break;
         this.activeRequests.set(request.id, request);
@@ -259,7 +268,6 @@ export class RequestQueue {
   }
 
   private async executeRequest<T>(request: QueuedRequest<T>): Promise<void> {
-    let shouldContinueProcessing = true;
     try {
       const response = await this.fetchFn<T>(request.url, request.options);
       this.cleanupRequest(request);
@@ -268,14 +276,16 @@ export class RequestQueue {
     catch (error) {
       if (this.shouldRetry(error, request)) {
         request.retries++;
-        shouldContinueProcessing = false;
-        const delay = this.options.retryDelay * (2 ** (request.retries - 1));
+        // The slot is released for the wait rather than after it. A request sleeping through its
+        // backoff is doing nothing, and holding one of the six in-flight budget while it sleeps
+        // starves everything else for the whole delay - which grows exponentially per attempt.
+        // Its dedupe key stays, so callers attached to it still settle from the retry.
+        this.activeRequests.delete(request.id);
         setTimeout(() => {
-          this.activeRequests.delete(request.id);
           this.insertByPriority(request);
           this.updateState();
           this.processQueue().catch(catchError => logger.error(catchError));
-        }, delay);
+        }, this.options.retryDelay * (2 ** (request.retries - 1)));
         return;
       }
       this.cleanupRequest(request);
@@ -283,8 +293,7 @@ export class RequestQueue {
     }
     finally {
       this.updateState();
-      if (shouldContinueProcessing)
-        this.processQueue().catch(error => logger.error(error));
+      this.processQueue().catch(error => logger.error(error));
     }
   }
 
