@@ -47,7 +47,7 @@ const v$ = useVuelidate(
       clearable
       :error-messages="toMessages(v$.url)"
       v-bind="$attrs"
-      @click:clear="saveData()"
+      @clear="saveData()"
     />
     <RuiButton
       variant="text"

@@ -78,14 +78,12 @@ describe('settings/explorers/ExplorerInput.vue', () => {
     expect(wrapper.emitted('save-data')).toEqual([['https://example.com/address/']]);
   });
 
-  // Documents a defect: the field is emptied but nothing is persisted, because the template listens
-  // for `click:clear` while RuiTextField emits `clear`. Fixed in the next commit.
-  it('should empty the field but emit nothing when cleared', async () => {
+  it('should empty the field and emit no value when cleared', async () => {
     wrapper = createWrapper('https://example.com/address/');
 
     await wrapper.find('[data-id=clear-btn]').trigger('click');
 
     expect(wrapper.props('modelValue')).toBe('');
-    expect(wrapper.emitted('save-data')).toBeUndefined();
+    expect(wrapper.emitted('save-data')).toEqual([[undefined]]);
   });
 });
