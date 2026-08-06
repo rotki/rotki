@@ -16,7 +16,7 @@ export type StaticLane = (typeof STATIC_LANES)[number];
  * (`tx-sync:<chain>`). Also a closed list, so a family cap cannot be keyed by a prefix no producer
  * ever mints.
  */
-export const LANE_FAMILIES = ['tx-sync:', 'exchange-events:', 'accounts-add:'] as const;
+export const LANE_FAMILIES = ['tx-sync:', 'exchange-events:', 'accounts-add:', 'accounts-remove:'] as const;
 
 export type LaneFamily = (typeof LANE_FAMILIES)[number];
 
@@ -92,6 +92,18 @@ export const EXCHANGE_EVENTS_LANE_PREFIX: LaneFamily = 'exchange-events:';
  * flat lane would serialize additions across chains instead, which is not what it replaced.
  */
 export const ACCOUNTS_ADD_LANE_PREFIX: LaneFamily = 'accounts-add:';
+
+/**
+ * Family prefix for the per-chain account-removal lanes (`accounts-remove:<chain>`). Capped at 1 per
+ * chain *and* 1 active lane, which together reproduce the fully serial `awaitParallelExecution(...,
+ * 1)` that removing one address from several chains used to apply by hand.
+ *
+ * Its own family rather than a share of {@link ACCOUNTS_ADD_LANE_PREFIX}: an addition and a removal
+ * are independent operations on different addresses, so pooling them would make a removal wait on an
+ * unrelated addition. They contend for the same chain only in the sense every chain call does, which
+ * is a per-chain budget question, not a reason to serialize the two against each other.
+ */
+export const ACCOUNTS_REMOVE_LANE_PREFIX: LaneFamily = 'accounts-remove:';
 
 /** Push live step progress for a running activity. Pure no-op-safe; calling after the spec
  *  settles is harmless (ignored by the orchestrator). */

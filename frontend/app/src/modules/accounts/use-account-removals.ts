@@ -44,6 +44,7 @@ export function useAccountRemovals(): UseAccountRemovalsReturn {
     const outcome = await submitTask({
       id: accountRemoveActivity.id(subject),
       kind: accountRemoveActivity.kind,
+      lane: accountRemoveActivity.laneOf?.(subject),
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<BlockchainBalances>(
@@ -66,6 +67,7 @@ export function useAccountRemovals(): UseAccountRemovalsReturn {
     const outcome = await submitTask({
       id: accountAgnosticRemoveActivity.id(subject),
       kind: accountAgnosticRemoveActivity.kind,
+      lane: accountAgnosticRemoveActivity.laneOf?.(subject),
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<BlockchainBalances>(
@@ -88,6 +90,7 @@ export function useAccountRemovals(): UseAccountRemovalsReturn {
     const outcome = await submitTask({
       id: accountRemoveActivity.id(subject),
       kind: accountRemoveActivity.kind,
+      lane: accountRemoveActivity.laneOf?.(subject),
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<boolean>(
