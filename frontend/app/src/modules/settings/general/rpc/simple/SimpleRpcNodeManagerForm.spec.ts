@@ -47,16 +47,14 @@ describe('settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue', () => {
     wrapper = createWrapper('');
     await vi.advanceTimersToNextTimerAsync();
 
-    const valid = await wrapper.vm.validate();
-    expect(valid).toBe(false);
+    expect(wrapper.vm.validate()).toBe(false);
   });
 
   it('should pass validation with a non-empty url', async () => {
     wrapper = createWrapper('https://example.com');
     await vi.advanceTimersToNextTimerAsync();
 
-    const valid = await wrapper.vm.validate();
-    expect(valid).toBe(true);
+    expect(wrapper.vm.validate()).toBe(true);
   });
 
   it('should clear external error messages when the url changes', async () => {
@@ -96,7 +94,7 @@ describe('settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue', () => {
 
     expect(wrapper.find('.details .text-rui-error').exists()).toBe(false);
 
-    await wrapper.vm.validate();
+    wrapper.vm.validate();
     await nextTick();
 
     expect(wrapper.find('.details .text-rui-error').exists()).toBe(true);
