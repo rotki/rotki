@@ -138,6 +138,26 @@ def test_detect_api_key_tier_caches_and_reuses_value(temp_etherscan: Etherscan) 
     assert temp_etherscan._rate_limiter.capacity == 20
 
 
+def test_detect_api_key_tier_does_not_warn_for_missing_key(
+        function_scope_messages_aggregator,
+        tmpdir_factory,
+        sql_vm_instructions_cb,
+) -> None:
+    database = DBHandler(
+        user_data_dir=tmpdir_factory.mktemp('keyless-userdata'),
+        password='123',
+        msg_aggregator=function_scope_messages_aggregator,
+        initial_settings=None,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        resume_from_backup=False,
+    )
+    with patch.object(database.msg_aggregator, 'add_missing_key_message') as warning_mock:
+        etherscan = Etherscan(database=database, msg_aggregator=database.msg_aggregator)
+        warning_mock.assert_not_called()
+        assert etherscan._get_api_key_for_chain(ChainID.ETHEREUM) is None
+        warning_mock.assert_called_once_with(ExternalService.ETHERSCAN)
+
+
 def test_api_key_change_invalidates_cached_tier(temp_etherscan: Etherscan) -> None:
     temp_etherscan._cache_api_key_tier(tier=ETHERSCAN_TIER_BY_DAILY_LIMIT[500000])
     with patch.object(temp_etherscan, '_query', return_value={'creditLimit': 200000}):

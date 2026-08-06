@@ -10,7 +10,10 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
-from rotkehlchen.externalapis.interface import ExternalServiceWithRecommendedApiKey
+from rotkehlchen.externalapis.interface import (
+    ExternalServiceWithApiKey,
+    ExternalServiceWithRecommendedApiKey,
+)
 from rotkehlchen.externalapis.utils import maybe_read_integer
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -153,7 +156,9 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         Free and Lite are indistinguishable (both 100k/day), so the 100k bucket stays at the
         documented Free tier of 3 rps.
         """
-        if (api_key := self._get_api_key()) is None:
+        # Tier detection runs during user initialization, before Etherscan is actually needed.
+        # Bypass the recommended-key warning so new users are notified only on real usage.
+        if (api_key := ExternalServiceWithApiKey._get_api_key(self)) is None:
             self._rate_limiter.reset(
                 rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
                 capacity=FREE_ETHERSCAN_RATE_LIMIT_BURST,
