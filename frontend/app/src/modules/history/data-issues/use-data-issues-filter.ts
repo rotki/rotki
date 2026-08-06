@@ -8,7 +8,7 @@ import { assetSuggestions } from '@/modules/core/common/display/assets';
 import { IssueKind, IssueState } from '@/modules/history/data-issues/constants';
 import { useSetting } from '@/modules/settings/use-setting';
 
-enum DataIssuesFilterKeys {
+export enum DataIssuesFilterKeys {
   STATE = 'state',
   KIND = 'kind',
   ASSET = 'asset',
@@ -17,7 +17,7 @@ enum DataIssuesFilterKeys {
   END = 'end',
 }
 
-enum DataIssuesFilterValueKeys {
+export enum DataIssuesFilterValueKeys {
   STATE = 'state',
   KIND = 'kind',
   ASSET = 'asset',

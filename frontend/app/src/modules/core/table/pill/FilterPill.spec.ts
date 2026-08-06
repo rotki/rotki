@@ -75,6 +75,25 @@ describe('filterPill', () => {
     expect(wrapper.get('[data-testid=filter-pill-value]').text()).toContain('+1');
   });
 
+  // A field whose values are not all of one kind resolves the kind per value: the data-issues
+  // account is an address on a chain and an exchange account name elsewhere, and the exchange's
+  // icon comes from its location rather than from the value being filtered on.
+  it('should draw a value in its own display kind when the field resolves one', () => {
+    const accountField: FieldDef = {
+      ...field,
+      resolveDisplay: (value: string) => (value.startsWith('0x')
+        ? { kind: 'address' as const }
+        : { kind: 'location' as const, source: 'kraken' }),
+    };
+    const wrapper = mount(FilterPill, {
+      global: { plugins: [createCustomPinia()] },
+      props: { field: accountField, filter: { fieldKey: 'protocols', op: 'is', values: ['Kraken 1'] }, removeLabel: 'Remove' },
+    });
+
+    expect(wrapper.findComponent({ name: 'LocationIcon' }).props('item')).toBe('kraken');
+    expect(wrapper.findComponent({ name: 'EnsAvatar' }).exists()).toBe(false);
+  });
+
   // The pill could not be reached by keyboard at all: its root is a div with a click handler, so
   // Tab skipped it and an existing filter could not be reopened without a mouse.
   it('should expose the editable region as a button so it can be tabbed to', () => {

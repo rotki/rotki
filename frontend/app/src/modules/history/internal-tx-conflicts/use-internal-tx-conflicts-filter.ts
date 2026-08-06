@@ -4,13 +4,13 @@ import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFo
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSetting } from '@/modules/settings/use-setting';
 
-const InternalTxConflictFilterKeys = {
+export const InternalTxConflictFilterKeys = {
   CHAIN: 'chain',
   FROM_TIMESTAMP: 'start',
   TO_TIMESTAMP: 'end',
 } as const;
 
-const InternalTxConflictFilterValueKeys = {
+export const InternalTxConflictFilterValueKeys = {
   CHAIN: 'chain',
   FROM_TIMESTAMP: 'fromTimestamp',
   TO_TIMESTAMP: 'toTimestamp',

@@ -2,7 +2,8 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
 import { startPromise } from '@shared/utils';
-import TableFilter from '@/modules/core/table/TableFilter.vue';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import DataIssueDetailDrawer from '@/modules/history/data-issues/components/DataIssueDetailDrawer.vue';
 import DataIssuesTable from '@/modules/history/data-issues/components/DataIssuesTable.vue';
@@ -10,6 +11,7 @@ import DataIssueSummaryBar from '@/modules/history/data-issues/components/DataIs
 import ResolveManuallyDialog from '@/modules/history/data-issues/components/ResolveManuallyDialog.vue';
 import { DEFAULT_LIST_STATES, IssueState } from '@/modules/history/data-issues/constants';
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
+import { useDataIssueFields } from '@/modules/history/data-issues/use-data-issue-fields';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
 import { type Filters, type Matcher, useDataIssuesFilter } from '@/modules/history/data-issues/use-data-issues-filter';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
@@ -52,7 +54,8 @@ const {
   urlState: routeWhen(mainPage),
 });
 
-const matchers = filterSchema.matchers;
+const fields = useDataIssueFields(filterSchema.matchers);
+const pillLabels = usePillBarLabels();
 
 // Tracks whether the first load has finished. The all-clear screen keys off this
 // (plus `hasAnyIssues`) instead of the list's transient `isLoading`, so a refresh
@@ -219,14 +222,12 @@ onMounted(async () => {
       />
 
       <RuiCard>
-        <div class="flex justify-end mb-4">
-          <div class="w-full sm:max-w-[30rem]">
-            <TableFilter
-              v-model:matches="filters"
-              :matchers="matchers"
-            />
-          </div>
-        </div>
+        <PillFilterBar
+          v-model:matches="filters"
+          class="mb-4"
+          :fields="fields"
+          :labels="pillLabels"
+        />
 
         <DataIssuesTable
           v-model:pagination="pagination"

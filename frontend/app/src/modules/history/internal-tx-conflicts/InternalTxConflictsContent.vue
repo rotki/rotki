@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
-import TableFilter from '@/modules/core/table/TableFilter.vue';
 import InternalTxConflictRowActions from '@/modules/history/internal-tx-conflicts/InternalTxConflictRowActions.vue';
+import { useInternalTxConflictFields } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflict-fields';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
@@ -46,6 +48,9 @@ const {
   setFilter,
   sort,
 } = useInternalTxConflicts();
+
+const fields = useInternalTxConflictFields(matchers);
+const pillLabels = usePillBarLabels();
 
 const {
   areAllSelected,
@@ -187,9 +192,12 @@ defineExpose({
       </RuiTab>
     </RuiTabs>
 
+    <!-- Compact never puts the bar beside the selection actions: the pinned rail is narrow while
+         the viewport is not, so a `md:` row read the screen and squeezed the bar into a column of
+         its own, one control per line. -->
     <div
-      class="flex flex-col md:flex-row md:items-center gap-2 pt-4 pb-2 shrink-0"
-      :class="compact ? 'px-3' : 'px-4'"
+      class="flex flex-col gap-2 pt-4 pb-2 shrink-0"
+      :class="compact ? 'px-3' : 'px-4 md:flex-row md:items-center'"
     >
       <div class="flex items-center gap-3">
         <template v-if="isRunning">
@@ -233,9 +241,10 @@ defineExpose({
         </template>
       </div>
 
-      <TableFilter
+      <PillFilterBar
         v-model:matches="filters"
-        :matchers="matchers"
+        :fields="fields"
+        :labels="pillLabels"
         :disabled="loading"
         class="flex-1"
       />
