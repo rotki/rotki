@@ -11,6 +11,7 @@ import type { Module } from '@/modules/core/common/modules';
 import { assert, bigNumberify, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { getAccountAddress, getChain } from '@/modules/accounts/account-utils';
+import { EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { useAccountEdits } from '@/modules/accounts/use-account-edits';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -178,7 +179,7 @@ export function useAccountManage(): UseAccountManageReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const { updateAccountData, updateAccounts } = useBlockchainAccountsStore();
-  const { addAccounts, addEvmAccounts, fetchAccounts, refreshAccounts } = useBlockchainAccountManagement();
+  const { addAccounts, fetchAccounts, refreshAccounts } = useBlockchainAccountManagement();
   const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
   const { editAccount, editAgnosticAccount } = useAccountEdits();
   const { showErrorMessage } = useNotifications();
@@ -212,20 +213,23 @@ export function useAccountManage(): UseAccountManageReturn {
       set(pending, true);
       if (edit) {
         updateAccounts(state.chain, await editAccount(state.data, state.chain));
+        return true;
       }
-      else {
-        if (state.chain === 'all') {
-          await addEvmAccounts({
-            modules: state.modules,
-            payload: state.data,
-          });
-        }
-        else {
-          await addAccounts(state.chain, {
-            modules: isEth ? state.modules : undefined,
-            payload: state.data,
-          });
-        }
+
+      // `'all'` is the form's word for every EVM chain; the mechanism's is the pseudo-chain.
+      const chain = state.chain === 'all' ? EVM_PSEUDO_CHAIN : state.chain;
+      const summary = await addAccounts(chain, {
+        modules: isEth || state.chain === 'all' ? state.modules : undefined,
+        payload: state.data,
+      }, { wait: true });
+
+      // Nothing added and something failed: keep the dialog open so the user can correct it. A
+      // partial success closes it — the failures were already reported by the mechanism, and the
+      // accounts that did land are real. Previously the count decided this: one address threw, and
+      // two or more closed the dialog as a success even when some of them had failed.
+      if (summary.added.length === 0 && summary.failed.length > 0) {
+        handleErrors(new Error(t('account_form.error.addition_failed', { count: summary.failed.length }, summary.failed.length)));
+        return false;
       }
     }
     catch (error: unknown) {
@@ -265,7 +269,17 @@ export function useAccountManage(): UseAccountManageReturn {
         startPromise(fetchAccounts(chain));
       }
       else {
-        await addAccounts(chain, state.data);
+        // Awaited, so an xpub that fails to add keeps its dialog open rather than closing as if it
+        // had worked. `handleErrors` is given the xpub props so `ApiValidationError` can still fill
+        // in per-field errors.
+        const summary = await addAccounts(chain, state.data, { wait: true });
+        if (summary.added.length === 0 && summary.failed.length > 0) {
+          handleErrors(new Error(t('account_form.error.addition_failed', { count: 1 }, 1)), {
+            derivationPath: '',
+            xpub: '',
+          });
+          return false;
+        }
       }
     }
     catch (error: unknown) {

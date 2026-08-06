@@ -82,6 +82,9 @@ vi.mock('@/modules/accounts/blockchain/use-account-manage', () => {
 vi.mock('@/modules/accounts/use-account-addition-notifications', () => ({
   useAccountAdditionNotifications: vi.fn(() => ({
     createFailureNotification: vi.fn(),
+    // Reached now that every import row goes through the one addition path; the old single-address
+    // shortcut never called it.
+    notifyFailedToAddAddress: vi.fn(),
     notifyUser: vi.fn(),
   })),
 }));
@@ -137,17 +140,18 @@ describe('useAccountImport', () => {
     await importAccounts(mockFile);
 
     expect(addAccount).toHaveBeenCalledTimes(1);
+    // Several rows, so the import runs under one umbrella and every addition is parented to it.
     expect(addAccount).toHaveBeenCalledWith('eth', [{
       address: '0x124',
       label: 'Name2',
       tags: ['tag1', 'tag2'],
-    }]);
+    }], { parent: expect.any(String) });
     expect(addEvmAccount).toHaveBeenCalledTimes(1);
     expect(addEvmAccount).toHaveBeenCalledWith({
       address: '0x123',
       label: 'Name1',
       tags: ['tag1', 'tag2'],
-    });
+    }, { parent: expect.any(String) });
     expect(queryAddTag).toHaveBeenCalledTimes(2);
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag1' }));
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag2' }));
@@ -174,13 +178,13 @@ describe('useAccountImport', () => {
       address: '0x125',
       label: 'Name3',
       tags: ['tag1', 'tag2'],
-    }]);
+    }], { parent: expect.any(String) });
     expect(addEvmAccount).toHaveBeenCalledTimes(1);
     expect(addEvmAccount).toHaveBeenCalledWith({
       address: '0x123',
       label: 'Name1',
       tags: ['tag1', 'tag2'],
-    });
+    }, { parent: expect.any(String) });
     expect(queryAddTag).toHaveBeenCalledTimes(2);
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag1' }));
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag2' }));
@@ -215,6 +219,8 @@ describe('useAccountImport', () => {
     await importAccounts(mockFile);
 
     expect(addAccount).toHaveBeenCalledTimes(1);
+    // A one-row import needs no umbrella, so this addition has no parent — the batch suppresses the
+    // umbrella rather than showing a parent over a single child.
     expect(addAccount).toHaveBeenCalledWith('btc', {
       label: 'Test Pub',
       tags: ['tag1'],
@@ -223,7 +229,7 @@ describe('useAccountImport', () => {
         xpub: XPUB,
         xpubType: 'p2pkh',
       },
-    });
+    }, undefined);
 
     expect(queryAddTag).toHaveBeenCalledTimes(1);
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag1' }));

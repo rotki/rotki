@@ -73,6 +73,7 @@
   "account_form": {
     "advanced_tooltip": "Display the advanced xpub options | Hide the advanced xpub options",
     "error": {
+      "addition_failed": "No account was added. | The address could not be added. | None of the {count} addresses could be added.",
       "description": "Error while adding account: {error}",
       "title": "Adding Account",
       "validator_needs_credentials": "Could not add the validator. Configure a consensus layer RPC or add a Beaconcha.in API key in settings, then try again."
@@ -6013,6 +6014,7 @@
         "add": "Adding {address}",
         "detect": "Detecting EVM accounts",
         "ens": "Resolving ENS names for {count} address | Resolving ENS names for {count} addresses",
+        "import": "Importing {count} account | Importing {count} accounts",
         "remove": "Removing {address}",
         "remove_count": "Removing {count} account | Removing {count} accounts",
         "remove_xpub": "Removing xpub {xpub}"

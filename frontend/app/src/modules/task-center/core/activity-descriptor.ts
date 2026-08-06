@@ -1,5 +1,5 @@
 import type { Lane } from '@/modules/task-center/core/orchestrator/spec';
-import { type ActivityId, type ActivityKind, type ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { type ActivityId, type ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 
 /**
  * Every leading slice of a tuple, including the empty one: `[A, B]` gives `[] | [A] | [A, B]`.
@@ -50,6 +50,12 @@ export interface ActivityDescriptor<TSubject, TKey extends KeyParts> {
   readonly partsOf: (subject: TSubject) => KeyParts;
   /** As {@link partsOf}, for a prefix of the key: the coarse read. */
   readonly partsWithin: (prefix: Prefixes<TKey>) => KeyParts;
+  /**
+   * The id of the umbrella that parents a fan-out over `prefix` — one row per chain rather than one
+   * per address. It sits under the same prefix as its children, so a coarse reader covers both, and
+   * ends in a literal that no subject key part can produce.
+   */
+  readonly batchId: (prefix: Prefixes<TKey>) => ActivityId;
   /** The lane one subject's work runs in, when it declares one. */
   readonly laneOf?: (subject: TSubject) => Lane;
 }
@@ -71,6 +77,8 @@ export function defineActivity<TSubject, const TKey extends KeyParts>(
   const partsOf = (subject: TSubject): KeyParts => [input.part, ...input.key(subject)];
 
   return {
+    batchId: (prefix: Prefixes<TKey>): ActivityId =>
+      makeActivityId(input.kind, input.part, ...prefix, ActivityPart.BATCH),
     id: (subject: TSubject): ActivityId => makeActivityId(input.kind, ...partsOf(subject)),
     keyOf: input.key,
     kind: input.kind,

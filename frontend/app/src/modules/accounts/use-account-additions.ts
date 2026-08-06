@@ -1,18 +1,29 @@
 import type { AccountPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
 import type { EvmAccountsResult } from '@/modules/core/api/types/accounts';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { err, flatMap as flatMapResult, map as mapResult, ok, type Result } from 'plainfp/result';
 import { accountActivityLabel, accountAddActivity, type AccountSubject, accountTargetOf, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
+/**
+ * `parent` is passed explicitly rather than picked up from ambient state. A module-scoped "current
+ * batch" would read more cleanly at the call sites, but it only works while every submit happens in
+ * the synchronous prologue of the batch callback — an `await` introduced anywhere above it would
+ * silently orphan the child from its umbrella, with nothing to report it.
+ */
+export interface AdditionOptions {
+  readonly parent?: ActivityId;
+}
+
 interface UseAccountAdditionsReturn {
   /**
    * The added address on success. Failure stays a value: `TaskError` distinguishes a cancelled
    * add from a failed one, which a bare string could not.
    */
-  addAccount: (chain: string, payload: AccountPayload[] | XpubAccountPayload) => Promise<Result<string, TaskError>>;
-  addEvmAccount: (payload: AccountPayload) => Promise<Result<EvmAccountsResult, TaskError>>;
+  addAccount: (chain: string, payload: AccountPayload[] | XpubAccountPayload, options?: AdditionOptions) => Promise<Result<string, TaskError>>;
+  addEvmAccount: (payload: AccountPayload, options?: AdditionOptions) => Promise<Result<EvmAccountsResult, TaskError>>;
 }
 
 export function useAccountAdditions(): UseAccountAdditionsReturn {
@@ -20,13 +31,18 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
   const { submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
 
-  const addAccount = async (chain: string, payload: AccountPayload[] | XpubAccountPayload): Promise<Result<string, TaskError>> => {
+  const addAccount = async (
+    chain: string,
+    payload: AccountPayload[] | XpubAccountPayload,
+    options?: AdditionOptions,
+  ): Promise<Result<string, TaskError>> => {
     const address = Array.isArray(payload) ? payload.map(item => item.address).join(',\n') : payload.xpub.xpub;
     const subject = { chain, target: accountTargetOf(payload) };
     const outcome = await submitTask<string[] | true>({
       id: accountAddActivity.id(subject),
       kind: accountAddActivity.kind,
       lane: accountAddActivity.laneOf?.(subject),
+      parent: options?.parent,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<string[] | true, TaskError>> => mapResult(
         await runTask<string[] | true>(
@@ -55,13 +71,17 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
     });
   };
 
-  const addEvmAccount = async ({ address, label, tags }: AccountPayload): Promise<Result<EvmAccountsResult, TaskError>> => {
+  const addEvmAccount = async (
+    { address, label, tags }: AccountPayload,
+    options?: AdditionOptions,
+  ): Promise<Result<EvmAccountsResult, TaskError>> => {
     // The pseudo-chain, not a real one: this asks for every EVM chain at once.
     const subject: AccountSubject = { chain: EVM_PSEUDO_CHAIN, target: { address, kind: 'address' } };
     const outcome = await submitTask<EvmAccountsResult>({
       id: accountAddActivity.id(subject),
       kind: accountAddActivity.kind,
       lane: accountAddActivity.laneOf?.(subject),
+      parent: options?.parent,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<EvmAccountsResult, TaskError>> => mapResult(
         await runTask<EvmAccountsResult>(

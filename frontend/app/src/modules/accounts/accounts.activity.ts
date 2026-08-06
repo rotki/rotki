@@ -2,6 +2,7 @@ import type { AccountPayload, XpubAccountPayload } from '@/modules/accounts/bloc
 import { msg } from '@/message-key';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { defineActivity } from '@/modules/task-center/core/activity-descriptor';
+import { ACCOUNTS_ADD_LANE_PREFIX, familyLane } from '@/modules/task-center/core/orchestrator/spec';
 import { ActivityKind, ActivityPart, type ActivityText } from '@/modules/task-center/core/types';
 
 /**
@@ -76,15 +77,28 @@ export function accountTargetOf(payload: AccountPayload[] | XpubAccountPayload):
  * dedups on id identity, so a chain-only id collapsed every address after the first onto the
  * first's promise and reported them added without ever sending them.
  *
- * ⚠️ No lane yet: `addMultipleAccounts` still throttles itself with
- * `awaitParallelExecution(..., 2)`. Declaring a lane cap here as well would put two mechanisms on
- * one piece of work, which is what the warning on `DECODE_LANE` is about. The lane arrives when
- * that limiter is removed, not before.
+ * The lane caps additions at 2 per chain, which is the parallelism `addMultipleAccounts` used to
+ * apply with `awaitParallelExecution(..., 2)`. That limiter is gone: one mechanism governs, as the
+ * warning on `DECODE_LANE` requires.
  */
 export const accountAddActivity = defineActivity<AccountSubject, readonly [string, string]>({
   key: subject => [subject.chain, targetKey(subject.target)],
   kind: ActivityKind.ACCOUNTS,
+  lane: subject => familyLane(ACCOUNTS_ADD_LANE_PREFIX, subject.chain),
   part: ActivityPart.ADD,
+});
+
+/**
+ * A CSV import, as one activity parenting every addition it makes. Keyed by source so two imports
+ * are two runs; there is only one source today, and naming it keeps the id from being kind-only.
+ *
+ * It is the outermost umbrella: an import fans out over rows, and a row with several addresses fans
+ * out again under its own per-chain umbrella.
+ */
+export const accountImportActivity = defineActivity<{ source: string }, readonly [string]>({
+  key: subject => [subject.source],
+  kind: ActivityKind.ACCOUNTS,
+  part: ActivityPart.IMPORT,
 });
 
 /**

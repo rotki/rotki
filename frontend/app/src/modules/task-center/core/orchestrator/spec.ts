@@ -16,7 +16,7 @@ export type StaticLane = (typeof STATIC_LANES)[number];
  * (`tx-sync:<chain>`). Also a closed list, so a family cap cannot be keyed by a prefix no producer
  * ever mints.
  */
-export const LANE_FAMILIES = ['tx-sync:', 'exchange-events:'] as const;
+export const LANE_FAMILIES = ['tx-sync:', 'exchange-events:', 'accounts-add:'] as const;
 
 export type LaneFamily = (typeof LANE_FAMILIES)[number];
 
@@ -84,6 +84,14 @@ export const ACCOUNT_SYNC_LANE_PREFIX: LaneFamily = 'tx-sync:';
  * A flat lane cap could not express it: two slots would happily go to the same exchange.
  */
 export const EXCHANGE_EVENTS_LANE_PREFIX: LaneFamily = 'exchange-events:';
+
+/**
+ * Family prefix for the per-chain account-addition lanes (`accounts-add:<chain>`). Capped at 2 per
+ * chain, which is the parallelism `addMultipleAccounts` used to apply itself with
+ * `awaitParallelExecution(..., 2)` — per chain, because that limiter wrapped a per-chain call. A
+ * flat lane would serialize additions across chains instead, which is not what it replaced.
+ */
+export const ACCOUNTS_ADD_LANE_PREFIX: LaneFamily = 'accounts-add:';
 
 /** Push live step progress for a running activity. Pure no-op-safe; calling after the spec
  *  settles is harmless (ignored by the orchestrator). */
