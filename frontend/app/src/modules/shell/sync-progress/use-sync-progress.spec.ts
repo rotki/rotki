@@ -361,10 +361,14 @@ describe('useSyncProgress', () => {
       store.updateGeneral({ ...store.general, disabledChainQueries: value });
     }
 
+    // The transaction messages carry `SupportedBlockchain.value` ('ETH') while the setting is keyed
+    // by its serialized form ('eth'), so the fixtures use the real casing of each side. The chain
+    // half is already normalized by `useTxQueryStatusStore`; the address half is not, which is why
+    // the per-address test below pairs a checksummed address on the wire with a lower-cased rule.
     it('should exclude a disabled chain from the transaction progress', () => {
       setupTxStore([
-        createEvmTxStatus('0x111', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-        createEvmTxStatus('0x222', 'polygon_pos', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+        createEvmTxStatus('0x111', 'ETH', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+        createEvmTxStatus('0x222', 'POLYGON_POS', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
       ]);
 
       // 1 of 2 accounts done while polygon counts, so the bar sits at 50%.
@@ -377,9 +381,9 @@ describe('useSyncProgress', () => {
 
     it('should exclude a disabled chain from the chain and account counts', () => {
       setupTxStore([
-        createEvmTxStatus('0x111', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-        createEvmTxStatus('0x222', 'polygon_pos', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
-        createEvmTxStatus('0x333', 'polygon_pos', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+        createEvmTxStatus('0x111', 'ETH', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+        createEvmTxStatus('0x222', 'POLYGON_POS', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+        createEvmTxStatus('0x333', 'POLYGON_POS', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
       ]);
       disableChains({ polygon_pos: [] });
 
@@ -392,10 +396,11 @@ describe('useSyncProgress', () => {
 
     it('should exclude a single disabled address but keep the rest of its chain', () => {
       setupTxStore([
-        createEvmTxStatus('0x111', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-        createEvmTxStatus('0x222', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+        createEvmTxStatus('0x111', 'ETH', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+        createEvmTxStatus('0xAbC', 'ETH', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
       ]);
-      disableChains({ eth: ['0x222'] });
+      // Checksummed on the wire, lower-cased in the rule: a case-only difference must not defeat it.
+      disableChains({ eth: ['0xabc'] });
 
       const { chains, totalAccounts, totalChains } = useSyncProgress();
       expect(get(totalChains)).toBe(1);

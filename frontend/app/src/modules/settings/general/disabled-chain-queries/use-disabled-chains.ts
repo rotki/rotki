@@ -26,10 +26,15 @@ export interface UseDisabledChainsReturn {
  * panel and (later) balances all have to answer the same question, and a second copy of the
  * empty-array rule is how the two surfaces drift apart.
  *
- * Comparisons are case-insensitive on both chain and address. The setting is written from tracked
- * accounts while the sync panel's addresses arrive over the websocket, so a case-only difference
- * between the two would silently defeat a rule the user did set. No two distinct addresses differ
- * only by case in any chain rotki supports.
+ * Comparisons are case-insensitive on both chain and address, because the two sides are written by
+ * different parties: the rule comes from the settings dialog, while what it is matched against
+ * arrives over the websocket. Addresses are the case that bites - nothing normalizes them on the
+ * way in, so a checksummed address on the wire against a lower-cased one in the rule would silently
+ * defeat a rule the user did set. Chains are already lower-cased by `useTxQueryStatusStore`, so
+ * normalizing them here is only belt-and-braces for callers that do not.
+ *
+ * No two distinct addresses differ only by case in any chain rotki supports, so folding case cannot
+ * over-match.
  */
 export function useDisabledChains(): UseDisabledChainsReturn {
   const disabledChainQueries = useSetting('disabledChainQueries');
