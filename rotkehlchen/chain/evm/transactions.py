@@ -471,8 +471,15 @@ class EvmTransactions(ABC):  # noqa: B024
         if end_ts >= ts_now() - RECENT_RANGE_MARGIN:
             try:
                 to_block = self.evm_inquirer.get_blocknumber_by_time(ts=end_ts, closest='before')
-                covered_end_ts = min(end_ts, self.evm_inquirer.get_block_timestamp(to_block))
-            except (RemoteError, NoAvailableIndexers, DeserializationError) as e:
+                covered_end_ts = min(end_ts, self.evm_inquirer.get_block_timestamp(
+                    block_number=to_block,
+                    full_transactions=False,  # only the timestamp is needed here
+                    # the block is whatever the indexers' index reaches, so read its
+                    # timestamp from them too instead of from a node that may sit on a
+                    # different view of the chain
+                    call_order=[self.evm_inquirer.indexers_node],
+                ))
+            except (RemoteError, NoAvailableIndexers, DeserializationError, KeyError) as e:
                 log.warning(
                     'Not recording the %s query range %s - %s for %s: could not establish how '
                     'far the indexers actually covered due to %s',

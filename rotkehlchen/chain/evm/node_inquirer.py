@@ -613,15 +613,25 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             self,
             num: int,
             call_order: Sequence[WeightedNode] | None = None,
+            full_transactions: bool = True,
     ) -> dict[str, Any]:
         return self._query(
             method=self._get_block_by_number,
             call_order=call_order,
             num=num,
+            full_transactions=full_transactions,
         )
 
-    def _get_block_by_number(self, web3: Web3 | None, num: int) -> dict[str, Any]:
+    def _get_block_by_number(
+            self,
+            web3: Web3 | None,
+            num: int,
+            full_transactions: bool = True,
+    ) -> dict[str, Any]:
         """Returns the block object corresponding to the given block number
+
+        full_transactions decides whether the transactions of the block come as objects or
+        as hashes. It only reaches the indexers, since web3 already returns hashes here.
 
         May raise:
         - RemoteError if an external service such as Etherscan is queried and
@@ -633,6 +643,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             return self._try_indexers(func=lambda indexer: indexer.get_block_by_number(
                 chain_id=self.chain_id,
                 block_number=num,
+                full_transactions=full_transactions,
             ))
 
         block_data: MutableAttributeDict = MutableAttributeDict(web3.eth.get_block(num))  # type: ignore # pylint: disable=no-member
@@ -1670,12 +1681,31 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             log.error(f'Failed to get L1 fees for {account=} {tx_hash=} {block_number=} due to {e!s}')  # noqa: E501
             return None
 
-    def get_block_timestamp(self, block_number: int) -> Timestamp:
-        """Return block timestamp using cache first and falling back to block query."""
+    def get_block_timestamp(
+            self,
+            block_number: int,
+            full_transactions: bool = True,
+            call_order: Sequence[WeightedNode] | None = None,
+    ) -> Timestamp:
+        """Return block timestamp using cache first and falling back to block query.
+
+        full_transactions and call_order are only passed through to the block query. Nothing
+        but the timestamp is read here, so False asks for a payload that is an order of
+        magnitude smaller. It defaults to True to leave the shape of the existing callers'
+        requests alone.
+
+        May raise:
+        - RemoteError if the block cannot be queried
+        - DeserializationError or KeyError if the response carries no readable timestamp
+        """
         if (cached_timestamp := self.block_to_timestamp_cache.get(block_number)) is not None:
             return cached_timestamp
 
-        block_data = self.get_block_by_number(num=block_number)
+        block_data = self.get_block_by_number(
+            num=block_number,
+            call_order=call_order,
+            full_transactions=full_transactions,
+        )
         timestamp = Timestamp(read_integer(block_data, 'timestamp', 'web3'))
         self.block_to_timestamp_cache.add(key=block_number, value=timestamp)
         return timestamp

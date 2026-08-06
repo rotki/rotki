@@ -925,8 +925,14 @@ class EtherscanLikeApi(ABC):
             self,
             chain_id: SUPPORTED_CHAIN_IDS,
             block_number: int,
+            full_transactions: bool = True,
     ) -> dict[str, Any]:
         """Gets block data by block number.
+
+        With full_transactions the block carries every transaction as an object, which for a
+        busy block is a few hundred KB. Callers that only read block metadata should ask for
+        False and get the transaction hashes instead.
+
         May raise:
          - RemoteError if there are problems contacting the indexer
          - DeserializationError if the indexer returns an invalid response
@@ -934,7 +940,7 @@ class EtherscanLikeApi(ABC):
         if (block_data := self._query_rpc_method(  # pyright: ignore[reportUnnecessaryComparison]  # indexer can return None.
             chain_id=chain_id,
             method='eth_getBlockByNumber',
-            options={'tag': hex(block_number), 'boolean': 'true'},
+            options={'tag': hex(block_number), 'boolean': str(full_transactions).lower()},
         )) is None:
             raise RemoteError(f'Null response from {self.name} for block {block_number}')
 
