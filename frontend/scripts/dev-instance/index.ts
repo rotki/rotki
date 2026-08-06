@@ -12,6 +12,8 @@ export {
   writeManagedEnv,
 } from './env-file';
 
+export { humanBytes } from './format';
+
 export {
   buildSeedSkip,
   copyTree,
