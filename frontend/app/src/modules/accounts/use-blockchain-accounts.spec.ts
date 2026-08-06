@@ -253,6 +253,21 @@ describe('useBlockchainAccounts', () => {
       expect(mocks.notifyError).not.toHaveBeenCalled();
     });
 
+    // Same hazard as the add side: an account delete and an xpub delete on one chain both used
+    // `accounts:remove:<chain>`, so an overlap deduped the second onto the first while the UI
+    // still dropped its rows — accounts that were never deleted reappear on the next fetch.
+    it('should give a plain removal and an xpub removal distinct activity ids', async () => {
+      whenOk({ perAccount: {}, totals: { assets: {}, liabilities: {} } }, false);
+      const { useBlockchainAccounts } = await importModule();
+      const accounts = useBlockchainAccounts();
+
+      await accounts.removeAccount({ accounts: ['0xabc'], chain: 'btc' });
+      await accounts.deleteXpub({ chain: 'btc', xpub: 'xpub123' });
+
+      const [first, second] = submitTask.mock.calls.map(([spec]) => spec.id);
+      expect(first).not.toBe(second);
+    });
+
     it('should notify on an actionable failure', async () => {
       whenActionable('remove failed');
       const { useBlockchainAccounts } = await importModule();

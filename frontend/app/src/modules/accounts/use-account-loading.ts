@@ -12,18 +12,19 @@ interface UseAccountLoadingReturn {
 export const useAccountLoading = createSharedComposable((): UseAccountLoadingReturn => {
   const pending = ref<boolean>(false);
 
-  const { useWorkStatus, useWorkStatusPrefix } = useTaskCenter();
+  const { useWorkStatusPrefix } = useTaskCenter();
   const { isRefreshing } = storeToRefs(useBalanceRefreshState());
 
   // With a blockchain, gate on that chain's add/remove activity; without, aggregate over all.
-  // Add ids carry the address after the chain (so concurrent additions don't dedup onto each
-  // other), so the per-chain lookup has to be a prefix match; remove ids are still chain-only.
+  // Both add and remove ids carry what they act on after the chain, so that two concurrent
+  // operations don't dedup onto each other. Every per-chain lookup is therefore a prefix match:
+  // an exact one no longer matches any id and would silently never report activity.
   const isAccountOperationRunning = (blockchain?: string): ComputedRef<boolean> => {
     const add = blockchain
       ? useWorkStatusPrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD, blockchain)
       : useWorkStatusPrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD);
     const remove = blockchain
-      ? useWorkStatus(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, blockchain)
+      ? useWorkStatusPrefix(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, blockchain)
       : useWorkStatusPrefix(ActivityKind.ACCOUNTS, ActivityPart.REMOVE);
     return logicOr(
       computed<boolean>(() => get(add).active),
