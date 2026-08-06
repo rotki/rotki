@@ -18,7 +18,7 @@ import asyncio
 import logging
 from contextlib import suppress
 from http.cookies import SimpleCookie
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Final, cast
 
 from a2wsgi import WSGIMiddleware
 
@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from flask import Flask
 
     from rotkehlchen.api.rest import RestAPI
+    from rotkehlchen.api.session_token import SessionClaims
     from rotkehlchen.api.websockets.notifier import RotkiNotifier
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,12 @@ WSGI_BRIDGE_WORKERS = 64
 # disconnected, which is strictly better than silent unbounded lag.
 WS_QUEUE_MAXSIZE = 4096
 
+# Close codes. 1013 (try again later) asks the frontend to reconnect, which a lagging
+# client should; 1008 (policy violation) is for a connection whose session died under
+# it, where a reconnect is expected to be refused at the handshake.
+WS_CLOSE_TRY_AGAIN_LATER: Final = 1013
+WS_CLOSE_POLICY_VIOLATION: Final = 1008
+
 
 class AsgiWebsocketSubscriber:
     """A websocket client of the asyncio server, as seen by RotkiNotifier.
@@ -63,15 +70,26 @@ class AsgiWebsocketSubscriber:
     Duck-types the parts of geventwebsocket's WebSocket that the notifier
     touches: a ``closed`` attribute and a ``send()`` that may be called from
     any greenlet/thread and raises on a dead client.
+
+    ``username``/``sid`` are the credential the handshake was accepted under, kept so
+    the connection can be dropped when that session stops being the live one. Both are
+    None when the cookie gate is off (Electron/dev), where there is nothing to revoke.
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
+    def __init__(
+            self,
+            loop: asyncio.AbstractEventLoop,
+            username: str | None = None,
+            sid: str | None = None,
+    ) -> None:
         self.loop = loop
+        self.username = username
+        self.sid = sid
         self.queue: asyncio.Queue[str] = asyncio.Queue(maxsize=WS_QUEUE_MAXSIZE)
         self.closed = False
-        # set by _serve_websocket; invoked on the event-loop thread when the
-        # queue overflows, to tear the lagging connection down
-        self.overflow_callback: Callable[[], None] | None = None
+        # set by _serve_websocket; invoked on the event-loop thread with a close code,
+        # to tear this connection down
+        self.close_callback: Callable[[int], None] | None = None
         # messages that found the queue full, retained so teardown hands them to
         # the notifier along with the queued ones instead of losing them
         self._overflowed: list[str] = []
@@ -91,8 +109,21 @@ class AsgiWebsocketSubscriber:
         except asyncio.QueueFull:
             self._overflowed.append(message)
             self.closed = True
-            if self.overflow_callback is not None:
-                self.overflow_callback()
+            if self.close_callback is not None:
+                self.close_callback(WS_CLOSE_TRY_AGAIN_LATER)
+
+    def disconnect(self, code: int = WS_CLOSE_POLICY_VIOLATION) -> None:
+        """Tear this connection down. May be called from any thread.
+
+        Marking it closed first stops broadcasts from reaching it even before the
+        event loop gets to the close, so a revoked client sees nothing more from the
+        moment the caller returns.
+        """
+        self.closed = True
+        if self.close_callback is None:
+            return
+        with suppress(RuntimeError):  # the event loop is closed (server shutdown)
+            self.loop.call_soon_threadsafe(self.close_callback, code)
 
     def send(self, message: str) -> None:
         """Enqueue a message for delivery by the connection's sender coroutine.
@@ -127,6 +158,7 @@ async def _serve_websocket(
         notifier: RotkiNotifier,
         receive: Receive,
         send: Send,
+        claims: SessionClaims | None = None,
 ) -> None:
     """Serve one websocket connection: subscribe it to the notifier, drain its
     queue into the socket and echo back any client messages (parity with the
@@ -135,7 +167,11 @@ async def _serve_websocket(
     if message['type'] != 'websocket.connect':
         return
     await send({'type': 'websocket.accept'})
-    subscriber = AsgiWebsocketSubscriber(loop=asyncio.get_running_loop())
+    subscriber = AsgiWebsocketSubscriber(
+        loop=asyncio.get_running_loop(),
+        username=claims.username if claims is not None else None,
+        sid=claims.sid if claims is not None else None,
+    )
 
     async def drain_queue() -> None:
         while True:
@@ -144,18 +180,19 @@ async def _serve_websocket(
 
     sender_task = asyncio.create_task(drain_queue())
 
-    async def disconnect_lagging_client() -> None:
+    async def close_connection(code: int) -> None:
         sender_task.cancel()
         with suppress(BaseException):  # swallow CancelledError and any send failure
             await sender_task
         with suppress(Exception):  # the client may be gone already
-            await send({'type': 'websocket.close', 'code': 1013})  # 1013: try again later
+            await send({'type': 'websocket.close', 'code': code})
 
-    def on_overflow() -> None:  # runs on the event-loop thread
-        log.warning('Disconnecting a websocket client that stopped consuming messages')
-        asyncio.get_running_loop().create_task(disconnect_lagging_client())
+    def on_close_requested(code: int) -> None:  # runs on the event-loop thread
+        if code == WS_CLOSE_TRY_AGAIN_LATER:
+            log.warning('Disconnecting a websocket client that stopped consuming messages')
+        asyncio.get_running_loop().create_task(close_connection(code))
 
-    subscriber.overflow_callback = on_overflow
+    subscriber.close_callback = on_close_requested
     notifier.subscribe(subscriber)
     try:
         while True:
@@ -186,16 +223,20 @@ async def _handle_lifespan(receive: Receive, send: Send) -> None:
             return
 
 
-def _ws_session_allowed(rest_api: RestAPI, scope: Scope) -> bool:
+def _check_ws_session(rest_api: RestAPI, scope: Scope) -> tuple[bool, SessionClaims | None]:
     """Docker session-cookie gate for the /ws handshake (the ASGI equivalent of the
     Flask before_request gate, which does not see websocket upgrades). Inert without a
     key; otherwise the same-origin `rotki_session` cookie rides the handshake and must
     carry the user's active `sid` (a newer login kicks it — #3156). Rejected here
-    *before* accept, so an unauthenticated client never completes the handshake."""
+    *before* accept, so an unauthenticated client never completes the handshake.
+
+    Returns whether the handshake may proceed together with the claims it was accepted
+    under, which the connection keeps so a later revocation can drop it: this gate runs
+    once, and nothing re-reads the cookie for the life of the socket."""
     if rest_api.session_key is None:
-        return True  # feature off (Electron/dev)
+        return True, None  # feature off (Electron/dev)
     if rest_api.session_store is None:
-        return False
+        return False, None
     raw_cookie = ''
     # ASGI scope headers are an iterable of (name, value) byte pairs; the Scope union
     # types `.get` as `object`, so narrow it for the loop below.
@@ -206,7 +247,9 @@ def _ws_session_allowed(rest_api: RestAPI, scope: Scope) -> bool:
             break
     morsel = SimpleCookie(raw_cookie).get(SESSION_COOKIE_NAME)
     claims = read_session_token(rest_api.session_key, morsel.value if morsel is not None else '')
-    return claims is not None and rest_api.session_store.is_active(claims.username, claims.sid)
+    if claims is None or not rest_api.session_store.is_active(claims.username, claims.sid):
+        return False, None
+    return True, claims
 
 
 def create_asgi_app(
@@ -229,10 +272,19 @@ def create_asgi_app(
         if scope['type'] == 'lifespan':
             await _handle_lifespan(receive=receive, send=send)
         elif scope['type'] == 'websocket':
-            if scope['path'] not in {'/ws', '/ws/'} or not _ws_session_allowed(rest_api, scope):
+            if scope['path'] not in {'/ws', '/ws/'}:
                 await send({'type': 'websocket.close'})  # reject the handshake
                 return
-            await _serve_websocket(notifier=rotki_notifier, receive=receive, send=send)
+            allowed, claims = _check_ws_session(rest_api, scope)
+            if not allowed:
+                await send({'type': 'websocket.close'})  # reject the handshake
+                return
+            await _serve_websocket(
+                notifier=rotki_notifier,
+                receive=receive,
+                send=send,
+                claims=claims,
+            )
         else:
             await wsgi_app(scope, receive, send)
 

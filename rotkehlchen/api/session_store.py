@@ -27,6 +27,7 @@ from rotkehlchen.api.session_token import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
 
 SESSION_DB_NAME: Final = 'session.db'
@@ -55,6 +56,11 @@ class SessionStore:
         self._lock = Semaphore()
         # user -> ActiveSession; the hot authority (session.db is the durable mirror).
         self._active: dict[str, ActiveSession] = {}
+        # Invoked after any change to which sessions are live, so holders of a
+        # credential that is checked only once -- websockets, which are gated at the
+        # handshake and never again -- can be dropped. Wired by RestAPI at startup;
+        # None in tests that exercise the store on its own.
+        self.on_sessions_changed: Callable[[], None] | None = None
         with self._lock:
             self._conn.execute('PRAGMA journal_mode=WAL')
             self._initialize_schema()
@@ -123,7 +129,12 @@ class SessionStore:
                 exp=exp,
                 mcp_sid=None,
             )
+        self._notify_sessions_changed()  # outside the lock: the callback closes sockets
         return mint_session_token(self.session_key, username, sid, expires_at=exp)['token']
+
+    def _notify_sessions_changed(self) -> None:
+        if self.on_sessions_changed is not None:
+            self.on_sessions_changed()
 
     def reissue(self, username: str, sid: str) -> str | None:
         """Rolling refresh: re-mint the *same* sid with a fresh idle ``exp`` capped at
@@ -200,6 +211,7 @@ class SessionStore:
             self._conn.execute('DELETE FROM active_sessions WHERE user = ?', (username,))
             self._conn.commit()
             self._active.pop(username, None)
+        self._notify_sessions_changed()
 
     def close(self) -> None:
         """Close the underlying connection (test cleanup; the process shares one store)."""

@@ -5,7 +5,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from rotkehlchen.api.asgi import WS_QUEUE_MAXSIZE, AsgiWebsocketSubscriber
+from rotkehlchen.api.asgi import (
+    WS_CLOSE_POLICY_VIOLATION,
+    WS_CLOSE_TRY_AGAIN_LATER,
+    WS_QUEUE_MAXSIZE,
+    AsgiWebsocketSubscriber,
+)
+from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -72,6 +78,42 @@ def test_requeue_undelivered_messages():
     assert msg_aggregator.consume_warnings() == ['a warning']
 
 
+def test_disconnect_deauthorized_drops_only_revoked_connections():
+    """The /ws gate runs once, at the handshake, so a revoked session's socket has to
+    be dropped from the outside or it keeps receiving broadcasts -- including, after a
+    takeover, the next user's. Connections opened with the cookie gate off carry no
+    credential and must be left alone."""
+    loop = asyncio.new_event_loop()
+    try:
+        notifier = RotkiNotifier()
+        revoked = AsgiWebsocketSubscriber(loop=loop, username='alice', sid='old-sid')
+        live = AsgiWebsocketSubscriber(loop=loop, username='bob', sid='live-sid')
+        ungated = AsgiWebsocketSubscriber(loop=loop)  # cookie gate off (Electron/dev)
+        for subscriber in (revoked, live, ungated):
+            subscriber.close_callback = Mock()
+            notifier.subscribe(subscriber)
+
+        notifier.disconnect_deauthorized(
+            lambda username, sid: (username, sid) in {(None, None), ('bob', 'live-sid')},
+        )
+        loop.run_until_complete(asyncio.sleep(0))  # flush the scheduled callbacks
+
+        assert revoked.closed is True
+        revoked.close_callback.assert_called_once_with(WS_CLOSE_POLICY_VIOLATION)
+        assert live.closed is False
+        live.close_callback.assert_not_called()
+        assert ungated.closed is False
+        ungated.close_callback.assert_not_called()
+
+        # and the revoked one receives nothing more, even before its close lands
+        notifier.broadcast(message_type='legacy', to_send_data={'value': 'after'})
+        loop.run_until_complete(asyncio.sleep(0))  # send() enqueues via the loop too
+        assert revoked.queue.qsize() == 0
+        assert live.queue.qsize() == 1
+    finally:
+        loop.close()
+
+
 def test_queue_overflow_retains_dropped_messages():
     """The message that finds the queue full must be kept for teardown: it is
     handed back to the notifier by drain_pending along with the queued ones, so
@@ -79,14 +121,14 @@ def test_queue_overflow_retains_dropped_messages():
     loop = asyncio.new_event_loop()
     try:
         subscriber = AsgiWebsocketSubscriber(loop=loop)
-        subscriber.overflow_callback = (overflow_callback := Mock())
+        subscriber.close_callback = (close_callback := Mock())
         for i in range(WS_QUEUE_MAXSIZE):
             subscriber.enqueue(f'message {i}')
         assert subscriber.closed is False
 
         subscriber.enqueue('the overflowing message')
         assert subscriber.closed is True
-        overflow_callback.assert_called_once()
+        close_callback.assert_called_once_with(WS_CLOSE_TRY_AGAIN_LATER)
         # an enqueue already scheduled before the overflow closed it is kept too
         subscriber.enqueue('a message scheduled before the disconnect')
 

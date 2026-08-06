@@ -488,6 +488,26 @@ class RestAPI:
                 session_key=self.session_key,
             ) if self.session_key is not None else None
         )
+        if self.session_store is not None:
+            # The /ws gate only runs at the handshake, so a socket accepted under a
+            # session that is later revoked or displaced would keep receiving
+            # broadcasts. Sweeping on every store change covers logout, same-user
+            # takeover and displacement by another user in one place.
+            self.session_store.on_sessions_changed = self._disconnect_revoked_websockets
+
+    def _disconnect_revoked_websockets(self) -> None:
+        """Drop every websocket whose session is no longer the live one for its user.
+
+        A connection carries the username/sid its handshake was accepted under; None
+        for both means the cookie gate was off when it connected, so there is nothing
+        to revoke it against.
+        """
+        def is_authorized(username: str | None, sid: str | None) -> bool:
+            if username is None or sid is None:
+                return True
+            return self.session_store is not None and self.session_store.is_active(username, sid)
+
+        self.rotkehlchen.rotki_notifier.disconnect_deauthorized(is_authorized)
 
     @contextmanager
     def session_usage(self) -> Iterator[bool]:

@@ -1,6 +1,6 @@
 from typing import NamedTuple
 
-from rotkehlchen.api.asgi import _ws_session_allowed
+from rotkehlchen.api.asgi import _check_ws_session
 from rotkehlchen.api.session_token import mint_session_token
 
 SESSION_KEY = b'ws-test-session-signing-key'
@@ -36,7 +36,7 @@ def test_ws_session_cookie_gate() -> None:
     False rejects the handshake *before* accept."""
     # disabled (no key) ⇒ allowed without a cookie
     disabled = _FakeRestAPI(session_key=None, session_store=None)
-    assert _ws_session_allowed(disabled, _scope()) is True  # type: ignore[arg-type]  # fake rest api
+    assert _check_ws_session(disabled, _scope()) == (True, None)  # type: ignore[arg-type]  # fake rest api
 
     rest_api = _FakeRestAPI(
         session_key=SESSION_KEY,
@@ -44,15 +44,19 @@ def test_ws_session_cookie_gate() -> None:
     )
 
     # key set, no cookie ⇒ rejected
-    assert _ws_session_allowed(rest_api, _scope()) is False  # type: ignore[arg-type]  # fake rest api
+    assert _check_ws_session(rest_api, _scope()) == (False, None)  # type: ignore[arg-type]  # fake rest api
 
     # key set, invalid cookie ⇒ rejected
-    assert _ws_session_allowed(rest_api, _scope('rotki_session=garbage')) is False  # type: ignore[arg-type]  # fake rest api
+    assert _check_ws_session(rest_api, _scope('rotki_session=garbage')) == (False, None)  # type: ignore[arg-type]  # fake rest api
 
     # key set, valid signature but a stale sid (a previous session) ⇒ rejected
     stale = mint_session_token(SESSION_KEY, 'alice', 'a-different-sid')['token']
-    assert _ws_session_allowed(rest_api, _scope(f'rotki_session={stale}')) is False  # type: ignore[arg-type]  # fake rest api
+    assert _check_ws_session(rest_api, _scope(f'rotki_session={stale}')) == (False, None)  # type: ignore[arg-type]  # fake rest api
 
-    # key set, valid cookie with the active sid (alongside other cookies) ⇒ allowed
+    # key set, valid cookie with the active sid (alongside other cookies) ⇒ allowed,
+    # and the claims come back so the accepted connection can be revoked later
     token = mint_session_token(SESSION_KEY, 'alice', ACTIVE_SID)['token']
-    assert _ws_session_allowed(rest_api, _scope(f'theme=dark; rotki_session={token}')) is True  # type: ignore[arg-type]  # fake rest api
+    allowed, claims = _check_ws_session(rest_api, _scope(f'theme=dark; rotki_session={token}'))  # type: ignore[arg-type]  # fake rest api
+    assert allowed is True
+    assert claims is not None
+    assert (claims.username, claims.sid) == (ACTIVE_USER, ACTIVE_SID)

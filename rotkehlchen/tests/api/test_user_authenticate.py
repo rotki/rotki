@@ -9,6 +9,7 @@ exercised end-to-end through real HTTP.
 """
 import time
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import suppress
 from http import HTTPStatus
 from threading import Event
 from typing import TYPE_CHECKING, Any
@@ -16,6 +17,7 @@ from unittest.mock import patch
 
 import pytest
 import requests
+from websocket import WebSocket, WebSocketConnectionClosedException, create_connection
 
 from rotkehlchen.api.session_store import (
     SESSION_DB_NAME,
@@ -79,6 +81,7 @@ def _enable_session(api_server: APIServer) -> SessionStore:
         session_key=SESSION_KEY,
     )
     rest_api.session_store = store
+    store.on_sessions_changed = rest_api._disconnect_revoked_websockets
     return store
 
 
@@ -96,6 +99,13 @@ def _cookie_sid(token: str) -> str:
     claims = read_session_token(SESSION_KEY, token)
     assert claims is not None
     return claims.sid
+
+
+def _read_until_closed(websocket: WebSocket) -> None:
+    """Read until the server's close frame lands. Messages already in flight may trail
+    the close, so a single recv is not enough to see the disconnect."""
+    while True:
+        websocket.recv()
 
 
 def _logout(api_server: APIServer, username: str) -> None:
@@ -689,4 +699,45 @@ def test_login_displaces_every_other_users_session(
             sid=mcp_claims.sid,
         ) is False
     finally:
+        _disable_session(rotkehlchen_api_server)
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_websocket_is_dropped_when_its_session_stops_being_active(
+        rotkehlchen_api_server: APIServer,
+        rest_api_port: int,
+        username: str,
+) -> None:
+    """An open websocket must die with the session that opened it.
+
+    The /ws gate runs once, at the handshake, and nothing re-reads the cookie for the
+    life of the socket. Without a push from the session store's side, a connection
+    accepted under a session that is later revoked or displaced stays subscribed to a
+    notifier that scopes nothing by user, so it keeps receiving every broadcast --
+    after a takeover, the *next* user's. The client is under no obligation to notice
+    it has been logged out and hang up.
+    """
+    store = _enable_session(rotkehlchen_api_server)
+    msg_aggregator = rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator
+    websocket = create_connection(
+        f'ws://127.0.0.1:{rest_api_port}/ws/',
+        cookie=f'{SESSION_COOKIE_NAME}={store.login(username)}',
+        timeout=10,
+    )
+    try:
+        msg_aggregator.add_error('while the session is live')
+        assert 'while the session is live' in websocket.recv()
+
+        store.login(f'{username}_next')  # a different user takes the session over
+
+        with pytest.raises(WebSocketConnectionClosedException):
+            _read_until_closed(websocket)
+
+        # and nothing broadcast afterwards was written to it
+        msg_aggregator.add_error('after the takeover')
+        assert websocket.connected is False
+    finally:
+        with suppress(WebSocketConnectionClosedException, OSError):
+            websocket.close()
         _disable_session(rotkehlchen_api_server)
