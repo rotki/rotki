@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { TaskOrchestrator } from './core/orchestrator/api';
 import { createTaskOrchestrator } from './core/orchestrator/orchestrator';
-import { ACCOUNT_SYNC_LANE_PREFIX, BALANCES_LANE, CHAIN_SYNC_LANE, DECODE_LANE, EXCHANGE_EVENTS_LANE_PREFIX, EXCHANGE_LANE, SESSION_LANE, UMBRELLA_LANE } from './core/orchestrator/spec';
+import { ACCOUNT_SYNC_LANE_PREFIX, ACCOUNTS_ADD_LANE_PREFIX, BALANCES_LANE, CHAIN_SYNC_LANE, DECODE_LANE, EXCHANGE_EVENTS_LANE_PREFIX, EXCHANGE_LANE, SESSION_LANE, UMBRELLA_LANE } from './core/orchestrator/spec';
 import { type Activity, type ActivityKind, makeActivityId, type WorkStatus } from './core/types';
 
 /**
@@ -64,11 +64,12 @@ export const useTaskOrchestrator = createSharedComposable((): UseTaskOrchestrato
       [SESSION_LANE]: 2,
       [UMBRELLA_LANE]: 16,
     },
-    // Two accounts per chain, not two across every chain; one query per exchange location.
-    laneFamilies: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [EXCHANGE_EVENTS_LANE_PREFIX]: 1 },
+    // Two accounts per chain, not two across every chain; one query per exchange location; two
+    // addresses added at once per chain, replacing `addMultipleAccounts`'s own limiter.
+    laneFamilies: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [ACCOUNTS_ADD_LANE_PREFIX]: 2, [EXCHANGE_EVENTS_LANE_PREFIX]: 1 },
     // ...and only two chains' lanes live at once. The accounts of every chain are declared up
     // front now, so without this the per-chain cap alone would let all of them progress together.
-    laneFamilyActive: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [EXCHANGE_EVENTS_LANE_PREFIX]: 2 },
+    laneFamilyActive: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [ACCOUNTS_ADD_LANE_PREFIX]: 2, [EXCHANGE_EVENTS_LANE_PREFIX]: 2 },
   });
   const activities = shallowRef<Activity[]>([]);
   // Bumped on every orchestrator change so `useWorkStatus` computeds re-read the (non-reactive)

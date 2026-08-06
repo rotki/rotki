@@ -1,9 +1,10 @@
 import { Blockchain } from '@rotki/common';
 import { err, isErr, ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { type XpubAccountPayload, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 import { Module } from '@/modules/core/common/modules';
-import { TaskFailed } from '@/modules/core/tasks/task-result';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 
 const h = vi.hoisted(() => ({
@@ -22,6 +23,32 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/modules/accounts/use-account-additions', () => ({
   useAccountAdditions: vi.fn(() => ({ addAccount: h.addAccount, addEvmAccount: h.addEvmAccount })),
+}));
+
+// A faithful stand-in: every item runs, each gets a parent. The real one submits an activity, which
+// would drag the whole task layer (and pinia) into these specs; its own behaviour is covered in
+// use-activity-batch.spec.ts.
+async function runEach<TItem, TResult>(items: readonly TItem[], run: (item: TItem, parent: string) => Promise<TResult>): Promise<TResult[]> {
+  return Promise.all(items.map(async item => run(item, 'accounts:add:batch')));
+}
+
+vi.mock('@/modules/accounts/use-account-addition-batch', () => ({
+  // Not mocked: it is a pure comparison against the pseudo-chain, and stubbing it would let the
+  // spec disagree with the module about what "every EVM chain" means.
+  isEveryEvmChain: (chain: string): boolean => chain === 'EVM',
+  useAccountAdditionBatch: vi.fn(() => ({
+    runAdditionBatch: async <TItem, TResult>(
+      _chain: string,
+      items: readonly TItem[],
+      _addressOf: (item: TItem) => string,
+      run: (item: TItem, parent: string) => Promise<TResult>,
+    ): Promise<TResult[]> => runEach(items, run),
+    runEvmAdditionBatch: async <TItem, TResult>(
+      items: readonly TItem[],
+      _addressOf: (item: TItem) => string,
+      run: (item: TItem, parent: string) => Promise<TResult>,
+    ): Promise<TResult[]> => runEach(items, run),
+  })),
 }));
 
 vi.mock('@/modules/balances/blockchain/use-token-detection-orchestrator', () => ({
@@ -98,7 +125,8 @@ describe('useAccountAdditionService', () => {
       h.addAccount.mockResolvedValue(ok('0xabc'));
       const { useAccountAdditionService } = await importModule();
       const result = await useAccountAdditionService().addSingleAccount({ address: '0xabc', tags: null }, 'eth');
-      expect(h.addAccount).toHaveBeenCalledWith('eth', [{ address: '0xabc', tags: null }]);
+      // The third argument is the batch options; a single add has no umbrella to parent it to.
+      expect(h.addAccount).toHaveBeenCalledWith('eth', [{ address: '0xabc', tags: null }], undefined);
       expect(result).toStrictEqual(ok('0xabc'));
     });
 
@@ -110,7 +138,7 @@ describe('useAccountAdditionService', () => {
       };
       const { useAccountAdditionService } = await importModule();
       const result = await useAccountAdditionService().addSingleAccount(xpubPayload, 'btc');
-      expect(h.addAccount).toHaveBeenCalledWith('btc', xpubPayload);
+      expect(h.addAccount).toHaveBeenCalledWith('btc', xpubPayload, undefined);
       expect(result).toStrictEqual(ok('xpub123'));
     });
 
@@ -173,57 +201,78 @@ describe('useAccountAdditionService', () => {
     });
   });
 
-  describe('addMultipleAccounts', () => {
+  describe('addAccounts', () => {
+    const onComplete = vi.fn<() => Promise<void>>(async () => {});
+
     it('should collect added accounts and invoke the completion callback', async () => {
       h.addAccount.mockResolvedValue(ok('0xabc'));
-      const onComplete = vi.fn<() => Promise<void>>(async () => {});
       const { useAccountAdditionService } = await importModule();
-      await useAccountAdditionService().addMultipleAccounts(
-        [{ address: '0xabc', tags: null }],
-        'eth',
-        undefined,
-        onComplete,
-      );
-      expect(onComplete).toHaveBeenCalledWith({ addedAccounts: [{ address: '0xabc', chain: 'eth' }], chain: 'eth', modulesToEnable: undefined });
+      const summary = await useAccountAdditionService().addAccounts('eth', [{ address: '0xabc', tags: null }], undefined, onComplete);
+
+      expect(summary.added).toStrictEqual([{ address: '0xabc', chain: 'eth' }]);
+      expect(onComplete).toHaveBeenCalledWith({ addedAccounts: [{ address: '0xabc', chain: 'eth' }], chain: 'eth', isXpub: false, modulesToEnable: undefined });
       expect(h.notifyFailedToAddAddress).not.toHaveBeenCalled();
     });
 
-    it('should notify about failed additions', async () => {
+    it('should notify about failed additions and report them in the summary', async () => {
       h.addAccount.mockResolvedValue(err(TaskFailed({ message: 'nope' })));
-      const onComplete = vi.fn<() => Promise<void>>(async () => {});
       const { useAccountAdditionService } = await importModule();
-      await useAccountAdditionService().addMultipleAccounts(
-        [{ address: '0xabc', tags: null }],
-        'eth',
-        undefined,
-        onComplete,
-      );
+      const summary = await useAccountAdditionService().addAccounts('eth', [{ address: '0xabc', tags: null }], undefined, onComplete);
+
+      expect(summary.failed).toStrictEqual([{ address: '0xabc', tags: null }]);
       expect(h.notifyFailedToAddAddress).toHaveBeenCalledOnce();
     });
-  });
 
-  describe('addMultipleEvmAccounts', () => {
-    it('should collect added accounts and invoke the completion callback', async () => {
-      h.addEvmAccount.mockResolvedValue(ok({ added: { '0xabc': ['eth'] } }));
-      const onComplete = vi.fn<() => Promise<void>>(async () => {});
+    // A cancellation is neither added nor failed: reporting it would raise "failed to add" for work
+    // the user deliberately stopped.
+    it('should record a cancellation without reporting it as a failure', async () => {
+      h.addAccount.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
       const { useAccountAdditionService } = await importModule();
-      await useAccountAdditionService().addMultipleEvmAccounts(
-        { modules: undefined, payload: [{ address: '0xabc', tags: null }] },
-        onComplete,
-      );
-      expect(onComplete).toHaveBeenCalledWith({ addedAccounts: [{ address: '0xabc', chain: 'eth' }], modulesToEnable: undefined });
+      const summary = await useAccountAdditionService().addAccounts('eth', [{ address: '0xabc', tags: null }], undefined, onComplete);
+
+      expect(summary).toMatchObject({ added: [], cancelled: true, failed: [] });
       expect(h.notifyFailedToAddAddress).not.toHaveBeenCalled();
     });
 
-    it('should notify about failed evm additions', async () => {
-      h.addEvmAccount.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
-      const onComplete = vi.fn<() => Promise<void>>(async () => {});
+    it('should route the pseudo-chain through the evm addition', async () => {
+      h.addEvmAccount.mockResolvedValue(ok({ added: { '0xabc': ['eth'] } }));
       const { useAccountAdditionService } = await importModule();
-      await useAccountAdditionService().addMultipleEvmAccounts(
-        { modules: undefined, payload: [{ address: '0xabc', tags: null }] },
-        onComplete,
-      );
-      expect(h.notifyFailedToAddAddress).toHaveBeenCalledOnce();
+      const summary = await useAccountAdditionService().addAccounts(EVM_PSEUDO_CHAIN, [{ address: '0xabc', tags: null }], undefined, onComplete);
+
+      expect(h.addEvmAccount).toHaveBeenCalledOnce();
+      expect(summary.added).toStrictEqual([{ address: '0xabc', chain: 'eth' }]);
+      // No `chain` on the completion params: the pseudo-chain is not one to refresh.
+      expect(onComplete).toHaveBeenCalledWith({ addedAccounts: [{ address: '0xabc', chain: 'eth' }], chain: undefined, isXpub: false, modulesToEnable: undefined });
+    });
+
+    // An xpub is one unit of work, so it never fans out — but it returns the same summary, which is
+    // what lets the caller have a single shape to handle.
+    it('should add an xpub through the same function and summary', async () => {
+      h.addAccount.mockResolvedValue(ok('xpub123'));
+      const xpubPayload: XpubAccountPayload = {
+        tags: null,
+        xpub: { derivationPath: '', xpub: 'xpub123', xpubType: XpubKeyType.XPUB },
+      };
+      const { useAccountAdditionService } = await importModule();
+      const summary = await useAccountAdditionService().addAccounts('btc', xpubPayload, undefined, onComplete);
+
+      expect(summary.added).toStrictEqual([{ address: 'xpub123', chain: 'btc' }]);
+      expect(onComplete).toHaveBeenCalledWith(expect.objectContaining({ isXpub: true }));
+    });
+
+    // The notification lists addresses, so an xpub has no row in it — but the summary must still
+    // carry the failure or the form would close as though the xpub had been added.
+    it('should report a failed xpub in the summary but not in the notification', async () => {
+      h.addAccount.mockResolvedValue(err(TaskFailed({ message: 'nope' })));
+      const xpubPayload: XpubAccountPayload = {
+        tags: null,
+        xpub: { derivationPath: '', xpub: 'xpub123', xpubType: XpubKeyType.XPUB },
+      };
+      const { useAccountAdditionService } = await importModule();
+      const summary = await useAccountAdditionService().addAccounts('btc', xpubPayload, undefined, onComplete);
+
+      expect(summary.failed).toStrictEqual([xpubPayload]);
+      expect(h.notifyFailedToAddAddress).not.toHaveBeenCalled();
     });
   });
 
