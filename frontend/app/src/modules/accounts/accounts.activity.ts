@@ -2,7 +2,7 @@ import type { AccountPayload, XpubAccountPayload } from '@/modules/accounts/bloc
 import { msg } from '@/message-key';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { defineActivity } from '@/modules/task-center/core/activity-descriptor';
-import { ACCOUNTS_ADD_LANE_PREFIX, familyLane } from '@/modules/task-center/core/orchestrator/spec';
+import { ACCOUNTS_ADD_LANE_PREFIX, ACCOUNTS_REMOVE_LANE_PREFIX, familyLane } from '@/modules/task-center/core/orchestrator/spec';
 import { ActivityKind, ActivityPart, type ActivityText } from '@/modules/task-center/core/types';
 
 /**
@@ -109,6 +109,7 @@ export const accountImportActivity = defineActivity<{ source: string }, readonly
 export const accountRemoveActivity = defineActivity<AccountSubject, readonly [string, string]>({
   key: subject => [subject.chain, targetKey(subject.target)],
   kind: ActivityKind.ACCOUNTS,
+  lane: subject => familyLane(ACCOUNTS_REMOVE_LANE_PREFIX, subject.chain),
   part: ActivityPart.REMOVE,
 });
 
@@ -125,5 +126,8 @@ export const accountRemoveActivity = defineActivity<AccountSubject, readonly [st
 export const accountAgnosticRemoveActivity = defineActivity<{ category: string; address: string }, readonly [ActivityPart, string, string]>({
   key: subject => [ActivityPart.CATEGORY, subject.category, subject.address],
   kind: ActivityKind.ACCOUNTS,
+  // Same family as the chain-scoped removal: the family caps one active lane, so an agnostic
+  // removal and a per-chain one still take turns rather than racing each other.
+  lane: subject => familyLane(ACCOUNTS_REMOVE_LANE_PREFIX, subject.category),
   part: ActivityPart.REMOVE,
 });
