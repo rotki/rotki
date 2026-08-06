@@ -33,10 +33,12 @@ describe('settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue', () => {
         plugins: [pinia],
       },
       props: {
-        errorMessages,
-        modelValue,
+        'errorMessages': errorMessages,
+        'modelValue': modelValue,
+        'stateUpdated': false,
         'onUpdate:errorMessages': async (value: ValidationErrors): Promise<void> => wrapper.setProps({ errorMessages: value }),
         'onUpdate:modelValue': async (value: string): Promise<void> => wrapper.setProps({ modelValue: value }),
+        'onUpdate:stateUpdated': async (value: boolean): Promise<void> => wrapper.setProps({ stateUpdated: value }),
       },
     });
   }
@@ -75,5 +77,40 @@ describe('settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.props('errorMessages')).toEqual({ modelValue: ['Invalid endpoint'] });
+  });
+
+  it('should display an externally reported error on the field', async () => {
+    wrapper = createWrapper('https://example.com');
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.find('input').setValue('https://bad-url');
+    await wrapper.setProps({ errorMessages: { modelValue: ['Invalid endpoint'] } });
+    await nextTick();
+
+    expect(wrapper.find('.details .text-rui-error').text()).toBe('Invalid endpoint');
+  });
+
+  it('should reveal the error on the field when validation fails', async () => {
+    wrapper = createWrapper('');
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(wrapper.find('.details .text-rui-error').exists()).toBe(false);
+
+    await wrapper.vm.validate();
+    await nextTick();
+
+    expect(wrapper.find('.details .text-rui-error').exists()).toBe(true);
+  });
+
+  it('should report the state as updated once the url is edited', async () => {
+    wrapper = createWrapper('https://example.com');
+    await vi.advanceTimersByTimeAsync(600);
+
+    expect(wrapper.props('stateUpdated')).toBe(false);
+
+    await wrapper.find('input').setValue('https://example.com/rpc');
+    await vi.advanceTimersByTimeAsync(600);
+
+    expect(wrapper.props('stateUpdated')).toBe(true);
   });
 });
