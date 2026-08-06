@@ -1,12 +1,12 @@
 import type { DeleteBlockchainAccountParams, DeleteXpubParams } from '@/modules/accounts/blockchain-accounts';
 import type { BlockchainBalances } from '@/modules/balances/types/blockchain-balances';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
-import { accountActivityLabel, accountRemoveActivity, type AccountSubject } from '@/modules/accounts/accounts.activity';
+import { accountActivityLabel, accountAgnosticRemoveActivity, accountRemoveActivity, type AccountSubject } from '@/modules/accounts/accounts.activity';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
-import { ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseAccountRemovalsReturn {
   removeAccount: (payload: DeleteBlockchainAccountParams) => Promise<void>;
@@ -61,16 +61,11 @@ export function useAccountRemovals(): UseAccountRemovalsReturn {
     }));
   };
 
-  /**
-   * ⚠️ Keyed by chain *type*, not chain, so it shares a keyspace with {@link removeAccount} without
-   * sharing its subject — which is why it has no descriptor. Two agnostic removals of different
-   * addresses under one chain type still collide, the same hazard the descriptors fixed elsewhere;
-   * left as-is here so this move stays a pure move.
-   */
   const removeAgnosticAccount = async (chainType: string, address: string): Promise<void> => {
+    const subject = { address, category: chainType };
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, chainType),
-      kind: ActivityKind.ACCOUNTS,
+      id: accountAgnosticRemoveActivity.id(subject),
+      kind: accountAgnosticRemoveActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<BlockchainBalances>(
