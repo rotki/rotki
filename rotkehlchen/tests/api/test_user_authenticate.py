@@ -9,6 +9,7 @@ exercised end-to-end through real HTTP.
 """
 import time
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import suppress
 from http import HTTPStatus
 from threading import Event
 from typing import TYPE_CHECKING, Any
@@ -16,8 +17,13 @@ from unittest.mock import patch
 
 import pytest
 import requests
+from websocket import WebSocket, WebSocketConnectionClosedException, create_connection
 
-from rotkehlchen.api.session_store import SESSION_DB_NAME, SessionStore
+from rotkehlchen.api.session_store import (
+    SESSION_DB_NAME,
+    SessionStore,
+    is_persisted_mcp_session_active,
+)
 from rotkehlchen.api.session_token import (
     MCP_BACKEND_PROOF_HEADER,
     SESSION_COOKIE_NAME,
@@ -75,6 +81,7 @@ def _enable_session(api_server: APIServer) -> SessionStore:
         session_key=SESSION_KEY,
     )
     rest_api.session_store = store
+    store.on_sessions_changed = rest_api._disconnect_revoked_websockets
     return store
 
 
@@ -92,6 +99,13 @@ def _cookie_sid(token: str) -> str:
     claims = read_session_token(SESSION_KEY, token)
     assert claims is not None
     return claims.sid
+
+
+def _read_until_closed(websocket: WebSocket) -> None:
+    """Read until the server's close frame lands. Messages already in flight may trail
+    the close, so a single recv is not enough to see the disconnect."""
+    while True:
+        websocket.recv()
 
 
 def _logout(api_server: APIServer, username: str) -> None:
@@ -585,3 +599,145 @@ def test_cookie_less_rules_pinned(rotkehlchen_api_server: APIServer) -> None:
         (f'{prefix}/users/<string:name>', 'POST'),
         (f'{prefix}/users/<string:name>/authenticate', 'POST'),
     })
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_credentials_are_bound_to_the_user_that_issued_them(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+) -> None:
+    """A cookie or bearer minted for one user must not read another user's data.
+
+    Validating a credential proves the session is live, not that it belongs to the data
+    behind the request: core unlocks one user at a time and scopes nothing by the caller.
+
+    The situation is reachable because a user change is not always preceded by a logout.
+    A restart clears `user_is_logged_in` without revoking anything, so the next login can
+    be a different user while the previous one's session row is still live, rehydrated
+    from the durable mirror, and its bearer still sitting in an MCP client. That is what
+    this reproduces: the unlocked user is `username`, while the only live session belongs
+    to someone else.
+    """
+    store = _enable_session(rotkehlchen_api_server)
+    try:
+        other = f'{username}_previous'
+        other_cookie = store.login(other)
+        other_claims = read_session_token(SESSION_KEY, other_cookie)
+        assert other_claims is not None
+        other_bearer = store.issue_mcp_token(username=other, sid=other_claims.sid)
+        assert other_bearer is not None
+
+        # Both credentials are live by the session store's own reckoning, which is
+        # exactly why validating them is not enough on its own.
+        assert store.is_active(other, other_claims.sid) is True
+        mcp_claims = read_mcp_token(SESSION_KEY, other_bearer)
+        assert mcp_claims is not None
+        assert store.is_mcp_active(username=other, sid=mcp_claims.sid) is True
+
+        settings_url = api_url_for(rotkehlchen_api_server, 'settingsresource')
+        assert requests.get(
+            settings_url,
+            cookies={SESSION_COOKIE_NAME: other_cookie},
+        ).status_code == HTTPStatus.UNAUTHORIZED
+        assert requests.get(
+            settings_url,
+            headers={
+                'Authorization': f'Bearer {other_bearer}',
+                MCP_BACKEND_PROOF_HEADER: create_mcp_backend_proof(
+                    key=SESSION_KEY,
+                    token=other_bearer,
+                ),
+            },
+        ).status_code == HTTPStatus.UNAUTHORIZED
+
+        # The unlocked user's own credential still works, so the check rejects the
+        # mismatch rather than simply everything.
+        assert requests.get(
+            settings_url,
+            cookies={SESSION_COOKIE_NAME: store.login(username)},
+        ).status_code == HTTPStatus.OK
+    finally:
+        _disable_session(rotkehlchen_api_server)
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_login_displaces_every_other_users_session(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+) -> None:
+    """A login must end every other user's session, not just overwrite its own row.
+
+    `active_sessions` is keyed by user, so the UPSERT only ever rewrites the row of the
+    user logging in. Core unlocks one user at a time, so any other row is a session that
+    can no longer be reached, and leaving it behind let a previous user's cookie and MCP
+    bearer outlive the login that displaced them. A bearer is handed to an external MCP
+    client, so it survives the browser losing its cookie.
+    """
+    store = _enable_session(rotkehlchen_api_server)
+    try:
+        other = f'{username}_previous'
+        other_cookie = store.login(other)
+        other_claims = read_session_token(SESSION_KEY, other_cookie)
+        assert other_claims is not None
+        other_bearer = store.issue_mcp_token(username=other, sid=other_claims.sid)
+        assert other_bearer is not None
+        mcp_claims = read_mcp_token(SESSION_KEY, other_bearer)
+        assert mcp_claims is not None
+
+        store.login(username)
+
+        assert store.is_active(other, other_claims.sid) is False
+        assert store.is_mcp_active(username=other, sid=mcp_claims.sid) is False
+        # Also gone from the durable mirror, which is the authority MCP reads in its
+        # own process and the one that survives a restart.
+        assert is_persisted_mcp_session_active(
+            db_path=(
+                rotkehlchen_api_server.rest_api.rotkehlchen.data_dir /
+                GLOBALDIR_NAME / SESSION_DB_NAME
+            ),
+            username=other,
+            sid=mcp_claims.sid,
+        ) is False
+    finally:
+        _disable_session(rotkehlchen_api_server)
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_websocket_is_dropped_when_its_session_stops_being_active(
+        rotkehlchen_api_server: APIServer,
+        rest_api_port: int,
+        username: str,
+) -> None:
+    """An open websocket must die with the session that opened it.
+
+    The /ws gate runs once, at the handshake, and nothing re-reads the cookie for the
+    life of the socket. Without a push from the session store's side, a connection
+    accepted under a session that is later revoked or displaced stays subscribed to a
+    notifier that scopes nothing by user, so it keeps receiving every broadcast --
+    after a takeover, the *next* user's. The client is under no obligation to notice
+    it has been logged out and hang up.
+    """
+    store = _enable_session(rotkehlchen_api_server)
+    msg_aggregator = rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator
+    websocket = create_connection(
+        f'ws://127.0.0.1:{rest_api_port}/ws/',
+        cookie=f'{SESSION_COOKIE_NAME}={store.login(username)}',
+        timeout=10,
+    )
+    try:
+        msg_aggregator.add_error('while the session is live')
+        assert 'while the session is live' in websocket.recv()
+
+        store.login(f'{username}_next')  # a different user takes the session over
+
+        with pytest.raises(WebSocketConnectionClosedException):
+            _read_until_closed(websocket)
+
+        # and nothing broadcast afterwards was written to it
+        msg_aggregator.add_error('after the takeover')
+        assert websocket.connected is False
+    finally:
+        with suppress(WebSocketConnectionClosedException, OSError):
+            websocket.close()
+        _disable_session(rotkehlchen_api_server)

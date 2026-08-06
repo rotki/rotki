@@ -64,14 +64,34 @@ def test_is_active_rejects_unknown_user_and_wrong_sid(tmp_path):
 
 
 @pytest.mark.freeze_time(BASE)
-def test_login_is_per_user_isolated(tmp_path):
+def test_login_displaces_every_other_user(tmp_path):
+    """A login ends every other user's session, not just the row it upserts.
+
+    Core unlocks one user at a time, so any other row is a session that can no longer
+    be reached. Leaving it behind let a displaced user's cookie -- and the MCP bearer
+    minted from it, which lives in an external client and is untouched by the browser
+    losing its cookie -- outlive the login that displaced them.
+    """
     store = _store(tmp_path)
     alice = read_session_token(KEY, store.login('alice'))
+    assert alice is not None
+    alice_bearer = store.issue_mcp_token(username='alice', sid=alice.sid)
+    assert alice_bearer is not None
+    assert (alice_mcp := read_mcp_token(KEY, alice_bearer)) is not None
+
     bob = read_session_token(KEY, store.login('bob'))
-    assert alice is not None and bob is not None
-    # bob logging in does not disturb alice's session (per-user single-active)
-    assert store.is_active('alice', alice.sid) is True
+    assert bob is not None
+
+    assert store.is_active('alice', alice.sid) is False
+    assert store.is_mcp_active(username='alice', sid=alice_mcp.sid) is False
     assert store.is_active('bob', bob.sid) is True
+    # gone from the durable mirror too, which is the authority the MCP process reads
+    # and the one that survives a restart
+    assert is_persisted_mcp_session_active(
+        db_path=tmp_path / SESSION_DB_NAME,
+        username='alice',
+        sid=alice_mcp.sid,
+    ) is False
 
 
 def test_reissue_rolls_exp_and_caps_at_absolute(tmp_path):
