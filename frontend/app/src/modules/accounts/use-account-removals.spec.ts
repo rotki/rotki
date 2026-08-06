@@ -94,6 +94,21 @@ describe('useAccountRemovals', () => {
   });
 
   describe('removeAgnosticAccount', () => {
+    // Keyed by the account category alone, two removals under one category were the same activity,
+    // so `submitTask` handed the second the first's promise and the second address was never sent
+    // while the UI dropped its row. The same collision the chain-scoped removals had.
+    it('should give each address its own activity id within a category', async () => {
+      whenOk({ perAccount: {}, totals: { assets: {}, liabilities: {} } }, false);
+      const { useAccountRemovals } = await importModule();
+      const accounts = useAccountRemovals();
+
+      await accounts.removeAgnosticAccount('evm', '0xabc');
+      await accounts.removeAgnosticAccount('evm', '0xdef');
+
+      const [first, second] = submitTask.mock.calls.map(([spec]) => spec.id);
+      expect(first).not.toBe(second);
+    });
+
     it('should notify on an actionable failure', async () => {
       whenActionable('agnostic failed');
       const { useAccountRemovals } = await importModule();

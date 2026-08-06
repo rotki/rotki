@@ -97,3 +97,17 @@ export const accountRemoveActivity = defineActivity<AccountSubject, readonly [st
   kind: ActivityKind.ACCOUNTS,
   part: ActivityPart.REMOVE,
 });
+
+/**
+ * Removing one address across a whole account category ("every EVM chain"), which is a different
+ * subject: the broad component is a category, not a chain. Its own descriptor rather than a reuse
+ * of {@link accountRemoveActivity}, so the subject stays honest about what it holds.
+ *
+ * ⚠️ It shares the `accounts:remove` keyspace with the chain-scoped removals. Nothing collides
+ * today because no chain is named after a category, but the two are only kept apart by that.
+ */
+export const accountAgnosticRemoveActivity = defineActivity<{ category: string; address: string }, readonly [string, string]>({
+  key: subject => [subject.category, subject.address],
+  kind: ActivityKind.ACCOUNTS,
+  part: ActivityPart.REMOVE,
+});
