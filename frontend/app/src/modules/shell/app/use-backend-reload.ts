@@ -56,11 +56,16 @@ export function useBackendReload(): UseBackendReloadReturn {
       return result;
     }
 
-    // `unavailable` lands here too, and should: no restart was possible, but the change
-    // was still applied, so the flow completes exactly as it did before this runtime
-    // could restart anything at all.
+    // Only a restart that actually happened is itself a logout: core's graceful shutdown
+    // runs `Rotkehlchen.logout()`, so calling the HTTP logout on top of it would reach a
+    // backend with nobody logged in and surface a spurious failure.
+    //
+    // `unavailable` restarted nothing. The backend is still up and still holds the
+    // session, so it needs the real logout - the one this runtime has always done. Sending
+    // `skipBackendCall` there signed the user out of the frontend alone and left the
+    // backend logged in, so the next login came back "user is already logged in".
     if (get(logged))
-      await logout(true, { skipBackendCall: true });
+      await logout(true, { skipBackendCall: result.status === BackendRestartStatus.restarted });
 
     connect();
     return result;
