@@ -27,10 +27,16 @@ const pillLabels = usePillBarLabels();
       color="primary"
       class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
     >
-      <RuiTab :value="CustomRuleHandling.EXCLUDE">
+      <RuiTab
+        :value="CustomRuleHandling.EXCLUDE"
+        data-testid="accounting-rule-tab-regular"
+      >
         {{ t('accounting_settings.rule.tabs.regular') }}
       </RuiTab>
-      <RuiTab :value="CustomRuleHandling.ONLY">
+      <RuiTab
+        :value="CustomRuleHandling.ONLY"
+        data-testid="accounting-rule-tab-custom"
+      >
         {{ t('accounting_settings.rule.tabs.custom') }}
       </RuiTab>
     </RuiTabs>
