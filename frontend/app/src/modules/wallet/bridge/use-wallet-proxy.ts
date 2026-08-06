@@ -1,6 +1,6 @@
 import { startPromise } from '@shared/utils';
 import { get, isDefined, set } from '@vueuse/core';
-import { computed, onScopeDispose, ref } from 'vue';
+import { computed, getCurrentScope, onScopeDispose, ref } from 'vue';
 import { waitForCondition } from '@/modules/core/common/async/async-utilities';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -288,10 +288,15 @@ export function useWalletProxy(): UseWalletProxyReturn {
   // Cleanup when the owning scope is disposed. This composable is created inside the wallet
   // store, so a component hook would bind to whichever component happened to instantiate the
   // store first and tear the bridge down when that unrelated component unmounted.
-  onScopeDispose(() => {
-    logger.debug('Scope disposed, cleaning up bridge resources...');
-    cleanupResources();
-  });
+  //
+  // useInjectedWallet() builds a second instance from an async action, where there is no scope
+  // to attach to; that one is torn down explicitly by its disconnect() instead.
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      logger.debug('Scope disposed, cleaning up bridge resources...');
+      cleanupResources();
+    });
+  }
 
   return {
     disconnectProxy,
