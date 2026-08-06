@@ -123,6 +123,19 @@ describe('useAccountAdditionService', () => {
   });
 
   describe('addSingleEvmAddress', () => {
+    // `added` is an optional record, so `{}` is a valid response: truthy, but with nothing to
+    // destructure. That threw `undefined is not iterable` out of the composable — surfacing as a
+    // raw type error in the add dialog, and in a bulk add being swallowed by the queue so the
+    // address landed in neither the added nor the failed list.
+    it('should handle an empty added record without throwing', async () => {
+      h.addEvmAccount.mockResolvedValue(ok({ added: {} }));
+      const { useAccountAdditionService } = await importModule();
+      const result = await useAccountAdditionService().addSingleEvmAddress({ address: '0xabc', tags: null });
+      assert(!isErr(result));
+      expect(result.value).toStrictEqual([]);
+      expect(h.notifyUser).not.toHaveBeenCalled();
+    });
+
     it('should expand added chains and notify the user', async () => {
       h.addEvmAccount.mockResolvedValue(ok({ added: { '0xabc': ['eth', 'optimism'] } }));
       const { useAccountAdditionService } = await importModule();

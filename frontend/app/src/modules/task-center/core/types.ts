@@ -282,6 +282,12 @@ export const ActivityPart = {
   SUSHISWAP: 'sushiswap',
   FETCH: 'fetch',
   ADD: 'add',
+  /**
+   * Work scoped to an account *category* ("every EVM chain") rather than a chain. A literal part
+   * rather than a bare category name, so such an id can never be mistaken for a chain-scoped one
+   * by a prefix reader — a chain would have to be named `category` for them to overlap.
+   */
+  CATEGORY: 'category',
   EDIT: 'edit',
   PERFORMANCE: 'performance',
   VALIDATORS: 'validators',
