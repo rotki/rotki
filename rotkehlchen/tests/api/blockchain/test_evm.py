@@ -145,7 +145,7 @@ def test_deleting_ens_account_works(rotkehlchen_api_server: APIServer) -> None:
     assert_error_response(
         response=response,
         status_code=HTTPStatus.BAD_REQUEST,
-        contained_in_msg='Given ENS name ishouldnotexistforrealz.eth could not be resolved',
+        contained_in_msg='Given name ishouldnotexistforrealz.eth could not be resolved',
     )
 
 
@@ -202,7 +202,7 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server: APIServer) -> 
     assert_error_response(
         response=response,
         status_code=HTTPStatus.BAD_REQUEST,
-        contained_in_msg='Given ENS name ishouldnotexistforrealz.eth could not be resolved',
+        contained_in_msg='Given name ishouldnotexistforrealz.eth could not be resolved',
     )
 
     # Edit the resolvable account
@@ -228,8 +228,28 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server: APIServer) -> 
     assert_error_response(
         response=response,
         status_code=HTTPStatus.BAD_REQUEST,
-        contained_in_msg='Given ENS name ishouldnotexistforrealz.eth could not be resolved',
+        contained_in_msg='Given name ishouldnotexistforrealz.eth could not be resolved',
     )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('name', ['yabir.gwei', 'yabir.eth'], ids=['gns', 'ens'])
+def test_adding_name_account_works(
+        rotkehlchen_api_server: APIServer,
+        name: str,
+) -> None:
+    """Test that adding an ENS or GNS account resolves its name."""
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json={'accounts': [{'address': name}]})
+
+    assert assert_proper_sync_response_with_result(response) == [
+        resolved_account := string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65'),
+    ]
+    assert rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.accounts.eth[-1] == resolved_account  # noqa: E501
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -605,7 +625,7 @@ def test_evm_address_async(rotkehlchen_api_server: APIServer) -> None:
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
         assert outcome['result'] is None
         assert outcome['status_code'] == HTTPStatus.BAD_REQUEST
-        assert 'Given ENS name rotki.ethe could not be resolved for Ethereum' in outcome['message']
+        assert 'Given name rotki.ethe could not be resolved for Ethereum' in outcome['message']
 
         # add an address that should be correctly added
         label = 'rotki account'
