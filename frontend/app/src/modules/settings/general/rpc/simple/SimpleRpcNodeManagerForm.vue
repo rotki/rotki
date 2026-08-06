@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import type { RuiTextField } from '@rotki/ui-library';
+import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import useVuelidate from '@vuelidate/core';
-import { required } from '@vuelidate/validators';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useForm } from '@/modules/core/form/use-form';
+import { SETTING_FIELD, type SettingFieldState, textSettingSchema } from '@/modules/settings/controls/setting-field-schemas';
 
+/**
+ * The endpoint is one setting field, so it reuses the shared setting schema; the surrounding dialog
+ * owns the persist, which is why `submit` here is a no-op.
+ */
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const modelValue = defineModel<string>({ required: true });
@@ -14,40 +16,65 @@ const { disabled = false } = defineProps<{
   disabled?: boolean;
 }>();
 
+/** The key the dialog reports its save failures under, mapped onto the single form field. */
+const ERROR_KEY = 'modelValue';
+
 const { t } = useI18n({ useScope: 'global' });
 
-const rules = {
-  modelValue: { required },
-};
-
-const states = {
-  modelValue,
-};
-
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errors,
+const schema = computed<ZodType>(() => textSettingSchema({
+  messages: {
+    required: t('settings.validation.text.non_empty'),
   },
-);
+  required: true,
+}));
 
-useFormStateWatcher(states, stateUpdated);
+const form = useForm<SettingFieldState, SettingFieldState>({
+  initial: (): SettingFieldState => ({ value: get(modelValue) }),
+  schema,
+  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  transform: (state): SettingFieldState => ({ value: state.value }),
+});
 
-watch(modelValue, () => {
+function toMessages(value: ValidationErrors[string] | undefined): string[] {
+  if (value === undefined)
+    return [];
+
+  return (Array.isArray(value) ? value : [value]).filter(message => message !== '');
+}
+
+watch(() => form.state.value, (value) => {
+  set(modelValue, value);
   if (Object.keys(get(errors)).length > 0)
     set(errors, {});
 });
 
+// The dialog reseeds the field when it opens a different endpoint for editing.
+watch(modelValue, (value) => {
+  if (value !== form.state.value)
+    form.state.value = value;
+});
+
+watch(errors, (value) => {
+  form.setServerErrors({ [SETTING_FIELD]: toMessages(value[ERROR_KEY]) });
+}, { deep: true, immediate: true });
+
+watch(form.dirty, (dirty) => {
+  set(stateUpdated, dirty);
+});
+
+// The dialog keeps its prompt-on-close flag across opens, so hand it back disarmed.
+onUnmounted(() => {
+  set(stateUpdated, false);
+});
+
 defineExpose({
-  validate: async () => await get(v$).$validate(),
+  validate: (): boolean => form.validate(),
 });
 </script>
 
 <template>
   <RuiTextField
-    v-model="modelValue"
+    v-model="form.state.value"
     variant="outlined"
     color="primary"
     class="pt-2"
@@ -55,6 +82,6 @@ defineExpose({
     type="text"
     clearable
     :disabled="disabled"
-    :error-messages="toMessages(v$.modelValue)"
+    :error-messages="form.errors(SETTING_FIELD)"
   />
 </template>
