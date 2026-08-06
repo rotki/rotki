@@ -7,7 +7,7 @@ import { startPromise } from '@shared/utils';
 import { pipe } from 'plainfp';
 import { err, isErr, mapError, ok } from 'plainfp/result';
 import { useAccountAdditionNotifications } from '@/modules/accounts/use-account-addition-notifications';
-import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts';
+import { useAccountAdditions } from '@/modules/accounts/use-account-additions';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
@@ -67,7 +67,7 @@ interface UseAccountAdditionServiceReturn {
 }
 
 export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
-  const { addAccount, addEvmAccount } = useBlockchainAccounts();
+  const { addAccount, addEvmAccount } = useAccountAdditions();
   const { detectTokens: detectTokensForChain } = useTokenDetectionOrchestrator();
   const { trackAddedAddresses } = useBlockchainAccountsStore();
   const { fetchTags } = useTagOperations();

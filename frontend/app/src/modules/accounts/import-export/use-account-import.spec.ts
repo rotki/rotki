@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountManage } from '@/modules/accounts/blockchain/use-account-manage';
 import { createValidatorAccount } from '@/modules/accounts/create-account';
 import { useAccountImport } from '@/modules/accounts/import-export/use-account-import';
-import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts';
+import { useAccountAdditions } from '@/modules/accounts/use-account-additions';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useTagsApi } from '@/modules/tags/use-tags-api';
@@ -51,7 +51,7 @@ function mockAddAccount(failOnAddress?: string[]): (_chain: string, payload: Acc
   };
 }
 
-vi.mock('@/modules/accounts/use-blockchain-accounts', () => {
+vi.mock('@/modules/accounts/use-account-additions', () => {
   const mock = {
     addAccount: vi.fn().mockImplementation(mockAddAccount()),
     addEvmAccount: vi.fn().mockImplementation(async (address: string) => ok({
@@ -59,12 +59,15 @@ vi.mock('@/modules/accounts/use-blockchain-accounts', () => {
         [address]: ['eth', 'optimism', 'gnosis'],
       },
     })),
-    fetch: vi.fn().mockResolvedValue(undefined),
   };
   return {
-    useBlockchainAccounts: vi.fn(() => mock),
+    useAccountAdditions: vi.fn(() => mock),
   };
 });
+
+vi.mock('@/modules/accounts/use-account-fetching', () => ({
+  useAccountFetching: vi.fn(() => ({ fetch: vi.fn().mockResolvedValue(undefined) })),
+}));
 
 vi.mock('@/modules/accounts/blockchain/use-account-manage', () => {
   const mock = {
@@ -121,7 +124,7 @@ describe('useAccountImport', () => {
   });
 
   it('should import valid accounts from csv', async () => {
-    const { addAccount, addEvmAccount } = useBlockchainAccounts();
+    const { addAccount, addEvmAccount } = useAccountAdditions();
     const { queryAddTag } = useTagsApi();
 
     const mockFile = createMockCSV([
@@ -151,7 +154,7 @@ describe('useAccountImport', () => {
   });
 
   it('should not fail to import accounts if one addition fails', async () => {
-    const { addAccount, addEvmAccount } = useBlockchainAccounts();
+    const { addAccount, addEvmAccount } = useAccountAdditions();
     const { queryAddTag } = useTagsApi();
 
     vi.mocked(addAccount).mockImplementation(mockAddAccount(['0x124']));
@@ -200,7 +203,7 @@ describe('useAccountImport', () => {
   });
 
   it('should import an xpub address', async () => {
-    const { addAccount } = useBlockchainAccounts();
+    const { addAccount } = useAccountAdditions();
     const { queryAddTag } = useTagsApi();
 
     const mockFile = createMockCSV([

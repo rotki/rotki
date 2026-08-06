@@ -33,8 +33,8 @@ vi.mock('@/modules/core/notifications/use-notifications', async () => ({
   }),
 }));
 
-vi.mock('@/modules/accounts/use-blockchain-accounts', () => ({
-  useBlockchainAccounts: vi.fn(() => ({
+vi.mock('@/modules/accounts/use-account-edits', () => ({
+  useAccountEdits: vi.fn(() => ({
     editAccount: vi.fn(),
     editAgnosticAccount: vi.fn(),
   })),

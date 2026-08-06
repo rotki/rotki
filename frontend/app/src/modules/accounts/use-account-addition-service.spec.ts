@@ -20,8 +20,8 @@ const h = vi.hoisted(() => ({
   trackAddedAddresses: vi.fn(),
 }));
 
-vi.mock('@/modules/accounts/use-blockchain-accounts', () => ({
-  useBlockchainAccounts: vi.fn(() => ({ addAccount: h.addAccount, addEvmAccount: h.addEvmAccount })),
+vi.mock('@/modules/accounts/use-account-additions', () => ({
+  useAccountAdditions: vi.fn(() => ({ addAccount: h.addAccount, addEvmAccount: h.addEvmAccount })),
 }));
 
 vi.mock('@/modules/balances/blockchain/use-token-detection-orchestrator', () => ({

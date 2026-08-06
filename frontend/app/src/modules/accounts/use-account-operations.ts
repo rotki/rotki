@@ -5,7 +5,7 @@ import { startPromise } from '@shared/utils';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
-import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts';
+import { useAccountFetching } from '@/modules/accounts/use-account-fetching';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
@@ -31,7 +31,7 @@ interface UseAccountOperationsReturn {
 }
 
 export function useAccountOperations(): UseAccountOperationsReturn {
-  const { fetch } = useBlockchainAccounts();
+  const { fetch } = useAccountFetching();
   const { fetchBlockchainBalances, refreshBlockchainBalances } = useBlockchainBalances();
   const { fetchEnsNames } = useEnsOperations();
   const { detectEvmAccounts: detectEvmAccountsCaller } = useBlockchainAccountsApi();

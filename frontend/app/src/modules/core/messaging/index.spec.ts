@@ -73,13 +73,6 @@ vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
   }),
 }));
 
-vi.mock('@/modules/accounts/use-blockchain-accounts', () => ({
-  useBlockchainAccounts: vi.fn().mockReturnValue({
-    fetchBlockchainAccounts: vi.fn().mockResolvedValue([]),
-    fetchAccounts: vi.fn().mockResolvedValue([]),
-  }),
-}));
-
 vi.mock('@/modules/core/common/use-supported-chains', async () => {
   const { computed } = await import('vue');
   const { Blockchain } = await import('@rotki/common');

@@ -11,8 +11,8 @@ import type { Module } from '@/modules/core/common/modules';
 import { assert, bigNumberify, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { getAccountAddress, getChain } from '@/modules/accounts/account-utils';
+import { useAccountEdits } from '@/modules/accounts/use-account-edits';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
-import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { getKeyType, guessPrefix } from '@/modules/accounts/xpub';
@@ -180,7 +180,7 @@ export function useAccountManage(): UseAccountManageReturn {
   const { updateAccountData, updateAccounts } = useBlockchainAccountsStore();
   const { addAccounts, addEvmAccounts, fetchAccounts, refreshAccounts } = useBlockchainAccountManagement();
   const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
-  const { editAccount, editAgnosticAccount } = useBlockchainAccounts();
+  const { editAccount, editAgnosticAccount } = useAccountEdits();
   const { showErrorMessage } = useNotifications();
 
   function handleErrors(error: unknown, props: Record<string, any> = {}): void {
