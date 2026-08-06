@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test';
 import { confirmInlineSuccess } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 
-export class EvmSettingsPage {
+export class ChainsSettingsPage {
   constructor(private readonly page: Page) {}
 
   async visit(): Promise<void> {
@@ -10,12 +10,24 @@ export class EvmSettingsPage {
     await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'visible' });
     await this.page.locator('[data-cy=settings-button]').click();
     await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
-    await this.page.locator('[data-cy="settings__evm"]').click();
+    await this.page.locator('[data-cy="settings__chains"]').click();
     await this.page.locator('[data-testid=chains-to-skip-detection]').waitFor({ state: 'visible' });
   }
 
   async navigateAway(): Promise<void> {
     await RotkiApp.navigateTo(this.page, 'dashboard');
+  }
+
+  /**
+   * The two settings that both read as "skip this chain" are deliberately co-located under one
+   * category: query skipping (all chains) and detection skipping (EVM only). They used to sit a
+   * page apart, so assert they render together rather than only that each renders somewhere.
+   */
+  async verifyChainQueriesCategory(): Promise<void> {
+    const category = this.page.locator('#chain_queries');
+    await expect(category).toBeVisible();
+    await expect(category.locator('[data-testid=rule-add]')).toBeVisible();
+    await expect(category.locator('[data-testid=chains-to-skip-detection]')).toBeVisible();
   }
 
   // Indexer Order Settings

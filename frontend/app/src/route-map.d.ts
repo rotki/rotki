@@ -364,8 +364,8 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | '/settings/account/'
       | '/settings/accounting/'
+      | '/settings/chains/'
       | '/settings/database/'
-      | '/settings/evm/'
       | '/settings/general/'
       | '/settings/interface/'
       | '/settings/mcp/'
@@ -387,16 +387,16 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/settings/database/': RouteRecordInfo<
-      '/settings/database/',
-      '/settings/database',
+    '/settings/chains/': RouteRecordInfo<
+      '/settings/chains/',
+      '/settings/chains',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    '/settings/evm/': RouteRecordInfo<
-      '/settings/evm/',
-      '/settings/evm',
+    '/settings/database/': RouteRecordInfo<
+      '/settings/database/',
+      '/settings/database',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -911,8 +911,8 @@ declare module 'vue-router/auto-routes' {
         | '/settings'
         | '/settings/account/'
         | '/settings/accounting/'
+        | '/settings/chains/'
         | '/settings/database/'
-        | '/settings/evm/'
         | '/settings/general/'
         | '/settings/interface/'
         | '/settings/mcp/'
@@ -940,17 +940,17 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/pages/settings/database/index.vue': {
+    'src/pages/settings/chains/index.vue': {
       routes:
-        | '/settings/database/'
+        | '/settings/chains/'
       views:
         | never
       pathParamNames:
         | never
     }
-    'src/pages/settings/evm/index.vue': {
+    'src/pages/settings/database/index.vue': {
       routes:
-        | '/settings/evm/'
+        | '/settings/database/'
       views:
         | never
       pathParamNames:

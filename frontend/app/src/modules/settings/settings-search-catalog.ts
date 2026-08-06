@@ -105,18 +105,18 @@ export const SEARCH_CATEGORIES: readonly SearchCategory[] = [
   {
     id: SettingsCategoryIds.CHAIN_QUERIES,
     keywords: [msg.$t('chain_settings.chain_queries.subtitle')],
-    tab: '/settings/evm/',
+    tab: '/settings/chains/',
     titleKey: msg.$t('chain_settings.chain_queries.title'),
   },
   {
     id: SettingsCategoryIds.CHAINS,
-    tab: '/settings/evm/',
+    tab: '/settings/chains/',
     titleKey: msg.$t('evm_settings.general.title'),
   },
   {
     id: SettingsCategoryIds.INDEXER,
     keywords: [msg.$t('evm_settings.indexer.subtitle')],
-    tab: '/settings/evm/',
+    tab: '/settings/chains/',
     titleKey: msg.$t('evm_settings.indexer.title'),
   },
   // oracle

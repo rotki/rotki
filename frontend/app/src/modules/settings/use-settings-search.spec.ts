@@ -17,7 +17,7 @@ const settingsRoutes = [
     name: '/settings/accounting/',
     meta: { nav: { icon: 'lu-calculator', labelKey: 'Accounting' } },
   },
-  { name: '/settings/evm/', meta: { nav: { icon: 'lu-cpu', labelKey: 'EVM' } } },
+  { name: '/settings/chains/', meta: { nav: { icon: 'lu-cpu', labelKey: 'EVM' } } },
   { name: '/settings/oracle/', meta: { nav: { icon: 'lu-activity', labelKey: 'Oracles' } } },
   { name: '/settings/rpc/', meta: { nav: { icon: 'lu-server', labelKey: 'RPC Nodes' } } },
   { name: '/settings/modules/', meta: { nav: { icon: 'lu-boxes', labelKey: 'Modules' } } },

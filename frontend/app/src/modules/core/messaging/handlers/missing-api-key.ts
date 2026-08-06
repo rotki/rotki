@@ -44,7 +44,7 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
     // Both etherscan and blockscout are transaction indexers, so offer to change the order.
     if (isEtherscan || isBlockscout) {
       actions.push({
-        action: async () => router.push({ name: '/settings/evm/', hash: '#indexer' }),
+        action: async () => router.push({ name: '/settings/chains/', hash: '#indexer' }),
         icon: 'lu-settings',
         label: t('notification_messages.missing_api_key.change_indexer_order'),
         persist: true,
