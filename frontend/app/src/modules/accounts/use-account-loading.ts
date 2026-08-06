@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
+import { accountAddActivity, accountRemoveActivity } from '@/modules/accounts/accounts.activity';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseAccountLoadingReturn {
@@ -15,17 +15,13 @@ export const useAccountLoading = createSharedComposable((): UseAccountLoadingRet
   const { useWorkStatusPrefix } = useTaskCenter();
   const { isRefreshing } = storeToRefs(useBalanceRefreshState());
 
-  // With a blockchain, gate on that chain's add/remove activity; without, aggregate over all.
-  // Both add and remove ids carry what they act on after the chain, so that two concurrent
-  // operations don't dedup onto each other. Every per-chain lookup is therefore a prefix match:
-  // an exact one no longer matches any id and would silently never report activity.
+  // A chain is a *prefix* of an add/remove key, never a whole one — the id also carries what is
+  // being acted on. `partsWithin` is what encodes that: it takes the leading slice of the key, so
+  // the coarse read cannot drift from the ids the producers actually submit.
   const isAccountOperationRunning = (blockchain?: string): ComputedRef<boolean> => {
-    const add = blockchain
-      ? useWorkStatusPrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD, blockchain)
-      : useWorkStatusPrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD);
-    const remove = blockchain
-      ? useWorkStatusPrefix(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, blockchain)
-      : useWorkStatusPrefix(ActivityKind.ACCOUNTS, ActivityPart.REMOVE);
+    const within = blockchain ? ([blockchain] as const) : ([] as const);
+    const add = useWorkStatusPrefix(accountAddActivity.kind, ...accountAddActivity.partsWithin(within));
+    const remove = useWorkStatusPrefix(accountRemoveActivity.kind, ...accountRemoveActivity.partsWithin(within));
     return logicOr(
       computed<boolean>(() => get(add).active),
       computed<boolean>(() => get(remove).active),

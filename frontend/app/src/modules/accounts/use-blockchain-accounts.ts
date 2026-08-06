@@ -9,8 +9,8 @@ import type { BlockchainBalances } from '@/modules/balances/types/blockchain-bal
 import type { EvmAccountsResult } from '@/modules/core/api/types/accounts';
 import { Blockchain } from '@rotki/common';
 import { err, flatMap as flatMapResult, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
-import { msg } from '@/message-key';
 import { convertBtcAccounts } from '@/modules/accounts/account-helpers';
+import { accountActivityLabel, accountAddActivity, accountRemoveActivity, type AccountSubject, accountTargetOf, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { createAccount } from '@/modules/accounts/create-account';
@@ -22,7 +22,6 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
-import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseBlockchainAccountsReturn {
@@ -65,19 +64,11 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
 
   const addAccount = async (chain: string, payload: AccountPayload[] | XpubAccountPayload): Promise<Result<string, TaskError>> => {
     const address = Array.isArray(payload) ? payload.map(item => item.address).join(',\n') : payload.xpub.xpub;
-    // The address belongs in the id, not just the subtitle: `addMultipleAccounts` fans out over one
-    // chain at parallelism 2, and `submitTask` dedups on id identity. A chain-only id collapses the
-    // second address onto the first's promise, so it is reported added without ever being sent.
-    //
-    // The xpub key carries the derivation path too: the same xpub added under two paths is two
-    // distinct additions, and keying on the xpub alone would dedup them exactly as the chain-only
-    // id deduped two addresses.
-    const key = Array.isArray(payload)
-      ? payload.map(item => item.address).join(',')
-      : `${payload.xpub.xpub}/${payload.xpub.derivationPath}`;
+    const subject = { chain, target: accountTargetOf(payload) };
     const outcome = await submitTask<string[] | true>({
-      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.ADD, chain, key),
-      kind: ActivityKind.ACCOUNTS,
+      id: accountAddActivity.id(subject),
+      kind: accountAddActivity.kind,
+      lane: accountAddActivity.laneOf?.(subject),
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<string[] | true, TaskError>> => mapResult(
         await runTask<string[] | true>(
@@ -85,7 +76,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
         ),
         value => value,
       ),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.accounts.add'), { address }),
+      subtitle: accountActivityLabel.add(address),
       title: t('task_center.group.accounts'),
     });
 
@@ -105,11 +96,12 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   };
 
   const addEvmAccount = async ({ address, label, tags }: AccountPayload): Promise<Result<EvmAccountsResult, TaskError>> => {
-    const blockchain = 'EVM';
+    // The pseudo-chain, not a real one: this asks for every EVM chain at once.
+    const subject: AccountSubject = { chain: EVM_PSEUDO_CHAIN, target: { address, kind: 'address' } };
     const outcome = await submitTask<EvmAccountsResult>({
-      // Same reasoning as `addAccount`: `addMultipleEvmAccounts` fans out over one pseudo-chain.
-      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.ADD, blockchain, address),
-      kind: ActivityKind.ACCOUNTS,
+      id: accountAddActivity.id(subject),
+      kind: accountAddActivity.kind,
+      lane: accountAddActivity.laneOf?.(subject),
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<EvmAccountsResult, TaskError>> => mapResult(
         await runTask<EvmAccountsResult>(
@@ -117,7 +109,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
         ),
         value => value,
       ),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.accounts.add'), { address }),
+      subtitle: accountActivityLabel.add(address),
       title: t('task_center.group.accounts'),
     });
 
@@ -174,13 +166,10 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
 
   const removeAccount = async (payload: DeleteBlockchainAccountParams): Promise<void> => {
     const { accounts, chain } = payload;
+    const subject: AccountSubject = { chain, target: { addresses: accounts, kind: 'addresses' } };
     const outcome = await submitTask({
-      // Keyed by what is being removed, for the same reason additions are: a plain delete and an
-      // xpub delete on one chain both used `accounts:remove:<chain>`, so an overlap deduped the
-      // second onto the first. The UI still dropped its rows, leaving accounts that were never
-      // deleted on the backend to reappear on the next fetch.
-      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, chain, accounts.join(',')),
-      kind: ActivityKind.ACCOUNTS,
+      id: accountRemoveActivity.id(subject),
+      kind: accountRemoveActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<BlockchainBalances>(
@@ -188,7 +177,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
         ),
         () => {},
       ),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.accounts.remove_count'), { count: accounts.length }, accounts.length),
+      subtitle: accountActivityLabel.removeCount(accounts.length),
       title: t('task_center.group.accounts'),
     });
 
@@ -216,7 +205,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
         ),
         () => {},
       ),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.accounts.remove'), { address }),
+      subtitle: accountActivityLabel.remove(address),
       title: t('task_center.group.accounts'),
     });
 
@@ -283,11 +272,13 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   };
 
   const deleteXpub = async (params: DeleteXpubParams): Promise<void> => {
+    const subject: AccountSubject = {
+      chain: params.chain,
+      target: { derivationPath: params.derivationPath, kind: 'xpub', xpub: params.xpub },
+    };
     const outcome = await submitTask({
-      // As in `removeAccount`: the xpub and its derivation path discriminate this from a plain
-      // account removal on the same chain, and from the same xpub under a different path.
-      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, params.chain, `${params.xpub}/${params.derivationPath ?? ''}`),
-      kind: ActivityKind.ACCOUNTS,
+      id: accountRemoveActivity.id(subject),
+      kind: accountRemoveActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<boolean>(
@@ -295,7 +286,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
         ),
         () => {},
       ),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.accounts.remove_xpub'), { xpub: params.xpub }),
+      subtitle: accountActivityLabel.removeXpub(params.xpub),
       title: t('task_center.group.accounts'),
     });
 
