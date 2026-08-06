@@ -5,10 +5,12 @@ import { StarlingService } from '@shared/starling/starling-protocol';
 import { startPromise } from '@shared/utils';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useControl } from '@/modules/core/control/use-control';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useMcpApi } from '@/modules/settings/api/use-mcp-api';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import CopyTooltip from '@/modules/shell/components/CopyTooltip.vue';
+import GetPremiumPlaceholder from '@/modules/shell/components/GetPremiumPlaceholder.vue';
 import { useMcpServerState } from './use-mcp-server-state';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -17,6 +19,7 @@ const isDocker = import.meta.env.VITE_DOCKER === 'true';
 const { getMcpServerStatus, isPackaged, setMcpAutoStart } = useInterop();
 const { available, probe, serviceState, setServiceRunning, supportsOptions } = useControl();
 const { generateMcpToken } = useMcpApi();
+const { allowed: mcpAllowed, minimumTier: mcpMinimumTier, premium } = useFeatureAccess(PremiumFeature.MCP);
 
 const state = ref<StarlingServiceStatus>();
 const autoStart = ref<boolean>(false);
@@ -72,6 +75,13 @@ const unavailableMessage = computed<string>(() => (
   isPackaged || isDocker
     ? t('backend_settings.settings.mcp_server.control_unavailable')
     : t('backend_settings.settings.mcp_server.desktop_only')
+));
+// a premium subscriber whose tier is too low needs a different answer than someone
+// with no subscription at all: one has to upgrade, the other has to subscribe.
+const gateTitle = computed<string>(() => (
+  get(premium)
+    ? t('backend_settings.settings.mcp_server.premium_plan_title')
+    : t('backend_settings.settings.mcp_server.premium_title')
 ));
 
 function statusLabel(current: StarlingServiceStatus | undefined): string {
@@ -160,6 +170,9 @@ watch(mcpServerState, (pushed) => {
     set(state, pushed);
 });
 
+// Runs regardless of the premium gate: the probe is what decides whether there is a
+// supervisor at all, and that answer is shown ahead of any upsell. Gating it on
+// `mcpAllowed` would also leave a user who unlocks mid-session without a status.
 onBeforeMount(() => {
   startPromise(loadStatus());
 });
@@ -174,12 +187,26 @@ onBeforeMount(() => {
       {{ t('backend_settings.settings.mcp_server.hint') }}
     </template>
 
+    <!-- the environment check comes first: where there is no server to reach, the answer is
+         "not here", not "buy premium". Offering premium there would be selling nothing. -->
     <RuiAlert
       v-if="!available && !loading"
       type="info"
     >
       {{ unavailableMessage }}
     </RuiAlert>
+
+    <div
+      v-else-if="!loading && !mcpAllowed"
+      class="max-w-2xl rounded-lg border border-default bg-rui-grey-50 dark:bg-rui-grey-900 px-4 py-5"
+      data-testid="mcp-premium-gate"
+    >
+      <GetPremiumPlaceholder
+        :title="gateTitle"
+        :description="t('backend_settings.settings.mcp_server.premium_description')"
+        :minimum-tier="mcpMinimumTier"
+      />
+    </div>
 
     <div
       v-else
