@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
 import type { IssueDescription } from '@/modules/history/data-issues/types';
 import { startPromise } from '@shared/utils';
-import TableFilter from '@/modules/core/table/TableFilter.vue';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import DataIssueDetailContent from '@/modules/history/data-issues/components/DataIssueDetailContent.vue';
 import DataIssuePanelCard from '@/modules/history/data-issues/components/DataIssuePanelCard.vue';
 import ResolveManuallyDialog from '@/modules/history/data-issues/components/ResolveManuallyDialog.vue';
 import { IssueState, NON_TERMINAL_STATES } from '@/modules/history/data-issues/constants';
 import { describeIssue, relatedEventRoute } from '@/modules/history/data-issues/transforms';
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
+import { useDataIssueFields } from '@/modules/history/data-issues/use-data-issue-fields';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
-import { type Filters, type Matcher, useDataIssuesFilter } from '@/modules/history/data-issues/use-data-issues-filter';
+import { DataIssuesFilterValueKeys, type Filters, useDataIssuesFilter } from '@/modules/history/data-issues/use-data-issues-filter';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import { HighlightTargetTypes, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 import PinnedDetailSheet from '@/modules/shell/pinned/PinnedDetailSheet.vue';
@@ -32,13 +35,20 @@ const loading = ref<boolean>(false);
 const { fetchData } = useDataIssues();
 const { refreshSummary } = useDataIssuesSummary();
 
-// Reuse the full-page filter matchers, but expose only the compact subset that fits
-// the preview: state, kind, asset and account. Protocol is intentionally absent (the
-// list endpoint does not accept a protocol filter).
-const PANEL_FILTER_KEYS: readonly string[] = ['state', 'kind', 'asset', 'account'];
+// Reuse the full-page filter fields, but expose only the compact subset that fits the preview:
+// state, kind, asset and account. Keyed by wire key, which is what a field carries — the period
+// pill is left out because the preview is a glance at what needs attention now, not a search.
+const PANEL_FILTER_KEYS: readonly string[] = [
+  DataIssuesFilterValueKeys.STATE,
+  DataIssuesFilterValueKeys.KIND,
+  DataIssuesFilterValueKeys.ASSET,
+  DataIssuesFilterValueKeys.ACCOUNT,
+];
 const { matchers } = useDataIssuesFilter();
-const panelMatchers = computed<Matcher[]>(() =>
-  get(matchers).filter(matcher => PANEL_FILTER_KEYS.includes(matcher.key)));
+const fields = useDataIssueFields(matchers);
+const panelFields = computed<FieldDef[]>(() =>
+  get(fields).filter(field => PANEL_FILTER_KEYS.includes(field.key)));
+const pillLabels = usePillBarLabels();
 const panelFilters = ref<Filters>({});
 const hasPanelFilters = computed<boolean>(() => Object.keys(get(panelFilters)).length > 0);
 
@@ -281,9 +291,10 @@ onMounted(() => {
       ref="filterWrapper"
       class="px-3 py-2 border-b border-default shrink-0"
     >
-      <TableFilter
+      <PillFilterBar
         v-model:matches="panelFilters"
-        :matchers="panelMatchers"
+        :fields="panelFields"
+        :labels="pillLabels"
       />
     </div>
 

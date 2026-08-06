@@ -2645,6 +2645,7 @@
       "asset": "Asset",
       "end_date": "End date",
       "kind": "Kind",
+      "period": "Date",
       "start_date": "Start date",
       "state": "State"
     },
@@ -4281,6 +4282,9 @@
     "errors": {
       "fetch": "Failed to fetch internal transaction conflicts: {error}",
       "fetch_title": "Internal Tx Conflicts Error"
+    },
+    "filter": {
+      "period": "Date"
     },
     "notifications": {
       "cancelled": "Resolution cancelled. {completed} of {total} conflicts resolved.",

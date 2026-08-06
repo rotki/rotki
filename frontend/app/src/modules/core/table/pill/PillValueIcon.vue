@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DisplayKind, DisplayKinds, type FieldDef, type ValueIcon, type ValueSwatch } from '@/modules/core/table/pill/core/types';
+import { type DisplayKind, DisplayKinds, type FieldDef, type ValueDisplay, type ValueIcon, type ValueSwatch } from '@/modules/core/table/pill/core/types';
 import { useScramble } from '@/modules/settings/use-scramble';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
@@ -16,9 +16,14 @@ import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
  * The asset icon's own chain badge is suppressed: at this size it hangs outside its box. The
  * chain is shown separately, next to the value.
  */
-const { display, value, icon, swatch, size = '16px' } = defineProps<{
+const { display, value, valueDisplay, icon, swatch, size = '16px' } = defineProps<{
   display: FieldDef['display'];
   value: string;
+  /**
+   * This value's own display (`FieldDef.resolveDisplay`), for a field whose values are of more
+   * than one kind. Overrides `display`, and may name what the icon is drawn from.
+   */
+  valueDisplay?: ValueDisplay;
   /** A field-resolved plain icon (`FieldDef.resolveIcon`), for values that are neither identities nor a display kind. */
   icon?: ValueIcon;
   /** A field-resolved colour pair (`FieldDef.resolveSwatch`), for a value that is itself a colour (a tag). */
@@ -59,7 +64,10 @@ function markFor(kind: DisplayKind | undefined): IconMark {
   }
 }
 
-const mark = computed<IconMark>(() => markFor(display));
+const mark = computed<IconMark>(() => markFor(valueDisplay?.kind ?? display));
+
+// An exchange account's icon comes from its location, not from the account name being filtered on.
+const iconValue = computed<string>(() => valueDisplay?.source ?? value);
 </script>
 
 <template>
@@ -78,30 +86,30 @@ const mark = computed<IconMark>(() => markFor(display));
   />
   <AssetIcon
     v-else-if="mark === 'asset'"
-    :identifier="value"
+    :identifier="iconValue"
     :size="size"
     :show-chain="false"
   />
   <EnsAvatar
     v-else-if="mark === 'avatar'"
-    :address="scrambleAddress(value)"
+    :address="scrambleAddress(iconValue)"
     avatar
     :size="size"
   />
   <ChainIcon
     v-else-if="mark === 'chain'"
-    :chain="value"
+    :chain="iconValue"
     :size="size"
   />
   <LocationIcon
     v-else-if="mark === 'location'"
-    :item="value"
+    :item="iconValue"
     icon
     :size="size"
   />
   <CounterpartyDisplay
     v-else-if="mark === 'counterparty'"
-    :counterparty="value"
+    :counterparty="iconValue"
     icon
     :size="size"
   />

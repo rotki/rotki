@@ -23,6 +23,21 @@ export const DisplayKinds = {
 
 export type DisplayKind = typeof DisplayKinds[keyof typeof DisplayKinds];
 
+/**
+ * One value's own display, for a field whose values are not all of the same kind. The history
+ * account label is the case that needs it: it is an address on a chain and an exchange account
+ * *name* everywhere else, drawn with a blockie in the first case and the exchange's logo in the
+ * second, exactly as the table draws it (`HistoryEventAccount`).
+ */
+export interface ValueDisplay {
+  readonly kind: DisplayKind;
+  /**
+   * What the icon is drawn from, when that is not the value itself: an exchange account's icon
+   * comes from its location (`kraken`), not from the account name the filter carries.
+   */
+  readonly source?: string;
+}
+
 /** A plain icon standing in for one filter value, resolved by the field that owns the value. */
 export interface ValueIcon {
   readonly icon: RuiIcons;
@@ -86,6 +101,11 @@ export interface FieldDef {
    * plain text.
    */
   readonly display?: DisplayKind;
+  /**
+   * Overrides `display` for one value, for a field whose values are of more than one kind. Takes
+   * precedence over `display`; `resolveIcon` and `resolveSwatch` still win over both.
+   */
+  readonly resolveDisplay?: (value: string) => ValueDisplay | undefined;
   /**
    * Maps a value to a plain icon shown before it, for a field whose values are neither an
    * identity nor a rich display kind but are still scanned by their icon (e.g. the history event
