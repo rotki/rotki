@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   convertFromTimestamp,
   convertToTimestamp,
+  dateBoundParser,
   getDayNames,
   setupDayjs,
 } from '@/modules/core/common/data/date';
@@ -121,6 +122,23 @@ describe('date-utils', () => {
       Date.prototype.getTimezoneOffset = function (): number {
         return 0;
       };
+    });
+  });
+  describe('dateBoundParser', () => {
+    const parse = dateBoundParser(ref(DateFormat.DateMonthYearHourMinuteSecond));
+
+    it('should read a written date into the timestamp a filter bound stores', () => {
+      expect(parse('15/01/2024')).toBe(dayjs('2024-01-15T00:00:00').unix().toString());
+    });
+
+    it('should refuse text that is not a date', () => {
+      expect(parse('not a date')).toBeUndefined();
+    });
+
+    it('should refuse a date in the future, which the backend answers with a 400', () => {
+      const nextYear = dayjs().add(1, 'year');
+
+      expect(parse(nextYear.format('DD/MM/YYYY'))).toBeUndefined();
     });
   });
 });

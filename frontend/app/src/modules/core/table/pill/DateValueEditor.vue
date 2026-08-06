@@ -67,6 +67,16 @@ const showTo = computed<boolean>(() => filter.op !== FilterOps.AFTER);
 const fromValue = computed<number | undefined>(() => toEpoch(filter.date?.from));
 const toValue = computed<number | undefined>(() => toEpoch(filter.date?.to));
 
+/**
+ * The bounds each picker allows. Neither end may sit in the future — nothing has happened yet
+ * after now, and a `from` past the backend's default `to` of now is answered with a 400 — and a
+ * `between` may not be written back to front, which would return an empty table with no
+ * explanation. The old bar refused both through `dateRangeValidator`; the pickers enforce them
+ * here, where the user can see the days that are out of range greyed out.
+ */
+const fromMaxDate = computed<number | 'now'>(() => get(toValue) ?? 'now');
+const toMinDate = computed<number | undefined>(() => get(fromValue));
+
 function toEpoch(value: string | undefined): number | undefined {
   if (value === undefined || value === '')
     return undefined;
@@ -119,6 +129,7 @@ function setBound(bound: 'from' | 'to', value: number | Date | undefined): void 
       v-if="showFrom"
       v-model:menu-open="fromMenuOpen"
       :model-value="fromValue"
+      :max-date="fromMaxDate"
       autofocus
       :actions="[]"
       type="epoch"
@@ -136,6 +147,8 @@ function setBound(bound: 'from' | 'to', value: number | Date | undefined): void 
       v-if="showTo"
       v-model:menu-open="toMenuOpen"
       :model-value="toValue"
+      :min-date="toMinDate"
+      max-date="now"
       :autofocus="!showFrom"
       :actions="[]"
       type="epoch"
