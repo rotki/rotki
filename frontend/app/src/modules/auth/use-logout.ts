@@ -8,7 +8,7 @@ import { getErrorMessage, useNotifications } from '@/modules/core/notifications/
 import { useSchedulerState } from '@/modules/session/use-scheduler-state';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
-import { useWalletStore } from '@/modules/wallet/use-wallet-store';
+import { disconnectWalletIfActive } from '@/modules/wallet/use-wallet-store';
 
 interface LogoutOptions {
   navigate?: boolean;
@@ -36,7 +36,6 @@ export function useLogout(): UseLogoutReturn {
   const { showErrorMessage } = useNotifications();
   const { notifyUserLogout, resetMcpSession, resetTray } = useInterop();
   const { loggedUsers: getLoggedUsers, logout: callLogout } = useUsersApi();
-  const { disconnect: disconnectWallet } = useWalletStore();
   const { reset: resetSchedulerState } = useSchedulerState();
 
   const logout = async (navigate: boolean = true, options: LogoutOptions = {}): Promise<void> => {
@@ -50,7 +49,7 @@ export function useLogout(): UseLogoutReturn {
     // Notify electron to cleanup wallet bridge connections BEFORE disconnecting
     notifyUserLogout();
 
-    await disconnectWallet();
+    await disconnectWalletIfActive();
     set(logged, false);
     const user = get(username); // save the username, after the await below, it is reset
     // allow some time for the components to leave the dom completely and show loading overlay
@@ -85,7 +84,7 @@ export function useLogout(): UseLogoutReturn {
     api.cancel();
 
     try {
-      await disconnectWallet();
+      await disconnectWalletIfActive();
       const loggedUsers = await getLoggedUsers();
       for (const user of loggedUsers)
         await callLogout(user);

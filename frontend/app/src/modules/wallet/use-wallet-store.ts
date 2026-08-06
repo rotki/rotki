@@ -24,12 +24,14 @@ import { useTransactionManager } from './use-transaction-manager';
 
 export { type WalletMode } from './constants';
 
+const STORE_ID = 'wallet';
+
 // Lazy backend types
 type WalletConnectInstance = ReturnType<typeof import('./use-wallet-connect').useWalletConnect>;
 
 type InjectedWalletInstance = ReturnType<typeof import('./bridge/use-injected-wallet').useInjectedWallet>;
 
-export const useWalletStore = defineStore('wallet', () => {
+export const useWalletStore = defineStore(STORE_ID, () => {
   // Core wallet state - centralized instead of delegated
   const preparing = ref<boolean>(false);
   const waitingForWalletConfirmation = ref<boolean>(false);
@@ -364,3 +366,19 @@ export const useWalletStore = defineStore('wallet', () => {
     walletMode,
   };
 });
+
+/**
+ * Disconnects the wallet only when the store already exists.
+ *
+ * A session that never opened the wallet has nothing to disconnect, and calling
+ * `useWalletStore()` would build the whole wallet graph (bridge proxy, providers, transaction
+ * manager) just to tear it down. The auth flows use this so the login screen no longer
+ * instantiates the store.
+ */
+export async function disconnectWalletIfActive(): Promise<void> {
+  const pinia = getActivePinia();
+  if (!pinia || !Object.hasOwn(pinia.state.value, STORE_ID))
+    return;
+
+  await useWalletStore().disconnect();
+}

@@ -235,6 +235,27 @@ describe('modules/wallet/use-wallet-store', () => {
     });
   });
 
+  describe('disconnectWalletIfActive', () => {
+    it('should not create the store when it does not exist yet', async () => {
+      const { disconnectWalletIfActive } = await import('./use-wallet-store');
+
+      await disconnectWalletIfActive();
+
+      expect(providers().clearProvider).not.toHaveBeenCalled();
+      expect(injected().disconnect).not.toHaveBeenCalled();
+    });
+
+    it('should disconnect when the store already exists', async () => {
+      const { disconnectWalletIfActive } = await import('./use-wallet-store');
+      const store = await getStore();
+      await store.connect(); // initialise the injected instance
+
+      await disconnectWalletIfActive();
+
+      expect(injected().disconnect).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('reset', () => {
     it('should clear the connection state and the recent transactions', async () => {
       const store = await getStore();
