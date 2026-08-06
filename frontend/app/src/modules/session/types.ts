@@ -118,6 +118,7 @@ export enum PremiumFeature {
   ASSET_MOVEMENT_MATCHING = 'assetMovementMatching',
   GNOSIS_PAY = 'gnosispay',
   MONERIUM = 'monerium',
+  MCP = 'mcp',
 }
 
 export const PremiumFeatureCapability = z.object({
@@ -138,6 +139,7 @@ export const PremiumCapabilities = z.object({
   historyEventsLimit: z.number().optional(),
   limitOfDevices: z.number().optional(),
   maxBackupSizeMb: z.number().optional(),
+  mcp: PremiumFeatureCapability.optional(),
   monerium: PremiumFeatureCapability.optional(),
   pnlEventsLimit: z.number().optional(),
   reportsLookupLimit: z.number().optional(),

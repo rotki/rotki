@@ -1680,6 +1680,9 @@
         "hide_token": "Hide bearer token",
         "hint": "Manage the local MCP server used by AI assistants.",
         "label": "MCP Server",
+        "premium_description": "Subscribe to rotki premium to let AI assistants query your rotki data over MCP.",
+        "premium_plan_title": "MCP is not included in your current plan",
+        "premium_title": "MCP requires a rotki premium subscription",
         "reveal_token": "Reveal bearer token",
         "status": {
           "failed": "Failed",

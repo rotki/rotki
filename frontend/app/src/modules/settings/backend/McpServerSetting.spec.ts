@@ -1,6 +1,9 @@
 import { type McpServerStatus, StarlingServiceStatus } from '@shared/ipc';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { usePremiumStore } from '@/modules/premium/use-premium-store';
+import { PremiumFeature } from '@/modules/session/types';
 import McpServerSetting from '@/modules/settings/backend/McpServerSetting.vue';
 import { setMcpServerState } from '@/modules/settings/backend/use-mcp-server-state';
 
@@ -92,6 +95,10 @@ function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
           props: ['disabled', 'modelValue'],
           template: '<button v-bind="$attrs" class="rui-switch" :disabled="disabled" @click="$emit(\'update:modelValue\', !modelValue)" />',
         },
+        GetPremiumPlaceholder: {
+          props: ['description', 'minimumTier', 'title'],
+          template: '<div class="get-premium-placeholder" :data-minimum-tier="minimumTier">{{ title }}{{ description }}</div>',
+        },
         SettingsItem: {
           template: '<section><slot name="title" /><slot name="subtitle" /><slot /></section>',
         },
@@ -100,10 +107,27 @@ function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
   });
 }
 
+function grantMcpAccess(enabled: boolean, minimumTier = 'Basic'): void {
+  const { capabilities, premium } = storeToRefs(usePremiumStore());
+  set(premium, true);
+  set(capabilities, {
+    currentTier: enabled ? 'Basic' : 'Supporter',
+    [PremiumFeature.MCP]: { enabled, minimumTier },
+  });
+}
+
+function revokePremium(): void {
+  const { capabilities, premium } = storeToRefs(usePremiumStore());
+  set(premium, false);
+  set(capabilities, undefined);
+}
+
 describe('mcpServerSetting', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     vi.stubEnv('VITE_DOCKER', 'false');
+    grantMcpAccess(true);
     mocks.isPackaged = true;
     controlAvailable(true);
     control.serviceState.mockResolvedValue(StarlingServiceStatus.IDLE);
@@ -284,5 +308,91 @@ describe('mcpServerSetting', () => {
     );
     expect(wrapper.text()).toContain('token failed');
     expect(wrapper.text()).not.toContain('backend_settings.settings.mcp_server.error');
+  });
+
+  it('should not show the premium gate when MCP is unlocked', async () => {
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="mcp-premium-gate"]').exists()).toBe(false);
+  });
+
+  it('should tell a premium user their plan is insufficient, with the required tier', async () => {
+    grantMcpAccess(false);
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    const gate = wrapper.find('[data-testid="mcp-premium-gate"]');
+    expect(gate.exists()).toBe(true);
+    expect(gate.text()).toContain('backend_settings.settings.mcp_server.premium_plan_title');
+    expect(gate.text()).not.toContain('backend_settings.settings.mcp_server.premium_title');
+    expect(gate.find('.get-premium-placeholder').attributes('data-minimum-tier')).toBe('Basic');
+  });
+
+  it('should ask a user without a subscription to subscribe', async () => {
+    revokePremium();
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    const gate = wrapper.find('[data-testid="mcp-premium-gate"]');
+    expect(gate.exists()).toBe(true);
+    expect(gate.text()).toContain('backend_settings.settings.mcp_server.premium_title');
+    expect(gate.text()).not.toContain('backend_settings.settings.mcp_server.premium_plan_title');
+    // no capabilities are fetched without a subscription, so there is no tier to name
+    expect(gate.text()).toContain('backend_settings.settings.mcp_server.premium_description');
+  });
+
+  it('should hide the lifecycle controls when MCP is locked', async () => {
+    grantMcpAccess(false);
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="mcp-lifecycle"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="mcp-auto-start"]').exists()).toBe(false);
+  });
+
+  it('should hide token generation in Docker when MCP is locked', async () => {
+    vi.stubEnv('VITE_DOCKER', 'true');
+    mocks.isPackaged = false;
+    grantMcpAccess(false);
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="mcp-premium-gate"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="mcp-generate-token"]').exists()).toBe(false);
+    expect(wrapper.text()).not.toContain('backend_settings.settings.mcp_server.docker_description');
+  });
+
+  it('should show the desktop-only message instead of the gate in the web build', async () => {
+    grantMcpAccess(false);
+    mocks.isPackaged = false;
+    controlUnavailable();
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    // there is no server to run here for anyone, so the answer is "not here", not "buy premium"
+    expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.desktop_only');
+    expect(wrapper.find('[data-testid="mcp-premium-gate"]').exists()).toBe(false);
+  });
+
+  it('should reveal working controls once capabilities unlock MCP after mount', async () => {
+    grantMcpAccess(false);
+
+    const wrapper = createWrapper();
+    await flushPromises();
+    expect(wrapper.find('[data-testid="mcp-lifecycle"]').exists()).toBe(false);
+
+    // capabilities arrive after mount, so the status is loaded regardless of the gate:
+    // unlocking must not leave the user with controls that have no state to act on
+    grantMcpAccess(true);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="mcp-lifecycle"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="mcp-lifecycle"]').attributes('disabled')).toBeUndefined();
   });
 });

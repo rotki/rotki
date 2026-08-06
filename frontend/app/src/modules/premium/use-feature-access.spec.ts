@@ -200,6 +200,61 @@ describe('modules/premium/use-feature-access', () => {
       expect(get(minimumTier)).toBeNull();
     });
 
+    it('should return allowed=true for MCP when the capability is enabled', () => {
+      const store = usePremiumStore();
+      const { capabilities, premium } = storeToRefs(store);
+      set(premium, true);
+      set(capabilities, {
+        currentTier: 'Basic',
+        mcp: cap(true, 'Basic'),
+      });
+
+      const { allowed, minimumTier } = useFeatureAccess(PremiumFeature.MCP);
+
+      expect(get(allowed)).toBe(true);
+      expect(get(minimumTier)).toBe('Basic');
+    });
+
+    it('should return allowed=false for MCP when the capability is disabled', () => {
+      const store = usePremiumStore();
+      const { capabilities, premium } = storeToRefs(store);
+      set(premium, true);
+      set(capabilities, {
+        currentTier: 'Supporter',
+        mcp: cap(false, 'Basic'),
+      });
+
+      const { allowed, minimumTier } = useFeatureAccess(PremiumFeature.MCP);
+
+      expect(get(allowed)).toBe(false);
+      expect(get(minimumTier)).toBe('Basic');
+    });
+
+    it('should return allowed=false for MCP when user is not premium', () => {
+      const store = usePremiumStore();
+      const { capabilities, premium } = storeToRefs(store);
+      set(premium, false);
+      set(capabilities, {
+        currentTier: 'Basic',
+        mcp: cap(true, 'Basic'),
+      });
+
+      const { allowed } = useFeatureAccess(PremiumFeature.MCP);
+
+      expect(get(allowed)).toBe(false);
+    });
+
+    it('should return allowed=false for MCP when capabilities are not loaded', () => {
+      const store = usePremiumStore();
+      const { premium } = storeToRefs(store);
+      set(premium, true);
+
+      const { allowed, minimumTier } = useFeatureAccess(PremiumFeature.MCP);
+
+      expect(get(allowed)).toBe(false);
+      expect(get(minimumTier)).toBeNull();
+    });
+
     it('should work with reactive feature parameter', async () => {
       const store = usePremiumStore();
       const { capabilities, premium } = storeToRefs(store);
@@ -367,6 +422,30 @@ describe('modules/premium/use-feature-access', () => {
       expect(get(ethStakingAllowed)).toBe(true);
       expect(get(graphsAllowed)).toBe(true);
       expect(get(eventAnalysisAllowed)).toBe(false);
+    });
+
+    it('should parse the mcp capability from the backend payload', async () => {
+      const mockCapabilities: PremiumCapabilities = {
+        currentTier: 'Basic',
+        [PremiumFeature.MCP]: cap(true, 'Basic'),
+      };
+
+      server.use(mockPremiumCapabilities(mockCapabilities));
+      const { fetchCapabilities } = usePremiumWatchers();
+
+      const store = usePremiumStore();
+      const { capabilities, premium } = storeToRefs(store);
+
+      const { allowed, minimumTier } = useFeatureAccess(PremiumFeature.MCP);
+
+      expect(get(allowed)).toBe(false);
+
+      set(premium, true);
+      await fetchCapabilities();
+
+      expect(get(capabilities)).toEqual(mockCapabilities);
+      expect(get(allowed)).toBe(true);
+      expect(get(minimumTier)).toBe('Basic');
     });
 
     it('should handle gnosis pay and monerium capabilities', async () => {
