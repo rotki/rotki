@@ -20,8 +20,8 @@ const h = vi.hoisted(() => ({
 
 const submitTask = vi.fn(runSpecWith(h.runTaskResult));
 
-vi.mock('@/modules/accounts/use-blockchain-accounts', () => ({
-  useBlockchainAccounts: vi.fn(() => ({ fetch: h.fetch })),
+vi.mock('@/modules/accounts/use-account-fetching', () => ({
+  useAccountFetching: vi.fn(() => ({ fetch: h.fetch })),
 }));
 
 vi.mock('@/modules/balances/use-blockchain-balances', () => ({
