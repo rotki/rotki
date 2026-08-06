@@ -9,7 +9,6 @@ import BtcDerivationGapLimitSetting from '@/modules/settings/general/BtcDerivati
 import CsvExportDelimiterSetting from '@/modules/settings/general/CsvExportDelimiterSetting.vue';
 import DateDisplayFormatSetting from '@/modules/settings/general/DateDisplayFormatSetting.vue';
 import DateInputFormatSetting from '@/modules/settings/general/DateInputFormatSetting.vue';
-import DisabledChainQueriesSettings from '@/modules/settings/general/disabled-chain-queries/DisabledChainQueriesSettings.vue';
 import DisplayDateInLocaltimeSetting from '@/modules/settings/general/DisplayDateInLocaltimeSetting.vue';
 import UsageAnalyticsSetting from '@/modules/settings/general/UsageAnalyticsSetting.vue';
 import VersionUpdateFrequencySetting from '@/modules/settings/general/VersionUpdateFrequencySetting.vue';
@@ -67,12 +66,6 @@ const autoDetectTokensOnLogin = useSetting('autoDetectTokensOnLogin');
     <SettingsItem setting-key="dateDisplayFormat">
       <DateDisplayFormatSetting />
       <DateInputFormatSetting />
-    </SettingsItem>
-    <SettingsItem setting-key="disabledChainQueries">
-      <template #subtitle>
-        {{ t('general_settings.disabled_chain_queries.subtitle') }}
-      </template>
-      <DisabledChainQueriesSettings />
     </SettingsItem>
   </SettingCategory>
 </template>

@@ -101,7 +101,13 @@ export const SEARCH_CATEGORIES: readonly SearchCategory[] = [
     tab: '/settings/database/',
     titleKey: msg.$t('database_settings.asset_database.title'),
   },
-  // evm
+  // chains
+  {
+    id: SettingsCategoryIds.CHAIN_QUERIES,
+    keywords: [msg.$t('chain_settings.chain_queries.subtitle')],
+    tab: '/settings/evm/',
+    titleKey: msg.$t('chain_settings.chain_queries.title'),
+  },
   {
     id: SettingsCategoryIds.CHAINS,
     tab: '/settings/evm/',
