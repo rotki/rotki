@@ -61,13 +61,13 @@ describe('settings/general/rpc/BlockchainRpcNodeForm.vue', () => {
   it('should accept a fully filled node', async () => {
     wrapper = createWrapper();
 
-    expect(await wrapper.vm.validate()).toBe(true);
+    expect(wrapper.vm.validate()).toBe(true);
   });
 
   it('should reject a node without a name', async () => {
     wrapper = createWrapper(stateFor({ name: '' }));
 
-    expect(await wrapper.vm.validate()).toBe(false);
+    expect(wrapper.vm.validate()).toBe(false);
     await nextTick();
     expect(wrapper.find('[data-cy=node-name] .details .text-rui-error').exists()).toBe(true);
   });
@@ -75,7 +75,7 @@ describe('settings/general/rpc/BlockchainRpcNodeForm.vue', () => {
   it('should reject a node without an endpoint', async () => {
     wrapper = createWrapper(stateFor({ endpoint: '' }));
 
-    expect(await wrapper.vm.validate()).toBe(false);
+    expect(wrapper.vm.validate()).toBe(false);
     await nextTick();
     expect(wrapper.find('[data-cy=node-endpoint] .details .text-rui-error').exists()).toBe(true);
   });
@@ -85,13 +85,13 @@ describe('settings/general/rpc/BlockchainRpcNodeForm.vue', () => {
   it('should accept an etherscan node without an endpoint', async () => {
     wrapper = createWrapper(stateFor({ endpoint: '', name: 'etherscan' }));
 
-    expect(await wrapper.vm.validate()).toBe(true);
+    expect(wrapper.vm.validate()).toBe(true);
   });
 
   it('should reject a weight above one hundred', async () => {
     wrapper = createWrapper(stateFor({ weight: 101 }));
 
-    expect(await wrapper.vm.validate()).toBe(false);
+    expect(wrapper.vm.validate()).toBe(false);
   });
 
   // The dialog reports the server's rejection after a failed save, which is the only time the form

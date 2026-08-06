@@ -43,23 +43,28 @@ function isBlank(value: string): boolean {
   return value.trim() === '';
 }
 
-export function textSettingSchema(rules: TextSettingRules): ZodType {
+/** The rules alone, for forms that hold a text field among others rather than a lone setting. */
+export function textSettingField(rules: TextSettingRules): ZodType<string> {
   const { maxLength, messages, required = false } = rules;
 
+  return z.string().superRefine((value, ctx) => {
+    if (isBlank(value)) {
+      // A blank value is the required rule's business alone: an optional field that is empty must
+      // not also trip the length rule.
+      if (required)
+        ctx.addIssue({ code: 'custom', message: messages.required });
+
+      return;
+    }
+
+    if (maxLength !== undefined && value.length > maxLength)
+      ctx.addIssue({ code: 'custom', message: messages.maxLength });
+  });
+}
+
+export function textSettingSchema(rules: TextSettingRules): ZodType {
   return z.object({
-    value: z.string().superRefine((value, ctx) => {
-      if (isBlank(value)) {
-        // A blank value is the required rule's business alone: an optional field that is empty must
-        // not also trip the length rule.
-        if (required)
-          ctx.addIssue({ code: 'custom', message: messages.required });
-
-        return;
-      }
-
-      if (maxLength !== undefined && value.length > maxLength)
-        ctx.addIssue({ code: 'custom', message: messages.maxLength });
-    }),
+    value: textSettingField(rules),
   });
 }
 
@@ -82,27 +87,32 @@ function rangeMessage(numeric: number, rules: NumberSettingRules): string | unde
   return undefined;
 }
 
-export function numberSettingSchema(rules: NumberSettingRules): ZodType {
+/** The rules alone, for forms that hold a numeric field among others rather than a lone setting. */
+export function numberSettingField(rules: NumberSettingRules): ZodType<string> {
   const { messages, required = true } = rules;
 
-  return z.object({
-    value: z.string().superRefine((value, ctx) => {
-      if (isBlank(value)) {
-        if (required)
-          ctx.addIssue({ code: 'custom', message: messages.required });
-
-        return;
-      }
-
-      const numeric = Number(value);
-      if (Number.isNaN(numeric)) {
+  return z.string().superRefine((value, ctx) => {
+    if (isBlank(value)) {
+      if (required)
         ctx.addIssue({ code: 'custom', message: messages.required });
-        return;
-      }
 
-      const message = rangeMessage(numeric, rules);
-      if (message !== undefined)
-        ctx.addIssue({ code: 'custom', message });
-    }),
+      return;
+    }
+
+    const numeric = Number(value);
+    if (Number.isNaN(numeric)) {
+      ctx.addIssue({ code: 'custom', message: messages.required });
+      return;
+    }
+
+    const message = rangeMessage(numeric, rules);
+    if (message !== undefined)
+      ctx.addIssue({ code: 'custom', message });
+  });
+}
+
+export function numberSettingSchema(rules: NumberSettingRules): ZodType {
+  return z.object({
+    value: numberSettingField(rules),
   });
 }
