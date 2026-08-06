@@ -408,7 +408,8 @@
             "no_activity": "No activity found on this chain yet"
           },
           "no_activity_hint": "Chains where the address has no activity yet are skipped. This is normal for a fresh wallet. Once the address has transactions, add it again, or add it now with a specific chain selected to track it anyway.",
-          "non_eth": "All non ETH chains"
+          "non_eth": "All non ETH chains",
+          "nothing_added": "No account was added for {address}"
         },
         "no_new": {
           "description": "The selected addresses are already tracked by rotki"

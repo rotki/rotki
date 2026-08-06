@@ -148,14 +148,23 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
 
     const outcome = await addEvmAccount(account);
     if (isErr(outcome)) {
-      logger.error(outcome.error.message);
+      // Only a real failure is worth a log line. A cancelled bulk add would otherwise write one
+      // console error per in-flight address, which is the noise this branch exists to avoid.
+      if (isActionable(outcome.error))
+        logger.error(outcome.error.message);
+
       return err({ account, error: outcome.error });
     }
 
     const { added, ...result } = outcome.value;
 
-    if (added) {
-      const [address, chains] = Object.entries(added)[0];
+    // `added` is an optional record, so `{}` is a valid response: truthy, but with no entry to
+    // destructure. That threw `undefined is not iterable`, which the removed try/catch used to
+    // turn into a failure result and now escapes as a rejection.
+    const [addedEntry] = Object.entries(added ?? {});
+
+    if (addedEntry) {
+      const [address, chains] = addedEntry;
       const isAll = chains.length === 1 && chains[0] === 'all';
       const usedChains = isAll ? get(evmChains) : chains;
 
@@ -216,7 +225,10 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   ): ResultAsync<string, AccountAdditionFailure> => pipe(
     await addAccount(chain, 'xpub' in account ? account : [account]),
     mapError((error: TaskError) => {
-      logger.error(error.message);
+      // As in `addSingleEvmAddress`: a cancellation is not a failure to log.
+      if (isActionable(error))
+        logger.error(error.message);
+
       return { account, error };
     }),
   );

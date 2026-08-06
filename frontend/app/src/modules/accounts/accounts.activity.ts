@@ -103,11 +103,13 @@ export const accountRemoveActivity = defineActivity<AccountSubject, readonly [st
  * subject: the broad component is a category, not a chain. Its own descriptor rather than a reuse
  * of {@link accountRemoveActivity}, so the subject stays honest about what it holds.
  *
- * ⚠️ It shares the `accounts:remove` keyspace with the chain-scoped removals. Nothing collides
- * today because no chain is named after a category, but the two are only kept apart by that.
+ * The key opens with the literal `category` part so these ids cannot be confused with chain-scoped
+ * ones by a prefix reader. Keying straight off the category name would have left the two apart only
+ * because no chain happens to be called `evm` — incidental, and invisible once it stopped being
+ * true.
  */
-export const accountAgnosticRemoveActivity = defineActivity<{ category: string; address: string }, readonly [string, string]>({
-  key: subject => [subject.category, subject.address],
+export const accountAgnosticRemoveActivity = defineActivity<{ category: string; address: string }, readonly [ActivityPart, string, string]>({
+  key: subject => [ActivityPart.CATEGORY, subject.category, subject.address],
   kind: ActivityKind.ACCOUNTS,
   part: ActivityPart.REMOVE,
 });
