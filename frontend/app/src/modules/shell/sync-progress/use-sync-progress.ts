@@ -5,6 +5,7 @@ import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-st
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
+import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
 import {
   type ChainProgress,
   type DecodingProgress,
@@ -98,6 +99,7 @@ function decodingRatio(items: { cancelled: boolean; progress: number }[]): numbe
 export function useSyncProgress(): UseSyncProgressReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { getChainName } = useSupportedChains();
+  const { isChainExcluded } = useDisabledChains();
   const txStore = useTxQueryStatusStore();
   const eventsStore = useEventsQueryStatusStore();
   const decodingStatusStore = useDecodingStatusStore();
@@ -152,25 +154,36 @@ export function useSyncProgress(): UseSyncProgressReturn {
       });
   });
 
+  /**
+   * Decoding and protocol cache are per-chain and, like the transaction status above, are reported
+   * by the backend rather than derived from work we submitted. Excluding them here matters for more
+   * than the row: decoding carries 20% of `overallProgress`, so a chain the user switched off would
+   * otherwise keep a fifth of the bar from completing. Only chain-level rules apply - neither
+   * message carries an address.
+   */
   const decoding = computed<DecodingProgress[]>(() =>
-    get(rawDecodingStatus).map(item => ({
-      cancelled: item.cancelled ?? false,
-      chain: item.chain,
-      processed: item.processed,
-      progress: item.total > 0 ? Math.round((item.processed / item.total) * 100) : 0,
-      total: item.total,
-    })),
+    get(rawDecodingStatus)
+      .filter(item => !isChainExcluded(item.chain))
+      .map(item => ({
+        cancelled: item.cancelled ?? false,
+        chain: item.chain,
+        processed: item.processed,
+        progress: item.total > 0 ? Math.round((item.processed / item.total) * 100) : 0,
+        total: item.total,
+      })),
   );
 
   const protocolCache = computed<ProtocolCacheProgress[]>(() =>
-    get(rawProtocolCacheStatus).map(item => ({
-      cancelled: item.cancelled ?? false,
-      chain: item.chain,
-      processed: item.processed,
-      progress: item.total > 0 ? Math.round((item.processed / item.total) * 100) : 0,
-      protocol: item.protocol,
-      total: item.total,
-    })),
+    get(rawProtocolCacheStatus)
+      .filter(item => !isChainExcluded(item.chain))
+      .map(item => ({
+        cancelled: item.cancelled ?? false,
+        chain: item.chain,
+        processed: item.processed,
+        progress: item.total > 0 ? Math.round((item.processed / item.total) * 100) : 0,
+        protocol: item.protocol,
+        total: item.total,
+      })),
   );
 
   const totalChains = computed<number>(() => get(chains).length);

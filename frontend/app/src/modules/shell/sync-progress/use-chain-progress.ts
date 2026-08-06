@@ -1,6 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { TxQueryStatusData } from '@/modules/history/use-tx-query-status-store';
 import { TransactionsQueryStatus } from '@/modules/core/messaging/types';
+import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
 import { type AddressProgress, AddressStatus, AddressStep, type ChainProgress } from './types';
 
 /**
@@ -112,11 +113,20 @@ function calculateChainProgress(addresses: AddressProgress[]): number {
 export function useChainProgress(
   queryStatus: Ref<Record<string, TxQueryStatusData>> | ComputedRef<Record<string, TxQueryStatusData>>,
 ): ComputedRef<ChainProgress[]> {
+  const { isAddressExcluded } = useDisabledChains();
+
   return computed<ChainProgress[]>(() => {
     const statusMap = get(queryStatus);
     const grouped = new Map<string, { key: string; data: TxQueryStatusData }[]>();
 
     for (const [key, item] of Object.entries(statusMap)) {
+      // Dropped before grouping so an excluded chain leaves no row *and* no denominator: these
+      // entries are backend websocket status, not work we submitted, so the backend still reports
+      // on chains the user switched off. Per address, not per chain - the setting excludes single
+      // addresses on an otherwise active chain, and those must not pad the chain's total either.
+      if (isAddressExcluded(item.chain, item.address))
+        continue;
+
       const chain = item.chain.toLowerCase();
       if (!grouped.has(chain)) {
         grouped.set(chain, []);
