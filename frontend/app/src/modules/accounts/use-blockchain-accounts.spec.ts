@@ -142,6 +142,22 @@ describe('useBlockchainAccounts', () => {
       expect(mocks.addBlockchainAccount).toHaveBeenCalledWith('btc', xpubPayload);
     });
 
+    // `addMultipleAccounts` fans out over one chain at parallelism 2, so two addresses are in
+    // flight under the same activity id at once. `submitTask` dedups on id identity (proven in
+    // use-native-task.spec.ts), which would collapse the second address onto the first's promise
+    // and report it added without ever calling the API. The id has to carry the address.
+    it('should give each address its own activity id on the same chain', async () => {
+      whenOk<string[] | true>(true);
+      const { useBlockchainAccounts } = await importModule();
+      const accounts = useBlockchainAccounts();
+
+      await accounts.addAccount('eth', [{ address: '0xabc', tags: null }]);
+      await accounts.addAccount('eth', [{ address: '0xdef', tags: null }]);
+
+      const [first, second] = submitTask.mock.calls.map(([spec]) => spec.id);
+      expect(first).not.toBe(second);
+    });
+
     it('should throw on an actionable failure', async () => {
       whenActionable('boom');
       const { useBlockchainAccounts } = await importModule();

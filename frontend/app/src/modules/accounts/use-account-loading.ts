@@ -15,10 +15,12 @@ export const useAccountLoading = createSharedComposable((): UseAccountLoadingRet
   const { useWorkStatus, useWorkStatusPrefix } = useTaskCenter();
   const { isRefreshing } = storeToRefs(useBalanceRefreshState());
 
-  // With a blockchain, gate on that chain's exact add/remove activity; without, aggregate over all.
+  // With a blockchain, gate on that chain's add/remove activity; without, aggregate over all.
+  // Add ids carry the address after the chain (so concurrent additions don't dedup onto each
+  // other), so the per-chain lookup has to be a prefix match; remove ids are still chain-only.
   const isAccountOperationRunning = (blockchain?: string): ComputedRef<boolean> => {
     const add = blockchain
-      ? useWorkStatus(ActivityKind.ACCOUNTS, ActivityPart.ADD, blockchain)
+      ? useWorkStatusPrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD, blockchain)
       : useWorkStatusPrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD);
     const remove = blockchain
       ? useWorkStatus(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, blockchain)
