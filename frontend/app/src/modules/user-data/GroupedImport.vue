@@ -5,6 +5,7 @@ import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
 const { t } = useI18n({ useScope: 'global' });
+const route = useRoute();
 
 const sources = computed<ImportSource[]>(() => [
   {
@@ -106,6 +107,15 @@ const sources = computed<ImportSource[]>(() => [
 ]);
 
 const selectedSource = ref<ImportSource>();
+
+watch(route, ({ query }) => {
+  if (typeof query.source !== 'string')
+    return;
+
+  const source = get(sources).find(({ key }) => key === query.source);
+  if (source)
+    set(selectedSource, source);
+}, { immediate: true });
 
 const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
   logo?: string;

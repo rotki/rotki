@@ -897,6 +897,7 @@ def rotkehlchen_api_server_with_exchanges(
             api_secret=exchangeobj.secret if exchange_location not in EXCHANGES_WITHOUT_API_SECRET else None,  # noqa: E501
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
+            binance_history_start_ts=Timestamp(0) if exchange_location == Location.BINANCE else None,  # noqa: E501
         )
 
     yield rotkehlchen_api_server

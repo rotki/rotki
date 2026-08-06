@@ -54,6 +54,7 @@ from rotkehlchen.api.v1.resources import (
     AssociatedLocations,
     AsyncTasksResource,
     BinanceAvailableMarkets,
+    BinanceHistoryStartTimestampResource,
     BinanceSavingsResource,
     BinanceUserMarkets,
     BlockchainBalancesResource,
@@ -253,6 +254,7 @@ URLS_V1: URLS = [
     ('/assets/counterpartymappings', CounterpartyAssetMappingsResource),
     ('/tags', TagsResource),
     ('/exchanges/binance/pairs', BinanceAvailableMarkets),
+    ('/exchanges/binance/history-start', BinanceHistoryStartTimestampResource),
     ('/exchanges/<string:location>/savings', BinanceSavingsResource),  # this can only be Binance/BinanceUS  # noqa: E501
     ('/exchanges/binance/pairs/<string:name>', BinanceUserMarkets),
     ('/exchanges/data', ExchangesDataResource),

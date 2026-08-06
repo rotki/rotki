@@ -49,17 +49,20 @@ from rotkehlchen.db.cache import (
     LabeledLocationIdArgsType,
 )
 from rotkehlchen.db.constants import (
+    BINANCE_HISTORY_START_TS_KEY,
     BINANCE_MARKETS_KEY,
     EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
     EVM_ACCOUNTS_DETAILS_TOKENS,
     EXTRAINTERNALTXPREFIX,
     GATE_LOCATION_KEY,
+    HISTORY_MAPPING_KEY_STATE,
     KDF_ITER,
     KRAKEN_ACCOUNT_TYPE_KEY,
     KRAKEN_FUTURES_API_KEY_KEY,
     KRAKEN_FUTURES_API_SECRET_KEY,
     OKX_LOCATION_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
+    HistoryMappingState,
 )
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -161,7 +164,7 @@ from rotkehlchen.types import (
     UserNote,
 )
 from rotkehlchen.utils.hashing import file_md5
-from rotkehlchen.utils.misc import get_chunks, ts_now
+from rotkehlchen.utils.misc import get_chunks, ts_ms_to_sec, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 if TYPE_CHECKING:
@@ -912,6 +915,15 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: DBCursor,
+            name: Literal[DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS],
+            **kwargs: Unpack[BinancePairLastTradeArgsType],
+    ) -> Timestamp | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_QUERY_TS],
             **kwargs: Unpack[LabeledLocationIdArgsType],
     ) -> Timestamp | None:
@@ -1078,6 +1090,16 @@ class DBHandler:
             write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.BINANCE_PAIR_LAST_ID],
             value: int,
+            **kwargs: Unpack[BinancePairLastTradeArgsType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: DBCursor,
+            name: Literal[DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS],
+            value: Timestamp,
             **kwargs: Unpack[BinancePairLastTradeArgsType],
     ) -> None:
         ...
@@ -1719,6 +1741,17 @@ class DBHandler:
 
         return Timestamp(int(result[0])), Timestamp(int(result[1]))
 
+    @staticmethod
+    def _is_binance_pair_cache_key(key: str, prefix: str) -> bool:
+        """Return whether key is a Binance pair ID or pair query timestamp cache.
+
+        Binance symbols are concatenated alphanumeric asset symbols. Checking the suffix keeps
+        exchange names such as ``main`` and ``main_backup`` unambiguous despite the legacy
+        underscore-delimited cache format.
+        """
+        suffix = key.removeprefix(prefix).removesuffix('_last_query_ts')
+        return suffix.isalnum()
+
     def delete_used_query_range_for_exchange(
             self,
             write_cursor: DBCursor,
@@ -1729,12 +1762,35 @@ class DBHandler:
         """Delete the query ranges for the given exchange name"""
         if data_type == ExchangePurgeType.ALL:
             ranges_to_delete = [f'{location!s}\\_%']
+            escaped_name: str | None = None
             if exchange_name is not None:
-                ranges_to_delete = [f'{location!s}\\_%\\_{exchange_name}']
+                escaped_name = exchange_name.replace(
+                    '\\',
+                    '\\\\',
+                ).replace('%', '\\%').replace('_', '\\_')
+                ranges_to_delete = [f'{location!s}\\_%\\_{escaped_name}']
             write_cursor.execute(
                 'DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ?;',
                 (ranges_to_delete[0], '\\'),
             )
+            if (
+                    exchange_name is not None and
+                    escaped_name is not None and
+                    location in (Location.BINANCE, Location.BINANCEUS)
+            ):
+                cache_prefix = f'{location!s}_{exchange_name}_'
+                cache_keys = write_cursor.execute(
+                    'SELECT name FROM key_value_cache WHERE name LIKE ? ESCAPE ?;',
+                    (f'{location!s}\\_{escaped_name}\\_%', '\\'),
+                ).fetchall()
+                write_cursor.executemany(
+                    'DELETE FROM key_value_cache WHERE name=?;',
+                    [
+                        (key,)
+                        for key, in cache_keys
+                        if self._is_binance_pair_cache_key(key=key, prefix=cache_prefix)
+                    ],
+                )
         elif data_type == ExchangePurgeType.TRADES:
             ranges_to_delete = [
                 f'{location!s}\\_trades\\_%'
@@ -2432,6 +2488,7 @@ class DBHandler:
             kraken_futures_api_key: ApiKey | None = None,
             kraken_futures_api_secret: ApiSecret | None = None,
             binance_selected_trade_pairs: list[str] | None = None,
+            binance_history_start_ts: Timestamp | None = None,
             okx_location: OkxLocation | None = None,
             gate_location: GateLocation | None = None,
     ) -> None:
@@ -2484,6 +2541,47 @@ class DBHandler:
 
             if location in (Location.BINANCE, Location.BINANCEUS) and binance_selected_trade_pairs is not None:  # noqa: E501
                 self.set_binance_pairs(cursor, name=name, pairs=binance_selected_trade_pairs, location=location)  # noqa: E501
+
+            if location in (Location.BINANCE, Location.BINANCEUS):
+                now = ts_now()
+                if binance_history_start_ts is None:
+                    binance_history_start_ts = (
+                        imported_history_end
+                        if (imported_history_end := self.get_latest_binance_csv_import_timestamp(cursor)) is not None  # noqa: E501
+                        else now
+                    )
+
+                binance_history_start_ts = min(binance_history_start_ts, now)
+                self._insert_into_credentials_mappings(
+                    cursor=cursor,
+                    name=name,
+                    location=location.serialize_for_db(),
+                    settings={BINANCE_HISTORY_START_TS_KEY: binance_history_start_ts},
+                )
+                if binance_history_start_ts > 0:
+                    self.update_used_query_range(
+                        write_cursor=cursor,
+                        name=f'{location!s}_history_events_{name}',
+                        start_ts=Timestamp(0),
+                        end_ts=Timestamp(binance_history_start_ts - 1),
+                    )
+
+    @staticmethod
+    def get_latest_binance_csv_import_timestamp(cursor: DBCursor) -> Timestamp | None:
+        """Return the newest Binance CSV event timestamp in seconds, if one exists."""
+        if (timestamp := cursor.execute(
+            'SELECT MAX(H.timestamp) FROM history_events H '
+            'INNER JOIN history_events_mappings M ON H.identifier=M.parent_identifier '
+            'WHERE H.location=? AND M.name=? AND M.value=?',
+            (
+                Location.BINANCE.serialize_for_db(),
+                HISTORY_MAPPING_KEY_STATE,
+                HistoryMappingState.IMPORTED_FROM_CSV.serialize_for_db(),
+            ),
+        ).fetchone()[0]) is None:
+            return None
+
+        return Timestamp(ts_ms_to_sec(timestamp))
 
     def edit_exchange(
             self,
@@ -2583,12 +2681,6 @@ class DBHandler:
             try:
                 exchange_name = new_name if new_name is not None else name
                 self.set_binance_pairs(write_cursor, name=exchange_name, pairs=binance_selected_trade_pairs, location=location)  # noqa: E501
-                # Also delete used query ranges to allow fetching missing trades
-                # from the possible new pairs
-                write_cursor.execute(
-                    'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-                    (f'{location!s}\\_history_events\\_{name}', '\\'),
-                )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
@@ -2730,6 +2822,11 @@ class DBHandler:
                         extras[key] = OkxLocation.deserialize(entry[1])
                     except DeserializationError as e:
                         log.error('Couldnt deserialize okx location from DB. %s', e)
+                elif key == BINANCE_HISTORY_START_TS_KEY:
+                    try:
+                        extras[key] = Timestamp(int(entry[1]))
+                    except ValueError:
+                        log.error('Could not deserialize Binance history start timestamp from DB')
                 else:  # can only be BINANCE_MARKETS_KEY
                     try:
                         extras[key] = json.loads(entry[1])

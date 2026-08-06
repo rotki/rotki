@@ -809,6 +809,7 @@ class RestAPI:
             kraken_futures_api_key: ApiKey | None,
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
+            binance_history_start_ts: Timestamp | None,
             okx_location: OkxLocation | None,
             gate_location: GateLocation | None,
     ) -> Response:
@@ -822,10 +823,17 @@ class RestAPI:
             kraken_futures_api_key=kraken_futures_api_key,
             kraken_futures_api_secret=kraken_futures_api_secret,
             binance_markets=binance_markets,
+            binance_history_start_ts=binance_history_start_ts,
             okx_location=okx_location,
             gate_location=gate_location,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
+
+    def get_binance_history_start_timestamp(self) -> Response:
+        return api_response(
+            _wrap_in_ok_result(self.exchanges_service.get_binance_history_start_timestamp()),
+            status_code=HTTPStatus.OK,
+        )
 
     def edit_exchange(
             self,

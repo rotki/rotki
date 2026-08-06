@@ -3029,6 +3029,12 @@
     }
   },
   "exchange_keys_form": {
+    "binance_history_import": {
+      "description": "Binance's API rate limits make a full historical sync impractical. {csvImport} before saving this key to include older activity. API syncing will start after the latest imported entry, or from now if you skip the import.",
+      "link": "Import your Binance CSV",
+      "start_date": "API history start date",
+      "start_date_hint": "Defaults to immediately after your newest Binance CSV import, or now when no import exists. You can choose an earlier date, but Binance rate limits may make large API queries impractical."
+    },
     "binance_markets_required": "Binance market pairs are required to avoid rate limiting. This limitation comes from the Binance API itself which enforces strict rate limits when querying all trading pairs.",
     "edit": {
       "activate_tooltip": "Edit the api keys for the exchange.",
@@ -4114,6 +4120,7 @@
   },
   "import_data": {
     "binance": {
+      "api_history_note": "Use this CSV for older activity. Binance API syncing only queries activity after the latest imported entry, or after the API key was added if no CSV was imported.",
       "line_one": "The columns we process include: User_ID, UTC_Time, Account, Operation, Coin, Change, and Remark.",
       "line_three": "Due to Binance's CSV format, there is a chance that not all data will be imported. If this happens, you will receive a warning.",
       "line_two": "You can obtain the CSV file from {link}.",

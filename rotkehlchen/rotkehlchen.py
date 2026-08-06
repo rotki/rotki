@@ -1506,6 +1506,7 @@ class Rotkehlchen:
             kraken_futures_api_key: ApiKey | None = None,
             kraken_futures_api_secret: ApiSecret | None = None,
             binance_selected_trade_pairs: list[str] | None = None,
+            binance_history_start_ts: Timestamp | None = None,
             okx_location: OkxLocation | None = None,
             gate_location: GateLocation | None = None,
     ) -> tuple[bool, str]:
@@ -1524,6 +1525,7 @@ class Rotkehlchen:
             database=self.data.db,
             passphrase=passphrase,
             binance_selected_trade_pairs=binance_selected_trade_pairs,
+            binance_history_start_ts=binance_history_start_ts,
             okx_location=okx_location,
             gate_location=gate_location,
         )

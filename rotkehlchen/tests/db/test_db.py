@@ -34,7 +34,13 @@ from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
-from rotkehlchen.db.constants import KRAKEN_FUTURES_API_KEY_KEY, KRAKEN_FUTURES_API_SECRET_KEY
+from rotkehlchen.db.constants import (
+    BINANCE_HISTORY_START_TS_KEY,
+    HISTORY_MAPPING_KEY_STATE,
+    KRAKEN_FUTURES_API_KEY_KEY,
+    KRAKEN_FUTURES_API_SECRET_KEY,
+    HistoryMappingState,
+)
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AddressbookFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -97,7 +103,9 @@ from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import DBSchemaError, InputError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.constants import (
     A_DAO,
@@ -2046,21 +2054,74 @@ def test_add_edit_remove_kraken_futures(database: DBHandler) -> None:
     assert kraken_extras == {}
 
 
-def test_edit_binance_pairs_clears_history_events_query_range(database: DBHandler) -> None:
-    """Editing Binance selected trade pairs must clear that exchange's
-    ``_history_events_`` used_query_range, so history for any newly added pairs is
-    fetched again instead of being treated as already covered.
+@pytest.mark.parametrize(('location', 'with_csv', 'custom_start_ts', 'expected_start_ts', 'expected_end_ts'), [  # noqa: E501
+    (Location.BINANCE, False, None, Timestamp(1800000000), Timestamp(1799999999)),
+    (Location.BINANCE, True, None, Timestamp(1763643255), Timestamp(1763643254)),
+    (Location.BINANCE, True, Timestamp(1700000000), Timestamp(1700000000), Timestamp(1699999999)),
+    (Location.BINANCE, False, Timestamp(0), Timestamp(0), None),
+    (Location.BINANCEUS, True, None, Timestamp(1763643255), Timestamp(1763643254)),
+])
+def test_add_binance_initializes_history_query_range(
+        database: DBHandler,
+        location: Location,
+        with_csv: bool,
+        custom_start_ts: Timestamp | None,
+        expected_start_ts: Timestamp,
+        expected_end_ts: Timestamp | None,
+) -> None:
+    """Binance API history starts at the chosen date, CSV boundary, or key creation."""
+    if with_csv:
+        with database.user_write() as write_cursor:
+            DBHistoryEvents(database).add_history_event(
+                write_cursor=write_cursor,
+                event=HistoryEvent(
+                    timestamp=TimestampMS(1763643255500),
+                    sequence_index=0,
+                    location=Location.BINANCE,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_BTC,
+                    amount=ONE,
+                    group_identifier='binance_csv_event',
+                ),
+                mapping_values={
+                    HISTORY_MAPPING_KEY_STATE: HistoryMappingState.IMPORTED_FROM_CSV,
+                },
+            )
 
-    Regression test for a typo in the DELETE's LIKE pattern (an unescaped ``_``
-    acting as a single-char wildcard) which made it match nothing: the range
-    survived the edit and trades for the new pairs were never backfilled.
-    """
+    with patch('rotkehlchen.db.dbhandler.ts_now', return_value=Timestamp(1800000000)):
+        database.add_exchange(
+            name='binance1',
+            location=location,
+            api_key=ApiKey('binance_api_key'),
+            api_secret=ApiSecret(b'binance_api_secret'),
+            binance_history_start_ts=custom_start_ts,
+        )
+
+    assert database.get_exchange_credentials_extras(
+        name='binance1',
+        location=location,
+    )[BINANCE_HISTORY_START_TS_KEY] == expected_start_ts
+    with database.conn.read_ctx() as cursor:
+        queried_range = database.get_used_query_range(
+            cursor,
+            f'{location!s}_history_events_binance1',
+        )
+        if expected_end_ts is None:
+            assert queried_range is None
+        else:
+            assert queried_range == (Timestamp(0), expected_end_ts)
+
+
+def test_edit_binance_pairs_keeps_history_events_query_range(database: DBHandler) -> None:
+    """A newly selected pair bootstraps from the saved exchange timestamp."""
     name = 'binance1'
     database.add_exchange(
         name=name,
         location=Location.BINANCE,
         api_key=ApiKey('binance_api_key'),
         api_secret=ApiSecret(b'binance_api_secret'),
+        binance_history_start_ts=Timestamp(1400000000),
     )
     # range name built exactly like ExchangeInterface.query_history_events does
     events_range = f'{Location.BINANCE!s}_history_events_{name}'
@@ -2079,7 +2140,7 @@ def test_edit_binance_pairs_clears_history_events_query_range(database: DBHandle
             name=name,
             location=Location.BINANCE,
             new_name=None,
-            api_key=None,
+            api_key=ApiKey('new_binance_api_key'),
             api_secret=None,
             passphrase=None,
             kraken_account_type=None,
@@ -2090,10 +2151,79 @@ def test_edit_binance_pairs_clears_history_events_query_range(database: DBHandle
         )
 
     with database.conn.read_ctx() as cursor:
-        assert database.get_used_query_range(cursor, events_range) is None, \
-            'editing binance pairs should have cleared the history events query range'
+        assert database.get_used_query_range(cursor, events_range) is not None, \
+            'editing binance pairs should preserve the history events query range'
         assert database.get_used_query_range(cursor, trades_range) is not None, \
             'unrelated query ranges must not be deleted when editing binance pairs'
+    assert database.get_exchange_credentials_extras(
+        name=name,
+        location=Location.BINANCE,
+    )[BINANCE_HISTORY_START_TS_KEY] == Timestamp(1400000000)
+
+
+@pytest.mark.parametrize(('deleted_name', 'remaining_name'), [
+    ('binance_1', 'binance_1_backup'),
+    ('binance_1_backup', 'binance_1'),
+])
+def test_delete_binance_exchange_clears_pair_query_progress(
+        database: DBHandler,
+        deleted_name: str,
+        remaining_name: str,
+) -> None:
+    """Deleting one Binance key clears only that key's per-pair progress."""
+    cache_args = {
+        'location': Location.BINANCE.serialize(),
+        'queried_pair': 'ETHBTC',
+    }
+    exchange_names = (deleted_name, remaining_name)
+    for idx, location_name in enumerate(exchange_names):
+        database.add_exchange(
+            name=location_name,
+            location=Location.BINANCE,
+            api_key=ApiKey(f'binance_api_key_{idx}'),
+            api_secret=ApiSecret(f'binance_api_secret_{idx}'.encode()),
+        )
+
+    with database.user_write() as write_cursor:
+        for location_name in exchange_names:
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                value=42,
+                location_name=location_name,
+                **cache_args,
+            )
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
+                value=Timestamp(1800000000),
+                location_name=location_name,
+                **cache_args,
+            )
+
+        database.delete_used_query_range_for_exchange(
+            write_cursor=write_cursor,
+            location=Location.BINANCE,
+            exchange_name=deleted_name,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        for cache_name in (
+                DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
+        ):
+            assert database.get_dynamic_cache(
+                cursor=cursor,
+                name=cache_name,
+                location_name=deleted_name,
+                **cache_args,
+            ) is None
+            assert database.get_dynamic_cache(
+                cursor=cursor,
+                name=cache_name,
+                location_name=remaining_name,
+                **cache_args,
+            ) is not None
 
 
 def test_remove_multichain_address_keeps_tags_on_other_chains(database: DBHandler) -> None:
