@@ -128,6 +128,7 @@ function openEventsDialog(eventIds: number[]) {
     :cols="cols"
     :loading="isLoading"
     row-attr="identifier"
+    data-testid="accounting-rule-table"
   >
     <template #header.taxable>
       <RuiTooltip
@@ -195,8 +196,12 @@ function openEventsDialog(eventIds: number[]) {
       </div>
     </template>
     <template #item.eventTypeAndSubtype="{ row }">
-      <div>{{ getHistoryEventTypeName(row.eventType) }} -</div>
-      <div>{{ getHistoryEventSubTypeName(row.eventSubtype) }}</div>
+      <div data-testid="accounting-rule-event-type">
+        {{ getHistoryEventTypeName(row.eventType) }} -
+      </div>
+      <div data-testid="accounting-rule-event-subtype">
+        {{ getHistoryEventSubTypeName(row.eventSubtype) }}
+      </div>
     </template>
     <template #item.resultingCombination="{ row }">
       <HistoryEventTypeCombination
