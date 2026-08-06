@@ -16,7 +16,6 @@ interface UseAccountingRulesTableReturn {
   modelCustomRuleHandling: Ref<CustomRuleHandling>;
   pagination: WritableComputedRef<TablePaginationData>;
   refetch: () => Promise<void>;
-  setFilter: (filter: Filters) => void;
   showsCustomRules: ComputedRef<boolean>;
 }
 
@@ -37,7 +36,6 @@ export function useAccountingRulesTable(): UseAccountingRulesTableReturn {
     isLoading,
     pagination,
     refetch,
-    setFilter,
   } = useServerTable<AccountingRuleEntry, AccountingRuleRequestPayload, Filters, Matcher>({
     fetch: getAccountingRules,
     filterSchema,
@@ -58,7 +56,6 @@ export function useAccountingRulesTable(): UseAccountingRulesTableReturn {
     modelCustomRuleHandling,
     pagination,
     refetch,
-    setFilter,
     showsCustomRules: computed<boolean>(() => get(modelCustomRuleHandling) === CustomRuleHandling.ONLY),
   };
 }

@@ -1,21 +1,23 @@
 <script setup lang="ts">
 import type { Filters, Matcher } from '@/modules/core/table/filters/use-accounting-rule-filter';
-import TableFilter from '@/modules/core/table/TableFilter.vue';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { CustomRuleHandling } from '@/modules/settings/accounting/rule/accounting-rule-query';
+import { useAccountingRuleFields } from '@/modules/settings/accounting/rule/use-accounting-rule-fields';
 
 /** Which half of the rules the table shows: the regular ones, or the event-specific ones. */
 const customRuleHandling = defineModel<CustomRuleHandling>('customRuleHandling', { required: true });
+/** The filter is a v-model rather than a prop pair so the bar writes straight back to the table. */
+const filter = defineModel<Filters>('filter', { required: true });
 
-defineProps<{
+const { matchers } = defineProps<{
   matchers: Matcher[];
-  filter: Filters;
-}>();
-
-const emit = defineEmits<{
-  'update:filter': [filter: Filters];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const fields = useAccountingRuleFields(() => matchers);
+const pillLabels = usePillBarLabels();
 </script>
 
 <template>
@@ -33,12 +35,11 @@ const { t } = useI18n({ useScope: 'global' });
       </RuiTab>
     </RuiTabs>
 
-    <div class="w-full md:w-[25rem] ml-auto">
-      <TableFilter
-        :matches="filter"
-        :matchers="matchers"
-        @update:matches="emit('update:filter', $event)"
-      />
-    </div>
+    <PillFilterBar
+      v-model:matches="filter"
+      class="flex-1 min-w-[12rem] md:min-w-[20rem]"
+      :fields="fields"
+      :labels="pillLabels"
+    />
   </div>
 </template>

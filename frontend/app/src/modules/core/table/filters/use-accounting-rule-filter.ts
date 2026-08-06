@@ -5,13 +5,13 @@ import { arrayify } from '@/modules/core/common/data/array';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 
-enum AccountingRuleFilterKeys {
+export enum AccountingRuleFilterKeys {
   EVENT_TYPE = 'event_type',
   EVENT_SUBTYPE = 'event_subtype',
   COUNTERPARTY = 'counterparty',
 }
 
-enum AccountingRuleFilterValueKeys {
+export enum AccountingRuleFilterValueKeys {
   EVENT_TYPE = 'eventTypes',
   EVENT_SUBTYPE = 'eventSubtypes',
   COUNTERPARTY = 'counterparties',
