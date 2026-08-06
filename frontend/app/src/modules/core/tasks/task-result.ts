@@ -48,6 +48,24 @@ export function isActionable(error: TaskError): error is Extract<TaskError, { _t
 }
 
 /**
+ * Re-raise an actionable failure as a throw, for the form-facing callers whose dialog has to stay
+ * open. `cause` is rethrown as-is when it is an `Error`, so a caller that branches on
+ * `ApiValidationError` to fill in per-field errors still gets it; wrapping the message in a bare
+ * `Error` would flatten every validation failure into one generic toast.
+ *
+ * A cancellation is not actionable, so this returns and the caller continues silently.
+ */
+export function throwIfActionable(error: TaskError): void {
+  if (!isActionable(error))
+    return;
+
+  if (error.cause instanceof Error)
+    throw error.cause;
+
+  throw new Error(error.message);
+}
+
+/**
  * Run `handler` only when `outcome` is an actionable failure, not a cancellation. The canonical
  * tail for a native producer that surfaces real errors (notify, throw, …) while staying silent
  * on cancels. No-op on success.

@@ -1,7 +1,9 @@
 import { Blockchain } from '@rotki/common';
+import { err, isErr, ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type XpubAccountPayload, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 import { Module } from '@/modules/core/common/modules';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 
 const h = vi.hoisted(() => ({
@@ -93,15 +95,15 @@ describe('useAccountAdditionService', () => {
 
   describe('addSingleAccount', () => {
     it('should return the address on success', async () => {
-      h.addAccount.mockResolvedValue('0xabc');
+      h.addAccount.mockResolvedValue(ok('0xabc'));
       const { useAccountAdditionService } = await importModule();
       const result = await useAccountAdditionService().addSingleAccount({ address: '0xabc', tags: null }, 'eth');
       expect(h.addAccount).toHaveBeenCalledWith('eth', [{ address: '0xabc', tags: null }]);
-      expect(result).toStrictEqual({ address: '0xabc', type: 'success' });
+      expect(result).toStrictEqual(ok('0xabc'));
     });
 
     it('should pass an xpub payload through directly', async () => {
-      h.addAccount.mockResolvedValue('xpub123');
+      h.addAccount.mockResolvedValue(ok('xpub123'));
       const xpubPayload: XpubAccountPayload = {
         tags: null,
         xpub: { derivationPath: '', xpub: 'xpub123', xpubType: XpubKeyType.XPUB },
@@ -109,24 +111,24 @@ describe('useAccountAdditionService', () => {
       const { useAccountAdditionService } = await importModule();
       const result = await useAccountAdditionService().addSingleAccount(xpubPayload, 'btc');
       expect(h.addAccount).toHaveBeenCalledWith('btc', xpubPayload);
-      expect(result).toStrictEqual({ address: 'xpub123', type: 'success' });
+      expect(result).toStrictEqual(ok('xpub123'));
     });
 
     it('should return an error result when the addition throws', async () => {
-      h.addAccount.mockRejectedValue(new Error('nope'));
+      h.addAccount.mockResolvedValue(err(TaskFailed({ message: 'nope' })));
       const { useAccountAdditionService } = await importModule();
       const result = await useAccountAdditionService().addSingleAccount({ address: '0xabc', tags: null }, 'eth');
-      expect(result.type).toBe('error');
+      expect(isErr(result)).toBe(true);
     });
   });
 
   describe('addSingleEvmAddress', () => {
     it('should expand added chains and notify the user', async () => {
-      h.addEvmAccount.mockResolvedValue({ added: { '0xabc': ['eth', 'optimism'] } });
+      h.addEvmAccount.mockResolvedValue(ok({ added: { '0xabc': ['eth', 'optimism'] } }));
       const { useAccountAdditionService } = await importModule();
       const result = await useAccountAdditionService().addSingleEvmAddress({ address: '0xabc', tags: null });
-      assert(result.type === 'success');
-      expect(result.accounts).toEqual([
+      assert(!isErr(result));
+      expect(result.value).toEqual([
         { address: '0xabc', chain: 'eth' },
         { address: '0xabc', chain: 'optimism' },
       ]);
@@ -135,32 +137,32 @@ describe('useAccountAdditionService', () => {
     });
 
     it('should expand to all evm chains when the result is "all"', async () => {
-      h.addEvmAccount.mockResolvedValue({ added: { '0xabc': ['all'] } });
+      h.addEvmAccount.mockResolvedValue(ok({ added: { '0xabc': ['all'] } }));
       const { useAccountAdditionService } = await importModule();
       const result = await useAccountAdditionService().addSingleEvmAddress({ address: '0xabc', tags: null });
-      assert(result.type === 'success');
-      expect(result.accounts.map(a => a.chain)).toEqual(['eth', 'optimism']);
+      assert(!isErr(result));
+      expect(result.value.map(account => account.chain)).toEqual(['eth', 'optimism']);
     });
 
     it('should skip chains that are not valid blockchains', async () => {
-      h.addEvmAccount.mockResolvedValue({ added: { '0xabc': ['eth', 'not-a-chain'] } });
+      h.addEvmAccount.mockResolvedValue(ok({ added: { '0xabc': ['eth', 'not-a-chain'] } }));
       const { useAccountAdditionService } = await importModule();
       const result = await useAccountAdditionService().addSingleEvmAddress({ address: '0xabc', tags: null });
-      assert(result.type === 'success');
-      expect(result.accounts.map(a => a.chain)).toEqual(['eth']);
+      assert(!isErr(result));
+      expect(result.value.map(account => account.chain)).toEqual(['eth']);
     });
 
     it('should return an error result when the addition throws', async () => {
-      h.addEvmAccount.mockRejectedValue(new Error('boom'));
+      h.addEvmAccount.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
       const { useAccountAdditionService } = await importModule();
       const result = await useAccountAdditionService().addSingleEvmAddress({ address: '0xabc', tags: null });
-      expect(result.type).toBe('error');
+      expect(isErr(result)).toBe(true);
     });
   });
 
   describe('addMultipleAccounts', () => {
     it('should collect added accounts and invoke the completion callback', async () => {
-      h.addAccount.mockResolvedValue('0xabc');
+      h.addAccount.mockResolvedValue(ok('0xabc'));
       const onComplete = vi.fn<() => Promise<void>>(async () => {});
       const { useAccountAdditionService } = await importModule();
       await useAccountAdditionService().addMultipleAccounts(
@@ -174,7 +176,7 @@ describe('useAccountAdditionService', () => {
     });
 
     it('should notify about failed additions', async () => {
-      h.addAccount.mockRejectedValue(new Error('nope'));
+      h.addAccount.mockResolvedValue(err(TaskFailed({ message: 'nope' })));
       const onComplete = vi.fn<() => Promise<void>>(async () => {});
       const { useAccountAdditionService } = await importModule();
       await useAccountAdditionService().addMultipleAccounts(
@@ -189,7 +191,7 @@ describe('useAccountAdditionService', () => {
 
   describe('addMultipleEvmAccounts', () => {
     it('should collect added accounts and invoke the completion callback', async () => {
-      h.addEvmAccount.mockResolvedValue({ added: { '0xabc': ['eth'] } });
+      h.addEvmAccount.mockResolvedValue(ok({ added: { '0xabc': ['eth'] } }));
       const onComplete = vi.fn<() => Promise<void>>(async () => {});
       const { useAccountAdditionService } = await importModule();
       await useAccountAdditionService().addMultipleEvmAccounts(
@@ -201,7 +203,7 @@ describe('useAccountAdditionService', () => {
     });
 
     it('should notify about failed evm additions', async () => {
-      h.addEvmAccount.mockRejectedValue(new Error('boom'));
+      h.addEvmAccount.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
       const onComplete = vi.fn<() => Promise<void>>(async () => {});
       const { useAccountAdditionService } = await importModule();
       await useAccountAdditionService().addMultipleEvmAccounts(
