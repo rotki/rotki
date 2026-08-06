@@ -9,7 +9,7 @@ import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { api } from '@/modules/core/api/rotki-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useWalletStore } from '@/modules/wallet/use-wallet-store';
+import { disconnectWalletIfActive } from '@/modules/wallet/use-wallet-store';
 import { useSessionReady } from './use-session-ready';
 import {
   type Resolution,
@@ -73,7 +73,6 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
     () => get(logged),
   );
   const { updateFrontendSetting } = useSettingsOperations();
-  const { disconnect: disconnectWallet } = useWalletStore();
   const { savedUsername } = useRememberSettings();
   const { checkIfPasswordConfirmationNeeded } = usePasswordConfirmation();
   const { restarting } = useRestartingStatus();
@@ -154,7 +153,7 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
     if (resumed)
       await checkIfPasswordConfirmationNeeded(get(username));
     else
-      await disconnectWallet();
+      await disconnectWalletIfActive();
   }
 
   watch(flow.state, (current) => {
