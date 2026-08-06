@@ -44,6 +44,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatus
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.ens.utils import is_valid_ens_name
+from rotkehlchen.chain.evm.names import maybe_resolve_name
 from rotkehlchen.chain.evm.types import EvmIndexer, SerializableChainIndexerOrder
 from rotkehlchen.chain.hyperliquid.validation import is_valid_hyperliquid_token_address
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
@@ -2571,27 +2572,26 @@ def _transform_btc_or_bch_address(
     return address
 
 
-def _resolve_ens_name(
+def _resolve_evm_name(
         ethereum_inquirer: EthereumInquirer,
         name: str,
         field_name: str,
 ) -> ChecksumEvmAddress:
-    try:
-        resolved_address = ethereum_inquirer.ens_lookup(name)
-    except (RemoteError, InputError) as e:
+    if (resolved_address := maybe_resolve_name(
+        ethereum_inquirer=ethereum_inquirer,
+        name=name,
+        ignore_cache=True,  # account mutations must not use a potentially stale name mapping
+    )) is None:
         raise ValidationError(
-            f'Given ENS name {name} could not be resolved for Ethereum'
-            f' due to: {e!s}',
+            f'Given name {name} could not be resolved for Ethereum',
             field_name=field_name,
         ) from None
 
-    if resolved_address is None:
-        raise ValidationError(
-            f'Given ENS name {name} could not be resolved for Ethereum',
-            field_name=field_name,
-        ) from None
-
-    log.info(f'Resolved ENS {name} to {(address := to_checksum_address(resolved_address))}')
+    log.info(
+        'Resolved name %s to %s',
+        name,
+        address := to_checksum_address(resolved_address),
+    )
     return address
 
 
@@ -2602,8 +2602,8 @@ def _transform_evm_address(
     try:
         address = to_checksum_address(given_address)
     except ValueError:
-        # Validation allows ENS names here (.eth and supported DNS TLDs). Resolve it.
-        address = _resolve_ens_name(
+        # Validation allows Ethereum naming systems here. Resolve according to the suffix.
+        address = _resolve_evm_name(
             ethereum_inquirer=ethereum_inquirer,
             name=given_address,
             field_name='address',

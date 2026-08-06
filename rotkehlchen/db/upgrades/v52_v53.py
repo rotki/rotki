@@ -273,6 +273,33 @@ SELECT address, ens_name, last_update, last_avatar_update FROM ens_mappings_old;
 DROP TABLE ens_mappings_old;
 """)
 
+    @progress_step(description='Add GNS after ENS in address name priority.')
+    def _add_gns_to_address_name_priority(write_cursor: DBCursor) -> None:
+        if (data := write_cursor.execute(
+            "SELECT value FROM settings WHERE name='address_name_priority'",
+        ).fetchone()) is None:
+            return  # A missing setting uses the defaults, which already have GNS after ENS.
+
+        try:
+            priority = json.loads(data[0])
+        except json.JSONDecodeError as e:
+            log.error('Failed to read address name priority from user db due to %s', e)
+            return
+
+        if not isinstance(priority, list):
+            return
+
+        priority = [source for source in priority if source != 'gns_names']
+        if 'ens_names' in priority:
+            priority.insert(priority.index('ens_names') + 1, 'gns_names')
+        else:
+            priority.append('gns_names')
+
+        write_cursor.execute(
+            "UPDATE settings SET value=? WHERE name='address_name_priority'",
+            (json.dumps(priority),),
+        )
+
     @progress_step(description='Add Kraken as the first current price oracle.')
     def _add_kraken_current_price_oracle(write_cursor: DBCursor) -> None:
         if (data := write_cursor.execute(

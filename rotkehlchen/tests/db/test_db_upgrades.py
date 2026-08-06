@@ -4159,11 +4159,23 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('current_price_oracles', [None, ['coingecko', 'defillama']])
+@pytest.mark.parametrize(('address_name_priority', 'expected_address_name_priority'), [
+    (
+        ['private_addressbook', 'ens_names', 'ethereum_tokens'],
+        ['private_addressbook', 'ens_names', 'gns_names', 'ethereum_tokens'],
+    ),
+    (
+        ['private_addressbook', 'gns_names', 'ethereum_tokens'],
+        ['private_addressbook', 'ethereum_tokens', 'gns_names'],
+    ),
+])
 def test_upgrade_db_52_to_53(
         user_data_dir,
         messages_aggregator,
         data_dir,
         current_price_oracles,
+        address_name_priority,
+        expected_address_name_priority,
 ):
     """Test upgrading the DB from version 52 to version 53."""
     lowercased_address = (checksummed_address := '0xaB19dE37aB19DE37AB19de37Ab19de37ab19de37').lower()  # noqa: E501
@@ -4431,6 +4443,10 @@ def test_upgrade_db_52_to_53(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 ('current_price_oracles', json.dumps(current_price_oracles)),
             )
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('address_name_priority', json.dumps(address_name_priority)),
+        )
 
         write_cursor.execute(  # a gnosis order pinned to the now paid-only etherscan
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -4789,6 +4805,9 @@ def test_upgrade_db_52_to_53(
             assert oracle_setting is None
         else:
             assert json.loads(oracle_setting[0]) == ['kraken', *current_price_oracles]
+        assert json.loads(cursor.execute(
+            "SELECT value FROM settings WHERE name='address_name_priority'",
+        ).fetchone()[0]) == expected_address_name_priority
         assert db.get_setting(cursor, 'version') == 53
 
     assert airdrop_parquet_path.exists() is False

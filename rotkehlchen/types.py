@@ -1517,6 +1517,7 @@ DEFAULT_ADDRESS_NAME_PRIORITY: Sequence[AddressNameSource] = (
     'ethereum_tokens',
     'hardcoded_mappings',
     'ens_names',
+    'gns_names',
 )
 
 
