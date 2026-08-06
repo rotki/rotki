@@ -92,7 +92,7 @@ describe('createMissingApiKeyHandler', () => {
     const action = findAction(result, 'change_indexer_order');
     await action.action();
 
-    expect(mockPush).toHaveBeenCalledWith({ hash: '#indexer', name: '/settings/evm/' });
+    expect(mockPush).toHaveBeenCalledWith({ hash: '#indexer', name: '/settings/chains/' });
   });
 
   it('should offer to open the registration url for blockscout', async () => {
