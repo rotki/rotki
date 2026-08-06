@@ -1,4 +1,5 @@
 import { startPromise } from '@shared/utils';
+import { logger } from '@/modules/core/common/logging/logging';
 
 type Fn = () => Promise<void>;
 
@@ -37,9 +38,23 @@ export class LimitedParallelizationQueue {
 
   private async run(identifier: string, fn: Fn): Promise<void> {
     this.runningTasks.set(identifier, fn);
-    await fn();
-    this.runningTasks.delete(identifier);
+    try {
+      await fn();
+    }
+    catch (error: unknown) {
+      // A rejected task must not strand its slot. Without this the bookkeeping below was skipped
+      // entirely: the identifier stayed in `runningTasks`, no queued task was ever started, and
+      // `onCompletion` never fired — so `awaitParallelExecution` waited forever rather than
+      // failing. The queue's contract is fire-and-forget, so the error is logged, not rethrown.
+      logger.error(error);
+    }
 
+    this.runningTasks.delete(identifier);
+    this.pump();
+  }
+
+  /** Start the next pending task, or announce completion when nothing is left. */
+  private pump(): void {
     if (this.pending > 0) {
       const entries = this.pendingTasks.entries();
       const next = entries.next();

@@ -175,7 +175,11 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const removeAccount = async (payload: DeleteBlockchainAccountParams): Promise<void> => {
     const { accounts, chain } = payload;
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, chain),
+      // Keyed by what is being removed, for the same reason additions are: a plain delete and an
+      // xpub delete on one chain both used `accounts:remove:<chain>`, so an overlap deduped the
+      // second onto the first. The UI still dropped its rows, leaving accounts that were never
+      // deleted on the backend to reappear on the next fetch.
+      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, chain, accounts.join(',')),
       kind: ActivityKind.ACCOUNTS,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
@@ -280,7 +284,9 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
 
   const deleteXpub = async (params: DeleteXpubParams): Promise<void> => {
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, params.chain),
+      // As in `removeAccount`: the xpub and its derivation path discriminate this from a plain
+      // account removal on the same chain, and from the same xpub under a different path.
+      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.REMOVE, params.chain, `${params.xpub}/${params.derivationPath ?? ''}`),
       kind: ActivityKind.ACCOUNTS,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
