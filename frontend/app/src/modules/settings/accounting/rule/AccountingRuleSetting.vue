@@ -21,7 +21,6 @@ const {
   modelCustomRuleHandling,
   pagination,
   refetch,
-  setFilter,
   showsCustomRules,
 } = useAccountingRulesTable();
 
@@ -90,9 +89,8 @@ onMounted(async () => {
           />
           <AccountingRuleToolbar
             v-model:custom-rule-handling="modelCustomRuleHandling"
-            :filter="filter"
+            v-model:filter="filter"
             :matchers="matchers"
-            @update:filter="setFilter($event)"
           />
         </div>
       </template>

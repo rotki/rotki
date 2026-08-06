@@ -259,6 +259,11 @@
         "event_subtype": "filter by event sub type",
         "event_type": "filter by event type"
       },
+      "filter_field_labels": {
+        "counterparty": "Counterparty",
+        "event_subtype": "Subtype",
+        "event_type": "Type"
+      },
       "import": "Import accounting rules",
       "labels": {
         "accounting_treatment": "Accounting Treatment",
