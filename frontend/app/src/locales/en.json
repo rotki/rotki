@@ -3120,7 +3120,8 @@
   },
   "explorer_input": {
     "validation": {
-      "https": "Only https urls are allowed"
+      "https": "Only https urls are allowed",
+      "url": "The value is not a valid url"
     }
   },
   "explorers": {
