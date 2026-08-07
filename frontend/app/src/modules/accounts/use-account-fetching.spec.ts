@@ -1,5 +1,12 @@
+import { FetchError } from 'ofetch';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
+
+function unauthorized(): FetchError {
+  const error = new FetchError('No user is currently logged in');
+  error.status = 401;
+  return error;
+}
 
 const mocks = vi.hoisted(() => ({
   fetchEthStakingValidators: vi.fn(),
@@ -87,6 +94,31 @@ describe('useAccountFetching', () => {
     mocks.queryBtcAccounts.mockRejectedValue(new Error('btc failed'));
     const { useAccountFetching } = await importModule();
     await useAccountFetching().fetch('bch');
+    expect(mocks.notifyError).toHaveBeenCalledOnce();
+  });
+
+  // This runs once per supported chain, so a logout mid-flight raised one notification per chain.
+  // They stack at `z-[10000]` over the user menu and swallow clicks — the notification is about a
+  // session `handleAuthFailure` has already torn down.
+  it('should stay silent when the session expired', async () => {
+    mocks.queryAccounts.mockRejectedValue(unauthorized());
+    const { useAccountFetching } = await importModule();
+
+    await useAccountFetching().fetch('eth');
+
+    expect(mocks.notifyError).not.toHaveBeenCalled();
+  });
+
+  // The guard must key on the status, not on "it came from the accounts query" — otherwise it
+  // swallows every real backend failure on this path too.
+  it('should still notify for a non-401 FetchError', async () => {
+    const error = new FetchError('boom');
+    error.status = 500;
+    mocks.queryAccounts.mockRejectedValue(error);
+    const { useAccountFetching } = await importModule();
+
+    await useAccountFetching().fetch('eth');
+
     expect(mocks.notifyError).toHaveBeenCalledOnce();
   });
 });

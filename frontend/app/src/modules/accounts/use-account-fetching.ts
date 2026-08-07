@@ -5,6 +5,7 @@ import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
+import { isSessionExpired } from '@/modules/core/api/response-handlers';
 import { type BtcChains, isBtcChain } from '@/modules/core/common/chains';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -24,10 +25,13 @@ export function useAccountFetching(): UseAccountFetchingReturn {
 
   /**
    * A cancelled request is not a failure to report: it is the queue dropping work the user moved
-   * away from. Everything else is surfaced.
+   * away from. Neither is an expired session — this fans out over every supported chain, so a
+   * logout mid-flight would otherwise raise one "no user is currently logged in" per chain, and
+   * they stack over the UI describing a session that `handleAuthFailure` has already torn down.
+   * Everything else is surfaced.
    */
   const notifyFetchFailure = (chain: string, error: unknown): void => {
-    if (isRequestCancellation(error))
+    if (isRequestCancellation(error) || isSessionExpired(error))
       return;
 
     logger.error(error);
