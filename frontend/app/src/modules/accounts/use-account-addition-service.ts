@@ -25,7 +25,7 @@ import { useTagOperations } from '@/modules/tags/use-tag-operations';
  * hand, and (because `addAccount` signalled failure with `''`) the success branch also absorbed
  * cancellations.
  */
-interface AccountAdditionFailure<T = AccountPayload | XpubAccountPayload> {
+export interface AccountAdditionFailure<T = AccountPayload | XpubAccountPayload> {
   error: TaskError;
   account: T;
 }
@@ -46,8 +46,12 @@ export interface AccountAdditionParams {
  */
 export interface AdditionSummary {
   readonly added: Account[];
-  /** Both payload kinds: an xpub can fail too, and the caller still has to hear about it. */
-  readonly failed: (AccountPayload | XpubAccountPayload)[];
+  /**
+   * Both payload kinds: an xpub can fail too, and the caller still has to hear about it. Each entry
+   * keeps its `TaskError`, so a form caller can still reach an `ApiValidationError` cause and fill
+   * in per-field errors instead of flattening every rejection into one generic message.
+   */
+  readonly failed: AccountAdditionFailure[];
   /** True when every failure was a cancellation, so nothing is worth reporting. */
   readonly cancelled: boolean;
 }
@@ -227,7 +231,7 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
     options?: AdditionOptions,
   ): Promise<AdditionSummary> => {
     const addedAccounts: Account[] = [];
-    const failed: (AccountPayload | XpubAccountPayload)[] = [];
+    const failed: AccountAdditionFailure[] = [];
     let cancelled = false;
 
     const isXpub = 'xpub' in payload;
@@ -246,7 +250,7 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
         return;
       }
 
-      failed.push(result.error.account);
+      failed.push(result.error);
     };
 
     if (isXpub) {
@@ -281,7 +285,9 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
 
     // The notification lists addresses, so an xpub failure is not one of its rows — the caller
     // reports that from the summary instead.
-    const failedAddresses = failed.filter((account): account is AccountPayload => !('xpub' in account));
+    const failedAddresses = failed
+      .map(failure => failure.account)
+      .filter((account): account is AccountPayload => !('xpub' in account));
     if (failedAddresses.length > 0)
       notifyFailedToAddAddress(failedAddresses, isXpub ? 1 : payload.length, everyEvmChain ? undefined : chain);
 
