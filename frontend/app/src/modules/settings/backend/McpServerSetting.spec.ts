@@ -1,3 +1,4 @@
+import { assert } from '@rotki/common';
 import { type McpServerStatus, StarlingServiceStatus } from '@shared/ipc';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
@@ -117,6 +118,26 @@ function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
   });
 }
 
+/**
+ * The privacy preview's cells for one field, as [on-chain swap, exchange deposit]. Anchored on the
+ * field name rather than a row index so a reordered preview fails loudly instead of silently
+ * asserting the wrong row.
+ */
+function previewRow(wrapper: VueWrapper<InstanceType<typeof McpServerSetting>>, field: string): string[] {
+  // The group caption rows carry no header cell, hence the exists() guard before reading it.
+  const row = wrapper.findAll('tbody tr').find((entry) => {
+    const header = entry.find('th');
+    return header.exists() && header.text() === field;
+  });
+  assert(row, `the privacy preview has no ${field} row`);
+  return row.findAll('td').map(cell => cell.text());
+}
+
+/** Every column name the preview claims the assistant receives, in render order. */
+function previewFields(wrapper: VueWrapper<InstanceType<typeof McpServerSetting>>): string[] {
+  return wrapper.findAll('tbody tr th').map(header => header.text());
+}
+
 function grantMcpAccess(enabled: boolean, minimumTier = 'Basic'): void {
   const { capabilities, premium } = storeToRefs(usePremiumStore());
   set(premium, true);
@@ -179,12 +200,59 @@ describe('mcpServerSetting', () => {
     expect(selector.text()).toContain('backend_settings.settings.mcp_server.privacy_mode.balanced.description');
     expect(selector.text()).toContain('backend_settings.settings.mcp_server.privacy_mode.raw.description');
     expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.privacy_mode.preview.title');
-    expect(wrapper.text()).toContain('anon_5c4efe77c7146ef8');
-    expect(wrapper.text()).toContain('Kraken main');
+    // Balanced keeps the venue name readable under its own column, alongside the hash every
+    // identifier gets.
+    expect(previewRow(wrapper, 'location_label')).toStrictEqual([
+      'backend_settings.settings.mcp_server.privacy_mode.preview.not_set',
+      'kraken',
+    ]);
+    expect(previewRow(wrapper, 'location_label_hash')).toStrictEqual([
+      'anon_5c4efe77c7146ef8',
+      'anon_b43a5d4cd838add9',
+    ]);
     expect(selector.findAll('.rui-radio')).toHaveLength(3);
     expect(selector.findAll('.rui-radio').every(radio => (
       radio.element.parentElement === selector.element
     ))).toBe(true);
+  });
+
+  /**
+   * The one field that separates balanced from strict. `READABLE_LOCATION_LABELS` in
+   * rotkehlchen/mcp/analytics.py lets a location label through only when it is exactly a rotki
+   * location name, so the exchange row stays readable in balanced and is hashed in strict; the
+   * on-chain row is address-shaped and is hashed in both.
+   */
+  it('should mask the exchange account label only in strict mode', async () => {
+    const repo = useSettingsRepo();
+    repo.updateGeneral({ ...repo.general, mcpPrivacyMode: McpPrivacyMode.STRICT });
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    // "not sent", not "not set": strict emits no such column, so querying it would fail rather
+    // than return null.
+    expect(previewRow(wrapper, 'location_label')).toStrictEqual([
+      'backend_settings.settings.mcp_server.privacy_mode.preview.not_sent',
+      'backend_settings.settings.mcp_server.privacy_mode.preview.not_sent',
+    ]);
+    expect(previewRow(wrapper, 'location_label_hash')).toStrictEqual([
+      'anon_5c4efe77c7146ef8',
+      'anon_b43a5d4cd838add9',
+    ]);
+  });
+
+  /**
+   * Outside raw an identifier moves to `<column>_hash` and its own column is dropped, so a preview
+   * that still labelled the hash `tx_hash` would send someone to write SQL against a column the
+   * assistant never received.
+   */
+  it('should name masked identifier columns as the assistant sees them', async () => {
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    const fields = previewFields(wrapper);
+    expect(fields).toContain('tx_hash_hash');
+    expect(fields).not.toContain('tx_hash');
   });
 
   it('should warn and preview unmasked fields in raw mode', async () => {
