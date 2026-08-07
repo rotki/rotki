@@ -1,6 +1,10 @@
-import type { ApiUrls } from '@shared/ipc';
-
-function getDefaultCoreUrl(): string {
+/**
+ * The origin the app addresses when nothing has overridden it: core answers
+ * `/api/1/*` under it, colibri `/colibri/*`. Electron replaces it over IPC once
+ * starling's proxy port is known; the custom-backend flow replaces it with the
+ * url the user typed.
+ */
+function getDefaultApiUrl(): string {
   if (import.meta.env.VITE_BACKEND_URL)
     return import.meta.env.VITE_BACKEND_URL;
 
@@ -12,24 +16,4 @@ function getDefaultCoreUrl(): string {
   return '';
 }
 
-function getDefaultColibriUrl(): string {
-  if (import.meta.env.VITE_COLIBRI_URL)
-    return import.meta.env.VITE_COLIBRI_URL;
-
-  if (import.meta.env.VITE_PUBLIC_PATH) {
-    const pathname = window.location.pathname;
-    return `${pathname.endsWith('/') ? pathname.slice(0, -1) : pathname}/colibri`;
-  }
-
-  return '';
-}
-
-export const defaultApiUrls: Readonly<ApiUrls> = {
-  colibriApiUrl: getDefaultColibriUrl(),
-  coreApiUrl: getDefaultCoreUrl(),
-};
-
-export const apiUrls: ApiUrls = {
-  colibriApiUrl: defaultApiUrls.colibriApiUrl,
-  coreApiUrl: defaultApiUrls.coreApiUrl,
-};
+export const defaultApiUrl: string = getDefaultApiUrl();

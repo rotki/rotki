@@ -112,7 +112,7 @@ function makeConfig(): AppConfig {
     isDev: false,
     isMac: false,
     ports: { corePort: 4242, colibriPort: 4343, mcpPort: 4445, proxyPort: 4141 },
-    urls: { coreApiUrl: '', colibriApiUrl: '' },
+    apiUrl: '',
   } satisfies AppConfig;
 }
 
@@ -146,10 +146,9 @@ describe('starlingHandler', () => {
     expect(spawnMock).toHaveBeenCalledTimes(1);
     expect(methods).toContain(StarlingMethod.START); // renderer drives the first bring-up
     expect(onProcessError).not.toHaveBeenCalled();
-    // Single-origin posture: both URLs point at the proxy port; colibri sits
-    // under /colibri. The direct core/colibri ports are the proxy's upstreams.
-    expect(config.urls.coreApiUrl).toBe('http://127.0.0.1:4141');
-    expect(config.urls.colibriApiUrl).toBe('http://127.0.0.1:4141/colibri');
+    // Single-origin posture: the renderer gets the proxy origin and nothing else;
+    // colibri sits under /colibri. The direct core/colibri ports are its upstreams.
+    expect(config.apiUrl).toBe('http://127.0.0.1:4141');
     expect(handler.getMcpServerEndpoint()).toBe('http://127.0.0.1:4445/mcp');
     expect(selectPortMock).toHaveBeenCalledWith(4242, '127.0.0.1');
     expect(selectPortMock).toHaveBeenCalledWith(4343, '127.0.0.1');

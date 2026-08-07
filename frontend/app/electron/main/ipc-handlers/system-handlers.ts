@@ -43,7 +43,7 @@ export class SystemHandlers {
   // System info handlers
   getDebugSettings = (): DebugSettings => ({ persistStore: this.settings.appSettings.persistStore ?? false });
 
-  getApiUrls = () => this.config.urls;
+  getApiUrl = (): string => this.config.apiUrl;
 
   getVersion = (): SystemVersion => this.version;
 

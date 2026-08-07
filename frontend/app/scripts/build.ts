@@ -73,11 +73,8 @@ function loadUrlConfig(mode: string): Record<string, string> {
     return urlsVars;
   }
   const backendUrl = process.env.VITE_BACKEND_URL;
-  const colibriUrl = process.env.VITE_COLIBRI_URL;
   if (backendUrl)
     urlsVars.VITE_BACKEND_URL = backendUrl;
-  if (colibriUrl)
-    urlsVars.VITE_COLIBRI_URL = colibriUrl;
   return urlsVars;
 }
 

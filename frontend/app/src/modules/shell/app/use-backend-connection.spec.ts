@@ -20,8 +20,7 @@ vi.mock('@/modules/core/api/rotki-api', () => ({
 }));
 
 vi.mock('@/modules/core/api/api-urls', () => ({
-  apiUrls: { coreApiUrl: 'http://localhost:4242', colibriApiUrl: 'http://localhost:4343' },
-  defaultApiUrls: { coreApiUrl: 'http://localhost:4242', colibriApiUrl: 'http://localhost:4343' },
+  defaultApiUrl: 'http://localhost:4242',
 }));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({

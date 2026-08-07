@@ -7,6 +7,9 @@ export const MANAGED_ENV_KEYS = [
   'INSTANCE_NAME',
   'INSTANCE_PORT_SLOT',
   'VITE_BACKEND_URL',
+  // No longer written: colibri shares the core origin under `/colibri`. Kept in
+  // the managed set so a line left by an older version is stripped rather than
+  // lingering in a developer's env file as a url nothing reads.
   'VITE_COLIBRI_URL',
   'DEV_PORT',
 ] as const;

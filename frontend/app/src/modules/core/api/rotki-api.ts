@@ -3,7 +3,7 @@ import type { QueueState } from '@/modules/core/api/request-queue/types';
 import type { RotkiFetchOptions } from '@/modules/core/api/types';
 import { ofetch } from 'ofetch';
 import { combineAbortSignals } from '@/modules/core/api/abort-signals';
-import { defaultApiUrls } from '@/modules/core/api/api-urls';
+import { defaultApiUrl } from '@/modules/core/api/api-urls';
 import { DEFAULT_TIMEOUT, DOWNLOAD_TIMEOUT, RequestTarget } from '@/modules/core/api/constants';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { RequestQueue } from '@/modules/core/api/request-queue/queue';
@@ -27,7 +27,7 @@ export class RotkiApi {
   private _stopped: boolean = false;
 
   constructor() {
-    this._serverUrl = defaultApiUrls.coreApiUrl;
+    this._serverUrl = defaultApiUrl;
     this._baseURL = `${this._serverUrl}/api/1/`;
     this.abortController = new AbortController();
     this._requestQueue = new RequestQueue(
@@ -51,7 +51,7 @@ export class RotkiApi {
   }
 
   get defaultBackend(): boolean {
-    return this._serverUrl === defaultApiUrls.coreApiUrl;
+    return this._serverUrl === defaultApiUrl;
   }
 
   get queueState(): QueueState {
