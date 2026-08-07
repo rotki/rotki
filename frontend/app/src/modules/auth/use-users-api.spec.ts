@@ -294,6 +294,83 @@ describe('composables/api/session/users', () => {
         password: 'colibripass',
       });
     });
+
+    it('should relock and retry when colibri still holds a db', async () => {
+      const calls: string[] = [];
+      let unlockAttempts = 0;
+
+      // colibri refuses to unlock while it holds any client, and cannot say whose it is.
+      server.use(
+        http.post(`${colibriUrl}/user`, () => {
+          calls.push('unlock');
+          unlockAttempts += 1;
+          if (unlockAttempts === 1) {
+            return HttpResponse.json({
+              result: null,
+              message: 'The DB is already unlocked',
+            }, { status: 400 });
+          }
+          return HttpResponse.json({ result: true, message: '' });
+        }),
+        http.post(`${colibriUrl}/user/logout`, () => {
+          calls.push('lock');
+          return HttpResponse.json({ result: true, message: '' });
+        }),
+      );
+
+      const { colibriLogin } = useUsersApi();
+      const result = await colibriLogin({ username: 'bob', password: 'pw' });
+
+      expect(result).toBe(true);
+      expect(calls).toEqual(['unlock', 'lock', 'unlock']);
+    });
+
+    it('should reject when the retried unlock also fails', async () => {
+      let unlockAttempts = 0;
+
+      server.use(
+        http.post(`${colibriUrl}/user`, () => {
+          unlockAttempts += 1;
+          return HttpResponse.json({
+            result: null,
+            message: 'The DB is already unlocked',
+          }, { status: 400 });
+        }),
+        http.post(`${colibriUrl}/user/logout`, () =>
+          HttpResponse.json({ result: true, message: '' })),
+      );
+
+      const { colibriLogin } = useUsersApi();
+
+      await expect(colibriLogin({ username: 'bob', password: 'pw' }))
+        .rejects
+        .toThrow('The DB is already unlocked');
+      // retried exactly once, never looped
+      expect(unlockAttempts).toBe(2);
+    });
+
+    it('should not relock when the unlock fails for another reason', async () => {
+      let lockCalled = false;
+
+      server.use(
+        http.post(`${colibriUrl}/user`, () =>
+          HttpResponse.json({
+            result: null,
+            message: 'Failed to open database at /data/users/bob/rotkehlchen.db',
+          }, { status: 400 })),
+        http.post(`${colibriUrl}/user/logout`, () => {
+          lockCalled = true;
+          return HttpResponse.json({ result: true, message: '' });
+        }),
+      );
+
+      const { colibriLogin } = useUsersApi();
+
+      await expect(colibriLogin({ username: 'bob', password: 'pw' }))
+        .rejects
+        .toThrow('Failed to open database');
+      expect(lockCalled).toBe(false);
+    });
   });
 
   describe('logout', () => {

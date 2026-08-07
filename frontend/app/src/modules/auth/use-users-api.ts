@@ -16,6 +16,12 @@ import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types'
  */
 const COLIBRI_ALREADY_LOCKED = 'DB not unlocked';
 
+/**
+ * The 400 body colibri answers with when it already holds an unlocked user db,
+ * whoever it belongs to (`unlock_user` in `colibri/src/api/database.rs`).
+ */
+const COLIBRI_ALREADY_UNLOCKED = 'The DB is already unlocked';
+
 interface UseUsersApiReturn {
   authenticate: (credentials: BasicLoginCredentials) => Promise<void>;
   createAccount: (payload: CreateAccountPayload) => Promise<PendingTask>;
@@ -153,7 +159,7 @@ export function useUsersApi(): UseUsersApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
-  const colibriLogin = async (payload: BasicLoginCredentials): Promise<boolean> => api.post<boolean>(
+  const unlockColibri = async (payload: BasicLoginCredentials): Promise<boolean> => api.post<boolean>(
     '/user',
     payload,
     {
@@ -161,6 +167,38 @@ export function useUsersApi(): UseUsersApiReturn {
       validStatuses: VALID_ACCOUNT_OPERATION_STATUS,
     },
   );
+
+  /**
+   * Unlock colibri's copy of the user db, relocking first if it still holds one.
+   *
+   * Colibri refuses to unlock while it holds any client and cannot say whose db that
+   * is: `unlock_user` never records the username, so a stale handle from a previous
+   * session and one belonging to another user are indistinguishable from here. Taking
+   * it fresh with our own credentials is the only way to know colibri ends up serving
+   * the user we just logged in as — colibri's gate authorizes any live session, so a
+   * handle left open would otherwise serve the previous user's assets to this one.
+   *
+   * Safe because this only ever runs on a fresh login or account creation, and core
+   * 409s those while any user is logged in. So core holds no unlocked user at this
+   * point, and whatever db colibri still has open is a leftover from a session that
+   * has already ended — never a live one. A resumed session takes the other branch and
+   * does not come through here at all. Should core ever allow two users to be logged
+   * in at once, this has to grow a real identity check before it relocks.
+   *
+   * Retried once. A second refusal is a genuine failure and rejects.
+   */
+  const colibriLogin = async (payload: BasicLoginCredentials): Promise<boolean> => {
+    try {
+      return await unlockColibri(payload);
+    }
+    catch (error: unknown) {
+      if (!(error instanceof ApiValidationError) || error.message !== COLIBRI_ALREADY_UNLOCKED)
+        throw error;
+
+      await colibriLogout();
+      return unlockColibri(payload);
+    }
+  };
 
   const changeUserPassword = async (username: string, currentPassword: string, newPassword: string): Promise<true> => api.patch<true>(
     `/users/${username}/password`,
