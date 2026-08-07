@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import type { StakingValidatorManage } from '@/modules/accounts/blockchain/use-account-manage';
+import type { SavedViewState } from '@/modules/core/table/pill/composables/use-saved-views';
+import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import Eth2ValidatorLimitRow from '@/modules/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import { SavedFilterLocation } from '@/modules/core/table/filtering';
-import TableFilter from '@/modules/core/table/TableFilter.vue';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import PillViewsMenu from '@/modules/core/table/pill/PillViewsMenu.vue';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import { useEthValidatorData } from '@/modules/staking/eth/use-eth-validator-data';
+import { useEthValidatorFields } from '@/modules/staking/eth/use-eth-validator-fields';
 import { useEthValidatorOperations } from '@/modules/staking/eth/use-eth-validator-operations';
 import { useEthValidatorUtils } from '@/modules/staking/eth/use-eth-validator-utils';
 import ValidatorStatus from '@/modules/staking/eth/ValidatorStatus.vue';
@@ -25,12 +30,25 @@ const {
   cols,
   ethStakingValidators,
   filters,
-  matchers,
   pagination,
   rows,
   modelSelected,
   sort,
 } = useEthValidatorData();
+
+const fields = useEthValidatorFields();
+const pillLabels = usePillBarLabels();
+
+// Every pill on this table is matcher-bound, so a saved view is its `matches` alone. `params` stays
+// in the stored shape because it is the bar's own serialized form, shared with the param-bound bars.
+const pillState = computed<SavedViewState>(() => ({
+  matches: get(filters),
+  params: {},
+}));
+
+function applyView(view: SavedView): void {
+  set(filters, view.matches);
+}
 
 const {
   accountOperation,
@@ -97,12 +115,22 @@ defineExpose({
           </RuiButton>
         </div>
       </div>
-      <TableFilter
+      <PillFilterBar
         v-model:matches="filters"
-        :matchers="matchers"
-        class="ml-auto max-w-[calc(100vw-11rem)] w-[25rem] lg:max-w-[30rem]"
-        :location="SavedFilterLocation.ETH_VALIDATORS"
-      />
+        class="ml-auto max-w-[calc(100vw-11rem)] w-[25rem] lg:max-w-[30rem] bg-white dark:bg-rui-grey-900"
+        :fields="fields"
+        :labels="pillLabels"
+      >
+        <template #views="{ disabled }">
+          <PillViewsMenu
+            :fields="fields"
+            :location="SavedFilterLocation.ETH_VALIDATORS"
+            :state="pillState"
+            :disabled="disabled"
+            @apply="applyView($event)"
+          />
+        </template>
+      </PillFilterBar>
     </div>
     <RuiDataTable
       v-model="modelSelected"

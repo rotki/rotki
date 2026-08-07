@@ -16,7 +16,6 @@ interface UseEthValidatorDataReturn {
   ethStakingValidators: ComputedRef<EthereumValidator[]>;
   fetchData: () => Promise<void>;
   filters: WritableComputedRef<Filters>;
-  matchers: ComputedRef<Matcher[]>;
   pagination: Ref<TablePaginationData>;
   rows: Ref<Collection<EthereumValidator>>;
   modelSelected: Ref<number[]>;
@@ -33,7 +32,6 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
   const currencySymbol = useSetting('currencySymbol');
 
   const filterSchema = useEthValidatorAccountFilter(t);
-  const { matchers } = filterSchema;
 
   const {
     collection: rows,
@@ -120,7 +118,6 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
     ethStakingValidators,
     fetchData,
     filters,
-    matchers,
     pagination,
     rows,
     modelSelected,
