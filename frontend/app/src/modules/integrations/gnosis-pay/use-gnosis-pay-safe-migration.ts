@@ -7,6 +7,7 @@ import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchai
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { errorOf } from '@/modules/core/tasks/task-result';
 import { useGnosisPaySiweApi } from '@/modules/integrations/gnosis-pay/use-gnosis-pay-api';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -89,13 +90,30 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
 
     set(adding, true);
     try {
-      await addAccounts(Blockchain.GNOSIS, {
+      const summary = await addAccounts(Blockchain.GNOSIS, {
         payload: [{
           address: safe.address,
           label: t('external_services.gnosispay.safe_migration.account_label'),
           tags: null,
         }],
       }, { wait: true });
+
+      // Additions report failure as a value, not a throw, so the `catch` below no longer sees a
+      // rejected add. Without this the Safe was announced as added and the suggestion dismissed
+      // while the account was never stored. A cancellation leaves the suggestion in place to retry
+      // and says nothing, because the user asked for it.
+      if (summary.added.length === 0) {
+        if (summary.failed.length > 0) {
+          showErrorMessage(
+            t('external_services.gnosispay.safe_migration.title'),
+            t('external_services.gnosispay.safe_migration.add_error', {
+              error: errorOf(summary.failed[0].error).message,
+            }),
+          );
+        }
+        return;
+      }
+
       set(untrackedSafe, undefined);
       showSuccessMessage(
         t('external_services.gnosispay.safe_migration.title'),
