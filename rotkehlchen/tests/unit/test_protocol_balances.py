@@ -4,12 +4,12 @@ from collections import defaultdict
 from contextlib import ExitStack
 from pathlib import Path
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.arbitrum_one.modules.gearbox.balances import (
@@ -308,7 +308,6 @@ def test_across_staked_lp_balances(
         token_kind=TokenKind.ERC20,
         symbol='Av2-USDC-LP',
         decimals=9,
-        protocol=CPT_ACROSS,
     )
     events_db = DBHistoryEvents(ethereum_inquirer.database)
     with ethereum_inquirer.database.conn.write_ctx() as write_cursor:
@@ -326,19 +325,42 @@ def test_across_staked_lp_balances(
             address=string_to_evm_address('0x9040e41eF5E8b281535a96D9a48aCb8cfaBD9a48'),
         ))
 
-    with patch.object(ethereum_inquirer, 'multicall', return_value=[WEB3.codec.encode(
-        ['(uint256,uint256,uint256,uint256)'],
-        [(941791733, 1782476591, 2208435768107840498940736998091, 0)],
-    )]):
+    with (
+        patch.object(ethereum_inquirer, 'call_contract', return_value=1100000000000000000),
+        patch.object(ethereum_inquirer, 'multicall', return_value=[WEB3.codec.encode(
+            ['(uint256,uint256,uint256,uint256)'],
+            [(941791733, 1782476591, 2208435768107840498940736998091, 0)],
+        )]),
+        patch.object(
+            type(inquirer),
+            'find_main_currency_prices',
+            side_effect=lambda assets: {
+                asset: inquirer.find_across_lp_price(asset.resolve_to_evm_token())
+                for asset in assets
+            },
+        ),
+        patch.object(
+            type(inquirer),
+            'get_evm_manager',
+            return_value=Mock(node_inquirer=ethereum_inquirer),
+        ),
+    ):
         across_balances = AcrossBalances(
             evm_inquirer=ethereum_inquirer,
             tx_decoder=ethereum_transaction_decoder,
         ).query_balances()
 
     staked_amount = FVal('0.941791733')
-    assert across_balances[user_address].assets[token][CPT_ACROSS] == Balance(
+    updated_token = EvmToken(token.identifier)
+    assert updated_token.protocol == CPT_ACROSS
+    assert updated_token.underlying_tokens == [UnderlyingToken(
+        address=A_USDC.resolve_to_evm_token().evm_address,
+        token_kind=TokenKind.ERC20,
+        weight=ONE,
+    )]
+    assert across_balances[user_address].assets[updated_token][CPT_ACROSS] == Balance(
         amount=staked_amount,
-        value=staked_amount * CURRENT_PRICE_MOCK,
+        value=staked_amount * CURRENT_PRICE_MOCK * FVal('1.1'),
     )
 
 

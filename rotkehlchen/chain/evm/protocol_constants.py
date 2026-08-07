@@ -2,6 +2,7 @@ from typing import Final, Literal
 
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V2
+from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
 from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINANCE
 from rotkehlchen.chain.evm.decoding.beefy_finance.constants import CPT_BEEFY_FINANCE
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
@@ -22,6 +23,7 @@ from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CP
 # NOTE: these constants are kept separate from evm/constants.py to avoid circular imports.
 # The protocols for which we know how to calculate their prices
 EVM_PROTOCOLS_WITH_PRICE_LOGIC: Final = (
+    CPT_ACROSS,
     CPT_UNISWAP_V2,
     CPT_YEARN_V2,
     CPT_CURVE,

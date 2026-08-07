@@ -3,15 +3,22 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.accounting.structures.balance import BalanceSheet
-from rotkehlchen.assets.utils import token_normalized_value
+from rotkehlchen.assets.asset import UnderlyingToken
+from rotkehlchen.assets.utils import (
+    TokenEncounterInfo,
+    get_or_create_evm_token,
+    token_normalized_value,
+)
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.constants import ONE
+from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import TokenKind
 
-from .constants import LP_STAKING
+from .constants import ACROSS_LP_TOKEN_UNDERLYING, LP_STAKING
 
 if TYPE_CHECKING:
     from eth_typing.abi import ABI
@@ -41,6 +48,53 @@ class AcrossBalances(ProtocolWithBalance):
             deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},  # noqa: E501
         )
 
+    def _ensure_token_metadata(
+            self,
+            token: EvmToken,
+    ) -> EvmToken:
+        """Ensure Across LP tokens have the metadata required by the price inquirer."""
+        if token.protocol is not None and token.underlying_tokens is not None:
+            return token
+
+        underlying_tokens = token.underlying_tokens
+        if underlying_tokens is None:
+            if (underlying_address := ACROSS_LP_TOKEN_UNDERLYING.get(token.evm_address)) is None:
+                log.error('Could not find the underlying token for Across LP token %s', token)
+                return token
+            try:
+                underlying_token = get_or_create_evm_token(
+                    userdb=self.evm_inquirer.database,
+                    evm_address=underlying_address,
+                    chain_id=token.chain_id,
+                    evm_inquirer=self.evm_inquirer,
+                    encounter=TokenEncounterInfo(
+                        description='Detecting Across LP underlying token',
+                        should_notify=False,
+                    ),
+                )
+            except NotERC20Conformant as e:
+                log.error(
+                    'Failed to add underlying token %s for Across LP token %s due to %s',
+                    underlying_address,
+                    token,
+                    e,
+                )
+                return token
+
+            underlying_tokens = [UnderlyingToken(
+                address=underlying_token.evm_address,
+                token_kind=TokenKind.ERC20,
+                weight=ONE,
+            )]
+
+        return get_or_create_evm_token(
+            userdb=self.evm_inquirer.database,
+            evm_address=token.evm_address,
+            chain_id=token.chain_id,
+            protocol=CPT_ACROSS if token.protocol is None else None,
+            underlying_tokens=underlying_tokens,
+        )
+
     def query_balances(self) -> BalancesSheetType:
         """Query Across LP tokens staked in the Across accelerating distributor."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
@@ -61,7 +115,8 @@ class AcrossBalances(ProtocolWithBalance):
                     continue
 
                 seen.add((user_address, event.asset))
-                token = event.asset.resolve_to_evm_token()
+                resolved_token = event.asset.resolve_to_evm_token()
+                token = self._ensure_token_metadata(token=resolved_token)
                 calls.append((
                     LP_STAKING,
                     staking_contract.encode(
