@@ -2071,9 +2071,7 @@
     },
     "fee": "Fee",
     "filter": {
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
-      "end_date": "filter by the ending date of the period",
-      "start_date": "filter by the starting date of the period"
+      "period": "Date"
     },
     "here": "here",
     "ignored_in_accounting": "Excluded from accounting (PnL)",
