@@ -1013,6 +1013,11 @@
       "add_title": "Add address book entry",
       "edit_title": "Edit address book entry"
     },
+    "filter_field_labels": {
+      "address": "Address",
+      "chain": "Chain",
+      "name": "Name"
+    },
     "form": {
       "labels": {
         "address": "Address"

@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
+import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
 type Scope = 'global' | 'private';
@@ -28,13 +29,6 @@ async function confirmDelete(page: Page): Promise<void> {
   const confirmDialogEl = page.locator('[data-cy=confirm-dialog]');
   await confirmDialogEl.locator('[data-cy=button-confirm]').click();
   await confirmDialogEl.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
-}
-
-async function pickMenuOption(page: Page, value: string): Promise<void> {
-  const menu = page.locator('[role="menu"], [role="listbox"]').last();
-  await menu.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-  await menu.locator('button[type="button"]').filter({ hasText: new RegExp(`^${value}$`, 'i') }).first().click();
-  await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_SHORT });
 }
 
 export class AddressBookPage {
@@ -124,19 +118,42 @@ export class AddressBookPage {
     await expect(this.rowFor(address)).toHaveCount(0);
   }
 
-  async filterByChain(chain: string): Promise<void> {
-    const filter = this.page.getByTestId('address-book-chain-filter');
-    await filter.click();
-    await pickMenuOption(this.page, chain);
+  /**
+   * The chain filter, now a pill in the shared bar rather than a selector of its own.
+   *
+   * `search` is the chain's display name, which is what the checklist matches on, while the value
+   * ticked is the chain id the request carries.
+   */
+  async filterByChain(chainId: string, chainName: string): Promise<void> {
+    const filter = new PillFilterBar(this.page);
+    await filter.addField('blockchain');
+    await filter.selectValue(chainId, chainName);
+    await filter.closeEditor('blockchain');
+    await filter.expectPillVisible('blockchain');
   }
 
   async clearChainFilter(): Promise<void> {
-    const filter = this.page.getByTestId('address-book-chain-filter');
-    // Look for the clear button rendered when an option is selected.
-    const clear = filter.locator('button').filter({ hasNot: this.page.locator('text=/.+/') }).first();
-    if (await clear.isVisible().catch(() => false)) {
-      await clear.click();
-    }
+    const filter = new PillFilterBar(this.page);
+    await filter.removePill('blockchain');
+    await filter.expectNoPill('blockchain');
+  }
+
+  /** Filters by a substring of the entry name, which is typed rather than picked. */
+  async filterByName(name: string): Promise<void> {
+    const filter = new PillFilterBar(this.page);
+    await filter.addField('nameSubstring');
+    await filter.typeTextValue(name);
+    await filter.closeEditor('nameSubstring');
+    await filter.expectPillVisible('nameSubstring');
+  }
+
+  async clearFilters(): Promise<void> {
+    await new PillFilterBar(this.page).clearAll();
+  }
+
+  /** Waits for the table to settle on a row count, which a filter changes asynchronously. */
+  async expectVisibleRowCount(expected: number): Promise<void> {
+    await expect.poll(async () => this.visibleRowCount(), { timeout: TIMEOUT_MEDIUM }).toBe(expected);
   }
 
   async expectRow(address: string, name?: string): Promise<void> {

@@ -72,4 +72,22 @@ test.describe.serial('address book', () => {
     expect(await page.visibleRowCount()).toBeGreaterThan(0);
     await page.expectNextPageEnabled(false);
   });
+
+  // Runs on the 11 entries the pagination test left behind, so the filter has both something to
+  // find and plenty to exclude.
+  test('filters the entries by name', async () => {
+    await page.filterByName('entry-03');
+    await page.expectVisibleRowCount(1);
+    await page.expectRowByName('entry-03');
+
+    // The negative control: the same pill, a name nothing carries, and the row is gone. Without it
+    // a filter that quietly did nothing would still have passed above, since entry-03 was on the
+    // page to begin with.
+    await page.clearFilters();
+    await page.filterByName('no-such-entry');
+    await page.expectVisibleRowCount(0);
+
+    await page.clearFilters();
+    await page.expectVisibleRowCount(10);
+  });
 });
