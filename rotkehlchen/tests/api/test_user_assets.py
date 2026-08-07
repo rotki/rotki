@@ -217,7 +217,7 @@ def test_add_user_assets(
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    # try to add invalid cryptocompare
+    # try to add invalid cryptocompare with an API key configured
     bad_id = 'dsadsad'
     bad_asset = {
         'asset_type': 'omni token',
@@ -232,20 +232,19 @@ def test_add_user_assets(
         ),
         json=bad_asset,
     )
-    expected_msg = f'Given cryptocompare identifier {bad_id} is not valid'
     assert_error_response(
         response=response,
-        contained_in_msg=expected_msg,
+        contained_in_msg=f'Given cryptocompare identifier {bad_id} is not valid',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
+@pytest.mark.parametrize('include_cryptocompare_key', [False])
 @pytest.mark.parametrize('coingecko_cache_coinlist', [{
     'internet-computer': {'symbol': 'ICP', 'name': 'Internet computer'},
 }])
-@pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'ICP': {}}])
 def test_editing_user_assets(
         rotkehlchen_api_server: APIServer,
         globaldb: GlobalDBHandler,
@@ -416,28 +415,27 @@ def test_editing_user_assets(
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    # try to add invalid cryptocompare
-    bad_id = 'dsadsad'
-    bad_asset = {
-        'identifier': 'EUR',
-        'asset_type': 'omni token',
-        'name': 'Euro',
-        'symbol': 'EUR',
-        'cryptocompare': bad_id,
+    # cryptocompare identifiers are accepted without remote validation since its coin list API
+    # requires an API key
+    cryptocompare_id = 'dsadsad'
+    edited_asset = {
+        'identifier': user_asset1_id,
+        'asset_type': 'own chain',
+        'name': user_asset1['name'],
+        'symbol': user_asset1['symbol'],
+        'cryptocompare': cryptocompare_id,
     }
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json=bad_asset,
+        json=edited_asset,
     )
-    expected_msg = f'Given cryptocompare identifier {bad_id} is not valid'
-    assert_error_response(
-        response=response,
-        contained_in_msg=expected_msg,
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
+    assert_proper_response(response)
+    data = globaldb.get_asset_data(identifier=user_asset1_id, form_with_incomplete_data=False)
+    assert data is not None
+    assert data.cryptocompare == cryptocompare_id
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
