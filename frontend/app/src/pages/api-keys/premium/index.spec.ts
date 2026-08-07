@@ -1,5 +1,5 @@
 import { libraryDefaults } from '@test/utils/provide-defaults';
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { type DOMWrapper, mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
@@ -67,6 +67,65 @@ describe('premium-settings', () => {
 
     const { premiumUserLoggedIn } = useInterop();
     expect(premiumUserLoggedIn).toHaveBeenCalledWith(true);
+  });
+
+  function field(name: 'api-key' | 'api-secret'): DOMWrapper<HTMLInputElement> {
+    return wrapper.find<HTMLInputElement>(`[data-cy=premium__${name}] input`);
+  }
+
+  function fieldError(name: 'api-key' | 'api-secret'): string {
+    return wrapper.find(`[data-cy=premium__${name}] .details .text-rui-error`).text();
+  }
+
+  async function submit(): Promise<void> {
+    await wrapper.find('[data-cy=premium__setup]').trigger('click');
+    await nextTick();
+    await flushPromises();
+  }
+
+  it('should not submit without an api key and secret', async () => {
+    api.setPremiumCredentials = vi.fn().mockResolvedValue({ result: true });
+
+    await submit();
+
+    expect(api.setPremiumCredentials).not.toHaveBeenCalled();
+  });
+
+  it('should not submit with only the api key filled', async () => {
+    api.setPremiumCredentials = vi.fn().mockResolvedValue({ result: true });
+
+    await field('api-key').setValue('1234');
+    await submit();
+
+    expect(api.setPremiumCredentials).not.toHaveBeenCalled();
+  });
+
+  it('should report both missing fields once submitted', async () => {
+    await submit();
+
+    expect(fieldError('api-key')).not.toBe('');
+    expect(fieldError('api-secret')).not.toBe('');
+  });
+
+  it('should reject a whitespace only api key', async () => {
+    api.setPremiumCredentials = vi.fn().mockResolvedValue({ result: true });
+
+    await field('api-key').setValue('   ');
+    await field('api-secret').setValue('1234');
+    await submit();
+
+    expect(api.setPremiumCredentials).not.toHaveBeenCalled();
+  });
+
+  it('should clear the fields once the credentials were accepted', async () => {
+    api.setPremiumCredentials = vi.fn().mockResolvedValue({ result: true });
+
+    await field('api-key').setValue('1234');
+    await field('api-secret').setValue('5678');
+    await submit();
+
+    expect(field('api-key').element.value).toBe('');
+    expect(field('api-secret').element.value).toBe('');
   });
 
   it('should update premium status upon removing keys', async () => {
