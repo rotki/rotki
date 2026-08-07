@@ -13,7 +13,7 @@ describe('useAssetIgnoreApi', () => {
 
   describe('getIgnoredAssets', () => {
     it('should send GET request to colibri and returns asset list', async () => {
-      // Note: getIgnoredAssets overrides baseURL to colibriApiUrl, so URL is without /api/1
+      // Note: getIgnoredAssets targets colibri, so the URL is without /api/1
       server.use(
         http.get(`${colibriUrl}/assets/ignored`, () =>
           HttpResponse.json({

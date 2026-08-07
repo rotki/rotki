@@ -47,8 +47,11 @@ jobs:
       - name: Build frontend
         working-directory: ./frontend/app
         env:
-          VITE_BACKEND_URL: http://127.0.0.1:30302
-          VITE_COLIBRI_URL: http://127.0.0.1:30303
+          # Baked into dist, so it must match the origin playwright brings up:
+          # BASE_PROXY_PORT in playwright.config.ts (CI always lands on offset 0).
+          # This is starling's reverse proxy, not core's own port - core answers
+          # /api/1 and /ws under it, colibri /colibri.
+          VITE_BACKEND_URL: http://127.0.0.1:30305
           VITE_COVERAGE: true
         run: pnpm run build:app --mode e2e
 
