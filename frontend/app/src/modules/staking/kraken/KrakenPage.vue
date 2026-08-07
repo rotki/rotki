@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
-import type { KrakenStakingDateFilter } from '@/modules/staking/staking-types';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
@@ -16,10 +15,10 @@ import KrakenStakingPagePlaceholder from '@/modules/staking/kraken/KrakenStaking
 import { useKrakenStakingOperations } from '@/modules/staking/kraken/use-kraken-staking-operations';
 import { useKrakenStakingStore } from '@/modules/staking/use-kraken-staking-store';
 
-const filters = ref<KrakenStakingDateFilter>({});
-
 const store = useKrakenStakingStore();
-const { events } = toRefs(store);
+// The filter bar writes straight into the query the reads are issued from, so no read can carry a
+// date that the user has since moved on from.
+const { dateFilter: filters, dateFilterKey, events } = storeToRefs(store);
 const { fetchEvents: load } = useKrakenStakingOperations();
 const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
@@ -46,7 +45,7 @@ const isKrakenConnected = computed<boolean>(() => {
 
 async function refresh(ignoreCache: boolean = false): Promise<void> {
   resetProtocolStatsPriceQueryStatus('kraken');
-  await load(ignoreCache, get(filters));
+  await load(ignoreCache);
   const assets = get(events).received.map(item => item.asset);
   await refreshPrices(ignoreCache, assets);
 }
@@ -55,13 +54,13 @@ async function refresh(ignoreCache: boolean = false): Promise<void> {
  * The date pills write a value per picker emit, and a year typed digit by digit emits once per
  * digit (`2` and `20` and `202` are each a valid date). Every write here is a POST to
  * `/staking/kraken` plus a price refresh, so the trigger is debounced and a burst of intermediate
- * dates settles into one query. `refresh` reads the live `filters`, so it still queries the value
- * the user stopped on, and the debounced ref starts at the current value, so the first run after
- * mount is not delayed.
+ * dates settles into one query. The key is watched rather than the bounds themselves: it changes
+ * only when a bound does, where the object it comes from is rewritten by any pagination change.
+ * The debounced ref starts at the current value, so the first run after mount is not delayed.
  */
-const settledFilters = refDebounced(filters, 400);
+const settledDateFilterKey = refDebounced(dateFilterKey, 400);
 
-watchImmediate([settledFilters, isKrakenConnected], async ([_, isKrakenConnected]) => {
+watchImmediate([settledDateFilterKey, isKrakenConnected], async ([_, isKrakenConnected]) => {
   if (isKrakenConnected) {
     await refresh();
   }
