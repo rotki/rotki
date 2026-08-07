@@ -2,6 +2,7 @@ import type { RefreshTransactionsParams } from './types';
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import { startPromise } from '@shared/utils';
 import { ok, type Result } from 'plainfp/result';
+import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { logger } from '@/modules/core/common/logging/logging';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
@@ -52,6 +53,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     resolveRefreshTargets,
     shouldNotRefresh,
   } = useHistoryRefreshPolicy();
+  const { pending: accountsPending } = useAccountLoadState();
   const { queryAllExchangeEvents, queryOnlineEvent, resetOnlineWarnings } = useRefreshHandlers();
   const { onHistoryFinished, onHistoryStarted } = useSchedulerState();
   const { t } = useI18n({ useScope: 'global' });
@@ -217,6 +219,14 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   async function refreshOnce(params: RefreshTransactionsParams, wave: RefreshWave): Promise<void> {
     const { chains = [], disableEvmEvents = false, payload = {}, userInitiated = false } = params;
     const fullRefresh = Object.keys(payload).length === 0;
+
+    // The scope below is a snapshot of the account store, and the store is filled one chain at a
+    // time. Taking it mid-read drops whatever has not arrived, and the sync then reports complete
+    // over a scope that never covered those chains. Guarded rather than awaited unconditionally, so
+    // the common idle path keeps its current ordering.
+    const accountRead = accountsPending();
+    if (accountRead)
+      await accountRead;
 
     const usedExchanges = filterSyncingExchanges(payload.exchanges);
     // Filter before novelty detection so disabled-chain accounts are not flagged as newly

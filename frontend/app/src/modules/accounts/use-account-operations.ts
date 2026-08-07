@@ -2,13 +2,14 @@ import type { MaybeRef } from 'vue';
 import type { AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { Semaphore } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useAccountFetching } from '@/modules/accounts/use-account-fetching';
+import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -38,9 +39,27 @@ export function useAccountOperations(): UseAccountOperationsReturn {
   const { isEvm, supportedChains, supportsTransactions } = useSupportedChains();
   const { getAddresses } = useAccountAddresses();
 
+  const { track } = useAccountLoadState();
   const { submitTask } = useNativeTask();
   const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
+
+  /**
+   * Two chains at a time. `fetch` reports its own failures, so one chain failing must not abandon
+   * the rest.
+   */
+  const readChains = async (chains: string[]): Promise<void> => {
+    const permits = new Semaphore(2);
+    await Promise.all(chains.map(async (chain) => {
+      await permits.acquire();
+      try {
+        await fetch(chain);
+      }
+      finally {
+        permits.release();
+      }
+    }));
+  };
 
   const fetchAccounts = async (blockchain?: string | string[], refreshEns: boolean = false): Promise<void> => {
     let chains: string[];
@@ -48,7 +67,11 @@ export function useAccountOperations(): UseAccountOperationsReturn {
       chains = Array.isArray(blockchain) ? blockchain : [blockchain];
     else
       chains = get(supportedChains).map(chain => chain.id);
-    await awaitParallelExecution(chains, chain => chain, fetch, 2);
+
+    // Only a full read is tracked: that is the one that leaves the store partially filled for long
+    // enough for a consumer to snapshot it. A targeted read is already scoped to what it changed.
+    const read = readChains(chains);
+    await (blockchain ? read : track(read));
 
     const namesPayload: AddressBookSimplePayload[] = [];
 
