@@ -1151,11 +1151,6 @@
     "events": "Événements",
     "exchange": "Plateforme d'Échange",
     "fee": "Frais",
-    "filter": {
-      "date_hint": "format {format} HH:mm:ss (les secondes sont facultatives)",
-      "end_date": "filtrer par la date de fin de la période",
-      "start_date": "filtrer par la date de début de la période"
-    },
     "here": "ici",
     "ignored_in_accounting": "Exclu de la comptabilité (PnL)",
     "important_notice": "Remarque importante :",
@@ -3004,30 +2999,11 @@
     "title": "Synchronisation de l'historique"
   },
   "table_filter": {
-    "exclusion": {
-      "description": "Utiliser l'opérateur `!=` pour filtrer l'option, par exemple."
-    },
-    "hint": {
-      "description": "Tapez le filtre puis appuyez sur entrée, par exemple."
-    },
-    "label": "Filtres disponibles",
     "saved_filters": {
-      "actions": {
-        "add": "Enregistrer le filtre actuel dans la liste",
-        "apply": "Appliquer ce filtre enregistré",
-        "list": "Ouvrir la liste des filtres enregistrés",
-        "remove": "Supprimer ce filtre enregistré"
-      },
-      "added": "Filtre enregistré",
-      "empty": "Vous n'avez aucun filtre enregistré. Appliquez le filtre comme d'habitude, puis cliquez sur ce bouton {button} pour enregistrer le filtre.",
       "saving": {
-        "limited": "Vous n'êtes autorisé à enregistrer que {limit} filtres. Supprimez d'autres filtres pour pouvoir en ajouter à nouveau.",
-        "title": "Échec de l'enregistrement du filtre"
+        "limited": "Vous n'êtes autorisé à enregistrer que {limit} filtres. Supprimez d'autres filtres pour pouvoir en ajouter à nouveau."
       }
-    },
-    "start_typing": "Saisissez la valeur du filtre {search}",
-    "title": "Filtres disponibles",
-    "unsupported_filter": "Filtre non pris en charge:"
+    }
   },
   "tag_creator": {
     "labels": {

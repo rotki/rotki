@@ -1031,11 +1031,6 @@
     "events": "事件",
     "exchange": "交易所",
     "fee": "费用",
-    "filter": {
-      "date_hint": "format {format} HH:mm:ss(时间/秒可选)",
-      "end_date": "按期间结束日期筛选",
-      "start_date": "按期间的开始日期过滤"
-    },
     "here": "这儿",
     "ignored_in_accounting": "已从会计中排除 (PnL)",
     "important_notice": "重要通知:",
@@ -2753,30 +2748,11 @@
     "transactions": "交易"
   },
   "table_filter": {
-    "exclusion": {
-      "description": "使用运算符 `!=` 过滤掉选项，例如"
-    },
-    "hint": {
-      "description": "输入过滤器，然后按回车键，例如。",
-      "example": "开始 = 26/05/2022"
-    },
     "saved_filters": {
-      "actions": {
-        "add": "将当前过滤器保存到列表",
-        "apply": "应用这个保存的过滤器",
-        "list": "打开保存的过滤器列表",
-        "remove": "移除这个已保存的过滤器"
-      },
-      "added": "过滤器已保存",
-      "empty": "您没有任何已保存的过滤器。 照常应用过滤器，然后单击此按钮 {button} 保存过滤器。",
       "saving": {
-        "limited": "您最多只能保存 {limit} 个过滤器。 删除其他过滤器以便能够再次添加。",
-        "title": "未能保存过滤器"
+        "limited": "您最多只能保存 {limit} 个过滤器。 删除其他过滤器以便能够再次添加。"
       }
-    },
-    "start_typing": "输入 {search} 过滤器的值",
-    "title": "可用过滤器",
-    "unsupported_filter": "不支持的过滤器："
+    }
   },
   "tag_creator": {
     "labels": {
