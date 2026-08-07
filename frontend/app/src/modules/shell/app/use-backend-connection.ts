@@ -1,6 +1,6 @@
 import type { Nullable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { apiUrls, defaultApiUrls } from '@/modules/core/api/api-urls';
+import { defaultApiUrl } from '@/modules/core/api/api-urls';
 import { api } from '@/modules/core/api/rotki-api';
 import { logger, setLevel } from '@/modules/core/common/logging/logging';
 import { useMainStore } from '@/modules/core/common/use-main-store';
@@ -82,16 +82,14 @@ export function useBackendConnection(): UseBackendConnectionReturn {
       clearInterval(intervalId);
 
     const updateApi = (payload?: Nullable<string>): void => {
-      const updatedUrls = typeof window !== 'undefined' ? window.interop?.apiUrls() : undefined;
-      let backendUrl = defaultApiUrls.coreApiUrl;
-      if (payload) {
+      // One origin covers both backends, so a custom url the user typed carries
+      // colibri with it instead of leaving it pointed at the previous backend.
+      const interopUrl = typeof window !== 'undefined' ? window.interop?.apiUrl() : undefined;
+      let backendUrl = defaultApiUrl;
+      if (payload)
         backendUrl = payload;
-      }
-      else if (updatedUrls) {
-        backendUrl = updatedUrls.coreApiUrl;
-        apiUrls.coreApiUrl = updatedUrls.coreApiUrl;
-        apiUrls.colibriApiUrl = updatedUrls.colibriApiUrl;
-      }
+      else if (interopUrl)
+        backendUrl = interopUrl;
 
       api.setup(backendUrl);
     };

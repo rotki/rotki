@@ -294,7 +294,6 @@ export default defineConfig({
       timeout: interactive || process.env.CI ? 180_000 : 300_000,
       env: {
         VITE_BACKEND_URL: backendUrl,
-        VITE_COLIBRI_URL: colibriUrl,
         // Pass coverage flag to enable source maps in build
         ...(process.env.VITE_COVERAGE && { VITE_COVERAGE: process.env.VITE_COVERAGE }),
       },

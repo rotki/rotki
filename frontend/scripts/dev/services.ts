@@ -192,10 +192,11 @@ async function startBackendForMode(
 function spawnProxyForBackend(instance: InstanceRuntime | null, backendEnv: StarlingDevEnv): void {
   // The premium dev-proxy is the outermost hop, so it fronts starling's proxy
   // rather than core directly: frontend -> dev-proxy -> starling proxy -> core.
-  // It only ever forwarded the core API, so colibri keeps addressing starling.
+  // Colibri now rides the same chain: the dev-proxy mounts a catch-all with no
+  // path filter and only intercepts `/api/1/*`, so `/colibri/*` passes straight
+  // through to starling, which strips the prefix.
   const proxyPort = instance?.ports.proxy ?? DEFAULT_PORTS.proxy;
   process.env.VITE_BACKEND_URL = `http://127.0.0.1:${proxyPort}`;
-  process.env.VITE_COLIBRI_URL = backendEnv.VITE_COLIBRI_URL;
   startDevProxy({ PORT: String(proxyPort), BACKEND: backendEnv.VITE_BACKEND_URL });
 }
 
@@ -238,7 +239,6 @@ function pointFrontendAtBackend(backendEnv: StarlingDevEnv): void {
   // `/colibri/*`, and the CORS allowance starling passes both backends permits
   // the Vite origin.
   process.env.VITE_BACKEND_URL = backendEnv.VITE_BACKEND_URL;
-  process.env.VITE_COLIBRI_URL = backendEnv.VITE_COLIBRI_URL;
 }
 
 export async function startDevelopmentEnvironment(opts: DevEnvironmentOptions): Promise<void> {

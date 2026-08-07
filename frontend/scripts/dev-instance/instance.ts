@@ -51,15 +51,13 @@ function envKeysDiverge(
 function computeDesiredManagedEnv(name: string, slot: number, ports: PortSet, useProxy: boolean): Record<string, string> {
   // Nothing addresses core or colibri directly any more: starling fronts both
   // behind its reverse proxy, and the premium dev-proxy (when on) fronts that
-  // in turn. Only the core API URL is routed through the dev-proxy; colibri is
-  // always addressed as `<starling proxy>/colibri` (the dev-proxy forwards
-  // every path, so this is a routing choice here, not a limit of the proxy).
+  // in turn. One origin covers both, colibri under `/colibri`, so the whole
+  // chain is described by a single url.
   const starlingOrigin = `http://127.0.0.1:${ports.starlingProxy}`;
   return {
     INSTANCE_NAME: name,
     INSTANCE_PORT_SLOT: String(slot),
     VITE_BACKEND_URL: useProxy ? `http://127.0.0.1:${ports.proxy}` : starlingOrigin,
-    VITE_COLIBRI_URL: `${starlingOrigin}/colibri`,
     DEV_PORT: String(ports.dev),
   };
 }

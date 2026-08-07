@@ -15,8 +15,6 @@ export interface StartupError {
   code: BackendCode;
 }
 
-export interface ApiUrls { coreApiUrl: string; colibriApiUrl: string }
-
 export const StarlingServiceStatus = {
   DEGRADED: 'Degraded',
   FAILED: 'Failed',
@@ -142,7 +140,8 @@ export interface Interop {
   openDirectory: (title: string) => Promise<undefined | string>;
   premiumUserLoggedIn: (premiumUser: boolean) => void;
   debugSettings?: () => DebugSettings | undefined;
-  apiUrls: () => ApiUrls;
+  /** The single origin the renderer addresses: core under `/api/1`, colibri under `/colibri`. */
+  apiUrl: () => string;
   metamaskImport: () => Promise<MetamaskImport>;
   checkForUpdates: () => Promise<boolean>;
   downloadUpdate: (progress: (percentage: number) => void) => Promise<boolean>;

@@ -135,7 +135,7 @@ export class IpcManager {
       event.returnValue = this.systemHandlers.getDebugSettings();
     });
     this.on(IpcCommands.SYNC_API_URL, (event) => {
-      event.returnValue = this.systemHandlers.getApiUrls();
+      event.returnValue = this.systemHandlers.getApiUrl();
     });
     this.on(IpcCommands.PREMIUM_LOGIN, (_event, showPremium) => {
       callbacks.updatePremiumMenu(showPremium);

@@ -143,9 +143,7 @@ export class StarlingHandler {
     // reach core, `/colibri/*` reaches colibri (the proxy strips the prefix). The
     // direct core/colibri ports stay the proxy's upstream targets, passed to
     // starling above; the renderer never dials them.
-    const proxyOrigin = `http://${API_HOST}:${proxyPort}`;
-    this.config.urls.coreApiUrl = proxyOrigin;
-    this.config.urls.colibriApiUrl = `${proxyOrigin}/colibri`;
+    this.config.apiUrl = `http://${API_HOST}:${proxyPort}`;
 
     const invocation = buildStarlingInvocation({
       isDev: this.config.isDev,

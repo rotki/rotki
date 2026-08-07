@@ -1,7 +1,7 @@
 import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
-import { defaultApiUrls } from '@/modules/core/api/api-urls';
+import { defaultApiUrl } from '@/modules/core/api/api-urls';
 import { RequestTarget } from '@/modules/core/api/constants';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { RequestQueue } from '@/modules/core/api/request-queue/queue';
@@ -36,9 +36,9 @@ describe('modules/api/rotki-api', () => {
 
   describe('constructor and setup', () => {
     it('should initialize with default API URLs', () => {
-      expect(api.serverUrl).toBe(defaultApiUrls.coreApiUrl);
-      expect(api.baseURL).toBe(`${defaultApiUrls.coreApiUrl}/api/1/`);
-      expect(api.colibriBaseURL).toBe(`${defaultApiUrls.coreApiUrl}/colibri`);
+      expect(api.serverUrl).toBe(defaultApiUrl);
+      expect(api.baseURL).toBe(`${defaultApiUrl}/api/1/`);
+      expect(api.colibriBaseURL).toBe(`${defaultApiUrl}/colibri`);
     });
 
     it('should return true for defaultBackend when using default URL', () => {
@@ -989,7 +989,7 @@ describe('modules/api/rotki-api', () => {
       api.stopRequests();
       await expect(api.get('test')).rejects.toThrow(RequestCancelledError);
 
-      api.setup(defaultApiUrls.coreApiUrl);
+      api.setup(defaultApiUrl);
 
       await expect(api.get('test')).resolves.toEqual({ ok: true });
     });

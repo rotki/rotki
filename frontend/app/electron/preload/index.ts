@@ -1,4 +1,4 @@
-import type { ApiUrls, Credentials, Interop, Listeners, StartupError, TrayUpdate } from '@shared/ipc';
+import type { Credentials, Interop, Listeners, StartupError, TrayUpdate } from '@shared/ipc';
 import type { LogLevel } from '@shared/log-level';
 import { IpcCommands } from '@electron/ipc-commands';
 import { checkIfDevelopment } from '@shared/utils';
@@ -57,7 +57,7 @@ contextBridge.exposeInMainWorld('interop', {
     ipcRenderer.send(IpcCommands.RENDERER_READY);
   },
   debugSettings: isDevelopment ? (): DebugSettings | undefined => debugSettings : undefined,
-  apiUrls: (): ApiUrls => ipcRenderer.sendSync(IpcCommands.SYNC_API_URL),
+  apiUrl: (): string => ipcRenderer.sendSync(IpcCommands.SYNC_API_URL),
   metamaskImport: async () => ipcRenderer.invoke(IpcCommands.INVOKE_WALLET_IMPORT),
   openWalletConnectBridge: async () => ipcRenderer.invoke(IpcCommands.OPEN_WALLET_CONNECT_BRIDGE),
   restartBackend: async (options, forceRestart = false) => ipcRenderer.invoke(IpcCommands.INVOKE_SUBPROCESS_START, options, forceRestart),
