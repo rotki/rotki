@@ -210,6 +210,39 @@ describe('useRefreshTransactions', () => {
   });
 
   describe('basic refresh flow', () => {
+    // The account store fills one chain at a time. Scoping the sync off a snapshot taken mid-read
+    // drops whatever has not arrived, and the sync then reports complete over chains it never
+    // covered. Waiting for the read is what makes the scope whole.
+    it('should wait for a running account read before taking its scope', async () => {
+      const { useAccountLoadState } = await import('@/modules/accounts/use-account-load-state');
+      let finishRead = (): void => {};
+      const read = new Promise<void>((resolve) => {
+        finishRead = resolve;
+      });
+      const tracked = useAccountLoadState().track(read);
+
+      // Mid-read the store holds only the EVM chains.
+      mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([...mockEvmAccounts]);
+
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+      const refreshing = refreshTransactions();
+      await Promise.resolve();
+
+      // The rest of the chains land, then the read finishes.
+      mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([...mockEvmAccounts, ...mockBitcoinAccounts]);
+      finishRead();
+      await tracked;
+
+      await refreshing;
+      await settleRefresh();
+
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
+        expect.arrayContaining([...mockEvmAccounts, ...mockBitcoinAccounts]),
+        expect.anything(),
+        HISTORY_SYNC_ID,
+      );
+    });
+
     it('should perform full refresh when called without parameters', async () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
