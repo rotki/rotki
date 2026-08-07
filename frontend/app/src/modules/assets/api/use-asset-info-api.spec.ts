@@ -3,7 +3,7 @@ import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
-const colibriUrl = process.env.VITE_COLIBRI_URL;
+const colibriUrl = `${backendUrl}/colibri`;
 
 vi.unmock('@/modules/assets/api/use-asset-info-api');
 

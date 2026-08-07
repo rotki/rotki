@@ -4,7 +4,7 @@ import {
   type CreateAccountPayload,
   type LoginCredentials,
 } from '@/modules/auth/login';
-import { apiUrls } from '@/modules/core/api/api-urls';
+import { RequestTarget } from '@/modules/core/api/constants';
 import { api } from '@/modules/core/api/rotki-api';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { VALID_ACCOUNT_OPERATION_STATUS } from '@/modules/core/api/utils';
@@ -75,7 +75,7 @@ export function useUsersApi(): UseUsersApiReturn {
         '/user/logout',
         undefined,
         {
-          baseURL: apiUrls.colibriApiUrl,
+          target: RequestTarget.COLIBRI,
           validStatuses: VALID_ACCOUNT_OPERATION_STATUS,
           treat409AsSuccess: true,
         },
@@ -163,7 +163,7 @@ export function useUsersApi(): UseUsersApiReturn {
     '/user',
     payload,
     {
-      baseURL: apiUrls.colibriApiUrl,
+      target: RequestTarget.COLIBRI,
       validStatuses: VALID_ACCOUNT_OPERATION_STATUS,
     },
   );

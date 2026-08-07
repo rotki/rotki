@@ -1,4 +1,5 @@
 import type { FetchOptions, ResponseType } from 'ofetch';
+import type { RequestTarget } from '@/modules/core/api/constants';
 import type { ValidStatuses } from '@/modules/core/api/utils';
 import type { RetryOptions } from '@/modules/core/api/with-retry';
 
@@ -13,6 +14,8 @@ type OmittedFetchKeys = 'onRequest' | 'onResponse' | 'onResponseError' | 'retry'
 
 export interface RotkiFetchOptions<R extends ResponseType = 'json', T = unknown>
   extends Omit<FetchOptions<R, any>, OmittedFetchKeys> {
+  /** Which backend to address. Defaults to {@link RequestTarget.CORE}. */
+  target?: RequestTarget;
   /** Skip camelCase transformation on response (returns raw JSON) */
   skipCamelCase?: boolean;
   /** Use noRootCamelCaseTransformer instead of camelCaseTransformer (skips root keys transformation) */

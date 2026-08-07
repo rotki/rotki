@@ -3,8 +3,8 @@ import type { QueueState } from '@/modules/core/api/request-queue/types';
 import type { RotkiFetchOptions } from '@/modules/core/api/types';
 import { ofetch } from 'ofetch';
 import { combineAbortSignals } from '@/modules/core/api/abort-signals';
-import { apiUrls, defaultApiUrls } from '@/modules/core/api/api-urls';
-import { DEFAULT_TIMEOUT, DOWNLOAD_TIMEOUT } from '@/modules/core/api/constants';
+import { defaultApiUrls } from '@/modules/core/api/api-urls';
+import { DEFAULT_TIMEOUT, DOWNLOAD_TIMEOUT, RequestTarget } from '@/modules/core/api/constants';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { RequestQueue } from '@/modules/core/api/request-queue/queue';
 import { defaultPriorityFor } from '@/modules/core/api/request-queue/request-priority';
@@ -44,6 +44,10 @@ export class RotkiApi {
 
   get baseURL(): string {
     return this._baseURL;
+  }
+
+  get colibriBaseURL(): string {
+    return `${this._serverUrl}/colibri`;
   }
 
   get defaultBackend(): boolean {
@@ -88,14 +92,8 @@ export class RotkiApi {
     return this._colibriRequestQueue.getMetrics();
   }
 
-  private isColibriRequest(baseURL?: string): boolean {
-    if (!baseURL)
-      return false;
-    // Read the mutable urls, not the frozen defaults: in embedded the proxy
-    // origin arrives via IPC after startup, so the frozen colibri url stays ''
-    // and would never match. The asset-* APIs set this same baseURL.
-    const colibriUrl = apiUrls.colibriApiUrl;
-    return colibriUrl !== '' && baseURL.startsWith(colibriUrl);
+  private baseUrlFor(target?: RequestTarget): string {
+    return target === RequestTarget.COLIBRI ? this.colibriBaseURL : this._baseURL;
   }
 
   buildUrl(path: string, query?: Record<string, unknown>): string {
@@ -160,7 +158,7 @@ export class RotkiApi {
     if (skipQueue)
       return this.fetchDirect<T>(url, restOptions);
 
-    const queue = this.isColibriRequest(restOptions.baseURL)
+    const queue = restOptions.target === RequestTarget.COLIBRI
       ? this._colibriRequestQueue
       : this._requestQueue;
 
@@ -235,6 +233,7 @@ export class RotkiApi {
 
   private async fetchDirect<T>(url: string, options: Omit<RotkiFetchOptions<'json', T>, 'skipQueue' | 'priority' | 'tags' | 'dedupe' | 'maxQueueTime' | 'queueRetries'> = {}): Promise<T> {
     const {
+      target,
       validStatuses,
       skipCamelCase,
       skipRootCamelCase,
@@ -255,7 +254,8 @@ export class RotkiApi {
 
       const response = await ofetch.raw<ActionResult<T>>(url, {
         ...fetchOptions,
-        baseURL: fetchOptions.baseURL ?? this._baseURL,
+        // Resolved per execution, so a request queued before `setup()` follows the new backend.
+        baseURL: fetchOptions.baseURL ?? this.baseUrlFor(target),
         timeout,
         signal,
         ignoreResponseError: true,
@@ -313,12 +313,12 @@ export class RotkiApi {
     if (this._stopped)
       throw new RequestCancelledError('Application is quitting');
 
-    const { validStatuses, skipSnakeCase, query: rawQuery, baseURL, timeout = DEFAULT_TIMEOUT } = options;
+    const { validStatuses, skipSnakeCase, query: rawQuery, baseURL, target, timeout = DEFAULT_TIMEOUT } = options;
     const query = transformRequestQuery(rawQuery, { skipSnakeCase });
 
     const response = await ofetch.raw(url, {
       method: 'HEAD',
-      baseURL: baseURL ?? this._baseURL,
+      baseURL: baseURL ?? this.baseUrlFor(target),
       timeout,
       signal: combineAbortSignals(this.abortController.signal, undefined, timeout).signal,
       ignoreResponseError: true,
@@ -344,13 +344,13 @@ export class RotkiApi {
     if (this._stopped)
       throw new RequestCancelledError('Application is quitting');
 
-    const { validStatuses, skipSnakeCase, timeout = DOWNLOAD_TIMEOUT, ...fetchOptions } = options;
+    const { validStatuses, skipSnakeCase, target, timeout = DOWNLOAD_TIMEOUT, ...fetchOptions } = options;
     const body = transformRequestBody(fetchOptions.body, { skipSnakeCase });
     const query = transformRequestQuery(fetchOptions.query, { skipSnakeCase });
 
     const response = await ofetch.raw<Blob, 'blob'>(url, {
       method: fetchOptions.method,
-      baseURL: fetchOptions.baseURL ?? this._baseURL,
+      baseURL: fetchOptions.baseURL ?? this.baseUrlFor(target),
       timeout,
       signal: combineAbortSignals(this.abortController.signal, fetchOptions.signal, timeout).signal,
       responseType: 'blob',

@@ -1,6 +1,6 @@
 import type { EvmChainAddress } from '@/modules/history/events/event-payloads';
 import { AssetMap, AssetsWithId } from '@/modules/assets/types';
-import { apiUrls } from '@/modules/core/api/api-urls';
+import { RequestTarget } from '@/modules/core/api/constants';
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITHOUT_SESSION_STATUS } from '@/modules/core/api/utils';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
@@ -27,7 +27,7 @@ export function useAssetInfoApi(): UseAssetInfoApiReturn {
       '/assets/mappings',
       { identifiers },
       {
-        baseURL: apiUrls.colibriApiUrl,
+        target: RequestTarget.COLIBRI,
         retry: true,
       },
     );
@@ -47,7 +47,7 @@ export function useAssetInfoApi(): UseAssetInfoApiReturn {
         ...payload,
       },
       {
-        baseURL: apiUrls.colibriApiUrl,
+        target: RequestTarget.COLIBRI,
         retry: true,
         signal,
       },

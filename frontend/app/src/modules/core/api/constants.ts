@@ -16,3 +16,16 @@ export const DEFAULT_MAX_RETRIES = 2;
 
 /** Default base delay in milliseconds between retries (20 seconds) */
 export const DEFAULT_RETRY_DELAY = 20_000;
+
+/**
+ * The upstream a request addresses. Everything reaches the same origin; the
+ * target picks the path prefix under it (`/api/1/` for core, `/colibri` for
+ * colibri, which the starling proxy strips) and, with it, the queue the request
+ * is scheduled on.
+ */
+export const RequestTarget = {
+  COLIBRI: 'colibri',
+  CORE: 'core',
+} as const;
+
+export type RequestTarget = (typeof RequestTarget)[keyof typeof RequestTarget];

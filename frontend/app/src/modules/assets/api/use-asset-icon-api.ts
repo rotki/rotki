@@ -1,4 +1,4 @@
-import { apiUrls } from '@/modules/core/api/api-urls';
+import { RequestTarget } from '@/modules/core/api/constants';
 import { api } from '@/modules/core/api/rotki-api';
 import { HTTPStatus } from '@/modules/core/api/types/http';
 
@@ -23,15 +23,16 @@ export function useAssetIconApi(): UseAssetIconApiReturn {
     if (randomString)
       params.set('t', String(randomString));
 
-    return `${apiUrls.colibriApiUrl}/assets/icon?${params.toString()}`;
+    // Not a request but an <img src>, so it needs the resolved url rather than a target.
+    return `${api.colibriBaseURL}/assets/icon?${params.toString()}`;
   };
 
   const checkAsset = async (identifier: string, options: CheckAssetOptions): Promise<number> => {
     const params = new URLSearchParams();
     params.set('asset_id', identifier);
     return api.headStatus(`/assets/icon?${params.toString()}`, {
-      baseURL: apiUrls.colibriApiUrl,
       signal: options.abortController?.signal,
+      target: RequestTarget.COLIBRI,
       validStatuses: [HTTPStatus.OK, HTTPStatus.ACCEPTED, HTTPStatus.NOT_FOUND],
     });
   };
