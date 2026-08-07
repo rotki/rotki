@@ -20,11 +20,13 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     get_or_create_evm_token,
+    get_single_underlying_token,
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.arbitrum_one.modules.umami.constants import CPT_UMAMI
 from rotkehlchen.chain.arbitrum_one.modules.umami.utils import get_umami_vault_token_price
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
+from rotkehlchen.chain.ethereum.modules.across.constants import ACROSS_HUB_POOL_ABI, HUB_POOL
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     CPT_YEARN_STAKING,
     CPT_YEARN_V2,
@@ -32,6 +34,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
 )
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
 from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINANCE
 from rotkehlchen.chain.evm.decoding.aura_finance.utils import get_aura_pool_price
 from rotkehlchen.chain.evm.decoding.balancer.constants import (
@@ -229,6 +232,8 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
     price, oracle = None, CurrentPriceOracle.BLOCKCHAIN
     if token.protocol in LP_TOKEN_AS_POOL_PROTOCOLS:
         price = Inquirer().find_lp_price_from_uniswaplike_pool(token)
+    elif token.protocol == CPT_ACROSS:
+        price = Inquirer().find_across_lp_price(token)
     elif (
             token == 'eip155:1/erc20:0x0655977FEb2f289A4aB78af67BAB0d17aAb84367' or  # scrvUSD
             (token.protocol == CPT_CURVE and token.symbol == CURVE_LEND_VAULT_SYMBOL)
@@ -1309,6 +1314,35 @@ class Inquirer:
             return Price(price_per_share * underlying_token_price / 10 ** decimals)
 
         return None
+
+    def find_across_lp_price(self, token: EvmToken) -> Price | None:
+        """Return an Across LP token's redeemable underlying value in USD."""
+        if (underlying_token := get_single_underlying_token(token)) is None:
+            log.error('Could not find a single underlying token for Across LP token %s', token)
+            return None
+
+        node_inquirer = self.get_evm_manager(chain_id=token.chain_id).node_inquirer
+        try:
+            exchange_rate = EvmContract(
+                address=HUB_POOL,
+                abi=ACROSS_HUB_POOL_ABI,
+                deployed_block=0,
+            ).call(
+                node_inquirer=node_inquirer,
+                method_name='exchangeRateCurrent',
+                arguments=[underlying_token.evm_address],
+            )
+        except (RemoteError, BlockchainQueryError) as e:
+            log.error('Failed to query the Across exchange rate for %s due to %s', token, e)
+            return None
+
+        if (underlying_price := self.find_usd_price(underlying_token)) == ZERO_PRICE:
+            log.error(
+                'Could not find the USD price of Across underlying token %s', underlying_token,
+            )
+            return None
+
+        return Price(exchange_rate * underlying_price / 10**18)
 
     def find_yearn_price(
             self,
