@@ -34,6 +34,21 @@ describe('useEventsQueryStatusStore', () => {
     expect(get(store.isAllFinished)).toBe(false);
   });
 
+  it('should keep a finished exchange untouched when extending', () => {
+    const store = useEventsQueryStatusStore();
+    store.initializeQueryStatus([{ location: 'eth', name: 'a' }]);
+    store.setQueryStatus(data('eth', 'a', HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED));
+    store.stopSyncing();
+
+    store.initializeQueryStatus([{ location: 'eth', name: 'a' }, { location: 'btc', name: 'b' }], { extend: true });
+
+    const status = get(store.queryStatus);
+    expect(Object.keys(status)).toHaveLength(2);
+    expect(status.etha.status).toBe(HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED);
+    expect(status.btcb.status).toBe(HistoryEventsQueryStatus.QUERYING_EVENTS_STARTED);
+    expect(get(store.syncing)).toBe(true);
+  });
+
   it('should ignore status updates while not syncing', () => {
     const store = useEventsQueryStatusStore();
     store.setQueryStatus(data('eth', 'a', HistoryEventsQueryStatus.QUERYING_EVENTS_STARTED));

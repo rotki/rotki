@@ -66,6 +66,30 @@ describe('useDecodingStatusStore', () => {
     });
   });
 
+  describe('resumeDecodingSyncProgress', () => {
+    it('should reopen the progress gate a stopped sync closed', () => {
+      const store = useDecodingStatusStore();
+      store.resetDecodingSyncProgress();
+      store.stopDecodingSyncProgress();
+
+      store.resumeDecodingSyncProgress();
+      store.setUndecodedTransactionsStatus(createStatus('eth', 100, 50));
+
+      expect(get(store.decodingSyncProgress).eth).toEqual({ chain: 'eth', processed: 50, total: 100 });
+    });
+
+    it('should keep the progress an earlier wave recorded', () => {
+      const store = useDecodingStatusStore();
+      store.resetDecodingSyncProgress();
+      store.setUndecodedTransactionsStatus(createStatus('eth', 100, 100));
+      store.stopDecodingSyncProgress();
+
+      store.resumeDecodingSyncProgress();
+
+      expect(get(store.decodingSyncProgress).eth).toEqual({ chain: 'eth', processed: 100, total: 100 });
+    });
+  });
+
   describe('updateUndecodedTransactionsStatus', () => {
     it('should batch update multiple chain statuses', () => {
       const store = useDecodingStatusStore();

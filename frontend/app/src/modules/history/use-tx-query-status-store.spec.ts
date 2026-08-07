@@ -60,6 +60,47 @@ describe('store/history/query-status/tx-query-status', () => {
       expect(Object.keys(get(store.queryStatus))).toHaveLength(1);
       expect(get(store.queryStatus)['0x123eth']).toBeUndefined();
     });
+
+    it('should keep the earlier entries when extending', () => {
+      const store = useTxQueryStatusStore();
+
+      store.initializeQueryStatus([{ address: '0x123', chain: 'eth' }]);
+      store.initializeQueryStatus([{ address: '0x456', chain: 'optimism' }], { extend: true });
+
+      const status = get(store.queryStatus);
+      expect(Object.keys(status)).toHaveLength(2);
+      expect(status['0x123eth']).toBeDefined();
+      expect(status['0x456optimism']).toBeDefined();
+    });
+
+    it('should not walk a finished address back to ACCOUNT_CHANGE when extending', () => {
+      const store = useTxQueryStatusStore();
+      const account = { address: '0x123', chain: 'eth' };
+
+      store.initializeQueryStatus([account]);
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'eth',
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED,
+        subtype: 'evm',
+      });
+
+      store.initializeQueryStatus([account], { extend: true });
+
+      expect(get(store.queryStatus)['0x123eth'].status).toBe(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED);
+    });
+
+    it('should resume syncing when extending', () => {
+      const store = useTxQueryStatusStore();
+
+      store.initializeQueryStatus([{ address: '0x123', chain: 'eth' }]);
+      store.stopSyncing();
+
+      store.initializeQueryStatus([{ address: '0x456', chain: 'optimism' }], { extend: true });
+
+      expect(get(store.syncing)).toBe(true);
+    });
   });
 
   describe('setUnifiedTxQueryStatus', () => {

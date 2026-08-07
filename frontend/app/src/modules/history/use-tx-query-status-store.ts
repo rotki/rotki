@@ -122,14 +122,31 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     syncing,
   } = createQueryStatusState<TxQueryStatusData>(isStatusFinished, createKey);
 
-  const initializeQueryStatus = (data: ChainAddress[]): void => {
-    resetQueryStatus();
+  /**
+   * Seed the panel with the addresses a sync is about to query.
+   *
+   * ⚠️ `extend` keeps what an earlier wave of the *same* sync already produced. A history refresh
+   * can run in more than one wave: accounts that were not yet loaded when the umbrella opened are
+   * drained into a follow-up run, and each wave carries only its own accounts. Replacing the map on
+   * the second wave dropped every address the first had finished, so the bar's denominator fell
+   * mid-sync (6/7 -> 3/3) with nothing to say a new wave had begun.
+   *
+   * ⚠️ An address already present is left alone. Re-seeding it as `ACCOUNT_CHANGE` would walk a
+   * finished chain's progress backwards, which is the same lie in the other direction.
+   */
+  const initializeQueryStatus = (data: ChainAddress[], { extend = false }: { extend?: boolean } = {}): void => {
+    if (!extend)
+      resetQueryStatus();
+
     set(syncing, true);
 
     const status = { ...get(queryStatus) };
     const now = millisecondsToSeconds(Date.now());
     for (const item of data) {
       const key = createKey(item);
+      if (extend && status[key])
+        continue;
+
       status[key] = {
         address: item.address,
         chain: item.chain,
