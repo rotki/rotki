@@ -12,6 +12,18 @@ export const BalanceSnapshotSchema = z.object({
 
 export type BalanceSnapshot = z.infer<typeof BalanceSnapshotSchema>;
 
+/**
+ * Visibility of zero-value rows in the snapshot balances table. `ONLY` isolates
+ * them and is entered from the summary's zero-value warning.
+ */
+export const ZeroValueFilter = {
+  ALL: 'all',
+  HIDE: 'hide',
+  ONLY: 'only',
+} as const;
+
+export type ZeroValueFilter = typeof ZeroValueFilter[keyof typeof ZeroValueFilter];
+
 export interface BalanceSnapshotPayload {
   timestamp: number;
   category: BalanceType;

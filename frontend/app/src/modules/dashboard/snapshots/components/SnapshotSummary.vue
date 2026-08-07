@@ -32,6 +32,7 @@ const {
 const emit = defineEmits<{
   'edit-locations': [];
   'reconcile-locations': [location: string];
+  'show-zero-value': [];
 }>();
 
 /** Number of location rows shown in the allocation glance before "+N more". */
@@ -133,20 +134,28 @@ function warningMessage(warning: SnapshotWarning): string {
 
 // Zero-value rows are overwhelmingly valueless spam/airdrop tokens, not edit
 // mistakes — listing each would bury the genuine warnings. Collapse them into a
-// single count and keep every other warning one-to-one.
-const warningMessages = computed<string[]>(() => {
+// single count (carrying an action that isolates those rows in the balances
+// table, since the collapsed line names none of them) and keep every other
+// warning one-to-one.
+const warningMessages = computed<{ action: boolean; text: string }[]>(() => {
   const all = get(warnings);
-  const messages = all.filter(warning => warning.code !== 'zero-value').map(warningMessage);
+  const messages = all
+    .filter(warning => warning.code !== 'zero-value')
+    .map(warning => ({ action: false, text: warningMessage(warning) }));
   const zeroValueCount = all.filter(warning => warning.code === 'zero-value').length;
-  if (zeroValueCount > 0)
-    messages.push(t('dashboard.snapshot.detail.warnings.zero_value', { count: zeroValueCount }, zeroValueCount));
+  if (zeroValueCount > 0) {
+    messages.push({
+      action: true,
+      text: t('dashboard.snapshot.detail.warnings.zero_value', { count: zeroValueCount }, zeroValueCount),
+    });
+  }
   return messages;
 });
 
 // The sanity warnings are advisory, so let the user dismiss them. Re-surface when
 // the set of warnings changes (an edit introduced or resolved something).
 const warningsDismissed = ref<boolean>(false);
-watch(() => get(warningMessages).join(' '), () => {
+watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
   set(warningsDismissed, false);
 });
 </script>
@@ -354,7 +363,18 @@ watch(() => get(warningMessages).join(' '), () => {
           v-for="(message, index) in warningMessages"
           :key="index"
         >
-          {{ message }}
+          <span>{{ message.text }}</span>
+          <RuiButton
+            v-if="message.action"
+            variant="text"
+            size="sm"
+            color="warning"
+            class="ml-1 !py-0"
+            data-testid="snapshot-summary-show-zero-value"
+            @click="emit('show-zero-value')"
+          >
+            {{ t('dashboard.snapshot.detail.warnings.show_zero_value') }}
+          </RuiButton>
         </li>
       </ul>
     </RuiAlert>

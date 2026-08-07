@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { Snapshot } from '@/modules/dashboard/snapshots';
 import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
@@ -7,6 +6,7 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import ExportSnapshotDialog from '@/modules/dashboard/ExportSnapshotDialog.vue';
+import { type Snapshot, ZeroValueFilter } from '@/modules/dashboard/snapshots';
 import SnapshotBalancesTable from '@/modules/dashboard/snapshots/components/SnapshotBalancesTable.vue';
 import SnapshotEditorToolbar from '@/modules/dashboard/snapshots/components/SnapshotEditorToolbar.vue';
 import SnapshotLocationsDrawer from '@/modules/dashboard/snapshots/components/SnapshotLocationsDrawer.vue';
@@ -42,6 +42,9 @@ const saveSuccess = ref<boolean>(false);
 const loaded = ref<Snapshot>();
 const exportDialog = ref<boolean>(false);
 const locationsDrawer = ref<boolean>(false);
+// Owned here so the summary's zero-value warning can isolate those rows in the
+// balances table below it.
+const zeroValueFilter = ref<ZeroValueFilter>(ZeroValueFilter.HIDE);
 
 const { fetchSnapshot, persist, remove } = useSnapshotStore();
 // `rows` (and the prev/next order + deltas derived from them) come from the cached
@@ -337,9 +340,11 @@ useEventListener(window, 'beforeunload', (event: BeforeUnloadEvent) => {
         :previous="previous"
         @edit-locations="locationsDrawer = true"
         @reconcile-locations="reconcileLocations($event)"
+        @show-zero-value="zeroValueFilter = ZeroValueFilter.ONLY"
       />
 
       <SnapshotBalancesTable
+        v-model:zero-value-filter="zeroValueFilter"
         :snapshot="draft"
         :timestamp="timestamp"
         :locked="!!mismatch"

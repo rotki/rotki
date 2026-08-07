@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { BalanceSnapshot, Snapshot } from '@/modules/dashboard/snapshots';
 import type { BalanceMutation, LocationAttribution } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { type BigNumber, toSentenceCase } from '@rotki/common';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
@@ -11,6 +10,7 @@ import NftDetails from '@/modules/balances/nft/NftDetails.vue';
 import { BalanceType } from '@/modules/balances/types/balances';
 import TableStatusFilter from '@/modules/core/table/TableStatusFilter.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { type BalanceSnapshot, type Snapshot, ZeroValueFilter } from '@/modules/dashboard/snapshots';
 import SnapshotBalanceDeleteDialog from '@/modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog.vue';
 import SnapshotBalanceEntryDialog from '@/modules/dashboard/snapshots/components/SnapshotBalanceEntryDialog.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
@@ -23,6 +23,12 @@ import RowActions from '@/modules/shell/components/RowActions.vue';
 type CategoryFilter = 'all' | 'asset' | 'liability' | 'nft';
 
 type IndexedBalanceSnapshot = BalanceSnapshot & { index: number; categoryLabel: string };
+
+/**
+ * Zero-value visibility. Owned by the page so the summary's zero-value warning
+ * can switch the table to `only` and isolate the rows it is complaining about.
+ */
+const zeroValueFilter = defineModel<ZeroValueFilter>('zeroValueFilter', { default: ZeroValueFilter.HIDE });
 
 const { locked = false, snapshot, timestamp } = defineProps<{
   snapshot: Snapshot;
@@ -52,13 +58,22 @@ const categoryFilter = ref<CategoryFilter>('all');
 const filterMenu = ref<boolean>(false);
 const hideSpam = ref<boolean>(true);
 const hideIgnored = ref<boolean>(true);
-const hideZeroValue = ref<boolean>(true);
 const sort = ref<DataTableSortData<BalanceSnapshot>>({
   column: 'usdValue',
   direction: 'desc',
 });
 const entryDialog = useTemplateRef<InstanceType<typeof SnapshotBalanceEntryDialog>>('entryDialog');
 const deleteDialog = useTemplateRef<InstanceType<typeof SnapshotBalanceDeleteDialog>>('deleteDialog');
+
+/**
+ * The menu checkbox only toggles between hiding and showing zero-value rows;
+ * isolating them (`ONLY`) is entered from the summary warning, and ticking the
+ * box again is one of the two ways back out of it.
+ */
+const hideZeroValue = computed<boolean>({
+  get: () => get(zeroValueFilter) === ZeroValueFilter.HIDE,
+  set: (value: boolean) => { set(zeroValueFilter, value ? ZeroValueFilter.HIDE : ZeroValueFilter.ALL); },
+});
 
 const categoryOptions = computed<{ key: CategoryFilter; label: string }[]>(() => [
   { key: 'all', label: t('dashboard.snapshot.detail.balances.all') },
@@ -120,28 +135,49 @@ const spamCount = computed<number>(() => get(data).filter(item => isSpamAsset(it
 const ignoredCount = computed<number>(() => get(data).filter(item => isIgnoredAsset(item.assetIdentifier)).length);
 const zeroValueCount = computed<number>(() => get(data).filter(item => item.usdValue.isZero()).length);
 
+function matchesZeroValue(item: IndexedBalanceSnapshot, mode: ZeroValueFilter): boolean {
+  switch (mode) {
+    case ZeroValueFilter.HIDE:
+      return !item.usdValue.isZero();
+    case ZeroValueFilter.ONLY:
+      return item.usdValue.isZero();
+    case ZeroValueFilter.ALL:
+    default:
+      return true;
+  }
+}
+
 const filteredData = computed<IndexedBalanceSnapshot[]>(() => {
   const text = get(debouncedSearch).toLowerCase().trim();
   const hideSpamRows = get(hideSpam);
   const hideIgnoredRows = get(hideIgnored);
-  const hideZeroValueRows = get(hideZeroValue);
+  const zeroValueMode = get(zeroValueFilter);
   return get(data).filter(item =>
     matchesCategory(item)
     && (!hideSpamRows || !isSpamAsset(item.assetIdentifier))
     && (!hideIgnoredRows || !isIgnoredAsset(item.assetIdentifier))
-    && (!hideZeroValueRows || !item.usdValue.isZero())
+    && matchesZeroValue(item, zeroValueMode)
     && (!text || haystack(item.assetIdentifier).includes(text)),
   );
 });
 
 const total = computed<BigNumber>(() => getTotalValue(snapshot.locationDataSnapshot));
 
-/** Rows hidden by the active hide-filters, surfaced next to the filter button. */
-const hiddenCount = computed<number>(() => get(data).filter(item =>
-  (get(hideSpam) && isSpamAsset(item.assetIdentifier))
-  || (get(hideIgnored) && isIgnoredAsset(item.assetIdentifier))
-  || (get(hideZeroValue) && item.usdValue.isZero()),
-).length);
+/**
+ * Rows hidden by the active hide-filters, surfaced next to the filter button.
+ * Suppressed while isolating zero-value rows — there the point is what is shown,
+ * not what is hidden, and its own chip says so.
+ */
+const hiddenCount = computed<number>(() => {
+  if (get(zeroValueFilter) === ZeroValueFilter.ONLY)
+    return 0;
+
+  return get(data).filter(item =>
+    (get(hideSpam) && isSpamAsset(item.assetIdentifier))
+    || (get(hideIgnored) && isIgnoredAsset(item.assetIdentifier))
+    || (get(hideZeroValue) && item.usdValue.isZero()),
+  ).length;
+});
 
 const emptyDescription = computed<string>(() =>
   get(data).length > 0 && get(filteredData).length === 0
@@ -339,6 +375,18 @@ function onDelete(payload: { index: number; location: LocationAttribution }): vo
             data-testid="snapshot-balances-hidden-count"
           >
             {{ t('dashboard.snapshot.detail.balances.hidden', { count: hiddenCount }, hiddenCount) }}
+          </RuiChip>
+          <RuiChip
+            v-if="zeroValueFilter === ZeroValueFilter.ONLY"
+            size="sm"
+            color="warning"
+            variant="outlined"
+            closeable
+            class="whitespace-nowrap"
+            data-testid="snapshot-balances-zero-value-only"
+            @click:close="zeroValueFilter = ZeroValueFilter.HIDE"
+          >
+            {{ t('dashboard.snapshot.detail.balances.zero_value_only') }}
           </RuiChip>
           <RuiMenuSelect
             v-model="categoryFilter"
