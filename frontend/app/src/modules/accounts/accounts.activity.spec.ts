@@ -6,9 +6,8 @@ function subject(chain: string, address: string): AccountSubject {
 }
 
 describe('account activity lanes', () => {
-  // The lane is what serializes removals now that `awaitParallelExecution(..., 1)` is gone. A
-  // removal that minted no lane would take the default one, which is uncapped, and the serial
-  // behaviour would be lost silently rather than loudly.
+  // The lane is the only thing serializing removals. One that minted no lane would take the
+  // default, which is uncapped, and the serial behaviour would be lost silently rather than loudly.
   it('should put a removal on its chain lane', () => {
     expect(accountRemoveActivity.laneOf?.(subject('eth', '0xabc'))).toBe('accounts-remove:eth');
   });

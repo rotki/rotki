@@ -220,8 +220,7 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
    * the batch suppresses the umbrella — so the address count no longer changes the mechanism, only
    * how it is presented.
    *
-   * No limiter: the `accounts-add:<chain>` lane caps this at 2, which is what the old
-   * `awaitParallelExecution(..., 2)` did by hand around a call that already submits to a lane.
+   * No limiter here: the `accounts-add:<chain>` lane caps this at 2.
    */
   const addAccounts = async (
     chain: string,

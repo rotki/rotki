@@ -1,6 +1,5 @@
 import { type StakingValidatorManage, useAccountManage } from '@/modules/accounts/blockchain/use-account-manage';
 import { createValidatorAction, type CSVRow } from '@/modules/accounts/import-export/account-csv-schema';
-import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
 
 interface UseValidatorImportReturn {
   importValidators: (validators: CSVRow[], onProgress: () => void) => Promise<void>;
@@ -23,15 +22,12 @@ export function useValidatorImport(): UseValidatorImportReturn {
       });
     });
 
-    await awaitParallelExecution(
-      validatorActions,
-      item => item.data.publicKey!,
-      async (item) => {
-        onProgress();
-        await save(item);
-      },
-      1,
-    );
+    // Serial, as it has always been. Whether the backend tolerates concurrent validator adds has
+    // never been established, so this keeps the existing behaviour rather than assuming.
+    for (const item of validatorActions) {
+      await save(item);
+      onProgress();
+    }
   };
 
   return { importValidators };
