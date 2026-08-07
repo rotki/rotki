@@ -5316,7 +5316,15 @@
     "manage_or_upgrade": "Manage or upgrade subscription",
     "premium_active": "@:premium_settings.title is active",
     "subtitle": "@:premium_settings.title is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
-    "title": "rotki Premium"
+    "title": "rotki Premium",
+    "validation": {
+      "api_key": {
+        "non_empty": "The API key cannot be empty"
+      },
+      "api_secret": {
+        "non_empty": "The API secret cannot be empty"
+      }
+    }
   },
   "price_accuracy_hint": {
     "tooltip": "These prices are based on the current exchange rate of historical USD values"
