@@ -1992,7 +1992,8 @@
   "collapsed_pending_tasks": {
     "cancel_task": "Cancel task",
     "cancel_task_info": "This action will leave the running process ({title}) in an unfinished state, are you sure you want to cancel?",
-    "title": "{count} pending task | {count} pending tasks"
+    "steps": "{current} of {total} steps done",
+    "title": "{count} job running | {count} jobs running"
   },
   "common": {
     "account": "Account",
@@ -5100,6 +5101,18 @@
     "validation": {
       "range": "Value must be between 1 and 14 days"
     }
+  },
+  "pending_task": {
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "status": {
+      "cancelled": "Cancelled",
+      "done": "Done",
+      "failed": "Failed",
+      "queued": "Queued",
+      "skipped": "Skipped"
+    },
+    "steps": "{current} of {total}"
   },
   "percentage_display": {
     "symbol": "%",
