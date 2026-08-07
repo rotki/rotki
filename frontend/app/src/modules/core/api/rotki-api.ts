@@ -255,7 +255,7 @@ export class RotkiApi {
       const response = await ofetch.raw<ActionResult<T>>(url, {
         ...fetchOptions,
         // Resolved per execution, so a request queued before `setup()` follows the new backend.
-        baseURL: fetchOptions.baseURL ?? this.baseUrlFor(target),
+        baseURL: this.baseUrlFor(target),
         timeout,
         signal,
         ignoreResponseError: true,
@@ -313,12 +313,12 @@ export class RotkiApi {
     if (this._stopped)
       throw new RequestCancelledError('Application is quitting');
 
-    const { validStatuses, skipSnakeCase, query: rawQuery, baseURL, target, timeout = DEFAULT_TIMEOUT } = options;
+    const { validStatuses, skipSnakeCase, query: rawQuery, target, timeout = DEFAULT_TIMEOUT } = options;
     const query = transformRequestQuery(rawQuery, { skipSnakeCase });
 
     const response = await ofetch.raw(url, {
       method: 'HEAD',
-      baseURL: baseURL ?? this.baseUrlFor(target),
+      baseURL: this.baseUrlFor(target),
       timeout,
       signal: combineAbortSignals(this.abortController.signal, undefined, timeout).signal,
       ignoreResponseError: true,
@@ -350,7 +350,7 @@ export class RotkiApi {
 
     const response = await ofetch.raw<Blob, 'blob'>(url, {
       method: fetchOptions.method,
-      baseURL: fetchOptions.baseURL ?? this.baseUrlFor(target),
+      baseURL: this.baseUrlFor(target),
       timeout,
       signal: combineAbortSignals(this.abortController.signal, fetchOptions.signal, timeout).signal,
       responseType: 'blob',
