@@ -141,26 +141,63 @@ describe('useKrakenStakingOperations', () => {
       expect(mockNotify).toHaveBeenCalledOnce();
     });
 
-    it('should skip when the refresh activity is already running', async () => {
+    it('should skip a refresh when the refresh activity is already running', async () => {
       workStatus = { ...IDLE, active: true, running: true };
+
+      const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
+      await fetchEvents(true);
+
+      expect(mockFetchKrakenStakingEvents).not.toHaveBeenCalled();
+      expect(mockRefreshKrakenStaking).not.toHaveBeenCalled();
+    });
+
+    it('should fetch events with the date filter as it stands', async () => {
+      const { useKrakenStakingStore } = await import('@/modules/staking/use-kraken-staking-store');
+
+      mockFetchKrakenStakingEvents.mockResolvedValue(defaultEvents());
+      mockRefreshKrakenStaking.mockResolvedValue({ taskId: 1 });
+
+      const { dateFilter } = storeToRefs(useKrakenStakingStore());
+      const bounds = { fromTimestamp: 1000, toTimestamp: 2000 };
+      set(dateFilter, bounds);
 
       const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
       await fetchEvents();
 
-      expect(mockFetchKrakenStakingEvents).not.toHaveBeenCalled();
+      const lastCallArgs = mockFetchKrakenStakingEvents.mock.calls.at(-1)?.[0];
+      expect(lastCallArgs).toMatchObject(bounds);
     });
 
-    it('should fetch events with date filter', async () => {
+    it('should query the filter set while a refresh was running', async () => {
+      const { useKrakenStakingStore } = await import('@/modules/staking/use-kraken-staking-store');
+
       mockFetchKrakenStakingEvents.mockResolvedValue(defaultEvents());
-      mockRefreshKrakenStaking.mockResolvedValue({ taskId: 1 });
+      const { dateFilter } = storeToRefs(useKrakenStakingStore());
+
+      // The refresh is where the user gets time to move the filter, so it moves mid-task: the read
+      // that follows must send the new bounds, not the ones this call started with.
+      mockRefreshKrakenStaking.mockImplementation(async () => {
+        set(dateFilter, { fromTimestamp: 5000 });
+        return { taskId: 1 };
+      });
 
       const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
-      const dateFilter = { fromTimestamp: 1000, toTimestamp: 2000 };
-
-      await fetchEvents(false, dateFilter);
+      await fetchEvents();
 
       const lastCallArgs = mockFetchKrakenStakingEvents.mock.calls.at(-1)?.[0];
-      expect(lastCallArgs).toMatchObject(dateFilter);
+      expect(lastCallArgs).toMatchObject({ fromTimestamp: 5000 });
+    });
+
+    it('should not skip a plain read while a refresh is running', async () => {
+      workStatus = { ...IDLE, active: true, running: true };
+      mockFetchKrakenStakingEvents.mockResolvedValue(defaultEvents());
+
+      const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
+      await fetchEvents();
+
+      // Dropping it would leave the table on rows the pills no longer describe.
+      expect(mockFetchKrakenStakingEvents).toHaveBeenCalled();
+      expect(mockRefreshKrakenStaking).not.toHaveBeenCalled();
     });
 
     it('should cancel a read still in flight before starting a new one', async () => {
@@ -168,7 +205,7 @@ describe('useKrakenStakingOperations', () => {
       mockRefreshKrakenStaking.mockResolvedValue({ taskId: 1 });
 
       const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
-      await fetchEvents(false, { fromTimestamp: 1000 });
+      await fetchEvents();
 
       expect(mockCancelPendingEventReads).toHaveBeenCalledOnce();
       // Cancelling has to precede the read it supersedes, or the read it aborts is its own.
