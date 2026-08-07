@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
-import useVuelidate from '@vuelidate/core';
-import { required } from '@vuelidate/validators';
 import { msg } from '@/message-key';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useForm } from '@/modules/core/form/use-form';
 import PremiumDeviceList from '@/modules/premium/devices/components/PremiumDeviceList.vue';
+import {
+  emptyPremiumCredentialsForm,
+  type PremiumCredentialsFormState,
+  premiumCredentialsSchema,
+} from '@/modules/premium/premium-credentials-form';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
 import { usePremiumOperations } from '@/modules/premium/use-premium-operations';
@@ -30,8 +33,6 @@ defineOptions({
 
 const { t } = useI18n({ useScope: 'global' });
 
-const apiKey = ref<string>('');
-const apiSecret = ref<string>('');
 const edit = ref<boolean>(true);
 const error = ref<string>();
 
@@ -54,47 +55,37 @@ const mainActionText = computed<string>(() => {
   return t('common.actions.save');
 });
 
-const rules = {
-  apiKey: { required },
-  apiSecret: { required },
-};
+const form = useForm<PremiumCredentialsFormState, PremiumCredentialsFormState>({
+  initial: emptyPremiumCredentialsForm,
+  schema: premiumCredentialsSchema(),
+  // The page decides what to do with the outcome, so the persist stays in `setupPremium`.
+  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  transform: (state): PremiumCredentialsFormState => ({ ...state }),
+});
 
-const v$ = useVuelidate(
-  rules,
-  {
-    apiKey,
-    apiSecret,
-  },
-  { $autoDirty: true },
-);
-
-function cancelEdit() {
+function cancelEdit(): void {
   set(edit, false);
-  set(apiKey, '');
-  set(apiSecret, '');
-  get(v$).$reset();
+  form.reset();
 }
 
-function reset() {
-  set(apiSecret, '');
-  set(apiKey, '');
+function reset(): void {
   set(edit, false);
-  get(v$).$reset();
+  form.reset();
 }
 
-async function setupPremium() {
+async function setupPremium(): Promise<void> {
   if (get(premium) && !get(edit)) {
     set(edit, true);
     return;
   }
 
   set(error, undefined);
-  if (!(await get(v$).$validate()))
+  if (!form.validate())
     return;
 
   const result = await setup({
-    apiKey: get(apiKey),
-    apiSecret: get(apiSecret),
+    apiKey: form.state.apiKey,
+    apiSecret: form.state.apiSecret,
     username: get(username),
   });
 
@@ -193,25 +184,25 @@ onMounted(() => {
         </div>
 
         <RuiRevealableTextField
-          v-model.trim="apiKey"
+          v-model.trim="form.state.apiKey"
           data-cy="premium__api-key"
           variant="outlined"
           color="primary"
           :disabled="premium && !edit"
-          :error-messages="toMessages(v$.apiKey)"
+          :error-messages="form.errors('apiKey')"
           :label="t('premium_settings.fields.api_key')"
-          @blur="v$.$touch()"
+          @blur="form.touch('apiKey')"
         />
 
         <RuiRevealableTextField
-          v-model.trim="apiSecret"
+          v-model.trim="form.state.apiSecret"
           data-cy="premium__api-secret"
           variant="outlined"
           color="primary"
           :disabled="premium && !edit"
-          :error-messages="toMessages(v$.apiSecret)"
+          :error-messages="form.errors('apiSecret')"
           :label="t('premium_settings.fields.api_secret')"
-          @blur="v$.$touch()"
+          @blur="form.touch('apiSecret')"
         />
       </div>
 
