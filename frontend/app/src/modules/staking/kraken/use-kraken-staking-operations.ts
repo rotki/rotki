@@ -75,6 +75,11 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
       if (shouldSkip(refresh))
         return;
 
+      // A read still in flight was started for an older filter. Left alone it can land after this
+      // one and overwrite it, leaving the table showing rows the pills no longer describe, so it
+      // is cancelled rather than raced.
+      api.cancelPendingEventReads();
+
       const firstLoad = !get(loadedOnce);
       set(loading, true);
 
@@ -99,10 +104,12 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
       set(loading, isRefreshRunning());
     }
     catch (error: unknown) {
-      set(loading, false);
-
+      // A cancelled read was superseded by a newer one, which owns `loading` from here on:
+      // clearing it would hide the spinner while that newer read is still running.
       if (isRequestCancellation(error))
         return;
+
+      set(loading, false);
 
       logger.error(error);
       notifyError(

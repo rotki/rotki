@@ -10,6 +10,7 @@ import '@test/i18n';
 const mockFetchKrakenStakingEvents = vi.fn();
 const mockRefreshKrakenStaking = vi.fn();
 const mockNotify = vi.fn();
+const { mockCancelPendingEventReads } = vi.hoisted(() => ({ mockCancelPendingEventReads: vi.fn() }));
 
 const IDLE: WorkStatus = { active: false, everCompleted: false, pending: false, running: false };
 let workStatus: WorkStatus = { ...IDLE };
@@ -17,6 +18,7 @@ const statusOf = vi.fn((): WorkStatus => workStatus);
 
 vi.mock('@/modules/staking/api/use-kraken-api', () => ({
   useKrakenApi: vi.fn(() => ({
+    cancelPendingEventReads: mockCancelPendingEventReads,
     fetchKrakenStakingEvents: mockFetchKrakenStakingEvents,
     refreshKrakenStaking: mockRefreshKrakenStaking,
   })),
@@ -159,6 +161,36 @@ describe('useKrakenStakingOperations', () => {
 
       const lastCallArgs = mockFetchKrakenStakingEvents.mock.calls.at(-1)?.[0];
       expect(lastCallArgs).toMatchObject(dateFilter);
+    });
+
+    it('should cancel a read still in flight before starting a new one', async () => {
+      mockFetchKrakenStakingEvents.mockResolvedValue(defaultEvents());
+      mockRefreshKrakenStaking.mockResolvedValue({ taskId: 1 });
+
+      const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
+      await fetchEvents(false, { fromTimestamp: 1000 });
+
+      expect(mockCancelPendingEventReads).toHaveBeenCalledOnce();
+      // Cancelling has to precede the read it supersedes, or the read it aborts is its own.
+      expect(mockCancelPendingEventReads.mock.invocationCallOrder[0])
+        .toBeLessThan(mockFetchKrakenStakingEvents.mock.invocationCallOrder[0]);
+    });
+
+    it('should leave loading alone when a read is cancelled', async () => {
+      const { useKrakenStakingStore } = await import('@/modules/staking/use-kraken-staking-store');
+      const { RequestCancelledError } = await import('@/modules/core/api/request-queue/errors');
+
+      mockFetchKrakenStakingEvents.mockRejectedValueOnce(new RequestCancelledError('superseded'));
+
+      const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
+      const store = useKrakenStakingStore();
+
+      await fetchEvents();
+
+      // The read that replaced this one owns `loading`; clearing it here would hide the spinner
+      // while that newer read is still running.
+      expect(get(store.loading)).toBe(true);
+      expect(mockNotify).not.toHaveBeenCalled();
     });
 
     it('should call refreshEvents on explicit refresh', async () => {
