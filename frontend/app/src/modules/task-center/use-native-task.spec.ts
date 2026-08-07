@@ -1,9 +1,11 @@
-import { err, isErr, isOk, ok } from 'plainfp/result';
+import type { ResultAsync } from 'plainfp/result-async';
+import { err, isErr, isOk, ok, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { assert, describe, expect, it, vi } from 'vitest';
-import { TaskFailed } from '@/modules/core/tasks/task-result';
+import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { ActivityKind, makeActivityId } from './core/types';
 import { useNativeTask } from './use-native-task';
+import { useTaskOrchestrator } from './use-task-orchestrator';
 
 // The handler backs the runner the facade binds to each activity, and the backend abort behind
 // `cancel`; the orchestrator stays real.
@@ -68,5 +70,64 @@ describe('useNativeTask', () => {
     release();
     await Promise.all([first, second]);
     expect(run).toHaveBeenCalledOnce();
+  });
+
+  describe('reset', () => {
+    /** Only the orchestrator can settle this, which is the whole point of the two tests below. */
+    const neverSettles = async (): ResultAsync<void, TaskError> => new Promise<Result<void, TaskError>>(() => {});
+
+    // Logout resets the orchestrator while work is still in flight. The caller of that work is
+    // awaiting a promise only the orchestrator can settle, and the id is held in `inflight` until
+    // it settles — so if reset drops the record without settling the caller, that id is poisoned
+    // for the life of the process and every later submit dedups onto a promise that never
+    // resolves. In the app that stalls `fetchCached()` on its first await, so the accounts are
+    // never fetched and the whole post-login session sits on a spinner.
+    it('should settle a caller waiting on work that reset dropped', async () => {
+      const { submitTask } = useNativeTask();
+      const orchestrator = useTaskOrchestrator();
+      const id = makeActivityId(ActivityKind.PRICES, 'reset-settles');
+
+      // Nothing but the orchestrator can settle this.
+      const outcome = submitTask({
+        id,
+        kind: ActivityKind.PRICES,
+        run: neverSettles,
+        title: 'prices',
+      });
+
+      orchestrator.reset();
+
+      const raced = await Promise.race([
+        outcome.then(() => 'settled'),
+        new Promise<string>((resolve) => {
+          setTimeout(resolve, 50, 'HUNG');
+        }),
+      ]);
+
+      expect(raced).toBe('settled');
+    });
+
+    it('should let the same activity run again after reset', async () => {
+      const { submitTask } = useNativeTask();
+      const orchestrator = useTaskOrchestrator();
+      const id = makeActivityId(ActivityKind.PRICES, 'reset-reruns');
+
+      // Awaited only after the reset releases it; the assertion is about the SECOND submit.
+      const abandoned = submitTask({
+        id,
+        kind: ActivityKind.PRICES,
+        run: neverSettles,
+        title: 'prices',
+      });
+
+      orchestrator.reset();
+      await abandoned;
+
+      // The id must be free again, or this dedups onto the abandoned promise and never runs.
+      const run = vi.fn(async () => ok(undefined));
+      await submitTask({ id, kind: ActivityKind.PRICES, run, title: 'prices' });
+
+      expect(run).toHaveBeenCalledOnce();
+    });
   });
 });
