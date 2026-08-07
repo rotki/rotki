@@ -51,7 +51,17 @@ async function refresh(ignoreCache: boolean = false): Promise<void> {
   await refreshPrices(ignoreCache, assets);
 }
 
-watchImmediate([filters, isKrakenConnected], async ([_, isKrakenConnected]) => {
+/**
+ * The date pills write a value per picker emit, and a year typed digit by digit emits once per
+ * digit (`2` and `20` and `202` are each a valid date). Every write here is a POST to
+ * `/staking/kraken` plus a price refresh, so the trigger is debounced and a burst of intermediate
+ * dates settles into one query. `refresh` reads the live `filters`, so it still queries the value
+ * the user stopped on, and the debounced ref starts at the current value, so the first run after
+ * mount is not delayed.
+ */
+const settledFilters = refDebounced(filters, 400);
+
+watchImmediate([settledFilters, isKrakenConnected], async ([_, isKrakenConnected]) => {
   if (isKrakenConnected) {
     await refresh();
   }

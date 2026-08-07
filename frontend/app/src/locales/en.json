@@ -4348,6 +4348,9 @@
     }
   },
   "kraken_staking_events": {
+    "filter": {
+      "period": "Date"
+    },
     "query_historical_price": "Querying Kraken historical prices ({processed}/{total})",
     "refresh_tooltip": "Refresh your Kraken staking events"
   },

@@ -1,40 +1,32 @@
 <script lang="ts" setup>
-import type { MatchedKeyword, SearchMatcher } from '@/modules/core/table/filtering';
+import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import type { KrakenStakingDateFilter } from '@/modules/staking/staking-types';
 import { assert } from '@rotki/common';
-import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/core/common/data/date';
-import TableFilter from '@/modules/core/table/TableFilter.vue';
-import { useSetting } from '@/modules/settings/use-setting';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import { KrakenStakingFilterValueKeys, useKrakenStakingFields } from '@/modules/staking/kraken/use-kraken-staking-fields';
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 
-const { t } = useI18n({ useScope: 'global' });
-const dateInputFormat = useSetting('dateInputFormat');
+const fields = useKrakenStakingFields();
+const pillLabels = usePillBarLabels();
 
-enum KrakenStakingFilterKeys {
-  START = 'start',
-  END = 'end',
-}
-
-enum KrakenStakingFilterValueKeys {
-  START = 'fromTimestamp',
-  END = 'toTimestamp',
-}
-
-type KrakenStakingMatcher = SearchMatcher<KrakenStakingFilterKeys, KrakenStakingFilterValueKeys>;
-
-type KrakenStakingFilters = MatchedKeyword<KrakenStakingFilterValueKeys>;
-
-const matches = computed<KrakenStakingFilters>({
+/**
+ * The bar's model is the flat keyword map every table filter speaks; this page's model is the
+ * `{ fromTimestamp, toTimestamp }` object it hands to `fetchEvents` and to the events table below.
+ * The bridge is the whole reason this component exists.
+ */
+const matches = computed<MatchedKeywordWithBehaviour<string>>({
   get() {
     const model = get(modelValue);
     return {
-      ...(model.fromTimestamp ? { fromTimestamp: model.fromTimestamp.toString() } : {}),
-      ...(model.toTimestamp ? { toTimestamp: model.toTimestamp.toString() } : {}),
+      ...(model.fromTimestamp ? { [KrakenStakingFilterValueKeys.START]: model.fromTimestamp.toString() } : {}),
+      ...(model.toTimestamp ? { [KrakenStakingFilterValueKeys.END]: model.toTimestamp.toString() } : {}),
     };
   },
   set(value) {
-    const { fromTimestamp, toTimestamp } = value;
+    const fromTimestamp = value[KrakenStakingFilterValueKeys.START];
+    const toTimestamp = value[KrakenStakingFilterValueKeys.END];
     assert(typeof fromTimestamp === 'string' || fromTimestamp === undefined);
     assert(typeof toTimestamp === 'string' || toTimestamp === undefined);
 
@@ -44,37 +36,18 @@ const matches = computed<KrakenStakingFilters>({
     });
   },
 });
-
-const matchers = computed<KrakenStakingMatcher[]>(() => [{
-  description: t('common.filter.start_date'),
-  deserializer: dateDeserializer(dateInputFormat),
-  hint: t('common.filter.date_hint', {
-    format: getDateInputISOFormat(get(dateInputFormat)),
-  }),
-  key: KrakenStakingFilterKeys.START,
-  keyValue: KrakenStakingFilterValueKeys.START,
-  serializer: dateSerializer(dateInputFormat),
-  string: true,
-  suggestions: () => [],
-  validate: dateRangeValidator(dateInputFormat, () => get(matches)?.toTimestamp?.toString(), 'start'),
-}, {
-  description: t('common.filter.end_date'),
-  deserializer: dateDeserializer(dateInputFormat),
-  hint: t('common.filter.date_hint', {
-    format: getDateInputISOFormat(get(dateInputFormat)),
-  }),
-  key: KrakenStakingFilterKeys.END,
-  keyValue: KrakenStakingFilterValueKeys.END,
-  serializer: dateSerializer(dateInputFormat),
-  string: true,
-  suggestions: () => [],
-  validate: dateRangeValidator(dateInputFormat, () => get(matches)?.fromTimestamp?.toString(), 'end'),
-}]);
 </script>
 
 <template>
-  <TableFilter
+  <!--
+    The bar draws a border but no surface of its own: everywhere else it sits inside a card, which
+    is what makes it read as a white input. Here it sits straight on the page background, so it
+    brings the surface its own pills already assume.
+  -->
+  <PillFilterBar
     v-model:matches="matches"
-    :matchers="matchers"
+    class="bg-white dark:bg-rui-grey-900"
+    :fields="fields"
+    :labels="pillLabels"
   />
 </template>
