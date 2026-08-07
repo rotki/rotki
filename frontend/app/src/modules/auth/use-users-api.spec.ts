@@ -328,6 +328,71 @@ describe('composables/api/session/users', () => {
       });
     });
 
+    it('should lock colibri before logging out of core', async () => {
+      const calls: string[] = [];
+
+      server.use(
+        http.post(`${colibriUrl}/user/logout`, () => {
+          calls.push('colibri');
+          return HttpResponse.json({ result: true, message: '' });
+        }),
+        http.patch(`${backendUrl}/api/1/users/:username`, () => {
+          calls.push('core');
+          return HttpResponse.json({ result: true, message: '' });
+        }),
+      );
+
+      const { logout } = useUsersApi();
+      await logout('testuser');
+
+      expect(calls).toEqual(['colibri', 'core']);
+    });
+
+    it('should still log out of core when colibri is already locked', async () => {
+      let coreCalled = false;
+
+      // colibri answers 400 "DB not unlocked" whenever it holds no user db client,
+      // which is the normal state after a resumed session.
+      server.use(
+        http.post(`${colibriUrl}/user/logout`, () =>
+          HttpResponse.json({
+            result: null,
+            message: 'DB not unlocked',
+          }, { status: 400 })),
+        http.patch(`${backendUrl}/api/1/users/:username`, () => {
+          coreCalled = true;
+          return HttpResponse.json({ result: true, message: '' });
+        }),
+      );
+
+      const { logout } = useUsersApi();
+      const result = await logout('testuser');
+
+      expect(result).toBe(true);
+      expect(coreCalled).toBe(true);
+    });
+
+    it('should not log out of core when colibri fails for another reason', async () => {
+      let coreCalled = false;
+
+      server.use(
+        http.post(`${colibriUrl}/user/logout`, () =>
+          HttpResponse.json({
+            result: null,
+            message: 'Database error while closing the connection',
+          }, { status: 400 })),
+        http.patch(`${backendUrl}/api/1/users/:username`, () => {
+          coreCalled = true;
+          return HttpResponse.json({ result: true, message: '' });
+        }),
+      );
+
+      const { logout } = useUsersApi();
+
+      await expect(logout('testuser')).rejects.toThrow('Database error while closing the connection');
+      expect(coreCalled).toBe(false);
+    });
+
     it('should return true when logout returns 409 conflict', async () => {
       // Note: colibri logout uses baseURL override, so no /api/1 prefix
       server.use(
