@@ -250,6 +250,9 @@ describe('useUnlockSteps', () => {
       expect(result).toEqual({ ok: true, value: undefined });
       expect(runTaskResult).toHaveBeenCalled();
       expect(colibriLogin).toHaveBeenCalledWith({ password: 'p', username: 'bob' });
+      // Unlock order is core first, then colibri (locking runs the other way round).
+      expect(runTaskResult.mock.invocationCallOrder[0])
+        .toBeLessThan(colibriLogin.mock.invocationCallOrder[0]);
     });
 
     it('should return err(wrongPassword) on a non-actionable login failure', async () => {

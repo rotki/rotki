@@ -6,8 +6,15 @@ import {
 } from '@/modules/auth/login';
 import { apiUrls } from '@/modules/core/api/api-urls';
 import { api } from '@/modules/core/api/rotki-api';
+import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { VALID_ACCOUNT_OPERATION_STATUS } from '@/modules/core/api/utils';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
+
+/**
+ * The 400 body colibri answers with when it holds no unlocked user db
+ * (`logout_user` in `colibri/src/api/database.rs`).
+ */
+const COLIBRI_ALREADY_LOCKED = 'DB not unlocked';
 
 interface UseUsersApiReturn {
   authenticate: (credentials: BasicLoginCredentials) => Promise<void>;
@@ -46,15 +53,34 @@ export function useUsersApi(): UseUsersApiReturn {
     return loggedUsers;
   };
 
-  const colibriLogout = async (): Promise<boolean> => api.post<boolean>(
-    '/user/logout',
-    undefined,
-    {
-      baseURL: apiUrls.colibriApiUrl,
-      validStatuses: VALID_ACCOUNT_OPERATION_STATUS,
-      treat409AsSuccess: true,
-    },
-  );
+  /**
+   * Lock colibri's copy of the user db. Treats "already locked" as success: that is
+   * precisely the state this call aims for, and it is reached on every ordinary path —
+   * a resumed session (page reload while logged in) never unlocks colibri at all.
+   *
+   * Without this, the throw stops `logout` before it reaches core — colibri is locked
+   * first by design — so core keeps the session, `/users` still reports `loggedin`, and
+   * the user is stuck on "Logout failed / DB not unlocked" with no way out. Any other
+   * colibri failure still rejects: an account is locked only once both are locked.
+   */
+  const colibriLogout = async (): Promise<boolean> => {
+    try {
+      return await api.post<boolean>(
+        '/user/logout',
+        undefined,
+        {
+          baseURL: apiUrls.colibriApiUrl,
+          validStatuses: VALID_ACCOUNT_OPERATION_STATUS,
+          treat409AsSuccess: true,
+        },
+      );
+    }
+    catch (error: unknown) {
+      if (error instanceof ApiValidationError && error.message === COLIBRI_ALREADY_LOCKED)
+        return true;
+      throw error;
+    }
+  };
 
   const logout = async (username: string): Promise<boolean> => {
     await colibriLogout();
