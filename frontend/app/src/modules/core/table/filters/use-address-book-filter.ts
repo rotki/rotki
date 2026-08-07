@@ -3,12 +3,12 @@ import type { FilterSchema } from '@/modules/core/table/pagination-filter-types'
 import { z } from 'zod';
 import { arrayify } from '@/modules/core/common/data/array';
 
-enum AddressBookFilterKeys {
+export enum AddressBookFilterKeys {
   NAME = 'name',
   ADDRESS = 'address',
 }
 
-enum AddressBookFilterValueKeys {
+export enum AddressBookFilterValueKeys {
   NAME = 'nameSubstring',
   ADDRESS = 'address',
 }
