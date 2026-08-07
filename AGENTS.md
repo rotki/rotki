@@ -85,6 +85,34 @@ pnpm run test:unit
 pnpm run typecheck
 ```
 
+#### Command durations: always set an explicit timeout
+
+The frontend gates are slow, and CI is slower than a development machine. Budget against a slow-CI
+baseline (roughly 4x a fast 16-core workstation), not against your own warm-cache run. Automated
+assistants must pass an explicit timeout on these commands rather than relying on a short default.
+
+| Command | Allow at least |
+|---------|----------------|
+| `pnpm run lint:file <paths>`, `pnpm run lint:file:check <paths>`, `pnpm run lint-staged` | 2 minutes (usually the default) |
+| `pnpm run test:unit <path>` narrowed to one file or folder | 5 minutes |
+| `pnpm run lint`, `pnpm run lint:all`, `pnpm run typecheck`, `pnpm run build`, `pnpm run test:unit` (full suite), `pnpm install` | 10 minutes |
+| `pnpm run test:e2e`, `pnpm run electron:build`, docker builds | run in the background instead. The unsharded e2e suite takes ~20 minutes locally, which outlasts any foreground timeout. |
+
+Reference measurements (2026-08-07), so a later reader can tell whether this has drifted:
+
+| Command | 16-core workstation, warm cache | CI (`ubuntu-latest`, 4 cores, incl. install) |
+|---------|---------------------------------|-----------------------------------------------|
+| `pnpm run lint` | 164s | "Frontend lint" job (install + build + `lint:all`): 238-391s |
+| `pnpm run typecheck` | 56s | folded into that job's `build` step |
+| `pnpm run test:unit` (full) | 114s | "Frontend unit tests / vitest": 483-519s |
+| `pnpm run lint:style` | 2s | |
+| `pnpm run check:linked-keys` | 1s | |
+| `pnpm run test:e2e` (full, unsharded) | ~20 minutes | 240-634s per shard, across four shards |
+
+A command that hits its timeout has not failed, it has been cut off. Re-run it with a larger
+timeout or in the background. Do not report the truncation as a result, and do not retry at the
+default timeout on the assumption it was a fluke.
+
 ### Colibri (Rust) Service
 ```bash
 cd colibri
@@ -132,6 +160,9 @@ cargo run -- --database ../data/global.db --port 4343
 #### Directory Structure
 - All frontend commands should be run from `frontend/` directory, NOT `frontend/app/`
 - The main application code is in `frontend/app/src/`
+- New composables and components go under `modules/<domain>/` (components in
+  `modules/<domain>/components/`), not in a top-level `composables/` or `components/` directory.
+  The codebase is organised by module, and new code follows that structure.
 
 ### Code Organization & Maintainability
 
@@ -159,6 +190,26 @@ cargo run -- --database ../data/global.db --port 4343
   const user = response.data as User;
   const element = event.target as HTMLInputElement;
   ```
+  Cast-free ways out of the usual traps: build a `new Map<string, X>(Object.entries(obj))` and use
+  `.get(key)` for dynamic lookups instead of `as Record<string, X>`; use `Reflect.get(obj, key)` to
+  read a dynamic field; in unit tests use `createMock<T>()` (see Testing below) instead of a double
+  cast. Keep the assertions that are genuinely unavoidable, one per boundary, each with a one-line
+  justification. Never launder a type through `any` to dodge the lint rule; that is worse than a
+  documented `as`.
+- **No barrel files**: do not create or extend `index.ts` re-export modules. The
+  `@rotki/max-dependencies` rule caps a file at 20 imports, and a barrel is not the way to satisfy
+  it. Reduce real imports instead (drop unused ones, or fold a genuinely cohesive group behind one
+  domain composable), or leave the file as it is.
+- **`max-lines` caps `.ts` files at 400 lines** (error, from `@rotki/eslint-config`; specs, `.d.ts`,
+  and scripts are exempt). The cap is binding: no non-spec `.ts` file in `app/src` currently exceeds
+  it. A file at the ceiling needs to be split before it can grow, so plan the split rather than
+  shaving lines. **The rule does not apply to `.vue` files**, so nothing stops an SFC from growing
+  without limit. See the SFC size guidance below.
+- **`@rotki/composable-return-readonly`**: a composable returning a writable `Ref` must wrap it in
+  `readonly()`. When the ref is intentionally writable because a consumer binds it with `v-model`,
+  `readonly()` would break the binding, so **prefix the returned name with `model`** instead (for
+  example `privacy` becomes `modelPrivacy`) and the rule skips it. Do not reach for
+  `eslint-disable`; the existing suppressions are debt to convert, not precedent.
 
 #### Vue.js and TypeScript Conventions
 - Use VueUse utilities for reactive state management
@@ -182,6 +233,12 @@ cargo run -- --database ../data/global.db --port 4343
 - **Always type computed properties**: `const fullName = computed<string>(() => ...)`
 - If a ref type can be undefined and the default value is undefined, **Don't explicitly put it as type or default value**: `const newId = ref<number>()`
 - **Always use `{ useScope: 'global' }` parameter for `useI18n()`**: `const { t } = useI18n({ useScope: 'global' });`
+- **Never pass `t` as a parameter to a composable.** `useI18n` is auto-imported and available
+  everywhere, so a composable that needs translations calls it internally. Passing `t` in is
+  unnecessary coupling.
+- **Use `as const` objects instead of TypeScript enums for new types**, with the type derived from
+  the object. Enums are a legacy pattern here (they tree-shake poorly and infer badly). Existing
+  enums stay as they are unless you are already reworking that file extensively.
 
 #### Correct Examples:
 
@@ -355,11 +412,42 @@ async function fetchData() {
 ##### Other conventions
 - Use `$attrs` in templates instead of `useAttrs`
 
+#### Single-file component size
+
+The median SFC in `app/src` is 75 lines and 90% are under 230. Treat **~200 lines as the point to
+start splitting** and **~300 as the point where you need a reason not to**. Unlike `.ts` files,
+`.vue` files are not covered by the 400-line `max-lines` rule, so nothing will stop a component from
+growing without limit: this is a judgment call the linter does not make for you.
+
+Split along the grain, not to hit a number:
+- **Logic goes to a composable.** Move `<script setup>` state and behaviour into a `use-*.ts` in the
+  same module folder and keep the SFC as wiring. This is the highest-value split, because a
+  composable can be unit-tested directly while template logic cannot. Order what remains as described
+  in "Setup Script Organization (Preferred Order)" above.
+- **Template regions go to child components** under `modules/<domain>/components/`, when a region is
+  independently meaningful: a row, a summary card, one step of a form.
+
+Signals you are already past the point of splitting: the file needs more than 20 imports (the
+`@rotki/max-dependencies` ceiling), `vue/max-template-depth` or `vue/max-props` starts warning,
+`<script setup>` is longer than the template, or one file handles more than one concern (for example
+a table plus its edit dialog plus its filters).
+
+Do not split for its own sake. A child component used once that only forwards props adds indirection
+without reducing complexity; extract the logic instead.
+
 #### Pinia Store Structure
 1. State definitions
 2. Computed getters
 3. Actions
 4. Optional watchers
+
+**Stores are state-only and synchronous.** No `async`/`await` actions and no API calls inside a
+store. A store holds refs, computed getters, and synchronous setters (for example
+`setSummary(...)`). The async fetching that writes into the store belongs in a separate composable
+that calls the store's setter. For example `use-data-issues-inbox-store.ts` holds `counts` plus an
+`actionableCount` getter and `setSummary()`, while `use-data-issues-summary.ts` does the async
+`refreshSummary()` and calls `store.setSummary(...)`. This keeps stores predictable, testable, and
+free of side effects.
 
 #### Styling
 - Use Tailwind CSS for all styling
@@ -386,6 +474,36 @@ async function fetchData() {
 - **All unit tests are co-located** next to the source file they test (not in a separate `tests/` directory)
 - Test descriptions must follow the `it('should ...'` pattern
 - Component tests should follow existing patterns in co-located `*.spec.ts` files
+- **Re-run the full `pnpm run typecheck` after editing any `.spec.ts`**, even if you typechecked
+  earlier in the change. The "Frontend lint" CI job runs `pnpm run build`, and `vue-tsc --build`
+  type-checks specs too, so a green `test:unit` plus a green `lint:file:check` does not prove the
+  spec compiles. Type your mocks (`vi.fn<(id: number) => void>()`) so they stay assignable to the
+  callback or DOM method they stand in for.
+- **Narrow types with an assertion, never an `if`**: an `if (!result.ok) { expect(...) }` passes
+  silently when the branch is wrong, because the body never runs. Import `assert` from `vitest`,
+  assert the discriminant (which also narrows the following lines), then expect:
+  ```typescript
+  import { assert, describe, expect, it } from 'vitest';
+
+  const result = await useDataIssuesApi().listIssues(payload);
+  assert(!result.ok);                          // fails loudly, and narrows to the error variant
+  expect(result.error.type).toBe('not-found');
+  ```
+- **Shared test helpers** live in `frontend/app/tests/unit/` and are imported through the `@test/*`
+  alias (defined in `tsconfig.vitest.json`):
+  - `createMock<T>(overrides?)` from `@test/utils/create-mock` is the generic stubber. Use it for
+    branded, class, or large types where the test only reads a few fields, instead of a
+    `as unknown as T` double cast. It returns a `Proxy`, so proxies do not deep-equal: build a real
+    object when you need `toEqual`.
+  - `mockT` from `@test/i18n` is the echo translator. `useI18n` is globally mocked in
+    `tests/unit/setup-files/setup.ts` to use it, so composables calling `useI18n()` get `t` for free.
+  - Other fixtures: `@test/mocks/file`, `@test/utils/create-pinia`, `@test/utils/events`.
+- **Test selectors**: new attributes go in as `data-testid`. Do not introduce new `data-cy`; the
+  team is replacing it after the next release. Existing `data-cy` attributes are not being changed
+  in place, so query whichever attribute is on the component today.
+- **e2e: never locate a row by index.** Anchoring a history-events assertion on row position makes
+  the test pass for the wrong reason as soon as ordering or fixture data shifts. Anchor on fixture
+  content, and pair the assertion with a negative control that proves the test can fail.
 
 #### Fast checks via pnpm scripts
 
@@ -406,12 +524,27 @@ All checks are run from the `frontend/` directory through the workspace scripts 
   ```
   This is the canonical fast lint loop and only touches files in the git index. The same hook runs automatically on commit (via Husky), so passing it locally first means the commit won't bounce.
 
+- **Lint specific files** (the fast path when they are not staged yet):
+  ```bash
+  pnpm run lint:file <paths>         # eslint --fix on those files
+  pnpm run lint:file:check <paths>   # report-only, does not mutate
+  ```
+  Use `lint:file:check` when a fix would be destructive to inspect, for example on locale files,
+  where the unused-keys autofix deletes keys.
+
 - **Lint the whole project (full pass)**:
   ```bash
   pnpm run lint        # report-only
   pnpm run lint:fix    # auto-fix what it can
   ```
-  ESLint scans everything and there is no per-file pnpm script — use `lint-staged` (above) for the fast path.
+
+- **Never invoke the tools directly.** `pnpm exec eslint`, `pnpm exec vitest`, and `pnpm exec vue-tsc`
+  run with whatever working directory you happen to be in, which silently breaks CWD-relative rule
+  options and config resolution, and manufactures failures that are not real. One concrete case:
+  running `eslint app/src/locales/en.json` from `frontend/app` made `@rotki/no-unused-i18n-keys`
+  resolve its `src` option to a nonexistent `app/app/src`, so it reported all ~3563 keys as unused.
+  The scripts pin the working directory to `frontend/`. If no script covers what you need, add one
+  to `frontend/package.json` rather than reaching for `pnpm exec`.
 
 - **Stylelint** is wired the same way: `pnpm run lint-staged` covers staged `.vue`/`.scss`; `pnpm run lint:style` does the full pass.
 
