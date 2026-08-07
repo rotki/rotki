@@ -5936,23 +5936,12 @@
     }
   },
   "table_filter": {
-    "asset_suggestion": "Type the asset symbol or address to search.",
-    "exclusion": {
-      "description": "Use operator `!=` to filter out option, e.g.",
-      "example": "type != evm event"
-    },
     "field_kinds": {
       "asset": "asset",
       "date": "date",
       "range": "range",
       "toggle": "toggle"
     },
-    "hint": {
-      "description": "Type the filter and then press enter e.g.",
-      "edit_note": "Click applied filter to edit the value",
-      "example": "start = 26/05/2022"
-    },
-    "label": "Combined filters",
     "operators": {
       "after": "after",
       "before": "before",
@@ -5971,19 +5960,9 @@
       "remove": "Remove filter",
       "search": "Filter by…"
     },
-    "press_enter_to_apply": "Press enter to apply:",
     "saved_filters": {
-      "actions": {
-        "add": "Save current filter to list",
-        "apply": "Apply this saved filter",
-        "list": "Open saved filter list",
-        "remove": "Remove this saved filter"
-      },
-      "added": "Filter saved",
-      "empty": "You don't have any saved filter. Apply the filter as usual, and click this button {button} to save the filter.",
       "saving": {
-        "limited": "You are only allowed to save up to {limit} filters. Remove other filters to be able to add again.",
-        "title": "Failed to save filter"
+        "limited": "You are only allowed to save up to {limit} filters. Remove other filters to be able to add again."
       }
     },
     "saved_views": {
@@ -6002,10 +5981,7 @@
       "name_placeholder": "Name these filters…",
       "nothing_to_save": "Add a filter to save it as a view.",
       "title": "Views"
-    },
-    "start_typing": "Type the value for the {search} filter",
-    "title": "Available filters",
-    "unsupported_filter": "Unsupported filter:"
+    }
   },
   "tag_creator": {
     "labels": {

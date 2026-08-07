@@ -5,7 +5,7 @@ import { FilterOps, FilterValueTypes } from '@/modules/core/table/filtering';
 import { validStatuses } from '@/modules/core/table/filters/use-eth-validator-filter';
 
 /** The wire keys the validators table filters on. */
-export const EthValidatorFieldKeys = {
+const EthValidatorFieldKeys = {
   INDEX: 'index',
   PUBLIC_KEY: 'publicKey',
   STATUS: 'status',
