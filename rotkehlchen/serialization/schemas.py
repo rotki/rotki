@@ -105,7 +105,7 @@ class AssetWithOraclesSchema(BaseAssetSchema):
             raise ValidationError(message='Asset identifier should be given', field_name='identifier')  # noqa: E501
         if self.coingecko_obj is not None:
             _validate_single_oracle_id(data, 'coingecko', self.coingecko_obj)
-        if self.cryptocompare_obj is not None:
+        if self.cryptocompare_obj is not None and self.cryptocompare_obj.has_api_key() is True:
             _validate_single_oracle_id(data, 'cryptocompare', self.cryptocompare_obj)
 
 
@@ -439,7 +439,7 @@ class AssetSchema(Schema):
         If identifier_required is True then the identifier field is required.
         Provided asset_type must not be in disallowed_asset_types list.
         If coingecko is not None then the coingecko identifier has to be valid.
-        If cryptocompare is not None then the cryptocompare identifier has to be valid.
+        If cryptocompare has an API key then the cryptocompare identifier has to be valid.
         """
         super().__init__(**kwargs)
         self.identifier_required = identifier_required

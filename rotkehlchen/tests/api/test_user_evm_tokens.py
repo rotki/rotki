@@ -293,7 +293,7 @@ def test_adding_user_tokens(
         contained_in_msg=f'Given coingecko identifier {bad_identifier} is not valid',
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    # test that adding invalid cryptocompare fails
+    # test that adding invalid cryptocompare fails with an API key configured
     bad_token_2['cryptocompare'] = bad_identifier
     bad_token_2['coingecko'] = None
     response = requests.put(
@@ -314,10 +314,10 @@ def test_adding_user_tokens(
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
 @pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
+@pytest.mark.parametrize('include_cryptocompare_key', [False])
 @pytest.mark.parametrize('coingecko_cache_coinlist', [{
     'internet-computer': {'symbol': 'ICP', 'name': 'Internet computer'},
 }])
-@pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'ICP': {}}])
 def test_editing_user_tokens(
         rotkehlchen_api_server: APIServer,
         cache_coinlist: list[dict[str, dict]],
@@ -400,7 +400,8 @@ def test_editing_user_tokens(
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # test that editing with an invalid cryptocompare identifier is handled
+    # cryptocompare identifiers are accepted without remote validation since its coin list API
+    # requires an API key
     bad_token = new_token.copy()
     bad_identifier = 'INVALIDID'
     bad_token['cryptocompare'] = bad_identifier
@@ -411,10 +412,9 @@ def test_editing_user_tokens(
         ),
         json=bad_token,
     )
-    assert_error_response(
-        response=response,
-        contained_in_msg=f'Given cryptocompare identifier {bad_identifier} is not valid',
-        status_code=HTTPStatus.BAD_REQUEST,
+    assert_proper_response(response)
+    assert (
+        Asset(expected_tokens[0].identifier).resolve_to_evm_token().cryptocompare == bad_identifier
     )
 
 
