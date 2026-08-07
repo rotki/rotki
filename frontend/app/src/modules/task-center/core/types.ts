@@ -218,6 +218,12 @@ export interface ActivityModel {
   readonly active: Activity[];
   /** Flat, waiting to start. */
   readonly pending: Activity[];
+  /**
+   * The tops of the activity tree — what a user actually started, as opposed to the work it fanned
+   * out into. See {@link ./tree}; `children` holds the rest, keyed by parent id.
+   */
+  readonly roots: Activity[];
+  readonly children: ReadonlyMap<ActivityId, Activity[]>;
   readonly overall: ActivityOverall;
   /** The single activity the header bar labels; see selection rule in {@link ./model}. */
   readonly current?: Activity;
