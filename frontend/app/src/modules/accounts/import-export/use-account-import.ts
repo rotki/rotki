@@ -110,11 +110,14 @@ export function useAccountImport(): UseAccountImportReturn {
     await runImportBatch(
       additions,
       async ([chain, account], parent) => {
-        increment();
         // Both kinds of row take the same call with the same contract. The EVM loop previously had
         // no `try/catch` while the chain one did, so a failed EVM row aborted the whole import and
         // a failed chain row did not — accidental, not chosen. Neither throws now.
         await addAccounts(chain, account, { parent, wait: true });
+        // Counted after the row lands, not before. The batch starts every row's callback in the
+        // same tick, so incrementing first drove the bar to 100% before a single account had been
+        // submitted and left it parked there while the lanes drained.
+        increment();
       },
     );
 
