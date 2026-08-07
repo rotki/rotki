@@ -18,7 +18,7 @@ const HistoryEventTypeFormStub = defineComponent({
   props: {
     counterparty: { default: '', type: String },
     disabled: { default: false, type: Boolean },
-    errorMessages: { default: () => ({}), type: Object },
+    errorMessages: { required: true, type: Object },
     eventSubtype: { default: '', type: String },
     eventType: { default: '', type: String },
   },
@@ -30,7 +30,7 @@ const CounterpartyInputStub = defineComponent({
   name: 'CounterpartyInput',
   props: {
     disabled: { default: false, type: Boolean },
-    errorMessages: { default: () => [], type: Array },
+    errorMessages: { default: (): string[] => [], type: Array },
     modelValue: { default: '', type: String },
   },
   setup: () => (): VNode => h('div', { class: 'counterparty-input' }),
@@ -92,11 +92,11 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
     });
   }
 
-  function typeForm(): ReturnType<VueWrapper['findComponent']> {
+  function typeForm(): VueWrapper<InstanceType<typeof HistoryEventTypeFormStub>> {
     return wrapper.findComponent(HistoryEventTypeFormStub);
   }
 
-  function counterpartyInput(): ReturnType<VueWrapper['findComponent']> {
+  function counterpartyInput(): VueWrapper<InstanceType<typeof CounterpartyInputStub>> {
     return wrapper.findComponent(CounterpartyInputStub);
   }
 
@@ -119,19 +119,19 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
   it('should validate a complete rule', async () => {
     wrapper = createWrapper({ modelValue: createRule() });
 
-    await expect(wrapper.vm.validate()).resolves.toBe(true);
+    expect(wrapper.vm.validate()).toBe(true);
   });
 
   it('should reject a rule with no event type', async () => {
     wrapper = createWrapper({ modelValue: createRule({ eventType: '' }) });
 
-    await expect(wrapper.vm.validate()).resolves.toBe(false);
+    expect(wrapper.vm.validate()).toBe(false);
   });
 
   it('should reject a rule with no event subtype', async () => {
     wrapper = createWrapper({ modelValue: createRule({ eventSubtype: '' }) });
 
-    await expect(wrapper.vm.validate()).resolves.toBe(false);
+    expect(wrapper.vm.validate()).toBe(false);
   });
 
   it('should accept a rule with no counterparty and no accounting treatment', async () => {
@@ -139,7 +139,7 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
       modelValue: createRule({ accountingTreatment: null, counterparty: null }),
     });
 
-    await expect(wrapper.vm.validate()).resolves.toBe(true);
+    expect(wrapper.vm.validate()).toBe(true);
   });
 
   it('should report the required errors on the offending fields once validated', async () => {
@@ -147,7 +147,7 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
 
     expect(typeForm().props('errorMessages')).toEqual({ eventSubtype: [], eventType: [] });
 
-    await wrapper.vm.validate();
+    wrapper.vm.validate();
     await nextTick();
 
     const messages = typeForm().props('errorMessages');
@@ -156,11 +156,12 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
   });
 
   /**
-   * Vuelidate reads `$externalResults` through `$errors`, which stays empty until the field is
-   * dirty, so a save failure is invisible on an untouched field. Pinned deliberately: the field has
-   * to be touched before the message the server sent back can be seen.
+   * Vuelidate read `$externalResults` through `$errors`, which stayed empty until the field was
+   * dirty, so a save failure was invisible on a field the user had not touched. The form core shows
+   * it straight away, which is what the flow needs: the save that produced the error is the only
+   * thing the user just did.
    */
-  it('should hide server errors until the field is touched', async () => {
+  it('should surface server errors on their fields', async () => {
     wrapper = createWrapper({ modelValue: createRule() });
 
     await wrapper.setProps({
@@ -169,28 +170,22 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
         eventType: ['not a valid event type'],
       },
     });
-    await nextTick();
-
-    expect(typeForm().props('errorMessages').eventType).toStrictEqual([]);
-    expect(counterpartyInput().props('errorMessages')).toStrictEqual([]);
-  });
-
-  it('should surface server errors on their fields once touched', async () => {
-    wrapper = createWrapper({ modelValue: createRule() });
-
-    await wrapper.setProps({
-      errorMessages: {
-        counterparty: ['unknown counterparty'],
-        eventType: ['not a valid event type'],
-      },
-    });
-
-    typeForm().vm.$emit('touch');
-    counterpartyInput().vm.$emit('blur');
     await nextTick();
 
     expect(typeForm().props('errorMessages').eventType).toStrictEqual(['not a valid event type']);
     expect(counterpartyInput().props('errorMessages')).toStrictEqual(['unknown counterparty']);
+  });
+
+  it('should drop a server error once its field is edited', async () => {
+    wrapper = createWrapper({ modelValue: createRule() });
+
+    await wrapper.setProps({ errorMessages: { counterparty: ['unknown counterparty'] } });
+    expect(counterpartyInput().props('errorMessages')).toStrictEqual(['unknown counterparty']);
+
+    counterpartyInput().vm.$emit('update:modelValue', 'aave');
+    await nextTick();
+
+    expect(counterpartyInput().props('errorMessages')).toStrictEqual([]);
   });
 
   it('should write the counterparty back to the model', async () => {
@@ -236,19 +231,16 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
     expect(counterpartyInput().props('disabled')).toBe(false);
   });
 
-  it('should not arm the dirty flag until the watcher delay has passed', async () => {
+  it('should leave the state clean while nothing has been edited', async () => {
     wrapper = createWrapper({ modelValue: createRule() });
 
-    counterpartyInput().vm.$emit('update:modelValue', 'aave');
-    await nextTick();
+    await vi.advanceTimersByTimeAsync(1000);
 
     expect(wrapper.emitted('update:stateUpdated')).toBeUndefined();
   });
 
-  it('should flag the state as updated once a field changes', async () => {
+  it('should flag the state as updated as soon as a field changes', async () => {
     wrapper = createWrapper({ modelValue: createRule() });
-
-    await vi.advanceTimersByTimeAsync(500);
 
     counterpartyInput().vm.$emit('update:modelValue', 'aave');
     await nextTick();
@@ -256,9 +248,19 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
     expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toStrictEqual([true]);
   });
 
+  it('should clear the flag when an edit is undone', async () => {
+    wrapper = createWrapper({ modelValue: createRule({ counterparty: 'aave' }) });
+
+    counterpartyInput().vm.$emit('update:modelValue', 'uniswap');
+    await nextTick();
+    counterpartyInput().vm.$emit('update:modelValue', 'aave');
+    await nextTick();
+
+    expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toStrictEqual([false]);
+  });
+
   it('should disarm the dirty flag when it goes away', async () => {
     wrapper = createWrapper({ modelValue: createRule() });
-    await vi.advanceTimersByTimeAsync(500);
 
     counterpartyInput().vm.$emit('update:modelValue', 'aave');
     await nextTick();
