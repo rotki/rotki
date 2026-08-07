@@ -6,13 +6,13 @@ import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval
 import { assetSuggestions } from '@/modules/core/common/display/assets';
 import { CommaSeparatedStringSchema } from '@/modules/core/table/route';
 
-enum ManualBalanceFilterKeys {
+export enum ManualBalanceFilterKeys {
   LOCATION = 'location',
   LABEL = 'label',
   ASSET = 'asset',
 }
 
-enum ManualBalanceFilterValueKeys {
+export enum ManualBalanceFilterValueKeys {
   LOCATION = 'location',
   LABEL = 'label',
   ASSET = 'asset',

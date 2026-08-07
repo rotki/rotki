@@ -4,17 +4,18 @@ import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice
 import { isEqual } from 'es-toolkit';
 import ManualBalanceMissingAssetWarning
   from '@/modules/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
+import { useManualBalanceFields } from '@/modules/accounts/manual-balances/use-manual-balance-fields';
 import { useManualBalanceTableActions } from '@/modules/accounts/manual-balances/use-manual-balance-table-actions';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';
 import { type Filters, ManualBalancesFilterSchema, type Matcher, useManualBalanceFilter } from '@/modules/core/table/filters/use-manual-balances-filter';
-import TableFilter from '@/modules/core/table/TableFilter.vue';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { useSetting } from '@/modules/settings/use-setting';
-import TagFilter from '@/modules/shell/components/inputs/TagFilter.vue';
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
@@ -37,7 +38,8 @@ const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(() => ty
 const { prepareForEdit, pricesLoading, refresh, refreshing, showDeleteConfirmation } = useManualBalanceTableActions();
 
 const filterSchema = useManualBalanceFilter(locations);
-const { matchers } = filterSchema;
+const fields = useManualBalanceFields(filterSchema.matchers);
+const pillLabels = usePillBarLabels();
 
 const {
   collection: state,
@@ -74,6 +76,23 @@ const {
     ],
   },
   urlState: { mode: 'route' },
+});
+
+// The tags pill is param-bound, so the bar's param bag is bridged to the ref backing it — the same
+// ref the standalone tag selector used to write, and the one the request/url param source reads.
+// An absent param clears it: removing the pill is how the filter is turned off.
+const pillParams = computed<Record<string, string | string[] | boolean>>({
+  get(): Record<string, string | string[] | boolean> {
+    const selected = get(tags);
+    return selected.length > 0 ? { tags: selected } : {};
+  },
+  set(value: Record<string, string | string[] | boolean>): void {
+    const next = value.tags;
+    if (next === undefined || typeof next === 'boolean')
+      set(tags, []);
+    else
+      set(tags, Array.isArray(next) ? next : [next]);
+  },
 });
 
 function edit(balance: ManualBalanceWithPrice): void {
@@ -156,18 +175,13 @@ watchDebounced(
             @refresh="refresh()"
           />
           <div class="grow" />
-          <div class="flex flex-col sm:flex-row flex-1 gap-2 min-w-full md:min-w-[40rem]">
-            <TagFilter
-              v-model="tags"
-              class="w-full flex-1"
-              hide-details
-            />
-            <TableFilter
-              v-model:matches="filters"
-              class="w-full flex-1"
-              :matchers="matchers"
-            />
-          </div>
+          <PillFilterBar
+            v-model:matches="filters"
+            v-model:params="pillParams"
+            class="flex-1 min-w-full md:min-w-[40rem]"
+            :fields="fields"
+            :labels="pillLabels"
+          />
         </div>
       </div>
     </template>

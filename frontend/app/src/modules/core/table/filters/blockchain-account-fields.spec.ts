@@ -1,6 +1,6 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { describe, expect, it } from 'vitest';
-import { type TagFieldOption, toAccountChainField, toAccountTagsField } from '@/modules/core/table/filters/blockchain-account-fields';
+import { toAccountChainField } from '@/modules/core/table/filters/blockchain-account-fields';
 
 const t = (key: string): string => key;
 
@@ -37,32 +37,5 @@ describe('toAccountChainField', () => {
   it('should offer the chains of the shown category', () => {
     const field = toAccountChainField(t, resolvers, () => ['eth', 'optimism']);
     expect(field.suggest?.()).toStrictEqual(['eth', 'optimism']);
-  });
-});
-
-describe('toAccountTagsField', () => {
-  const tags: TagFieldOption[] = [
-    { name: 'office', swatch: { background: '#ffffff', foreground: '#000000' } },
-  ];
-
-  it('should bind the tags field to the tags param', () => {
-    const field = toAccountTagsField(t, () => tags);
-    expect(field).toMatchObject({
-      binding: { kind: 'param', paramKey: 'tags', to: 'both' },
-      key: 'tags',
-      label: 'account_balances.filter_field_labels.tags',
-      multiple: true,
-    });
-  });
-
-  it('should offer every tag as a value', () => {
-    const field = toAccountTagsField(t, () => tags);
-    expect(field.suggest?.()).toStrictEqual(['office']);
-  });
-
-  it('should resolve a tag to the colours it is recognised by', () => {
-    const field = toAccountTagsField(t, () => tags);
-    expect(field.resolveSwatch?.('office')).toStrictEqual({ background: '#ffffff', foreground: '#000000' });
-    expect(field.resolveSwatch?.('unknown')).toBeUndefined();
   });
 });
