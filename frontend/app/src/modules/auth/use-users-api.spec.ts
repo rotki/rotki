@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useUsersApi } from './use-users-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
-const colibriUrl = process.env.VITE_COLIBRI_URL;
+const colibriUrl = `${backendUrl}/colibri`;
 
 describe('composables/api/session/users', () => {
   beforeEach(() => {

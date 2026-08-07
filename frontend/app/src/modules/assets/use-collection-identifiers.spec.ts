@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCollectionIdentifiers } from './use-collection-identifiers';
 
-const colibriUrl = process.env.VITE_COLIBRI_URL;
+const colibriUrl = `${process.env.VITE_BACKEND_URL}/colibri`;
 
 describe('useCollectionIdentifiers', () => {
   beforeEach(() => {

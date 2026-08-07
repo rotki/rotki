@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetIgnoreApi } from './use-asset-ignore-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
-const colibriUrl = process.env.VITE_COLIBRI_URL;
+const colibriUrl = `${backendUrl}/colibri`;
 
 describe('useAssetIgnoreApi', () => {
   beforeEach(() => {
