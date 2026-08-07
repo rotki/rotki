@@ -22,6 +22,18 @@ interface UseRefreshTransactionsReturn {
   refreshTransactions: (params?: RefreshTransactionsParams) => Promise<void>;
 }
 
+/**
+ * Which wave of a sync a run is. `CONTINUATION` is the drained follow-up: it belongs to the sync
+ * already on screen, so it adds to that progress rather than starting its own, and it does not
+ * drain again (see {@link drainPending} for why one wave per run is the bound).
+ */
+const RefreshWave = {
+  CONTINUATION: 'continuation',
+  INITIAL: 'initial',
+} as const;
+
+type RefreshWave = (typeof RefreshWave)[keyof typeof RefreshWave];
+
 export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   let timeout: NodeJS.Timeout;
 
@@ -30,7 +42,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { filterDisabledChainAccounts } = useHistoryTransactionAccounts();
   const { statusOf, submitTask } = useNativeTask();
   const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
-  const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus, stopDecodingSyncProgress } = useDecodingStatusStore();
+  const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus, resumeDecodingSyncProgress, stopDecodingSyncProgress } = useDecodingStatusStore();
 
   const { syncTransactionsByChains } = useTransactionSync();
   const {
@@ -44,9 +56,19 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { onHistoryFinished, onHistoryStarted } = useSchedulerState();
   const { t } = useI18n({ useScope: 'global' });
 
-  function initializeRefresh(targets: RefreshTargets): void {
-    resetQueryStatus();
-    resetOnlineWarnings();
+  /**
+   * A continuation carries only what the previous wave did not know about, so everything here that
+   * clears state has to be skipped for it: the first wave's finished addresses and its online
+   * warnings belong to the same sync, and wiping them is what made the progress bar restart with a
+   * smaller denominator instead of growing.
+   */
+  function initializeRefresh(targets: RefreshTargets, wave: RefreshWave): void {
+    const continuation = wave === RefreshWave.CONTINUATION;
+
+    if (!continuation) {
+      resetQueryStatus();
+      resetOnlineWarnings();
+    }
 
     if (!(targets.accounts.length > 0 || targets.exchanges.length > 0)) {
       return;
@@ -58,7 +80,16 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       return;
     }
 
-    initializeQueryStatus(targets.decodableAccounts);
+    initializeQueryStatus(targets.decodableAccounts, { extend: continuation });
+
+    if (continuation) {
+      // ⚠️ Re-arm, do not reset. The decode section is gated by a single flag that the previous
+      // wave's `finally` turned off, so skipping this entirely would drop every decode message this
+      // wave produces and leave the section reading complete over the previous wave's rows.
+      resumeDecodingSyncProgress();
+      return;
+    }
+
     resetUndecodedTransactionsStatus();
     resetDecodingSyncProgress();
   }
@@ -73,19 +104,28 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     return queries ?? [];
   }
 
+  /** Same continuation rule as {@link initializeRefresh}, for the exchange half of the panel. */
+  function seedExchangeProgress(targets: RefreshTargets, wave: RefreshWave): void {
+    const continuation = wave === RefreshWave.CONTINUATION;
+
+    if (!continuation)
+      resetExchangesQueryStatus();
+
+    if (targets.queryExchanges && targets.shouldShowSyncProgress)
+      initializeExchangeEventsQueryStatus(targets.usedExchanges, { extend: continuation });
+  }
+
   async function executeOperations(
     targets: RefreshTargets,
     disableEvmEvents: boolean,
     queries: OnlineHistoryEventsQueryType[] | undefined,
     umbrella: ActivityId,
+    wave: RefreshWave,
   ): Promise<void> {
     if (targets.fullRefresh || targets.decodableAccounts.length > 0)
       await fetchUndecodedTransactionsBreakdown();
 
-    resetExchangesQueryStatus();
-
-    if (targets.queryExchanges && targets.shouldShowSyncProgress)
-      initializeExchangeEventsQueryStatus(targets.usedExchanges);
+    seedExchangeProgress(targets, wave);
 
     // The shape of the refresh comes off the declaration rather than being rebuilt here, so what a
     // test asserts about `historySyncFlow` is what actually runs. Everything is a child of the
@@ -170,11 +210,11 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
           accounts: newAccounts.length > 0 ? newAccounts : undefined,
           exchanges: newExchanges.length > 0 ? newExchanges : undefined,
         },
-      }, false));
+      }, RefreshWave.CONTINUATION));
     }, 100);
   }
 
-  async function refreshOnce(params: RefreshTransactionsParams, mayDrain: boolean): Promise<void> {
+  async function refreshOnce(params: RefreshTransactionsParams, wave: RefreshWave): Promise<void> {
     const { chains = [], disableEvmEvents = false, payload = {}, userInitiated = false } = params;
     const fullRefresh = Object.keys(payload).length === 0;
 
@@ -216,10 +256,10 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       rerunnable: false,
       staleAfter: HISTORY_STALE_AFTER,
       run: async (): Promise<Result<void, TaskError>> => {
-        initializeRefresh(targets);
+        initializeRefresh(targets, wave);
 
         try {
-          await executeOperations(targets, disableEvmEvents, payload.queries, umbrellaId);
+          await executeOperations(targets, disableEvmEvents, payload.queries, umbrellaId, wave);
         }
         catch (error) {
           logger.error(error);
@@ -237,12 +277,12 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       title: t('task_center.group.history_sync'),
     });
 
-    if (mayDrain)
+    if (wave === RefreshWave.INITIAL)
       drainPending(params);
   }
 
   async function refreshTransactions(params: RefreshTransactionsParams = {}): Promise<void> {
-    await refreshOnce(params, true);
+    await refreshOnce(params, RefreshWave.INITIAL);
   }
 
   onScopeDispose(() => {

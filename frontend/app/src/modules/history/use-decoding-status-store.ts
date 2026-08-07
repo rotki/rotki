@@ -84,6 +84,20 @@ export const useDecodingStatusStore = defineStore('history/decoding-status', () 
     set(decodingSyncing, true);
   };
 
+  /**
+   * Re-arm the progress gate without discarding what is already recorded.
+   *
+   * ⚠️ `decodingSyncing` is the only gate on both writers of `decodingSyncProgress`, and
+   * `stopDecodingSyncProgress` runs whenever a sync's run settles. A follow-up wave of the *same*
+   * sync therefore has to turn it back on or its decode is invisible — the panel would sit on the
+   * earlier wave's finished rows and read complete while work was still running. It must not clear
+   * `decodingSyncProgress`, which is exactly what makes this distinct from
+   * {@link resetDecodingSyncProgress}.
+   */
+  const resumeDecodingSyncProgress = (): void => {
+    set(decodingSyncing, true);
+  };
+
   const stopDecodingSyncProgress = (): void => {
     set(decodingSyncing, false);
   };
@@ -100,6 +114,7 @@ export const useDecodingStatusStore = defineStore('history/decoding-status', () 
     markDecodingCancelled,
     resetDecodingSyncProgress,
     resetUndecodedTransactionsStatus,
+    resumeDecodingSyncProgress,
     setUndecodedTransactionsStatus,
     stopDecodingSyncProgress,
     undecodedTransactionsStatus,

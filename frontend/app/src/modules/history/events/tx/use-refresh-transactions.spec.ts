@@ -34,7 +34,7 @@ const mockExchanges: Exchange[] = [
 
 // Mock stores and composables
 const mockTxQueryStatusStore = {
-  initializeQueryStatus: vi.fn<(accounts: ChainAddress[]) => void>(),
+  initializeQueryStatus: vi.fn<(accounts: ChainAddress[], options?: { extend?: boolean }) => void>(),
   resetQueryStatus: vi.fn(),
   stopSyncing: vi.fn(),
 };
@@ -112,6 +112,7 @@ const mockUndecodedTransactionsStatus = {
 
 const mockDecodingStatusStore = {
   resetDecodingSyncProgress: vi.fn(),
+  resumeDecodingSyncProgress: vi.fn(),
   resetUndecodedTransactionsStatus: vi.fn(),
   stopDecodingSyncProgress: vi.fn(),
 };
@@ -297,7 +298,7 @@ describe('useRefreshTransactions', () => {
         payload: { exchanges: mockExchanges },
       });
 
-      expect(mockEventsQueryStatusStore.initializeQueryStatus).toHaveBeenCalledWith(mockExchanges);
+      expect(mockEventsQueryStatusStore.initializeQueryStatus).toHaveBeenCalledWith(mockExchanges, { extend: false });
       expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledWith(mockExchanges, HISTORY_SYNC_ID);
     });
 
@@ -374,6 +375,59 @@ describe('useRefreshTransactions', () => {
       // Twice: the first refresh over every account, then the drain over the late arrival alone.
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledTimes(2);
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenLastCalledWith([addedMidRefresh], expect.anything(), HISTORY_SYNC_ID);
+
+      vi.useRealTimers();
+    });
+
+    it('should extend the progress panel on the drained wave instead of replacing it', async () => {
+      vi.useFakeTimers();
+
+      const addedMidRefresh: ChainAddress = { address: '0x9531C059098e3d194fF87FebB587aB07B30B1306', chain: 'eth' };
+
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+      const firstRefresh = refreshTransactions();
+
+      mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([...mockEvmAccounts, ...mockBitcoinAccounts, addedMidRefresh]);
+
+      await refreshTransactions({ payload: { accounts: [addedMidRefresh] } });
+      await firstRefresh;
+      await vi.advanceTimersByTimeAsync(150);
+      await settleRefresh();
+
+      // The drained wave carries only the late arrival. Seeding it as a fresh panel dropped every
+      // address the first wave had already finished, so the bar's denominator fell mid-sync
+      // (the reported 6/7 -> 3/3) with nothing to signal that a second wave had begun.
+      const [initial, drained] = mockTxQueryStatusStore.initializeQueryStatus.mock.calls;
+      expect(initial).toEqual([mockEvmAccounts, { extend: false }]);
+      expect(drained).toEqual([[addedMidRefresh], { extend: true }]);
+
+      // One reset for the sync as a whole, not one per wave.
+      expect(mockTxQueryStatusStore.resetQueryStatus).toHaveBeenCalledTimes(1);
+
+      vi.useRealTimers();
+    });
+
+    it('should reopen the decoding progress gate on the drained wave', async () => {
+      vi.useFakeTimers();
+
+      const addedMidRefresh: ChainAddress = { address: '0x9531C059098e3d194fF87FebB587aB07B30B1306', chain: 'eth' };
+
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+      const firstRefresh = refreshTransactions();
+
+      mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([...mockEvmAccounts, ...mockBitcoinAccounts, addedMidRefresh]);
+
+      await refreshTransactions({ payload: { accounts: [addedMidRefresh] } });
+      await firstRefresh;
+      await vi.advanceTimersByTimeAsync(150);
+      await settleRefresh();
+
+      // `decodingSyncing` is the only gate on both decode-progress writers, and the first wave's
+      // `finally` turns it off. Without re-arming it the drained wave decodes invisibly: the panel
+      // keeps the first wave's finished rows and reads complete while work is still running.
+      expect(mockDecodingStatusStore.resumeDecodingSyncProgress).toHaveBeenCalledTimes(1);
+      // Re-armed without discarding what the first wave recorded.
+      expect(mockDecodingStatusStore.resetDecodingSyncProgress).toHaveBeenCalledTimes(1);
 
       vi.useRealTimers();
     });
@@ -568,7 +622,7 @@ describe('useRefreshTransactions', () => {
 
       await refreshTransactions();
 
-      expect(mockTxQueryStatusStore.initializeQueryStatus).toHaveBeenCalledWith(mockEvmAccounts);
+      expect(mockTxQueryStatusStore.initializeQueryStatus).toHaveBeenCalledWith(mockEvmAccounts, { extend: false });
     });
 
     it('should reset query status when no accounts to refresh', async () => {
