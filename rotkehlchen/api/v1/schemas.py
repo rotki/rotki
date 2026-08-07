@@ -1863,6 +1863,10 @@ class ModifiableSettingsSchema(Schema):
         load_default=None,
         validate=validate.Range(min=30),  # every 30 seconds is minimum
     )
+    mcp_privacy_mode = fields.String(
+        load_default=None,
+        validate=validate.OneOf(choices=('balanced', 'strict', 'raw')),
+    )
 
     @validates_schema
     def validate_settings_schema(
@@ -1938,6 +1942,7 @@ class ModifiableSettingsSchema(Schema):
             use_asset_collections_in_cost_basis=data['use_asset_collections_in_cost_basis'],
             internal_txs_to_repull=data['internal_txs_to_repull'],
             internal_tx_conflict_repull_frequency=data['internal_tx_conflict_repull_frequency'],
+            mcp_privacy_mode=data['mcp_privacy_mode'],
         )
 
 

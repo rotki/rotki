@@ -969,5 +969,9 @@ def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:
         if settings_from_file.get(key) == '':
             settings_from_file[key] = getattr(default_settings, key)
 
+    # Older debug files do not contain settings introduced after they were created.
+    if 'mcp_privacy_mode' not in settings_from_file:
+        settings_from_file['mcp_privacy_mode'] = default_settings.mcp_privacy_mode
+
     assert settings_from_file == settings_from_db
     assert list(ignored_actions_ids_from_db) == ignored_actions_ids_from_file

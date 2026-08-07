@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { McpToken } from '@/modules/settings/types/mcp';
 import { StarlingServiceStatus } from '@shared/ipc';
 import { StarlingService } from '@shared/starling/starling-protocol';
 import { startPromise } from '@shared/utils';
@@ -8,9 +7,12 @@ import { useControl } from '@/modules/core/control/use-control';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useMcpApi } from '@/modules/settings/api/use-mcp-api';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
+import { McpPrivacyMode, type McpPrivacyMode as McpPrivacyModeValue, type McpToken } from '@/modules/settings/types/mcp';
+import { useSettingModel } from '@/modules/settings/use-setting-model';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import CopyTooltip from '@/modules/shell/components/CopyTooltip.vue';
 import GetPremiumPlaceholder from '@/modules/shell/components/GetPremiumPlaceholder.vue';
+import McpPrivacyPreview from './McpPrivacyPreview.vue';
 import { useMcpServerState } from './use-mcp-server-state';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -29,6 +31,51 @@ const token = ref<McpToken>();
 const tokenError = ref<string>();
 const tokenVisible = ref<boolean>(false);
 const mcpServerState = useMcpServerState();
+const {
+  error: privacyModeError,
+  model: privacyModeModel,
+  pending: privacyModePending,
+  success: privacyModeSuccess,
+} = useSettingModel('mcpPrivacyMode');
+
+const privacyMode = computed<McpPrivacyModeValue>({
+  get: () => get(privacyModeModel),
+  set: value => set(privacyModeModel, value),
+});
+
+interface PrivacyModeOption {
+  readonly description: string;
+  readonly title: string;
+  readonly value: McpPrivacyModeValue;
+}
+
+const privacyModes = computed<PrivacyModeOption[]>(() => [
+  {
+    description: t('backend_settings.settings.mcp_server.privacy_mode.strict.description'),
+    title: t('backend_settings.settings.mcp_server.privacy_mode.strict.title'),
+    value: McpPrivacyMode.STRICT,
+  },
+  {
+    description: t('backend_settings.settings.mcp_server.privacy_mode.balanced.description'),
+    title: t('backend_settings.settings.mcp_server.privacy_mode.balanced.title'),
+    value: McpPrivacyMode.BALANCED,
+  },
+  {
+    description: t('backend_settings.settings.mcp_server.privacy_mode.raw.description'),
+    title: t('backend_settings.settings.mcp_server.privacy_mode.raw.title'),
+    value: McpPrivacyMode.RAW,
+  },
+]);
+const privacyModeErrorMessages = computed<string[]>(() => (
+  get(privacyModeError)
+    ? [`${t('backend_settings.settings.mcp_server.privacy_mode.error')}: ${get(privacyModeError)}`]
+    : []
+));
+const privacyModeSuccessMessages = computed<string[]>(() => (
+  get(privacyModeSuccess)
+    ? [t('backend_settings.settings.mcp_server.privacy_mode.success')]
+    : []
+));
 
 const transitioningStates: ReadonlySet<StarlingServiceStatus> = new Set([
   StarlingServiceStatus.RESTARTING,
@@ -219,10 +266,7 @@ onBeforeMount(() => {
         {{ t('backend_settings.settings.mcp_server.error', { message: serverError }) }}
       </RuiAlert>
 
-      <div class="flex flex-wrap items-center gap-3">
-        <span class="text-sm text-rui-text-secondary">
-          {{ t('backend_settings.settings.mcp_server.status.label') }}
-        </span>
+      <div class="flex flex-col gap-3 rounded-lg bg-rui-grey-50 p-4 dark:bg-rui-grey-900 sm:flex-row sm:items-center">
         <RuiChip
           data-testid="mcp-status"
           size="sm"
@@ -230,39 +274,105 @@ onBeforeMount(() => {
         >
           {{ statusLabel(state) }}
         </RuiChip>
+        <code
+          v-if="endpoint"
+          class="min-w-0 flex-1 break-all font-mono text-sm text-rui-text-secondary"
+        >
+          {{ endpoint }}
+        </code>
+        <CopyTooltip
+          v-if="endpoint"
+          :value="endpoint"
+        >
+          <RuiButton
+            icon
+            variant="text"
+            color="primary"
+            size="sm"
+          >
+            <RuiIcon
+              name="lu-copy"
+              size="16"
+            />
+          </RuiButton>
+          <template #label>
+            {{ t('common.actions.copy_to_clipboard') }}
+          </template>
+        </CopyTooltip>
+        <RuiButton
+          data-testid="mcp-lifecycle"
+          :color="isRunning ? 'error' : 'primary'"
+          :disabled="isLifecycleDisabled"
+          :loading="loading"
+          @click="toggleServer()"
+        >
+          {{ isRunning
+            ? t('backend_settings.settings.mcp_server.actions.stop')
+            : t('backend_settings.settings.mcp_server.actions.start') }}
+        </RuiButton>
       </div>
 
-      <div
-        v-if="endpoint"
-        class="flex flex-col gap-1"
-      >
-        <span class="text-sm text-rui-text-secondary">
-          {{ t('backend_settings.settings.mcp_server.endpoint') }}
-        </span>
-        <div class="flex items-center gap-2 rounded border border-default bg-rui-grey-50 dark:bg-rui-grey-900 p-3">
-          <code class="flex-1 min-w-0 text-sm break-all font-mono">
-            {{ endpoint }}
-          </code>
-          <CopyTooltip :value="endpoint">
-            <RuiButton
-              icon
-              variant="text"
-              color="primary"
-              size="sm"
-            >
-              <RuiIcon
-                name="lu-copy"
-                size="16"
-              />
-            </RuiButton>
-            <template #label>
-              {{ t('common.actions.copy_to_clipboard') }}
-            </template>
-          </CopyTooltip>
+      <section class="flex max-w-4xl flex-col gap-4">
+        <div>
+          <h6 class="text-h6 font-semibold">
+            {{ t('backend_settings.settings.mcp_server.privacy_mode.label') }}
+          </h6>
+          <p class="text-sm text-rui-text-secondary">
+            {{ t('backend_settings.settings.mcp_server.privacy_mode.hint') }}
+          </p>
         </div>
-      </div>
 
-      <div class="flex flex-wrap items-center gap-4">
+        <RuiRadioGroup
+          v-model="privacyMode"
+          data-testid="mcp-privacy-mode"
+          color="primary"
+          :disabled="privacyModePending"
+          :success-messages="privacyModeSuccessMessages"
+          :error-messages="privacyModeErrorMessages"
+        >
+          <RuiRadio
+            v-for="option in privacyModes"
+            :key="option.value"
+            :value="option.value"
+            class="mb-2 w-full rounded border px-3 py-2 transition-colors last:mb-0"
+            :class="privacyMode === option.value
+              ? option.value === McpPrivacyMode.RAW
+                ? 'border-rui-warning/50 bg-rui-warning/10'
+                : 'border-rui-primary bg-rui-primary/5'
+              : 'border-default'"
+          >
+            <div>
+              <div class="flex items-center gap-2 font-medium">
+                {{ option.title }}
+                <RuiChip
+                  v-if="option.value === McpPrivacyMode.BALANCED"
+                  size="sm"
+                  color="success"
+                >
+                  {{ t('backend_settings.settings.mcp_server.privacy_mode.default') }}
+                </RuiChip>
+              </div>
+              <div class="mt-0.5 text-sm text-rui-text-secondary">
+                {{ option.description }}
+              </div>
+            </div>
+          </RuiRadio>
+        </RuiRadioGroup>
+
+        <RuiAlert
+          v-if="privacyMode === McpPrivacyMode.RAW"
+          type="warning"
+        >
+          <strong>
+            {{ t('backend_settings.settings.mcp_server.privacy_mode.raw_warning.title') }}
+          </strong>
+          {{ t('backend_settings.settings.mcp_server.privacy_mode.raw_warning.description') }}
+        </RuiAlert>
+
+        <McpPrivacyPreview :mode="privacyMode" />
+      </section>
+
+      <div class="flex flex-wrap items-center gap-4 border-t border-default pt-4">
         <RuiSwitch
           v-if="supportsOptions"
           data-testid="mcp-auto-start"
@@ -273,17 +383,6 @@ onBeforeMount(() => {
           :label="t('backend_settings.settings.mcp_server.auto_start')"
           @update:model-value="updateAutoStart($event)"
         />
-        <RuiButton
-          data-testid="mcp-lifecycle"
-          color="primary"
-          :disabled="isLifecycleDisabled"
-          :loading="loading"
-          @click="toggleServer()"
-        >
-          {{ isRunning
-            ? t('backend_settings.settings.mcp_server.actions.stop')
-            : t('backend_settings.settings.mcp_server.actions.start') }}
-        </RuiButton>
       </div>
 
       <template v-if="isDocker">

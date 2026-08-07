@@ -89,6 +89,7 @@ export const generalRegistry = {
   }),
   internalTxsToRepull: general('internalTxsToRepull', { anchor: SettingsHighlightIds.INTERNAL_TX_CONFLICT_REPULL }),
   ksmRpcEndpoint: general('ksmRpcEndpoint'),
+  mcpPrivacyMode: general('mcpPrivacyMode'),
   nonSyncingExchanges: general('nonSyncingExchanges'),
   oraclePenaltyDuration: general('oraclePenaltyDuration', {
     anchor: SettingsHighlightIds.ORACLE_PENALTY_DURATION,
