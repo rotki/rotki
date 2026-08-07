@@ -1680,7 +1680,6 @@
         "auto_start": "Start MCP automatically with rotki",
         "control_unavailable": "MCP lifecycle controls are unavailable because this deployment was started without session authentication.",
         "desktop_only": "MCP lifecycle controls are available in the rotki desktop app.",
-        "endpoint": "Endpoint",
         "error": "Failed to update the MCP server: {message}",
         "generate_token": "Generate bearer token",
         "hide_token": "Hide bearer token",
@@ -1689,10 +1688,44 @@
         "premium_description": "Subscribe to rotki premium to let AI assistants query your rotki data over MCP.",
         "premium_plan_title": "MCP is not included in your current plan",
         "premium_title": "MCP requires a rotki premium subscription",
+        "privacy_mode": {
+          "balanced": {
+            "description": "Masks addresses, transaction hashes, group identifiers, and unknown fields, but keeps readable account names and generated descriptions.",
+            "title": "Balanced"
+          },
+          "default": "Default",
+          "error": "Failed to update the MCP privacy mode",
+          "hint": "Choose how much of your data is masked before it reaches an AI assistant. Changes apply to every request without restarting MCP.",
+          "label": "Privacy mode",
+          "preview": {
+            "deposit": "Kraken deposit",
+            "field": "Field",
+            "footer": {
+              "balanced": "Identifiers remain masked while useful generated descriptions and account names stay readable.",
+              "raw": "Nothing is masked. Addresses, hashes, account names, and notes reach the assistant verbatim.",
+              "strict": "Identifiers become session-stable anonymous hashes so grouping still works. Free text is replaced by a flag indicating whether it existed."
+            },
+            "not_set": "not set",
+            "swap": "On-chain swap",
+            "title": "Example of what the assistant receives"
+          },
+          "raw": {
+            "description": "Masks nothing. Sends your data exactly as rotki stores it.",
+            "title": "Raw"
+          },
+          "raw_warning": {
+            "description": "Only use this with an assistant and provider you trust with your full financial history.",
+            "title": "Raw sends addresses, transaction hashes, account names, and notes verbatim."
+          },
+          "strict": {
+            "description": "Masks addresses, hashes, account names, and all free text. Keeps amounts, assets, dates, counterparties, and locations.",
+            "title": "Strict"
+          },
+          "success": "MCP privacy mode updated"
+        },
         "reveal_token": "Reveal bearer token",
         "status": {
           "failed": "Failed",
-          "label": "Status",
           "loading": "Loading",
           "running": "Running",
           "starting": "Starting",

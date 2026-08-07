@@ -1,5 +1,6 @@
 import type { Currency } from '@/modules/assets/amount-display/currencies';
 import { Defaults } from '@/modules/core/common/defaults';
+import { McpPrivacyMode } from '@/modules/settings/types/mcp';
 import { type AccountingSettings, CostBasisMethod, type GeneralSettings } from '@/modules/settings/types/user-settings';
 
 export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings {
@@ -35,6 +36,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     internalTxsToRepull: Defaults.DEFAULT_INTERNAL_TXS_TO_REPULL,
     ksmRpcEndpoint: Defaults.KSM_RPC_ENDPOINT,
     mainCurrency,
+    mcpPrivacyMode: McpPrivacyMode.BALANCED,
     nonSyncingExchanges: [],
     oraclePenaltyDuration: Defaults.DEFAULT_ORACLE_PENALTY_DURATION,
     oraclePenaltyThresholdCount: Defaults.DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT,

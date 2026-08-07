@@ -265,6 +265,16 @@ def test_setup_server_should_gate_premium_tools(monkeypatch) -> None:
         loop.close()
 
 
+def test_privacy_mode_should_not_be_exposed_as_an_mcp_tool() -> None:
+    tool_names = {
+        getattr(tool, '__mcp_tool_name__', tool.__name__)
+        for tool in server.discover_tools()
+    }
+
+    assert 'set_privacy_mode' not in tool_names
+    assert 'change_privacy_mode' not in tool_names
+
+
 def test_run_server_should_use_streamable_http_transport(monkeypatch) -> None:
     setup_kwargs = {}
     transports = []

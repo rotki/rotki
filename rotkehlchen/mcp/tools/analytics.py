@@ -1,8 +1,38 @@
 import asyncio
 from typing import Any
 
-from rotkehlchen.mcp.analytics import DEFAULT_MAX_RESULT_ROWS, get_analytics_session
+from rotkehlchen.mcp.analytics import DEFAULT_MAX_RESULT_ROWS, sync_privacy_mode
 from rotkehlchen.mcp.registry import register_tool
+
+
+def _refresh_analytics_data(
+        tables: list[str] | None,
+        from_timestamp: int,
+        to_timestamp: int,
+        include_ignored_assets: bool,
+        include_values: bool,
+        aggregate_by_group_ids: bool,
+) -> dict[str, Any]:
+    return sync_privacy_mode().refresh(
+        tables=tables,
+        from_timestamp=from_timestamp,
+        to_timestamp=to_timestamp,
+        include_ignored_assets=include_ignored_assets,
+        include_values=include_values,
+        aggregate_by_group_ids=aggregate_by_group_ids,
+    )
+
+
+def _list_tables() -> dict[str, Any]:
+    return sync_privacy_mode().list_tables()
+
+
+def _describe_table(table: str) -> dict[str, Any]:
+    return sync_privacy_mode().describe_table(table=table)
+
+
+def _query_sql(sql: str, max_rows: int) -> dict[str, Any]:
+    return sync_privacy_mode().query_sql(sql=sql, max_rows=max_rows)
 
 
 @register_tool(name='refresh_analytics_data')
@@ -57,7 +87,7 @@ async def refresh_analytics_data(
     so do not compute coverage from it.
     """
     return await asyncio.to_thread(
-        get_analytics_session().refresh,
+        _refresh_analytics_data,
         tables=tables,
         from_timestamp=from_timestamp,
         to_timestamp=to_timestamp,
@@ -70,7 +100,7 @@ async def refresh_analytics_data(
 @register_tool(name='list_tables')
 async def list_tables() -> dict[str, Any]:
     """List the analytics tables: which are loaded now, the defaults, and all available."""
-    return await asyncio.to_thread(get_analytics_session().list_tables)
+    return await asyncio.to_thread(_list_tables)
 
 
 @register_tool(name='describe_table')
@@ -95,9 +125,9 @@ async def describe_table(table: str) -> dict[str, Any]:
     Identifier columns are privacy-filtered: they appear as ``<col>_hash``, consistent within
     a session so you can still GROUP BY / JOIN on them but not reversible and not stable
     across sessions. Their values are never listed. Free-text ``notes``/``user_notes`` are
-    redacted to a ``has_<col>`` flag, unless the server was started in ``raw`` privacy mode.
+    redacted to a ``has_<col>`` flag, unless ``raw`` privacy mode is selected in rotki.
     """
-    return await asyncio.to_thread(get_analytics_session().describe_table, table=table)
+    return await asyncio.to_thread(_describe_table, table=table)
 
 
 @register_tool(name='query_sql')
@@ -143,7 +173,7 @@ async def query_sql(sql: str, max_rows: int = DEFAULT_MAX_RESULT_ROWS) -> dict[s
     ``get_event_taxonomy`` carries worked queries for the common questions under ``recipes``.
     """
     return await asyncio.to_thread(
-        get_analytics_session().query_sql,
+        _query_sql,
         sql=sql,
         max_rows=max_rows,
     )

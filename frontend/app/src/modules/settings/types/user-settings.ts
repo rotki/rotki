@@ -8,6 +8,7 @@ import { Defaults } from '@/modules/core/common/defaults';
 import { ModuleEnum } from '@/modules/core/common/modules';
 import { EvmIndexerEnum } from '@/modules/settings/types/evm-indexer';
 import { parseFrontendSettings } from '@/modules/settings/types/frontend-settings';
+import { McpPrivacyModeEnum } from '@/modules/settings/types/mcp';
 import { PriceOracleEnum } from '@/modules/settings/types/price-oracle';
 
 export const OtherSettings = z.object({
@@ -77,6 +78,7 @@ const GeneralSettings = z.object({
     const { findCurrency } = useCurrencies();
     return findCurrency(currency);
   }),
+  mcpPrivacyMode: McpPrivacyModeEnum.default('balanced'),
   nonSyncingExchanges: z.array(Exchange),
   oraclePenaltyDuration: z.number().min(1),
   oraclePenaltyThresholdCount: z.number().min(1),
@@ -201,6 +203,7 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     internalTxsToRepull: settings.internalTxsToRepull,
     ksmRpcEndpoint: settings.ksmRpcEndpoint,
     mainCurrency: settings.mainCurrency,
+    mcpPrivacyMode: settings.mcpPrivacyMode,
     nonSyncingExchanges: settings.nonSyncingExchanges,
     oraclePenaltyDuration: settings.oraclePenaltyDuration,
     oraclePenaltyThresholdCount: settings.oraclePenaltyThresholdCount,

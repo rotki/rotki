@@ -89,6 +89,7 @@ DEFAULT_AUTO_CREATE_PROFIT_EVENTS: Final = False
 DEFAULT_USE_ASSET_COLLECTIONS_IN_COST_BASIS: Final = True
 DEFAULT_INTERNAL_TXS_TO_REPULL: Final = 100
 DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY: Final = 900  # every 15 mins
+DEFAULT_MCP_PRIVACY_MODE: Final = 'balanced'
 DEFAULT_CHAINS_TO_SKIP_DETECTION: Final = (
     SupportedBlockchain.ETHEREUM,
     SupportedBlockchain.AVALANCHE,
@@ -156,6 +157,7 @@ STRING_KEYS: Final = (
     'btc_mempool_api',
     'date_display_format',
     'frontend_settings',
+    'mcp_privacy_mode',
     'csv_export_delimiter',
 )
 # String settings whose empty value means "not set". For these we delete the
@@ -230,6 +232,7 @@ CachedDBSettingsFieldNames = Literal[
     'internal_txs_to_repull',
     'internal_tx_conflict_repull_frequency',
     'disabled_chain_queries',
+    'mcp_privacy_mode',
 ]
 
 DBSettingsFieldTypes = (
@@ -311,6 +314,7 @@ class DBSettings:
     use_asset_collections_in_cost_basis: bool = DEFAULT_USE_ASSET_COLLECTIONS_IN_COST_BASIS
     internal_txs_to_repull: int = DEFAULT_INTERNAL_TXS_TO_REPULL
     internal_tx_conflict_repull_frequency: int = DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY
+    mcp_privacy_mode: str = DEFAULT_MCP_PRIVACY_MODE
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -396,6 +400,7 @@ class ModifiableDBSettings(NamedTuple):
     use_asset_collections_in_cost_basis: bool | None = None
     internal_txs_to_repull: int | None = None
     internal_tx_conflict_repull_frequency: int | None = None
+    mcp_privacy_mode: str | None = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
