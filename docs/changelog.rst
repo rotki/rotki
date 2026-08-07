@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Bridging DAI from Ethereum to Gnosis chain is again seen as a bridge, instead of being mistaken for a DAI to USDS migration.
 * :bug:`12764` Ignored assets should now be ignored from the snapshot values shown in the dashboard.
 * :feature:`12735` KittenSwap swaps on HyperEVM are now properly decoded.
 * :feature:`12735` Project X swaps and liquidity position activity on HyperEVM are now properly decoded.
