@@ -351,6 +351,15 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
         record.cleanedUp = true;
         record.spec.cleanup?.();
       }
+      // ⚠️ Emit while the cancelled records are still in the map. A caller awaiting `submitTask`
+      // is released by a resolver that looks its activity up in the snapshot and settles it when
+      // it reads terminal; clearing first makes that lookup miss, so the caller never settles.
+      // Worse, the id is held in `inflight` until it settles, so it stays poisoned for the life of
+      // the process and every later submit dedups onto a promise that can no longer resolve. In
+      // the app that stalls `fetchCached()` on its first await after a re-login, so accounts are
+      // never fetched and the session sits on a spinner with nothing running.
+      emit();
+
       records.clear();
       ledger.clear();
       staleEdges.clear();
