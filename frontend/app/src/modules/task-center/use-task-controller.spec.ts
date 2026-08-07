@@ -31,10 +31,12 @@ function activity(overrides: Partial<Activity> & Pick<Activity, 'source'>): Acti
 function emptyModel(activities: Activity[] = []): ActivityModel {
   return {
     active: activities,
+    children: new Map(),
     current: activities[0],
     groups: [{ activities, kind: ActivityKind.OTHER, percentage: -1, status: ActivityStatus.RUNNING, title: 'g' }],
     overall: { percentage: 0, phase: 'working' },
     pending: [],
+    roots: activities,
   };
 }
 
