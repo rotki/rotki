@@ -42,8 +42,7 @@ interface UseAccountAdditionBatchReturn {
  * than the children it claims to parent.
  *
  * Throttling is the lane's, not this function's — each child submits onto `accounts-add:<chain>`,
- * capped at 2. That is the parallelism `addMultipleAccounts` used to apply itself with
- * `awaitParallelExecution(..., 2)`; expressing it twice is the trap documented on `DECODE_LANE`.
+ * capped at 2. Expressing it here as well is the trap documented on `DECODE_LANE`.
  */
 export function useAccountAdditionBatch(): UseAccountAdditionBatchReturn {
   const { runActivityBatch } = useActivityBatch();

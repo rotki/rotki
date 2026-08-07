@@ -77,9 +77,8 @@ export function accountTargetOf(payload: AccountPayload[] | XpubAccountPayload):
  * dedups on id identity, so a chain-only id collapsed every address after the first onto the
  * first's promise and reported them added without ever sending them.
  *
- * The lane caps additions at 2 per chain, which is the parallelism `addMultipleAccounts` used to
- * apply with `awaitParallelExecution(..., 2)`. That limiter is gone: one mechanism governs, as the
- * warning on `DECODE_LANE` requires.
+ * The lane caps additions at 2 per chain. Concurrency lives there and nowhere else, as the warning
+ * on `DECODE_LANE` requires.
  */
 export const accountAddActivity = defineActivity<AccountSubject, readonly [string, string]>({
   key: subject => [subject.chain, targetKey(subject.target)],

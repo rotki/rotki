@@ -61,13 +61,11 @@ export const UMBRELLA_LANE: StaticLane = 'umbrella';
 export const CHAIN_SYNC_LANE: StaticLane = 'chain-sync';
 
 /**
- * Every transaction decode runs here, capped at 2 — the parallelism the redecode paths always used
- * (`awaitParallelExecution(..., 2)`), now expressed once, in the lane, rather than by a limiter
- * wrapping a call that submits to a lane.
+ * Every transaction decode runs here, capped at 2.
  *
- * ⚠️ It was briefly capped at 1, matching the sync path's old decode queue. That silently halved
- * redecode throughput: the redecode fan-outs were never migrated, so their outer limiter of 2 was
- * captured by the inner cap of 1 and became dead. One mechanism governs this now.
+ * ⚠️ Do not lower this to 1. Concurrency belongs to the lane alone: a limiter wrapped around a call
+ * that already submits here is captured by the inner cap and silently becomes dead, which is how
+ * redecode throughput was once halved without anything reporting a change.
  */
 export const DECODE_LANE: StaticLane = 'decode';
 
@@ -87,16 +85,13 @@ export const EXCHANGE_EVENTS_LANE_PREFIX: LaneFamily = 'exchange-events:';
 
 /**
  * Family prefix for the per-chain account-addition lanes (`accounts-add:<chain>`). Capped at 2 per
- * chain, which is the parallelism `addMultipleAccounts` used to apply itself with
- * `awaitParallelExecution(..., 2)` — per chain, because that limiter wrapped a per-chain call. A
- * flat lane would serialize additions across chains instead, which is not what it replaced.
+ * chain rather than 2 overall: a flat lane would serialize additions across unrelated chains.
  */
 export const ACCOUNTS_ADD_LANE_PREFIX: LaneFamily = 'accounts-add:';
 
 /**
  * Family prefix for the per-chain account-removal lanes (`accounts-remove:<chain>`). Capped at 1 per
- * chain *and* 1 active lane, which together reproduce the fully serial `awaitParallelExecution(...,
- * 1)` that removing one address from several chains used to apply by hand.
+ * chain *and* 1 active lane, so removing one address from several chains stays fully serial.
  *
  * Its own family rather than a share of {@link ACCOUNTS_ADD_LANE_PREFIX}: an addition and a removal
  * are independent operations on different addresses, so pooling them would make a removal wait on an
