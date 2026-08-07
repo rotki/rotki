@@ -1690,21 +1690,24 @@
         "premium_title": "MCP requires a rotki premium subscription",
         "privacy_mode": {
           "balanced": {
-            "description": "Masks addresses, transaction hashes, group identifiers, and unknown fields, but keeps readable account names and generated descriptions.",
+            "description": "Masks addresses, transaction hashes, group identifiers, and unknown fields, but keeps generated descriptions and the venue name of exchange accounts. Account names you chose yourself are still masked.",
             "title": "Balanced"
           },
           "default": "Default",
-          "error": "Failed to update the MCP privacy mode",
-          "hint": "Choose how much of your data is masked before it reaches an AI assistant. Changes apply to every request without restarting MCP.",
+          "error": "Failed to update the MCP privacy mode: {message}",
+          "hint": "Choose how much of your data is masked before it reaches an AI assistant. The new mode applies without restarting MCP, but a connected assistant has to reload its analytics data before it can query again.",
           "label": "Privacy mode",
           "preview": {
             "deposit": "Kraken deposit",
             "field": "Field",
             "footer": {
-              "balanced": "Identifiers remain masked while useful generated descriptions and account names stay readable.",
+              "balanced": "Identifiers remain masked while generated descriptions stay readable, and an exchange account keeps its venue name. A name you assigned yourself is masked like any other identifier.",
               "raw": "Nothing is masked. Addresses, hashes, account names, and notes reach the assistant verbatim.",
               "strict": "Identifiers become session-stable anonymous hashes so grouping still works. Free text is replaced by a flag indicating whether it existed."
             },
+            "group_affected": "Decided by this mode",
+            "group_always": "Sent in every mode",
+            "not_sent": "column not sent",
             "not_set": "not set",
             "swap": "On-chain swap",
             "title": "Example of what the assistant receives"

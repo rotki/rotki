@@ -33,49 +33,64 @@ const tokenVisible = ref<boolean>(false);
 const mcpServerState = useMcpServerState();
 const {
   error: privacyModeError,
-  model: privacyModeModel,
+  model: privacyMode,
   pending: privacyModePending,
   success: privacyModeSuccess,
 } = useSettingModel('mcpPrivacyMode');
 
-const privacyMode = computed<McpPrivacyModeValue>({
-  get: () => get(privacyModeModel),
-  set: value => set(privacyModeModel, value),
-});
+// `useSettingModel` keeps `success` true until the next write, which beside a heading would read as
+// a permanent label rather than a confirmation. Show it only for as long as it is news.
+const savedVisible = ref<boolean>(false);
+const { start: hideSaved } = useTimeoutFn(() => {
+  set(savedVisible, false);
+}, 4000, { immediate: false });
 
 interface PrivacyModeOption {
+  readonly classes: string;
   readonly description: string;
+  /** The backend default, and the one the copy points at. */
+  readonly recommended: boolean;
   readonly title: string;
   readonly value: McpPrivacyModeValue;
 }
 
-const privacyModes = computed<PrivacyModeOption[]>(() => [
-  {
-    description: t('backend_settings.settings.mcp_server.privacy_mode.strict.description'),
-    title: t('backend_settings.settings.mcp_server.privacy_mode.strict.title'),
-    value: McpPrivacyMode.STRICT,
-  },
-  {
-    description: t('backend_settings.settings.mcp_server.privacy_mode.balanced.description'),
-    title: t('backend_settings.settings.mcp_server.privacy_mode.balanced.title'),
-    value: McpPrivacyMode.BALANCED,
-  },
-  {
-    description: t('backend_settings.settings.mcp_server.privacy_mode.raw.description'),
-    title: t('backend_settings.settings.mcp_server.privacy_mode.raw.title'),
-    value: McpPrivacyMode.RAW,
-  },
-]);
-const privacyModeErrorMessages = computed<string[]>(() => (
-  get(privacyModeError)
-    ? [`${t('backend_settings.settings.mcp_server.privacy_mode.error')}: ${get(privacyModeError)}`]
-    : []
-));
-const privacyModeSuccessMessages = computed<string[]>(() => (
-  get(privacyModeSuccess)
-    ? [t('backend_settings.settings.mcp_server.privacy_mode.success')]
-    : []
-));
+// Raw is the only mode that sends anything unmasked, so selecting it carries the warning tone
+// rather than the ordinary selected tint.
+function optionClasses(value: McpPrivacyModeValue, selected: McpPrivacyModeValue): string {
+  if (value !== selected)
+    return 'border-default';
+
+  return value === McpPrivacyMode.RAW
+    ? 'border-rui-warning/50 bg-rui-warning/10'
+    : 'border-rui-primary bg-rui-primary/5';
+}
+
+const privacyModes = computed<PrivacyModeOption[]>(() => {
+  const selected = get(privacyMode);
+  return [
+    {
+      classes: optionClasses(McpPrivacyMode.STRICT, selected),
+      description: t('backend_settings.settings.mcp_server.privacy_mode.strict.description'),
+      recommended: false,
+      title: t('backend_settings.settings.mcp_server.privacy_mode.strict.title'),
+      value: McpPrivacyMode.STRICT,
+    },
+    {
+      classes: optionClasses(McpPrivacyMode.BALANCED, selected),
+      description: t('backend_settings.settings.mcp_server.privacy_mode.balanced.description'),
+      recommended: true,
+      title: t('backend_settings.settings.mcp_server.privacy_mode.balanced.title'),
+      value: McpPrivacyMode.BALANCED,
+    },
+    {
+      classes: optionClasses(McpPrivacyMode.RAW, selected),
+      description: t('backend_settings.settings.mcp_server.privacy_mode.raw.description'),
+      recommended: false,
+      title: t('backend_settings.settings.mcp_server.privacy_mode.raw.title'),
+      value: McpPrivacyMode.RAW,
+    },
+  ];
+});
 
 const transitioningStates: ReadonlySet<StarlingServiceStatus> = new Set([
   StarlingServiceStatus.RESTARTING,
@@ -212,6 +227,12 @@ function toggleTokenVisibility(): void {
   set(tokenVisible, !get(tokenVisible));
 }
 
+watch(privacyModeSuccess, (saved) => {
+  set(savedVisible, saved);
+  if (saved)
+    hideSaved();
+});
+
 watch(mcpServerState, (pushed) => {
   if (pushed)
     set(state, pushed);
@@ -266,7 +287,7 @@ onBeforeMount(() => {
         {{ t('backend_settings.settings.mcp_server.error', { message: serverError }) }}
       </RuiAlert>
 
-      <div class="flex flex-col gap-3 rounded-lg bg-rui-grey-50 p-4 dark:bg-rui-grey-900 sm:flex-row sm:items-center">
+      <div class="flex max-w-4xl flex-col gap-3 rounded-lg border border-default bg-rui-grey-50 p-4 dark:bg-rui-grey-900 sm:flex-row sm:items-center">
         <RuiChip
           data-testid="mcp-status"
           size="sm"
@@ -314,45 +335,57 @@ onBeforeMount(() => {
 
       <section class="flex max-w-4xl flex-col gap-4">
         <div>
-          <h6 class="text-h6 font-semibold">
-            {{ t('backend_settings.settings.mcp_server.privacy_mode.label') }}
-          </h6>
+          <div class="flex flex-wrap items-baseline justify-between gap-x-4">
+            <h6 class="text-h6 font-semibold">
+              {{ t('backend_settings.settings.mcp_server.privacy_mode.label') }}
+            </h6>
+            <!-- Beside the heading rather than under the last option: the group's own detail slot
+                 renders below Raw, where a confirmation reads as if it belonged to Raw. -->
+            <span
+              v-if="savedVisible"
+              class="text-sm text-rui-success"
+            >
+              {{ t('backend_settings.settings.mcp_server.privacy_mode.success') }}
+            </span>
+          </div>
           <p class="text-sm text-rui-text-secondary">
             {{ t('backend_settings.settings.mcp_server.privacy_mode.hint') }}
           </p>
         </div>
 
+        <RuiAlert
+          v-if="privacyModeError"
+          type="error"
+        >
+          {{ t('backend_settings.settings.mcp_server.privacy_mode.error', { message: privacyModeError }) }}
+        </RuiAlert>
+
         <RuiRadioGroup
           v-model="privacyMode"
           data-testid="mcp-privacy-mode"
           color="primary"
+          hide-details
           :disabled="privacyModePending"
-          :success-messages="privacyModeSuccessMessages"
-          :error-messages="privacyModeErrorMessages"
         >
           <RuiRadio
             v-for="option in privacyModes"
             :key="option.value"
             :value="option.value"
-            class="mb-2 w-full rounded border px-3 py-2 transition-colors last:mb-0"
-            :class="privacyMode === option.value
-              ? option.value === McpPrivacyMode.RAW
-                ? 'border-rui-warning/50 bg-rui-warning/10'
-                : 'border-rui-primary bg-rui-primary/5'
-              : 'border-default'"
+            class="mb-2 w-full rounded border pl-4 transition-colors last:mb-0"
+            :class="option.classes"
           >
-            <div>
+            <div class="py-2 pr-3">
               <div class="flex items-center gap-2 font-medium">
                 {{ option.title }}
                 <RuiChip
-                  v-if="option.value === McpPrivacyMode.BALANCED"
+                  v-if="option.recommended"
                   size="sm"
                   color="success"
                 >
                   {{ t('backend_settings.settings.mcp_server.privacy_mode.default') }}
                 </RuiChip>
               </div>
-              <div class="mt-0.5 text-sm text-rui-text-secondary">
+              <div class="mt-0.5 max-w-prose text-sm text-rui-text-secondary">
                 {{ option.description }}
               </div>
             </div>
@@ -372,7 +405,7 @@ onBeforeMount(() => {
         <McpPrivacyPreview :mode="privacyMode" />
       </section>
 
-      <div class="flex flex-wrap items-center gap-4 border-t border-default pt-4">
+      <div class="flex max-w-4xl flex-wrap items-center gap-4 border-t border-default pt-4">
         <RuiSwitch
           v-if="supportsOptions"
           data-testid="mcp-auto-start"
