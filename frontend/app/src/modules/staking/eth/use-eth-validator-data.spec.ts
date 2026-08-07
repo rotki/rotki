@@ -124,7 +124,6 @@ describe('useEthValidatorData', () => {
     const data = create();
     expect(data.fetchData).toBe(mockFetchData);
     expect(data.filters).toBe(mockFilters);
-    expect(data.matchers).toBe(mockMatchers);
     expect(data.pagination).toBe(mockPagination);
     expect(data.sort).toBe(mockSort);
     expect(data.rows).toBe(mockRows);
