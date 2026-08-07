@@ -11,6 +11,7 @@ import {
   isValidHyperliquidTokenAddress,
   isValidSolanaAddress,
   isValidSolanaSignature,
+  isValidSs58Address,
   isValidTxHashOrSignature,
   isValidUrl,
   toCapitalCase,
@@ -171,11 +172,27 @@ describe('text-utils', () => {
     expect(isValidAddress('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa')).toBe(true); // BTC
     expect(isValidAddress('qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a')).toBe(true); // BCH
     expect(isValidAddress('7EqQdEULxWcraVx3mXKFjc84LhCkMGZCkRuDpvcMwJeK')).toBe(true); // SOL
+    expect(isValidAddress('13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB')).toBe(true); // DOT
+    expect(isValidAddress('HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F')).toBe(true); // KSM
 
     // Invalid
     expect(isValidAddress('invalid-address')).toBe(false);
     expect(isValidAddress('')).toBe(false);
     expect(isValidAddress(undefined)).toBe(false);
+    // A half-typed address is the case that reaches the filter bar.
+    expect(isValidAddress('0x')).toBe(false);
+    expect(isValidAddress('0x742d35Cc6634C0532925a3b844Bc9e7595f0')).toBe(false);
+  });
+
+  it('should validate substrate addresses', () => {
+    expect(isValidSs58Address('13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB')).toBe(true); // Polkadot
+    expect(isValidSs58Address('HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F')).toBe(true); // Kusama
+
+    // Generic substrate (prefix 42) is a well-formed ss58 address the backend does not accept.
+    expect(isValidSs58Address('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY')).toBe(false);
+    expect(isValidSs58Address('13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkn')).toBe(false);
+    expect(isValidSs58Address('')).toBe(false);
+    expect(isValidSs58Address(undefined)).toBe(false);
   });
 
   it('should validate EVM transaction hashes', () => {

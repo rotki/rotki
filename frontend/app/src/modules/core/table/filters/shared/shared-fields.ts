@@ -1,4 +1,5 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
+import { isValidAddress } from '@rotki/common';
 import { DisplayKinds, type FieldDef } from '@/modules/core/table/pill/core/types';
 
 /**
@@ -53,7 +54,16 @@ function sharedFieldDecoration(kind: SharedFieldKind, resolvers: SharedFieldReso
       // Typed, not picked: there is no list of every address, and the value is shortened and
       // scrambled for display so a filtered address is no more revealing than the same address
       // anywhere else in the app.
-      return { display: DisplayKinds.ADDRESS, freeText: true, resolveLabel: resolvers.resolveHex };
+      //
+      // Validated here rather than per table: an address is sent as an address, and the backend
+      // answers anything it cannot place with a 400. Committing happens on enter AND on closing the
+      // editor, so without this a half-typed address is applied the moment the user clicks away.
+      return {
+        display: DisplayKinds.ADDRESS,
+        freeText: true,
+        resolveLabel: resolvers.resolveHex,
+        validate: (value: string): boolean => isValidAddress(value.trim()),
+      };
     case SharedFieldKinds.TX_HASH:
       // No `display`: a transaction is not an identity with a face, so an avatar would be noise.
       // Still shortened, because a raw hash does not fit on a pill.
