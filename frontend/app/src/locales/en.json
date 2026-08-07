@@ -65,8 +65,7 @@
     "filter": {},
     "filter_field_labels": {
       "account": "Account",
-      "chain": "Chain",
-      "tags": "Tags"
+      "chain": "Chain"
     },
     "per_chain": "Per chain",
     "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries"

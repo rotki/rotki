@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Bridging DAI from Ethereum to Gnosis chain is again seen as a bridge, instead of being mistaken for a DAI to USDS migration.
+* :feature:`-` Filtering manual balances now uses the same filter bar as the rest of rotki, and the tag selector beside it is now a tag pill in the same bar, drawn in the colours you gave each tag. Locations are shown with their icon and name, and assets with their icon and symbol.
 * :bug:`12764` Ignored assets should now be ignored from the snapshot values shown in the dashboard.
 * :feature:`12735` KittenSwap swaps on HyperEVM are now properly decoded.
 * :feature:`12735` Project X swaps and liquidity position activity on HyperEVM are now properly decoded.
