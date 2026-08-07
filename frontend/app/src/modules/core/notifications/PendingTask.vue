@@ -1,60 +1,115 @@
 <script setup lang="ts">
-import dayjs from 'dayjs';
-import { type Activity, resolveText } from '@/modules/task-center/core/types';
+import { type ActivityOutcome, activityOutcome } from '@/modules/task-center/activity-outcome';
+import { formatElapsed } from '@/modules/task-center/core/elapsed';
+import { isTerminalStatus } from '@/modules/task-center/core/status';
+import { type Activity, ActivityStatus, type ActivitySteps, resolveText } from '@/modules/task-center/core/types';
 
-const { activity } = defineProps<{ activity: Activity }>();
+const { activity, cancellable, nested = false, now, percentage, steps } = defineProps<{
+  activity: Activity;
+  /** Ticks once a second, owned by the panel so one timer serves every row. */
+  now: number;
+  /** 0-100, or `-1` for indeterminate. Parents pass their subtree's; leaves their own. */
+  percentage: number;
+  /** Present for a parent: the leaf tally behind {@link percentage}. */
+  steps?: ActivitySteps;
+  /** Decided by the caller — a parent is not cancellable until cancel cascades. */
+  cancellable: boolean;
+  /** A child row: the job above it already names the work, so its own label is enough. */
+  nested?: boolean;
+}>();
+
 const emit = defineEmits<{
   cancel: [activity: Activity];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-// `-1` is the orchestrator's "indeterminate": no producer reported steps for this activity.
-const hasDeterminateProgress = computed<boolean>(() => activity.percentage >= 0);
-
-const time = computed<string>(() => (activity.startedAt ? dayjs(activity.startedAt).format('LLL') : ''));
-
 // Resolved here rather than at submit time, so a language change updates work already in flight.
 const subtitle = computed<string | undefined>(() => resolveText(t, activity.subtitle));
+
+// A child of "History refresh" reads better as "Ethereum" than as "Transaction sync / Ethereum":
+// a chain and its accounts carry the same title, so under a parent the subtitle is the identity.
+const label = computed<string>(() => (nested ? get(subtitle) ?? activity.title : activity.title));
+
+const secondary = computed<string | undefined>(() => (nested ? undefined : get(subtitle)));
+
+const isRunning = computed<boolean>(() => activity.status === ActivityStatus.RUNNING);
+
+// `-1` is the orchestrator's "indeterminate": no producer reported steps for this activity.
+const hasDeterminateProgress = computed<boolean>(() => percentage >= 0);
+
+const elapsed = computed<string | undefined>(() => {
+  if (!get(isRunning) || activity.startedAt === undefined)
+    return undefined;
+
+  return formatElapsed(now - activity.startedAt);
+});
+
+const meta = computed<string | undefined>(() => {
+  const parts: string[] = [];
+  const elapsedTime = get(elapsed);
+  if (elapsedTime)
+    parts.push(elapsedTime);
+
+  if (steps && steps.total > 0)
+    parts.push(t('pending_task.steps', { current: steps.current, total: steps.total }));
+
+  return parts.length > 0 ? parts.join(' · ') : undefined;
+});
+
+const outcome = computed<ActivityOutcome | undefined>(() => activityOutcome(activity.status));
 </script>
 
 <template>
-  <div class="flex items-center justify-between flex-nowrap gap-4">
-    <div class="flex flex-col flex-1 break-words">
-      <div class="overflow-hidden text-ellipsis text-sm font-medium mb-1 leading-4">
-        {{ activity.title }}
+  <div class="flex items-center justify-between flex-nowrap gap-3">
+    <div class="flex flex-col flex-1 min-w-0">
+      <div
+        class="overflow-hidden text-ellipsis text-sm leading-4"
+        :class="[nested ? 'font-normal' : 'font-medium', { 'text-rui-text-secondary': isTerminalStatus(activity.status) }]"
+      >
+        {{ label }}
       </div>
       <div
-        v-if="subtitle"
-        class="text-xs text-rui-text-secondary mb-2"
+        v-if="secondary"
+        class="text-xs text-rui-text-secondary mt-1"
       >
-        {{ subtitle }}
+        {{ secondary }}
       </div>
       <div
-        v-if="time"
-        class="text-caption text-xs"
+        v-if="meta"
+        class="text-xs text-rui-text-secondary mt-1 tabular-nums"
       >
-        {{ time }}
+        {{ meta }}
       </div>
     </div>
+
+    <RuiChip
+      v-if="outcome"
+      size="sm"
+      :color="outcome.color"
+      class="shrink-0"
+    >
+      {{ t(outcome.key) }}
+    </RuiChip>
     <RuiProgress
-      v-if="hasDeterminateProgress"
+      v-else-if="hasDeterminateProgress"
       color="primary"
       circular
       variant="determinate"
-      :value="activity.percentage"
+      :value="percentage"
       size="24"
       show-label
       thickness="2"
     />
     <RuiIcon
       v-else
-      name="lu-loader"
+      name="lu-loader-circle"
       size="20"
-      class="text-rui-text-secondary shrink-0"
+      class="text-rui-primary shrink-0 animate-spin"
     />
+
     <RuiTooltip
-      v-if="activity.cancellable"
+      v-if="cancellable"
       :popper="{ placement: 'top' }"
       :open-delay="400"
     >
@@ -65,6 +120,7 @@ const subtitle = computed<string | undefined>(() => resolveText(t, activity.subt
           class="shrink-0"
           size="sm"
           icon
+          data-testid="cancel-activity"
           @click="emit('cancel', activity)"
         >
           <RuiIcon name="lu-x" />
