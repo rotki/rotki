@@ -3,6 +3,7 @@ import { assert, describe, expect, it, vi } from 'vitest';
 import {
   BackendCancelled,
   Cancelled,
+  errorOf,
   isActionable,
   isCancellation,
   onActionableError,
@@ -35,6 +36,29 @@ describe('isActionable', () => {
   it('should be false for either cancellation', () => {
     expect(isActionable(Cancelled({ message: 'boom' }))).toBe(false);
     expect(isActionable(BackendCancelled({ message: 'boom' }))).toBe(false);
+  });
+});
+
+describe('errorOf', () => {
+  it('should return the original cause so a subclass survives', () => {
+    class ApiError extends Error {
+      override name = 'ApiError';
+    }
+    const cause = new ApiError('{"address": ["invalid"]}');
+
+    const error = errorOf(TaskFailed({ cause, message: 'wrapped' }));
+
+    expect(error).toBe(cause);
+    expect(error).toBeInstanceOf(ApiError);
+  });
+
+  it('should wrap the message when the cause is not an Error', () => {
+    expect(errorOf(TaskFailed({ cause: 'a string', message: 'wrapped' }))).toStrictEqual(new Error('wrapped'));
+    expect(errorOf(TaskFailed({ message: 'wrapped' }))).toStrictEqual(new Error('wrapped'));
+  });
+
+  it('should wrap the message for a cancellation, which carries no cause', () => {
+    expect(errorOf(Cancelled({ message: 'cancelled' }))).toStrictEqual(new Error('cancelled'));
   });
 });
 

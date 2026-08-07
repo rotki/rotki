@@ -63,8 +63,8 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
       if (result === true)
         return ok(address);
 
-      // Translated, because this message is user-facing: `throwIfActionable` rethrows it and the
-      // account form renders `error.message` in its dialog.
+      // Translated, because this message is user-facing: `errorOf` hands it back and the account
+      // form renders `error.message` in its dialog.
       return result.length > 0
         ? ok(result[0])
         : err(TaskFailed({ message: t('actions.balances.blockchain_accounts_add.error.nothing_added', { address }) }));

@@ -5,6 +5,7 @@ import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type BlockchainAccountBalance, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 
 const mockAddAccounts = vi.fn();
 const mockAddEvmAccounts = vi.fn();
@@ -277,6 +278,71 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
         'account_form.error.title',
         expect.stringContaining('{}'),
       );
+    });
+
+    it('should map a resolved failure cause to inline form errors', async () => {
+      mockAddAccounts.mockResolvedValueOnce({
+        added: [],
+        cancelled: false,
+        failed: [{
+          account: { address: 'Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK', tags: null },
+          error: TaskFailed({
+            cause: new ApiValidationError('{"address": ["Given value Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK is not a valid solana address"]}'),
+            message: 'validation failed',
+          }),
+        }],
+      });
+
+      const { modelErrorMessages, save } = useAccountManage();
+      const result = await save(createSolanaAccountState());
+
+      expect(result).toBe(false);
+      expect(get(modelErrorMessages)).toEqual({
+        address: ['Given value Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK is not a valid solana address'],
+      });
+      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+    });
+
+    it('should report the count when several addresses fail', async () => {
+      mockAddAccounts.mockResolvedValueOnce({
+        added: [],
+        cancelled: false,
+        failed: [
+          {
+            account: { address: '0xone', tags: null },
+            error: TaskFailed({ cause: new ApiValidationError('{"address": ["bad"]}'), message: 'validation failed' }),
+          },
+          {
+            account: { address: '0xtwo', tags: null },
+            error: TaskFailed({ message: 'boom' }),
+          },
+        ],
+      });
+
+      const { modelErrorMessages, save } = useAccountManage();
+      const result = await save(createSolanaAccountState());
+
+      expect(result).toBe(false);
+      // No single field to highlight across two addresses.
+      expect(get(modelErrorMessages)).toEqual({});
+      expect(mockShowErrorMessage).toHaveBeenCalledWith(
+        'account_form.error.title',
+        expect.stringContaining('account_form.error.addition_failed'),
+      );
+    });
+
+    // Cancelling produces neither an addition nor a failure. Returning true there closed the dialog
+    // and emitted `complete` for an account that was never added.
+    it('should not report a fully cancelled addition as saved', async () => {
+      mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: true, failed: [] });
+
+      const { modelErrorMessages, save } = useAccountManage();
+      const result = await save(createSolanaAccountState());
+
+      expect(result).toBe(false);
+      // The user asked for the cancellation, so nothing is reported.
+      expect(get(modelErrorMessages)).toEqual({});
+      expect(mockShowErrorMessage).not.toHaveBeenCalled();
     });
 
     it('should not double-parse an existing ApiValidationError', async () => {

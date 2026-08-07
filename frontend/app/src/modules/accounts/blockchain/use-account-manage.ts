@@ -12,6 +12,7 @@ import { assert, bigNumberify, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { getAccountAddress, getChain } from '@/modules/accounts/account-utils';
 import { EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
+import { additionError, isNothingButCancelled } from '@/modules/accounts/blockchain/addition-outcome';
 import { useAccountEdits } from '@/modules/accounts/use-account-edits';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -205,6 +206,9 @@ export function useAccountManage(): UseAccountManageReturn {
     }
   }
 
+  const additionFallback = (count: number): string =>
+    t('account_form.error.addition_failed', { count }, count);
+
   async function saveAccount(state: AccountManage): Promise<boolean> {
     const edit = state.mode === 'edit';
     const isEth = state.chain === Blockchain.ETH;
@@ -228,9 +232,12 @@ export function useAccountManage(): UseAccountManageReturn {
       // accounts that did land are real. Previously the count decided this: one address threw, and
       // two or more closed the dialog as a success even when some of them had failed.
       if (summary.added.length === 0 && summary.failed.length > 0) {
-        handleErrors(new Error(t('account_form.error.addition_failed', { count: summary.failed.length }, summary.failed.length)));
+        handleErrors(additionError(summary.failed, additionFallback(summary.failed.length)));
         return false;
       }
+
+      if (isNothingButCancelled(summary))
+        return false;
     }
     catch (error: unknown) {
       handleErrors(error);
@@ -274,12 +281,15 @@ export function useAccountManage(): UseAccountManageReturn {
         // in per-field errors.
         const summary = await addAccounts(chain, state.data, { wait: true });
         if (summary.added.length === 0 && summary.failed.length > 0) {
-          handleErrors(new Error(t('account_form.error.addition_failed', { count: 1 }, 1)), {
+          handleErrors(additionError(summary.failed, additionFallback(summary.failed.length)), {
             derivationPath: '',
             xpub: '',
           });
           return false;
         }
+
+        if (isNothingButCancelled(summary))
+          return false;
       }
     }
     catch (error: unknown) {

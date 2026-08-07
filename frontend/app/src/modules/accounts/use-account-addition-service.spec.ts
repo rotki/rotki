@@ -214,12 +214,18 @@ describe('useAccountAdditionService', () => {
       expect(h.notifyFailedToAddAddress).not.toHaveBeenCalled();
     });
 
-    it('should notify about failed additions and report them in the summary', async () => {
-      h.addAccount.mockResolvedValue(err(TaskFailed({ message: 'nope' })));
+    // The reason travels with the payload: a form caller reads the cause off it to fill in
+    // per-field errors, which a payload-only summary cannot support.
+    it('should notify about failed additions and report them with their reason', async () => {
+      const cause = new Error('{"address": ["invalid"]}');
+      h.addAccount.mockResolvedValue(err(TaskFailed({ cause, message: 'nope' })));
       const { useAccountAdditionService } = await importModule();
       const summary = await useAccountAdditionService().addAccounts('eth', [{ address: '0xabc', tags: null }], undefined, onComplete);
 
-      expect(summary.failed).toStrictEqual([{ address: '0xabc', tags: null }]);
+      expect(summary.failed).toStrictEqual([{
+        account: { address: '0xabc', tags: null },
+        error: TaskFailed({ cause, message: 'nope' }),
+      }]);
       expect(h.notifyFailedToAddAddress).toHaveBeenCalledOnce();
     });
 
@@ -271,7 +277,10 @@ describe('useAccountAdditionService', () => {
       const { useAccountAdditionService } = await importModule();
       const summary = await useAccountAdditionService().addAccounts('btc', xpubPayload, undefined, onComplete);
 
-      expect(summary.failed).toStrictEqual([xpubPayload]);
+      expect(summary.failed).toStrictEqual([{
+        account: xpubPayload,
+        error: TaskFailed({ message: 'nope' }),
+      }]);
       expect(h.notifyFailedToAddAddress).not.toHaveBeenCalled();
     });
   });
