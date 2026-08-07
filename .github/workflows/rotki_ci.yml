@@ -116,7 +116,7 @@ jobs:
           category: "/language:javascript"
 
   lint-frontend:
-    name: 'Frontend lint'
+    name: 'Frontend checks'
     needs: [ 'check-changes', 'check-typos' ]
     if: ${{ needs.check-changes.outputs.frontend_tasks }}
     runs-on: ubuntu-latest
@@ -147,19 +147,38 @@ jobs:
           cache-dependency-path: 'frontend/pnpm-lock.yaml'
 
       - name: Install dependencies
+        id: install
         working-directory: ./frontend
         run: pnpm install --frozen-lockfile
 
-      - name: Build
+      # Each check is its own step so the failure annotation names what actually broke: a
+      # vue-tsc error reports as "Typecheck", not as a generic lint failure. The condition
+      # keeps later checks running after an earlier one fails, so a single run reports every
+      # problem, while still skipping them all if the install itself never succeeded.
+      - name: Typecheck
+        if: ${{ steps.install.outcome == 'success' && github.event_name != 'push' }}
         working-directory: ./frontend
-        run: |
-          if [ ${{ github.event_name }} != 'push' ]; then
-            pnpm run build
-          fi
+        run: pnpm run typecheck
 
-      - name: Lint code
+      - name: Build
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name != 'push' }}
         working-directory: ./frontend
-        run: pnpm run lint:all
+        run: pnpm run --filter rotki build:app
+
+      - name: ESLint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        working-directory: ./frontend
+        run: pnpm run lint
+
+      - name: Stylelint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        working-directory: ./frontend
+        run: pnpm run lint:style
+
+      - name: Linked i18n keys
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        working-directory: ./frontend
+        run: pnpm run --filter rotki check:linked-keys
 
   check-backend-mapping-keys:
     name: 'Backend mapping keys'
