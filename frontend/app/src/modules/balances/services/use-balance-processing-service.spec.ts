@@ -73,6 +73,14 @@ const runTask = vi.fn().mockImplementation(async (taskFn: () => Promise<{ taskId
 
 const { useBalanceProcessingService } = await import('@/modules/balances/services/use-balance-processing-service');
 
+function balancesAt(blockchain: string, lastRefreshTs: number): unknown {
+  return {
+    lastRefreshTs: { [blockchain]: lastRefreshTs },
+    perAccount: { [blockchain]: {} },
+    totals: { assets: {}, liabilities: {} },
+  };
+}
+
 function emptyBalances(blockchain: string): unknown {
   return {
     perAccount: { [blockchain]: {} },
@@ -92,6 +100,62 @@ describe('useBalanceProcessingService', () => {
     updateAccounts(Blockchain.ETH, [
       createAccount({ address: '0x1', label: null, tags: null }, { chain: Blockchain.ETH, nativeAsset: 'ETH' }),
     ]);
+  });
+
+  /**
+   * ⭐ The guarantee that lets a DB data refresh and a network query overlap without being
+   * serialised: whichever carries the older `lastRefreshTs` is discarded, whatever order they land
+   * in. Without it the slower one wins and rolls the chain back to stale balances.
+   */
+  describe('stale payloads', () => {
+    // ⚠️ A chain of its own, not ETH. The orchestrator is a `createSharedComposable`, so its
+    // completion ledger survives `setActivePinia` and leaks between tests — marking ETH complete
+    // here makes a later test see `hasCachedData` already true.
+    const CHAIN = 'gnosis';
+
+    async function resolveCachedFetch(taskId: number, payload: unknown): Promise<void> {
+      const service = useBalanceProcessingService();
+      const pending = service.handleCachedFetch(
+        runTask,
+        { addresses: undefined, blockchain: CHAIN, isXpub: false },
+        undefined,
+      );
+      await vi.waitFor(() => {
+        expect(pendingTasks.has(taskId)).toBe(true);
+      });
+      pendingTasks.get(taskId)!.resolve(ok(payload));
+      await pending;
+    }
+
+    it('should ignore a payload older than the chain already holds', async () => {
+      mockQueryBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
+      useBlockchainAccountsStore().updateAccounts(CHAIN, [
+        createAccount({ address: '0x9', label: null, tags: null }, { chain: CHAIN, nativeAsset: 'ETH' }),
+      ]);
+      const { updateBalances } = useBalancesStore();
+
+      await resolveCachedFetch(1, balancesAt(CHAIN, 3000));
+      vi.mocked(updateBalances).mockClear();
+
+      await resolveCachedFetch(2, balancesAt(CHAIN, 1000));
+
+      expect(updateBalances).not.toHaveBeenCalled();
+    });
+
+    it('should accept a payload newer than the chain holds', async () => {
+      mockQueryBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
+      useBlockchainAccountsStore().updateAccounts(CHAIN, [
+        createAccount({ address: '0x9', label: null, tags: null }, { chain: CHAIN, nativeAsset: 'ETH' }),
+      ]);
+      const { updateBalances } = useBalancesStore();
+
+      await resolveCachedFetch(1, balancesAt(CHAIN, 1000));
+      vi.mocked(updateBalances).mockClear();
+
+      await resolveCachedFetch(2, balancesAt(CHAIN, 3000));
+
+      expect(updateBalances).toHaveBeenCalled();
+    });
   });
 
   describe('shouldQuery', () => {

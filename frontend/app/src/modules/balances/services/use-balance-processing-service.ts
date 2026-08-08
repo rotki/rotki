@@ -38,7 +38,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const { queryBlockchainBalances, refreshBlockchainBalances, queryXpubBalances } = useBlockchainBalancesApi();
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { updateBalances } = useBalancesStore();
-  const { updateTimestamps } = useBlockchainRefreshTimestampsStore();
+  const { isStale, updateTimestamps } = useBlockchainRefreshTimestampsStore();
   const { t } = useI18n({ useScope: 'global' });
   const { invalidate, markCompleted } = useTaskOrchestrator();
   const { isEth2Enabled } = useBlockchainValidatorsStore();
@@ -46,6 +46,13 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
 
   const processBalanceResult = (blockchain: string, result: unknown): void => {
     const parsedBalances: BlockchainBalances = BlockchainBalances.parse(result);
+
+    // 🔴 Drop a payload older than what this chain already holds. A data refresh from the DB and a
+    // network query are allowed to overlap by design, so the two can land out of order; without
+    // this the slower one wins and rolls the chain back to stale balances. Discarding by age is
+    // what makes the overlap harmless — and what lets the work stop being serialised to avoid it.
+    if (isStale(blockchain, parsedBalances.lastRefreshTs?.[blockchain]))
+      return;
 
     if (parsedBalances.lastRefreshTs)
       updateTimestamps(parsedBalances.lastRefreshTs);

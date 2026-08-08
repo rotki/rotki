@@ -11,7 +11,6 @@ import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { BALANCES_CACHED_LANE, BALANCES_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
-import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 import { useBalanceProcessingService } from './services/use-balance-processing-service';
 
 interface UseBlockchainBalancesReturn {
@@ -22,21 +21,27 @@ interface UseBlockchainBalancesReturn {
 export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { getChainName, supportedChains } = useSupportedChains();
-  const { statusOf, version } = useTaskOrchestrator();
   const valueThreshold = useValueThreshold(BalanceSource.BLOCKCHAIN);
 
   const { clearChainBalances, handleCachedFetch, handleRefresh, shouldQuery } = useBalanceProcessingService();
   const { submitTask } = useNativeTask();
   const refreshState = useBalanceRefreshState();
 
-  // Deliberately the *cached* activity and not the whole chain prefix: this runs inside the
-  // refresh activity itself, so a prefix read would see its own RUNNING status and wait forever.
-  // `version` is touched so the `until` below re-evaluates when the cached read settles.
-  const isChainBusy = (chain: string): boolean => {
-    get(version);
-    return statusOf(ActivityKind.BLOCKCHAIN_BALANCES, chain, ActivityPart.CACHED).active
-      || get(refreshState.refreshingChains).has(chain);
-  };
+  /**
+   * Whether a *network* refresh is already running for this chain.
+   *
+   * ⭐ It no longer waits on the chain's data refresh from the DB. That half existed because a
+   * cached read landing after a network result would overwrite fresh balances with stale ones —
+   * which balance writes being monotonic now prevents outright: the older payload is discarded
+   * whichever order the two land in. Two mechanisms for one hazard, and the cheaper one wins.
+   *
+   * ⚠️ The remaining half is not redundant with `submitTask`'s id dedup, and must not be deleted
+   * with it. Dedup *joins* a caller to the run already in flight; this makes a manual refresh wait
+   * and then genuinely re-query, which is what a user asking for fresh data expects. Deleting it
+   * would silently hand them the periodic run's result instead — the supersede gap, which has no
+   * implementation yet.
+   */
+  const isChainRefreshing = (chain: string): boolean => get(refreshState.refreshingChains).has(chain);
 
   /**
    * Refresh this app's data from the DB — one read per chain with accounts; empty chains are
@@ -106,7 +111,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
           lane: BALANCES_LANE,
           rerunnable: true,
           run: async ({ runTask }): Promise<Result<void, TaskError>> => {
-            if (isChainBusy(chain)) {
+            if (isChainRefreshing(chain)) {
               // 🔴 A dropped refresh is SKIPPED with a reason, never `ok`. Returning success here
               // recorded a completion for work that never ran, so the ledger — and `everCompleted`
               // with it — reported this chain as refreshed. Same class as a green "Sync Complete"
@@ -117,7 +122,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
               if (periodic)
                 return err(Skipped({ message: t('actions.balances.blockchain.skipped.busy') }));
 
-              await until(() => isChainBusy(chain)).toBe(false);
+              await until(() => isChainRefreshing(chain)).toBe(false);
             }
             return handleRefresh(runTask, chainPayload);
           },
