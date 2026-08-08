@@ -6,6 +6,7 @@ import { useAddressNameResolution } from '@/modules/accounts/address-book/use-ad
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
+import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -45,8 +46,9 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
   const currencySymbol = useSetting('currencySymbol');
   // Every source that can still be filling the breakdown this table renders.
   const { useIsActive } = useTaskCenter();
+  const { loadingBlockchainBalances } = useBalancesLoading();
   const detailsLoading = logicOr(
-    useIsActive(ActivityKind.BLOCKCHAIN_BALANCES),
+    loadingBlockchainBalances,
     useIsActive(ActivityKind.EXCHANGE_BALANCES),
     useIsActive(ActivityKind.MANUAL_BALANCES),
   );

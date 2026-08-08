@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
+import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { useForm } from '@/modules/core/form/use-form';
 import {
   DEFAULT_THRESHOLD,
@@ -27,9 +28,9 @@ const balanceValueThreshold = useSetting('balanceValueThreshold');
 const { updateFrontendSetting } = useSettingsOperations();
 
 const { useIsActive } = useTaskCenter();
+const { loadingBlockchainBalances: isQueryingBlockchain } = useBalancesLoading();
 const isManualBalancesLoading = useIsActive(ActivityKind.MANUAL_BALANCES);
 const isExchangeLoading = useIsActive(ActivityKind.EXCHANGE_BALANCES);
-const isQueryingBlockchain = useIsActive(ActivityKind.BLOCKCHAIN_BALANCES);
 
 const schema = computed<ZodType>(() => hideSmallBalancesSchema({
   min: t('settings.validation.number.min', { min: 0 }),
