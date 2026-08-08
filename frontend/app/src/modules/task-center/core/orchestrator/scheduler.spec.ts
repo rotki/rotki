@@ -213,4 +213,56 @@ describe('createScheduler', () => {
       expect(scheduler.runningCount('balances')).toBe(2);
     });
   });
+
+  describe('clear', () => {
+    /**
+     * A slot is freed from `run()`'s `finally`, and a reset abandons those runs rather than
+     * resolving them. Leaving the slots occupied meant a lane stayed full for the life of the
+     * process, so the next session's work queued behind jobs belonging to a session that had ended
+     * and never started at all.
+     */
+    it('should free the slots of running jobs, not just the queue', () => {
+      const scheduler = createScheduler({ decode: 2 });
+      const running = [1, 2].map(n => controllableJob(`old-${n}`, 'decode'));
+      running.forEach(({ job }) => scheduler.submit(job));
+      // A third job cannot start: the lane is at its cap of 2.
+      scheduler.submit(controllableJob('old-3', 'decode').job);
+      expect(scheduler.runningCount('decode')).toBe(2);
+
+      // The session ends. The abandoned runs are never resolved.
+      scheduler.clear();
+
+      expect(scheduler.runningCount('decode')).toBe(0);
+      expect(scheduler.isQueued('old-3')).toBe(false);
+    });
+
+    it('should let the next session start work on a lane that was full', () => {
+      const scheduler = createScheduler({ decode: 2 });
+      const stuck = [1, 2].map(n => controllableJob(`old-${n}`, 'decode'));
+      stuck.forEach(({ job }) => scheduler.submit(job));
+
+      scheduler.clear();
+      scheduler.submit(controllableJob('new-1', 'decode').job);
+
+      expect(scheduler.isRunning('new-1')).toBe(true);
+    });
+
+    /**
+     * The abandoned run may still settle later. Its `finally` deletes a job the map no longer holds
+     * and pumps, and neither may disturb the session that replaced it.
+     */
+    it('should ignore an abandoned run settling after the clear', async () => {
+      const scheduler = createScheduler({ decode: 2 });
+      const old = controllableJob('old-1', 'decode');
+      scheduler.submit(old.job);
+
+      scheduler.clear();
+      scheduler.submit(controllableJob('new-1', 'decode').job);
+      old.finish();
+      await flush();
+
+      expect(scheduler.runningCount('decode')).toBe(1);
+      expect(scheduler.isRunning('new-1')).toBe(true);
+    });
+  });
 });
