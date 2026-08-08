@@ -1,4 +1,5 @@
 import type { RunBackendTask } from '@/modules/task-center/use-native-task';
+import { Blockchain } from '@rotki/common';
 import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { convertBtcBalances } from '@/modules/accounts/account-helpers';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -14,6 +15,7 @@ import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-bloc
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -27,6 +29,8 @@ interface UseBalanceProcessingServiceReturn {
   handleCachedFetch: (runTask: RunBackendTask, payload: FetchBlockchainBalancePayload, threshold: string | undefined) => Promise<Result<void, TaskError>>;
   handleRefresh: (runTask: RunBackendTask, payload: FetchBlockchainBalancePayload) => Promise<Result<void, TaskError>>;
   hasAccounts: (blockchain: string) => boolean;
+  /** Whether the chain has anything to query — `hasAccounts`, except eth2. */
+  shouldQuery: (blockchain: string) => boolean;
 }
 
 export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn {
@@ -37,6 +41,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const { updateTimestamps } = useBlockchainRefreshTimestampsStore();
   const { t } = useI18n({ useScope: 'global' });
   const { invalidate, markCompleted } = useTaskOrchestrator();
+  const { isEth2Enabled } = useBlockchainValidatorsStore();
   const refreshState = useBalanceRefreshState();
 
   const processBalanceResult = (blockchain: string, result: unknown): void => {
@@ -66,6 +71,25 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
    * difference matters below: `hasAccounts` cannot tell them apart, and both read as false.
    */
   const accountsKnown = (blockchain: string): boolean => get(accounts)[blockchain] !== undefined;
+
+  /**
+   * Whether this chain has anything worth querying.
+   *
+   * ⭐ eth2 is the exception, and it is one the backend already makes. Its "accounts" are
+   * validators, produced by a backend task rather than an accounts read, so `hasAccounts` reads
+   * false until that task lands — and a balance pass that overtakes it would skip the chain
+   * entirely. `aggregator.py:727` exempts `ETHEREUM_BEACONCHAIN` from the same account check and
+   * routes it to `query_eth2_balances`, so the frontend gate disagreeing with it only ever loses
+   * balances the backend would have returned.
+   *
+   * Gated on the module being active, which is the backend's own other precondition — with eth2
+   * off there is nothing to query and the exemption must not apply.
+   *
+   * ⚠️ STOPGAP. The real shape is an edge from the validator fetch to the eth2 balance query, once
+   * the refresh is a declared graph rather than a `Promise.all`. See the balances redesign plan.
+   */
+  const shouldQuery = (blockchain: string): boolean =>
+    blockchain === Blockchain.ETH2 ? isEth2Enabled() : hasAccounts(blockchain);
 
   const clearChainBalances = (blockchain: string): void => {
     // 🔴 A chain whose accounts have not been read yet is left alone. Every caller arrives here
@@ -98,7 +122,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     blockchain: string,
     apiCall: () => Promise<{ taskId: number }>,
   ): Promise<Result<void, TaskError>> => {
-    if (!hasAccounts(blockchain)) {
+    if (!shouldQuery(blockchain)) {
       clearChainBalances(blockchain);
       return ok(undefined);
     }
@@ -162,5 +186,6 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     handleCachedFetch,
     handleRefresh,
     hasAccounts,
+    shouldQuery,
   };
 }

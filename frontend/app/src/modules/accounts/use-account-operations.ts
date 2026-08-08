@@ -68,6 +68,21 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     else
       chains = get(supportedChains).map(chain => chain.id);
 
+    // 🔴 eth2 leaves the full walk. Every other chain is a plain `GET .../accounts`; eth2 is a
+    // backend task that re-queries validators, so it is both the slowest leg and the only one that
+    // is not an accounts read. Inside `readChains` it gated the whole `Promise.all`, which made
+    // every consumer of account readiness — including the balance refresh — wait on a validator
+    // query. Observed after a re-login: 17 chains' accounts landed, and not one balance was
+    // fetched, because the walk never resolved.
+    //
+    // Its own read still happens, just not as something the rest of the load waits on. A consumer
+    // that reaches eth2 before it lands now sees the chain as *unknown* rather than empty, which
+    // `clearChainBalances` refuses to act on.
+    if (!blockchain && chains.includes(Blockchain.ETH2)) {
+      chains = chains.filter(chain => chain !== Blockchain.ETH2);
+      startPromise(fetch(Blockchain.ETH2));
+    }
+
     // Only a full read is tracked: that is the one that leaves the store partially filled for long
     // enough for a consumer to snapshot it. A targeted read is already scoped to what it changed.
     const read = readChains(chains);
