@@ -5,6 +5,7 @@ import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { Cancelled, type TaskError } from '@/modules/core/tasks/task-result';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
@@ -113,6 +114,39 @@ describe('useBalanceProcessingService', () => {
       service.clearChainBalances('optimism');
 
       expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, 'optimism').everCompleted).toBe(true);
+    });
+
+    /**
+     * 🔴 The destructive half. Every caller reaches `clearChainBalances` through
+     * `!hasAccounts(chain)`, which cannot tell "fetched, genuinely empty" from "not fetched yet".
+     * Clearing on unknown *erases* a chain's balances whenever a refresh races the account walk,
+     * rather than skipping it — and the balances are gone until something re-queries.
+     */
+    it('should not erase balances for a chain whose accounts are not loaded yet', () => {
+      const service = useBalanceProcessingService();
+      const { updateBalances } = useBalancesStore();
+      // ⚠️ The spy comes from the module mock factory, so unlike the pinia stores (recreated in
+      // `beforeEach`) it carries the calls every earlier test in this file made through it.
+      vi.mocked(updateBalances).mockClear();
+
+      // `zksync_lite` was never written by the accounts fetch — unknown, not empty.
+      service.clearChainBalances('zksync_lite');
+
+      expect(updateBalances).not.toHaveBeenCalled();
+    });
+
+    it('should erase balances for a chain known to have no accounts', () => {
+      const service = useBalanceProcessingService();
+      const { updateAccounts } = useBlockchainAccountsStore();
+      const { updateBalances } = useBalancesStore();
+
+      updateAccounts('scroll', []);
+      service.clearChainBalances('scroll');
+
+      expect(updateBalances).toHaveBeenCalledWith('scroll', {
+        perAccount: {},
+        totals: { assets: {}, liabilities: {} },
+      });
     });
   });
 
