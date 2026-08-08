@@ -70,13 +70,22 @@ export const useBalanceFetching = createSharedComposable(() => {
     await Promise.allSettled([fetchManualBalances(), refreshAccounts(), fetchConnectedExchangeBalances()]);
   };
 
+  /**
+   * ⭐ A refresh never snapshots. It used to end in `fetchBalances()` with an empty payload —
+   * `GET /balances` reads the shared in-memory balances and persists on the backend's own
+   * schedule, so a refresh was implicitly asking for a snapshot while its own per-chain queries
+   * were still clearing and repopulating chains. That is how a 0-value row could reach the user's
+   * net-worth history, and it forced the whole refresh to be ordered around it.
+   *
+   * Nothing is lost by dropping it: the backend takes automatic snapshots itself
+   * (`tasks/manager.py::_maybe_update_snapshot_balances`, which checks `balance_save_frequency`,
+   * runs `maybe_detect_new_tokens` first and passes `requested_save_data=True`). Explicit user
+   * snapshots go through {@link fetchBalances} from `forceSave`, which is unchanged.
+   *
+   * ⚠️ The result of that call was discarded anyway (`mapResult(…, () => {})`) — it was only ever
+   * made for the backend side effect, never for data this app reads.
+   */
   const refreshFromChain = async (): Promise<void> => {
-    // Trigger the all-balances query only after the blockchain balances refresh
-    // completes. GET /balances reads the shared in-memory balances and may persist
-    // a snapshot; a per-chain refresh clears a chain's balances before repopulating
-    // them, so running both concurrently can let the snapshot observe the transient
-    // cleared state and save a 0-value snapshot while the balances recover right
-    // after.
     if (willDetect()) {
       const nonEvmChains = getNonEvmTxChains();
       logger.debug(`refreshFromChain: detect-and-refresh-non-evm, non-EVM chains=[${nonEvmChains.join(', ')}]`);
@@ -88,7 +97,6 @@ export const useBalanceFetching = createSharedComposable(() => {
       logger.debug(`refreshFromChain: refresh-all-no-detection (${autoDetectSkipReason() ?? 'unknown'}), refreshing all chains`);
       await refreshBlockchainBalances();
     }
-    await fetchBalances();
   };
 
   const fetch = async (): Promise<void> => {

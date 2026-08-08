@@ -159,18 +159,34 @@ describe('useBalanceFetching', () => {
       expect(refreshBlockchainBalances).toHaveBeenCalledWith({ blockchain: ['btc'] });
     });
 
-    it('should query all balances only after the chain refresh completes', async () => {
+    /**
+     * ⭐ Replaces "should query all balances only after the chain refresh completes", which pinned
+     * an ordering that only mattered because the refresh asked for a snapshot at all.
+     *
+     * `GET /balances` persists on the backend's own schedule, so ending a refresh with it meant
+     * requesting a snapshot while the per-chain queries were still clearing and repopulating
+     * chains — the 0-value row. Nothing is lost by not asking: the backend takes automatic
+     * snapshots itself (`_maybe_update_snapshot_balances`), and explicit ones go through
+     * `forceSave`, which calls `fetchBalances` directly with `saveData: true`.
+     */
+    it('should not query all balances', async () => {
       willDetect.mockReturnValue(false);
       const { refreshFromChain } = useBalanceFetching();
 
       await refreshFromChain();
 
       expect(refreshBlockchainBalances).toHaveBeenCalledOnce();
-      expect(queryBalancesAsync).toHaveBeenCalledOnce();
-      // the all-balances query (which may persist a snapshot) must run strictly
-      // after the per-chain refresh to avoid snapshotting transient cleared state
-      expect(refreshBlockchainBalances.mock.invocationCallOrder[0])
-        .toBeLessThan(queryBalancesAsync.mock.invocationCallOrder[0]);
+      expect(queryBalancesAsync).not.toHaveBeenCalled();
+    });
+
+    it('should not query all balances on the detecting branch either', async () => {
+      // The old ordering held in only one of the two branches, which was the other half of the bug.
+      willDetect.mockReturnValue(true);
+      const { refreshFromChain } = useBalanceFetching();
+
+      await refreshFromChain();
+
+      expect(queryBalancesAsync).not.toHaveBeenCalled();
     });
   });
 
