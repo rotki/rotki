@@ -386,6 +386,9 @@
         "error": {
           "description": "Error at querying blockchain balances: {error}",
           "title": "Querying blockchain balances"
+        },
+        "skipped": {
+          "busy": "Already refreshing this chain"
         }
       },
       "blockchain_account_removal": {
