@@ -21,7 +21,13 @@ export interface Scheduler {
   readonly pump: () => void;
   /** Remove a still-queued job (returns true if it was queued; running jobs are unaffected). */
   readonly drop: (id: string) => boolean;
-  /** Drop every queued job (running jobs settle and free their slots). Used by orchestrator reset. */
+  /**
+   * Drop every queued job *and* release every running job's lane slot. Used by orchestrator reset.
+   *
+   * ⚠️ The slots must go too. A slot is freed from `run()`'s `finally`, and a reset abandons those
+   * runs rather than resolving them, so anything live at reset would hold its lane for the life of
+   * the process and the work submitted after it would queue forever.
+   */
   readonly clear: () => void;
   readonly isRunning: (id: string) => boolean;
   readonly isQueued: (id: string) => boolean;
@@ -134,6 +140,15 @@ export function createScheduler(
   return {
     clear(): void {
       queue.length = 0;
+      // 🔴 The slots too, not just the queue. A slot is freed from `run()`'s `finally`, and a reset
+      // abandons those runs rather than resolving them — so anything live when a session ended held
+      // its lane forever, and lane caps are 1-2. The next session's work then queued behind ghosts
+      // and never started: observed as `prices:exchange-rates` being submitted and never running
+      // after a re-login, which stalled the whole session load on its first await.
+      //
+      // Safe against the abandoned run settling later: its `finally` deletes a job that is no
+      // longer in the map (a no-op) and pumps, which is what we want anyway.
+      running.clear();
     },
     drop(id: string): boolean {
       const index = queue.findIndex(job => job.id === id);

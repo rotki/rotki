@@ -129,5 +129,48 @@ describe('useNativeTask', () => {
 
       expect(run).toHaveBeenCalledOnce();
     });
+
+    /**
+     * 🔴 The two tests above prove the *abandoned* caller settles and its id is freed. Neither
+     * proves the *next* session can start anything, and that is where this actually broke: a lane
+     * slot is released from `run()`'s `finally`, and a reset abandons those runs rather than
+     * resolving them, so every activity live at logout held its lane for the life of the process.
+     * With the lane full, the next session's submit queued behind jobs belonging to a session that
+     * no longer existed and never ran at all.
+     *
+     * In the app: `prices:exchange-rates` was submitted after a re-login and never started, which
+     * stalled `fetchCached()` on its first await — no exchange rates, no account read, no balances.
+     */
+    it('should start new work after reset even when every lane slot was taken', async () => {
+      const { submitTask } = useNativeTask();
+      const orchestrator = useTaskOrchestrator();
+
+      // Saturate the default lane with work only the orchestrator can settle.
+      const abandoned = [1, 2, 3, 4].map(async n => submitTask({
+        id: makeActivityId(ActivityKind.PRICES, `slot-${n}`),
+        kind: ActivityKind.PRICES,
+        run: neverSettles,
+        title: 'prices',
+      }));
+
+      orchestrator.reset();
+      await Promise.all(abandoned);
+
+      const run = vi.fn(async () => ok(undefined));
+      const raced = await Promise.race([
+        submitTask({
+          id: makeActivityId(ActivityKind.PRICES, 'after-reset'),
+          kind: ActivityKind.PRICES,
+          run,
+          title: 'prices',
+        }).then(() => 'settled'),
+        new Promise<string>((resolve) => {
+          setTimeout(resolve, 50, 'HUNG');
+        }),
+      ]);
+
+      expect(raced).toBe('settled');
+      expect(run).toHaveBeenCalledOnce();
+    });
   });
 });
