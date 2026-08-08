@@ -115,6 +115,68 @@ describe('useAccountLoadState', () => {
     expect(pending()).toBeUndefined();
   });
 
+  describe('the unstarted-read bound', () => {
+    /**
+     * `release()` normally ends the wait, but its caller sits behind
+     * `allSettled([fetchCached(), …])`, and `allSettled` cannot settle if `fetchCached` never does.
+     * Observed in the app: a poisoned `prices:exchange-rates` id stalled `fetchCached` on its first
+     * await, and the history sync waited forever.
+     */
+    it('should release a gate whose read never starts', async () => {
+      vi.useFakeTimers();
+      const { useAccountLoadState } = await importModule();
+      const { arm, pending } = useAccountLoadState();
+
+      arm();
+      const waiting = pending();
+      await vi.advanceTimersByTimeAsync(30_000);
+
+      await expect(waiting).resolves.toBeUndefined();
+      expect(pending()).toBeUndefined();
+      vi.useRealTimers();
+    });
+
+    /**
+     * The bound covers "promised but never started" only. A read that is genuinely in flight must
+     * be waited out however long it takes — expiring mid-read releases waiters into a half-filled
+     * store, which is the bug this composable exists to prevent.
+     */
+    it('should not expire while a read is actually in flight', async () => {
+      vi.useFakeTimers();
+      const { useAccountLoadState } = await importModule();
+      const { arm, pending, track } = useAccountLoadState();
+      let finish = (): void => {};
+      const read = new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+
+      arm();
+      const tracked = track(read);
+      // Well past the bound, with the read still running.
+      await vi.advanceTimersByTimeAsync(120_000);
+      expect(pending()).toBeDefined();
+
+      finish();
+      await tracked;
+      expect(pending()).toBeUndefined();
+      vi.useRealTimers();
+    });
+
+    it('should not fire after the gate was already released', async () => {
+      vi.useFakeTimers();
+      const { useAccountLoadState } = await importModule();
+      const { arm, pending, release } = useAccountLoadState();
+
+      arm();
+      release();
+      await vi.advanceTimersByTimeAsync(30_000);
+
+      // A late timer must not resurrect or re-settle anything.
+      expect(pending()).toBeUndefined();
+      vi.useRealTimers();
+    });
+  });
+
   it('should join a second arm to the waiter the first one created', async () => {
     const { useAccountLoadState } = await importModule();
     const { arm, pending, release } = useAccountLoadState();
