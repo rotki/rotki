@@ -48,12 +48,16 @@ export function useAccountOperations(): UseAccountOperationsReturn {
    * Two chains at a time. `fetch` reports its own failures, so one chain failing must not abandon
    * the rest.
    */
-  const readChains = async (chains: string[]): Promise<void> => {
+  const readChains = async (chains: string[], onChainRead?: (chain: string) => void): Promise<void> => {
     const permits = new Semaphore(2);
     await Promise.all(chains.map(async (chain) => {
       await permits.acquire();
       try {
         await fetch(chain);
+        // ⭐ Per chain, not per walk. This chain's accounts are known now, and nothing about its
+        // balances depends on the other sixteen — so handing it downstream here is what stops the
+        // slowest chain from gating every other chain's balances.
+        onChainRead?.(chain);
       }
       finally {
         permits.release();
@@ -85,7 +89,22 @@ export function useAccountOperations(): UseAccountOperationsReturn {
 
     // Only a full read is tracked: that is the one that leaves the store partially filled for long
     // enough for a consumer to snapshot it. A targeted read is already scoped to what it changed.
-    const read = readChains(chains);
+    //
+    // ⭐ On the full walk each chain's data refresh runs as that chain's accounts land, rather than
+    // all of them after all seventeen. A targeted read keeps its old shape — `refreshAccounts`
+    // still drives balances for the chain it was asked about.
+    //
+    // These stand alone: independent, deduplicated by chain, and deliberately NOT under an
+    // umbrella. A data refresh from the DB is plumbing, not work — the umbrella belongs to the job
+    // (detection and the network query), which is what a user watches, cancels or supersedes.
+    //
+    // Not awaited either: the caller waits for *accounts*, and a chain's balances arriving later is
+    // the point.
+    const readCachedBalances = (chain: string): void => {
+      startPromise(fetchBlockchainBalances({ blockchain: chain }));
+    };
+
+    const read = readChains(chains, blockchain ? undefined : readCachedBalances);
     await (blockchain ? read : track(read));
 
     const namesPayload: AddressBookSimplePayload[] = [];
@@ -123,11 +142,14 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     const isEth2 = chain === Blockchain.ETH2;
 
     const shouldRefresh = !!(isEth2 || uniqueAddresses);
-    const pending: Promise<any>[] = [
-      shouldRefresh
-        ? refreshBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, isXpub }, periodic)
-        : fetchBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, isXpub }),
-    ];
+    // ⚠️ On the full walk `fetchAccounts` has already read each chain's cached balances as that
+    // chain landed, so repeating the sweep here would query every chain a second time. A targeted
+    // refresh still drives its own chain: nothing else will.
+    const pending: Promise<any>[] = [];
+    if (shouldRefresh)
+      pending.push(refreshBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, isXpub }, periodic));
+    else if (chain !== undefined)
+      pending.push(fetchBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, isXpub }));
 
     if (isEth && getAddresses(Blockchain.ETH2).length > 0)
       startPromise(refreshAccounts({ blockchain: Blockchain.ETH2 }));

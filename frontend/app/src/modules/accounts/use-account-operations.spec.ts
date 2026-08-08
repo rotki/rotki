@@ -135,6 +135,50 @@ describe('useAccountOperations', () => {
       expect(h.fetch).toHaveBeenCalledWith('eth2');
     });
 
+    /**
+     * ⭐ The point of the per-chain pipeline: a chain's balances are read when *its* accounts land,
+     * not when all of them have. Previously the whole sweep ran after the walk, so the slowest
+     * chain gated every other chain's balances.
+     */
+    it('should read a chain\'s cached balances as that chain lands, not after the walk', async () => {
+      h.chainIds = ['eth', 'btc'];
+      let releaseBtc = (): void => {};
+      h.fetch.mockImplementation(async (chain: string) => {
+        if (chain === 'btc') {
+          return new Promise<void>((resolve): void => {
+            releaseBtc = resolve;
+          });
+        }
+
+        return undefined;
+      });
+
+      const { useAccountOperations } = await importModule();
+      const walk = useAccountOperations().fetchAccounts();
+      await vi.waitFor(() => {
+        expect(h.fetchBlockchainBalances).toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'eth' }));
+      });
+
+      // eth's balances were read while btc's accounts are still outstanding.
+      expect(h.fetchBlockchainBalances).not.toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'btc' }));
+
+      releaseBtc();
+      await walk;
+    });
+
+    it('should not sweep every chain again after the walk', async () => {
+      const { useAccountOperations } = await importModule();
+      await useAccountOperations().refreshAccounts();
+      await flushPromises();
+
+      // One read per chain, from the walk — not a second undirected sweep.
+      expect(h.fetchBlockchainBalances).toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'eth' }));
+      expect(h.fetchBlockchainBalances).toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'btc' }));
+      expect(h.fetchBlockchainBalances).not.toHaveBeenCalledWith(
+        expect.objectContaining({ blockchain: undefined }),
+      );
+    });
+
     it('should fall back to every supported chain when no chain is given', async () => {
       const { useAccountOperations } = await importModule();
       await useAccountOperations().fetchAccounts();

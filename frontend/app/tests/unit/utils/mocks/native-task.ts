@@ -8,6 +8,9 @@ export interface SubmittedSpec {
   id: string;
   kind: string;
   run: (ctx: ActivityContext) => Promise<unknown>;
+  /** Declared so a spec can assert scheduling intent (an umbrella's lane, a child's parent). */
+  lane?: string;
+  parent?: string;
 }
 
 /**
