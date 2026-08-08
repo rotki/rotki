@@ -7,7 +7,7 @@ import type { TaskError } from '@/modules/core/tasks/task-result';
  * keyed by a lane that exists — a typo like `balnces` is a compile error rather than a silent
  * fallback to the default cap, which would otherwise surface only as unexplained concurrency.
  */
-export const STATIC_LANES = ['default', 'balances', 'exchange', 'session', 'umbrella', 'chain-sync', 'decode'] as const;
+export const STATIC_LANES = ['default', 'balances', 'balances-cached', 'exchange', 'session', 'umbrella', 'chain-sync', 'decode'] as const;
 
 export type StaticLane = (typeof STATIC_LANES)[number];
 
@@ -39,6 +39,24 @@ export const DEFAULT_LANE: StaticLane = 'default';
  * so initial load is not throttled.
  */
 export const BALANCES_LANE: StaticLane = 'balances';
+
+/**
+ * Cached (DB-backed) blockchain balance reads.
+ *
+ * Their own lane rather than a share of {@link DEFAULT_LANE}: each chain's cached read is submitted
+ * as that chain's accounts land, so the fan-out follows the account walk instead of one bounded
+ * sweep. On `default` it would be capped only incidentally (by `defaultCap`) while contending with
+ * every other default-lane activity.
+ *
+ * ⚠️ The cap belongs here and nowhere else. These reads are `ephemeral`, so they never reach the
+ * task centre, which makes a limiter wrapped around them especially easy to add and impossible to
+ * notice — the trap {@link DECODE_LANE} describes.
+ *
+ * 🔴 Not free: `GET /balances/blockchains/<chain>` serves from the DB for a returning user, but
+ * falls back to a full node query when the cache is empty (first login, after a purge, a newly
+ * added chain). This cap is what bounds that case.
+ */
+export const BALANCES_CACHED_LANE: StaticLane = 'balances-cached';
 
 /** Exchange balance + savings queries run here; capped at 2, a pool separate from {@link BALANCES_LANE}. */
 export const EXCHANGE_LANE: StaticLane = 'exchange';

@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { TaskOrchestrator } from './core/orchestrator/api';
 import { createTaskOrchestrator } from './core/orchestrator/orchestrator';
-import { ACCOUNT_SYNC_LANE_PREFIX, ACCOUNTS_ADD_LANE_PREFIX, ACCOUNTS_REMOVE_LANE_PREFIX, BALANCES_LANE, CHAIN_SYNC_LANE, DECODE_LANE, EXCHANGE_EVENTS_LANE_PREFIX, EXCHANGE_LANE, SESSION_LANE, UMBRELLA_LANE } from './core/orchestrator/spec';
+import { ACCOUNT_SYNC_LANE_PREFIX, ACCOUNTS_ADD_LANE_PREFIX, ACCOUNTS_REMOVE_LANE_PREFIX, BALANCES_CACHED_LANE, BALANCES_LANE, CHAIN_SYNC_LANE, DECODE_LANE, EXCHANGE_EVENTS_LANE_PREFIX, EXCHANGE_LANE, SESSION_LANE, UMBRELLA_LANE } from './core/orchestrator/spec';
 import { type Activity, type ActivityKind, makeActivityId, type WorkStatus } from './core/types';
 
 /**
@@ -57,6 +57,7 @@ export interface UseTaskOrchestratorReturn extends TaskOrchestrator {
 export const useTaskOrchestrator = createSharedComposable((): UseTaskOrchestratorReturn => {
   const orchestrator = createTaskOrchestrator({
     caps: {
+      [BALANCES_CACHED_LANE]: 2,
       [BALANCES_LANE]: 2,
       [CHAIN_SYNC_LANE]: 2,
       [DECODE_LANE]: 2,
