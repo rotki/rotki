@@ -6,6 +6,8 @@ import { TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 
 const h = vi.hoisted(() => ({
+  // Mutable so a test can add a chain (eth2) without a second module mock.
+  chainIds: ['eth', 'btc'],
   detectEvmAccounts: vi.fn(),
   fetch: vi.fn(),
   fetchBlockchainBalances: vi.fn(),
@@ -44,7 +46,7 @@ vi.mock('@/modules/core/common/use-supported-chains', async () => {
   return {
     useSupportedChains: vi.fn(() => ({
       isEvm: h.isEvm,
-      supportedChains: vue.ref([{ id: 'eth' }, { id: 'btc' }]),
+      supportedChains: vue.computed(() => h.chainIds.map(id => ({ id }))),
       supportsTransactions: h.supportsTransactions,
     })),
   };
@@ -84,6 +86,7 @@ describe('useAccountOperations', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    h.chainIds = ['eth', 'btc'];
   });
 
   describe('fetchAccounts', () => {
@@ -102,6 +105,34 @@ describe('useAccountOperations', () => {
       await useAccountOperations().fetchAccounts('btc');
       expect(h.fetch).toHaveBeenCalledWith('btc');
       expect(h.fetchEnsNames).not.toHaveBeenCalled();
+    });
+
+    /**
+     * 🔴 eth2 is not an accounts read — it is a backend task that re-queries validators, and the
+     * slowest leg of the walk. Inside the tracked `Promise.all` it gated everything downstream:
+     * observed after a re-login as all 17 chains' accounts landing and not one balance being
+     * fetched, because the walk never resolved.
+     */
+    it('should not hold the full walk on eth2', async () => {
+      h.chainIds = ['eth', 'btc', 'eth2'];
+      h.fetch.mockImplementation(async (chain: string) => {
+        if (chain === 'eth2')
+          return new Promise<void>(() => {});
+
+        return undefined;
+      });
+
+      const { useAccountOperations } = await importModule();
+      const walk = await Promise.race([
+        useAccountOperations().fetchAccounts().then(() => 'resolved'),
+        new Promise<string>((resolve) => {
+          setTimeout(resolve, 50, 'HUNG');
+        }),
+      ]);
+
+      expect(walk).toBe('resolved');
+      // Still read, just not waited on.
+      expect(h.fetch).toHaveBeenCalledWith('eth2');
     });
 
     it('should fall back to every supported chain when no chain is given', async () => {

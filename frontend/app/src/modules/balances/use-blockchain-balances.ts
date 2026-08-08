@@ -25,7 +25,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const { statusOf, version } = useTaskOrchestrator();
   const valueThreshold = useValueThreshold(BalanceSource.BLOCKCHAIN);
 
-  const { clearChainBalances, handleCachedFetch, handleRefresh, hasAccounts } = useBalanceProcessingService();
+  const { clearChainBalances, handleCachedFetch, handleRefresh, shouldQuery } = useBalanceProcessingService();
   const { submitTask } = useNativeTask();
   const refreshState = useBalanceRefreshState();
 
@@ -50,7 +50,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     await Promise.allSettled(
       chains.map(async (chain) => {
         const chainPayload = { addresses, blockchain: chain, isXpub };
-        if (!hasAccounts(chain)) {
+        if (!shouldQuery(chain)) {
           clearChainBalances(chain);
           return;
         }
@@ -77,7 +77,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     await Promise.allSettled(
       chains.map(async (chain) => {
         const chainPayload = { addresses, blockchain: chain, isXpub };
-        if (!hasAccounts(chain)) {
+        if (!shouldQuery(chain)) {
           clearChainBalances(chain);
           return;
         }

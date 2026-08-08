@@ -20,6 +20,12 @@ vi.mock('@/modules/balances/use-balances-store', () => ({
   }),
 }));
 
+const mockIsEth2Enabled = vi.fn((): boolean => true);
+
+vi.mock('@/modules/staking/use-blockchain-validators-store', () => ({
+  useBlockchainValidatorsStore: vi.fn(() => ({ isEth2Enabled: mockIsEth2Enabled })),
+}));
+
 vi.mock('@/modules/core/common/use-supported-chains', async () => {
   const { computed } = await import('vue');
   return {
@@ -86,6 +92,38 @@ describe('useBalanceProcessingService', () => {
     updateAccounts(Blockchain.ETH, [
       createAccount({ address: '0x1', label: null, tags: null }, { chain: Blockchain.ETH, nativeAsset: 'ETH' }),
     ]);
+  });
+
+  describe('shouldQuery', () => {
+    /**
+     * 🔴 eth2's "accounts" are validators, produced by a backend task rather than an accounts read,
+     * so `hasAccounts` is false until that task lands. Gating on it means a balance pass that
+     * overtakes the validator fetch skips eth2 entirely — and the backend would have answered:
+     * `aggregator.py:727` exempts ETHEREUM_BEACONCHAIN from the same check.
+     */
+    it('should query eth2 even before its validators have loaded', () => {
+      mockIsEth2Enabled.mockReturnValue(true);
+      const service = useBalanceProcessingService();
+
+      expect(service.hasAccounts(Blockchain.ETH2)).toBe(false);
+      expect(service.shouldQuery(Blockchain.ETH2)).toBe(true);
+    });
+
+    // The backend's other precondition: with the module off there is nothing to query.
+    it('should not query eth2 when the module is disabled', () => {
+      mockIsEth2Enabled.mockReturnValue(false);
+      const service = useBalanceProcessingService();
+
+      expect(service.shouldQuery(Blockchain.ETH2)).toBe(false);
+    });
+
+    it('should still require accounts for every other chain', () => {
+      mockIsEth2Enabled.mockReturnValue(true);
+      const service = useBalanceProcessingService();
+
+      expect(service.shouldQuery('optimism')).toBe(false);
+      expect(service.shouldQuery(Blockchain.ETH)).toBe(true);
+    });
   });
 
   describe('clearChainBalances', () => {
