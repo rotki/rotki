@@ -1,5 +1,6 @@
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceSeed } from '@/modules/assets/prices/use-price-seed';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
@@ -32,6 +33,7 @@ export function useDataLoader(): UseDataLoaderReturn {
   const { refreshPrices } = usePriceRefresh();
   const { seedFromHistoric } = usePriceSeed();
   const { markCompleted } = useTaskOrchestrator();
+  const { arm: armAccountLoad, release: releaseAccountLoad } = useAccountLoadState();
 
   /**
    * Nothing is fetched on this path: the balances are already in the DB and were restored with the
@@ -56,10 +58,18 @@ export function useDataLoader(): UseDataLoaderReturn {
       fetchIgnoredAssets(),
       fetchWhitelistedAssets(),
     ]);
-    await Promise.allSettled([
-      fetchCached(),
-      fetchNetValue(),
-    ]);
+    try {
+      await Promise.allSettled([
+        fetchCached(),
+        fetchNetValue(),
+      ]);
+    }
+    finally {
+      // The bound on the account gate. `fetchAccounts` normally opens it much earlier, the moment
+      // its read settles; this is the guarantee for the case where the read never happens at all,
+      // so a waiter cannot outlive the load that was supposed to satisfy it.
+      releaseAccountLoad();
+    }
     await seedFromHistoric();
     startPromise(refreshPrices());
     startPromise(refreshFromChain());
@@ -78,6 +88,12 @@ export function useDataLoader(): UseDataLoaderReturn {
       markRestored();
     }
     else if (get(shouldFetchData)) {
+      // Armed here, synchronously, rather than inside the read. `refreshData` awaits the
+      // ignored/whitelisted lists and then the exchange rates before it ever reaches the accounts,
+      // and a consumer that snapshots the store during that stretch sees it empty. Navigating
+      // straight into history is fast enough to land there, which is why the sync could report
+      // complete over a scope of nothing.
+      armAccountLoad();
       startPromise(refreshData());
     }
     else {
