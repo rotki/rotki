@@ -1,3 +1,4 @@
+import { flushPromises } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 async function importModule(): Promise<typeof import('./use-account-load-state')> {
@@ -45,6 +46,86 @@ describe('useAccountLoadState', () => {
 
     await expect(waiting).resolves.toBeUndefined();
     expect(pending()).toBeUndefined();
+  });
+
+  // The whole point of the third state: at session start the store is empty rather than partial,
+  // and nothing is in flight yet because the load is still awaiting the exchange rates.
+  it('should report pending once armed, before any read starts', async () => {
+    const { useAccountLoadState } = await importModule();
+    const { arm, pending } = useAccountLoadState();
+
+    expect(pending()).toBeUndefined();
+    arm();
+    expect(pending()).toBeDefined();
+  });
+
+  it('should keep an armed waiter waiting until the first read finishes', async () => {
+    const { useAccountLoadState } = await importModule();
+    const { arm, pending, track } = useAccountLoadState();
+    let finish = (): void => {};
+    const read = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+
+    arm();
+    const waiting = pending();
+    let settled = false;
+    const observer = waiting?.then(() => {
+      settled = true;
+    });
+
+    // Armed but not started: a waiter must not be released by the arming itself. Draining the
+    // microtask queue is enough — if the gate were already open, `observer` would have run by now.
+    await flushPromises();
+    expect(settled).toBe(false);
+
+    const tracked = track(read);
+    finish();
+    await tracked;
+    await observer;
+
+    expect(settled).toBe(true);
+    expect(pending()).toBeUndefined();
+  });
+
+  // 🔴 The deadlock case. A resumed session restores balances without re-reading accounts, so the
+  // read the gate was armed for never happens. Without the release the waiter hangs forever.
+  it('should release an armed waiter when no read ever happens', async () => {
+    const { useAccountLoadState } = await importModule();
+    const { arm, pending, release } = useAccountLoadState();
+
+    arm();
+    const waiting = pending();
+    release();
+
+    await expect(waiting).resolves.toBeUndefined();
+    expect(pending()).toBeUndefined();
+  });
+
+  // A waiter belongs to the session that armed it; logging out must not strand it on the next user.
+  it('should release an armed waiter on reset', async () => {
+    const { useAccountLoadState } = await importModule();
+    const { arm, pending, reset } = useAccountLoadState();
+
+    arm();
+    const waiting = pending();
+    reset();
+
+    await expect(waiting).resolves.toBeUndefined();
+    expect(pending()).toBeUndefined();
+  });
+
+  it('should join a second arm to the waiter the first one created', async () => {
+    const { useAccountLoadState } = await importModule();
+    const { arm, pending, release } = useAccountLoadState();
+
+    arm();
+    const first = pending();
+    arm();
+    expect(pending()).toBe(first);
+
+    release();
+    await expect(first).resolves.toBeUndefined();
   });
 
   it('should track the newer read when one starts while another is finishing', async () => {
