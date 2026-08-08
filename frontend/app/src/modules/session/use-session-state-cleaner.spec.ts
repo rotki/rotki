@@ -10,6 +10,7 @@ const stop = vi.fn();
 const reset = vi.fn();
 const resetState = vi.fn();
 const cancelByTag = vi.fn();
+const resetNativeTasks = vi.fn();
 
 vi.mock('@/modules/auth/use-session-auth-store', () => ({
   useSessionAuthStore: (): object => ({ logged }),
@@ -25,6 +26,11 @@ vi.mock('@/modules/shell/app/use-monitor-service', () => ({
 
 vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
   useTaskOrchestrator: (): object => ({ reset }),
+}));
+
+// Mocked rather than left real: it reaches `useTaskHandler`, which needs an active pinia.
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: (): object => ({ reset: resetNativeTasks }),
 }));
 
 vi.mock('@/modules/shell/app/store-plugins', () => ({
@@ -64,6 +70,9 @@ describe('useSessionStateCleaner', () => {
     expect(stop).toHaveBeenCalledOnce();
     expect(clearUploadStatus).toHaveBeenCalledOnce();
     expect(reset).toHaveBeenCalledOnce();
+    // An id left in the submission map outlives the session, and submitTask dedups by id, so the
+    // next session would join a promise that can never resolve.
+    expect(resetNativeTasks).toHaveBeenCalledOnce();
     expect(resetState).toHaveBeenCalledOnce();
     // The login-time suggestion probes are not awaited by the login, so they can outlive it.
     expect(cancelByTag).toHaveBeenCalledWith(SUGGESTION_PROBE_TAG);
@@ -75,6 +84,7 @@ describe('useSessionStateCleaner', () => {
     await nextTick();
     expect(clearUploadStatus).not.toHaveBeenCalled();
     expect(reset).not.toHaveBeenCalled();
+    expect(resetNativeTasks).not.toHaveBeenCalled();
     expect(resetState).not.toHaveBeenCalled();
   });
 });
