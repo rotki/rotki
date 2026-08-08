@@ -3,6 +3,7 @@ import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { assert, type BigNumber, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
 import dayjs from 'dayjs';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { computeNetValueDelta, type NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
 import SnapshotActionButton from '@/modules/dashboard/SnapshotActionButton.vue';
@@ -14,8 +15,6 @@ import { useSettingsOperations } from '@/modules/settings/use-settings-operation
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import TimeframeSelector from '@/modules/statistics/TimeframeSelector.vue';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
-import { ActivityKind } from '@/modules/task-center/core/types';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -32,8 +31,7 @@ const premium = usePremium();
 const { updateFrontendSetting } = useSettingsOperations();
 // Was `initial-loading OR section-loading`; on the ledger the first implies the second, so any
 // balance work in flight is the whole condition.
-const { useIsActive } = useTaskCenter();
-const isLoading = useIsActive(ActivityKind.BLOCKCHAIN_BALANCES);
+const { loadingBlockchainBalances: isLoading } = useBalancesLoading();
 
 const zoomRange = ref<NetValueZoomRange>();
 

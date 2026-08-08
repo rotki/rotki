@@ -9,6 +9,7 @@ import { useAccountImportProgressStore } from '@/modules/accounts/use-account-im
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { getKeyType, guessPrefix, isPrefixed } from '@/modules/accounts/xpub';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
+import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { logger } from '@/modules/core/common/logging/logging';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/modules/core/common/use-csv-import-export';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -16,8 +17,6 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { useTagOperations } from '@/modules/tags/use-tag-operations';
-import { ActivityKind } from '@/modules/task-center/core/types';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseAccountImportReturn {
   importAccounts: (file: File) => Promise<void>;
@@ -39,8 +38,7 @@ export function useAccountImport(): UseAccountImportReturn {
   const { increment, setTotal, skip } = progressStore;
   const { progress } = storeToRefs(progressStore);
 
-  const { useIsActive } = useTaskCenter();
-  const blockchainLoading = useIsActive(ActivityKind.BLOCKCHAIN_BALANCES);
+  const { loadingBlockchainBalances: blockchainLoading } = useBalancesLoading();
   const doneLoading = refDebounced(logicNot(blockchainLoading), 2000);
 
   async function handleAccountRestore(rows: CSVRow[]): Promise<void> {
