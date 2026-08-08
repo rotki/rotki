@@ -1,3 +1,4 @@
+import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { api } from '@/modules/core/api/rotki-api';
 import { useSync } from '@/modules/session/use-session-sync';
@@ -13,6 +14,7 @@ export function useSessionStateCleaner(): void {
   const { start, stop } = useMonitorService();
   const orchestrator = useTaskOrchestrator();
   const { reset: resetNativeTasks } = useNativeTask();
+  const { reset: resetAccountLoad } = useAccountLoadState();
 
   function cleanup(): void {
     clearUploadStatus();
@@ -28,6 +30,8 @@ export function useSessionStateCleaner(): void {
     // `prices:exchange-rates` stalled `fetchCached` on its first await after a re-login, leaving
     // the new session with no exchange rates, no accounts and no balances.
     resetNativeTasks();
+    // Same reason, same scope: a read tracked here outlives the session that started it.
+    resetAccountLoad();
     resetState();
   }
 
