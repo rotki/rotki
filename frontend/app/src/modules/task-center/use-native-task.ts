@@ -92,6 +92,12 @@ interface UseNativeTaskReturn {
    */
   readonly submitTask: <T = void>(spec: NativeActivitySpec<T>) => Promise<TaskOutcome<T>>;
   /**
+   * Settle and drop every in-flight submission. Called when a session ends, so no id survives into
+   * the next one — `submitTask` dedups by id, and a surviving id hands the next session a promise
+   * that can never resolve.
+   */
+  readonly reset: () => void;
+  /**
    * Cancel one activity by identity — `orchestrator.cancel(makeActivityId(kind, ...parts))`. The
    * replacement for the old imperative cancel-by-task-type at producer call sites: it settles the
    * activity terminal *immediately* (so awaiting readers and `useWorkStatus` spinners unblock even
@@ -150,6 +156,33 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
    */
   const inflight = new Map<ActivityId, Promise<TaskOutcome<never>>>();
 
+  /**
+   * How to settle each in-flight submission from the outside. Held beside {@link inflight} because
+   * the promise alone cannot be resolved by anyone but its own closure, and a session ending must
+   * be able to settle every caller it is about to abandon.
+   */
+  const inflightFinish = new Map<ActivityId, (outcome: TaskOutcome<never>) => void>();
+
+  /**
+   * Drop every in-flight submission, settling its callers first.
+   *
+   * 🔴 Must run when a session ends. This map is app-scoped, so an id left here outlives the
+   * session that submitted it, and `submitTask` dedups on id identity — so the *next* session's
+   * caller is handed a promise belonging to a session that is gone and can never resolve. Observed
+   * as `prices:exchange-rates` joining an 11.7s-old promise after a re-login, which stalled
+   * `fetchCached` on its first await: no exchange rates, so no account read, so no balances.
+   *
+   * Settled as cancelled rather than merely cleared, because an abandoned caller is still awaiting
+   * this promise; dropping the reference alone would suspend it forever.
+   */
+  function reset(): void {
+    for (const finishInflight of inflightFinish.values())
+      finishInflight(err(Cancelled({ message: 'session ended' })));
+
+    inflight.clear();
+    inflightFinish.clear();
+  }
+
   function cancelActivity(kind: ActivityKind, ...parts: (string | number)[]): void {
     // The Result is deliberately dropped: "nothing to cancel" (unknown id / already terminal) is
     // the normal case at a supersede site, not an error the caller can act on.
@@ -178,6 +211,7 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
       settled = true;
       stop();
       inflight.delete(spec.id);
+      inflightFinish.delete(spec.id);
       settle(outcome);
     }
 
@@ -230,6 +264,7 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     // is why the map is keyed to `never` rather than `unknown`.
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- a per-entry key/value type correlation TypeScript cannot express without existential types; contained to this line
     inflight.set(spec.id, promise as Promise<TaskOutcome<never>>);
+    inflightFinish.set(spec.id, finish);
     orchestrator.submit({ ...spec, cancel, run });
     return promise;
   }
@@ -240,6 +275,7 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     cancelByPrefix,
     reportProgress,
     statusOf,
+    reset,
     submitTask,
     useIsActive,
     useWorkStatus,
