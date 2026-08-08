@@ -68,6 +68,14 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const accountsKnown = (blockchain: string): boolean => get(accounts)[blockchain] !== undefined;
 
   const clearChainBalances = (blockchain: string): void => {
+    // 🔴 A chain whose accounts have not been read yet is left alone. Every caller arrives here
+    // through `!hasAccounts(chain)`, and that cannot tell "fetched, genuinely empty" from "not
+    // fetched yet" — both read false. So clearing on unknown *erases* a chain's balances whenever
+    // a refresh races the account walk, rather than merely skipping it. Only a known-empty chain
+    // is cleared; an unknown one keeps whatever it has until its accounts land.
+    if (!accountsKnown(blockchain))
+      return;
+
     updateBalances(blockchain, {
       perAccount: {},
       totals: {
@@ -78,11 +86,11 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     // No accounts means no activity was submitted, so nothing would otherwise record that this
     // chain is settled. Without it an empty chain reads as perpetually unloaded.
     //
-    // Only once the account set is known, though: a refresh that races the accounts fetch sees
-    // every chain as empty, and recording completions there marked the whole app "ever loaded"
-    // with no balances — dropping the initial-loading state while the real data was still coming.
-    if (accountsKnown(blockchain))
-      markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
+    // Safe here because the early return above has already established the account set is known: a
+    // refresh racing the accounts fetch used to see every chain as empty, and recording completions
+    // there marked the whole app "ever loaded" with no balances — dropping the initial-loading
+    // state while the real data was still coming.
+    markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
   };
 
   const executeBalanceQuery = async (
