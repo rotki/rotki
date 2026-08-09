@@ -6047,7 +6047,8 @@
       },
       "blockchain_balances": {
         "cached": "Reading cached {chain} data",
-        "query": "Querying the {chain} network"
+        "chain": "Refreshing {chain}",
+        "run": "Refreshing {count} chains"
       },
       "csv_import": {
         "source": "Importing data from {source}"

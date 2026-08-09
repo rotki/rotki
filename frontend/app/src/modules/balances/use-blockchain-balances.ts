@@ -130,7 +130,11 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
 
           return handleRefresh(runTask, chainPayload);
         },
-        subtitle: activityLabelFor(msg.$t('task_center.activity.blockchain_balances.query'), { chain: getChainName(chain) }),
+        // ⚠️ Stage-neutral, and it has to be: a subtitle is fixed at submit time while this job now
+        // has two stages, so "Querying the Ethereum network" sat there for minutes while the job
+        // was in fact still detecting tokens. `ActivitySteps` carries no text, so the row cannot
+        // narrate the stage — it can only avoid claiming the wrong one.
+        subtitle: activityLabelFor(msg.$t('task_center.activity.blockchain_balances.chain'), { chain: getChainName(chain) }),
         title: t('task_center.group.blockchain_balances'),
       });
     };
@@ -148,6 +152,9 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
       {
         id: makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, ActivityPart.RUN, setDigest(chains), mode),
         kind: ActivityKind.BLOCKCHAIN_BALANCES,
+        // ⚠️ Without this the umbrella is a bare group title, indistinguishable from a chain job in
+        // the panel — every other row says what it is doing, and the parent has to as well.
+        subtitle: activityLabelFor(msg.$t('task_center.activity.blockchain_balances.run'), { count: chains.length }),
         title: t('task_center.group.blockchain_balances'),
       },
       chains,
