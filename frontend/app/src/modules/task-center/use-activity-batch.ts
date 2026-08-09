@@ -24,6 +24,14 @@ interface BatchUmbrella extends BatchLabels {
    * umbrella is suppressed, so a single-item batch does not orphan its child from the outer batch.
    */
   readonly parent?: ActivityId;
+  /**
+   * Keep this umbrella out of the completion ledger — see {@link ActivitySpec.container}.
+   *
+   * ⚠️ Opt-in per caller, because it is not always right: an umbrella that *is* the subject for its
+   * kind (`HISTORY_SYNC`) has a load-bearing ledger entry. Set it where the children are the
+   * subjects and the umbrella is only their container.
+   */
+  readonly container?: boolean;
 }
 
 interface UseActivityBatchReturn {
@@ -72,6 +80,7 @@ export function useActivityBatch(): UseActivityBatchReturn {
 
     const batch = submitTask({
       id: batchId,
+      container: umbrella.container,
       kind: umbrella.kind,
       lane: UMBRELLA_LANE,
       parent: umbrella.parent,

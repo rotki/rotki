@@ -104,7 +104,15 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
 
     const chainJob = async (chain: string, parent: ActivityId | undefined): Promise<void> => {
       const chainPayload = { addresses, blockchain: chain, isXpub };
-      const id = makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain);
+      // 🔴 `detect` is part of the identity, not just the body. `submitTask` dedups by id, so with a
+      // shared id a login sweep landing while any plain background refresh is in flight (a wallet
+      // transaction, a websocket refresh, the eth2 watcher) joins that run and **detection for the
+      // chain never happens** — no row, no log, no error. `withDetection` still writes
+      // `lastAutoDetectAt` in its `finally`, so the cooldown then suppresses the next login's sweep
+      // too, and the tokens stay undetected for a day.
+      const id = detect
+        ? makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain, ActivityPart.DETECT)
+        : makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain);
       await submit({
         id,
         parent,
@@ -159,6 +167,11 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     await runActivityBatch(
       {
         id: makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, ActivityPart.RUN, setDigest(chains), mode),
+        // 🔴 The chains are the subjects; this only contains them. Without it the umbrella settles
+        // COMPLETE whenever its children settle — including when every one of them FAILED — and
+        // writes a success under `BLOCKCHAIN_BALANCES`, so `everCompleted` for the whole kind reads
+        // true and the dashboard shows a settled, empty portfolio after a total failure.
+        container: true,
         kind: ActivityKind.BLOCKCHAIN_BALANCES,
         // ⚠️ Without this the umbrella is a bare group title, indistinguishable from a chain job in
         // the panel — every other row says what it is doing, and the parent has to as well.
