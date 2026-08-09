@@ -2,8 +2,8 @@ import type { MaybeRef } from 'vue';
 import type { AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { Semaphore } from 'es-toolkit';
-import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { allWithConcurrency, type ResultAsync } from 'plainfp/result-async';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useAccountFetching } from '@/modules/accounts/use-account-fetching';
@@ -17,6 +17,9 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { activityLabel } from '@/modules/task-center/activity-labels';
 import { ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
+
+/** Chains read at a time during the account walk. */
+const ACCOUNT_READ_CONCURRENCY = 2;
 
 export interface RefreshAccountsParams {
   blockchain?: MaybeRef<string>;
@@ -45,13 +48,21 @@ export function useAccountOperations(): UseAccountOperationsReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   /**
-   * Two chains at a time. `fetch` reports its own failures, so one chain failing must not abandon
-   * the rest.
+   * Two chains at a time.
+   *
+   * ⭐ Bounded by `allWithConcurrency` rather than a semaphore. The fit is structural: the chain
+   * set is a fixed batch known upfront, with no dynamic arrival, no cancel and no progress —
+   * precisely the case the orchestrator is *not* for (`scheduler.ts:41` draws the same boundary
+   * from the other side). The bound is a function call, so there is no second scheduler and no
+   * lane to mistake for an ordering.
+   *
+   * 🔴 `allWithConcurrency` **short-circuits on the first `err`**: in-flight factories finish and
+   * no new ones start. One chain failing must not abandon the other sixteen, so each factory is
+   * infallible — `ResultAsync<void, never>`. Nothing in the package enforces that, and the naive
+   * call site silently drops chains.
    */
   const readChains = async (chains: string[], onChainRead?: (chain: string) => void): Promise<void> => {
-    const permits = new Semaphore(2);
-    await Promise.all(chains.map(async (chain) => {
-      await permits.acquire();
+    const factories = chains.map(chain => async (): ResultAsync<void, never> => {
       try {
         await fetch(chain);
         // ⭐ Per chain, not per walk. This chain's accounts are known now, and nothing about its
@@ -59,10 +70,15 @@ export function useAccountOperations(): UseAccountOperationsReturn {
         // slowest chain from gating every other chain's balances.
         onChainRead?.(chain);
       }
-      finally {
-        permits.release();
+      catch (error: unknown) {
+        // Swallowed rather than rethrown: a rejection here is a rejection of the whole batch. The
+        // paths `fetch` owns already notify; this covers the ones it does not.
+        logger.error(error);
       }
-    }));
+      return ok(undefined);
+    });
+
+    await allWithConcurrency(factories, ACCOUNT_READ_CONCURRENCY);
   };
 
   const fetchAccounts = async (blockchain?: string | string[], refreshEns: boolean = false): Promise<void> => {
