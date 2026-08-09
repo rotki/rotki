@@ -6,7 +6,7 @@ import FilterPill from '@/modules/core/table/pill/FilterPill.vue';
 
 const field: FieldDef = {
   allowExclusion: true,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   key: 'protocols',
   label: 'Protocol',
   multiple: true,

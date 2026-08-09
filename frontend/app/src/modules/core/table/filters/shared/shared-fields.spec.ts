@@ -18,7 +18,7 @@ const resolvers: SharedFieldResolvers = {
 function field(overrides: Partial<FieldDef> = {}): FieldDef {
   return {
     allowExclusion: false,
-    binding: { kind: 'matcher' },
+    binding: { kind: 'filter' },
     key: 'k',
     label: 'K',
     multiple: true,
@@ -81,7 +81,7 @@ describe('decorateSharedField', () => {
 
     const decorated = decorateSharedField(original, SharedFieldKinds.PROTOCOL, resolvers);
 
-    expect(decorated).toMatchObject({ binding: { kind: 'matcher' }, key: 'counterparties', operators: ['is', 'is_not'] });
+    expect(decorated).toMatchObject({ binding: { kind: 'filter' }, key: 'counterparties', operators: ['is', 'is_not'] });
   });
 
   it('should leave a field that is nobody else\'s kind untouched', () => {

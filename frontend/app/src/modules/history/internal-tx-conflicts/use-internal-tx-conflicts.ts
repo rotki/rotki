@@ -7,7 +7,7 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useInternalTxConflictsApi } from './internal-tx-conflicts-api';
 import { type InternalTxConflict, type InternalTxConflictsRequestPayload, type InternalTxConflictStatus, InternalTxConflictStatuses } from './types';
-import { type Filters, type Matcher, useInternalTxConflictsFilter } from './use-internal-tx-conflicts-filter';
+import { type Filters, useInternalTxConflictsFilter } from './use-internal-tx-conflicts-filter';
 
 export function getConflictKey(conflict: InternalTxConflict): string {
   return `${conflict.chain}:${conflict.txHash}`;
@@ -33,7 +33,6 @@ interface UseInternalTxConflictsReturn {
   handleConflictFixed: () => Promise<void>;
   issueCount: ComputedRef<number>;
   loading: Ref<boolean>;
-  matchers: ComputedRef<Matcher[]>;
   pagination: WritableComputedRef<TablePaginationData>;
   pendingCount: Ref<number>;
   setFilter: (status: InternalTxConflictStatus) => void;
@@ -57,7 +56,6 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
   }));
 
   const filterSchema = useInternalTxConflictsFilter();
-  const { matchers } = filterSchema;
 
   const {
     collection: state,
@@ -67,7 +65,7 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
     refetch: fetchData,
     setPage,
     sort,
-  } = useServerTable<InternalTxConflict, InternalTxConflictsRequestPayload, Filters, Matcher>({
+  } = useServerTable<InternalTxConflict, InternalTxConflictsRequestPayload, Filters>({
     fetch: fetchInternalTxConflicts,
     filterSchema,
     params: [{ skipEmpty: true, to: 'request', values: requestParams }],
@@ -138,7 +136,6 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
     handleConflictFixed,
     issueCount,
     loading,
-    matchers,
     pagination,
     pendingCount,
     setFilter,

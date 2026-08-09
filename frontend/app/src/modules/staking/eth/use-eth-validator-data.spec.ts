@@ -53,7 +53,7 @@ vi.mock('@/modules/core/table/use-remember-table-sorting', async importOriginal 
   useRememberTableSorting: (...args: unknown[]): void => mockRememberSorting(...args),
 }));
 
-vi.mock('@/modules/core/table/filters/use-eth-validator-filter', () => ({
+vi.mock('@/modules/staking/eth/use-eth-validator-filter', () => ({
   useEthValidatorAccountFilter: (): Record<string, unknown> => ({
     filters: mockFilters,
     matchers: mockMatchers,

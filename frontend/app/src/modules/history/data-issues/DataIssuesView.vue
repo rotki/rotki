@@ -13,7 +13,7 @@ import { DEFAULT_LIST_STATES, IssueState } from '@/modules/history/data-issues/c
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
 import { useDataIssueFields } from '@/modules/history/data-issues/use-data-issue-fields';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
-import { type Filters, type Matcher, useDataIssuesFilter } from '@/modules/history/data-issues/use-data-issues-filter';
+import { type Filters, useDataIssuesFilter } from '@/modules/history/data-issues/use-data-issues-filter';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -43,7 +43,7 @@ const {
   pagination,
   refetch: refresh,
   setFilter: updateFilter,
-} = useServerTable<DataIssue, DataIssuesRequestPayload, Filters, Matcher>({
+} = useServerTable<DataIssue, DataIssuesRequestPayload, Filters>({
   fetch: fetchData,
   filterSchema,
   params: [{
@@ -54,7 +54,7 @@ const {
   urlState: routeWhen(mainPage),
 });
 
-const fields = useDataIssueFields(filterSchema.matchers);
+const fields = useDataIssueFields();
 const pillLabels = usePillBarLabels();
 
 // Tracks whether the first load has finished. The all-clear screen keys off this

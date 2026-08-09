@@ -17,7 +17,6 @@ const {
   collection,
   filter,
   isLoading,
-  matchers,
   modelCustomRuleHandling,
   pagination,
   refetch,
@@ -90,7 +89,6 @@ onMounted(async () => {
           <AccountingRuleToolbar
             v-model:custom-rule-handling="modelCustomRuleHandling"
             v-model:filter="filter"
-            :matchers="matchers"
           />
         </div>
       </template>

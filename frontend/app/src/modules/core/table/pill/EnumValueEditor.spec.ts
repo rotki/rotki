@@ -14,7 +14,7 @@ const ButtonGroupStub = defineComponent({
 
 const enumField: FieldDef = {
   allowExclusion: true,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   key: 'protocols',
   label: 'Protocol',
   multiple: true,

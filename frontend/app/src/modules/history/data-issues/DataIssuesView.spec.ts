@@ -29,7 +29,6 @@ vi.mock('@/modules/core/table/use-server-table', () => ({
     collection: ref({ data: state.rows, found: state.rows.length, limit: 10, total: state.rows.length }),
     filter: ref(state.filters),
     isLoading: ref(state.isLoading),
-    matchers: ref([]),
     pagination: ref({}),
     refetch: vi.fn().mockResolvedValue(undefined),
     setFilter: vi.fn(),

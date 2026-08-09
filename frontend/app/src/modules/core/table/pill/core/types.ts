@@ -57,19 +57,19 @@ export interface ValueSwatch {
 /**
  * Where a field's value is transported when the state is serialized.
  *
- * - `matcher`: flows through the `matches` object (`MatchedKeywordWithBehaviour`), exactly
- *   like the current `TableFilter` bar.
+ * - `filter`: flows through the table's own filter bag (`MatchedKeywordWithBehaviour`), which is
+ *   the `matches` object the bar is bound to.
  * - `param`: flows through a `useServerTable` param source (request and/or url), which is
- *   how today's *external* filters (e.g. history account `locationLabels`) are transported.
- *   Modelling them as fields is what lets the pill bar absorb external filters into one bar.
+ *   how *external* filters (e.g. history account `locationLabels`) are transported. Modelling
+ *   them as fields is what lets the pill bar absorb external filters into one bar.
  */
 export type FieldBinding =
-  | { readonly kind: 'matcher' }
+  | { readonly kind: 'filter' }
   | { readonly kind: 'param'; readonly paramKey: string; readonly to: 'request' | 'url' | 'both' };
 
 /**
- * A normalized, presentation-facing view of a `SearchMatcher` or an external param filter.
- * The one shape the pill components read, so they never branch on the matcher discriminant.
+ * A filter as the bar shows and edits it, whichever way its value is transported. The one shape
+ * the pill components read, so they never branch on where a field's value ends up.
  */
 export interface FieldDef {
   readonly key: string;
@@ -128,7 +128,7 @@ export interface FieldDef {
   readonly resolveLoading?: (value: string) => boolean;
   /**
    * Reads a value stored by the old filter bar into the form this field now takes, for a field
-   * that used to be matcher-bound and is now param-bound. Returning nothing drops the value.
+   * that used to be filter-bound and is now param-bound. Returning nothing drops the value.
    * Only the accounts table needs it, whose account filter stored `label (address)` where the
    * field now wants the address alone. Lives on the field because it is the only thing that knows
    * both forms; without it a converted saved filter would lose that pill silently.
@@ -166,6 +166,16 @@ export interface FieldDef {
    * `date.to`. Matcher-bound only. The optional `serializer`/`deserializer` apply to each bound.
    */
   readonly bounds?: { readonly lower: string; readonly upper: string };
+  /**
+   * Whether the two bounds may name the same instant. `date` fields only, default allowed.
+   *
+   * The bounds are sent in seconds and compared inclusively, so an equal pair normally means
+   * exactly that second, which is a filter worth offering. A table whose column is stored in
+   * milliseconds is the exception: its bounds are scaled by 1000, so an equal pair asks for the
+   * single millisecond `X000` rather than the second, and every other event in that second is
+   * silently left out. Such a table sets this to `false` and the editor keeps the bounds apart.
+   */
+  readonly allowEqualBounds?: boolean;
   /**
    * Formats a raw bound value for display on the pill (e.g. a `date` field's unix-second bound to
    * a human date). Display-only: the stored/wire value keeps its raw form. Range/date fields only.

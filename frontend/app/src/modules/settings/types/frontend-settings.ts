@@ -16,7 +16,8 @@ import { Constraints, MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/modules/core/com
 import { DateFormatEnum } from '@/modules/core/common/date-format';
 import { Defaults } from '@/modules/core/common/defaults';
 import { logger } from '@/modules/core/common/logging/logging';
-import { BaseSuggestion, SavedFilterLocation } from '@/modules/core/table/filtering';
+import { SavedFilterLocations } from '@/modules/core/table/filtering';
+import { LegacySavedFilters } from '@/modules/core/table/pill/core/legacy-saved-filter';
 import { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import { TableColumnEnum } from '@/modules/core/table/table-column';
 import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
@@ -117,7 +118,7 @@ export enum BlockchainRefreshButtonBehaviour {
 
 const BlockchainRefreshButtonBehaviourEnum = z.enum(BlockchainRefreshButtonBehaviour);
 
-const SavedFilterLocationEnum = z.enum(SavedFilterLocation);
+const SavedFilterLocationEnum = z.enum(SavedFilterLocations);
 
 const PrivacyModeEnum = z.nativeEnum(PrivacyMode);
 
@@ -286,7 +287,7 @@ export const FrontendSettings = z.object({
     .catch({}),
   renderAllNftImages: z.boolean().default(true),
   savedFilters: z
-    .partialRecord(SavedFilterLocationEnum, z.array(z.array(BaseSuggestion)))
+    .partialRecord(SavedFilterLocationEnum, LegacySavedFilters)
     .default({})
 
     .catch({}),

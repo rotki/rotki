@@ -7,7 +7,7 @@ import OraclePriceEditDialog from '@/modules/assets/prices/components/oracle/Ora
 import { getOracleSourceLabel } from '@/modules/assets/prices/oracle-source-labels';
 import { useOraclePriceFields } from '@/modules/assets/prices/use-oracle-price-fields';
 import { useOraclePrices } from '@/modules/assets/prices/use-oracle-prices';
-import { type Filters, type Matcher, useOraclePricesFilter } from '@/modules/assets/prices/use-oracle-prices-filter';
+import { type Filters, useOraclePricesFilter } from '@/modules/assets/prices/use-oracle-prices-filter';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
@@ -21,7 +21,7 @@ const { t } = useI18n({ useScope: 'global' });
 const { deletePrice, fetchData } = useOraclePrices();
 
 const filterSchema = useOraclePricesFilter();
-const fields = useOraclePriceFields(filterSchema.matchers);
+const fields = useOraclePriceFields();
 const pillLabels = usePillBarLabels();
 
 const {
@@ -33,8 +33,7 @@ const {
 } = useServerTable<
   OraclePriceEntry,
   OraclePricesQuery,
-  Filters,
-  Matcher
+  Filters
 >({
   fetch: fetchData,
   filterSchema,

@@ -1,15 +1,16 @@
+import type { LegacySavedFilterEntry } from '@/modules/core/table/pill/core/legacy-saved-filter';
 import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type BaseSuggestion, SavedFilterLocation } from '@/modules/core/table/filtering';
+import { type SavedFilterLocation, SavedFilterLocations } from '@/modules/core/table/filtering';
 import { useSavedViews } from '@/modules/core/table/pill/composables/use-saved-views';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 interface FrontendPatch {
   savedViews?: Partial<Record<SavedFilterLocation, SavedView[]>>;
-  savedFilters?: Partial<Record<SavedFilterLocation, BaseSuggestion[][]>>;
+  savedFilters?: Partial<Record<SavedFilterLocation, LegacySavedFilterEntry[][]>>;
 }
 
 const updateFrontendSetting = vi.fn(async (_settings: FrontendPatch) => ({ success: true }));
@@ -18,7 +19,7 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: (): { updateFrontendSetting: typeof updateFrontendSetting } => ({ updateFrontendSetting }),
 }));
 
-const location = SavedFilterLocation.HISTORY_EVENTS;
+const location = SavedFilterLocations.HISTORY_EVENTS;
 
 function lastPatch(): FrontendPatch | undefined {
   return updateFrontendSetting.mock.calls.at(-1)?.[0];
@@ -38,11 +39,11 @@ function convertedName(number: number): string {
 }
 
 // The conversion routes a legacy value by the binding of the field that owns its key, so the
-// fields under test are the contract: `location` is matcher-bound, `account` is param-bound.
+// fields under test are the contract: `location` is filter-bound, `account` is param-bound.
 const fields: FieldDef[] = [
   {
     allowExclusion: true,
-    binding: { kind: 'matcher' },
+    binding: { kind: 'filter' },
     key: 'location',
     label: 'Location',
     multiple: true,
@@ -69,7 +70,7 @@ describe('useSavedViews', () => {
 
   it('should read back the views of its own location', () => {
     useSettingsRepo().updateFrontend({
-      savedViews: { [SavedFilterLocation.ETH_VALIDATORS]: [view('theirs')], [location]: [view('mine')] },
+      savedViews: { [SavedFilterLocations.ETH_VALIDATORS]: [view('theirs')], [location]: [view('mine')] },
     });
 
     const { views } = useSavedViews(location, fields);
@@ -128,7 +129,7 @@ describe('useSavedViews', () => {
     it('should convert the old saved filters and drop the old key in one write', async () => {
       useSettingsRepo().updateFrontend({
         savedFilters: {
-          [SavedFilterLocation.ETH_VALIDATORS]: [[{ key: 'status', value: 'active' }]],
+          [SavedFilterLocations.ETH_VALIDATORS]: [[{ key: 'status', value: 'active' }]],
           [location]: [[
             { key: 'location', value: 'kraken' },
             { key: 'type', value: 'trade' },
@@ -154,7 +155,7 @@ describe('useSavedViews', () => {
       }]);
       // Only this location moves: the other two tables still render the old filter bar.
       expect(lastPatch()?.savedFilters).toEqual({
-        [SavedFilterLocation.ETH_VALIDATORS]: [[{ key: 'status', value: 'active' }]],
+        [SavedFilterLocations.ETH_VALIDATORS]: [[{ key: 'status', value: 'active' }]],
       });
     });
 

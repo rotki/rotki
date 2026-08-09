@@ -19,6 +19,35 @@ export const CommaSeparatedStringSchema = z.string()
   .optional()
   .transform(val => (val ? val.split(',') : []));
 
+/**
+ * How many values a filter key carries: exactly one, or a list. A url can repeat a key, so `MANY`
+ * accepts both a single value and a list and always reads as a list.
+ */
+export const FilterKeyArities = {
+  MANY: 'many',
+  ONE: 'one',
+} as const;
+
+export type FilterKeyArity = typeof FilterKeyArities[keyof typeof FilterKeyArities];
+
+const OptionalValue = z.string().optional();
+
+const OptionalValues = z.array(z.string()).or(z.string()).transform(arrayify).optional();
+
+/**
+ * The url shape of a table's filter bag: every key it filters on, and whether that key takes one
+ * value or several. Every table wrote the same two optional-string schemas by hand to say this;
+ * the only thing that differed was the list of keys.
+ */
+export function filterRouteSchema(keys: Record<string, FilterKeyArity>): z.ZodObject<Record<string, typeof OptionalValue | typeof OptionalValues>> {
+  return z.object(Object.fromEntries(
+    Object.entries(keys).map(([key, arity]) => [
+      key,
+      arity === FilterKeyArities.MANY ? OptionalValues : OptionalValue,
+    ]),
+  ));
+}
+
 export const RouterExpandedIdsSchema = z.object({
   expanded: CommaSeparatedStringSchema,
 });

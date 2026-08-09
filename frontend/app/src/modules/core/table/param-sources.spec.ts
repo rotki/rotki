@@ -1,113 +1,87 @@
 import { describe, expect, it } from 'vitest';
-import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher, type StringSuggestionMatcher } from '@/modules/core/table/filtering';
+import { FilterBehaviours, type MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import { collectSources, mergeParams, type ParamSource, transformFilters } from '@/modules/core/table/param-sources';
 
 type Filters = MatchedKeywordWithBehaviour<string>;
 
-function stringMatcher(overrides: Partial<Omit<StringSuggestionMatcher<string, string>, 'string'>> = {}): SearchMatcher<string, string> {
-  const matcher: StringSuggestionMatcher<string, string> = {
-    behaviourRequired: true,
-    description: 'Type',
-    key: 'type',
-    string: true,
-    suggestions: () => [],
-    validate: () => true,
-    ...overrides,
-  };
-  return matcher;
-}
+const TYPE = ['type'];
 
 describe('transformFilters', () => {
-  it('should return the filters unchanged when they are not an object', () => {
-    expect(transformFilters(undefined, [stringMatcher()])).toBeUndefined();
+  it('should return an empty bag unchanged', () => {
+    expect(transformFilters({}, TYPE)).toStrictEqual({});
   });
 
-  it('should return the filters unchanged when there are no matchers', () => {
+  it('should return the filters unchanged when no key carries a behaviour', () => {
     const filters: Filters = { type: 'deposit' };
     expect(transformFilters(filters, [])).toStrictEqual({ type: 'deposit' });
   });
 
-  it('should ignore matchers that do not require a behaviour', () => {
-    const filters: Filters = { type: 'deposit' };
-    const result = transformFilters(filters, [stringMatcher({ behaviourRequired: false })]);
-    expect(result).toStrictEqual({ type: 'deposit' });
+  it('should leave a key the table did not declare alone', () => {
+    const filters: Filters = { location: 'kraken', type: 'deposit' };
+    const result = transformFilters(filters, TYPE);
+    expect(result).toStrictEqual({ location: 'kraken', type: { behaviour: FilterBehaviours.INCLUDE, values: 'deposit' } });
   });
 
   it('should ignore keys that are not present in the filters', () => {
     const filters: Filters = { location: 'kraken' };
-    const result = transformFilters(filters, [stringMatcher({ key: 'type' })]);
-    expect(result).toStrictEqual({ location: 'kraken' });
+    expect(transformFilters(filters, TYPE)).toStrictEqual({ location: 'kraken' });
   });
 
   it('should ignore falsy values', () => {
     const filters: Filters = { type: '' };
-    const result = transformFilters(filters, [stringMatcher()]);
-    expect(result).toStrictEqual({ type: '' });
+    expect(transformFilters(filters, TYPE)).toStrictEqual({ type: '' });
   });
 
   it('should wrap a plain string value with the INCLUDE behaviour', () => {
     const filters: Filters = { type: 'deposit' };
-    const result = transformFilters(filters, [stringMatcher()]);
-    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviour.INCLUDE, values: 'deposit' } });
+    const result = transformFilters(filters, TYPE);
+    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviours.INCLUDE, values: 'deposit' } });
   });
 
   it('should wrap a boolean value with the INCLUDE behaviour', () => {
     const filters: Filters = { type: true };
-    const result = transformFilters(filters, [stringMatcher()]);
-    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviour.INCLUDE, values: true } });
+    const result = transformFilters(filters, TYPE);
+    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviours.INCLUDE, values: true } });
   });
 
-  it('should use keyValue over key for the lookup', () => {
-    const filters: Filters = { eventTypes: 'deposit' };
-    const result = transformFilters(filters, [stringMatcher({ key: 'type', keyValue: 'eventTypes' })]);
-    expect(result).toStrictEqual({ eventTypes: { behaviour: FilterBehaviour.INCLUDE, values: 'deposit' } });
-  });
-
-  it('should resolve a leading ! on a string to EXCLUDE when exclusion is allowed', () => {
+  // Declaring the key IS the statement that it can be excluded, so the `!` the pill writes is
+  // always resolved here. The matcher's separate allowExclusion flag no longer gates it.
+  it('should resolve a leading ! on a string to EXCLUDE', () => {
     const filters: Filters = { type: '!deposit' };
-    const result = transformFilters(filters, [stringMatcher({ allowExclusion: true })]);
-    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviour.EXCLUDE, values: 'deposit' } });
-  });
-
-  it('should keep the ! and use INCLUDE when exclusion is not allowed', () => {
-    const filters: Filters = { type: '!deposit' };
-    const result = transformFilters(filters, [stringMatcher({ allowExclusion: false })]);
-    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviour.INCLUDE, values: '!deposit' } });
+    const result = transformFilters(filters, TYPE);
+    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviours.EXCLUDE, values: 'deposit' } });
   });
 
   it('should resolve a leading ! on an array to EXCLUDE and strip every element', () => {
     const filters: Filters = { type: ['!deposit', '!withdrawal'] };
-    const result = transformFilters(filters, [stringMatcher({ allowExclusion: true })]);
-    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviour.EXCLUDE, values: ['deposit', 'withdrawal'] } });
+    const result = transformFilters(filters, TYPE);
+    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviours.EXCLUDE, values: ['deposit', 'withdrawal'] } });
   });
 
   it('should keep an array as INCLUDE when its first element has no !', () => {
     const filters: Filters = { type: ['deposit', 'withdrawal'] };
-    const result = transformFilters(filters, [stringMatcher({ allowExclusion: true })]);
-    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviour.INCLUDE, values: ['deposit', 'withdrawal'] } });
+    const result = transformFilters(filters, TYPE);
+    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviours.INCLUDE, values: ['deposit', 'withdrawal'] } });
   });
 
   it('should normalize an already-wrapped value, defaulting the behaviour to INCLUDE', () => {
     const filters: Filters = { type: { values: 'deposit' } };
-    const result = transformFilters(filters, [stringMatcher()]);
-    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviour.INCLUDE, values: 'deposit' } });
+    const result = transformFilters(filters, TYPE);
+    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviours.INCLUDE, values: 'deposit' } });
   });
 
   it('should preserve an explicit behaviour on an already-wrapped value', () => {
-    const filters: Filters = { type: { behaviour: FilterBehaviour.EXCLUDE, values: 'deposit' } };
-    const result = transformFilters(filters, [stringMatcher()]);
-    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviour.EXCLUDE, values: 'deposit' } });
+    const filters: Filters = { type: { behaviour: FilterBehaviours.EXCLUDE, values: 'deposit' } };
+    const result = transformFilters(filters, TYPE);
+    expect(result).toStrictEqual({ type: { behaviour: FilterBehaviours.EXCLUDE, values: 'deposit' } });
   });
 
-  it('should transform several matchers independently', () => {
+  it('should transform several declared keys independently', () => {
     const filters: Filters = { location: '!kraken', type: 'deposit' };
-    const result = transformFilters(filters, [
-      stringMatcher({ key: 'type' }),
-      stringMatcher({ allowExclusion: true, key: 'location' }),
-    ]);
+    const result = transformFilters(filters, ['type', 'location']);
     expect(result).toStrictEqual({
-      location: { behaviour: FilterBehaviour.EXCLUDE, values: 'kraken' },
-      type: { behaviour: FilterBehaviour.INCLUDE, values: 'deposit' },
+      location: { behaviour: FilterBehaviours.EXCLUDE, values: 'kraken' },
+      type: { behaviour: FilterBehaviours.INCLUDE, values: 'deposit' },
     });
   });
 });

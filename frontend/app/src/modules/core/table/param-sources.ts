@@ -1,7 +1,7 @@
 import type { MaybeRefOrGetter } from 'vue';
 import type { LocationQuery } from '@/modules/core/table/route';
 import { nonEmptyProperties } from '@/modules/core/common/data/data';
-import { FilterBehaviour, type FilterObjectWithBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher, type StringSuggestionMatcher } from '@/modules/core/table/filtering';
+import { FilterBehaviours, type FilterObjectWithBehaviour } from '@/modules/core/table/filtering';
 
 type FilterValue = string | string[] | boolean | FilterObjectWithBehaviour<string | string[] | boolean>;
 
@@ -103,16 +103,13 @@ export function mergeParams(
 }
 
 /**
- * Resolves a leading `!` into an EXCLUDE behaviour when the matcher allows
- * exclusion, stripping the `!` from the string or every array element.
+ * Resolves a leading `!` into an EXCLUDE behaviour, stripping it from the string
+ * or from every array element. Only called for keys the table declares as
+ * behaviour-carrying, which is what makes the prefix meaningful.
  */
 function resolveExclusion(
-  matcher: StringSuggestionMatcher<string, string>,
   data: string | string[] | boolean,
 ): { exclude: boolean; values: string | string[] | boolean } {
-  if (!matcher.allowExclusion)
-    return { exclude: false, values: data };
-
   if (typeof data === 'string' && data.startsWith('!'))
     return { exclude: true, values: data.substring(1) };
 
@@ -123,59 +120,58 @@ function resolveExclusion(
 }
 
 /**
- * Builds the `{ behaviour, values }` pair for one matcher's value: an
- * already-wrapped value keeps (or defaults) its behaviour, a plain value is
- * wrapped and resolved for exclusion. Returns undefined when there is nothing
- * to rewrite.
+ * Builds the `{ behaviour, values }` pair for one key's value: an already-wrapped
+ * value keeps (or defaults) its behaviour, a plain value is wrapped and resolved
+ * for exclusion. Returns undefined when there is nothing to rewrite.
  */
 function toBehaviourValue(
-  matcher: StringSuggestionMatcher<string, string>,
   data: FilterValue,
-  keyPresent: boolean,
 ): FilterObjectWithBehaviour<string | string[] | boolean> | undefined {
   if (typeof data === 'object' && !Array.isArray(data)) {
-    if (data.values && keyPresent)
-      return { behaviour: data.behaviour ?? FilterBehaviour.INCLUDE, values: data.values };
+    if (data.values)
+      return { behaviour: data.behaviour ?? FilterBehaviours.INCLUDE, values: data.values };
 
     return undefined;
   }
 
-  const { exclude, values } = resolveExclusion(matcher, data);
+  const { exclude, values } = resolveExclusion(data);
   return {
-    behaviour: exclude ? FilterBehaviour.EXCLUDE : FilterBehaviour.INCLUDE,
+    behaviour: exclude ? FilterBehaviours.EXCLUDE : FilterBehaviours.INCLUDE,
     values,
   };
 }
 
+/** Whether a bag entry is something a filter can carry, and so something to rewrite. */
+function isFilterValue(data: unknown): data is FilterValue {
+  return typeof data === 'string' || typeof data === 'boolean' || Array.isArray(data)
+    || (typeof data === 'object' && data !== null);
+}
+
 /**
- * Rewrites plain filter values into `{ behaviour, values }` pairs for matchers that
- * require it, resolving a leading `!` into an EXCLUDE behaviour.
+ * Rewrites plain filter values into `{ behaviour, values }` pairs for the keys the table declares
+ * as behaviour-carrying, resolving a leading `!` into an EXCLUDE behaviour.
+ *
+ * Takes and returns a plain bag rather than the table's filter type: by the time it is called the
+ * filter has already been merged with the param sources, so the keys are no longer only the
+ * filter's own. Typing it as the filter type only ever meant asserting that at the call site.
  */
-export function transformFilters<TFilter extends MatchedKeywordWithBehaviour<string> | void>(
-  filters: TFilter,
-  matchers: (SearchMatcher<string, string> | void)[],
-): TFilter {
-  if (typeof filters !== 'object' || matchers.length === 0)
+export function transformFilters(
+  filters: Record<string, unknown>,
+  behaviourKeys: readonly string[],
+): Record<string, unknown> {
+  if (behaviourKeys.length === 0)
     return filters;
 
-  const newFilters = { ...filters };
+  const newFilters: Record<string, unknown> = { ...filters };
 
-  matchers.forEach((matcher) => {
-    if (typeof matcher !== 'object' || !('string' in matcher) || !matcher.behaviourRequired)
+  behaviourKeys.forEach((key) => {
+    const data = filters[key];
+    if (!data || !isFilterValue(data))
       return;
 
-    const usedKey = matcher.keyValue ?? matcher.key;
-
-    if (!(usedKey in filters))
-      return;
-
-    const data = filters[usedKey];
-    if (!data)
-      return;
-
-    const value = toBehaviourValue(matcher, data, usedKey in newFilters);
+    const value = toBehaviourValue(data);
     if (value !== undefined)
-      newFilters[usedKey] = value;
+      newFilters[key] = value;
   });
 
   return newFilters;

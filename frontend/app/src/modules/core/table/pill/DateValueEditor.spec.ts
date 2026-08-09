@@ -1,6 +1,6 @@
 import type { ActiveFilter, FieldDef } from '@/modules/core/table/pill/core/types';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it, type Mock, vi } from 'vitest';
+import { assert, describe, expect, it, type Mock, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import DateValueEditor from '@/modules/core/table/pill/DateValueEditor.vue';
 
@@ -18,7 +18,11 @@ const DateTimePickerStub = defineComponent({
   name: 'RuiDateTimePicker',
   props: {
     autofocus: { default: false, type: Boolean },
+    // The bound constraints the editor computes from the other end, so a test can read what the
+    // real picker would grey out.
+    maxDate: { default: undefined, type: [Number, String] },
     menuOpen: { default: false, type: Boolean },
+    minDate: { default: undefined, type: Number },
     modelValue: { default: undefined, type: Number },
   },
   emits: ['update:modelValue', 'update:menuOpen'],
@@ -38,7 +42,7 @@ const DateTimePickerStub = defineComponent({
 
 const field: FieldDef = {
   allowExclusion: false,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   key: 'period',
   label: 'Period',
   multiple: false,
@@ -49,12 +53,36 @@ const field: FieldDef = {
 function createWrapper(
   filter: ActiveFilter,
   attachTo?: HTMLElement,
+  fieldOverrides: Partial<FieldDef> = {},
 ): VueWrapper<InstanceType<typeof DateValueEditor>> {
   return mount(DateValueEditor, {
     attachTo,
     global: { stubs: { RuiButtonGroup: ButtonGroupStub, RuiDateTimePicker: DateTimePickerStub } },
-    props: { field, filter },
+    props: { field: { ...field, ...fieldOverrides }, filter },
   });
+}
+
+// The two pickers are told apart by their test id rather than by position, so a template reorder
+// cannot make these assertions pass for the wrong bound.
+function boundProp(
+  wrapper: VueWrapper<InstanceType<typeof DateValueEditor>>,
+  testId: string,
+  prop: 'maxDate' | 'minDate',
+): unknown {
+  const found = wrapper.findAllComponents(DateTimePickerStub)
+    .find(component => component.attributes('data-testid') === testId);
+  assert(found, `no picker with the test id ${testId}`);
+  return found.props(prop);
+}
+
+function bounds(wrapper: VueWrapper<InstanceType<typeof DateValueEditor>>): {
+  fromMax: unknown;
+  toMin: unknown;
+} {
+  return {
+    fromMax: boundProp(wrapper, 'date-from', 'maxDate'),
+    toMin: boundProp(wrapper, 'date-to', 'minDate'),
+  };
 }
 
 // Mounts into a host that records what escapes the editor: the editor stops the key on its own
@@ -82,6 +110,27 @@ describe('dateValueEditor', () => {
     const before = createWrapper({ fieldKey: 'period', op: 'before', values: [] });
     expect(before.find('[data-testid=date-from]').exists()).toBe(false);
     expect(before.find('[data-testid=date-to]').exists()).toBe(true);
+  });
+
+  // Inclusive second bounds, so the same second on both ends is a filter for that second.
+  it('should let both bounds sit on the same second by default', () => {
+    const filter: ActiveFilter = { date: { from: '1704067200', to: '1704153600' }, fieldKey: 'period', op: 'between', values: [] };
+
+    expect(bounds(createWrapper(filter))).toStrictEqual({ fromMax: 1704153600, toMin: 1704067200 });
+  });
+
+  // A millisecond-backed column scales both bounds by 1000, so an equal pair asks for `X000` alone.
+  it('should keep a second between the bounds when the field forbids an equal pair', () => {
+    const filter: ActiveFilter = { date: { from: '1704067200', to: '1704153600' }, fieldKey: 'period', op: 'between', values: [] };
+
+    expect(bounds(createWrapper(filter, undefined, { allowEqualBounds: false })))
+      .toStrictEqual({ fromMax: 1704153599, toMin: 1704067201 });
+  });
+
+  it('should cap the from bound at now while the to bound is empty', () => {
+    const filter: ActiveFilter = { fieldKey: 'period', op: 'between', values: [] };
+
+    expect(bounds(createWrapper(filter))).toStrictEqual({ fromMax: 'now', toMin: undefined });
   });
 
   it('should emit the from bound as the unix-second string the picker gives', async () => {

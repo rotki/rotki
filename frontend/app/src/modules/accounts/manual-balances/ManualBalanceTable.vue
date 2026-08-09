@@ -6,10 +6,10 @@ import ManualBalanceMissingAssetWarning
   from '@/modules/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
 import { useManualBalanceFields } from '@/modules/accounts/manual-balances/use-manual-balance-fields';
 import { useManualBalanceTableActions } from '@/modules/accounts/manual-balances/use-manual-balance-table-actions';
+import { type Filters, ManualBalancesFilterSchema, useManualBalanceFilter } from '@/modules/accounts/manual-balances/use-manual-balances-filter';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';
-import { type Filters, ManualBalancesFilterSchema, type Matcher, useManualBalanceFilter } from '@/modules/core/table/filters/use-manual-balances-filter';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
@@ -37,8 +37,8 @@ const currencySymbol = useSetting('currencySymbol');
 const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(() => type);
 const { prepareForEdit, pricesLoading, refresh, refreshing, showDeleteConfirmation } = useManualBalanceTableActions();
 
-const filterSchema = useManualBalanceFilter(locations);
-const fields = useManualBalanceFields(filterSchema.matchers);
+const filterSchema = useManualBalanceFilter();
+const fields = useManualBalanceFields(locations, filterSchema.filters);
 const pillLabels = usePillBarLabels();
 
 const {
@@ -51,8 +51,7 @@ const {
 } = useServerTable<
   ManualBalanceWithPrice,
   ManualBalanceRequestPayload,
-  Filters,
-  Matcher
+  Filters
 >({
   fetch,
   filterSchema,

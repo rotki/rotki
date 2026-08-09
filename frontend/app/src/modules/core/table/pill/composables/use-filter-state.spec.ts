@@ -5,7 +5,7 @@ import { useFilterState } from '@/modules/core/table/pill/composables/use-filter
 
 const protocol: FieldDef = {
   allowExclusion: true,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   key: 'protocols',
   label: 'Protocol',
   multiple: true,
@@ -15,7 +15,7 @@ const protocol: FieldDef = {
 
 const ignored: FieldDef = {
   allowExclusion: false,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   key: 'excludeIgnoredAssets',
   label: 'Ignored',
   multiple: false,

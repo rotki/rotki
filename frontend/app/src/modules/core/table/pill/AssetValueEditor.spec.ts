@@ -33,7 +33,7 @@ vi.mock('@/modules/shell/components/inputs/use-asset-search', () => ({
 
 const field: FieldDef = {
   allowExclusion: false,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   display: 'asset',
   key: 'assets',
   label: 'Asset',

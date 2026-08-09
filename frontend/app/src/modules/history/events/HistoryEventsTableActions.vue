@@ -9,7 +9,7 @@ import type { IgnoreStatus } from '@/modules/history/events/use-history-events-s
 import type { SelectionState } from '@/modules/history/events/use-selection-mode';
 import { arrayify } from '@/modules/core/common/data/array';
 import { useRefPropVModel } from '@/modules/core/common/validation/model';
-import { type MatchedKeywordWithBehaviour, SavedFilterLocation } from '@/modules/core/table/filtering';
+import { type MatchedKeywordWithBehaviour, SavedFilterLocations } from '@/modules/core/table/filtering';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import PillViewsMenu from '@/modules/core/table/pill/PillViewsMenu.vue';
@@ -154,7 +154,7 @@ function handleToggleSelectAllMatching(): void {
         <template #views="{ disabled: barDisabled }">
           <PillViewsMenu
             :fields="fields"
-            :location="SavedFilterLocation.HISTORY_EVENTS"
+            :location="SavedFilterLocations.HISTORY_EVENTS"
             :state="pillState"
             :disabled="barDisabled"
             @apply="applyView($event)"

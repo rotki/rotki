@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Filters, Matcher } from '@/modules/core/table/filters/use-events-filter';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
+import type { Filters } from '@/modules/history/events/use-events-filter';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
@@ -35,8 +35,7 @@ const {
 } = useServerTable<
   HistoryEventRow,
   HistoryEventRequestPayload,
-  Filters,
-  Matcher
+  Filters
 >({
   fetch: fetchHistoryEvents,
   params: [{

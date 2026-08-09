@@ -1,6 +1,6 @@
 import type { ActiveFilter, FieldDef, FilterOp, FilterState } from '@/modules/core/table/pill/core/types';
 import { arrayify } from '@/modules/core/common/data/array';
-import { FilterBehaviour, type FilterObjectWithBehaviour, FilterOps, FilterValueTypes, type MatchedKeyword, type MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
+import { FilterBehaviours, type FilterObjectWithBehaviour, FilterOps, FilterValueTypes, type MatchedKeyword, type MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 
 /**
  * The pure bridge between the `ActiveFilter[]` editing model and the transported form.
@@ -14,7 +14,7 @@ import { FilterBehaviour, type FilterObjectWithBehaviour, FilterOps, FilterValue
  * collapse lands with the events-filter rewrite, when the field carries its wire-key mapping.
  */
 
-/** The transported form of a filter state: matcher-bound `matches` + param-bound `params`. */
+/** The transported form of a filter state: filter-bound `matches` + param-bound `params`. */
 export interface SerializedState {
   matches: Partial<MatchedKeyword<string>>;
   params: Record<string, string | string[] | boolean>;
@@ -148,7 +148,7 @@ function decodeEnumLike(field: FieldDef, raw: unknown): ActiveFilter | undefined
   let exclude = false;
   let source: unknown = raw;
   if (isBehaviourWrapped(raw)) {
-    exclude = raw.behaviour === FilterBehaviour.EXCLUDE;
+    exclude = raw.behaviour === FilterBehaviours.EXCLUDE;
     source = raw.values;
   }
 
@@ -227,7 +227,7 @@ function decodeField(field: FieldDef, raw: unknown): ActiveFilter | undefined {
 }
 
 /**
- * Transported form -> ActiveFilter[]. Reads each field from `matches` (matcher-bound) or
+ * Transported form -> ActiveFilter[]. Reads each field from `matches` (filter-bound) or
  * `params` (param-bound), decoding `!`-prefixed / behaviour-wrapped exclusion into the
  * field-level `is_not` operator. Iterates `fields` so the output order is stable.
  */

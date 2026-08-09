@@ -14,7 +14,7 @@ import { describeIssue, relatedEventRoute } from '@/modules/history/data-issues/
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
 import { useDataIssueFields } from '@/modules/history/data-issues/use-data-issue-fields';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
-import { DataIssuesFilterValueKeys, type Filters, useDataIssuesFilter } from '@/modules/history/data-issues/use-data-issues-filter';
+import { DataIssuesFilterKeys, type Filters } from '@/modules/history/data-issues/use-data-issues-filter';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import { HighlightTargetTypes, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 import PinnedDetailSheet from '@/modules/shell/pinned/PinnedDetailSheet.vue';
@@ -39,13 +39,12 @@ const { refreshSummary } = useDataIssuesSummary();
 // state, kind, asset and account. Keyed by wire key, which is what a field carries — the period
 // pill is left out because the preview is a glance at what needs attention now, not a search.
 const PANEL_FILTER_KEYS: readonly string[] = [
-  DataIssuesFilterValueKeys.STATE,
-  DataIssuesFilterValueKeys.KIND,
-  DataIssuesFilterValueKeys.ASSET,
-  DataIssuesFilterValueKeys.ACCOUNT,
+  DataIssuesFilterKeys.STATE,
+  DataIssuesFilterKeys.KIND,
+  DataIssuesFilterKeys.ASSET,
+  DataIssuesFilterKeys.ACCOUNT,
 ];
-const { matchers } = useDataIssuesFilter();
-const fields = useDataIssueFields(matchers);
+const fields = useDataIssueFields();
 const panelFields = computed<FieldDef[]>(() =>
   get(fields).filter(field => PANEL_FILTER_KEYS.includes(field.key)));
 const pillLabels = usePillBarLabels();
@@ -74,7 +73,7 @@ watch(filterFocused, (focused) => {
   }
 });
 
-// Filter values are typed `string | string[] | boolean`; our matchers only ever
+// Filter values are typed `string | string[] | boolean`; these fields only ever
 // produce strings/arrays, so narrow to the shapes the request payload accepts.
 type FilterValue = string | string[] | boolean | undefined;
 

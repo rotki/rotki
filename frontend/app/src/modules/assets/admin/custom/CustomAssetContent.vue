@@ -4,9 +4,9 @@ import type { CustomAsset, CustomAssetRequestPayload } from '@/modules/assets/ty
 import CustomAssetFormDialog from '@/modules/assets/admin/custom/CustomAssetFormDialog.vue';
 import CustomAssetTable from '@/modules/assets/admin/custom/CustomAssetTable.vue';
 import { useCustomAssetFields } from '@/modules/assets/admin/custom/use-custom-asset-fields';
+import { type Filters, useCustomAssetFilter } from '@/modules/assets/admin/custom/use-custom-assets-filter';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { type Filters, type Matcher, useCustomAssetFilter } from '@/modules/core/table/filters/use-custom-assets-filter';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
@@ -41,8 +41,8 @@ const { showDeleteConfirmation } = useTableRowDeletion<CustomAsset>({
   onDeleted: refresh,
 });
 
-const filterSchema = useCustomAssetFilter(types);
-const fields = useCustomAssetFields(filterSchema.matchers);
+const filterSchema = useCustomAssetFilter();
+const fields = useCustomAssetFields(types);
 
 const {
   collection,
@@ -54,8 +54,7 @@ const {
 } = useServerTable<
   CustomAsset,
   CustomAssetRequestPayload,
-  Filters,
-  Matcher
+  Filters
 >({
   fetch: queryAllCustomAssets,
   filterSchema,

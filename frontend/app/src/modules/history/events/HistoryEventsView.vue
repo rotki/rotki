@@ -101,6 +101,21 @@ const {
 
 const usedTitle = computed<string>(() => sectionTitle || t('transactions.title'));
 
+// What this view fixes for the user, read by both the table's filters and the pill-bar fields, so
+// the restrictions are stated once.
+const filterOptions = {
+  entryTypes: () => entryTypes,
+  eventSubTypes: () => eventSubTypes,
+  eventTypes: () => eventTypes,
+  externalAccountFilter: () => externalAccountFilter,
+  location: () => location,
+  mainPage: () => mainPage,
+  period: () => period,
+  protocols: () => protocols,
+  useExternalAccountFilter: () => useExternalAccountFilter,
+  validators: () => validators,
+};
+
 const {
   clearFilters,
   duplicateHandlingStatus,
@@ -117,31 +132,16 @@ const {
   includes,
   action,
   locationLabels,
-  matchers,
+  modelFilters,
   onActionChanged,
   onLocationLabelsChanged,
   pagination,
   requestPayload,
   setPage,
   sort,
-} = useHistoryEventsFilters(
-  {
-    entryTypes: () => entryTypes,
-    eventSubTypes: () => eventSubTypes,
-    eventTypes: () => eventTypes,
-    externalAccountFilter: () => externalAccountFilter,
-    location: () => location,
-    mainPage: () => mainPage,
-    period: () => period,
-    protocols: () => protocols,
-    useExternalAccountFilter: () => useExternalAccountFilter,
-    validators: () => validators,
-  },
-  toggles,
-  overlayMode,
-);
+} = useHistoryEventsFilters(filterOptions, toggles, overlayMode);
 
-const fields = useHistoryEventFields(matchers, () => useExternalAccountFilter);
+const fields = useHistoryEventFields({ ...filterOptions, modelFilters });
 
 // Accounting overlay: shows the known balance after each event. Keys off each event's own
 // (account, asset) pair, so no extra filter is required. Gated by VITE_ACCOUNTING_UPDATE,

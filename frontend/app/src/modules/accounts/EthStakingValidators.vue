@@ -5,7 +5,7 @@ import type { SavedViewState } from '@/modules/core/table/pill/composables/use-s
 import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import Eth2ValidatorLimitRow from '@/modules/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
-import { SavedFilterLocation } from '@/modules/core/table/filtering';
+import { SavedFilterLocations } from '@/modules/core/table/filtering';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import PillViewsMenu from '@/modules/core/table/pill/PillViewsMenu.vue';
@@ -39,7 +39,7 @@ const {
 const fields = useEthValidatorFields();
 const pillLabels = usePillBarLabels();
 
-// Every pill on this table is matcher-bound, so a saved view is its `matches` alone. `params` stays
+// Every pill on this table is filter-bound, so a saved view is its `matches` alone. `params` stays
 // in the stored shape because it is the bar's own serialized form, shared with the param-bound bars.
 const pillState = computed<SavedViewState>(() => ({
   matches: get(filters),
@@ -124,7 +124,7 @@ defineExpose({
         <template #views="{ disabled }">
           <PillViewsMenu
             :fields="fields"
-            :location="SavedFilterLocation.ETH_VALIDATORS"
+            :location="SavedFilterLocations.ETH_VALIDATORS"
             :state="pillState"
             :disabled="disabled"
             @apply="applyView($event)"
