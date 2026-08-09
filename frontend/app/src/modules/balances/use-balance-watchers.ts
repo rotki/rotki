@@ -3,15 +3,15 @@ import { isEqual } from 'es-toolkit';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
+import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { useSetting } from '@/modules/settings/use-setting';
 
 export function useBalanceWatchers(): void {
   const { fetchManualBalances } = useManualBalances();
   const { fetchConnectedExchangeBalances } = useExchanges();
-  const { fetchBlockchainBalances } = useBlockchainBalances();
+  const { hydrate } = useBalanceHydration();
   const { removeIgnoredAssets } = useBalancesStore();
 
   const balanceValueThreshold = useSetting('balanceValueThreshold');
@@ -27,14 +27,14 @@ export function useBalanceWatchers(): void {
     }
 
     if (!isEqual(current[BalanceSource.BLOCKCHAIN], old[BalanceSource.BLOCKCHAIN])) {
-      startPromise(fetchBlockchainBalances());
+      startPromise(hydrate());
     }
   });
 
   watch(ignoredAssets, (curr, prev) => {
     const removedAssets = prev.filter(asset => !curr.includes(asset));
     if (removedAssets.length > 0) {
-      startPromise(fetchBlockchainBalances());
+      startPromise(hydrate());
     }
 
     const addedAssets = curr.filter(asset => !prev.includes(asset));

@@ -1,5 +1,6 @@
 import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { api } from '@/modules/core/api/rotki-api';
 import { useSync } from '@/modules/session/use-session-sync';
 import { SUGGESTION_PROBE_TAG } from '@/modules/settings/suggestions/use-suggestion-probes';
@@ -15,6 +16,7 @@ export function useSessionStateCleaner(): void {
   const orchestrator = useTaskOrchestrator();
   const { reset: resetNativeTasks } = useNativeTask();
   const { reset: resetAccountLoad } = useAccountLoadState();
+  const { reset: resetHydration } = useBalanceHydration();
 
   function cleanup(): void {
     clearUploadStatus();
@@ -32,6 +34,10 @@ export function useSessionStateCleaner(): void {
     resetNativeTasks();
     // Same reason, same scope: a read tracked here outlives the session that started it.
     resetAccountLoad();
+    // Hydration dedups by chain against an app-scoped map, so a read that can never settle (its
+    // backend task belonged to the session that just ended) would be handed to the next session's
+    // caller for that chain — which then never hydrates, silently.
+    resetHydration();
     resetState();
   }
 

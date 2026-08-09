@@ -7,7 +7,7 @@ import { msg } from '@/message-key';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useTokenDetectionApi } from '@/modules/balances/blockchain/use-token-detection-api';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
-import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { arrayify } from '@/modules/core/common/data/array';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
@@ -31,7 +31,7 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
   const { setMassDetecting } = useTokenDetectionStore();
   const { addresses } = useAccountAddresses();
   const { getChainName, supportsTransactions, txEvmChains } = useSupportedChains();
-  const { fetchBlockchainBalances } = useBlockchainBalances();
+  const { hydrate } = useBalanceHydration();
   const { submitTask } = useNativeTask();
   const { activities } = useTaskOrchestrator();
 
@@ -60,12 +60,10 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
     })));
   };
 
+  // Detection ends in a balance read, so the chains it touched are hydrated once it settles —
+  // §4's only coupling between the layers: work finishing triggers hydration for its subject.
   const reloadBalancesForChains = async (chains: string[]): Promise<void> => {
-    await Promise.allSettled(chains.map(async chain =>
-      fetchBlockchainBalances({
-        blockchain: chain,
-      }),
-    ));
+    await hydrate({ blockchain: chains });
   };
 
   const detectTokens = async (

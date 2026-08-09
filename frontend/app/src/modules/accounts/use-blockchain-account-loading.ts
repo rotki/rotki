@@ -20,13 +20,13 @@ export function useBlockchainAccountLoading(category: MaybeRefOrGetter<string> =
   const { useIsActivePrefix } = useTaskCenter();
   const { activities } = useTaskOrchestrator();
   const { massDetecting } = storeToRefs(useTokenDetectionStore());
-  const { refreshingChains } = storeToRefs(useBalanceRefreshState());
+  const { busyChains } = storeToRefs(useBalanceRefreshState());
 
   const { chainIds, isEvm } = useAccountCategoryHelper(category);
 
   // Reads the live activities rather than a per-chain `useWorkStatus`, because the chain set is
-  // itself reactive. Matching on the id's first part covers both the network refresh
-  // (`blockchain-balances:<chain>`) and the cached read (`…:cached`).
+  // itself reactive. Matching on the id's first part covers the network refresh
+  // (`blockchain-balances:<chain>`); hydration has no activity and is folded in below.
   const isAnyBalancesFetching = computed<boolean>(() => {
     const fetching = get(activities).filter(activity =>
       activity.kind === ActivityKind.BLOCKCHAIN_BALANCES && !isTerminalStatus(activity.status));
@@ -38,17 +38,17 @@ export function useBlockchainAccountLoading(category: MaybeRefOrGetter<string> =
     return fetching.some(activity => chains.has(String(activityParts(activity.id)[0])));
   });
 
-  // `isAnyBalancesFetching` already narrows to the category, so the only thing left to add is the
-  // refresh side, which the orchestrator does not own: a POST that is in flight is tracked by
-  // `useBalanceRefreshState`, not by an activity status.
+  // `isAnyBalancesFetching` already narrows to the category, so what is left to add is everything
+  // the orchestrator does not own: an in-flight refresh POST and a hydration read, both tracked by
+  // `useBalanceRefreshState` rather than by an activity status.
   const isSectionLoading = computed<boolean>(() => {
     if (get(isAnyBalancesFetching))
       return true;
 
-    const refreshing = get(refreshingChains);
+    const busy = get(busyChains);
     return toValue(category)
-      ? get(chainIds).some(chain => refreshing.has(chain))
-      : refreshing.size > 0;
+      ? get(chainIds).some(chain => busy.has(chain))
+      : busy.size > 0;
   });
 
   const isDetectingTokens = computed<boolean>(() => get(isEvm) && isDefined(massDetecting));

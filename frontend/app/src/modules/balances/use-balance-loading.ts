@@ -1,4 +1,5 @@
 import type { ComputedRef } from 'vue';
+import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
@@ -14,17 +15,21 @@ interface UseBalancesLoadingReturn {
  *
  * ⚠️ Read liveness from here rather than calling `useIsActive(ActivityKind.BLOCKCHAIN_BALANCES)`
  * directly. Consumers spread across the app reading the orchestrator themselves is what makes the
- * source of that liveness impossible to change: the cached read is due to stop being an activity,
- * and every direct reader would silently go dark for the whole cached phase — an empty dashboard
- * that looks settled rather than loading.
+ * source of that liveness impossible to change — and it has now changed: hydration is no longer an
+ * activity, so a direct reader goes silently dark for the whole cached phase, showing an empty
+ * dashboard that looks settled rather than loading.
  */
 export function useBalancesLoading(): UseBalancesLoadingReturn {
   const { useIsActive } = useTaskCenter();
+  const { isHydrating } = storeToRefs(useBalanceRefreshState());
 
-  // Every balance source now runs native, so liveness comes entirely off the orchestrator
-  // (which also covers the queued/pending window the task store could not see).
-
-  const loadingBlockchainBalances = useIsActive(ActivityKind.BLOCKCHAIN_BALANCES);
+  // Two sources, because there are two layers. Work is the orchestrator's (which also covers the
+  // queued/pending window the task store could not see); hydration is not an activity at all, so
+  // its liveness comes off the refresh-state store.
+  const loadingBlockchainBalances = logicOr(
+    useIsActive(ActivityKind.BLOCKCHAIN_BALANCES),
+    isHydrating,
+  );
 
   const loadingBalances = logicOr(
     useIsActive(ActivityKind.ALL_BALANCES),

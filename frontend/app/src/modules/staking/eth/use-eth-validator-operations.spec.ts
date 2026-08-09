@@ -63,6 +63,7 @@ function validator(overrides: Partial<EthereumValidator> = {}): EthereumValidato
 
 describe('useEthValidatorOperations', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     set(mockLoading, false);
     set(mockAddRunning, false);

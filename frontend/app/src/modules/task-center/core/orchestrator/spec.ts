@@ -35,28 +35,14 @@ export const DEFAULT_LANE: StaticLane = 'default';
 
 /**
  * Blockchain-balance refreshes + token detection run here; capped at 2 to mirror the old
- * `BalanceQueueService` `maxConcurrency`. Cached blockchain reads stay on {@link DEFAULT_LANE}
- * so initial load is not throttled.
+ * `BalanceQueueService` `maxConcurrency`.
+ *
+ * ⛔ Balance *hydration* — reading a chain back out of the user's own database — has no lane here
+ * and must not be given one. It is not work: no task-centre row, no cancel, no progress. Its bound
+ * is `allWithConcurrency` inside `useBalanceHydration`, which is what makes the {@link DECODE_LANE}
+ * trap structurally unavailable rather than merely avoided.
  */
 export const BALANCES_LANE: StaticLane = 'balances';
-
-/**
- * Cached (DB-backed) blockchain balance reads.
- *
- * Their own lane rather than a share of {@link DEFAULT_LANE}: each chain's cached read is submitted
- * as that chain's accounts land, so the fan-out follows the account walk instead of one bounded
- * sweep. On `default` it would be capped only incidentally (by `defaultCap`) while contending with
- * every other default-lane activity.
- *
- * ⚠️ The cap belongs here and nowhere else. These reads are `ephemeral`, so they never reach the
- * task centre, which makes a limiter wrapped around them especially easy to add and impossible to
- * notice — the trap {@link DECODE_LANE} describes.
- *
- * 🔴 Not free: `GET /balances/blockchains/<chain>` serves from the DB for a returning user, but
- * falls back to a full node query when the cache is empty (first login, after a purge, a newly
- * added chain). This cap is what bounds that case.
- */
-export const BALANCES_CACHED_LANE: StaticLane = 'balances-cached';
 
 /** Exchange balance + savings queries run here; capped at 2, a pool separate from {@link BALANCES_LANE}. */
 export const EXCHANGE_LANE: StaticLane = 'exchange';
