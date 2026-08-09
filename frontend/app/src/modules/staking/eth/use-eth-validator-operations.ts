@@ -49,11 +49,13 @@ export function useEthValidatorOperations(): UseEthValidatorOperationsReturn {
     };
   }
 
+  // Reached only from the accounts page's refresh button (exposed through `EthStakingValidators`),
+  // hence `user`: it supersedes a background eth2 query rather than joining it.
   async function refresh(): Promise<void> {
     await fetchEthStakingValidators({ ignoreCache: true });
     await refreshBlockchainBalances({
       blockchain: Blockchain.ETH2,
-    });
+    }, 'user');
   }
 
   function confirmDelete(item: EthereumValidator): void {

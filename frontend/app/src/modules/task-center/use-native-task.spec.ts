@@ -72,6 +72,62 @@ describe('useNativeTask', () => {
     expect(run).toHaveBeenCalledOnce();
   });
 
+  describe('supersedeTask', () => {
+    const stalls = async (): ResultAsync<void, TaskError> => new Promise<Result<void, TaskError>>(() => {});
+
+    /**
+     * ⭐ `submitTask` dedups, so a user asking for fresh data while a background run is in flight
+     * would be handed that run's promise *and its parameters*. Superseding replaces it instead.
+     */
+    it('should replace a run already in flight', async () => {
+      const { submitTask, supersedeTask } = useNativeTask();
+      const id = makeActivityId(ActivityKind.PRICES, 'supersede-replaces');
+
+      const background = submitTask({ id, kind: ActivityKind.PRICES, run: stalls, title: 'prices' });
+
+      const run = vi.fn(async () => ok(undefined));
+      await supersedeTask({ id, kind: ActivityKind.PRICES, run, title: 'prices' });
+
+      // The new spec actually ran, rather than dedupping onto the stalled one.
+      expect(run).toHaveBeenCalledOnce();
+      // And the abandoned caller was settled, not stranded.
+      await expect(background).resolves.toBeDefined();
+    });
+
+    /**
+     * 🔴 The regression this helper exists to prevent. `finish()` is what frees the id, and it runs
+     * when the cancelled activity settles — so submitting without awaiting dedups onto the corpse
+     * and the new spec never runs. Dropping the `await` in `supersedeTask` fails this.
+     */
+    it('should not dedup the replacement onto the cancelled run', async () => {
+      const { submitTask, supersedeTask } = useNativeTask();
+      const id = makeActivityId(ActivityKind.PRICES, 'supersede-frees-id');
+
+      const background = submitTask({ id, kind: ActivityKind.PRICES, run: stalls, title: 'prices' });
+      const run = vi.fn(async () => ok(undefined));
+
+      const outcome = await supersedeTask({ id, kind: ActivityKind.PRICES, run, title: 'prices' });
+
+      expect(isOk(outcome)).toBe(true);
+      expect(run).toHaveBeenCalledOnce();
+      await background;
+    });
+
+    it('should just submit when nothing is in flight', async () => {
+      const { supersedeTask } = useNativeTask();
+      const run = vi.fn(async () => ok(undefined));
+
+      await supersedeTask({
+        id: makeActivityId(ActivityKind.PRICES, 'supersede-idle'),
+        kind: ActivityKind.PRICES,
+        run,
+        title: 'prices',
+      });
+
+      expect(run).toHaveBeenCalledOnce();
+    });
+  });
+
   describe('reset', () => {
     /** Only the orchestrator can settle this, which is the whole point of the two tests below. */
     const neverSettles = async (): ResultAsync<void, TaskError> => new Promise<Result<void, TaskError>>(() => {});

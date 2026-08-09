@@ -67,9 +67,11 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
     const refreshValidators = async (userInitiated: boolean): Promise<void> => {
       const shouldRefresh = userInitiated || isFirstLoad();
       if (shouldRefresh) {
+        // Only the user's own press supersedes; a first load has nothing to supersede and should
+        // join whatever is already querying eth2.
         await refreshBlockchainBalances({
           blockchain: Blockchain.ETH2,
-        });
+        }, userInitiated ? 'user' : 'background');
       }
       else {
         await hydrate({

@@ -226,14 +226,14 @@ describe('useAccountOperations', () => {
     it('should refresh balances for the eth2 chain', async () => {
       const { useAccountOperations } = await importModule();
       await useAccountOperations().refreshAccounts({ blockchain: 'eth2' });
-      expect(h.refreshBlockchainBalances).toHaveBeenCalledWith({ addresses: undefined, blockchain: 'eth2', isXpub: false }, false);
+      expect(h.refreshBlockchainBalances).toHaveBeenCalledWith({ addresses: undefined, blockchain: 'eth2', isXpub: false }, 'background');
     });
 
     it('should pass unique addresses for a chain without transaction support', async () => {
       h.supportsTransactions.mockReturnValue(false);
       const { useAccountOperations } = await importModule();
       await useAccountOperations().refreshAccounts({ addresses: ['0xa', '0xa', '0xb'], blockchain: 'gnosis', isXpub: true });
-      expect(h.refreshBlockchainBalances).toHaveBeenCalledWith({ addresses: ['0xa', '0xb'], blockchain: 'gnosis', isXpub: true }, false);
+      expect(h.refreshBlockchainBalances).toHaveBeenCalledWith({ addresses: ['0xa', '0xb'], blockchain: 'gnosis', isXpub: true }, 'background');
     });
 
     it('should schedule an eth2 refresh when eth has validators', async () => {
@@ -241,7 +241,7 @@ describe('useAccountOperations', () => {
       const { useAccountOperations } = await importModule();
       await useAccountOperations().refreshAccounts({ blockchain: 'eth' });
       await flushPromises();
-      expect(h.refreshBlockchainBalances).toHaveBeenCalledWith({ addresses: undefined, blockchain: 'eth2', isXpub: false }, false);
+      expect(h.refreshBlockchainBalances).toHaveBeenCalledWith({ addresses: undefined, blockchain: 'eth2', isXpub: false }, 'background');
     });
   });
 

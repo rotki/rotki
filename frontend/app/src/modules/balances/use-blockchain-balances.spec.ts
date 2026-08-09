@@ -8,7 +8,7 @@ import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { type RefreshMode, useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 
 vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({}),
@@ -48,7 +48,14 @@ vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
 
 // The balance processing service takes its runner from the activity, so the stub passes one that
 // resolves like the backend task would.
+//
+// `submitTask` and `supersedeTask` are separate stubs that both run the spec inline. The real
+// difference between them (cancel, await the cancelled promise, resubmit) belongs to
+// `useNativeTask` and is covered by its own spec; what this file owns is which of the two a given
+// refresh mode routes to.
 const { runTask } = vi.hoisted(() => ({ runTask: vi.fn() }));
+const submitTask = vi.fn();
+const supersedeTask = vi.fn();
 
 vi.mock('@/modules/task-center/use-native-task', async () => {
   const { ok } = await import('plainfp/result');
@@ -60,7 +67,8 @@ vi.mock('@/modules/task-center/use-native-task', async () => {
   return {
     useNativeTask: vi.fn(() => ({
       reportProgress: vi.fn(),
-      submitTask: vi.fn(runSpecWith(runTask)),
+      submitTask,
+      supersedeTask,
     })),
   };
 });
@@ -104,6 +112,8 @@ describe('useBlockchainBalances', () => {
     api = useBlockchainBalancesApi();
     blockchainBalances = useBlockchainBalances();
     vi.clearAllMocks();
+    submitTask.mockImplementation(runSpecWith(runTask));
+    supersedeTask.mockImplementation(runSpecWith(runTask));
   });
 
   describe('refreshBlockchainBalances', () => {
@@ -120,12 +130,12 @@ describe('useBlockchainBalances', () => {
     });
 
     it('should refresh particular blockchain - default', () => {
-      const call = async (periodic = true): Promise<void> => {
+      const call = async (mode: RefreshMode = 'periodic'): Promise<void> => {
         await blockchainBalances.refreshBlockchainBalances(
           {
             blockchain: Blockchain.ETH,
           },
-          periodic,
+          mode,
         );
       };
 
@@ -143,12 +153,12 @@ describe('useBlockchainBalances', () => {
     });
 
     it('should ignore periodic balance refresh, when there are other task running', async () => {
-      const call = async (periodic = true): Promise<void> => {
+      const call = async (mode: RefreshMode = 'periodic'): Promise<void> => {
         await blockchainBalances.refreshBlockchainBalances(
           {
             blockchain: Blockchain.ETH,
           },
-          periodic,
+          mode,
         );
       };
 
@@ -174,37 +184,35 @@ describe('useBlockchainBalances', () => {
       assert(1);
     });
 
-    it('should queue manual balance refresh, after other task is done', async () => {
-      const call = async (periodic = true): Promise<void> => {
-        await blockchainBalances.refreshBlockchainBalances(
-          {
-            blockchain: Blockchain.ETH,
-          },
-          periodic,
-        );
+    /**
+     * ⭐ §7. A user pressing refresh on a busy chain supersedes the run in flight instead of
+     * joining it, so they get a fresh query with their own parameters rather than the background
+     * run's. This replaced an `until(() => isChainRefreshing(chain)).toBe(false)` poll that reached
+     * a similar outcome by waiting out work the user had already superseded.
+     *
+     * The cancel/await/resubmit mechanics live in `useNativeTask` and are covered there; the
+     * routing decision is what belongs here.
+     */
+    it('should supersede a running refresh when the user asks for one', async () => {
+      const call = async (mode: RefreshMode): Promise<void> => {
+        await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, mode);
       };
 
-      const assert = (times = 1): void => {
-        expect(api.refreshBlockchainBalances).toHaveBeenCalledTimes(times);
-        expect(api.refreshBlockchainBalances).toHaveBeenCalledWith({
-          addresses: undefined,
-          blockchain: Blockchain.ETH,
-          isXpub: false,
-        });
-      };
+      await call('periodic');
+      expect(submitTask).toHaveBeenCalledTimes(1);
+      expect(supersedeTask).not.toHaveBeenCalled();
 
-      const refreshState = useBalanceRefreshState();
-      const loading = refreshState.useIsRefreshing(Blockchain.ETH);
+      await call('user');
+      expect(supersedeTask).toHaveBeenCalledTimes(1);
+      // Not joined onto the background run: the user's press genuinely re-queried.
+      expect(api.refreshBlockchainBalances).toHaveBeenCalledTimes(2);
+    });
 
-      startPromise(call());
-      assert(1);
+    it('should join, not supersede, a background refresh', async () => {
+      await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, 'background');
 
-      startPromise(call(false));
-      assert(1);
-
-      await until(loading).toBe(false);
-      await nextTick();
-      assert(2);
+      expect(submitTask).toHaveBeenCalledTimes(1);
+      expect(supersedeTask).not.toHaveBeenCalled();
     });
 
     it('should refresh balances with isXpub flag set to true', async () => {

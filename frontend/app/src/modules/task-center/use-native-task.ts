@@ -92,6 +92,11 @@ interface UseNativeTaskReturn {
    */
   readonly submitTask: <T = void>(spec: NativeActivitySpec<T>) => Promise<TaskOutcome<T>>;
   /**
+   * Like {@link submitTask}, but replaces the run already in flight for this id rather than joining
+   * it. For user-initiated work, which must not be handed a background run's parameters.
+   */
+  readonly supersedeTask: <T = void>(spec: NativeActivitySpec<T>) => Promise<TaskOutcome<T>>;
+  /**
    * Settle and drop every in-flight submission. Called when a session ends, so no id survives into
    * the next one — `submitTask` dedups by id, and a surviving id hands the next session a promise
    * that can never resolve.
@@ -181,6 +186,36 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
 
     inflight.clear();
     inflightFinish.clear();
+  }
+
+  /**
+   * Replace the run already in flight for this id, instead of joining it.
+   *
+   * ⭐ {@link submitTask} dedups: a second caller for a live id is handed the first run's promise
+   * and the first run's *parameters*. That is right for background work — two periodic ticks should
+   * share one run — and wrong for a user, who asked for fresh data and would silently receive
+   * whatever the background run happened to be doing.
+   *
+   * Cancelling settles the record immediately (`settleTerminal` inside `orchestrator.cancel`, for
+   * RUNNING as well as PENDING), so this does not wait on the aborted work itself.
+   *
+   * ⚠️ The `await` is defensive rather than demonstrated. `finish()` — which frees the id — runs
+   * from the resolver that `cancel`'s emit fires, and that chain is synchronous today, so the id is
+   * already free by the time `submitTask` is reached. Removing the await does not currently fail
+   * any test. It stays because the ordering is not guaranteed anywhere: if settling ever becomes
+   * async, submitting without it dedups the replacement onto the corpse — silently, and looking
+   * exactly like the bug this helper exists to fix.
+   */
+  async function supersedeTask<T = void>(spec: NativeActivitySpec<T>): Promise<TaskOutcome<T>> {
+    const running = inflight.get(spec.id);
+    if (running) {
+      // Result deliberately dropped: "nothing to cancel" (already terminal, or gone between the
+      // lookup and here) is the normal race, not something the caller can act on.
+      orchestrator.cancel(spec.id);
+      await running;
+    }
+
+    return submitTask(spec);
   }
 
   function cancelActivity(kind: ActivityKind, ...parts: (string | number)[]): void {
@@ -277,6 +312,7 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     statusOf,
     reset,
     submitTask,
+    supersedeTask,
     useIsActive,
     useWorkStatus,
   };

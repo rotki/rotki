@@ -165,7 +165,7 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     // drives its own chain: nothing else will.
     const pending: Promise<any>[] = [];
     if (shouldRefresh)
-      pending.push(refreshBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, isXpub }, periodic));
+      pending.push(refreshBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, isXpub }, periodic ? 'periodic' : 'background'));
     else if (chain !== undefined)
       pending.push(hydrate({ addresses: uniqueAddresses, blockchain: chain, isXpub }));
 
