@@ -5,6 +5,7 @@ import { msg } from '@/message-key';
 import { AssetPriceResponse } from '@/modules/assets/prices/price-types';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
+import { setDigest } from '@/modules/core/common/data/digest';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -29,17 +30,7 @@ interface UseFetchPricesReturn {
  * handful of price requests that can be in flight at once, that is far below the noise floor,
  * and the failure is a stale price rather than a wrong one.
  */
-export function assetSetDigest(assets: readonly string[]): string {
-  let hash = 0x811C9DC5;
-  for (const asset of [...assets].sort()) {
-    for (let index = 0; index < asset.length; index++) {
-      hash = Math.imul(hash ^ asset.charCodeAt(index), 0x01000193);
-    }
-    // Fold the separator too, so ['ab','c'] and ['a','bc'] cannot land on the same digest.
-    hash = Math.imul(hash ^ 0x2C, 0x01000193);
-  }
-  return (hash >>> 0).toString(36);
-}
+export const assetSetDigest = setDigest;
 
 /**
  * Fetches latest asset prices as a single native PRICES activity (Phase 2 migration). The whole

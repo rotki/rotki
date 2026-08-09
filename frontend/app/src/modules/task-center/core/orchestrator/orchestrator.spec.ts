@@ -3,7 +3,7 @@ import { err, isErr, isOk, ok, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { assert, describe, expect, it, vi } from 'vitest';
 import { BackendCancelled, Cancelled, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
-import { INDETERMINATE } from '../status';
+import { INDETERMINATE, isTerminalStatus } from '../status';
 import {
   type Activity,
   type ActivityId,
@@ -776,6 +776,73 @@ describe('createTaskOrchestrator', () => {
 
       expect(byId(orchestrator, parent.spec.id)?.status).toBe(Status.RUNNING);
       expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.RUNNING);
+    });
+
+    /**
+     * 🔴🔴 The chain-job shape, against the real scheduler. A parent that *awaits its own children*
+     * holds its lane slot for the whole body, so the children must not need a slot on that lane —
+     * with a cap of 2, two such parents would wait forever on work that can never start.
+     *
+     * This is why token detection has its own `detect:<chain>` family instead of sharing
+     * `BALANCES_LANE` with the chain job. Nothing above the orchestrator can catch it: every
+     * producer spec stubs `submitTask` to run inline, where lanes do not exist.
+     */
+    it('should let a parent awaiting children hold its lane without deadlocking them', async () => {
+      // Two balances slots, both taken by the chain jobs; the detect family has room of its own.
+      const orchestrator = createTaskOrchestrator({ caps: { balances: 2 }, defaultCap: 4 });
+      const children = new Map<ActivityId, Controllable>();
+
+      /** Resolves when that activity reaches a terminal status — the parent's real await. */
+      const awaitTerminal = async (id: ActivityId): Promise<void> => new Promise<void>((resolve) => {
+        const stop = orchestrator.onChange(() => {
+          const activity = byId(orchestrator, id);
+          if (activity && isTerminalStatus(activity.status)) {
+            stop();
+            resolve();
+          }
+        });
+      });
+
+      const chainJob = (chain: string): ActivitySpec => ({
+        cancel: vi.fn(),
+        id: makeActivityId(Kind.BLOCKCHAIN_BALANCES, chain),
+        kind: Kind.BLOCKCHAIN_BALANCES,
+        lane: 'balances',
+        run: async (): Promise<Result<unknown, TaskError>> => {
+          const ids = ['0xaaa', '0xbbb'].map((address) => {
+            const child = controllable(`${chain}-${address}`, {
+              id: makeActivityId(Kind.TOKEN_DETECTION, chain, address),
+              kind: Kind.TOKEN_DETECTION,
+              lane: `detect:${chain}`,
+              parent: makeActivityId(Kind.BLOCKCHAIN_BALANCES, chain),
+            });
+            children.set(child.spec.id, child);
+            orchestrator.submit(child.spec);
+            return child.spec.id;
+          });
+          await Promise.all(ids.map(awaitTerminal));
+          return ok(undefined);
+        },
+        title: chain,
+      });
+
+      orchestrator.submit(chainJob('eth'));
+      orchestrator.submit(chainJob('gnosis'));
+      await vi.waitFor(() => {
+        expect(children.size).toBe(4);
+      });
+
+      // 🔴 The assertion that fails if detection shares the balances lane: with both slots held by
+      // the parents, every child would still be PENDING here and nothing could ever settle them.
+      for (const child of children.values()) {
+        expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.RUNNING);
+        child.settle(ok(undefined));
+      }
+
+      await vi.waitFor(() => {
+        expect(byId(orchestrator, makeActivityId(Kind.BLOCKCHAIN_BALANCES, 'eth'))?.status).toBe(Status.COMPLETE);
+        expect(byId(orchestrator, makeActivityId(Kind.BLOCKCHAIN_BALANCES, 'gnosis'))?.status).toBe(Status.COMPLETE);
+      });
     });
 
     it('should not gate a child whose parent is unknown', async () => {

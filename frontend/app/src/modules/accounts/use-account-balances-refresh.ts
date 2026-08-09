@@ -25,7 +25,7 @@ export function useAccountBalancesRefresh(
 
   async function refreshClick(): Promise<void> {
     const chains = toValue(chainIds);
-    await fetchAccounts(chains, true);
+    await fetchAccounts({ blockchain: chains, refreshEns: true });
     if (toValue(isEvm))
       await handleBlockchainRefresh(chains);
     else

@@ -388,7 +388,8 @@
           "title": "Querying blockchain balances"
         },
         "skipped": {
-          "busy": "Already refreshing this chain"
+          "busy": "Already refreshing this chain",
+          "no_accounts": "No tracked accounts on this chain"
         }
       },
       "blockchain_account_removal": {

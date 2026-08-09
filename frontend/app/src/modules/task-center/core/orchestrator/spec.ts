@@ -16,7 +16,7 @@ export type StaticLane = (typeof STATIC_LANES)[number];
  * (`tx-sync:<chain>`). Also a closed list, so a family cap cannot be keyed by a prefix no producer
  * ever mints.
  */
-export const LANE_FAMILIES = ['tx-sync:', 'exchange-events:', 'accounts-add:', 'accounts-remove:'] as const;
+export const LANE_FAMILIES = ['tx-sync:', 'exchange-events:', 'accounts-add:', 'accounts-remove:', 'detect:'] as const;
 
 export type LaneFamily = (typeof LANE_FAMILIES)[number];
 
@@ -78,6 +78,19 @@ export const DECODE_LANE: StaticLane = 'decode';
  * accounts sync at once *on each chain* rather than two across all of them.
  */
 export const ACCOUNT_SYNC_LANE_PREFIX: LaneFamily = 'tx-sync:';
+
+/**
+ * Family prefix for the per-chain token-detection lanes (`detect:<chain>`).
+ *
+ * 🔴🔴 Detection must NOT share {@link BALANCES_LANE} with the chain job that awaits it. The chain
+ * job holds a balances slot for its whole body — detection, then the network query — so children
+ * queued on the same lane could never get one: with a cap of 2, two chain jobs would sit waiting
+ * on addresses that cannot start, and the refresh would hang until the tab was reloaded.
+ *
+ * A separate family also gives the shape §8 asks for directly: 2 addresses per chain, with the
+ * balances cap deciding how many chains detect at once.
+ */
+export const DETECT_LANE_PREFIX: LaneFamily = 'detect:';
 
 /**
  * Family prefix for the per-location exchange lanes (`exchange-events:<location>`). Capped at 1 per

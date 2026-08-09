@@ -273,7 +273,7 @@ export function useAccountManage(): UseAccountManageReturn {
       set(pending, true);
       if (edit) {
         await editAccount(state.data, chain);
-        startPromise(fetchAccounts(chain));
+        startPromise(fetchAccounts({ blockchain: chain }));
       }
       else {
         // Awaited, so an xpub that fails to add keeps its dialog open rather than closing as if it
@@ -320,7 +320,7 @@ export function useAccountManage(): UseAccountManageReturn {
           assert(payload.publicKey);
           assert(payload.ownershipPercentage);
           updateEthStakingOwnership(payload.publicKey, bigNumberify(payload.ownershipPercentage));
-          startPromise(fetchAccounts(Blockchain.ETH2));
+          startPromise(fetchAccounts({ blockchain: Blockchain.ETH2 }));
         }
         else {
           startPromise(refreshAccounts({ blockchain: Blockchain.ETH2 }));

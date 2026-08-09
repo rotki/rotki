@@ -87,6 +87,47 @@ describe('useTokenDetectionOrchestrator', () => {
     set(mockActivities, []);
   });
 
+  describe('detectForChain', () => {
+    /**
+     * 🔴🔴 Detection must not share `BALANCES_LANE` with the chain job that awaits it. That job
+     * holds a balances slot for its whole body, and the cap is 2 — so children queued on the same
+     * lane could never get one, and two chain jobs would sit waiting on addresses that cannot
+     * start. A hang, not a slowdown, and no unit test that stubs `submitTask` can see it: the lane
+     * is only honoured by the real scheduler. Assert the lane itself.
+     */
+    it('should queue detection on the per-chain lane, never the balances lane', async () => {
+      set(mockAddresses, { eth: ['0xaddr1', '0xaddr2'] });
+      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
+
+      await useTokenDetectionOrchestrator().detectForChain('eth', makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'));
+
+      expect(mockSubmitTask).toHaveBeenCalledTimes(2);
+      for (const [spec] of mockSubmitTask.mock.calls) {
+        expect(spec.lane).toBe('detect:eth');
+        expect(spec.parent).toBe(makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'));
+      }
+    });
+
+    it('should do nothing for a chain with no addresses', async () => {
+      set(mockAddresses, { eth: [] });
+      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
+
+      await useTokenDetectionOrchestrator().detectForChain('eth', makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'));
+
+      expect(mockSubmitTask).not.toHaveBeenCalled();
+    });
+
+    /** The chain job's own query follows immediately and reads the same rows. */
+    it('should not hydrate, unlike the standalone detection flow', async () => {
+      set(mockAddresses, { eth: ['0xaddr1'] });
+      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
+
+      await useTokenDetectionOrchestrator().detectForChain('eth', makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'));
+
+      expect(mockHydrate).not.toHaveBeenCalled();
+    });
+  });
+
   describe('detectTokens', () => {
     it('should submit a native detection activity per address and reload cached balances', async () => {
       const { useTokenDetectionOrchestrator } = await loadOrchestrator();

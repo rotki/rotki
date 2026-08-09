@@ -65,7 +65,7 @@ describe('useAccountMigration', () => {
     const { useAccountMigration } = await importModule();
     useAccountMigration().setUpgradedAddresses(migrated);
 
-    expect(h.fetchAccounts).toHaveBeenCalledWith('eth');
+    expect(h.fetchAccounts).toHaveBeenCalledWith({ blockchain: 'eth' });
     expect(h.detectTokens).toHaveBeenCalledWith('eth', ['0xabc']);
     expect(h.notify).toHaveBeenCalledOnce();
     await flushPromises();
@@ -80,7 +80,7 @@ describe('useAccountMigration', () => {
 
     set(canRequestData, true);
     await nextTick();
-    expect(h.fetchAccounts).toHaveBeenCalledWith('eth');
+    expect(h.fetchAccounts).toHaveBeenCalledWith({ blockchain: 'eth' });
   });
 
   it('should ignore addresses on chains without token detection', async () => {
@@ -97,7 +97,7 @@ describe('useAccountMigration', () => {
     set(canRequestData, true);
     const { useAccountMigration } = await importModule();
     useAccountMigration().setUpgradedAddresses([{ address: '0xdef', chain: 'zksync_lite' }]);
-    expect(h.fetchAccounts).toHaveBeenCalledWith('zksync_lite');
+    expect(h.fetchAccounts).toHaveBeenCalledWith({ blockchain: 'zksync_lite' });
     expect(h.detectTokens).not.toHaveBeenCalled();
   });
 });
