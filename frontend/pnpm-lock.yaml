@@ -34,8 +34,8 @@ catalogs:
       specifier: 7.0.0
       version: 7.0.0
     '@rotki/eslint-plugin':
-      specifier: 1.5.0
-      version: 1.5.0
+      specifier: 1.5.1
+      version: 1.5.1
     '@rotki/ui-library':
       specifier: 2.23.2
       version: 2.23.2
@@ -312,10 +312,10 @@ importers:
         version: 4.5.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(jsonc-eslint-parser@3.1.0)(supports-color@10.2.2)(vue-eslint-parser@10.4.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(yaml-eslint-parser@2.1.0)
       '@rotki/eslint-config':
         specifier: 'catalog:'
-        version: 7.0.0(@intlify/eslint-plugin-vue-i18n@4.5.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(jsonc-eslint-parser@3.1.0)(supports-color@10.2.2)(vue-eslint-parser@10.4.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(yaml-eslint-parser@2.1.0))(@rotki/eslint-plugin@1.5.0(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(@vue/compiler-sfc@3.5.40)(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)(vitest@4.1.10)
+        version: 7.0.0(@intlify/eslint-plugin-vue-i18n@4.5.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(jsonc-eslint-parser@3.1.0)(supports-color@10.2.2)(vue-eslint-parser@10.4.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(yaml-eslint-parser@2.1.0))(@rotki/eslint-plugin@1.5.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(@vue/compiler-sfc@3.5.40)(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)(vitest@4.1.10)
       '@rotki/eslint-plugin':
         specifier: 'catalog:'
-        version: 1.5.0(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
+        version: 1.5.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
       cac:
         specifier: 'catalog:'
         version: 7.0.0
@@ -2226,8 +2226,8 @@ packages:
       eslint-plugin-storybook:
         optional: true
 
-  '@rotki/eslint-plugin@1.5.0':
-    resolution: {integrity: sha512-uzH2nmKFlaSBWaCmJnH9lvR/ARMXxciaqCMWiyHOCjnIgwarfpdNOZG+8lndORe8BTJDkyQv5gWUiXiJTigNdA==}
+  '@rotki/eslint-plugin@1.5.1':
+    resolution: {integrity: sha512-4hzl8453hUgz6CKkdsllWpzhgjlLIYbD4d6vgexQI6Mu8MF+XPnpqZAmM9hfh0O6yxIaSiZCOkbS6fYCKoMLQQ==}
     engines: {node: '>=24 <25', pnpm: '>=10 <12'}
     peerDependencies:
       eslint: ^9.20.0 || ^10.0.0
@@ -8206,7 +8206,7 @@ snapshots:
       estree-walker: 2.0.2
       picomatch: 4.0.5
 
-  '@rotki/eslint-config@7.0.0(@intlify/eslint-plugin-vue-i18n@4.5.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(jsonc-eslint-parser@3.1.0)(supports-color@10.2.2)(vue-eslint-parser@10.4.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(yaml-eslint-parser@2.1.0))(@rotki/eslint-plugin@1.5.0(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(@vue/compiler-sfc@3.5.40)(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)(vitest@4.1.10)':
+  '@rotki/eslint-config@7.0.0(@intlify/eslint-plugin-vue-i18n@4.5.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(jsonc-eslint-parser@3.1.0)(supports-color@10.2.2)(vue-eslint-parser@10.4.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(yaml-eslint-parser@2.1.0))(@rotki/eslint-plugin@1.5.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(@vue/compiler-sfc@3.5.40)(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)(vitest@4.1.10)':
     dependencies:
       '@antfu/install-pkg': 1.1.0
       '@clack/prompts': 1.7.0
@@ -8246,7 +8246,7 @@ snapshots:
       yaml-eslint-parser: 2.1.0
     optionalDependencies:
       '@intlify/eslint-plugin-vue-i18n': 4.5.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(jsonc-eslint-parser@3.1.0)(supports-color@10.2.2)(vue-eslint-parser@10.4.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(yaml-eslint-parser@2.1.0)
-      '@rotki/eslint-plugin': 1.5.0(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
+      '@rotki/eslint-plugin': 1.5.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
     transitivePeerDependencies:
       - '@eslint/json'
       - '@types/eslint'
@@ -8257,8 +8257,9 @@ snapshots:
       - typescript
       - vitest
 
-  '@rotki/eslint-plugin@1.5.0(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)':
+  '@rotki/eslint-plugin@1.5.1(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)':
     dependencies:
+      '@typescript-eslint/parser': 8.64.0(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
       '@typescript-eslint/utils': 8.64.0(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
       debug: 4.4.3(supports-color@10.2.2)
       eslint: 10.7.0(jiti@2.7.0)(supports-color@10.2.2)
@@ -8494,7 +8495,7 @@ snapshots:
   '@typescript-eslint/project-service@8.61.0(supports-color@10.2.2)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/tsconfig-utils': 8.61.0(typescript@6.0.3)
-      '@typescript-eslint/types': 8.61.0
+      '@typescript-eslint/types': 8.64.0
       debug: 4.4.3(supports-color@10.2.2)
       typescript: 6.0.3
     transitivePeerDependencies:
@@ -9904,7 +9905,7 @@ snapshots:
       '@one-ini/wasm': 0.1.1
       commander: 10.0.1
       minimatch: 9.0.9
-      semver: 7.8.4
+      semver: 7.8.5
 
   ee-first@1.1.1: {}
 
@@ -10558,10 +10559,6 @@ snapshots:
   fd-package-json@2.0.0:
     dependencies:
       walk-up-path: 4.0.0
-
-  fdir@6.5.0(picomatch@4.0.4):
-    optionalDependencies:
-      picomatch: 4.0.4
 
   fdir@6.5.0(picomatch@4.0.5):
     optionalDependencies:
@@ -12980,8 +12977,8 @@ snapshots:
 
   tinyglobby@0.2.17:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.4)
-      picomatch: 4.0.4
+      fdir: 6.5.0(picomatch@4.0.5)
+      picomatch: 4.0.5
 
   tinypool@2.1.0: {}
 
