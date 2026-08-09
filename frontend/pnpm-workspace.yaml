@@ -44,7 +44,7 @@ catalog:
   '@pinia/testing': 2.0.1
   '@playwright/test': 1.61.1
   '@rotki/eslint-config': 7.0.0
-  '@rotki/eslint-plugin': 1.5.0
+  '@rotki/eslint-plugin': 1.5.1
   '@rotki/ui-library': 2.23.2
   '@tsconfig/node24': 24.0.4
   '@types/body-parser': 1.19.6
