@@ -3,7 +3,6 @@ import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 interface UseAutoTokenDetectionReturn {
-  willDetect: () => boolean;
   /**
    * Run `pass`, telling it whether this login is due a detection sweep, and own the cooldown
    * bookkeeping around it.
@@ -49,10 +48,6 @@ export function useAutoTokenDetection(): UseAutoTokenDetectionReturn {
     return null;
   }
 
-  function willDetect(): boolean {
-    return skipReason() === null;
-  }
-
   async function withDetection<T>(pass: (detect: boolean) => Promise<T>): Promise<T> {
     const skip = skipReason();
     if (skip !== null) {
@@ -76,5 +71,5 @@ export function useAutoTokenDetection(): UseAutoTokenDetectionReturn {
     }
   }
 
-  return { skipReason, willDetect, withDetection };
+  return { skipReason, withDetection };
 }

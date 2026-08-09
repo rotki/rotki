@@ -98,17 +98,13 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
 
   // Detection ends in a balance read, so the chains it touched are hydrated once it settles —
   // §4's only coupling between the layers: work finishing triggers hydration for its subject.
-  const reloadBalancesForChains = async (chains: string[]): Promise<void> => {
-    await hydrate({ blockchain: chains });
-  };
-
   const detectTokens = async (
     chain: string | string[],
     addrs: string[],
   ): Promise<void> => {
     const chains = arrayify(chain);
     await Promise.all(chains.map(async c => queueDetectionForChain(c, addrs)));
-    await reloadBalancesForChains(chains);
+    await hydrate({ blockchain: chains });
   };
 
   const detectAllTokens = async (
@@ -129,7 +125,7 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
           await queueDetectionForChain(c, tokenAddresses);
       }));
 
-      await reloadBalancesForChains(chains);
+      await hydrate({ blockchain: chains });
     }
     finally {
       setMassDetecting(undefined);
