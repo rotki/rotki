@@ -296,7 +296,7 @@ describe('useBlockchainBalances', () => {
      */
     it('should settle a chain with no accounts as skipped, not drop it', async () => {
       // btc is in scope but has no accounts in this fixture.
-      submitTask.mockImplementation(async (spec: SubmittedSpec) => spec.run({ report: () => {}, runTask }));
+      submitTask.mockImplementation(async (spec: SubmittedSpec) => spec.run({ cancelled: () => false, report: () => {}, runTask }));
 
       await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.BTC }, 'background');
 
@@ -309,6 +309,33 @@ describe('useBlockchainBalances', () => {
       assert(!result.ok);
       expect(hasTag(result.error, 'Skipped')).toBe(true);
       expect(api.refreshBlockchainBalances).not.toHaveBeenCalled();
+    });
+
+    /**
+     * 🔴🔴 Seen against a real backend. Cancelling Ethereum mid-detection aborted both running
+     * children (`DELETE /api/1/tasks/424` and `/425`) and left the other seven addresses never
+     * attempted — the cascade doing its job — and then the chain job's own body carried straight
+     * on and issued `POST /balances/blockchains/eth` anyway, writing balances and recording a
+     * completion for a chain the user had stopped. Nothing can interrupt a running async body, so
+     * the body has to ask.
+     */
+    it('should not query after being cancelled during detection', async () => {
+      let stageCancelled = false;
+      detectForChain.mockImplementation(async () => {
+        // The cancel lands while detection is in flight, exactly as a user click would.
+        stageCancelled = true;
+      });
+      submitTask.mockImplementation(async (spec: SubmittedSpec) =>
+        spec.run({ cancelled: () => stageCancelled, report: () => {}, runTask }));
+
+      await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, 'background', { detect: true });
+
+      expect(detectForChain).toHaveBeenCalledOnce();
+      expect(api.refreshBlockchainBalances).not.toHaveBeenCalled();
+
+      const result = await submitTask.mock.results[0].value;
+      assert(!result.ok);
+      expect(hasTag(result.error, 'Cancelled')).toBe(true);
     });
 
     it('should not detect when the flow did not ask for it', async () => {

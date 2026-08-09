@@ -47,13 +47,29 @@ export type TaskOutcome<T = void> = Result<T, TaskError>;
 export type RunBackendTask = <R>(task: () => Promise<{ taskId: number }>) => Promise<Result<R, TaskError>>;
 
 /**
- * What the orchestrator hands a running activity: its progress sink and its own task runner.
+ * What the orchestrator hands a running activity: its progress sink, its own task runner, and
+ * whether it has since been cancelled.
  * Passing the runner explicitly (rather than reading an ambient "current activity") keeps the
  * binding correct for producers that await before submitting their backend task.
  */
 export interface ActivityContext {
   readonly report: ReportProgress;
   readonly runTask: RunBackendTask;
+  /**
+   * True once this activity has been cancelled — **a body with more than one stage must check it
+   * between them**.
+   *
+   * 🔴 Cancelling settles the *record*; it cannot interrupt a running async body, because nothing
+   * in JavaScript can. A multi-stage producer therefore runs to completion after the row already
+   * says CANCELLED. Observed against a real backend: cancelling a chain mid-detection aborted its
+   * detection children correctly, and then the body carried straight on and issued the balance
+   * query anyway — `POST /balances/blockchains/eth` *after* the `DELETE`s — writing balances and
+   * recording a completion for work the user had stopped.
+   *
+   * ⚠️ It only helps where it is *read*. There is no way to make a body stop on its own, so a
+   * producer that ignores this has the old behaviour.
+   */
+  readonly cancelled: () => boolean;
 }
 
 /**
@@ -169,6 +185,13 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
   const inflightFinish = new Map<ActivityId, (outcome: TaskOutcome<never>) => void>();
 
   /**
+   * How to tell each in-flight submission that it has been cancelled, so a multi-stage body can
+   * stop between stages. Kept beside {@link inflight} for the same reason: a session ending has to
+   * reach bodies it is about to abandon, and settling the caller does not stop the body.
+   */
+  const inflightCancel = new Map<ActivityId, () => void>();
+
+  /**
    * Drop every in-flight submission, settling its callers first.
    *
    * 🔴 Must run when a session ends. This map is app-scoped, so an id left here outlives the
@@ -181,11 +204,17 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
    * this promise; dropping the reference alone would suspend it forever.
    */
   function reset(): void {
+    // Before settling: a body that checks `cancelled()` between stages must see the session end,
+    // or it carries on doing work for a user who has logged out.
+    for (const requestCancel of inflightCancel.values())
+      requestCancel();
+
     for (const finishInflight of inflightFinish.values())
       finishInflight(err(Cancelled({ message: 'session ended' })));
 
     inflight.clear();
     inflightFinish.clear();
+    inflightCancel.clear();
   }
 
   /**
@@ -247,6 +276,7 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
       stop();
       inflight.delete(spec.id);
       inflightFinish.delete(spec.id);
+      inflightCancel.delete(spec.id);
       settle(outcome);
     }
 
@@ -269,10 +299,22 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
       }, label);
     }
 
+    /** Set once this activity is cancelled; read by the body through `ctx.cancelled()`. */
+    let cancelRequested = false;
+
+    function requestCancel(): void {
+      cancelRequested = true;
+    }
+
     // Cancelling the activity aborts whatever backend task it spawned. Producers no longer pass a
     // cancel handle: an activity that never started one still settles CANCELLED (the orchestrator
     // does that), this just stops the work on the backend.
+    //
+    // ⚠️ Aborting the backend task is not the same as stopping the body. A body between stages has
+    // spawned no task yet, so there is nothing here to abort — which is exactly the case that let a
+    // cancelled chain go on to run its query. The flag is what that body reads.
     function cancel(): void {
+      requestCancel();
       if (backendTaskId !== undefined)
         startPromise(cancelTaskById(backendTaskId));
     }
@@ -281,7 +323,7 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     // awaits the work itself, not just a status flip.
     async function run(report: ReportProgress): Promise<Result<T, TaskError>> {
       backendTaskId = undefined;
-      const outcome = spec.run({ report, runTask });
+      const outcome = spec.run({ cancelled: () => cancelRequested, report, runTask });
       outcome.then(finish, (error: unknown) => finish(err(TaskFailed({ message: getErrorMessage(error) }))));
       return outcome;
     }
@@ -300,6 +342,7 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- a per-entry key/value type correlation TypeScript cannot express without existential types; contained to this line
     inflight.set(spec.id, promise as Promise<TaskOutcome<never>>);
     inflightFinish.set(spec.id, finish);
+    inflightCancel.set(spec.id, requestCancel);
     orchestrator.submit({ ...spec, cancel, run });
     return promise;
   }

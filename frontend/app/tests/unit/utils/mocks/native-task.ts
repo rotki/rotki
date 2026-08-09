@@ -22,5 +22,5 @@ export interface SubmittedSpec {
  * and keep asserting on `runTask` as before.
  */
 export function runSpecWith(runTask: RunBackendTask): (spec: SubmittedSpec) => Promise<unknown> {
-  return async (spec: SubmittedSpec): Promise<unknown> => spec.run({ report: () => {}, runTask });
+  return async (spec: SubmittedSpec): Promise<unknown> => spec.run({ cancelled: () => false, report: () => {}, runTask });
 }
