@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Swaps in Gnosis chain that paraswap routes through a curve pool are properly decoded again.
 * :bug:`-` Bridging DAI from Ethereum to Gnosis chain is again seen as a bridge, instead of being mistaken for a DAI to USDS migration.
 * :feature:`-` Filtering the address book now uses the same filter bar as the rest of rotki. The chain selector and the strict-chain checkbox that sat beside it are now pills in that one bar, so there is a single place to filter from, and a chain is shown with its logo and name.
 * :feature:`-` Filtering manual balances now uses the same filter bar as the rest of rotki, and the tag selector beside it is now a tag pill in the same bar, drawn in the colours you gave each tag. Locations are shown with their icon and name, and assets with their icon and symbol.
