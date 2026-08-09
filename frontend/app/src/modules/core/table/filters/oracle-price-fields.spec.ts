@@ -23,7 +23,7 @@ const matchers: Matcher[] = [
     description: 'filter by source asset',
     key: 'from_asset',
     keyValue: 'fromAsset',
-    suggestions: async (): Promise<[]> => [],
+    suggestions: async (): Promise<string[]> => [],
   },
   {
     description: 'filter by oracle source',

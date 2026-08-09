@@ -49,7 +49,7 @@ const matchers: Matcher[] = [
     description: 'asset',
     key: ManualBalanceFilterKeys.ASSET,
     keyValue: ManualBalanceFilterValueKeys.ASSET,
-    suggestions: async (): Promise<[]> => [],
+    suggestions: async (): Promise<string[]> => [],
   },
 ];
 

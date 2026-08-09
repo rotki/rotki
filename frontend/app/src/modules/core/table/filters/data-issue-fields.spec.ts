@@ -60,7 +60,7 @@ const matchers: Matcher[] = [
     description: 'filter by asset',
     key: DataIssuesFilterKeys.ASSET,
     keyValue: DataIssuesFilterValueKeys.ASSET,
-    suggestions: async (): Promise<[]> => [],
+    suggestions: async (): Promise<string[]> => [],
   },
   {
     description: 'filter by account',
