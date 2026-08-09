@@ -128,6 +128,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     runTask: RunBackendTask,
     blockchain: string,
     apiCall: () => Promise<{ taskId: number }>,
+    notify: boolean = true,
   ): Promise<Result<void, TaskError>> => {
     if (!shouldQuery(blockchain)) {
       clearChainBalances(blockchain);
@@ -139,12 +140,18 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     if (isErr(result)) {
       if (isActionable(result.error)) {
         logger.error(result.error.message);
-        notifyError(
-          t('actions.balances.blockchain.error.title'),
-          t('actions.balances.blockchain.error.description', {
-            error: result.error.message,
-          }),
-        );
+        // ⭐ `notify` is off for the hydration read. A data refresh from the DB retries silently —
+        // it is plumbing, not something the user asked for and can act on — and a notification per
+        // attempt would make one failing chain raise three toasts. The log stays either way, so a
+        // chain that never hydrates is still diagnosable.
+        if (notify) {
+          notifyError(
+            t('actions.balances.blockchain.error.title'),
+            t('actions.balances.blockchain.error.description', {
+              error: result.error.message,
+            }),
+          );
+        }
       }
       // Forget any earlier success for this chain, so a failed query reads as "no data" rather
       // than leaving the last good load standing. Runs before the activity settles, so the FAILED
@@ -167,7 +174,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     threshold: string | undefined,
   ): Promise<Result<void, TaskError>> => {
     const { blockchain } = payload;
-    return executeBalanceQuery(runTask, blockchain, async () => queryBlockchainBalances(payload, threshold));
+    return executeBalanceQuery(runTask, blockchain, async () => queryBlockchainBalances(payload, threshold), false);
   };
 
   const handleRefresh = async (

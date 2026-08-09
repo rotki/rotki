@@ -10,7 +10,7 @@ const h = vi.hoisted(() => ({
   chainIds: ['eth', 'btc'],
   detectEvmAccounts: vi.fn(),
   fetch: vi.fn(),
-  fetchBlockchainBalances: vi.fn(),
+  hydrate: vi.fn(),
   fetchEnsNames: vi.fn(),
   getAddresses: vi.fn((_chain: string): string[] => []),
   isEvm: vi.fn((chain: string): boolean => chain === 'eth' || chain === 'optimism'),
@@ -28,9 +28,12 @@ vi.mock('@/modules/accounts/use-account-fetching', () => ({
 
 vi.mock('@/modules/balances/use-blockchain-balances', () => ({
   useBlockchainBalances: vi.fn(() => ({
-    fetchBlockchainBalances: h.fetchBlockchainBalances,
     refreshBlockchainBalances: h.refreshBlockchainBalances,
   })),
+}));
+
+vi.mock('@/modules/balances/use-balance-hydration', () => ({
+  useBalanceHydration: vi.fn(() => ({ hydrate: h.hydrate })),
 }));
 
 vi.mock('@/modules/accounts/address-book/use-ens-operations', () => ({
@@ -79,7 +82,7 @@ describe('useAccountOperations', () => {
     h.getAddresses.mockReturnValue([]);
     h.supportsTransactions.mockReturnValue(true);
     h.fetch.mockResolvedValue(undefined);
-    h.fetchBlockchainBalances.mockResolvedValue(undefined);
+    h.hydrate.mockResolvedValue(undefined);
     h.refreshBlockchainBalances.mockResolvedValue(undefined);
     h.fetchEnsNames.mockResolvedValue(undefined);
   });
@@ -157,7 +160,7 @@ describe('useAccountOperations', () => {
       expect(h.fetch).toHaveBeenCalledWith('btc');
       expect(h.fetch).toHaveBeenCalledWith('optimism');
       // The chain behind the rejection still gets its data refresh.
-      expect(h.fetchBlockchainBalances).toHaveBeenCalledWith({ blockchain: 'optimism' });
+      expect(h.hydrate).toHaveBeenCalledWith({ blockchain: 'optimism' });
     });
 
     /**
@@ -181,11 +184,11 @@ describe('useAccountOperations', () => {
       const { useAccountOperations } = await importModule();
       const walk = useAccountOperations().fetchAccounts();
       await vi.waitFor(() => {
-        expect(h.fetchBlockchainBalances).toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'eth' }));
+        expect(h.hydrate).toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'eth' }));
       });
 
       // eth's balances were read while btc's accounts are still outstanding.
-      expect(h.fetchBlockchainBalances).not.toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'btc' }));
+      expect(h.hydrate).not.toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'btc' }));
 
       releaseBtc();
       await walk;
@@ -197,9 +200,9 @@ describe('useAccountOperations', () => {
       await flushPromises();
 
       // One read per chain, from the walk — not a second undirected sweep.
-      expect(h.fetchBlockchainBalances).toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'eth' }));
-      expect(h.fetchBlockchainBalances).toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'btc' }));
-      expect(h.fetchBlockchainBalances).not.toHaveBeenCalledWith(
+      expect(h.hydrate).toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'eth' }));
+      expect(h.hydrate).toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'btc' }));
+      expect(h.hydrate).not.toHaveBeenCalledWith(
         expect.objectContaining({ blockchain: undefined }),
       );
     });
@@ -216,7 +219,7 @@ describe('useAccountOperations', () => {
     it('should fetch balances for a regular chain', async () => {
       const { useAccountOperations } = await importModule();
       await useAccountOperations().refreshAccounts({ blockchain: 'eth' });
-      expect(h.fetchBlockchainBalances).toHaveBeenCalledWith({ addresses: undefined, blockchain: 'eth', isXpub: false });
+      expect(h.hydrate).toHaveBeenCalledWith({ addresses: undefined, blockchain: 'eth', isXpub: false });
       expect(h.refreshBlockchainBalances).not.toHaveBeenCalled();
     });
 

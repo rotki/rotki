@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEthStakingRefresh } from '@/modules/staking/eth/use-eth-staking-refresh';
 
 const mockFetchEthStakingValidators = vi.fn();
-const mockFetchBlockchainBalances = vi.fn();
+const mockHydrate = vi.fn();
 const mockRefreshBlockchainBalances = vi.fn();
 // `everCompleted === false` means "first load"; drives the isFirstLoad gate in the SUT.
 const mockFirstLoad = ref<boolean>(false);
@@ -28,8 +28,13 @@ vi.mock('@/modules/auth/use-session-auth-store', () => ({
 
 vi.mock('@/modules/balances/use-blockchain-balances', () => ({
   useBlockchainBalances: vi.fn(() => ({
-    fetchBlockchainBalances: mockFetchBlockchainBalances,
     refreshBlockchainBalances: mockRefreshBlockchainBalances,
+  })),
+}));
+
+vi.mock('@/modules/balances/use-balance-hydration', () => ({
+  useBalanceHydration: vi.fn(() => ({
+    hydrate: mockHydrate,
   })),
 }));
 
@@ -95,6 +100,7 @@ function createCallbacks(overrides: {
 
 describe('useEthStakingRefresh', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     set(mockFirstLoad, false);
     set(mockUsername, 'test-user');
@@ -103,7 +109,7 @@ describe('useEthStakingRefresh', () => {
     set(mockEth2Loading, false);
     set(mockBlockProductionLoading, false);
     mockFetchEthStakingValidators.mockResolvedValue(undefined);
-    mockFetchBlockchainBalances.mockResolvedValue(undefined);
+    mockHydrate.mockResolvedValue(undefined);
     mockRefreshBlockchainBalances.mockResolvedValue(undefined);
   });
 
@@ -113,7 +119,7 @@ describe('useEthStakingRefresh', () => {
       await refresh(true);
 
       expect(mockRefreshBlockchainBalances).toHaveBeenCalledWith({ blockchain: 'eth2' });
-      expect(mockFetchBlockchainBalances).not.toHaveBeenCalled();
+      expect(mockHydrate).not.toHaveBeenCalled();
       expect(mockFetchEthStakingValidators).toHaveBeenCalledWith({ ignoreCache: true });
     });
 
@@ -124,7 +130,7 @@ describe('useEthStakingRefresh', () => {
       await refresh(false);
 
       expect(mockRefreshBlockchainBalances).toHaveBeenCalledWith({ blockchain: 'eth2' });
-      expect(mockFetchBlockchainBalances).not.toHaveBeenCalled();
+      expect(mockHydrate).not.toHaveBeenCalled();
       expect(mockFetchEthStakingValidators).toHaveBeenCalledWith({ ignoreCache: true });
     });
 
@@ -132,7 +138,7 @@ describe('useEthStakingRefresh', () => {
       const { refresh } = useEthStakingRefresh(createCallbacks());
       await refresh(false);
 
-      expect(mockFetchBlockchainBalances).toHaveBeenCalledWith({ blockchain: 'eth2' });
+      expect(mockHydrate).toHaveBeenCalledWith({ blockchain: 'eth2' });
       expect(mockRefreshBlockchainBalances).not.toHaveBeenCalled();
       expect(mockFetchEthStakingValidators).toHaveBeenCalledWith({ ignoreCache: false });
     });
@@ -141,7 +147,7 @@ describe('useEthStakingRefresh', () => {
       const { refresh } = useEthStakingRefresh(createCallbacks());
       await refresh();
 
-      expect(mockFetchBlockchainBalances).toHaveBeenCalledWith({ blockchain: 'eth2' });
+      expect(mockHydrate).toHaveBeenCalledWith({ blockchain: 'eth2' });
       expect(mockRefreshBlockchainBalances).not.toHaveBeenCalled();
     });
 

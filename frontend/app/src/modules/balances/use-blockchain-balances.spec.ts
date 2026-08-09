@@ -106,33 +106,6 @@ describe('useBlockchainBalances', () => {
     vi.clearAllMocks();
   });
 
-  describe('fetchBlockchainBalances', () => {
-    it('should fetch all supported blockchains', async () => {
-      const { updateAccounts } = useBlockchainAccountsStore();
-      // won't call if no account
-      await blockchainBalances.fetchBlockchainBalances();
-
-      expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(0);
-
-      // call if there's account
-      updateAccounts(Blockchain.ETH, [
-        createAccount(
-          { address: '0x49ff149D649769033d43783E7456F626862CD160', label: null, tags: null },
-          { chain: Blockchain.ETH, nativeAsset: 'ETH' },
-        ),
-      ]);
-
-      await blockchainBalances.fetchBlockchainBalances();
-
-      expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(1);
-      expect(api.queryBlockchainBalances).toHaveBeenCalledWith({
-        addresses: undefined,
-        blockchain: 'eth',
-        isXpub: false,
-      }, undefined);
-    });
-  });
-
   describe('refreshBlockchainBalances', () => {
     beforeEach(() => {
       // refresh only calls the api when the chain has an account (see executeBalanceQuery);

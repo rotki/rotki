@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { ref } from 'vue';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 /** A fetch that never settles, so the chain stays live for as long as the test needs it. */
@@ -48,12 +48,29 @@ describe('useBalanceStatus', () => {
       expect(get(isInitialLoading)).toBe(false);
     });
 
-    it('should cover both the cached read and the network refresh of a chain', () => {
+    /**
+     * 🔴 Hydration is not an activity, so the orchestrator reports a chain being read from the DB
+     * as idle. Without the store half, the whole cached phase renders settled-and-empty.
+     */
+    it('should cover a chain being hydrated as well as refreshed', () => {
+      const refreshState = useBalanceRefreshState();
       const { isInitialLoading } = useBalanceStatus('eth');
 
-      // The two ids a chain runs under; a per-chain read is a prefix aggregate over both.
-      startFetch('eth', ActivityPart.CACHED);
+      expect(get(isInitialLoading)).toBe(false);
+
+      refreshState.startHydration('eth');
       expect(get(isInitialLoading)).toBe(true);
+
+      refreshState.stopHydration('eth');
+      expect(get(isInitialLoading)).toBe(false);
+    });
+
+    it('should not mistake a sibling chain\'s hydration for this one', () => {
+      const refreshState = useBalanceRefreshState();
+      const { isInitialLoading } = useBalanceStatus('eth');
+
+      refreshState.startHydration('btc');
+      expect(get(isInitialLoading)).toBe(false);
     });
 
     it('should not mistake a sibling chain for this one', () => {

@@ -20,7 +20,8 @@ export function useAccountLoadingStates<T extends BlockchainAccountBalance>(
 ): UseAccountLoadingStates<T> {
   const { useIsActivePrefix } = useTaskCenter();
   const { statusOf, statusOfPrefix, version } = useTaskOrchestrator();
-  const { refreshingChains } = storeToRefs(useBalanceRefreshState());
+  const refreshState = useBalanceRefreshState();
+  const { hydratingChains, refreshingChains } = storeToRefs(refreshState);
   const { isSectionLoading } = useBlockchainAccountLoading(category);
   const { chainIds } = useAccountCategoryHelper(category);
 
@@ -34,16 +35,21 @@ export function useAccountLoadingStates<T extends BlockchainAccountBalance>(
   // `active && !everCompleted` is false for both, so no "has this chain been touched" filter is
   // needed the way the status map required one. A category whose chain list is not resolved yet
   // falls back to every chain, as it did before.
+  //
+  // 🔴 "Active" is both layers. Hydration is not an activity, so the orchestrator alone reports a
+  // chain being read from the DB as idle — and with nothing yet completed that renders an empty
+  // table instead of a loading one, for the whole cached phase.
   const isInitialLoading = computed<boolean>(() => {
     get(version); // touch the change counter so this re-reads the non-reactive ledger
+    const hydrating = get(hydratingChains);
     const chains = get(chainIds);
     if (chains.length === 0) {
       const { active, everCompleted } = statusOf(ActivityKind.BLOCKCHAIN_BALANCES);
-      return active && !everCompleted;
+      return (active || hydrating.size > 0) && !everCompleted;
     }
     return chains.some((chain) => {
       const { active, everCompleted } = statusOfPrefix(ActivityKind.BLOCKCHAIN_BALANCES, chain);
-      return active && !everCompleted;
+      return (active || hydrating.has(chain)) && !everCompleted;
     });
   });
 

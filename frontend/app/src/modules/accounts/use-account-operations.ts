@@ -9,6 +9,7 @@ import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-
 import { useAccountFetching } from '@/modules/accounts/use-account-fetching';
 import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -36,7 +37,8 @@ interface UseAccountOperationsReturn {
 
 export function useAccountOperations(): UseAccountOperationsReturn {
   const { fetch } = useAccountFetching();
-  const { fetchBlockchainBalances, refreshBlockchainBalances } = useBlockchainBalances();
+  const { hydrate } = useBalanceHydration();
+  const { refreshBlockchainBalances } = useBlockchainBalances();
   const { fetchEnsNames } = useEnsOperations();
   const { detectEvmAccounts: detectEvmAccountsCaller } = useBlockchainAccountsApi();
   const { isEvm, supportedChains, supportsTransactions } = useSupportedChains();
@@ -116,11 +118,11 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     //
     // Not awaited either: the caller waits for *accounts*, and a chain's balances arriving later is
     // the point.
-    const readCachedBalances = (chain: string): void => {
-      startPromise(fetchBlockchainBalances({ blockchain: chain }));
+    const hydrateChain = (chain: string): void => {
+      startPromise(hydrate({ blockchain: chain }));
     };
 
-    const read = readChains(chains, blockchain ? undefined : readCachedBalances);
+    const read = readChains(chains, blockchain ? undefined : hydrateChain);
     await (blockchain ? read : track(read));
 
     const namesPayload: AddressBookSimplePayload[] = [];
@@ -158,14 +160,14 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     const isEth2 = chain === Blockchain.ETH2;
 
     const shouldRefresh = !!(isEth2 || uniqueAddresses);
-    // ⚠️ On the full walk `fetchAccounts` has already read each chain's cached balances as that
-    // chain landed, so repeating the sweep here would query every chain a second time. A targeted
-    // refresh still drives its own chain: nothing else will.
+    // ⚠️ On the full walk `fetchAccounts` has already hydrated each chain as that chain landed, so
+    // repeating the sweep here would read every chain a second time. A targeted refresh still
+    // drives its own chain: nothing else will.
     const pending: Promise<any>[] = [];
     if (shouldRefresh)
       pending.push(refreshBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, isXpub }, periodic));
     else if (chain !== undefined)
-      pending.push(fetchBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, isXpub }));
+      pending.push(hydrate({ addresses: uniqueAddresses, blockchain: chain, isXpub }));
 
     if (isEth && getAddresses(Blockchain.ETH2).length > 0)
       startPromise(refreshAccounts({ blockchain: Blockchain.ETH2 }));

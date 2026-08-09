@@ -37,10 +37,10 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   }),
 }));
 
-const mockFetchBlockchainBalances = vi.fn().mockResolvedValue(undefined);
-vi.mock('@/modules/balances/use-blockchain-balances', () => ({
-  useBlockchainBalances: vi.fn().mockReturnValue({
-    fetchBlockchainBalances: mockFetchBlockchainBalances,
+const mockHydrate = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/modules/balances/use-balance-hydration', () => ({
+  useBalanceHydration: vi.fn().mockReturnValue({
+    hydrate: mockHydrate,
   }),
 }));
 
@@ -102,8 +102,8 @@ describe('useTokenDetectionOrchestrator', () => {
       });
       expect(mockDetectTokensForAddress).toHaveBeenCalledWith(mockRunTask, 'eth', '0xaddr1');
       expect(mockDetectTokensForAddress).toHaveBeenCalledWith(mockRunTask, 'eth', '0xaddr2');
-      expect(mockFetchBlockchainBalances).toHaveBeenCalledWith({
-        blockchain: 'eth',
+      expect(mockHydrate).toHaveBeenCalledWith({
+        blockchain: ['eth'],
       });
     });
 
@@ -114,7 +114,9 @@ describe('useTokenDetectionOrchestrator', () => {
       await detectTokens(['eth', 'optimism'], ['0xaddr1']);
 
       expect(mockSubmitTask).toHaveBeenCalledTimes(2);
-      expect(mockFetchBlockchainBalances).toHaveBeenCalledTimes(2);
+      // One hydration for the whole set, not one per chain: `hydrate` takes the chains and applies
+      // its own bound.
+      expect(mockHydrate).toHaveBeenCalledWith({ blockchain: ['eth', 'optimism'] });
     });
   });
 
@@ -131,7 +133,7 @@ describe('useTokenDetectionOrchestrator', () => {
       await detectAllTokens();
 
       expect(mockSubmitTask).toHaveBeenCalledTimes(2);
-      expect(mockFetchBlockchainBalances).toHaveBeenCalledTimes(2);
+      expect(mockHydrate).toHaveBeenCalledWith({ blockchain: ['eth', 'optimism'] });
     });
 
     it('should detect tokens only for specified chains', async () => {
