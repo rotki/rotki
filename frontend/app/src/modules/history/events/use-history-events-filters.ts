@@ -9,7 +9,6 @@ import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import { objectOmit } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
-import { type Filters, type Matcher, useHistoryEventFilter } from '@/modules/core/table/filters/use-events-filter';
 import { TableId } from '@/modules/core/table/use-remember-table-sorting';
 import { type ChangeSource, routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
@@ -19,6 +18,7 @@ import {
 } from '@/modules/history/event-utils';
 import { DuplicateHandlingStatus, type HighlightType } from '@/modules/history/events/action-types';
 import { buildHistoryEventSources } from '@/modules/history/events/history-event-query';
+import { type Filters, useHistoryEventFilter } from '@/modules/history/events/use-events-filter';
 import { useHistoryEventHighlights, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 
@@ -66,7 +66,12 @@ interface UseHistoryEventsFiltersReturn {
   identifiers: ComputedRef<string[] | undefined>;
   includes: ComputedRef<{ evmEvents: boolean; onlineEvents: boolean }>;
   locations: ComputedRef<string[]>;
-  matchers: ComputedRef<Matcher[]>;
+  /**
+   * The filter bag itself, writable. The pill-bar fields read it to scope their option lists and
+   * prune what a narrowing selection no longer admits, which the table's own `filter` (a computed)
+   * cannot express.
+   */
+  modelFilters: Ref<Filters>;
   onLocationLabelsChanged: (locationLabels: string[]) => void;
   requestPayload: ComputedRef<HistoryEventRequestPayload>;
   pagination: ComputedRef<TablePaginationData>;
@@ -173,16 +178,7 @@ export function useHistoryEventsFilters(
     validators,
   });
 
-  const filterSchema = useHistoryEventFilter({
-    eventSubtypes: (toValue(eventSubTypes) || []).length > 0,
-    eventTypes: (toValue(eventTypes) || []).length > 0,
-    locations: !!toValue(location),
-    period: !!toValue(period),
-    protocols: (toValue(protocols) || []).length > 0,
-    validators: !!toValue(validators),
-  }, computed<HistoryEventEntryType[] | undefined>(() => toValue(entryTypes)));
-
-  const { matchers } = filterSchema;
+  const filterSchema = useHistoryEventFilter();
 
   const {
     collection: groups,
@@ -198,8 +194,7 @@ export function useHistoryEventsFilters(
   } = useServerTable<
     HistoryEventRow,
     HistoryEventRequestPayload,
-    Filters,
-    Matcher
+    Filters
   >({
     fetch: fetchHistoryEventsTagged,
     filterSchema,
@@ -322,7 +317,7 @@ export function useHistoryEventsFilters(
     includes,
     locationLabels: shallowReadonly(locationLabels),
     locations,
-    matchers,
+    modelFilters: filterSchema.filters,
     onActionChanged,
     onLocationLabelsChanged,
     pagination,

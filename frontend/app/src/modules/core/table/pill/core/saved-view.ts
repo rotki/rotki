@@ -1,17 +1,17 @@
 import { z } from 'zod';
-import { FilterBehaviour } from '@/modules/core/table/filtering';
+import { FilterBehaviours } from '@/modules/core/table/filtering';
 
 /** One value of a stored filter: the same shapes the codec writes. */
 const SavedViewValue = z.union([z.string(), z.array(z.string()), z.boolean()]);
 
 /**
- * One entry of a view's `matches`: whatever the field codec writes for a matcher-bound field, so
+ * One entry of a view's `matches`: whatever the field codec writes for a filter-bound field, so
  * a scalar, a list, a boolean, or the behaviour-wrapped form the older filter bar produces.
  */
 const SavedViewMatch = z.union([
   SavedViewValue,
   z.object({
-    behaviour: z.enum(FilterBehaviour).optional(),
+    behaviour: z.enum(FilterBehaviours).optional(),
     values: SavedViewValue,
   }),
 ]);

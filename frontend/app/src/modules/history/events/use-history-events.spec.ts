@@ -9,10 +9,10 @@ import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useMainStore } from '@/modules/core/common/use-main-store';
-import { FilterBehaviour } from '@/modules/core/table/filtering';
-import { type Filters, type Matcher, useHistoryEventFilter } from '@/modules/core/table/filters/use-events-filter';
+import { FilterBehaviours } from '@/modules/core/table/filtering';
 import { type LocationQuery, RouterAccountsSchema } from '@/modules/core/table/route';
 import { useServerTable } from '@/modules/core/table/use-server-table';
+import { type Filters, useHistoryEventFilter } from '@/modules/history/events/use-events-filter';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 
 vi.mock('vue', async (): Promise<Record<string, unknown>> => {
@@ -100,12 +100,11 @@ describe('useHistoryEvents', () => {
       const { filter, sort, collection, refetch, isLoading } = useServerTable<
         HistoryEventRow,
         HistoryEventRequestPayload,
-        Filters,
-        Matcher
+        Filters
       >({
         fetch: fetchHistoryEvents,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
-        filterSchema: useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
+        filterSchema: useHistoryEventFilter(),
         params: sources,
       });
       expect(get(isLoading)).toBe(false);
@@ -126,12 +125,11 @@ describe('useHistoryEvents', () => {
     });
 
     it('should return correct types', () => {
-      const filterSchema = useHistoryEventFilter({ protocols: get(protocols).length > 0 });
+      const filterSchema = useHistoryEventFilter();
       const { isLoading, collection, filter } = useServerTable<
         HistoryEventRow,
         HistoryEventRequestPayload,
-        Filters,
-        Matcher
+        Filters
       >({
         fetch: fetchHistoryEvents,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
@@ -145,7 +143,6 @@ describe('useHistoryEvents', () => {
       expectTypeOf(get(collection).data).toEqualTypeOf<HistoryEventRow[]>();
       expectTypeOf(get(collection).found).toEqualTypeOf<number>();
       expectTypeOf(get(filter)).toEqualTypeOf<Filters>();
-      expectTypeOf(get(filterSchema.matchers)).toEqualTypeOf<Matcher[]>();
     });
 
     it('should modify filters and fetch data correctly', async () => {
@@ -155,12 +152,11 @@ describe('useHistoryEvents', () => {
       const { isLoading, collection, requestPayload, sort } = useServerTable<
         HistoryEventRow,
         HistoryEventRequestPayload,
-        Filters,
-        Matcher
+        Filters
       >({
         fetch: fetchHistoryEvents,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
-        filterSchema: useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
+        filterSchema: useHistoryEventFilter(),
         params: sources,
       });
 
@@ -212,12 +208,11 @@ describe('useHistoryEvents', () => {
       const { isLoading, filter } = useServerTable<
         HistoryEventRow,
         HistoryEventRequestPayload,
-        Filters,
-        Matcher
+        Filters
       >({
         fetch: fetchHistoryEvents,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
-        filterSchema: useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
+        filterSchema: useHistoryEventFilter(),
         params: sources,
       });
 
@@ -249,12 +244,11 @@ describe('useHistoryEvents', () => {
       const { markUserIntent, refetch, isLoading, setFilter } = useServerTable<
         HistoryEvent,
         HistoryEventRequestPayload,
-        Filters,
-        Matcher
+        Filters
       >({
         fetch: fetchHistoryEvents,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
-        filterSchema: useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
+        filterSchema: useHistoryEventFilter(),
         params: sources,
       });
 
@@ -276,7 +270,7 @@ describe('useHistoryEvents', () => {
 
       expect(payloads.at(-1)).toMatchObject({
         entryTypes: {
-          behaviour: FilterBehaviour.EXCLUDE,
+          behaviour: FilterBehaviours.EXCLUDE,
           values: ['evm event'],
         },
       });

@@ -34,7 +34,7 @@ const RuiMenuStub = defineComponent({
 
 const protocol: FieldDef = {
   allowExclusion: true,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   key: 'protocols',
   label: 'Protocol',
   multiple: true,
@@ -72,7 +72,7 @@ const action: FieldDef = {
 // view stores and the one place a stored filter can come back as something else.
 const amount: FieldDef = {
   allowExclusion: false,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   bounds: { lower: 'minAmount', upper: 'maxAmount' },
   key: 'amount',
   label: 'Amount',
@@ -493,7 +493,7 @@ describe('pillFilterBar', () => {
   it('should remember a free-text value once, when its editor closes', async () => {
     const notes: FieldDef = {
       allowExclusion: false,
-      binding: { kind: 'matcher' },
+      binding: { kind: 'filter' },
       freeText: true,
       key: 'notesSubstring',
       label: 'Notes',

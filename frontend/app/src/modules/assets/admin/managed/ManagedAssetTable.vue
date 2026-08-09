@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { SupportedAsset } from '@rotki/common';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
 import type { Collection } from '@/modules/core/common/collection';
-import type { Filters } from '@/modules/core/table/filters/use-assets-filter';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import AssetUnderlyingTokens from '@/modules/assets/admin/AssetUnderlyingTokens.vue';
 import ManagedAssetActions from '@/modules/assets/admin/managed/ManagedAssetActions.vue';

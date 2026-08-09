@@ -6,7 +6,7 @@ import TextValueEditor from '@/modules/core/table/pill/TextValueEditor.vue';
 
 const notesField: FieldDef = {
   allowExclusion: false,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   freeText: true,
   key: 'notesSubstring',
   label: 'Notes',

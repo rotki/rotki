@@ -5,7 +5,7 @@ import { DEFAULT_OPERATORS, defaultOp, isDefaultOp, operatorsFor } from '@/modul
 function field(partial: Partial<FieldDef>): FieldDef {
   return {
     allowExclusion: false,
-    binding: { kind: 'matcher' },
+    binding: { kind: 'filter' },
     key: 'k',
     label: 'K',
     multiple: false,

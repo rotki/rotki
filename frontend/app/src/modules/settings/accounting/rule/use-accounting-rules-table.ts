@@ -2,16 +2,15 @@ import type { TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { AccountingRuleEntry, AccountingRuleRequestPayload } from '@/modules/settings/types/accounting';
-import { type Filters, type Matcher, useAccountingRuleFilter } from '@/modules/core/table/filters/use-accounting-rule-filter';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { CustomRuleHandling } from '@/modules/settings/accounting/rule/accounting-rule-query';
+import { type Filters, useAccountingRuleFilter } from '@/modules/settings/accounting/rule/use-accounting-rule-filter';
 import { useAccountingSettings } from '@/modules/settings/accounting/use-accounting-settings';
 
 interface UseAccountingRulesTableReturn {
   collection: Ref<Collection<AccountingRuleEntry>>;
   filter: WritableComputedRef<Filters>;
   isLoading: Ref<boolean>;
-  matchers: ComputedRef<Matcher[]>;
   /** Which half of the rules is shown; a tab, and a request/url param. */
   modelCustomRuleHandling: Ref<CustomRuleHandling>;
   pagination: WritableComputedRef<TablePaginationData>;
@@ -36,7 +35,7 @@ export function useAccountingRulesTable(): UseAccountingRulesTableReturn {
     isLoading,
     pagination,
     refetch,
-  } = useServerTable<AccountingRuleEntry, AccountingRuleRequestPayload, Filters, Matcher>({
+  } = useServerTable<AccountingRuleEntry, AccountingRuleRequestPayload, Filters>({
     fetch: getAccountingRules,
     filterSchema,
     params: [{
@@ -52,7 +51,6 @@ export function useAccountingRulesTable(): UseAccountingRulesTableReturn {
     collection,
     filter,
     isLoading,
-    matchers: filterSchema.matchers,
     modelCustomRuleHandling,
     pagination,
     refetch,

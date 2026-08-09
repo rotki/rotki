@@ -6,7 +6,7 @@ import PillMenu from '@/modules/core/table/pill/PillMenu.vue';
 function field(key: string, label: string): FieldDef {
   return {
     allowExclusion: false,
-    binding: { kind: 'matcher' },
+    binding: { kind: 'filter' },
     key,
     label,
     multiple: true,

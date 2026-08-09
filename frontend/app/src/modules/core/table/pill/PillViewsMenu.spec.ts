@@ -5,7 +5,7 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
-import { SavedFilterLocation } from '@/modules/core/table/filtering';
+import { type SavedFilterLocation, SavedFilterLocations } from '@/modules/core/table/filtering';
 import PillViewsMenu from '@/modules/core/table/pill/PillViewsMenu.vue';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
@@ -28,7 +28,7 @@ const RuiMenuStub = defineComponent({
 
 const location: FieldDef = {
   allowExclusion: false,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   key: 'location',
   label: 'Location',
   multiple: false,
@@ -60,14 +60,14 @@ function createWrapper(state: SavedViewState = { matches: {}, params: {} }): Vue
     },
     props: {
       fields: [location, account],
-      location: SavedFilterLocation.HISTORY_EVENTS,
+      location: SavedFilterLocations.HISTORY_EVENTS,
       state,
     },
   });
 }
 
 function storeViews(views: SavedView[]): void {
-  useSettingsRepo().updateFrontend({ savedViews: { [SavedFilterLocation.HISTORY_EVENTS]: views } });
+  useSettingsRepo().updateFrontend({ savedViews: { [SavedFilterLocations.HISTORY_EVENTS]: views } });
 }
 
 describe('pillViewsMenu', () => {
@@ -135,7 +135,7 @@ describe('pillViewsMenu', () => {
 
     expect(updateFrontendSetting).toHaveBeenCalledWith({
       savedViews: {
-        [SavedFilterLocation.HISTORY_EVENTS]: [{
+        [SavedFilterLocations.HISTORY_EVENTS]: [{
           matches: { location: 'kraken' },
           name: 'Kraken swaps',
           params: { locationLabels: ['0xaaa'] },
@@ -165,7 +165,7 @@ describe('pillViewsMenu', () => {
     await wrapper.get('[data-testid=pill-views-delete-0]').trigger('click');
 
     expect(updateFrontendSetting).toHaveBeenCalledWith({
-      savedViews: { [SavedFilterLocation.HISTORY_EVENTS]: [view('b')] },
+      savedViews: { [SavedFilterLocations.HISTORY_EVENTS]: [view('b')] },
     });
   });
   // The list scrolls once a few views are stored, and the arrow keys are handled on the list

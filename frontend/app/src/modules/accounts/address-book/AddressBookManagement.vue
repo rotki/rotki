@@ -10,9 +10,9 @@ import AddressBookManagementMore from '@/modules/accounts/address-book/AddressBo
 import AddressBookTable from '@/modules/accounts/address-book/AddressBookTable.vue';
 import EthNamesHint from '@/modules/accounts/address-book/EthNamesHint.vue';
 import { useAddressBookFields } from '@/modules/accounts/address-book/use-address-book-fields';
+import { type Filters, useAddressBookFilter } from '@/modules/accounts/address-book/use-address-book-filter';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
 import { arrayify } from '@/modules/core/common/data/array';
-import { type Filters, type Matcher, useAddressBookFilter } from '@/modules/core/table/filters/use-address-book-filter';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
@@ -34,7 +34,7 @@ const { editableItem, openDialog } = useCommonTableProps<AddressBookPayload>();
 const { getAddressBook } = useAddressBookOperations();
 
 const filterSchema = useAddressBookFilter();
-const fields = useAddressBookFields(filterSchema.matchers);
+const fields = useAddressBookFields();
 const pillLabels = usePillBarLabels();
 
 const {
@@ -47,8 +47,7 @@ const {
 } = useServerTable<
   AddressBookEntry,
   AddressBookRequestPayload,
-  Filters,
-  Matcher
+  Filters
 >({
   fetch: filter => getAddressBook(get(location), get(filter)),
   filterSchema,

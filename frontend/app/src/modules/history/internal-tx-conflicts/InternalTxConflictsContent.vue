@@ -42,14 +42,13 @@ const {
   fetchCounts,
   filters,
   loading,
-  matchers,
   pagination,
   pendingCount,
   setFilter,
   sort,
 } = useInternalTxConflicts();
 
-const fields = useInternalTxConflictFields(matchers);
+const fields = useInternalTxConflictFields();
 const pillLabels = usePillBarLabels();
 
 const {

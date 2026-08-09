@@ -12,7 +12,7 @@ import TextValueEditor from '@/modules/core/table/pill/TextValueEditor.vue';
 function field(valueType: FilterValueType, overrides: Partial<FieldDef> = {}): FieldDef {
   return {
     allowExclusion: false,
-    binding: { kind: 'matcher' },
+    binding: { kind: 'filter' },
     key: 'k',
     label: 'K',
     multiple: false,

@@ -62,7 +62,6 @@
     "edit_tooltip": "Edit account",
     "enter_selection_mode": "Enter selection mode to bulk ignore or mark assets as spam",
     "exit_selection_mode": "Exit selection mode",
-    "filter": {},
     "filter_field_labels": {
       "account": "Account",
       "chain": "Chain"
@@ -253,11 +252,6 @@
       "fetch_error": {
         "message": "Failed retrieving accounting rules: {message}",
         "title": "Retrieving accounting rules"
-      },
-      "filter": {
-        "counterparty": "filter by counterparty",
-        "event_subtype": "filter by event sub type",
-        "event_type": "filter by event type"
       },
       "filter_field_labels": {
         "counterparty": "Counterparty",
@@ -1457,20 +1451,11 @@
       }
     },
     "filter": {
-      "address": "Filter by the address",
       "address_hint": "E.g. 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      "asset_flag": "Filter by asset flag",
       "asset_flag_hint": "E.g. rebasing",
-      "asset_type": "Filter by the asset type",
-      "chain": "Filter by chain",
-      "identifier": "Filter by identifier",
       "identifier_hint": "E.g. eip155:8453/erc20:0x833589fCD6e...b54bdA02913",
-      "name": "Filter by the name of the asset",
       "name_hint": "Search using the asset name",
-      "symbol": "Filter by the symbol of the asset",
-      "symbol_hint": "Search using the asset symbol",
-      "type": "Filter by the type of the custom asset",
-      "type_hint": "Search using the asset type"
+      "symbol_hint": "Search using the asset symbol"
     },
     "filter_field_labels": {
       "address": "Address",
@@ -2702,10 +2687,8 @@
     "filter": {
       "account": "Account",
       "asset": "Asset",
-      "end_date": "End date",
       "kind": "Kind",
       "period": "Date",
-      "start_date": "Start date",
       "state": "State"
     },
     "headers": {
@@ -2939,9 +2922,6 @@
     "copy_tooltip": "Copy the error text to the clipboard",
     "message": "Open an issue in Github and include rotki_electron.log and rotkehlchen.log. The backend's output follows below:",
     "start_failure": "rotki failed to start"
-  },
-  "eth_validator_combined_filter": {
-    "status": "Filter by the status of the validator"
   },
   "eth2_input": {
     "ownership": {
@@ -5062,13 +5042,6 @@
         "title": "Oracle prices fetch failed"
       }
     },
-    "filter": {
-      "from_asset": "Filter by source asset",
-      "from_date": "Filter by start date",
-      "source_type": "Filter by oracle source",
-      "to_asset": "Filter by target asset",
-      "to_date": "Filter by end date"
-    },
     "filter_field_labels": {
       "from_asset": "Source asset",
       "period": "Period",
@@ -5966,11 +5939,6 @@
       "remove": "Remove filter",
       "search": "Filter by…"
     },
-    "saved_filters": {
-      "saving": {
-        "limited": "You are only allowed to save up to {limit} filters. Remove other filters to be able to add again."
-      }
-    },
     "saved_views": {
       "actions": {
         "apply": "Apply this view",
@@ -6684,34 +6652,19 @@
     },
     "filter": {
       "account": "Filter by account",
-      "address": "filter by counterparty address",
-      "asset": "filter by the asset of the events",
       "date_from": "From",
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
       "date_to": "To",
       "duplicate_value": "Already added",
-      "end_date": "filter by the end date of the transaction period",
-      "entry_type": "filter by entry type",
-      "event_subtype": "filter by event sub type",
-      "event_type": "filter by event type",
       "invalid_address": "Enter a valid address",
       "invalid_tx_hash": "Enter a valid transaction hash or signature",
       "invalid_validator_index": "Enter a validator index",
       "invalid_value": "Invalid value",
-      "location": "filter by event location",
       "match_exact_filter": "Should match exact filter",
       "match_exact_filter_disabled": "Disabled: every event in a matching group is shown.",
       "match_exact_filter_enabled": "Enabled: only the events that match are shown.",
-      "max_amount": "filter by maximum amount",
-      "min_amount": "filter by minimum amount",
-      "notes": "filter by notes content",
-      "protocol": "filter by the protocol of the events",
       "range_max": "Max",
       "range_max_below_min": "Max must be greater than min",
-      "range_min": "Min",
-      "start_date": "filter by the start date of the transaction period",
-      "tx_hash": "filter by tx hash(es) or signature(s)",
-      "validator_index": "filter by validator index(es)"
+      "range_min": "Min"
     },
     "filter_field_labels": {
       "account": "Account",

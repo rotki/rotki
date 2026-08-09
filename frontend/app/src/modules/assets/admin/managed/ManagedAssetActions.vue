@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Filters } from '@/modules/core/table/filters/use-assets-filter';
+import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType, isIgnoredAssetsHandling } from '@/modules/assets/types';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';

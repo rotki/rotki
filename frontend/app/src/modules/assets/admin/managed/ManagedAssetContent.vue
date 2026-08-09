@@ -3,6 +3,7 @@ import type { Nullable, SupportedAsset } from '@rotki/common';
 import { isEqual, keyBy } from 'es-toolkit';
 import ManagedAssetFormDialog from '@/modules/assets/admin/managed/ManagedAssetFormDialog.vue';
 import ManagedAssetTable from '@/modules/assets/admin/managed/ManagedAssetTable.vue';
+import { type Filters, useAssetFilter } from '@/modules/assets/admin/managed/use-assets-filter';
 import { useManagedAssetFields } from '@/modules/assets/admin/managed/use-managed-asset-fields';
 import MergeDialog from '@/modules/assets/admin/MergeDialog.vue';
 import RestoreAssetDbButton from '@/modules/assets/admin/RestoreAssetDbButton.vue';
@@ -12,7 +13,6 @@ import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { type Filters, type Matcher, useAssetFilter } from '@/modules/core/table/filters/use-assets-filter';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
@@ -61,8 +61,8 @@ const { getAssetTypes } = useAssetManagementApi();
 
 const { deleteCacheKey } = useAssetInfoCache();
 
-const filterSchema = useAssetFilter(assetTypes);
-const fields = useManagedAssetFields(filterSchema.matchers, () => get(ignoredAssets).length);
+const filterSchema = useAssetFilter();
+const fields = useManagedAssetFields(assetTypes, () => get(ignoredAssets).length);
 
 const {
   collection: assets,
@@ -75,8 +75,7 @@ const {
 } = useServerTable<
   SupportedAsset,
   AssetRequestPayload,
-  Filters,
-  Matcher
+  Filters
 >({
   fetch: queryAllAssets,
   filterSchema,

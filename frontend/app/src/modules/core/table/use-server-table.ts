@@ -2,7 +2,7 @@ import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, MaybeRef, Ref, WritableComputedRef } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
-import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/modules/core/table/filtering';
+import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
 import { isEqual } from 'es-toolkit';
 import { getApiSortingParams } from '@/modules/core/table/pagination-filter-utils';
@@ -43,17 +43,16 @@ interface UseServerTableOptions<
   TItem extends NonNullable<unknown>,
   TPayload extends PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem>,
   TFilter extends MatchedKeywordWithBehaviour<string> | void = undefined,
-  TSuggestionMatcher extends SearchMatcher<string, string> | void = undefined,
 > {
   /** The request function. `TPayload` is inferred from its parameter. */
   fetch: (payload: MaybeRef<TPayload>) => Promise<Collection<TItem>>;
   /** URL query sync mode; defaults to `{ mode: 'none' }` (no URL binding). */
   urlState?: UrlState;
   /**
-   * The filter schema itself, not a factory: the caller holds it and reads
-   * `matchers` off it. Named `filterSchema` because `filter` is the returned value.
+   * The filter schema itself, not a factory: the caller holds it, and the pill bar reads the same
+   * filter bag. Named `filterSchema` because `filter` is the returned value.
    */
-  filterSchema?: FilterSchema<TFilter, TSuggestionMatcher>;
+  filterSchema?: FilterSchema<TFilter>;
   /** External parameter sources merged into the request payload and/or URL. */
   params?: ParamSource[];
   /** Default sort column and fallback column applied when none is persisted. */
@@ -92,21 +91,19 @@ export function useServerTable<
   TItem extends NonNullable<unknown>,
   TPayload extends PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem> = PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem>,
   TFilter extends MatchedKeywordWithBehaviour<string> | void = undefined,
-  TSuggestionMatcher extends SearchMatcher<string, string> | void = undefined,
 >(
-  options: UseServerTableOptions<TItem, TPayload, TFilter, TSuggestionMatcher>,
+  options: UseServerTableOptions<TItem, TPayload, TFilter>,
 ): UseServerTableReturn<TItem, TPayload, TFilter> {
   const itemsPerPage = useItemsPerPage();
 
   const {
     fetch: requestData,
     filterSchema = {
-      // The fallback for a table with no filter schema. An empty bag is not provably a TFilter,
-      // and neither is undefined, so this is the same filter-bag debt the two suppressions in
-      // requestPayload below carry, and it dies with them in Stage 4.
+      // The fallback for a table with no filter schema (a dialog listing rows it never filters).
+      // Such a table has no filter bag at all, and neither an empty one nor undefined is provably
+      // the TFilter its caller declared, so the hole is stated here rather than at every read.
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       filters: ref({}) as Ref<TFilter>,
-      matchers: computed<TSuggestionMatcher[]>(() => []),
       RouteFilterSchema: undefined,
     },
     params = [],
@@ -118,7 +115,7 @@ export function useServerTable<
 
   const { markUserIntent, pendingIntent, pendingUrlSource } = useChangeIntent();
 
-  const { filters, matchers, RouteFilterSchema } = filterSchema;
+  const { behaviourKeys = [], filters, RouteFilterSchema } = filterSchema;
 
   // Commit callbacks feed the reducer. They are defined before the sub-composables that
   // receive them and call the hoisted `dispatch`.
@@ -161,14 +158,11 @@ export function useServerTable<
     const offset = (page - 1) * limit;
 
     const merged = mergeParams(params, 'request', get(filters) ?? {});
+    const transformed = transformFilters(merged, behaviourKeys);
 
-    // The merged bag is filter keys plus arbitrary source keys, so it is only
-    // nominally TFilter. Both casts are the same debt the old code carried and both
-    // die in Stage 4, when the payload is assembled from typed parts instead of
-    // spread from one loosely-typed bag.
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const transformed = transformFilters(merged as TFilter, get(matchers)) as Record<string, unknown>;
-
+    // The one assertion left here, and the boundary it belongs to: what a table sends is its
+    // filter bag plus whatever its param sources contribute, which only the caller's own payload
+    // type describes. Assembling it from typed parts is what would retire this.
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
       ...transformed,

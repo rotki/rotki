@@ -3,9 +3,9 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { toHumanReadable } from '@rotki/common';
 import { dateBoundParser, dateDeserializer } from '@/modules/core/common/data/date';
 import { FilterOps, FilterValueTypes } from '@/modules/core/table/filtering';
-import { validStatuses } from '@/modules/core/table/filters/use-eth-validator-filter';
 import { toDateFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { useSetting } from '@/modules/settings/use-setting';
+import { validStatuses } from '@/modules/staking/eth/use-eth-validator-filter';
 
 /** The wire keys the combined filter is stored and sent under. */
 export const EthStakingFilterValueKeys = {
@@ -51,7 +51,7 @@ export function useEthStakingFilterFields(
   // and this one only ever feeds the pill bar.
   const statusField = computed<FieldDef>(() => ({
     allowExclusion: false,
-    binding: { kind: 'matcher' },
+    binding: { kind: 'filter' },
     key: EthStakingFilterValueKeys.STATUS,
     // `eth_validator_combined_filter.status` is the long "filter by the status of the validator"
     // hint the old bar showed; a pill wants the noun.

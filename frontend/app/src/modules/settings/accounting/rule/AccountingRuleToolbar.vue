@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Filters, Matcher } from '@/modules/core/table/filters/use-accounting-rule-filter';
+import type { Filters } from '@/modules/settings/accounting/rule/use-accounting-rule-filter';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { CustomRuleHandling } from '@/modules/settings/accounting/rule/accounting-rule-query';
@@ -10,13 +10,9 @@ const customRuleHandling = defineModel<CustomRuleHandling>('customRuleHandling',
 /** The filter is a v-model rather than a prop pair so the bar writes straight back to the table. */
 const filter = defineModel<Filters>('filter', { required: true });
 
-const { matchers } = defineProps<{
-  matchers: Matcher[];
-}>();
-
 const { t } = useI18n({ useScope: 'global' });
 
-const fields = useAccountingRuleFields(() => matchers);
+const fields = useAccountingRuleFields();
 const pillLabels = usePillBarLabels();
 </script>
 

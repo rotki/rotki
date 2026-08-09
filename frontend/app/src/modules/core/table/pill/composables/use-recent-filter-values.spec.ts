@@ -18,7 +18,7 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
 function field(overrides: Partial<FieldDef> = {}): FieldDef {
   return {
     allowExclusion: false,
-    binding: { kind: 'matcher' },
+    binding: { kind: 'filter' },
     freeText: true,
     key: 'addresses',
     label: 'Address',

@@ -46,8 +46,8 @@ vi.mock('@/modules/core/table/use-server-table', () => ({
 
 // The filter schema is now built by the caller rather than by the mocked table, so
 // it has to be stubbed too: the real one reaches into the settings store.
-vi.mock('@/modules/core/table/filters/use-events-filter', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/modules/core/table/filters/use-events-filter')>();
+vi.mock('@/modules/history/events/use-events-filter', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/modules/history/events/use-events-filter')>();
   return {
     ...actual,
     useHistoryEventFilter: vi.fn(() => ({

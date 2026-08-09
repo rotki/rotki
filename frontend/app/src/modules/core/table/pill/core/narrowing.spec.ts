@@ -26,7 +26,7 @@ function searchFieldsAndValues(
 function field(overrides: Partial<FieldDef> & Pick<FieldDef, 'key' | 'label'>): FieldDef {
   return {
     allowExclusion: false,
-    binding: { kind: 'matcher' },
+    binding: { kind: 'filter' },
     multiple: true,
     operators: ['is'],
     valueType: FilterValueTypes.ENUM,

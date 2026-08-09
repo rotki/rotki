@@ -1,8 +1,8 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { toAccountChainField } from '@/modules/accounts/blockchain-account-fields';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
 import { useBlockchainAccountOptions } from '@/modules/accounts/use-blockchain-account-options';
-import { toAccountChainField } from '@/modules/core/table/filters/blockchain-account-fields';
 import { toAccountField } from '@/modules/core/table/filters/shared/account-field';
 import { type TagFieldOption, toTagsField } from '@/modules/core/table/filters/shared/tag-field';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';

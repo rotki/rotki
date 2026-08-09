@@ -1,11 +1,11 @@
 import type { FieldDef, FilterState } from '@/modules/core/table/pill/core/types';
 import { describe, expect, it } from 'vitest';
-import { FilterBehaviour } from '@/modules/core/table/filtering';
+import { FilterBehaviours } from '@/modules/core/table/filtering';
 import { hasWritableValue, matchesFromState, stateFromMatches } from '@/modules/core/table/pill/core/codec';
 
 const protocol: FieldDef = {
   allowExclusion: true,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   key: 'protocols',
   label: 'Protocol',
   multiple: true,
@@ -15,7 +15,7 @@ const protocol: FieldDef = {
 
 const asset: FieldDef = {
   allowExclusion: false,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   key: 'assets',
   label: 'Asset',
   multiple: true,
@@ -25,7 +25,7 @@ const asset: FieldDef = {
 
 const ignored: FieldDef = {
   allowExclusion: false,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   key: 'excludeIgnoredAssets',
   label: 'Ignored',
   multiple: false,
@@ -55,7 +55,7 @@ const account: FieldDef = {
 
 const amount: FieldDef = {
   allowExclusion: false,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   bounds: { lower: 'minAmount', upper: 'maxAmount' },
   key: 'amount',
   label: 'Amount',
@@ -66,7 +66,7 @@ const amount: FieldDef = {
 
 const period: FieldDef = {
   allowExclusion: false,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   bounds: { lower: 'fromTimestamp', upper: 'toTimestamp' },
   deserializer: (value: string) => `d:${value}`,
   key: 'period',
@@ -92,6 +92,16 @@ describe('pill codec', () => {
     it('should prefix excluded (is_not) enum values with !', () => {
       const state: FilterState = [{ fieldKey: 'protocols', op: 'is_not', values: ['aave'] }];
       expect(matchesFromState(state, fields).matches).toStrictEqual({ protocols: ['!aave'] });
+    });
+
+    // The other half of the exclusion contract, and the reason a field must not offer `is_not`
+    // unless it declares `allowExclusion`: here the operator is silently dropped and the filter
+    // applies as `is`, which the user has no way of seeing. Enforced at the source in
+    // `toMatchFieldDef`, which does not offer the operator to a field that cannot express it.
+    it('should drop is_not on a field that does not allow exclusion', () => {
+      const state: FilterState = [{ fieldKey: 'assets', op: 'is_not', values: ['ETH'] }];
+
+      expect(matchesFromState(state, fields).matches).toStrictEqual({ assets: ['ETH'] });
     });
 
     it('should serialize a boolean field as true', () => {
@@ -187,7 +197,7 @@ describe('pill codec', () => {
 
     it('should decode a behaviour-wrapped exclude value', () => {
       const state = stateFromMatches(
-        { protocols: { behaviour: FilterBehaviour.EXCLUDE, values: ['aave'] } },
+        { protocols: { behaviour: FilterBehaviours.EXCLUDE, values: ['aave'] } },
         {},
         fields,
       );

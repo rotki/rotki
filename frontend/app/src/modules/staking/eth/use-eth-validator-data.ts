@@ -5,10 +5,10 @@ import type {
   EthereumValidatorRequestPayload,
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
-import { type Filters, type Matcher, useEthValidatorAccountFilter } from '@/modules/core/table/filters/use-eth-validator-filter';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useSetting } from '@/modules/settings/use-setting';
+import { type Filters, useEthValidatorAccountFilter } from '@/modules/staking/eth/use-eth-validator-filter';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 
 interface UseEthValidatorDataReturn {
@@ -31,7 +31,7 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
   const { ethStakingValidators } = storeToRefs(blockchainValidatorsStore);
   const currencySymbol = useSetting('currencySymbol');
 
-  const filterSchema = useEthValidatorAccountFilter(t);
+  const filterSchema = useEthValidatorAccountFilter();
 
   const {
     collection: rows,
@@ -42,8 +42,7 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
   } = useServerTable<
     EthereumValidator,
     EthereumValidatorRequestPayload,
-    Filters,
-    Matcher
+    Filters
   >({
     fetch: fetchValidators,
     filterSchema,

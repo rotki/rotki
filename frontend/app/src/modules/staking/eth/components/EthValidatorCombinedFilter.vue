@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import { assert, type EthStakingCombinedFilter } from '@rotki/common';
-import { isValidStatus } from '@/modules/core/table/filters/use-eth-validator-filter';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { EthStakingFilterValueKeys, useEthStakingFilterFields } from '@/modules/staking/eth/use-eth-staking-filter-fields';
+import { isValidStatus } from '@/modules/staking/eth/use-eth-validator-filter';
 
 const filter = defineModel<EthStakingCombinedFilter | undefined>('filter', { required: true });
 

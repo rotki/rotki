@@ -1,10 +1,11 @@
 import type { RuiIcons } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import type { ComputedRef } from 'vue';
 import type { FieldDef, ValueIcon } from '@/modules/core/table/pill/core/types';
-import type { Matcher } from '@/modules/history/data-issues/use-data-issues-filter';
-import { type DataIssueFieldResolution, toDataIssueFields } from '@/modules/core/table/filters/data-issue-fields';
+import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
+import { assetSuggestions } from '@/modules/core/common/display/assets';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { IssueKind, IssueState, KIND_META, STATE_META } from '@/modules/history/data-issues/constants';
+import { type DataIssueFieldResolution, toDataIssueFields } from '@/modules/history/data-issues/data-issue-fields';
 import { useDataIssueAccountOptions } from '@/modules/history/data-issues/use-data-issue-account-options';
 import { useDataIssuesFormat } from '@/modules/history/data-issues/use-data-issues-format';
 
@@ -34,13 +35,18 @@ function toValueIcon(meta: { color: string; icon: RuiIcons }): ValueIcon {
  * State and kind are looked up through maps built from the enums rather than resolved per call: a
  * resolver runs once per candidate value while the bar narrows, so it must not rebuild anything.
  */
-export function useDataIssueFields(matchers: MaybeRefOrGetter<Matcher[]>): ComputedRef<FieldDef[]> {
+export function useDataIssueFields(): ComputedRef<FieldDef[]> {
   const { t } = useI18n({ useScope: 'global' });
   // Asset, address and date resolution is the same for every table filtering on them, so it comes
   // from one place rather than being restated here.
   const shared = useSharedFieldResolvers();
   const { kindLabel, stateLabel } = useDataIssuesFormat();
   const account = useDataIssueAccountOptions();
+  const { assetSearch } = useAssetInfoRetrieval();
+
+  // Built once rather than per call: `assetSuggestions` carries the debounce, so rebuilding it on
+  // every keystroke would give each one a fresh timer that cancels nothing.
+  const searchAsset = assetSuggestions(assetSearch);
 
   const stateLabels = computed<Map<string, string>>(
     () => new Map(Object.values(IssueState).map(state => [String(state), stateLabel(state)])),
@@ -61,7 +67,8 @@ export function useDataIssueFields(matchers: MaybeRefOrGetter<Matcher[]>): Compu
     resolveKindLabel: (value: string): string => get(kindLabels).get(value) ?? value,
     resolveStateIcon: (value: string): ValueIcon | undefined => stateIcons.get(value),
     resolveStateLabel: (value: string): string => get(stateLabels).get(value) ?? value,
+    searchAsset,
   }));
 
-  return computed<FieldDef[]>(() => toDataIssueFields(toValue(matchers), shared, t, get(resolution)));
+  return computed<FieldDef[]>(() => toDataIssueFields(shared, t, get(resolution)));
 }
