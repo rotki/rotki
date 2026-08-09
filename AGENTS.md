@@ -98,16 +98,25 @@ assistants must pass an explicit timeout on these commands rather than relying o
 | `pnpm run lint`, `pnpm run lint:all`, `pnpm run typecheck`, `pnpm run build`, `pnpm run test:unit` (full suite), `pnpm install` | 10 minutes |
 | `pnpm run test:e2e`, `pnpm run electron:build`, docker builds | run in the background instead. The unsharded e2e suite takes ~20 minutes locally, which outlasts any foreground timeout. |
 
-Reference measurements (2026-08-07), so a later reader can tell whether this has drifted:
+Reference measurements (2026-08-09), so a later reader can tell whether this has drifted. The
+frontend gates run as separate steps of one **"Frontend checks"** job (3m50s-5m10s including
+install), so the CI column names the step rather than a whole job:
 
-| Command | 16-core workstation, warm cache | CI (`ubuntu-latest`, 4 cores, incl. install) |
+| Command | 16-core workstation, warm cache | CI (`ubuntu-latest`, 4 cores) |
 |---------|---------------------------------|-----------------------------------------------|
-| `pnpm run lint` | 164s | "Frontend lint" job (install + build + `lint:all`): 238-391s |
-| `pnpm run typecheck` | 56s | folded into that job's `build` step |
-| `pnpm run test:unit` (full) | 114s | "Frontend unit tests / vitest": 483-519s |
-| `pnpm run lint:style` | 2s | |
-| `pnpm run check:linked-keys` | 1s | |
-| `pnpm run test:e2e` (full, unsharded) | ~20 minutes | 240-634s per shard, across four shards |
+| `pnpm run lint` | 54s (multithreaded; 159s before `--concurrency=4`) | ESLint step: 110-154s (208-226s before `--concurrency=4`) |
+| `pnpm run typecheck` | 56s | Typecheck step: 59-86s |
+| `pnpm run build` | | Build step (`build:app`): 12-17s |
+| `pnpm run test:unit` (full) | 114s | "Frontend unit tests / vitest" job: 483-519s |
+| `pnpm run lint:style` | 2s | Stylelint step: 2s |
+| `pnpm run check:linked-keys` | 1s | Linked i18n keys step: 1s |
+| `pnpm run test:e2e` (full, unsharded) | ~20 minutes | 240-637s per shard, across four shards |
+
+Runner speed varies by about 1.4x between runs, and it moves every step together, so compare a
+step against its own range rather than reading one slow run as a regression.
+
+The Typecheck and Build steps are `pull_request`-only (`github.event_name != 'push'`), so a push
+straight to a branch never typechecks. ESLint, Stylelint and the i18n key check run on every event.
 
 A command that hits its timeout has not failed, it has been cut off. Re-run it with a larger
 timeout or in the background. Do not report the truncation as a result, and do not retry at the
