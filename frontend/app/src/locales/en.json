@@ -383,6 +383,7 @@
         }
       },
       "blockchain": {
+        "cancelled": "Cancelled before querying the network",
         "error": {
           "description": "Error at querying blockchain balances: {error}",
           "title": "Querying blockchain balances"

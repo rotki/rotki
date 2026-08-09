@@ -6,7 +6,7 @@ import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-s
 import { arrayify } from '@/modules/core/common/data/array';
 import { setDigest } from '@/modules/core/common/data/digest';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { Skipped, type TaskError } from '@/modules/core/tasks/task-result';
+import { Cancelled, Skipped, type TaskError } from '@/modules/core/tasks/task-result';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { BALANCES_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
@@ -111,7 +111,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
         kind: ActivityKind.BLOCKCHAIN_BALANCES,
         lane: BALANCES_LANE,
         rerunnable: true,
-        run: async ({ runTask }): Promise<Result<void, TaskError>> => {
+        run: async ({ cancelled, runTask }): Promise<Result<void, TaskError>> => {
           // 🔴 A dropped refresh is SKIPPED with a reason, never `ok`. Returning success here
           // recorded a completion for work that never ran, so the ledger — and `everCompleted`
           // with it — reported this chain as refreshed. Same class as a green "Sync Complete"
@@ -127,6 +127,14 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
           // second top-level activity, and cancelling this chain now stops the addresses too.
           if (detect)
             await detectForChain(chain, id);
+
+          // 🔴🔴 The cancel that stopped the children does not stop *this body* — nothing in
+          // JavaScript can interrupt a running async function. Without this check the await above
+          // simply resolved (cancelled children settle too) and the query ran anyway: observed as
+          // `POST /balances/blockchains/eth` landing *after* the `DELETE`s that aborted its
+          // detections, writing balances and recording a completion for a chain the user stopped.
+          if (cancelled())
+            return err(Cancelled({ message: t('actions.balances.blockchain.cancelled') }));
 
           return handleRefresh(runTask, chainPayload);
         },

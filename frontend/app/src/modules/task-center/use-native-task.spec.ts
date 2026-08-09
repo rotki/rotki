@@ -2,7 +2,7 @@ import type { ResultAsync } from 'plainfp/result-async';
 import { err, isErr, isOk, ok, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { assert, describe, expect, it, vi } from 'vitest';
-import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { ActivityKind, makeActivityId } from './core/types';
 import { useNativeTask } from './use-native-task';
 import { useTaskOrchestrator } from './use-task-orchestrator';
@@ -70,6 +70,94 @@ describe('useNativeTask', () => {
     release();
     await Promise.all([first, second]);
     expect(run).toHaveBeenCalledOnce();
+  });
+
+  describe('ctx.cancelled', () => {
+    /**
+     * 🔴🔴 Cancelling settles the *record*; it cannot interrupt a running async body, because
+     * nothing in JavaScript can. A body with more than one stage therefore runs to completion after
+     * the row already says CANCELLED — observed against a real backend as a cancelled chain going
+     * on to issue its balance query, `POST /balances/blockchains/eth` landing after the `DELETE`s
+     * that aborted its detections.
+     */
+    it('should tell a running body that it was cancelled', async () => {
+      const { cancelActivity, submitTask } = useNativeTask();
+      const id = makeActivityId(ActivityKind.PRICES, 'cancel-signal');
+
+      let release!: () => void;
+      const firstStageDone = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const secondStage = vi.fn();
+
+      const outcome = submitTask({
+        id,
+        kind: ActivityKind.PRICES,
+        run: async ({ cancelled }): ResultAsync<void, TaskError> => {
+          await firstStageDone;
+          if (cancelled())
+            return err(Cancelled({ message: 'stopped between stages' }));
+
+          secondStage();
+          return ok(undefined);
+        },
+        title: 'prices',
+      });
+
+      cancelActivity(ActivityKind.PRICES, 'cancel-signal');
+      release();
+      await outcome;
+
+      // The stage after the cancel never ran.
+      expect(secondStage).not.toHaveBeenCalled();
+    });
+
+    it('should read false for a body that was never cancelled', async () => {
+      const { submitTask } = useNativeTask();
+      const seen: boolean[] = [];
+
+      await submitTask({
+        id: makeActivityId(ActivityKind.PRICES, 'cancel-signal-clean'),
+        kind: ActivityKind.PRICES,
+        run: async ({ cancelled }): ResultAsync<void, TaskError> => {
+          seen.push(cancelled());
+          return ok(undefined);
+        },
+        title: 'prices',
+      });
+
+      expect(seen).toStrictEqual([false]);
+    });
+
+    /** A session ending has to reach bodies mid-stage too, or they work on for a logged-out user. */
+    it('should tell a running body that the session ended', async () => {
+      const { reset, submitTask } = useNativeTask();
+      let release!: () => void;
+      const firstStageDone = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const secondStage = vi.fn();
+
+      const outcome = submitTask({
+        id: makeActivityId(ActivityKind.PRICES, 'cancel-signal-reset'),
+        kind: ActivityKind.PRICES,
+        run: async ({ cancelled }): ResultAsync<void, TaskError> => {
+          await firstStageDone;
+          if (cancelled())
+            return err(Cancelled({ message: 'session ended' }));
+
+          secondStage();
+          return ok(undefined);
+        },
+        title: 'prices',
+      });
+
+      reset();
+      release();
+      await outcome;
+
+      expect(secondStage).not.toHaveBeenCalled();
+    });
   });
 
   describe('supersedeTask', () => {
