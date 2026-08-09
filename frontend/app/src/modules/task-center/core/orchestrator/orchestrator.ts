@@ -1,15 +1,11 @@
 import type { OrchestratorOptions, TaskOrchestrator } from './api';
 import { err, ok, type Result } from 'plainfp/result';
-import { type ResultAsync, retry, timeout } from 'plainfp/result-async';
-import { hasTag } from 'plainfp/tagged';
-import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { isTerminalStatus } from '../status';
 import {
   type Activity,
   type ActivityId,
   activityIdHasPrefix,
   type ActivityKind,
-  ActivitySourceType,
   type ActivityStatus,
   type ActivitySteps,
   type CompletionRecord,
@@ -20,7 +16,8 @@ import {
 } from '../types';
 import { AlreadyTerminal, type ControlError, NotCancellable, NotFound, NotRerunnable } from './errors';
 import { dropCompletions, markStaleAfter, recordCompletion, recordSettlement } from './ledger';
-import { aggregateStatus, childProgress, percentageOf, statusForId } from './projection';
+import { endedIncomplete, liveChildrenOf, runActivity, terminalStatus } from './lifecycle';
+import { aggregateStatus, childProgress, projectActivity, statusForId } from './projection';
 import { allRulesPass, DEFAULT_RULES } from './rules';
 import { createScheduler } from './scheduler';
 import { type ActivitySpec, DEFAULT_LANE, DEFAULT_PRIORITY, type ReportProgress, type StaleAfterEdge } from './spec';
@@ -92,6 +89,29 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
 
     if (status === Status.COMPLETE && markStaleAfter(record.spec.id, staleEdges, ledger))
       emit();
+
+    // 🔴 An activity that ends without completing takes its subtree with it — cancelled, failed or
+    // skipped alike. Hanging the cascade off the settle rather than off `cancel` is what makes it
+    // one rule instead of two: a parent that fails mid-flight orphans its queued children exactly
+    // the way an explicit cancel used to.
+    //
+    // ⭐ Recursion terminates on a malformed parent cycle without a seen-set, because `status` is
+    // already terminal by the time this runs, so a node reached a second time is skipped.
+    if (status !== Status.COMPLETE)
+      cancelDescendantsOf(record.spec.id);
+  }
+
+  /**
+   * Cancel everything beneath `id`. Each child settles through {@link settleTerminal}, which walks
+   * its own children in turn, so the whole subtree comes down from one call.
+   *
+   * ⚠️ A child that cannot be cancelled never stops the walk. A RUNNING node with no cancel handle
+   * is left alone and its siblings still come down; abandoning the rest of the subtree over one
+   * such node is the bug this fixes, not a safety property.
+   */
+  function cancelDescendantsOf(id: ActivityId): void {
+    for (const child of liveChildrenOf(records, id))
+      cancelOne(child);
   }
 
   /**
@@ -128,27 +148,8 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     }
   }
 
-  function project(record: ActivityRecord, children?: Map<ActivityId, ActivitySteps>): Activity {
-    const { spec, status, steps, startedAt } = record;
-    const percentage = percentageOf(status, steps, children?.get(spec.id));
-    return {
-      cancellable: status === Status.RUNNING ? Boolean(spec.cancel) : status === Status.PENDING,
-      ephemeral: spec.ephemeral,
-      group: spec.group,
-      id: spec.id,
-      kind: spec.kind,
-      parent: spec.parent,
-      percentage,
-      rerunnable: Boolean(spec.rerunnable),
-      resets: spec.resets,
-      source: { type: ActivitySourceType.NATIVE },
-      startedAt,
-      status,
-      steps,
-      subtitle: spec.subtitle,
-      title: spec.title,
-    };
-  }
+  const project = (record: ActivityRecord, children?: Map<ActivityId, ActivitySteps>): Activity =>
+    projectActivity(record, children?.get(record.spec.id));
 
   function snapshot(): Activity[] {
     const children = childProgress(records);
@@ -182,6 +183,11 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
       const parent = records.get(record.spec.parent);
       if (parent?.status === Status.PENDING)
         return false;
+
+      // ⛔ No check for a parent that ended incomplete belongs here. Refusing is not settling, so a
+      // child nothing will ever make eligible would sit PENDING for the life of the process,
+      // holding its caller's await open with it. `settleTerminal` cancels the subtree and `submit`
+      // settles a late arrival — both *end* the child rather than leaving it queued forever.
     }
 
     const depsSatisfied = (record.spec.deps ?? []).every((depId) => {
@@ -194,45 +200,15 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     return allRulesPass(rules, project(record), snapshot());
   }
 
-  function terminalStatus(record: ActivityRecord, outcome: Result<unknown, TaskError>): ActivityStatus {
-    if (record.cancelRequested)
-      return Status.CANCELLED;
-    if (outcome.ok)
-      return Status.COMPLETE;
-
-    const { error } = outcome;
-    if (hasTag(error, 'Cancelled') || hasTag(error, 'BackendCancelled'))
-      return Status.CANCELLED;
-    if (hasTag(error, 'Skipped'))
-      return Status.SKIPPED;
-
-    return Status.FAILED;
-  }
-
   async function execute(record: ActivityRecord): Promise<void> {
     record.status = Status.RUNNING;
     record.startedAt = now();
     emit();
 
     const report: ReportProgress = steps => reportProgress(record.spec.id, steps);
+    const outcome = await runActivity(record.spec, report);
 
-    const runOnce = async (): ResultAsync<unknown, TaskError> => {
-      const base = record.spec.run(report);
-      return record.spec.timeoutMs === undefined
-        ? base
-        : timeout(base, record.spec.timeoutMs, () => TaskFailed({ message: 'Timed out' }));
-    };
-
-    let outcome: Result<unknown, TaskError>;
-    try {
-      outcome = await (record.spec.retry ? retry(runOnce, record.spec.retry) : runOnce());
-    }
-    catch (error) {
-      // The producer's ResultAsync should never reject; guard so a misbehaving one can't hang.
-      outcome = err(TaskFailed({ cause: error, message: 'Unexpected error' }));
-    }
-
-    settleTerminal(record, terminalStatus(record, outcome));
+    settleTerminal(record, terminalStatus(record.cancelRequested, outcome));
   }
 
   function schedule(record: ActivityRecord): void {
@@ -259,23 +235,31 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     records.set(spec.id, record);
     if (spec.staleAfter?.length)
       staleEdges.set(spec.id, spec.staleAfter);
+
+    // A child arriving after its parent already ended without completing belongs to a subtree that
+    // is gone, so it is settled here rather than scheduled. `eligible` would refuse to start it
+    // either way — but refusing is not settling, and a record nothing will ever make eligible sits
+    // PENDING for the life of the process, holding its caller's await open with it.
+    const parent = spec.parent === undefined ? undefined : records.get(spec.parent);
+    if (parent !== undefined && endedIncomplete(parent)) {
+      settleTerminal(record, Status.CANCELLED);
+      return spec.id;
+    }
+
     schedule(record);
     emit();
     return spec.id;
   }
 
-  function cancel(id: ActivityId): Result<void, ControlError> {
-    const record = records.get(id);
-    if (!record)
-      return err(NotFound({ id }));
+  /** One node's cancellation. No `pump` — {@link cancel} pumps once for the whole subtree. */
+  function cancelOne(record: ActivityRecord): Result<void, ControlError> {
+    const id = record.spec.id;
     if (isTerminalStatus(record.status))
       return err(AlreadyTerminal({ id }));
 
     if (record.status === Status.PENDING) {
       scheduler.drop(id);
       settleTerminal(record, Status.CANCELLED);
-      // A cancelled dep may unblock dependents / rules — re-evaluate the queue.
-      scheduler.pump();
       return ok(undefined);
     }
 
@@ -287,8 +271,32 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     // Reflect the cancellation immediately; `cancelRequested` keeps it CANCELLED even if the
     // aborting task later settles ok. The scheduler slot frees once `run` actually resolves.
     settleTerminal(record, Status.CANCELLED);
-    scheduler.pump();
     return ok(undefined);
+  }
+
+  /**
+   * Cancel an activity **and everything beneath it**. "Stop this refresh" is one act.
+   *
+   * 🔴 Cancelling a parent alone settled its row and stopped nothing: the handle every native spec
+   * carries only aborts that activity's own backend task, which an umbrella never has, so the row
+   * went CANCELLED and vanished while its children kept running — and queued ones still started,
+   * because `eligible` only refused a child whose parent was still PENDING.
+   *
+   * ⭐ No new cancel handle is needed anywhere. Once the children settle, the parent's `Promise.all`
+   * resolves on its own and `cancelRequested` maps that outcome to CANCELLED.
+   *
+   * The walk itself lives in {@link settleTerminal}, so this is only the root's own cancellation:
+   * every path that ends an activity incomplete brings its subtree down, not just this one.
+   */
+  function cancel(id: ActivityId): Result<void, ControlError> {
+    const record = records.get(id);
+    if (!record)
+      return err(NotFound({ id }));
+
+    const outcome = cancelOne(record);
+    // Once, for the whole subtree: a cancelled dep may unblock dependents / rules.
+    scheduler.pump();
+    return outcome;
   }
 
   function cancelMatching(predicate: (record: ActivityRecord) => boolean): void {
