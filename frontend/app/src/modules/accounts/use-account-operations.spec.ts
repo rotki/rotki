@@ -136,6 +136,31 @@ describe('useAccountOperations', () => {
     });
 
     /**
+     * 🔴 `allWithConcurrency` short-circuits on the first `err`: in-flight factories finish and no
+     * new ones start. With a bound of 2 and eth rejecting, optimism is the chain that would never
+     * be read — silently, with no failure anywhere. The factories are infallible for exactly this,
+     * and the naive version passes every other test in this file.
+     */
+    it('should read every chain even when one read rejects', async () => {
+      h.chainIds = ['eth', 'btc', 'optimism'];
+      h.fetch.mockImplementation(async (chain: string) => {
+        if (chain === 'eth')
+          throw new Error('boom');
+
+        return undefined;
+      });
+
+      const { useAccountOperations } = await importModule();
+      await useAccountOperations().fetchAccounts();
+      await flushPromises();
+
+      expect(h.fetch).toHaveBeenCalledWith('btc');
+      expect(h.fetch).toHaveBeenCalledWith('optimism');
+      // The chain behind the rejection still gets its data refresh.
+      expect(h.fetchBlockchainBalances).toHaveBeenCalledWith({ blockchain: 'optimism' });
+    });
+
+    /**
      * ⭐ The point of the per-chain pipeline: a chain's balances are read when *its* accounts land,
      * not when all of them have. Previously the whole sweep ran after the walk, so the slowest
      * chain gated every other chain's balances.
