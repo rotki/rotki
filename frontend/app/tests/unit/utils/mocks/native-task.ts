@@ -11,6 +11,8 @@ export interface SubmittedSpec {
   /** Declared so a spec can assert scheduling intent (an umbrella's lane, a child's parent). */
   lane?: string;
   parent?: string;
+  /** Whether this activity claims freshness for its kind — an umbrella must not. */
+  container?: boolean;
 }
 
 /**

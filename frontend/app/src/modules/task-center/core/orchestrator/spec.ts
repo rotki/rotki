@@ -7,7 +7,7 @@ import type { TaskError } from '@/modules/core/tasks/task-result';
  * keyed by a lane that exists — a typo like `balnces` is a compile error rather than a silent
  * fallback to the default cap, which would otherwise surface only as unexplained concurrency.
  */
-export const STATIC_LANES = ['default', 'balances', 'balances-cached', 'exchange', 'session', 'umbrella', 'chain-sync', 'decode'] as const;
+export const STATIC_LANES = ['default', 'balances', 'exchange', 'session', 'umbrella', 'chain-sync', 'decode'] as const;
 
 export type StaticLane = (typeof STATIC_LANES)[number];
 
@@ -211,6 +211,22 @@ export interface ActivitySpec<T = unknown> {
    * account creation) that must not leave a stale entry once the shell mounts.
    */
   readonly ephemeral?: boolean;
+  /**
+   * This activity only *groups* other work and produces no data of its own, so it writes no
+   * completion-ledger entry.
+   *
+   * 🔴 `everCompleted` for a kind must mean "we have data", not "a run happened". A fan-out
+   * umbrella settles COMPLETE whenever its children settle — `allSettled`, deliberately, because a
+   * failure belongs to the subject that failed — so an umbrella sharing its children's kind writes
+   * a success even when **every** child FAILED. Concretely: backend unreachable at login, all 17
+   * chain jobs fail, umbrella completes, and the dashboard reads `hasCachedData` true and
+   * `isInitialLoading` false — a settled, empty portfolio instead of an error state.
+   *
+   * ⚠️ Opt-in, never blanket. `HISTORY_SYNC`'s umbrella *is* the subject for its kind and its
+   * ledger entry is load-bearing (`use-refresh-transactions.ts` reads `everCompleted` for
+   * `alreadyLoaded` / `everRefreshed`); silencing that one would make history re-sync every time.
+   */
+  readonly container?: boolean;
   /**
    * Marks work that deletes data before re-deriving it, so the eligibility rules can keep it from
    * overlapping work that writes to the same rows. Everything else may overlap harmlessly — the

@@ -78,7 +78,10 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
       return;
 
     record.status = status;
-    recordSettlement(record.spec.id, record.spec.kind, status, now(), ledger);
+    // A container groups work and produces nothing of its own, so it never claims freshness for
+    // its kind — see {@link ActivitySpec.container}.
+    if (!record.spec.container)
+      recordSettlement(record.spec.id, record.spec.kind, status, now(), ledger);
     // Tear down producer side resources once — settleTerminal may run twice (cancel then the
     // aborted run resolving), so the flag keeps `cleanup` from double-firing.
     if (!record.cleanedUp) {

@@ -70,7 +70,14 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
   /** The read in flight per chain — the subject dedup. Entries exist only while a read is live. */
   const inflight = new Map<string, Promise<void>>();
 
-  const readChain = async (payload: BlockchainBalancePayload, chain: string): Promise<void> => {
+  /**
+   * Bumped by {@link reset}, so a read started before a session ended can tell that it has been
+   * abandoned. Clearing the map is not enough on its own: the abandoned read still settles later
+   * and still runs its own teardown, which would then act on the *next* session's state.
+   */
+  let generation = 0;
+
+  const readChain = async (payload: BlockchainBalancePayload, chain: string, era: number): Promise<void> => {
     const chainPayload = { addresses: payload.addresses, blockchain: chain, isXpub: payload.isXpub ?? false };
     const threshold = get(valueThreshold);
     // Names the backend task in the monitor's failure notification and the dev logs, the same way
@@ -96,7 +103,11 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
       await retry(readOnce, HYDRATION_RETRY);
     }
     finally {
-      stopHydration(chain);
+      // 🔴 Only if this read is still the current one. A read abandoned by `reset()` settles
+      // whenever its backend task does — possibly long into the *next* session — and clearing the
+      // flag then drops the new session's dashboard out of its loading state mid-load.
+      if (era === generation)
+        stopHydration(chain);
     }
   };
 
@@ -110,8 +121,13 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
     if (running)
       return running;
 
-    const read = readChain(payload, chain).finally(() => {
-      inflight.delete(chain);
+    const era = generation;
+    const read = readChain(payload, chain, era).finally(() => {
+      // 🔴 Same hazard on the dedup map: an abandoned read deleting the entry would drop the *new*
+      // session's read for this chain, so a later caller starts a second concurrent GET. Guarded on
+      // identity rather than key, the way `settleTerminal` compares the record and not just the id.
+      if (inflight.get(chain) === read)
+        inflight.delete(chain);
     });
     inflight.set(chain, read);
     return read;
@@ -143,6 +159,7 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
   };
 
   const reset = (): void => {
+    generation += 1;
     inflight.clear();
   };
 

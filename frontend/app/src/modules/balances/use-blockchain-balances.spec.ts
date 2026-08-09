@@ -242,7 +242,26 @@ describe('useBlockchainBalances', () => {
 
       expect(order).toStrictEqual(['detect', 'query']);
       // Parented to the chain job, which is what makes cancelling the chain stop its addresses.
-      expect(detectForChain).toHaveBeenCalledWith(Blockchain.ETH, makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH));
+      // 🔴 The id carries `detect`: sharing it with a plain refresh let `submitTask`'s dedup join
+      // this run to one that does no detection, silently skipping the sweep for that chain.
+      expect(detectForChain).toHaveBeenCalledWith(
+        Blockchain.ETH,
+        makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH, ActivityPart.DETECT),
+      );
+    });
+
+    /**
+     * 🔴🔴 A detecting run and a plain one must not share an id. `submitTask` dedups by id, so a
+     * login sweep landing while any background refresh is in flight (wallet transaction, websocket
+     * refresh, eth2 watcher) would join it and never detect — no row, no log, no error — while
+     * `withDetection` still recorded the sweep, suppressing the next login's too.
+     */
+    it('should not share an id between a detecting and a plain refresh', async () => {
+      await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, 'background');
+      await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, 'background', { detect: true });
+
+      const ids = submitTask.mock.calls.map(([spec]) => spec.id);
+      expect(new Set(ids).size).toBe(2);
     });
 
     /**
@@ -263,6 +282,29 @@ describe('useBlockchainBalances', () => {
         assert(child !== undefined);
         expect(child[0].parent).toBe(umbrella);
       }
+    });
+
+    /**
+     * 🔴🔴 The umbrella settles COMPLETE whenever its children settle — `allSettled`, so even when
+     * every one of them FAILED. Sharing its children's kind meant it wrote a success to the
+     * completion ledger, and `statusOf(BLOCKCHAIN_BALANCES).everCompleted` aggregates by kind: the
+     * dashboard then read "loaded" after a total failure and showed a settled, empty portfolio.
+     */
+    it('should mark the run umbrella as a container, so it claims no freshness', async () => {
+      await blockchainBalances.refreshBlockchainBalances({}, 'background');
+
+      const umbrella = submitTask.mock.calls
+        .map(([spec]) => spec)
+        .find(spec => spec.id.includes(`:${ActivityPart.RUN}:`));
+      assert(umbrella !== undefined);
+      expect(umbrella.container).toBe(true);
+
+      // The chains themselves are subjects and must keep writing their own entries.
+      const chainSpec = submitTask.mock.calls
+        .map(([spec]) => spec)
+        .find(spec => spec.id === makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH));
+      assert(chainSpec !== undefined);
+      expect(chainSpec.container).toBeUndefined();
     });
 
     it('should give a run a different identity per scope and per mode', async () => {

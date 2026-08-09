@@ -855,6 +855,42 @@ describe('createTaskOrchestrator', () => {
     });
   });
 
+  describe('container activities', () => {
+    /**
+     * 🔴🔴 A fan-out umbrella settles COMPLETE whenever its children settle — `allSettled`, on
+     * purpose, because a failure belongs to the subject that failed. Sharing its children's kind
+     * then wrote a *success* to the completion ledger even when every child FAILED, and
+     * `statusOf(kind)` aggregates by kind: the dashboard read "loaded" after a total failure.
+     */
+    it('should not let a container claim freshness for its kind', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 10 } });
+      const umbrella = controllable('run', { container: true });
+      const child = controllable('subject', { parent: umbrella.spec.id });
+      orchestrator.submit(umbrella.spec);
+      orchestrator.submit(child.spec);
+
+      // Every subject fails; the container completes anyway, as a container does.
+      child.settle(err(TaskFailed({ message: 'backend unreachable' })));
+      umbrella.settle(ok(undefined));
+      await flush();
+
+      expect(byId(orchestrator, umbrella.spec.id)?.status).toBe(Status.COMPLETE);
+      expect(orchestrator.statusOf(Kind.OTHER).everCompleted).toBe(false);
+    });
+
+    it('should still let a non-container umbrella record its own completion', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 10 } });
+      const umbrella = controllable('run-subject');
+      orchestrator.submit(umbrella.spec);
+
+      umbrella.settle(ok(undefined));
+      await flush();
+
+      // `HISTORY_SYNC`'s umbrella *is* the subject for its kind, and its entry is load-bearing.
+      expect(orchestrator.statusOf(Kind.OTHER).everCompleted).toBe(true);
+    });
+  });
+
   describe('cancel cascade', () => {
     /** An umbrella, one chain under it, two accounts under the chain — the history-refresh shape. */
     function tree(orchestrator: TaskOrchestrator): {
