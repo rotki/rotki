@@ -2,7 +2,7 @@ import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/m
 import { startPromise } from '@shared/utils';
 import { isEveryEvmChain } from '@/modules/accounts/use-account-addition-batch';
 import { type AccountAdditionParams, type AdditionSummary, useAccountAdditionService } from '@/modules/accounts/use-account-addition-service';
-import { type RefreshAccountsParams, useAccountOperations } from '@/modules/accounts/use-account-operations';
+import { type FetchAccountsParams, type RefreshAccountsParams, useAccountOperations } from '@/modules/accounts/use-account-operations';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -21,8 +21,8 @@ const NOTHING_ADDED: AdditionSummary = { added: [], cancelled: false, failed: []
 interface UseBlockchainAccountManagementReturn {
   addAccounts: (chain: string, data: AddAccountsPayload | XpubAccountPayload, options?: AddAccountsOption) => Promise<AdditionSummary>;
   detectEvmAccounts: () => Promise<void>;
-  fetchAccounts: (blockchain?: string | string[], refreshEns?: boolean) => Promise<void>;
-  refreshAccounts: (params?: RefreshAccountsParams) => Promise<void>;
+  fetchAccounts: (params?: FetchAccountsParams) => Promise<void>;
+  refreshAccounts: (params: RefreshAccountsParams) => Promise<void>;
 }
 
 export function useBlockchainAccountManagement(): UseBlockchainAccountManagementReturn {

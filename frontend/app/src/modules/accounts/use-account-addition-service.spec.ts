@@ -299,7 +299,7 @@ describe('useAccountAdditionService', () => {
       );
       expect(h.fetchTags).toHaveBeenCalledOnce();
       expect(h.trackAddedAddresses).toHaveBeenCalledWith(['0xabc']);
-      expect(onFetchAccounts).toHaveBeenCalledWith('eth', true);
+      expect(onFetchAccounts).toHaveBeenCalledWith({ blockchain: 'eth', refreshEns: true });
       expect(onRefreshAccounts).not.toHaveBeenCalled();
       expect(h.detectTokens).toHaveBeenCalledWith('eth', ['0xabc']);
     });

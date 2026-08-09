@@ -1,6 +1,6 @@
 import type { RunBackendTask } from '@/modules/task-center/use-native-task';
 import { Blockchain } from '@rotki/common';
-import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { err, isErr, map as mapResult, type Result } from 'plainfp/result';
 import { convertBtcBalances } from '@/modules/accounts/account-helpers';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
@@ -14,7 +14,7 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-blockchain-refresh-timestamps-store';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, Skipped, type TaskError } from '@/modules/core/tasks/task-result';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
@@ -130,9 +130,14 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     apiCall: () => Promise<{ taskId: number }>,
     notify: boolean = true,
   ): Promise<Result<void, TaskError>> => {
+    // 🔴🔴 SKIPPED with a reason, never `ok`. A chain with nothing to query is a real outcome the
+    // user can be told about ("no accounts on this chain"), and reporting it as success recorded a
+    // completion for work that never ran. §5 is the other half of the argument: the chain stays in
+    // its run's denominator instead of vanishing from it, so "11 of 17" counts every chain in scope
+    // rather than only the ones that happened to have accounts.
     if (!shouldQuery(blockchain)) {
       clearChainBalances(blockchain);
-      return ok(undefined);
+      return err(Skipped({ message: t('actions.balances.blockchain.skipped.no_accounts') }));
     }
 
     const result = await runTask<BlockchainBalances>(apiCall);

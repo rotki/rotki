@@ -264,6 +264,11 @@ export interface WorkStatus {
 export const ActivityPart = {
   CACHED: 'cached',
   PULL: 'pull',
+  /**
+   * The umbrella over a fan-out, as opposed to one subject's own work. Keeps a run's id
+   * (`…:run:<scope>:<mode>`) from ever colliding with a subject's (`…:<chain>`).
+   */
+  RUN: 'run',
   EXPORT: 'export',
   EXCHANGE_RATES: 'exchange-rates',
   ORACLE_CACHE: 'oracle-cache',

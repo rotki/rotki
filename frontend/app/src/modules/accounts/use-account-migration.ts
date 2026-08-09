@@ -54,7 +54,7 @@ export function useAccountMigration(): UseAccountMigrationReturn {
     for (const chain in addresses) {
       const chainAddresses = addresses[chain];
       const chainName = getChainName(chain);
-      promises.push(fetchAccounts(chain));
+      promises.push(fetchAccounts({ blockchain: chain }));
       if (isEvm(chain))
         promises.push(detectTokens(chain, chainAddresses));
 

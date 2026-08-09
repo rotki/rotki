@@ -96,7 +96,7 @@ describe('useAccountOperations', () => {
     it('should fetch the given chain and resolve ens names for evm chains', async () => {
       h.getAddresses.mockReturnValue(['0xabc']);
       const { useAccountOperations } = await importModule();
-      await useAccountOperations().fetchAccounts('eth', true);
+      await useAccountOperations().fetchAccounts({ blockchain: 'eth', refreshEns: true });
       expect(h.fetch).toHaveBeenCalledWith('eth');
       await flushPromises();
       expect(h.fetchEnsNames).toHaveBeenCalledWith([{ address: '0xabc', blockchain: 'eth' }], true);
@@ -105,7 +105,7 @@ describe('useAccountOperations', () => {
     it('should not resolve ens names for non-evm chains', async () => {
       h.getAddresses.mockReturnValue(['bc1abc']);
       const { useAccountOperations } = await importModule();
-      await useAccountOperations().fetchAccounts('btc');
+      await useAccountOperations().fetchAccounts({ blockchain: 'btc' });
       expect(h.fetch).toHaveBeenCalledWith('btc');
       expect(h.fetchEnsNames).not.toHaveBeenCalled();
     });
@@ -196,7 +196,7 @@ describe('useAccountOperations', () => {
 
     it('should not sweep every chain again after the walk', async () => {
       const { useAccountOperations } = await importModule();
-      await useAccountOperations().refreshAccounts();
+      await useAccountOperations().fetchAccounts({ refreshEns: true });
       await flushPromises();
 
       // One read per chain, from the walk — not a second undirected sweep.

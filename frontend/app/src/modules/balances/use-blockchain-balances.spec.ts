@@ -2,13 +2,15 @@ import type { EvmChainInfo, SupportedChains } from '@/modules/core/api/types/cha
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { createCustomPinia } from '@test/utils/create-pinia';
-import { runSpecWith } from '@test/utils/mocks/native-task';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { runSpecWith, type SubmittedSpec } from '@test/utils/mocks/native-task';
+import { hasTag } from 'plainfp/tagged';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { type RefreshMode, useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 
 vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({}),
@@ -18,6 +20,12 @@ vi.mock('@/modules/balances/use-balances-store', () => ({
   useBalancesStore: vi.fn().mockReturnValue({
     updateBalances: vi.fn(),
   }),
+}));
+
+const detectForChain = vi.fn<(chain: string, parent: string) => Promise<void>>(async () => {});
+
+vi.mock('@/modules/balances/blockchain/use-token-detection-orchestrator', () => ({
+  useTokenDetectionOrchestrator: vi.fn(() => ({ detectForChain })),
 }));
 
 vi.mock('@/modules/balances/api/use-blockchain-balances-api', () => ({
@@ -112,6 +120,7 @@ describe('useBlockchainBalances', () => {
     api = useBlockchainBalancesApi();
     blockchainBalances = useBlockchainBalances();
     vi.clearAllMocks();
+    detectForChain.mockReset().mockResolvedValue(undefined);
     submitTask.mockImplementation(runSpecWith(runTask));
     supersedeTask.mockImplementation(runSpecWith(runTask));
   });
@@ -213,6 +222,100 @@ describe('useBlockchainBalances', () => {
 
       expect(submitTask).toHaveBeenCalledTimes(1);
       expect(supersedeTask).not.toHaveBeenCalled();
+    });
+
+    /**
+     * ⭐ §3. The chain job's body is statement order: detection, then the query that reads what it
+     * found. Not a `deps` edge between two activities — one job, two stages.
+     */
+    it('should detect before querying, as children of the chain job', async () => {
+      const order: string[] = [];
+      detectForChain.mockImplementation(async () => {
+        order.push('detect');
+      });
+      vi.mocked(api.refreshBlockchainBalances).mockImplementation(async () => {
+        order.push('query');
+        return { taskId: 4 };
+      });
+
+      await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, 'background', { detect: true });
+
+      expect(order).toStrictEqual(['detect', 'query']);
+      // Parented to the chain job, which is what makes cancelling the chain stop its addresses.
+      expect(detectForChain).toHaveBeenCalledWith(Blockchain.ETH, makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH));
+    });
+
+    /**
+     * ⭐ §5. The fan-out is a *run*, and its identity is scope + mode — so two identical runs dedup
+     * onto one umbrella while a full refresh and a single-chain one coexist.
+     */
+    it('should declare the chain jobs under a run umbrella', async () => {
+      await blockchainBalances.refreshBlockchainBalances({}, 'background');
+
+      const submitted = submitTask.mock.calls.map(([spec]) => spec.id);
+      const umbrella = submitted.find(id => id.includes(`:${ActivityPart.RUN}:`));
+      assert(umbrella !== undefined);
+      expect(umbrella).toContain('background');
+
+      // Every chain in scope is a child of it, including the one with nothing to query.
+      for (const chain of [Blockchain.ETH, Blockchain.BTC]) {
+        const child = submitTask.mock.calls.find(([spec]) => spec.id === makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain));
+        assert(child !== undefined);
+        expect(child[0].parent).toBe(umbrella);
+      }
+    });
+
+    it('should give a run a different identity per scope and per mode', async () => {
+      await blockchainBalances.refreshBlockchainBalances({}, 'background');
+      await blockchainBalances.refreshBlockchainBalances({}, 'periodic');
+
+      const runs = submitTask.mock.calls
+        .map(([spec]) => spec.id)
+        .filter(id => id.includes(`:${ActivityPart.RUN}:`));
+
+      // Same scope, different mode — two runs, not one.
+      expect(new Set(runs).size).toBe(2);
+    });
+
+    /**
+     * A parent over one child is a second row describing the same work, so a single-chain refresh
+     * has no umbrella at all — the caller never branches on the count.
+     */
+    it('should not raise an umbrella for a single-chain run', async () => {
+      await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, 'background');
+
+      const submitted = submitTask.mock.calls.map(([spec]) => spec.id);
+      expect(submitted.some(id => id.includes(`:${ActivityPart.RUN}:`))).toBe(false);
+      expect(submitted).toContain(makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH));
+    });
+
+    /**
+     * 🔴🔴 §5. A chain with nothing to query used to return before submitting anything, so it
+     * vanished from its run's denominator — "11 of 11" over a scope of 17. It now settles SKIPPED
+     * with a reason, which is terminal-but-not-successful and raises no notification.
+     */
+    it('should settle a chain with no accounts as skipped, not drop it', async () => {
+      // btc is in scope but has no accounts in this fixture.
+      submitTask.mockImplementation(async (spec: SubmittedSpec) => spec.run({ report: () => {}, runTask }));
+
+      await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.BTC }, 'background');
+
+      // The chain still gets its own activity, so the run's denominator counts it...
+      const [spec] = submitTask.mock.calls[0];
+      expect(spec.id).toBe(makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.BTC));
+
+      // ...and it settles terminal-but-not-successful, with a reason the task centre can render.
+      const result = await submitTask.mock.results[0].value;
+      assert(!result.ok);
+      expect(hasTag(result.error, 'Skipped')).toBe(true);
+      expect(api.refreshBlockchainBalances).not.toHaveBeenCalled();
+    });
+
+    it('should not detect when the flow did not ask for it', async () => {
+      await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, 'background');
+
+      expect(detectForChain).not.toHaveBeenCalled();
+      expect(api.refreshBlockchainBalances).toHaveBeenCalledTimes(1);
     });
 
     it('should refresh balances with isXpub flag set to true', async () => {

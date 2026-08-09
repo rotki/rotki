@@ -22,8 +22,16 @@ import { ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/mod
 /** Chains read at a time during the account walk. */
 const ACCOUNT_READ_CONCURRENCY = 2;
 
+export interface FetchAccountsParams {
+  /** Omit for the full walk over every supported chain. */
+  blockchain?: string | string[];
+  /** Re-resolve ENS names for the chains that were read. */
+  refreshEns?: boolean;
+}
+
 export interface RefreshAccountsParams {
-  blockchain?: MaybeRef<string>;
+  /** Required: without a chain this is an accounts read, and that is {@link fetchAccounts}. */
+  blockchain: MaybeRef<string>;
   addresses?: string[];
   isXpub?: boolean;
   periodic?: boolean;
@@ -31,8 +39,8 @@ export interface RefreshAccountsParams {
 
 interface UseAccountOperationsReturn {
   detectEvmAccounts: () => Promise<void>;
-  fetchAccounts: (blockchain?: string | string[], refreshEns?: boolean) => Promise<void>;
-  refreshAccounts: (params?: RefreshAccountsParams) => Promise<void>;
+  fetchAccounts: (params?: FetchAccountsParams) => Promise<void>;
+  refreshAccounts: (params: RefreshAccountsParams) => Promise<void>;
 }
 
 export function useAccountOperations(): UseAccountOperationsReturn {
@@ -83,7 +91,8 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     await allWithConcurrency(factories, ACCOUNT_READ_CONCURRENCY);
   };
 
-  const fetchAccounts = async (blockchain?: string | string[], refreshEns: boolean = false): Promise<void> => {
+  const fetchAccounts = async (params: FetchAccountsParams = {}): Promise<void> => {
+    const { blockchain, refreshEns = false } = params;
     let chains: string[];
     if (blockchain)
       chains = Array.isArray(blockchain) ? blockchain : [blockchain];
@@ -150,11 +159,20 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     return addresses.filter(uniqueStrings);
   };
 
-  const refreshAccounts = async (params: RefreshAccountsParams = {}): Promise<void> => {
+  /**
+   * Read one chain's accounts, then bring its balances up to date.
+   *
+   * ⚠️ **A chain is required.** Called without one this used to be an accounts read and nothing
+   * else — both halves of the decision below need a chain — so the same name meant two different
+   * things depending on the argument, and the session load and the periodic tick both silently got
+   * the accounts-only meaning. Callers that want the walk call {@link fetchAccounts} directly; the
+   * flows that want balances say which kind they want.
+   */
+  const refreshAccounts = async (params: RefreshAccountsParams): Promise<void> => {
     const { addresses, blockchain, isXpub = false, periodic = false } = params;
     const chain = get(blockchain);
     const uniqueAddresses = targetAddresses(addresses, chain);
-    await fetchAccounts(chain, true);
+    await fetchAccounts({ blockchain: chain, refreshEns: true });
 
     const isEth = chain === Blockchain.ETH;
     const isEth2 = chain === Blockchain.ETH2;

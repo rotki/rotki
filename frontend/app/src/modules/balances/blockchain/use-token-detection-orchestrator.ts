@@ -11,15 +11,17 @@ import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { arrayify } from '@/modules/core/common/data/array';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { BALANCES_LANE } from '@/modules/task-center/core/orchestrator/spec';
+import { DETECT_LANE_PREFIX, familyLane } from '@/modules/task-center/core/orchestrator/spec';
 import { isTerminalStatus } from '@/modules/task-center/core/status';
-import { ActivityKind, activityParts, makeActivityId } from '@/modules/task-center/core/types';
+import { type ActivityId, ActivityKind, activityParts, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 interface UseTokenDetectionOrchestratorReturn {
   detectTokens: (chain: string | string[], addresses: string[]) => Promise<void>;
   detectAllTokens: (chains?: string | string[]) => Promise<void>;
+  /** Detection as a stage *inside* a chain job — see {@link useBlockchainBalances}. */
+  detectForChain: (chain: string, parent: ActivityId) => Promise<void>;
   /** Synchronous liveness probe — true while a matching detection activity is pending or running. */
   isDetecting: (chain: string, address?: string | null) => boolean;
   useIsDetecting: (chain: MaybeRefOrGetter<string | string[]>, address?: MaybeRefOrGetter<string | null>) => ComputedRef<boolean>;
@@ -47,17 +49,51 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
     });
   }
 
-  const queueDetectionForChain = async (chain: string, addrs: string[]): Promise<void> => {
+  /**
+   * One detection activity per address, resolving when they have all settled.
+   *
+   * ⭐ Per-address rather than one activity for the chain, and that is deliberate: `ActivitySteps`
+   * is `{ current, total }` and nothing else, so progress can say "3/9" but never *which* address;
+   * and `cancel` targets an activity id, so per-account cancel needs per-account activities.
+   * Folding them into the chain would delete both capabilities, not defer them.
+   *
+   * 🔴 On the per-chain `detect:` family, never {@link BALANCES_LANE}. The chain job that awaits
+   * this holds a balances slot for its whole body, so sharing that lane would deadlock it against
+   * its own children.
+   */
+  const queueDetectionForChain = async (chain: string, addrs: string[], parent?: ActivityId): Promise<void> => {
     assert(supportsTransactions(chain));
     await Promise.all(addrs.map(async addr => submitTask({
       id: makeActivityId(ActivityKind.TOKEN_DETECTION, chain, addr),
       kind: ActivityKind.TOKEN_DETECTION,
-      lane: BALANCES_LANE,
+      lane: familyLane(DETECT_LANE_PREFIX, chain),
+      parent,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => detectTokensForAddress(runTask, chain, addr),
       subtitle: activityLabelFor(msg.$t('task_center.activity.token_detection.detect'), { address: addr, chain: getChainName(chain) }),
       title: t('task_center.group.token_detection'),
     })));
+  };
+
+  /**
+   * Detection for one chain, as children of the chain job that awaits it.
+   *
+   * ⚠️ No hydration afterwards, unlike {@link detectTokens}: the chain job's own network query is
+   * the next statement, and it reads the tokens this just found. Hydrating in between would be a
+   * second read of the same rows.
+   *
+   * A chain with no addresses, or one that cannot hold tokens, is not an error — it simply has no
+   * detection stage, and the chain job carries straight on to its query.
+   */
+  const detectForChain = async (chain: string, parent: ActivityId): Promise<void> => {
+    if (!supportsTransactions(chain))
+      return;
+
+    const chainAddresses = get(addresses)[chain] ?? [];
+    if (chainAddresses.length === 0)
+      return;
+
+    await queueDetectionForChain(chain, chainAddresses, parent);
   };
 
   // Detection ends in a balance read, so the chains it touched are hydrated once it settles —
@@ -127,6 +163,7 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
 
   return {
     detectAllTokens,
+    detectForChain,
     detectTokens,
     isDetecting: (chain: string, address: string | null = null): boolean => isDetectingTokens(chain, address),
     useIsDetecting,

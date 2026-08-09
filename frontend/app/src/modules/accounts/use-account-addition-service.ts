@@ -1,6 +1,6 @@
 import type { ResultAsync } from 'plainfp/result-async';
 import type { AccountPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
-import type { RefreshAccountsParams } from '@/modules/accounts/use-account-operations';
+import type { FetchAccountsParams, RefreshAccountsParams } from '@/modules/accounts/use-account-operations';
 import type { Module } from '@/modules/core/common/modules';
 import { type Account, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
@@ -58,7 +58,7 @@ export interface AdditionSummary {
 
 type RefreshAccountsCallback = (params: RefreshAccountsParams) => Promise<void>;
 
-type FetchAccountsCallback = (blockchain?: string | string[], refreshEns?: boolean) => Promise<void>;
+type FetchAccountsCallback = (params?: FetchAccountsParams) => Promise<void>;
 
 type CompletionCallback = (params: AccountAdditionParams) => Promise<void>;
 
@@ -70,7 +70,7 @@ interface UseAccountAdditionServiceReturn {
   addAccounts: (chain: string, payload: AccountPayload[] | XpubAccountPayload, modules: Module[] | undefined, onComplete: CompletionCallback, options?: AdditionOptions) => Promise<AdditionSummary>;
   addSingleAccount: (account: AccountPayload | XpubAccountPayload, chain: string, options?: AdditionOptions) => ResultAsync<string, AccountAdditionFailure>;
   addSingleEvmAddress: (account: AccountPayload, options?: AdditionOptions) => ResultAsync<Account[], AccountAdditionFailure<AccountPayload>>;
-  completeAccountAddition: (params: AccountAdditionParams, onRefreshAccounts: RefreshAccountsCallback, onFetchAccounts?: FetchAccountsCallback) => Promise<void>;
+  completeAccountAddition: (params: AccountAdditionParams, onRefreshAccounts: RefreshAccountsCallback, onFetchAccounts: FetchAccountsCallback) => Promise<void>;
   getNewAccountPayload: (chain: string, payload: AccountPayload[]) => AccountPayload[];
 }
 
@@ -100,7 +100,7 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   const completeAccountAddition = async (
     params: AccountAdditionParams,
     onRefreshAccounts: RefreshAccountsCallback,
-    onFetchAccounts?: FetchAccountsCallback,
+    onFetchAccounts: FetchAccountsCallback,
   ): Promise<void> => {
     const {
       addedAccounts,
@@ -114,14 +114,14 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
 
     trackAddedAddresses(addedAccounts.map(item => item.address));
 
-    const chainsSupportsTransactions = !chain || supportsTransactions(chain);
-    if (chainsSupportsTransactions && onFetchAccounts) {
-      // For EVM chains, only load account metadata without fetching balances.
-      // Token detection runs next and explicitly triggers a balance refresh.
-      await onFetchAccounts(chain, true);
+    // ⚠️ §6's known exception, and it is correct: a chain that will detect deliberately skips its
+    // own balance read, because detection ends in one. Only a chain that cannot hold tokens has to
+    // ask for balances itself.
+    if (chain !== undefined && !supportsTransactions(chain)) {
+      await onRefreshAccounts({ addresses: addedAccounts.map(item => item.address), blockchain: chain, isXpub });
     }
     else {
-      await onRefreshAccounts({ addresses: addedAccounts.map(item => item.address), blockchain: chain, isXpub });
+      await onFetchAccounts({ blockchain: chain, refreshEns: true });
     }
 
     // Enable modules for ETH accounts

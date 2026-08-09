@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { TaskOrchestrator } from './core/orchestrator/api';
 import { createTaskOrchestrator } from './core/orchestrator/orchestrator';
-import { ACCOUNT_SYNC_LANE_PREFIX, ACCOUNTS_ADD_LANE_PREFIX, ACCOUNTS_REMOVE_LANE_PREFIX, BALANCES_LANE, CHAIN_SYNC_LANE, DECODE_LANE, EXCHANGE_EVENTS_LANE_PREFIX, EXCHANGE_LANE, SESSION_LANE, UMBRELLA_LANE } from './core/orchestrator/spec';
+import { ACCOUNT_SYNC_LANE_PREFIX, ACCOUNTS_ADD_LANE_PREFIX, ACCOUNTS_REMOVE_LANE_PREFIX, BALANCES_LANE, CHAIN_SYNC_LANE, DECODE_LANE, DETECT_LANE_PREFIX, EXCHANGE_EVENTS_LANE_PREFIX, EXCHANGE_LANE, SESSION_LANE, UMBRELLA_LANE } from './core/orchestrator/spec';
 import { type Activity, type ActivityKind, makeActivityId, type WorkStatus } from './core/types';
 
 /**
@@ -67,10 +67,12 @@ export const useTaskOrchestrator = createSharedComposable((): UseTaskOrchestrato
     // Two accounts per chain, not two across every chain; one query per exchange location; two
     // addresses added at once per chain, replacing `addMultipleAccounts`'s own limiter. Removals
     // take 1 per chain and 1 active lane, which is the fully serial shape they always had.
-    laneFamilies: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [ACCOUNTS_ADD_LANE_PREFIX]: 2, [ACCOUNTS_REMOVE_LANE_PREFIX]: 1, [EXCHANGE_EVENTS_LANE_PREFIX]: 1 },
+    laneFamilies: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [ACCOUNTS_ADD_LANE_PREFIX]: 2, [ACCOUNTS_REMOVE_LANE_PREFIX]: 1, [DETECT_LANE_PREFIX]: 2, [EXCHANGE_EVENTS_LANE_PREFIX]: 1 },
     // ...and only two chains' lanes live at once. The accounts of every chain are declared up
     // front now, so without this the per-chain cap alone would let all of them progress together.
-    laneFamilyActive: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [ACCOUNTS_ADD_LANE_PREFIX]: 2, [ACCOUNTS_REMOVE_LANE_PREFIX]: 1, [EXCHANGE_EVENTS_LANE_PREFIX]: 2 },
+    // Detection's active cap matches the balances cap: a chain only detects inside its own chain
+    // job, and only two of those run at once, so a third would be a lane nothing can fill.
+    laneFamilyActive: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [ACCOUNTS_ADD_LANE_PREFIX]: 2, [ACCOUNTS_REMOVE_LANE_PREFIX]: 1, [DETECT_LANE_PREFIX]: 2, [EXCHANGE_EVENTS_LANE_PREFIX]: 2 },
   });
   const activities = shallowRef<Activity[]>([]);
   // Bumped on every orchestrator change so `useWorkStatus` computeds re-read the (non-reactive)
