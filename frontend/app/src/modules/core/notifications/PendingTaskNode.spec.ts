@@ -80,12 +80,18 @@ describe('pendingTaskNode', () => {
   });
 
   /**
-   * ⚠️ Cancelling a parent today settles its row and stops nothing — the handle aborts a backend
-   * task id an umbrella never has, and cancel does not walk descendants. The control comes back
-   * when cancellation cascades.
+   * ⭐ The control is back now that `orchestrator.cancel` cascades. It was withheld while
+   * cancelling a parent settled its row and stopped nothing — the handle aborts a backend task id
+   * an umbrella never has.
    */
-  it('should offer no cancel control on a parent', () => {
-    expect(createWrapper().findAll('[data-testid=cancel-activity]')).toHaveLength(0);
+  it('should offer a cancel control on a parent', async () => {
+    const wrapper = createWrapper();
+    const control = wrapper.find('[data-testid=cancel-activity]');
+    expect(control.exists()).toBe(true);
+
+    await control.trigger('click');
+
+    expect(wrapper.emitted('cancel')).toHaveLength(1);
   });
 
   it('should bubble a leaf cancel up to the panel', async () => {

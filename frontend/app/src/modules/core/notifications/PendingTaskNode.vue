@@ -36,12 +36,12 @@ const percentage = computed<number>(() => {
 });
 
 /**
- * ⚠️ Parents are deliberately not cancellable here. Cancelling one today settles its row and stops
- * nothing: the handle only aborts a backend task id an umbrella never has, `cancel` does not walk
- * descendants, and a cancelled parent no longer holds the refresh re-entrancy guard. Restore this
- * once cancellation cascades.
+ * ⭐ A parent's stop control ends its whole subtree, because `orchestrator.cancel` cascades: the
+ * settle walks the children, each of which walks its own. Until that landed this row deliberately
+ * rendered no control at all — cancelling a parent settled its row and stopped nothing, since the
+ * handle only aborts a backend task id an umbrella never has.
  */
-const cancellable = computed<boolean>(() => activity.cancellable && !get(isParent));
+const cancellable = computed<boolean>(() => activity.cancellable);
 </script>
 
 <template>
