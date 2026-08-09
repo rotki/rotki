@@ -11,8 +11,19 @@ import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useBalanceProcessingService } from './services/use-balance-processing-service';
 
+/**
+ * Who asked for this refresh, which is what decides what happens when the chain is already busy.
+ *
+ * - `background`: join the run in flight. Two callers wanting the same thing share one query.
+ * - `periodic`: settle SKIPPED with a reason. A tick that finds the chain busy has nothing to add,
+ *   and recording it as `ok` would mark the chain refreshed when nothing ran.
+ * - `user`: supersede. Someone pressed refresh, so they get a fresh query with *their* parameters
+ *   rather than whatever the background run happened to be doing.
+ */
+export type RefreshMode = 'background' | 'periodic' | 'user';
+
 interface UseBlockchainBalancesReturn {
-  refreshBlockchainBalances: (payload?: BlockchainBalancePayload, periodic?: boolean) => Promise<void>;
+  refreshBlockchainBalances: (payload?: BlockchainBalancePayload, mode?: RefreshMode) => Promise<void>;
 }
 
 /**
@@ -27,7 +38,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const { getChainName, supportedChains } = useSupportedChains();
 
   const { clearChainBalances, handleRefresh, shouldQuery } = useBalanceProcessingService();
-  const { submitTask } = useNativeTask();
+  const { submitTask, supersedeTask } = useNativeTask();
   const refreshState = useBalanceRefreshState();
 
   /**
@@ -39,11 +50,8 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
    * discarded whichever order the two land in. Two mechanisms for one hazard, and the cheaper one
    * wins.
    *
-   * ⚠️ The remaining half is not redundant with `submitTask`'s id dedup, and must not be deleted
-   * with it. Dedup *joins* a caller to the run already in flight; this makes a manual refresh wait
-   * and then genuinely re-query, which is what a user asking for fresh data expects. Deleting it
-   * would silently hand them the periodic run's result instead — the supersede gap, which has no
-   * implementation yet.
+   * ⚠️ Read by the `periodic` branch only. It is not redundant with `submitTask`'s id dedup: dedup
+   * covers a run that is *submitted*, this covers the window where the POST itself is in flight.
    */
   const isChainRefreshing = (chain: string): boolean => get(refreshState.refreshingChains).has(chain);
 
@@ -51,10 +59,19 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   // paused during decode by the orchestrator rule, replacing the old BalanceQueueService).
   const refreshBlockchainBalances = async (
     payload: BlockchainBalancePayload = {},
-    periodic = false,
+    mode: RefreshMode = 'background',
   ): Promise<void> => {
     const { addresses, blockchain, isXpub = false } = payload;
     const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
+    // ⭐ A user-initiated refresh replaces the run in flight instead of joining it. `supersedeTask`
+    // is the single shared helper for that — cancel, *await the cancelled promise*, then submit —
+    // because `finish()` is what frees the id, and resubmitting before it dedups onto the corpse.
+    //
+    // This is what retired the old `until(() => isChainRefreshing(chain)).toBe(false)` poll on the
+    // non-periodic path. That poll was standing in for supersede: it made a manual refresh wait for
+    // the background run to finish and then re-query, which is the right *outcome* reached by
+    // waiting out work the user had already superseded.
+    const submit = mode === 'user' ? supersedeTask : submitTask;
     await Promise.allSettled(
       chains.map(async (chain) => {
         const chainPayload = { addresses, blockchain: chain, isXpub };
@@ -62,25 +79,22 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
           clearChainBalances(chain);
           return;
         }
-        await submitTask({
+        await submit({
           id: makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain),
           kind: ActivityKind.BLOCKCHAIN_BALANCES,
           lane: BALANCES_LANE,
           rerunnable: true,
           run: async ({ runTask }): Promise<Result<void, TaskError>> => {
-            if (isChainRefreshing(chain)) {
-              // 🔴 A dropped refresh is SKIPPED with a reason, never `ok`. Returning success here
-              // recorded a completion for work that never ran, so the ledger — and `everCompleted`
-              // with it — reported this chain as refreshed. Same class as a green "Sync Complete"
-              // over chains that were never synced.
-              //
-              // `Skipped` is not `isActionable`, so this raises no notification; it settles the
-              // activity terminal-but-not-successful and the task centre renders the reason.
-              if (periodic)
-                return err(Skipped({ message: t('actions.balances.blockchain.skipped.busy') }));
+            // 🔴 A dropped refresh is SKIPPED with a reason, never `ok`. Returning success here
+            // recorded a completion for work that never ran, so the ledger — and `everCompleted`
+            // with it — reported this chain as refreshed. Same class as a green "Sync Complete"
+            // over chains that were never synced.
+            //
+            // `Skipped` is not `isActionable`, so this raises no notification; it settles the
+            // activity terminal-but-not-successful and the task centre renders the reason.
+            if (mode === 'periodic' && isChainRefreshing(chain))
+              return err(Skipped({ message: t('actions.balances.blockchain.skipped.busy') }));
 
-              await until(() => isChainRefreshing(chain)).toBe(false);
-            }
             return handleRefresh(runTask, chainPayload);
           },
           subtitle: activityLabelFor(msg.$t('task_center.activity.blockchain_balances.query'), { chain: getChainName(chain) }),

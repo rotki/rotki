@@ -118,7 +118,7 @@ describe('useEthStakingRefresh', () => {
       const { refresh } = useEthStakingRefresh(createCallbacks());
       await refresh(true);
 
-      expect(mockRefreshBlockchainBalances).toHaveBeenCalledWith({ blockchain: 'eth2' });
+      expect(mockRefreshBlockchainBalances).toHaveBeenCalledWith({ blockchain: 'eth2' }, 'user');
       expect(mockHydrate).not.toHaveBeenCalled();
       expect(mockFetchEthStakingValidators).toHaveBeenCalledWith({ ignoreCache: true });
     });
@@ -129,7 +129,8 @@ describe('useEthStakingRefresh', () => {
       const { refresh } = useEthStakingRefresh(createCallbacks());
       await refresh(false);
 
-      expect(mockRefreshBlockchainBalances).toHaveBeenCalledWith({ blockchain: 'eth2' });
+      // A first load forces the query but has nothing to supersede — nobody asked for it.
+      expect(mockRefreshBlockchainBalances).toHaveBeenCalledWith({ blockchain: 'eth2' }, 'background');
       expect(mockHydrate).not.toHaveBeenCalled();
       expect(mockFetchEthStakingValidators).toHaveBeenCalledWith({ ignoreCache: true });
     });

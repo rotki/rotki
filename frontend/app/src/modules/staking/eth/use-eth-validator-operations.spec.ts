@@ -92,7 +92,8 @@ describe('useEthValidatorOperations', () => {
       const { refresh } = useEthValidatorOperations();
       await refresh();
       expect(mockFetchEthStakingValidators).toHaveBeenCalledWith({ ignoreCache: true });
-      expect(mockRefreshBlockchainBalances).toHaveBeenCalledWith({ blockchain: Blockchain.ETH2 });
+      // From the accounts page's refresh button, so it supersedes rather than joins.
+      expect(mockRefreshBlockchainBalances).toHaveBeenCalledWith({ blockchain: Blockchain.ETH2 }, 'user');
     });
   });
 
