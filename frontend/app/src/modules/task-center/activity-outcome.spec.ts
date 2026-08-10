@@ -3,8 +3,27 @@ import { activityOutcome } from './activity-outcome';
 import { ActivityStatus } from './core/types';
 
 describe('activityOutcome', () => {
-  it('should leave a running activity to its progress indicator', () => {
-    expect(activityOutcome(ActivityStatus.RUNNING)).toBeUndefined();
+  /**
+   * A running row without a percentage used to fall back to a spinner. The elapsed counter beside
+   * it already ticks, so the spin carried no information the row was not already showing.
+   */
+  it('should give a running activity a label of its own', () => {
+    expect(activityOutcome(ActivityStatus.RUNNING).color).toBe('primary');
+  });
+
+  /**
+   * Filled means it needs attention. A refresh settles dozens of children successfully, so filling
+   * those made a wall of green the loudest thing in the panel and buried the chain still at 0%.
+   */
+  it('should fill only the outcomes that need attention', () => {
+    const filled = Object.values(ActivityStatus).filter(status => activityOutcome(status).variant === 'filled');
+
+    expect(filled).toStrictEqual([ActivityStatus.FAILED, ActivityStatus.SKIPPED]);
+  });
+
+  it('should give every status an icon', () => {
+    for (const status of Object.values(ActivityStatus))
+      expect(activityOutcome(status).icon).toBeDefined();
   });
 
   /**
@@ -13,20 +32,18 @@ describe('activityOutcome', () => {
    * A subtree at 100% with two failed chains is otherwise indistinguishable from a clean one.
    */
   it('should separate a failure from a skip', () => {
-    expect(activityOutcome(ActivityStatus.FAILED)?.color).toBe('error');
-    expect(activityOutcome(ActivityStatus.SKIPPED)?.color).toBe('warning');
+    expect(activityOutcome(ActivityStatus.FAILED).color).toBe('error');
+    expect(activityOutcome(ActivityStatus.SKIPPED).color).toBe('warning');
   });
 
   it('should mark a success and leave the neutral outcomes grey', () => {
-    expect(activityOutcome(ActivityStatus.COMPLETE)?.color).toBe('success');
-    expect(activityOutcome(ActivityStatus.CANCELLED)?.color).toBe('grey');
-    expect(activityOutcome(ActivityStatus.PENDING)?.color).toBe('grey');
+    expect(activityOutcome(ActivityStatus.COMPLETE).color).toBe('success');
+    expect(activityOutcome(ActivityStatus.CANCELLED).color).toBe('grey');
+    expect(activityOutcome(ActivityStatus.PENDING).color).toBe('grey');
   });
 
-  it('should give every non-running status a label', () => {
-    const statuses = Object.values(ActivityStatus).filter(status => status !== ActivityStatus.RUNNING);
-
-    for (const status of statuses)
-      expect(activityOutcome(status)?.key).toBeDefined();
+  it('should give every status a label', () => {
+    for (const status of Object.values(ActivityStatus))
+      expect(activityOutcome(status).key).toBeDefined();
   });
 });

@@ -57,7 +57,11 @@ const meta = computed<string | undefined>(() => {
   return parts.length > 0 ? parts.join(' · ') : undefined;
 });
 
-const outcome = computed<ActivityOutcome | undefined>(() => activityOutcome(activity.status));
+const outcome = computed<ActivityOutcome>(() => activityOutcome(activity.status));
+
+// The ring only earns the slot when it has a real number to put in it. Everything else — including
+// a running row the producer never counted steps for — says its status in words instead.
+const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminateProgress));
 </script>
 
 <template>
@@ -83,16 +87,8 @@ const outcome = computed<ActivityOutcome | undefined>(() => activityOutcome(acti
       </div>
     </div>
 
-    <RuiChip
-      v-if="outcome"
-      size="sm"
-      :color="outcome.color"
-      class="shrink-0"
-    >
-      {{ t(outcome.key) }}
-    </RuiChip>
     <RuiProgress
-      v-else-if="hasDeterminateProgress"
+      v-if="showRing"
       color="primary"
       circular
       variant="determinate"
@@ -101,12 +97,35 @@ const outcome = computed<ActivityOutcome | undefined>(() => activityOutcome(acti
       show-label
       thickness="2"
     />
-    <RuiIcon
+    <!--
+      Icon only. The drawer is 400px and a nested row spends most of it on its label; "Refreshing
+      Arbitrum One" wrapped to two lines to make room for the word "Running". Colour plus icon
+      carries the status, the tooltip carries the word, and `aria-label` keeps it for anyone not
+      reading either.
+    -->
+    <RuiTooltip
       v-else
-      name="lu-loader-circle"
-      size="20"
-      class="text-rui-primary shrink-0 animate-spin"
-    />
+      :popper="{ placement: 'top' }"
+      :open-delay="400"
+    >
+      <template #activator>
+        <RuiChip
+          size="sm"
+          :color="outcome.color"
+          :variant="outcome.variant"
+          :aria-label="t(outcome.key)"
+          :class-names="{ content: '!px-1' }"
+          class="shrink-0"
+          data-testid="activity-outcome"
+        >
+          <RuiIcon
+            :name="outcome.icon"
+            size="14"
+          />
+        </RuiChip>
+      </template>
+      {{ t(outcome.key) }}
+    </RuiTooltip>
 
     <RuiTooltip
       v-if="cancellable"

@@ -259,6 +259,14 @@ export default defineConfig({
         'lu-palette',
         'lu-slash',
         'lu-monitor',
+        // task-center activity outcomes: named in activity-outcome.ts, so the source scan of
+        // templates never sees them (see the warning on `ActivityOutcome.icon`)
+        'lu-activity',
+        'lu-ban',
+        'lu-check',
+        'lu-circle-x',
+        'lu-clock',
+        'lu-skip-forward',
       ],
       customIcons: ['lu-github', 'lu-discord', 'lu-x-twitter'],
     }),
