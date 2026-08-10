@@ -121,6 +121,23 @@ const mockDecodingStatusStore = {
 
 type SyncOutcomes = Promise<Result<void, TaskError>[]>;
 
+/**
+ * The default behaviours, named so `beforeEach` can restore them. ⚠️ `failEverything` below uses
+ * `mockResolvedValue`, which `vi.clearAllMocks()` does not undo — without restoring these, one
+ * failure test silently turned every later test's first refresh into a failed one.
+ */
+async function defaultSyncByChains(accounts: ChainAddress[]): SyncOutcomes {
+  for (const account of accounts)
+    attempted.add(`tx-sync:${account.chain}:${account.address}`);
+  return accounts.map(() => ok(undefined));
+}
+
+async function defaultQueryExchanges(exchanges: Exchange[] = []): SyncOutcomes {
+  for (const exchange of exchanges)
+    attempted.add(`exchange-events:${exchange.location}:${exchange.name}`);
+  return exchanges.map(() => ok(undefined));
+}
+
 const mockTransactionSync = {
   // Records what it synced. The real one settles a TX_SYNC activity per account, and the completion
   // ledger those settles write is exactly what the drain reads to decide what was never attempted —
@@ -129,11 +146,7 @@ const mockTransactionSync = {
   // ⚠️ It also has to *report* an outcome per chain: the umbrella settles on what its children did,
   // so a mock returning nothing would make every refresh look like it synced nothing at all.
   syncTransactionsByChains: vi.fn<(accounts: ChainAddress[], showProgress: boolean, parent?: string) => SyncOutcomes>(
-    async (accounts: ChainAddress[]): SyncOutcomes => {
-      for (const account of accounts)
-        attempted.add(`tx-sync:${account.chain}:${account.address}`);
-      return accounts.map(() => ok(undefined));
-    },
+    defaultSyncByChains,
   ),
 };
 
@@ -143,11 +156,7 @@ const mockSupportedChains = {
 
 const mockRefreshHandlers = {
   // Same contract as the sync mock above: settling is what makes an exchange stop being novel.
-  queryAllExchangeEvents: vi.fn(async (exchanges: Exchange[] = []): SyncOutcomes => {
-    for (const exchange of exchanges)
-      attempted.add(`exchange-events:${exchange.location}:${exchange.name}`);
-    return exchanges.map(() => ok(undefined));
-  }),
+  queryAllExchangeEvents: vi.fn(defaultQueryExchanges),
   queryOnlineEvent: vi.fn().mockResolvedValue(ok(undefined)),
   resetOnlineWarnings: vi.fn(),
 };
@@ -224,6 +233,9 @@ describe('useRefreshTransactions', () => {
     attempted.clear();
 
     // Reset mock return values to defaults
+    mockTransactionSync.syncTransactionsByChains.mockImplementation(defaultSyncByChains);
+    mockRefreshHandlers.queryAllExchangeEvents.mockImplementation(defaultQueryExchanges);
+    mockRefreshHandlers.queryOnlineEvent.mockResolvedValue(ok(undefined));
     mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([...mockEvmAccounts, ...mockBitcoinAccounts]);
     mockHistoryTransactionAccounts.filterDisabledChainAccounts.mockImplementation((accounts: ChainAddress[]) => accounts);
     set(mockExchangeData.syncingExchanges, mockExchanges);
@@ -596,17 +608,17 @@ describe('useRefreshTransactions', () => {
   });
 
   describe('error handling', () => {
-    it('should settle the umbrella when an operation fails', async () => {
+    it('should settle the umbrella when an operation throws', async () => {
       mockTransactionSync.syncTransactionsByChains.mockRejectedValue(new Error('Sync failed'));
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
       await settleRefresh();
 
-      // The failure is swallowed inside `run`, so history still reads as loaded and, crucially,
-      // nothing is left in flight to block the next refresh.
+      // A throw is contained inside `run`, so nothing is left in flight to block the next refresh —
+      // but it is still the account half failing, so no completion is recorded.
       expect(historySyncStatus().active).toBe(false);
-      expect(historySyncStatus().everCompleted).toBe(true);
+      expect(historySyncStatus().everCompleted).toBe(false);
     });
 
     it('should not record a completion when every operation failed', async () => {
@@ -621,6 +633,22 @@ describe('useRefreshTransactions', () => {
       // later background refresh. Nothing is left in flight either way.
       expect(historySyncStatus().everCompleted).toBe(false);
       expect(historySyncStatus().active).toBe(false);
+    });
+
+    it('should not let a successful online query mask a total chain failure', async () => {
+      // 🔴 Found by running this in the app: every transaction request failed, but the protocol
+      // queries succeeded ("7/7 protocols refreshed"), and one success anywhere was enough to record
+      // the completion — so `alreadyLoaded` short-circuited the background chain re-sync exactly as
+      // before. The umbrella's freshness gates the *account* scope, so chains failing wholesale has
+      // to fail it whatever else happened to succeed.
+      failEverything();
+      mockRefreshHandlers.queryOnlineEvent.mockResolvedValue(ok(undefined));
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+
+      await refreshTransactions();
+      await settleRefresh();
+
+      expect(historySyncStatus().everCompleted).toBe(false);
     });
 
     it('should still sync every account on a background refresh after an all-failed first sync', async () => {
