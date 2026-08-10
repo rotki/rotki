@@ -1,5 +1,4 @@
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
-import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
 
 /** The wire keys the accounting rules table filters on, which the URL carries too. */
 export const AccountingRuleFilterKeys = {
@@ -11,11 +10,3 @@ export const AccountingRuleFilterKeys = {
 export type AccountingRuleFilterKey = typeof AccountingRuleFilterKeys[keyof typeof AccountingRuleFilterKeys];
 
 export type Filters = MatchedKeywordWithBehaviour<AccountingRuleFilterKey>;
-
-export function useAccountingRuleFilter(): FilterSchema<Filters> {
-  const modelFilters = ref<Filters>({});
-
-  return {
-    filters: modelFilters,
-  };
-}

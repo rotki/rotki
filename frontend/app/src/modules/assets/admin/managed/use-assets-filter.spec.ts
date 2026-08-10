@@ -1,12 +1,12 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
+import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
 import type { AssetRequestPayload } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
-import { type Filters, useAssetFilter } from '@/modules/assets/admin/managed/use-assets-filter';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 
@@ -53,7 +53,6 @@ describe('useAssetsFilter', () => {
       >({
         fetch: fetchAssets,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
-        filterSchema: useAssetFilter(),
         sort: {
           default: [{
             column: 'symbol',
@@ -80,7 +79,6 @@ describe('useAssetsFilter', () => {
     });
 
     it('should return correct types', () => {
-      const schema = useAssetFilter();
       const { isLoading, collection, filter } = useServerTable<
         SupportedAsset,
         AssetRequestPayload,
@@ -88,7 +86,6 @@ describe('useAssetsFilter', () => {
       >({
         fetch: fetchAssets,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
-        filterSchema: schema,
       });
 
       expect(get(isLoading)).toBe(false);
@@ -110,7 +107,6 @@ describe('useAssetsFilter', () => {
       >({
         fetch: fetchAssets,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
-        filterSchema: useAssetFilter(),
         sort: {
           default: [{
             column: 'symbol',

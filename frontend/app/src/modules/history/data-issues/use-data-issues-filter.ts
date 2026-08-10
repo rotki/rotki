@@ -1,5 +1,4 @@
 import type { MatchedKeyword } from '@/modules/core/table/filtering';
-import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
 
 /** The wire keys the data issues table filters on, which the URL carries too. */
 export const DataIssuesFilterKeys = {
@@ -14,11 +13,3 @@ export const DataIssuesFilterKeys = {
 export type DataIssuesFilterKey = typeof DataIssuesFilterKeys[keyof typeof DataIssuesFilterKeys];
 
 export type Filters = MatchedKeyword<DataIssuesFilterKey>;
-
-export function useDataIssuesFilter(): FilterSchema<Filters> {
-  const modelFilters = ref<Filters>({});
-
-  return {
-    filters: modelFilters,
-  };
-}

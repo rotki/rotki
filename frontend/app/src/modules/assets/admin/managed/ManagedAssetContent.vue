@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { Nullable, SupportedAsset } from '@rotki/common';
+import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
 import { isEqual, keyBy } from 'es-toolkit';
 import ManagedAssetFormDialog from '@/modules/assets/admin/managed/ManagedAssetFormDialog.vue';
 import ManagedAssetTable from '@/modules/assets/admin/managed/ManagedAssetTable.vue';
-import { type Filters, useAssetFilter } from '@/modules/assets/admin/managed/use-assets-filter';
 import { useManagedAssetFields } from '@/modules/assets/admin/managed/use-managed-asset-fields';
 import MergeDialog from '@/modules/assets/admin/MergeDialog.vue';
 import RestoreAssetDbButton from '@/modules/assets/admin/RestoreAssetDbButton.vue';
@@ -61,7 +61,6 @@ const { getAssetTypes } = useAssetManagementApi();
 
 const { deleteCacheKey } = useAssetInfoCache();
 
-const filterSchema = useAssetFilter();
 const fields = useManagedAssetFields(assetTypes, () => get(ignoredAssets).length);
 
 const {
@@ -79,7 +78,6 @@ const {
 >({
   fetch: queryAllAssets,
   fields,
-  filterSchema,
   params: [{
     fromQuery(query): void {
       // A url is anyone's to write, and the handling reaches both the request and the ignored

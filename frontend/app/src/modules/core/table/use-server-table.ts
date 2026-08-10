@@ -4,7 +4,6 @@ import type { Schema } from 'zod';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
-import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { isEqual } from 'es-toolkit';
 import { getApiSortingParams } from '@/modules/core/table/pagination-filter-utils';
@@ -52,10 +51,11 @@ interface UseServerTableOptions<
   /** URL query sync mode; defaults to `{ mode: 'none' }` (no URL binding). */
   urlState?: UrlState;
   /**
-   * The filter schema itself, not a factory: the caller holds it, and the pill bar reads the same
-   * filter bag. Named `filterSchema` because `filter` is the returned value.
+   * The filter bag. Owned here unless the caller passes one, which it needs to do only when
+   * something has to read the bag before the table exists — the pill-bar fields of a table whose
+   * option lists narrow by what is already picked. Everything else reads the returned `filter`.
    */
-  filterSchema?: FilterSchema<TFilter>;
+  filters?: Ref<TFilter>;
   /**
    * The pill-bar fields this table filters on, the same list the bar is given. The url shape of the
    * filter bag and the keys the request wraps as `{ behaviour, values }` are read off them, rather
@@ -108,13 +108,11 @@ export function useServerTable<
   const {
     fetch: requestData,
     fields,
-    filterSchema = {
-      // The fallback for a table with no filter schema (a dialog listing rows it never filters).
-      // Such a table has no filter bag at all, and neither an empty one nor undefined is provably
-      // the TFilter its caller declared, so the hole is stated here rather than at every read.
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      filters: ref({}) as Ref<TFilter>,
-    },
+    // An empty bag is the starting state of every table, including one that never filters (a dialog
+    // listing rows). Neither an empty object nor undefined is provably the `TFilter` the caller
+    // declared, so the hole is stated once here rather than at every read.
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    filters = ref({}) as Ref<TFilter>,
     params = [],
     persist,
     request: { cancelTag, debounce: fetchDebounce = 0 } = {},
@@ -123,8 +121,6 @@ export function useServerTable<
   } = options;
 
   const { markUserIntent, pendingIntent, pendingUrlSource } = useChangeIntent();
-
-  const { filters } = filterSchema;
 
   // Both derived from the declared fields, and cached against them: a gated field list can change
   // while the table is mounted, and the URL must be read with the keys in play at that moment.

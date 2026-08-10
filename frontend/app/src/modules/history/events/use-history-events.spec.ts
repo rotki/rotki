@@ -5,6 +5,7 @@ import type { ParamSource } from '@/modules/core/table/param-sources';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEvent, HistoryEventRow } from '@/modules/history/events/schemas';
+import type { Filters } from '@/modules/history/events/use-events-filter';
 import { type Account, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
@@ -14,7 +15,6 @@ import { FilterBehaviours } from '@/modules/core/table/filtering';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { type LocationQuery, RouterAccountsSchema } from '@/modules/core/table/route';
 import { useServerTable } from '@/modules/core/table/use-server-table';
-import { type Filters, useHistoryEventFilter } from '@/modules/history/events/use-events-filter';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 
 vi.mock('vue', async (): Promise<Record<string, unknown>> => {
@@ -119,7 +119,6 @@ describe('useHistoryEvents', () => {
         fetch: fetchHistoryEvents,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
         fields,
-        filterSchema: useHistoryEventFilter(),
         params: sources,
       });
       expect(get(isLoading)).toBe(false);
@@ -140,7 +139,6 @@ describe('useHistoryEvents', () => {
     });
 
     it('should return correct types', () => {
-      const filterSchema = useHistoryEventFilter();
       const { isLoading, collection, filter } = useServerTable<
         HistoryEventRow,
         HistoryEventRequestPayload,
@@ -148,7 +146,6 @@ describe('useHistoryEvents', () => {
       >({
         fetch: fetchHistoryEvents,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
-        filterSchema,
         params: sources,
       });
 
@@ -172,7 +169,6 @@ describe('useHistoryEvents', () => {
         fetch: fetchHistoryEvents,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
         fields,
-        filterSchema: useHistoryEventFilter(),
         params: sources,
       });
 
@@ -229,7 +225,6 @@ describe('useHistoryEvents', () => {
         fetch: fetchHistoryEvents,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
         fields,
-        filterSchema: useHistoryEventFilter(),
         params: sources,
       });
 
@@ -266,7 +261,6 @@ describe('useHistoryEvents', () => {
         fetch: fetchHistoryEvents,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
         fields,
-        filterSchema: useHistoryEventFilter(),
         params: sources,
       });
 

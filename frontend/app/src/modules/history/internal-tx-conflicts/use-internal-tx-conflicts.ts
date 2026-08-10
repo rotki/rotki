@@ -1,5 +1,6 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
+import type { Filters } from './use-internal-tx-conflicts-filter';
 import { startPromise } from '@shared/utils';
 import { logger } from '@/modules/core/common/logging/logging';
 import { internalTxFixedSignal } from '@/modules/core/messaging/handlers/internal-tx-fixed';
@@ -7,7 +8,6 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useInternalTxConflictsApi } from './internal-tx-conflicts-api';
 import { type InternalTxConflict, type InternalTxConflictsRequestPayload, type InternalTxConflictStatus, InternalTxConflictStatuses } from './types';
-import { type Filters, useInternalTxConflictsFilter } from './use-internal-tx-conflicts-filter';
 
 export function getConflictKey(conflict: InternalTxConflict): string {
   return `${conflict.chain}:${conflict.txHash}`;
@@ -55,8 +55,6 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
     ...getStatusFilter(get(activeFilter)),
   }));
 
-  const filterSchema = useInternalTxConflictsFilter();
-
   const {
     collection: state,
     filter: filters,
@@ -67,7 +65,6 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
     sort,
   } = useServerTable<InternalTxConflict, InternalTxConflictsRequestPayload, Filters>({
     fetch: fetchInternalTxConflicts,
-    filterSchema,
     params: [{ skipEmpty: true, to: 'request', values: requestParams }],
     sort: {
       default: {

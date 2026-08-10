@@ -6,7 +6,7 @@ import ManualBalanceMissingAssetWarning
   from '@/modules/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
 import { useManualBalanceFields } from '@/modules/accounts/manual-balances/use-manual-balance-fields';
 import { useManualBalanceTableActions } from '@/modules/accounts/manual-balances/use-manual-balance-table-actions';
-import { type Filters, ManualBalancesFilterSchema, useManualBalanceFilter } from '@/modules/accounts/manual-balances/use-manual-balances-filter';
+import { type Filters, ManualBalancesFilterSchema } from '@/modules/accounts/manual-balances/use-manual-balances-filter';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';
@@ -37,8 +37,10 @@ const currencySymbol = useSetting('currencySymbol');
 const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(() => type);
 const { prepareForEdit, pricesLoading, refresh, refreshing, showDeleteConfirmation } = useManualBalanceTableActions();
 
-const filterSchema = useManualBalanceFilter();
-const fields = useManualBalanceFields(locations, filterSchema.filters);
+// Declared here rather than left to the table: the asset search is scoped by the picked location,
+// so the fields read the bag, and they are built before the table that owns it.
+const modelFilters = ref<Filters>({});
+const fields = useManualBalanceFields(locations, modelFilters);
 const pillLabels = usePillBarLabels();
 
 const {
@@ -55,7 +57,7 @@ const {
 >({
   fetch,
   fields,
-  filterSchema,
+  filters: modelFilters,
   params: [{
     fromQuery(query): void {
       const schema = ManualBalancesFilterSchema.parse(query);
