@@ -18,6 +18,11 @@ export interface AccountingRuleFieldOptions {
   readonly eventTypeName: (value: string) => string;
   readonly eventSubtypes: () => string[];
   readonly eventSubtypeName: (value: string) => string;
+  /**
+   * The same lookup as a function of the types, rather than of the current selection: what the
+   * subtype field `admits` is asked for the types the bar is about to hold, not the ones it holds.
+   */
+  readonly subtypesFor: (eventTypes: readonly string[]) => string[];
   readonly counterparties: () => string[];
 }
 
@@ -44,6 +49,10 @@ export function toAccountingRuleFields(
       suggest: options.eventTypes,
     }),
     toMatchFieldDef({
+      // A rule is written for a type/subtype pair, and the request reads the two as a cross
+      // product, so a subtype the selected types do not admit matches no rule at all. The bar
+      // narrows what can be added and drops what stops being admitted, both off one lookup.
+      admits: values => options.subtypesFor(values[AccountingRuleFilterKeys.EVENT_TYPE] ?? []),
       key: AccountingRuleFilterKeys.EVENT_SUBTYPE,
       label: t('accounting_settings.rule.filter_field_labels.event_subtype'),
       multiple: true,
