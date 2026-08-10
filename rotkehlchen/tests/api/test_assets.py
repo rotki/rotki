@@ -1660,12 +1660,12 @@ def test_edit_solana_token(
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_add_and_retrieve_hyperliquid_token(rotkehlchen_api_server: APIServer) -> None:
-    token_address = '0x6781b92b6ea5d8ed37d275eb201f64af'
+    token_address = '0x1234567890abcdef1234567890abcdef'
     payload: dict[str, Any] = {
         'asset_type': 'hyperliquid token',
         'address': token_address,
-        'name': '$MAX',
-        'symbol': 'MAX',
+        'name': '$TEST',
+        'symbol': 'TEST',
         'decimals': 6,
         'coingecko': None,
         'cryptocompare': None,
@@ -1723,18 +1723,18 @@ def test_add_and_retrieve_hyperliquid_token(rotkehlchen_api_server: APIServer) -
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('coingecko_cache_coinlist', [{'some-token': {}}])
-@pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'MAX': {}}])
+@pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'TEST': {}}])
 def test_edit_hyperliquid_token(
         rotkehlchen_api_server: APIServer,
         cache_coinlist: list[dict[str, dict]],
 ) -> None:
     token = HyperliquidToken.initialize(
-        address=HyperliquidTokenAddress('0x6781b92b6ea5d8ed37d275eb201f64af'),
-        name='$MAX',
-        symbol='MAX',
+        address=HyperliquidTokenAddress('0x1234567890abcdef1234567890abcdef'),
+        name='$TEST',
+        symbol='TEST',
         decimals=6,
         started=Timestamp(1749829092),
-        cryptocompare='MAX',
+        cryptocompare='TEST',
     )
     GlobalDBHandler.add_asset(token)
 
@@ -1753,7 +1753,7 @@ def test_edit_hyperliquid_token(
     token_after_edit = Asset(token.identifier).resolve_to_hyperliquid_token()
     assert token_after_edit.asset_type == AssetType.HYPERLIQUID_TOKEN
     assert token_after_edit.address == token.address
-    assert token_after_edit.cryptocompare == 'MAX'
+    assert token_after_edit.cryptocompare == 'TEST'
     assert token_after_edit.decimals == 8
     assert token_after_edit.name == 'Some Token'
     assert token_after_edit.symbol == 'ST'
