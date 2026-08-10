@@ -3,6 +3,7 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, h, ref, type VNode } from 'vue';
 import ExchangeKeysForm from '@/modules/settings/api-keys/exchange/ExchangeKeysForm.vue';
 import '@test/i18n';
 
@@ -107,25 +108,94 @@ describe('settings/api-keys/exchange validation', () => {
   }
 
   /**
+   * 🔴 These mount through a parent that owns the entry, the way the dialog does. Bound by props
+   * alone the form's own `modelValue` writes resolve immediately, which hides the tick the real
+   * binding takes and makes a re-taken baseline look correct when it is not.
+   */
+  function createDialogHarness(overrides: Partial<ExchangeFormData> = {}): {
+    dirty: () => boolean;
+    switchExchange: (location: string) => Promise<void>;
+    edit: (patch: Partial<ExchangeFormData>) => Promise<void>;
+  } {
+    const dirty = ref<boolean>(false);
+    const entry = ref<ExchangeFormData>({
+      apiKey: 'key',
+      apiSecret: 'secret',
+      binanceMarkets: [],
+      location: 'kucoin',
+      mode: 'add',
+      name: 'Kucoin 1',
+      passphrase: '',
+      ...overrides,
+    });
+
+    const parent = mount(defineComponent({
+      name: 'DialogHarness',
+      setup: () => (): VNode => h(ExchangeKeysForm, {
+        'errorMessages': {},
+        'modelValue': entry.value,
+        'onUpdate:modelValue': (value: ExchangeFormData) => { entry.value = value; },
+        'onUpdate:stateUpdated': (value: boolean) => { dirty.value = value; },
+        'stateUpdated': dirty.value,
+      }),
+    }), {
+      global: {
+        plugins: [pinia],
+        stubs: {
+          BinanceHistoryStartDate: true,
+          BinancePairsSelector: true,
+          ExchangeInput: true,
+          I18nT: true,
+          InternalLink: true,
+        },
+      },
+    });
+
+    return {
+      dirty: (): boolean => dirty.value,
+      edit: async (patch: Partial<ExchangeFormData>): Promise<void> => {
+        entry.value = { ...entry.value, ...patch };
+        await nextTick();
+        await nextTick();
+      },
+      switchExchange: async (location: string): Promise<void> => {
+        parent.findComponent({ name: 'ExchangeInput' }).vm.$emit('update:modelValue', location);
+        await nextTick();
+        await nextTick();
+      },
+    };
+  }
+
+  /**
    * The dialog turns this flag into its discard-on-close prompt, so anything the form writes into
-   * the entry by itself must not raise it. `onMounted` seeds the name, which lands after the form
-   * took its baseline.
+   * the entry by itself must not raise it. Both the `onMounted` name seeding and the exchange switch
+   * write to the entry, and both land after the form took its baseline.
    */
   describe('the unsaved changes flag', () => {
     it('should stay down for a form the user has not touched', async () => {
-      const form = createWrapper({ name: '' });
+      const harness = createDialogHarness({ name: '' });
+      await nextTick();
       await nextTick();
 
-      expect((form.emitted('update:stateUpdated') ?? []).flat()).not.toContain(true);
+      expect(harness.dirty()).toBe(false);
+    });
+
+    it('should stay down when the exchange is switched', async () => {
+      const harness = createDialogHarness();
+      await nextTick();
+
+      await harness.switchExchange('kraken');
+
+      expect(harness.dirty()).toBe(false);
     });
 
     it('should go up once a field is edited', async () => {
-      const form = createWrapper();
+      const harness = createDialogHarness();
       await nextTick();
 
-      await form.setProps({ modelValue: { ...form.props('modelValue'), apiKey: 'edited' } });
+      await harness.edit({ apiKey: 'edited' });
 
-      expect(form.emitted('update:stateUpdated')?.at(-1)?.[0]).toBe(true);
+      expect(harness.dirty()).toBe(true);
     });
   });
 
