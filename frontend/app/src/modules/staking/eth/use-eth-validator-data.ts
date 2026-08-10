@@ -5,15 +5,19 @@ import type {
   EthereumValidatorRequestPayload,
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useSetting } from '@/modules/settings/use-setting';
+import { useEthValidatorFields } from '@/modules/staking/eth/use-eth-validator-fields';
 import { type Filters, useEthValidatorAccountFilter } from '@/modules/staking/eth/use-eth-validator-filter';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 
 interface UseEthValidatorDataReturn {
   cols: ComputedRef<DataTableColumn<EthereumValidator>[]>;
   ethStakingValidators: ComputedRef<EthereumValidator[]>;
+  /** The pill-bar fields, built here because the table's url shape is read off them. */
+  fields: ComputedRef<FieldDef[]>;
   fetchData: () => Promise<void>;
   filters: WritableComputedRef<Filters>;
   pagination: Ref<TablePaginationData>;
@@ -32,6 +36,7 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
   const currencySymbol = useSetting('currencySymbol');
 
   const filterSchema = useEthValidatorAccountFilter();
+  const fields = useEthValidatorFields();
 
   const {
     collection: rows,
@@ -45,6 +50,7 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
     Filters
   >({
     fetch: fetchValidators,
+    fields,
     filterSchema,
     sort: {
       default: {
@@ -115,6 +121,7 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
   return {
     cols,
     ethStakingValidators,
+    fields,
     fetchData,
     filters,
     pagination,

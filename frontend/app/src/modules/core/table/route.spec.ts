@@ -1,11 +1,16 @@
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { describe, expect, it } from 'vitest';
+import { FilterValueTypes } from '@/modules/core/table/filtering';
+import { toMatchFieldDef, toParamFieldDef, toRangeFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import {
+  behaviourKeysFromFields,
   CommaSeparatedStringSchema,
   HistoryPaginationSchema,
   HistorySortOrderSchema,
   RouterAccountsSchema,
   RouterExpandedIdsSchema,
   RouterLocationLabelsSchema,
+  routeSchemaFromFields,
 } from '@/modules/core/table/route';
 
 describe('route query schemas', () => {
@@ -92,6 +97,69 @@ describe('route query schemas', () => {
 
     it('should skip entries with an unknown chain', () => {
       expect(RouterAccountsSchema.parse({ accounts: '0xaaa#notachain' })).toStrictEqual({ accounts: [] });
+    });
+  });
+
+  // The url shape used to be restated per table beside a field list that already said the same
+  // thing, so the two could disagree with nothing to catch it.
+  describe('routeSchemaFromFields', () => {
+    const single: FieldDef = toMatchFieldDef({ key: 'location', label: 'Location', multiple: false });
+    const many: FieldDef = toMatchFieldDef({ key: 'counterparties', label: 'Protocol', multiple: true });
+
+    it('should read a single-value field as one optional string', () => {
+      expect(routeSchemaFromFields([single]).parse({ location: 'kraken' })).toStrictEqual({ location: 'kraken' });
+    });
+
+    it('should read a multi-value field as a list, however the url spells it', () => {
+      const schema = routeSchemaFromFields([many]);
+
+      expect(schema.parse({ counterparties: 'uniswap-v2' })).toStrictEqual({ counterparties: ['uniswap-v2'] });
+      expect(schema.parse({ counterparties: ['uniswap-v2', 'curve'] }))
+        .toStrictEqual({ counterparties: ['uniswap-v2', 'curve'] });
+    });
+
+    // A collapsed range/date pill carries its own display key ('amount', 'period'), which is not a
+    // wire key: what the url and the request carry are its two bounds.
+    it('should expand a bounds field into its two wire keys and leave its own key out', () => {
+      const amount = toRangeFieldDef({ key: 'amount', label: 'Amount', lowerKey: 'minAmount', upperKey: 'maxAmount' });
+
+      expect(routeSchemaFromFields([amount]).parse({ amount: '5', maxAmount: '10', minAmount: '1' }))
+        .toStrictEqual({ maxAmount: '10', minAmount: '1' });
+    });
+
+    // A param-bound field is not part of the filter bag: its own source reads it back off the query.
+    it('should leave a param-bound field out of the filter bag', () => {
+      const owned = toParamFieldDef({
+        key: 'owned',
+        label: 'Owned',
+        paramKey: 'showUserOwnedAssetsOnly',
+        to: 'both',
+        valueType: FilterValueTypes.BOOLEAN,
+      });
+
+      expect(routeSchemaFromFields([owned]).parse({ owned: 'true' })).toStrictEqual({});
+    });
+
+    it('should allow an empty query', () => {
+      expect(routeSchemaFromFields([single, many]).parse({})).toStrictEqual({});
+    });
+  });
+
+  describe('behaviourKeysFromFields', () => {
+    it('should name the fields that can express an exclusion', () => {
+      const fields = [
+        toMatchFieldDef({ allowExclusion: true, key: 'entryTypes', label: 'Type', multiple: true }),
+        toMatchFieldDef({ key: 'location', label: 'Location', multiple: false }),
+      ];
+
+      expect(behaviourKeysFromFields(fields)).toStrictEqual(['entryTypes']);
+    });
+
+    // A param carries a plain list with no form for the `!` negation, so it never wraps.
+    it('should never name a param-bound field', () => {
+      const state = toParamFieldDef({ key: 'state', label: 'State', paramKey: 'stateMarkers', to: 'request' });
+
+      expect(behaviourKeysFromFields([state])).toStrictEqual([]);
     });
   });
 });

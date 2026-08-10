@@ -50,6 +50,7 @@ const {
   Filters
 >({
   fetch: filter => getAddressBook(get(location), get(filter)),
+  fields,
   filterSchema,
   params: [{
     to: 'both',

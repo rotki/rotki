@@ -1,6 +1,5 @@
 import type { MatchedKeyword } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
-import { FilterKeyArities, filterRouteSchema } from '@/modules/core/table/route';
 
 /** The wire keys the oracle prices table filters on, which the URL carries too. */
 export const OraclePriceFilterKeys = {
@@ -20,12 +19,5 @@ export function useOraclePricesFilter(): FilterSchema<Filters> {
 
   return {
     filters: modelFilters,
-    RouteFilterSchema: filterRouteSchema({
-      [OraclePriceFilterKeys.END]: FilterKeyArities.ONE,
-      [OraclePriceFilterKeys.FROM_ASSET]: FilterKeyArities.ONE,
-      [OraclePriceFilterKeys.SOURCE]: FilterKeyArities.ONE,
-      [OraclePriceFilterKeys.START]: FilterKeyArities.ONE,
-      [OraclePriceFilterKeys.TO_ASSET]: FilterKeyArities.ONE,
-    }),
   };
 }

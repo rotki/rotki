@@ -1,4 +1,4 @@
-import { assert, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { useCustomAssetFilter } from '@/modules/assets/admin/custom/use-custom-assets-filter';
 
 vi.mock('vue-i18n', async importOriginal => ({
@@ -13,14 +13,6 @@ describe('useCustomAssetFilter', () => {
   });
 
   // The fields are declared in `custom-asset-fields.ts`, with their suggestions and validation, and
-  // covered by its own spec. What is left here is the URL round-trip.
-  it('should keep name and type route values as optional strings', () => {
-    const { RouteFilterSchema } = useCustomAssetFilter();
-    assert(RouteFilterSchema);
-    expect(RouteFilterSchema.parse({ custom_asset_type: 'fiat', name: 'gold' })).toEqual({
-      custom_asset_type: 'fiat',
-      name: 'gold',
-    });
-    expect(RouteFilterSchema.parse({})).toEqual({});
-  });
+  // covered by its own spec, which is also where the URL round-trip is now asserted: the url shape
+  // is derived from those fields.
 });

@@ -4,6 +4,7 @@ import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/u
 import { describe, expect, it } from 'vitest';
 import { toManualBalanceFields } from '@/modules/accounts/manual-balances/manual-balance-fields';
 import { DisplayKinds } from '@/modules/core/table/pill/core/types';
+import { routeSchemaFromFields } from '@/modules/core/table/route';
 
 const t = (key: string): string => key;
 
@@ -30,6 +31,19 @@ const options = {
 const fields = (): ReturnType<typeof toManualBalanceFields> => toManualBalanceFields(resolvers, t, options);
 
 describe('toManualBalanceFields', () => {
+  // The url shape of the filter bag is derived from these fields, so the round-trip is asserted
+  // here rather than against a second hand-written declaration.
+  it('should parse optional route filter values', () => {
+    const schema = routeSchemaFromFields(fields());
+
+    expect(schema.parse({ asset: 'ETH', label: 'x', location: 'kraken' })).toEqual({
+      asset: 'ETH',
+      label: 'x',
+      location: 'kraken',
+    });
+    expect(schema.parse({})).toEqual({});
+  });
+
   // The tags pill is the whole point of the migration here: it was a selector of its own beside
   // the bar, and it is param-bound rather than part of the filter bag.
   it('should offer the tags beside the table own fields', () => {

@@ -1,4 +1,4 @@
-import { assert, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   isValidStatus,
   useEthValidatorAccountFilter,
@@ -25,26 +25,6 @@ describe('useEthValidatorAccountFilter', () => {
     expect(get(filters)).toEqual({});
   });
 
-  it('should coerce single route values into arrays', () => {
-    const { RouteFilterSchema } = useEthValidatorAccountFilter();
-    assert(RouteFilterSchema);
-
-    expect(RouteFilterSchema.parse({ index: '5', publicKey: '0xabc', status: 'active' }))
-      .toEqual({ index: ['5'], publicKey: ['0xabc'], status: ['active'] });
-  });
-
-  it('should keep array route values as arrays', () => {
-    const { RouteFilterSchema } = useEthValidatorAccountFilter();
-    assert(RouteFilterSchema);
-
-    expect(RouteFilterSchema.parse({ status: ['active', 'exited'] }))
-      .toEqual({ status: ['active', 'exited'] });
-  });
-
-  it('should allow an empty route filter', () => {
-    const { RouteFilterSchema } = useEthValidatorAccountFilter();
-    assert(RouteFilterSchema);
-
-    expect(RouteFilterSchema.parse({})).toEqual({});
-  });
+  // The URL round-trip is asserted in `use-eth-validator-fields.spec.ts`, against the field list
+  // the url shape is now derived from.
 });

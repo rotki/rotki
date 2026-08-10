@@ -35,6 +35,7 @@ const { baselineTotal, counts, dismissInlinePanels, refreshSummary } = useDataIs
 const { syncCompleted } = useSyncCompleted();
 
 const filterSchema = useDataIssuesFilter();
+const fields = useDataIssueFields();
 
 const {
   collection: state,
@@ -45,6 +46,7 @@ const {
   setFilter: updateFilter,
 } = useServerTable<DataIssue, DataIssuesRequestPayload, Filters>({
   fetch: fetchData,
+  fields,
   filterSchema,
   params: [{
     isDefault: true,
@@ -54,7 +56,6 @@ const {
   urlState: routeWhen(mainPage),
 });
 
-const fields = useDataIssueFields();
 const pillLabels = usePillBarLabels();
 
 // Tracks whether the first load has finished. The all-clear screen keys off this

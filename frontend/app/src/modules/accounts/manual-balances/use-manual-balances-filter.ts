@@ -1,7 +1,7 @@
 import type { MatchedKeyword } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
 import z from 'zod';
-import { CommaSeparatedStringSchema, FilterKeyArities, filterRouteSchema } from '@/modules/core/table/route';
+import { CommaSeparatedStringSchema } from '@/modules/core/table/route';
 
 /** The wire keys the manual balances table filters on, which the URL carries too. */
 export const ManualBalanceFilterKeys = {
@@ -19,11 +19,6 @@ export function useManualBalanceFilter(): FilterSchema<Filters> {
 
   return {
     filters: modelFilters,
-    RouteFilterSchema: filterRouteSchema({
-      [ManualBalanceFilterKeys.ASSET]: FilterKeyArities.ONE,
-      [ManualBalanceFilterKeys.LABEL]: FilterKeyArities.ONE,
-      [ManualBalanceFilterKeys.LOCATION]: FilterKeyArities.ONE,
-    }),
   };
 }
 

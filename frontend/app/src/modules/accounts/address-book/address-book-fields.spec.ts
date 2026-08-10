@@ -6,6 +6,7 @@ import {
   toAddressBookStrictField,
 } from '@/modules/accounts/address-book/address-book-fields';
 import { DisplayKinds } from '@/modules/core/table/pill/core/types';
+import { routeSchemaFromFields } from '@/modules/core/table/route';
 
 const t = (key: string): string => key;
 
@@ -22,6 +23,28 @@ const resolvers: SharedFieldResolvers = {
 };
 
 describe('toAddressBookFields', () => {
+  // The url shape of the filter bag is derived from these fields, so the round-trip is asserted
+  // here rather than against a second hand-written declaration.
+  describe('route query', () => {
+    const schema = routeSchemaFromFields(toAddressBookFields(resolvers, t));
+
+    it('should keep the name value as a single string', () => {
+      expect(schema.parse({ nameSubstring: 'alice' })).toEqual({ nameSubstring: 'alice' });
+    });
+
+    it('should coerce a single address into an array', () => {
+      expect(schema.parse({ address: '0xabc' })).toEqual({ address: ['0xabc'] });
+    });
+
+    it('should keep multiple addresses as an array', () => {
+      expect(schema.parse({ address: ['0xabc', '0xdef'] })).toEqual({ address: ['0xabc', '0xdef'] });
+    });
+
+    it('should allow an empty route filter', () => {
+      expect(schema.parse({})).toEqual({});
+    });
+  });
+
   it('should keep the wire keys the table already sends', () => {
     expect(toAddressBookFields(resolvers, t).map(field => field.key)).toStrictEqual([
       'nameSubstring',

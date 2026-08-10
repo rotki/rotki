@@ -1,18 +1,26 @@
 <script setup lang="ts">
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { Filters } from '@/modules/settings/accounting/rule/use-accounting-rule-filter';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { CustomRuleHandling } from '@/modules/settings/accounting/rule/accounting-rule-query';
-import { useAccountingRuleFields } from '@/modules/settings/accounting/rule/use-accounting-rule-fields';
 
 /** Which half of the rules the table shows: the regular ones, or the event-specific ones. */
 const customRuleHandling = defineModel<CustomRuleHandling>('customRuleHandling', { required: true });
+
 /** The filter is a v-model rather than a prop pair so the bar writes straight back to the table. */
 const filter = defineModel<Filters>('filter', { required: true });
 
+/**
+ * The fields come from the table rather than being built here: the table reads the url shape of
+ * its filter bag off them, so both halves have to be looking at the same list.
+ */
+const { fields } = defineProps<{
+  fields: FieldDef[];
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
-const fields = useAccountingRuleFields();
 const pillLabels = usePillBarLabels();
 </script>
 
