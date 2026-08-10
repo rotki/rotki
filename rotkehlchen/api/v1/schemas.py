@@ -2221,7 +2221,11 @@ class BlockchainBalanceBaseSchema(AsyncQueryArgumentSchema):
                 )
 
 
-class BlockchainBalanceQuerySchema(BlockchainBalanceBaseSchema, ValueThresholdSchema):
+class BlockchainBalanceQuerySchema(
+        BlockchainBalanceBaseSchema,
+        ValueThresholdSchema,
+        OnlyCacheQuerySchema,
+):
     ...
 
 

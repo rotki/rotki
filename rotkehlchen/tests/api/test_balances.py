@@ -837,6 +837,29 @@ def test_multiple_balance_queries_not_concurrent(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_blockchain_balances_only_cache_does_not_query_chain(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """A cache-only GET returns an empty result without falling back to the chain."""
+    chains_aggregator = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator
+    with patch.object(chains_aggregator, 'query_balances') as query_mock:
+        result = assert_proper_sync_response_with_result(requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'named_blockchain_balances_resource',
+                blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+            ),
+            params={'only_cache': True},
+        ))
+
+    query_mock.assert_not_called()
+    assert result == {
+        'per_account': {},
+        'totals': {'assets': {}, 'liabilities': {}},
+    }
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
 def test_balances_caching_mixup(
         rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],

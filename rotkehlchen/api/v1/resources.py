@@ -1200,12 +1200,14 @@ class BlockchainBalancesResource(BaseMethodView):
             self,
             blockchain: SupportedBlockchain | None,
             async_query: bool,
+            only_cache: bool,
             value_threshold: FVal | None,
             addresses: ListOfBlockchainAddresses | None,
     ) -> Response:
         return self.rest_api.query_blockchain_balances(
             blockchain=blockchain,
             async_query=async_query,
+            only_cache=only_cache,
             value_threshold=value_threshold,
             addresses=addresses,
         )

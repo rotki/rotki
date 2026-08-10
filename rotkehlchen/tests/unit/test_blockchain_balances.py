@@ -1,10 +1,10 @@
-from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.balances import BlockchainBalances
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -15,6 +15,7 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_evm_address
 from rotkehlchen.tests.utils.xpubs import setup_db_for_xpub_tests_impl
 from rotkehlchen.types import (
@@ -25,9 +26,6 @@ from rotkehlchen.types import (
     Timestamp,
     TokenKind,
 )
-
-if TYPE_CHECKING:
-    from rotkehlchen.chain.aggregator import ChainsAggregator
 
 OPTIMISM_OP_TOKEN = EvmToken.initialize(
     address=string_to_evm_address('0x4200000000000000000000000000000000000042'),
@@ -384,3 +382,27 @@ def test_cached_gnosis_balance_uses_manual_current_price(
 
     assert gnosis_token in balances_update.totals.assets
     assert balances_update.totals.assets[gnosis_token]['aave-v3'].value == amount * manual_price
+
+
+def test_only_cache_repricing_does_not_query_price_oracles() -> None:
+    """A cache-only balance read must not fetch a missing manual-price conversion online."""
+    with (
+        patch.object(Inquirer, 'get_cached_current_price_entry', return_value=None),
+        patch.object(
+            Inquirer,
+            'find_price',
+            side_effect=AssertionError(
+                'cache-only balance repricing must not query price oracles',
+            ),
+        ),
+    ):
+        price = ChainsAggregator.get_price_for_cached_balances(
+            asset=A_ETH.resolve_to_crypto_asset(),
+            timestamp=Timestamp(1_700_000_000),
+            main_currency=A_EUR,
+            price_cache={},
+            manual_current_prices={A_ETH.identifier: (A_BTC, Price(ONE))},
+            only_cache=True,
+        )
+
+    assert price == ZERO

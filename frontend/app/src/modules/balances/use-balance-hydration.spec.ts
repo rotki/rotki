@@ -2,16 +2,13 @@ import type { EvmChainInfo, SupportedChains } from '@/modules/core/api/types/cha
 import { Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises } from '@vue/test-utils';
-import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 
 const h = vi.hoisted(() => ({
   queryBlockchainBalances: vi.fn(),
-  runTask: vi.fn(),
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
@@ -33,11 +30,6 @@ vi.mock('@/modules/balances/api/use-blockchain-balances-api', () => ({
     queryXpubBalances: vi.fn().mockResolvedValue({ taskId: 3 }),
     refreshBlockchainBalances: vi.fn().mockResolvedValue({ taskId: 4 }),
   })),
-}));
-
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
-  ...(await importOriginal<Record<string, unknown>>()),
-  useTaskHandler: vi.fn(() => ({ cancelTaskById: vi.fn(), runTask: h.runTask })),
 }));
 
 vi.mock('@/modules/assets/amount-display/use-usd-value-threshold', async () => {
@@ -95,11 +87,7 @@ describe('useBalanceHydration', () => {
   beforeEach(() => {
     setActivePinia(createCustomPinia());
     vi.clearAllMocks();
-    h.queryBlockchainBalances.mockResolvedValue({ taskId: 1 });
-    h.runTask.mockImplementation(async (task: () => Promise<unknown>) => {
-      await task();
-      return ok(EMPTY_BALANCES);
-    });
+    h.queryBlockchainBalances.mockResolvedValue(EMPTY_BALANCES);
   });
 
   afterEach(() => {
@@ -129,12 +117,11 @@ describe('useBalanceHydration', () => {
   it('should share one read between callers racing the same chain', async () => {
     addAccount(Blockchain.ETH);
     let release = (): void => {};
-    h.runTask.mockImplementation(async (task: () => Promise<unknown>) => {
-      await task();
+    h.queryBlockchainBalances.mockImplementation(async () => {
       await new Promise<void>((resolve) => {
         release = resolve;
       });
-      return ok(EMPTY_BALANCES);
+      return EMPTY_BALANCES;
     });
 
     const { useBalanceHydration } = await importModule();
@@ -162,7 +149,7 @@ describe('useBalanceHydration', () => {
       if (payload.blockchain === Blockchain.ETH)
         throw new Error('boom');
 
-      return { taskId: 1 };
+      return EMPTY_BALANCES;
     });
 
     const { useBalanceHydration } = await importModule();
@@ -181,15 +168,9 @@ describe('useBalanceHydration', () => {
   /** §1: hydration's failure policy is to retry, silently. */
   it('should retry an actionable failure', async () => {
     addAccount(Blockchain.ETH);
-    h.runTask
-      .mockImplementationOnce(async (task: () => Promise<unknown>) => {
-        await task();
-        return err(TaskFailed({ message: 'nope' }));
-      })
-      .mockImplementationOnce(async (task: () => Promise<unknown>) => {
-        await task();
-        return ok(EMPTY_BALANCES);
-      });
+    h.queryBlockchainBalances
+      .mockRejectedValueOnce(new Error('nope'))
+      .mockResolvedValueOnce(EMPTY_BALANCES);
 
     const { useBalanceHydration } = await importModule();
     await useBalanceHydration().hydrate({ blockchain: Blockchain.ETH });
@@ -203,10 +184,7 @@ describe('useBalanceHydration', () => {
    */
   it('should not retry a cancelled read', async () => {
     addAccount(Blockchain.ETH);
-    h.runTask.mockImplementation(async (task: () => Promise<unknown>) => {
-      await task();
-      return err(Cancelled({ message: 'session ended' }));
-    });
+    h.queryBlockchainBalances.mockRejectedValue(new DOMException('session ended', 'AbortError'));
 
     const { useBalanceHydration } = await importModule();
     await useBalanceHydration().hydrate({ blockchain: Blockchain.ETH });
@@ -222,12 +200,11 @@ describe('useBalanceHydration', () => {
   it('should report liveness while a chain is being read', async () => {
     addAccount(Blockchain.ETH);
     let release = (): void => {};
-    h.runTask.mockImplementation(async (task: () => Promise<unknown>) => {
-      await task();
+    h.queryBlockchainBalances.mockImplementation(async () => {
       await new Promise<void>((resolve) => {
         release = resolve;
       });
-      return ok(EMPTY_BALANCES);
+      return EMPTY_BALANCES;
     });
 
     const { useBalanceHydration } = await importModule();

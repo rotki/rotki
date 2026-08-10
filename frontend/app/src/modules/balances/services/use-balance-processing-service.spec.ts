@@ -1,3 +1,4 @@
+import type { BlockchainBalances } from '@/modules/balances/types/blockchain-balances';
 import { Blockchain } from '@rotki/common';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -73,7 +74,7 @@ const runTask = vi.fn().mockImplementation(async (taskFn: () => Promise<{ taskId
 
 const { useBalanceProcessingService } = await import('@/modules/balances/services/use-balance-processing-service');
 
-function balancesAt(blockchain: string, lastRefreshTs: number): unknown {
+function balancesAt(blockchain: string, lastRefreshTs: number): BlockchainBalances {
   return {
     lastRefreshTs: { [blockchain]: lastRefreshTs },
     perAccount: { [blockchain]: {} },
@@ -81,7 +82,7 @@ function balancesAt(blockchain: string, lastRefreshTs: number): unknown {
   };
 }
 
-function emptyBalances(blockchain: string): unknown {
+function emptyBalances(blockchain: string): BlockchainBalances {
   return {
     perAccount: { [blockchain]: {} },
     totals: { assets: {}, liabilities: {} },
@@ -113,46 +114,39 @@ describe('useBalanceProcessingService', () => {
     // here makes a later test see `hasCachedData` already true.
     const CHAIN = 'gnosis';
 
-    async function resolveCachedFetch(taskId: number, payload: unknown): Promise<void> {
+    async function resolveCachedFetch(payload: BlockchainBalances): Promise<void> {
       const service = useBalanceProcessingService();
-      const pending = service.handleCachedFetch(
-        runTask,
+      mockQueryBlockchainBalances.mockResolvedValue(payload);
+      await service.handleCachedFetch(
         { addresses: undefined, blockchain: CHAIN, isXpub: false },
         undefined,
       );
-      await vi.waitFor(() => {
-        expect(pendingTasks.has(taskId)).toBe(true);
-      });
-      pendingTasks.get(taskId)!.resolve(ok(payload));
-      await pending;
     }
 
     it('should ignore a payload older than the chain already holds', async () => {
-      mockQueryBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
       useBlockchainAccountsStore().updateAccounts(CHAIN, [
         createAccount({ address: '0x9', label: null, tags: null }, { chain: CHAIN, nativeAsset: 'ETH' }),
       ]);
       const { updateBalances } = useBalancesStore();
 
-      await resolveCachedFetch(1, balancesAt(CHAIN, 3000));
+      await resolveCachedFetch(balancesAt(CHAIN, 3000));
       vi.mocked(updateBalances).mockClear();
 
-      await resolveCachedFetch(2, balancesAt(CHAIN, 1000));
+      await resolveCachedFetch(balancesAt(CHAIN, 1000));
 
       expect(updateBalances).not.toHaveBeenCalled();
     });
 
     it('should accept a payload newer than the chain holds', async () => {
-      mockQueryBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
       useBlockchainAccountsStore().updateAccounts(CHAIN, [
         createAccount({ address: '0x9', label: null, tags: null }, { chain: CHAIN, nativeAsset: 'ETH' }),
       ]);
       const { updateBalances } = useBalancesStore();
 
-      await resolveCachedFetch(1, balancesAt(CHAIN, 1000));
+      await resolveCachedFetch(balancesAt(CHAIN, 1000));
       vi.mocked(updateBalances).mockClear();
 
-      await resolveCachedFetch(2, balancesAt(CHAIN, 3000));
+      await resolveCachedFetch(balancesAt(CHAIN, 3000));
 
       expect(updateBalances).toHaveBeenCalled();
     });
@@ -253,14 +247,14 @@ describe('useBalanceProcessingService', () => {
   });
 
   it('should flip hasCachedData when the cached GET resolves, before refresh POST completes', async () => {
-    mockQueryBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
+    const cachedBalances = deferred<BlockchainBalances>();
+    mockQueryBlockchainBalances.mockReturnValue(cachedBalances.promise);
     mockRefreshBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
 
     const service = useBalanceProcessingService();
     const { hasCachedData, isRefreshing } = useBalanceStatus(Blockchain.ETH);
 
     const cachedPromise = service.handleCachedFetch(
-      runTask,
       { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false },
       undefined,
     );
@@ -269,23 +263,21 @@ describe('useBalanceProcessingService', () => {
       { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false },
     );
 
-    // wait for both api calls to have registered their tasks
+    // Only the refresh registers a backend task. The cached GET is a direct request.
     await vi.waitFor(() => {
-      expect(pendingTasks.size).toBe(2);
+      expect(pendingTasks.size).toBe(1);
     });
 
     expect(get(hasCachedData)).toBe(false);
     expect(get(isRefreshing)).toBe(true);
 
-    // resolve the cached GET task first (taskId 1)
-    pendingTasks.get(1)!.resolve(ok(emptyBalances(Blockchain.ETH)));
+    cachedBalances.resolve(emptyBalances(Blockchain.ETH));
     await cachedPromise;
 
     expect(get(hasCachedData)).toBe(true);
     expect(get(isRefreshing)).toBe(true); // refresh POST still in flight
 
-    // resolve the refresh POST task
-    pendingTasks.get(2)!.resolve(ok(emptyBalances(Blockchain.ETH)));
+    pendingTasks.get(1)!.resolve(ok(emptyBalances(Blockchain.ETH)));
     await refreshPromise;
 
     expect(get(hasCachedData)).toBe(true);

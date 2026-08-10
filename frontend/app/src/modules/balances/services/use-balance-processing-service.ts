@@ -1,6 +1,6 @@
 import type { RunBackendTask } from '@/modules/task-center/use-native-task';
 import { Blockchain } from '@rotki/common';
-import { err, isErr, map as mapResult, type Result } from 'plainfp/result';
+import { err, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { convertBtcBalances } from '@/modules/accounts/account-helpers';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
@@ -12,9 +12,11 @@ import {
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-blockchain-refresh-timestamps-store';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, Skipped, type TaskError } from '@/modules/core/tasks/task-result';
+import { Cancelled, isActionable, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
@@ -26,7 +28,7 @@ function isBtcBalances(data?: BtcBalances | any): data is BtcBalances {
 interface UseBalanceProcessingServiceReturn {
   /** Empties a chain's balances and marks it loaded. No backend task, so no activity involved. */
   clearChainBalances: (blockchain: string) => void;
-  handleCachedFetch: (runTask: RunBackendTask, payload: FetchBlockchainBalancePayload, threshold: string | undefined) => Promise<Result<void, TaskError>>;
+  handleCachedFetch: (payload: FetchBlockchainBalancePayload, threshold: string | undefined) => Promise<Result<void, TaskError>>;
   handleRefresh: (runTask: RunBackendTask, payload: FetchBlockchainBalancePayload) => Promise<Result<void, TaskError>>;
   hasAccounts: (blockchain: string) => boolean;
   /** Whether the chain has anything to query — `hasAccounts`, except eth2. */
@@ -174,12 +176,30 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   };
 
   const handleCachedFetch = async (
-    runTask: RunBackendTask,
     payload: FetchBlockchainBalancePayload,
     threshold: string | undefined,
   ): Promise<Result<void, TaskError>> => {
     const { blockchain } = payload;
-    return executeBalanceQuery(runTask, blockchain, async () => queryBlockchainBalances(payload, threshold), false);
+    if (!shouldQuery(blockchain)) {
+      clearChainBalances(blockchain);
+      return err(Skipped({ message: t('actions.balances.blockchain.skipped.no_accounts') }));
+    }
+
+    try {
+      processBalanceResult(blockchain, await queryBlockchainBalances(payload, threshold));
+      markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
+      return ok(undefined);
+    }
+    catch (error: unknown) {
+      const taskError = isRequestCancellation(error)
+        ? Cancelled({ message: 'Request cancelled' })
+        : TaskFailed({ cause: error, message: getErrorMessage(error) });
+      if (isActionable(taskError))
+        logger.error(taskError.message);
+
+      invalidate(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
+      return err(taskError);
+    }
   };
 
   const handleRefresh = async (
