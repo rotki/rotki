@@ -3,7 +3,9 @@ import { err, isErr, ok, type Result } from 'plainfp/result';
 import { allWithConcurrency, type ResultAsync, retry, type RetryOptions } from 'plainfp/result-async';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useBalanceProcessingService } from '@/modules/balances/services/use-balance-processing-service';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -59,6 +61,8 @@ interface UseBalanceHydrationReturn {
 export const useBalanceHydration = createSharedComposable((): UseBalanceHydrationReturn => {
   const { supportedChains } = useSupportedChains();
   const { clearChainBalances, handleCachedFetch, shouldQuery } = useBalanceProcessingService();
+  const { prices } = storeToRefs(useBalancePricesStore());
+  const { updatePrices } = useBalancesStore();
   const { startHydration, stopHydration } = useBalanceRefreshState();
   const valueThreshold = useValueThreshold(BalanceSource.BLOCKCHAIN);
 
@@ -147,6 +151,11 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
     });
 
     await allWithConcurrency(factories, HYDRATION_CONCURRENCY);
+    // A cache-only backend read deliberately avoids price oracles, so balances without a local
+    // backend price arrive with a zero value. Reapply the frontend's already-fetched prices once
+    // the batch settles; otherwise a late hydration response can zero a correctly priced chain
+    // and make it disappear from the dashboard until the next price refresh.
+    updatePrices(get(prices));
   };
 
   const reset = (): void => {

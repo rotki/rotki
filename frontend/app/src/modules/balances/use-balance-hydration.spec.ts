@@ -1,14 +1,17 @@
+import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import type { EvmChainInfo, SupportedChains } from '@/modules/core/api/types/chains';
-import { Blockchain } from '@rotki/common';
+import { bigNumberify, Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import '@test/i18n';
 
 const h = vi.hoisted(() => ({
   queryBlockchainBalances: vi.fn(),
+  updatePrices: vi.fn(),
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
@@ -21,7 +24,10 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
 }));
 
 vi.mock('@/modules/balances/use-balances-store', () => ({
-  useBalancesStore: vi.fn().mockReturnValue({ updateBalances: vi.fn() }),
+  useBalancesStore: vi.fn().mockReturnValue({
+    updateBalances: vi.fn(),
+    updatePrices: h.updatePrices,
+  }),
 }));
 
 vi.mock('@/modules/balances/api/use-blockchain-balances-api', () => ({
@@ -108,6 +114,25 @@ describe('useBalanceHydration', () => {
       { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false },
       undefined,
     );
+  });
+
+  it('should reapply frontend prices once after hydrating cached balances', async () => {
+    const prices: AssetPrices = {
+      ETH: {
+        isManualPrice: false,
+        oracle: 'coingecko',
+        value: bigNumberify(2500),
+      },
+    };
+    const { prices: storedPrices } = storeToRefs(useBalancePricesStore());
+    set(storedPrices, prices);
+    addAccount(Blockchain.ETH);
+
+    const { useBalanceHydration } = await importModule();
+    await useBalanceHydration().hydrate({ blockchain: Blockchain.ETH });
+
+    expect(h.updatePrices).toHaveBeenCalledOnce();
+    expect(h.updatePrices).toHaveBeenCalledWith(prices);
   });
 
   /**
