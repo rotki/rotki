@@ -92,6 +92,58 @@ describe('useFilterState', () => {
     ]);
   });
 
+  // The bar is the only place the rule is applied, so every door into the state has to pass through
+  // it. A user edit and a route restore are two different doors.
+  describe('admissibility', () => {
+    const subtypes: FieldDef = {
+      admits: values => ((values.types ?? []).includes('spend') ? ['fee'] : []),
+      allowExclusion: false,
+      binding: { kind: 'filter' },
+      key: 'subtypes',
+      label: 'Subtype',
+      multiple: true,
+      operators: ['is'],
+      valueType: 'enum',
+    };
+    const types: FieldDef = { ...protocol, key: 'types', label: 'Type' };
+    const narrowing = [types, subtypes];
+
+    it('should drop a value once an edit stops admitting it', () => {
+      const { addFilter, matches } = useFilterState(narrowing);
+      addFilter({ fieldKey: 'types', op: 'is', values: ['spend'] });
+      addFilter({ fieldKey: 'subtypes', op: 'is', values: ['fee', 'airdrop'] });
+
+      expect(get(matches).subtypes).toStrictEqual(['fee']);
+    });
+
+    it('should drop a value arriving from the route', () => {
+      const { matches, setFromMatches } = useFilterState(narrowing);
+      setFromMatches({ subtypes: ['airdrop', 'fee'], types: ['spend'] }, {});
+
+      expect(get(matches).subtypes).toStrictEqual(['fee']);
+    });
+
+    // The option list is store-backed, so a restored link can land before the mapping does. The
+    // value is kept then, and pruned when the list finally arrives — without this the bar would
+    // have to be touched again before it corrected itself.
+    it('should re-prune when the option list arrives late', async () => {
+      const loaded = ref<boolean>(false);
+      const late: FieldDef = {
+        ...subtypes,
+        admits: values => (get(loaded) && (values.types ?? []).includes('spend') ? ['fee'] : []),
+      };
+      const { matches, setFromMatches } = useFilterState(() => [types, late]);
+
+      setFromMatches({ subtypes: ['airdrop'], types: ['spend'] }, {});
+      expect(get(matches).subtypes).toStrictEqual(['airdrop']);
+
+      set(loaded, true);
+      await nextTick();
+
+      expect(get(matches).subtypes).toBeUndefined();
+    });
+  });
+
   it('should skip the self echo so a round-trip does not reorder', () => {
     const { addFilter, matches, params, setFromMatches, state } = useFilterState(fields);
     addFilter({ fieldKey: 'protocols', op: 'is', values: ['aave', 'uniswap'] });

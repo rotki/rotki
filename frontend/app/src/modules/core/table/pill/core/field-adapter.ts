@@ -53,6 +53,7 @@ export interface ParamFieldSpec {
 export interface MatchFieldSpec {
   readonly key: string;
   readonly label: string;
+  readonly admits?: FieldDef['admits'];
   readonly valueType?: FilterValueType;
   readonly operators?: readonly FilterOp[];
   readonly multiple?: boolean;
@@ -213,6 +214,7 @@ export function toMatchFieldDef(spec: MatchFieldSpec): FieldDef {
   const valueType = spec.valueType ?? FilterValueTypes.ENUM;
   const allowExclusion = spec.allowExclusion ?? false;
   return {
+    admits: spec.admits,
     allowExclusion,
     binding: { kind: 'filter' },
     deserializer: spec.deserializer,

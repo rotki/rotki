@@ -60,6 +60,11 @@ export interface HistoryEventFieldOptions {
   readonly eventTypes: () => string[];
   /** The subtypes the selected event types admit, already narrowed and deduplicated. */
   readonly eventSubtypes: () => string[];
+  /**
+   * The same lookup as a function of the types, rather than of the current selection: what the
+   * subtype field `admits` is asked for the types the bar is about to hold, not the ones it holds.
+   */
+  readonly subtypesFor: (eventTypes: readonly string[]) => string[];
   /** The async asset search, already scoped to the picked location. */
   readonly searchAsset: (value: string) => Promise<AssetsWithId>;
 }
@@ -209,14 +214,16 @@ function classificationFields(
 
   if (included.evmOrOnline && !disabled.eventSubtypes) {
     fields.push(toMatchFieldDef({
+      // The backend reads types and subtypes as a cross product, so a subtype the selected types do
+      // not admit matches nothing. The bar narrows what can be added, drops what stops being
+      // admitted, and refuses it if typed — all three off the one mapping lookup.
+      admits: values => options.subtypesFor(values[HistoryEventFilterKeys.EVENT_TYPE] ?? []),
       excludes: EXCLUDES_ACTION,
       key: HistoryEventFilterKeys.EVENT_SUBTYPE,
       label: t('transactions.filter_field_labels.event_subtype'),
       multiple: true,
       resolveLabel: resolvers.resolveEventSubTypeName,
       suggest: options.eventSubtypes,
-      // Checked against the same narrowed list it offers, so a subtype the selected event types do
-      // not admit is never applied.
       validate: (subtype: string): boolean => options.eventSubtypes().includes(subtype),
     }));
   }

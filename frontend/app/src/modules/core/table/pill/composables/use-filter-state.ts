@@ -3,6 +3,7 @@ import type { MatchedKeyword, MatchedKeywordWithBehaviour } from '@/modules/core
 import type { ActiveFilter, FieldDef, FilterState } from '@/modules/core/table/pill/core/types';
 import type { ChangeSource } from '@/modules/core/table/use-change-intent';
 import { isEqual } from 'es-toolkit';
+import { pruneInadmissible } from '@/modules/core/table/pill/core/admissibility';
 import { matchesFromState, stateFromMatches } from '@/modules/core/table/pill/core/codec';
 
 export interface UseFilterStateReturn {
@@ -50,21 +51,49 @@ export function useFilterState(fields: MaybeRefOrGetter<FieldDef[]>): UseFilterS
   const matches = computed<Partial<MatchedKeyword<string>>>(() => get(serialized).matches);
   const params = computed<Record<string, string | string[] | boolean>>(() => get(serialized).params);
 
+  /**
+   * The one way state is written. Every entry point goes through here so a field's `admits` is
+   * applied to all of them alike — an edit, a removal, and the route/saved-view restore below.
+   */
+  function commit(next: FilterState): void {
+    set(state, pruneInadmissible(next, toValue(fields)));
+  }
+
   function addFilter(filter: ActiveFilter): void {
-    set(state, [...get(state).filter(item => item.fieldKey !== filter.fieldKey), filter]);
+    commit([...get(state).filter(item => item.fieldKey !== filter.fieldKey), filter]);
   }
 
   function updateFilter(fieldKey: string, patch: Partial<Omit<ActiveFilter, 'fieldKey'>>): void {
-    set(state, get(state).map(item => (item.fieldKey === fieldKey ? { ...item, ...patch } : item)));
+    commit(get(state).map(item => (item.fieldKey === fieldKey ? { ...item, ...patch } : item)));
   }
 
   function removeFilter(fieldKey: string): void {
-    set(state, get(state).filter(item => item.fieldKey !== fieldKey));
+    commit(get(state).filter(item => item.fieldKey !== fieldKey));
   }
 
   function clearAll(): void {
     set(state, []);
   }
+
+  /**
+   * What the declaring fields currently admit. Reading it *calls* `admits`, so whatever those
+   * lookups depend on — a store-backed mapping, another field's values — is tracked here.
+   * Watching the field list instead would miss a mapping that loads without rebuilding the list.
+   */
+  const admitted = computed<string[][]>(() => {
+    const values = Object.fromEntries(get(state).map(filter => [filter.fieldKey, filter.values]));
+    return toValue(fields).filter(field => field.admits).map(field => [...field.admits!(values)]);
+  });
+
+  /**
+   * The option lists behind `admits` are store-backed, so one can arrive after the state it governs:
+   * a link restored before the event-type mapping loads keeps its value (see `pruneInadmissible`)
+   * and has to be pruned once the mapping answers. Re-pruning cannot loop, because a second pass
+   * over an already-pruned state returns it by reference and `set` is then a no-op.
+   */
+  watch(admitted, () => {
+    commit(get(state));
+  });
 
   function setFromMatches(
     incoming: MatchedKeywordWithBehaviour<string>,
@@ -74,7 +103,7 @@ export function useFilterState(fields: MaybeRefOrGetter<FieldDef[]>): UseFilterS
     if (source === 'self' || (isEqual(incoming, get(matches)) && isEqual(incomingParams, get(params))))
       return;
 
-    set(state, stateFromMatches(incoming, incomingParams, toValue(fields)));
+    commit(stateFromMatches(incoming, incomingParams, toValue(fields)));
   }
 
   return {
