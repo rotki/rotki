@@ -5,7 +5,7 @@ import { z } from 'zod/v4';
 import { DEFAULT_COLIBRI_PORT, DEFAULT_MCP_PORT, DEFAULT_PORT, DEFAULT_PROXY_PORT } from '../../app/shared/port-utils';
 import { createDevLogger } from '../dev/logger';
 import { errorCode, errorMessage } from './format';
-import { ensureInstanceParent, resolveInstanceParent, sanitizeName } from './paths';
+import { ensureInstanceParent, resolveInstanceDir, resolveInstanceParent, sanitizeName } from './paths';
 
 /**
  * Note the two distinct proxies: `proxy` is the optional premium dev-proxy
@@ -209,10 +209,41 @@ function isSlotInUse(index: PortIndex, slot: number, exceptName?: string): boole
   return false;
 }
 
+/**
+ * Drop slot reservations whose instance directory is gone.
+ *
+ * `releasePortSlot` only runs on `--clean`, so an instance deleted by hand (or a
+ * seed that was aborted before the directory existed) keeps its slot reserved
+ * forever, and the allocator walks past it. That is how you end up being handed
+ * slot 8 with no instances on disk at all.
+ *
+ * `keepName` is the instance currently being allocated: `prepareInstance`
+ * creates its directory before it calls in here, but keeping it exempt means a
+ * caller that has not done so yet cannot have its own reservation pruned.
+ *
+ * Returns the names that were dropped.
+ */
+function pruneOrphanedSlots(index: PortIndex, keepName: string): string[] {
+  const dropped: string[] = [];
+  for (const name of Object.keys(index.slots)) {
+    if (name === keepName || fs.existsSync(resolveInstanceDir(name))) {
+      continue;
+    }
+    delete index.slots[name];
+    dropped.push(name);
+  }
+  return dropped;
+}
+
 export async function allocatePortSlot(name: string, hint?: number): Promise<number> {
   const sanitized = sanitizeName(name);
   return withRegistryLock(() => {
     const index = readPortIndex();
+    const orphaned = pruneOrphanedSlots(index, sanitized);
+    if (orphaned.length > 0) {
+      logger.info(`Released port slot(s) for removed instance(s): ${orphaned.join(', ')}`);
+      writePortIndex(index);
+    }
 
     if (hint !== undefined) {
       if (slotHasReservedConflict(hint)) {

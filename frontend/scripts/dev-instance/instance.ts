@@ -176,6 +176,11 @@ function buildMeta(
 export async function prepareInstance(opts: PrepareInstanceOptions): Promise<InstanceRuntime> {
   const name = sanitizeName(opts.name);
   const dir = resolveInstanceDir(name);
+  // Claim the directory before the slot: the allocator releases slots whose
+  // directory is gone, and an instance that has not created its own yet would
+  // look exactly like one of those to a second `dev:web` running concurrently.
+  // `ensureInstanceData` still treats an empty directory as needing a seed.
+  fs.mkdirSync(dir, { recursive: true });
   const slot = await allocatePortSlot(name, opts.slotHint);
   const ports = portsForSlot(slot);
 
