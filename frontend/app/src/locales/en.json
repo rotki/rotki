@@ -5110,6 +5110,7 @@
       "done": "Done",
       "failed": "Failed",
       "queued": "Queued",
+      "running": "Running",
       "skipped": "Skipped"
     },
     "steps": "{current} of {total}"
