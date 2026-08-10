@@ -96,7 +96,7 @@ assistants must pass an explicit timeout on these commands rather than relying o
 | `pnpm run lint:file <paths>`, `pnpm run lint:file:check <paths>`, `pnpm run lint-staged` | 2 minutes (usually the default) |
 | `pnpm run test:unit <path>` narrowed to one file or folder | 5 minutes |
 | `pnpm run lint`, `pnpm run lint:all`, `pnpm run typecheck`, `pnpm run build`, `pnpm run test:unit` (full suite), `pnpm install` | 10 minutes |
-| `pnpm run test:e2e`, `pnpm run electron:build`, docker builds | run in the background instead. The unsharded e2e suite takes ~20 minutes locally, which outlasts any foreground timeout. |
+| `pnpm run test:e2e`, `pnpm run test:e2e:shards`, `pnpm run electron:build`, docker builds | run in the background instead. The unsharded e2e suite takes ~20 minutes locally and the sharded one ~7, both of which outlast any foreground timeout. |
 
 Reference measurements (2026-08-09), so a later reader can tell whether this has drifted. The
 frontend gates run as separate steps of one **"Frontend checks"** job (3m50s-5m10s including
@@ -111,6 +111,7 @@ install), so the CI column names the step rather than a whole job:
 | `pnpm run lint:style` | 2s | Stylelint step: 2s |
 | `pnpm run check:linked-keys` | 1s | Linked i18n keys step: 1s |
 | `pnpm run test:e2e` (full, unsharded) | ~20 minutes | 240-637s per shard, across four shards |
+| `pnpm run test:e2e:shards` (full, four local shards) | 7.1 minutes, 806 MB peak per shard | not used; CI shards across runners |
 
 Runner speed varies by about 1.4x between runs, and it moves every step together, so compare a
 step against its own range rather than reading one slow run as a regression.
@@ -870,6 +871,38 @@ Key files:
 - Test utilities (fixtures, mocks, setup) remain in `frontend/app/tests/unit/`
 - Playwright for E2E testing (specs in `frontend/app/tests/e2e/specs/`, page objects in `frontend/app/tests/e2e/pages/`, helpers in `frontend/app/tests/e2e/helpers/`)
 - Test descriptions must follow the `it('should ...'` pattern
+
+#### Running e2e locally, sharded
+
+The backend is single-user, so one Playwright run is pinned to `workers: 1` and takes about
+twenty minutes. `pnpm run test:e2e:shards` starts several complete stacks side by side instead -
+each with its own starling supervisor, rpc mock, preview server, port block and data directory -
+and gives each one a shard of the suite. The whole suite takes about seven minutes across four
+shards, at roughly 800 MB peak per shard.
+
+```bash
+cd frontend
+pnpm run test:e2e:shards                                              # four shards
+pnpm run test:e2e:shards -n 2                                         # two
+pnpm run test:e2e:shards -n 2 tests/e2e/specs/app/tag-manager.spec.ts # only these specs
+pnpm run test:e2e:shards -n 2 -- --grep @slow                         # raw playwright flags
+```
+
+Spec paths are positional, so no `--` is needed for them; pnpm forwards arguments verbatim.
+A `--` separates flags meant for Playwright rather than for the runner.
+
+Useful to know:
+- Shard N takes the port block at offset `N * 10`, so the base block stays free and a plain
+  `pnpm test:e2e` can run alongside a sharded one.
+- Every shard is served the same bundle, built once with an empty `VITE_BACKEND_URL` so it
+  addresses the backend same-origin; each preview server proxies `/api/`, `/ws/` and `/colibri/`
+  to its own shard's starling. Those proxy keys are anchored regexes on purpose: a bare `/api`
+  also matches the `/api-<hash>.js` chunk and the app renders a blank page.
+- Each shard starts from a pristine copy of the packaged global database, so manual prices and
+  other global-database residue cannot leak between runs.
+- Per-shard output lands in `.e2e/shard-N/logs/shard.log`; the terminal only gets summary and
+  failure lines unless `--verbose` is passed. The blob reports are merged into one
+  `playwright-report` at the end.
 
 ## Packaging
 ```bash
