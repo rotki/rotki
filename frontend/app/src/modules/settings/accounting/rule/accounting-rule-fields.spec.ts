@@ -25,6 +25,9 @@ const options: AccountingRuleFieldOptions = {
   eventSubtypes: (): string[] => ['deposit asset'],
   eventTypeName: (value: string): string => (value === 'deposit' ? 'Deposit' : value),
   eventTypes: (): string[] => ['deposit'],
+  // What each event type admits, the lookup the subtype field declares as `admits`.
+  subtypesFor: (eventTypes: readonly string[]): string[] =>
+    eventTypes.includes('deposit') ? ['deposit asset'] : [],
 };
 
 const fields = (): FieldDef[] => toAccountingRuleFields(resolvers, t, options);
@@ -72,6 +75,16 @@ describe('toAccountingRuleFields', () => {
 
     expect(type.suggest?.()).toStrictEqual(['deposit']);
     expect(subtype.suggest?.()).toStrictEqual(['deposit asset']);
+  });
+
+  // A rule is written for a type/subtype pair and the request reads the two as a cross product, so
+  // a subtype the selected types do not admit matches no rule. The bar drops it through
+  // `pruneInadmissible`; here it is the declaration that is pinned.
+  it('should admit only the subtypes of the types it is asked about', () => {
+    const [, subtype] = fields();
+
+    expect(subtype.admits?.({ eventTypes: ['deposit'] })).toStrictEqual(['deposit asset']);
+    expect(subtype.admits?.({ eventTypes: ['spend'] })).toStrictEqual([]);
   });
 
   // The table names the same values through the backend's event mappings, so the pill uses them

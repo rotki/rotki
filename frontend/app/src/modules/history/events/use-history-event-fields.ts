@@ -4,11 +4,11 @@ import type { AssetsWithId } from '@/modules/assets/types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { Filters } from '@/modules/history/events/use-events-filter';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
-import { uniqueStrings } from '@/modules/core/common/data/data';
 import { assetSuggestions } from '@/modules/core/common/display/assets';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { useEventActionPicker } from '@/modules/history/events/action-picker/use-event-action-picker';
 import { type ActionFieldOption, toHistoryAccountField, toHistoryActionField, toHistoryEventFields, toHistoryIgnoredField, toHistoryStateField } from '@/modules/history/events/history-event-fields';
+import { subtypesForTypes } from '@/modules/history/events/mapping/event-type-subtypes';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import { isValidHistoryEventState, useHistoryEventStateMapping } from '@/modules/history/events/mapping/use-history-event-state-mapping';
@@ -71,21 +71,11 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
   const shared = useSharedFieldResolvers();
 
   /**
-   * The subtypes a set of event types admits, deduplicated; every known subtype when no type is
-   * picked. The field declares it twice over — as the option list it offers, and as what it
-   * `admits` — so the narrowing and the pruning of an already-picked subtype cannot disagree.
+   * The field declares this twice over — as the option list it offers, and as what it `admits` —
+   * so the narrowing and the pruning of an already-picked subtype cannot disagree.
    */
-  function subtypesFor(eventTypes: readonly string[]): string[] {
-    const mapping = get(historyEventTypeGlobalMapping);
-    if (Object.keys(mapping).length === 0)
-      return [];
-
-    const keys = eventTypes.length === 0
-      ? Object.values(mapping).flatMap(entry => Object.keys(entry))
-      : eventTypes.flatMap(selected => Object.keys(mapping[selected] ?? {}));
-
-    return keys.filter(uniqueStrings);
-  }
+  const subtypesFor = (eventTypes: readonly string[]): string[] =>
+    subtypesForTypes(get(historyEventTypeGlobalMapping), eventTypes);
 
   const selectedEventTypes = computed<string[]>(() => {
     const picked = get(filters)?.eventTypes;
