@@ -1000,3 +1000,115 @@ def test_curve_deposit_interfering_with_paraswap_swap(
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
+@pytest.mark.parametrize('gnosis_accounts', [['0x98E393228A1C69F8631c5a7278d83a1599165326']])
+def test_native_swap_routed_through_curve_zap(
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
+        load_global_caches,
+        allow_gnosis_etherscan: None,
+) -> None:
+    """Regression test for a bug where paraswap routing a swap through the curve EURe zap made
+    the curve decoder claim the sender's spend as a deposit, since the zap is the AddLiquidity
+    provider and adds liquidity with exactly the amount the sender swapped."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xbe029b6a84a3f310ca8bb692225c4a2b19a47b9a7f053bfaa765738c7592143f')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1785777775000)),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_XDAI,
+        amount=FVal(gas_amount := '0.00000004654072516'),
+        location_label=(user_address := gnosis_accounts[0]),
+        notes=f'Burn {gas_amount} XDAI for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_XDAI,
+        amount=FVal(spend_amount := '1156'),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} XDAI in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),  # EURe
+        amount=FVal(receive_amount := '1003.92719024870398872'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} EURe as the result of a swap in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
+@pytest.mark.parametrize('gnosis_accounts', [['0xDd036474388108B3b1304Db2C88C951D6d95038C']])
+def test_native_receive_swap_routed_through_curve_zap(
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
+        load_global_caches,
+        allow_gnosis_etherscan: None,
+) -> None:
+    """Regression test for the withdrawal side of the same bug: paraswap routing a swap out of a
+    curve pool made the curve decoder claim the receive of any tracked address in the transaction
+    as a withdrawal, even though the funds came from paraswap and never from curve."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf14f1ec5f36ad62d9791c58202fab061775f7a95edb1ac2c80a1ff7b4732e1de')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1785700545000)),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_XDAI,
+        amount=FVal(gas_amount := '0.000000006688898758'),
+        location_label=(user_address := gnosis_accounts[0]),
+        notes=f'Burn {gas_amount} XDAI for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:100/erc20:0x2a22f9c3b484c3629090FeED35F17Ff8F88f76F0'),  # USDC.e
+        amount=FVal(spend_amount := '12.057476'),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} USDC.e in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_XDAI,
+        amount=FVal(receive_amount := '12.058107620013985682'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} XDAI as the result of a swap in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    )]

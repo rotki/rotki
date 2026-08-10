@@ -122,6 +122,14 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         self.curve_swap_routers = curve_swap_routers
         self.crv_minter_addresses = crv_minter_addresses
 
+    def _is_curve_address(self, address: ChecksumEvmAddress | None) -> bool:
+        """Whether funds moving to or from this address are moving within curve"""
+        return (
+            address in self.pools or
+            address in self.curve_deposit_contracts or
+            address in self.curve_swap_routers
+        )
+
     def _read_curve_asset(
             self: CurveCommonDecoder,
             asset_address: ChecksumEvmAddress | None,
@@ -353,6 +361,14 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                 event.location_label is not None and (
                     transaction.from_address == user_or_contract_address or
                     self.base.is_tracked(string_to_evm_address(event.location_label))
+                ) and (
+                    # The removal may be done by a zap or a router on behalf of the tracked
+                    # address, but it may equally be an aggregator routing a swap through the
+                    # pool, in which case the tracked address receives from the aggregator and
+                    # never from curve. Require the funds to have come from curve, or the
+                    # transaction to target it, before claiming the receive as a withdrawal.
+                    self._is_curve_address(event.address) or
+                    self._is_curve_address(transaction.to_address)
                 )
             ):
                 notes = f'Remove {event.amount} {crypto_asset.symbol} from {tx_log.address} curve pool'  # noqa: E501
@@ -460,6 +476,15 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
     ) -> EvmDecodingOutput:
         """Decode information related to depositing assets in curve pools"""
         is_direct_pool_interaction = transaction.to_address == tx_log.address
+        # A deposit zap is also the AddLiquidity provider when an aggregator routes a swap
+        # through a curve pool. There the transaction sender never deposits: their funds go to
+        # the aggregator, which happens to add liquidity with the exact same amount, so the
+        # amount check below can't tell the two apart. Only take the zap as evidence that the
+        # sender deposited when the transaction itself targets curve.
+        deposits_through_zap = (
+            user_or_contract_address in self.curve_deposit_contracts and
+            self._is_curve_address(transaction.to_address)
+        )
         display_pool_address = tx_log.address
         if (
             user_or_contract_address in self.curve_deposit_contracts and
@@ -531,7 +556,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                         (
                             event.location_label == transaction.from_address and
                             (
-                                user_or_contract_address in self.curve_deposit_contracts or
+                                deposits_through_zap or
                                 event.address in self.curve_deposit_contracts
                             )
                         )
