@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod/v4';
 import { createDevLogger } from '../dev/logger';
+import { atomicWriteJson } from './atomic-json';
 import { errorMessage } from './format';
-import { atomicWriteJson } from './port-registry';
 
 const SIDECAR_FILENAME = '.rotki-instance.json';
 
