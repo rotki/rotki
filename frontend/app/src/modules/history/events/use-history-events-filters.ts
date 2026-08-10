@@ -208,7 +208,7 @@ export function useHistoryEventsFilters(
   >({
     fetch: fetchHistoryEventsTagged,
     fields,
-    filterSchema: { filters: modelFilters },
+    filters: modelFilters,
     params: sources,
     persist: {
       keys: {

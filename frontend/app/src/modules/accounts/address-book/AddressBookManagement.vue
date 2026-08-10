@@ -5,12 +5,12 @@ import type {
   AddressBookPayload,
   AddressBookRequestPayload,
 } from '@/modules/accounts/address-book/eth-names';
+import type { Filters } from '@/modules/accounts/address-book/use-address-book-filter';
 import AddressBookFormDialog from '@/modules/accounts/address-book/AddressBookFormDialog.vue';
 import AddressBookManagementMore from '@/modules/accounts/address-book/AddressBookManagementMore.vue';
 import AddressBookTable from '@/modules/accounts/address-book/AddressBookTable.vue';
 import EthNamesHint from '@/modules/accounts/address-book/EthNamesHint.vue';
 import { useAddressBookFields } from '@/modules/accounts/address-book/use-address-book-fields';
-import { type Filters, useAddressBookFilter } from '@/modules/accounts/address-book/use-address-book-filter';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
 import { arrayify } from '@/modules/core/common/data/array';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
@@ -33,7 +33,6 @@ const { editableItem, openDialog } = useCommonTableProps<AddressBookPayload>();
 
 const { getAddressBook } = useAddressBookOperations();
 
-const filterSchema = useAddressBookFilter();
 const fields = useAddressBookFields();
 const pillLabels = usePillBarLabels();
 
@@ -51,7 +50,6 @@ const {
 >({
   fetch: filter => getAddressBook(get(location), get(filter)),
   fields,
-  filterSchema,
   params: [{
     to: 'both',
     values: computed<Record<string, unknown>>(() => ({

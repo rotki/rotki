@@ -1,5 +1,4 @@
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
-import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
 
 /** The wire keys the history events table filters on, which the URL carries too. */
 export const HistoryEventFilterKeys = {
@@ -22,11 +21,3 @@ export const HistoryEventFilterKeys = {
 export type HistoryEventFilterKey = typeof HistoryEventFilterKeys[keyof typeof HistoryEventFilterKeys];
 
 export type Filters = MatchedKeywordWithBehaviour<HistoryEventFilterKey>;
-
-export function useHistoryEventFilter(): FilterSchema<Filters> {
-  const modelFilters = ref<Filters>({});
-
-  return {
-    filters: modelFilters,
-  };
-}

@@ -2,7 +2,6 @@ import type { EffectScope, MaybeRef, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
-import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { LocationQuery } from '@/modules/core/table/route';
 import flushPromises from 'flush-promises';
@@ -129,7 +128,7 @@ function mockRequestWithExtras(): (payload: MaybeRef<TestPayloadWithExtras>) => 
  * The filter bag and the fields it is declared by. The url shape is derived from the fields, so a
  * table under test states its keys once, the same way a real one does.
  */
-function createTestFilterOptions(): { fields: FieldDef[]; filterSchema: FilterSchema<TestFilters> } {
+function createTestFilterOptions(): { fields: FieldDef[]; filters: Ref<TestFilters> } {
   return {
     fields: [
       toMatchFieldDef({ key: 'asset', label: 'Asset', multiple: false }),
@@ -137,7 +136,7 @@ function createTestFilterOptions(): { fields: FieldDef[]; filterSchema: FilterSc
       toMatchFieldDef({ key: 'tempFilter', label: 'Temp filter', multiple: false }),
       toMatchFieldDef({ key: 'txRefs', label: 'Tx refs', multiple: true }),
     ],
-    filterSchema: { filters: ref<TestFilters>({}) },
+    filters: ref<TestFilters>({}),
   };
 }
 

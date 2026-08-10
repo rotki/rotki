@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { OraclePriceEntry, OraclePricesQuery } from '@/modules/assets/prices/price-types';
+import type { Filters } from '@/modules/assets/prices/use-oracle-prices-filter';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import OraclePriceEditDialog from '@/modules/assets/prices/components/oracle/OraclePriceEditDialog.vue';
 import { getOracleSourceLabel } from '@/modules/assets/prices/oracle-source-labels';
 import { useOraclePriceFields } from '@/modules/assets/prices/use-oracle-price-fields';
 import { useOraclePrices } from '@/modules/assets/prices/use-oracle-prices';
-import { type Filters, useOraclePricesFilter } from '@/modules/assets/prices/use-oracle-prices-filter';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
@@ -20,7 +20,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { deletePrice, fetchData } = useOraclePrices();
 
-const filterSchema = useOraclePricesFilter();
 const fields = useOraclePriceFields();
 const pillLabels = usePillBarLabels();
 
@@ -37,7 +36,6 @@ const {
 >({
   fetch: fetchData,
   fields,
-  filterSchema,
   sort: {
     default: {
       column: 'timestamp',

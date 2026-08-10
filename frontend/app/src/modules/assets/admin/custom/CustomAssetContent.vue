@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { Nullable } from '@rotki/common';
+import type { Filters } from '@/modules/assets/admin/custom/use-custom-assets-filter';
 import type { CustomAsset, CustomAssetRequestPayload } from '@/modules/assets/types';
 import CustomAssetFormDialog from '@/modules/assets/admin/custom/CustomAssetFormDialog.vue';
 import CustomAssetTable from '@/modules/assets/admin/custom/CustomAssetTable.vue';
 import { useCustomAssetFields } from '@/modules/assets/admin/custom/use-custom-asset-fields';
-import { type Filters, useCustomAssetFilter } from '@/modules/assets/admin/custom/use-custom-assets-filter';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
@@ -41,7 +41,6 @@ const { showDeleteConfirmation } = useTableRowDeletion<CustomAsset>({
   onDeleted: refresh,
 });
 
-const filterSchema = useCustomAssetFilter();
 const fields = useCustomAssetFields(types);
 
 const {
@@ -58,7 +57,6 @@ const {
 >({
   fetch: queryAllCustomAssets,
   fields,
-  filterSchema,
   sort: {
     default: [{
       column: 'name',
