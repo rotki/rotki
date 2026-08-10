@@ -6026,7 +6026,6 @@
         "versions": "Checking for asset database updates"
       },
       "blockchain_balances": {
-        "cached": "Reading cached {chain} data",
         "chain": "Refreshing {chain}",
         "run": "Refreshing {count} chains"
       },

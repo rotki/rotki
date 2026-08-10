@@ -936,6 +936,7 @@ class RestAPI:
     def query_blockchain_balances(
             self,
             blockchain: SupportedBlockchain | None,
+            only_cache: bool = False,
             value_threshold: FVal | None = None,
             addresses: ListOfBlockchainAddresses | None = None,
     ) -> dict[str, Any]:
@@ -947,8 +948,9 @@ class RestAPI:
                 chain=blockchain,
                 from_cache=True,
                 addresses=addresses,
+                only_cache=only_cache,
             )
-            if self._should_refresh_blockchain_balances(
+            if only_cache is False and self._should_refresh_blockchain_balances(
                 blockchain=blockchain,
                 balances=balances,
                 last_refresh_ts=self.rotkehlchen.chains_aggregator.get_blockchain_balances_last_query_ts(blockchain),

@@ -1,5 +1,4 @@
 import type { BlockchainBalancePayload } from '@/modules/balances/types/blockchain-balances';
-import type { RunBackendTask } from '@/modules/task-center/use-native-task';
 import { err, isErr, ok, type Result } from 'plainfp/result';
 import { allWithConcurrency, type ResultAsync, retry, type RetryOptions } from 'plainfp/result-async';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
@@ -9,7 +8,6 @@ import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
-import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 
 /**
@@ -32,7 +30,7 @@ interface UseBalanceHydrationReturn {
   hydrate: (payload?: BlockchainBalancePayload) => Promise<void>;
   /**
    * Forget every read in flight. 🔴 Must run when a session ends: this map is app-scoped, so a
-   * read that can never settle (its backend task belongs to a session that is gone) would
+   * read that can never settle (its request belongs to a session that is gone) would
    * otherwise be handed to the next session's caller for that chain, which then never hydrates.
    */
   reset: () => void;
@@ -51,21 +49,18 @@ interface UseBalanceHydrationReturn {
  * the read in flight and therefore its parameters, which is right for a data refresh: the rows it
  * reads back are the same either way.
  *
- * ⚠️ It is still a *backend task* — the current GET escalates to a full node query on an empty
- * cache, so it cannot simply drop `async_query`. That is a backend change, not a reason for this
- * to be a job.
+ * ⭐ The GET is cache-only and returns directly. An empty cache returns empty balances instead of
+ * escalating to a node query, so hydration does not need the backend task monitor.
  *
  * 🔴 Overlapping a network refresh is harmless by construction rather than by exclusion:
  * `processBalanceResult` discards a payload older than what the chain already holds, whichever
  * order the two land in. That is what lets this layer stop being serialised against work at all.
  */
 export const useBalanceHydration = createSharedComposable((): UseBalanceHydrationReturn => {
-  const { getChainName, supportedChains } = useSupportedChains();
+  const { supportedChains } = useSupportedChains();
   const { clearChainBalances, handleCachedFetch, shouldQuery } = useBalanceProcessingService();
-  const { runTask: runBackendTask } = useTaskHandler();
   const { startHydration, stopHydration } = useBalanceRefreshState();
   const valueThreshold = useValueThreshold(BalanceSource.BLOCKCHAIN);
-  const { t } = useI18n({ useScope: 'global' });
 
   /** The read in flight per chain — the subject dedup. Entries exist only while a read is live. */
   const inflight = new Map<string, Promise<void>>();
@@ -80,10 +75,6 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
   const readChain = async (payload: BlockchainBalancePayload, chain: string, era: number): Promise<void> => {
     const chainPayload = { addresses: payload.addresses, blockchain: chain, isXpub: payload.isXpub ?? false };
     const threshold = get(valueThreshold);
-    // Names the backend task in the monitor's failure notification and the dev logs, the same way
-    // the orchestrator labels the run of an activity that owns one.
-    const label = t('task_center.activity.blockchain_balances.cached', { chain: getChainName(chain) });
-    const runTask: RunBackendTask = async task => runBackendTask(task, label);
 
     /**
      * One attempt, with its outcome placed in the channel `retry` reads.
@@ -94,7 +85,7 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
      * goes in `err`; everything else short-circuits as `ok`.
      */
     const readOnce = async (): ResultAsync<Result<void, TaskError>, TaskError> => {
-      const outcome = await handleCachedFetch(runTask, chainPayload, threshold);
+      const outcome = await handleCachedFetch(chainPayload, threshold);
       return isErr(outcome) && isActionable(outcome.error) ? err(outcome.error) : ok(outcome);
     };
 
@@ -104,7 +95,7 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
     }
     finally {
       // 🔴 Only if this read is still the current one. A read abandoned by `reset()` settles
-      // whenever its backend task does — possibly long into the *next* session — and clearing the
+      // whenever its request does — possibly long into the *next* session — and clearing the
       // flag then drops the new session's dashboard out of its loading state mid-load.
       if (era === generation)
         stopHydration(chain);

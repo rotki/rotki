@@ -71,6 +71,7 @@ from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.concurrency import exception_of, result_of, spawn, wait
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_ETH2
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
@@ -524,6 +525,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             chain: SupportedBlockchain | None,
             from_cache: bool = False,
             addresses: ListOfBlockchainAddresses | None = None,
+            only_cache: bool = False,
     ) -> BlockchainBalancesUpdate:
         """Returns a balances update to be consumed by the API."""
         if from_cache is True:
@@ -541,6 +543,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self._populate_cached_balances_values(
                 balances=balances,
                 last_query_ts=last_query_ts,
+                only_cache=only_cache,
             )
             return BlockchainBalancesUpdate(
                 given_chain=chain,
@@ -582,6 +585,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             main_currency: Asset,
             price_cache: dict[tuple[str, Timestamp], FVal],
             manual_current_prices: dict[str, tuple[Asset, Price]],
+            only_cache: bool = False,
     ) -> FVal:
         cache_key = (asset.identifier, timestamp)
         if cache_key in price_cache:
@@ -594,10 +598,18 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             if current_to_asset == main_currency:
                 price = FVal(current_price)
             else:
-                current_to_asset_price = Inquirer.find_price(
-                    from_asset=current_to_asset,
-                    to_asset=main_currency,
-                )
+                if only_cache is True:
+                    cached_price = Inquirer.get_cached_current_price_entry(
+                        cache_key=(current_to_asset, main_currency),
+                    )
+                    current_to_asset_price = (
+                        cached_price.price if cached_price is not None else ZERO_PRICE
+                    )
+                else:
+                    current_to_asset_price = Inquirer.find_price(
+                        from_asset=current_to_asset,
+                        to_asset=main_currency,
+                    )
                 price = FVal(current_price * current_to_asset_price)
         elif (price_entry := GlobalDBHandler.get_historical_price(
             from_asset=asset,
@@ -616,6 +628,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             balances: BlockchainBalances,
             last_query_ts: dict[str, Timestamp],
+            only_cache: bool = False,
     ) -> None:
         main_currency = CachedSettings().main_currency
         price_cache: dict[tuple[str, Timestamp], FVal] = {}
@@ -637,6 +650,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                             main_currency=main_currency,
                             price_cache=price_cache,
                             manual_current_prices=manual_current_prices,
+                            only_cache=only_cache,
                         )
                         for balance in labeled_balances.values():
                             balance.value = balance.amount * price
@@ -654,6 +668,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 main_currency=main_currency,
                 price_cache=price_cache,
                 manual_current_prices=manual_current_prices,
+                only_cache=only_cache,
             )
 
             for balance in chain_balances.values():
