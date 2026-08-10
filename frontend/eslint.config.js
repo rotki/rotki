@@ -45,7 +45,10 @@ export default rotki({
     'app/backend-strings.generated.js',
     'app/premium-keys.generated.js',
     'app/tests/e2e/.v8-coverage/**',
-    'app/tests/e2e/test-results/**',
+    // A sharded run writes one output directory per shard: `test-results-1`, `-2`, ...
+    'app/tests/e2e/test-results*/**',
+    // The merged html report a sharded run leaves behind: a bundled trace viewer.
+    'app/playwright-report/**',
   ],
   vue: true,
   typescript: {
