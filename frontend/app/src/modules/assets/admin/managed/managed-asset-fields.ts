@@ -45,12 +45,14 @@ export function toManagedAssetFields(
   options: ManagedAssetFieldOptions,
 ): FieldDef[] {
   return [
+    // The backend takes identifiers as a list (`DelimitedOrNormalList` -> `IN (...)`), and the URL
+    // has always carried several, so the field offers several rather than only the first.
     toMatchFieldDef({
       freeText: true,
       hint: t('assets.filter.identifier_hint'),
       key: AssetFilterKeys.IDENTIFIER,
       label: t('assets.filter_field_labels.identifier'),
-      multiple: false,
+      multiple: true,
     }),
     // A backend asset type is already spaced words (`evm token`), so it only needs its casing fixed.
     decorateSharedField(
