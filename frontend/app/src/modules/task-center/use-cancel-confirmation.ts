@@ -31,14 +31,24 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
     // belongs to no component scope, so one that outlives its dialog is never collected: it would
     // go on calling `dismiss()` on every later settle, closing whatever confirmation happened to
     // be open at the time.
+    //
+    // `done` closes the same hole on the debounce timer. Unwatching does not unschedule an already
+    // pending `dismissWhenSettled`, so a user who confirms or backs out inside the debounce window
+    // would still get a `dismiss()` a second later — aimed at whatever dialog is open by then, not
+    // at this one.
     let unwatch: () => void = () => {};
+    let done = false;
     const stop = (): void => {
+      done = true;
       unwatch();
     };
 
     // Debounced: a settle emits more than once in quick succession (the status, then the ledger
     // write), and the dialog should not blink shut on the first of them.
     const dismissWhenSettled = useDebounceFn(async () => {
+      if (done)
+        return;
+
       stop();
       await dismiss();
     }, 1000);

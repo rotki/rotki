@@ -63,20 +63,6 @@ export function buildTree(activities: Activity[], compareRoots: (a: Activity, b:
   return { children, roots: [...roots].sort(compareRoots) };
 }
 
-/**
- * How much of a subtree is done, counted in **leaves**.
- *
- * Leaves are the only nodes that do work: an umbrella awaits its chains, a chain awaits its
- * accounts, and only the accounts talk to the backend. Counting them is what makes "4 of 11 steps"
- * mean something to a reader — counting rows instead would have every intermediate node inflate
- * the total, and a two-chain refresh would claim more work than it does.
- *
- * ⚠️ Deliberately not the same denominator as `Activity.percentage`, which the orchestrator
- * derives from **direct** children only (`projection.ts` `childProgress`). For a two-level tree
- * they agree; for three levels the percentage is "how many chains finished" while this is "how
- * many accounts finished". Whichever a surface shows, it must show both its number and its bar
- * from the same one.
- */
 /** True when `root` or anything beneath it satisfies `predicate`. Same guarded walk as {@link subtreeSteps}. */
 export function someInSubtree(
   children: ReadonlyMap<ActivityId, Activity[]>,
@@ -101,6 +87,20 @@ export function someInSubtree(
   return false;
 }
 
+/**
+ * How much of a subtree is done, counted in **leaves**.
+ *
+ * Leaves are the only nodes that do work: an umbrella awaits its chains, a chain awaits its
+ * accounts, and only the accounts talk to the backend. Counting them is what makes "4 of 11 steps"
+ * mean something to a reader — counting rows instead would have every intermediate node inflate
+ * the total, and a two-chain refresh would claim more work than it does.
+ *
+ * ⚠️ Deliberately not the same denominator as `Activity.percentage`, which the orchestrator
+ * derives from **direct** children only (`projection.ts` `childProgress`). For a two-level tree
+ * they agree; for three levels the percentage is "how many chains finished" while this is "how
+ * many accounts finished". Whichever a surface shows, it must show both its number and its bar
+ * from the same one.
+ */
 export function subtreeSteps(children: ReadonlyMap<ActivityId, Activity[]>, root: Activity): ActivitySteps {
   let current = 0;
   let total = 0;
