@@ -13,7 +13,6 @@ import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/ma
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import { isValidHistoryEventState, useHistoryEventStateMapping } from '@/modules/history/events/mapping/use-history-event-state-mapping';
 import { HistoryEventState } from '@/modules/history/events/schemas';
-import { useEventSubtypeKeys } from '@/modules/history/events/use-event-subtype-keys';
 import { useAccountFilterOptions } from '@/modules/history/use-account-filter-options';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 
@@ -71,12 +70,29 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
   // filters on them, so it comes from one place rather than being restated here.
   const shared = useSharedFieldResolvers();
 
-  // The subtypes the selected event types admit. It also prunes the filter bag as that set narrows,
-  // which is why it takes the writable ref rather than a copy of its value.
-  const validSubtypeKeys = useEventSubtypeKeys({
-    disabled: () => get(disabled).eventSubtypes,
-    globalMapping: historyEventTypeGlobalMapping,
-    modelFilters: filters,
+  /**
+   * The subtypes a set of event types admits, deduplicated; every known subtype when no type is
+   * picked. The field declares it twice over — as the option list it offers, and as what it
+   * `admits` — so the narrowing and the pruning of an already-picked subtype cannot disagree.
+   */
+  function subtypesFor(eventTypes: readonly string[]): string[] {
+    const mapping = get(historyEventTypeGlobalMapping);
+    if (Object.keys(mapping).length === 0)
+      return [];
+
+    const keys = eventTypes.length === 0
+      ? Object.values(mapping).flatMap(entry => Object.keys(entry))
+      : eventTypes.flatMap(selected => Object.keys(mapping[selected] ?? {}));
+
+    return keys.filter(uniqueStrings);
+  }
+
+  const selectedEventTypes = computed<string[]>(() => {
+    const picked = get(filters)?.eventTypes;
+    if (picked === undefined)
+      return [];
+
+    return (Array.isArray(picked) ? picked : [picked]).map(entry => entry.toString());
   });
 
   /**
@@ -141,10 +157,11 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
       counterparties: (): string[] => get(counterparties),
       disabled: get(disabled),
       entryTypes: toValue(entryTypes),
-      eventSubtypes: (): string[] => get(validSubtypeKeys).filter(uniqueStrings),
+      eventSubtypes: (): string[] => subtypesFor(get(selectedEventTypes)),
       eventTypes: (): string[] => get(historyEventTypes),
       locations: (): string[] => get(associatedLocations),
       searchAsset,
+      subtypesFor,
     });
     const withParams = [...base, actionField, stateField, ignoredField];
     return toValue(useExternalAccountFilter) ? withParams : [...withParams, accountField];

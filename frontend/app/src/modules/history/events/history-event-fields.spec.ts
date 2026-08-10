@@ -36,6 +36,9 @@ function fields(overrides: Partial<HistoryEventFieldOptions> = {}): FieldDef[] {
     eventTypes: (): string[] => ['informational'],
     locations: (): string[] => ['kraken'],
     searchAsset,
+    // What each event type admits, the lookup the subtype field declares as `admits`.
+    subtypesFor: (eventTypes: readonly string[]): string[] =>
+      eventTypes.includes('informational') ? ['receive_wrapped'] : [],
     ...overrides,
   });
 }
@@ -197,6 +200,16 @@ describe('toHistoryEventFields', () => {
   it('should apply only a subtype the selected event types admit', () => {
     expect(fieldOf('eventSubtypes')?.validate?.('receive_wrapped')).toBe(true);
     expect(fieldOf('eventSubtypes')?.validate?.('spend')).toBe(false);
+  });
+
+  // The other half of the same rule: a subtype already picked has to leave the filter once the
+  // selected types stop admitting it, or the cross-product query returns nothing. The bar applies
+  // this through `pruneInadmissible`; here it is the declaration that is pinned.
+  it('should admit only the subtypes of the types it is asked about', () => {
+    const admits = fieldOf('eventSubtypes')?.admits;
+
+    expect(admits?.({ eventTypes: ['informational'] })).toStrictEqual(['receive_wrapped']);
+    expect(admits?.({ eventTypes: ['spend'] })).toStrictEqual([]);
   });
 
   it('should search assets through the search its table supplies', () => {

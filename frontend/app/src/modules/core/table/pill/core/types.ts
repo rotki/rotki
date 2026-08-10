@@ -89,6 +89,21 @@ export interface FieldDef {
    */
   readonly excludes?: readonly string[];
   /**
+   * The values this field still admits, given what the other fields currently hold. The value-level
+   * sibling of {@link excludes}: that one says two fields cannot coexist at all, this one says which
+   * of *this* field's values survive once another field narrows.
+   *
+   * History's event subtype is the case that needs it: the backend reads types and subtypes as a
+   * cross product, so a subtype no selected type admits matches nothing and the table goes silently
+   * empty. Narrowing the option list is only half the rule — a value already picked has to leave the
+   * filter too, which is what the bar applies whenever its state changes, route restore included.
+   *
+   * Receives every active field's values, keyed by field key. Returning an empty list means "not
+   * known yet" and admits everything: the option lists are store-backed and a field must not wipe a
+   * selection just because its mapping has not loaded.
+   */
+  readonly admits?: (values: Readonly<Record<string, readonly string[]>>) => readonly string[];
+  /**
    * A string field with no option list: the user types the value(s) (e.g. notes substring, a tx
    * hash, an address). Rendered by the text editor instead of the checklist. Serializes as an
    * enum (its typed string values), so the wire form is unchanged.
