@@ -1,4 +1,4 @@
-import { isErr, type Result } from 'plainfp/result';
+import { err, isErr, ok, type Result } from 'plainfp/result';
 import { hasTag, tag } from 'plainfp/tagged';
 
 /**
@@ -61,6 +61,40 @@ export function errorOf(error: TaskError): Error {
     return error.cause;
 
   return new Error(error.message);
+}
+
+/**
+ * Fold a fan-out's child outcomes into the one verdict its parent should settle on.
+ *
+ * 🔴 A parent must not claim a success its children did not earn. The shape this exists to kill is
+ * `await Promise.all(children); return ok(undefined)`, which completes even when every child
+ * failed — and where the parent's completion-ledger entry is load-bearing, that writes "we have
+ * data" over nothing at all. Concretely: backend unreachable on the first history sync, every
+ * account fails, the umbrella completes anyway, `everCompleted` goes true and every later
+ * non-user-initiated refresh short-circuits on it, so history silently never syncs again.
+ *
+ * ⭐ One success is enough. A fan-out is partial by nature — one chain failing is that chain's
+ * failure, not the refresh's — so this reports a failure only when *nothing* got through. An empty
+ * batch is `Skipped`: no work ran, so no work succeeded, and a parent that ran nothing must not
+ * record a completion either.
+ *
+ * The losing errors are dropped rather than merged. Each child has already surfaced its own
+ * failure where it happened; this only has to pick the most actionable one for the parent's row,
+ * which is why an actionable failure outranks a cancellation and a cancellation outranks a skip.
+ */
+export function combineOutcomes(outcomes: readonly Result<unknown, TaskError>[]): Result<void, TaskError> {
+  const errors: TaskError[] = [];
+  for (const outcome of outcomes) {
+    if (!isErr(outcome))
+      return ok(undefined);
+    errors.push(outcome.error);
+  }
+
+  const failure = errors.find(error => isActionable(error))
+    ?? errors.find(error => isCancellation(error))
+    ?? errors.at(0);
+
+  return err(failure ?? Skipped({ message: 'nothing ran' }));
 }
 
 /**

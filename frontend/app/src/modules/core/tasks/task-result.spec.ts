@@ -3,10 +3,12 @@ import { assert, describe, expect, it, vi } from 'vitest';
 import {
   BackendCancelled,
   Cancelled,
+  combineOutcomes,
   errorOf,
   isActionable,
   isCancellation,
   onActionableError,
+  Skipped,
   TaskFailed,
 } from './task-result';
 
@@ -36,6 +38,64 @@ describe('isActionable', () => {
   it('should be false for either cancellation', () => {
     expect(isActionable(Cancelled({ message: 'boom' }))).toBe(false);
     expect(isActionable(BackendCancelled({ message: 'boom' }))).toBe(false);
+  });
+});
+
+describe('combineOutcomes', () => {
+  it('should succeed when a single child succeeded', () => {
+    const combined = combineOutcomes([
+      err(TaskFailed({ message: 'eth' })),
+      ok(undefined),
+      err(TaskFailed({ message: 'gnosis' })),
+    ]);
+
+    expect(combined.ok).toBe(true);
+  });
+
+  it('should fail when every child failed', () => {
+    const combined = combineOutcomes([
+      err(TaskFailed({ message: 'eth' })),
+      err(TaskFailed({ message: 'gnosis' })),
+    ]);
+
+    assert(!combined.ok);
+    expect(combined.error.message).toBe('eth');
+  });
+
+  it('should prefer an actionable failure over a cancellation', () => {
+    const combined = combineOutcomes([
+      err(Cancelled({ message: 'stopped' })),
+      err(TaskFailed({ message: 'real failure' })),
+    ]);
+
+    assert(!combined.ok);
+    expect(isActionable(combined.error)).toBe(true);
+  });
+
+  it('should prefer a cancellation over a skip', () => {
+    const combined = combineOutcomes([
+      err(Skipped({ message: 'no api key' })),
+      err(BackendCancelled({ message: 'stopped' })),
+    ]);
+
+    assert(!combined.ok);
+    expect(isCancellation(combined.error)).toBe(true);
+  });
+
+  it('should report a skip when every child was skipped', () => {
+    const combined = combineOutcomes([err(Skipped({ message: 'disabled' }))]);
+
+    assert(!combined.ok);
+    expect(combined.error.message).toBe('disabled');
+  });
+
+  it('should not report a success when nothing ran', () => {
+    // 🔴 The empty case is the whole point: a parent that ran no children has produced no data, so
+    // it must not write a completion its consumers read as "we already have this".
+    const combined = combineOutcomes([]);
+
+    assert(!combined.ok);
+    expect(isActionable(combined.error)).toBe(false);
   });
 });
 
