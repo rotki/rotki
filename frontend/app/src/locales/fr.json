@@ -2996,9 +2996,6 @@
       "empty_name": "Veuillez fournir un nom à l'étiquette"
     }
   },
-  "tag_filter": {
-    "label": "Filtrer par étiquette(s)"
-  },
   "tag_manager": {
     "confirmation": {
       "message": "Voulez-vous vraiment supprimer {tagToDelete} ? Cela supprimera également toutes les correspondances de cette étiquette.",

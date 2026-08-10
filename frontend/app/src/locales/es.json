@@ -907,9 +907,6 @@
       "foreground": "Frente"
     }
   },
-  "tag_filter": {
-    "label": "Filtrar por etiqueta(s)"
-  },
   "transactions": {
     "actions": {
       "add_event": "Añadir un nuevo evento",
