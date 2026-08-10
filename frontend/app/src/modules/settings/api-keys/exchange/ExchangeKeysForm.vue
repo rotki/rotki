@@ -364,9 +364,16 @@ onMounted(() => {
   }
 
   const model = get(modelValue);
+  // The locations come from the backend, so the store holds none until that fetch lands and the
+  // suggestion comes back empty. This runs once, so writing that over the name would leave the
+  // field blank with nothing left to restore it.
+  const suggestion = suggestedName(model.location);
+  if (!suggestion)
+    return;
+
   set(modelValue, {
     ...model,
-    name: suggestedName(model.location),
+    name: suggestion,
   });
 });
 
