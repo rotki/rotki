@@ -20,7 +20,9 @@ const isDeterminate = computed<boolean>(() => percentage >= 0 && steps.total > 0
 
 <template>
   <div class="flex justify-between items-center">
-    <div class="flex items-center gap-4">
+    <!-- gap-3 and size 24 on both rings, so the header keeps its metrics when it flips determinate
+         and its indicator column lines up with the rows beneath it. -->
+    <div class="flex items-center gap-3 min-w-0">
       <RuiProgress
         v-if="isDeterminate"
         color="primary"
@@ -36,16 +38,16 @@ const isDeterminate = computed<boolean>(() => percentage >= 0 && steps.total > 0
         color="primary"
         variant="indeterminate"
         circular
-        size="20"
+        size="24"
         thickness="2"
       />
-      <div class="flex flex-col">
-        <div class="font-medium">
+      <div class="flex flex-col gap-0.5 min-w-0">
+        <div class="font-medium leading-5 truncate">
           {{ t('collapsed_pending_tasks.title', { count }, count) }}
         </div>
         <div
           v-if="isDeterminate"
-          class="text-xs text-rui-text-secondary tabular-nums"
+          class="text-xs leading-4 text-rui-text-secondary tabular-nums"
         >
           {{ t('collapsed_pending_tasks.steps', { current: steps.current, total: steps.total }) }}
         </div>
