@@ -66,22 +66,29 @@ const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminatePro
 
 <template>
   <div class="flex items-center justify-between flex-nowrap gap-3">
-    <div class="flex flex-col flex-1 min-w-0">
+    <div class="flex flex-col flex-1 min-w-0 gap-0.5">
+      <!--
+        `truncate`, not `text-ellipsis`: the latter is inert without `whitespace-nowrap`, so every
+        long chain name wrapped to two lines and the panel had no vertical rhythm at all. One line
+        per row, with the full text on hover.
+      -->
       <div
-        class="overflow-hidden text-ellipsis text-sm leading-4"
+        class="truncate text-sm leading-5"
         :class="[nested ? 'font-normal' : 'font-medium', { 'text-rui-text-secondary': isTerminalStatus(activity.status) }]"
+        :title="label"
       >
         {{ label }}
       </div>
       <div
         v-if="secondary"
-        class="text-xs text-rui-text-secondary mt-1"
+        class="truncate text-xs leading-4 text-rui-text-secondary"
+        :title="secondary"
       >
         {{ secondary }}
       </div>
       <div
         v-if="meta"
-        class="text-xs text-rui-text-secondary mt-1 tabular-nums"
+        class="text-xs leading-4 text-rui-text-secondary tabular-nums"
       >
         {{ meta }}
       </div>
@@ -109,8 +116,16 @@ const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminatePro
       :open-delay="400"
     >
       <template #activator>
+        <!--
+          ⚠️ `role` and `tabindex` are overrides, not decoration. RuiChip hardcodes `role="button"`
+          and `tabindex="0"` on its root whether or not it is clickable, so an untouched status chip
+          is a focusable fake button: a keyboard user tabs through a "Done" button on every row and
+          hears one announced per settled child. `role="img"` makes the icon carry its `aria-label`.
+        -->
         <RuiChip
           size="sm"
+          role="img"
+          tabindex="-1"
           :color="outcome.color"
           :variant="outcome.variant"
           :aria-label="t(outcome.key)"

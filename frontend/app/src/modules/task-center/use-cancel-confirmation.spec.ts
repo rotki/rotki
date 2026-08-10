@@ -11,7 +11,18 @@ import { useCancelConfirmation } from './use-cancel-confirmation';
 const activities = ref<Activity[]>([]);
 const cancel = vi.fn();
 const dismiss = vi.fn();
-const show = vi.fn();
+
+/**
+ * The real store is a single global slot: `show` overwrites the message and both handlers, so the
+ * mock has to model that rather than just record the call. A mock that only recorded it let the
+ * supersede case pass while the composable could not see it.
+ */
+const visible = ref<boolean>(false);
+const confirmation = ref<object>({});
+const show = vi.fn((message: object, _onConfirm: () => unknown, _onDismiss?: () => unknown): void => {
+  set(confirmation, message);
+  set(visible, true);
+});
 
 vi.mock('./use-task-orchestrator', () => ({
   useTaskOrchestrator: (): { activities: Ref<Activity[]> } => ({ activities }),
@@ -22,7 +33,12 @@ vi.mock('./use-task-controller', () => ({
 }));
 
 vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): { dismiss: () => void; show: typeof show } => ({ dismiss, show }),
+  useConfirmStore: (): {
+    confirmation: Ref<object>;
+    dismiss: () => void;
+    show: typeof show;
+    visible: Ref<boolean>;
+  } => ({ confirmation, dismiss, show, visible }),
 }));
 
 function activity(status: ActivityStatus, subtitle?: string): Activity {
@@ -43,13 +59,17 @@ describe('useCancelConfirmation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     set(activities, [activity(ActivityStatus.RUNNING)]);
+    set(visible, false);
+    set(confirmation, {});
   });
 
   /** Closes the dialog the way a user backing out would, so its watcher does not outlive the test. */
   function dismissDialog(): void {
     const call = show.mock.calls.at(-1);
     assert(call, 'no confirmation was shown');
-    call[2]();
+    const onDismiss = call[2];
+    assert(onDismiss, 'the confirmation was shown without a dismiss handler');
+    onDismiss();
   }
 
   it('should name the activity in the prompt, preferring its subtitle', () => {
@@ -86,7 +106,7 @@ describe('useCancelConfirmation', () => {
   it('should cancel nothing when the user backs out', () => {
     useCancelConfirmation().confirmCancel(activity(ActivityStatus.RUNNING));
 
-    show.mock.calls[0][2]();
+    dismissDialog();
 
     expect(cancel).not.toHaveBeenCalled();
   });
@@ -164,6 +184,43 @@ describe('useCancelConfirmation', () => {
     await vi.advanceTimersByTimeAsync(1000);
 
     expect(dismiss).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  /**
+   * `useConfirmStore` is a single global slot, so an unrelated `show()` overwrites the dismiss
+   * handler and this composable's own `stop` never runs. Left unwatched, the watcher would outlive
+   * the process and close that unrelated dialog the moment this activity settled.
+   */
+  it('should stop watching when another dialog takes the slot', async () => {
+    vi.useFakeTimers();
+    useCancelConfirmation().confirmCancel(activity(ActivityStatus.RUNNING));
+
+    show({ title: 'something else entirely' }, () => {});
+    await nextTick();
+    dismiss.mockClear();
+
+    set(activities, [activity(ActivityStatus.COMPLETE)]);
+    await nextTick();
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(dismiss).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  /**
+   * The row renders from a snapshot that is a tick old, so the work can already be terminal by the
+   * time it is clicked. A non-immediate watcher never sees a transition and leaves the dialog up
+   * asking to cancel finished work — which `orchestrator.cancel` would then refuse anyway.
+   */
+  it('should dismiss itself when the work settled before the click', async () => {
+    vi.useFakeTimers();
+    set(activities, [activity(ActivityStatus.COMPLETE)]);
+
+    useCancelConfirmation().confirmCancel(activity(ActivityStatus.COMPLETE));
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(dismiss).toHaveBeenCalledOnce();
     vi.useRealTimers();
   });
 

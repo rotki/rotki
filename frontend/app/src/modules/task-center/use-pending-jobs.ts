@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue';
-import { percentageFromSteps } from './core/status';
-import { someInSubtree, subtreeSteps } from './core/tree';
+import { INDETERMINATE } from './core/status';
+import { someInSubtree, subtreeProgress, subtreeSteps } from './core/tree';
 import { type Activity, type ActivityId, ActivityStatus, type ActivitySteps } from './core/types';
 import { useTaskCenter } from './use-task-center';
 
@@ -10,9 +10,9 @@ import { useTaskCenter } from './use-task-center';
  */
 export interface PendingJob {
   readonly activity: Activity;
-  /** Leaf-based, so it agrees with {@link percentage}. See {@link subtreeSteps}. */
+  /** The integer leaf tally the row's text shows. See {@link subtreeSteps}. */
   readonly steps: ActivitySteps;
-  /** 0-100, or -1 when the subtree is a single indeterminate leaf. */
+  /** 0-100, or -1 when no leaf in the subtree can be quantified. See {@link subtreeProgress}. */
   readonly percentage: number;
 }
 
@@ -47,10 +47,11 @@ export function usePendingJobs(): UsePendingJobsReturn {
   const jobs = computed<PendingJob[]>(() => {
     const tree = get(children);
 
-    return get(model).roots.filter(root => someInSubtree(tree, root, isRunning)).map((activity) => {
-      const steps = subtreeSteps(tree, activity);
-      return { activity, percentage: percentageFromSteps(steps.current, steps.total), steps };
-    });
+    return get(model).roots.filter(root => someInSubtree(tree, root, isRunning)).map(activity => ({
+      activity,
+      percentage: subtreeProgress(tree, activity),
+      steps: subtreeSteps(tree, activity),
+    }));
   });
 
   const steps = computed<ActivitySteps>(() => get(jobs).reduce<ActivitySteps>(
@@ -58,9 +59,19 @@ export function usePendingJobs(): UsePendingJobsReturn {
     { current: 0, total: 0 },
   ));
 
+  // Weighted by leaves, so a one-leaf job does not count for as much as an eleven-chain refresh.
+  // A job nobody can quantify keeps its leaves in the denominator and contributes nothing, which is
+  // the same rule `subtreeProgress` applies inside one subtree — unknown work reads as unfinished.
   const percentage = computed<number>(() => {
-    const { current, total } = get(steps);
-    return percentageFromSteps(current, total);
+    const list = get(jobs);
+    const total = get(steps).total;
+    const quantifiable = list.filter(job => job.percentage >= 0);
+
+    if (total === 0 || quantifiable.length === 0)
+      return INDETERMINATE;
+
+    const done = quantifiable.reduce((sum, job) => sum + (job.percentage / 100) * job.steps.total, 0);
+    return Math.round((done / total) * 100);
   });
 
   return { children, jobs, percentage, steps };

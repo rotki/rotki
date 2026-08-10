@@ -21,26 +21,30 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { activities } = useTaskOrchestrator();
   const { cancel } = useTaskController();
-  const { dismiss, show } = useConfirmStore();
+  const confirmStore = useConfirmStore();
+  const { dismiss, show } = confirmStore;
+  const { confirmation, visible } = storeToRefs(confirmStore);
 
   function confirmCancel(activity: Activity): void {
     const live = computed<boolean>(() => get(activities)
       .some(item => item.id === activity.id && !isTerminalStatus(item.status)));
 
-    // Every exit runs through `stop`, including the self-dismiss below. A watcher created here
-    // belongs to no component scope, so one that outlives its dialog is never collected: it would
-    // go on calling `dismiss()` on every later settle, closing whatever confirmation happened to
-    // be open at the time.
+    // Every exit runs through `stop`, and there are three of them, because a watcher created here
+    // belongs to no component scope: one that outlives its dialog is never collected, and would go
+    // on calling `dismiss()` at every later settle, closing whatever confirmation happened to be
+    // open at the time.
     //
-    // `done` closes the same hole on the debounce timer. Unwatching does not unschedule an already
-    // pending `dismissWhenSettled`, so a user who confirms or backs out inside the debounce window
-    // would still get a `dismiss()` a second later — aimed at whatever dialog is open by then, not
-    // at this one.
-    let unwatch: () => void = () => {};
+    // 1. `done` covers the debounce timer. Unwatching does not unschedule an already pending
+    //    `dismissWhenSettled`, so a user who acts inside the debounce window would still get a
+    //    `dismiss()` a second later, aimed at whatever dialog is open by then.
+    // 2. `unwatchOwnership` covers being superseded. `useConfirmStore` is a single global slot, so
+    //    any other `show()` overwrites the dismiss handler below and our own `stop` never runs.
+    const stops: (() => void)[] = [];
     let done = false;
     const stop = (): void => {
       done = true;
-      unwatch();
+      for (const off of stops.splice(0))
+        off();
     };
 
     // Debounced: a settle emits more than once in quick succession (the status, then the ledger
@@ -53,25 +57,36 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
       await dismiss();
     }, 1000);
 
-    unwatch = watch(live, (isLive) => {
+    // `immediate`, because the work can already be terminal by the time the row is clicked — the
+    // snapshot the row rendered from is one tick old. Without it `live` starts false, never
+    // transitions, and the dialog sits there asking to cancel something already finished.
+    stops.push(watch(live, (isLive) => {
       if (!isLive)
         startPromise(dismissWhenSettled());
-    });
+    }, { immediate: true }));
 
-    show(
-      {
-        message: t('collapsed_pending_tasks.cancel_task_info', {
-          title: resolveText(t, activity.subtitle) ?? activity.title,
-        }),
-        title: t('collapsed_pending_tasks.cancel_task'),
-        type: 'warning',
-      },
-      async () => {
+    const message = {
+      message: t('collapsed_pending_tasks.cancel_task_info', {
+        title: resolveText(t, activity.subtitle) ?? activity.title,
+      }),
+      title: t('collapsed_pending_tasks.cancel_task'),
+      type: 'warning' as const,
+    };
+
+    // The slot is ours only until someone else claims it; identity, not visibility, is what says so.
+    // ⚠️ `toRaw` is load-bearing: the store holds the message in a plain `ref`, which deeply
+    // reactifies it, so `get(confirmation)` is a proxy *of* `message` and never `message` itself.
+    // Comparing them directly is always unequal — it stopped the self-dismiss the instant the
+    // dialog opened, disabling the whole composable.
+    stops.push(watch([visible, confirmation], ([shown, current]) => {
+      if (!shown || toRaw(current) !== message)
         stop();
-        await cancel(activity);
-      },
-      stop,
-    );
+    }));
+
+    show(message, async () => {
+      stop();
+      await cancel(activity);
+    }, stop);
   }
 
   return { confirmCancel };

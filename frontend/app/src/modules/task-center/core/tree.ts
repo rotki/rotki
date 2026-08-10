@@ -1,5 +1,5 @@
 import type { Activity, ActivityId, ActivitySteps } from './types';
-import { isTerminalStatus } from './status';
+import { INDETERMINATE, isTerminalStatus } from './status';
 
 /**
  * The activity tree, read off `Activity.parent`.
@@ -129,4 +129,55 @@ export function subtreeSteps(children: ReadonlyMap<ActivityId, Activity[]>, root
   }
 
   return { current, total };
+}
+
+/**
+ * How far along a subtree is, 0-100, or {@link INDETERMINATE} when nothing in it can be quantified.
+ *
+ * Same leaves as {@link subtreeSteps}, but a leaf counts fractionally: a running leaf that reports
+ * 45% contributes 0.45, not 0. Counting only settled leaves made the header discard the one number
+ * a single-task job actually has — a price refresh at 45% rendered its own row at 45% under a
+ * header ring pinned at 0%, because "0 of 1 steps" was all the tally could say.
+ *
+ * A leaf nobody counted contributes 0 while still counting toward the denominator, so unknown work
+ * reads as unfinished rather than quietly leaving the average. Only when *no* leaf anywhere is
+ * quantifiable does this give up and say so.
+ *
+ * ⚠️ This is the number a bar or ring shows; {@link subtreeSteps} is the number the text shows.
+ * They are the same denominator but not the same precision, so a subtree can legitimately read
+ * "0 of 1 steps" beside a 45% ring. Never pair this with a *different* denominator's text.
+ */
+export function subtreeProgress(children: ReadonlyMap<ActivityId, Activity[]>, root: Activity): number {
+  let done = 0;
+  let total = 0;
+  let quantifiable = 0;
+
+  const seen = new Set<ActivityId>();
+  const stack: Activity[] = [root];
+
+  while (stack.length > 0) {
+    const activity = stack.pop();
+    if (activity === undefined || seen.has(activity.id))
+      continue;
+
+    seen.add(activity.id);
+    const descendants = children.get(activity.id);
+
+    if (descendants !== undefined && descendants.length > 0) {
+      stack.push(...descendants);
+      continue;
+    }
+
+    total += 1;
+    if (isTerminalStatus(activity.status)) {
+      done += 1;
+      quantifiable += 1;
+    }
+    else if (activity.percentage >= 0) {
+      done += activity.percentage / 100;
+      quantifiable += 1;
+    }
+  }
+
+  return quantifiable === 0 || total === 0 ? INDETERMINATE : Math.round((done / total) * 100);
 }

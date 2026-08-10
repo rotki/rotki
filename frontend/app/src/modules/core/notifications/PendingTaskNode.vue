@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { Activity, ActivityId, ActivitySteps } from '@/modules/task-center/core/types';
 import PendingTask from '@/modules/core/notifications/PendingTask.vue';
-import { percentageFromSteps } from '@/modules/task-center/core/status';
-import { subtreeSteps } from '@/modules/task-center/core/tree';
+import { subtreeProgress, subtreeSteps } from '@/modules/task-center/core/tree';
 
 const { activity, children, depth = 0, now } = defineProps<{
   activity: Activity;
@@ -31,10 +30,9 @@ const isParent = computed<boolean>(() => get(descendants).length > 0);
 // the orchestrator derived for it.
 const steps = computed<ActivitySteps | undefined>(() => (get(isParent) ? subtreeSteps(children, activity) : undefined));
 
-const percentage = computed<number>(() => {
-  const tally = get(steps);
-  return tally ? percentageFromSteps(tally.current, tally.total) : activity.percentage;
-});
+// A parent rolls its subtree up, giving each leaf fractional credit for its own progress; a leaf
+// shows what the orchestrator derived for it.
+const percentage = computed<number>(() => (get(isParent) ? subtreeProgress(children, activity) : activity.percentage));
 
 /**
  * ⭐ A parent's stop control ends its whole subtree, because `orchestrator.cancel` cascades: the
@@ -69,7 +67,7 @@ const cancellable = computed<boolean>(() => activity.cancellable);
       />
 
       <PendingTask
-        class="flex-1 min-w-0 py-1"
+        class="flex-1 min-w-0 py-1.5"
         :activity="activity"
         :now="now"
         :percentage="percentage"
@@ -80,9 +78,13 @@ const cancellable = computed<boolean>(() => activity.cancellable);
       />
     </div>
 
+    <!--
+      16px of indent per level, not 24. The drawer is 400px and a history refresh nests three deep,
+      so the wider step spent a fifth of the width on guide lines and truncated the labels instead.
+    -->
     <div
       v-if="isParent && expanded"
-      class="flex flex-col ml-3 pl-3 border-l border-default"
+      class="flex flex-col ml-2 pl-2 border-l border-default"
     >
       <PendingTaskNode
         v-for="child in descendants"

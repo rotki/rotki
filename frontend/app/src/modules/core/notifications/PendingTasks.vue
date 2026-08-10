@@ -29,9 +29,14 @@ const hasJobs = computed<boolean>(() => get(jobs).length > 0);
         :steps="steps"
         :percentage="percentage"
       />
+      <!--
+        The rule separates one job from the next, so it goes between them rather than above each:
+        a leading border drew a second line directly under the header's own divider. No padding
+        here — every row owns its vertical space, so a job row and a nested row measure the same.
+      -->
       <div
         v-if="expanded"
-        class="flex flex-col pt-2 max-h-[50vh] overflow-y-auto"
+        class="flex flex-col divide-y divide-rui-grey-200 dark:divide-rui-grey-800 max-h-[50vh] overflow-y-auto"
       >
         <PendingTaskNode
           v-for="job in jobs"
@@ -39,7 +44,6 @@ const hasJobs = computed<boolean>(() => get(jobs).length > 0);
           :activity="job.activity"
           :children="children"
           :now="now"
-          class="border-t border-default py-1"
           @cancel="confirmCancel($event)"
         />
       </div>

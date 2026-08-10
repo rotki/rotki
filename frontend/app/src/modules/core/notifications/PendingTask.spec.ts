@@ -121,6 +121,19 @@ describe('pendingTask', () => {
     expect(wrapper.find('[data-testid=activity-outcome]').exists()).toBe(true);
   });
 
+  /**
+   * RuiChip hardcodes `role="button"` and `tabindex="0"` on its root regardless of `clickable`, so
+   * an untouched status chip is a focusable fake button — one extra tab stop and one "Done, button"
+   * announcement per settled child, on a decoration that does nothing.
+   */
+  it('should present the outcome as an image, not a focusable button', () => {
+    const chip = createWrapper({ activity: activity({ status: ActivityStatus.COMPLETE }) })
+      .find('[data-testid=activity-outcome]');
+
+    expect(chip.attributes('role')).toBe('img');
+    expect(chip.attributes('tabindex')).toBe('-1');
+  });
+
   it('should show a determinate ring once there is a percentage', () => {
     const wrapper = createWrapper({ activity: activity({ status: ActivityStatus.RUNNING }), percentage: 40 });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTree, someInSubtree, subtreeSteps } from './tree';
+import { buildTree, someInSubtree, subtreeProgress, subtreeSteps } from './tree';
 import { type Activity, type ActivityId, ActivityKind, ActivitySourceType, ActivityStatus, makeActivityId } from './types';
 
 function activity(id: string, status: ActivityStatus, parent?: string, startedAt?: number): Activity {
@@ -138,5 +138,66 @@ describe('someInSubtree', () => {
     ], byId);
 
     expect(someInSubtree(children, roots[0], isRunning)).toBe(false);
+  });
+});
+
+describe('subtreeProgress', () => {
+  function withPercentage(base: Activity, percentage: number): Activity {
+    return { ...base, percentage };
+  }
+
+  /**
+   * The bug this exists for: a job that is a single running leaf has no settled leaves, so a tally
+   * of whole steps can only ever say `0 of 1`. The leaf's own percentage is the one number it has,
+   * and the header used to throw it away and render a ring pinned at 0 above a row showing 45%.
+   */
+  it('should give a leaf fractional credit for its own progress', () => {
+    const root = withPercentage(activity('prices', ActivityStatus.RUNNING), 45);
+    const { children } = buildTree([root], byId);
+
+    expect(subtreeProgress(children, root)).toBe(45);
+    expect(subtreeSteps(children, root)).toEqual({ current: 0, total: 1 });
+  });
+
+  it('should count a settled leaf as whole regardless of its percentage', () => {
+    const root = withPercentage(activity('prices', ActivityStatus.COMPLETE), 20);
+    const { children } = buildTree([root], byId);
+
+    expect(subtreeProgress(children, root)).toBe(100);
+  });
+
+  /** Unknown work is unfinished work: it drags the mean down rather than leaving the denominator. */
+  it('should count an unquantifiable leaf as zero without dropping it', () => {
+    const activities = [
+      activity('umbrella', ActivityStatus.RUNNING),
+      withPercentage(activity('eth', ActivityStatus.COMPLETE, 'umbrella'), 100),
+      activity('gno', ActivityStatus.RUNNING, 'umbrella'),
+    ];
+    const { children, roots } = buildTree(activities, byId);
+
+    expect(subtreeProgress(children, roots[0])).toBe(50);
+  });
+
+  it('should say so when nothing in the subtree can be quantified', () => {
+    const activities = [
+      activity('umbrella', ActivityStatus.RUNNING),
+      activity('eth', ActivityStatus.RUNNING, 'umbrella'),
+    ];
+    const { children, roots } = buildTree(activities, byId);
+
+    expect(subtreeProgress(children, roots[0])).toBe(-1);
+  });
+
+  it('should average the leaves of a deep tree, not its rows', () => {
+    const activities = [
+      activity('umbrella', ActivityStatus.RUNNING),
+      activity('eth', ActivityStatus.RUNNING, 'umbrella'),
+      activity('eth-a', ActivityStatus.COMPLETE, 'eth'),
+      withPercentage(activity('eth-b', ActivityStatus.RUNNING, 'eth'), 50),
+    ];
+    const { children, roots } = buildTree(activities, byId);
+
+    // Two leaves: one whole, one half. The two intermediate rows count for nothing.
+    expect(subtreeProgress(children, roots[0])).toBe(75);
   });
 });
