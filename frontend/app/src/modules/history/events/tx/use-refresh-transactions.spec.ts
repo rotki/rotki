@@ -2,7 +2,9 @@ import type { RefreshTransactionsParams } from './types';
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import flushPromises from 'flush-promises';
+import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { ActivityKind, makeActivityId, type WorkStatus } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
@@ -117,14 +119,20 @@ const mockDecodingStatusStore = {
   stopDecodingSyncProgress: vi.fn(),
 };
 
+type SyncOutcomes = Promise<Result<void, TaskError>[]>;
+
 const mockTransactionSync = {
   // Records what it synced. The real one settles a TX_SYNC activity per account, and the completion
   // ledger those settles write is exactly what the drain reads to decide what was never attempted —
   // so a mock that settled nothing would leave every account novel forever and drain on every run.
-  syncTransactionsByChains: vi.fn<(accounts: ChainAddress[], showProgress: boolean, parent?: string) => Promise<void>>(
-    async (accounts: ChainAddress[]): Promise<void> => {
+  //
+  // ⚠️ It also has to *report* an outcome per chain: the umbrella settles on what its children did,
+  // so a mock returning nothing would make every refresh look like it synced nothing at all.
+  syncTransactionsByChains: vi.fn<(accounts: ChainAddress[], showProgress: boolean, parent?: string) => SyncOutcomes>(
+    async (accounts: ChainAddress[]): SyncOutcomes => {
       for (const account of accounts)
         attempted.add(`tx-sync:${account.chain}:${account.address}`);
+      return accounts.map(() => ok(undefined));
     },
   ),
 };
@@ -135,11 +143,12 @@ const mockSupportedChains = {
 
 const mockRefreshHandlers = {
   // Same contract as the sync mock above: settling is what makes an exchange stop being novel.
-  queryAllExchangeEvents: vi.fn(async (exchanges: Exchange[] = []): Promise<void> => {
+  queryAllExchangeEvents: vi.fn(async (exchanges: Exchange[] = []): SyncOutcomes => {
     for (const exchange of exchanges)
       attempted.add(`exchange-events:${exchange.location}:${exchange.name}`);
+    return exchanges.map(() => ok(undefined));
   }),
-  queryOnlineEvent: vi.fn().mockResolvedValue(undefined),
+  queryOnlineEvent: vi.fn().mockResolvedValue(ok(undefined)),
   resetOnlineWarnings: vi.fn(),
 };
 
@@ -147,6 +156,21 @@ const mockExchangeData = {
   isSameExchange: (a: Exchange, b: Exchange): boolean => a.location === b.location && a.name === b.name,
   syncingExchanges: ref<Exchange[]>(mockExchanges),
 };
+
+/** Every kind of child reports a failure, so the umbrella has no success to settle on. */
+function failEverything(): void {
+  const failure = err(TaskFailed({ message: 'backend unreachable' }));
+  mockTransactionSync.syncTransactionsByChains.mockResolvedValue([failure]);
+  mockRefreshHandlers.queryAllExchangeEvents.mockResolvedValue([failure]);
+  mockRefreshHandlers.queryOnlineEvent.mockResolvedValue(failure);
+}
+
+/** The inverse of {@link failEverything}, for the second half of a recovery test. */
+function succeedEverything(): void {
+  mockTransactionSync.syncTransactionsByChains.mockResolvedValue([ok(undefined)]);
+  mockRefreshHandlers.queryAllExchangeEvents.mockResolvedValue([ok(undefined)]);
+  mockRefreshHandlers.queryOnlineEvent.mockResolvedValue(ok(undefined));
+}
 
 vi.mock('./use-history-transaction-accounts', () => ({
   useHistoryTransactionAccounts: vi.fn(() => mockHistoryTransactionAccounts),
@@ -585,6 +609,43 @@ describe('useRefreshTransactions', () => {
       expect(historySyncStatus().everCompleted).toBe(true);
     });
 
+    it('should not record a completion when every operation failed', async () => {
+      failEverything();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+
+      await refreshTransactions();
+      await settleRefresh();
+
+      // 🔴 The defect this guards: the umbrella used to return `ok` whatever its children did, so an
+      // all-failed first sync wrote "history has loaded" and `alreadyLoaded` short-circuited every
+      // later background refresh. Nothing is left in flight either way.
+      expect(historySyncStatus().everCompleted).toBe(false);
+      expect(historySyncStatus().active).toBe(false);
+    });
+
+    it('should still sync every account on a background refresh after an all-failed first sync', async () => {
+      failEverything();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+      await refreshTransactions();
+      await settleRefresh();
+
+      // Every account has now been *attempted*, so none is novel — which is why the failed first
+      // load has to be recovered by scope, not by novelty.
+      markAttempted();
+      succeedEverything();
+      mockTransactionSync.syncTransactionsByChains.mockClear();
+
+      await refreshTransactions();
+      await settleRefresh();
+
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
+        expect.arrayContaining(mockEvmAccounts),
+        expect.anything(),
+        HISTORY_SYNC_ID,
+      );
+      expect(historySyncStatus().everCompleted).toBe(true);
+    });
+
     it('should continue with other operations when one fails', async () => {
       mockTransactionSync.syncTransactionsByChains.mockRejectedValue(new Error('Sync failed'));
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
@@ -744,8 +805,9 @@ describe('useRefreshTransactions', () => {
       mockOnHistoryStarted.mockImplementation(() => {
         callOrder.push('onHistoryStarted');
       });
-      mockTransactionSync.syncTransactionsByChains.mockImplementation(async () => {
+      mockTransactionSync.syncTransactionsByChains.mockImplementation(async (): SyncOutcomes => {
         callOrder.push('syncTransactionsByChains');
+        return [ok(undefined)];
       });
 
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
@@ -760,8 +822,9 @@ describe('useRefreshTransactions', () => {
 
       // The umbrella awaits its children, so the WS progress updates decoding pushes cannot be
       // dropped by an early `stopDecodingSyncProgress()`. This used to be `waitForDecoding()`.
-      mockTransactionSync.syncTransactionsByChains.mockImplementation(async () => {
+      mockTransactionSync.syncTransactionsByChains.mockImplementation(async (): SyncOutcomes => {
         callOrder.push('syncTransactionsByChains');
+        return [ok(undefined)];
       });
       mockDecodingStatusStore.stopDecodingSyncProgress.mockImplementation(() => {
         callOrder.push('stopDecodingSyncProgress');
@@ -777,8 +840,9 @@ describe('useRefreshTransactions', () => {
     it('should call onHistoryFinished after all operations complete', async () => {
       const callOrder: string[] = [];
 
-      mockTransactionSync.syncTransactionsByChains.mockImplementation(async () => {
+      mockTransactionSync.syncTransactionsByChains.mockImplementation(async (): SyncOutcomes => {
         callOrder.push('syncTransactionsByChains');
+        return [ok(undefined)];
       });
       mockOnHistoryFinished.mockImplementation(() => {
         callOrder.push('onHistoryFinished');
@@ -845,15 +909,33 @@ describe('useRefreshTransactions', () => {
   });
 
   describe('full refresh with no new accounts', () => {
-    it('should not refresh accounts when all accounts are already known and not user initiated', async () => {
-      // All accounts already attempted, so none are novel and it is not user initiated.
+    it('should not refresh accounts when history has loaded and none are new', async () => {
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+      // A real completed load, which is what makes "none are novel" mean "we already have it".
+      await refreshTransactions();
+      await settleRefresh();
+
+      markAttempted();
+      mockTransactionSync.syncTransactionsByChains.mockClear();
+
+      await refreshTransactions();
+
+      expect(mockTransactionSync.syncTransactionsByChains).not.toHaveBeenCalled();
+    });
+
+    it('should refresh every account when nothing is novel but history never loaded', async () => {
+      // ⚠️ The distinguishing case: attempted but never completed is what an all-failed or cancelled
+      // first sync leaves behind, and novelty alone reads it as "nothing to do".
       markAttempted();
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
-      // No accounts to sync since none are new and not userInitiated
-      expect(mockTransactionSync.syncTransactionsByChains).not.toHaveBeenCalled();
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
+        expect.arrayContaining(mockEvmAccounts),
+        expect.anything(),
+        HISTORY_SYNC_ID,
+      );
     });
   });
 

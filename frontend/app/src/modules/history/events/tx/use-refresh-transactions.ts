@@ -1,10 +1,10 @@
 import type { RefreshTransactionsParams } from './types';
-import type { TaskError } from '@/modules/core/tasks/task-result';
 import { startPromise } from '@shared/utils';
-import { ok, type Result } from 'plainfp/result';
+import { err, type Result } from 'plainfp/result';
 import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { logger } from '@/modules/core/common/logging/logging';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
+import { combineOutcomes, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { historySyncFlow } from '@/modules/history/events/tx/history-sync.flow';
 import { HISTORY_STALE_AFTER, type RefreshTargets, useHistoryRefreshPolicy } from '@/modules/history/events/tx/use-history-refresh-policy';
@@ -123,7 +123,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     queries: OnlineHistoryEventsQueryType[] | undefined,
     umbrella: ActivityId,
     wave: RefreshWave,
-  ): Promise<void> {
+  ): Promise<Result<void, TaskError>> {
     if (targets.fullRefresh || targets.decodableAccounts.length > 0)
       await fetchUndecodedTransactionsBreakdown();
 
@@ -147,22 +147,29 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     // sequence with two locations at a time. Driving those per child would silently discard both.
     // The declaration still names every child, and names them with the same id constructors the
     // producers submit under, so the tree and the umbrella's progress stay accurate.
-    const asyncOperations = [
+    const asyncOperations: Promise<Result<void, TaskError>[]>[] = [
       ...(targets.accounts.length > 0
         ? [syncTransactionsByChains(targets.accounts, targets.shouldShowSyncProgress, umbrella)]
         : []),
       ...(exchanges.length > 0 ? [queryAllExchangeEvents(exchanges, umbrella)] : []),
       ...children.flatMap(child => child.payload.type === 'online'
-        ? [queryOnlineEvent(child.payload.query, umbrella)]
+        ? [queryOnlineEvent(child.payload.query, umbrella).then(outcome => [outcome])]
         : []),
     ];
 
+    // Collected, not discarded: the umbrella settles on these, and a run whose every child failed
+    // must not write the completion that `alreadyLoaded` reads.
+    const outcomes: Result<void, TaskError>[] = [];
+
     for (const operation of asyncOperations) {
       try {
-        await operation;
+        outcomes.push(...await operation);
       }
       catch (error: unknown) {
         logger.error(error);
+        // The thrown value rides along as `cause`; the operation itself is what failed, and each
+        // producer has already logged its own detail.
+        outcomes.push(err(TaskFailed({ cause: error, message: 'a refresh operation threw' })));
       }
     }
 
@@ -172,6 +179,8 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     // guard precisely because the first had finished. Not awaited: the refresh is over and the
     // count is a display concern. Re-entry is the activity's own to dedup.
     startPromise(fetchUndecodedTransactionsBreakdown());
+
+    return combineOutcomes(outcomes);
   }
 
   /**
@@ -265,14 +274,23 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       lane: UMBRELLA_LANE,
       rerunnable: false,
       staleAfter: HISTORY_STALE_AFTER,
+      // 🔴 The outcome is the children's, not a foregone `ok`. This umbrella *is* the subject for
+      // its kind — `alreadyLoaded` below reads its `everCompleted` — so returning success
+      // unconditionally meant an all-failed first sync (backend unreachable at login, every chain
+      // fails) still wrote "history has loaded", and every later non-user-initiated refresh
+      // short-circuited on it: history silently never synced again for the session. It cannot be a
+      // `container` for the same reason — the entry is needed, it just has to be true. A run that
+      // targeted nothing settles SKIPPED for the same reason, which is what stops a refresh fired
+      // before any account has loaded from claiming the whole history.
       run: async (): Promise<Result<void, TaskError>> => {
         initializeRefresh(targets, wave);
 
         try {
-          await executeOperations(targets, disableEvmEvents, payload.queries, umbrellaId, wave);
+          return await executeOperations(targets, disableEvmEvents, payload.queries, umbrellaId, wave);
         }
         catch (error) {
           logger.error(error);
+          return err(TaskFailed({ cause: error, message: 'the history refresh threw' }));
         }
         finally {
           onHistoryFinished();
@@ -281,8 +299,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
           stopDecodingSyncProgress();
           sigilBus.emit('history:ready');
         }
-
-        return ok(undefined);
       },
       title: t('task_center.group.history_sync'),
     });

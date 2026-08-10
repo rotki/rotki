@@ -1,10 +1,10 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
-import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { err, isErr, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { ApiKeyMissingError } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, Skipped, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { onlineEventsActivityId } from '@/modules/history/events/tx/sync-activity';
@@ -19,8 +19,8 @@ import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types'
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseRefreshHandlersReturn {
-  queryAllExchangeEvents: (exchanges: Exchange[], parent?: ActivityId) => Promise<void>;
-  queryOnlineEvent: (queryType: OnlineHistoryEventsQueryType, parent?: ActivityId) => Promise<void>;
+  queryAllExchangeEvents: (exchanges: Exchange[], parent?: ActivityId) => Promise<Result<void, TaskError>[]>;
+  queryOnlineEvent: (queryType: OnlineHistoryEventsQueryType, parent?: ActivityId) => Promise<Result<void, TaskError>>;
   resetOnlineWarnings: () => void;
 }
 
@@ -86,9 +86,11 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
     return true;
   };
 
-  const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType, parent?: ActivityId): Promise<void> => {
+  const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType, parent?: ActivityId): Promise<Result<void, TaskError>> => {
+    // A source the user has switched off or never authenticated is a skip, not a success: it submits
+    // no activity at all, so reporting it as one would let a refresh that ran nothing look complete.
     if (!(await canQueryOnlineEvent(queryType)))
-      return;
+      return err(Skipped({ message: `${queryType} is not available` }));
 
     logger.debug(`querying for ${queryType} events`);
 
@@ -128,6 +130,7 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
       }
     }
     logger.debug(`finished querying for ${queryType} events`);
+    return outcome;
   };
 
   const resetOnlineWarnings = (): void => {
