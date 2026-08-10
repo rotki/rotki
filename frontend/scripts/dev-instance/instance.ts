@@ -181,7 +181,10 @@ export async function prepareInstance(opts: PrepareInstanceOptions): Promise<Ins
   // look exactly like one of those to a second `dev:web` running concurrently.
   // `ensureInstanceData` still treats an empty directory as needing a seed.
   fs.mkdirSync(dir, { recursive: true });
-  const slot = await allocatePortSlot(name, opts.slotHint);
+  const slot = await allocatePortSlot(name, {
+    hint: opts.slotHint,
+    isSlotLive: async (candidate: number): Promise<boolean> => (await probePortsLive(candidate)).length > 0,
+  });
   const ports = portsForSlot(slot);
 
   await refuseIfSlotLive(name, slot);
