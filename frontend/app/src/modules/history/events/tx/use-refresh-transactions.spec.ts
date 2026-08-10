@@ -4,7 +4,7 @@ import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import flushPromises from 'flush-promises';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { ActivityKind, makeActivityId, type WorkStatus } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
@@ -631,6 +631,19 @@ describe('useRefreshTransactions', () => {
       // 🔴 The defect this guards: the umbrella used to return `ok` whatever its children did, so an
       // all-failed first sync wrote "history has loaded" and `alreadyLoaded` short-circuited every
       // later background refresh. Nothing is left in flight either way.
+      expect(historySyncStatus().everCompleted).toBe(false);
+      expect(historySyncStatus().active).toBe(false);
+    });
+
+    it('should not record a completion when the sync was cancelled', async () => {
+      // Cancelling is not loading. If a stopped sync wrote the completion, `alreadyLoaded` would
+      // suppress the next background refresh and the data the user interrupted would never arrive.
+      mockTransactionSync.syncTransactionsByChains.mockResolvedValue([err(Cancelled({ message: 'stopped' }))]);
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+
+      await refreshTransactions();
+      await settleRefresh();
+
       expect(historySyncStatus().everCompleted).toBe(false);
       expect(historySyncStatus().active).toBe(false);
     });
