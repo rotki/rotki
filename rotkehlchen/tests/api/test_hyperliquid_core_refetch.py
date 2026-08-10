@@ -4,8 +4,8 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.resolver import hyperliquid_token_address_to_identifier
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
 from rotkehlchen.types import Location, SupportedBlockchain, Timestamp
 
@@ -72,7 +72,9 @@ def test_refetch_hyperliquid_core_history_with_max_event(
             (
                 Location.HYPERLIQUID.serialize_for_db(),
                 address,
-                Asset('MAX').identifier,
+                hyperliquid_token_address_to_identifier(
+                    '0x6781b92b6ea5d8ed37d275eb201f64af',
+                ),
                 1781377469380,
             ),
         ).fetchone()[0] == 1

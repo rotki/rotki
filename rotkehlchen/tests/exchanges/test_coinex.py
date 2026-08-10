@@ -1,7 +1,6 @@
 import hmac
 import logging
 from hashlib import sha256
-from typing import TYPE_CHECKING
 from unittest.mock import call, patch
 
 import pytest
@@ -19,10 +18,7 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.types import Location, LocationAssetMappingUpdateEntry, Timestamp, TimestampMS
-
-if TYPE_CHECKING:
-    from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 
 def test_name(coinex_exchange: Coinex) -> None:
@@ -261,15 +257,8 @@ def test_query_asset_movements(coinex_exchange: Coinex) -> None:
     ]
 
 
-def test_query_trades(coinex_exchange: Coinex, globaldb: GlobalDBHandler) -> None:
+def test_query_trades(coinex_exchange: Coinex) -> None:
     cet_asset = Asset('eip155:1/erc20:0x081F67aFA0cCF8c7B17540767BBe95DF2bA8D97F').resolve_to_asset_with_oracles()  # noqa: E501
-    globaldb.add_location_asset_mappings([
-        LocationAssetMappingUpdateEntry(
-            location=Location.COINEX,
-            location_symbol='CET',
-            asset=cet_asset,
-        ),
-    ])
     market = CoinexMarket(
         market='BTCUSDT',
         base_asset_symbol='BTC',

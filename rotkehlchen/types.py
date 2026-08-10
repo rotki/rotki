@@ -226,6 +226,7 @@ class ChainID(Enum):
     MONAD = 143
     INK = 57073
     MEGAETH = 4326
+    ROBINHOOD = 4663
 
     @classmethod
     def deserialize_from_db(cls, value: int) -> ChainID:
