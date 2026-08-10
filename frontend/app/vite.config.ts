@@ -46,6 +46,36 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 const isTest = !!process.env.VITE_TEST;
 const isCoverage = !!process.env.VITE_COVERAGE;
 const hmrEnabled = isDevelopment && !(process.env.CI && isTest);
+
+/**
+ * Sharded e2e runs (`scripts/e2e-shards.ts`) serve ONE bundle from several `vite preview`
+ * servers, one per shard. That only works because the bundle names no port: it is built
+ * with an empty `VITE_BACKEND_URL`, so every call goes same-origin, and each preview
+ * server forwards those calls to its own shard's starling proxy.
+ *
+ * The port is read when preview starts rather than when the bundle is built, which is
+ * what lets one build serve every shard. `E2E_PORT_OFFSET` is the block the run settled
+ * on and 30305 is the proxy inside it, matching playwright.config.ts.
+ */
+const E2E_BASE_PROXY_PORT = 30305;
+const e2eShard = Number(process.env.E2E_SHARD ?? 0);
+const e2eProxyTarget = `http://127.0.0.1:${E2E_BASE_PROXY_PORT + Number(process.env.E2E_PORT_OFFSET ?? 0)}`;
+/**
+ * The keys are anchored regexes, not plain prefixes, because the bundle's own chunks sit
+ * at the root and are named after the module they came from: a bare `/api` key also
+ * matches the `/api-<hash>.js` chunk, which is then forwarded to a backend that has
+ * never heard of it. The 404 arrives as a failed dynamic import of the login chunk, and
+ * the app renders a blank page with nothing in the console naming the proxy.
+ */
+const previewProxy = e2eShard > 0
+  ? {
+      '^/api/': { target: e2eProxyTarget },
+      // Task and balance updates the backend pushes over a websocket.
+      '^/ws/': { target: e2eProxyTarget, ws: true },
+      // starling strips the prefix itself, so this is a plain forward.
+      '^/colibri/': { target: e2eProxyTarget },
+    }
+  : undefined;
 // Single source of truth for the accounting-update feature: the backend gates its
 // endpoints behind ROTKI_ACCOUNTING_UPDATE, so we mirror that same shell var into a
 // VITE_-prefixed entry, which Vite then exposes on import.meta.env. Exporting the one
@@ -138,6 +168,9 @@ export default defineConfig({
     dedupe: ['vue'],
   },
   base: publicPath,
+  preview: {
+    proxy: previewProxy,
+  },
   customLogger: createConfigLogger(),
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),

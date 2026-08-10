@@ -28,7 +28,7 @@ yarn-error.log*
 
 #Electron-builder output
 /dist_electron
-tests/e2e/test-results
+tests/e2e/test-results*
 playwright-report
 tests/**/coverage
 tests/**/.v8-coverage
