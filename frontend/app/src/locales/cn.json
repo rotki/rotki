@@ -2752,9 +2752,6 @@
       "empty_name": "请提供标签名称"
     }
   },
-  "tag_filter": {
-    "label": "按标签过滤"
-  },
   "tag_manager": {
     "confirmation": {
       "message": "您确定要删除 {tagToDelete} 吗？这也会删除该标签的所有映射。",
