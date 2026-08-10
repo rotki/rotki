@@ -106,6 +106,29 @@ describe('settings/api-keys/exchange validation', () => {
     return form.vm.validate();
   }
 
+  /**
+   * The dialog turns this flag into its discard-on-close prompt, so anything the form writes into
+   * the entry by itself must not raise it. `onMounted` seeds the name, which lands after the form
+   * took its baseline.
+   */
+  describe('the unsaved changes flag', () => {
+    it('should stay down for a form the user has not touched', async () => {
+      const form = createWrapper({ name: '' });
+      await nextTick();
+
+      expect((form.emitted('update:stateUpdated') ?? []).flat()).not.toContain(true);
+    });
+
+    it('should go up once a field is edited', async () => {
+      const form = createWrapper();
+      await nextTick();
+
+      await form.setProps({ modelValue: { ...form.props('modelValue'), apiKey: 'edited' } });
+
+      expect(form.emitted('update:stateUpdated')?.at(-1)?.[0]).toBe(true);
+    });
+  });
+
   describe('the common fields', () => {
     it('should accept a complete form', async () => {
       await expect(validate()).resolves.toBe(true);
