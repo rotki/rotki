@@ -1,11 +1,11 @@
 import { groupBy } from 'es-toolkit';
-import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { msg } from '@/message-key';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { combineOutcomes, isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { type BlockchainAddress, type ChainAddress, TransactionChainType, TransactionChainTypeNeedDecoding, type TransactionRequestPayload } from '@/modules/history/events/event-payloads';
 import { accountSyncActivityId, chainSyncActivityId } from '@/modules/history/events/tx/sync-activity';
@@ -23,10 +23,21 @@ interface TransactionSyncParams {
   trackProgress?: boolean;
 }
 
+/** A chain activity's declared children, split by whether they decide the chain's own outcome. */
+interface ChainSubtree {
+  readonly accounts: readonly Promise<Result<void, TaskError>>[];
+  readonly decode: readonly Promise<void>[];
+}
+
+/**
+ * The per-chain and per-account syncs report their outcome rather than swallowing it: a parent
+ * settles on what its children actually did, and the sync's own error handling (status store,
+ * notifications) still happens where the failure is, not at the caller.
+ */
 interface UseTransactionSyncReturn {
-  syncAndReDecodeEvents: (chain: string, params: TransactionSyncParams, parent?: ActivityId) => Promise<void>;
-  syncTransactionTask: (account: ChainAddress, type: TransactionChainType, trackProgress?: boolean, parent?: ActivityId) => Promise<void>;
-  syncTransactionsByChains: (accounts: ChainAddress[], trackProgress?: boolean, parent?: ActivityId) => Promise<void>;
+  syncAndReDecodeEvents: (chain: string, params: TransactionSyncParams, parent?: ActivityId) => Promise<Result<void, TaskError>>;
+  syncTransactionTask: (account: ChainAddress, type: TransactionChainType, trackProgress?: boolean, parent?: ActivityId) => Promise<Result<void, TaskError>>;
+  syncTransactionsByChains: (accounts: ChainAddress[], trackProgress?: boolean, parent?: ActivityId) => Promise<Result<void, TaskError>[]>;
 }
 
 export function useTransactionSync(): UseTransactionSyncReturn {
@@ -83,7 +94,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     type: TransactionChainType,
     trackProgress = true,
     parent?: ActivityId,
-  ): Promise<void> => {
+  ): Promise<Result<void, TaskError>> => {
     const { address, chain } = account;
     const isEvmlike = type === TransactionChainType.EVMLIKE;
 
@@ -138,6 +149,8 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     // setEvmlikeStatus already guards against overwriting cancelled entries
     if (isEvmlike && trackProgress)
       setEvmlikeStatus(account, 'finished');
+
+    return outcome;
   };
 
   /**
@@ -155,19 +168,26 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     chain: string,
     params: TransactionSyncParams,
     parent?: ActivityId,
-  ): Promise<void> => {
+  ): Promise<Result<void, TaskError>> => {
     const { accounts, trackProgress = true, type } = params;
     const chainId = chainSyncActivityId(chain);
 
     // The chain activity is submitted before its children so the parent gate applies to them, but
     // its `run` needs their promises — which only exist once they are submitted. It waits on this
     // rather than on an array that would still be empty when the run body first executes.
-    let declared!: (work: readonly Promise<void>[]) => void;
-    const subtree = new Promise<readonly Promise<void>[]>((resolve) => {
+    //
+    // The two halves are handed over separately because only one of them decides the chain's
+    // verdict: the accounts are what a TX_SYNC activity is *about*, while the decode is follow-on
+    // work carrying its own kind and its own row.
+    let declared!: (work: ChainSubtree) => void;
+    const subtree = new Promise<ChainSubtree>((resolve) => {
       declared = resolve;
     });
 
     const chainWork = submitTask({
+      // Produces no data of its own — the per-account children carry the same kind and write their
+      // own ledger entries, so this row must not claim freshness for the chain on their behalf.
+      container: true,
       id: chainId,
       kind: ActivityKind.TX_SYNC,
       lane: CHAIN_SYNC_LANE,
@@ -175,8 +195,12 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       rerunnable: false,
       run: async (): Promise<Result<void, TaskError>> => {
         logger.debug(`syncing ${chain} transactions for ${accounts.length} addresses`);
-        await Promise.all(await subtree);
-        return ok(undefined);
+        const { accounts: accountWork, decode } = await subtree;
+        // Both halves are already in flight, so awaiting them in sequence costs nothing and keeps
+        // the verdict off the decode.
+        const outcomes = await Promise.all(accountWork);
+        await Promise.all(decode);
+        return combineOutcomes(outcomes);
       },
       subtitle: activityLabelFor(msg.$t('task_center.activity.tx_sync.chain'), { chain: getChainName(chain) }),
       title: t('task_center.group.tx_sync'),
@@ -195,17 +219,17 @@ export function useTransactionSync(): UseTransactionSyncReturn {
         })]
       : [];
 
-    declared([...accountWork, ...decodeWork]);
+    declared({ accounts: accountWork, decode: decodeWork });
 
-    await chainWork;
+    return chainWork;
   };
 
-  const syncTransactionsByChains = async (accounts: ChainAddress[], trackProgress = true, parent?: ActivityId): Promise<void> => {
+  const syncTransactionsByChains = async (accounts: ChainAddress[], trackProgress = true, parent?: ActivityId): Promise<Result<void, TaskError>[]> => {
     logger.debug(`refreshing transactions for ${accounts.length} addresses`);
 
     // The account set is known here, synchronously, so every chain and every account below it is
     // declared in this pass. No limiter: CHAIN_SYNC_LANE caps how many chains run at once.
-    await Promise.all(Object.entries(groupBy(accounts, item => item.chain))
+    return Promise.all(Object.entries(groupBy(accounts, item => item.chain))
       .map(async ([chain, chainAccounts]) => syncAndReDecodeEvents(chain, {
         accounts: chainAccounts,
         trackProgress,
