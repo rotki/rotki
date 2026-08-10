@@ -1,7 +1,7 @@
 import type { NativeActivitySpec } from '@/modules/task-center/use-native-task';
 import { err, ok, type Result } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BackendCancelled, Cancelled, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { BackendCancelled, Cancelled, isCancellation, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useTransactionSync } from './use-transaction-sync';
@@ -178,6 +178,32 @@ describe('useTransactionSync', () => {
 
       assert(!outcome.ok);
       expect(outcome.error.message).toBe('boom');
+    });
+
+    it('should settle cancelled, not failed, when its accounts were cancelled', async () => {
+      // The chain's verdict now folds its children's outcomes, so cancellation has to survive that
+      // fold: reporting a user-stopped chain as FAILED would put an error row in the task centre for
+      // something the user chose to stop.
+      runChainBody(err(Cancelled({ message: 'stopped' })), err(BackendCancelled({ message: 'stopped' })));
+      const { syncAndReDecodeEvents } = useTransactionSync();
+
+      const outcome = await syncAndReDecodeEvents('eth', { accounts, type: TransactionChainType.EVM });
+
+      assert(!outcome.ok);
+      expect(isCancellation(outcome.error)).toBe(true);
+    });
+
+    it('should report a real failure over a cancellation', async () => {
+      // The other side of the same fold: a chain where one address genuinely failed and the rest were
+      // cancelled is a failure worth surfacing. (A user cancelling the chain *itself* still reads
+      // CANCELLED — `cancelRequested` overrides the run's outcome in the orchestrator.)
+      runChainBody(err(TaskFailed({ message: 'boom' })), err(Cancelled({ message: 'stopped' })));
+      const { syncAndReDecodeEvents } = useTransactionSync();
+
+      const outcome = await syncAndReDecodeEvents('eth', { accounts, type: TransactionChainType.EVM });
+
+      assert(!outcome.ok);
+      expect(isCancellation(outcome.error)).toBe(false);
     });
 
     it('should declare the chain activity as a container', async () => {
