@@ -3,11 +3,11 @@ import type { Collection } from '@/modules/core/common/collection';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { LocationQuery } from '@/modules/core/table/route';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, type Mock, vi } from 'vitest';
-import { z } from 'zod';
-import { arrayify } from '@/modules/core/common/data/array';
+import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { TableId } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 
@@ -125,18 +125,19 @@ function mockRequestWithExtras(): (payload: MaybeRef<TestPayloadWithExtras>) => 
   });
 }
 
-function createTestFilterSchema(): FilterSchema<TestFilters> {
-  const OptionalString = z.string().optional();
-  const OptionalMultipleString = z.array(z.string()).or(z.string()).transform(arrayify).optional();
-
+/**
+ * The filter bag and the fields it is declared by. The url shape is derived from the fields, so a
+ * table under test states its keys once, the same way a real one does.
+ */
+function createTestFilterOptions(): { fields: FieldDef[]; filterSchema: FilterSchema<TestFilters> } {
   return {
-    filters: ref<TestFilters>({}),
-    RouteFilterSchema: z.object({
-      asset: OptionalString,
-      identifiers: OptionalString,
-      tempFilter: OptionalString,
-      txRefs: OptionalMultipleString,
-    }),
+    fields: [
+      toMatchFieldDef({ key: 'asset', label: 'Asset', multiple: false }),
+      toMatchFieldDef({ key: 'identifiers', label: 'Identifiers', multiple: false }),
+      toMatchFieldDef({ key: 'tempFilter', label: 'Temp filter', multiple: false }),
+      toMatchFieldDef({ key: 'txRefs', label: 'Tx refs', multiple: true }),
+    ],
+    filterSchema: { filters: ref<TestFilters>({}) },
   };
 }
 
@@ -188,7 +189,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { identifiers: 'never', groupIdentifiers: 'never' }, tableId: TableId.HISTORY },
         params: [{
           values: computed(() => ({
@@ -219,7 +220,7 @@ describe('filter-persistence', () => {
       scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { identifiers: 'never' }, tableId: TableId.HISTORY },
         params: [{
           values: computed(() => ({ identifiers: 'some-id' })),
@@ -244,7 +245,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { tableId: TableId.HISTORY },
         params: [{
           values: computed(() => ({ identifiers: 'some-id' })),
@@ -270,7 +271,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { identifiers: 'never', groupIdentifiers: 'never', duplicateHandlingStatus: 'never' }, tableId: TableId.HISTORY },
         params: [
           {
@@ -310,7 +311,7 @@ describe('filter-persistence', () => {
       scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }));
 
@@ -332,7 +333,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -354,7 +355,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -382,7 +383,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -411,7 +412,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -439,7 +440,7 @@ describe('filter-persistence', () => {
       scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged', tempFilter: 'untilChanged' }, tableId: TableId.HISTORY },
       }));
 
@@ -461,7 +462,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged', tempFilter: 'untilChanged' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -491,7 +492,7 @@ describe('filter-persistence', () => {
       scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { identifiers: 'never', groupIdentifiers: 'never', txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
         params: [{
           values: computed(() => ({ identifiers: 'id-1' })),
@@ -519,7 +520,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { identifiers: 'never', txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
         params: [{
           values: computed(() => ({ identifiers: 'id-1' })),
@@ -548,7 +549,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
       }))!;
 
       await nextTick();
@@ -565,7 +566,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         params: [{
           values: computed(() => ({ identifiers: 'some-id' })),
           to: 'both',
@@ -592,7 +593,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { tableId: TableId.HISTORY },
         params: [{
           values: computed(() => ({ identifiers: 'some-id' })),
@@ -621,7 +622,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -655,7 +656,7 @@ describe('filter-persistence', () => {
       scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { tableId: TableId.HISTORY },
       }));
 
@@ -675,7 +676,7 @@ describe('filter-persistence', () => {
       scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { tableId: TableId.HISTORY },
       }));
 
@@ -691,7 +692,7 @@ describe('filter-persistence', () => {
       scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
       }));
 
       await nextTick();
@@ -705,7 +706,7 @@ describe('filter-persistence', () => {
       scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { tableId: TableId.HISTORY },
       }));
 
@@ -721,7 +722,7 @@ describe('filter-persistence', () => {
       const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { nonExistentKey: 'never', anotherMissing: 'never' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -743,7 +744,7 @@ describe('filter-persistence', () => {
       scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }));
 
@@ -796,7 +797,7 @@ describe('request.debounce', () => {
       fetch: requestFn,
       request: { debounce: 200 },
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -833,7 +834,7 @@ describe('request.debounce', () => {
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -879,7 +880,7 @@ describe('request.cancelTag', () => {
       fetch: requestFn,
       request: { cancelTag: 'test-cancel-tag' },
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -904,7 +905,7 @@ describe('request.cancelTag', () => {
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -926,7 +927,7 @@ describe('request.cancelTag', () => {
       fetch: requestFn,
       request: { cancelTag: 'test-cancel-tag' },
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }));
 
     await nextTick();
@@ -952,7 +953,7 @@ describe('request.cancelTag', () => {
       fetch: requestFn,
       request: { debounce: 200 },
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [
         {
           values: computed<Partial<{ locationLabels: string[] }>>(() => {
@@ -1008,7 +1009,7 @@ describe('request.cancelTag', () => {
       fetch: requestFn,
       request: { debounce: 200 },
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [
         {
           values: computed<Partial<{ locationLabels: string[] }>>(() => {
@@ -1055,7 +1056,7 @@ describe('request.cancelTag', () => {
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1084,7 +1085,7 @@ describe('request.cancelTag', () => {
       fetch: requestFn,
       request: { cancelTag: 'debounced-cancel-tag', debounce: 200 },
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1137,7 +1138,7 @@ describe('sources precedence', () => {
     const { filter, requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{
         values: computed(() => ({ asset: 'FROM_BASE' })),
         to: 'request',
@@ -1162,7 +1163,7 @@ describe('sources precedence', () => {
     const { filter, requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{
         values: computed(() => ({ asset: 'FROM_SOURCE' })),
         to: 'request',
@@ -1183,7 +1184,7 @@ describe('sources precedence', () => {
     const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [
         { values: computed(() => ({ asset: 'FIRST' })), to: 'request' },
         { values: computed(() => ({ asset: 'SECOND' })), to: 'request' },
@@ -1219,7 +1220,7 @@ describe('source destinations', () => {
     const { filter, requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [
         { values: computed(() => ({ requestParam: 'req' })), to: 'request' },
         { values: computed(() => ({ urlParam: 'url' })), to: 'url' },
@@ -1254,7 +1255,7 @@ describe('source destinations', () => {
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1283,7 +1284,7 @@ describe('source destinations', () => {
     scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: requestFn,
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{
         values: computed(() => ({ urlParam: get(urlOnly) })),
         to: 'url',
@@ -1309,7 +1310,7 @@ describe('source destinations', () => {
     const { filter, requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{
         values: computed(() => ({ emptyArr: [], emptyStr: '', filled: 'x' })),
         to: 'both',
@@ -1340,7 +1341,7 @@ describe('source destinations', () => {
     const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{
         values: computed(() => ({ emptyArr: [], emptyStr: '' })),
         to: 'request',
@@ -1385,7 +1386,7 @@ describe('urlState modes', () => {
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       urlState: { mode: 'none' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1414,7 +1415,7 @@ describe('urlState modes', () => {
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'ref', query },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1453,7 +1454,7 @@ describe('sort.fallbackColumn', () => {
     const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1466,7 +1467,7 @@ describe('sort.fallbackColumn', () => {
     const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       sort: { fallbackColumn: 'name' },
     }))!;
 
@@ -1480,7 +1481,7 @@ describe('sort.fallbackColumn', () => {
     const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       sort: { default: { column: 'id', direction: 'asc' }, fallbackColumn: 'name' },
     }))!;
 
@@ -1517,7 +1518,7 @@ describe('error', () => {
     const { error, filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1535,7 +1536,7 @@ describe('error', () => {
     const { error, filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1573,7 +1574,7 @@ describe('generic inference', () => {
     const table = scope.run(() => useServerTable({
       fetch: mockRequestWithExtras(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{ values: computed(() => ({ asset: 'INFERRED' })), to: 'request' }],
     }))!;
 
@@ -1613,7 +1614,7 @@ describe('page reset', () => {
   it('should reset to page 1 when the filter changes', async () => {
     const { filter, pagination } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1636,7 +1637,7 @@ describe('page reset', () => {
     const { pagination } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{ values: computed(() => ({ urlParam: get(highlight) })), to: 'url' }],
     }))!;
 
@@ -1662,7 +1663,7 @@ describe('page reset', () => {
     const { pagination } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestWithExtras(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{ skipEmpty: true, to: 'request', values: computed(() => ({ requestParam: get(account) })) }],
     }))!;
 

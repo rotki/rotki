@@ -1,12 +1,15 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRef, Ref, WritableComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
+import type { Schema } from 'zod';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { isEqual } from 'es-toolkit';
 import { getApiSortingParams } from '@/modules/core/table/pagination-filter-utils';
 import { collectSources, mergeParams, type ParamSource, transformFilters } from '@/modules/core/table/param-sources';
+import { behaviourKeysFromFields, routeSchemaFromFields } from '@/modules/core/table/route';
 import { type ChangeSource, useChangeIntent } from '@/modules/core/table/use-change-intent';
 import { useTableData } from '@/modules/core/table/use-table-data';
 import { useTablePagination } from '@/modules/core/table/use-table-pagination';
@@ -53,6 +56,12 @@ interface UseServerTableOptions<
    * filter bag. Named `filterSchema` because `filter` is the returned value.
    */
   filterSchema?: FilterSchema<TFilter>;
+  /**
+   * The pill-bar fields this table filters on, the same list the bar is given. The url shape of the
+   * filter bag and the keys the request wraps as `{ behaviour, values }` are read off them, rather
+   * than restated per table beside a field list that already says both.
+   */
+  fields?: MaybeRefOrGetter<FieldDef[]>;
   /** External parameter sources merged into the request payload and/or URL. */
   params?: ParamSource[];
   /** Default sort column and fallback column applied when none is persisted. */
@@ -98,13 +107,13 @@ export function useServerTable<
 
   const {
     fetch: requestData,
+    fields,
     filterSchema = {
       // The fallback for a table with no filter schema (a dialog listing rows it never filters).
       // Such a table has no filter bag at all, and neither an empty one nor undefined is provably
       // the TFilter its caller declared, so the hole is stated here rather than at every read.
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       filters: ref({}) as Ref<TFilter>,
-      RouteFilterSchema: undefined,
     },
     params = [],
     persist,
@@ -115,7 +124,15 @@ export function useServerTable<
 
   const { markUserIntent, pendingIntent, pendingUrlSource } = useChangeIntent();
 
-  const { behaviourKeys = [], filters, RouteFilterSchema } = filterSchema;
+  const { filters } = filterSchema;
+
+  // Both derived from the declared fields, and cached against them: a gated field list can change
+  // while the table is mounted, and the URL must be read with the keys in play at that moment.
+  const behaviourKeys = computed<string[]>(() => behaviourKeysFromFields(toValue(fields) ?? []));
+  const routeFilterSchema = computed<Schema | undefined>(() => {
+    const declared = toValue(fields);
+    return declared ? routeSchemaFromFields(declared) : undefined;
+  });
 
   // Commit callbacks feed the reducer. They are defined before the sub-composables that
   // receive them and call the hoisted `dispatch`.
@@ -158,7 +175,7 @@ export function useServerTable<
     const offset = (page - 1) * limit;
 
     const merged = mergeParams(params, 'request', get(filters) ?? {});
-    const transformed = transformFilters(merged, behaviourKeys);
+    const transformed = transformFilters(merged, get(behaviourKeys));
 
     // The one assertion left here, and the boundary it belongs to: what a table sends is its
     // filter bag plus whatever its param sources contribute, which only the caller's own payload
@@ -194,7 +211,7 @@ export function useServerTable<
     resetTransientValues,
     restorePersistedFilter,
     params,
-    routeFilterSchema: RouteFilterSchema,
+    routeFilterSchema: (): Schema | undefined => get(routeFilterSchema),
     urlState,
   });
 

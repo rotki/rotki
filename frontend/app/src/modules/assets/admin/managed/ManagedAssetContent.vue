@@ -78,6 +78,7 @@ const {
   Filters
 >({
   fetch: queryAllAssets,
+  fields,
   filterSchema,
   params: [{
     fromQuery(query): void {

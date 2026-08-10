@@ -7,13 +7,14 @@
 // can go away.
 export { useHistoryEventFields } from './use-history-event-fields';
 
+export { useHistoryEventNavigationConsumer } from './use-history-event-navigation-consumer';
+
 export { useHistoryEventsActions } from './use-history-events-actions';
 
 export { useHistoryEventsDeletion } from './use-history-events-deletion';
 
 export {
   getDefaultToggles,
-  useHistoryEventNavigationConsumer,
   useHistoryEventsFilters,
 } from './use-history-events-filters';
 

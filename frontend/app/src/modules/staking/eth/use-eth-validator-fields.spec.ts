@@ -2,6 +2,7 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { withSetup } from '@test/utils/with-setup';
 import { describe, expect, it } from 'vitest';
+import { routeSchemaFromFields } from '@/modules/core/table/route';
 import { useEthValidatorFields } from './use-eth-validator-fields';
 import '@test/i18n';
 
@@ -18,6 +19,24 @@ function fieldOf(key: string): FieldDef | undefined {
 }
 
 describe('useEthValidatorFields', () => {
+  // The url shape of the filter bag is derived from these fields, so the round-trip is asserted
+  // here rather than against a second hand-written declaration.
+  describe('route query', () => {
+    it('should coerce single route values into arrays', () => {
+      expect(routeSchemaFromFields(fields()).parse({ index: '5', publicKey: '0xabc', status: 'active' }))
+        .toEqual({ index: ['5'], publicKey: ['0xabc'], status: ['active'] });
+    });
+
+    it('should keep array route values as arrays', () => {
+      expect(routeSchemaFromFields(fields()).parse({ status: ['active', 'exited'] }))
+        .toEqual({ status: ['active', 'exited'] });
+    });
+
+    it('should allow an empty route filter', () => {
+      expect(routeSchemaFromFields(fields()).parse({})).toEqual({});
+    });
+  });
+
   it('should send the keys the validators request takes', () => {
     expect(fields().map(field => field.key)).toStrictEqual(['index', 'publicKey', 'status']);
   });

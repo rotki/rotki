@@ -1,4 +1,5 @@
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { bigNumberify } from '@rotki/common';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope, type Ref } from 'vue';
@@ -57,8 +58,11 @@ vi.mock('@/modules/staking/eth/use-eth-validator-filter', () => ({
   useEthValidatorAccountFilter: (): Record<string, unknown> => ({
     filters: mockFilters,
     matchers: mockMatchers,
-    RouteFilterSchema: undefined,
   }),
+}));
+
+vi.mock('@/modules/staking/eth/use-eth-validator-fields', () => ({
+  useEthValidatorFields: (): Ref<FieldDef[]> => ref([]),
 }));
 
 vi.mock('@/modules/core/table/use-server-table', () => ({

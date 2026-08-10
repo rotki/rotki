@@ -36,6 +36,7 @@ const {
   Filters
 >({
   fetch: fetchData,
+  fields,
   filterSchema,
   sort: {
     default: {

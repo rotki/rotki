@@ -1,4 +1,4 @@
-import { assert, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   ManualBalancesFilterSchema,
   useManualBalanceFilter,
@@ -11,17 +11,8 @@ describe('useManualBalanceFilter', () => {
     expect(get(filters)).toEqual({});
   });
 
-  it('should parse optional route filter values', () => {
-    const { RouteFilterSchema } = useManualBalanceFilter();
-    assert(RouteFilterSchema);
-
-    expect(RouteFilterSchema.parse({ asset: 'ETH', label: 'x', location: 'kraken' })).toEqual({
-      asset: 'ETH',
-      label: 'x',
-      location: 'kraken',
-    });
-    expect(RouteFilterSchema.parse({})).toEqual({});
-  });
+  // The URL round-trip is asserted in `manual-balance-fields.spec.ts`, against the field list the
+  // url shape is now derived from.
 });
 
 describe('manualBalancesFilterSchema', () => {

@@ -1,6 +1,7 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { describe, expect, it } from 'vitest';
 import { DisplayKinds, type FieldDef } from '@/modules/core/table/pill/core/types';
+import { routeSchemaFromFields } from '@/modules/core/table/route';
 import { type AccountingRuleFieldOptions, toAccountingRuleFields } from '@/modules/settings/accounting/rule/accounting-rule-fields';
 
 const t = (key: string): string => key;
@@ -29,6 +30,19 @@ const options: AccountingRuleFieldOptions = {
 const fields = (): FieldDef[] => toAccountingRuleFields(resolvers, t, options);
 
 describe('toAccountingRuleFields', () => {
+  // The url shape of the filter bag is derived from these fields, so the round-trip is asserted
+  // here rather than against a second hand-written declaration.
+  describe('route query', () => {
+    it('should coerce single route values into arrays', () => {
+      expect(routeSchemaFromFields(fields()).parse({ counterparties: 'uniswap', eventTypes: 'spend' }))
+        .toEqual({ counterparties: ['uniswap'], eventTypes: ['spend'] });
+    });
+
+    it('should allow an empty route filter', () => {
+      expect(routeSchemaFromFields(fields()).parse({})).toEqual({});
+    });
+  });
+
   it('should keep the wire keys the table already sends', () => {
     expect(fields().map(field => field.key)).toStrictEqual([
       'eventTypes',

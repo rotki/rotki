@@ -1,6 +1,5 @@
 import type { MatchedKeyword } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
-import { FilterKeyArities, filterRouteSchema } from '@/modules/core/table/route';
 
 export const AddressBookFilterKeys = {
   ADDRESS: 'address',
@@ -16,9 +15,5 @@ export function useAddressBookFilter(): FilterSchema<Filters> {
 
   return {
     filters: modelFilters,
-    RouteFilterSchema: filterRouteSchema({
-      [AddressBookFilterKeys.ADDRESS]: FilterKeyArities.MANY,
-      [AddressBookFilterKeys.NAME]: FilterKeyArities.ONE,
-    }),
   };
 }

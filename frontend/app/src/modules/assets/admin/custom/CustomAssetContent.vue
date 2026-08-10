@@ -57,6 +57,7 @@ const {
   Filters
 >({
   fetch: queryAllCustomAssets,
+  fields,
   filterSchema,
   sort: {
     default: [{

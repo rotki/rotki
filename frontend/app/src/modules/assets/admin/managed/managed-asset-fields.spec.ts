@@ -8,6 +8,7 @@ import {
   toAssetWhitelistedField,
   toManagedAssetFields,
 } from '@/modules/assets/admin/managed/managed-asset-fields';
+import { routeSchemaFromFields } from '@/modules/core/table/route';
 
 const t = (key: string): string => key;
 
@@ -101,6 +102,16 @@ describe('toManagedAssetFields', () => {
     expect(fields().filter(field => field.multiple).map(field => field.key)).toStrictEqual(['identifiers']);
   });
 
+  // The url shape of the filter bag is derived from these fields, so the round-trip is asserted
+  // here rather than against a second hand-written declaration.
+  it('should read identifiers as a list and everything else as one value', () => {
+    const schema = routeSchemaFromFields(fields());
+
+    expect(schema.parse({ identifiers: 'eip155:1/erc20:0xdai', name: 'dai' }))
+      .toEqual({ identifiers: ['eip155:1/erc20:0xdai'], name: 'dai' });
+    expect(schema.parse({ identifiers: ['a', 'b'] })).toEqual({ identifiers: ['a', 'b'] });
+    expect(schema.parse({})).toEqual({});
+  });
 });
 
 describe('the status fields', () => {

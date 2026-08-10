@@ -1,6 +1,5 @@
 import type { MatchedKeyword } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
-import { FilterKeyArities, filterRouteSchema } from '@/modules/core/table/route';
 
 /** The wire keys the data issues table filters on, which the URL carries too. */
 export const DataIssuesFilterKeys = {
@@ -21,13 +20,5 @@ export function useDataIssuesFilter(): FilterSchema<Filters> {
 
   return {
     filters: modelFilters,
-    RouteFilterSchema: filterRouteSchema({
-      [DataIssuesFilterKeys.ACCOUNT]: FilterKeyArities.ONE,
-      [DataIssuesFilterKeys.ASSET]: FilterKeyArities.ONE,
-      [DataIssuesFilterKeys.END]: FilterKeyArities.ONE,
-      [DataIssuesFilterKeys.KIND]: FilterKeyArities.MANY,
-      [DataIssuesFilterKeys.START]: FilterKeyArities.ONE,
-      [DataIssuesFilterKeys.STATE]: FilterKeyArities.MANY,
-    }),
   };
 }

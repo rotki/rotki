@@ -1,6 +1,5 @@
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
-import { FilterKeyArities, filterRouteSchema } from '@/modules/core/table/route';
 
 /** The wire keys the accounting rules table filters on, which the URL carries too. */
 export const AccountingRuleFilterKeys = {
@@ -18,10 +17,5 @@ export function useAccountingRuleFilter(): FilterSchema<Filters> {
 
   return {
     filters: modelFilters,
-    RouteFilterSchema: filterRouteSchema({
-      [AccountingRuleFilterKeys.COUNTERPARTY]: FilterKeyArities.MANY,
-      [AccountingRuleFilterKeys.EVENT_SUBTYPE]: FilterKeyArities.MANY,
-      [AccountingRuleFilterKeys.EVENT_TYPE]: FilterKeyArities.MANY,
-    }),
   };
 }

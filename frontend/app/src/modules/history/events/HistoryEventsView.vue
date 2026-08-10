@@ -2,6 +2,7 @@
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import type { PullLocationTransactionPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
+import type { Filters } from '@/modules/history/events/use-events-filter';
 import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { AccountingOverlayToggle, BalanceDivergenceToggle } from '@/modules/history/balances/components';
 import { OverlayMode, type OverlayPair, useAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay';
@@ -116,6 +117,11 @@ const filterOptions = {
   validators: () => validators,
 };
 
+// The filter bag, and the fields bound to it, in that order: the fields read the bag to scope
+// their option lists, and the table below reads the url shape of the bag off the fields.
+const modelFilters = ref<Filters>({});
+const fields = useHistoryEventFields({ ...filterOptions, modelFilters });
+
 const {
   clearFilters,
   duplicateHandlingStatus,
@@ -132,16 +138,13 @@ const {
   includes,
   action,
   locationLabels,
-  modelFilters,
   onActionChanged,
   onLocationLabelsChanged,
   pagination,
   requestPayload,
   setPage,
   sort,
-} = useHistoryEventsFilters(filterOptions, toggles, overlayMode);
-
-const fields = useHistoryEventFields({ ...filterOptions, modelFilters });
+} = useHistoryEventsFilters({ ...filterOptions, fields, filters: modelFilters }, toggles, overlayMode);
 
 // Accounting overlay: shows the known balance after each event. Keys off each event's own
 // (account, asset) pair, so no extra filter is required. Gated by VITE_ACCOUNTING_UPDATE,

@@ -54,6 +54,7 @@ const {
   Filters
 >({
   fetch,
+  fields,
   filterSchema,
   params: [{
     fromQuery(query): void {

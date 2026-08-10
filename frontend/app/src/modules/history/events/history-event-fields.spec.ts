@@ -2,6 +2,9 @@ import type { AssetsWithId } from '@/modules/assets/types';
 import type { FieldDef, ValueIcon } from '@/modules/core/table/pill/core/types';
 import { HistoryEventEntryType } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
+import { FilterBehaviours } from '@/modules/core/table/filtering';
+import { transformFilters } from '@/modules/core/table/param-sources';
+import { behaviourKeysFromFields, routeSchemaFromFields } from '@/modules/core/table/route';
 import { type HistoryEventFieldOptions, toHistoryAccountField, toHistoryActionField, toHistoryEventFields, toHistoryIgnoredField, toHistoryStateField } from '@/modules/history/events/history-event-fields';
 
 const t = (key: string): string => key;
@@ -46,6 +49,40 @@ function keysOf(overrides: Partial<HistoryEventFieldOptions> = {}): string[] {
 }
 
 describe('toHistoryEventFields', () => {
+  // Both the url shape of the filter bag and the keys the request wraps as `{ behaviour, values }`
+  // are derived from these fields, so they are asserted here rather than against a second
+  // hand-written declaration that could disagree with the field list.
+  describe('route query', () => {
+    it('should coerce single route values into arrays where the request takes many', () => {
+      expect(routeSchemaFromFields(fields()).parse({ asset: 'ETH', entryTypes: 'evm event', txRefs: '0xabc' }))
+        .toEqual({ asset: 'ETH', entryTypes: ['evm event'], txRefs: ['0xabc'] });
+    });
+
+    // The period pill collapses the two bounds, which is what the url and the request carry.
+    it('should keep the two period bounds as they are sent', () => {
+      expect(routeSchemaFromFields(fields()).parse({ fromTimestamp: '1700000000', toTimestamp: '1700086400' }))
+        .toEqual({ fromTimestamp: '1700000000', toTimestamp: '1700086400' });
+    });
+
+    it('should allow an empty route filter', () => {
+      expect(routeSchemaFromFields(fields()).parse({})).toEqual({});
+    });
+  });
+
+  // The backend takes entry types as `{ behaviour, values }` so a type can be excluded. The pill
+  // writes exclusion as a `!` prefix, which is what the URL carries too; the wrapping happens at
+  // request assembly, from the keys named here.
+  describe('behaviour keys', () => {
+    it('should declare entry types as the only behaviour-carrying key', () => {
+      expect(behaviourKeysFromFields(fields())).toStrictEqual(['entryTypes']);
+    });
+
+    it('should wrap an excluded entry type for the request', () => {
+      expect(transformFilters({ entryTypes: ['!evm event'] }, behaviourKeysFromFields(fields())))
+        .toStrictEqual({ entryTypes: { behaviour: FilterBehaviours.EXCLUDE, values: ['evm event'] } });
+    });
+  });
+
   it('should offer every field in a stable display order when nothing is restricted', () => {
     expect(keysOf()).toStrictEqual([
       'period',

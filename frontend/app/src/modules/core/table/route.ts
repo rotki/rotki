@@ -1,4 +1,5 @@
 import type { LocationQueryValue, LocationQueryValueRaw } from 'vue-router';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { type Account, Blockchain } from '@rotki/common';
 import { z } from 'zod';
 import { arrayify } from '@/modules/core/common/data/array';
@@ -46,6 +47,44 @@ export function filterRouteSchema(keys: Record<string, FilterKeyArity>): z.ZodOb
       arity === FilterKeyArities.MANY ? OptionalValues : OptionalValue,
     ]),
   ));
+}
+
+/**
+ * The same url shape, read off the fields the table already declares instead of restated by hand.
+ *
+ * A field says everything the schema needs: which wire key it writes, and whether that key takes
+ * one value or a list (`multiple`). A collapsed range/date field writes two scalar bounds rather
+ * than its own key, and a param-bound field is not part of the filter bag at all, so neither
+ * contributes its `key`.
+ */
+export function routeSchemaFromFields(fields: readonly FieldDef[]): ReturnType<typeof filterRouteSchema> {
+  const keys: Record<string, FilterKeyArity> = {};
+
+  for (const field of fields) {
+    if (field.binding.kind !== 'filter')
+      continue;
+
+    if (field.bounds) {
+      keys[field.bounds.lower] = FilterKeyArities.ONE;
+      keys[field.bounds.upper] = FilterKeyArities.ONE;
+      continue;
+    }
+
+    keys[field.key] = field.multiple ? FilterKeyArities.MANY : FilterKeyArities.ONE;
+  }
+
+  return filterRouteSchema(keys);
+}
+
+/**
+ * The keys the backend takes as `{ behaviour, values }`, read off the fields that declare they can
+ * express an exclusion. The two were declared separately, and a field offering `is_not` for a key
+ * the request never wraps applies as a plain `is`, silently keeping what the user excluded.
+ */
+export function behaviourKeysFromFields(fields: readonly FieldDef[]): string[] {
+  return fields
+    .filter(field => field.binding.kind === 'filter' && field.allowExclusion)
+    .map(field => field.key);
 }
 
 export const RouterExpandedIdsSchema = z.object({

@@ -15,6 +15,7 @@ import { anchorId } from '@/modules/settings/settings-actions';
 
 const {
   collection,
+  fields,
   filter,
   isLoading,
   modelCustomRuleHandling,
@@ -89,6 +90,7 @@ onMounted(async () => {
           <AccountingRuleToolbar
             v-model:custom-rule-handling="modelCustomRuleHandling"
             v-model:filter="filter"
+            :fields="fields"
           />
         </div>
       </template>

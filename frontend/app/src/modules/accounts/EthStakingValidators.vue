@@ -14,7 +14,6 @@ import HashLink from '@/modules/shell/components/HashLink.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import { useEthValidatorData } from '@/modules/staking/eth/use-eth-validator-data';
-import { useEthValidatorFields } from '@/modules/staking/eth/use-eth-validator-fields';
 import { useEthValidatorOperations } from '@/modules/staking/eth/use-eth-validator-operations';
 import { useEthValidatorUtils } from '@/modules/staking/eth/use-eth-validator-utils';
 import ValidatorStatus from '@/modules/staking/eth/ValidatorStatus.vue';
@@ -29,6 +28,7 @@ const { t } = useI18n({ useScope: 'global' });
 const {
   cols,
   ethStakingValidators,
+  fields,
   filters,
   pagination,
   rows,
@@ -36,7 +36,6 @@ const {
   sort,
 } = useEthValidatorData();
 
-const fields = useEthValidatorFields();
 const pillLabels = usePillBarLabels();
 
 // Every pill on this table is filter-bound, so a saved view is its `matches` alone. `params` stays

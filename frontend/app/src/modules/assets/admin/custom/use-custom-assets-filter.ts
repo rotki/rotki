@@ -1,6 +1,5 @@
 import type { MatchedKeyword } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
-import { FilterKeyArities, filterRouteSchema } from '@/modules/core/table/route';
 
 /** The wire keys the custom assets table filters on, which the URL carries too. */
 export const CustomAssetFilterKeys = {
@@ -17,9 +16,5 @@ export function useCustomAssetFilter(): FilterSchema<Filters> {
 
   return {
     filters: modelFilters,
-    RouteFilterSchema: filterRouteSchema({
-      [CustomAssetFilterKeys.CUSTOM_ASSET_TYPE]: FilterKeyArities.ONE,
-      [CustomAssetFilterKeys.NAME]: FilterKeyArities.ONE,
-    }),
   };
 }
