@@ -90,19 +90,24 @@ describe('pendingTasks', () => {
    * The point of the whole change: one user action is one row with its work nested beneath it, not
    * four sibling rows that repeat the same title.
    */
-  it('should show one job for a whole subtree, with its children under it', () => {
+  it('should show one job for a whole subtree, with its children under it', async () => {
     set(activities, [
       umbrella(ActivityStatus.RUNNING),
       activity('ethereum', ActivityStatus.RUNNING, umbrellaId),
       activity('gnosis', ActivityStatus.PENDING, umbrellaId),
     ]);
 
-    const text = createWrapper().text();
+    const wrapper = createWrapper();
 
-    expect(text).toContain('collapsed_pending_tasks.title::1');
-    expect(text).toContain('History refresh');
-    expect(text).toContain('ethereum');
-    expect(text).toContain('gnosis');
+    // One row, not three siblings repeating the same title — the children are behind its disclosure.
+    expect(wrapper.text()).toContain('collapsed_pending_tasks.title::1');
+    expect(wrapper.text()).toContain('History refresh');
+    expect(wrapper.text()).not.toContain('ethereum');
+
+    await wrapper.find('[aria-expanded]').trigger('click');
+
+    expect(wrapper.text()).toContain('ethereum');
+    expect(wrapper.text()).toContain('gnosis');
   });
 
   it('should count steps in leaves, so intermediate rows do not inflate the total', () => {

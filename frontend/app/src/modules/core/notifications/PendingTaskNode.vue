@@ -18,9 +18,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-// A job's own fan-out is the interesting part, so it opens; a chain's forty accounts are not, so
-// anything deeper starts closed and costs one click.
-const expanded = ref<boolean>(depth === 0);
+// Every parent starts closed, at every depth. The rolled-up row already answers the question a
+// reader arrives with — what is running and how far along — and a refresh that opened its own
+// fan-out pushed the other jobs off the panel to say the same thing twice. Opening one is a click.
+const expanded = ref<boolean>(false);
 
 const descendants = computed<Activity[]>(() => children.get(activity.id) ?? []);
 

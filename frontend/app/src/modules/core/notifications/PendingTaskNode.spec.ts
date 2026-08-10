@@ -53,20 +53,29 @@ function createWrapper(): VueWrapper {
 }
 
 describe('pendingTaskNode', () => {
-  it('should render a job with its children expanded', () => {
+  /**
+   * Collapsed at every level, the job's own fan-out included. The rolled-up row already says what
+   * is running and how far along; unfolding eleven chains times four accounts into a 400px drawer
+   * to repeat it pushes every other job off the panel.
+   */
+  it('should render a job with its children collapsed', () => {
     const text = createWrapper().text();
 
     expect(text).toContain('History refresh');
-    expect(text).toContain('ethereum');
+    expect(text).not.toContain('ethereum');
   });
 
-  /** Eleven chains times four accounts is not something to unfold into a 400px drawer unasked. */
-  it('should keep levels below the first collapsed until asked', async () => {
+  it('should unfold one level per click', async () => {
     const wrapper = createWrapper();
 
+    const jobDisclosure = wrapper.find('[aria-expanded]');
+    assert(jobDisclosure.exists(), 'the job rendered no disclosure');
+    await jobDisclosure.trigger('click');
+
+    // The chain is now visible, but its own accounts are not: one click, one level.
+    expect(wrapper.text()).toContain('ethereum');
     expect(wrapper.text()).not.toContain('0xbb');
 
-    // The last disclosure is the chain's; the first is the job's, already open.
     const chainDisclosure = wrapper.findAll('[aria-expanded]').at(-1);
     assert(chainDisclosure, 'the chain rendered no disclosure');
     await chainDisclosure.trigger('click');
@@ -99,7 +108,7 @@ describe('pendingTaskNode', () => {
     const chain = children.get(root.id)?.[0];
     const wrapper = mount(PendingTaskNode, { props: { activity: chain!, children, depth: 1, now: NOW } });
 
-    // Mounted below the first level, so it starts collapsed; its accounts carry the control.
+    // Starts collapsed like every parent; its accounts carry the control once it is open.
     await wrapper.find('[aria-expanded]').trigger('click');
     await wrapper.find('[data-testid=cancel-activity]').trigger('click');
 
