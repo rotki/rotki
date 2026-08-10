@@ -66,6 +66,12 @@ function cleanupDist(): void {
 /**
  * If the env already contains env variables about the backend urls,
  * e.g., from the e2e script, then we want to keep these settings.
+ *
+ * An empty value counts as a setting: `.env` points the backend at port 4242, and a
+ * bundle that has to address the backend same-origin (the sharded e2e run, where one
+ * bundle is served by several preview servers) can only say so by clearing it. The app
+ * reads an empty url as "same origin" (modules/core/api/api-urls.ts), so what matters
+ * here is set-to-empty versus not set at all.
  */
 function loadUrlConfig(mode: string): Record<string, string> {
   const urlsVars: Record<string, string> = {};
@@ -73,7 +79,7 @@ function loadUrlConfig(mode: string): Record<string, string> {
     return urlsVars;
   }
   const backendUrl = process.env.VITE_BACKEND_URL;
-  if (backendUrl)
+  if (backendUrl !== undefined)
     urlsVars.VITE_BACKEND_URL = backendUrl;
   return urlsVars;
 }
@@ -87,7 +93,7 @@ function updateEnvVars(vars: Record<string, string>): void {
   }
 }
 
-async function setup(mode: string): Promise<void> {
+async function setup(mode: string, rendererOnly: boolean): Promise<void> {
   consola.info(`Building for ${mode}...`);
   const urlsVars: Record<string, string> = loadUrlConfig(mode);
 
@@ -103,8 +109,13 @@ async function setup(mode: string): Promise<void> {
         injectEnv(`.env.${mode}`);
       updateEnvVars(urlsVars);
 
-      await setupPreloadBuilder(mode);
-      await setupMainBuilder(mode);
+      // The preload and main bundles are electron-only, and a web-served build never
+      // loads them. Skipping them is what makes the e2e build cheap enough to run
+      // before every sharded run.
+      if (!rendererOnly) {
+        await setupPreloadBuilder(mode);
+        await setupMainBuilder(mode);
+      }
     }
 
     await setupRendererBuilder(mode);
@@ -122,8 +133,9 @@ const cli = cac();
 
 cli.command('', 'Rotki frontend build')
   .option('--mode <mode>', 'Build mode (production, docker, e2e)', { default: 'production' })
+  .option('--renderer-only', 'Build only the renderer, skipping the electron preload and main bundles', { default: false })
   .action(async (options) => {
-    await setup(options.mode);
+    await setup(options.mode, Boolean(options.rendererOnly));
   });
 
 cli.help();
