@@ -94,10 +94,13 @@ describe('toManagedAssetFields', () => {
     expect(fieldOf('evmChain')?.excludes).toStrictEqual(['assetType']);
   });
 
-  // The endpoint takes one of each, as the matchers this replaced declared.
-  it('should let no field take more than one value', () => {
-    expect(fields().every(field => !field.multiple)).toBe(true);
+  // `AssetsPostSchema` takes one of each of these; only `identifiers` is a list
+  // (`DelimitedOrNormalList`, matched with `IN (...)`), which is also what the url has always
+  // carried for it.
+  it('should let only the identifiers field take more than one value', () => {
+    expect(fields().filter(field => field.multiple).map(field => field.key)).toStrictEqual(['identifiers']);
   });
+
 });
 
 describe('the status fields', () => {
