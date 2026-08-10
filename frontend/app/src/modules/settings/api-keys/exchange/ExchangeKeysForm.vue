@@ -223,11 +223,24 @@ onUnmounted(() => {
   set(stateUpdated, false);
 });
 
+/**
+ * The dialog owns the entry, so a write to `modelValue` only comes back on the next tick. Every
+ * caller therefore hands the entry it just wrote straight to the baseline instead of reading it
+ * back: re-reading `modelValue` here returns the value from before the write, which re-takes the
+ * baseline the form already had and leaves the write itself looking like a user edit.
+ */
+function replaceEntry(next: ExchangeFormData): void {
+  set(modelValue, next);
+  form.reset(toExchangeKeysFormState(next));
+}
+
 function onExchangeChange(exchange?: string) {
   const name = exchange ?? '';
   const isKraken = name === 'kraken';
 
-  set(modelValue, {
+  // Picking a different exchange starts a different connection, so the errors from the last one
+  // must not be left decorating the new form.
+  replaceEntry({
     apiKey: '',
     apiSecret: '',
     binanceHistoryStartTs: undefined,
@@ -243,21 +256,16 @@ function onExchangeChange(exchange?: string) {
     okxLocation: name === 'okx' ? 'global' : undefined,
     passphrase: '',
   });
-
-  // Picking a different exchange starts a different connection, so the errors from the last one
-  // must not be left decorating the new form.
-  nextTick(() => {
-    form.reset(toExchangeKeysFormState(get(modelValue)));
-  });
 }
 
 function seedName(): void {
+  const model = get(modelValue);
+
   if (get(editMode)) {
-    set(newNameProp, get(nameProp));
+    replaceEntry({ ...model, newName: model.name });
     return;
   }
 
-  const model = get(modelValue);
   // The locations come from the backend, so the store holds none until that fetch lands and the
   // suggestion comes back empty. This runs once, so writing that over the name would leave the
   // field blank with nothing left to restore it.
@@ -265,20 +273,12 @@ function seedName(): void {
   if (!suggestion)
     return;
 
-  set(modelValue, {
-    ...model,
-    name: suggestion,
-  });
+  replaceEntry({ ...model, name: suggestion });
 }
 
-onMounted(() => {
-  seedName();
-  // The seeded name lands after `useForm` took its baseline, so take it again. Otherwise a dialog
-  // the user has not touched counts as dirty and prompts to discard on close. This has to run in
-  // the same tick as the seeding: a deferred reset lets `dirty` flip on the way, and the dialog
-  // latches the flag it is handed.
-  form.reset(toExchangeKeysFormState(get(modelValue)));
-});
+// Seeding lands after `useForm` took its baseline, so `replaceEntry` takes it again. Otherwise a
+// dialog the user has not touched counts as dirty and prompts to discard on close.
+onMounted(seedName);
 
 defineExpose({
   validate: (): boolean => form.validate(),
