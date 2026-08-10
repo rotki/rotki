@@ -132,6 +132,41 @@ describe('useCancelConfirmation', () => {
     vi.useRealTimers();
   });
 
+  /**
+   * Unwatching does not unschedule a debounce that is already pending. The settle arms the 1s
+   * self-dismiss, the user backs out inside that second, and the timer still fires — dismissing
+   * whatever confirmation is open by then rather than the one it was armed for.
+   */
+  it('should not dismiss anything when the user backs out inside the debounce window', async () => {
+    vi.useFakeTimers();
+    useCancelConfirmation().confirmCancel(activity(ActivityStatus.RUNNING));
+
+    set(activities, [activity(ActivityStatus.COMPLETE)]);
+    await nextTick();
+    await vi.advanceTimersByTimeAsync(500);
+
+    dismissDialog();
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(dismiss).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('should not dismiss anything when the user confirms inside the debounce window', async () => {
+    vi.useFakeTimers();
+    useCancelConfirmation().confirmCancel(activity(ActivityStatus.RUNNING));
+
+    set(activities, [activity(ActivityStatus.COMPLETE)]);
+    await nextTick();
+    await vi.advanceTimersByTimeAsync(500);
+
+    await show.mock.calls[0][1]();
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(dismiss).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
   it('should stay up while the work is still running', async () => {
     vi.useFakeTimers();
     useCancelConfirmation().confirmCancel(activity(ActivityStatus.RUNNING));
