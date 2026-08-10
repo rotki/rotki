@@ -147,29 +147,33 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     // sequence with two locations at a time. Driving those per child would silently discard both.
     // The declaration still names every child, and names them with the same id constructors the
     // producers submit under, so the tree and the umbrella's progress stay accurate.
-    const asyncOperations: Promise<Result<void, TaskError>[]>[] = [
+    // Tagged by whether the work is the *account* half, because only that half votes on the
+    // umbrella's freshness — see the return below.
+    const asyncOperations: { accounts: boolean; work: Promise<Result<void, TaskError>[]> }[] = [
       ...(targets.accounts.length > 0
-        ? [syncTransactionsByChains(targets.accounts, targets.shouldShowSyncProgress, umbrella)]
+        ? [{ accounts: true, work: syncTransactionsByChains(targets.accounts, targets.shouldShowSyncProgress, umbrella) }]
         : []),
-      ...(exchanges.length > 0 ? [queryAllExchangeEvents(exchanges, umbrella)] : []),
+      ...(exchanges.length > 0 ? [{ accounts: false, work: queryAllExchangeEvents(exchanges, umbrella) }] : []),
       ...children.flatMap(child => child.payload.type === 'online'
-        ? [queryOnlineEvent(child.payload.query, umbrella).then(outcome => [outcome])]
+        ? [{ accounts: false, work: queryOnlineEvent(child.payload.query, umbrella).then(outcome => [outcome]) }]
         : []),
     ];
 
     // Collected, not discarded: the umbrella settles on these, and a run whose every child failed
     // must not write the completion that `alreadyLoaded` reads.
-    const outcomes: Result<void, TaskError>[] = [];
+    const accountOutcomes: Result<void, TaskError>[] = [];
+    const otherOutcomes: Result<void, TaskError>[] = [];
 
     for (const operation of asyncOperations) {
+      const sink = operation.accounts ? accountOutcomes : otherOutcomes;
       try {
-        outcomes.push(...await operation);
+        sink.push(...await operation.work);
       }
       catch (error: unknown) {
         logger.error(error);
         // The thrown value rides along as `cause`; the operation itself is what failed, and each
         // producer has already logged its own detail.
-        outcomes.push(err(TaskFailed({ cause: error, message: 'a refresh operation threw' })));
+        sink.push(err(TaskFailed({ cause: error, message: 'a refresh operation threw' })));
       }
     }
 
@@ -180,7 +184,18 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     // count is a display concern. Re-entry is the activity's own to dedup.
     startPromise(fetchUndecodedTransactionsBreakdown());
 
-    return combineOutcomes(outcomes);
+    // 🔴 The accounts decide whenever they are in scope, and nothing else may vote. Combining all
+    // three kinds together let a protocol query that happened to succeed record the completion over
+    // a run where *every* chain failed — the same silent short-circuit, reached by a narrower road.
+    // Found in the app, not by the unit suite, which failed all three kinds together.
+    //
+    // ⚠️ Not "every kind must succeed" either: an online source failing is ordinary (a missing key,
+    // an unauthenticated integration), and letting that fail the umbrella would make history re-sync
+    // on every single refresh forever. Those failures have their own rows and warnings; this entry
+    // answers one question, "has the account history loaded", so the account half owns it.
+    return accountOutcomes.length > 0
+      ? combineOutcomes(accountOutcomes)
+      : combineOutcomes(otherOutcomes);
   }
 
   /**
