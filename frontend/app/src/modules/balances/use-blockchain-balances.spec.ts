@@ -11,6 +11,7 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 
 vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
@@ -113,6 +114,11 @@ vi.mock('@/modules/core/common/use-supported-chains', async () => {
 });
 
 describe('useBlockchainBalances', () => {
+  function setDisabled(value: Record<string, string[]>): void {
+    const repo = useSettingsRepo();
+    repo.updateGeneral({ ...repo.general, disabledChainQueries: value });
+  }
+
   let api: ReturnType<typeof useBlockchainBalancesApi>;
   let blockchainBalances: ReturnType<typeof useBlockchainBalances>;
 
@@ -431,6 +437,70 @@ describe('useBlockchainBalances', () => {
       const result = await submitTask.mock.results[0].value;
       assert(!result.ok);
       expect(hasTag(result.error, 'Cancelled')).toBe(true);
+    });
+
+    /**
+     * ⭐ `disabledChainQueries` reaches the query path, not just the sync panel. Without this the
+     * app kept issuing `POST /balances/blockchains/<chain>` and `tokens/detect` for a chain the
+     * user switched off — observed against a real backend.
+     */
+    it('should skip an excluded chain instead of querying or detecting it', async () => {
+      setDisabled({ [Blockchain.ETH]: [] });
+
+      await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, 'background', { detect: true });
+
+      expect(api.refreshBlockchainBalances).not.toHaveBeenCalled();
+      expect(detectForChain).not.toHaveBeenCalled();
+
+      // Submitted, not dropped: the chain is still in the run's scope, so it owes it a row.
+      const result = await submitTask.mock.results[0].value;
+      assert(!result.ok);
+      expect(hasTag(result.error, 'Skipped')).toBe(true);
+    });
+
+    it('should still query a chain whose rule only names other addresses', async () => {
+      setDisabled({ [Blockchain.ETH]: ['0xdeadbeef'] });
+
+      await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, 'background');
+
+      expect(api.refreshBlockchainBalances).toHaveBeenCalledTimes(1);
+    });
+
+    it('should narrow the payload to the addresses the rule still allows', async () => {
+      setDisabled({ [Blockchain.ETH]: ['0xexcluded'] });
+
+      await blockchainBalances.refreshBlockchainBalances(
+        { addresses: ['0xexcluded', '0xallowed'], blockchain: Blockchain.ETH },
+        'background',
+      );
+
+      expect(api.refreshBlockchainBalances).toHaveBeenCalledWith({
+        addresses: ['0xallowed'],
+        blockchain: Blockchain.ETH,
+        isXpub: false,
+      });
+    });
+
+    it('should skip a chain whose every requested address is excluded', async () => {
+      setDisabled({ [Blockchain.ETH]: ['0xexcluded'] });
+
+      await blockchainBalances.refreshBlockchainBalances(
+        { addresses: ['0xexcluded'], blockchain: Blockchain.ETH },
+        'background',
+      );
+
+      expect(api.refreshBlockchainBalances).not.toHaveBeenCalled();
+    });
+
+    it('should match the rule regardless of address case', async () => {
+      setDisabled({ [Blockchain.ETH]: ['0XEXCLUDED'] });
+
+      await blockchainBalances.refreshBlockchainBalances(
+        { addresses: ['0xexcluded'], blockchain: Blockchain.ETH },
+        'background',
+      );
+
+      expect(api.refreshBlockchainBalances).not.toHaveBeenCalled();
     });
 
     it('should not detect when the flow did not ask for it', async () => {

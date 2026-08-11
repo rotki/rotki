@@ -1,6 +1,7 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { type Activity, ActivityKind, ActivityStatus, makeActivityId } from '@/modules/task-center/core/types';
 
 const mockDetectTokensForAddress = vi.fn().mockResolvedValue(ok(undefined));
@@ -81,7 +82,14 @@ async function loadOrchestrator(): Promise<typeof import('./use-token-detection-
 }
 
 describe('useTokenDetectionOrchestrator', () => {
+  /** `useDisabledChains` reads the settings repo, so detection needs a live pinia. */
+  function setDisabled(value: Record<string, string[]>): void {
+    const repo = useSettingsRepo();
+    repo.updateGeneral({ ...repo.general, disabledChainQueries: value });
+  }
+
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     set(mockAddresses, {});
     set(mockActivities, []);
@@ -111,6 +119,33 @@ describe('useTokenDetectionOrchestrator', () => {
     it('should do nothing for a chain with no addresses', async () => {
       set(mockAddresses, { eth: [] });
       const { useTokenDetectionOrchestrator } = await loadOrchestrator();
+
+      await useTokenDetectionOrchestrator().detectForChain('eth', makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'));
+
+      expect(mockSubmitTask).not.toHaveBeenCalled();
+    });
+
+    /**
+     * ⭐ Every detection path queues through `queueDetectionForChain`, so filtering there covers
+     * `detectTokens` and `detectAllTokens` too — automated detection was still firing
+     * `POST /blockchains/<chain>/tokens/detect` for chains the user had switched off.
+     */
+    it('should not detect an address excluded by disabledChainQueries', async () => {
+      set(mockAddresses, { eth: ['0xaddr1', '0xaddr2'] });
+      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
+      setDisabled({ eth: ['0xADDR1'] });
+
+      await useTokenDetectionOrchestrator().detectForChain('eth', makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'));
+
+      expect(mockSubmitTask).toHaveBeenCalledTimes(1);
+      const [spec] = mockSubmitTask.mock.calls[0];
+      expect(spec.id).toBe(makeActivityId(ActivityKind.TOKEN_DETECTION, 'eth', '0xaddr2'));
+    });
+
+    it('should detect nothing on a fully excluded chain', async () => {
+      set(mockAddresses, { eth: ['0xaddr1', '0xaddr2'] });
+      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
+      setDisabled({ eth: [] });
 
       await useTokenDetectionOrchestrator().detectForChain('eth', makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'));
 

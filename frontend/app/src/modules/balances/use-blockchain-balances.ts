@@ -8,6 +8,7 @@ import { arrayify } from '@/modules/core/common/data/array';
 import { setDigest } from '@/modules/core/common/data/digest';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { Cancelled, Skipped, type TaskError } from '@/modules/core/tasks/task-result';
+import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { BALANCES_LANE, DEFAULT_PRIORITY, Priority } from '@/modules/task-center/core/orchestrator/spec';
 import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
@@ -62,6 +63,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const { runActivityBatch } = useActivityBatch();
   const { submitTask, supersedeTask } = useNativeTask();
   const refreshState = useBalanceRefreshState();
+  const { isAddressExcluded, isChainExcluded } = useDisabledChains();
 
   /**
    * Whether a *network* refresh is already running for this chain.
@@ -87,6 +89,12 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     const { detect = false, detectAddresses } = options;
     const { addresses, blockchain, isXpub = false } = payload;
     const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
+    // ⚠️ An empty list means "every address", same as omitting it, so it must not be narrowed.
+    const requestedAddresses = addresses?.length ? addresses : undefined;
+
+    /** Addresses of `chain` `disabledChainQueries` still allows, or `undefined` for the whole chain. */
+    const allowedAddresses = (chain: string): string[] | undefined =>
+      requestedAddresses?.filter(address => !isAddressExcluded(chain, address));
     // ⭐ A user-initiated refresh replaces the run in flight instead of joining it. `supersedeTask`
     // is the single shared helper for that — cancel, *await the cancelled promise*, then submit —
     // because `finish()` is what frees the id, and resubmitting before it dedups onto the corpse.
@@ -98,7 +106,8 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     const submit = mode === RefreshMode.USER ? supersedeTask : submitTask;
 
     const chainJob = async (chain: string, parent: ActivityId | undefined): Promise<void> => {
-      const chainPayload = { addresses, blockchain: chain, isXpub };
+      const chainAddresses = allowedAddresses(chain);
+      const chainPayload = { addresses: chainAddresses ?? addresses, blockchain: chain, isXpub };
       // 🔴 `detect` is part of the identity, not just the body. `submitTask` dedups by id, so with a
       // shared id a login sweep landing while any plain background refresh is in flight (a wallet
       // transaction, a websocket refresh, the eth2 watcher) joins that run and **detection for the
@@ -137,6 +146,16 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
           // activity terminal-but-not-successful and the task centre renders the reason.
           if (mode === RefreshMode.PERIODIC && isChainRefreshing(chain))
             return err(Skipped({ message: t('actions.balances.blockchain.skipped.busy') }));
+
+          // ⭐ `disabledChainQueries` is honoured here, before detection, so an excluded target
+          // costs neither a detect nor a query. SKIPPED rather than dropped from `chains`: the
+          // scope is what the user tracks, and a chain that silently leaves it takes the run's
+          // denominator with it.
+          //
+          // ⚠️ `chainAddresses` empty means the payload named addresses and every one of them is
+          // excluded — not the same as naming none, which leaves it `undefined`.
+          if (isChainExcluded(chain) || chainAddresses?.length === 0)
+            return err(Skipped({ message: t('actions.balances.blockchain.skipped.disabled') }));
 
           // ⭐ Statement order is the ordering. Detection's children run under this job and are
           // awaited here, so the query below sees the tokens they found — no `deps` edge, no

@@ -10,6 +10,7 @@ import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-
 import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { arrayify } from '@/modules/core/common/data/array';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { DETECT_LANE_PREFIX, familyLane } from '@/modules/task-center/core/orchestrator/spec';
 import { isTerminalStatus } from '@/modules/task-center/core/status';
@@ -38,6 +39,7 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
   const { addresses } = useAccountAddresses();
   const { getChainName, supportsTransactions, txEvmChains } = useSupportedChains();
   const { hydrate } = useBalanceHydration();
+  const { isAddressExcluded } = useDisabledChains();
   const { submitTask } = useNativeTask();
   const { activities } = useTaskOrchestrator();
 
@@ -67,7 +69,13 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
    */
   const queueDetectionForChain = async (chain: string, addrs: string[], parent?: ActivityId): Promise<void> => {
     assert(supportsTransactions(chain));
-    await Promise.all(addrs.map(async addr => submitTask({
+    // ⭐ Every detection path queues here, so `disabledChainQueries` is applied once rather than at
+    // each caller. Per *address*: an address rule must lose that address, not the whole chain.
+    const detectable = addrs.filter(addr => !isAddressExcluded(chain, addr));
+    if (detectable.length === 0)
+      return;
+
+    await Promise.all(detectable.map(async addr => submitTask({
       id: makeActivityId(ActivityKind.TOKEN_DETECTION, chain, addr),
       kind: ActivityKind.TOKEN_DETECTION,
       lane: familyLane(DETECT_LANE_PREFIX, chain),
