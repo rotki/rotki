@@ -48,7 +48,6 @@ export interface BalancesApi {
   exchangeRate: (currency: string) => Ref<BigNumber>;
   queryOnlyCacheHistoricalRates: (asset: string, timestamp: number[]) => Promise<Record<number, BigNumber>>;
   assetPrice: (asset: string) => ComputedRef<BigNumber>;
-  isHistoricPricePending: (asset: string, timestamp: number) => ComputedRef<boolean>;
 }
 
 export interface AssetsApi {
@@ -57,13 +56,8 @@ export interface AssetsApi {
   tokenAddress: (identifier: MaybeRef<string>) => ComputedRef<string>;
 }
 
-export interface UtilsApi {
-  truncate: (text: string, length: number) => string;
-}
-
 export interface DataUtilities {
   readonly assets: AssetsApi;
-  readonly utils: UtilsApi;
   readonly statistics: StatisticsApi;
   readonly balances: BalancesApi;
 }
