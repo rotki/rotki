@@ -15,6 +15,7 @@ import { defineConfig } from 'vitest/config';
 import { VueRouterAutoImports } from 'vue-router/unplugin';
 import VueRouter from 'vue-router/vite';
 import { backendIcons } from './backend-icons.generated';
+import { sharedHelperModules, vendorChunkFor } from './scripts/chunk-groups';
 import { backendIconsCachePlugin } from './scripts/extract-backend-icons';
 
 const PACKAGE_ROOT = __dirname;
@@ -323,38 +324,19 @@ export default defineConfig({
             : currentName;
           return `${name}-[hash].js`;
         },
-        manualChunks: (id: string): string | undefined => {
-          const chunkGroups: Record<string, string[]> = {
-            'vue-vendor': ['vue', 'vue-router', 'pinia', 'vue-i18n'],
-            'common': ['@rotki/common', 'bignumber.js'],
-            'ui-vendor': ['@rotki/ui-library'],
-            'chart': ['echarts', 'vue-echarts'],
-            'editor': ['vanilla-jsoneditor'],
-            'utils': [
-              '@vueuse/math',
-              '@vueuse/core',
-              '@vueuse/shared',
-              '@vuelidate/core',
-              '@vuelidate/validators',
-              'ofetch',
-              'es-toolkit',
-              'imask',
-              'dayjs',
-              'consola',
-              'zod',
-            ],
-            'wallet-connect': [
-              '@walletconnect/core',
-              '@walletconnect/universal-provider',
-              'viem',
-            ],
-          };
-          for (const [chunk, packages] of Object.entries(chunkGroups)) {
-            if (packages.some(pkg => id.includes(`/node_modules/${pkg}/`))) {
-              return chunk;
-            }
-          }
-          return undefined;
+        codeSplitting: {
+          groups: [
+            // Must outrank the vendor groups below so these land in `helpers` rather than
+            // in whichever vendor chunk happens to claim them first.
+            {
+              name: 'helpers',
+              priority: 100,
+              test: (id: string): boolean => sharedHelperModules.has(id),
+            },
+            {
+              name: (id: string): string | null => vendorChunkFor(id),
+            },
+          ],
         },
       },
     },
