@@ -134,13 +134,13 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
         "data-testid=asset",
         "data-testid=datetime",
         "data-testid=eth-block-event-form__advance",
-        "data-testid=groupIdentifier",
+        "data-testid=group-identifier",
         "data-testid=grouped-amount-input__swap-button",
         "data-testid=is-exit",
         "data-testid=primary",
         "data-testid=secondary",
-        "data-testid=validatorIndex",
-        "data-testid=withdrawalAddress",
+        "data-testid=validator-index",
+        "data-testid=withdrawal-address",
       ]
     `);
   });
@@ -149,8 +149,8 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validatorIndex] input');
-    const withdrawalAddressInput = wrapper.find<HTMLInputElement>('[data-testid=withdrawalAddress] .input-value');
+    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validator-index] input');
+    const withdrawalAddressInput = wrapper.find<HTMLInputElement>('[data-testid=withdrawal-address] .input-value');
     const isExitCheckbox = wrapper.find<HTMLInputElement>('[data-testid=is-exit] input');
 
     expect(validatorIndexInput.element.value).toBe('');
@@ -163,8 +163,8 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { group: event, nextSequenceId: '1', type: 'group-add' } });
 
-    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validatorIndex] input');
-    const withdrawalAddressInput = wrapper.find<HTMLInputElement>('[data-testid=withdrawalAddress] .input-value');
+    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validator-index] input');
+    const withdrawalAddressInput = wrapper.find<HTMLInputElement>('[data-testid=withdrawal-address] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
     const isExitedCheckbox = wrapper.find<HTMLInputElement>('[data-testid=is-exit] input');
 
@@ -179,8 +179,8 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { event, nextSequenceId: '1', type: 'edit' } });
 
-    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validatorIndex] input');
-    const withdrawalAddressInput = wrapper.find<HTMLInputElement>('[data-testid=withdrawalAddress] .input-value');
+    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validator-index] input');
+    const withdrawalAddressInput = wrapper.find<HTMLInputElement>('[data-testid=withdrawal-address] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
     const isExitedCheckbox = wrapper.find<HTMLInputElement>('[data-testid=is-exit] input');
 
@@ -199,8 +199,8 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     const nowInMs = now.valueOf();
 
     await wrapper.find('[data-testid=amount] input').setValue('2.5');
-    await wrapper.find('[data-testid=validatorIndex] input').setValue('123');
-    await wrapper.find('[data-testid=withdrawalAddress] .input-value').setValue('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12');
+    await wrapper.find('[data-testid=validator-index] input').setValue('123');
+    await wrapper.find('[data-testid=withdrawal-address] .input-value').setValue('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12');
     await wrapper.find<HTMLInputElement>('[data-testid=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
     await wrapper.find('[data-testid=is-exit] input').setValue(true);
 
@@ -267,7 +267,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     await wrapper.find('[data-testid=amount] input').setValue('4.5');
-    await wrapper.find('[data-testid=validatorIndex] input').setValue('224');
+    await wrapper.find('[data-testid=validator-index] input').setValue('224');
     await wrapper.find('[data-testid=is-exit] input').setValue(false);
 
     const saveMethod = wrapper.vm.save;
@@ -318,7 +318,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
 
     expect(editHistoryEventMock).toHaveBeenCalled();
     expect(saveResult).toBe(false);
-    expect(wrapper.find('[data-testid=withdrawalAddress] .details').text()).toBe('withdrawal address is required');
+    expect(wrapper.find('[data-testid=withdrawal-address] .details').text()).toBe('withdrawal address is required');
   });
 
   it('should display validation errors when the form is invalid', async () => {
@@ -328,8 +328,8 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     await saveMethod();
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-testid=withdrawalAddress] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=validatorIndex] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=withdrawal-address] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=validator-index] .details').exists()).toBe(true);
   });
 
   describe('actualGroupIdentifier', () => {
@@ -348,7 +348,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
       await wrapper.find('[data-testid=eth-block-event-form__advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe('ACTUAL123');
       expect(groupIdentifierInput.element.disabled).toBe(true);
     });
@@ -362,7 +362,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
       await wrapper.find('[data-testid=eth-block-event-form__advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
       expect(groupIdentifierInput.element.disabled).toBe(false);
     });

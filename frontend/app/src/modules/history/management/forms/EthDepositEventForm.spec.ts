@@ -122,13 +122,13 @@ describe('form/EthDepositEventForm.vue', () => {
         "data-testid=datetime",
         "data-testid=depositor",
         "data-testid=eth-deposit-event-form__advance",
-        "data-testid=groupIdentifier",
+        "data-testid=group-identifier",
         "data-testid=grouped-amount-input__swap-button",
         "data-testid=primary",
         "data-testid=secondary",
         "data-testid=sequence-index",
         "data-testid=tx-ref",
-        "data-testid=validatorIndex",
+        "data-testid=validator-index",
       ]
     `);
   });
@@ -140,9 +140,9 @@ describe('form/EthDepositEventForm.vue', () => {
     await wrapper.find('[data-testid=eth-deposit-event-form__advance] [data-accordion-trigger]').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
-    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validatorIndex] input');
+    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validator-index] input');
     const txRefInput = wrapper.find<HTMLInputElement>('[data-testid=tx-ref] input');
-    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
     const depositorInput = wrapper.find<HTMLInputElement>('[data-testid=depositor] .input-value');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-testid=sequence-index] input');
 
@@ -161,9 +161,9 @@ describe('form/EthDepositEventForm.vue', () => {
     await wrapper.find('[data-testid=eth-deposit-event-form__advance] [data-accordion-trigger]').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
-    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validatorIndex] input');
+    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validator-index] input');
     const txRefInput = wrapper.find<HTMLInputElement>('[data-testid=tx-ref] input');
-    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
     const depositorInput = wrapper.find<HTMLInputElement>('[data-testid=depositor] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-testid=sequence-index] input');
@@ -184,9 +184,9 @@ describe('form/EthDepositEventForm.vue', () => {
     await wrapper.find('[data-testid=eth-deposit-event-form__advance] [data-accordion-trigger]').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
-    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validatorIndex] input');
+    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validator-index] input');
     const txRefInput = wrapper.find<HTMLInputElement>('[data-testid=tx-ref] input');
-    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
     const depositorInput = wrapper.find<HTMLInputElement>('[data-testid=depositor] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-testid=sequence-index] input');
@@ -209,7 +209,7 @@ describe('form/EthDepositEventForm.vue', () => {
 
     await wrapper.find('[data-testid=amount] input').setValue('2.5');
     await wrapper.find('[data-testid=tx-ref] input').setValue('0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef');
-    await wrapper.find('[data-testid=validatorIndex] input').setValue('123');
+    await wrapper.find('[data-testid=validator-index] input').setValue('123');
     await wrapper.find('[data-testid=depositor] .input-value').setValue('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12');
     await wrapper.find('[data-testid=sequence-index] input').setValue('5');
     await wrapper.find<HTMLInputElement>('[data-testid=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
@@ -279,7 +279,7 @@ describe('form/EthDepositEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     await wrapper.find('[data-testid=amount] input').setValue('4.5');
-    await wrapper.find('[data-testid=validatorIndex] input').setValue('224');
+    await wrapper.find('[data-testid=validator-index] input').setValue('224');
 
     const saveMethod = wrapper.vm.save;
 
@@ -320,7 +320,7 @@ describe('form/EthDepositEventForm.vue', () => {
       success: false,
     });
 
-    await wrapper.find('[data-testid=validatorIndex] input').setValue('123123');
+    await wrapper.find('[data-testid=validator-index] input').setValue('123123');
 
     await vi.advanceTimersToNextTimerAsync();
 
@@ -342,7 +342,7 @@ describe('form/EthDepositEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.find('[data-testid=depositor] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=validatorIndex] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=validator-index] .details').exists()).toBe(true);
     expect(wrapper.find('[data-testid=tx-ref] .details').exists()).toBe(true);
   });
 
@@ -362,7 +362,7 @@ describe('form/EthDepositEventForm.vue', () => {
       await wrapper.find('[data-testid=eth-deposit-event-form__advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe('ACTUAL123');
       expect(groupIdentifierInput.element.disabled).toBe(true);
     });
@@ -376,7 +376,7 @@ describe('form/EthDepositEventForm.vue', () => {
       await wrapper.find('[data-testid=eth-deposit-event-form__advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
       expect(groupIdentifierInput.element.disabled).toBe(false);
     });

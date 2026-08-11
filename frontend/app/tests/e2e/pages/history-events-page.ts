@@ -137,7 +137,7 @@ export class HistoryEventsPage {
   async fillAssetMovementForm(data: AssetMovementEventFixture): Promise<void> {
     await this.fillDatetime();
     await this.selectLocation(data.location);
-    await this.selectAutocompleteOption('eventSubtype', data.eventSubtype);
+    await this.selectAutocompleteOption('event-subtype', data.eventSubtype);
     await selectAsset(this.page, '[data-testid=asset]', data.asset, data.assetId);
     await this.page.locator('[data-testid=amount] input').clear();
     await this.page.locator('[data-testid=amount] input').fill(data.amount);
@@ -273,25 +273,25 @@ export class HistoryEventsPage {
 
   async fillEthBlockEventForm(data: EthBlockEventFixture): Promise<void> {
     await this.fillDatetime();
-    await this.page.locator('[data-testid=blockNumber] input').clear();
-    await this.page.locator('[data-testid=blockNumber] input').fill(data.blockNumber);
-    await this.page.locator('[data-testid=validatorIndex] input').clear();
-    await this.page.locator('[data-testid=validatorIndex] input').fill(data.validatorIndex);
+    await this.page.locator('[data-testid=block-number] input').clear();
+    await this.page.locator('[data-testid=block-number] input').fill(data.blockNumber);
+    await this.page.locator('[data-testid=validator-index] input').clear();
+    await this.page.locator('[data-testid=validator-index] input').fill(data.validatorIndex);
     await this.page.locator('[data-testid=amount] input').clear();
     await this.page.locator('[data-testid=amount] input').fill(data.amount);
-    await this.fillAddressAutocomplete('feeRecipient', data.feeRecipient);
+    await this.fillAddressAutocomplete('fee-recipient', data.feeRecipient);
 
     if (data.isMevReward)
-      await this.page.locator('[data-testid=isMevReward]').click();
+      await this.page.locator('[data-testid=is-mev-reward]').click();
   }
 
   async fillEthWithdrawalEventForm(data: EthWithdrawalEventFixture): Promise<void> {
     await this.fillDatetime();
-    await this.page.locator('[data-testid=validatorIndex] input').clear();
-    await this.page.locator('[data-testid=validatorIndex] input').fill(data.validatorIndex);
+    await this.page.locator('[data-testid=validator-index] input').clear();
+    await this.page.locator('[data-testid=validator-index] input').fill(data.validatorIndex);
     await this.page.locator('[data-testid=amount] input').clear();
     await this.page.locator('[data-testid=amount] input').fill(data.amount);
-    await this.fillAddressAutocomplete('withdrawalAddress', data.withdrawalAddress);
+    await this.fillAddressAutocomplete('withdrawal-address', data.withdrawalAddress);
 
     if (data.isExit)
       await this.page.locator('[data-testid=is-exit]').click();
@@ -299,8 +299,8 @@ export class HistoryEventsPage {
 
   async fillEthDepositEventForm(data: EthDepositEventFixture): Promise<void> {
     await this.fillDatetime();
-    await this.page.locator('[data-testid=validatorIndex] input').clear();
-    await this.page.locator('[data-testid=validatorIndex] input').fill(data.validatorIndex);
+    await this.page.locator('[data-testid=validator-index] input').clear();
+    await this.page.locator('[data-testid=validator-index] input').fill(data.validatorIndex);
     await this.page.locator('[data-testid=tx-ref] input').fill(data.txHash);
     await this.page.locator('[data-testid=amount] input').clear();
     await this.page.locator('[data-testid=amount] input').fill(data.amount);

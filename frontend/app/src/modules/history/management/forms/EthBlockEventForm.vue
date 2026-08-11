@@ -78,7 +78,7 @@ defineExpose({
         v-model="state.blockNumber"
         variant="outlined"
         integer
-        data-testid="blockNumber"
+        data-testid="block-number"
         :label="t('transactions.events.form.block_number.label')"
         required
         :error-messages="form.errors('blockNumber')"
@@ -88,7 +88,7 @@ defineExpose({
         v-model="state.validatorIndex"
         variant="outlined"
         integer
-        data-testid="validatorIndex"
+        data-testid="validator-index"
         :label="t('transactions.events.form.validator_index.label')"
         required
         :error-messages="form.errors('validatorIndex')"
@@ -114,7 +114,7 @@ defineExpose({
     <AutoCompleteWithSearchSync
       v-model="state.feeRecipient"
       :items="feeRecipientSuggestions"
-      data-testid="feeRecipient"
+      data-testid="fee-recipient"
       :label="t('transactions.events.form.fee_recipient.label')"
       required
       :error-messages="form.errors('feeRecipient')"
@@ -125,7 +125,7 @@ defineExpose({
     <RuiCheckbox
       v-model="state.isMevReward"
       color="primary"
-      data-testid="isMevReward"
+      data-testid="is-mev-reward"
     >
       {{ t('transactions.events.form.is_mev_reward.label') }}
     </RuiCheckbox>
@@ -146,7 +146,7 @@ defineExpose({
             v-model="state.groupIdentifier"
             variant="outlined"
             color="primary"
-            data-testid="groupIdentifier"
+            data-testid="group-identifier"
             :disabled="state.hasActualGroupIdentifier"
             :label="t('transactions.events.form.group_identifier.label')"
             :error-messages="form.errors('groupIdentifier')"

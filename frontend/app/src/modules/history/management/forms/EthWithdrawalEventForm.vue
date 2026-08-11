@@ -79,7 +79,7 @@ defineExpose({
         v-model="state.validatorIndex"
         variant="outlined"
         integer
-        data-testid="validatorIndex"
+        data-testid="validator-index"
         :label="t('transactions.events.form.validator_index.label')"
         required
         :error-messages="form.errors('validatorIndex')"
@@ -105,7 +105,7 @@ defineExpose({
     <AutoCompleteWithSearchSync
       v-model="state.withdrawalAddress"
       :items="withdrawalAddressSuggestions"
-      data-testid="withdrawalAddress"
+      data-testid="withdrawal-address"
       :label="t('transactions.events.form.withdrawal_address.label')"
       required
       :error-messages="form.errors('withdrawalAddress')"
@@ -137,7 +137,7 @@ defineExpose({
             v-model="state.groupIdentifier"
             variant="outlined"
             color="primary"
-            data-testid="groupIdentifier"
+            data-testid="group-identifier"
             :disabled="state.hasActualGroupIdentifier"
             :label="t('transactions.events.form.group_identifier.label')"
             :error-messages="form.errors('groupIdentifier')"

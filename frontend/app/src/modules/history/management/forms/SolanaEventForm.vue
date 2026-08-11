@@ -186,7 +186,7 @@ defineExpose({
             v-model="state.groupIdentifier"
             variant="outlined"
             color="primary"
-            data-testid="groupIdentifier"
+            data-testid="group-identifier"
             :disabled="state.hasActualGroupIdentifier"
             :label="t('transactions.events.form.group_identifier.label')"
             :error-messages="form.errors('groupIdentifier')"

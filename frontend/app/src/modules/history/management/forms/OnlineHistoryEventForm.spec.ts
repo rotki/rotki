@@ -138,10 +138,10 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
         "data-testid=asset",
         "data-testid=datetime",
         "data-testid=event-action-picker",
-        "data-testid=groupIdentifier",
+        "data-testid=group-identifier",
         "data-testid=grouped-amount-input__swap-button",
         "data-testid=location",
-        "data-testid=locationLabel",
+        "data-testid=location-label",
         "data-testid=notes",
         "data-testid=primary",
         "data-testid=secondary",
@@ -154,8 +154,8 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
-    const locationLabel = wrapper.find<HTMLInputElement>('[data-testid=locationLabel] .input-value');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
+    const locationLabel = wrapper.find<HTMLInputElement>('[data-testid=location-label] .input-value');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-testid=sequence-index] input');
 
     expect(groupIdentifierInput.element.value).toBe('');
@@ -171,8 +171,8 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
-    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
-    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-testid=locationLabel] .input-value');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
+    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-testid=location-label] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-testid=sequence-index] input');
     const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-testid=notes] textarea:not([aria-hidden="true"])');
@@ -192,8 +192,8 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
-    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
-    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-testid=locationLabel] .input-value');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
+    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-testid=location-label] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-testid=sequence-index] input');
     const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-testid=notes] textarea:not([aria-hidden="true"])');
@@ -209,9 +209,9 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-testid=groupIdentifier] input').setValue(event.groupIdentifier);
+    await wrapper.find('[data-testid=group-identifier] input').setValue(event.groupIdentifier);
     await wrapper.find('[data-testid=location] input').setValue(event.location);
-    await wrapper.find('[data-testid=locationLabel] input').setValue(event.locationLabel);
+    await wrapper.find('[data-testid=location-label] input').setValue(event.locationLabel);
     await wrapper.find('[data-testid=datetime] input').setValue(dayjs(event.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
     wrapper.findComponent({ name: 'HistoryEventActionPicker' }).vm.$emit('update:modelValue', {
       eventSubtype: event.eventSubtype,
@@ -394,7 +394,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe('ACTUAL123');
       expect(groupIdentifierInput.element.disabled).toBe(true);
     });
@@ -405,7 +405,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
       // Note: groupIdentifier is always disabled in edit mode for this form (data.type !== 'add')
       expect(groupIdentifierInput.element.disabled).toBe(true);

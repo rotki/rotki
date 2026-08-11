@@ -119,16 +119,16 @@ describe('forms/EthBlockEventForm.vue', () => {
       [
         "data-testid=amount",
         "data-testid=asset",
-        "data-testid=blockNumber",
+        "data-testid=block-number",
         "data-testid=datetime",
         "data-testid=eth-block-event-form__advance",
-        "data-testid=feeRecipient",
-        "data-testid=groupIdentifier",
+        "data-testid=fee-recipient",
+        "data-testid=group-identifier",
         "data-testid=grouped-amount-input__swap-button",
-        "data-testid=isMevReward",
+        "data-testid=is-mev-reward",
         "data-testid=primary",
         "data-testid=secondary",
-        "data-testid=validatorIndex",
+        "data-testid=validator-index",
       ]
     `);
   });
@@ -137,10 +137,10 @@ describe('forms/EthBlockEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    const blockNumberInput = wrapper.find<HTMLInputElement>('[data-testid=blockNumber] input');
-    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validatorIndex] input');
-    const feeRecipientInput = wrapper.find<HTMLInputElement>('[data-testid=feeRecipient] .input-value');
-    const mevRewardCheckbox = wrapper.find<HTMLInputElement>('[data-testid=isMevReward] input');
+    const blockNumberInput = wrapper.find<HTMLInputElement>('[data-testid=block-number] input');
+    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validator-index] input');
+    const feeRecipientInput = wrapper.find<HTMLInputElement>('[data-testid=fee-recipient] .input-value');
+    const mevRewardCheckbox = wrapper.find<HTMLInputElement>('[data-testid=is-mev-reward] input');
 
     expect(blockNumberInput.element.value).toBe('');
     expect(validatorIndexInput.element.value).toBe('');
@@ -153,11 +153,11 @@ describe('forms/EthBlockEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { group: event, nextSequenceId: '1', type: 'group-add' } });
 
-    const blockNumberInput = wrapper.find<HTMLInputElement>('[data-testid=blockNumber] input');
-    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validatorIndex] input');
-    const feeRecipientInput = wrapper.find<HTMLInputElement>('[data-testid=feeRecipient] .input-value');
+    const blockNumberInput = wrapper.find<HTMLInputElement>('[data-testid=block-number] input');
+    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validator-index] input');
+    const feeRecipientInput = wrapper.find<HTMLInputElement>('[data-testid=fee-recipient] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
-    const isMevCheckbox = wrapper.find<HTMLInputElement>('[data-testid=isMevReward] input');
+    const isMevCheckbox = wrapper.find<HTMLInputElement>('[data-testid=is-mev-reward] input');
 
     expect(blockNumberInput.element.value).toBe(event.blockNumber.toString());
     expect(validatorIndexInput.element.value).toBe(event.validatorIndex.toString());
@@ -171,11 +171,11 @@ describe('forms/EthBlockEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { event, nextSequenceId: '1', type: 'edit' } });
 
-    const blockNumberInput = wrapper.find<HTMLInputElement>('[data-testid=blockNumber] input');
-    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validatorIndex] input');
-    const feeRecipientInput = wrapper.find<HTMLInputElement>('[data-testid=feeRecipient] .input-value');
+    const blockNumberInput = wrapper.find<HTMLInputElement>('[data-testid=block-number] input');
+    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validator-index] input');
+    const feeRecipientInput = wrapper.find<HTMLInputElement>('[data-testid=fee-recipient] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
-    const isMevCheckbox = wrapper.find<HTMLInputElement>('[data-testid=isMevReward] input');
+    const isMevCheckbox = wrapper.find<HTMLInputElement>('[data-testid=is-mev-reward] input');
 
     expect(blockNumberInput.element.value).toBe(event.blockNumber.toString());
     expect(validatorIndexInput.element.value).toBe(event.validatorIndex.toString());
@@ -191,11 +191,11 @@ describe('forms/EthBlockEventForm.vue', () => {
     const now = dayjs();
     const nowInMs = now.valueOf();
 
-    const blockNumberInput = wrapper.find<HTMLInputElement>('[data-testid=blockNumber] input');
-    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validatorIndex] input');
-    const feeRecipientInput = wrapper.find<HTMLInputElement>('[data-testid=feeRecipient] .input-value');
+    const blockNumberInput = wrapper.find<HTMLInputElement>('[data-testid=block-number] input');
+    const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-testid=validator-index] input');
+    const feeRecipientInput = wrapper.find<HTMLInputElement>('[data-testid=fee-recipient] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
-    const isMevCheckbox = wrapper.find<HTMLInputElement>('[data-testid=isMevReward] input');
+    const isMevCheckbox = wrapper.find<HTMLInputElement>('[data-testid=is-mev-reward] input');
     const dateInput = wrapper.find<HTMLInputElement>('[data-testid=datetime] input');
 
     await blockNumberInput.setValue(event.blockNumber);
@@ -297,7 +297,7 @@ describe('forms/EthBlockEventForm.vue', () => {
       success: false,
     });
 
-    await wrapper.find('[data-testid=blockNumber] input').setValue('111');
+    await wrapper.find('[data-testid=block-number] input').setValue('111');
 
     await vi.advanceTimersToNextTimerAsync();
 
@@ -318,8 +318,8 @@ describe('forms/EthBlockEventForm.vue', () => {
     await saveMethod();
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-testid=blockNumber] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=validatorIndex] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=block-number] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=validator-index] .details').exists()).toBe(true);
   });
 
   describe('actualGroupIdentifier', () => {
@@ -338,7 +338,7 @@ describe('forms/EthBlockEventForm.vue', () => {
       await wrapper.find('[data-testid=eth-block-event-form__advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe('ACTUAL123');
       expect(groupIdentifierInput.element.disabled).toBe(true);
     });
@@ -352,7 +352,7 @@ describe('forms/EthBlockEventForm.vue', () => {
       await wrapper.find('[data-testid=eth-block-event-form__advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
       expect(groupIdentifierInput.element.disabled).toBe(false);
     });

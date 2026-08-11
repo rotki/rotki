@@ -142,7 +142,7 @@ describe('forms/EvmEventForm.vue', () => {
         "data-testid=datetime",
         "data-testid=event-action-picker",
         "data-testid=evm-event-form__advance",
-        "data-testid=groupIdentifier",
+        "data-testid=group-identifier",
         "data-testid=grouped-amount-input__swap-button",
         "data-testid=location",
         "data-testid=location-label",
@@ -399,7 +399,7 @@ describe('forms/EvmEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe('ACTUAL123');
       expect(groupIdentifierInput.element.disabled).toBe(true);
     });
@@ -410,7 +410,7 @@ describe('forms/EvmEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe(group.groupIdentifier);
       expect(groupIdentifierInput.element.disabled).toBe(false);
     });
