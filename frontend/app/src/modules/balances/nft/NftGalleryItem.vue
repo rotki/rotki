@@ -23,7 +23,7 @@ const imageUrlSource = computed<string | null>(() => item.imageUrl);
 
 const { isVideo, renderedMedia, shouldRender } = useNftImage(imageUrlSource);
 
-const name = computed(() => (item.name ? item.name : item.collection.name));
+const name = computed(() => (item.name ? item.name : item.collection?.name));
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -143,6 +143,7 @@ const mediaStyle = computed<StyleValue>(() => {
         {{ name }}
       </RuiTooltip>
       <RuiTooltip
+        v-if="item.collection"
         :popper="{ placement: 'top' }"
         :open-delay="400"
         tooltip-class="max-w-[20rem] text-truncate overflow-hidden"

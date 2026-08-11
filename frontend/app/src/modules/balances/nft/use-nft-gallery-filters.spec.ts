@@ -10,10 +10,10 @@ vi.mock('@/modules/accounts/account-utils', () => ({
   getAccountAddress: (account: { data: { address: string } }): string => account.data.address,
 }));
 
-function nft(overrides: { address?: string; name?: string; price?: number; collection?: string }): GalleryNft {
+function nft(overrides: { address?: string; name?: string; price?: number; collection?: string | null }): GalleryNft {
   return createMock<GalleryNft>({
     address: overrides.address ?? '0xabc',
-    collection: createMock({ name: overrides.collection ?? 'Punks' }),
+    collection: overrides.collection === null ? null : createMock({ name: overrides.collection ?? 'Punks' }),
     name: overrides.name ?? 'NFT',
     price: bigNumberify(overrides.price ?? 1),
   });
@@ -51,6 +51,19 @@ describe('useNftGalleryFilters', () => {
     list = [nft({ collection: 'Punks' }), nft({ collection: 'Apes' }), nft({ collection: 'Punks' })];
     const { collections } = useNftGalleryFilters(nfts, ref(null));
     expect(get(collections)).toEqual(['Punks', 'Apes']);
+  });
+
+  it('should handle an nft that belongs to no collection', () => {
+    list = [nft({ collection: null, name: 'Loose' }), nft({ collection: 'Punks', name: 'Owned' })];
+    const { collections, items, modelSelectedCollection, modelSortBy } = useNftGalleryFilters(nfts, ref(null));
+
+    expect(get(collections)).toEqual(['', 'Punks']);
+
+    set(modelSortBy, 'collection');
+    expect(get(items).map(n => n.name)).toHaveLength(2);
+
+    set(modelSelectedCollection, 'Punks');
+    expect(get(items).map(n => n.name)).toEqual(['Owned']);
   });
 
   it('should sort by name ascending by default', () => {
