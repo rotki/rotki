@@ -1,12 +1,11 @@
 <script setup lang="ts">
+import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import type { PullLocationTransactionPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventsRestrictions } from '@/modules/history/events/history-events-restrictions';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import type { Filters } from '@/modules/history/events/use-events-filter';
-import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { AccountingOverlayToggle, BalanceDivergenceToggle } from '@/modules/history/balances/components';
-import { OverlayMode, type OverlayPair, useAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay';
-import { provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
+import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import {
   getDefaultToggles,
@@ -14,14 +13,16 @@ import {
   useHistoryEventNavigationConsumer,
   useHistoryEventsActions,
   useHistoryEventsDeletion,
+  useHistoryEventsDialogRouting,
   useHistoryEventsFilters,
+  useHistoryEventsOverlay,
   useHistoryEventsSelectionActions,
   useHistoryEventsSelectionMode,
   useHistoryEventsStatus,
+  useHistoryEventsTableHeight,
   useUnmatchedAssetMovements,
   useUnmatchedBridgeTransactions,
 } from '@/modules/history/events/composables';
-import { DIALOG_TYPES, type DialogShowOptions, type HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import HistoryEventsDialogContainer from '@/modules/history/events/HistoryEventsDialogContainer.vue';
 import HistoryEventsFiltersChips from '@/modules/history/events/HistoryEventsFiltersChips.vue';
 import HistoryEventsTableActions from '@/modules/history/events/HistoryEventsTableActions.vue';
@@ -33,7 +34,6 @@ import {
 } from '@/modules/history/events/prices/use-event-price-update-trigger';
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
 
 defineOptions({ inheritAttrs: false });
 
@@ -47,7 +47,6 @@ const { mainPage = false, restrictions = {}, sectionTitle = '' } = defineProps<{
 const SyncProgressPanel = defineAsyncComponent(() => import('@/modules/shell/sync-progress/components/SyncProgressPanel.vue'));
 
 const { t } = useI18n({ useScope: 'global' });
-const router = useRouter();
 const route = useRoute();
 
 const toggles = ref<HistoryEventsToggles>(getDefaultToggles());
@@ -56,18 +55,13 @@ const overlayMode = ref<OverlayMode>(OverlayMode.NONE);
 
 const eventPriceUpdatePayload = ref<EventPriceUpdatePayload>();
 
-const syncProgressPanelEl = useTemplateRef<ComponentPublicInstance>('syncProgressPanel');
-const tableActionsEl = useTemplateRef<ComponentPublicInstance>('tableActions');
-const filtersChipsEl = useTemplateRef<ComponentPublicInstance>('filtersChips');
 const dialogContainer = useTemplateRef<InstanceType<typeof HistoryEventsDialogContainer>>('dialogContainer');
 
-const { height: syncProgressHeight } = useElementSize(syncProgressPanelEl);
-const { height: tableActionsHeight } = useElementSize(tableActionsEl);
-const { height: filtersChipsHeight } = useElementSize(filtersChipsEl);
-
-const BASE_TABLE_HEIGHT_OFFSET = 252;
-
-const tableHeightOffset = computed<number>(() => get(syncProgressHeight) + get(tableActionsHeight) + get(filtersChipsHeight) + BASE_TABLE_HEIGHT_OFFSET);
+const tableHeightOffset = useHistoryEventsTableHeight(
+  useTemplateRef<ComponentPublicInstance>('syncProgressPanel'),
+  useTemplateRef<ComponentPublicInstance>('tableActions'),
+  useTemplateRef<ComponentPublicInstance>('filtersChips'),
+);
 
 const {
   anyEventsDecoding,
@@ -113,46 +107,7 @@ const {
   restrictions: () => restrictions,
 }, toggles, overlayMode);
 
-// Accounting overlay: shows the known balance after each event. Keys off each event's own
-// (account, asset) pair, so no extra filter is required. Gated by VITE_ACCOUNTING_UPDATE,
-// which is derived at build/dev time from the backend's ROTKI_ACCOUNTING_UPDATE env var (see
-// vite.config.ts), so the overlay only appears in builds where the backend serves it.
-// The mode is synced through the router query (via useHistoryEventsFilters' queryParamsOnly):
-// it rides along with pagination instead of being clobbered by it, and is NOT persisted across
-// sessions. Fresh navigation to history resets it to 'none' (empty query), while browser/in-app
-// back restores it from the history entry's query. Only the main page syncs (history: 'router').
-const overlayAvailable = isAccountingUpdateEnabled();
-
-// Require the build flag too, so the 'balance' choice can't enable it where the
-// backend would reject every call.
-const overlayEnabled = computed<boolean>(() => overlayAvailable && get(overlayMode) === OverlayMode.BALANCE);
-
-const overlayPairs = computed<OverlayPair[]>(() => {
-  const events = get(groups).data.flatMap(row => Array.isArray(row) ? row : [row]);
-  // Map keyed by `${account} ${asset}` dedupes for free; last write wins (identical payload).
-  const byKey = new Map<string, OverlayPair>();
-  for (const { asset, locationLabel } of events) {
-    if (locationLabel)
-      byKey.set(`${locationLabel} ${asset}`, { asset, locationLabel });
-  }
-  return [...byKey.values()];
-});
-
-const accountingOverlay = useAccountingOverlay({
-  enabled: overlayEnabled,
-  pairs: overlayPairs,
-});
-
-provideAccountingOverlay({ enabled: overlayEnabled, overlay: accountingOverlay });
-
-// When the history sync (tx query + exchange events + decoding) completes, new events have
-// landed and their historical balances may have shifted, so the whole overlay is refreshed to
-// re-resolve every visible row against the updated series. Guarded so a hidden overlay stays idle.
-const { syncCompleted } = useSyncCompleted();
-watch(syncCompleted, async () => {
-  if (get(overlayEnabled))
-    await accountingOverlay.refresh();
-});
+const { available: overlayAvailable } = useHistoryEventsOverlay(overlayMode, groups);
 
 const actions = useHistoryEventsActions({
   entryTypes: () => restrictions.entryTypes,
@@ -237,21 +192,7 @@ watchImmediate(groups, (newGroups) => {
   selectionMode.setTotalMatchingCount(newGroups.found);
 });
 
-const queryToDialogMap: Record<string, DialogShowOptions> = {
-  openDecodingStatusDialog: { type: DIALOG_TYPES.DECODING_STATUS },
-  openMatchAssetMovementsDialog: { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS },
-  openMatchBridgesDialog: { type: DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS },
-};
-
-watchImmediate(route, async ({ query }) => {
-  const dialogOptions = Object.keys(queryToDialogMap).find(key => query[key]);
-  if (!dialogOptions)
-    return;
-
-  await nextTick();
-  get(dialogContainer)?.show(queryToDialogMap[dialogOptions]);
-  await router.replace({ query: {} });
-});
+useHistoryEventsDialogRouting(dialogContainer);
 
 watch(backgroundLoading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
