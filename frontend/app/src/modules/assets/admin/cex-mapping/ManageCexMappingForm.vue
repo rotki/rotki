@@ -116,7 +116,7 @@ defineExpose({
     />
     <RuiTextField
       v-model="locationSymbol"
-      data-testid="locationSymbol"
+      data-testid="location-symbol"
       variant="outlined"
       color="primary"
       :disabled="editMode"

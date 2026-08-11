@@ -138,7 +138,7 @@ defineExpose({
         v-model="state.locationLabel"
         :items="locationLabelSuggestions"
         clearable
-        data-testid="locationLabel"
+        data-testid="location-label"
         :label="t('transactions.events.form.location_label.label')"
         :error-messages="form.errors('locationLabel')"
         auto-select-first
@@ -154,7 +154,7 @@ defineExpose({
       :options="historyEventTypesData"
       key-attr="identifier"
       text-attr="label"
-      data-testid="eventSubtype"
+      data-testid="event-subtype"
       auto-select-first
       :error-messages="form.errors('eventSubtype')"
       @blur="form.touch('eventSubtype')"
@@ -235,7 +235,7 @@ defineExpose({
             v-model="state.groupIdentifier"
             variant="outlined"
             color="primary"
-            data-testid="groupIdentifier"
+            data-testid="group-identifier"
             :disabled="state.hasActualGroupIdentifier"
             :label="t('transactions.events.form.group_identifier.label')"
             :error-messages="form.errors('groupIdentifier')"

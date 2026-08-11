@@ -167,14 +167,14 @@ describe('forms/AssetMovementEventForm.vue', () => {
         "data-testid=asset-movement-event-form__advance",
         "data-testid=blockchain-id",
         "data-testid=datetime",
-        "data-testid=eventSubtype",
+        "data-testid=event-subtype",
         "data-testid=fee-amount",
         "data-testid=fee-asset",
-        "data-testid=groupIdentifier",
+        "data-testid=group-identifier",
         "data-testid=grouped-amount-input__swap-button",
         "data-testid=has-fee",
         "data-testid=location",
-        "data-testid=locationLabel",
+        "data-testid=location-label",
         "data-testid=notes",
         "data-testid=primary",
         "data-testid=secondary",
@@ -188,8 +188,8 @@ describe('forms/AssetMovementEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input').element.value).toBe('');
-    expect(wrapper.find<HTMLInputElement>('[data-testid=locationLabel] .input-value').element.value).toBe('');
+    expect(wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input').element.value).toBe('');
+    expect(wrapper.find<HTMLInputElement>('[data-testid=location-label] .input-value').element.value).toBe('');
   });
 
   it('should call addHistoryEvent when adding a new event without fee', async () => {
@@ -198,9 +198,9 @@ describe('forms/AssetMovementEventForm.vue', () => {
     const now = dayjs();
     const nowInMs = now.valueOf();
     await wrapper.find('[data-testid=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
-    await wrapper.find('[data-testid=groupIdentifier] input').setValue('TEST123');
-    await wrapper.find('[data-testid=eventSubtype] input').setValue('receive');
-    await wrapper.find('[data-testid=locationLabel] input').setValue('Kraken 1');
+    await wrapper.find('[data-testid=group-identifier] input').setValue('TEST123');
+    await wrapper.find('[data-testid=event-subtype] input').setValue('receive');
+    await wrapper.find('[data-testid=location-label] input').setValue('Kraken 1');
     await wrapper.find('[data-testid=location] input').setValue('kraken');
     await wrapper.find('[data-testid=asset] input').setValue('BTC');
     await wrapper.find('[data-testid=amount] input').setValue('2.5');
@@ -239,9 +239,9 @@ describe('forms/AssetMovementEventForm.vue', () => {
     const now = dayjs();
     const nowInMs = now.valueOf();
     await wrapper.find('[data-testid=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
-    await wrapper.find('[data-testid=groupIdentifier] input').setValue('TEST123');
-    await wrapper.find('[data-testid=eventSubtype] input').setValue('receive');
-    await wrapper.find('[data-testid=locationLabel] input').setValue('Kraken 1');
+    await wrapper.find('[data-testid=group-identifier] input').setValue('TEST123');
+    await wrapper.find('[data-testid=event-subtype] input').setValue('receive');
+    await wrapper.find('[data-testid=location-label] input').setValue('Kraken 1');
     await wrapper.find('[data-testid=location] input').setValue('kraken');
     await wrapper.find('[data-testid=asset] input').setValue('BTC');
     await wrapper.find('[data-testid=amount] input').setValue('2.5');
@@ -295,8 +295,8 @@ describe('forms/AssetMovementEventForm.vue', () => {
     await wrapper.setProps({ data: { eventsInGroup: [event], type: 'edit-group' } });
     await vi.advanceTimersToNextTimerAsync();
 
-    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
-    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-testid=locationLabel] .input-value');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
+    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-testid=location-label] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
     const notesTextArea = wrapper.find<HTMLTextAreaElement>('[data-testid=notes] textarea:not([aria-hidden="true"])');
 
@@ -464,7 +464,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     const now = dayjs();
     const nowInMs = now.valueOf();
     await wrapper.find('[data-testid=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
-    await wrapper.find('[data-testid=eventSubtype] input').setValue('receive');
+    await wrapper.find('[data-testid=event-subtype] input').setValue('receive');
     await wrapper.find('[data-testid=location] input').setValue('kraken');
     await wrapper.find('[data-testid=asset] input').setValue('BTC');
     await wrapper.find('[data-testid=amount] input').setValue('2.5');
@@ -504,7 +504,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await flushPromises();
 
-    expect(wrapper.findAll('[data-testid=eventSubtype] .selections span')).toHaveLength(2);
+    expect(wrapper.findAll('[data-testid=event-subtype] .selections span')).toHaveLength(2);
   });
 
   describe('actualGroupIdentifier', () => {
@@ -520,7 +520,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe('ACTUAL123');
       expect(groupIdentifierInput.element.disabled).toBe(true);
     });
@@ -531,7 +531,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
       expect(groupIdentifierInput.element.disabled).toBe(false);
     });

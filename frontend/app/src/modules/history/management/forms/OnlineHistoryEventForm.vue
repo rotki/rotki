@@ -130,7 +130,7 @@ defineExpose({
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add' || state.hasActualGroupIdentifier"
-      data-testid="groupIdentifier"
+      data-testid="group-identifier"
       :label="t('transactions.events.form.group_identifier.label')"
       :required="data.type === 'edit'"
       :error-messages="form.errors('groupIdentifier')"
@@ -159,7 +159,7 @@ defineExpose({
         v-model="state.locationLabel"
         :items="locationLabelSuggestions"
         clearable
-        data-testid="locationLabel"
+        data-testid="location-label"
         :label="t('transactions.events.form.location_label.label')"
         :error-messages="form.errors('locationLabel')"
         auto-select-first
