@@ -2,28 +2,18 @@ import type { BlockchainBalancePayload } from '@/modules/balances/types/blockcha
 import { err, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
+import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { arrayify } from '@/modules/core/common/data/array';
 import { setDigest } from '@/modules/core/common/data/digest';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { Cancelled, Skipped, type TaskError } from '@/modules/core/tasks/task-result';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { BALANCES_LANE } from '@/modules/task-center/core/orchestrator/spec';
+import { BALANCES_LANE, DEFAULT_PRIORITY, Priority } from '@/modules/task-center/core/orchestrator/spec';
 import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useActivityBatch } from '@/modules/task-center/use-activity-batch';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useBalanceProcessingService } from './services/use-balance-processing-service';
-
-/**
- * Who asked for this refresh, which is what decides what happens when the chain is already busy.
- *
- * - `background`: join the run in flight. Two callers wanting the same thing share one query.
- * - `periodic`: settle SKIPPED with a reason. A tick that finds the chain busy has nothing to add,
- *   and recording it as `ok` would mark the chain refreshed when nothing ran.
- * - `user`: supersede. Someone pressed refresh, so they get a fresh query with *their* parameters
- *   rather than whatever the background run happened to be doing.
- */
-export type RefreshMode = 'background' | 'periodic' | 'user';
 
 export interface RefreshOptions {
   /**
@@ -87,11 +77,11 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
    */
   const isChainRefreshing = (chain: string): boolean => get(refreshState.refreshingChains).has(chain);
 
-  // Network refresh — one native BLOCKCHAIN_BALANCES activity per chain on BALANCES_LANE (cap 2,
-  // paused during decode by the orchestrator rule, replacing the old BalanceQueueService).
+  // Network refresh: one native BLOCKCHAIN_BALANCES activity per chain on BALANCES_LANE (cap 2;
+  // background runs pause while a history sync is running, per the orchestrator rule).
   const refreshBlockchainBalances = async (
     payload: BlockchainBalancePayload = {},
-    mode: RefreshMode = 'background',
+    mode: RefreshMode = RefreshMode.BACKGROUND,
     options: RefreshOptions = {},
   ): Promise<void> => {
     const { detect = false, detectAddresses } = options;
@@ -105,7 +95,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     // non-periodic path. That poll was standing in for supersede: it made a manual refresh wait for
     // the background run to finish and then re-query, which is the right *outcome* reached by
     // waiting out work the user had already superseded.
-    const submit = mode === 'user' ? supersedeTask : submitTask;
+    const submit = mode === RefreshMode.USER ? supersedeTask : submitTask;
 
     const chainJob = async (chain: string, parent: ActivityId | undefined): Promise<void> => {
       const chainPayload = { addresses, blockchain: chain, isXpub };
@@ -133,6 +123,9 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
         parent,
         kind: ActivityKind.BLOCKCHAIN_BALANCES,
         lane: BALANCES_LANE,
+        // Jumps queued background work, and exempts the job from `pauseBalancesDuringHistorySync`:
+        // a user pressing refresh must not wait out a whole history sync.
+        priority: mode === RefreshMode.USER ? Priority.USER : DEFAULT_PRIORITY,
         rerunnable: true,
         run: async ({ cancelled, runTask }): Promise<Result<void, TaskError>> => {
           // 🔴 A dropped refresh is SKIPPED with a reason, never `ok`. Returning success here
@@ -142,7 +135,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
           //
           // `Skipped` is not `isActionable`, so this raises no notification; it settles the
           // activity terminal-but-not-successful and the task centre renders the reason.
-          if (mode === 'periodic' && isChainRefreshing(chain))
+          if (mode === RefreshMode.PERIODIC && isChainRefreshing(chain))
             return err(Skipped({ message: t('actions.balances.blockchain.skipped.busy') }));
 
           // ⭐ Statement order is the ordering. Detection's children run under this job and are

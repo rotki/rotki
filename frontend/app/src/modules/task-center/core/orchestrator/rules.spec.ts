@@ -7,7 +7,8 @@ import {
   makeActivityId,
   ActivityStatus as Status,
 } from '../types';
-import { excludeMatchingDuringReset } from './rules';
+import { excludeMatchingDuringReset, pauseBalancesDuringHistorySync } from './rules';
+import { Priority } from './spec';
 
 function activity(overrides: Partial<Activity> & Pick<Activity, 'id' | 'kind' | 'status'>): Activity {
   return {
@@ -44,6 +45,46 @@ function reset(status: Activity['status']): Activity {
     status,
   });
 }
+
+function historySync(status: Activity['status']): Activity {
+  return activity({ id: makeActivityId(Kind.HISTORY_SYNC), kind: Kind.HISTORY_SYNC, status });
+}
+
+function balances(priority?: number): Activity {
+  return activity({
+    id: makeActivityId(Kind.BLOCKCHAIN_BALANCES, 'eth'),
+    kind: Kind.BLOCKCHAIN_BALANCES,
+    priority,
+    status: Status.PENDING,
+  });
+}
+
+describe('pauseBalancesDuringHistorySync', () => {
+  it('should hold a background balance query back while a sync is running', () => {
+    const candidate = balances();
+    expect(pauseBalancesDuringHistorySync(candidate, [candidate, historySync(Status.RUNNING)])).toBe(false);
+  });
+
+  it('should let a background balance query run once the sync has settled', () => {
+    const candidate = balances();
+    expect(pauseBalancesDuringHistorySync(candidate, [candidate, historySync(Status.COMPLETE)])).toBe(true);
+  });
+
+  it('should ignore a sync that is only queued', () => {
+    const candidate = balances();
+    expect(pauseBalancesDuringHistorySync(candidate, [candidate, historySync(Status.PENDING)])).toBe(true);
+  });
+
+  it('should let a user-initiated balance query through', () => {
+    const candidate = balances(Priority.USER);
+    expect(pauseBalancesDuringHistorySync(candidate, [candidate, historySync(Status.RUNNING)])).toBe(true);
+  });
+
+  it('should ignore non-balance candidates', () => {
+    const candidate = activity({ id: makeActivityId(Kind.TX_SYNC, 'eth'), kind: Kind.TX_SYNC, status: Status.PENDING });
+    expect(pauseBalancesDuringHistorySync(candidate, [candidate, historySync(Status.RUNNING)])).toBe(true);
+  });
+});
 
 describe('excludeMatchingDuringReset', () => {
   it('should hold matching back while a reset is running', () => {

@@ -4,6 +4,7 @@ import type { StakingValidatorManage } from '@/modules/accounts/blockchain/use-a
 import { Blockchain } from '@rotki/common';
 import { useAccountDelete } from '@/modules/accounts/blockchain/use-account-delete';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
+import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
@@ -55,7 +56,7 @@ export function useEthValidatorOperations(): UseEthValidatorOperationsReturn {
     await fetchEthStakingValidators({ ignoreCache: true });
     await refreshBlockchainBalances({
       blockchain: Blockchain.ETH2,
-    }, 'user');
+    }, RefreshMode.USER);
   }
 
   function confirmDelete(item: EthereumValidator): void {

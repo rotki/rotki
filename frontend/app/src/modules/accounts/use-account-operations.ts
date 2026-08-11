@@ -9,9 +9,9 @@ import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-
 import { useAccountFetching } from '@/modules/accounts/use-account-fetching';
 import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -156,7 +156,7 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     if (!addresses?.length || !chain || supportsTransactions(chain))
       return undefined;
 
-    return addresses.filter(uniqueStrings);
+    return [...new Set(addresses)];
   };
 
   /**
@@ -183,7 +183,7 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     // drives its own chain: nothing else will.
     const pending: Promise<any>[] = [];
     if (shouldRefresh)
-      pending.push(refreshBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, isXpub }, periodic ? 'periodic' : 'background'));
+      pending.push(refreshBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, isXpub }, periodic ? RefreshMode.PERIODIC : RefreshMode.BACKGROUND));
     else if (chain !== undefined)
       pending.push(hydrate({ addresses: uniqueAddresses, blockchain: chain, isXpub }));
 

@@ -182,20 +182,34 @@ describe('createTaskOrchestrator', () => {
     expect(byId(orchestrator, secondId)?.status).toBe(Status.RUNNING);
   });
 
-  it('should pause balances while decoding runs (default rule)', async () => {
+  it('should pause background balances while a history sync runs (default rule)', async () => {
     const orchestrator = createTaskOrchestrator();
-    const decode = controllable('decode', { id: makeActivityId(Kind.TX_DECODING, 'eth'), kind: Kind.TX_DECODING });
+    const sync = controllable('sync', { id: makeActivityId(Kind.HISTORY_SYNC), kind: Kind.HISTORY_SYNC });
     const balances = controllable('bal', {
       id: makeActivityId(Kind.BLOCKCHAIN_BALANCES, 'eth'),
       kind: Kind.BLOCKCHAIN_BALANCES,
     });
-    orchestrator.submit(decode.spec);
+    orchestrator.submit(sync.spec);
     const balId = orchestrator.submit(balances.spec);
 
     expect(byId(orchestrator, balId)?.status).toBe(Status.PENDING);
 
-    decode.settle({ ok: true, value: 1 });
+    sync.settle({ ok: true, value: 1 });
     await flush();
+
+    expect(byId(orchestrator, balId)?.status).toBe(Status.RUNNING);
+  });
+
+  it('should let a user-initiated balance refresh run during a history sync', () => {
+    const orchestrator = createTaskOrchestrator();
+    const sync = controllable('sync', { id: makeActivityId(Kind.HISTORY_SYNC), kind: Kind.HISTORY_SYNC });
+    const balances = controllable('bal', {
+      id: makeActivityId(Kind.BLOCKCHAIN_BALANCES, 'eth'),
+      kind: Kind.BLOCKCHAIN_BALANCES,
+      priority: Priority.USER,
+    });
+    orchestrator.submit(sync.spec);
+    const balId = orchestrator.submit(balances.spec);
 
     expect(byId(orchestrator, balId)?.status).toBe(Status.RUNNING);
   });

@@ -1,6 +1,7 @@
 import type { MaybeRef } from 'vue';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
+import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { arrayify } from '@/modules/core/common/data/array';
 import { BlockchainRefreshButtonBehaviour } from '@/modules/settings/types/frontend-settings';
@@ -21,7 +22,7 @@ export const useBalanceRefresh = createSharedComposable(() => {
     const chain = blockchain ? arrayify(blockchain) : undefined;
     await refreshBlockchainBalances({
       blockchain: chain,
-    }, 'user');
+    }, RefreshMode.USER);
   };
 
   const { detectAllTokens } = useTokenDetectionOrchestrator();

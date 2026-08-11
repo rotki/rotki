@@ -3,6 +3,7 @@ import { Blockchain } from '@rotki/common';
 import dayjs from 'dayjs';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
@@ -71,7 +72,7 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
         // join whatever is already querying eth2.
         await refreshBlockchainBalances({
           blockchain: Blockchain.ETH2,
-        }, userInitiated ? 'user' : 'background');
+        }, userInitiated ? RefreshMode.USER : RefreshMode.BACKGROUND);
       }
       else {
         await hydrate({

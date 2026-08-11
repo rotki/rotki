@@ -171,6 +171,7 @@ export interface RenderableRecord {
     readonly group?: Activity['group'];
     readonly parent?: ActivityId;
     readonly resets?: Activity['resets'];
+    readonly priority?: Activity['priority'];
     readonly ephemeral?: boolean;
     readonly rerunnable?: boolean;
     readonly cancel?: () => void;
@@ -193,6 +194,7 @@ export function projectActivity(record: RenderableRecord, childSteps?: ActivityS
     kind: spec.kind,
     parent: spec.parent,
     percentage: percentageOf(status, steps, childSteps),
+    priority: spec.priority,
     rerunnable: Boolean(spec.rerunnable),
     resets: spec.resets,
     source: { type: ActivitySourceType.NATIVE },
