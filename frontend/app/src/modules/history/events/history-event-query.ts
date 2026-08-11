@@ -14,7 +14,6 @@ type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp
 interface HistoryEventSourceDeps {
   duplicateHandlingStatusFromQuery: ComputedRef<DuplicateHandlingStatus | undefined>;
   entryTypes: MaybeRefOrGetter<HistoryEventEntryType[] | undefined>;
-  eventSubTypes: MaybeRefOrGetter<string[]>;
   eventTypes: MaybeRefOrGetter<string[]>;
   groupIdentifiersFromQuery: ComputedRef<string[] | undefined>;
   location: MaybeRefOrGetter<string | undefined>;
@@ -51,7 +50,6 @@ export function buildHistoryEventSources({
   action,
   duplicateHandlingStatusFromQuery,
   entryTypes,
-  eventSubTypes,
   eventTypes,
   groupIdentifiersFromQuery,
   location,
@@ -123,7 +121,6 @@ export function buildHistoryEventSources({
         const params: Writeable<Partial<HistoryEventRequestPayload>> = {
           aggregateByGroupIds: true,
           counterparties: toValue(protocols),
-          eventSubtypes: toValue(eventSubTypes),
           eventTypes: toValue(eventTypes),
           identifiers: get(missingAcquisitionFromQuery),
         };

@@ -328,12 +328,13 @@ function refresh() {
     />
 
     <HistoryEventsView
-      use-external-account-filter
       :section-title="t('liquity_staking_events.title')"
-      :protocols="['liquity']"
-      :external-account-filter="accountFilter"
-      :only-chains="chains"
-      :entry-types="[HistoryEventEntryType.EVM_EVENT]"
+      :restrictions="{
+        entryTypes: [HistoryEventEntryType.EVM_EVENT],
+        externalAccounts: accountFilter,
+        onlyChains: chains,
+        protocols: ['liquity'],
+      }"
     />
   </TablePageLayout>
 </template>

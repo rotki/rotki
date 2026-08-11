@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import type { PullLocationTransactionPayload } from '@/modules/history/events/event-payloads';
+import type { HistoryEventsRestrictions } from '@/modules/history/events/history-events-restrictions';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import type { Filters } from '@/modules/history/events/use-events-filter';
 import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
@@ -35,36 +35,13 @@ import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
 
-type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
-
 defineOptions({ inheritAttrs: false });
 
-const {
-  entryTypes,
-  eventSubTypes = [],
-  eventTypes = [],
-  externalAccountFilter = [],
-  location,
-  mainPage,
-  onlyChains = [],
-  period,
-  protocols = [],
-  sectionTitle = '',
-  useExternalAccountFilter,
-  validators,
-} = defineProps<{
-  location?: string;
-  protocols?: string[];
-  eventTypes?: string[];
-  eventSubTypes?: string[];
-  entryTypes?: HistoryEventEntryType[];
-  period?: Period;
-  validators?: number[];
-  externalAccountFilter?: Account[];
-  useExternalAccountFilter?: boolean;
+const { mainPage = false, restrictions = {}, sectionTitle = '' } = defineProps<{
+  /** What this view fixes for the user. See HistoryEventsRestrictions. */
+  restrictions?: HistoryEventsRestrictions;
   sectionTitle?: string;
   mainPage?: boolean;
-  onlyChains?: Blockchain[];
 }>();
 
 const SyncProgressPanel = defineAsyncComponent(() => import('@/modules/shell/sync-progress/components/SyncProgressPanel.vue'));
@@ -102,25 +79,10 @@ const {
 
 const usedTitle = computed<string>(() => sectionTitle || t('transactions.title'));
 
-// What this view fixes for the user, read by both the table's filters and the pill-bar fields, so
-// the restrictions are stated once.
-const filterOptions = {
-  entryTypes: () => entryTypes,
-  eventSubTypes: () => eventSubTypes,
-  eventTypes: () => eventTypes,
-  externalAccountFilter: () => externalAccountFilter,
-  location: () => location,
-  mainPage: () => mainPage,
-  period: () => period,
-  protocols: () => protocols,
-  useExternalAccountFilter: () => useExternalAccountFilter,
-  validators: () => validators,
-};
-
 // The filter bag, and the fields bound to it, in that order: the fields read the bag to scope
 // their option lists, and the table below reads the url shape of the bag off the fields.
 const modelFilters = ref<Filters>({});
-const fields = useHistoryEventFields({ ...filterOptions, modelFilters });
+const fields = useHistoryEventFields({ modelFilters, restrictions: () => restrictions });
 
 const {
   clearFilters,
@@ -144,7 +106,12 @@ const {
   requestPayload,
   setPage,
   sort,
-} = useHistoryEventsFilters({ ...filterOptions, fields, filters: modelFilters }, toggles, overlayMode);
+} = useHistoryEventsFilters({
+  fields,
+  filters: modelFilters,
+  mainPage: () => mainPage,
+  restrictions: () => restrictions,
+}, toggles, overlayMode);
 
 // Accounting overlay: shows the known balance after each event. Keys off each event's own
 // (account, asset) pair, so no extra filter is required. Gated by VITE_ACCOUNTING_UPDATE,
@@ -188,11 +155,11 @@ watch(syncCompleted, async () => {
 });
 
 const actions = useHistoryEventsActions({
-  entryTypes: () => entryTypes,
+  entryTypes: () => restrictions.entryTypes,
   refetch,
   groups,
   mainPage: () => mainPage,
-  onlyChains: () => onlyChains,
+  onlyChains: () => restrictions.onlyChains ?? [],
   shouldFetchEventsRegularly,
 });
 
