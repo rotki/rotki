@@ -33,10 +33,15 @@ import {
   isGroupEditableHistoryEvent,
 } from '@/modules/history/management/forms/form-guards';
 
-const { event, loading, duplicateHandlingStatus, groupEvents } = defineProps<{
+const { event, loading, redecoding, duplicateHandlingStatus, groupEvents } = defineProps<{
   event: HistoryEventEntry;
   groupEvents?: HistoryEventEntry[];
   loading: boolean;
+  /**
+   * This group's own re-decode is in flight. Kept apart from `loading`, which follows every events
+   * fetch (paging, scrolling, filtering) and so would disable the action on routine refreshes.
+   */
+  redecoding?: boolean;
   duplicateHandlingStatus?: DuplicateHandlingStatus;
 }>();
 
@@ -293,7 +298,7 @@ function confirmIgnoreDuplicate(): void {
       <template v-if="blockEvent">
         <RuiButton
           variant="list"
-          :disabled="loading || ethBlockEventsDecoding"
+          :disabled="loading || redecoding || ethBlockEventsDecoding"
           @click="redecode(blockEvent)"
         >
           <template #prepend>
@@ -304,7 +309,7 @@ function confirmIgnoreDuplicate(): void {
       </template>
       <template v-else-if="eventWithDecoding">
         <RedecodeEventsButton
-          :disabled="loading || txEventsDecoding"
+          :disabled="loading || redecoding || txEventsDecoding"
           :has-options="!!decodableEvmEvent"
           @redecode="redecode(eventWithDecoding)"
           @redecode-with-options="decodableEvmEvent && redecodeWithOptions(decodableEvmEvent)"
