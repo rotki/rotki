@@ -4221,8 +4221,8 @@ def test_upgrade_db_52_to_53(
             ),
         )
 
-        # bitcoin events, which the upgrade leaves in place. They are replaced per
-        # transaction by the next transaction query, not deleted here.
+        # Bitcoin transaction events are reset by the upgrade and refetched after the query
+        # range is reset. Customized transaction events and plain user-created events survive.
         btc_tx_id, bch_tx_id, customized_tx_id = 'a' * 64, 'b' * 64, 'c' * 64
         for group_identifier, sequence_index, location in (
             (f'btc_{btc_tx_id}', 0, Location.BITCOIN.serialize_for_db()),
@@ -4630,45 +4630,38 @@ def test_upgrade_db_52_to_53(
             ('EVENT_METRICS_TEST_1',),
         ).fetchone()[0] == 1
 
-        # the bitcoin events survive the upgrade so the user keeps a visible history. They
-        # are purged and rewritten per transaction by the next transaction query.
+        # Uncustomized Bitcoin transaction events are purged so the next query refetches and
+        # decodes them with the current logic. Customized transactions and plain user events
+        # remain visible.
         assert cursor.execute(
             'SELECT group_identifier FROM history_events '
             "WHERE location IN ('q', 'r') ORDER BY group_identifier, sequence_index",
         ).fetchall() == [
-            (f'bch_{bch_tx_id}',),
-            (f'btc_{btc_tx_id}',),
-            (f'btc_{btc_tx_id}',),
             (f'btc_{customized_tx_id}',),
             ('manual_btc_event',),
         ]
 
-        # the ones identifying a transaction became chain events carrying its id, while
-        # the user created one that only looks like a transaction stayed a plain event
+        # The customized transaction remains a chain event carrying its id, while the user
+        # created one that only looks like a transaction stays a plain event.
         assert cursor.execute(
             'SELECT H.group_identifier, H.entry_type, C.tx_ref FROM history_events AS H '
             'LEFT JOIN chain_events_info AS C ON C.identifier=H.identifier '
             "WHERE H.location IN ('q', 'r') ORDER BY H.group_identifier, H.sequence_index",
         ).fetchall() == [
-            (f'bch_{bch_tx_id}', 11, bytes.fromhex(bch_tx_id)),
-            (f'btc_{btc_tx_id}', 11, bytes.fromhex(btc_tx_id)),
-            (f'btc_{btc_tx_id}', 11, bytes.fromhex(btc_tx_id)),
             (f'btc_{customized_tx_id}', 11, bytes.fromhex(customized_tx_id)),
             ('manual_btc_event', 1, None),
         ]
         assert cursor.execute(
             'SELECT COUNT(*) FROM bitcoin_events_addresses WHERE event_identifier=?',
             (btc_reset_identifier,),
-        ).fetchone()[0] == 1
+        ).fetchone()[0] == 0
 
-        # the backup of an edited event is migrated too. Restoring one that stayed a plain
-        # event would replace the migrated row and cascade its chain info away, leaving an
-        # event no transaction filter or redecode could find.
+        # The backup of the purged event is removed with the event. Keeping it would allow
+        # stale metadata to be restored if the history-event identifier is reused.
         assert cursor.execute(
-            'SELECT B.entry_type, C.tx_ref FROM history_events_backup AS B LEFT JOIN '
-            'chain_events_info_backup AS C ON C.identifier=B.identifier WHERE B.identifier=?',
+            'SELECT COUNT(*) FROM history_events_backup WHERE identifier=?',
             (btc_reset_identifier,),
-        ).fetchall() == [(11, bytes.fromhex(btc_tx_id))]
+        ).fetchone()[0] == 0
 
         # bitcoin transactions are saved from now on, so a future decoding fix needs no
         # refetching. They start empty since nothing was saved before this upgrade.
