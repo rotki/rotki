@@ -15,7 +15,7 @@ import { defineConfig } from 'vitest/config';
 import { VueRouterAutoImports } from 'vue-router/unplugin';
 import VueRouter from 'vue-router/vite';
 import { backendIcons } from './backend-icons.generated';
-import { sharedHelperModules, vendorChunkFor } from './scripts/chunk-groups';
+import { sharedHelperModules, vendorGroupEntries } from './scripts/chunk-groups';
 import { backendIconsCachePlugin } from './scripts/extract-backend-icons';
 
 const PACKAGE_ROOT = __dirname;
@@ -333,9 +333,7 @@ export default defineConfig({
               priority: 100,
               test: (id: string): boolean => sharedHelperModules.has(id),
             },
-            {
-              name: (id: string): string | null => vendorChunkFor(id),
-            },
+            ...vendorGroupEntries(),
           ],
         },
       },

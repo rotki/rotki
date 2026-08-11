@@ -24,63 +24,84 @@ export const sharedHelperModules = new Set<string>([
   '\0vite/preload-helper.js',
 ]);
 
+export interface VendorGroup {
+  chunk: string;
+  priority: number;
+  packages: string[];
+}
+
 /**
- * Package to chunk assignment. A module under `node_modules/<pkg>/` is placed in the chunk
- * whose list names `<pkg>`.
+ * Package to chunk assignment, highest priority first. A module under `node_modules/<pkg>/`
+ * is placed in the chunk whose list names `<pkg>`.
+ *
+ * **Priority is load-bearing, not cosmetic.** Rolldown lets the highest-priority matching
+ * group claim a module and removes it from the others, and a widely shared dependency that
+ * the wrong group claims drags that whole group into the eager startup graph. `vue-vendor`
+ * ranks above everything because every chunk needs the vue runtime: while `chart` outranked
+ * it, vue was emitted into `chart`, so all 369 chunks statically imported `chart` and echarts
+ * loaded at startup. Raising `vue-vendor` is what makes `chart` lazy.
  */
-export const vendorGroups: Record<string, string[]> = {
-  'chart': ['echarts', 'vue-echarts'],
-  'common': ['@rotki/common', 'bignumber.js'],
-  'editor': ['vanilla-jsoneditor'],
-  'ui-vendor': ['@rotki/ui-library'],
-  'utils': [
-    '@vueuse/math',
-    '@vueuse/core',
-    '@vueuse/shared',
-    '@vuelidate/core',
-    '@vuelidate/validators',
-    'ofetch',
-    'es-toolkit',
-    'imask',
-    'dayjs',
-    'consola',
-    'zod',
-  ],
-  'vue-vendor': ['vue', 'vue-router', 'pinia', 'vue-i18n'],
-  'wallet-connect': [
-    '@walletconnect/core',
-    '@walletconnect/universal-provider',
-    'viem',
-  ],
-};
+export const vendorGroups: VendorGroup[] = [
+  { chunk: 'vue-vendor', priority: 90, packages: ['vue', 'vue-router', 'pinia', 'vue-i18n'] },
+  { chunk: 'common', priority: 80, packages: ['@rotki/common', 'bignumber.js'] },
+  {
+    chunk: 'utils',
+    priority: 70,
+    packages: [
+      '@vueuse/math',
+      '@vueuse/core',
+      '@vueuse/shared',
+      '@vuelidate/core',
+      '@vuelidate/validators',
+      'ofetch',
+      'es-toolkit',
+      'imask',
+      'dayjs',
+      'consola',
+      'zod',
+    ],
+  },
+  { chunk: 'ui-vendor', priority: 60, packages: ['@rotki/ui-library'] },
+  { chunk: 'chart', priority: 50, packages: ['echarts', 'vue-echarts'] },
+  { chunk: 'editor', priority: 40, packages: ['vanilla-jsoneditor'] },
+  {
+    chunk: 'wallet-connect',
+    priority: 30,
+    packages: ['@walletconnect/core', '@walletconnect/universal-provider', 'viem'],
+  },
+];
+
+/**
+ * The vendor groups as one explicit `test` + `priority` entry per chunk. A single group with
+ * a shared dynamic `name()` cannot express the ordering above, because every name it returns
+ * gets the same priority.
+ */
+export function vendorGroupEntries(): { name: string; priority: number; test: (id: string) => boolean }[] {
+  return vendorGroups.map(({ chunk, priority, packages }) => ({
+    name: chunk,
+    priority,
+    test: (id: string): boolean => {
+      const pkg = packageOf(id);
+      return pkg !== undefined && packages.includes(pkg);
+    },
+  }));
+}
 
 /**
  * Chunks that must never appear in an `index.html` modulepreload. Each is only reachable
  * through a dynamic import, so a preload link means something started importing it statically.
  */
-export const lazyChunks: string[] = ['editor', 'wallet-connect'];
+export const lazyChunks: string[] = ['chart', 'editor', 'wallet-connect'];
 
 /**
  * Misplacements that exist today and are not fixed yet. The check stays green for these but
  * fails on anything new, and it also fails once one of them stops happening, which is the
  * prompt to delete the entry rather than let the list rot.
  *
- * `vue` in `chart`: Rolldown emits the vue runtime into `chart` even though the rule resolves
- * it to `vue-vendor`. Every chunk needs vue, so all of them statically import `chart` and
- * echarts ends up eager. Cause is Rolldown-side and still unknown. This is the big remaining
- * win, worth roughly 257 KB gzip.
- *
- * The `ui-vendor` entries are a few kB each: Rolldown hoists a handful of modules shared with
- * `@rotki/ui-library` into its chunk instead of leaving them in the group they resolve to.
- * Low impact, and it predates the codeSplitting migration.
+ * Empty on purpose: every package currently lands where the rules say it should. Add an entry
+ * only to record a misplacement you are deliberately not fixing.
  */
-export const knownViolations: string[] = [
-  '@vueuse/core -> ui-vendor (expected utils)',
-  '@vueuse/shared -> ui-vendor (expected utils)',
-  'dayjs -> ui-vendor (expected utils)',
-  'vue -> chart (expected vue-vendor)',
-  'vue-router -> ui-vendor (expected vue-vendor)',
-];
+export const knownViolations: string[] = [];
 
 function packageOf(id: string): string | undefined {
   const normalized = id.replaceAll('\\', '/');
@@ -105,7 +126,7 @@ export function vendorChunkFor(id: string): string | null {
   if (!pkg)
     return null;
 
-  for (const [chunk, packages] of Object.entries(vendorGroups)) {
+  for (const { chunk, packages } of vendorGroups) {
     if (packages.includes(pkg))
       return chunk;
   }
