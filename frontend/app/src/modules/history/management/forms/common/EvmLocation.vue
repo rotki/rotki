@@ -32,7 +32,7 @@ const { t } = useI18n({ useScope: 'global' });
       v-model="address"
       clearable
       variant="outlined"
-      data-cy="address"
+      data-testid="address"
       :label="t('transactions.events.form.contract_address.label')"
       :error-messages="errorMessages.address"
       @blur="emit('blur', 'address')"

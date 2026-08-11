@@ -38,16 +38,16 @@ const chainName = useChainName(() => chainId);
         v-if="asset"
         :asset="asset"
         :amount="chainBalance.amount"
-        data-cy="chain-balance-amount"
+        data-testid="chain-balance-amount"
       />
       <ValueDisplay
         v-else
         :value="chainBalance.amount"
-        data-cy="chain-balance-amount"
+        data-testid="chain-balance-amount"
       />
       <FiatDisplay
         :value="chainBalance.value"
-        data-cy="chain-balance-value"
+        data-testid="chain-balance-value"
       />
     </div>
   </RuiTooltip>

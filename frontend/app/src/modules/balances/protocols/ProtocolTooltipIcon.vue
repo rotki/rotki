@@ -82,18 +82,18 @@ const name = computed<string>(() => {
         :asset="asset"
         :amount="protocolBalance.amount"
         :loading="loading"
-        data-cy="top-protocol-amount"
+        data-testid="top-protocol-amount"
       />
       <ValueDisplay
         v-else
         :value="protocolBalance.amount"
         :loading="loading"
-        data-cy="top-protocol-amount"
+        data-testid="top-protocol-amount"
       />
       <FiatDisplay
         :value="protocolBalance.value"
         :loading="loading"
-        data-cy="top-protocol-value"
+        data-testid="top-protocol-value"
       />
     </div>
   </RuiTooltip>

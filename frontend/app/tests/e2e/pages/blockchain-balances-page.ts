@@ -15,10 +15,10 @@ export class BlockchainBalancesPage {
   async getTotals(): Promise<BigNumber> {
     await this.visit();
     const text = await this.page
-      .locator('[data-cy=blockchain-asset-balances]')
+      .locator('[data-testid=blockchain-asset-balances]')
       .locator('tbody')
       .locator('tr:last-child td:nth-child(2)')
-      .locator('[data-cy=display-amount]')
+      .locator('[data-testid=display-amount]')
       .textContent();
     return parseBigNumber(text ?? '0');
   }

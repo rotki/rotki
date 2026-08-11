@@ -48,8 +48,8 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
           asset: 'ETH',
         },
       });
-      expect(wrapper.find('[data-cy=amount-display]').text()).toMatch('1.50');
-      expect(wrapper.find('[data-cy=display-currency]').text()).toBe('ETH');
+      expect(wrapper.find('[data-testid=amount-display]').text()).toMatch('1.50');
+      expect(wrapper.find('[data-testid=display-currency]').text()).toBe('ETH');
     });
   });
 
@@ -63,7 +63,7 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
           pnl: true,
         },
       });
-      expect(wrapper.find('[data-cy=amount-display].text-rui-success').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=amount-display].text-rui-success').exists()).toBe(true);
     });
 
     it('should show red for negative values', () => {
@@ -75,7 +75,7 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
           pnl: true,
         },
       });
-      expect(wrapper.find('[data-cy=amount-display].text-rui-error').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=amount-display].text-rui-error').exists()).toBe(true);
     });
   });
 
@@ -92,7 +92,7 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
           asset: 'ETH',
         },
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe('1.50');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).not.toBe('1.50');
     });
 
     it('should not scramble the amount when noScramble is true', async () => {
@@ -104,7 +104,7 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
           noScramble: true,
         },
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.50');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).toBe('1.50');
     });
   });
 
@@ -165,7 +165,7 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
         },
       });
       // Asset amounts use amountRoundingMode which defaults to ROUND_UP
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('128');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).toBe('128');
     });
   });
 

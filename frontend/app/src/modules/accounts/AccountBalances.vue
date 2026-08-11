@@ -105,7 +105,7 @@ defineExpose({
 </script>
 
 <template>
-  <RuiCard data-cy="account-balances">
+  <RuiCard data-testid="account-balances">
     <div class="flex flex-col md:flex-row md:items-center gap-4 flex-wrap">
       <AccountAssetSelectionActions
         :selected-count="selectedAssets?.length"

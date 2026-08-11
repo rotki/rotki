@@ -9,7 +9,7 @@ export class ExternalServicesPage {
 
   async visit(): Promise<void> {
     await RotkiApp.navigateTo(this.page, 'api-keys', 'api-keys-external-services');
-    await this.page.locator('[data-cy=external-keys]').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+    await this.page.locator('[data-testid=external-keys]').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
   }
 
   /**
@@ -43,7 +43,7 @@ export class ExternalServicesPage {
   }
 
   serviceTitle(title: string): Locator {
-    return this.page.locator('[data-cy=external-keys]').getByText(title, { exact: true });
+    return this.page.locator('[data-testid=external-keys]').getByText(title, { exact: true });
   }
 
   async expectServicesRendered(titles: string[]): Promise<void> {
@@ -52,13 +52,13 @@ export class ExternalServicesPage {
   }
 
   async saveEtherscanKey(key: string): Promise<void> {
-    const card = this.page.locator('[data-cy=etherscan-api-keys]');
+    const card = this.page.locator('[data-testid=etherscan-api-keys]');
     await card.getByRole('button', { name: 'Enter API key' }).click();
 
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_DIALOG });
-    await dialog.locator('[data-cy=service-key__api-key] input').fill(key);
-    await dialog.locator('[data-cy=confirm]').click();
+    await dialog.locator('[data-testid=service-key__api-key] input').fill(key);
+    await dialog.locator('[data-testid=confirm]').click();
   }
 
   async expectSaveSucceeded(key: string): Promise<void> {
@@ -66,12 +66,12 @@ export class ExternalServicesPage {
       .poll(() => JSON.stringify(this.lastPutBody ?? {}))
       .toContain(key);
     expect(JSON.stringify(this.lastPutBody)).toContain('etherscan');
-    await expect(this.page.locator('[data-cy=bottom-dialog]').getByText('Successfully updated the key')).toBeVisible();
+    await expect(this.page.locator('[data-testid=bottom-dialog]').getByText('Successfully updated the key')).toBeVisible();
   }
 
   async closeDialog(): Promise<void> {
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
-    await dialog.locator('[data-cy=cancel]').click();
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
+    await dialog.locator('[data-testid=cancel]').click();
     await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_DIALOG });
   }
 }

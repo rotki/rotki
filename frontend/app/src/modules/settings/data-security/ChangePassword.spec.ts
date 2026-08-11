@@ -40,11 +40,11 @@ describe('settings/data-security/ChangePassword.vue', () => {
   }
 
   function field(name: 'current-password' | 'new-password' | 'confirm-password'): DOMWrapper<HTMLInputElement> {
-    return wrapper.find<HTMLInputElement>(`[data-cy=${name}] input`);
+    return wrapper.find<HTMLInputElement>(`[data-testid=${name}] input`);
   }
 
   function submitButton(): DOMWrapper<HTMLButtonElement> {
-    return wrapper.find<HTMLButtonElement>('[data-cy=change-password-button]');
+    return wrapper.find<HTMLButtonElement>('[data-testid=change-password-button]');
   }
 
   async function fill(current: string, next: string, confirm: string): Promise<void> {
@@ -68,7 +68,7 @@ describe('settings/data-security/ChangePassword.vue', () => {
 
     await fill('old', 'new', 'different');
 
-    expect(wrapper.find('[data-cy=confirm-password] .details .text-rui-error').text())
+    expect(wrapper.find('[data-testid=confirm-password] .details .text-rui-error').text())
       .toBe('change_password.validation.password_mismatch');
     expect(submitButton().attributes('disabled')).toBeDefined();
   });

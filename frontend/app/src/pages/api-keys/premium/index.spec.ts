@@ -54,14 +54,14 @@ describe('premium-settings', () => {
 
   it('should update premium status upon setting keys', async () => {
     api.setPremiumCredentials = vi.fn().mockResolvedValue({ result: true });
-    const apiKey = wrapper.find('[data-cy=premium__api-key] input');
-    const apiSecret = wrapper.find('[data-cy=premium__api-secret] input');
+    const apiKey = wrapper.find('[data-testid=premium__api-key] input');
+    const apiSecret = wrapper.find('[data-testid=premium__api-secret] input');
 
     await apiKey.setValue('1234');
     await apiSecret.setValue('1234');
 
     await nextTick();
-    await wrapper.find('[data-cy=premium__setup]').trigger('click');
+    await wrapper.find('[data-testid=premium__setup]').trigger('click');
     await nextTick();
     await flushPromises();
 
@@ -70,15 +70,15 @@ describe('premium-settings', () => {
   });
 
   function field(name: 'api-key' | 'api-secret'): DOMWrapper<HTMLInputElement> {
-    return wrapper.find<HTMLInputElement>(`[data-cy=premium__${name}] input`);
+    return wrapper.find<HTMLInputElement>(`[data-testid=premium__${name}] input`);
   }
 
   function fieldError(name: 'api-key' | 'api-secret'): string {
-    return wrapper.find(`[data-cy=premium__${name}] .details .text-rui-error`).text();
+    return wrapper.find(`[data-testid=premium__${name}] .details .text-rui-error`).text();
   }
 
   async function submit(): Promise<void> {
-    await wrapper.find('[data-cy=premium__setup]').trigger('click');
+    await wrapper.find('[data-testid=premium__setup]').trigger('click');
     await nextTick();
     await flushPromises();
   }
@@ -135,7 +135,7 @@ describe('premium-settings', () => {
     await nextTick();
     api.deletePremiumCredentials = vi.fn().mockResolvedValue({ result: true });
 
-    await wrapper.find('[data-cy=premium__delete]').trigger('click');
+    await wrapper.find('[data-testid=premium__delete]').trigger('click');
     await nextTick();
     await flushPromises();
     await flushPromises();

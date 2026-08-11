@@ -154,7 +154,7 @@ watch(visibleAssets, (_, oldVisibleAssets) => {
     </template>
     <template #no-data>
       <div
-        data-cy="no_assets"
+        data-testid="no_assets"
         class="p-4"
       >
         {{ t('asset_select.no_results') }}

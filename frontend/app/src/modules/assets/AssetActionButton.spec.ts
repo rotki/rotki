@@ -6,7 +6,7 @@ interface ActionProps {
   icon?: string;
   color?: 'primary' | 'warning' | 'error';
   tooltip?: string;
-  dataCy?: string;
+  dataTestid?: string;
 }
 
 function mountButton(props: ActionProps = {}): VueWrapper<InstanceType<typeof AssetActionButton>> {
@@ -29,15 +29,15 @@ describe('modules/assets/AssetActionButton', () => {
     expect(wrapper.emitted('click')).toHaveLength(1);
   });
 
-  it('should apply the data-cy hook to the button itself, not the tooltip root', () => {
-    const wrapper = mountButton({ dataCy: 'asset-update-price' });
+  it('should apply the data-testid hook to the button itself, not the tooltip root', () => {
+    const wrapper = mountButton({ dataTestid: 'asset-update-price' });
 
-    expect(wrapper.find('button').attributes('data-cy')).toBe('asset-update-price');
+    expect(wrapper.find('button').attributes('data-testid')).toBe('asset-update-price');
   });
 
-  it('should omit the data-cy attribute when no hook is given', () => {
+  it('should omit the data-testid attribute when no hook is given', () => {
     const wrapper = mountButton();
 
-    expect(wrapper.find('button').attributes('data-cy')).toBeUndefined();
+    expect(wrapper.find('button').attributes('data-testid')).toBeUndefined();
   });
 });

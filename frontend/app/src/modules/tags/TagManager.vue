@@ -94,7 +94,7 @@ onMounted(async () => {
       <RuiButton
         color="primary"
         size="lg"
-        data-cy="add-tags"
+        data-testid="add-tags"
         @click="handleCreateTagClick()"
       >
         <template #prepend>

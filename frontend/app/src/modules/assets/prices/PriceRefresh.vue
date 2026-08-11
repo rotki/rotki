@@ -28,7 +28,7 @@ async function refresh() {
     color="primary"
     size="lg"
     :loading="refreshing"
-    data-cy="price-refresh"
+    data-testid="price-refresh"
     :disabled="disabled"
     @click="refresh()"
   >

@@ -300,7 +300,7 @@ function showResetConfirmation() {
     <div class="flex flex-col gap-4">
       <RuiTextField
         v-model="userDataDirectory"
-        data-cy="user-data-directory-input"
+        data-testid="user-data-directory-input"
         :loading="!userDataDirectory"
         class="pt-2"
         variant="outlined"
@@ -328,7 +328,7 @@ function showResetConfirmation() {
       </RuiTextField>
       <RuiTextField
         v-model="userLogDirectory"
-        data-cy="user-log-directory-input"
+        data-testid="user-log-directory-input"
         :disabled="!!fileConfig.logDirectory"
         :hint="!!fileConfig.logDirectory ? t('backend_settings.config_file_disabled') : undefined"
         variant="outlined"
@@ -357,7 +357,7 @@ function showResetConfirmation() {
 
     <RuiAccordions>
       <RuiAccordion
-        data-cy="onboarding-setting__advance"
+        data-testid="onboarding-setting__advance"
         header-class="py-4"
         eager
       >
@@ -367,7 +367,7 @@ function showResetConfirmation() {
         <div class="py-2">
           <RuiTextField
             v-model="maxLogSize"
-            data-cy="max-log-size-input"
+            data-testid="max-log-size-input"
             class="mb-4"
             variant="outlined"
             color="primary"
@@ -385,14 +385,14 @@ function showResetConfirmation() {
             <template #append>
               <SettingResetButton
                 v-if="!isMaxSizeDefault"
-                data-cy="reset-max-log-size"
+                data-testid="reset-max-log-size"
                 @click="resetDefaultArguments('size')"
               />
             </template>
           </RuiTextField>
           <RuiTextField
             v-model="maxLogFiles"
-            data-cy="max-log-files-input"
+            data-testid="max-log-files-input"
             variant="outlined"
             color="primary"
             class="mb-4"
@@ -410,7 +410,7 @@ function showResetConfirmation() {
             <template #append>
               <SettingResetButton
                 v-if="!isMaxLogFilesDefault"
-                data-cy="reset-max-log-files"
+                data-testid="reset-max-log-files"
                 @click="resetDefaultArguments('files')"
               />
             </template>
@@ -418,7 +418,7 @@ function showResetConfirmation() {
 
           <RuiTextField
             v-model="sqliteInstructions"
-            data-cy="sqlite-instructions-input"
+            data-testid="sqlite-instructions-input"
             variant="outlined"
             color="primary"
             class="mb-4"
@@ -436,7 +436,7 @@ function showResetConfirmation() {
             <template #append>
               <SettingResetButton
                 v-if="!isSqliteInstructionsDefaults"
-                data-cy="reset-sqlite-instructions"
+                data-testid="reset-sqlite-instructions"
                 @click="resetDefaultArguments('instructions')"
               />
             </template>
@@ -445,7 +445,7 @@ function showResetConfirmation() {
           <RuiCheckbox
             v-model="logFromOtherModules"
             color="primary"
-            data-cy="log-from-other-modules-checkbox"
+            data-testid="log-from-other-modules-checkbox"
             :label="t('backend_settings.log_from_other_modules.label')"
             :disabled="fileConfig.logFromOtherModules"
             :hint="
@@ -477,7 +477,7 @@ function showResetConfirmation() {
           {{ t('backend_settings.actions.reset') }}
         </RuiButton>
         <RuiButton
-          data-cy="onboarding-setting__submit-button"
+          data-testid="onboarding-setting__submit-button"
           color="primary"
           :disabled="!anyValueChanged || !valid"
           type="submit"

@@ -6,7 +6,7 @@ import { RotkiApp } from './rotki-app';
 type Scope = 'global' | 'private';
 
 async function dismissErrorIfShown(page: Page): Promise<void> {
-  const okBtn = page.locator('[data-cy=message-dialog__ok]');
+  const okBtn = page.locator('[data-testid=message-dialog__ok]');
   // Wait briefly for a delayed popup to appear; if none, move on.
   try {
     await okBtn.waitFor({ state: 'visible', timeout: 500 });
@@ -19,15 +19,15 @@ async function dismissErrorIfShown(page: Page): Promise<void> {
 }
 
 async function confirmDialog(page: Page): Promise<void> {
-  const dialog = page.locator('[data-cy=bottom-dialog]');
-  await dialog.locator('[data-cy=confirm]').click();
+  const dialog = page.locator('[data-testid=bottom-dialog]');
+  await dialog.locator('[data-testid=confirm]').click();
   await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
   await dismissErrorIfShown(page);
 }
 
 async function confirmDelete(page: Page): Promise<void> {
-  const confirmDialogEl = page.locator('[data-cy=confirm-dialog]');
-  await confirmDialogEl.locator('[data-cy=button-confirm]').click();
+  const confirmDialogEl = page.locator('[data-testid=confirm-dialog]');
+  await confirmDialogEl.locator('[data-testid=button-confirm]').click();
   await confirmDialogEl.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
 }
 
@@ -70,21 +70,21 @@ export class AddressBookPage {
   async openAddDialog(): Promise<void> {
     await dismissErrorIfShown(this.page);
     await this.page.getByTestId('address-book-add').click();
-    await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
   }
 
   async submitDialog(): Promise<void> {
-    await this.page.locator('[data-cy=bottom-dialog] [data-cy=confirm]').click();
+    await this.page.locator('[data-testid=bottom-dialog] [data-testid=confirm]').click();
   }
 
   async cancelDialog(): Promise<void> {
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
-    await dialog.locator('[data-cy=cancel]').click();
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
+    await dialog.locator('[data-testid=cancel]').click();
     await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
   }
 
   async expectRequiredErrors(): Promise<void> {
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await expect(dialog.getByText('The address field cannot be empty')).toBeVisible();
     await expect(dialog.getByText('The name field cannot be empty')).toBeVisible();
   }
@@ -92,7 +92,7 @@ export class AddressBookPage {
   async addEntry(opts: { address: string; name: string }): Promise<void> {
     await dismissErrorIfShown(this.page);
     await this.page.getByTestId('address-book-add').click();
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     await this.page.getByTestId('address-book-form-address').locator('input').first().fill(opts.address);
     await this.page.getByTestId('address-book-form-name').locator('input').fill(opts.name);
@@ -101,8 +101,8 @@ export class AddressBookPage {
 
   async editEntry(address: string, newName: string): Promise<void> {
     await dismissErrorIfShown(this.page);
-    await this.rowFor(address).first().locator('[data-cy=row-edit]').click();
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    await this.rowFor(address).first().locator('[data-testid=row-edit]').click();
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     // Wait for the dialog to bind to the editable row's data; the title flips
     // from the empty "Add" form to "Edit address book entry" once that lands.
@@ -113,7 +113,7 @@ export class AddressBookPage {
   }
 
   async deleteEntry(address: string): Promise<void> {
-    await this.rowFor(address).first().locator('[data-cy=row-delete]').click();
+    await this.rowFor(address).first().locator('[data-testid=row-delete]').click();
     await confirmDelete(this.page);
     await expect(this.rowFor(address)).toHaveCount(0);
   }

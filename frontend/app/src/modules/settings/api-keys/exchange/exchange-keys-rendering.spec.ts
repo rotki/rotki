@@ -88,7 +88,7 @@ describe('settings/api-keys/exchange rendering', () => {
   }
 
   function has(testId: string): boolean {
-    return wrapper.find(`[data-cy=${testId}]`).exists();
+    return wrapper.find(`[data-testid=${testId}]`).exists();
   }
 
   describe('the fields every exchange shows', () => {
@@ -222,7 +222,7 @@ describe('settings/api-keys/exchange rendering', () => {
     const edit: Partial<ExchangeFormData> = { mode: 'edit', name: 'Kucoin 1', newName: 'Kucoin 1' };
 
     function value(testId: string): string {
-      return wrapper.find<HTMLInputElement>(`[data-cy=${testId}] input`).element.value;
+      return wrapper.find<HTMLInputElement>(`[data-testid=${testId}] input`).element.value;
     }
 
     it('should mask the saved key and secret while editing', () => {
@@ -262,21 +262,21 @@ describe('settings/api-keys/exchange rendering', () => {
     it('should not offer to reveal a masked key', () => {
       createWrapper(edit);
 
-      expect(wrapper.find('[data-cy=api-key]').findComponent({ name: 'RuiRevealableTextField' }).exists())
+      expect(wrapper.find('[data-testid=api-key]').findComponent({ name: 'RuiRevealableTextField' }).exists())
         .toBe(false);
     });
 
     it('should offer to reveal a key being typed', () => {
       createWrapper();
 
-      expect(wrapper.find('[data-cy=api-key]').findComponent({ name: 'RuiRevealableTextField' }).exists())
+      expect(wrapper.find('[data-testid=api-key]').findComponent({ name: 'RuiRevealableTextField' }).exists())
         .toBe(true);
     });
 
     it('should reveal the field for typing when asked to replace the keys', async () => {
       createWrapper(edit);
 
-      await wrapper.find('[data-cy=toggle-edit-keys]').trigger('click');
+      await wrapper.find('[data-testid=toggle-edit-keys]').trigger('click');
 
       expect(value('api-key')).toBe('key');
     });
@@ -287,7 +287,7 @@ describe('settings/api-keys/exchange rendering', () => {
      */
     it('should drop what was typed when the replacement is abandoned', async () => {
       createWrapper(edit);
-      const toggle = wrapper.find('[data-cy=toggle-edit-keys]');
+      const toggle = wrapper.find('[data-testid=toggle-edit-keys]');
 
       await toggle.trigger('click');
       await toggle.trigger('click');
@@ -300,7 +300,7 @@ describe('settings/api-keys/exchange rendering', () => {
 
     it('should drop the futures pair when its replacement is abandoned', async () => {
       createWrapper({ ...edit, location: 'kraken' });
-      const toggle = wrapper.find('[data-cy=toggle-edit-futures-keys]');
+      const toggle = wrapper.find('[data-testid=toggle-edit-futures-keys]');
 
       await toggle.trigger('click');
       await toggle.trigger('click');

@@ -49,7 +49,7 @@ const status = actionStatus(name);
       hide-actions
       :api-key="key"
       :name="name"
-      :data-cy="name"
+      :data-testid="name"
       :label="t('external_services.api_key')"
       :hint="t('external_services.opensea.hint')"
       :loading="loading"

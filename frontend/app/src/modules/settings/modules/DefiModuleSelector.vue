@@ -43,7 +43,7 @@ const modules = computed<PurgeableModuleEntry[]>(() => {
   <RuiAutoComplete
     v-bind="$attrs"
     v-model="model"
-    data-cy="defi-input"
+    data-testid="defi-input"
     :options="modules"
     key-attr="identifier"
     text-attr="name"

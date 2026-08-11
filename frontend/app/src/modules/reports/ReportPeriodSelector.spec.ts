@@ -50,7 +50,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
     it('should render year buttons for the last 5 years', () => {
       wrapper = createWrapper();
 
-      const yearButtons = wrapper.findAll('[data-cy=button-group-report-period-year] button');
+      const yearButtons = wrapper.findAll('[data-testid=button-group-report-period-year] button');
 
       const expectedYears: string[] = [];
       for (let i = 0; i < 5; i++) {
@@ -66,7 +66,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
     it('should emit update:selection when a year button is clicked', async () => {
       wrapper = createWrapper();
 
-      const yearButtons = wrapper.findAll('[data-cy=button-group-report-period-year] button');
+      const yearButtons = wrapper.findAll('[data-testid=button-group-report-period-year] button');
       const previousYear = (Number(currentYear) - 1).toString();
 
       await yearButtons[1].trigger('click');
@@ -83,7 +83,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
     it('should emit update:period with correct timestamps when year is selected', async () => {
       wrapper = createWrapper();
 
-      const yearButtons = wrapper.findAll('[data-cy=button-group-report-period-year] button');
+      const yearButtons = wrapper.findAll('[data-testid=button-group-report-period-year] button');
 
       await yearButtons[1].trigger('click');
       await vi.advanceTimersToNextTimerAsync();
@@ -102,7 +102,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
     it('should not change yearModel when dropdown button is clicked', async () => {
       wrapper = createWrapper();
 
-      const dropdownButton = wrapper.find('[data-cy=button-older-years]');
+      const dropdownButton = wrapper.find('[data-testid=button-older-years]');
       expect(dropdownButton.exists()).toBe(true);
 
       const initialSelectionEvents = wrapper.emitted('update:selection');
@@ -126,7 +126,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
         },
       });
 
-      const dropdownButton = wrapper.find('[data-cy=button-older-years]');
+      const dropdownButton = wrapper.find('[data-testid=button-older-years]');
       expect(dropdownButton.text()).toContain(olderYear);
     });
   });
@@ -135,7 +135,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
     it('should emit correct events when all-time is clicked', async () => {
       wrapper = createWrapper();
 
-      const allTimeButton = wrapper.find('[data-cy=button-all-time]');
+      const allTimeButton = wrapper.find('[data-testid=button-all-time]');
       expect(allTimeButton.exists()).toBe(true);
 
       await allTimeButton.trigger('click');
@@ -160,7 +160,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
     it('should emit update:selection with custom year when custom is clicked', async () => {
       wrapper = createWrapper();
 
-      const customButton = wrapper.find('[data-cy=button-custom]');
+      const customButton = wrapper.find('[data-testid=button-custom]');
       expect(customButton.exists()).toBe(true);
 
       await customButton.trigger('click');
@@ -192,7 +192,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       // Drop the mount-time period emit from the assertion window.
       await vi.advanceTimersToNextTimerAsync();
 
-      const customButton = wrapper.find('[data-cy=button-custom]');
+      const customButton = wrapper.find('[data-testid=button-custom]');
       await customButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
@@ -212,7 +212,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
         },
       });
 
-      const quarterButtonGroup = wrapper.find('[data-cy=button-group-quarter]');
+      const quarterButtonGroup = wrapper.find('[data-testid=button-group-quarter]');
       expect(quarterButtonGroup.exists()).toBe(false);
     });
   });
@@ -226,7 +226,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
         },
       });
 
-      const quarterButtonGroup = wrapper.find('[data-cy=button-group-quarter]');
+      const quarterButtonGroup = wrapper.find('[data-testid=button-group-quarter]');
       expect(quarterButtonGroup.exists()).toBe(true);
 
       const quarterButtons = quarterButtonGroup.findAll('button');
@@ -241,7 +241,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
         },
       });
 
-      const quarterButtonGroup = wrapper.find('[data-cy=button-group-quarter]');
+      const quarterButtonGroup = wrapper.find('[data-testid=button-group-quarter]');
       expect(quarterButtonGroup.exists()).toBe(false);
     });
 
@@ -253,7 +253,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
         },
       });
 
-      const quarterButtonGroup = wrapper.find('[data-cy=button-group-quarter]');
+      const quarterButtonGroup = wrapper.find('[data-testid=button-group-quarter]');
       const quarterButtons = quarterButtonGroup.findAll('button');
 
       await quarterButtons[1].trigger('click');

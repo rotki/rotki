@@ -102,7 +102,7 @@ defineExpose({
       variant="outlined"
       color="primary"
       class="tag_creator__name"
-      data-cy="tag-creator-name"
+      data-testid="tag-creator-name"
       :label="t('common.name')"
       :error-messages="toMessages(v$.name)"
     />
@@ -111,7 +111,7 @@ defineExpose({
       variant="outlined"
       color="primary"
       class="tag_creator__description"
-      data-cy="tag-creator-description"
+      data-testid="tag-creator-description"
       :label="t('common.description')"
     />
 
@@ -125,7 +125,7 @@ defineExpose({
         <RuiColorPicker
           v-model="foregroundColor"
           class="w-full"
-          data-cy="tag-creator__color-picker__foreground"
+          data-testid="tag-creator__color-picker__foreground"
         />
       </RuiCard>
       <RuiCard class="flex flex-col items-center">
@@ -135,7 +135,7 @@ defineExpose({
         <RuiColorPicker
           v-model="backgroundColor"
           class="w-full"
-          data-cy="tag-creator__color-picker__background"
+          data-testid="tag-creator__color-picker__background"
         />
       </RuiCard>
     </div>

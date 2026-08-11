@@ -34,7 +34,7 @@ const displayRouter = logicAnd(connected, logicNot(autolog), logicNot(showDocker
 
   <div
     v-if="displayRouter"
-    data-cy="account-management-forms"
+    data-testid="account-management-forms"
     class="min-h-[150px]"
   >
     <slot />

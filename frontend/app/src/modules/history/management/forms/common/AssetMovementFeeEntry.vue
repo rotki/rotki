@@ -24,7 +24,7 @@ const { t } = useI18n({ useScope: 'global' });
   <div>
     <RuiCheckbox
       v-model="hasFee"
-      data-cy="has-fee"
+      data-testid="has-fee"
       :label="t('transactions.events.form.has_fee.label')"
       color="primary"
     />
@@ -35,7 +35,7 @@ const { t } = useI18n({ useScope: 'global' });
         :disabled="!hasFee"
         clearable
         variant="outlined"
-        data-cy="fee-amount"
+        data-testid="fee-amount"
         :label="t('common.fee')"
         :error-messages="errorMessages.fee"
         @blur="emit('blur', 'fee')"
@@ -45,7 +45,7 @@ const { t } = useI18n({ useScope: 'global' });
         :disabled="!hasFee"
         outlined
         clearable
-        data-cy="fee-asset"
+        data-testid="fee-asset"
         :label="t('transactions.events.form.fee_asset.label')"
         :error-messages="errorMessages.feeAsset"
         @blur="emit('blur', 'feeAsset')"

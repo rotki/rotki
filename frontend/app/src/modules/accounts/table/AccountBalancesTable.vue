@@ -92,7 +92,7 @@ defineExpose({
     row-attr="id"
     :empty="{ description: t('data_table.no_data') }"
     :loading-text="t('account_balances.data_table.loading')"
-    data-cy="account-table"
+    data-testid="account-table"
     single-expand
     outlined
     sticky-header

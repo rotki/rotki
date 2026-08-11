@@ -65,7 +65,7 @@ watch(width, (newWidth) => {
   <div
     ref="dashboardRef"
     class="pb-6"
-    data-cy="dashboard"
+    data-testid="dashboard"
   >
     <div
       ref="floatingRef"
@@ -111,7 +111,7 @@ watch(width, (newWidth) => {
       <NftBalanceTable
         v-if="nftEnabled"
         id="nft-balance-table-section"
-        data-cy="nft-balance-table"
+        data-testid="nft-balance-table"
         class="mt-8"
       />
     </div>

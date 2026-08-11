@@ -10,7 +10,7 @@ import { useSettingModel } from '@/modules/settings/use-setting-model';
  * title/subtitle; this renders only the switch (or checkbox).
  *
  * `inverted` flips the displayed state against the stored value (e.g. an "animations note" toggle that
- * shows the opposite of `animationsEnabled`). Extra attributes (data-cy, size, class, hint) are
+ * shows the opposite of `animationsEnabled`). Extra attributes (data-testid, size, class, hint) are
  * forwarded to the underlying control.
  */
 defineOptions({ inheritAttrs: false });

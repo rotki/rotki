@@ -44,12 +44,12 @@ export class RotkiApp {
     await this.page.goto('/#/user/login?skip_update=1', { timeout: TIMEOUT_MEDIUM });
     await disableAnimations(this.page);
 
-    await this.page.locator('[data-cy=connection-loading__content]').waitFor({ state: 'detached' });
-    await this.page.locator('[data-cy=account-management-forms]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=connection-loading__content]').waitFor({ state: 'detached' });
+    await this.page.locator('[data-testid=account-management-forms]').waitFor({ state: 'visible' });
 
     // Check if we're on the login page (accounts exist) or create page (fresh start)
     // On fresh start without any accounts, it might show create account form directly
-    const newAccountButton = this.page.locator('[data-cy=new-account]');
+    const newAccountButton = this.page.locator('[data-testid=new-account]');
     const introductionContinue = this.page.locator('[data-testid=create-account__introduction__create]');
 
     // Wait for either the login form's "Create account" button or the create wizard's continue button
@@ -64,14 +64,14 @@ export class RotkiApp {
     }
 
     await this.page.locator('[data-testid=create-account__introduction__create]').click();
-    await this.page.locator('[data-cy=create-account__premium__button__continue]').click();
-    await this.page.locator('[data-cy=create-account__fields__username] input').fill(username);
-    await this.page.locator('[data-cy=create-account__fields__password] input').fill(password);
-    await this.page.locator('[data-cy=create-account__fields__password-repeat] input').fill(password);
-    await this.page.locator('[data-cy=create-account__boxes__user-prompted] > label').click();
-    await this.page.locator('[data-cy=create-account__credentials__button__continue]').click();
-    await this.page.locator('[data-cy=create-account__submit-analytics__button__continue]').click();
-    await this.page.locator('[data-cy=account-management-forms]').waitFor({ state: 'detached' });
+    await this.page.locator('[data-testid=create-account__premium__button__continue]').click();
+    await this.page.locator('[data-testid=create-account__fields__username] input').fill(username);
+    await this.page.locator('[data-testid=create-account__fields__password] input').fill(password);
+    await this.page.locator('[data-testid=create-account__fields__password-repeat] input').fill(password);
+    await this.page.locator('[data-testid=create-account__boxes__user-prompted] > label').click();
+    await this.page.locator('[data-testid=create-account__credentials__button__continue]').click();
+    await this.page.locator('[data-testid=create-account__submit-analytics__button__continue]').click();
+    await this.page.locator('[data-testid=account-management-forms]').waitFor({ state: 'detached' });
     await this.checkGetPremiumButton();
     await apiUpdateAssets(this.request);
     await this.loadEnv();
@@ -114,7 +114,7 @@ export class RotkiApp {
   }
 
   async checkGetPremiumButton(): Promise<void> {
-    await this.page.locator('[data-cy=get-premium-button]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=get-premium-button]').waitFor({ state: 'visible' });
   }
 
   async relogin(username: string, password: string = '1234'): Promise<void> {
@@ -123,11 +123,11 @@ export class RotkiApp {
   }
 
   async login(username: string, password: string = '1234'): Promise<void> {
-    const usernameField = this.page.locator('[data-cy=username-input]');
+    const usernameField = this.page.locator('[data-testid=username-input]');
     const usernameInput = usernameField.locator('input');
-    const passwordInput = this.page.locator('[data-cy=password-input] input');
-    const submitButton = this.page.locator('[data-cy=login-submit]');
-    const premiumButton = this.page.locator('[data-cy=get-premium-button]');
+    const passwordInput = this.page.locator('[data-testid=password-input] input');
+    const submitButton = this.page.locator('[data-testid=login-submit]');
+    const premiumButton = this.page.locator('[data-testid=get-premium-button]');
 
     await usernameInput.waitFor({ state: 'visible' });
 
@@ -186,33 +186,33 @@ export class RotkiApp {
   }
 
   async logout(): Promise<void> {
-    await this.page.locator('[data-cy=user-menu-button]').click();
-    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'visible' });
-    await this.page.locator('[data-cy=logout-button]').click();
+    await this.page.locator('[data-testid=user-menu-button]').click();
+    await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=logout-button]').click();
     await confirmDialog(this.page);
-    await this.page.locator('[data-cy=username-input] input').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=username-input] input').waitFor({ state: 'visible' });
   }
 
   async changeCurrency(currency: string): Promise<void> {
-    await this.page.locator('[data-cy=currency-dropdown]').click();
+    await this.page.locator('[data-testid=currency-dropdown]').click();
     await this.page.locator(`#change-to-${currency.toLowerCase()}`).click();
   }
 
   async togglePrivacyMenu(show?: boolean): Promise<void> {
-    const menuButton = this.page.locator('[data-cy=privacy-menu]');
-    const menuContent = this.page.locator('[data-cy=privacy-menu-content]');
+    const menuButton = this.page.locator('[data-testid=privacy-menu]');
+    const menuContent = this.page.locator('[data-testid=privacy-menu-content]');
 
     if (show) {
       await menuButton.click();
       // Wait for the slider to be visible (the slider is inside the menu content)
-      await this.page.locator('[data-cy=privacy-mode-dropdown__input]').waitFor({ state: 'visible' });
+      await this.page.locator('[data-testid=privacy-mode-dropdown__input]').waitFor({ state: 'visible' });
     }
     else {
       const isVisible = await menuContent.isVisible();
       if (isVisible) {
         await menuButton.click();
         // Wait for menu content to be hidden
-        await this.page.locator('[data-cy=privacy-mode-dropdown__input]').waitFor({ state: 'hidden' });
+        await this.page.locator('[data-testid=privacy-mode-dropdown__input]').waitFor({ state: 'hidden' });
       }
     }
   }
@@ -221,14 +221,14 @@ export class RotkiApp {
     await this.togglePrivacyMenu(true);
     // Mode 0 = Normal, 1 = Semi Private, 2 = Private
     // Sibling div after slider contains mode labels
-    const label = this.page.locator(`[data-cy=privacy-mode-dropdown__input] + div > div:nth-child(${mode + 1})`);
+    const label = this.page.locator(`[data-testid=privacy-mode-dropdown__input] + div > div:nth-child(${mode + 1})`);
     await label.waitFor({ state: 'visible' });
     await label.click();
     await this.togglePrivacyMenu();
   }
 
   async toggleScrambler(enable: boolean): Promise<void> {
-    const input = this.page.locator('[data-cy=privacy-mode-scramble__toggle] input[type=checkbox]');
+    const input = this.page.locator('[data-testid=privacy-mode-scramble__toggle] input[type=checkbox]');
     const isChecked = await input.isChecked();
 
     if (enable !== isChecked) {
@@ -238,13 +238,13 @@ export class RotkiApp {
 
   async changeScrambleValue(multiplier: string): Promise<void> {
     await this.toggleScrambler(true);
-    const input = this.page.locator('[data-cy=privacy-mode-scramble__multiplier] input');
+    const input = this.page.locator('[data-testid=privacy-mode-scramble__multiplier] input');
     await input.fill(multiplier);
   }
 
   async changeRandomScrambleValue(): Promise<void> {
     await this.toggleScrambler(true);
-    const button = this.page.locator('[data-cy=privacy-mode-scramble__random-multiplier]');
+    const button = this.page.locator('[data-testid=privacy-mode-scramble__random-multiplier]');
     await button.click();
   }
 

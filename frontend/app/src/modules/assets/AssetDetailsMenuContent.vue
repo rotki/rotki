@@ -172,7 +172,7 @@ defineExpose({
             <AssetActionButton
               icon="lu-dollar-sign"
               color="primary"
-              data-cy="asset-update-price"
+              data-testid="asset-update-price"
               :tooltip="t('assets.action.update_price')"
               @click="openPriceUpdate()"
             />

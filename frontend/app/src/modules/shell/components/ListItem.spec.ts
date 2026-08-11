@@ -26,6 +26,6 @@ describe('listItem', () => {
     expect(wrapper.find('.blur').exists()).toBe(true);
     // the avatar must remain untouched so the icon is not double-blurred
     expect(wrapper.find('.avatar .blur').exists()).toBe(false);
-    expect(wrapper.find('[data-cy=list-title]').classes()).not.toContain('blur');
+    expect(wrapper.find('[data-testid=list-title]').classes()).not.toContain('blur');
   });
 });

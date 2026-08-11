@@ -66,7 +66,7 @@ onMounted(async () => {
     <template #buttons>
       <BlockchainBalanceStalenessIndicator class="self-center" />
       <RuiButton
-        data-cy="blockchain-account-refresh"
+        data-testid="blockchain-account-refresh"
         variant="outlined"
         color="primary"
         size="lg"
@@ -80,7 +80,7 @@ onMounted(async () => {
         {{ t('common.refresh') }}
       </RuiButton>
       <RuiButton
-        data-cy="add-blockchain-account"
+        data-testid="add-blockchain-account"
         color="primary"
         size="lg"
         @click="createNewBlockchainAccount()"

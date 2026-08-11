@@ -161,7 +161,7 @@ const isRotkiCustomImport = computed<boolean>(() => source.startsWith('rotki_'))
 </script>
 
 <template>
-  <div :data-cy="`import-source-${source}`">
+  <div :data-testid="`import-source-${source}`">
     <div class="mb-2">
       <slot name="upload-title" />
     </div>
@@ -249,7 +249,7 @@ const isRotkiCustomImport = computed<boolean>(() => source.startsWith('rotki_'))
         <RuiButton
           color="primary"
           class="w-full"
-          data-cy="button-import"
+          data-testid="button-import"
           size="lg"
           type="submit"
           :disabled="v$.$invalid || !file || loading"

@@ -61,7 +61,7 @@ function add(): void {
       <RuiButton
         variant="outlined"
         color="primary"
-        data-cy="fee-add"
+        data-testid="fee-add"
         :disabled="disabled"
         size="sm"
         @click="add()"

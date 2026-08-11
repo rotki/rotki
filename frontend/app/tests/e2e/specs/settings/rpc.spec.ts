@@ -81,11 +81,11 @@ test.describe.serial('settings::rpc narrow viewport', () => {
   test.beforeAll(async ({ browser, request }) => {
     ctx = await createLoggedInContext(browser, request);
     pageRpc = new RpcSettingsPage(ctx.sharedPage);
-    await ctx.sharedPage.locator('[data-cy=user-menu-button]').click();
-    await ctx.sharedPage.locator('[data-cy=user-dropdown]').waitFor({ state: 'visible' });
-    await ctx.sharedPage.locator('[data-cy=settings-button]').click();
-    await ctx.sharedPage.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
-    await ctx.sharedPage.locator('[data-cy="settings__rpc"]').click();
+    await ctx.sharedPage.locator('[data-testid=user-menu-button]').click();
+    await ctx.sharedPage.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
+    await ctx.sharedPage.locator('[data-testid=settings-button]').click();
+    await ctx.sharedPage.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
+    await ctx.sharedPage.locator('[data-testid="settings__rpc"]').click();
     await ctx.sharedPage.getByTestId('rpc-settings-dropdowns').waitFor({ state: 'visible' });
   });
 

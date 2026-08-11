@@ -27,7 +27,7 @@ const { activeWelcomeMessages, welcomeMessage } = useDynamicMessages();
         :disabled="loading"
         variant="outlined"
         type="button"
-        data-cy="show-dynamic-messages"
+        data-testid="show-dynamic-messages"
         v-bind="attrs"
       >
         {{ welcomeMessage.action.text }}

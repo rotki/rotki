@@ -126,7 +126,7 @@ function promptClose() {
     >
       <RuiCard
         :divide="divide"
-        data-cy="bottom-dialog"
+        data-testid="bottom-dialog"
         class="!rounded-b-none"
       >
         <template #custom-header>
@@ -167,7 +167,7 @@ function promptClose() {
             <RuiButton
               color="primary"
               variant="outlined"
-              data-cy="cancel"
+              data-testid="cancel"
               @click="cancel()"
             >
               {{ secondary }}

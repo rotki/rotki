@@ -34,7 +34,7 @@ const { copied, copy } = useCopy(() => value);
 
     <div
       class="text-center"
-      data-cy="display-full-value"
+      data-testid="display-full-value"
     >
       <slot name="tooltip">
         <div v-if="tooltip">

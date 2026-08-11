@@ -7,7 +7,7 @@ defineProps<{
 
 <template>
   <span
-    data-cy="display-currency"
+    data-testid="display-currency"
     :class="noTruncate ? '' : 'truncate max-w-[5rem]'"
   >
     {{ symbol }}

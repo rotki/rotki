@@ -287,7 +287,7 @@ defineExpose({
 
 <template>
   <div
-    data-cy="exchange-keys"
+    data-testid="exchange-keys"
     class="flex flex-col gap-4"
   >
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
@@ -295,7 +295,7 @@ defineExpose({
         show-with-key-only
         :model-value="modelValue.location"
         :label="t('common.exchange')"
-        data-cy="exchange"
+        data-testid="exchange"
         :disabled="editMode"
         @update:model-value="onExchangeChange($event)"
       />
@@ -305,7 +305,7 @@ defineExpose({
         variant="outlined"
         color="primary"
         :error-messages="editMode ? form.errors('newName') : form.errors('name')"
-        data-cy="name"
+        data-testid="name"
         :label="t('common.name')"
       />
     </div>
@@ -313,7 +313,7 @@ defineExpose({
     <RuiMenuSelect
       v-if="isKraken"
       v-model="krakenAccountType"
-      data-cy="account-type"
+      data-testid="account-type"
       :options="krakenAccountTypes"
       :label="t('exchange_settings.inputs.kraken_account')"
       key-attr="identifier"
@@ -324,7 +324,7 @@ defineExpose({
     <RuiMenuSelect
       v-if="isGate"
       v-model="gateLocation"
-      data-cy="gate-location"
+      data-testid="gate-location"
       :options="gateLocations"
       :label="t('exchange_keys_form.region')"
       key-attr="identifier"
@@ -348,7 +348,7 @@ defineExpose({
     <RuiMenuSelect
       v-if="isOkx"
       v-model="okxLocation"
-      data-cy="okx-location"
+      data-testid="okx-location"
       :options="okxLocations"
       :label="t('exchange_keys_form.region')"
       key-attr="identifier"
@@ -380,7 +380,7 @@ defineExpose({
       >
         <template #activator>
           <RuiButton
-            data-cy="toggle-edit-keys"
+            data-testid="toggle-edit-keys"
             variant="text"
             class="!p-2"
             icon
@@ -408,7 +408,7 @@ defineExpose({
           color="primary"
           :disabled="editMode && !editKeys"
           :error-messages="form.errors('apiKey')"
-          data-cy="api-key"
+          data-testid="api-key"
           prepend-icon="lu-key"
           :label="label"
           :hint="hint"
@@ -426,7 +426,7 @@ defineExpose({
           :text-color="editMode && !editKeys && form.errors('apiKey').length === 0 ? 'success' : undefined"
           :disabled="editMode && !editKeys"
           :error-messages="form.errors('apiSecret')"
-          data-cy="api-secret"
+          data-testid="api-secret"
           prepend-icon="lu-lock-keyhole"
           :label="label"
           :hint="hint"
@@ -444,7 +444,7 @@ defineExpose({
           color="primary"
           :error-messages="form.errors('passphrase')"
           prepend-icon="lu-key"
-          data-cy="passphrase"
+          data-testid="passphrase"
           :label="label"
           :hint="hint"
           :class="className"

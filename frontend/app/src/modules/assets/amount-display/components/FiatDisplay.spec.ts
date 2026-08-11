@@ -43,10 +43,10 @@ describe('modules/amount-display/components/FiatDisplay', () => {
   describe('no conversion', () => {
     it('should display value as-is when from is not provided', async () => {
       wrapper = createWrapper({ value: bigNumberify(1.20440001) });
-      expect(wrapper.find('[data-cy=amount-display]').text()).toMatch('1.20');
-      await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
+      expect(wrapper.find('[data-testid=amount-display]').text()).toMatch('1.20');
+      await wrapper.find('[data-testid=display-amount]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch('1.20440001');
+      expect(wrapper.find('[data-testid=display-full-value]').text()).toMatch('1.20440001');
     });
   });
 
@@ -56,10 +56,10 @@ describe('modules/amount-display/components/FiatDisplay', () => {
         from: 'USD',
         value: bigNumberify(1.20440001),
       });
-      expect(wrapper.find('[data-cy=amount-display]').text()).toMatch('1.44');
-      await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
+      expect(wrapper.find('[data-testid=amount-display]').text()).toMatch('1.44');
+      await wrapper.find('[data-testid=display-amount]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch('1.445280012');
+      expect(wrapper.find('[data-testid=display-full-value]').text()).toMatch('1.445280012');
     });
 
     it('should not convert when from equals user currency', async () => {
@@ -67,10 +67,10 @@ describe('modules/amount-display/components/FiatDisplay', () => {
         from: 'EUR',
         value: bigNumberify(1.20440001),
       });
-      expect(wrapper.find('[data-cy=amount-display]').text()).toMatch('1.20');
-      await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
+      expect(wrapper.find('[data-testid=amount-display]').text()).toMatch('1.20');
+      await wrapper.find('[data-testid=display-amount]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch('1.20440001');
+      expect(wrapper.find('[data-testid=display-full-value]').text()).toMatch('1.20440001');
     });
   });
 
@@ -80,7 +80,7 @@ describe('modules/amount-display/components/FiatDisplay', () => {
         pnl: true,
         value: bigNumberify(50),
       });
-      expect(wrapper.find('[data-cy=amount-display].text-rui-success').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=amount-display].text-rui-success').exists()).toBe(true);
     });
 
     it('should show red for negative values', () => {
@@ -88,7 +88,7 @@ describe('modules/amount-display/components/FiatDisplay', () => {
         pnl: true,
         value: bigNumberify(-50),
       });
-      expect(wrapper.find('[data-cy=amount-display].text-rui-error').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=amount-display].text-rui-error').exists()).toBe(true);
     });
   });
 
@@ -102,10 +102,10 @@ describe('modules/amount-display/components/FiatDisplay', () => {
         from: 'USD',
         value: bigNumberify(1.20440001),
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe('1.44');
-      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).not.toBe('1.44');
+      await wrapper.find('[data-testid="display-amount"]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe('1.445280012');
+      expect(wrapper.find('[data-testid="display-full-value"]').text()).not.toBe('1.445280012');
     });
 
     it('should not scramble the value when noScramble is true', async () => {
@@ -114,10 +114,10 @@ describe('modules/amount-display/components/FiatDisplay', () => {
         noScramble: true,
         value: bigNumberify(1.20440001),
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toMatch('1.44');
-      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).toMatch('1.44');
+      await wrapper.find('[data-testid="display-amount"]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-cy="display-full-value"]').text()).toMatch('1.445280012');
+      expect(wrapper.find('[data-testid="display-full-value"]').text()).toMatch('1.445280012');
     });
 
     it('should not scramble the value when priceAsset is set', async () => {
@@ -126,10 +126,10 @@ describe('modules/amount-display/components/FiatDisplay', () => {
         priceAsset: 'ETH',
         value: bigNumberify(1.20440001),
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toMatch('1.44');
-      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).toMatch('1.44');
+      await wrapper.find('[data-testid="display-amount"]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-cy="display-full-value"]').text()).toMatch('1.445280012');
+      expect(wrapper.find('[data-testid="display-full-value"]').text()).toMatch('1.445280012');
     });
   });
 
@@ -149,7 +149,7 @@ describe('modules/amount-display/components/FiatDisplay', () => {
       await nextTick();
       await flushPromises();
 
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.20');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).toBe('1.20');
       expect(getPrice).toHaveBeenCalledWith('USD', 1000);
     });
 
@@ -168,7 +168,7 @@ describe('modules/amount-display/components/FiatDisplay', () => {
       await nextTick();
       await flushPromises();
 
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.20');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).toBe('1.20');
       expect(getPrice).toHaveBeenCalledWith('USD', 1000);
     });
   });
@@ -180,7 +180,7 @@ describe('modules/amount-display/components/FiatDisplay', () => {
         value: bigNumberify(128.205),
       });
       // Default rounding mode rounds down
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('128');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).toBe('128');
     });
   });
 });

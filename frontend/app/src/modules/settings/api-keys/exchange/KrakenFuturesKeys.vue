@@ -57,7 +57,7 @@ function toggle(): void {
     >
       <template #activator>
         <RuiButton
-          data-cy="toggle-edit-futures-keys"
+          data-testid="toggle-edit-futures-keys"
           variant="text"
           class="!p-2"
           icon
@@ -80,7 +80,7 @@ function toggle(): void {
     color="primary"
     :disabled="masked"
     :error-messages="keyErrors"
-    data-cy="kraken-futures-api-key"
+    data-testid="kraken-futures-api-key"
     prepend-icon="lu-key"
     :label="t('exchange_settings.inputs.futures_api_key')"
   />
@@ -91,7 +91,7 @@ function toggle(): void {
     color="primary"
     :disabled="masked"
     :error-messages="secretErrors"
-    data-cy="kraken-futures-api-secret"
+    data-testid="kraken-futures-api-secret"
     prepend-icon="lu-lock-keyhole"
     :label="t('exchange_settings.inputs.futures_api_secret')"
   />

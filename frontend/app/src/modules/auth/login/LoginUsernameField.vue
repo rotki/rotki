@@ -56,7 +56,7 @@ defineExpose({ focus });
     :error-messages="errorMessages"
     :disabled="disabled"
     class="mb-2"
-    data-cy="username-input"
+    data-testid="username-input"
     dense
   />
   <RuiAutoComplete
@@ -68,7 +68,7 @@ defineExpose({ focus });
     :options="orderedUsernames"
     :disabled="disabled"
     :error-messages="errorMessages"
-    data-cy="username-input"
+    data-testid="username-input"
     class="mb-2 [&_[data-id=activator]]:bg-transparent"
     auto-select-first
     :hide-no-data="savedUsernames.length > 0"

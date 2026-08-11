@@ -69,7 +69,7 @@ defineExpose({
         max-date="now"
         variant="outlined"
         accuracy="millisecond"
-        data-cy="datetime"
+        data-testid="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
         :error-messages="form.errors('timestamp')"
         @blur="form.touch('timestamp')"
@@ -78,7 +78,7 @@ defineExpose({
         v-model="state.blockNumber"
         variant="outlined"
         integer
-        data-cy="blockNumber"
+        data-testid="blockNumber"
         :label="t('transactions.events.form.block_number.label')"
         required
         :error-messages="form.errors('blockNumber')"
@@ -88,7 +88,7 @@ defineExpose({
         v-model="state.validatorIndex"
         variant="outlined"
         integer
-        data-cy="validatorIndex"
+        data-testid="validatorIndex"
         :label="t('transactions.events.form.validator_index.label')"
         required
         :error-messages="form.errors('validatorIndex')"
@@ -114,7 +114,7 @@ defineExpose({
     <AutoCompleteWithSearchSync
       v-model="state.feeRecipient"
       :items="feeRecipientSuggestions"
-      data-cy="feeRecipient"
+      data-testid="feeRecipient"
       :label="t('transactions.events.form.fee_recipient.label')"
       required
       :error-messages="form.errors('feeRecipient')"
@@ -125,7 +125,7 @@ defineExpose({
     <RuiCheckbox
       v-model="state.isMevReward"
       color="primary"
-      data-cy="isMevReward"
+      data-testid="isMevReward"
     >
       {{ t('transactions.events.form.is_mev_reward.label') }}
     </RuiCheckbox>
@@ -134,7 +134,7 @@ defineExpose({
 
     <RuiAccordions>
       <RuiAccordion
-        data-cy="eth-block-event-form__advance"
+        data-testid="eth-block-event-form__advance"
         header-class="py-4"
         eager
       >
@@ -146,7 +146,7 @@ defineExpose({
             v-model="state.groupIdentifier"
             variant="outlined"
             color="primary"
-            data-cy="groupIdentifier"
+            data-testid="groupIdentifier"
             :disabled="state.hasActualGroupIdentifier"
             :label="t('transactions.events.form.group_identifier.label')"
             :error-messages="form.errors('groupIdentifier')"

@@ -51,7 +51,7 @@ const { t } = useI18n({ useScope: 'global' });
           class="flex items-center -my-1"
         >
           <SummaryCardRefreshMenu
-            data-cy="account-balances-refresh-menu"
+            data-testid="account-balances-refresh-menu"
             :tooltip="t('summary_card.refresh_tooltip', { name })"
             :loading="isLoading"
             @refresh="emit('refresh', name.toLowerCase())"

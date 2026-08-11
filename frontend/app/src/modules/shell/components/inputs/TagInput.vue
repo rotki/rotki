@@ -158,7 +158,7 @@ watch(tags, () => {
     </RuiAutoComplete>
     <RuiButton
       class="mt-1"
-      data-cy="add-tag-button"
+      data-testid="add-tag-button"
       icon
       variant="text"
       color="primary"

@@ -220,7 +220,6 @@ function onUpdate(verbKey: string | undefined): void {
     :required="required"
     :error-messages="errorMessages"
     :hint="hint"
-    data-cy="eventActionPicker"
     data-testid="event-action-picker"
     @update:model-value="onUpdate($event)"
   >

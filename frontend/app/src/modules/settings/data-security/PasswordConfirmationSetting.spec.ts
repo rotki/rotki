@@ -45,24 +45,24 @@ describe('settings/data-security/PasswordConfirmationSetting.vue', () => {
   }
 
   function intervalInput(): DOMWrapper<HTMLInputElement> {
-    return wrapper.find<HTMLInputElement>('[data-cy=password-confirmation-interval-input] input');
+    return wrapper.find<HTMLInputElement>('[data-testid=password-confirmation-interval-input] input');
   }
 
   function saveButton(): DOMWrapper<HTMLButtonElement> {
-    return wrapper.find<HTMLButtonElement>('[data-cy=save-password-confirmation-settings]');
+    return wrapper.find<HTMLButtonElement>('[data-testid=save-password-confirmation-settings]');
   }
 
   function errorMessage(): string {
-    return wrapper.find('[data-cy=password-confirmation-interval-input] .details .text-rui-error').text();
+    return wrapper.find('[data-testid=password-confirmation-interval-input] .details .text-rui-error').text();
   }
 
   function toggle(): DOMWrapper<HTMLInputElement> {
-    return wrapper.find<HTMLInputElement>('[data-cy=enable-password-confirmation-toggle] input');
+    return wrapper.find<HTMLInputElement>('[data-testid=enable-password-confirmation-toggle] input');
   }
 
   /** The confirm dialog is teleported to the body, so it is reached through the document. */
   async function confirmDisable(): Promise<void> {
-    const confirm = document.body.querySelector<HTMLButtonElement>('[data-cy=button-confirm]');
+    const confirm = document.body.querySelector<HTMLButtonElement>('[data-testid=button-confirm]');
     assert(confirm, 'the disable warning is not showing');
     await new DOMWrapper(confirm).trigger('click');
     await flushPromises();

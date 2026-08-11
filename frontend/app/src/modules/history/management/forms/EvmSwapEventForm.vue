@@ -128,7 +128,7 @@ defineExpose({
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
-      data-cy="tx-ref"
+      data-testid="tx-ref"
       :label="t('common.tx_hash')"
       required
       :hint="txRefHint"
@@ -145,7 +145,7 @@ defineExpose({
           variant="indeterminate"
           color="primary"
           size="20"
-          data-cy="tx-ref-loading"
+          data-testid="tx-ref-loading"
         />
         <RuiTooltip
           v-else
@@ -156,7 +156,7 @@ defineExpose({
               icon
               variant="text"
               size="sm"
-              data-cy="tx-ref-retry"
+              data-testid="tx-ref-retry"
               @click="retryLookup()"
             >
               <RuiIcon name="lu-refresh-cw" />
@@ -171,7 +171,7 @@ defineExpose({
 
     <SwapSubEventList
       v-model="state.spend"
-      data-cy="spend"
+      data-testid="spend"
       path="spend"
       :errors="form.errors"
       :touch="form.touch"
@@ -184,7 +184,7 @@ defineExpose({
 
     <SwapSubEventList
       v-model="state.receive"
-      data-cy="receive"
+      data-testid="receive"
       path="receive"
       :errors="form.errors"
       :touch="form.touch"
@@ -198,13 +198,13 @@ defineExpose({
     <RuiCheckbox
       v-model="state.hasFee"
       :label="t('transactions.events.form.has_fee.label')"
-      data-cy="has-fee"
+      data-testid="has-fee"
       color="primary"
     />
 
     <SwapSubEventList
       v-model="state.fee"
-      data-cy="fee"
+      data-testid="fee"
       path="fee"
       :errors="form.errors"
       :touch="form.touch"
@@ -220,7 +220,7 @@ defineExpose({
       v-model="state.address"
       clearable
       variant="outlined"
-      data-cy="address"
+      data-testid="address"
       :label="t('transactions.events.form.contract_address.label')"
       :error-messages="form.errors('address')"
       @blur="form.touch('address')"
@@ -232,7 +232,7 @@ defineExpose({
         variant="outlined"
         integer
         :disabled="data.type === 'edit-group'"
-        data-cy="sequence-index"
+        data-testid="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
         required
         :error-messages="form.errors('sequenceIndex')"
@@ -242,7 +242,7 @@ defineExpose({
       <CounterpartyInput
         v-model="state.counterparty"
         :label="t('common.counterparty')"
-        data-cy="counterparty"
+        data-testid="counterparty"
         :error-messages="form.errors('counterparty')"
         @blur="form.touch('counterparty')"
       />

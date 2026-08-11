@@ -11,7 +11,7 @@ export class ModulesSettingsPage {
   }
 
   private moduleSwitch(identifier: string) {
-    return this.page.locator(`[data-cy="${identifier}-module-switch"]`);
+    return this.page.locator(`[data-testid="${identifier}-module-switch"]`);
   }
 
   private moduleCheckbox(identifier: string) {
@@ -33,6 +33,6 @@ export class ModulesSettingsPage {
   }
 
   async enableAll(): Promise<void> {
-    await this.page.locator('[data-cy=modules_enable_all]').click();
+    await this.page.locator('[data-testid=modules_enable_all]').click();
   }
 }

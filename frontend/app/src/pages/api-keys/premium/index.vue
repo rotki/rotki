@@ -185,7 +185,7 @@ onMounted(() => {
 
         <RuiRevealableTextField
           v-model.trim="form.state.apiKey"
-          data-cy="premium__api-key"
+          data-testid="premium__api-key"
           variant="outlined"
           color="primary"
           :disabled="premium && !edit"
@@ -196,7 +196,7 @@ onMounted(() => {
 
         <RuiRevealableTextField
           v-model.trim="form.state.apiSecret"
-          data-cy="premium__api-secret"
+          data-testid="premium__api-secret"
           variant="outlined"
           color="primary"
           :disabled="premium && !edit"
@@ -273,7 +273,7 @@ onMounted(() => {
               variant="outlined"
               color="primary"
               type="submit"
-              data-cy="premium__delete"
+              data-testid="premium__delete"
               @click="showDeleteConfirmation()"
             >
               {{ t('premium_settings.actions.delete') }}
@@ -284,7 +284,7 @@ onMounted(() => {
             class="min-w-28"
             color="primary"
             type="submit"
-            data-cy="premium__setup"
+            data-testid="premium__setup"
             @click="setupPremium()"
           >
             {{ mainActionText }}

@@ -24,13 +24,13 @@ describe('user-security-settings', () => {
   });
 
   it('should display no warning by default', () => {
-    expect(wrapper.find('[data-cy=premium-warning]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=premium-warning]').exists()).toBe(false);
   });
 
   it('should display warning if premium sync enabled', async () => {
     const { premiumSync } = storeToRefs(usePremiumStore());
     set(premiumSync, true);
     await nextTick();
-    expect(wrapper.find('[data-cy=premium-warning]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=premium-warning]').exists()).toBe(true);
   });
 });

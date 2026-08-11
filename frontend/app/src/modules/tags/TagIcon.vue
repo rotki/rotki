@@ -22,7 +22,7 @@ const shouldShowAmount = useSetting('shouldShowAmount');
   >
     <RuiChip
       class="font-medium !rounded-md shrink-0"
-      data-cy="tag"
+      data-testid="tag"
       tile
       content-class="flex font-mono"
       :size="small ? 'sm' : 'md'"

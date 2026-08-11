@@ -16,7 +16,7 @@ const { t } = useI18n({ useScope: 'global' });
   <RuiTextField
     v-model="labelModel"
     clearable
-    data-cy="account-label-field"
+    data-testid="account-label-field"
     color="primary"
     variant="outlined"
     class="account-form__label"
@@ -26,7 +26,7 @@ const { t } = useI18n({ useScope: 'global' });
 
   <TagInput
     v-model="tagsModel"
-    data-cy="account-tag-field"
+    data-testid="account-tag-field"
     :disabled="disabled"
   />
 </template>

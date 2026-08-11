@@ -47,7 +47,7 @@ async function change(): Promise<void> {
   <RuiAlert
     v-if="premiumSync"
     class="mt-6"
-    data-cy="premium-warning"
+    data-testid="premium-warning"
     type="warning"
   >
     {{ t('change_password.sync_warning') }}
@@ -68,7 +68,7 @@ async function change(): Promise<void> {
       <RuiRevealableTextField
         v-model="form.state.currentPassword"
         color="primary"
-        data-cy="current-password"
+        data-testid="current-password"
         :label="t('change_password.labels.password')"
         :error-messages="form.errors('currentPassword')"
         variant="outlined"
@@ -77,7 +77,7 @@ async function change(): Promise<void> {
       <RuiRevealableTextField
         v-model="form.state.newPassword"
         color="primary"
-        data-cy="new-password"
+        data-testid="new-password"
         :label="t('change_password.labels.new_password')"
         prepend-icon="lu-lock-keyhole"
         :error-messages="form.errors('newPassword')"
@@ -87,7 +87,7 @@ async function change(): Promise<void> {
       <RuiRevealableTextField
         v-model="form.state.newPasswordConfirm"
         color="primary"
-        data-cy="confirm-password"
+        data-testid="confirm-password"
         :label="t('change_password.labels.confirm_password')"
         prepend-icon="lu-repeat"
         :error-messages="form.errors('newPasswordConfirm')"
@@ -96,7 +96,7 @@ async function change(): Promise<void> {
       />
       <div class="flex justify-end">
         <RuiButton
-          data-cy="change-password-button"
+          data-testid="change-password-button"
           color="primary"
           :loading="loading"
           type="submit"

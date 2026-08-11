@@ -23,11 +23,11 @@ const DISABLE_ANIMATIONS_CSS = `
  * @param tab - the settings tab id (e.g. `interface`, `modules`, `oracle`)
  */
 export async function openSettingsTab(page: Page, tab: string): Promise<void> {
-  await page.locator('[data-cy=user-menu-button]').click();
-  await page.locator('[data-cy=user-dropdown]').waitFor({ state: 'visible' });
-  await page.locator('[data-cy=settings-button]').click();
-  await page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
-  await page.locator(`[data-cy="settings__${tab}"]`).click();
+  await page.locator('[data-testid=user-menu-button]').click();
+  await page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
+  await page.locator('[data-testid=settings-button]').click();
+  await page.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
+  await page.locator(`[data-testid="settings__${tab}"]`).click();
 }
 
 /**
@@ -114,13 +114,13 @@ export async function confirmInlineSuccess(page: Page, target: string, messageCo
  * Optionally verifies the dialog title contains expected text.
  */
 export async function confirmDialog(page: Page, expectedTitle?: string): Promise<void> {
-  const dialog = page.locator('[data-cy=confirm-dialog]');
+  const dialog = page.locator('[data-testid=confirm-dialog]');
 
   if (expectedTitle) {
-    await expect(dialog.locator('[data-cy=dialog-title]')).toContainText(expectedTitle);
+    await expect(dialog.locator('[data-testid=dialog-title]')).toContainText(expectedTitle);
   }
 
-  await dialog.locator('[data-cy=button-confirm]').click();
+  await dialog.locator('[data-testid=button-confirm]').click();
 }
 
 /**

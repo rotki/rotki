@@ -82,7 +82,7 @@ const typeLabel = computed<string | undefined>(() =>
   <!-- Card Layout -->
   <div
     v-if="isCard"
-    data-cy="history-event-swap"
+    data-testid="history-event-swap"
     :data-event-id="eventsProp[0]?.identifier"
     class="p-3 border-b border-default bg-white dark:bg-dark-surface contain-content transition-all"
     :class="[
@@ -112,7 +112,7 @@ const typeLabel = computed<string | undefined>(() =>
         />
 
         <RuiButton
-          data-cy="swap-expand"
+          data-testid="swap-expand"
           size="sm"
           icon
           color="primary"
@@ -200,7 +200,7 @@ const typeLabel = computed<string | undefined>(() =>
   <!-- Row Layout -->
   <div
     v-else
-    data-cy="history-event-swap"
+    data-testid="history-event-swap"
     :data-event-id="eventsProp[0]?.identifier"
     class="h-[72px] flex items-center gap-4 border-b border-default px-4 pl-6 group/row relative contain-content"
     :class="[
@@ -219,7 +219,7 @@ const typeLabel = computed<string | undefined>(() =>
 
     <div class="relative -top-2">
       <RuiButton
-        data-cy="swap-expand"
+        data-testid="swap-expand"
         size="sm"
         icon
         color="primary"

@@ -28,7 +28,7 @@ import { PillFilterBar } from '../../pages/pill-filter-bar';
 import { PillViewsMenu } from '../../pages/pill-views-menu';
 import { RotkiApp } from '../../pages/rotki-app';
 
-const ROW = '[data-cy=history-event-row]';
+const ROW = '[data-testid=history-event-row]';
 
 /**
  * Regression net for the pill filter bar on the history events table.
@@ -912,7 +912,7 @@ test.describe.serial('history events pill filter paging', () => {
   test('a filter survives sorting by date', async () => {
     // Newest first by default, so the last kraken event leads.
     const firstNote = async (): Promise<string | null> =>
-      ctx.sharedPage.locator(ROW).first().locator('[data-cy=event-notes]').textContent();
+      ctx.sharedPage.locator(ROW).first().locator('[data-testid=event-notes]').textContent();
     expect(await firstNote()).toContain(`paged ${PAGED_KRAKEN - 1}`);
 
     await bar.toggleDateSort();
@@ -973,7 +973,7 @@ test.describe.serial('history events pill filter across chains', () => {
       await bar.expectPillVisible('asset');
 
       await expect.poll(async () => ctx.sharedPage.locator(ROW).count(), { timeout: 15000 }).toBe(1);
-      await expect(ctx.sharedPage.locator(ROW).first().locator('[data-cy=event-notes]'))
+      await expect(ctx.sharedPage.locator(ROW).first().locator('[data-testid=event-notes]'))
         .toContainText(expected);
       // Both pills read "USDC", so the label alone cannot tell which is applied.
       expect(await bar.pillValue('asset')).toContain('USDC');

@@ -50,7 +50,7 @@ const tooltip = computed<string>(() => get(silent)
       <div
         v-else
         class="flex items-center"
-        data-cy="notification-indicator-progress"
+        data-testid="notification-indicator-progress"
       >
         <RuiProgress
           variant="indeterminate"

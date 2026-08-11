@@ -259,7 +259,7 @@ function abortLogin() {
               :disabled="loading || conflictExist || customBackendDisplay"
               class="mb-2 [&>div]:bg-transparent"
               :label="t('login.label_password')"
-              data-cy="password-input"
+              data-testid="password-input"
               dense
             />
 
@@ -304,7 +304,7 @@ function abortLogin() {
                 :disabled="v$.$invalid || loading || conflictExist || customBackendDisplay"
                 :loading="loading"
                 type="submit"
-                data-cy="login-submit"
+                data-testid="login-submit"
               >
                 {{ t('common.actions.continue') }}
               </RuiButton>
@@ -319,7 +319,7 @@ function abortLogin() {
                   variant="text"
                   :disabled="loading"
                   type="button"
-                  data-cy="new-account"
+                  data-testid="new-account"
                   class="py-1"
                   @click="newAccount()"
                 >

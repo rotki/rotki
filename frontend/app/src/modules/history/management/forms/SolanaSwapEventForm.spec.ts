@@ -184,30 +184,30 @@ describe('forms/SolanaSwapEventForm', () => {
     // The e2e suite finds every field through these selectors; losing one is an e2e break.
     expect(selectorContract(wrapper)).toMatchInlineSnapshot(`
       [
-        "data-cy=address",
-        "data-cy=advanced-accordion",
-        "data-cy=counterparty",
-        "data-cy=datetime",
-        "data-cy=fee",
-        "data-cy=fee-add",
-        "data-cy=fee-amount",
-        "data-cy=fee-asset",
-        "data-cy=fee-notes",
-        "data-cy=has-fee",
-        "data-cy=location",
-        "data-cy=location-label",
-        "data-cy=receive",
-        "data-cy=receive-add",
-        "data-cy=receive-amount",
-        "data-cy=receive-asset",
-        "data-cy=receive-notes",
-        "data-cy=sequence-index",
-        "data-cy=spend",
-        "data-cy=spend-add",
-        "data-cy=spend-amount",
-        "data-cy=spend-asset",
-        "data-cy=spend-notes",
-        "data-cy=tx-ref",
+        "data-testid=address",
+        "data-testid=advanced-accordion",
+        "data-testid=counterparty",
+        "data-testid=datetime",
+        "data-testid=fee",
+        "data-testid=fee-add",
+        "data-testid=fee-amount",
+        "data-testid=fee-asset",
+        "data-testid=fee-notes",
+        "data-testid=has-fee",
+        "data-testid=location",
+        "data-testid=location-label",
+        "data-testid=receive",
+        "data-testid=receive-add",
+        "data-testid=receive-amount",
+        "data-testid=receive-asset",
+        "data-testid=receive-notes",
+        "data-testid=sequence-index",
+        "data-testid=spend",
+        "data-testid=spend-add",
+        "data-testid=spend-amount",
+        "data-testid=spend-asset",
+        "data-testid=spend-notes",
+        "data-testid=tx-ref",
       ]
     `);
   });
@@ -215,44 +215,44 @@ describe('forms/SolanaSwapEventForm', () => {
   it('should render the form correctly', () => {
     wrapper = createWrapper();
     expect(wrapper.exists()).toBe(true);
-    expect(wrapper.find('[data-cy=datetime]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=location]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=tx-ref]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=datetime]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=location]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=tx-ref]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy=spend-amount]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=spend-asset]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=spend-amount]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=spend-asset]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy=receive-amount]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=receive-asset]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=receive-amount]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=receive-asset]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy=has-fee]').exists()).toBe(true);
-    expect(wrapper.find<HTMLInputElement>('[data-cy=has-fee]').element.checked).toBeUndefined();
-    expect(wrapper.find('[data-cy=fee-amount]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=fee-asset]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=has-fee]').exists()).toBe(true);
+    expect(wrapper.find<HTMLInputElement>('[data-testid=has-fee]').element.checked).toBeUndefined();
+    expect(wrapper.find('[data-testid=fee-amount]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=fee-asset]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy=address]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=sequence-index]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=counterparty]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=address]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sequence-index]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=counterparty]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy=spend-notes]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=receive-notes]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=fee-notes]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=spend-notes]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=receive-notes]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=fee-notes]').exists()).toBe(true);
   });
 
   it('should enable fee-related fields when "Has Fee" checkbox is toggled', async () => {
     wrapper = createWrapper();
 
-    const feeToggle = wrapper.find('[data-cy=has-fee] input');
+    const feeToggle = wrapper.find('[data-testid=has-fee] input');
 
-    expect(wrapper.find('[data-cy=fee-amount] input').attributes('disabled')).toBeFalsy();
-    expect(wrapper.find('[data-cy=fee-asset] input').attributes('disabled')).toBeFalsy();
+    expect(wrapper.find('[data-testid=fee-amount] input').attributes('disabled')).toBeFalsy();
+    expect(wrapper.find('[data-testid=fee-asset] input').attributes('disabled')).toBeFalsy();
 
     await feeToggle.setValue(true);
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-cy=fee-amount] input').attributes('disabled')).toBeFalsy();
-    expect(wrapper.find('[data-cy=fee-asset] input').attributes('disabled')).toBeFalsy();
-    expect(wrapper.find('[data-cy=fee-notes]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=fee-amount] input').attributes('disabled')).toBeFalsy();
+    expect(wrapper.find('[data-testid=fee-asset] input').attributes('disabled')).toBeFalsy();
+    expect(wrapper.find('[data-testid=fee-notes]').exists()).toBe(true);
   });
 
   it('should validate the form and call addHistoryEvent on save', async () => {
@@ -264,12 +264,12 @@ describe('forms/SolanaSwapEventForm', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    const spendAmountField = wrapper.find('[data-cy=spend-amount] input');
-    const spendAssetField = wrapper.find('[data-cy=spend-asset] input');
-    const receiveAmountField = wrapper.find('[data-cy=receive-amount] input');
-    const receiveAssetField = wrapper.find('[data-cy=receive-asset] input');
-    const addressField = wrapper.find('[data-cy=address] input');
-    const counterpartyField = wrapper.find('[data-cy=counterparty] input');
+    const spendAmountField = wrapper.find('[data-testid=spend-amount] input');
+    const spendAssetField = wrapper.find('[data-testid=spend-asset] input');
+    const receiveAmountField = wrapper.find('[data-testid=receive-amount] input');
+    const receiveAssetField = wrapper.find('[data-testid=receive-asset] input');
+    const addressField = wrapper.find('[data-testid=address] input');
+    const counterpartyField = wrapper.find('[data-testid=counterparty] input');
 
     await spendAmountField.setValue('0.1');
     await spendAssetField.setValue('SOL');
@@ -314,11 +314,11 @@ describe('forms/SolanaSwapEventForm', () => {
     await saveMethod();
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-cy=tx-ref] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=spend-amount] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=spend-asset] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=receive-amount] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=receive-asset] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=tx-ref] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=spend-amount] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=spend-asset] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=receive-amount] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=receive-asset] .details').exists()).toBe(true);
   });
 
   it('should call editHistoryEvent when editing an event', async () => {
@@ -340,11 +340,11 @@ describe('forms/SolanaSwapEventForm', () => {
 
     expect(editHistoryEventMock).not.toHaveBeenCalled();
 
-    const feeAmount = wrapper.find('[data-cy=fee-amount] input');
+    const feeAmount = wrapper.find('[data-testid=fee-amount] input');
     await feeAmount.setValue('0.00001');
 
-    const receiveNotes = wrapper.find('[data-cy=receive-notes] textarea:not([aria-hidden="true"])');
-    const feeNotes = wrapper.find('[data-cy=fee-notes] textarea:not([aria-hidden="true"])');
+    const receiveNotes = wrapper.find('[data-testid=receive-notes] textarea:not([aria-hidden="true"])');
+    const feeNotes = wrapper.find('[data-testid=fee-notes] textarea:not([aria-hidden="true"])');
     await receiveNotes.setValue('updated receive note');
     await feeNotes.setValue('updated fee note');
 
@@ -400,11 +400,11 @@ describe('forms/SolanaSwapEventForm', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    const feeAmount = wrapper.find('[data-cy=fee-amount] input');
+    const feeAmount = wrapper.find('[data-testid=fee-amount] input');
     await feeAmount.setValue('0.00001');
 
-    const receiveNotes = wrapper.find('[data-cy=receive-notes] textarea:not([aria-hidden="true"])');
-    const feeNotes = wrapper.find('[data-cy=fee-notes] textarea:not([aria-hidden="true"])');
+    const receiveNotes = wrapper.find('[data-testid=receive-notes] textarea:not([aria-hidden="true"])');
+    const feeNotes = wrapper.find('[data-testid=fee-notes] textarea:not([aria-hidden="true"])');
     await receiveNotes.setValue('updated receive note');
     await feeNotes.setValue('updated fee note');
 
@@ -415,19 +415,19 @@ describe('forms/SolanaSwapEventForm', () => {
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
     addHistoryEventMock.mockResolvedValueOnce({ message: '', success: false });
 
-    await wrapper.find('[data-cy=spend-add]').trigger('click');
-    await wrapper.find('[data-cy=receive-add]').trigger('click');
+    await wrapper.find('[data-testid=spend-add]').trigger('click');
+    await wrapper.find('[data-testid=receive-add]').trigger('click');
 
-    await wrapper.findAll('[data-cy=spend-amount] input')[1].setValue('0.2');
-    await wrapper.findAll('[data-cy=spend-asset] input')[1].setValue('RAY');
+    await wrapper.findAll('[data-testid=spend-amount] input')[1].setValue('0.2');
+    await wrapper.findAll('[data-testid=spend-asset] input')[1].setValue('RAY');
 
-    await wrapper.findAll('[data-cy=receive-amount] input')[1].setValue('0.19');
-    await wrapper.findAll('[data-cy=receive-asset] input')[1].setValue('USDC');
+    await wrapper.findAll('[data-testid=receive-amount] input')[1].setValue('0.19');
+    await wrapper.findAll('[data-testid=receive-asset] input')[1].setValue('USDC');
 
-    await wrapper.find('[data-cy=spend-add]').trigger('click');
-    expect(wrapper.findAll('[data-cy=spend-amount]')).toHaveLength(3);
-    await wrapper.findAll('[data-cy=spend-remove]')[2].trigger('click');
-    expect(wrapper.findAll('[data-cy=spend-amount]')).toHaveLength(2);
+    await wrapper.find('[data-testid=spend-add]').trigger('click');
+    expect(wrapper.findAll('[data-testid=spend-amount]')).toHaveLength(3);
+    await wrapper.findAll('[data-testid=spend-remove]')[2].trigger('click');
+    expect(wrapper.findAll('[data-testid=spend-amount]')).toHaveLength(2);
 
     const saveResult = await saveMethod();
     expect(saveResult).toBe(true);
@@ -486,7 +486,7 @@ describe('forms/SolanaSwapEventForm', () => {
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
     addHistoryEventMock.mockResolvedValueOnce({ message: '', success: false });
 
-    await wrapper.find('[data-cy=has-fee] input').setValue(false);
+    await wrapper.find('[data-testid=has-fee] input').setValue(false);
 
     const saveResult = await saveMethod();
     expect(saveResult).toBe(true);
@@ -530,7 +530,7 @@ describe('forms/SolanaSwapEventForm', () => {
       success: false,
     });
 
-    await wrapper.find('[data-cy=address] input').setValue('DYw8jCTfwHNRJhhmFcbXvVDTqWMEVFBX6ZKUmG7EvgfK');
+    await wrapper.find('[data-testid=address] input').setValue('DYw8jCTfwHNRJhhmFcbXvVDTqWMEVFBX6ZKUmG7EvgfK');
 
     await vi.advanceTimersToNextTimerAsync();
 
@@ -541,7 +541,7 @@ describe('forms/SolanaSwapEventForm', () => {
 
     expect(editHistoryEventMock).toHaveBeenCalled();
     expect(saveResult).toBe(false);
-    expect(wrapper.find('[data-cy=address] .details').text()).toBe('Invalid Solana address format');
+    expect(wrapper.find('[data-testid=address] .details').text()).toBe('Invalid Solana address format');
   });
 
   it('should load data correctly for group-add mode', async () => {
@@ -553,13 +553,13 @@ describe('forms/SolanaSwapEventForm', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    const txRefField = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
+    const txRefField = wrapper.find<HTMLInputElement>('[data-testid=tx-ref] input');
     expect(txRefField.element.value).toBe(txRef);
 
-    const locationField = wrapper.find<HTMLInputElement>('[data-cy=location] input');
+    const locationField = wrapper.find<HTMLInputElement>('[data-testid=location] input');
     expect(locationField.element.value).toBe(SOLANA_CHAIN);
 
-    const sequenceIndexField = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
+    const sequenceIndexField = wrapper.find<HTMLInputElement>('[data-testid=sequence-index] input');
     expect(sequenceIndexField.element.value).toBe('3');
   });
 });

@@ -14,16 +14,16 @@ export class DashboardPage {
 
   async getOverallBalance(): Promise<BigNumber> {
     const amountText = await this.page
-      .locator('[data-cy=overall-balances__net-worth] [data-cy=display-amount]')
+      .locator('[data-testid=overall-balances__net-worth] [data-testid=display-amount]')
       .textContent();
     return parseBigNumber(amountText ?? '0');
   }
 
   async getBlockchainBalances(): Promise<Map<string, BigNumber>> {
-    await this.page.locator('[data-cy=blockchain-balances]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=blockchain-balances]').waitFor({ state: 'visible' });
 
     const balances = new Map<string, BigNumber>();
-    const elements = this.page.locator('[data-cy=blockchain-balance__summary]');
+    const elements = this.page.locator('[data-testid=blockchain-balance__summary]');
     const count = await elements.count();
 
     for (let i = 0; i < count; i++) {
@@ -32,7 +32,7 @@ export class DashboardPage {
       if (!location)
         continue;
 
-      const amountText = await element.locator('[data-cy=display-amount]').textContent();
+      const amountText = await element.locator('[data-testid=display-amount]').textContent();
       updateLocationBalance(amountText ?? '0', balances, location);
     }
 
@@ -40,14 +40,14 @@ export class DashboardPage {
   }
 
   async getNonFungibleBalances(): Promise<BigNumber> {
-    const nftTable = this.page.locator('[data-cy=nft-balance-table]');
+    const nftTable = this.page.locator('[data-testid=nft-balance-table]');
     const nftTableExists = (await nftTable.count()) > 0;
 
     if (!nftTableExists) {
       return Zero;
     }
 
-    const displayAmount = nftTable.locator('tbody tr:last-child td:nth-child(2) [data-cy=display-amount]');
+    const displayAmount = nftTable.locator('tbody tr:last-child td:nth-child(2) [data-testid=display-amount]');
     const displayAmountExists = (await displayAmount.count()) > 0;
 
     if (!displayAmountExists) {
@@ -59,10 +59,10 @@ export class DashboardPage {
   }
 
   async getLocationBalances(): Promise<Map<string, BigNumber>> {
-    await this.page.locator('[data-cy=manual-balances]').first().waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=manual-balances]').first().waitFor({ state: 'visible' });
 
     const balances = new Map<string, BigNumber>();
-    const elements = this.page.locator('[data-cy=manual-balance__summary]');
+    const elements = this.page.locator('[data-testid=manual-balance__summary]');
     const count = await elements.count();
 
     for (let i = 0; i < count; i++) {
@@ -71,7 +71,7 @@ export class DashboardPage {
       if (!location)
         continue;
 
-      const amountText = await element.locator('[data-cy=display-amount]').textContent();
+      const amountText = await element.locator('[data-testid=display-amount]').textContent();
       updateLocationBalance(amountText ?? '0', balances, location);
     }
 
@@ -79,23 +79,23 @@ export class DashboardPage {
   }
 
   async amountDisplayIsBlurred(): Promise<void> {
-    const amountDisplay = this.page.locator('[data-cy=amount-display]').first();
+    const amountDisplay = this.page.locator('[data-testid=amount-display]').first();
     const filter = await amountDisplay.evaluate(el => getComputedStyle(el).filter);
     expect(filter).toMatch(/^blur/);
   }
 
   async amountDisplayIsNotBlurred(): Promise<void> {
-    const amountDisplay = this.page.locator('[data-cy=amount-display]').first();
+    const amountDisplay = this.page.locator('[data-testid=amount-display]').first();
     const filter = await amountDisplay.evaluate(el => getComputedStyle(el).filter);
     expect(filter).not.toMatch(/^blur/);
   }
 
   async percentageDisplayIsBlurred(): Promise<void> {
-    await expect(this.page.locator('[data-cy=percentage-display]').first()).toHaveClass(/blur/);
+    await expect(this.page.locator('[data-testid=percentage-display]').first()).toHaveClass(/blur/);
   }
 
   async percentageDisplayIsNotBlurred(): Promise<void> {
-    await expect(this.page.locator('[data-cy=percentage-display]').first()).not.toHaveClass(/blur/);
+    await expect(this.page.locator('[data-testid=percentage-display]').first()).not.toHaveClass(/blur/);
   }
 
   async openSnapshotMenu(): Promise<void> {

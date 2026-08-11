@@ -48,10 +48,10 @@ test.describe.serial('blockchain balances', () => {
 
     await blockchainAccountsPage.visit();
     await blockchainAccountsPage.openAddDialog();
-    await tagManager.addTag('[data-cy=account-tag-field]', 'public', 'Public Accounts', 'EF703C', 'FFFFF8');
+    await tagManager.addTag('[data-testid=account-tag-field]', 'public', 'Public Accounts', 'EF703C', 'FFFFF8');
     await blockchainAccountsPage.addAccount(blockchainAccounts[0]);
     await blockchainAccountsPage.isEntryVisible(0, blockchainAccounts[0]);
-    await expect(ctx.sharedPage.locator('[data-cy=blockchain-account-refresh]')).not.toBeDisabled();
+    await expect(ctx.sharedPage.locator('[data-testid=blockchain-account-refresh]')).not.toBeDisabled();
     await waitForNoRunningTasks(ctx.sharedPage);
   });
 
@@ -62,7 +62,7 @@ test.describe.serial('blockchain balances', () => {
     await blockchainAccountsPage.openAddDialog();
     await blockchainAccountsPage.addAccount(blockchainAccounts[1]);
     await blockchainAccountsPage.isEntryVisible(0, blockchainAccounts[1]);
-    await expect(ctx.sharedPage.locator('[data-cy=blockchain-account-refresh]')).not.toBeDisabled();
+    await expect(ctx.sharedPage.locator('[data-testid=blockchain-account-refresh]')).not.toBeDisabled();
     await waitForNoRunningTasks(ctx.sharedPage);
   });
 

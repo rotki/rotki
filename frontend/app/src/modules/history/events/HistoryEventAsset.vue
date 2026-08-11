@@ -61,7 +61,7 @@ watch(menuOpened, (menuOpened) => {
   >
     <template #activator="{ attrs }">
       <div
-        data-cy="event-asset"
+        data-testid="event-asset"
         class="flex items-center w-full gap-2 overflow-hidden transition-colors"
         :class="[
           inline ? 'py-1.5' : 'py-2',
@@ -85,7 +85,7 @@ watch(menuOpened, (menuOpened) => {
           :class="inline ? 'flex items-baseline gap-1' : 'flex flex-col'"
         >
           <AssetAmountDisplay
-            data-cy="event-amount"
+            data-testid="event-amount"
             :amount="event.amount"
             :asset="event.asset"
             no-collection-parent

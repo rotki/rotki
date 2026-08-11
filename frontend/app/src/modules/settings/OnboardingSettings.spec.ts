@@ -139,48 +139,48 @@ describe('onboarding-settings', () => {
 
   describe('standard settings', () => {
     it('should use default value and disable save button', () => {
-      const dataDirectoryInput = wrapper.find<HTMLInputElement>('[data-cy=user-data-directory-input] input').element;
+      const dataDirectoryInput = wrapper.find<HTMLInputElement>('[data-testid=user-data-directory-input] input').element;
       expect(dataDirectoryInput.value).toBe('/Users/home/rotki/develop_data');
 
-      const userLogDirectoryInput = wrapper.find<HTMLInputElement>('[data-cy=user-log-directory-input] input')
+      const userLogDirectoryInput = wrapper.find<HTMLInputElement>('[data-testid=user-log-directory-input] input')
         .element;
       expect(userLogDirectoryInput.value).toBe('/Users/home/rotki/logs');
 
       const logLevelInput = wrapper.find<HTMLInputElement>('.loglevel-input .input').element;
       expect(logLevelInput.value).toBe('debug');
 
-      expect(wrapper.find('[data-cy=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
+      expect(wrapper.find('[data-testid=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
     });
 
     it('should save the data directory setting', async () => {
-      expect(wrapper.find('[data-cy=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
+      expect(wrapper.find('[data-testid=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
 
       const newDataDirectory = '/Users/home/rotki/develop_data1';
 
-      await wrapper.find('[data-cy=user-data-directory-input] input').setValue(newDataDirectory);
+      await wrapper.find('[data-testid=user-data-directory-input] input').setValue(newDataDirectory);
 
       await nextTick();
 
-      await wrapper.find('[data-cy=onboarding-setting__submit-button]').trigger('click');
+      await wrapper.find('[data-testid=onboarding-setting__submit-button]').trigger('click');
 
       expect(saveOptions).toBeCalledWith({
         dataDirectory: newDataDirectory,
       });
 
-      expect(wrapper.find('[data-cy=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
+      expect(wrapper.find('[data-testid=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
     });
 
     it('should save the loglevel setting', async () => {
       const logLevelInput = wrapper.find<HTMLInputElement>('.loglevel-input .input').element;
       expect(logLevelInput.value).toBe('debug');
 
-      expect(wrapper.find('[data-cy=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
+      expect(wrapper.find('[data-testid=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
 
       await wrapper.find('.loglevel-input .input').trigger('input', { value: 'warning' });
 
       await nextTick();
 
-      await wrapper.find('[data-cy=onboarding-setting__submit-button]').trigger('click');
+      await wrapper.find('[data-testid=onboarding-setting__submit-button]').trigger('click');
 
       await flushPromises();
       await nextTick();
@@ -203,7 +203,7 @@ describe('onboarding-settings', () => {
       setLevelMock.mockClear();
       setLogLevelMock.mockClear();
 
-      await wrapper.find('[data-cy=onboarding-setting__submit-button]').trigger('click');
+      await wrapper.find('[data-testid=onboarding-setting__submit-button]').trigger('click');
       await flushPromises();
       await nextTick();
 
@@ -259,13 +259,13 @@ describe('onboarding-settings', () => {
 
       const logLevelInput = wrapper.find<HTMLInputElement>('.loglevel-input .input').element;
       expect(logLevelInput.value).toBe('critical');
-      expect(wrapper.find('[data-cy=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
+      expect(wrapper.find('[data-testid=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
 
       // Switching to debug should re-enable save because it now differs from
       // the backend-reported prod default.
       await wrapper.find('.loglevel-input .input').trigger('input', { value: 'debug' });
       await nextTick();
-      expect(wrapper.find('[data-cy=onboarding-setting__submit-button]').attributes()).not.toHaveProperty('disabled');
+      expect(wrapper.find('[data-testid=onboarding-setting__submit-button]').attributes()).not.toHaveProperty('disabled');
     });
 
     it('should adopt the backend-reported loglevel once configuration lands (regression #12079)', async () => {
@@ -288,43 +288,43 @@ describe('onboarding-settings', () => {
       // User picks the value the backend already reports → no diff → save disabled.
       await wrapper.find('.loglevel-input .input').trigger('input', { value: 'debug' });
       await nextTick();
-      expect(wrapper.find('[data-cy=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
+      expect(wrapper.find('[data-testid=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
 
       // User picks something different → diff → save enabled.
       await wrapper.find('.loglevel-input .input').trigger('input', { value: 'warning' });
       await nextTick();
-      expect(wrapper.find('[data-cy=onboarding-setting__submit-button]').attributes()).not.toHaveProperty('disabled');
+      expect(wrapper.find('[data-testid=onboarding-setting__submit-button]').attributes()).not.toHaveProperty('disabled');
     });
   });
 
   describe('advanced settings', () => {
     beforeEach(async (): Promise<void> => {
-      await wrapper.find('[data-cy=onboarding-setting__advance] [data-accordion-trigger]').trigger('click');
+      await wrapper.find('[data-testid=onboarding-setting__advance] [data-accordion-trigger]').trigger('click');
 
       await nextTick();
     });
 
     it('should use default value and disable save button', () => {
-      const maxLogSizeInput = wrapper.find<HTMLInputElement>('[data-cy=max-log-size-input] input').element;
+      const maxLogSizeInput = wrapper.find<HTMLInputElement>('[data-testid=max-log-size-input] input').element;
       expect(maxLogSizeInput.value).toBe('300');
 
-      const maxLogFilesInput = wrapper.find<HTMLInputElement>('[data-cy=max-log-files-input] input').element;
+      const maxLogFilesInput = wrapper.find<HTMLInputElement>('[data-testid=max-log-files-input] input').element;
       expect(maxLogFilesInput.value).toBe('3');
 
-      const sqliteInstructions = wrapper.find<HTMLInputElement>('[data-cy=sqlite-instructions-input] input').element;
+      const sqliteInstructions = wrapper.find<HTMLInputElement>('[data-testid=sqlite-instructions-input] input').element;
       expect(sqliteInstructions.value).toBe('5000');
 
-      expect(wrapper.find('[data-cy=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
+      expect(wrapper.find('[data-testid=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
     });
 
     it('should save the setting', async () => {
-      await wrapper.find('[data-cy=max-log-size-input] input').setValue(301);
-      await wrapper.find('[data-cy=max-log-files-input] input').setValue(4);
-      await wrapper.find('[data-cy=sqlite-instructions-input] input').setValue(5001);
+      await wrapper.find('[data-testid=max-log-size-input] input').setValue(301);
+      await wrapper.find('[data-testid=max-log-files-input] input').setValue(4);
+      await wrapper.find('[data-testid=sqlite-instructions-input] input').setValue(5001);
 
       await nextTick();
 
-      await wrapper.find('[data-cy=onboarding-setting__submit-button]').trigger('click');
+      await wrapper.find('[data-testid=onboarding-setting__submit-button]').trigger('click');
 
       expect(saveOptions).toBeCalledWith({
         maxSizeInMbAllLogs: 301,
@@ -335,25 +335,25 @@ describe('onboarding-settings', () => {
       await nextTick();
 
       // reset button
-      await wrapper.find('[data-cy=reset-max-log-size] button').trigger('click');
+      await wrapper.find('[data-testid=reset-max-log-size] button').trigger('click');
       await nextTick();
 
-      const maxLogSizeInput = wrapper.find<HTMLInputElement>('[data-cy=max-log-size-input] input').element;
+      const maxLogSizeInput = wrapper.find<HTMLInputElement>('[data-testid=max-log-size-input] input').element;
       expect(maxLogSizeInput.value).toBe('300');
 
-      await wrapper.find('[data-cy=reset-max-log-files] button').trigger('click');
+      await wrapper.find('[data-testid=reset-max-log-files] button').trigger('click');
       await nextTick();
 
-      const maxLogFilesInput = wrapper.find<HTMLInputElement>('[data-cy=max-log-files-input] input').element;
+      const maxLogFilesInput = wrapper.find<HTMLInputElement>('[data-testid=max-log-files-input] input').element;
       expect(maxLogFilesInput.value).toBe('3');
 
-      await wrapper.find('[data-cy=reset-sqlite-instructions] button').trigger('click');
+      await wrapper.find('[data-testid=reset-sqlite-instructions] button').trigger('click');
       await nextTick();
 
-      const sqliteInstructions = wrapper.find<HTMLInputElement>('[data-cy=sqlite-instructions-input] input').element;
+      const sqliteInstructions = wrapper.find<HTMLInputElement>('[data-testid=sqlite-instructions-input] input').element;
       expect(sqliteInstructions.value).toBe('5000');
 
-      await wrapper.find('[data-cy=onboarding-setting__submit-button]').trigger('click');
+      await wrapper.find('[data-testid=onboarding-setting__submit-button]').trigger('click');
 
       // After resetting to defaults, the new code now explicitly passes the default values
       // since they differ from the previously saved custom values

@@ -69,7 +69,7 @@ defineExpose({
         max-date="now"
         variant="outlined"
         accuracy="millisecond"
-        data-cy="datetime"
+        data-testid="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
         :error-messages="form.errors('timestamp')"
         @blur="form.touch('timestamp')"
@@ -79,7 +79,7 @@ defineExpose({
         v-model="state.validatorIndex"
         variant="outlined"
         integer
-        data-cy="validatorIndex"
+        data-testid="validatorIndex"
         :label="t('transactions.events.form.validator_index.label')"
         required
         :error-messages="form.errors('validatorIndex')"
@@ -105,7 +105,7 @@ defineExpose({
     <AutoCompleteWithSearchSync
       v-model="state.withdrawalAddress"
       :items="withdrawalAddressSuggestions"
-      data-cy="withdrawalAddress"
+      data-testid="withdrawalAddress"
       :label="t('transactions.events.form.withdrawal_address.label')"
       required
       :error-messages="form.errors('withdrawalAddress')"
@@ -116,7 +116,7 @@ defineExpose({
     <RuiCheckbox
       v-model="state.isExit"
       color="primary"
-      data-cy="is-exit"
+      data-testid="is-exit"
     >
       {{ t('transactions.events.form.is_exit.label') }}
     </RuiCheckbox>
@@ -125,7 +125,7 @@ defineExpose({
 
     <RuiAccordions>
       <RuiAccordion
-        data-cy="eth-block-event-form__advance"
+        data-testid="eth-block-event-form__advance"
         header-class="py-4"
         eager
       >
@@ -137,7 +137,7 @@ defineExpose({
             v-model="state.groupIdentifier"
             variant="outlined"
             color="primary"
-            data-cy="groupIdentifier"
+            data-testid="groupIdentifier"
             :disabled="state.hasActualGroupIdentifier"
             :label="t('transactions.events.form.group_identifier.label')"
             :error-messages="form.errors('groupIdentifier')"

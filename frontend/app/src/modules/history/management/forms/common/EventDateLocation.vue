@@ -37,7 +37,7 @@ const { t } = useI18n({ useScope: 'global' });
       variant="outlined"
       accuracy="millisecond"
       :disabled="dateDisabled"
-      data-cy="datetime"
+      data-testid="datetime"
       :hint="t('transactions.events.form.datetime.hint')"
       :error-messages="errorMessages.timestamp"
       @blur="emit('blur', 'timestamp')"
@@ -45,7 +45,7 @@ const { t } = useI18n({ useScope: 'global' });
     <LocationSelector
       v-model="location"
       :disabled="locationDisabled"
-      data-cy="location"
+      data-testid="location"
       :items="locations"
       :label="t('common.location')"
       required

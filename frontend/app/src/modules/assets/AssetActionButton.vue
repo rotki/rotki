@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
 
-const { color, dataCy, icon, tooltip } = defineProps<{
+const { color, dataTestid, icon, tooltip } = defineProps<{
   icon: RuiIcons;
   color: 'primary' | 'warning' | 'error';
   tooltip: string;
-  dataCy?: string;
+  dataTestid?: string;
 }>();
 
 const emit = defineEmits<{
@@ -24,7 +24,7 @@ const emit = defineEmits<{
         :color="color"
         class="!py-0.5"
         size="sm"
-        :data-cy="dataCy"
+        :data-testid="dataTestid"
         @click="emit('click')"
       >
         <template #append>

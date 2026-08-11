@@ -46,7 +46,7 @@ test.describe.serial('settings::general', () => {
 
   test('change main currency and validate UI message', async () => {
     await pageGeneral.selectCurrency(settings.currency);
-    await confirmInlineSuccess(ctx.sharedPage, '[data-cy=currency-selector]', settings.currency);
+    await confirmInlineSuccess(ctx.sharedPage, '[data-testid=currency-selector]', settings.currency);
   });
 
   test('change balance save frequency and validate UI message', async () => {
@@ -62,7 +62,7 @@ test.describe.serial('settings::general', () => {
     await pageGeneral.setDateDisplayFormat(settings.dateDisplayFormat);
     await confirmInlineSuccess(
       ctx.sharedPage,
-      '[data-cy=date-display-format-input] .details',
+      '[data-testid=date-display-format-input] .details',
       settings.dateDisplayFormat,
     );
   });
@@ -100,7 +100,7 @@ test.describe.serial('settings::general', () => {
     // The rejected '.' is still sitting in the thousand field. Setting the decimal separator to the
     // thousand one must not slip past on that stale value.
     await pageGeneral.setDecimalSeparator(settings.thousandSeparator);
-    await confirmInlineSuccess(ctx.sharedPage, '[data-cy=decimal-separator-input] .details');
+    await confirmInlineSuccess(ctx.sharedPage, '[data-testid=decimal-separator-input] .details');
 
     // Re-login rather than navigate: navigating re-reads the in-memory settings repo, which merges
     // both patches locally even if what reached the backend did not. Only a fresh login proves what

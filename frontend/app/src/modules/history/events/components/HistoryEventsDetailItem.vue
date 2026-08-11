@@ -80,7 +80,7 @@ const isCard = computed<boolean>(() => variant === 'card');
   <!-- Card Layout -->
   <div
     v-if="isCard"
-    data-cy="history-event-row"
+    data-testid="history-event-row"
     :data-event-id="event.identifier"
     class="p-3 border-b border-default bg-white dark:bg-dark-surface contain-content transition-all"
     :class="[
@@ -149,7 +149,7 @@ const isCard = computed<boolean>(() => variant === 'card');
   <!-- Row Layout -->
   <div
     v-else
-    data-cy="history-event-row"
+    data-testid="history-event-row"
     :data-event-id="event.identifier"
     class="h-[72px] flex items-center gap-4 border-b border-default px-4 pl-6 group/row contain-content"
     :class="[

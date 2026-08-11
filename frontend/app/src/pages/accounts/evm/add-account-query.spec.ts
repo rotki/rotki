@@ -62,7 +62,7 @@ function mountPage(): VueWrapper<InstanceType<typeof EvmAccountsPage>> {
         AccountDialog: {
           props: ['modelValue', 'chainIds', 'showAllChainsOption'],
           emits: ['update:modelValue', 'complete'],
-          template: '<div data-cy="account-dialog-stub" />',
+          template: '<div data-testid="account-dialog-stub" />',
         },
         RuiTabs: true,
         RuiTab: true,

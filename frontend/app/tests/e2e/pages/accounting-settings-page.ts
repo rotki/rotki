@@ -87,11 +87,11 @@ export class AccountingSettingsPage {
   }
 
   async visit(): Promise<void> {
-    await this.page.locator('[data-cy=user-menu-button]').click();
-    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'visible' });
-    await this.page.locator('[data-cy=settings-button]').click();
-    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
-    await this.page.locator('[data-cy="settings__accounting"]').click();
+    await this.page.locator('[data-testid=user-menu-button]').click();
+    await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=settings-button]').click();
+    await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
+    await this.page.locator('[data-testid="settings__accounting"]').click();
     await this.page.locator('[data-testid=crypto2crypto-switch]').waitFor({ state: 'visible' });
   }
 

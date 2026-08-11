@@ -41,20 +41,20 @@ export class ApiKeysPage {
     });
 
     // Now open the dialog and fill the form
-    await this.page.locator('[data-cy=exchanges]').locator('[data-cy=add-exchange]').click();
-    const keys = this.page.locator('[data-cy=exchange-keys]');
-    await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'visible', timeout: TIMEOUT_DIALOG });
+    await this.page.locator('[data-testid=exchanges]').locator('[data-testid=add-exchange]').click();
+    const keys = this.page.locator('[data-testid=exchange-keys]');
+    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible', timeout: TIMEOUT_DIALOG });
 
-    await keys.locator('[data-cy=exchange] [data-id=activator]').click();
-    await keys.locator('[data-cy=exchange] input').fill(exchange);
+    await keys.locator('[data-testid=exchange] [data-id=activator]').click();
+    await keys.locator('[data-testid=exchange] input').fill(exchange);
     await expect(this.page.locator('[role=menu] button')).toHaveCount(1);
-    await keys.locator('[data-cy=exchange] input').press('Enter');
-    await keys.locator('[data-cy=name] input').fill(name);
-    await keys.locator('[data-cy=api-key] input').fill(apiKey);
-    await keys.locator('[data-cy=api-secret] input').fill(apiSecret);
+    await keys.locator('[data-testid=exchange] input').press('Enter');
+    await keys.locator('[data-testid=name] input').fill(name);
+    await keys.locator('[data-testid=api-key] input').fill(apiKey);
+    await keys.locator('[data-testid=api-secret] input').fill(apiSecret);
 
-    await this.page.locator('[data-cy=bottom-dialog]').locator('[data-cy=confirm]').click();
-    await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'detached', timeout: TIMEOUT_DIALOG });
+    await this.page.locator('[data-testid=bottom-dialog]').locator('[data-testid=confirm]').click();
+    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'detached', timeout: TIMEOUT_DIALOG });
 
     // Verify the interceptor captured the correct values
     expect(capturedRequest.api_key).toBe(apiKey);
@@ -64,7 +64,7 @@ export class ApiKeysPage {
   }
 
   async exchangeIsAdded(exchange: string, name: string): Promise<void> {
-    const table = this.page.locator('[data-cy=exchange-table]').locator('table');
+    const table = this.page.locator('[data-testid=exchange-table]').locator('table');
     const row = table.locator('tbody tr').first();
     await row.waitFor({ state: 'visible' });
     await expect(row.locator('td').first()).toContainText(exchange);

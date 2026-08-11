@@ -280,7 +280,7 @@ defineExpose({
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-3">
       <div
         class="col-span-2"
-        data-cy="type-select"
+        data-testid="type-select"
       >
         <RuiMenuSelect
           v-model="assetType"
@@ -295,7 +295,7 @@ defineExpose({
       </div>
 
       <template v-if="isEvmToken">
-        <div data-cy="chain-select">
+        <div data-testid="chain-select">
           <RuiAutoComplete
             v-model="evmChain"
             :label="t('asset_form.labels.chain')"
@@ -322,7 +322,7 @@ defineExpose({
           </RuiAutoComplete>
         </div>
 
-        <div data-cy="token-select">
+        <div data-testid="token-select">
           <RuiMenuSelect
             v-model="tokenKind"
             :label="t('asset_form.labels.token_kind')"
@@ -336,7 +336,7 @@ defineExpose({
         </div>
         <div
           class="col-span-2 flex flex-col sm:flex-row gap-3"
-          data-cy="address-input"
+          data-testid="address-input"
         >
           <RuiTextField
             v-model="address"
@@ -381,7 +381,7 @@ defineExpose({
       <template v-else-if="isSolanaToken">
         <div
           class="col-span-2"
-          data-cy="token-select"
+          data-testid="token-select"
         >
           <RuiMenuSelect
             v-model="tokenKind"
@@ -396,7 +396,7 @@ defineExpose({
         </div>
         <div
           class="col-span-2"
-          data-cy="address-input"
+          data-testid="address-input"
         >
           <RuiTextField
             v-model="address"
@@ -430,7 +430,7 @@ defineExpose({
       <div class="col-span-2 grid md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
         <RuiTextField
           v-model="name"
-          data-cy="name-input"
+          data-testid="name-input"
           class="md:col-span-2"
           variant="outlined"
           color="primary"
@@ -443,7 +443,7 @@ defineExpose({
         <RuiTextField
           v-model="symbol"
           :class="isTokenRequiresAddress ? 'md:col-span-1' : 'md:col-span-2'"
-          data-cy="symbol-input"
+          data-testid="symbol-input"
           variant="outlined"
           color="primary"
           :error-messages="toMessages(v$.symbol)"
@@ -453,7 +453,7 @@ defineExpose({
         />
         <div
           v-if="isTokenRequiresAddress"
-          data-cy="decimal-input"
+          data-testid="decimal-input"
         >
           <RuiTextField
             v-model="decimalsModel"

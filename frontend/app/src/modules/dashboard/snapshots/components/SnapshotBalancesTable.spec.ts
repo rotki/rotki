@@ -231,8 +231,8 @@ describe('modules/dashboard/snapshots/components/SnapshotBalancesTable', () => {
     expect(wrapper.find('[data-testid=snapshot-balances-locked]').exists()).toBe(true);
     expect(wrapper.find<HTMLButtonElement>('[data-testid=snapshot-balances-add]').element.disabled).toBe(true);
     expect(wrapper.find<HTMLButtonElement>('[data-testid=snapshot-balances-bulk-delete]').element.disabled).toBe(true);
-    expect(wrapper.find<HTMLButtonElement>('[data-cy=row-edit]').element.disabled).toBe(true);
-    expect(wrapper.find<HTMLButtonElement>('[data-cy=row-delete]').element.disabled).toBe(true);
+    expect(wrapper.find<HTMLButtonElement>('[data-testid=row-edit]').element.disabled).toBe(true);
+    expect(wrapper.find<HTMLButtonElement>('[data-testid=row-delete]').element.disabled).toBe(true);
   });
 
   it('should not flag zero-value rows', async () => {
