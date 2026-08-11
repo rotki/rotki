@@ -91,7 +91,7 @@ describe('usePoolDataFetching', () => {
     });
 
     it('should store parsed balances on success', async () => {
-      const balances = { '0x123': [{ address: '0x456', assets: [], totalAmount: '1', usdPrice: '2', userBalance: { amount: '1', usdValue: '2' } }] };
+      const balances = { '0x123': [{ address: '0x456', assets: [], totalAmount: '1', usdPrice: '2', userBalance: { amount: '1', value: '2' } }] };
       mockRunTaskResult.mockResolvedValue(ok(balances));
 
       const { usePoolBalancesStore } = await import('./use-pool-balances-store');
