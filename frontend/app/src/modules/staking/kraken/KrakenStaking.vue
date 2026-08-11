@@ -94,11 +94,14 @@ const earnedAssetsData = computed<EarnedAssetsData>(() => {
     <!-- as an exception here we specify event-types to only include staking events  -->
     <!-- if an alternative way becomes possible we can use that -->
     <HistoryEventsView
-      use-external-account-filter
-      location="kraken"
-      :period="modelValue"
-      :event-types="['staking']"
-      :entry-types="[HistoryEventEntryType.HISTORY_EVENT]"
+      :restrictions="{
+        entryTypes: [HistoryEventEntryType.HISTORY_EVENT],
+        eventTypes: ['staking'],
+        // Kraken has no per-account axis to offer, but it owns the one there is.
+        externalAccounts: [],
+        location: 'kraken',
+        period: modelValue,
+      }"
     />
   </div>
 </template>
