@@ -1,5 +1,6 @@
 import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { BALANCE_HYDRATION_TAG } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { api } from '@/modules/core/api/rotki-api';
 import { useSync } from '@/modules/session/use-session-sync';
@@ -34,9 +35,12 @@ export function useSessionStateCleaner(): void {
     resetNativeTasks();
     // Same reason, same scope: a read tracked here outlives the session that started it.
     resetAccountLoad();
-    // Hydration dedups by chain against an app-scoped map, so a read that can never settle (its
-    // backend task belonged to the session that just ended) would be handed to the next session's
-    // caller for that chain — which then never hydrates, silently.
+    // 🔴 Cancel before clearing the map. The cache-only read is a plain GET, not a backend task, so
+    // nothing above settles it: left alone it resolves against the session that just ended and
+    // `processBalanceResult` writes that user's balances into the next user's store.
+    api.cancelByTag(BALANCE_HYDRATION_TAG);
+    // Hydration dedups by chain against an app-scoped map, so a read that can never settle would be
+    // handed to the next session's caller for that chain — which then never hydrates, silently.
     resetHydration();
     resetState();
   }

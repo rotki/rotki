@@ -6,6 +6,15 @@ import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/core/api/utils';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 
+/**
+ * Tag the cache-only read carries so logging out can cancel whatever is still in flight.
+ *
+ * 🔴 It used to be a backend task, so `orchestrator.reset()` settled it as part of ending the
+ * session. A plain GET has no such owner: without this its response lands after logout and
+ * `processBalanceResult` writes one user's balances into the next user's store.
+ */
+export const BALANCE_HYDRATION_TAG = 'balance-hydration';
+
 interface UseBlockchainBalancesApiReturn {
   queryBlockchainBalances: (payload: FetchBlockchainBalancePayload, valueThreshold?: string) => Promise<BlockchainBalances>;
   refreshBlockchainBalances: (payload: FetchBlockchainBalancePayload) => Promise<PendingTask>;
@@ -27,6 +36,7 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
         onlyCache: true,
         valueThreshold,
       },
+      tags: [BALANCE_HYDRATION_TAG],
       validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
     });
     return BlockchainBalances.parse(response);

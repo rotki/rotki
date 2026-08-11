@@ -20,8 +20,12 @@ import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator
 interface UseTokenDetectionOrchestratorReturn {
   detectTokens: (chain: string | string[], addresses: string[]) => Promise<void>;
   detectAllTokens: (chains?: string | string[]) => Promise<void>;
-  /** Detection as a stage *inside* a chain job — see {@link useBlockchainBalances}. */
-  detectForChain: (chain: string, parent: ActivityId) => Promise<void>;
+  /**
+   * Detection as a stage *inside* a chain job — see {@link useBlockchainBalances}.
+   *
+   * `addrs` narrows the stage to specific addresses; omitted, it covers the whole chain.
+   */
+  detectForChain: (chain: string, parent: ActivityId, addrs?: string[]) => Promise<void>;
   /** Synchronous liveness probe — true while a matching detection activity is pending or running. */
   isDetecting: (chain: string, address?: string | null) => boolean;
   useIsDetecting: (chain: MaybeRefOrGetter<string | string[]>, address?: MaybeRefOrGetter<string | null>) => ComputedRef<boolean>;
@@ -84,12 +88,16 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
    *
    * A chain with no addresses, or one that cannot hold tokens, is not an error — it simply has no
    * detection stage, and the chain job carries straight on to its query.
+   *
+   * ⭐ `addrs` narrows the stage. An account addition knows exactly which addresses are new, and
+   * detecting the chain's other fifty would be work nobody asked for; every other caller wants the
+   * whole chain and passes nothing.
    */
-  const detectForChain = async (chain: string, parent: ActivityId): Promise<void> => {
+  const detectForChain = async (chain: string, parent: ActivityId, addrs?: string[]): Promise<void> => {
     if (!supportsTransactions(chain))
       return;
 
-    const chainAddresses = get(addresses)[chain] ?? [];
+    const chainAddresses = addrs ?? get(addresses)[chain] ?? [];
     if (chainAddresses.length === 0)
       return;
 

@@ -11,12 +11,12 @@ const h = vi.hoisted(() => ({
   addAccount: vi.fn(),
   addEvmAccount: vi.fn(),
   createFailureNotification: vi.fn(),
-  detectTokens: vi.fn(),
   enableModule: vi.fn(),
   fetchTags: vi.fn(),
   getAddresses: vi.fn((): string[] => []),
   notifyFailedToAddAddress: vi.fn(),
   notifyUser: vi.fn(),
+  refreshBlockchainBalances: vi.fn(),
   supportsTransactions: vi.fn((): boolean => true),
   trackAddedAddresses: vi.fn(),
 }));
@@ -51,8 +51,8 @@ vi.mock('@/modules/accounts/use-account-addition-batch', () => ({
   })),
 }));
 
-vi.mock('@/modules/balances/blockchain/use-token-detection-orchestrator', () => ({
-  useTokenDetectionOrchestrator: vi.fn(() => ({ detectTokens: h.detectTokens })),
+vi.mock('@/modules/balances/use-blockchain-balances', () => ({
+  useBlockchainBalances: vi.fn(() => ({ refreshBlockchainBalances: h.refreshBlockchainBalances })),
 }));
 
 vi.mock('@/modules/accounts/use-blockchain-accounts-store', () => ({
@@ -301,7 +301,59 @@ describe('useAccountAdditionService', () => {
       expect(h.trackAddedAddresses).toHaveBeenCalledWith(['0xabc']);
       expect(onFetchAccounts).toHaveBeenCalledWith({ blockchain: 'eth', refreshEns: true });
       expect(onRefreshAccounts).not.toHaveBeenCalled();
-      expect(h.detectTokens).toHaveBeenCalledWith('eth', ['0xabc']);
+    });
+
+    /**
+     * 🔴 The regression this guards: the cached GET used to escalate to a node query on an empty
+     * cache, which is the only reason a just-added address ever got its native balance. It is
+     * cache-only now, so the addition has to run the query itself — and it must run *after*
+     * detection, whose cache write deletes the address's default-label asset rows (the native coin
+     * among them). A `detect: false` job, or a plain hydrate, leaves the new account showing its
+     * tokens and no ETH.
+     */
+    it('should run a chain job that detects the new addresses before querying', async () => {
+      const onRefreshAccounts = vi.fn<() => Promise<void>>(async () => {});
+      const onFetchAccounts = vi.fn<() => Promise<void>>(async () => {});
+      const { useAccountAdditionService } = await importModule();
+      await useAccountAdditionService().completeAccountAddition(
+        { addedAccounts: added, chain: 'eth' },
+        onRefreshAccounts,
+        onFetchAccounts,
+      );
+      expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(
+        { blockchain: 'eth' },
+        'background',
+        { detect: true, detectAddresses: ['0xabc'] },
+      );
+    });
+
+    /** Detection is narrowed to what was added — the chain's other addresses are nobody's business here. */
+    it('should narrow detection to the added addresses, per chain', async () => {
+      const onRefreshAccounts = vi.fn<() => Promise<void>>(async () => {});
+      const onFetchAccounts = vi.fn<() => Promise<void>>(async () => {});
+      const { useAccountAdditionService } = await importModule();
+      await useAccountAdditionService().completeAccountAddition(
+        {
+          addedAccounts: [
+            { address: '0xabc', chain: Blockchain.ETH },
+            { address: '0xdef', chain: Blockchain.ETH },
+            { address: '0x123', chain: Blockchain.OPTIMISM },
+          ],
+        },
+        onRefreshAccounts,
+        onFetchAccounts,
+      );
+      expect(h.refreshBlockchainBalances).toHaveBeenCalledTimes(2);
+      expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(
+        { blockchain: Blockchain.ETH },
+        'background',
+        { detect: true, detectAddresses: ['0xabc', '0xdef'] },
+      );
+      expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(
+        { blockchain: Blockchain.OPTIMISM },
+        'background',
+        { detect: true, detectAddresses: ['0x123'] },
+      );
     });
 
     it('should refresh accounts when the chain does not support transactions', async () => {
@@ -316,7 +368,9 @@ describe('useAccountAdditionService', () => {
       );
       expect(onRefreshAccounts).toHaveBeenCalledWith({ addresses: ['0xabc'], blockchain: 'btc', isXpub: true });
       expect(onFetchAccounts).not.toHaveBeenCalled();
-      expect(h.detectTokens).not.toHaveBeenCalled();
+      // `refreshAccounts` already ran the job for this chain; a chain that cannot hold tokens has
+      // no detection stage, so there is nothing for a second job to add.
+      expect(h.refreshBlockchainBalances).not.toHaveBeenCalled();
     });
 
     it('should enable the requested modules for eth accounts', async () => {

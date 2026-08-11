@@ -247,7 +247,59 @@ describe('useBlockchainBalances', () => {
       expect(detectForChain).toHaveBeenCalledWith(
         Blockchain.ETH,
         makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH, ActivityPart.DETECT),
+        undefined,
       );
+    });
+
+    /**
+     * ⭐ Account addition and account migration are the flows that know which addresses are new, and
+     * detecting the chain's other fifty on their behalf is work nobody asked for. Without the
+     * forward the option is silently inert — the call still succeeds and still detects everything.
+     */
+    it('should forward the detection narrowing to the chain job', async () => {
+      await blockchainBalances.refreshBlockchainBalances(
+        { blockchain: Blockchain.ETH },
+        'background',
+        { detect: true, detectAddresses: ['0xabc'] },
+      );
+
+      // The id carries a digest of the narrowing, so match the parent the job actually submitted
+      // rather than restating the id here.
+      const [[spec]] = submitTask.mock.calls;
+      expect(detectForChain).toHaveBeenCalledWith(Blockchain.ETH, spec.id, ['0xabc']);
+    });
+
+    /**
+     * 🔴🔴 Two additions on one chain differ only in their narrowing, so a shared id makes the
+     * second dedup onto the first and its addresses are never detected. A CSV import starts every
+     * row in the same tick, which is exactly this shape.
+     */
+    it('should not share an id between differently narrowed detections', async () => {
+      await blockchainBalances.refreshBlockchainBalances(
+        { blockchain: Blockchain.ETH },
+        'background',
+        { detect: true, detectAddresses: ['0xaaa'] },
+      );
+      await blockchainBalances.refreshBlockchainBalances(
+        { blockchain: Blockchain.ETH },
+        'background',
+        { detect: true, detectAddresses: ['0xbbb'] },
+      );
+
+      const ids = submitTask.mock.calls.map(([spec]) => spec.id);
+      expect(new Set(ids).size).toBe(2);
+    });
+
+    /** Every reader of this id is prefix-based, so `(kind, chain)` has to keep matching. */
+    it('should keep the chain prefix when the detection is narrowed', async () => {
+      await blockchainBalances.refreshBlockchainBalances(
+        { blockchain: Blockchain.ETH },
+        'background',
+        { detect: true, detectAddresses: ['0xaaa'] },
+      );
+
+      const [[spec]] = submitTask.mock.calls;
+      expect(spec.id.startsWith(makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH))).toBe(true);
     });
 
     /**

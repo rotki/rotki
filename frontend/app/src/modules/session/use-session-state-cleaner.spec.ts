@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type EffectScope, nextTick } from 'vue';
+import { BALANCE_HYDRATION_TAG } from '@/modules/balances/api/use-blockchain-balances-api';
 import { SUGGESTION_PROBE_TAG } from '@/modules/settings/suggestions/use-suggestion-probes';
 import { useSessionStateCleaner } from './use-session-state-cleaner';
 
@@ -85,6 +86,10 @@ describe('useSessionStateCleaner', () => {
     expect(resetState).toHaveBeenCalledOnce();
     // The login-time suggestion probes are not awaited by the login, so they can outlive it.
     expect(cancelByTag).toHaveBeenCalledWith(SUGGESTION_PROBE_TAG);
+    // 🔴 The cache-only read is a plain GET, so nothing above settles it. Uncancelled, it resolves
+    // against the session that just ended and writes that user's balances into the next user's
+    // store — `resetHydration` only clears the dedup map, it cannot stop a request.
+    expect(cancelByTag).toHaveBeenCalledWith(BALANCE_HYDRATION_TAG);
   });
 
   it('should not clean up while the user stays logged in', async () => {

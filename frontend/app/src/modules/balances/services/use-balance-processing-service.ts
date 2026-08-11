@@ -46,9 +46,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const { isEth2Enabled } = useBlockchainValidatorsStore();
   const refreshState = useBalanceRefreshState();
 
-  const processBalanceResult = (blockchain: string, result: unknown): void => {
-    const parsedBalances: BlockchainBalances = BlockchainBalances.parse(result);
-
+  const processBalanceResult = (blockchain: string, parsedBalances: BlockchainBalances): void => {
     // 🔴 Drop a payload older than what this chain already holds. A data refresh from the DB and a
     // network query are allowed to overlap by design, so the two can land out of order; without
     // this the slower one wins and rolls the chain back to stale balances. Discarding by age is
@@ -126,24 +124,35 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
   };
 
-  const executeBalanceQuery = async (
-    runTask: RunBackendTask,
+  /**
+   * Whether this chain is worth asking about at all.
+   *
+   * 🔴🔴 SKIPPED with a reason, never `ok`. A chain with nothing to query is a real outcome the
+   * user can be told about ("no accounts on this chain"), and reporting it as success recorded a
+   * completion for work that never ran. §5 is the other half of the argument: the chain stays in
+   * its run's denominator instead of vanishing from it, so "11 of 17" counts every chain in scope
+   * rather than only the ones that happened to have accounts.
+   */
+  const skipUnlessQueryable = (blockchain: string): Result<void, TaskError> | undefined => {
+    if (shouldQuery(blockchain))
+      return undefined;
+
+    clearChainBalances(blockchain);
+    return err(Skipped({ message: t('actions.balances.blockchain.skipped.no_accounts') }));
+  };
+
+  /**
+   * Record one chain's outcome, whichever layer produced it.
+   *
+   * Both layers land here so the ledger is written in exactly one place: the network query owns its
+   * result through a backend task, the cache-only read resolves directly, and neither difference
+   * reaches the bookkeeping.
+   */
+  const settleChain = (
     blockchain: string,
-    apiCall: () => Promise<{ taskId: number }>,
-    notify: boolean = true,
-  ): Promise<Result<void, TaskError>> => {
-    // 🔴🔴 SKIPPED with a reason, never `ok`. A chain with nothing to query is a real outcome the
-    // user can be told about ("no accounts on this chain"), and reporting it as success recorded a
-    // completion for work that never ran. §5 is the other half of the argument: the chain stays in
-    // its run's denominator instead of vanishing from it, so "11 of 17" counts every chain in scope
-    // rather than only the ones that happened to have accounts.
-    if (!shouldQuery(blockchain)) {
-      clearChainBalances(blockchain);
-      return err(Skipped({ message: t('actions.balances.blockchain.skipped.no_accounts') }));
-    }
-
-    const result = await runTask<BlockchainBalances>(apiCall);
-
+    result: Result<BlockchainBalances, TaskError>,
+    notify: boolean,
+  ): Result<void, TaskError> => {
     if (isErr(result)) {
       if (isActionable(result.error)) {
         logger.error(result.error.message);
@@ -175,31 +184,49 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     return mapResult(result, () => {});
   };
 
+  const executeBalanceQuery = async (
+    runTask: RunBackendTask,
+    blockchain: string,
+    apiCall: () => Promise<{ taskId: number }>,
+  ): Promise<Result<void, TaskError>> => {
+    const skipped = skipUnlessQueryable(blockchain);
+    if (skipped)
+      return skipped;
+
+    // ⚠️ `runTask` types the payload but does not validate it — the schema is only applied here.
+    return settleChain(
+      blockchain,
+      mapResult(await runTask<unknown>(apiCall), result => BlockchainBalances.parse(result)),
+      true,
+    );
+  };
+
+  /**
+   * Layer 1's read. A plain cache-only GET, so its outcome is a rejection rather than a task result
+   * — the only difference from {@link executeBalanceQuery}, and it ends at the same bookkeeping.
+   */
   const handleCachedFetch = async (
     payload: FetchBlockchainBalancePayload,
     threshold: string | undefined,
   ): Promise<Result<void, TaskError>> => {
     const { blockchain } = payload;
-    if (!shouldQuery(blockchain)) {
-      clearChainBalances(blockchain);
-      return err(Skipped({ message: t('actions.balances.blockchain.skipped.no_accounts') }));
-    }
+    const skipped = skipUnlessQueryable(blockchain);
+    if (skipped)
+      return skipped;
 
+    let result: Result<BlockchainBalances, TaskError>;
     try {
-      processBalanceResult(blockchain, await queryBlockchainBalances(payload, threshold));
-      markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
-      return ok(undefined);
+      result = ok(await queryBlockchainBalances(payload, threshold));
     }
     catch (error: unknown) {
-      const taskError = isRequestCancellation(error)
-        ? Cancelled({ message: 'Request cancelled' })
-        : TaskFailed({ cause: error, message: getErrorMessage(error) });
-      if (isActionable(taskError))
-        logger.error(taskError.message);
-
-      invalidate(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
-      return err(taskError);
+      // A cancellation is expected — logout tags and cancels this read — so it must stay
+      // non-actionable, which is what keeps hydration from retrying it against a dead session.
+      result = err(isRequestCancellation(error)
+        ? Cancelled({ message: t('actions.balances.blockchain.cancelled') })
+        : TaskFailed({ cause: error, message: getErrorMessage(error) }));
     }
+
+    return settleChain(blockchain, result, false);
   };
 
   const handleRefresh = async (
