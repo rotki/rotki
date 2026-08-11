@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Single-asset deposits in StakeDAO are now decoded correctly.
 * :bug:`-` Swaps in Gnosis chain that paraswap routes through a curve pool are properly decoded again.
 * :bug:`-` Bridging DAI from Ethereum to Gnosis chain is again seen as a bridge, instead of being mistaken for a DAI to USDS migration.
 * :feature:`-` Filtering the address book now uses the same filter bar as the rest of rotki. The chain selector and the strict-chain checkbox that sat beside it are now pills in that one bar, so there is a single place to filter from, and a chain is shown with its logo and name.
