@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { EnhancedProviderDetail } from '@/modules/wallet/providers/provider-detection';
 import type { GasFeeEstimation, GetAssetBalancePayload } from '@/modules/wallet/types';
-import { type BigNumber, bigNumberify, Blockchain, isValidEthAddress } from '@rotki/common';
+import { type BigNumber, bigNumberify, Blockchain, isValidEthAddress, Zero } from '@rotki/common';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getWalletErrorMessage, isUserRejectedError, WALLET_MODES } from '@/modules/wallet/constants';
@@ -101,17 +101,17 @@ const wrongNetwork = computed(() => {
 });
 
 const amountExceeded = computed(() => {
-  const amountToBigNumber = bigNumberify(get(amount));
-  const maxToBigNumber = bigNumberify(get(max));
+  const amountToBigNumber = bigNumberify(get(amount), Zero);
+  const maxToBigNumber = bigNumberify(get(max), Zero);
 
   return amountToBigNumber.gt(maxToBigNumber);
 });
 
 const valid = computed<boolean>(() => {
-  const amountToBigNumber = bigNumberify(get(amount));
+  const amountToBigNumber = bigNumberify(get(amount), Zero);
   const to = get(toAddress);
 
-  const amountValid = !amountToBigNumber.isNaN() && amountToBigNumber.gt(0);
+  const amountValid = amountToBigNumber.gt(0);
   const toAddressValid = !!to && isValidEthAddress(to);
 
   return amountValid && toAddressValid && !get(amountExceeded);

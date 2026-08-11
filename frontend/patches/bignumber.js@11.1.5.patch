@@ -1,0 +1,39 @@
+diff --git a/dist/bignumber.d.cts b/dist/bignumber.d.cts
+index 8e390b56dc6ff6add279a75bed6ee82cbbb243d9..2b86a39ab92aa189d7df3522d80aaabe5376f23b 100644
+--- a/dist/bignumber.d.cts
++++ b/dist/bignumber.d.cts
+@@ -359,7 +359,7 @@ declare namespace BigNumber {
+ declare class BigNumber implements BigNumber.Instance {
+ 
+   /** Used internally to identify a BigNumber instance. */
+-  private readonly _isBigNumber: true;
++  readonly _isBigNumber: true;
+ 
+   /** The coefficient of the value of this BigNumber, an array of base 1e14 integer numbers, or null. */
+   readonly c: number[] | null;
+diff --git a/dist/bignumber.d.mts b/dist/bignumber.d.mts
+index 578d93ca88916b18a88cf100d158e4e959cd1ce2..858c7ccf65ddb95b481c683cfe72711e638250cd 100644
+--- a/dist/bignumber.d.mts
++++ b/dist/bignumber.d.mts
+@@ -359,7 +359,7 @@ declare namespace BigNumber {
+ declare class BigNumber implements BigNumber.Instance {
+ 
+   /** Used internally to identify a BigNumber instance. */
+-  private readonly _isBigNumber: true;
++  readonly _isBigNumber: true;
+ 
+   /** The coefficient of the value of this BigNumber, an array of base 1e14 integer numbers, or null. */
+   readonly c: number[] | null;
+diff --git a/dist/bignumber.d.ts b/dist/bignumber.d.ts
+index 4472a20885bada612b13581a19d5c32cbae2e565..f73a3a726f98931a7f0ef0ae227175eb7fdf1e45 100644
+--- a/dist/bignumber.d.ts
++++ b/dist/bignumber.d.ts
+@@ -359,7 +359,7 @@ declare namespace BigNumber {
+ declare class BigNumber implements BigNumber.Instance {
+ 
+   /** Used internally to identify a BigNumber instance. */
+-  private readonly _isBigNumber: true;
++  readonly _isBigNumber: true;
+ 
+   /** The coefficient of the value of this BigNumber, an array of base 1e14 integer numbers, or null. */
+   readonly c: number[] | null;

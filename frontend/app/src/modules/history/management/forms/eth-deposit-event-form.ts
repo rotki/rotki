@@ -88,10 +88,10 @@ export function ethDepositStateFromGroup(entry: EthDepositEvent, nextSequenceId:
 }
 
 export function toEthDepositPayload(state: EthDepositFormState): NewEthDepositEventPayload {
-  const amount = bigNumberify(state.amount);
+  const amount = bigNumberify(state.amount, Zero);
 
   return {
-    amount: amount.isNaN() ? Zero : amount,
+    amount,
     depositor: state.depositor,
     entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
     extraData: state.extraData,

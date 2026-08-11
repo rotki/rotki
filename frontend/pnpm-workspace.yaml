@@ -33,7 +33,7 @@ overrides:
   ws: 8.21.2
 patchedDependencies:
   app-builder-lib: patches/app-builder-lib.patch
-  bignumber.js@9.3.1: patches/bignumber.js@9.3.1.patch
+  bignumber.js@11.1.5: patches/bignumber.js@11.1.5.patch
 catalog:
   '@clack/prompts': 1.7.0
   '@electron/notarize': 3.1.1
@@ -67,7 +67,7 @@ catalog:
   '@walletconnect/core': 2.23.10
   '@walletconnect/universal-provider': 2.23.10
   autoprefixer: 10.5.4
-  bignumber.js: 9.3.1
+  bignumber.js: 11.1.5
   body-parser: 2.3.0
   bufferutil: 4.1.0
   c8: 12.0.0

@@ -103,8 +103,8 @@ catalogs:
       specifier: 10.5.4
       version: 10.5.4
     bignumber.js:
-      specifier: 9.3.1
-      version: 9.3.1
+      specifier: 11.1.5
+      version: 11.1.5
     body-parser:
       specifier: 2.3.0
       version: 2.3.0
@@ -298,7 +298,7 @@ overrides:
 
 patchedDependencies:
   app-builder-lib: 74f87c34f13b5c0d45e0c56b221cf7c77dac257298868081bdacddaa543aa97f
-  bignumber.js@9.3.1: 61396dd0164598dffc80190e90a8d2bd4ec88d03f7ec9956ab22182f63c0cb1d
+  bignumber.js@11.1.5: f4e1809da722675dee68e4f3622d2e8d74b5923d8f7eae8e8dc6f3fe16474402
 
 importers:
 
@@ -393,7 +393,7 @@ importers:
         version: 2.23.10(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@4.4.3)
       bignumber.js:
         specifier: 'catalog:'
-        version: 9.3.1(patch_hash=61396dd0164598dffc80190e90a8d2bd4ec88d03f7ec9956ab22182f63c0cb1d)
+        version: 11.1.5(patch_hash=f4e1809da722675dee68e4f3622d2e8d74b5923d8f7eae8e8dc6f3fe16474402)
       bufferutil:
         specifier: 'catalog:'
         version: 4.1.0
@@ -613,7 +613,7 @@ importers:
         version: 14.4.0(vue@3.5.40(typescript@6.0.3))
       bignumber.js:
         specifier: 'catalog:'
-        version: 9.3.1(patch_hash=61396dd0164598dffc80190e90a8d2bd4ec88d03f7ec9956ab22182f63c0cb1d)
+        version: 11.1.5(patch_hash=f4e1809da722675dee68e4f3622d2e8d74b5923d8f7eae8e8dc6f3fe16474402)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -2984,8 +2984,8 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  bignumber.js@9.3.1:
-    resolution: {integrity: sha512-Ko0uX15oIUS7wJ3Rb30Fs6SkVbLmPBAKdlm7q9+ak9bbIeFf0MwuBsQV6z7+X768/cHsfg+WlysDWJcmthjsjQ==}
+  bignumber.js@11.1.5:
+    resolution: {integrity: sha512-6WmzCNtUnfKpbozq+hOgWaZMMzORmYBwF1xZScyoIX3QRYWeKTtxxwDOW5tIz7C9BdjkIYHGTcelCLkXg0mndw==}
 
   birpc@2.9.0:
     resolution: {integrity: sha512-KrayHS5pBi69Xi9JmvoqrIgYGDkD6mcSe/i6YKi3w5kekCLzrX4+nawcXqrj2tIp50Kw/mT/s3p+GVK0A0sKxw==}
@@ -9364,7 +9364,7 @@ snapshots:
 
   baseline-browser-mapping@2.10.43: {}
 
-  bignumber.js@9.3.1(patch_hash=61396dd0164598dffc80190e90a8d2bd4ec88d03f7ec9956ab22182f63c0cb1d): {}
+  bignumber.js@11.1.5(patch_hash=f4e1809da722675dee68e4f3622d2e8d74b5923d8f7eae8e8dc6f3fe16474402): {}
 
   birpc@2.9.0: {}
 

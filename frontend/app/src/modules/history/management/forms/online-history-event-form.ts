@@ -108,11 +108,11 @@ export function onlineHistoryStateFromGroup(entry: OnlineHistoryEvent, defaults:
  * can produce; an edit keeps the one it already has.
  */
 export function toOnlineHistoryPayload(state: OnlineHistoryFormState, groupIdentifier: string): NewOnlineHistoryEventPayload {
-  const amount = bigNumberify(state.amount);
+  const amount = bigNumberify(state.amount, Zero);
   const userNotes = state.notes.trim();
 
   return {
-    amount: amount.isNaN() ? Zero : amount,
+    amount,
     asset: state.asset,
     entryType: HistoryEventEntryType.HISTORY_EVENT,
     eventSubtype: state.eventSubtype,

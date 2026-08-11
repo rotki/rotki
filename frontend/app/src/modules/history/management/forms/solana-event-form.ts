@@ -121,12 +121,12 @@ export function solanaEventStateFromGroup(entry: SolanaEvent, nextSequenceId: st
 
 /** Empty form fields are normalised to the nulls and defaults the backend expects. */
 export function toSolanaEventPayload(state: SolanaEventFormState): NewSolanaEventPayload {
-  const amount = bigNumberify(state.amount);
+  const amount = bigNumberify(state.amount, Zero);
   const userNotes = state.notes.trim();
 
   return {
     address: toNullableText(state.address),
-    amount: amount.isNaN() ? Zero : amount,
+    amount,
     asset: state.asset,
     // The one field the backend wants blank rather than null when unset.
     counterparty: state.counterparty,
