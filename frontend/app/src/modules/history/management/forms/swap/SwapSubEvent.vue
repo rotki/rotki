@@ -57,7 +57,7 @@ const userNotesLabel = computed<string>(() => {
           class="hidden group-hover/asset:flex size-10"
           variant="outlined"
           :disabled="disabled"
-          :data-cy="`${type}-remove`"
+          :data-testid="`${type}-remove`"
           icon
           color="error"
           @click="emit('remove', index)"
@@ -101,7 +101,7 @@ const userNotesLabel = computed<string>(() => {
       }"
     >
       <RuiAccordion
-        data-cy="advanced-accordion"
+        data-testid="advanced-accordion"
         header-class="py-3"
         eager
       >
@@ -113,7 +113,7 @@ const userNotesLabel = computed<string>(() => {
           <RuiTextArea
             v-model="modelValue.userNotes"
             prepend-icon="lu-sticky-note"
-            :data-cy="`${type}-notes`"
+            :data-testid="`${type}-notes`"
             variant="outlined"
             color="primary"
             :disabled="disabled"

@@ -138,20 +138,20 @@ describe('forms/SwapEventForm', () => {
     // The e2e suite finds every field through these selectors; losing one is an e2e break.
     expect(selectorContract(wrapper)).toMatchInlineSnapshot(`
       [
-        "data-cy=advanced-accordion",
-        "data-cy=datetime",
-        "data-cy=fee-add",
-        "data-cy=fee-amount",
-        "data-cy=fee-asset",
-        "data-cy=has-fee",
-        "data-cy=location",
-        "data-cy=receive-amount",
-        "data-cy=receive-asset",
-        "data-cy=receive-notes",
-        "data-cy=spend-amount",
-        "data-cy=spend-asset",
-        "data-cy=spend-notes",
-        "data-cy=unique-id",
+        "data-testid=advanced-accordion",
+        "data-testid=datetime",
+        "data-testid=fee-add",
+        "data-testid=fee-amount",
+        "data-testid=fee-asset",
+        "data-testid=has-fee",
+        "data-testid=location",
+        "data-testid=receive-amount",
+        "data-testid=receive-asset",
+        "data-testid=receive-notes",
+        "data-testid=spend-amount",
+        "data-testid=spend-asset",
+        "data-testid=spend-notes",
+        "data-testid=unique-id",
       ]
     `);
   });
@@ -159,37 +159,37 @@ describe('forms/SwapEventForm', () => {
   it('should render the form correctly', () => {
     wrapper = createWrapper();
     expect(wrapper.exists()).toBe(true);
-    expect(wrapper.find('[data-cy=datetime]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=location]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=datetime]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=location]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy=spend-amount]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=spend-asset]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=spend-amount]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=spend-asset]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy=receive-amount]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=receive-asset]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=receive-amount]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=receive-asset]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy=unique-id]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=unique-id]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy=has-fee]').exists()).toBe(true);
-    expect(wrapper.find<HTMLInputElement>('[data-cy=has-fee]').element.checked).toBeUndefined();
-    expect(wrapper.find('[data-cy=fee-add]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=advanced-accordion]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=has-fee]').exists()).toBe(true);
+    expect(wrapper.find<HTMLInputElement>('[data-testid=has-fee]').element.checked).toBeUndefined();
+    expect(wrapper.find('[data-testid=fee-add]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=advanced-accordion]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy=spend-notes]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=receive-notes]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=fee-notes-1]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=spend-notes]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=receive-notes]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=fee-notes-1]').exists()).toBe(false);
   });
 
   it('should validate the form and call addHistoryEvent on save', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
-    const datetimePicker = wrapper.find('[data-cy=datetime] input');
-    const locationField = wrapper.find('[data-cy=location] input');
-    const spendAmountField = wrapper.find('[data-cy=spend-amount] input');
-    const spendAssetField = wrapper.find('[data-cy=spend-asset] input');
-    const receiveAmountField = wrapper.find('[data-cy=receive-amount] input');
-    const receiveAssetField = wrapper.find('[data-cy=receive-asset] input');
-    const uniqueIdField = wrapper.find('[data-cy=unique-id] input');
+    const datetimePicker = wrapper.find('[data-testid=datetime] input');
+    const locationField = wrapper.find('[data-testid=location] input');
+    const spendAmountField = wrapper.find('[data-testid=spend-amount] input');
+    const spendAssetField = wrapper.find('[data-testid=spend-asset] input');
+    const receiveAmountField = wrapper.find('[data-testid=receive-amount] input');
+    const receiveAssetField = wrapper.find('[data-testid=receive-asset] input');
+    const uniqueIdField = wrapper.find('[data-testid=unique-id] input');
 
     const now = dayjs();
     const nowInMs = now.valueOf();
@@ -232,16 +232,16 @@ describe('forms/SwapEventForm', () => {
     await saveMethod();
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-cy=location] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=spend-amount] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=spend-asset] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=location] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=spend-amount] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=spend-asset] .details').exists()).toBe(true);
   });
 
   it('should enable fee-related fields when "Has Fee" checkbox is toggled', async () => {
     wrapper = createWrapper();
 
-    const feeAddButton = wrapper.find('[data-cy=fee-add]');
-    const feeToggle = wrapper.find('[data-cy=has-fee] input');
+    const feeAddButton = wrapper.find('[data-testid=fee-add]');
+    const feeToggle = wrapper.find('[data-testid=has-fee] input');
 
     expect(feeAddButton.attributes('disabled')).toBe('');
 
@@ -249,7 +249,7 @@ describe('forms/SwapEventForm', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     expect(feeAddButton.attributes('disabled')).toBeUndefined();
-    expect(wrapper.find('[data-cy=fee-notes-1]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=fee-notes-1]').exists()).toBe(true);
   });
 
   it('should call editHistoryEvent when editing an event', async () => {
@@ -262,12 +262,12 @@ describe('forms/SwapEventForm', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     // Edit the fee amount in SimpleFeeEntry (existing fee from data)
-    const feeAmountInputs = wrapper.findAll('[data-cy=fee-amount] input');
+    const feeAmountInputs = wrapper.findAll('[data-testid=fee-amount] input');
     expect(feeAmountInputs.length).toBeGreaterThan(0);
     await feeAmountInputs[0].setValue('2');
 
-    const receiveNotes = wrapper.find('[data-cy=receive-notes] textarea:not([aria-hidden="true"])');
-    const feeNotes = wrapper.find('[data-cy=fee-notes-1] textarea:not([aria-hidden="true"])');
+    const receiveNotes = wrapper.find('[data-testid=receive-notes] textarea:not([aria-hidden="true"])');
+    const feeNotes = wrapper.find('[data-testid=fee-notes-1] textarea:not([aria-hidden="true"])');
     await receiveNotes.setValue('receive');
     await feeNotes.setValue('fee');
 
@@ -372,16 +372,16 @@ describe('forms/SwapEventForm', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     // Verify both fee note textareas are rendered
-    expect(wrapper.find('[data-cy=fee-notes-1]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=fee-notes-2]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=fee-notes-1]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=fee-notes-2]').exists()).toBe(true);
 
     // Verify fee entries are loaded
-    const feeAmountInputs = wrapper.findAll('[data-cy=fee-amount] input');
+    const feeAmountInputs = wrapper.findAll('[data-testid=fee-amount] input');
     expect(feeAmountInputs).toHaveLength(2);
 
     // Edit the fee notes
-    const feeNotes1 = wrapper.find('[data-cy=fee-notes-1] textarea:not([aria-hidden="true"])');
-    const feeNotes2 = wrapper.find('[data-cy=fee-notes-2] textarea:not([aria-hidden="true"])');
+    const feeNotes1 = wrapper.find('[data-testid=fee-notes-1] textarea:not([aria-hidden="true"])');
+    const feeNotes2 = wrapper.find('[data-testid=fee-notes-2] textarea:not([aria-hidden="true"])');
     await feeNotes1.setValue('updated fee note 1');
     await feeNotes2.setValue('updated fee note 2');
 
@@ -421,7 +421,7 @@ describe('forms/SwapEventForm', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     // A blank value here means the watcher replaced the loaded row with an empty one.
-    const feeAmount = wrapper.findAll<HTMLInputElement>('[data-cy=fee-amount] input');
+    const feeAmount = wrapper.findAll<HTMLInputElement>('[data-testid=fee-amount] input');
     expect(feeAmount).toHaveLength(1);
     expect(feeAmount[0].element.value).toBe('1');
   });
@@ -433,12 +433,12 @@ describe('forms/SwapEventForm', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    const datetimePicker = wrapper.find('[data-cy=datetime] input');
-    const locationField = wrapper.find('[data-cy=location] input');
-    const spendAmountField = wrapper.find('[data-cy=spend-amount] input');
-    const spendAssetField = wrapper.find('[data-cy=spend-asset] input');
-    const receiveAmountField = wrapper.find('[data-cy=receive-amount] input');
-    const receiveAssetField = wrapper.find('[data-cy=receive-asset] input');
+    const datetimePicker = wrapper.find('[data-testid=datetime] input');
+    const locationField = wrapper.find('[data-testid=location] input');
+    const spendAmountField = wrapper.find('[data-testid=spend-amount] input');
+    const spendAssetField = wrapper.find('[data-testid=spend-asset] input');
+    const receiveAmountField = wrapper.find('[data-testid=receive-amount] input');
+    const receiveAssetField = wrapper.find('[data-testid=receive-asset] input');
 
     const now = dayjs();
     const nowInMs = now.valueOf();
@@ -475,7 +475,7 @@ describe('forms/SwapEventForm', () => {
       success: false,
     });
 
-    await wrapper.find('[data-cy=spend-amount] input').setValue('4.5');
+    await wrapper.find('[data-testid=spend-amount] input').setValue('4.5');
 
     await vi.advanceTimersToNextTimerAsync();
 
@@ -486,6 +486,6 @@ describe('forms/SwapEventForm', () => {
 
     expect(editHistoryEventMock).toHaveBeenCalled();
     expect(saveResult).toBe(false);
-    expect(wrapper.find('[data-cy=location] .details').text()).toBe('Location is required');
+    expect(wrapper.find('[data-testid=location] .details').text()).toBe('Location is required');
   });
 });

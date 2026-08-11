@@ -10,7 +10,7 @@ const { primary, hasErrors = false, actionDisabled = false, loading = false, err
 
 <template>
   <RuiButton
-    data-cy="confirm"
+    data-testid="confirm"
     :color="hasErrors ? 'error' : 'primary'"
     :disabled="actionDisabled || loading"
     :loading="loading"

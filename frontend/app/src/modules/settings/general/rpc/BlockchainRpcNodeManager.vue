@@ -195,7 +195,7 @@ defineExpose({
         v-for="(item, index) in nodes"
         :key="index + item.name"
         class="border-b border-default"
-        data-cy="ethereum-node"
+        data-testid="ethereum-node"
       >
         <td>
           <div class="flex gap-3 items-center">

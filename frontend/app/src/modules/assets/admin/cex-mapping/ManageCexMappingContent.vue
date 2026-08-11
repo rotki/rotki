@@ -115,7 +115,7 @@ const { showDeleteConfirmation } = useTableRowDeletion<CexMapping>({
       </RuiButton>
 
       <RuiButton
-        data-cy="managed-cex-mapping-add-btn"
+        data-testid="managed-cex-mapping-add-btn"
         color="primary"
         size="lg"
         @click="add()"

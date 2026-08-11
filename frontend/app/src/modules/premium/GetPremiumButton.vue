@@ -31,7 +31,7 @@ const { isLgAndDown } = useBreakpoint();
             :rounded="false"
             class="lg:!py-2"
             color="primary"
-            data-cy="get-premium-button"
+            data-testid="get-premium-button"
           >
             <template #prepend>
               <RuiIcon name="lu-crown" />

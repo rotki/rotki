@@ -100,7 +100,7 @@ async function changeSelectedTheme(selectedTheme: Theme) {
             id="theme-switch-slider"
             :model-value="selectedTheme"
             class="h-32 w-8"
-            data-cy="theme-switch__input"
+            data-testid="theme-switch__input"
             :step="1"
             :max="2"
             :min="0"

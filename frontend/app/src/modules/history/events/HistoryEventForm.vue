@@ -110,7 +110,7 @@ defineExpose({
 <template>
   <RuiMenuSelect
     v-model="entryType"
-    data-cy="entry-type"
+    data-testid="entry-type"
     :options="historyEventEntryTypes"
     :disabled="data.type !== 'add' && !isGroupAdd"
     :label="t('common.entry_type')"
@@ -135,7 +135,7 @@ defineExpose({
     :is="formComponents[entryType]"
     ref="form"
     v-model:state-updated="stateUpdated"
-    :data-cy="`${kebabCase(entryType)}-form`"
+    :data-testid="`${kebabCase(entryType)}-form`"
     :data="data"
   />
 </template>

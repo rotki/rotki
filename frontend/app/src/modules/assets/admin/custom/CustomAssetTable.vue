@@ -105,7 +105,7 @@ function expand(item: CustomAsset) {
       :cols="cols"
       :expanded="expanded"
       row-attr="identifier"
-      data-cy="custom-assets-table"
+      data-testid="custom-assets-table"
       single-expand
       sticky-header
       outlined

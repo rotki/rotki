@@ -81,7 +81,7 @@ watchImmediate([passwordConfirmationInterval, enablePasswordConfirmation], ([int
 <template>
   <SettingsItem
     setting-key="enablePasswordConfirmation"
-    data-cy="password-confirmation-setting"
+    data-testid="password-confirmation-setting"
   >
     <template #title>
       {{ t('password_confirmation_setting.title') }}
@@ -94,7 +94,7 @@ watchImmediate([passwordConfirmationInterval, enablePasswordConfirmation], ([int
     <RuiSwitch
       :model-value="enabled"
       color="primary"
-      data-cy="enable-password-confirmation-toggle"
+      data-testid="enable-password-confirmation-toggle"
       :label="t('password_confirmation_setting.enable_label')"
       @update:model-value="handleToggleChange($event)"
     />
@@ -111,13 +111,13 @@ watchImmediate([passwordConfirmationInterval, enablePasswordConfirmation], ([int
       :hint="t('password_confirmation_setting.hint')"
       :error-messages="form.errors('intervalDays')"
       :disabled="!enabled"
-      data-cy="password-confirmation-interval-input"
+      data-testid="password-confirmation-interval-input"
       @update:model-value="form.touch('intervalDays')"
     />
 
     <div class="flex justify-end mt-4">
       <RuiButton
-        data-cy="save-password-confirmation-settings"
+        data-testid="save-password-confirmation-settings"
         color="primary"
         :loading="loading"
         :disabled="loading || !hasChanged || invalid"

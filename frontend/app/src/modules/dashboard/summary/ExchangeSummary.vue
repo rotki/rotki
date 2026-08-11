@@ -38,7 +38,7 @@ const isExchangeLoading = useIsActive(ActivityKind.EXCHANGE_BALANCES);
       </SummaryCardCreateButton>
       <div
         v-else
-        data-cy="exchange-balances"
+        data-testid="exchange-balances"
       >
         <ExchangeBox
           v-for="exchange in exchanges"

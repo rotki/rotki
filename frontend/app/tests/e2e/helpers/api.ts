@@ -229,7 +229,7 @@ export async function apiAddEtherscanKey(
  */
 export async function waitForNoRunningTasks(page: Page, timeout: number = 180000): Promise<void> {
   const { expect } = await import('@playwright/test');
-  const indicator = page.locator('[data-cy=notification-indicator-progress]');
+  const indicator = page.locator('[data-testid=notification-indicator-progress]');
 
   // Poll until the indicator is detached and stays detached
   await expect(async () => {

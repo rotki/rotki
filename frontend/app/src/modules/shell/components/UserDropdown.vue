@@ -51,23 +51,23 @@ const { isDark } = useRotkiTheme();
 <template>
   <div>
     <RuiMenu
-      data-cy="user-menu"
+      data-testid="user-menu"
       menu-class="min-w-[10rem] max-w-[22rem]"
       close-on-content-click
     >
       <template #activator="{ attrs }">
         <MenuTooltipButton
           tooltip="Account"
-          data-cy="user-menu-button"
+          data-testid="user-menu-button"
           v-bind="attrs"
         >
           <RuiIcon name="lu-circle-user" />
         </MenuTooltipButton>
       </template>
-      <div data-cy="user-dropdown">
+      <div data-testid="user-dropdown">
         <div class="py-3 flex flex-col items-center gap-1">
           <div
-            data-cy="username"
+            data-testid="username"
             class="font-bold"
           >
             {{ username }}
@@ -95,7 +95,7 @@ const { isDark } = useRotkiTheme();
         >
           <RuiButton
             variant="list"
-            data-cy="settings-button"
+            data-testid="settings-button"
             @click="navigate()"
           >
             <template #prepend>
@@ -110,7 +110,7 @@ const { isDark } = useRotkiTheme();
 
         <RuiButton
           v-if="isXs"
-          data-cy="privacy-mode-button"
+          data-testid="privacy-mode-button"
           variant="list"
           @click="togglePrivacyMode()"
         >
@@ -126,14 +126,14 @@ const { isDark } = useRotkiTheme();
           v-if="isXs"
           :dark-mode-enabled="isDark"
           menu
-          data-cy="theme-control"
+          data-testid="theme-control"
         >
           {{ t('user_dropdown.switch_theme') }}
         </ThemeControl>
         <RuiDivider />
         <RuiButton
           variant="list"
-          data-cy="logout-button"
+          data-testid="logout-button"
           @click="showConfirmation()"
         >
           <template #prepend>

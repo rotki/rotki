@@ -49,9 +49,9 @@ test.describe.serial('calendar', () => {
 
   test('shows validation error when name is empty', async () => {
     await page.openAddDialog();
-    await ctx.sharedPage.locator('[data-cy=bottom-dialog] [data-cy=confirm]').click();
+    await ctx.sharedPage.locator('[data-testid=bottom-dialog] [data-testid=confirm]').click();
     await expect(
-      ctx.sharedPage.locator('[data-cy=bottom-dialog]').getByText('The name field cannot be empty'),
+      ctx.sharedPage.locator('[data-testid=bottom-dialog]').getByText('The name field cannot be empty'),
     ).toBeVisible();
     await page.cancelDialog();
   });

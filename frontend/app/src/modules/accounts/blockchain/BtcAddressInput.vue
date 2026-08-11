@@ -240,7 +240,7 @@ defineExpose({
     <div
       v-if="showDisambiguation"
       class="flex flex-col gap-2 -mt-2 mb-3"
-      data-cy="xpub-disambiguation"
+      data-testid="xpub-disambiguation"
     >
       <span class="text-rui-text-secondary text-body-2">
         {{ t('account_form.xpub_detected.disambiguation_prompt') }}
@@ -253,7 +253,7 @@ defineExpose({
           color="primary"
           size="sm"
           :disabled="disabled"
-          :data-cy="`xpub-disambiguation-${option.value}`"
+          :data-testid="`xpub-disambiguation-${option.value}`"
           @click="resolveDisambiguation(option.value)"
         >
           <div class="flex flex-col items-start">

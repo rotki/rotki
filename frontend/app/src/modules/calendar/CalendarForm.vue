@@ -118,7 +118,7 @@ defineExpose({
         :label="t('common.datetime')"
         persistent-hint
         variant="outlined"
-        data-cy="datetime"
+        data-testid="datetime"
         type="epoch"
         :error-messages="toMessages(v$.timestamp)"
         @blur="v$.timestamp.$touch()"
@@ -173,7 +173,7 @@ defineExpose({
     <CounterpartyInput
       v-model="counterparty"
       :label="t('common.counterparty')"
-      data-cy="counterparty"
+      data-testid="counterparty"
       :error-messages="toMessages(v$.counterparty)"
       :hint="t('common.optional')"
       persistent-hint

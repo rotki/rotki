@@ -114,7 +114,7 @@ onMounted(() => {
       </div>
       <div
         class="font-medium"
-        data-cy="overall-balances__net-worth"
+        data-testid="overall-balances__net-worth"
       >
         <FiatDisplay
           class="text-[2rem] leading-[3rem] sm:text-[3rem] sm:leading-[4rem]"

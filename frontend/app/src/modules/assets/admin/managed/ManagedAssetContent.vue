@@ -223,7 +223,7 @@ onBeforeMount(async () => {
       </RuiButton>
 
       <RuiButton
-        data-cy="managed-asset-add-btn"
+        data-testid="managed-asset-add-btn"
         color="primary"
         size="lg"
         @click="add()"

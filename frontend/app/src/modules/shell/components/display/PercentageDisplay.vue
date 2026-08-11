@@ -43,7 +43,7 @@ const { t } = useI18n({ useScope: 'global' });
     }"
   >
     <div
-      data-cy="percentage-display"
+      data-testid="percentage-display"
       :class="{
         'blur': !shouldShowPercentage,
         'text-end': justify === 'end',

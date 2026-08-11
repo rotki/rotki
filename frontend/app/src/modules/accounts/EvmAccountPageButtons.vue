@@ -57,7 +57,7 @@ const isEth2Loading = logicOr(
         <RuiButton
           v-bind="{
             ...attrs,
-            'data-cy': 'blockchain-account-refresh',
+            'data-testid': 'blockchain-account-refresh',
           }"
           size="lg"
           color="primary"
@@ -92,7 +92,7 @@ const isEth2Loading = logicOr(
   >
     <template #activator>
       <RuiButton
-        data-cy="add-blockchain-account"
+        data-testid="add-blockchain-account"
         color="primary"
         size="lg"
         :disabled="addDisabled"

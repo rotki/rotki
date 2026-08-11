@@ -33,7 +33,7 @@ describe('modules/amount-display/components/ValueDisplay', () => {
         global: { plugins: [pinia] },
         props: { value: bigNumberify(1.5) },
       });
-      expect(wrapper.find('[data-cy=amount-display]').text()).toMatch('1.50');
+      expect(wrapper.find('[data-testid=amount-display]').text()).toMatch('1.50');
     });
 
     it('should display value with custom symbol', async () => {
@@ -44,8 +44,8 @@ describe('modules/amount-display/components/ValueDisplay', () => {
           value: bigNumberify(1.5),
         },
       });
-      expect(wrapper.find('[data-cy=amount-display]').text()).toMatch('1.50');
-      expect(wrapper.find('[data-cy=display-currency]').text()).toBe('ETH');
+      expect(wrapper.find('[data-testid=amount-display]').text()).toMatch('1.50');
+      expect(wrapper.find('[data-testid=display-currency]').text()).toBe('ETH');
     });
 
     it('should display value without symbol when symbol is empty', async () => {
@@ -56,7 +56,7 @@ describe('modules/amount-display/components/ValueDisplay', () => {
           value: bigNumberify(1.5),
         },
       });
-      expect(wrapper.find('[data-cy=display-currency]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=display-currency]').exists()).toBe(false);
     });
   });
 
@@ -69,7 +69,7 @@ describe('modules/amount-display/components/ValueDisplay', () => {
           value: bigNumberify(50),
         },
       });
-      expect(wrapper.find('[data-cy=amount-display].text-rui-success').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=amount-display].text-rui-success').exists()).toBe(true);
     });
 
     it('should show red for negative values', () => {
@@ -80,7 +80,7 @@ describe('modules/amount-display/components/ValueDisplay', () => {
           value: bigNumberify(-50),
         },
       });
-      expect(wrapper.find('[data-cy=amount-display].text-rui-error').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=amount-display].text-rui-error').exists()).toBe(true);
     });
   });
 
@@ -94,7 +94,7 @@ describe('modules/amount-display/components/ValueDisplay', () => {
         global: { plugins: [pinia] },
         props: { value: bigNumberify(1.5) },
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe('1.50');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).not.toBe('1.50');
     });
 
     it('should not scramble the value when noScramble is true', async () => {
@@ -105,7 +105,7 @@ describe('modules/amount-display/components/ValueDisplay', () => {
           value: bigNumberify(1.5),
         },
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.50');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).toBe('1.50');
     });
   });
 
@@ -119,7 +119,7 @@ describe('modules/amount-display/components/ValueDisplay', () => {
         },
       });
       // Uses amountRoundingMode which defaults to ROUND_UP
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('129');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).toBe('129');
     });
   });
 
@@ -132,9 +132,9 @@ describe('modules/amount-display/components/ValueDisplay', () => {
           value: bigNumberify(1.5),
         },
       });
-      expect(wrapper.find('[data-cy="amount-display"].skeleton').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="amount-display"].skeleton').exists()).toBe(true);
       // Content should be hidden when loading
-      expect(wrapper.find('[data-cy="display-amount"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="display-amount"]').exists()).toBe(false);
     });
   });
 });

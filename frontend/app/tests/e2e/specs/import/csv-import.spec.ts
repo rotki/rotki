@@ -44,7 +44,7 @@ test.describe.serial('csv import', () => {
     }).toPass({ timeout: TIMEOUT_MEDIUM });
 
     // 0.091 BTC → rounded up to 0.10 with '<' prefix
-    await historyPage.verifyEventAmount('[data-cy=history-event-row]', 0, '0.10');
+    await historyPage.verifyEventAmount('[data-testid=history-event-row]', 0, '0.10');
   });
 
   test('import rotki generic trades', async () => {
@@ -63,7 +63,7 @@ test.describe.serial('csv import', () => {
     }).toPass({ timeout: TIMEOUT_MEDIUM });
 
     // 392.887 LTC → rounded up to 392.89 with '<' prefix
-    await historyPage.verifyEventAmount('[data-cy=history-event-swap]', 0, '392.89');
+    await historyPage.verifyEventAmount('[data-testid=history-event-swap]', 0, '392.89');
   });
 
   test('import cointracking csv', async () => {
@@ -86,8 +86,8 @@ test.describe.serial('csv import', () => {
     }).toPass({ timeout: TIMEOUT_MEDIUM });
 
     // 5.00 XMR — exact, no rounding needed
-    await historyPage.verifyEventAmount('[data-cy=history-event-row]', 0, '5.00');
-    await historyPage.verifyEventTypeLabel('[data-cy=history-event-row]', 0, 'Exchange deposit');
+    await historyPage.verifyEventAmount('[data-testid=history-event-row]', 0, '5.00');
+    await historyPage.verifyEventTypeLabel('[data-testid=history-event-row]', 0, 'Exchange deposit');
   });
 
   test('import nexo csv', async () => {
@@ -107,7 +107,7 @@ test.describe.serial('csv import', () => {
     }).toPass({ timeout: TIMEOUT_MEDIUM });
 
     // 5.37250072 NEXO fixed term interest (2024-12-28) → rounded up to 5.38 with '<' prefix
-    const amountLocator = ctx.sharedPage.locator('[data-cy=event-amount]').filter({ hasText: '5.38' });
+    const amountLocator = ctx.sharedPage.locator('[data-testid=event-amount]').filter({ hasText: '5.38' });
     await expect(amountLocator.first()).toBeVisible({ timeout: TIMEOUT_MEDIUM });
   });
 
@@ -125,6 +125,6 @@ test.describe.serial('csv import', () => {
     }).toPass({ timeout: TIMEOUT_MEDIUM });
 
     // Verify the USDC→ETH swap exists: 1,875.64 USDC spend → rounded up to 1,875.64 (exact 2 decimals)
-    await historyPage.verifyEventAmount('[data-cy=history-event-swap]', 0, '1,875.64');
+    await historyPage.verifyEventAmount('[data-testid=history-event-swap]', 0, '1,875.64');
   });
 });

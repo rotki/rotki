@@ -75,7 +75,7 @@ defineExpose({
         outlined
         :disabled="disableAsset"
         show-ignored
-        data-cy="asset"
+        data-testid="asset"
         :error-messages="disableAsset ? [''] : toMessages(v$.asset)"
         @blur="v$.asset.$touch()"
       />
@@ -94,7 +94,7 @@ defineExpose({
       <AmountInput
         v-model="amount"
         variant="outlined"
-        data-cy="amount"
+        data-testid="amount"
         :label="t('common.amount')"
         :error-messages="toMessages(v$.amount)"
         @blur="v$.amount.$touch()"

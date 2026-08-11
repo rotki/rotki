@@ -39,11 +39,11 @@ test.describe.serial('substrate accounts', () => {
     await blockchainAccountsPage.openAddDialog();
     await blockchainAccountsPage.addAccount(polkadotAccount);
     await blockchainAccountsPage.isEntryVisible(0, polkadotAccount);
-    await expect(ctx.sharedPage.locator('[data-cy=blockchain-account-refresh]')).not.toBeDisabled();
+    await expect(ctx.sharedPage.locator('[data-testid=blockchain-account-refresh]')).not.toBeDisabled();
     await waitForNoRunningTasks(ctx.sharedPage);
 
-    const row = ctx.sharedPage.locator('[data-cy=account-table] tbody tr[data-id="row"]').first();
-    const usdValueText = await row.locator('[data-cy=usd-value] [data-cy=display-amount]').textContent();
+    const row = ctx.sharedPage.locator('[data-testid=account-table] tbody tr[data-id="row"]').first();
+    const usdValueText = await row.locator('[data-testid=usd-value] [data-testid=display-amount]').textContent();
     expect(usdValueText, 'USD value should be displayed for the Polkadot account').not.toBeNull();
     expect(new BigNumber((usdValueText ?? '').replace(/,/g, '')).gt(0)).toBe(true);
   });

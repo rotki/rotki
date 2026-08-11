@@ -225,7 +225,7 @@ defineExpose({
       <RuiTextField
         v-if="!multiple"
         v-model="address"
-        data-cy="account-address-field"
+        data-testid="account-address-field"
         variant="outlined"
         color="primary"
         class="account-form__address flex-1"
@@ -240,7 +240,7 @@ defineExpose({
       <RuiTextArea
         v-else
         v-model="userAddresses"
-        data-cy="account-address-field"
+        data-testid="account-address-field"
         variant="outlined"
         color="primary"
         class="flex-1"

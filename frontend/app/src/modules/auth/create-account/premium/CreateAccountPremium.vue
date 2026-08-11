@@ -97,7 +97,7 @@ const premiumSelectionButtons = computed(() => [
         {{ t('common.actions.back') }}
       </RuiButton>
       <RuiButton
-        data-cy="create-account__premium__button__continue"
+        data-testid="create-account__premium__button__continue"
         size="lg"
         class="w-full"
         :disabled="!valid"

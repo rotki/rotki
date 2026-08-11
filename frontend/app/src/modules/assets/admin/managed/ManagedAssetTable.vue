@@ -106,7 +106,7 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
 </script>
 
 <template>
-  <div data-cy="managed-assets-table">
+  <div data-testid="managed-assets-table">
     <ManagedAssetActions
       v-model:ignored-filter="ignoredFilter"
       v-model:selected="selected"
@@ -130,7 +130,7 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
       :expanded="expanded"
       :disabled-rows="disabledRows"
       row-attr="identifier"
-      data-cy="managed-assets-table"
+      data-testid="managed-assets-table"
       single-expand
       sticky-header
       outlined

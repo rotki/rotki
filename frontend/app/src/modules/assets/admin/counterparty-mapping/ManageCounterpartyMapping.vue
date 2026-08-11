@@ -116,7 +116,7 @@ const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
       </RuiButton>
 
       <RuiButton
-        data-cy="managed-counterparty-mapping-add-btn"
+        data-testid="managed-counterparty-mapping-add-btn"
         color="primary"
         size="lg"
         @click="add()"

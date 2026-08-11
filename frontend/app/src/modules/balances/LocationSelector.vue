@@ -38,7 +38,7 @@ watch([locations, model], ([locations, value], [prevLocations, prevValue]) => {
   <RuiAutoComplete
     v-model="model"
     variant="outlined"
-    data-cy="location-input"
+    data-testid="location-input"
     :options="locations"
     key-attr="identifier"
     text-attr="name"

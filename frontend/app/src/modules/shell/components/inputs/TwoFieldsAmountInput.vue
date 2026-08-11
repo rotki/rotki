@@ -93,7 +93,7 @@ const uiClasses = {
       :hide-details="!reversed"
       variant="filled"
       persistent-hint
-      data-cy="primary"
+      data-testid="primary"
       :class="reversed ? uiClasses.disabledInput : uiClasses.enabledInput"
       :label="label.primary"
       :error-messages="aggregatedErrorMessages"
@@ -116,7 +116,7 @@ const uiClasses = {
       :hide-details="reversed"
       variant="filled"
       persistent-hint
-      data-cy="secondary"
+      data-testid="secondary"
       :class="reversed ? uiClasses.enabledInput : uiClasses.disabledInput"
       :label="label.secondary"
       :error-messages="aggregatedErrorMessages"
@@ -128,7 +128,7 @@ const uiClasses = {
       icon
       class="absolute right-5 top-14 transform -translate-y-1/2 z-[1] !p-2"
       color="primary"
-      data-cy="grouped-amount-input__swap-button"
+      data-testid="grouped-amount-input__swap-button"
       @click="reverse()"
     >
       <RuiIcon

@@ -55,7 +55,7 @@ test.describe.serial('snapshot edit', () => {
     // We call `login()` directly rather than `relogin()` because the auto-
     // logout has already detached the session — `relogin()` would try to
     // click a logout button that no longer exists.
-    await ctx.sharedPage.locator('[data-cy=username-input]').waitFor({ state: 'visible', timeout: 10_000 });
+    await ctx.sharedPage.locator('[data-testid=username-input]').waitFor({ state: 'visible', timeout: 10_000 });
     await ctx.app.login(ctx.username);
 
     await ctx.sharedPage.locator('[data-testid=net-worth-chart]').waitFor({ state: 'visible' });
@@ -202,7 +202,7 @@ test.describe.serial('snapshot split editing', () => {
     await importDialog.uploadLocationCsv(fixtures.locationsPath);
     await importDialog.import();
 
-    await ctx.sharedPage.locator('[data-cy=username-input]').waitFor({ state: 'visible', timeout: 10_000 });
+    await ctx.sharedPage.locator('[data-testid=username-input]').waitFor({ state: 'visible', timeout: 10_000 });
     await ctx.app.login(ctx.username);
     await ctx.sharedPage.locator('[data-testid=net-worth-chart]').waitFor({ state: 'visible' });
   });
@@ -266,7 +266,7 @@ test.describe.serial('snapshot add balance', () => {
     await importDialog.uploadLocationCsv(fixtures.locationsPath);
     await importDialog.import();
 
-    await ctx.sharedPage.locator('[data-cy=username-input]').waitFor({ state: 'visible', timeout: 10_000 });
+    await ctx.sharedPage.locator('[data-testid=username-input]').waitFor({ state: 'visible', timeout: 10_000 });
     await ctx.app.login(ctx.username);
     await ctx.sharedPage.locator('[data-testid=net-worth-chart]').waitFor({ state: 'visible' });
   });

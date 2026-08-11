@@ -167,7 +167,7 @@ watchDebounced(
 </script>
 
 <template>
-  <RuiCard data-cy="manual-balances">
+  <RuiCard data-testid="manual-balances">
     <template #custom-header>
       <div class="px-4 pt-4">
         <div class="flex items-center flex-wrap gap-3">
@@ -197,14 +197,14 @@ watchDebounced(
       row-attr="label"
       :rows="state.data"
       :item-class="getRowClass"
-      data-cy="manual-balances"
+      data-testid="manual-balances"
       class="lg:[&_table]:w-full"
     >
       <template #item.label="{ row }">
         <div
           class="font-medium !pb-0 text-truncate min-w-[8rem] max-w-[16rem]"
           :title="row.label"
-          data-cy="label"
+          data-testid="label"
           :class="{
             'pt-0': !row.tags,
           }"
@@ -240,7 +240,7 @@ watchDebounced(
       </template>
       <template #item.amount="{ row }">
         <ValueDisplay
-          data-cy="manual-balances__amount"
+          data-testid="manual-balances__amount"
           :value="row.amount"
         />
       </template>
@@ -257,7 +257,7 @@ watchDebounced(
       <template #item.location="{ row }">
         <LocationDisplay
           :identifier="row.location"
-          data-cy="manual-balances__location"
+          data-testid="manual-balances__location"
         />
       </template>
       <template #item.actions="{ row }">
@@ -286,7 +286,7 @@ watchDebounced(
           <FiatDisplay
             v-if="state.totalValue"
             class="p-4"
-            data-cy="manual-balances__amount"
+            data-testid="manual-balances__amount"
             :value="state.totalValue"
           />
         </RowAppend>

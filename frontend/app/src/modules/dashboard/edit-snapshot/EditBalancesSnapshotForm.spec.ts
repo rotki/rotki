@@ -83,10 +83,10 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
+    const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
     expect(amountInput.element.value).toBe('1.5');
 
-    const assetInput = wrapper.find<HTMLInputElement>('[data-cy=asset] input');
+    const assetInput = wrapper.find<HTMLInputElement>('[data-testid=asset] input');
     expect(assetInput.element.value).toBe('ETH');
   });
 
@@ -167,7 +167,7 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-cy=amount] input').setValue('5');
+    await wrapper.find('[data-testid=amount] input').setValue('5');
     await vi.advanceTimersToNextTimerAsync();
 
     const updates = wrapper.emitted<[BalanceSnapshotPayloadAndLocation]>('update:modelValue');

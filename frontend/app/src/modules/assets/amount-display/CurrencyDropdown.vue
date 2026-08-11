@@ -87,7 +87,7 @@ watch(visible, (isVisible, wasVisible) => {
           })
         "
         class-name="text-[1.375rem] font-bold"
-        data-cy="currency-dropdown"
+        data-testid="currency-dropdown"
         v-bind="attrs"
         :style="{
           fontSize: calculateFontSize(currency.unicodeSymbol, true),

@@ -86,7 +86,7 @@ const showLocationLabel = computed<boolean>(() => {
 
 <template>
   <div
-    data-cy="event-type"
+    data-testid="event-type"
     class="flex items-center text-left min-w-0"
   >
     <HistoryEventTypeCounterparty

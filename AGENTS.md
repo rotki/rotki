@@ -508,9 +508,9 @@ free of side effects.
   - `mockT` from `@test/i18n` is the echo translator. `useI18n` is globally mocked in
     `tests/unit/setup-files/setup.ts` to use it, so composables calling `useI18n()` get `t` for free.
   - Other fixtures: `@test/mocks/file`, `@test/utils/create-pinia`, `@test/utils/events`.
-- **Test selectors**: new attributes go in as `data-testid`. Do not introduce new `data-cy`; the
-  team is replacing it after the next release. Existing `data-cy` attributes are not being changed
-  in place, so query whichever attribute is on the component today.
+- **Test selectors**: use `data-testid`, in components and in queries alike. `data-cy` is gone from
+  the codebase; do not reintroduce it. `@rotki/ui-library` exposes no test-id attribute of its own,
+  so a `data-testid` on a `Rui*` component falls through `$attrs` onto its root element.
 - **e2e: never locate a row by index.** Anchoring a history-events assertion on row position makes
   the test pass for the wrong reason as soon as ordering or fixture data shifts. Anchor on fixture
   content, and pair the assertion with a negative control that proves the test can fail.

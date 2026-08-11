@@ -65,7 +65,6 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
       <RuiButton
         v-if="canAddNode"
         color="primary"
-        data-cy="add-node"
         data-testid="add-node"
         @click="addNodeClick()"
       >

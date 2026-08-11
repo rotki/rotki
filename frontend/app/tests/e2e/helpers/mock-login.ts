@@ -72,7 +72,7 @@ export async function mockLoginResult(page: Page, kind: LoginResult, username = 
  * callers assert on an error alert instead.
  */
 export async function submitLogin(page: Page, username = 'alice', password = 'a-password'): Promise<void> {
-  const usernameField = page.locator('[data-cy=username-input]');
+  const usernameField = page.locator('[data-testid=username-input]');
   const usernameInput = usernameField.locator('input');
   await usernameInput.waitFor({ state: 'visible' });
 
@@ -90,6 +90,6 @@ export async function submitLogin(page: Page, username = 'alice', password = 'a-
     await usernameInput.fill(username);
   }
 
-  await page.locator('[data-cy=password-input] input').fill(password);
-  await page.locator('[data-cy=login-submit]').click();
+  await page.locator('[data-testid=password-input] input').fill(password);
+  await page.locator('[data-testid=login-submit]').click();
 }

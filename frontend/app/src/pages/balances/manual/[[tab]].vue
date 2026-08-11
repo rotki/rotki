@@ -88,7 +88,7 @@ onBeforeMount(async () => {
       <RuiButton
         color="primary"
         size="lg"
-        data-cy="manual-balances-add-button"
+        data-testid="manual-balances-add-button"
         :disabled="loading"
         @click="add()"
       >
@@ -117,14 +117,14 @@ onBeforeMount(async () => {
       <RuiTabItems :model-value="tab">
         <RuiTabItem value="assets">
           <ManualBalanceTable
-            data-cy="manual-balances"
+            data-testid="manual-balances"
             type="balances"
             @edit="balance = $event"
           />
         </RuiTabItem>
         <RuiTabItem value="liabilities">
           <ManualBalanceTable
-            data-cy="manual-liabilities"
+            data-testid="manual-liabilities"
             type="liabilities"
             @edit="balance = $event"
           />

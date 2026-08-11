@@ -39,7 +39,7 @@ async function navigateToAsset(asset: AssetBalance): Promise<void> {
       >
         <template #activator>
           <div
-            data-cy="top-asset"
+            data-testid="top-asset"
             class="rounded-full size-8 flex items-center justify-center border bg-white border-rui-grey-300 dark:border-rui-grey-700 -ml-2 cursor-pointer"
             @click="navigateToAsset(asset)"
           >
@@ -60,7 +60,7 @@ async function navigateToAsset(asset: AssetBalance): Promise<void> {
           :asset="asset.asset"
           :amount="asset.amount"
           :no-collection-parent="!resolutionOptions?.collectionParent"
-          data-cy="top-asset-amount"
+          data-testid="top-asset-amount"
         />
       </RuiTooltip>
     </template>

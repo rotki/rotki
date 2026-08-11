@@ -80,7 +80,7 @@ onMounted(() => {
         <div class="pb-6 flex flex-wrap xl:flex-nowrap justify-between gap-2 items-center">
           <div class="flex items-center gap-2">
             <SummaryCardRefreshMenu
-              data-cy="blockchain-balances-refresh-menu"
+              data-testid="blockchain-balances-refresh-menu"
               :disabled="refreshDisabled"
               :loading="isDetectingTokens || isRefreshing"
               :tooltip="t('account_balances.refresh_tooltip')"
@@ -121,7 +121,7 @@ onMounted(() => {
         </div>
 
         <AssetBalances
-          data-cy="blockchain-asset-balances"
+          data-testid="blockchain-asset-balances"
           :loading="isInitialLoading"
           :balances="aggregatedBalances"
           :search="search"

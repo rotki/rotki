@@ -60,7 +60,7 @@ const steps = computed<{ title: string; description?: string }[]>(() => {
       <div class="flex flex-col px-4 pt-16 lg:pt-24 grow">
         <div
           class="pb-4"
-          data-cy="account-management"
+          data-testid="account-management"
         >
           <UserHost>
             <UpgradeProgressDisplay v-if="upgradeVisible" />

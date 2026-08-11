@@ -97,7 +97,7 @@ watchImmediate(pendingPriceIntent, (intent) => {
       <AmountInput
         v-model="amount"
         variant="outlined"
-        :data-cy="type ? `${type}-amount` : 'amount'"
+        :data-testid="type ? `${type}-amount` : 'amount'"
         :disabled="disabled"
         :label="type ? t('transactions.events.form.asset_price.amount_label', { type: toSentenceCase((type)) }) : t('common.amount')"
         required
@@ -110,7 +110,7 @@ watchImmediate(pendingPriceIntent, (intent) => {
           outlined
           show-ignored
           :disabled="disabled || disableAsset"
-          :data-cy="type ? `${type}-asset` : 'asset'"
+          :data-testid="type ? `${type}-asset` : 'asset'"
           :label="type ? t('transactions.events.form.asset_price.asset_label', { type: toSentenceCase((type)) }) : t('common.asset')"
           required
           :chain="chain"

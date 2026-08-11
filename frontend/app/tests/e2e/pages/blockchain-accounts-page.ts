@@ -16,25 +16,25 @@ export class BlockchainAccountsPage {
 
   async openAddDialog(): Promise<void> {
     // Dismiss any notifications if present
-    const dismissButton = this.page.locator('[data-cy=notification_dismiss-all]');
+    const dismissButton = this.page.locator('[data-testid=notification_dismiss-all]');
     if (await dismissButton.isVisible()) {
       await dismissButton.click();
     }
 
-    await this.page.locator('[data-cy=notification]').waitFor({ state: 'detached' });
-    const addButton = this.page.locator('[data-cy=add-blockchain-account]').first();
+    await this.page.locator('[data-testid=notification]').waitFor({ state: 'detached' });
+    const addButton = this.page.locator('[data-testid=add-blockchain-account]').first();
     await addButton.waitFor({ state: 'visible' });
     await addButton.click();
   }
 
   async addAccount(balance: FixtureBlockchainAccount): Promise<void> {
     // Use filter to target the Add blockchain account dialog specifically
-    const addAccountDialog = this.page.locator('[data-cy=bottom-dialog]').filter({ hasText: 'Add blockchain account' });
+    const addAccountDialog = this.page.locator('[data-testid=bottom-dialog]').filter({ hasText: 'Add blockchain account' });
     await addAccountDialog.waitFor({ state: 'visible' });
-    await this.page.locator('[data-cy=blockchain-balance-form]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=blockchain-balance-form]').waitFor({ state: 'visible' });
 
     // Handle blockchain field as autocomplete
-    const blockchainField = addAccountDialog.locator('[data-cy=account-blockchain-field]');
+    const blockchainField = addAccountDialog.locator('[data-testid=account-blockchain-field]');
     const blockchainInput = blockchainField.locator('input');
     await blockchainField.locator('[data-id=activator]').click();
     await this.page.locator('[role=menu]').waitFor({ state: 'visible' });
@@ -45,37 +45,37 @@ export class BlockchainAccountsPage {
 
     const isBtc = balance.blockchain === Blockchain.BTC || balance.blockchain === Blockchain.BCH;
     const addressField = isBtc
-      ? this.page.locator('[data-cy=account-address-field] textarea')
-      : this.page.locator('[data-cy=account-address-field] input');
+      ? this.page.locator('[data-testid=account-address-field] textarea')
+      : this.page.locator('[data-testid=account-address-field] input');
 
     await expect(addressField).not.toBeDisabled();
     await addressField.fill(balance.address);
-    await this.page.locator('[data-cy=account-label-field] input').fill(balance.label);
+    await this.page.locator('[data-testid=account-label-field] input').fill(balance.label);
 
     for (const tag of balance.tags) {
-      const tagField = this.page.locator('[data-cy=account-tag-field]');
+      const tagField = this.page.locator('[data-testid=account-tag-field]');
       const tagInput = tagField.locator('input');
       await tagField.locator('[data-id=activator]').click();
       await tagInput.fill(tag);
       await tagInput.press('Enter');
     }
 
-    await addAccountDialog.locator('[data-cy=confirm]').click();
+    await addAccountDialog.locator('[data-testid=confirm]').click();
     await addAccountDialog.waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
   }
 
   async editAccount(position: number, label: string): Promise<void> {
-    const rows = this.page.locator('[data-cy=account-table] tbody tr[data-id="row"]');
-    await rows.nth(position).locator('button[data-cy=row-edit]').click();
+    const rows = this.page.locator('[data-testid=account-table] tbody tr[data-id="row"]');
+    await rows.nth(position).locator('button[data-testid=row-edit]').click();
 
-    const editDialog = this.page.locator('[data-cy=bottom-dialog]').filter({ has: this.page.locator('[data-cy=blockchain-balance-form]') });
+    const editDialog = this.page.locator('[data-testid=bottom-dialog]').filter({ has: this.page.locator('[data-testid=blockchain-balance-form]') });
     await editDialog.waitFor({ state: 'visible' });
 
-    const accountLabel = editDialog.locator('[data-cy=account-label-field] input');
+    const accountLabel = editDialog.locator('[data-testid=account-label-field] input');
     await accountLabel.click();
     await accountLabel.clear();
     await accountLabel.fill(label);
-    await editDialog.locator('[data-cy=confirm]').click();
+    await editDialog.locator('[data-testid=confirm]').click();
     await editDialog.waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
   }
 
@@ -85,15 +85,15 @@ export class BlockchainAccountsPage {
 
   async deleteAccount(position: number): Promise<void> {
     // Use labeled-address-display for reliable counting of actual account entries
-    const accountAddresses = this.page.locator('[data-cy=account-table] [data-cy=labeled-address-display]');
+    const accountAddresses = this.page.locator('[data-testid=account-table] [data-testid=labeled-address-display]');
     const initialCount = await accountAddresses.count();
 
     // Use the row selector to find the delete button
-    const rows = this.page.locator('[data-cy=account-table] tbody tr[data-id="row"]');
-    await rows.nth(position).locator('button[data-cy=row-delete]').click();
+    const rows = this.page.locator('[data-testid=account-table] tbody tr[data-id="row"]');
+    await rows.nth(position).locator('button[data-testid=row-delete]').click();
     await this.confirmDelete();
 
-    const blockchainSection = this.page.locator('[data-cy=account-table]');
+    const blockchainSection = this.page.locator('[data-testid=account-table]');
     await blockchainSection.waitFor({ state: 'attached', timeout: TIMEOUT_LONG });
     await blockchainSection.locator('tbody td div[role=progressbar]').waitFor({ state: 'detached', timeout: TIMEOUT_VERY_LONG });
 
@@ -102,14 +102,14 @@ export class BlockchainAccountsPage {
   }
 
   async isEntryVisible(position: number, balance: FixtureBlockchainAccount): Promise<void> {
-    const blockchainSection = this.page.locator('[data-cy=account-table]');
+    const blockchainSection = this.page.locator('[data-testid=account-table]');
     await blockchainSection.waitFor({ state: 'attached', timeout: TIMEOUT_LONG });
     await blockchainSection.locator('tbody td div[role=progressbar]').waitFor({ state: 'detached', timeout: TIMEOUT_VERY_LONG });
 
     const rows = blockchainSection.locator('tbody tr[data-id="row"]');
     const row = rows.nth(position);
 
-    const addressLabel = row.locator('[data-cy=labeled-address-display]');
+    const addressLabel = row.locator('[data-testid=labeled-address-display]');
     await addressLabel.scrollIntoViewIfNeeded();
     await addressLabel.hover();
 
@@ -118,7 +118,7 @@ export class BlockchainAccountsPage {
     await expect(tooltip.locator('[data-id=content]')).toContainText(balance.address);
 
     for (const tag of balance.tags) {
-      await expect(row.locator('[data-cy=tag]')).toContainText(tag);
+      await expect(row.locator('[data-testid=tag]')).toContainText(tag);
     }
 
     await addressLabel.scrollIntoViewIfNeeded();
@@ -132,13 +132,13 @@ export class BlockchainAccountsPage {
     for (const category of categories) {
       await this.visit(category);
 
-      const rows = this.page.locator('[data-cy=account-table] tbody tr[data-id="row"]');
+      const rows = this.page.locator('[data-testid=account-table] tbody tr[data-id="row"]');
       const count = await rows.count();
 
       for (let i = 0; i < count; i++) {
         const row = rows.nth(i);
-        const valueText = await row.locator('[data-cy=usd-value] [data-cy=display-amount]').textContent();
-        const asset = await row.locator('[data-cy=account-chain]').first().getAttribute('data-chain');
+        const valueText = await row.locator('[data-testid=usd-value] [data-testid=display-amount]').textContent();
+        const asset = await row.locator('[data-testid=account-chain]').first().getAttribute('data-chain');
 
         if (!valueText || !asset) {
           continue;
