@@ -18,7 +18,7 @@ describe('activityOutcome', () => {
   it('should fill only the outcomes that need attention', () => {
     const filled = Object.values(ActivityStatus).filter(status => activityOutcome(status).variant === 'filled');
 
-    expect(filled).toStrictEqual([ActivityStatus.FAILED, ActivityStatus.SKIPPED]);
+    expect(filled).toStrictEqual([ActivityStatus.FAILED]);
   });
 
   it('should give every status an icon', () => {

@@ -17,9 +17,10 @@ export interface ActivityOutcome {
   /**
    * **Filled means it needs your attention; outlined means it is expected.**
    *
-   * Only FAILED and SKIPPED are filled. A history refresh settles dozens of children successfully,
-   * and filling those made a wall of green "Done" the loudest thing in the panel — drowning the
-   * one chain at 60% and the one at 0%, which is the only part a reader is actually there for.
+   * Only FAILED is filled. A history refresh settles dozens of children successfully, and filling
+   * those made a wall of green "Done" the loudest thing in the panel, drowning the one chain at 60%
+   * and the one at 0%, which is the only part a reader is actually there for. A skip is expected
+   * too: filled amber shouted over every neighbouring row for something nobody has to act on.
    */
   readonly variant: 'filled' | 'outlined';
 }
@@ -75,7 +76,7 @@ const OUTCOME: Record<ActivityStatus, ActivityOutcome> = {
     color: 'warning',
     icon: 'lu-skip-forward',
     key: msg.$t('pending_task.status.skipped'),
-    variant: 'filled',
+    variant: 'outlined',
   },
 };
 
