@@ -1,9 +1,10 @@
 import json
 from typing import TYPE_CHECKING, Any
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import pytest
 
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.chain.bitcoin.btc.constants import (
     BLOCKCHAIN_INFO_BASE_URL,
     BLOCKCYPHER_BASE_URL,
@@ -876,6 +877,49 @@ def test_transactions_are_saved_and_redecoded_offline(
         assert redecoded.sequence_index == original.sequence_index
         assert redecoded.amount == original.amount
         assert redecoded.notes == original.notes
+
+
+@pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1]])
+def test_bitcoin_decoding_sends_progress_updates(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Bitcoin decoding reports an initial and terminal progress update like EVM decoding."""
+    bitcoin_manager.query_transactions(
+        from_timestamp=Timestamp(0),
+        to_timestamp=ts_now(),
+        addresses=btc_accounts,
+    )
+    with bitcoin_manager.database.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(bitcoin_manager.database).reset_events_for_redecode(
+            write_cursor=write_cursor,
+            location=Location.BITCOIN,
+        )
+
+    with patch.object(bitcoin_manager.database.msg_aggregator, 'add_message') as msg_mock:
+        decoded_count = bitcoin_manager.decode_transactions(send_ws_notifications=True)
+
+    assert decoded_count > 0
+    msg_mock.assert_has_calls([
+        call(
+            message_type=WSMessageType.PROGRESS_UPDATES,
+            data={
+                'chain': SupportedBlockchain.BITCOIN.value,
+                'subtype': str(ProgressUpdateSubType.UNDECODED_TRANSACTIONS),
+                'total': decoded_count,
+                'processed': 0,
+            },
+        ),
+        call(
+            message_type=WSMessageType.PROGRESS_UPDATES,
+            data={
+                'chain': SupportedBlockchain.BITCOIN.value,
+                'subtype': str(ProgressUpdateSubType.UNDECODED_TRANSACTIONS),
+                'total': decoded_count,
+                'processed': decoded_count,
+            },
+        ),
+    ])
 
 
 @pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1]])

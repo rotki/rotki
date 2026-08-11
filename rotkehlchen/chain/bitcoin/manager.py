@@ -6,6 +6,7 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import (
+    ProgressUpdateSubType,
     TransactionStatusStep,
     TransactionStatusSubType,
     WSMessageType,
@@ -210,6 +211,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
     def _send_tx_ws_status(
             self,
             addresses: list[BTCAddress],
+            period: tuple[Timestamp, Timestamp],
             status: TransactionStatusStep,
     ) -> None:
         """Send tx querying status WS message to the frontend."""
@@ -219,6 +221,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 'addresses': addresses,
                 'chain': self.blockchain.value,
                 'subtype': str(TransactionStatusSubType.BITCOIN),
+                'period': period,
                 'status': str(status),
             },
         )
@@ -238,6 +241,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         """
         self._send_tx_ws_status(
             addresses=addresses,
+            period=(from_timestamp, to_timestamp),
             status=TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED,
         )
         self.refresh_tracked_accounts()
@@ -269,6 +273,11 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 accounts=accounts,
                 options={'to_timestamp': to_timestamp, 'last_queried_block': last_queried_block},
             )
+            self._send_tx_ws_status(
+                addresses=accounts,
+                period=(from_timestamp, to_timestamp),
+                status=TransactionStatusStep.QUERYING_TRANSACTIONS,
+            )
             if len(accounts_txs) == 0:
                 new_block_height = max(new_block_height, last_queried_block)
                 continue
@@ -278,6 +287,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
 
         self._send_tx_ws_status(
             addresses=addresses,
+            period=(from_timestamp, to_timestamp),
             status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
         )
         if len(tx_list) == 0:
@@ -312,11 +322,13 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
 
         self._send_tx_ws_status(
             addresses=addresses,
+            period=(from_timestamp, to_timestamp),
             status=TransactionStatusStep.DECODING_TRANSACTIONS_STARTED,
         )
-        self.decode_transactions()
+        self.decode_transactions(send_ws_notifications=True)
         self._send_tx_ws_status(
             addresses=addresses,
+            period=(from_timestamp, to_timestamp),
             status=TransactionStatusStep.DECODING_TRANSACTIONS_FINISHED,
         )
 
@@ -349,7 +361,11 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 relevant_addresses=list(relevant_addresses),
             )
 
-    def decode_transactions(self, tx_ids: list[BTCTxId] | None = None) -> int:
+    def decode_transactions(
+            self,
+            tx_ids: list[BTCTxId] | None = None,
+            send_ws_notifications: bool = False,
+    ) -> int:
         """Decode the saved transactions that are pending decoding into history events.
 
         If tx_ids is given only those transactions are considered. Returns the number of
@@ -365,6 +381,13 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             )
 
         dbevents = DBHistoryEvents(self.database)
+        total_transactions = len(pending_tx_ids)
+        processed_transactions = 0
+        if send_ws_notifications:
+            self._send_decoding_progress(
+                processed=processed_transactions,
+                total=total_transactions,
+            )
         for id_chunk in get_chunks(pending_tx_ids, DECODING_CHUNK_SIZE):
             # Read and decode a chunk at a time so that a full history redecode never holds
             # every transaction, all its TxIOs and all their events in memory at once.
@@ -405,8 +428,26 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                     location=self.location,
                     tx_ids=list(decoded_tx_ids),
                 )
+            processed_transactions += len(id_chunk)
+            if send_ws_notifications:
+                self._send_decoding_progress(
+                    processed=processed_transactions,
+                    total=total_transactions,
+                )
 
         return len(pending_tx_ids)
+
+    def _send_decoding_progress(self, processed: int, total: int) -> None:
+        """Send the current Bitcoin-family transaction decoding progress to the frontend."""
+        self.database.msg_aggregator.add_message(
+            message_type=WSMessageType.PROGRESS_UPDATES,
+            data={
+                'chain': self.blockchain.value,
+                'subtype': str(ProgressUpdateSubType.UNDECODED_TRANSACTIONS),
+                'total': total,
+                'processed': processed,
+            },
+        )
 
     def redecode_transactions(self, tx_ids: list[BTCTxId] | None = None) -> int:
         """Decode the saved transactions again, replacing their existing events.
