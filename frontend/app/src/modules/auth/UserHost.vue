@@ -14,10 +14,12 @@ const { t } = useI18n({ useScope: 'global' });
 const { autolog } = useAutoLogin();
 const { restarting } = useRestartingStatus();
 
-const { connected, connectionFailure, dockerRiskAccepted } = storeToRefs(useMainStore());
+const { connected, connectionFailure, sessionAuthEnabled, unauthenticatedApiAccepted } = storeToRefs(useMainStore());
 
 const isDocker = import.meta.env.VITE_DOCKER === 'true';
-const showDockerWarning = logicAnd(isDocker, logicNot(dockerRiskAccepted));
+// Either the deployment configured session authentication, so there is no unauthenticated
+// exposure, or the operator accepted the risk (env var or the button on the warning itself).
+const showDockerWarning = logicAnd(isDocker, logicNot(sessionAuthEnabled), logicNot(unauthenticatedApiAccepted));
 // Hide the login form while an auto-unlock is running — the ConnectionLoading card is the
 // single loading state for the whole attempt, so the empty form never shows behind it.
 const displayRouter = logicAnd(connected, logicNot(autolog), logicNot(showDockerWarning), logicNot(restarting));

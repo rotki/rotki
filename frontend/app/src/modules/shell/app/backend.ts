@@ -15,10 +15,11 @@ const DefaultBackendArguments = z.object({
 export type DefaultBackendArguments = z.infer<typeof DefaultBackendArguments>;
 
 export const BackendInfo = z.object({
-  acceptDockerRisk: z.boolean(),
+  acceptUnauthenticatedApi: z.boolean(),
   backendDefaultArguments: DefaultBackendArguments,
   dataDirectory: z.string(),
   logLevel: ActiveLogLevel,
+  sessionAuth: z.boolean(),
   version: BackendVersion,
 });
 

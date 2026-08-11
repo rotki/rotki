@@ -21,6 +21,7 @@ export const heliusLink = 'https://dev.helius.xyz/dashboard/app';
 export const blockscoutLink = 'https://dev.blockscout.com/';
 
 export const externalLinks = {
+  dockerSessionAuth: `${DOCS_BASE_URL}requirement-and-installation/docker#session-authentication`,
   integrations: `${BASE_URL}integrations`,
   premium: `${BASE_URL}products${UTM_PARAMS}`,
   premiumDevices: `${DOCS_BASE_URL}premium/devices`,
@@ -28,7 +29,6 @@ export const externalLinks = {
   manageSubscriptions: `${BASE_URL}home/subscription${UTM_PARAMS}`,
   usageGuide: USAGE_GUIDE_URL,
   usageGuideSection: {
-    dockerWarning: `${USAGE_GUIDE_URL}advanced/mobile#docker`,
     addingAnExchange: `${USAGE_GUIDE_URL}integrations/exchange-keys#exchanges-api-keys`,
     theGraphApiKey: `${USAGE_GUIDE_URL}integrations/external-services#the-graph`,
     gnosisPayKey: `${USAGE_GUIDE_URL}integrations/external-services#gnosis-pay`,

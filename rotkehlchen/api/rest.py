@@ -2094,7 +2094,15 @@ class RestAPI:
             'version': process_result(version),
             'data_directory': str(self.rotkehlchen.data_dir),
             'log_level': logging.getLevelName(logging.getLogger().getEffectiveLevel()),
-            'accept_docker_risk': 'ROTKI_ACCEPT_DOCKER_RISK' in os.environ,
+            # Deliberately not the retired ROTKI_ACCEPT_DOCKER_RISK: that one acknowledged a
+            # vague "you run in docker" warning, so honouring it here would silently grandfather
+            # every operator who set it out of ever hearing about session authentication.
+            'accept_unauthenticated_api': 'ROTKI_ACCEPT_UNAUTHENTICATED_API' in os.environ,
+            # Whether the deployment is behind session-cookie auth. Distinct from
+            # accept_unauthenticated_api: that one says the operator acknowledged the exposed
+            # API, this one says there is no exposure to acknowledge. The frontend
+            # skips the docker warning when either is true.
+            'session_auth': self.session_key is not None,
             'backend_default_arguments': {
                 'max_logfiles_num': DEFAULT_MAX_LOG_BACKUP_FILES,
                 'max_size_in_mb_all_logs': DEFAULT_MAX_LOG_SIZE_IN_MB,

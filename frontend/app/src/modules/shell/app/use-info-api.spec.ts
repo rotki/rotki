@@ -15,7 +15,7 @@ describe('composables/api/info/index', () => {
       let capturedParams: URLSearchParams | null = null;
 
       const mockInfo = {
-        accept_docker_risk: false,
+        accept_unauthenticated_api: false,
         backend_default_arguments: {
           max_logfiles_num: 3,
           max_size_in_mb_all_logs: 300,
@@ -23,6 +23,7 @@ describe('composables/api/info/index', () => {
         },
         data_directory: '/home/user/.local/share/rotki/data',
         log_level: 'debug',
+        session_auth: false,
         version: {
           our_version: '1.35.0',
           latest_version: '1.35.0',
@@ -45,7 +46,7 @@ describe('composables/api/info/index', () => {
       const result = await info();
 
       expect(capturedParams!.get('check_for_updates')).toBe('false');
-      expect(result.acceptDockerRisk).toBe(false);
+      expect(result.acceptUnauthenticatedApi).toBe(false);
       expect(result.dataDirectory).toBe('/home/user/.local/share/rotki/data');
       expect(result.logLevel).toBe('debug');
       expect(result.version.ourVersion).toBe('1.35.0');
@@ -55,7 +56,7 @@ describe('composables/api/info/index', () => {
       let capturedParams: URLSearchParams | null = null;
 
       const mockInfo = {
-        accept_docker_risk: true,
+        accept_unauthenticated_api: true,
         backend_default_arguments: {
           max_logfiles_num: 5,
           max_size_in_mb_all_logs: 500,
@@ -63,6 +64,7 @@ describe('composables/api/info/index', () => {
         },
         data_directory: '/data/rotki',
         log_level: 'info',
+        session_auth: true,
         version: {
           our_version: '1.34.0',
           latest_version: '1.35.0',
@@ -85,7 +87,7 @@ describe('composables/api/info/index', () => {
       const result = await info(true);
 
       expect(capturedParams!.get('check_for_updates')).toBe('true');
-      expect(result.acceptDockerRisk).toBe(true);
+      expect(result.acceptUnauthenticatedApi).toBe(true);
       expect(result.version.ourVersion).toBe('1.34.0');
       expect(result.version.latestVersion).toBe('1.35.0');
     });

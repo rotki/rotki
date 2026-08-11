@@ -7,7 +7,8 @@
     },
     "data_directory": "/Users/home/rotki/develop_data",
     "log_level": "DEBUG",
-    "accept_docker_risk": false,
+    "accept_unauthenticated_api": false,
+    "session_auth": false,
     "backend_default_arguments": {
       "max_logfiles_num": 3,
       "max_size_in_mb_all_logs": 300,

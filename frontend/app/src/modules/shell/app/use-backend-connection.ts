@@ -24,8 +24,9 @@ export function useBackendConnection(): UseBackendConnectionReturn {
     connectionFailure,
     dataDirectory,
     defaultBackendArguments,
-    dockerRiskAccepted,
     logLevel,
+    sessionAuthEnabled,
+    unauthenticatedApiAccepted,
     version,
   } = storeToRefs(store);
 
@@ -44,15 +45,17 @@ export function useBackendConnection(): UseBackendConnectionReturn {
 
   const getInfo = async (): Promise<void> => {
     const {
-      acceptDockerRisk,
+      acceptUnauthenticatedApi,
       backendDefaultArguments,
       dataDirectory: appDataDirectory,
       logLevel: level,
+      sessionAuth,
     } = await info(false);
 
     set(dataDirectory, appDataDirectory);
     set(logLevel, level);
-    set(dockerRiskAccepted, acceptDockerRisk);
+    set(unauthenticatedApiAccepted, acceptUnauthenticatedApi);
+    set(sessionAuthEnabled, sessionAuth);
     setLevel(level);
     set(defaultBackendArguments, backendDefaultArguments);
   };

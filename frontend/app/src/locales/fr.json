@@ -1503,10 +1503,6 @@
     "subtitle": "Ce sont les options de formatage de date prises en charge",
     "title": "Format de date"
   },
-  "docker_warning": {
-    "action": "Oui, je comprends",
-    "title": "Vous exécutez rotki dans docker. Assurez-vous d'avoir lu notre {0} et de comprendre le risque potentiel qu'il y a à exécuter rotki de cette façon."
-  },
   "ens_names": {
     "error": {
       "message": "Échec de la requête des noms ENS : {message}"

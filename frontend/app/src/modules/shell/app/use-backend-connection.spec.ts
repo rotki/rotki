@@ -94,10 +94,11 @@ describe('useBackendConnection', () => {
   describe('getInfo', () => {
     it('should update store with backend info', async () => {
       mockInfo.mockResolvedValue({
-        acceptDockerRisk: true,
+        acceptUnauthenticatedApi: true,
         backendDefaultArguments: { maxLogfilesNum: 5, maxSizeInMbAllLogs: 300, sqliteInstructions: 1000 },
         dataDirectory: '/data',
         logLevel: 'DEBUG',
+        sessionAuth: true,
       });
 
       const { useBackendConnection } = await importModule();
@@ -107,7 +108,8 @@ describe('useBackendConnection', () => {
       const store = useMainStore();
       expect(get(store.dataDirectory)).toBe('/data');
       expect(get(store.logLevel)).toBe('DEBUG');
-      expect(get(store.dockerRiskAccepted)).toBe(true);
+      expect(get(store.unauthenticatedApiAccepted)).toBe(true);
+      expect(get(store.sessionAuthEnabled)).toBe(true);
     });
   });
 

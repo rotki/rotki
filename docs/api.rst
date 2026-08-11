@@ -11397,7 +11397,8 @@ Querying general information
                 },
                 "data_directory": "/home/username/.local/share/rotki/data",
                 "log_level": "DEBUG",
-                "accept_docker_risk": false,
+                "accept_unauthenticated_api": false,
+                "session_auth": false,
                 "backend_default_arguments": {
                         "max_logfiles_num": 3,
                         "max_size_in_mb_all_logs": 300,
@@ -11412,7 +11413,8 @@ Querying general information
    :resjson str download_url: URL link to download the latest version
    :resjson str data_directory: The rotki data directory
    :resjson str log_level: The log level used in the backend. Can be ``DEBUG``, ``INFO``, ``WARN``, ``ERROR`` or ``CRITICAL``.
-   :resjson bool accept_docker_risk: A boolean indicating if the user has passed an environment variable to the backend process acknowledging the security issues with the docker setup: https://github.com/rotki/rotki/issues/5176
+   :resjson bool accept_unauthenticated_api: A boolean indicating if the backend process was given the ``ROTKI_ACCEPT_UNAUTHENTICATED_API`` environment variable, by which the operator acknowledges that the API is reachable without authentication: https://github.com/rotki/rotki/issues/5176. This replaces the retired ``accept_docker_risk``/``ROTKI_ACCEPT_DOCKER_RISK`` pair, which is no longer read.
+   :resjson bool session_auth: A boolean indicating whether the deployment runs behind session-cookie authentication, which is the case when the backend process is given the ``ROTKI_SESSION_KEY`` environment variable. When true the API rejects requests without a valid session cookie, so there is no unauthenticated exposure to acknowledge.
    :resjson object backend_default_arguments: A mapping of backend arguments to their default values so that the frontend can know about them.
 
    :statuscode 200: Information queried successfully

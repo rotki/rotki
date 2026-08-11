@@ -8,6 +8,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.api.session_store import SessionStore
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE_NAME
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
@@ -34,8 +35,9 @@ def generate_expected_info(
         expected_version: str,
         data_dir: Path,
         latest_version: str | None = None,
-        accept_docker_risk: bool = False,
+        accept_unauthenticated_api: bool = False,
         download_url: str | None = None,
+        session_auth: bool = False,
 ) -> dict[str, Any]:
     return {
         'version': {
@@ -45,7 +47,8 @@ def generate_expected_info(
         },
         'data_directory': str(data_dir),
         'log_level': 'DEBUG',
-        'accept_docker_risk': accept_docker_risk,
+        'accept_unauthenticated_api': accept_unauthenticated_api,
+        'session_auth': session_auth,
         'backend_default_arguments': {
             'max_logfiles_num': 3,
             'max_size_in_mb_all_logs': 300,
@@ -98,6 +101,24 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server: APIServer) -
     result = assert_proper_sync_response_with_result(response)
     assert result == generate_expected_info(expected_version, rotki.data_dir, latest_version=expected_version)  # noqa: E501
 
+    with version_patch, release_patch, patch.dict(os.environ, {'ROTKI_ACCEPT_UNAUTHENTICATED_API': 'whatever'}):  # noqa: E501
+        response = requests.get(
+            url=api_url_for(
+                rotkehlchen_api_server,
+                'inforesource',
+            ),
+        )
+
+    result = assert_proper_sync_response_with_result(response)
+    assert result == generate_expected_info(
+        expected_version=expected_version,
+        data_dir=rotki.data_dir,
+        accept_unauthenticated_api=True,
+    )
+
+    # The retired ROTKI_ACCEPT_DOCKER_RISK must not carry over. Operators who set it to
+    # silence the old docker warning have to see the new one once, otherwise they never
+    # learn that session authentication exists.
     with version_patch, release_patch, patch.dict(os.environ, {'ROTKI_ACCEPT_DOCKER_RISK': 'whatever'}):  # noqa: E501
         response = requests.get(
             url=api_url_for(
@@ -110,7 +131,35 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server: APIServer) -
     assert result == generate_expected_info(
         expected_version=expected_version,
         data_dir=rotki.data_dir,
-        accept_docker_risk=True,
+    )
+
+    # session_auth mirrors the signing key the deployment was given. Set it on the
+    # live rest_api since it is read from the environment at construction time. The
+    # store goes with it since the cookie gate asserts they are built together.
+    rest_api = rotkehlchen_api_server.rest_api
+    session_key = b'a-session-key'
+    session_store = SessionStore(
+        db_path=rotki.data_dir / 'test_session.db',
+        session_key=session_key,
+    )
+    with (
+        version_patch,
+        release_patch,
+        patch.object(rest_api, 'session_key', session_key),
+        patch.object(rest_api, 'session_store', session_store),
+    ):
+        response = requests.get(
+            url=api_url_for(
+                rotkehlchen_api_server,
+                'inforesource',
+            ),
+        )
+
+    result = assert_proper_sync_response_with_result(response)
+    assert result == generate_expected_info(
+        expected_version=expected_version,
+        data_dir=rotki.data_dir,
+        session_auth=True,
     )
 
 
