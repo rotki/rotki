@@ -165,6 +165,11 @@ jobs:
         working-directory: ./frontend
         run: pnpm run --filter rotki build:app
 
+      - name: Check bundle placement
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name != 'push' }}
+        working-directory: ./frontend
+        run: pnpm run --filter rotki check:bundle
+
       - name: ESLint
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         working-directory: ./frontend

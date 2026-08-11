@@ -11,6 +11,7 @@
   "scripts": {
     "build": "run-p typecheck \"build:app {@}\" --",
     "build:app": "tsx scripts/build.ts",
+    "check:bundle": "tsx scripts/check-bundle.ts",
     "build:preview": "pnpm run build:app && vite preview",
     "preview": "vite preview",
     "electron:build": "pnpm run build && pnpm run electron:package",
