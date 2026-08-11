@@ -11,7 +11,10 @@ export const useMainStore = defineStore('main', () => {
   const connectionEnabled = ref<boolean>(true);
   const dataDirectory = ref<string>('');
   const logLevel = ref<LogLevel>(getDefaultLogLevel());
-  const dockerRiskAccepted = ref<boolean>(true);
+  // Whether the operator acknowledged that the API is reachable without authentication.
+  const unauthenticatedApiAccepted = ref<boolean>(true);
+  // Whether the backend runs behind session-cookie auth (docker with ROTKI_SESSION_KEY).
+  const sessionAuthEnabled = ref<boolean>(false);
   const defaultBackendArguments = ref<DefaultBackendArguments>({
     maxLogfilesNum: 0,
     maxSizeInMbAllLogs: 0,
@@ -54,11 +57,12 @@ export const useMainStore = defineStore('main', () => {
     connectionFailure,
     dataDirectory,
     defaultBackendArguments,
-    dockerRiskAccepted,
     isDevelop,
     logLevel,
+    sessionAuthEnabled,
     setConnected,
     setConnectionFailure,
+    unauthenticatedApiAccepted,
     updateNeeded,
     version,
   };

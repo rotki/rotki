@@ -1391,11 +1391,6 @@
     "subtitle": "这些是支持的日期格式选项",
     "title": "日期格式"
   },
-  "docker_warning": {
-    "action": "是的，我明白了",
-    "documentation": "文档",
-    "title": "您正在 docker 中运行 rotki。确保您已阅读我们的 {0} 并了解以这种方式运行 rotki 的潜在风险。"
-  },
   "ens_names": {
     "task": {
       "title": "查询ENS名称"

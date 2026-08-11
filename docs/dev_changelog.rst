@@ -22,6 +22,11 @@ When rotki is set up with the ``ROTKI_SESSION_KEY`` environment variable (the Do
   - Issues an MCP-only bearer linked to the authenticated active session for the streamable HTTP transport exposed by Docker at ``/mcp``. It cannot be used as a REST API session cookie.
   - The MCP server validates the bearer token before protocol handling and checks the durable active-session record, so logout and session takeover revoke MCP access.
 
+* **Changed Endpoint**: ``GET /api/(version)/info``
+
+  - Gains ``session_auth``, ``true`` when the backend was given ``ROTKI_SESSION_KEY``. It is reported separately from the acknowledgement below: one says the operator acknowledged an unauthenticated API, the other says there is none. The frontend shows its Docker warning only when neither holds.
+  - ``accept_docker_risk`` is replaced by ``accept_unauthenticated_api``, driven by the new ``ROTKI_ACCEPT_UNAUTHENTICATED_API`` environment variable. ``ROTKI_ACCEPT_DOCKER_RISK`` is no longer read at all. It acknowledged a generic "you are running in docker" warning, so honouring it would leave every operator who set it silently unaware that session authentication now exists. Anyone still relying on it sees the new warning once and can then set ``ROTKI_SESSION_KEY`` or the new variable.
+
 * **New Endpoint**: ``GET /api/(version)/session/validate``
 
   - Returns ``true`` when the caller holds a valid, currently active session **cookie**, and ``401`` otherwise. Intended as an authorization subrequest: the Docker proxy forwards a caller's cookie here and only then dispatches a control operation, since core alone knows whether a newer login has retired that session.

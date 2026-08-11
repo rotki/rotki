@@ -2904,9 +2904,15 @@
     "last_90_days": "Last 90 days"
   },
   "docker_warning": {
-    "action": "Yes, I understand",
-    "documentation": "documentation",
-    "title": "You are running rotki in docker. Make sure you have read our {0} and understand the potential risk that running rotki in this way entails."
+    "accept": "Continue without authentication",
+    "accept_hint": "This lasts until rotki restarts. To accept it permanently, set this in the container's environment:",
+    "command_hint": "Generate a key and add it to the container's environment, then restart it:",
+    "copy_command": "Copy command",
+    "docs_link": "How to set up session authentication",
+    "heading": "This rotki instance is not protected",
+    "message": "You are running rotki in docker without session authentication. Anyone who can reach this instance can use the API and read your data without signing in.",
+    "proxy_note": "If this instance already sits behind a proxy that authenticates every request, it is protected and you can accept below.",
+    "recommendation": "Setting {0} makes rotki issue a session cookie on login and reject requests that do not carry it."
   },
   "ens_names": {
     "error": {
