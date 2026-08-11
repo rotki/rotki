@@ -384,6 +384,7 @@
         },
         "skipped": {
           "busy": "Already refreshing this chain",
+          "disabled": "Skipped in settings",
           "no_accounts": "No tracked accounts on this chain"
         }
       },
