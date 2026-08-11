@@ -739,7 +739,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if addresses is None or len(addresses) == 0:
             chains_to_query = [
                 chain for chain in chains_to_query
-                if chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN or len(self.accounts.get(chain)) > 0  # noqa: E501
+                if (
+                    chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN or
+                    self.get_active_addresses(chain)
+                )
             ]
 
         def _query_one(chain: SupportedBlockchain) -> None:
@@ -782,6 +785,20 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         return self.get_balances_update(blockchain)
 
+    @overload
+    def get_active_addresses(
+            self,
+            blockchain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
+    ) -> tuple[ChecksumEvmAddress, ...]:
+        ...
+
+    @overload
+    def get_active_addresses(
+            self,
+            blockchain: SupportedBlockchain,
+    ) -> TuplesOfBlockchainAddresses:
+        ...
+
     def get_active_addresses(
             self,
             blockchain: SupportedBlockchain,
@@ -815,8 +832,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if addresses is None or len(addresses) == 0:
             full_query = True
             if len(accounts := self.get_active_addresses(blockchain)) == 0:
-                with self.balances_lock:
-                    self.balances.get(chain=blockchain).clear()
                 return
         else:
             full_query = False
@@ -826,11 +841,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self.query_eth_balances(accounts) if blockchain == SupportedBlockchain.ETHEREUM  # type: ignore[arg-type]  # will be checksum addresses
             else self.get_chain_manager(blockchain).query_balances(accounts)
         )
-        if full_query is False:
-            # Protocol balance queries return entries for any tracked address with protocol
-            # activity, not only the queried ones. Keep only the requested addresses so the
-            # other accounts' full balance sheets don't get replaced by protocol-only data.
-            new_balances = {address: balance for address, balance in new_balances.items() if address in accounts}  # type: ignore[assignment]  # per-chain key/value types are preserved  # noqa: E501
+        # Protocol balance queries can return entries for any tracked address with protocol
+        # activity, not only the queried ones. Keep only active addresses so a disabled
+        # address is not refreshed accidentally and its frozen balance is preserved.
+        new_balances = {address: balance for address, balance in new_balances.items() if address in accounts}  # type: ignore[assignment]  # per-chain key/value types are preserved  # noqa: E501
 
         # Swap the results in only after the slow remote query and atomically under the
         # lock: sibling chain tasks recalculating totals and API threads serializing
@@ -839,7 +853,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         with self.balances_lock:
             existing_balances = self.balances.get(chain=blockchain)
             if full_query is True:
-                existing_balances.clear()
+                disabled = CachedSettings().get_settings().disabled_chain_queries.get(blockchain)
+                if disabled is None:
+                    existing_balances.clear()
+                else:
+                    for address in tuple(existing_balances):
+                        if address not in disabled:
+                            existing_balances.pop(address, None)  # type: ignore[call-overload]
             else:
                 for account in accounts:
                     existing_balances.pop(account, None)  # type: ignore[arg-type]

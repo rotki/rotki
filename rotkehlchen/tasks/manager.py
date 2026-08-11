@@ -357,9 +357,8 @@ class TaskManager:
         now = ts_now()
         dbevmtx = DBEvmTx(self.database)
         with self.database.conn.read_ctx() as cursor:
-            tracked_accounts = self.database.get_blockchain_accounts(cursor)
             for blockchain in shuffled_chains:
-                if len(accounts := tracked_accounts.get(blockchain)) == 0:
+                if len(accounts := self.chains_aggregator.get_active_addresses(blockchain)) == 0:
                     continue
 
                 queriable_accounts: list[ChecksumEvmAddress] = []

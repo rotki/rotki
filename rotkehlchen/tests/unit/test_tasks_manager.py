@@ -44,7 +44,7 @@ from rotkehlchen.premium.premium import (
 )
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.tasks.assets import _find_missing_tokens
+from rotkehlchen.tasks.assets import _find_missing_tokens, maybe_detect_new_tokens
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tasks.utils import (
     prefetch_scheduler_task_timestamps,
@@ -179,6 +179,76 @@ def test_maybe_query_evm_transactions_skips_repeat_range_reads(task_manager, eth
         task_manager.schedule()
         time.sleep(.2)
         assert range_mock.call_count == first_tick_reads, 'later ticks skip the read (memoized)'
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_maybe_query_evm_transactions_skips_disabled_chain(
+        task_manager,
+        ethereum_accounts,
+) -> None:
+    """A disabled chain must not be scheduled by the periodic transaction task."""
+    CachedSettings().update_entry(
+        'disabled_chain_queries',
+        {SupportedBlockchain.ETHEREUM: frozenset()},
+    )
+    try:
+        with (
+            patch.object(DBEvmTx, 'get_queried_range') as get_queried_range,
+            patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_and_track,
+        ):
+            assert task_manager._maybe_query_evm_transactions() is None
+
+        get_queried_range.assert_not_called()
+        spawn_and_track.assert_not_called()
+    finally:
+        CachedSettings().update_entry('disabled_chain_queries', {})
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_maybe_detect_new_tokens_skips_disabled_address(
+        rotkehlchen_instance: Rotkehlchen,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Token detection must not process events for a disabled address."""
+    database = rotkehlchen_instance.data.db
+    account = ethereum_accounts[0]
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                group_identifier='disabled-token-detection',
+                sequence_index=0,
+                timestamp=TimestampMS(2_000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_DAI,
+                amount=ONE,
+                location_label=account,
+                tx_ref=make_evm_tx_hash(),
+            ),
+        )
+
+    CachedSettings().update_entry(
+        'disabled_chain_queries',
+        {SupportedBlockchain.ETHEREUM: frozenset({account})},
+    )
+    try:
+        with (
+            patch.object(database, 'get_last_balance_save_time', return_value=Timestamp(0)),
+            patch.object(
+                database,
+                'get_tokens_for_address',
+                return_value=(None, None),
+            ) as get_tokens,
+            patch.object(database, 'save_tokens_for_address') as save_tokens,
+        ):
+            maybe_detect_new_tokens(database)
+
+        get_tokens.assert_not_called()
+        save_tokens.assert_not_called()
+    finally:
+        CachedSettings().update_entry('disabled_chain_queries', {})
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
