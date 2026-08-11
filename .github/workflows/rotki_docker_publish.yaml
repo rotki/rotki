@@ -19,7 +19,7 @@ jobs:
       REGCTL_SUM: 'df25ceaadf190ec73804023657673128a62d909cca12ccd7a9a727a0b6df84b846b00a89ae581bf179528d74dce6a12fb8b7f5e55e546615b75e0a5e5c56c227'
     steps:
       - name: Login to DockerHub
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee  # v4.2.0
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
