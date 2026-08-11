@@ -8,7 +8,7 @@ const { address, loading, chains } = defineProps<{
   chains: string[];
 }>();
 
-const { detectedTokens, detectingTokens, detectTokens } = useTokenDetectionUi(() => chains, () => address);
+const { detectedTokens, detectingTokens, detectionDisabled, detectTokens } = useTokenDetectionUi(() => chains, () => address);
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
@@ -24,7 +24,7 @@ const { t } = useI18n({ useScope: 'global' });
         <RuiButton
           variant="text"
           icon
-          :disabled="detectingTokens || loading"
+          :disabled="detectingTokens || loading || detectionDisabled"
           class="[&_span]:!flex [&_span]:items-center"
           color="primary"
           @click="detectTokens()"
@@ -46,7 +46,9 @@ const { t } = useI18n({ useScope: 'global' });
       </template>
       <div class="text-center">
         <div>
-          {{ t('account_balances.detect_tokens.tooltip.redetect') }}
+          {{ detectionDisabled
+            ? t('account_balances.detect_tokens.tooltip.disabled')
+            : t('account_balances.detect_tokens.tooltip.redetect') }}
         </div>
         <div v-if="detectedTokens.timestamp">
           <i18n-t
