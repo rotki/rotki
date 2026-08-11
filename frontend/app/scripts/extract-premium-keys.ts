@@ -15,7 +15,7 @@
  * rotki pins a components *major* (`COMPONENTS_VERSION` in rotkehlchen/premium/premium.py, and the
  * bundle filename derives from the premium package major), so the keys of the current major are the
  * complete set any supported rotki can request. Verified across every 15.x tag: the union is
- * identical to the tip, and identical again to 14.x.
+ * identical to the tip, and identical again to 14.x. Re-verify when 16.x accumulates tags.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';

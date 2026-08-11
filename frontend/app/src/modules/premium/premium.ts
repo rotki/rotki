@@ -5,7 +5,10 @@ import { app } from '@/main';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 
-const PREMIUM_COMPONENTS_VERSION = 28;
+// Bumped whenever the surface premium builds against changes. v29 (components major 16): the
+// statistics schemas read usdValue, and HistoryEventsView takes a single `restrictions` prop.
+// A v16 bundle refuses to render below this, rather than failing halfway.
+const PREMIUM_COMPONENTS_VERSION = 29;
 
 type PremiumLibrary = {
   install: (app: App) => void;
