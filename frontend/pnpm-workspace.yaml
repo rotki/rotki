@@ -103,12 +103,12 @@ catalog:
   pinia: 4.0.2
   plainfp: 0.1.1
   postcss: 8.5.25
-  postcss-html: 1.8.1
+  postcss-html: 2.0.0
   qrcode: 1.5.4
   rimraf: 6.1.3
   semver: 7.8.5
   stylelint: 17.14.1
-  stylelint-config-recommended-vue: 1.6.1
+  stylelint-config-recommended-vue: 2.0.0
   stylelint-order: 8.1.1
   tailwindcss: 3.4.19
   theme-colors: 0.1.0
