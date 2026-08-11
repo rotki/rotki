@@ -6603,6 +6603,7 @@
       "note": {
         "merchant_code": "Merchant Code: {code}"
       },
+      "redecoding": "Re-decoding",
       "selection_mode": {
         "all_matching_selected": "All events in {count} groups are selected",
         "create_rule": "Set custom accounting rule",
