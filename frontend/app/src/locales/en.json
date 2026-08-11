@@ -54,6 +54,7 @@
         "type": "Type the chain"
       },
       "tooltip": {
+        "disabled": "Skipped in Settings → Chains, so rotki does not query it",
         "last_detected": "Last detected: {time}",
         "redetect": "Re-detect tokens",
         "redetect_all": "Re-detect tokens for all addresses"

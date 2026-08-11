@@ -7,6 +7,7 @@ import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { arrayify } from '@/modules/core/common/data/array';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
 
 function noTokens(): EthDetectedTokensInfo {
   return {
@@ -50,6 +51,13 @@ function resolveDetectedTokensInfo(
 }
 
 interface UseTokenDetectionUiReturn {
+  /**
+   * `disabledChainQueries` excludes every chain in scope, so detection would queue nothing.
+   *
+   * The UI has to ask, because the orchestrator drops excluded addresses silently: without this
+   * the button stays enabled and does nothing at all when pressed.
+   */
+  detectionDisabled: ComputedRef<boolean>;
   detectingTokens: ComputedRef<boolean>;
   detectedTokens: ComputedRef<EthDetectedTokensInfo>;
   useEthDetectedTokensInfo: (chain: MaybeRefOrGetter<string>, address: MaybeRefOrGetter<string | null>) => ComputedRef<EthDetectedTokensInfo>;
@@ -65,10 +73,21 @@ export function useTokenDetectionUi(
   const { balances } = storeToRefs(useBalancesStore());
   const { isAssetIgnored } = useAssetsStore();
   const { supportsTransactions } = useSupportedChains();
+  const { isAddressExcluded, isChainExcluded } = useDisabledChains();
   const { detectAllTokens, detectTokens: orchestratorDetect, useIsDetecting } = useTokenDetectionOrchestrator();
 
   const chains = computed<string[]>(() => arrayify(toValue(chain)));
   const detectingTokens = useIsDetecting(chain, accountAddress);
+
+  // `every`, not `some`: a row spanning several chains still has work to do while one of them is
+  // allowed, and only the excluded ones drop out of the queue.
+  const detectionDisabled = computed<boolean>(() => {
+    const chainsValue = get(chains);
+    const address = toValue(accountAddress);
+    return chainsValue.length > 0 && chainsValue.every(blockchain => address
+      ? isAddressExcluded(blockchain, address)
+      : isChainExcluded(blockchain));
+  });
 
   function findDetectedTokensInfo(blockchain: string, address: string | null): EthDetectedTokensInfo {
     return resolveDetectedTokensInfo(blockchain, address, get(tokensState), get(balances), supportsTransactions, isAssetIgnored);
@@ -119,6 +138,7 @@ export function useTokenDetectionUi(
   return {
     detectedTokens,
     detectingTokens,
+    detectionDisabled,
     detectTokens,
     detectTokensOfAllAddresses,
     useEthDetectedTokensInfo,

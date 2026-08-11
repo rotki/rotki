@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useTokenDetectionStore } from './use-token-detection-store';
 
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
@@ -208,6 +209,55 @@ describe('useTokenDetectionUi', () => {
 
       expect(get(detectingTokens)).toBe(true);
       expect(mockUseIsDetecting).toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * ⭐ The orchestrator drops excluded addresses silently, so without this the button stays
+   * enabled and pressing it does nothing at all — no row, no toast, no error.
+   */
+  describe('detectionDisabled', () => {
+    function setDisabled(value: Record<string, string[]>): void {
+      const repo = useSettingsRepo();
+      repo.updateGeneral({ ...repo.general, disabledChainQueries: value });
+    }
+
+    it('should be false when no rule applies', () => {
+      const { detectionDisabled } = useTokenDetectionUi('eth', '0xaddr1');
+
+      expect(get(detectionDisabled)).toBe(false);
+    });
+
+    it('should be true for an address excluded on its only chain', () => {
+      setDisabled({ eth: ['0xaddr1'] });
+
+      const { detectionDisabled } = useTokenDetectionUi('eth', '0xaddr1');
+
+      expect(get(detectionDisabled)).toBe(true);
+    });
+
+    it('should be false while any chain in scope still allows the address', () => {
+      setDisabled({ eth: ['0xaddr1'] });
+
+      const { detectionDisabled } = useTokenDetectionUi(['eth', 'optimism'], '0xaddr1');
+
+      expect(get(detectionDisabled)).toBe(false);
+    });
+
+    it('should read the chain rule when no address is given', () => {
+      setDisabled({ eth: [] });
+
+      const { detectionDisabled } = useTokenDetectionUi('eth');
+
+      expect(get(detectionDisabled)).toBe(true);
+    });
+
+    it('should stay false for an address rule when no address is given', () => {
+      setDisabled({ eth: ['0xaddr1'] });
+
+      const { detectionDisabled } = useTokenDetectionUi('eth');
+
+      expect(get(detectionDisabled)).toBe(false);
     });
   });
 });
