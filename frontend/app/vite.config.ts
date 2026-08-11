@@ -1,4 +1,5 @@
 import type { ComponentResolver } from 'unplugin-vue-components';
+import { readFileSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
@@ -18,6 +19,11 @@ import { backendIconsCachePlugin } from './scripts/extract-backend-icons';
 
 const PACKAGE_ROOT = __dirname;
 const PROJECT_ROOT = resolve(PACKAGE_ROOT, '../..');
+
+// Read from the manifest instead of npm_package_version: the latter depends on how
+// the process was launched and is the workspace root's version when it is not vite
+// that pnpm invoked directly.
+const appVersion: string = JSON.parse(readFileSync(join(PACKAGE_ROOT, 'package.json'), 'utf8')).version;
 
 /**
  * Under `pnpm dev` the process forwarder already prefixes every line with its own
@@ -173,7 +179,7 @@ export default defineConfig({
   },
   customLogger: createConfigLogger(),
   define: {
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+    __APP_VERSION__: JSON.stringify(appVersion),
   },
   optimizeDeps: {
     include: [

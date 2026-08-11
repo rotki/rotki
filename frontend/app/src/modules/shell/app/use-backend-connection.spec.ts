@@ -79,7 +79,7 @@ describe('useBackendConnection', () => {
       });
     });
 
-    it('should not update version when info returns no version', async () => {
+    it('should keep the frontend version when info returns no version', async () => {
       mockInfo.mockResolvedValue({});
 
       const { useBackendConnection } = await importModule();
@@ -87,7 +87,7 @@ describe('useBackendConnection', () => {
       await getVersion();
 
       const store = useMainStore();
-      expect(get(store.version).version).toBe('');
+      expect(get(store.version).version).toBe(__APP_VERSION__);
     });
   });
 
