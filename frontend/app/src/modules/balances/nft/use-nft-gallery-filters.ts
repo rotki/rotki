@@ -12,7 +12,7 @@ type NftSortKey = (typeof NFT_SORT_KEYS)[number];
 type NftSortValue = string | BigNumber | null;
 
 function getSortValue(nft: GalleryNft, sortProp: NftSortKey): NftSortValue {
-  return sortProp === 'collection' ? nft.collection.name : nft[sortProp];
+  return sortProp === 'collection' ? nft.collection?.name ?? null : nft[sortProp];
 }
 
 function compareNullableNft(a: NftSortValue, b: NftSortValue, desc: boolean): number {
@@ -66,7 +66,7 @@ export function useNftGalleryFilters(
       return [];
 
     return get(nfts)
-      .map(({ collection }) => collection.name ?? '')
+      .map(({ collection }) => collection?.name ?? '')
       .filter(uniqueStrings);
   });
 
@@ -80,7 +80,7 @@ export function useNftGalleryFilters(
       return allNfts
         .filter(({ address, collection }) => {
           const sameAccount = hasAccounts ? accounts.find(account => getAccountAddress(account) === address) : true;
-          const sameCollection = selection ? selection === collection.name : true;
+          const sameCollection = selection ? selection === collection?.name : true;
           return sameAccount && sameCollection;
         })
         .sort((a, b) => sortNfts(modelSortBy, modelSortDescending, a, b));

@@ -20,7 +20,8 @@ const NftCollectionInfo = z.object({
 
 const Nft = z.object({
   backgroundColor: z.string().nullable(),
-  collection: NftCollectionInfo,
+  // The backend sends null for an NFT that belongs to no collection.
+  collection: NftCollectionInfo.nullable(),
   externalLink: z
     .string()
     .nullable()
