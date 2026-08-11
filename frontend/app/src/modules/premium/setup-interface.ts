@@ -12,7 +12,7 @@ import { convertToTimestamp } from '@/modules/core/common/data/date';
 import { DateFormat } from '@/modules/core/common/date-format';
 import { isOfEnum } from '@/modules/core/common/helpers/is-of-enum';
 import { logger } from '@/modules/core/common/logging/logging';
-import { assetsApi, balancesApi, statisticsApi, userSettings, utilsApi } from '@/modules/premium/premium-apis';
+import { assetsApi, balancesApi, statisticsApi, userSettings } from '@/modules/premium/premium-apis';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useThemeSettings } from '@/modules/shell/theme/use-theme-settings';
 import { useGraph } from '@/modules/statistics/use-graph';
@@ -76,7 +76,6 @@ export function createPremiumApi(): PremiumApi {
       assets: assetsApi(),
       balances: balancesApi(),
       statistics: statisticsApi(),
-      utils: utilsApi(),
     },
     date,
     graphs(): NewGraphApi {

@@ -11,7 +11,6 @@ import {
   type TimedAssetHistoricalBalances,
   type TimedBalances,
   type UserSettingsApi,
-  type UtilsApi,
 } from '@rotki/common';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { isNft } from '@/modules/assets/nft-utils';
@@ -22,7 +21,6 @@ import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
-import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
@@ -121,7 +119,6 @@ export function userSettings(): UserSettingsApi {
 export function balancesApi(): BalancesApi {
   const { getAssetPrice, getExchangeRate } = usePriceUtils();
   const { balancesByLocation, useBalances } = useAggregatedBalances();
-  const { createKey, isPending } = useHistoricPriceCache();
   const { queryOnlyCacheHistoricalRates } = usePriceApi();
   const currencySymbol = useSetting('currencySymbol');
 
@@ -130,7 +127,6 @@ export function balancesApi(): BalancesApi {
     balances: (groupMultiChain = false, exclude = []) => useBalances(false, groupMultiChain, exclude),
     byLocation: balancesByLocation,
     exchangeRate: (currency: string) => computed(() => getExchangeRate(currency, One)),
-    isHistoricPricePending: (asset: string, timestamp: number) => isPending(createKey(asset, timestamp)),
     queryOnlyCacheHistoricalRates: async (asset: string, timestamp: number[]): Promise<Record<string, BigNumber>> => {
       const data = await queryOnlyCacheHistoricalRates({
         assetsTimestamp: timestamp.map(item => [asset, item.toString()]),
@@ -140,11 +136,5 @@ export function balancesApi(): BalancesApi {
 
       return data.assets[asset] ?? {};
     },
-  };
-}
-
-export function utilsApi(): UtilsApi {
-  return {
-    truncate: truncateAddress,
   };
 }

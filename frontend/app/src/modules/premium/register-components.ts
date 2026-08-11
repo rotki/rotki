@@ -52,73 +52,30 @@ function ruiRegister(app: App): void {
   app.component('RuiColorPicker', RuiColorPicker);
   app.component('RuiProgress', RuiProgress);
   app.component('RuiDateTimePicker', RuiDateTimePicker);
-  // RuiAccordion(s) removed at 1.44
 }
 
+/**
+ * Components registered here are also handed to the premium bundle, which renders them by name.
+ *
+ * Every entry below is used by components major 16. The per-component "first available in version
+ * N" trail this list used to carry went back to version 1 (rotki 1.19) and is gone: a bundle now
+ * refuses to render below host version 29, so no supported bundle can ask for anything older, and
+ * git history holds the record for anyone who needs it.
+ */
 export function registerComponents(app: App): void {
-  // Globally registered components are also provided to the premium components.
-  // AmountDisplay was removed at 1.42;
-  // version: 1
   app.component('HashLink', HashLink);
-  // AssetDetails removed at 1.44
-  // DefiProtocolIcon was removed in 1.37;
-  // version: 2
-  //  CryptoIcon was replaced with AssetIcon on v11
   app.component('BalanceDisplay', BalanceDisplay);
-  // version: 3
   app.component('PercentageDisplay', PercentageDisplay);
-  // version: 4
-  // BlockchainAccountSelector removed at 1.44
   app.component('DateDisplay', DateDisplay);
-  // LocationDisplay removed at 1.44
-  // version 5
   app.component('AssetSelect', AssetSelect);
-  // version 6
-  // DateTimePicker removed at 1.44
-  // version 8
-  // CardTitle removed at 1.44
-  // version 9
-  // LiquidityPoolSelector removed at 1.37
-  // TableFilter removed at 1.44
-  // version 11
-  // AssetIcon removed at 1.44
-  // version 12 - 1.19
-  // RangeSelector and ConfirmDialog removed at 1.44
-  // Version 13 - 1.20
-  // UniswapPoolDetails was removed at 1.37
-  // Version 14 - 1.21
-  // PaginatedCards and AssetLink removed at 1.44
-  // Version 15 - 1.21.2
   app.component('StatisticsGraphSettings', StatisticsGraphSettings);
-  // Version 16 - 1.23
-  // AmountInput removed at 1.44
-  // Version 17 - 1.24
   app.component('ExportSnapshotDialog', ExportSnapshotDialog);
-  // Version 18 - 1.25
   app.component('MenuTooltipButton', MenuTooltipButton);
-  // 'GraphTooltipWrapper' removed at 1.40
-  // Version 19 - 1.26
-  // LpPoolIcon was removed at 1.37
-  // Version 20 - 1.27
-  // BadgeDisplay removed at 1.44
-  // Version 21 - 1.28
   app.component('HistoryEventsView', HistoryEventsView);
-  // Version 24 - 1.31
-  // LpPoolHeader was removed at 1.37
-  // RowAppend removed at 1.44
-  // Version 25 - 1.32
-  // UniswapPoolAssetBalance was removed at 1.37
-  // Version 26 - 1.34
-  // RefreshButton removed at 1.44
   app.component('AssetBalanceStatisticSourceSetting', AssetBalanceStatisticSourceSetting);
-
   app.component('MissingDailyPrices', MissingDailyPrices);
-
   app.component('NewGraphTooltipWrapper', NewGraphTooltipWrapper);
-
-  // Version 27 - Amount display components
   app.component('FiatDisplay', FiatDisplay);
-  // AssetValueDisplay and AssetAmountDisplay removed at 1.44
   app.component('ValueDisplay', ValueDisplay);
 
   ruiRegister(app);
