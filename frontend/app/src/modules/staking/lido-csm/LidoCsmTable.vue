@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';

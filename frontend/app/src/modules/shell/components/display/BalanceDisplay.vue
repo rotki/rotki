@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Balance, Zero } from '@rotki/common';
+import { type Balance, type BigNumber, Zero } from '@rotki/common';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
