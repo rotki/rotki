@@ -84,11 +84,16 @@ function applyDemoMode(version: string): string {
   return sanitized;
 }
 
+/**
+ * Until the backend answers, the frontend build version is the closest thing we have.
+ * It keeps the about dialog and the release notes link sane on the login screen,
+ * and gets overwritten by the backend version as soon as the connection is up.
+ */
 function defaultVersion(): Version {
   return {
     downloadUrl: '',
     latestVersion: '',
-    version: '',
+    version: __APP_VERSION__,
   };
 }
 

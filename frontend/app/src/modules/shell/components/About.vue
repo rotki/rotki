@@ -52,11 +52,11 @@ const electronVersion = computed<SystemVersion | null>(() => {
 const frontendVersion = __APP_VERSION__;
 
 const versionText = computed(() => {
-  const appVersion = t('about.app_version');
-  const frontendVersion = t('about.frontend_version');
+  const appVersionLabel = t('about.app_version');
+  const frontendVersionLabel = t('about.frontend_version');
   let versionText = '';
-  versionText += `${appVersion} ${get(version).version}\r\n`;
-  versionText += `${frontendVersion} ${frontendVersion}\r\n`;
+  versionText += `${appVersionLabel} ${get(version).version}\r\n`;
+  versionText += `${frontendVersionLabel} ${frontendVersion}\r\n`;
 
   const web = get(webVersion);
   const app = get(electronVersion);
