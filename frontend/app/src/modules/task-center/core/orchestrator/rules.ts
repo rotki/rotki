@@ -1,5 +1,6 @@
 import { isTerminalStatus } from '../status';
 import { type Activity, ActivityKind, ActivityPart, activityParts, ActivityStatus } from '../types';
+import { Priority } from './spec';
 
 /**
  * Decides whether a queued `candidate` may start, given a snapshot of `all` activities. Pure
@@ -15,21 +16,19 @@ const BALANCE_KINDS = new Set<ActivityKind>([
   ActivityKind.EXCHANGE_BALANCES,
 ]);
 
-const DECODE_KINDS = new Set<ActivityKind>([
-  ActivityKind.TX_DECODING,
-  ActivityKind.ETH_BLOCK_DECODING,
-]);
-
 /**
- * Balances must not query while transaction or block-event decoding is running — mirrors the
- * existing `BalanceQueueService.setCanProcess(() => !anyEventsDecoding)` pause. Non-balance
- * candidates are unaffected.
+ * Background balance queries wait for a history refresh to finish. The gate is the `HISTORY_SYNC`
+ * umbrella rather than the decodes under it: decoding was only ever a proxy for "a sync is running",
+ * and it let balances through during the `TX_SYNC`/`EXCHANGE_EVENTS` stretch that is most of a sync.
+ *
+ * ⭐ `Priority.USER` is exempt. The umbrella stays RUNNING for the whole refresh, so without the
+ * exemption a user pressing refresh would wait out the entire sync.
  */
-export const pauseBalancesDuringDecode: EligibilityRule = (candidate, all) => {
-  if (!BALANCE_KINDS.has(candidate.kind))
+export const pauseBalancesDuringHistorySync: EligibilityRule = (candidate, all) => {
+  if (!BALANCE_KINDS.has(candidate.kind) || candidate.priority === Priority.USER)
     return true;
 
-  return !all.some(activity => DECODE_KINDS.has(activity.kind) && activity.status === ActivityStatus.RUNNING);
+  return !all.some(activity => activity.kind === ActivityKind.HISTORY_SYNC && activity.status === ActivityStatus.RUNNING);
 };
 
 /**
@@ -67,7 +66,7 @@ export const excludeMatchingDuringReset: EligibilityRule = (candidate, all) => {
 };
 
 /** The rule set the reactive orchestrator is configured with by default. */
-export const DEFAULT_RULES: readonly EligibilityRule[] = [pauseBalancesDuringDecode, excludeMatchingDuringReset];
+export const DEFAULT_RULES: readonly EligibilityRule[] = [pauseBalancesDuringHistorySync, excludeMatchingDuringReset];
 
 /** True when every rule admits the candidate. */
 export function allRulesPass(rules: readonly EligibilityRule[], candidate: Activity, all: readonly Activity[]): boolean {

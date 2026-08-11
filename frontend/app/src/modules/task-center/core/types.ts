@@ -195,6 +195,11 @@ export interface Activity {
    * duplicate effort. See {@link HistoryFlow.resets}, which is where a flow declares it.
    */
   readonly resets?: boolean;
+  /**
+   * Scheduling priority, defaulted from the spec. Read by the eligibility rules to tell
+   * user-initiated work from background work; see {@link ./orchestrator/spec}'s `Priority`.
+   */
+  readonly priority?: number;
 }
 
 export interface ActivityGroup {

@@ -6,6 +6,7 @@ import { useSessionStorage } from '@vueuse/core';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -69,7 +70,7 @@ export function useAccountMigration(): UseAccountMigrationReturn {
         await fetchAccounts({ blockchain: chain });
         await refreshBlockchainBalances(
           { blockchain: chain },
-          'background',
+          RefreshMode.BACKGROUND,
           isEvm(chain) ? { detect: true, detectAddresses: chainAddresses } : {},
         );
       })());

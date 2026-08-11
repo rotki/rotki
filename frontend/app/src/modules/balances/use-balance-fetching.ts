@@ -8,6 +8,7 @@ import { useBalancesApi } from '@/modules/balances/api/use-balances-api';
 import { useAutoTokenDetection } from '@/modules/balances/blockchain/use-auto-token-detection';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
+import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -92,7 +93,7 @@ export const useBalanceFetching = createSharedComposable(() => {
     // a stage *inside* the chain job that reads its result, a chain is one job either way and the
     // split has nothing left to express — a chain that cannot hold tokens simply has no detect
     // stage.
-    await refreshBlockchainBalances({}, 'background', { detect });
+    await refreshBlockchainBalances({}, RefreshMode.BACKGROUND, { detect });
   });
 
   const fetch = async (): Promise<void> => {
@@ -122,7 +123,7 @@ export const useBalanceFetching = createSharedComposable(() => {
     ]);
 
     await Promise.allSettled([
-      refreshBlockchainBalances({}, 'periodic'),
+      refreshBlockchainBalances({}, RefreshMode.PERIODIC),
       refreshPrices(true),
     ]);
   };

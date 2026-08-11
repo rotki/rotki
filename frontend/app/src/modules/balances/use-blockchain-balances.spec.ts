@@ -1,3 +1,4 @@
+import type { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import type { EvmChainInfo, SupportedChains } from '@/modules/core/api/types/chains';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
@@ -9,7 +10,7 @@ import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { type RefreshMode, useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 
 vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
