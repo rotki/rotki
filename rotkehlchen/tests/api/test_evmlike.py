@@ -42,6 +42,26 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_decode_empty_evmlike_does_not_emit_progress(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """An empty forced redecode should neither look up accounts nor report progress."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    manager = rotki.chains_aggregator.zksync_lite
+    with (
+        patch.object(rotki.data.db, 'get_blockchain_accounts') as get_accounts,
+        patch.object(rotki.data.db.msg_aggregator, 'add_message') as add_message,
+    ):
+        assert manager.decode_undecoded_transactions(
+            force_redecode=True,
+            send_ws_notifications=True,
+        ) == 0
+
+    get_accounts.assert_not_called()
+    add_message.assert_not_called()
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('zksync_lite_accounts', [[make_evm_address(), make_evm_address()]])
 def test_evmlike_transactions_refresh(
         rotkehlchen_api_server: APIServer,
