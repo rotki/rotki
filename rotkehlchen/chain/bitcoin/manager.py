@@ -273,17 +273,17 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 accounts=accounts,
                 options={'to_timestamp': to_timestamp, 'last_queried_block': last_queried_block},
             )
-            self._send_tx_ws_status(
-                addresses=accounts,
-                period=(from_timestamp, to_timestamp),
-                status=TransactionStatusStep.QUERYING_TRANSACTIONS,
-            )
             if len(accounts_txs) == 0:
                 new_block_height = max(new_block_height, last_queried_block)
                 continue
 
             new_block_height = max(new_block_height, block_height)
             tx_list.extend(accounts_txs)
+            self._send_tx_ws_status(
+                addresses=accounts,
+                period=(from_timestamp, accounts_txs[-1].timestamp),
+                status=TransactionStatusStep.QUERYING_TRANSACTIONS,
+            )
 
         self._send_tx_ws_status(
             addresses=addresses,

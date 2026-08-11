@@ -66,6 +66,16 @@ def do_tx_query_and_get_events(
         assert message['chain'] == chain.value
         assert message['subtype'] == 'bitcoin'
         assert message['period']
+    querying_message = next(
+        message for message in status_messages
+        if message['status'] == 'querying_transactions'
+    )
+    started_message = next(
+        message for message in status_messages
+        if message['status'] == 'querying_transactions_started'
+    )
+    assert querying_message['period'][0] == started_message['period'][0]
+    assert querying_message['period'][1] < started_message['period'][1]
     websocket_connection.messages.clear()
 
     return events
