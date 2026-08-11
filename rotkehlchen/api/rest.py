@@ -3188,7 +3188,7 @@ class RestAPI:
     ) -> dict[str, Any]:
         manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)
         if addresses is None:
-            addresses = self.rotkehlchen.chains_aggregator.accounts.get(blockchain)
+            addresses = self.rotkehlchen.chains_aggregator.get_active_addresses(blockchain)
 
         try:
             account_tokens_info = manager.tokens.detect_tokens(

@@ -429,9 +429,11 @@ def update_spark_underlying_assets(chains_aggregator: ChainsAggregator) -> None:
 
 def maybe_detect_new_tokens(database: DBHandler) -> None:
     """Checks newly found history events with IN direction and saves their assets as detected."""
-    if not CachedSettings().get_settings().auto_detect_tokens:
+    settings = CachedSettings().get_settings()
+    if not settings.auto_detect_tokens:
         return
 
+    disabled_per_chain = settings.disabled_chain_queries
     with database.conn.read_ctx() as cursor:
         tracked_accounts = {address_tuple[0] for address_tuple in cursor.execute(
             'SELECT DISTINCT account FROM blockchain_accounts;',
@@ -467,6 +469,11 @@ def maybe_detect_new_tokens(database: DBHandler) -> None:
                     f'Found invalid or non-tracked location label {event.location_label} in '
                     f'history {event=} in {event.location} while detecting new tokens. Skipping.',
                 )
+                continue
+
+            if (disabled := disabled_per_chain.get(chain)) is not None and (
+                len(disabled) == 0 or event.location_label in disabled
+            ):
                 continue
 
             detected_tokens[chain, event.location_label].add(event.asset)

@@ -211,7 +211,7 @@ class HistoryQueryingManager:
                 evm_manager.transactions.query_chain(
                     from_timestamp=Timestamp(0),  # We need to have history of transactions since before the range  # noqa: E501
                     to_timestamp=end_ts,
-                    addresses=list(active_addresses),  # type: ignore[arg-type]  # EVM chains => ChecksumEvmAddress tuple
+                    addresses=list(active_addresses),  # EVM chains => ChecksumEvmAddress tuple
                 )
             except RemoteError as e:
                 msg = str(e)
