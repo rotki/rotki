@@ -103,6 +103,74 @@ def test_vault_deposit(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xAc305b47BB34AD6BB566288050920e9307fd23A7']])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_enso_vault_deposit(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.STAKEDAO_V2_VAULTS, str(ethereum_inquirer.chain_id.serialize())),
+            values=[','.join([
+                string_to_evm_address('0xD4467fBCBd3511112D2FD1af667E745D4987C8eb'),
+                string_to_evm_address('0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E'),
+            ])],
+        )
+    tx_hash = deserialize_evm_tx_hash(
+        '0x91cc9ba495cd2d34263d6d50508c001019e5787daa6e21aacc058b1d6a740b1f',
+    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    gas_amount, deposit_amount, received_amount, timestamp = (
+        '0.000266045545940347',
+        '811.869258',
+        '791.271053410458792279',
+        TimestampMS(1785927323000),
+    )
+    user_address = ethereum_accounts[0]
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+        amount=FVal(deposit_amount),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} USDC in StakeDAO',
+        counterparty=CPT_STAKEDAO_V2,
+        address=string_to_evm_address('0x4Fe93ebC4Ce6Ae4f81601cC7Ce7139023919E003'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:1/erc20:0xD4467fBCBd3511112D2FD1af667E745D4987C8eb'),
+        amount=FVal(received_amount),
+        location_label=user_address,
+        notes=f'Receive {received_amount} sd-crvUSDUSDC-f-vault after deposit in StakeDAO',
+        counterparty=CPT_STAKEDAO_V2,
+        address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xA6174cb9779661A182F8207dbdC1458bb653FDCc']])
 def test_vault_withdraw(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
