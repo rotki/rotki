@@ -241,16 +241,9 @@ function onUpdate(verbKey: string | undefined): void {
         >
           {{ subtitleFor(item) }}
         </span>
-        <!--
-          Pin the direction toward the chevron. RuiCategoryPicker's selection
-          layer applies `w-full` on top of its `left-4 right-8` box, so the
-          layer overflows ~16px past the field's right edge and reserves no room
-          for the chevron; the wide right margin clears it (verified ~12px gap).
-          Workaround for rotki/ui-library#559 — drop the margin once fixed.
-        -->
         <HistoryEventActionDirectionBadge
           :direction="item.direction"
-          class="shrink-0 ml-auto mr-16"
+          class="shrink-0 ml-auto"
         />
       </div>
     </template>
