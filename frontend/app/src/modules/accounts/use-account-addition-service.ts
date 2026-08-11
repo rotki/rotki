@@ -11,7 +11,7 @@ import { useAccountAdditionNotifications } from '@/modules/accounts/use-account-
 import { type AdditionOptions, useAccountAdditions } from '@/modules/accounts/use-account-additions';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
+import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -76,7 +76,7 @@ interface UseAccountAdditionServiceReturn {
 
 export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   const { addAccount, addEvmAccount } = useAccountAdditions();
-  const { detectTokens: detectTokensForChain } = useTokenDetectionOrchestrator();
+  const { refreshBlockchainBalances } = useBlockchainBalances();
   const { trackAddedAddresses } = useBlockchainAccountsStore();
   const { fetchTags } = useTagOperations();
   const { enableModule } = useSettingsOperations();
@@ -114,9 +114,9 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
 
     trackAddedAddresses(addedAccounts.map(item => item.address));
 
-    // ⚠️ §6's known exception, and it is correct: a chain that will detect deliberately skips its
-    // own balance read, because detection ends in one. Only a chain that cannot hold tokens has to
-    // ask for balances itself.
+    // A chain that cannot hold tokens gets its balances here — `refreshAccounts` reads the accounts
+    // and then runs a job narrowed to the added addresses. Everything else only reads accounts; its
+    // job runs below, after the modules are enabled, because detection is a stage inside it.
     if (chain !== undefined && !supportsTransactions(chain)) {
       await onRefreshAccounts({ addresses: addedAccounts.map(item => item.address), blockchain: chain, isXpub });
     }
@@ -146,10 +146,22 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       accountsByChain.set(accountChain, existing);
     }
 
-    // Detect tokens per chain — orchestrator handles queuing + balance refresh
-    for (const [accountChain, chainAddresses] of accountsByChain) {
-      await detectTokensForChain(accountChain, chainAddresses);
-    }
+    // ⭐ One chain job per chain that gained addresses: detect the new addresses, then query. This
+    // was §6's "known exception" — addition skipped its own balance read because detection ended in
+    // one — and that premise is gone. The cached GET is cache-only now, so nothing escalates to a
+    // node query on its behalf; and detection's cache write *deletes* the address's default-label
+    // asset rows (`dbhandler.py:1321`), taking the native coin with them. Only a query after
+    // detection puts it back, which is exactly the chain job's body order.
+    //
+    // ⚠️ Concurrently, not one chain at a time. Each iteration is now detection *plus* a full
+    // network query, so an every-EVM-chain addition would serialise ~20 of them; `BALANCES_LANE`
+    // (cap 2) is where this is meant to be throttled, and awaiting in a loop never reaches it.
+    await Promise.allSettled(Array.from(accountsByChain, async ([accountChain, chainAddresses]) =>
+      refreshBlockchainBalances(
+        { blockchain: accountChain },
+        'background',
+        { detect: true, detectAddresses: chainAddresses },
+      )));
   };
 
   const addSingleEvmAddress = async (

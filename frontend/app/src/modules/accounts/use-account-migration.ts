@@ -6,7 +6,7 @@ import { useSessionStorage } from '@vueuse/core';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
+import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
@@ -24,7 +24,7 @@ export function useAccountMigration(): UseAccountMigrationReturn {
   const { canRequestData } = storeToRefs(useSessionAuthStore());
   const { evmAndEvmLikeTxChainsInfo, getChainName, isEvm } = useSupportedChains();
   const { fetchAccounts } = useBlockchainAccountManagement();
-  const { detectTokens } = useTokenDetectionOrchestrator();
+  const { refreshBlockchainBalances } = useBlockchainBalances();
   const loggedUserIdentifier = useLoggedUserIdentifier();
 
   const { t } = useI18n({ useScope: 'global' });
@@ -54,9 +54,25 @@ export function useAccountMigration(): UseAccountMigrationReturn {
     for (const chain in addresses) {
       const chainAddresses = addresses[chain];
       const chainName = getChainName(chain);
-      promises.push(fetchAccounts({ blockchain: chain }));
-      if (isEvm(chain))
-        promises.push(detectTokens(chain, chainAddresses));
+      // A migrated address is new to this chain, so its balances are not in the cache and the
+      // cache-only read cannot fetch them. Same reason as an addition: detect, then query.
+      //
+      // 🔴 The accounts read is awaited *before* the job, not raced with it. The job's own
+      // `shouldQuery` reads the accounts store, so on a chain whose first account this is, a job
+      // that starts first sees none, clears the chain and settles SKIPPED — no detection, no
+      // query, and nothing to retry it.
+      //
+      // ⚠️ `isEvm` gates detection only. `tokenChains` comes from `evmAndEvmLikeTxChainsInfo`, so
+      // evm-*like* chains (zksync_lite) reach this loop and `isEvm` is false for them; gating the
+      // query too would leave their migrated addresses with no balances at all.
+      promises.push((async (): Promise<void> => {
+        await fetchAccounts({ blockchain: chain });
+        await refreshBlockchainBalances(
+          { blockchain: chain },
+          'background',
+          isEvm(chain) ? { detect: true, detectAddresses: chainAddresses } : {},
+        );
+      })());
 
       notifications.push({
         category: NotificationCategory.ADDRESS_MIGRATION,

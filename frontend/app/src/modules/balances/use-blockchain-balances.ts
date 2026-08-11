@@ -31,6 +31,11 @@ export interface RefreshOptions {
    * of the chain: the same chain detects on a login refresh and does not on a periodic one.
    */
   readonly detect?: boolean;
+  /**
+   * Narrow the detection stage to these addresses. Ignored without `detect`, and omitted it covers
+   * every address on the chain — an account addition is the one flow that knows a smaller answer.
+   */
+  readonly detectAddresses?: string[];
 }
 
 interface UseBlockchainBalancesReturn {
@@ -89,7 +94,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     mode: RefreshMode = 'background',
     options: RefreshOptions = {},
   ): Promise<void> => {
-    const { detect = false } = options;
+    const { detect = false, detectAddresses } = options;
     const { addresses, blockchain, isXpub = false } = payload;
     const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
     // ⭐ A user-initiated refresh replaces the run in flight instead of joining it. `supersedeTask`
@@ -110,8 +115,18 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
       // chain never happens** — no row, no log, no error. `withDetection` still writes
       // `lastAutoDetectAt` in its `finally`, so the cooldown then suppresses the next login's sweep
       // too, and the tokens stay undetected for a day.
+      //
+      // 🔴🔴 The *narrowing* is part of it for the same reason. Two additions on one chain differ
+      // only in `detectAddresses`, so a shared id makes the second dedup onto the first and its
+      // addresses are never detected — silently, and with the first job's wholesale query possibly
+      // already gone. A CSV import is the worst case: `use-account-import.ts` starts every row in
+      // the same tick, so rows 2..N all collapse onto row 1.
+      //
+      // ⚠️ Appended, never substituted: every reader of this id is prefix-based
+      // (`useIsActivePrefix`, `useWorkStatusPrefix`, `activityParts(id)[0]`), so `(kind, chain)`
+      // must keep matching.
       const id = detect
-        ? makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain, ActivityPart.DETECT)
+        ? makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain, ActivityPart.DETECT, ...(detectAddresses?.length ? [setDigest(detectAddresses)] : []))
         : makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain);
       await submit({
         id,
@@ -134,7 +149,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
           // awaited here, so the query below sees the tokens they found — no `deps` edge, no
           // second top-level activity, and cancelling this chain now stops the addresses too.
           if (detect)
-            await detectForChain(chain, id);
+            await detectForChain(chain, id, detectAddresses);
 
           // 🔴🔴 The cancel that stopped the children does not stop *this body* — nothing in
           // JavaScript can interrupt a running async function. Without this check the await above
