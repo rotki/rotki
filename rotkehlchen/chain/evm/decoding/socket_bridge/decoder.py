@@ -1,14 +1,19 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
+from eth_abi import decode as decode_abi
+from eth_abi.exceptions import DecodingError
+
 from rotkehlchen.assets.utils import asset_normalized_value, get_or_create_evm_token
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.socket_bridge.constants import (
     BRIDGE_TOPIC,
     CPT_SOCKET,
     GATEWAY_ADDRESS,
+    PERFORM_ACTION_WITH_IN_SELECTOR,
+    SWAP_AND_BRIDGE_SELECTOR,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -27,6 +32,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -48,6 +54,46 @@ class SocketBridgeDecoder(EvmDecoderInterface):
             msg_aggregator=msg_aggregator,
         )
         self.eth = A_ETH.resolve_to_crypto_asset()
+
+    @staticmethod
+    def _decode_native_target_asset(transaction: EvmTransaction) -> ChecksumEvmAddress | None:
+        """Return the native target hint from a directly decodable Socket route.
+
+        Socket's route implementations are arbitrary calldata. This handles the known
+        ``swapAndBridge`` route only and deliberately returns no hint for wrappers such as
+        multicalls and Safe executions.
+        """
+        input_data = transaction.input_data
+        if (
+            len(input_data) < 8 or
+            input_data[4:8] != SWAP_AND_BRIDGE_SELECTOR
+        ):
+            return None
+
+        try:
+            _, swap_data, _ = decode_abi(
+                types=[
+                    'uint32',
+                    'bytes',
+                    '(address,address,uint256,uint256,uint256,uint256,uint256,uint256,bytes32)',
+                ],
+                data=input_data[8:],
+            )
+            if not swap_data.startswith(PERFORM_ACTION_WITH_IN_SELECTOR):  # pylint: disable=no-member
+                return None
+
+            _, _, _, _, action_data = decode_abi(
+                types=['address', 'address', 'uint256', 'bytes32', 'bytes'],
+                data=swap_data[4:],
+            )
+        except (DecodingError, ValueError, IndexError):
+            return None
+
+        native_sentinel = bytes.fromhex(ETH_SPECIAL_ADDRESS[2:])
+        if action_data.count(native_sentinel) != 1:  # pylint: disable=no-member
+            return None
+
+        return ZERO_ADDRESS
 
     def _decode_bridged_asset(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != BRIDGE_TOPIC:
@@ -77,13 +123,21 @@ class SocketBridgeDecoder(EvmDecoderInterface):
             target_chain = str(to_chain_id_raw)
             log.error(f'Unknown to_chain in socket bridge: {to_chain_id_raw}')
 
+        target_asset = self._decode_native_target_asset(transaction=context.transaction)
         for event in context.decoded_events:
             if (
                 event.location_label == sender and
-                event.asset == bridged_asset and
-                event.amount == amount and
+                event.address == GATEWAY_ADDRESS and
                 event.event_type == HistoryEventType.SPEND
             ):
+                direct_transfer = event.asset == bridged_asset and event.amount == amount
+                swapped_transfer = event.event_subtype == HistoryEventSubType.NONE
+                if not direct_transfer and not swapped_transfer:
+                    continue
+
+                # Socket can swap the user's source token before emitting the bridge event. In
+                # that case the event token and amount describe the token sent by the gateway,
+                # while the user's spend is the transfer to the gateway itself.
                 if self.base.is_tracked(receiver):  # if receiver is not tracked we are spending it
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.BRIDGE
@@ -93,12 +147,14 @@ class SocketBridgeDecoder(EvmDecoderInterface):
                         to_chain=to_chain_id_raw,
                         from_address=sender,
                         to_address=receiver,
+                        to_asset=target_asset,
                     )
 
                 event.counterparty = CPT_SOCKET
                 event.notes = (
-                    f'Bridge {amount} {bridged_asset.symbol} to {receiver} at {target_chain} using Socket'  # noqa: E501
+                    f'Bridge {event.amount} {event.asset.symbol_or_name()} to {receiver} at {target_chain} using Socket'  # noqa: E501
                 )
+                break
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
