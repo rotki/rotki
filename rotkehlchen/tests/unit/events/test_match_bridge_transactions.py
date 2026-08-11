@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
 from rotkehlchen.chain.evm.decoding.lifi.constants import CPT_LIFI
 from rotkehlchen.chain.evm.decoding.relay.constants import CPT_RELAY
+from rotkehlchen.chain.evm.decoding.socket_bridge.constants import CPT_SOCKET
 from rotkehlchen.chain.evm.decoding.stakedao.v2.constants import CPT_STAKEDAO_V2
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -199,8 +200,12 @@ def test_match_lifi_relay_bridge_by_order_id(database: DBHandler) -> None:
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-def test_match_lifi_cross_asset_bridge_by_target_asset(database: DBHandler) -> None:
-    """LI.FI's explicit target asset narrows candidates and permits a cross-asset route."""
+@pytest.mark.parametrize('bridge_counterparty', [CPT_LIFI, CPT_SOCKET])
+def test_match_cross_asset_bridge_by_target_asset(
+        database: DBHandler,
+        bridge_counterparty: str,
+) -> None:
+    """An explicit target asset narrows candidates and permits a cross-asset route."""
     events_db = DBHistoryEvents(database)
     with database.conn.write_ctx() as write_cursor:
         events_db.add_history_events(
@@ -215,7 +220,7 @@ def test_match_lifi_cross_asset_bridge_by_target_asset(database: DBHandler) -> N
                 asset=A_USDC,
                 amount=FVal('52.085941'),
                 location_label=(user_address := make_evm_address()),
-                counterparty=CPT_LIFI,
+                counterparty=bridge_counterparty,
                 extra_data={'bridge': {
                     'from_chain': 42161,
                     'to_chain': 1,
