@@ -2,6 +2,7 @@
 import type { HistoryEventEntryType } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import { checkIfDevelopment } from '@shared/utils';
+import { kebabCase } from 'es-toolkit';
 import { type HighlightSegment, splitHighlight } from '@/modules/history/events/action-picker/highlight-match';
 import HistoryEventActionDirectionBadge from '@/modules/history/events/action-picker/HistoryEventActionDirectionBadge.vue';
 import { useEventActionDescriptions } from '@/modules/history/events/action-picker/use-event-action-descriptions';
@@ -275,7 +276,7 @@ function onUpdate(verbKey: string | undefined): void {
     <template #item="{ item }">
       <div
         class="flex items-center gap-3 w-full"
-        :data-testid="`event-action-picker-row-${item.verbKey}`"
+        :data-testid="`event-action-picker-row-${kebabCase(item.verbKey)}`"
         :data-event-types="rowEventTypes(item)"
       >
         <RuiIcon

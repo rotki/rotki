@@ -14,14 +14,15 @@ import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { type Pinned, PinnedNames, toPinned } from '@/modules/session/types';
 
+/** Rendered into `data-testid`, so the values are kebab-case like every other test id. */
 export const HISTORY_ISSUE_IDS = {
-  AUTO_FIX_DUPLICATES: 'autoFixDuplicates',
-  DATA_ISSUES: 'dataIssues',
-  INTERNAL_CONFLICTS: 'internalConflicts',
-  MANUAL_REVIEW_DUPLICATES: 'manualReviewDuplicates',
+  AUTO_FIX_DUPLICATES: 'auto-fix-duplicates',
+  DATA_ISSUES: 'data-issues',
+  INTERNAL_CONFLICTS: 'internal-conflicts',
+  MANUAL_REVIEW_DUPLICATES: 'manual-review-duplicates',
   UNDECODED: 'undecoded',
-  UNMATCHED_BRIDGES: 'unmatchedBridges',
-  UNMATCHED_MOVEMENTS: 'unmatchedMovements',
+  UNMATCHED_BRIDGES: 'unmatched-bridges',
+  UNMATCHED_MOVEMENTS: 'unmatched-movements',
 } as const;
 
 type HistoryIssueId = typeof HISTORY_ISSUE_IDS[keyof typeof HISTORY_ISSUE_IDS];
