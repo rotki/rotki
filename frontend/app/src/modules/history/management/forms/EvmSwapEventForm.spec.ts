@@ -188,24 +188,24 @@ describe('forms/EvmSwapEventForm', () => {
         "data-testid=counterparty",
         "data-testid=datetime",
         "data-testid=fee",
-        "data-testid=fee-add",
-        "data-testid=fee-amount",
-        "data-testid=fee-asset",
-        "data-testid=fee-notes",
         "data-testid=has-fee",
         "data-testid=location",
         "data-testid=location-label",
         "data-testid=receive",
-        "data-testid=receive-add",
-        "data-testid=receive-amount",
-        "data-testid=receive-asset",
-        "data-testid=receive-notes",
         "data-testid=sequence-index",
         "data-testid=spend",
-        "data-testid=spend-add",
-        "data-testid=spend-amount",
-        "data-testid=spend-asset",
-        "data-testid=spend-notes",
+        "data-testid=sub-event-amount[data-key=fee]",
+        "data-testid=sub-event-amount[data-key=receive]",
+        "data-testid=sub-event-amount[data-key=spend]",
+        "data-testid=sub-event-asset[data-key=fee]",
+        "data-testid=sub-event-asset[data-key=receive]",
+        "data-testid=sub-event-asset[data-key=spend]",
+        "data-testid=swap-sub-event-add[data-key=fee]",
+        "data-testid=swap-sub-event-add[data-key=receive]",
+        "data-testid=swap-sub-event-add[data-key=spend]",
+        "data-testid=swap-sub-event-notes[data-key=fee]",
+        "data-testid=swap-sub-event-notes[data-key=receive]",
+        "data-testid=swap-sub-event-notes[data-key=spend]",
         "data-testid=tx-ref",
       ]
     `);
@@ -218,25 +218,25 @@ describe('forms/EvmSwapEventForm', () => {
     expect(wrapper.find('[data-testid=location]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=tx-ref]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-testid=spend-amount]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=spend-asset]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-amount][data-key=spend]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-asset][data-key=spend]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-testid=receive-amount]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=receive-asset]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-amount][data-key=receive]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-asset][data-key=receive]').exists()).toBe(true);
 
     expect(wrapper.find('[data-testid=has-fee]').exists()).toBe(true);
     expect(wrapper.find<HTMLInputElement>('[data-testid=has-fee]').element.checked).toBeUndefined();
-    expect(wrapper.find('[data-testid=fee-amount]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=fee-asset]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-amount][data-key=fee]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-asset][data-key=fee]').exists()).toBe(true);
 
     expect(wrapper.find('[data-testid=address]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=location-label]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=sequence-index]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=counterparty]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-testid=spend-notes]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=receive-notes]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=fee-notes]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=swap-sub-event-notes][data-key=spend]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=swap-sub-event-notes][data-key=receive]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=swap-sub-event-notes][data-key=fee]').exists()).toBe(true);
   });
 
   it('should enable fee-related fields when "Has Fee" checkbox is toggled', async () => {
@@ -244,15 +244,15 @@ describe('forms/EvmSwapEventForm', () => {
 
     const feeToggle = wrapper.find('[data-testid=has-fee] input');
 
-    expect(wrapper.find('[data-testid=fee-amount] input').attributes('disabled')).toBeFalsy();
-    expect(wrapper.find('[data-testid=fee-asset] input').attributes('disabled')).toBeFalsy();
+    expect(wrapper.find('[data-testid=sub-event-amount][data-key=fee] input').attributes('disabled')).toBeFalsy();
+    expect(wrapper.find('[data-testid=sub-event-asset][data-key=fee] input').attributes('disabled')).toBeFalsy();
 
     await feeToggle.setValue(true);
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-testid=fee-amount] input').attributes('disabled')).toBeFalsy();
-    expect(wrapper.find('[data-testid=fee-asset] input').attributes('disabled')).toBeFalsy();
-    expect(wrapper.find('[data-testid=fee-notes]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-amount][data-key=fee] input').attributes('disabled')).toBeFalsy();
+    expect(wrapper.find('[data-testid=sub-event-asset][data-key=fee] input').attributes('disabled')).toBeFalsy();
+    expect(wrapper.find('[data-testid=swap-sub-event-notes][data-key=fee]').exists()).toBe(true);
   });
 
   it('should validate the form and call addHistoryEvent on save', async () => {
@@ -264,10 +264,10 @@ describe('forms/EvmSwapEventForm', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    const spendAmountField = wrapper.find('[data-testid=spend-amount] input');
-    const spendAssetField = wrapper.find('[data-testid=spend-asset] input');
-    const receiveAmountField = wrapper.find('[data-testid=receive-amount] input');
-    const receiveAssetField = wrapper.find('[data-testid=receive-asset] input');
+    const spendAmountField = wrapper.find('[data-testid=sub-event-amount][data-key=spend] input');
+    const spendAssetField = wrapper.find('[data-testid=sub-event-asset][data-key=spend] input');
+    const receiveAmountField = wrapper.find('[data-testid=sub-event-amount][data-key=receive] input');
+    const receiveAssetField = wrapper.find('[data-testid=sub-event-asset][data-key=receive] input');
     const addressField = wrapper.find('[data-testid=address] input');
     const locationLabelField = wrapper.find('[data-testid=location-label] input');
     const counterpartyField = wrapper.find('[data-testid=counterparty] input');
@@ -319,10 +319,10 @@ describe('forms/EvmSwapEventForm', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.find('[data-testid=location] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=spend-amount] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=spend-asset] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=receive-amount] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=receive-asset] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-amount][data-key=spend] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-asset][data-key=spend] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-amount][data-key=receive] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-asset][data-key=receive] .details').exists()).toBe(true);
   });
 
   it('should call editHistoryEvent when editing an event', async () => {
@@ -344,11 +344,11 @@ describe('forms/EvmSwapEventForm', () => {
 
     expect(editHistoryEventMock).not.toHaveBeenCalled();
 
-    const feeAmount = wrapper.find('[data-testid=fee-amount] input');
+    const feeAmount = wrapper.find('[data-testid=sub-event-amount][data-key=fee] input');
     await feeAmount.setValue('0.01');
 
-    const receiveNotes = wrapper.find('[data-testid=receive-notes] textarea:not([aria-hidden="true"])');
-    const feeNotes = wrapper.find('[data-testid=fee-notes] textarea:not([aria-hidden="true"])');
+    const receiveNotes = wrapper.find('[data-testid=swap-sub-event-notes][data-key=receive] textarea:not([aria-hidden="true"])');
+    const feeNotes = wrapper.find('[data-testid=swap-sub-event-notes][data-key=fee] textarea:not([aria-hidden="true"])');
     await receiveNotes.setValue('updated receive note');
     await feeNotes.setValue('updated fee note');
 
@@ -405,11 +405,11 @@ describe('forms/EvmSwapEventForm', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    const feeAmount = wrapper.find('[data-testid=fee-amount] input');
+    const feeAmount = wrapper.find('[data-testid=sub-event-amount][data-key=fee] input');
     await feeAmount.setValue('0.01');
 
-    const receiveNotes = wrapper.find('[data-testid=receive-notes] textarea:not([aria-hidden="true"])');
-    const feeNotes = wrapper.find('[data-testid=fee-notes] textarea:not([aria-hidden="true"])');
+    const receiveNotes = wrapper.find('[data-testid=swap-sub-event-notes][data-key=receive] textarea:not([aria-hidden="true"])');
+    const feeNotes = wrapper.find('[data-testid=swap-sub-event-notes][data-key=fee] textarea:not([aria-hidden="true"])');
     await receiveNotes.setValue('updated receive note');
     await feeNotes.setValue('updated fee note');
 
@@ -420,19 +420,19 @@ describe('forms/EvmSwapEventForm', () => {
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
     addHistoryEventMock.mockResolvedValueOnce({ message: '', success: false });
 
-    await wrapper.find('[data-testid=spend-add]').trigger('click');
-    await wrapper.find('[data-testid=receive-add]').trigger('click');
+    await wrapper.find('[data-testid=swap-sub-event-add][data-key=spend]').trigger('click');
+    await wrapper.find('[data-testid=swap-sub-event-add][data-key=receive]').trigger('click');
 
-    await wrapper.findAll('[data-testid=spend-amount] input')[1].setValue('0.2');
-    await wrapper.findAll('[data-testid=spend-asset] input')[1].setValue('DAI');
+    await wrapper.findAll('[data-testid=sub-event-amount][data-key=spend] input')[1].setValue('0.2');
+    await wrapper.findAll('[data-testid=sub-event-asset][data-key=spend] input')[1].setValue('DAI');
 
-    await wrapper.findAll('[data-testid=receive-amount] input')[1].setValue('0.19');
-    await wrapper.findAll('[data-testid=receive-asset] input')[1].setValue('USDC');
+    await wrapper.findAll('[data-testid=sub-event-amount][data-key=receive] input')[1].setValue('0.19');
+    await wrapper.findAll('[data-testid=sub-event-asset][data-key=receive] input')[1].setValue('USDC');
 
-    await wrapper.find('[data-testid=spend-add]').trigger('click');
-    expect(wrapper.findAll('[data-testid=spend-amount]')).toHaveLength(3);
-    await wrapper.findAll('[data-testid=spend-remove]')[2].trigger('click');
-    expect(wrapper.findAll('[data-testid=spend-amount]')).toHaveLength(2);
+    await wrapper.find('[data-testid=swap-sub-event-add][data-key=spend]').trigger('click');
+    expect(wrapper.findAll('[data-testid=sub-event-amount][data-key=spend]')).toHaveLength(3);
+    await wrapper.findAll('[data-testid=swap-sub-event-remove][data-key=spend]')[2].trigger('click');
+    expect(wrapper.findAll('[data-testid=sub-event-amount][data-key=spend]')).toHaveLength(2);
 
     const saveResult = await saveMethod();
     expect(saveResult).toBe(true);

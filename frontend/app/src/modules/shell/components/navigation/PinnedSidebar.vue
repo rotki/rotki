@@ -64,7 +64,8 @@ function collapse(): void {
           icon
           size="sm"
           :class="tab.name === activePinnedId ? '!bg-rui-primary !text-white' : '!text-rui-text-secondary'"
-          :data-testid="`pinned-mini-${tab.name}`"
+          data-testid="pinned-mini-tab"
+          :data-key="tab.name"
           @click="focus(tab.name)"
         >
           <RuiIcon
@@ -126,7 +127,8 @@ function collapse(): void {
               :class="tab.name === activePinnedId
                 ? 'bg-rui-primary text-white'
                 : 'text-rui-text-secondary hover:bg-rui-grey-200 dark:hover:bg-rui-grey-800'"
-              :data-testid="`pinned-tab-${tab.name}`"
+              data-testid="pinned-tab"
+              :data-key="tab.name"
               @click="focus(tab.name)"
             >
               <RuiIcon
@@ -138,7 +140,8 @@ function collapse(): void {
                 name="lu-x"
                 size="14"
                 class="ml-1 opacity-60 hover:opacity-100"
-                :data-testid="`pinned-tab-close-${tab.name}`"
+                data-testid="pinned-tab-close"
+                :data-key="tab.name"
                 @click.stop="close(tab.name)"
               />
             </button>

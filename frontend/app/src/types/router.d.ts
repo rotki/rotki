@@ -30,7 +30,7 @@ export interface RouteNavMeta {
   readonly order?: number;
   /** Drawer top-level section; dividers separate sections. Sub-items omit it. */
   readonly section?: number;
-  /** When set, the route shows in the drawer; the value is the `navigation__<id>` test selector. */
+  /** When set, the route shows in the drawer; the value is the entry's `data-key` test selector. */
   readonly drawer?: string;
   /** Set false to exclude the route from the otherwise default-on search palette. */
   readonly searchable?: boolean;

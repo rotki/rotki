@@ -66,7 +66,8 @@ function setOperator(op: FilterOp | FilterOp[] | undefined): void {
           v-for="op in operators"
           :key="op"
           :model-value="op"
-          :data-testid="`op-${op}`"
+          data-testid="pill-op"
+          :data-key="op"
         >
           {{ operatorLabels[op] }}
         </RuiButton>

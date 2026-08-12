@@ -45,7 +45,7 @@ export class ChainsSettingsPage {
 
   async selectChainFromMenu(chainId: string): Promise<void> {
     await this.page.locator('[data-testid=chain-menu]').waitFor({ state: 'visible' });
-    await this.page.locator(`[data-testid=chain-menu-item-${chainId}]`).click();
+    await this.page.locator(`[data-testid=chain-menu-item][data-key="${chainId}"]`).click();
   }
 
   async addChain(chainId: string): Promise<void> {
@@ -54,19 +54,19 @@ export class ChainsSettingsPage {
   }
 
   async removeChain(chainId: string): Promise<void> {
-    await this.page.locator(`[data-testid=remove-chain-${chainId}]`).click();
+    await this.page.locator(`[data-testid=remove-chain][data-key="${chainId}"]`).click();
   }
 
   async selectTab(tabId: string): Promise<void> {
-    await this.page.locator(`[data-testid=indexer-tab-${tabId}]`).click();
+    await this.page.locator(`[data-testid=indexer-tab][data-key="${tabId}"]`).click();
   }
 
   async verifyTabExists(tabId: string): Promise<void> {
-    await expect(this.page.locator(`[data-testid=indexer-tab-${tabId}]`)).toBeAttached();
+    await expect(this.page.locator(`[data-testid=indexer-tab][data-key="${tabId}"]`)).toBeAttached();
   }
 
   async verifyTabNotExists(tabId: string): Promise<void> {
-    await expect(this.page.locator(`[data-testid=indexer-tab-${tabId}]`)).not.toBeAttached();
+    await expect(this.page.locator(`[data-testid=indexer-tab][data-key="${tabId}"]`)).not.toBeAttached();
   }
 
   // Chains to Skip Detection Settings

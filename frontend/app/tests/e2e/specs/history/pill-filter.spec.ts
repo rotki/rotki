@@ -534,17 +534,17 @@ test.describe.serial('history events pill filter', () => {
 
     await views.open();
     // Opening lands focus on the list, which is where the arrow keys and Escape are handled.
-    expect(await bar.focusedTestId()).toBe('pill-views-list');
+    expect(await bar.keyboard.focusedTestId()).toBe('pill-views-list');
 
     // The name field is one Tab away while the list holds no view of its own.
-    await bar.pressFocused('Tab');
-    expect(await bar.focusedTestId()).toBe('pill-views-name');
-    await bar.typeFocused('kb optimism');
-    await bar.pressFocused('Enter');
+    await bar.keyboard.pressFocused('Tab');
+    expect(await bar.keyboard.focusedTestId()).toBe('pill-views-name');
+    await bar.keyboard.typeFocused('kb optimism');
+    await bar.keyboard.pressFocused('Enter');
 
     // Saving hands focus back to the list, which now holds the view.
     await views.expectVisible('kb optimism');
-    expect(await bar.focusedTestId()).toBe('pill-views-list');
+    expect(await bar.keyboard.focusedTestId()).toBe('pill-views-list');
     await views.close();
 
     // A second view, so moving the highlight is a move rather than a wrap onto itself. Saved with
@@ -558,10 +558,10 @@ test.describe.serial('history events pill filter', () => {
 
     await views.open();
     // Tab out of the list reaches the stored view itself, so a row is reachable without a mouse.
-    await bar.pressFocused('Tab');
-    expect(await bar.focusedTestId()).toBe('pill-views-apply');
+    await bar.keyboard.pressFocused('Tab');
+    expect(await bar.keyboard.focusedTestId()).toBe('pill-views-apply');
     // The index matters: Tab must land on the FIRST row, not merely on some row.
-    expect(await bar.focusedIndex()).toBe('0');
+    expect(await bar.keyboard.focusedIndex()).toBe('0');
     await views.save('kb kraken');
     await views.close();
 
@@ -570,8 +570,8 @@ test.describe.serial('history events pill filter', () => {
 
     // Down one row, then Enter: the second view, applied without a click.
     await views.open();
-    await bar.pressFocused('ArrowDown');
-    await bar.pressFocused('Enter');
+    await bar.keyboard.pressFocused('ArrowDown');
+    await bar.keyboard.pressFocused('Enter');
 
     await bar.expectPillVisible('location');
     expect(await bar.pillValue('location')).toContain('Kraken');
@@ -660,7 +660,7 @@ test.describe.serial('history events pill filter', () => {
     await bar.dismissEditor();
 
     await bar.expectNoPill('counterparties');
-    expect(await bar.focusedFieldTestId()).toBe('pill-narrow-input');
+    expect(await bar.keyboard.focusedFieldTestId()).toBe('pill-narrow-input');
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
@@ -669,9 +669,9 @@ test.describe.serial('history events pill filter', () => {
   test('a field can be picked from the add menu with the keyboard', async () => {
     await bar.openAddMenu();
     // The menu focuses its search on mount, so typing narrows without clicking into it.
-    expect(await bar.focusedFieldTestId()).toBe('pill-menu-search');
-    await bar.typeFocused('proto');
-    await bar.pressFocused('Enter');
+    expect(await bar.keyboard.focusedFieldTestId()).toBe('pill-menu-search');
+    await bar.keyboard.typeFocused('proto');
+    await bar.keyboard.pressFocused('Enter');
 
     // Picking a field opens its editor, so the checklist is what has focus now.
     await bar.expectPillVisible('counterparties');
@@ -708,13 +708,13 @@ test.describe.serial('history events pill filter', () => {
     await bar.addField('amount');
     // The editor focuses its first bound itself: `autofocus` is ignored for an input added to an
     // already-loaded document, which is why this is worth pinning.
-    await bar.expectFocusedField('range-min');
+    await bar.keyboard.expectFocusedField('range-min');
 
-    await bar.typeFocused('10');
-    await bar.pressFocused('Tab');
-    await bar.expectFocusedField('range-max');
-    await bar.typeFocused('100');
-    await bar.pressFocused('Enter');
+    await bar.keyboard.typeFocused('10');
+    await bar.keyboard.pressFocused('Tab');
+    await bar.keyboard.expectFocusedField('range-max');
+    await bar.keyboard.typeFocused('100');
+    await bar.keyboard.pressFocused('Enter');
 
     // Only the 20 DAI event sits between the two bounds.
     await expectRows(1);
@@ -723,10 +723,10 @@ test.describe.serial('history events pill filter', () => {
 
     // The chips sit above the bounds, so shift-tab out of the first one reaches the last chip.
     await bar.openPillEditor('amount');
-    await bar.expectFocusedField('range-min');
-    await bar.pressFocused('Shift+Tab');
-    await bar.expectFocusedField('op-lt');
-    await bar.pressFocused('Enter');
+    await bar.keyboard.expectFocusedField('range-min');
+    await bar.keyboard.pressFocused('Shift+Tab');
+    await bar.keyboard.expectFocusedFieldKey('pill-op', 'lt');
+    await bar.keyboard.pressFocused('Enter');
 
     // "less than" keeps only the upper bound, so the lower one must leave the URL with it.
     await expect.poll(() => url(), { timeout: 10000 }).not.toContain('minAmount=');
@@ -750,14 +750,14 @@ test.describe.serial('history events pill filter', () => {
     // The pills sit before the input in the DOM, so shift-tabbing out of it walks back into the
     // last pill: its remove control first, then the region that opens the editor.
     await bar.focusNarrowInput();
-    await bar.pressFocused('Shift+Tab');
-    expect(await bar.focusedTestId()).toBe('filter-pill-remove');
+    await bar.keyboard.pressFocused('Shift+Tab');
+    expect(await bar.keyboard.focusedTestId()).toBe('filter-pill-remove');
 
-    await bar.pressFocused('Shift+Tab');
-    expect(await bar.focusedTestId()).toBe('filter-pill-open');
+    await bar.keyboard.pressFocused('Shift+Tab');
+    expect(await bar.keyboard.focusedTestId()).toBe('filter-pill-open');
 
     // Enter on the focused pill has to open the same editor a click does.
-    await bar.pressFocused('Enter');
+    await bar.keyboard.pressFocused('Enter');
     await expect(ctx.sharedPage.locator('[data-testid=value-select-search]')).toBeVisible({ timeout: 10000 });
 
     await bar.closeEditor('counterparties');

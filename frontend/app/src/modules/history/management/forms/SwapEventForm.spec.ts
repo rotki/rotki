@@ -145,12 +145,12 @@ describe('forms/SwapEventForm', () => {
         "data-testid=fee-asset",
         "data-testid=has-fee",
         "data-testid=location",
-        "data-testid=receive-amount",
-        "data-testid=receive-asset",
         "data-testid=receive-notes",
-        "data-testid=spend-amount",
-        "data-testid=spend-asset",
         "data-testid=spend-notes",
+        "data-testid=sub-event-amount[data-key=receive]",
+        "data-testid=sub-event-amount[data-key=spend]",
+        "data-testid=sub-event-asset[data-key=receive]",
+        "data-testid=sub-event-asset[data-key=spend]",
         "data-testid=unique-id",
       ]
     `);
@@ -162,11 +162,11 @@ describe('forms/SwapEventForm', () => {
     expect(wrapper.find('[data-testid=datetime]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=location]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-testid=spend-amount]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=spend-asset]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-amount][data-key=spend]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-asset][data-key=spend]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-testid=receive-amount]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=receive-asset]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-amount][data-key=receive]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-asset][data-key=receive]').exists()).toBe(true);
 
     expect(wrapper.find('[data-testid=unique-id]').exists()).toBe(true);
 
@@ -185,10 +185,10 @@ describe('forms/SwapEventForm', () => {
     await vi.advanceTimersToNextTimerAsync();
     const datetimePicker = wrapper.find('[data-testid=datetime] input');
     const locationField = wrapper.find('[data-testid=location] input');
-    const spendAmountField = wrapper.find('[data-testid=spend-amount] input');
-    const spendAssetField = wrapper.find('[data-testid=spend-asset] input');
-    const receiveAmountField = wrapper.find('[data-testid=receive-amount] input');
-    const receiveAssetField = wrapper.find('[data-testid=receive-asset] input');
+    const spendAmountField = wrapper.find('[data-testid=sub-event-amount][data-key=spend] input');
+    const spendAssetField = wrapper.find('[data-testid=sub-event-asset][data-key=spend] input');
+    const receiveAmountField = wrapper.find('[data-testid=sub-event-amount][data-key=receive] input');
+    const receiveAssetField = wrapper.find('[data-testid=sub-event-asset][data-key=receive] input');
     const uniqueIdField = wrapper.find('[data-testid=unique-id] input');
 
     const now = dayjs();
@@ -233,8 +233,8 @@ describe('forms/SwapEventForm', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.find('[data-testid=location] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=spend-amount] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=spend-asset] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-amount][data-key=spend] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=sub-event-asset][data-key=spend] .details').exists()).toBe(true);
   });
 
   it('should enable fee-related fields when "Has Fee" checkbox is toggled', async () => {
@@ -435,10 +435,10 @@ describe('forms/SwapEventForm', () => {
 
     const datetimePicker = wrapper.find('[data-testid=datetime] input');
     const locationField = wrapper.find('[data-testid=location] input');
-    const spendAmountField = wrapper.find('[data-testid=spend-amount] input');
-    const spendAssetField = wrapper.find('[data-testid=spend-asset] input');
-    const receiveAmountField = wrapper.find('[data-testid=receive-amount] input');
-    const receiveAssetField = wrapper.find('[data-testid=receive-asset] input');
+    const spendAmountField = wrapper.find('[data-testid=sub-event-amount][data-key=spend] input');
+    const spendAssetField = wrapper.find('[data-testid=sub-event-asset][data-key=spend] input');
+    const receiveAmountField = wrapper.find('[data-testid=sub-event-amount][data-key=receive] input');
+    const receiveAssetField = wrapper.find('[data-testid=sub-event-asset][data-key=receive] input');
 
     const now = dayjs();
     const nowInMs = now.valueOf();
@@ -475,7 +475,7 @@ describe('forms/SwapEventForm', () => {
       success: false,
     });
 
-    await wrapper.find('[data-testid=spend-amount] input').setValue('4.5');
+    await wrapper.find('[data-testid=sub-event-amount][data-key=spend] input').setValue('4.5');
 
     await vi.advanceTimersToNextTimerAsync();
 

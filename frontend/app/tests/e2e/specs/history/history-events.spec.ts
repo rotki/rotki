@@ -103,8 +103,8 @@ test.describe.serial('history events', () => {
 
     await page.editEvent('[data-testid=history-event-swap]', 0);
 
-    await ctx.sharedPage.locator('[data-testid=receive-amount] input').clear();
-    await ctx.sharedPage.locator('[data-testid=receive-amount] input').fill(updatedReceiveAmount);
+    await ctx.sharedPage.locator('[data-testid=sub-event-amount][data-key=receive] input').clear();
+    await ctx.sharedPage.locator('[data-testid=sub-event-amount][data-key=receive] input').fill(updatedReceiveAmount);
 
     await page.saveForm();
 
@@ -250,8 +250,8 @@ test.describe.serial('history events', () => {
 
     await page.editEvent('[data-testid=history-event-swap]', 0);
 
-    await ctx.sharedPage.locator('[data-testid=receive-amount] input').clear();
-    await ctx.sharedPage.locator('[data-testid=receive-amount] input').fill(updatedReceiveAmount);
+    await ctx.sharedPage.locator('[data-testid=sub-event-amount][data-key=receive] input').clear();
+    await ctx.sharedPage.locator('[data-testid=sub-event-amount][data-key=receive] input').fill(updatedReceiveAmount);
 
     await page.saveForm();
 
@@ -431,8 +431,8 @@ test.describe.serial('evm history events', () => {
 
     await page.editEvent('[data-testid=history-event-swap]', 0);
 
-    await ctx.sharedPage.locator('[data-testid=receive-amount] input').clear();
-    await ctx.sharedPage.locator('[data-testid=receive-amount] input').fill(updatedReceiveAmount);
+    await ctx.sharedPage.locator('[data-testid=sub-event-amount][data-key=receive] input').clear();
+    await ctx.sharedPage.locator('[data-testid=sub-event-amount][data-key=receive] input').fill(updatedReceiveAmount);
 
     await page.saveForm();
 

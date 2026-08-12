@@ -11,7 +11,7 @@ export class ModulesSettingsPage {
   }
 
   private moduleSwitch(identifier: string) {
-    return this.page.locator(`[data-testid="${identifier}-module-switch"]`);
+    return this.page.locator(`[data-testid=module-switch][data-key="${identifier}"]`);
   }
 
   private moduleCheckbox(identifier: string) {

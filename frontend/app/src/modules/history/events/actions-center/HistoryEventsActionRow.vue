@@ -41,7 +41,8 @@ const lockedHint = computed<string>(() => issue.minimumTier
   <div
     class="flex items-center gap-3 py-3"
     :class="{ 'opacity-60': issue.locked }"
-    :data-testid="`actions-center-row-${issue.id}`"
+    data-testid="actions-center-row"
+    :data-key="issue.id"
   >
     <div
       class="shrink-0 rounded-full p-2"

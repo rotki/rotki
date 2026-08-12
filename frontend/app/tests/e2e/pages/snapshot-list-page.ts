@@ -15,7 +15,7 @@ export class SnapshotListPage {
   }
 
   private row(timestamp: number) {
-    return this.table.locator('tr', { has: this.page.locator(`[data-testid=snapshot-list-row-${timestamp}]`) });
+    return this.table.locator('tr', { has: this.page.locator(`[data-testid=snapshot-list-row][data-key="${timestamp}"]`) });
   }
 
   async visit(): Promise<void> {

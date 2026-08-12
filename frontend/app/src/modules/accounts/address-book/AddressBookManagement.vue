@@ -142,7 +142,8 @@ watchImmediate(location, async () => {
             v-for="loc in locations"
             :key="loc"
             class="capitalize"
-            :data-testid="`address-book-scope-${loc}`"
+            data-testid="address-book-scope-tab"
+            :data-key="loc"
           >
             {{ loc }}
           </RuiTab>

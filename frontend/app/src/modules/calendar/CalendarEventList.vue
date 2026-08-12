@@ -51,7 +51,8 @@ function onEventClicked(calendarEvent: CalendarEvent) {
 <template>
   <div
     class="flex items-center gap-4"
-    :data-testid="`calendar-event-${event.identifier}`"
+    data-testid="calendar-event"
+    :data-key="event.identifier"
     :data-event-name="event.name"
   >
     <div

@@ -108,7 +108,8 @@ function choiceLabel(item: SuggestionChoice): string {
             :key="item.id"
             :value="item.id"
             :label="choiceLabel(item)"
-            :data-testid="`suggestion-choice-${item.id}`"
+            data-testid="suggestion-choice"
+            :data-key="item.id"
           />
         </RuiRadioGroup>
 

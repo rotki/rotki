@@ -22,36 +22,36 @@ describe('dataIssueSummaryBar', () => {
   it('should render one card per non-terminal summary state', () => {
     const wrapper = createWrapper({ activeStates: [], counts: counts() });
 
-    expect(wrapper.find(`[data-testid="data-issue-summary-${IssueState.OPEN}"]`).exists()).toBe(true);
-    expect(wrapper.find(`[data-testid="data-issue-summary-${IssueState.AUTO_REMEDIATING}"]`).exists()).toBe(true);
-    expect(wrapper.find(`[data-testid="data-issue-summary-${IssueState.UNRESOLVED}"]`).exists()).toBe(true);
+    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.OPEN}"]`).exists()).toBe(true);
+    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.AUTO_REMEDIATING}"]`).exists()).toBe(true);
+    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.UNRESOLVED}"]`).exists()).toBe(true);
     // terminal states never get a card.
-    expect(wrapper.find(`[data-testid="data-issue-summary-${IssueState.RESOLVED}"]`).exists()).toBe(false);
+    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.RESOLVED}"]`).exists()).toBe(false);
   });
 
   it('should show the per-state counts', () => {
     const wrapper = createWrapper({ activeStates: [], counts: counts({ [IssueState.OPEN]: 4 }) });
 
-    expect(wrapper.find(`[data-testid="data-issue-summary-${IssueState.OPEN}"]`).text()).toContain('4');
+    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.OPEN}"]`).text()).toContain('4');
   });
 
   it('should mark a card active only when it is the single selected state', () => {
     const wrapper = createWrapper({ activeStates: [IssueState.OPEN], counts: counts() });
 
-    expect(wrapper.find(`[data-testid="data-issue-summary-${IssueState.OPEN}"]`).classes()).toContain('!border-rui-primary');
-    expect(wrapper.find(`[data-testid="data-issue-summary-${IssueState.UNRESOLVED}"]`).classes()).not.toContain('!border-rui-primary');
+    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.OPEN}"]`).classes()).toContain('!border-rui-primary');
+    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.UNRESOLVED}"]`).classes()).not.toContain('!border-rui-primary');
   });
 
   it('should not mark any card active when several states are selected', () => {
     const wrapper = createWrapper({ activeStates: [IssueState.OPEN, IssueState.UNRESOLVED], counts: counts() });
 
-    expect(wrapper.find(`[data-testid="data-issue-summary-${IssueState.OPEN}"]`).classes()).not.toContain('!border-rui-primary');
+    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.OPEN}"]`).classes()).not.toContain('!border-rui-primary');
   });
 
   it('should emit the state when a card is clicked', async () => {
     const wrapper = createWrapper({ activeStates: [], counts: counts() });
 
-    await wrapper.find(`[data-testid="data-issue-summary-${IssueState.UNRESOLVED}"]`).trigger('click');
+    await wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.UNRESOLVED}"]`).trigger('click');
 
     expect(wrapper.emitted('select')?.[0]).toStrictEqual([IssueState.UNRESOLVED]);
   });

@@ -716,7 +716,7 @@ definePage({
       parent: '/balances/',      // logical parent: drawer nesting + search breadcrumb
       order: 10,                 // order among siblings
       section: 1,                // drawer top-level section (dividers between sections); omit for sub-items
-      drawer: 'balances-blockchain', // present => shown in the drawer; value is the navigation__<id> test selector
+      drawer: 'balances-blockchain', // present => shown in the drawer; value is the entry's data-key test selector
       searchable: false,         // optional: exclude from the (default-on) search palette
       keywords: ['some.i18n.alias'], // optional: extra i18n keys the search palette matches
     },

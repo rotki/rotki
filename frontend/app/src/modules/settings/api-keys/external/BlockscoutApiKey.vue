@@ -21,7 +21,7 @@ const status = actionStatus(name);
   <ServiceKeyCard
     :name="name"
     :key-set="!!key"
-    :data-testid="`${name}-api-keys`"
+    data-testid="blockscout-api-keys"
     :title="t('external_services.blockscout.title')"
     :subtitle="t('external_services.blockscout.description')"
     :image-src="getPublicServiceImagePath('blockscout.svg')"
