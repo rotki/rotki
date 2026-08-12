@@ -19,7 +19,7 @@ def find_directories_with_missing_init(path: str) -> set[str]:
     return py_directories - package_dirs
 
 
-def test_no_missing_init():
+def test_no_missing_init() -> None:
     """Test that there is no directories missing an __init__.py file
 
     The reason for this is some linting tools like mypy and pylint don't check the

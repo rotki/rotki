@@ -20,7 +20,7 @@ def _user_creation_and_login(
         data_dir: Path,
         msg_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
-):
+) -> None:
     handler = DataHandler(
         data_directory=data_dir,
         msg_aggregator=msg_aggregator,
@@ -82,7 +82,7 @@ def test_user_long_password(
         data_dir: Path,
         function_scope_messages_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
-):
+) -> None:
     """Test that very long password work. https://github.com/rotki/rotki/issues/805"""
     username = 'foo'
     password = 'dadsadsadsdsasadsadsadsadsadsadsadhkhdkjasd#$%$%*)(\\aasdasdsadjsakdhjaskdhkjsadhkjsadhsdadsadjksajdlskajdskldjslkdjklasjdlsadjsadj4324@#@qweioqweiCZCK#$a'  # noqa: E501
@@ -99,7 +99,7 @@ def test_user_password_with_double_quote(
         data_dir: Path,
         function_scope_messages_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
-):
+) -> None:
     """Test that a password containing " is accepted.
 
     Probably what caused https://github.com/rotki/rotki/issues/805 to be reported"""
@@ -118,7 +118,7 @@ def test_user_password_with_single_quote(
         data_dir: Path,
         function_scope_messages_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
-):
+) -> None:
     """Since we now use single quotes in sqlite statements, make sure they work too for password"""
     username = 'foo'
     password = "pass'word"
@@ -135,7 +135,7 @@ def test_user_password_with_all_ascii(
         data_dir: Path,
         function_scope_messages_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
-):
+) -> None:
     """Test that a password containing all ASCII characters is accepted"""
     username = 'foo'
     password = string.printable
@@ -153,7 +153,7 @@ def test_users_query_permission_error(
         data_dir: Path,
         function_scope_messages_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
-):
+) -> None:
     users_dir = data_dir / USERSDIR_NAME
     not_allowed_dir = users_dir / 'notallowed'
     allowed_user_dir = users_dir / 'allowed_user'
@@ -178,7 +178,7 @@ def test_new_user_permission_error(
         data_dir: Path,
         function_scope_messages_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
-):
+) -> None:
     not_allowed_dir = data_dir / 'notallowed'
     os.mkdir(not_allowed_dir)
     handler = DataHandler(
