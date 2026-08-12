@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.tests.utils.exchanges import (
@@ -5,13 +7,20 @@ from rotkehlchen.tests.utils.exchanges import (
     create_test_coinbaseprime,
 )
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.coinbase import Coinbase
+    from rotkehlchen.exchanges.coinbaseprime import Coinbaseprime
+    from rotkehlchen.inquirer import Inquirer
+    from rotkehlchen.user_messages import MessagesAggregator
+
 
 @pytest.fixture
 def function_scope_coinbase(
-        database,
-        inquirer,  # pylint: disable=unused-argument,
-        function_scope_messages_aggregator,
-):
+        database: DBHandler,
+        inquirer: Inquirer,  # pylint: disable=unused-argument,
+        function_scope_messages_aggregator: MessagesAggregator,
+) -> Coinbase:
     return create_test_coinbase(
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
@@ -20,10 +29,10 @@ def function_scope_coinbase(
 
 @pytest.fixture
 def function_scope_coinbaseprime(
-        database,
-        inquirer,  # pylint: disable=unused-argument,
-        function_scope_messages_aggregator,
-):
+        database: DBHandler,
+        inquirer: Inquirer,  # pylint: disable=unused-argument,
+        function_scope_messages_aggregator: MessagesAggregator,
+) -> Coinbaseprime:
     return create_test_coinbaseprime(
         database=database,
         passphrase='Rotki123!',

@@ -211,6 +211,7 @@ module = [
     "rotkehlchen.tests.benchmarks.*",
     "rotkehlchen.tests.data_migrations.*",
     "rotkehlchen.tests.conftest",
+    "rotkehlchen.tests.fixtures.exchanges.*",
     "rotkehlchen.tests.mcp.tools.*",
     "rotkehlchen.tests.profiling.*",
     "rotkehlchen.tests.pylint.*",
