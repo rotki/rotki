@@ -63,13 +63,14 @@ describe('edit-snapshot/EditBalancesSnapshotAssetPriceForm.vue', () => {
     wrapper?.unmount();
   });
 
-  function createWrapper(amount = '1.5', usdValue = '0'): VueWrapper<FormInstance> {
-    const model = ref({ amount, asset: 'ETH', usdValue });
+  function createWrapper(amount = '1.5', usdValue = '0', asset = 'ETH', disableAsset = false): VueWrapper<FormInstance> {
+    const model = ref({ amount, asset, usdValue });
     return mount(EditBalancesSnapshotAssetPriceForm, {
       global: { plugins: [pinia] },
       props: {
         'amount': model.value.amount,
         'asset': model.value.asset,
+        disableAsset,
         timestamp,
         'usdValue': model.value.usdValue,
         'onUpdate:amount': (v: string) => { model.value.amount = v; },
@@ -109,6 +110,47 @@ describe('edit-snapshot/EditBalancesSnapshotAssetPriceForm.vue', () => {
 
     // 3600 EUR / 0.9 = 4000 USD
     expect(lastUsdValue()).toBe('4000');
+  });
+
+  it('should show the required messages once the fields are left empty', async () => {
+    setCurrency('USD');
+    wrapper = createWrapper('', '0', '');
+    await flushPromises();
+
+    await wrapper.find('[data-testid=amount] input').trigger('blur');
+    // The asset picker keeps its fallthrough listeners on its root, not on the inner input.
+    await wrapper.find('[data-testid=asset]').trigger('blur');
+    await flushPromises();
+    await nextTick();
+
+    expect(wrapper.find('[data-testid=amount] .details .text-rui-error').text())
+      .toBe('dashboard.snapshot.edit.dialog.balances.rules.amount');
+    expect(wrapper.find('[data-testid=asset] .details').text())
+      .toBe('dashboard.snapshot.edit.dialog.balances.rules.asset');
+  });
+
+  it('should suppress the asset message while the asset is locked', async () => {
+    setCurrency('USD');
+    wrapper = createWrapper('', '0', '', true);
+    await flushPromises();
+
+    await wrapper.find('[data-testid=asset]').trigger('blur');
+    await flushPromises();
+    await nextTick();
+
+    // Negative control: the sibling test proves the same empty, blurred asset does show a message
+    // when it isn't locked, so an absent message here is suppression rather than an unreached rule.
+    expect(wrapper.find('[data-testid=asset] .details').exists()).toBe(false);
+  });
+
+  // The form validates for display only: it exposes no `validate`, so nothing it reports can stop a
+  // save. The dialog's gate lives in EditBalancesSnapshotForm, over category and location alone.
+  it('should expose no validate, leaving its messages purely decorative', async () => {
+    setCurrency('USD');
+    wrapper = createWrapper();
+    await flushPromises();
+
+    expect('validate' in wrapper.vm).toBe(false);
   });
 
   it('should not touch the historic FX path in a USD main currency', async () => {
