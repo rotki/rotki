@@ -54,6 +54,8 @@ interface CacheContentVm {
   loadCaches: () => Promise<void>;
   newFromAsset: string;
   newToAsset: string;
+  /** The pill bar's bag, which is what the two filter assets are read out of. */
+  matches: Record<string, string>;
   filterFromAsset: string;
   filterToAsset: string;
   rows: { fromAsset: string; toAsset: string; id: number }[];
@@ -171,11 +173,11 @@ describe('oracleCacheContent', () => {
     const vm = componentVm<CacheContentVm>(wrapper);
     expect(vm.rows).toHaveLength(3);
 
-    vm.filterFromAsset = 'ETH';
+    vm.matches = { fromAsset: 'ETH' };
     await flushPromises();
     expect(vm.rows.map(r => r.fromAsset)).toEqual(['ETH', 'ETH']);
 
-    vm.filterToAsset = 'USD';
+    vm.matches = { fromAsset: 'ETH', toAsset: 'USD' };
     await flushPromises();
     expect(vm.rows).toHaveLength(1);
     expect(vm.rows[0]).toMatchObject({ fromAsset: 'ETH', toAsset: 'USD' });
