@@ -1,3 +1,5 @@
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BackendRestartStatus } from '@/modules/shell/app/use-backend-management';
@@ -23,7 +25,7 @@ vi.mock('@/modules/shell/app/use-backend-management', async importOriginal => ({
 }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: vi.fn(() => ({ isPackaged: interopState.isPackaged })),
+  useInterop: vi.fn(() => createMock<ReturnType<typeof useInterop>>({ isPackaged: interopState.isPackaged })),
 }));
 
 describe('useAssetUpdateSteps', () => {

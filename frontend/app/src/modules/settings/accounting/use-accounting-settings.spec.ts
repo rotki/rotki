@@ -2,6 +2,8 @@ import type {
   AccountingRuleConflictRequestPayload,
   AccountingRuleRequestPayload,
 } from '@/modules/settings/types/accounting';
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -56,7 +58,7 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
 }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: (): object => ({ appSession, getPath, openDirectory }),
+  useInterop: (): ReturnType<typeof useInterop> => createMock<ReturnType<typeof useInterop>>({ appSession, getPath, openDirectory }),
 }));
 
 vi.mock('@/modules/core/common/file/download', () => ({

@@ -1,3 +1,4 @@
+import type { useInterop as useInteropType } from '@/modules/shell/app/use-electron-interop';
 import { LogLevel } from '@shared/log-level';
 import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,10 +17,10 @@ vi.mock('@/modules/core/common/logging/logging', async (): Promise<Record<string
 });
 
 vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> => ({
-  useInterop: vi.fn().mockReturnValue({
+  useInterop: vi.fn().mockReturnValue(createMock<ReturnType<typeof useInteropType>>({
     isPackaged: true,
     setLogLevel: setLogLevelMock,
-  }),
+  })),
 }));
 
 vi.mock('@/modules/settings/api/use-settings-api', (): Record<string, unknown> => ({

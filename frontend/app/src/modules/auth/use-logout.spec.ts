@@ -1,3 +1,5 @@
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLogout } from '@/modules/auth/use-logout';
@@ -40,7 +42,7 @@ vi.mock('@/modules/wallet/use-wallet-store', () => ({
 }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: vi.fn(() => ({
+  useInterop: vi.fn(() => createMock<ReturnType<typeof useInterop>>({
     notifyUserLogout: mockNotifyUserLogout,
     resetMcpSession: mockResetMcpSession,
     resetTray: mockResetTray,

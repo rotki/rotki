@@ -1,5 +1,7 @@
 import type { BackendOptions } from '@shared/ipc';
 import type { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
@@ -24,7 +26,7 @@ const { openDirectoryMock, setLogLevelMock } = vi.hoisted(() => ({
   setLogLevelMock: vi.fn(),
 }));
 vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> => ({
-  useInterop: vi.fn().mockReturnValue({
+  useInterop: vi.fn().mockReturnValue(createMock<ReturnType<typeof useInterop>>({
     isPackaged: true,
     openDirectory: openDirectoryMock,
     restartBackend: vi.fn(),
@@ -37,7 +39,7 @@ vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> 
     // the log directory and left that field permanently disabled.
     config: vi.fn().mockImplementation(async (defaults: boolean): Promise<Partial<BackendOptions>> =>
       defaults ? { logDirectory: '/Users/home/rotki/logs' } : {}),
-  }),
+  })),
 }));
 
 let saveOptions = vi.fn();
