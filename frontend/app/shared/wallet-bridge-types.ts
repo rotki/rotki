@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 
 /**
  * Unified Wallet Bridge Types with Runtime Validation
@@ -12,9 +12,9 @@ const JsonRpcBaseSchema = z.object({
 });
 
 // Wallet Bridge Request Schema (JSON-RPC format)
-const WalletBridgeRequestSchema = JsonRpcBaseSchema.extend({
-  method: z.string().min(1),
-  params: z.array(z.unknown()).optional(),
+const WalletBridgeRequestSchema = z.extend(JsonRpcBaseSchema, {
+  method: z.string().check(z.minLength(1)),
+  params: z.optional(z.array(z.unknown())),
 });
 
 export type WalletBridgeRequest = z.infer<typeof WalletBridgeRequestSchema>;
@@ -23,17 +23,17 @@ export type WalletBridgeRequest = z.infer<typeof WalletBridgeRequestSchema>;
 const RpcErrorSchema = z.object({
   code: z.number(),
   message: z.string(),
-  data: z.unknown().optional(),
+  data: z.optional(z.unknown()),
 });
 
 // Wallet Bridge Response Schema
-export const WalletBridgeResponseSchema = JsonRpcBaseSchema.extend({
-  result: z.unknown().optional(),
-  error: RpcErrorSchema.optional(),
-}).refine(
+export const WalletBridgeResponseSchema = z.extend(JsonRpcBaseSchema, {
+  result: z.optional(z.unknown()),
+  error: z.optional(RpcErrorSchema),
+}).check(z.refine(
   data => (data.result !== undefined) !== (data.error !== undefined),
   { message: 'Response must have either result or error, but not both' },
-);
+));
 
 export type WalletBridgeResponse = z.infer<typeof WalletBridgeResponseSchema>;
 
@@ -47,9 +47,9 @@ const NotificationTypeSchema = z.enum([
 // Wallet Bridge Notification Schema
 const WalletBridgeNotificationSchema = z.object({
   type: NotificationTypeSchema,
-  eventName: z.string().optional(),
-  eventData: z.unknown().optional(),
-  data: z.unknown().optional(),
+  eventName: z.optional(z.string()),
+  eventData: z.optional(z.unknown()),
+  data: z.optional(z.unknown()),
 });
 
 export type WalletBridgeNotification = z.infer<typeof WalletBridgeNotificationSchema>;

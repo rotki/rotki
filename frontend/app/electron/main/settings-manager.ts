@@ -1,13 +1,13 @@
 import type { App } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
-import { z } from 'zod';
+import * as z from 'zod/mini';
 
 const AppSettingsSchema = z.object({
-  displayTray: z.boolean().default(true),
-  mcpAutoStart: z.boolean().default(false),
-  persistStore: z.boolean().optional(),
-  showNetWorthOnTray: z.boolean().default(false),
+  displayTray: z._default(z.boolean(), true),
+  mcpAutoStart: z._default(z.boolean(), false),
+  persistStore: z.optional(z.boolean()),
+  showNetWorthOnTray: z._default(z.boolean(), false),
 });
 
 type AppSettings = z.infer<typeof AppSettingsSchema>;
