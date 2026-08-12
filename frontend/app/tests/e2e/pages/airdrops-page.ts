@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
+import { TIMEOUT_MEDIUM } from '../helpers/constants';
+import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
 // Checksummed addresses used only inside the mocked airdrop payload. They are
@@ -151,14 +152,29 @@ export class AirdropsPage {
     await expect(this.rowFor(source)).toHaveCount(0);
   }
 
+  /**
+   * Narrows to one claim status through the pill bar.
+   *
+   * `All` is not a value the bar can hold: the absence of the pill is what "all" means, so it
+   * removes the pill instead of picking something.
+   */
   async selectStatus(label: string): Promise<void> {
-    await this.page.getByTestId('airdrop-status-filter').locator('[data-id=activator]').click();
-    const menu = this.page.locator('[role=menu]').last();
-    await menu.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-    const option = menu.getByText(label, { exact: true }).first();
-    await option.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-    await option.click();
-    await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_SHORT });
+    const bar = new PillFilterBar(this.page);
+
+    if (label === AIRDROP_STATUS.all) {
+      if (await bar.pill('status').count() > 0)
+        await bar.removePill('status');
+      return;
+    }
+
+    if (await bar.pill('status').count() === 0)
+      await bar.addField('status');
+    else
+      await bar.openPillEditor('status');
+
+    // The value is the wire status; the checklist searches on the label it renders.
+    await bar.selectValue(label.toLowerCase(), label);
+    await bar.closeEditor('status');
   }
 
   async expectUnknownAlertVisible(): Promise<void> {
