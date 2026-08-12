@@ -30,7 +30,7 @@ function isLocationDisabled(item: TradeLocationData): boolean {
     <LocationSelector
       v-model="model"
       :items="showOnlyExisting ? locations : []"
-      class="edit-balances-snapshot__location"
+      data-testid="snapshot-location"
       clearable
       :item-disabled="isLocationDisabled"
       :menu-options="{ menuClass: 'z-[10001]' }"

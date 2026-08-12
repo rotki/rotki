@@ -117,6 +117,7 @@ defineExpose({
   <div class="flex flex-col gap-2">
     <BalanceTypeInput
       v-model="category"
+      data-testid="category"
       :label="t('common.category')"
       :error-messages="toMessages(v$.category)"
     />

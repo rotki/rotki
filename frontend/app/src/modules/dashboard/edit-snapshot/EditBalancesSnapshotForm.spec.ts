@@ -4,12 +4,13 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick, ref } from 'vue';
+import { nextTick } from 'vue';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { BalanceType } from '@/modules/balances/types/balances';
 import EditBalancesSnapshotAssetPriceForm from '@/modules/dashboard/edit-snapshot/EditBalancesSnapshotAssetPriceForm.vue';
 import EditBalancesSnapshotForm from '@/modules/dashboard/edit-snapshot/EditBalancesSnapshotForm.vue';
+import EditBalancesSnapshotLocationSelector from '@/modules/dashboard/edit-snapshot/EditBalancesSnapshotLocationSelector.vue';
 
 vi.mock('@/modules/assets/prices/use-price-task-manager', () => ({
   usePriceTaskManager: vi.fn().mockReturnValue({
@@ -61,8 +62,10 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
   });
 
   function createWrapper(modelValue: BalanceSnapshotPayloadAndLocation = baseModel(), hideLocation = false, disabledLocations: string[] = []): VueWrapper<FormInstance> {
-    const model = ref<BalanceSnapshotPayloadAndLocation>(modelValue);
-    return mount(EditBalancesSnapshotForm, {
+    // The model has to be fed back as a prop, not just captured: with an `onUpdate:modelValue`
+    // listener attached, `defineModel` reads the prop rather than a local value, so a harness that
+    // only records the emission leaves the form frozen on its initial model.
+    wrapper = mount(EditBalancesSnapshotForm, {
       global: {
         plugins: [pinia],
       },
@@ -70,13 +73,13 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
         disabledLocations,
         hideLocation,
         'locations': ['blockchain', 'kraken'],
-        'modelValue': model.value,
+        modelValue,
         timestamp,
-        'onUpdate:modelValue': (value: BalanceSnapshotPayloadAndLocation) => {
-          model.value = value;
-        },
+        'onUpdate:modelValue': async (value: BalanceSnapshotPayloadAndLocation): Promise<void> =>
+          wrapper.setProps({ modelValue: value }),
       },
     });
+    return wrapper;
   }
 
   it('should pre-populate fields from the v-model', async () => {
@@ -148,6 +151,52 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
 
     const valid = await wrapper.vm.validate();
     expect(valid).toBe(false);
+  });
+
+  it('should show no validation message before anything is edited', async () => {
+    const model = baseModel();
+    model.location = '';
+    wrapper = createWrapper(model);
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(wrapper.find('[data-testid=snapshot-location] .details').exists()).toBe(false);
+  });
+
+  it('should reveal the location message once validate runs', async () => {
+    const model = baseModel();
+    model.location = '';
+    wrapper = createWrapper(model);
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.vm.validate();
+    await vi.advanceTimersByTimeAsync(700);
+
+    expect(wrapper.find('[data-testid=snapshot-location] .details').text())
+      .toBe('dashboard.snapshot.edit.dialog.balances.rules.location');
+  });
+
+  it('should reveal the insufficient-location message once validate runs', async () => {
+    const model = baseModel();
+    model.location = 'blockchain';
+    wrapper = createWrapper(model, false, ['blockchain']);
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.vm.validate();
+    await vi.advanceTimersByTimeAsync(700);
+
+    expect(wrapper.find('[data-testid=snapshot-location] .details').text())
+      .toBe('dashboard.snapshot.edit.dialog.balances.rules.location_insufficient');
+  });
+
+  it('should flag stateUpdated once a field is edited', async () => {
+    wrapper = createWrapper();
+    // `useFormStateWatcher` only arms its watcher after a 500ms delay.
+    await vi.advanceTimersByTimeAsync(600);
+
+    wrapper.findComponent(EditBalancesSnapshotLocationSelector).vm.$emit('update:modelValue', 'kraken');
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toEqual([true]);
   });
 
   it('should forward update:asset emitted by the inner price form', async () => {

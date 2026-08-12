@@ -53,6 +53,7 @@ defineExpose({
   <div class="flex flex-col gap-2">
     <LocationSelector
       v-model="location"
+      data-testid="edit-location-location"
       :excludes="excludedLocations"
       :label="t('common.location')"
       :error-messages="toMessages(v$.location)"
