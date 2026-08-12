@@ -69,7 +69,7 @@ describe('modules/history/events/actions-center/HistoryEventsActionsList', () =>
 
     const wrapper = mountList();
 
-    expect(wrapper.findAll('[data-testid^=actions-center-row-unmatched]')).toHaveLength(1);
+    expect(wrapper.findAll('[data-testid=actions-center-row][data-key^=unmatched]')).toHaveLength(1);
     expect(wrapper.find('[data-testid=actions-center-row-count]').text()).toBe('3');
     expect(wrapper.find('[data-testid=actions-center-cleared]').text()).toContain('Undecoded transactions');
   });
@@ -111,7 +111,7 @@ describe('modules/history/events/actions-center/HistoryEventsActionsList', () =>
     })]);
 
     const wrapper = mountList();
-    await wrapper.find(`[data-testid=actions-center-cleared-${HISTORY_ISSUE_IDS.AUTO_FIX_DUPLICATES}]`).trigger('click');
+    await wrapper.find(`[data-testid=actions-center-cleared-row][data-key="${HISTORY_ISSUE_IDS.AUTO_FIX_DUPLICATES}"]`).trigger('click');
 
     expect(wrapper.emitted('open')).toEqual([[{ kind: 'dialog', options: { type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES } }]]);
   });

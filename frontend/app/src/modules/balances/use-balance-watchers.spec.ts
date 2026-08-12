@@ -4,7 +4,7 @@ import { BalanceSource, type BalanceValueThreshold } from '@/modules/settings/ty
 
 const fetchManualBalances = vi.fn(async (): Promise<void> => {});
 const fetchConnectedExchangeBalances = vi.fn(async (): Promise<void> => {});
-const fetchBlockchainBalances = vi.fn(async (): Promise<void> => {});
+const hydrate = vi.fn(async (): Promise<void> => {});
 const removeIgnoredAssets = vi.fn();
 
 const mockBalanceValueThreshold = ref<BalanceValueThreshold>({});
@@ -32,9 +32,9 @@ vi.mock('@/modules/balances/exchanges/use-exchanges', () => ({
   }),
 }));
 
-vi.mock('@/modules/balances/use-blockchain-balances', () => ({
-  useBlockchainBalances: vi.fn().mockReturnValue({
-    fetchBlockchainBalances,
+vi.mock('@/modules/balances/use-balance-hydration', () => ({
+  useBalanceHydration: vi.fn().mockReturnValue({
+    hydrate,
   }),
 }));
 
@@ -83,7 +83,7 @@ describe('useBalanceWatchers', () => {
     expect(fetchManualBalances).toHaveBeenCalledOnce();
     expect(fetchManualBalances).toHaveBeenCalledWith(true);
     expect(fetchConnectedExchangeBalances).not.toHaveBeenCalled();
-    expect(fetchBlockchainBalances).not.toHaveBeenCalled();
+    expect(hydrate).not.toHaveBeenCalled();
   });
 
   it('should refetch exchange balances when exchange threshold changes', async () => {
@@ -99,7 +99,7 @@ describe('useBalanceWatchers', () => {
     expect(fetchConnectedExchangeBalances).toHaveBeenCalledOnce();
     expect(fetchConnectedExchangeBalances).toHaveBeenCalledWith(false);
     expect(fetchManualBalances).not.toHaveBeenCalled();
-    expect(fetchBlockchainBalances).not.toHaveBeenCalled();
+    expect(hydrate).not.toHaveBeenCalled();
   });
 
   it('should refetch blockchain balances when blockchain threshold changes', async () => {
@@ -112,7 +112,7 @@ describe('useBalanceWatchers', () => {
     set(mockBalanceValueThreshold, { [BalanceSource.BLOCKCHAIN]: '200' });
     await nextTick();
 
-    expect(fetchBlockchainBalances).toHaveBeenCalledOnce();
+    expect(hydrate).toHaveBeenCalledOnce();
     expect(fetchManualBalances).not.toHaveBeenCalled();
     expect(fetchConnectedExchangeBalances).not.toHaveBeenCalled();
   });
@@ -133,7 +133,7 @@ describe('useBalanceWatchers', () => {
 
     expect(fetchManualBalances).not.toHaveBeenCalled();
     expect(fetchConnectedExchangeBalances).not.toHaveBeenCalled();
-    expect(fetchBlockchainBalances).not.toHaveBeenCalled();
+    expect(hydrate).not.toHaveBeenCalled();
   });
 
   it('should refetch blockchain balances when ignored assets are removed', async () => {
@@ -150,7 +150,7 @@ describe('useBalanceWatchers', () => {
     set(mockIgnoredAssets, ['asset-a']);
     await nextTick();
 
-    expect(fetchBlockchainBalances).toHaveBeenCalledOnce();
+    expect(hydrate).toHaveBeenCalledOnce();
   });
 
   it('should call removeIgnoredAssets when assets are added to ignored list', async () => {
@@ -170,6 +170,6 @@ describe('useBalanceWatchers', () => {
 
     expect(removeIgnoredAssets).toHaveBeenCalledOnce();
     expect(removeIgnoredAssets).toHaveBeenCalledWith(updatedAssets);
-    expect(fetchBlockchainBalances).not.toHaveBeenCalled();
+    expect(hydrate).not.toHaveBeenCalled();
   });
 });

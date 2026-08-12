@@ -49,4 +49,40 @@ describe('useBlockchainRefreshTimestampsStore', () => {
     store.reset();
     expect(get(store.refreshTimestamps)).toEqual({});
   });
+
+  /**
+   * ⭐ A data refresh from the DB and a network query write the same chain and are allowed to
+   * overlap, so they can land out of order. Merging blindly let whichever landed *last* win, which
+   * rolls a chain back to stale balances. Keeping the newest is what makes the ordering irrelevant.
+   */
+  describe('monotonicity', () => {
+    it('should ignore a timestamp older than the one stored', () => {
+      store.updateTimestamps({ eth: 3000 });
+      store.updateTimestamps({ eth: 1000 });
+      expect(get(store.refreshTimestamps)).toEqual({ eth: 3000 });
+    });
+
+    it('should keep the newest per chain when a payload mixes older and newer', () => {
+      store.updateTimestamps({ btc: 5000, eth: 3000 });
+      store.updateTimestamps({ btc: 9000, eth: 1000 });
+      expect(get(store.refreshTimestamps)).toEqual({ btc: 9000, eth: 3000 });
+    });
+
+    it('should report a payload older than the stored one as stale', () => {
+      store.updateTimestamps({ eth: 3000 });
+      expect(store.isStale('eth', 1000)).toBe(true);
+      expect(store.isStale('eth', 3000)).toBe(false);
+      expect(store.isStale('eth', 4000)).toBe(false);
+    });
+
+    /**
+     * ⚠️ The backend omits `last_refresh_ts` for a chain it has never queried. Treating that as
+     * stale would mean a chain that has never been refreshed could never receive its first
+     * balances.
+     */
+    it('should not report anything stale when either side is unknown', () => {
+      expect(store.isStale('eth', undefined)).toBe(false);
+      expect(store.isStale('never-queried', 1000)).toBe(false);
+    });
+  });
 });

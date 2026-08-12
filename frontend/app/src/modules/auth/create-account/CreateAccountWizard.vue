@@ -171,7 +171,7 @@ onBeforeMount(loadProfiles);
               variant="text"
               :disabled="loading"
               type="button"
-              data-cy="login"
+              data-testid="login"
               class="py-1"
               @click="cancel()"
             >

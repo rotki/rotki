@@ -2,7 +2,7 @@ import { get } from '@vueuse/core';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
-import { useSetting } from '@/modules/settings/use-setting';
+import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
 
 interface UseHistoryTransactionAccountsReturn {
   filterDisabledChainAccounts: (accounts: ChainAddress[]) => ChainAddress[];
@@ -17,7 +17,7 @@ interface UseHistoryTransactionAccountsReturn {
 export function useHistoryTransactionAccounts(): UseHistoryTransactionAccountsReturn {
   const { addresses } = useAccountAddresses();
   const { isBtcChains, isEvmLikeChains, isSolanaChains, supportsTransactions } = useSupportedChains();
-  const disabledChainQueries = useSetting('disabledChainQueries');
+  const { filterAccounts } = useDisabledChains();
 
   const getAccountsByChainType = (
     chainFilter: (chain: string) => boolean,
@@ -51,18 +51,10 @@ export function useHistoryTransactionAccounts(): UseHistoryTransactionAccountsRe
     ...getSolanaAccounts(chains),
   ];
 
-  const filterDisabledChainAccounts = (accounts: ChainAddress[]): ChainAddress[] => {
-    const disabled = get(disabledChainQueries);
-    return accounts.filter(({ address, chain }) => {
-      const rule = disabled[chain];
-      if (rule === undefined)
-        return true;
-      // Backend contract: an empty rule array means the entire chain is disabled.
-      if (rule.length === 0)
-        return false;
-      return !rule.includes(address);
-    });
-  };
+  // Kept as a named member of this composable because `use-refresh-transactions` calls it at a
+  // deliberate point in the flow (before novelty detection), which the call site documents.
+  const filterDisabledChainAccounts = (accounts: ChainAddress[]): ChainAddress[] =>
+    filterAccounts(accounts);
 
   const getTransactionTypeFromChain = (chain: string): TransactionChainType => {
     if (isEvmLikeChains(chain))

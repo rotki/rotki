@@ -91,7 +91,7 @@ watchImmediate(display, async (isDisplayed) => {
           :error-messages="passwordErrors"
           type="password"
           autofocus
-          data-cy="password-confirmation-input"
+          data-testid="password-confirmation-input"
           @keydown.enter="confirmPassword()"
         />
       </div>
@@ -107,7 +107,7 @@ watchImmediate(display, async (isDisplayed) => {
           <div v-else />
           <RuiButton
             color="primary"
-            data-cy="password-confirmation-confirm"
+            data-testid="password-confirmation-confirm"
             @click="confirmPassword()"
           >
             {{ t('common.actions.confirm') }}

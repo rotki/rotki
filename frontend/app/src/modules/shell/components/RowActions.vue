@@ -42,7 +42,7 @@ const justify = computed<string>(() => {
       :disabled="disabled || editDisabled"
       :title="editTooltip || undefined"
       variant="text"
-      data-cy="row-edit"
+      data-testid="row-edit"
       icon
       @click="editClick()"
     >
@@ -56,7 +56,7 @@ const justify = computed<string>(() => {
       :disabled="disabled || deleteDisabled"
       :title="deleteTooltip || undefined"
       variant="text"
-      data-cy="row-delete"
+      data-testid="row-delete"
       icon
       @click="deleteClick()"
     >

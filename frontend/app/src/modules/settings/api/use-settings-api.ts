@@ -1,4 +1,4 @@
-import { apiUrls } from '@/modules/core/api/api-urls';
+import { RequestTarget } from '@/modules/core/api/constants';
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/core/api/utils';
 import { type SettingsUpdate, UserSettingsModel } from '@/modules/settings/types/user-settings';
@@ -51,7 +51,7 @@ export function useSettingsApi(): UseSettingsApiReturn {
   const colibriSettings = async (): Promise<ColibriConfiguration> => {
     const response = await api.get<ColibriConfiguration>(
       '/settings/configuration',
-      { baseURL: apiUrls.colibriApiUrl },
+      { target: RequestTarget.COLIBRI },
     );
     return ColibriConfiguration.parse(response);
   };
@@ -60,7 +60,7 @@ export function useSettingsApi(): UseSettingsApiReturn {
     const response = await api.put<ColibriConfiguration>(
       '/settings/configuration',
       { loglevel: loglevel.toUpperCase() },
-      { baseURL: apiUrls.colibriApiUrl },
+      { target: RequestTarget.COLIBRI },
     );
     return ColibriConfiguration.parse(response);
   };

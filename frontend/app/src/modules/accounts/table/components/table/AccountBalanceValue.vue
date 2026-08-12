@@ -26,7 +26,7 @@ defineProps<Props>();
     <FiatDisplay
       :value="value"
       :loading="loading"
-      data-cy="usd-value"
+      data-testid="usd-value"
       class="font-medium"
     />
   </div>

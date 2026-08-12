@@ -33,31 +33,31 @@ function createWrapper(selected: string[], multiple = true, pinned = 0): VueWrap
 describe('valueSelectList', () => {
   it('should render an option per choice', () => {
     const wrapper = createWrapper([]);
-    expect(wrapper.findAll('[data-testid^=value-select-option-]')).toHaveLength(3);
+    expect(wrapper.findAll('[data-testid=value-select-option]')).toHaveLength(3);
   });
 
   it('should add a value on toggle when multiple', async () => {
     const wrapper = createWrapper(['aave']);
-    await wrapper.get('[data-testid=value-select-option-uniswap]').trigger('click');
+    await wrapper.get('[data-testid=value-select-option][data-key=uniswap]').trigger('click');
     expect(wrapper.emitted('update:modelValue')?.[0]).toStrictEqual([['aave', 'uniswap']]);
   });
 
   it('should remove an already-selected value on toggle', async () => {
     const wrapper = createWrapper(['aave', 'uniswap']);
-    await wrapper.get('[data-testid=value-select-option-aave]').trigger('click');
+    await wrapper.get('[data-testid=value-select-option][data-key=aave]').trigger('click');
     expect(wrapper.emitted('update:modelValue')?.[0]).toStrictEqual([['uniswap']]);
   });
 
   it('should replace the value for a single-select list', async () => {
     const wrapper = createWrapper(['aave'], false);
-    await wrapper.get('[data-testid=value-select-option-curve]').trigger('click');
+    await wrapper.get('[data-testid=value-select-option][data-key=curve]').trigger('click');
     expect(wrapper.emitted('update:modelValue')?.[0]).toStrictEqual([['curve']]);
   });
 
   it('should narrow the list by the search text', async () => {
     const wrapper = createWrapper([]);
     await wrapper.find('input').setValue('uni');
-    const shown = wrapper.findAll('[data-testid^=value-select-option-]');
+    const shown = wrapper.findAll('[data-testid=value-select-option]');
     expect(shown).toHaveLength(1);
     expect(shown[0].text()).toContain('Uniswap');
   });
@@ -78,7 +78,7 @@ describe('valueSelectList', () => {
       },
     });
     await wrapper.find('input').setValue('0xabcdef');
-    const shown = wrapper.findAll('[data-testid^=value-select-option-]');
+    const shown = wrapper.findAll('[data-testid=value-select-option]');
     expect(shown).toHaveLength(1);
     expect(shown[0].text()).toContain('My wallet');
   });

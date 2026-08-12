@@ -6,6 +6,8 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.evm.node_inquirer import DEGRADED_INDEXERS
+from rotkehlchen.chain.evm.transactions import MIN_SPLITTABLE_QUERY_RANGE
 from rotkehlchen.chain.evm.types import (
     EvmAccount,
     EvmIndexer,
@@ -17,6 +19,7 @@ from rotkehlchen.chain.evm.types import (
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     TX_DECODED,
@@ -26,7 +29,7 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import DataIntegrityError, RemoteError
+from rotkehlchen.errors.misc import DataIntegrityError, RemoteError, RequestTooLargeError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -44,6 +47,7 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -1114,6 +1118,7 @@ def test_indexers_fall_back_properly(
     """
     assert optimism_manager.node_inquirer.blockscout is not None
     txs_mocks, hashes_mocks, unused_mocks, have_reached_tested_indexer = [], [], [], False
+    degraded_mocks: list[Any] = []
     with ExitStack() as stack:
         for indexer, name in (
             (optimism_manager.node_inquirer.etherscan, 'etherscan'),
@@ -1150,9 +1155,11 @@ def test_indexers_fall_back_properly(
 
             if have_reached_tested_indexer:
                 unused_mocks.extend([txs_mock, hashes_mock])
-            else:
+            elif name == tested_indexer:
                 txs_mocks.append(txs_mock)
                 hashes_mocks.append(hashes_mock)
+            else:  # failed to resolve the block range, so must not be asked for its data
+                degraded_mocks.extend([txs_mock, hashes_mock])
 
             if name == tested_indexer:
                 have_reached_tested_indexer = True
@@ -1162,6 +1169,11 @@ def test_indexers_fall_back_properly(
             start_ts=Timestamp(1729116000),
             end_ts=Timestamp(1729117000),
         )  # Query a small range that returns only two txs
+
+    # An indexer that could not resolve the block range has shown its index does not cover
+    # it, so it must not be asked for the transactions of that same range. Its empty answer
+    # would look like the address had no activity and would get the range marked as queried.
+    assert all(degraded_mock.call_count == 0 for degraded_mock in degraded_mocks)
 
     # Check the txlist and txlistinternal actions were called for all used indexers
     assert all(txs_mock.call_count == 2 for txs_mock in txs_mocks)
@@ -1274,3 +1286,222 @@ def test_wait_until_no_query_for_releases_locks_on_error(
 
     for address in addresses:
         assert eth_transactions.address_tx_locks[address].locked() is False
+
+
+def test_too_large_range_is_split_and_retried(ethereum_manager: EthereumManager) -> None:
+    """A range an indexer refuses to serve must be halved and retried, not abandoned.
+
+    Etherscan answers an oversized range by asking for a smaller dataset instead of
+    returning data, and rotki's first query for an address covers the whole chain history.
+    """
+    served: list[tuple[Timestamp, Timestamp]] = []
+
+    def query(chunk_start: Timestamp, chunk_end: Timestamp) -> None:
+        served.append((chunk_start, chunk_end))
+        if chunk_end - chunk_start > 20000:
+            raise RequestTooLargeError('Query Timeout occurred')
+
+    ethereum_manager.transactions._query_range_in_splittable_chunks(
+        query=query,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(80000),
+    )
+    # the chunks that were actually served must tile the range, oldest first, without gaps
+    assert [x for x in served if x[1] - x[0] <= 20000] == [
+        (0, 20000), (20001, 40000), (40001, 60000), (60001, 80000),
+    ]
+
+
+def test_too_large_range_stops_splitting_at_the_floor(ethereum_manager: EthereumManager) -> None:
+    """Halving forever would spin, so below the floor the error surfaces to the caller."""
+    attempts = 0
+
+    def query(chunk_start: Timestamp, chunk_end: Timestamp) -> None:
+        nonlocal attempts
+        attempts += 1
+        raise RequestTooLargeError('Query Timeout occurred')
+
+    with pytest.raises(RequestTooLargeError):
+        ethereum_manager.transactions._query_range_in_splittable_chunks(
+            query=query,
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(MIN_SPLITTABLE_QUERY_RANGE),
+        )
+
+    assert attempts == 1, 'a range already at the floor must not be split'
+
+
+def test_inverted_block_range_is_rejected(ethereum_inquirer: EthereumInquirer) -> None:
+    """An inverted window must raise instead of being handed to the indexers.
+
+    Indexers answer a range whose start is past its end with an empty result and no error,
+    which is indistinguishable from the address having no history in that period, so the
+    range would be recorded as queried and the activity in it lost.
+    """
+    with patch.object(
+        target=ethereum_inquirer,
+        attribute='_try_indexers_reporting_failures',
+        # a lagging indexer resolving the end of the window behind its start
+        return_value=((500, 100), EvmIndexer.ETHERSCAN, frozenset()),
+    ), pytest.raises(RemoteError, match='inverted'):
+        ethereum_inquirer.timestamp_range_to_block_range(
+            from_ts=Timestamp(1000),
+            to_ts=Timestamp(2000),
+        )
+
+
+def test_block_range_ends_come_from_one_indexer(ethereum_inquirer: EthereumInquirer) -> None:
+    """Both ends must be resolved by the same indexer in a single fallback attempt."""
+    resolved_by: list[str] = []
+
+    def mock_blocknumber_by_time(chain_id, ts, closest='before'):
+        resolved_by.append(ethereum_inquirer.etherscan.name)
+        return ts // 10
+
+    with patch.object(
+        target=ethereum_inquirer.etherscan,
+        attribute='get_blocknumber_by_time',
+        side_effect=mock_blocknumber_by_time,
+    ):
+        assert ethereum_inquirer.timestamp_range_to_block_range(
+            from_ts=Timestamp(1000),
+            to_ts=Timestamp(2000),
+        ) == (100, 200)
+
+    assert resolved_by == [ethereum_inquirer.etherscan.name] * 2
+
+
+def test_stale_indexer_is_not_asked_for_the_range_it_failed(
+        ethereum_manager: EthereumManager,
+) -> None:
+    """An indexer that cannot resolve a range must not be asked for its transactions.
+
+    This is the shape of the production incident: etherscan could not answer
+    getblocknobytime for a gnosis range because its index was behind, blockscout resolved it
+    instead, and etherscan was then asked for that same range's transactions anyway. It
+    answered "no transactions found" rather than erroring, which reads as the address having
+    been idle, so the range was recorded as queried and a day of history was lost.
+    """
+    inquirer = ethereum_manager.node_inquirer
+    inquirer.timestamp_to_block_cache[inquirer.chain_id].remove(key=Timestamp(2000))
+    period = TimestampOrBlockRange(
+        range_type='timestamps',
+        from_value=Timestamp(1000),
+        to_value=Timestamp(2000),
+    )
+
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(
+            target=inquirer.etherscan,
+            attribute='get_blocknumber_by_time',
+            side_effect=RemoteError('Could not read blocknumber'),
+        ))
+        stack.enter_context(patch.object(
+            target=inquirer.blockscout,
+            attribute='get_blocknumber_by_time',
+            side_effect=lambda chain_id, ts, closest='before': ts // 10,
+        ))
+        etherscan_txs = stack.enter_context(patch.object(
+            target=inquirer.etherscan,
+            attribute='get_transactions',
+            return_value=iter([[]]),
+        ))
+        blockscout_txs = stack.enter_context(patch.object(
+            target=inquirer.blockscout,
+            attribute='get_transactions',
+            return_value=iter([[]]),
+        ))
+
+        with inquirer.block_range_skipping_stale_indexers(period) as period_as_blocks:
+            assert period_as_blocks.from_value == 100
+            assert period_as_blocks.to_value == 200
+            list(inquirer.get_transactions(
+                account=make_evm_address(),
+                action='txlist',
+                period_or_hash=period_as_blocks,
+            ))
+
+    assert etherscan_txs.call_count == 0, 'the stale indexer must not serve this range'
+    assert blockscout_txs.call_count == 1
+
+    # outside the scope the demotion is lifted, since being behind is a property of the
+    # range that was asked for rather than of the indexer itself
+    assert len(DEGRADED_INDEXERS.get()) == 0
+
+
+def test_query_range_is_clamped_to_what_was_covered(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """Recording a range must stop where the indexers actually stopped.
+
+    The upper bound of a range resolves to a block with closest='before', so an indexer
+    whose view of the chain lags resolves it to a block hours or days behind. Everything
+    after that block was never looked at, and recording the range up to the requested end
+    would skip it for good, since the range never comes up for querying again.
+    """
+    now = ts_now()
+    with patch.object(
+        target=ethereum_manager.node_inquirer,
+        attribute='get_blocknumber_by_time',
+        return_value=500,
+    ), patch.object(
+        target=ethereum_manager.node_inquirer,
+        attribute='get_block_timestamp',
+        return_value=Timestamp(now - HOUR_IN_SECONDS),  # the indexer is an hour behind
+    ):
+        ethereum_manager.transactions._mark_range_as_queried(
+            location_string=(location_string := 'txs_clamped'),
+            start_ts=Timestamp(now - DAY_IN_SECONDS),
+            end_ts=Timestamp(now),
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_used_query_range(cursor=cursor, name=location_string) == (
+            now - DAY_IN_SECONDS,
+            now - HOUR_IN_SECONDS,
+        )
+
+
+def test_historical_query_range_needs_no_coverage_check(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """An index only lags at the head, so an old range is recorded without a block lookup."""
+    end_ts = Timestamp(ts_now() - 30 * DAY_IN_SECONDS)
+    with patch.object(
+        target=ethereum_manager.node_inquirer,
+        attribute='get_blocknumber_by_time',
+    ) as block_number_mock:
+        ethereum_manager.transactions._mark_range_as_queried(
+            location_string=(location_string := 'txs_historical'),
+            start_ts=(start_ts := Timestamp(end_ts - DAY_IN_SECONDS)),
+            end_ts=end_ts,
+        )
+
+    assert block_number_mock.call_count == 0, 'an old range must not cost a block lookup'
+    with database.conn.read_ctx() as cursor:
+        assert database.get_used_query_range(
+            cursor=cursor,
+            name=location_string,
+        ) == (start_ts, end_ts)
+
+
+def test_query_range_unrecorded_when_coverage_is_unknown(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """If we cannot tell how far the indexers reached, the range must be retried later."""
+    with patch.object(
+        target=ethereum_manager.node_inquirer,
+        attribute='get_blocknumber_by_time',
+        side_effect=RemoteError('FAIL'),
+    ):
+        ethereum_manager.transactions._mark_range_as_queried(
+            location_string=(location_string := 'txs_unknown'),
+            start_ts=Timestamp((now := ts_now()) - DAY_IN_SECONDS),
+            end_ts=Timestamp(now),
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_used_query_range(cursor=cursor, name=location_string) is None

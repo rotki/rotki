@@ -4,6 +4,7 @@ import AccountBalancesExportImport from '@/modules/accounts/AccountBalancesExpor
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import BlockchainBalanceRefreshBehaviourMenu
   from '@/modules/balances/BlockchainBalanceRefreshBehaviourMenu.vue';
+import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { ActivityPart } from '@/modules/task-center/core/types';
 import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
 
@@ -22,7 +23,11 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading('evm');
 const { useIsActive, useIsActivePrefix } = useTaskCenter();
-const eth2Loading = useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2);
+// Both layers — hydration is not an activity, so the orchestrator alone reports a DB read as idle.
+const eth2Loading = logicOr(
+  useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2),
+  useBalanceRefreshState().useIsHydrating(Blockchain.ETH2),
+);
 
 const isEth2Loading = logicOr(
   eth2Loading,
@@ -52,7 +57,7 @@ const isEth2Loading = logicOr(
         <RuiButton
           v-bind="{
             ...attrs,
-            'data-cy': 'blockchain-account-refresh',
+            'data-testid': 'blockchain-account-refresh',
           }"
           size="lg"
           color="primary"
@@ -87,7 +92,7 @@ const isEth2Loading = logicOr(
   >
     <template #activator>
       <RuiButton
-        data-cy="add-blockchain-account"
+        data-testid="add-blockchain-account"
         color="primary"
         size="lg"
         :disabled="addDisabled"

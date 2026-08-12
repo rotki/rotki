@@ -87,10 +87,10 @@ export function ethBlockStateFromGroup(entry: EthBlockEvent): EthBlockFormState 
 }
 
 export function toEthBlockPayload(state: EthBlockFormState): NewEthBlockEventPayload {
-  const amount = bigNumberify(state.amount);
+  const amount = bigNumberify(state.amount, Zero);
 
   return {
-    amount: amount.isNaN() ? Zero : amount,
+    amount,
     blockNumber: Number.parseInt(state.blockNumber),
     entryType: HistoryEventEntryType.ETH_BLOCK_EVENT,
     feeRecipient: state.feeRecipient,

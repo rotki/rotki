@@ -12,7 +12,7 @@ source leg (a bridge deposit or a plain spend). Matching happens in tiers:
    and its underlying bridge (currently LI.FI and Relay) are compatible.
 2. Structured heuristic: destination chain/address recorded by the decoder plus
    target asset (when available), asset-collection equality, amount tolerance and
-   a time window. Cross-asset LI.FI routes cannot use source/destination amounts.
+   a time window. Cross-asset routes cannot use source/destination amounts.
 3. Pure heuristic: asset-collection equality, amount tolerance and time window
    only (old events decoded before the structured data existed).
 
@@ -47,6 +47,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_BASE
 from rotkehlchen.chain.evm.decoding.lifi.constants import CPT_LIFI
 from rotkehlchen.chain.evm.decoding.polygon.constants import CPT_POLYGON
 from rotkehlchen.chain.evm.decoding.relay.constants import CPT_RELAY
+from rotkehlchen.chain.evm.decoding.socket_bridge.constants import CPT_SOCKET
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.chain.scroll.constants import CPT_SCROLL
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -236,9 +237,12 @@ def _bridge_counterparties_match(
     )
 
 
-def _get_lifi_target_asset(event: HistoryBaseEntry) -> Asset | None:
-    """Resolve the target asset recorded on a LI.FI source-side bridge event."""
-    if _is_bridge_withdrawal(event) or getattr(event, 'counterparty', None) != CPT_LIFI:
+def _get_bridge_target_asset(event: HistoryBaseEntry) -> Asset | None:
+    """Resolve the target asset recorded on a source-side bridge event."""
+    if (
+        _is_bridge_withdrawal(event) or
+        getattr(event, 'counterparty', None) not in {CPT_LIFI, CPT_SOCKET}
+    ):
         return None
 
     bridge_data = get_event_bridge_data(event)
@@ -278,9 +282,9 @@ def _bridge_candidate_tier(
     deposit_side, withdrawal_side = (
         (candidate, bridge_event) if anchor_is_withdrawal else (bridge_event, candidate)
     )
-    is_cross_asset_lifi_route = (
+    is_cross_asset_route = (
         anchor_is_withdrawal is False and
-        _get_lifi_target_asset(bridge_event) is not None and
+        _get_bridge_target_asset(bridge_event) is not None and
         bridge_event.asset not in assets_in_collection and
         candidate.asset in assets_in_collection
     )
@@ -288,7 +292,7 @@ def _bridge_candidate_tier(
         candidate.identifier in excluded_ids or
         candidate.location == bridge_event.location or  # bridging is always cross-chain
         (
-            is_cross_asset_lifi_route is False and
+            is_cross_asset_route is False and
             not _match_amount(
                 movement_amount=bridge_event.amount,
                 event_amount=candidate.amount,
@@ -765,10 +769,10 @@ def get_bridge_match_assets_in_collection(
         deposit: HistoryBaseEntry,
         cache: dict[str, tuple[Asset, ...]] | None = None,
 ) -> tuple[Asset, ...]:
-    """Get candidate assets, preferring LI.FI's recorded destination asset when available."""
+    """Get candidate assets, preferring the recorded destination asset when available."""
     identifier = (
         target_asset.identifier
-        if (target_asset := _get_lifi_target_asset(deposit)) is not None
+        if (target_asset := _get_bridge_target_asset(deposit)) is not None
         else deposit.asset.identifier
     )
     if cache is None:

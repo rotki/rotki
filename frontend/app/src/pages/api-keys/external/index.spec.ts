@@ -103,17 +103,17 @@ describe('external-services', () => {
       const mock = vi.mocked(api.setExternalServices);
       mock.mockResolvedValueOnce(mockResponse);
       await wrapper
-        .find('[data-cy=external-keys] [data-cy=etherscan-api-keys] button')
+        .find('[data-testid=external-keys] [data-testid=etherscan-api-keys] button')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
       await wrapper
-        .find('[data-cy="bottom-dialog"] [data-cy=etherscan] [data-cy=service-key__api-key] input')
+        .find('[data-testid="bottom-dialog"] [data-testid=etherscan] [data-testid=service-key__api-key] input')
         .setValue('123');
       await nextTick();
       await wrapper.find('form').trigger('submit');
       await flushPromises();
       const message = wrapper
-        .find('[data-cy="bottom-dialog"] [data-cy=etherscan] [data-cy=service-key__content] .details')
+        .find('[data-testid="bottom-dialog"] [data-testid=etherscan] [data-testid=service-key__content] .details')
         .text();
       expect(message).toMatch('Etherscan');
       await vi.advanceTimersToNextTimerAsync();
@@ -124,17 +124,17 @@ describe('external-services', () => {
       const mock = vi.mocked(api.setExternalServices);
       mock.mockResolvedValueOnce(mockResponse);
       await wrapper
-        .find('[data-cy=external-keys] [data-cy=cryptocompare-api-keys] button')
+        .find('[data-testid=external-keys] [data-testid=cryptocompare-api-keys] button')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
       await wrapper
-        .find('[data-cy="bottom-dialog"] [data-cy=cryptocompare] [data-cy=service-key__api-key] input')
+        .find('[data-testid="bottom-dialog"] [data-testid=cryptocompare] [data-testid=service-key__api-key] input')
         .setValue('123');
       await nextTick();
       await wrapper.find('form').trigger('submit');
       await flushPromises();
       const message = wrapper
-        .find('[data-cy="bottom-dialog"] [data-cy=cryptocompare] [data-cy=service-key__content] .details')
+        .find('[data-testid="bottom-dialog"] [data-testid=cryptocompare] [data-testid=service-key__content] .details')
         .text();
       expect(message).toMatch('Cryptocompare');
       await vi.advanceTimersToNextTimerAsync();
@@ -145,17 +145,17 @@ describe('external-services', () => {
       const mock = vi.mocked(api.setExternalServices);
       mock.mockRejectedValueOnce(new Error('mock failure'));
       await wrapper
-        .find('[data-cy=external-keys] [data-cy=etherscan-api-keys] button')
+        .find('[data-testid=external-keys] [data-testid=etherscan-api-keys] button')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
       await wrapper
-        .find('[data-cy=bottom-dialog] [data-cy=etherscan] [data-cy=service-key__api-key] input')
+        .find('[data-testid=bottom-dialog] [data-testid=etherscan] [data-testid=service-key__api-key] input')
         .setValue('123');
       await nextTick();
       await wrapper.find('form').trigger('submit');
       await flushPromises();
       const message = wrapper
-        .find('[data-cy=bottom-dialog] [data-cy=etherscan] [data-cy=service-key__content] .details')
+        .find('[data-testid=bottom-dialog] [data-testid=etherscan] [data-testid=service-key__content] .details')
         .text();
       expect(message).toMatch('mock failure');
       await vi.advanceTimersToNextTimerAsync();
@@ -163,38 +163,38 @@ describe('external-services', () => {
 
     it('should disable delete button', async () => {
       await wrapper
-        .find('[data-cy=external-keys] [data-cy=etherscan-api-keys] button')
+        .find('[data-testid=external-keys] [data-testid=etherscan-api-keys] button')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       expect(
-        wrapper.find('[data-cy=bottom-dialog] [data-cy=delete-button]').attributes(),
+        wrapper.find('[data-testid=bottom-dialog] [data-testid=delete-button]').attributes(),
       ).toHaveProperty('disabled');
 
       // Close the dialog
       await wrapper
-        .find('[data-cy=bottom-dialog] [data-cy=cancel]')
+        .find('[data-testid=bottom-dialog] [data-testid=cancel]')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       await wrapper
-        .find('[data-cy=external-keys] [data-cy=cryptocompare-api-keys] button')
+        .find('[data-testid=external-keys] [data-testid=cryptocompare-api-keys] button')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       expect(
-        wrapper.find('[data-cy=bottom-dialog] [data-cy=delete-button]').attributes(),
+        wrapper.find('[data-testid=bottom-dialog] [data-testid=delete-button]').attributes(),
       ).toHaveProperty('disabled');
     });
 
     it('should disable save button', async () => {
       await wrapper
-        .find('[data-cy=external-keys] [data-cy=etherscan-api-keys] button')
+        .find('[data-testid=external-keys] [data-testid=etherscan-api-keys] button')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       expect(
-        wrapper.find('[data-cy="bottom-dialog"] [data-cy="confirm"]').attributes(),
+        wrapper.find('[data-testid="bottom-dialog"] [data-testid="confirm"]').attributes(),
       ).toHaveProperty('disabled');
     });
   });
@@ -210,25 +210,25 @@ describe('external-services', () => {
 
     it('should update the fields', async () => {
       await wrapper
-        .find('[data-cy=external-keys] [data-cy=etherscan-api-keys] button')
+        .find('[data-testid=external-keys] [data-testid=etherscan-api-keys] button')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const etherscanKey = wrapper.find('[data-cy=bottom-dialog] [data-cy=etherscan]').findComponent(ServiceKey);
+      const etherscanKey = wrapper.find('[data-testid=bottom-dialog] [data-testid=etherscan]').findComponent(ServiceKey);
       expect(etherscanKey.vm.apiKey).toBe('123');
 
       // Close the dialog
       await wrapper
-        .find('[data-cy=bottom-dialog] [data-cy=cancel]')
+        .find('[data-testid=bottom-dialog] [data-testid=cancel]')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       await wrapper
-        .find('[data-cy=external-keys] [data-cy=cryptocompare-api-keys] button')
+        .find('[data-testid=external-keys] [data-testid=cryptocompare-api-keys] button')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const cryptoCompare = wrapper.find('[data-cy=bottom-dialog] [data-cy=cryptocompare]').findComponent(ServiceKey);
+      const cryptoCompare = wrapper.find('[data-testid=bottom-dialog] [data-testid=cryptocompare]').findComponent(ServiceKey);
 
       expect(etherscanKey.vm.apiKey).toBe('123');
       expect(cryptoCompare.vm.apiKey).toBe('123');
@@ -239,12 +239,12 @@ describe('external-services', () => {
       mock.mockResolvedValueOnce({});
 
       await wrapper
-        .find('[data-cy=external-keys] [data-cy=etherscan-api-keys] button')
+        .find('[data-testid=external-keys] [data-testid=etherscan-api-keys] button')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       await wrapper
-        .find('[data-cy=bottom-dialog] [data-cy=delete-button]')
+        .find('[data-testid=bottom-dialog] [data-testid=delete-button]')
         .trigger('click');
       await nextTick();
 
@@ -262,12 +262,12 @@ describe('external-services', () => {
       mock.mockRejectedValueOnce(new Error('mock failure'));
 
       await wrapper
-        .find('[data-cy=external-keys] [data-cy=cryptocompare-api-keys] button')
+        .find('[data-testid=external-keys] [data-testid=cryptocompare-api-keys] button')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       await wrapper
-        .find('[data-cy=bottom-dialog] [data-cy=delete-button]')
+        .find('[data-testid=bottom-dialog] [data-testid=delete-button]')
         .trigger('click');
       await nextTick();
 
@@ -280,7 +280,7 @@ describe('external-services', () => {
       expect(confirmStore.visible).toBe(false);
 
       const message = wrapper
-        .find('[data-cy=bottom-dialog] [data-cy=cryptocompare] [data-cy=service-key__content] .details')
+        .find('[data-testid=bottom-dialog] [data-testid=cryptocompare] [data-testid=service-key__content] .details')
         .text();
       expect(message).toMatch('mock failure');
     });

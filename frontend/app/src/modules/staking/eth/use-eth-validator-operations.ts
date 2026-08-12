@@ -4,6 +4,8 @@ import type { StakingValidatorManage } from '@/modules/accounts/blockchain/use-a
 import { Blockchain } from '@rotki/common';
 import { useAccountDelete } from '@/modules/accounts/blockchain/use-account-delete';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
+import { RefreshMode } from '@/modules/balances/types/refresh-mode';
+import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
@@ -22,7 +24,11 @@ export function useEthValidatorOperations(): UseEthValidatorOperationsReturn {
   const { fetchEthStakingValidators } = useEthStaking();
   const { refreshBlockchainBalances } = useBlockchainBalances();
   const { useIsActivePrefix } = useTaskCenter();
-  const loading = useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2);
+  // Both layers — hydration is not an activity, so the orchestrator alone reports a DB read as idle.
+  const loading = logicOr(
+    useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2),
+    useBalanceRefreshState().useIsHydrating(Blockchain.ETH2),
+  );
 
   const accountOperation = logicOr(
     useIsActivePrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD),
@@ -44,11 +50,13 @@ export function useEthValidatorOperations(): UseEthValidatorOperationsReturn {
     };
   }
 
+  // Reached only from the accounts page's refresh button (exposed through `EthStakingValidators`),
+  // hence `user`: it supersedes a background eth2 query rather than joining it.
   async function refresh(): Promise<void> {
     await fetchEthStakingValidators({ ignoreCache: true });
     await refreshBlockchainBalances({
       blockchain: Blockchain.ETH2,
-    });
+    }, RefreshMode.USER);
   }
 
   function confirmDelete(item: EthereumValidator): void {

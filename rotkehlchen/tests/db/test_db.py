@@ -83,6 +83,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_INTERNAL_TXS_TO_REPULL,
     DEFAULT_LAST_DATA_MIGRATION,
     DEFAULT_MAIN_CURRENCY,
+    DEFAULT_MCP_PRIVACY_MODE,
     DEFAULT_ORACLE_PENALTY_DURATION,
     DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT,
     DEFAULT_PNL_CSV_HAVE_SUMMARY,
@@ -592,6 +593,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'use_asset_collections_in_cost_basis': DEFAULT_USE_ASSET_COLLECTIONS_IN_COST_BASIS,
         'internal_txs_to_repull': DEFAULT_INTERNAL_TXS_TO_REPULL,
         'internal_tx_conflict_repull_frequency': DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY,
+        'mcp_privacy_mode': DEFAULT_MCP_PRIVACY_MODE,
     }
     assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 
@@ -615,6 +617,7 @@ def test_settings_entry_types(database):
             balance_save_frequency=24,
             date_display_format='%d/%m/%Y %H:%M:%S %z',
             submit_usage_analytics=False,
+            mcp_privacy_mode='strict',
         ))
         res = database.get_settings(cursor)
 
@@ -637,6 +640,7 @@ def test_settings_entry_types(database):
     assert res.date_display_format == '%d/%m/%Y %H:%M:%S %z'
     assert isinstance(res.submit_usage_analytics, bool)
     assert res.submit_usage_analytics is False
+    assert res.mcp_privacy_mode == 'strict'
     assert isinstance(res.active_modules, tuple)
     assert res.active_modules == DEFAULT_ACTIVE_MODULES
     assert isinstance(res.frontend_settings, str)

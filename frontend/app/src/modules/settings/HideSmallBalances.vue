@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { minValue, required } from '@vuelidate/validators';
-import { omit } from 'es-toolkit';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import type { ZodType } from 'zod';
+import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
+import { useForm } from '@/modules/core/form/use-form';
+import {
+  DEFAULT_THRESHOLD,
+  type HideSmallBalancesFormState,
+  hideSmallBalancesSchema,
+  toThresholds,
+} from '@/modules/settings/hide-small-balances-form';
 import { BalanceSource, type BalanceValueThreshold } from '@/modules/settings/types/frontend-settings';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
@@ -17,100 +22,70 @@ const { source } = defineProps<{
 const { t } = useI18n({ useScope: 'global' });
 
 const open = ref<boolean>(false);
-const hide = ref<boolean>(false);
-const hideBelow = ref<string>('1');
-const applyToAllBalances = ref<boolean>(true);
 
 const currencySymbol = useSetting('currencySymbol');
 const balanceValueThreshold = useSetting('balanceValueThreshold');
 const { updateFrontendSetting } = useSettingsOperations();
 
 const { useIsActive } = useTaskCenter();
+const { loadingBlockchainBalances: isQueryingBlockchain } = useBalancesLoading();
 const isManualBalancesLoading = useIsActive(ActivityKind.MANUAL_BALANCES);
 const isExchangeLoading = useIsActive(ActivityKind.EXCHANGE_BALANCES);
-const isQueryingBlockchain = useIsActive(ActivityKind.BLOCKCHAIN_BALANCES);
 
-const v$ = useVuelidate(
-  {
-    hideBelow: {
-      minValue: minValue(0),
-      required,
-    },
-  },
-  {
-    hideBelow,
-  },
-  {
-    $autoDirty: true,
-  },
-);
+const schema = computed<ZodType>(() => hideSmallBalancesSchema({
+  min: t('settings.validation.number.min', { min: 0 }),
+  required: t('settings.validation.number.non_empty'),
+}));
 
-const loading = computed(() => {
+const form = useForm<HideSmallBalancesFormState, BalanceValueThreshold>({
+  initial: (): HideSmallBalancesFormState => ({
+    applyToAllBalances: true,
+    hide: false,
+    hideBelow: DEFAULT_THRESHOLD,
+  }),
+  schema,
+  submit: async (payload: BalanceValueThreshold): Promise<{ success: boolean }> => {
+    await updateFrontendSetting({ balanceValueThreshold: payload });
+    return { success: true };
+  },
+  transform: (state): BalanceValueThreshold => toThresholds(state, source, get(balanceValueThreshold)),
+});
+
+const loading = computed<boolean>(() => {
   const loadingStates = {
     [BalanceSource.BLOCKCHAIN]: get(isQueryingBlockchain),
     [BalanceSource.EXCHANGES]: get(isExchangeLoading),
     [BalanceSource.MANUAL]: get(isManualBalancesLoading),
   };
 
-  return get(applyToAllBalances)
+  return form.state.applyToAllBalances
     ? Object.values(loadingStates).some(Boolean)
     : loadingStates[source];
 });
 
-const hint = computed(() => {
-  if (get(hideBelow) !== '0') {
+const hint = computed<string>(() => {
+  if (form.state.hideBelow !== '0') {
     return t('hide_small_balances.hint', {
       symbol: get(currencySymbol),
-      value: get(hideBelow),
+      value: form.state.hideBelow,
     });
   }
   return t('hide_small_balances.hint_zero');
 });
 
-async function applyChanges(): Promise<void> {
-  if (!(await get(v$).$validate())) {
-    return;
-  }
-  const usedNumber = get(hide) ? get(hideBelow) : undefined;
-  let newState: BalanceValueThreshold;
-
-  if (get(applyToAllBalances)) {
-    newState = usedNumber
-      ? {
-          [BalanceSource.BLOCKCHAIN]: usedNumber,
-          [BalanceSource.EXCHANGES]: usedNumber,
-          [BalanceSource.MANUAL]: usedNumber,
-        }
-      : {};
-  }
-  else {
-    newState = {
-      ...omit(get(balanceValueThreshold), [source]),
-      ...(usedNumber ? { [source]: usedNumber } : {}),
-    };
-  }
-
-  updateFrontendSetting({ balanceValueThreshold: newState });
-}
-
-watchImmediate([balanceValueThreshold, open], ([balanceValueThreshold]) => {
-  const data = balanceValueThreshold[source];
-
-  if (data) {
-    set(hide, true);
-    set(hideBelow, data);
-  }
-  else {
-    set(hide, false);
-    set(hideBelow, '1');
-  }
+watchImmediate([balanceValueThreshold, open], ([thresholds]) => {
+  const threshold = thresholds[source];
+  form.state.hide = Boolean(threshold);
+  form.state.hideBelow = threshold ?? DEFAULT_THRESHOLD;
 });
 
-watch(hide, (hide) => {
-  if (!hide) {
-    set(hideBelow, '1');
-  }
-  get(v$).$reset();
+watch(() => form.state.hide, (hide) => {
+  // Switching hiding off puts the field back to a value that cannot be blocking the save.
+  form.reset({
+    applyToAllBalances: form.state.applyToAllBalances,
+    hide,
+    hideBelow: hide ? form.state.hideBelow : DEFAULT_THRESHOLD,
+  });
 });
 </script>
 
@@ -131,25 +106,28 @@ watch(hide, (hide) => {
     </template>
     <div class="p-3 pt-4 flex flex-col gap-3">
       <RuiSwitch
-        v-model="hide"
+        v-model="form.state.hide"
         class="mb-2"
         size="sm"
+        data-testid="hide-small-balances-toggle"
         :label="t('hide_small_balances.hide')"
         hide-details
         color="primary"
       />
       <RuiTextField
-        v-model="hideBelow"
+        v-model="form.state.hideBelow"
+        data-testid="hide-small-balances-threshold"
         :label="t('hide_small_balances.hide_under')"
         variant="outlined"
         color="primary"
         min="0"
         step="0.1"
-        :disabled="!hide"
+        :disabled="!form.state.hide"
         type="number"
         :hint="hint"
-        :error-messages="toMessages(v$.hideBelow)"
+        :error-messages="form.errors('hideBelow')"
         dense
+        @update:model-value="form.touch('hideBelow')"
       >
         <template #prepend>
           {{ t('hide_small_balances.lt') }}
@@ -160,7 +138,7 @@ watch(hide, (hide) => {
       </RuiTextField>
       <div class="flex gap-2 items-center">
         <RuiCheckbox
-          v-model="applyToAllBalances"
+          v-model="form.state.applyToAllBalances"
           hide-details
           :disabled="loading"
           color="primary"
@@ -176,7 +154,8 @@ watch(hide, (hide) => {
         <RuiButton
           :loading="loading"
           color="primary"
-          @click="applyChanges()"
+          data-testid="hide-small-balances-apply"
+          @click="form.submit()"
         >
           {{ t('hide_small_balances.apply_changes') }}
         </RuiButton>

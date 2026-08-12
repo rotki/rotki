@@ -23,7 +23,7 @@ const navTarget = useBlockchainRedirectLink(() => total.chain);
   <div>
     <RouterLink :to="navTarget">
       <ListItem
-        data-cy="blockchain-balance__summary"
+        data-testid="blockchain-balance__summary"
         :data-location="total.chain"
         class="group !py-1 px-6"
       >

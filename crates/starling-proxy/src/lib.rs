@@ -193,6 +193,9 @@ pub(crate) struct ProxyState {
     mcp_enabled: bool,
     health: Option<HealthProbe>,
     pub(crate) control: Option<ControlDispatch>,
+    /// Whose `X-Forwarded-*` we believe. Shared with the access log so an
+    /// operator has one `--trusted-proxy` knob rather than two.
+    trusted_proxies: Arc<Vec<access_log::Cidr>>,
 }
 
 /// Bind the proxy listener on `host`. Done before serving so a bind failure
@@ -326,6 +329,7 @@ fn router(config: &ProxyConfig) -> Router {
         mcp_enabled: config.mcp_enabled,
         health: config.health.clone(),
         control: config.control.clone(),
+        trusted_proxies: Arc::new(config.access_log.trusted_proxies.clone()),
     };
 
     // nginx `location /prefix/` is a prefix match that also matches the bare
@@ -562,7 +566,7 @@ async fn proxy_core(State(state): State<ProxyState>, mut req: Request) -> Respon
     req.headers_mut().remove(MCP_BACKEND_PROOF_HEADER);
     let target = format!("http://{}{}", state.core_addr, path_and_query(&req));
     let peer = peer_addr(&req);
-    let req = req_with_target(req, target, peer);
+    let req = req_with_target(req, target, peer, &state.trusted_proxies);
     forward(&state, req).await
 }
 
@@ -571,7 +575,7 @@ async fn proxy_colibri(State(state): State<ProxyState>, req: Request) -> Respons
     let stripped = strip_colibri_prefix(&path_and_query(&req));
     let target = format!("http://{}{}", state.colibri_addr, stripped);
     let peer = peer_addr(&req);
-    let req = req_with_target(req, target, peer);
+    let req = req_with_target(req, target, peer, &state.trusted_proxies);
     forward(&state, req).await
 }
 
@@ -596,7 +600,7 @@ async fn proxy_mcp(State(state): State<ProxyState>, mut req: Request) -> Respons
     req.headers_mut().remove(MCP_BACKEND_PROOF_HEADER);
     let target = format!("http://{}{}", state.mcp_addr, path_and_query(&req));
     let peer = peer_addr(&req);
-    let req = req_with_target(req, target, peer);
+    let req = req_with_target(req, target, peer, &state.trusted_proxies);
     forward(&state, req).await
 }
 
@@ -631,7 +635,7 @@ pub(crate) fn origin_matches_host(headers: &HeaderMap) -> bool {
 async fn proxy_ws(State(state): State<ProxyState>, req: Request) -> Response {
     let target = format!("http://{}{}", state.core_addr, path_and_query(&req));
     let peer = peer_addr(&req);
-    let req = req_with_target(req, target, peer);
+    let req = req_with_target(req, target, peer, &state.trusted_proxies);
     forward_upgrade(&state, req).await
 }
 
@@ -664,18 +668,30 @@ fn strip_colibri_prefix(path_and_query: &str) -> String {
 }
 
 /// Rewrite the request URI to `target` and add the forwarding headers nginx set.
-fn req_with_target(mut req: Request, target: String, peer: Option<SocketAddr>) -> Request {
+fn req_with_target(
+    mut req: Request,
+    target: String,
+    peer: Option<SocketAddr>,
+    trusted: &[access_log::Cidr],
+) -> Request {
     match Uri::try_from(&target) {
         Ok(uri) => *req.uri_mut() = uri,
         Err(err) => warn!(%target, %err, "invalid upstream uri; forwarding original"),
     }
-    add_forwarding_headers(&mut req, peer);
+    add_forwarding_headers(&mut req, peer, trusted);
     req
 }
 
 /// Mirror nginx's `X-Real-IP` / `X-Forwarded-For` (append). `Set-Cookie` and
 /// `Host` pass through untouched (rotki auth depends on the cookie).
-fn add_forwarding_headers(req: &mut Request, peer: Option<SocketAddr>) {
+///
+/// Also normalises `X-Forwarded-Proto`, see [`sanitize_forwarded_proto`].
+fn add_forwarding_headers(
+    req: &mut Request,
+    peer: Option<SocketAddr>,
+    trusted: &[access_log::Cidr],
+) {
+    sanitize_forwarded_proto(req, peer, trusted);
     let Some(peer) = peer else { return };
     let ip = peer.ip().to_string();
     if let Ok(value) = HeaderValue::from_str(&ip) {
@@ -688,6 +704,51 @@ fn add_forwarding_headers(req: &mut Request, peer: Option<SocketAddr>) {
     if let Ok(value) = HeaderValue::from_str(&forwarded) {
         req.headers_mut().insert("x-forwarded-for", value);
     }
+}
+
+/// Replace `X-Forwarded-Proto` with a value the backends may believe.
+///
+/// Starling always speaks plain http, so the only source for "the browser used
+/// https" is a TLS-terminating proxy in front of us. That claim is only worth
+/// anything if the hop making it is one we trust, judged by the same
+/// `--trusted-proxy` set the access log uses.
+///
+/// **Always writes the header**, never merely leaves it alone: an inbound value
+/// from an untrusted peer must not survive, and an absent one must not be
+/// confusable with a stripped one. An unknown peer (no `ConnectInfo`) cannot be
+/// judged, so it is treated as untrusted.
+///
+/// Core reads this to decide whether the session cookie gets `Secure`. Getting
+/// it wrong in the trusting direction would let anyone who can reach the port
+/// dictate a cookie attribute, so the default is the pessimistic one.
+fn sanitize_forwarded_proto(
+    req: &mut Request,
+    peer: Option<SocketAddr>,
+    trusted: &[access_log::Cidr],
+) {
+    const HEADER: &str = "x-forwarded-proto";
+    let from_trusted_hop = peer
+        .map(|addr| access_log::is_trusted_hop(addr.ip(), trusted))
+        .unwrap_or(false);
+
+    // A trusted hop's claim is kept, but only when it is one of the two schemes
+    // that mean anything here; anything else is treated as no claim at all.
+    let claimed = from_trusted_hop
+        .then(|| {
+            req.headers()
+                .get(HEADER)
+                .and_then(|value| value.to_str().ok())
+                .map(str::trim)
+                // A chain appends, so the leftmost entry is the original scheme.
+                .and_then(|value| value.split(',').next())
+                .map(str::trim)
+                .filter(|scheme| scheme.eq_ignore_ascii_case("https"))
+        })
+        .flatten();
+
+    let scheme = if claimed.is_some() { "https" } else { "http" };
+    req.headers_mut()
+        .insert(HEADER, HeaderValue::from_static(scheme));
 }
 
 /// A small built-in HTML error page for proxy-generated gateway failures -
@@ -857,6 +918,231 @@ mod tests {
 
     use super::*;
     use crate::control::AUTH_BURST;
+
+    /// Build a request carrying `inbound` as `X-Forwarded-Proto` (when `Some`),
+    /// sanitize it as if it arrived from `peer`, and return what the backends
+    /// would see.
+    fn sanitized_proto(
+        inbound: Option<&str>,
+        peer: Option<&str>,
+        trusted: &[&str],
+    ) -> Option<String> {
+        let mut builder = Request::builder().uri("/api/1/ping");
+        if let Some(value) = inbound {
+            builder = builder.header("x-forwarded-proto", value);
+        }
+        let mut req = builder.body(Body::empty()).unwrap();
+        let peer = peer.map(|addr| addr.parse::<SocketAddr>().unwrap());
+        let trusted: Vec<_> = trusted
+            .iter()
+            .map(|spec| access_log::Cidr::parse(spec).unwrap())
+            .collect();
+        sanitize_forwarded_proto(&mut req, peer, &trusted);
+        req.headers()
+            .get("x-forwarded-proto")
+            .map(|value| value.to_str().unwrap().to_string())
+    }
+
+    /// The header must never simply be passed through: core decides the session
+    /// cookie's `Secure` attribute from it, and core sees every request as
+    /// coming from loopback, so it cannot make this judgement itself.
+    ///
+    /// Negative control: deleting the `insert` at the end of
+    /// `sanitize_forwarded_proto` makes the first two cases return the
+    /// attacker's `https` instead of `http`.
+    #[test]
+    fn forwarded_proto_from_an_untrusted_peer_is_overwritten() {
+        // A public peer is not a trusted hop, so its claim is discarded.
+        assert_eq!(
+            sanitized_proto(Some("https"), Some("203.0.113.9:443"), &[]),
+            Some("http".to_string()),
+        );
+        // An unknown peer cannot be judged, so it is treated as untrusted.
+        assert_eq!(
+            sanitized_proto(Some("https"), None, &[]),
+            Some("http".to_string()),
+        );
+    }
+
+    #[test]
+    fn forwarded_proto_from_a_trusted_hop_is_kept() {
+        // Private ranges are trusted by default, which is where a docker-network
+        // reverse proxy sits.
+        assert_eq!(
+            sanitized_proto(Some("https"), Some("172.18.0.5:443"), &[]),
+            Some("https".to_string()),
+        );
+        // And an operator can name a public one with --trusted-proxy.
+        assert_eq!(
+            sanitized_proto(Some("https"), Some("203.0.113.9:443"), &["203.0.113.0/24"]),
+            Some("https".to_string()),
+        );
+    }
+
+    #[test]
+    fn forwarded_proto_is_always_present_and_only_ever_the_two_schemes() {
+        // Absent inbound must not be confusable with a stripped one.
+        assert_eq!(
+            sanitized_proto(None, Some("172.18.0.5:443"), &[]),
+            Some("http".to_string()),
+        );
+        // A trusted hop reporting plain http stays http.
+        assert_eq!(
+            sanitized_proto(Some("http"), Some("172.18.0.5:443"), &[]),
+            Some("http".to_string()),
+        );
+        // Anything that is not one of the two schemes is no claim at all.
+        assert_eq!(
+            sanitized_proto(Some("gopher"), Some("172.18.0.5:443"), &[]),
+            Some("http".to_string()),
+        );
+    }
+
+    /// A chain appends, so the *leftmost* entry is the scheme the original
+    /// client used. Reading the rightmost would report our own hop's http and
+    /// silently drop the flag on a correctly configured two-proxy deployment.
+    #[test]
+    fn forwarded_proto_reads_the_original_scheme_from_a_chain() {
+        assert_eq!(
+            sanitized_proto(Some("https, http"), Some("172.18.0.5:443"), &[]),
+            Some("https".to_string()),
+        );
+        assert_eq!(
+            sanitized_proto(Some("http, https"), Some("172.18.0.5:443"), &[]),
+            Some("http".to_string()),
+        );
+    }
+
+    /// A stub upstream that echoes back the `X-Forwarded-Proto` it was handed,
+    /// so a test can assert what core would actually read. Reports `<absent>`
+    /// rather than an empty body when the header never arrived, so a missing
+    /// header cannot be mistaken for an empty one.
+    async fn spawn_proto_report_upstream() -> u16 {
+        let listener = TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
+            .await
+            .unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let app = Router::new().fallback(any(|req: Request| async move {
+            req.headers()
+                .get("x-forwarded-proto")
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("<absent>")
+                .to_string()
+        }));
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        port
+    }
+
+    /// Drive a request through the real router to `upstream` as if it arrived
+    /// from `peer`, and return the `X-Forwarded-Proto` the upstream received.
+    async fn proxied_proto(
+        path: &str,
+        inbound: Option<&str>,
+        peer: Option<&str>,
+        trusted: &[&str],
+        upstream: u16,
+    ) -> String {
+        let app = router(&ProxyConfig {
+            port: 0,
+            core_port: upstream,
+            colibri_port: upstream,
+            mcp_port: upstream,
+            mcp_enabled: true,
+            frontend_dir: None,
+            max_body_bytes: 50 * 1024 * 1024,
+            access_log: access_log::AccessLog {
+                trusted_proxies: trusted
+                    .iter()
+                    .map(|spec| access_log::Cidr::parse(spec).unwrap())
+                    .collect(),
+                ..Default::default()
+            },
+            health: None,
+            control: None,
+        });
+        let mut builder = Request::builder().uri(path);
+        if let Some(value) = inbound {
+            builder = builder.header("x-forwarded-proto", value);
+        }
+        let mut req = builder.body(Body::empty()).unwrap();
+        // What `serve` does per connection. Absent when the peer is unknown,
+        // which is the case the sanitizer must treat as untrusted.
+        if let Some(addr) = peer {
+            req.extensions_mut()
+                .insert(ConnectInfo(addr.parse::<SocketAddr>().unwrap()));
+        }
+        body_string(app.oneshot(req).await.unwrap()).await
+    }
+
+    /// The unit tests above call `sanitize_forwarded_proto` directly, so they
+    /// would all still pass if nothing ever called it. This drives a real
+    /// request through the router and asserts on what the upstream received,
+    /// which is the claim core's `forwarded` mode actually depends on.
+    ///
+    /// Negative control: deleting the `sanitize_forwarded_proto` call from
+    /// `add_forwarding_headers` leaves every other test in this module green
+    /// and fails this one.
+    #[tokio::test]
+    async fn forwarded_proto_is_sanitized_on_the_proxied_path() {
+        let upstream = spawn_proto_report_upstream().await;
+
+        // A public client's spoofed claim does not survive the hop, on either
+        // proxied prefix.
+        for path in ["/api/1/ping", "/colibri/health"] {
+            assert_eq!(
+                proxied_proto(path, Some("https"), None, &[], upstream).await,
+                "http",
+                "a spoofed claim from an unknown peer reached the upstream on {path}",
+            );
+            assert_eq!(
+                proxied_proto(path, Some("https"), Some("203.0.113.9:443"), &[], upstream).await,
+                "http",
+                "a spoofed claim from an untrusted peer reached the upstream on {path}",
+            );
+        }
+
+        // A real TLS terminator on the docker network is believed, which is the
+        // whole point of the mode.
+        assert_eq!(
+            proxied_proto(
+                "/api/1/ping",
+                Some("https"),
+                Some("172.18.0.5:443"),
+                &[],
+                upstream,
+            )
+            .await,
+            "https",
+        );
+
+        // The trust set is all of RFC1918 and cannot be narrowed, only extended,
+        // so a client on the same LAN as the container is a trusted hop too and
+        // its claim is kept. Pinned because it bounds what the sanitizing buys:
+        // it stops a *public* peer, not everyone who can reach the published
+        // port. Harmless in itself (the cookie goes back to that same client, so
+        // forcing Secure on only breaks its own login), but it means an operator
+        // publishing the port to an untrusted LAN cannot rely on this.
+        assert_eq!(
+            proxied_proto(
+                "/api/1/ping",
+                Some("https"),
+                Some("192.168.1.50:443"),
+                &[],
+                upstream,
+            )
+            .await,
+            "https",
+        );
+
+        // And the header is always written, so core never has to guess whether
+        // an absent value means "no proxy" or "stripped".
+        assert_eq!(
+            proxied_proto("/api/1/ping", None, Some("172.18.0.5:443"), &[], upstream).await,
+            "http",
+        );
+    }
 
     #[test]
     fn colibri_prefix_is_stripped() {
@@ -1755,9 +2041,13 @@ mod tests {
     }
 
     fn echo_dispatch() -> ControlDispatch {
-        ControlDispatch::new(vec!["status", "restart"], |line| async move {
-            format!("dispatched:{line}")
-        })
+        ControlDispatch::new(
+            vec!["status", "restart"],
+            |line| async move { format!("dispatched:{line}") },
+            // Mirrors what `starling`'s dispatcher answers, without pulling a JSON
+            // parser into this crate's tests: these frames are built here.
+            |line: &str| line.contains("\"method\":\"restart\""),
+        )
     }
 
     fn control_post(body: &str) -> Request {
@@ -2154,13 +2444,19 @@ mod tests {
         let app = control_router(port, Some(echo_dispatch()));
 
         app.clone()
-            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
 
         core.set(None);
         let resp = app
-            .oneshot(control_post_with("theme=dark; rotki_session=live", "{}"))
+            .oneshot(control_post_with(
+                "theme=dark; rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
         assert_eq!(
@@ -2176,7 +2472,10 @@ mod tests {
         let app = control_router(port, Some(echo_dispatch()));
 
         app.clone()
-            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
 
@@ -2184,7 +2483,10 @@ mod tests {
         core.set(None);
         let resp = app
             .clone()
-            .oneshot(control_post_with("rotki_session=other", "{}"))
+            .oneshot(control_post_with(
+                "rotki_session=other",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
@@ -2198,14 +2500,20 @@ mod tests {
         let app = control_router(port, Some(echo_dispatch()));
 
         app.clone()
-            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
 
         core.set(Some(StatusCode::UNAUTHORIZED));
         let resp = app
             .clone()
-            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
@@ -2213,7 +2521,10 @@ mod tests {
         core.set(None);
         let resp = app
             .clone()
-            .oneshot(control_post_with("rotki_session=live", "{}"))
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
             .await
             .unwrap();
         assert_eq!(
@@ -2221,6 +2532,71 @@ mod tests {
             StatusCode::SERVICE_UNAVAILABLE,
             "a revoked session must not be resurrected by core going down"
         );
+    }
+
+    #[tokio::test]
+    async fn a_status_call_does_not_arm_the_grace() {
+        // The window exists for the retry that recovers a failed restart, so only a
+        // restart may arm it. Arming on any allowed call meant the SPA's routine status
+        // poll left a fallback behind that a later, different method could spend.
+        let (port, core) = spawn_switchable_core(StatusCode::OK).await;
+        let app = control_router(port, Some(echo_dispatch()));
+
+        app.clone()
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"status"}"#,
+            ))
+            .await
+            .unwrap();
+
+        core.set(None);
+        let resp = app
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.status(),
+            StatusCode::SERVICE_UNAVAILABLE,
+            "only a restart may leave a window behind"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_grace_authorizes_nothing_but_a_restart() {
+        // Even a window a restart armed itself must not be spendable on another method:
+        // during an outage the only capability it may confer is restarting something
+        // that is already down.
+        let (port, core) = spawn_switchable_core(StatusCode::OK).await;
+        let app = control_router(port, Some(echo_dispatch()));
+
+        app.clone()
+            .oneshot(control_post_with(
+                "rotki_session=live",
+                r#"{"method":"restart"}"#,
+            ))
+            .await
+            .unwrap();
+
+        core.set(None);
+        for method in ["status", "startService", "stopService"] {
+            let resp = app
+                .clone()
+                .oneshot(control_post_with(
+                    "rotki_session=live",
+                    &format!(r#"{{"method":"{method}"}}"#),
+                ))
+                .await
+                .unwrap();
+            assert_eq!(
+                resp.status(),
+                StatusCode::SERVICE_UNAVAILABLE,
+                "{method} must not ride the restart grace window"
+            );
+        }
     }
 
     #[tokio::test]

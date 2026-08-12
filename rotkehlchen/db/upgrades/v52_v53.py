@@ -7,6 +7,7 @@ from eth_utils import to_checksum_address
 
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.misc import AIRDROPSDIR_NAME, APPDIR_NAME
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.oracles.structures import CurrentPriceOracle
@@ -273,6 +274,33 @@ SELECT address, ens_name, last_update, last_avatar_update FROM ens_mappings_old;
 DROP TABLE ens_mappings_old;
 """)
 
+    @progress_step(description='Add GNS after ENS in address name priority.')
+    def _add_gns_to_address_name_priority(write_cursor: DBCursor) -> None:
+        if (data := write_cursor.execute(
+            "SELECT value FROM settings WHERE name='address_name_priority'",
+        ).fetchone()) is None:
+            return  # A missing setting uses the defaults, which already have GNS after ENS.
+
+        try:
+            priority = json.loads(data[0])
+        except json.JSONDecodeError as e:
+            log.error('Failed to read address name priority from user db due to %s', e)
+            return
+
+        if not isinstance(priority, list):
+            return
+
+        priority = [source for source in priority if source != 'gns_names']
+        if 'ens_names' in priority:
+            priority.insert(priority.index('ens_names') + 1, 'gns_names')
+        else:
+            priority.append('gns_names')
+
+        write_cursor.execute(
+            "UPDATE settings SET value=? WHERE name='address_name_priority'",
+            (json.dumps(priority),),
+        )
+
     @progress_step(description='Add Kraken as the first current price oracle.')
     def _add_kraken_current_price_oracle(write_cursor: DBCursor) -> None:
         if (data := write_cursor.execute(
@@ -445,6 +473,78 @@ ON bitcointx_address_mappings(address, tx_id);
                 [(identifier,) for identifier, _ in migrated],
             )
 
+    @progress_step(description='Resetting decoded events.')
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
+        """Reset all decoded evm, solana and bitcoin events.
+
+        If any event in a transaction is customized, all events in that transaction are
+        preserved along with its decoded status. Bitcoin transactions are not present in the
+        newly created transaction tables yet, so their migrated chain events are selected by
+        location and will be refetched after the query range reset below.
+        """
+        has_bitcoin_events = write_cursor.execute(
+            "SELECT COUNT(*) FROM history_events WHERE location IN ('q', 'r') AND entry_type=11",
+        ).fetchone()[0] > 0
+        if not (
+            write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0 or
+            write_cursor.execute('SELECT COUNT(*) FROM solana_transactions').fetchone()[0] > 0 or
+            has_bitcoin_events
+        ):
+            return
+
+        querystr = (
+            "DELETE FROM history_events WHERE identifier IN ("
+            "SELECT H.identifier FROM history_events H INNER JOIN chain_events_info C "
+            "ON H.identifier=C.identifier AND (C.tx_ref IN "
+            "(SELECT tx_hash FROM evm_transactions) OR C.tx_ref IN "
+            "(SELECT signature FROM solana_transactions) OR H.location IN ('q', 'r')) "
+            "AND H.location != 'o')"  # location 'o' is zksync lite
+        )
+        bindings: tuple = ()
+        has_customized = write_cursor.execute(
+            'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
+            (customized_events_bindings := (
+                HISTORY_MAPPING_KEY_STATE,
+                HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+            )),
+        ).fetchone()[0] != 0
+        if has_customized:
+            querystr += (
+                ' AND group_identifier NOT IN ('
+                'SELECT H2.group_identifier FROM history_events H2 '
+                'INNER JOIN history_events_mappings M ON H2.identifier = M.parent_identifier '
+                'WHERE M.name=? AND M.value=?)'
+            )
+            bindings = customized_events_bindings
+
+        write_cursor.execute(querystr, bindings)
+        # A deleted event cannot be restored through any supported flow. Remove its backup too,
+        # otherwise a reused history-event identifier could restore stale Bitcoin metadata.
+        write_cursor.execute(
+            'DELETE FROM history_events_backup WHERE identifier NOT IN '
+            '(SELECT identifier FROM history_events)',
+        )
+
+        for table, tx_table, tx_id_col in (
+            ('evm_tx_mappings', 'evm_transactions', 'tx_hash'),
+            ('solana_tx_mappings', 'solana_transactions', 'signature'),
+        ):
+            tx_querystr = (
+                f'DELETE FROM {table} WHERE tx_id IN '
+                f'(SELECT identifier FROM {tx_table}) AND value=?'
+            )
+            tx_bindings: tuple = (0,)  # decoded tx state
+            if has_customized:
+                tx_querystr += (
+                    f' AND tx_id NOT IN ('
+                    f'SELECT DISTINCT T.identifier FROM {tx_table} T '
+                    f'INNER JOIN chain_events_info C ON T.{tx_id_col} = C.tx_ref '
+                    'INNER JOIN history_events_mappings M ON C.identifier = M.parent_identifier '
+                    'WHERE M.name=? AND M.value=?)'
+                )
+                tx_bindings += customized_events_bindings
+            write_cursor.execute(tx_querystr, tx_bindings)
+
     @progress_step(description='Reset bitcoin transaction query range.')
     def _reset_bitcoin_query_range(write_cursor: DBCursor) -> None:
         """Bitcoin transactions with a change output were decoded as a spend of the entire
@@ -458,11 +558,8 @@ ON bitcointx_address_mappings(address, tx_id);
         explorers and decodes it with the corrected logic. That query also fills the new
         tables, which is what makes any future correction a local redecode instead of this.
 
-        The existing events are deliberately left in place rather than deleted here. The
-        query purges each transaction's events right before writing the new ones, so they
-        are replaced one transaction at a time and the user keeps a visible history in the
-        meantime. That purge is keyed on the group identifier, so it also clears the mixed
-        stale/new event sets left by the sequence index collisions this same release fixes.
+        The decoded Bitcoin events are reset by the preceding upgrade step. The next query
+        therefore refetches the full history and writes events decoded with the corrected logic.
         """
         write_cursor.execute(
             "DELETE FROM key_value_cache WHERE "

@@ -3,8 +3,10 @@ import json
 import logging
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, TypeVar, overload
 
 import requests
 from eth_utils.abi import get_abi_output_types
@@ -94,6 +96,14 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# Indexers that could not resolve the block range currently being queried. Scoped to the
+# body of block_range_skipping_stale_indexers, since an indexer being behind is a property
+# of the range asked for and not of the indexer itself.
+DEGRADED_INDEXERS: Final[ContextVar[frozenset[EvmIndexer]]] = ContextVar(
+    'evm_degraded_indexers',
+    default=frozenset(),
+)
 
 T = TypeVar('T')
 
@@ -261,6 +271,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         # Cache block_number -> timestamp to avoid extra block header calls when transaction
         # lists from indexers already include the timestamp.
         self.block_to_timestamp_cache: LRUCacheWithRemove[int, Timestamp] = LRUCacheWithRemove(maxsize=2048)  # noqa: E501
+        # Which indexers could not resolve a given timestamp range to blocks. Kept next to
+        # the range cache above so every query over the range sees the same verdict.
+        self.range_indexer_failures: LRUCacheWithRemove[tuple[Timestamp, Timestamp], frozenset[EvmIndexer]] = LRUCacheWithRemove(maxsize=32)  # noqa: E501
 
         # A cache for erc20 and erc721 contract info to not requery the info
         self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
@@ -600,15 +613,25 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             self,
             num: int,
             call_order: Sequence[WeightedNode] | None = None,
+            full_transactions: bool = True,
     ) -> dict[str, Any]:
         return self._query(
             method=self._get_block_by_number,
             call_order=call_order,
             num=num,
+            full_transactions=full_transactions,
         )
 
-    def _get_block_by_number(self, web3: Web3 | None, num: int) -> dict[str, Any]:
+    def _get_block_by_number(
+            self,
+            web3: Web3 | None,
+            num: int,
+            full_transactions: bool = True,
+    ) -> dict[str, Any]:
         """Returns the block object corresponding to the given block number
+
+        full_transactions decides whether the transactions of the block come as objects or
+        as hashes. It only reaches the indexers, since web3 already returns hashes here.
 
         May raise:
         - RemoteError if an external service such as Etherscan is queried and
@@ -620,6 +643,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             return self._try_indexers(func=lambda indexer: indexer.get_block_by_number(
                 chain_id=self.chain_id,
                 block_number=num,
+                full_transactions=full_transactions,
             ))
 
         block_data: MutableAttributeDict = MutableAttributeDict(web3.eth.get_block(num))  # type: ignore # pylint: disable=no-member
@@ -1482,15 +1506,126 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         transaction, _ = self.get_transaction_by_hash(deployed_hash)
         return transaction.block_number
 
+    def timestamp_range_to_block_range(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> tuple[int, int]:
+        """Resolve both ends of a timestamp range to block numbers.
+
+        Whatever is not already cached is resolved by a single indexer, so the two ends of
+        the window cannot come from indexers holding different views of the chain. A cached
+        value is safe to mix in: it came from a resolution that succeeded, and blocks are
+        monotonic in time.
+
+        May raise:
+        - RemoteError if no indexer can resolve the range, or if the resolved window is
+        inverted. An inverted window would otherwise be handed to the indexers as-is, and
+        they answer it with an empty result and no error, which is indistinguishable from
+        the address genuinely having no history in that period.
+        - NoAvailableIndexers if there are no indexers available
+        """
+        return self._resolve_timestamp_range(from_ts=from_ts, to_ts=to_ts)[:2]
+
+    def _resolve_timestamp_range(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> tuple[int, int, frozenset[EvmIndexer]]:
+        """Like timestamp_range_to_block_range, also reporting who could not resolve it."""
+        cache = self.timestamp_to_block_cache[self.chain_id]
+        cached_from, cached_to = cache.get(from_ts), cache.get(to_ts)
+        # The block range is cached, so only the first of the three queries an address makes
+        # over a range actually resolves it. Remember who failed alongside it, or the
+        # internal transaction and token transfer queries would go straight back to the
+        # indexer the transaction query just found to be behind.
+        failed = self.range_indexer_failures.get((from_ts, to_ts)) or frozenset()
+        if cached_from is not None and cached_to is not None:
+            from_block, to_block = cached_from, cached_to
+        else:
+            def resolve(indexer: EtherscanLikeApi) -> tuple[int, int]:
+                resolved: dict[Timestamp, int] = {}
+                if cached_from is not None:
+                    resolved[from_ts] = cached_from
+                if cached_to is not None:
+                    resolved[to_ts] = cached_to
+
+                for ts in (from_ts, to_ts):  # a one element range asks for the same ts twice
+                    if ts not in resolved:
+                        resolved[ts] = indexer.get_blocknumber_by_time(
+                            chain_id=self.chain_id, ts=ts, closest='before',
+                        )
+
+                return resolved[from_ts], resolved[to_ts]
+
+            (from_block, to_block), _, failed = self._try_indexers_reporting_failures(
+                func=resolve,
+            )
+            cache.add(key=from_ts, value=from_block)
+            cache.add(key=to_ts, value=to_block)
+            self.range_indexer_failures.add(key=(from_ts, to_ts), value=failed)
+
+        if from_block > to_block:
+            raise RemoteError(
+                f'Resolved an inverted {self.chain_name} block range for {from_ts} - {to_ts}: '
+                f'{from_block} - {to_block}. An indexer is behind on the chain.',
+            )
+
+        return from_block, to_block, failed
+
+    @contextmanager
+    def block_range_skipping_stale_indexers(
+            self,
+            period: TimestampOrBlockRange,
+    ) -> Iterator[TimestampOrBlockRange]:
+        """Convert period to blocks, and inside the body skip indexers that could not.
+
+        An indexer that cannot resolve a block for a timestamp in the range has told us its
+        index does not reach that far. Asking it for the transactions of that same range is
+        then pointless, and its answer is actively dangerous: it reports no results rather
+        than an error, which reads as "the address had no activity" and gets the range
+        recorded as fully queried. That is how a stale indexer silently costs a user a day
+        of history that only a manual repull brings back.
+        """
+        if period.range_type != 'timestamps':
+            yield period  # already blocks, nothing was resolved and nothing can be stale
+            return
+
+        from_block, to_block, failed = self._resolve_timestamp_range(
+            from_ts=Timestamp(period.from_value),
+            to_ts=Timestamp(period.to_value),
+        )
+        if len(failed) != 0:
+            log.debug(
+                'Indexers %s could not resolve the %s range %s - %s. Not using them for its '
+                'transactions either.',
+                [x.serialize() for x in failed], self.chain_name,
+                period.from_value, period.to_value,
+            )
+
+        token = DEGRADED_INDEXERS.set(DEGRADED_INDEXERS.get() | failed)
+        try:
+            yield TimestampOrBlockRange(
+                range_type='blocks',
+                from_value=from_block,
+                to_value=to_block,
+            )
+        finally:
+            DEGRADED_INDEXERS.reset(token)
+
     def maybe_timestamp_to_block_range(
             self,
             period: TimestampOrBlockRange,
     ) -> TimestampOrBlockRange:
         if period.range_type == 'timestamps':
+            from_block, to_block = self.timestamp_range_to_block_range(
+                from_ts=Timestamp(period.from_value),
+                to_ts=Timestamp(period.to_value),
+            )
             return TimestampOrBlockRange(
                 range_type='blocks',
-                from_value=self.get_blocknumber_by_time(ts=Timestamp(period.from_value)),
-                to_value=self.get_blocknumber_by_time(ts=Timestamp(period.to_value)),
+                from_value=from_block,
+                to_value=to_block,
             )
 
         return period  # no op for block ranges
@@ -1546,12 +1681,31 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             log.error(f'Failed to get L1 fees for {account=} {tx_hash=} {block_number=} due to {e!s}')  # noqa: E501
             return None
 
-    def get_block_timestamp(self, block_number: int) -> Timestamp:
-        """Return block timestamp using cache first and falling back to block query."""
+    def get_block_timestamp(
+            self,
+            block_number: int,
+            full_transactions: bool = True,
+            call_order: Sequence[WeightedNode] | None = None,
+    ) -> Timestamp:
+        """Return block timestamp using cache first and falling back to block query.
+
+        full_transactions and call_order are only passed through to the block query. Nothing
+        but the timestamp is read here, so False asks for a payload that is an order of
+        magnitude smaller. It defaults to True to leave the shape of the existing callers'
+        requests alone.
+
+        May raise:
+        - RemoteError if the block cannot be queried
+        - DeserializationError or KeyError if the response carries no readable timestamp
+        """
         if (cached_timestamp := self.block_to_timestamp_cache.get(block_number)) is not None:
             return cached_timestamp
 
-        block_data = self.get_block_by_number(num=block_number)
+        block_data = self.get_block_by_number(
+            num=block_number,
+            call_order=call_order,
+            full_transactions=full_transactions,
+        )
         timestamp = Timestamp(read_integer(block_data, 'timestamp', 'web3'))
         self.block_to_timestamp_cache.add(key=block_number, value=timestamp)
         return timestamp
@@ -1823,11 +1977,21 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
     def _get_indexers_in_order(self) -> list[tuple[EvmIndexer, EtherscanLikeApi]]:
         """Return available indexers respecting user-defined order and optional subset."""
-        return [
+        ordered: list[tuple[EvmIndexer, EtherscanLikeApi]] = [
             (indexer_name, indexer)
             for indexer_name in CachedSettings().get_evm_indexers_order_for_chain(chain_id=self.chain_id)  # noqa: E501
             if (indexer := self.available_indexers.get(indexer_name)) is not None
         ]
+        if len(degraded := DEGRADED_INDEXERS.get()) == 0:
+            return ordered
+
+        if len(healthy := [entry for entry in ordered if entry[0] not in degraded]) != 0:
+            return healthy
+
+        # Nothing healthy is left for this range. Falling back to a degraded indexer is no
+        # worse than the behaviour before it was marked degraded, and beats reporting the
+        # chain as having no indexers at all.
+        return ordered
 
     def _try_indexers(self, func: Callable[[EtherscanLikeApi], T]) -> T:
         """Tries to call the given function on the indexers in order until one succeeds.
@@ -1841,6 +2005,18 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
     def _try_indexers_with_name(self, func: Callable[[EtherscanLikeApi], T]) -> tuple[T, EvmIndexer]:  # noqa: E501
         """Like _try_indexers, but also returns the indexer used for the query."""
+        result, indexer_name, _ = self._try_indexers_reporting_failures(func=func)
+        return result, indexer_name
+
+    def _try_indexers_reporting_failures(
+            self,
+            func: Callable[[EtherscanLikeApi], T],
+    ) -> tuple[T, EvmIndexer, frozenset[EvmIndexer]]:
+        """Like _try_indexers_with_name, but also reports which indexers failed on the way.
+
+        Callers use the failures to avoid asking the same indexers for related data they have
+        just shown they cannot serve.
+        """
         if len(ordered_indexers := self._get_indexers_in_order()) == 0:
             if not self._no_indexer_notified:
                 self._no_indexer_notified = True
@@ -1851,6 +2027,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             raise NoAvailableIndexers(f'No indexers are available for {self.chain_name}')
 
         errors: list[tuple[str, Exception]] = []
+        failed: set[EvmIndexer] = set()
         for indexer_name, indexer in ordered_indexers:
             if indexer_name not in self.available_indexers:
                 continue  # was removed while looping
@@ -1864,13 +2041,15 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                         f'API key. {e!s} Removing it from the available indexers for this chain.',
                     )
                     errors.append((indexer.name, e))
+                    failed.add(indexer_name)
             except RequestTooLargeError:
                 raise  # Let RequestTooLargeError bubble up for retry logic in callers
             except (RemoteError, DeserializationError) as e:
                 log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
                 errors.append((indexer.name, e))
+                failed.add(indexer_name)
             else:
-                return result, indexer_name
+                return result, indexer_name, frozenset(failed)
 
         raise RemoteError(
             f'Failed to query any indexer. '

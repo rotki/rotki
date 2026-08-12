@@ -76,7 +76,7 @@ const isRestoreMode = computed<boolean>(() => mode === 'restore');
       <RuiButton
         size="lg"
         class="w-full"
-        data-cy="create-account__credentials__button__continue"
+        data-testid="create-account__credentials__button__continue"
         :disabled="!valid || loading"
         :loading="loading"
         color="primary"

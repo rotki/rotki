@@ -18,7 +18,7 @@ const status = actionStatus(name);
 <template>
   <ServiceKeyCard
     :key-set="!!key"
-    data-cy="cryptocompare-api-keys"
+    data-testid="cryptocompare-api-keys"
     :title="t('external_services.cryptocompare.title')"
     :subtitle="t('external_services.cryptocompare.description')"
     :image-src="getPublicServiceImagePath('cryptocompare.svg')"
@@ -30,7 +30,7 @@ const status = actionStatus(name);
         :disabled="loading || !key"
         color="error"
         variant="text"
-        data-cy="delete-button"
+        data-testid="delete-button"
         @click="confirmDelete(name)"
       >
         <template #prepend>
@@ -47,7 +47,7 @@ const status = actionStatus(name);
       hide-actions
       :api-key="key"
       :name="name"
-      :data-cy="name"
+      :data-testid="name"
       :label="t('external_services.api_key')"
       :hint="t('external_services.cryptocompare.hint')"
       :loading="loading"

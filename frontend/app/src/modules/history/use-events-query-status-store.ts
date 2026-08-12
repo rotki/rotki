@@ -12,14 +12,26 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
   const { isAllFinished, markTerminal, queryStatus, removeQueryStatus, resetQueryStatus, stopSyncing, syncing }
     = createQueryStatusState<HistoryEventsQueryData>(isStatusFinished, createKey);
 
-  const initializeQueryStatus = (data: { location: string; name: string }[]): void => {
-    resetQueryStatus();
+  /**
+   * Seed the panel with the exchanges a sync is about to query.
+   *
+   * ⚠️ `extend` carries the same meaning as its counterpart in `useTxQueryStatusStore`: a drained
+   * follow-up wave belongs to the sync already on screen, so it must not clear what the first wave
+   * finished, and must not restart an exchange that is already recorded.
+   */
+  const initializeQueryStatus = (data: { location: string; name: string }[], { extend = false }: { extend?: boolean } = {}): void => {
+    if (!extend)
+      resetQueryStatus();
+
     set(syncing, true);
 
     const status = { ...get(queryStatus) };
     const now = millisecondsToSeconds(Date.now());
     for (const item of data) {
       const key = createKey(item);
+      if (extend && status[key])
+        continue;
+
       status[key] = {
         eventType: '',
         location: item.location,

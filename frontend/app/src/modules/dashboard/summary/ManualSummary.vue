@@ -38,7 +38,7 @@ const { t } = useI18n({ useScope: 'global' });
       </SummaryCardCreateButton>
       <div
         v-else
-        data-cy="manual-balances"
+        data-testid="manual-balances"
       >
         <ManualBalanceCardList
           v-for="manualBalance in manualBalanceByLocation"

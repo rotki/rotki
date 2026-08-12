@@ -3,6 +3,9 @@ import { Blockchain } from '@rotki/common';
 import dayjs from 'dayjs';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { RefreshMode } from '@/modules/balances/types/refresh-mode';
+import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
+import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { logger } from '@/modules/core/common/logging/logging';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
@@ -28,7 +31,8 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
   const { username } = storeToRefs(useSessionAuthStore());
   const { stakingValidatorsLimits } = storeToRefs(useBlockchainValidatorsStore());
   const { fetchEthStakingValidators } = useEthStaking();
-  const { fetchBlockchainBalances, refreshBlockchainBalances } = useBlockchainBalances();
+  const { hydrate } = useBalanceHydration();
+  const { refreshBlockchainBalances } = useBlockchainBalances();
   const { useIsActive, useWorkStatus, useIsActivePrefix } = useTaskCenter();
 
   const performanceStatus = useWorkStatus(ActivityKind.STAKING, ActivityPart.PERFORMANCE);
@@ -46,7 +50,12 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
 
   // Loading states
   const performanceRefreshing = computed<boolean>(() => get(performanceStatus).active);
-  const eth2Loading = useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2);
+  // Both layers: eth2's balances are read from the DB as well as queried, and hydration is not an
+  // activity the orchestrator can report on.
+  const eth2Loading = logicOr(
+    useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2),
+    useBalanceRefreshState().useIsHydrating(Blockchain.ETH2),
+  );
   const blockProductionLoading = useIsActive(ActivityKind.ONLINE_EVENTS, OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);
 
   const refreshing = logicOr(
@@ -59,12 +68,14 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
     const refreshValidators = async (userInitiated: boolean): Promise<void> => {
       const shouldRefresh = userInitiated || isFirstLoad();
       if (shouldRefresh) {
+        // Only the user's own press supersedes; a first load has nothing to supersede and should
+        // join whatever is already querying eth2.
         await refreshBlockchainBalances({
           blockchain: Blockchain.ETH2,
-        });
+        }, userInitiated ? RefreshMode.USER : RefreshMode.BACKGROUND);
       }
       else {
-        await fetchBlockchainBalances({
+        await hydrate({
           blockchain: Blockchain.ETH2,
         });
       }

@@ -20,8 +20,7 @@ vi.mock('@/modules/core/api/rotki-api', () => ({
 }));
 
 vi.mock('@/modules/core/api/api-urls', () => ({
-  apiUrls: { coreApiUrl: 'http://localhost:4242', colibriApiUrl: 'http://localhost:4343' },
-  defaultApiUrls: { coreApiUrl: 'http://localhost:4242', colibriApiUrl: 'http://localhost:4343' },
+  defaultApiUrl: 'http://localhost:4242',
 }));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
@@ -80,7 +79,7 @@ describe('useBackendConnection', () => {
       });
     });
 
-    it('should not update version when info returns no version', async () => {
+    it('should keep the frontend version when info returns no version', async () => {
       mockInfo.mockResolvedValue({});
 
       const { useBackendConnection } = await importModule();
@@ -88,17 +87,18 @@ describe('useBackendConnection', () => {
       await getVersion();
 
       const store = useMainStore();
-      expect(get(store.version).version).toBe('');
+      expect(get(store.version).version).toBe(__APP_VERSION__);
     });
   });
 
   describe('getInfo', () => {
     it('should update store with backend info', async () => {
       mockInfo.mockResolvedValue({
-        acceptDockerRisk: true,
+        acceptUnauthenticatedApi: true,
         backendDefaultArguments: { maxLogfilesNum: 5, maxSizeInMbAllLogs: 300, sqliteInstructions: 1000 },
         dataDirectory: '/data',
         logLevel: 'DEBUG',
+        sessionAuth: true,
       });
 
       const { useBackendConnection } = await importModule();
@@ -108,7 +108,8 @@ describe('useBackendConnection', () => {
       const store = useMainStore();
       expect(get(store.dataDirectory)).toBe('/data');
       expect(get(store.logLevel)).toBe('DEBUG');
-      expect(get(store.dockerRiskAccepted)).toBe(true);
+      expect(get(store.unauthenticatedApiAccepted)).toBe(true);
+      expect(get(store.sessionAuthEnabled)).toBe(true);
     });
   });
 

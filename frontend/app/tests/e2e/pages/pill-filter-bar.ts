@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM } from '../helpers/constants';
+import { PillFilterKeyboard } from './pill-filter-keyboard';
 
 /**
  * Drives the pill filter bar (`modules/core/table/pill/PillFilterBar.vue`).
@@ -8,7 +9,12 @@ import { TIMEOUT_MEDIUM } from '../helpers/constants';
  * callers pass the field keys (the wire keys, e.g. `counterparties`) their table exposes.
  */
 export class PillFilterBar {
-  constructor(private readonly page: Page) {}
+  /** Focus reads and key presses, which are about the document rather than about the bar. */
+  readonly keyboard: PillFilterKeyboard;
+
+  constructor(private readonly page: Page) {
+    this.keyboard = new PillFilterKeyboard(page);
+  }
 
   private get bar(): Locator {
     return this.page.locator('[data-testid=pill-bar]');
@@ -58,7 +64,7 @@ export class PillFilterBar {
    */
   async addField(fieldKey: string): Promise<void> {
     await this.bar.locator('[data-testid=pill-add]').click();
-    const option = this.page.locator(`[data-testid=pill-menu-field-${fieldKey}]`);
+    const option = this.page.locator(`[data-testid=pill-menu-field][data-field="${fieldKey}"]`);
     await option.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     await option.click();
   }
@@ -73,7 +79,7 @@ export class PillFilterBar {
    */
   async selectValue(value: string, search?: string): Promise<void> {
     await this.searchValues(search ?? value);
-    const option = this.page.locator(`[data-testid="value-select-option-${value}"]`);
+    const option = this.page.locator(`[data-testid=value-select-option][data-key="${value}"]`);
     await option.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     await option.click();
   }
@@ -87,7 +93,7 @@ export class PillFilterBar {
    */
   async selectValueOnce(value: string, search?: string): Promise<void> {
     await this.searchValues(search ?? value);
-    const option = this.page.locator(`[data-testid="value-select-option-${value}"]`);
+    const option = this.page.locator(`[data-testid=value-select-option][data-key="${value}"]`);
     await option.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
 
     if (await option.getAttribute('aria-checked') !== 'true')
@@ -132,7 +138,7 @@ export class PillFilterBar {
 
   /** Switches the open editor's operator (`is not`, `greater than`, `before`, …). */
   async selectOperator(op: string): Promise<void> {
-    const chip = this.page.locator(`[data-testid=op-${op}]`);
+    const chip = this.page.locator(`[data-testid=pill-op][data-key="${op}"]`);
     await chip.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     await chip.click();
   }
@@ -241,7 +247,7 @@ export class PillFilterBar {
 
   private suggestion(kind: 'field' | 'value', fieldKey: string, value?: string): Locator {
     const key = kind === 'field' ? `field-${fieldKey}` : `value-${fieldKey}-${value}`;
-    return this.page.locator(`[data-testid="pill-narrow-${key}"]`);
+    return this.page.locator(`[data-testid=pill-narrow-row][data-key="${key}"]`);
   }
 
   /**
@@ -249,19 +255,11 @@ export class PillFilterBar {
    * offer the same field twice, since a bare amount means either bound.
    */
   private filterSuggestion(fieldKey: string, op: string): Locator {
-    return this.page.locator(`[data-testid="pill-narrow-filter-${fieldKey}-${op}"]`);
+    return this.page.locator(`[data-testid=pill-narrow-row][data-key="filter-${fieldKey}-${op}"]`);
   }
 
   async expectFilterSuggestion(fieldKey: string, op: string): Promise<void> {
     await expect(this.filterSuggestion(fieldKey, op)).toBeVisible({ timeout: TIMEOUT_MEDIUM });
-  }
-
-  /**
-   * Waits for a field to hold focus. An editor focuses its first input from `onMounted`, a tick
-   * after the click that opened it has returned, so asserting focus straight away is a race.
-   */
-  async expectFocusedField(testId: string): Promise<void> {
-    await expect.poll(async () => this.focusedFieldTestId(), { timeout: TIMEOUT_MEDIUM }).toBe(testId);
   }
 
   async hasFilterSuggestion(fieldKey: string, op: string): Promise<boolean> {
@@ -306,7 +304,7 @@ export class PillFilterBar {
    * the async path should assert that a row arrives and applies, not which row won.
    */
   async pickFirstValueSuggestion(fieldKey: string): Promise<void> {
-    const row = this.page.locator(`[data-testid^="pill-narrow-value-${fieldKey}-"]`).first();
+    const row = this.page.locator(`[data-testid=pill-narrow-row][data-key^="value-${fieldKey}-"]`).first();
     await row.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     await row.click();
   }
@@ -325,33 +323,6 @@ export class PillFilterBar {
     for (let step = 0; step < steps; step++)
       await search.press('ArrowDown');
     await search.press('Enter');
-  }
-
-  /** `data-testid` of whatever currently holds focus, for asserting tab order. */
-  async focusedTestId(): Promise<string | null> {
-    return this.page.evaluate(() => document.activeElement?.getAttribute('data-testid') ?? null);
-  }
-
-  /** Presses a key against whatever currently holds focus, rather than a known element. */
-  async pressFocused(key: string): Promise<void> {
-    await this.page.keyboard.press(key);
-  }
-
-  /** Types into whatever currently holds focus, one key at a time. */
-  async typeFocused(text: string): Promise<void> {
-    await this.page.keyboard.type(text, { delay: 30 });
-  }
-
-  /**
-   * `data-testid` of the nearest tagged ancestor of whatever holds focus.
-   *
-   * The editors put their test ids on a field wrapper rather than on the `<input>` inside it, so
-   * `focusedTestId` reads null for them even when the right field has the caret.
-   */
-  async focusedFieldTestId(): Promise<string | null> {
-    return this.page.evaluate(() =>
-      document.activeElement?.closest('[data-testid]')?.getAttribute('data-testid') ?? null,
-    );
   }
 
   /** Puts focus in the bar's inline input, the anchor for tabbing to the pills before it. */

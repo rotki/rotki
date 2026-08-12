@@ -48,14 +48,34 @@ def do_tx_query_and_get_events(
         )
     assert len(events) == expected_len
 
-    # Confirm WS tx status messages were sent
-    websocket_connection.wait_until_messages_num(4, timeout=5)
-    assert list(websocket_connection.messages) == [  # messages are in descending order
-        {'type': 'transaction_status', 'data': {'addresses': accounts, 'chain': chain.value, 'subtype': 'bitcoin', 'status': 'decoding_transactions_finished'}},  # noqa: E501
-        {'type': 'transaction_status', 'data': {'addresses': accounts, 'chain': chain.value, 'subtype': 'bitcoin', 'status': 'decoding_transactions_started'}},  # noqa: E501
-        {'type': 'transaction_status', 'data': {'addresses': accounts, 'chain': chain.value, 'subtype': 'bitcoin', 'status': 'querying_transactions_finished'}},  # noqa: E501
-        {'type': 'transaction_status', 'data': {'addresses': accounts, 'chain': chain.value, 'subtype': 'bitcoin', 'status': 'querying_transactions_started'}},  # noqa: E501
+    # Confirm WS status updates include the requested period and an in-query update.
+    websocket_connection.wait_until_messages_num(7, timeout=5)
+    status_messages = [
+        message['data']
+        for message in websocket_connection.messages
+        if message['type'] == 'transaction_status'
     ]
+    assert [message['status'] for message in status_messages] == [  # messages are descending
+        'decoding_transactions_finished',
+        'decoding_transactions_started',
+        'querying_transactions_finished',
+        'querying_transactions',
+        'querying_transactions_started',
+    ]
+    for message in status_messages:
+        assert message['chain'] == chain.value
+        assert message['subtype'] == 'bitcoin'
+        assert message['period']
+    querying_message = next(
+        message for message in status_messages
+        if message['status'] == 'querying_transactions'
+    )
+    started_message = next(
+        message for message in status_messages
+        if message['status'] == 'querying_transactions_started'
+    )
+    assert querying_message['period'][0] == started_message['period'][0]
+    assert querying_message['period'][1] < started_message['period'][1]
     websocket_connection.messages.clear()
 
     return events

@@ -1,5 +1,6 @@
 import { groupTitle, kindRank } from './kinds';
 import { INDETERMINATE, rollupPercentage, rollupStatus, statusRank } from './status';
+import { buildTree } from './tree';
 import {
   type Activity,
   type ActivityGroup,
@@ -62,8 +63,8 @@ function dedupeById(activities: Activity[]): Activity[] {
 
 /**
  * Pure assembly of the flat activity list into the render model: dedup by id, groups (ordered
- * by kind priority), the active/pending splits, the overall rollup + phase, and the single
- * `current` activity the header bar labels. No Vue, no stores — unit-tested with literal
+ * by kind priority), the tree, the active/pending splits, the overall rollup + phase, and the
+ * single `current` activity the header bar labels. No Vue, no stores — unit-tested with literal
  * inputs.
  */
 export function assembleActivityModel(activities: Activity[], t: TranslateFn): ActivityModel {
@@ -83,11 +84,18 @@ export function assembleActivityModel(activities: Activity[], t: TranslateFn): A
   const active = ordered.filter(a => a.status === ActivityStatus.RUNNING);
   const pending = ordered.filter(a => a.status === ActivityStatus.PENDING);
 
-  const overallPercentage = rollupPercentage(groups.map(g => g.percentage));
+  const { children, roots } = buildTree(deduped, compareActivities);
+
+  // Roots only. Rolling up the per-kind groups counted every subtree twice — an umbrella's
+  // percentage is already the mean of its children (`projection.ts` `percentageOf`), so a history
+  // refresh contributed once as HISTORY_SYNC and again as TX_SYNC, each weighted like a single
+  // unrelated activity.
+  const overallPercentage = rollupPercentage(roots.map(root => root.percentage));
   const current = active[0] ?? pending[0];
 
   return {
     active,
+    children,
     current,
     groups,
     overall: {
@@ -95,5 +103,6 @@ export function assembleActivityModel(activities: Activity[], t: TranslateFn): A
       phase: phaseOf(activities),
     },
     pending,
+    roots,
   };
 }

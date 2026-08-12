@@ -1,53 +1,45 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, required, sameAs } from '@vuelidate/validators';
+import type { ZodType } from 'zod';
 import { useChangePassword } from '@/modules/auth/use-change-password';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useForm } from '@/modules/core/form/use-form';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-
-const currentPassword = ref<string>('');
-const newPassword = ref<string>('');
-const newPasswordConfirm = ref<string>('');
-const loading = ref<boolean>(false);
+import {
+  type ChangePasswordFormState,
+  changePasswordSchema,
+  emptyChangePasswordState,
+} from '@/modules/settings/data-security/change-password-form';
 
 const { t } = useI18n({ useScope: 'global' });
-
-const rules = {
-  currentPassword: {
-    required: helpers.withMessage(t('change_password.validation.empty_password'), required),
-  },
-  newPassword: {
-    required: helpers.withMessage(t('change_password.validation.empty_password'), required),
-  },
-  newPasswordConfirm: {
-    required: helpers.withMessage(t('change_password.validation.empty_confirmation'), required),
-    same: helpers.withMessage(t('change_password.validation.password_mismatch'), sameAs(newPassword)),
-  },
-};
-
-const v$ = useVuelidate(rules, { currentPassword, newPassword, newPasswordConfirm }, { $autoDirty: true });
 
 const { premiumSync } = storeToRefs(usePremiumStore());
 const { changePassword } = useChangePassword();
 
-function reset(): void {
-  set(currentPassword, '');
-  set(newPassword, '');
-  set(newPasswordConfirm, '');
-  get(v$).$reset();
-}
+const schema = computed<ZodType>(() => changePasswordSchema({
+  emptyConfirmation: t('change_password.validation.empty_confirmation'),
+  emptyPassword: t('change_password.validation.empty_password'),
+  mismatch: t('change_password.validation.password_mismatch'),
+}));
+
+const form = useForm<ChangePasswordFormState, { currentPassword: string; newPassword: string }>({
+  initial: emptyChangePasswordState,
+  schema,
+  submit: async payload => changePassword(payload),
+  transform: (state): { currentPassword: string; newPassword: string } => ({
+    currentPassword: state.currentPassword,
+    newPassword: state.newPassword,
+  }),
+});
+
+const invalid = computed<boolean>(() => !get(form.valid));
+
+const loading = computed<boolean>(() => get(form.submitting));
 
 async function change(): Promise<void> {
-  set(loading, true);
-  const result = await changePassword({
-    currentPassword: get(currentPassword),
-    newPassword: get(newPassword),
-  });
-  set(loading, false);
-
-  if (result.success)
-    reset();
+  const result = await form.submit();
+  // Only a completed change should wipe what the user typed; a rejected one is worth correcting.
+  if (result.outcome === 'success')
+    form.reset();
 }
 </script>
 
@@ -55,7 +47,7 @@ async function change(): Promise<void> {
   <RuiAlert
     v-if="premiumSync"
     class="mt-6"
-    data-cy="premium-warning"
+    data-testid="premium-warning"
     type="warning"
   >
     {{ t('change_password.sync_warning') }}
@@ -74,38 +66,41 @@ async function change(): Promise<void> {
       @submit.stop.prevent="change()"
     >
       <RuiRevealableTextField
-        v-model="currentPassword"
+        v-model="form.state.currentPassword"
         color="primary"
-        data-cy="current-password"
+        data-testid="current-password"
         :label="t('change_password.labels.password')"
-        :error-messages="toMessages(v$.currentPassword)"
+        :error-messages="form.errors('currentPassword')"
         variant="outlined"
+        @update:model-value="form.touch('currentPassword')"
       />
       <RuiRevealableTextField
-        v-model="newPassword"
+        v-model="form.state.newPassword"
         color="primary"
-        data-cy="new-password"
+        data-testid="new-password"
         :label="t('change_password.labels.new_password')"
         prepend-icon="lu-lock-keyhole"
-        :error-messages="toMessages(v$.newPassword)"
+        :error-messages="form.errors('newPassword')"
         variant="outlined"
+        @update:model-value="form.touch('newPassword')"
       />
       <RuiRevealableTextField
-        v-model="newPasswordConfirm"
+        v-model="form.state.newPasswordConfirm"
         color="primary"
-        data-cy="confirm-password"
+        data-testid="confirm-password"
         :label="t('change_password.labels.confirm_password')"
         prepend-icon="lu-repeat"
-        :error-messages="toMessages(v$.newPasswordConfirm)"
+        :error-messages="form.errors('newPasswordConfirm')"
         variant="outlined"
+        @update:model-value="form.touch('newPasswordConfirm')"
       />
       <div class="flex justify-end">
         <RuiButton
-          data-cy="change-password-button"
+          data-testid="change-password-button"
           color="primary"
           :loading="loading"
           type="submit"
-          :disabled="v$.$invalid || loading"
+          :disabled="invalid || loading"
         >
           {{ t('change_password.button') }}
         </RuiButton>

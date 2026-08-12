@@ -36,7 +36,7 @@ const isLoading = logicOr(isRefreshing, isTokenDetecting);
       <BlockchainSummaryCardCreateButton v-if="blockchainTotals.length === 0" />
       <div
         v-else
-        data-cy="blockchain-balances"
+        data-testid="blockchain-balances"
       >
         <BlockchainBalanceCardList
           v-for="total in blockchainTotals"

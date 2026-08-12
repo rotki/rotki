@@ -2,7 +2,7 @@ import { computed, defineComponent } from 'vue';
 
 export const RuiAutoCompleteStub = defineComponent({
   template: `
-      <div :data-cy="dataCy" v-bind="$attrs">
+      <div :data-testid="dataTestid" v-bind="$attrs">
         <div>
           <input
               :value="modelValue"
@@ -28,7 +28,7 @@ export const RuiAutoCompleteStub = defineComponent({
     errorMessages: { type: [String, Array], default: () => [] },
     options: { type: Array, default: () => [] },
     keyProp: { type: String, default: '' },
-    dataCy: { type: String, default: '' },
+    dataTestid: { type: String, default: '' },
     disabled: { type: Boolean, default: false },
   },
   emits: ['update:model-value', 'paste'],

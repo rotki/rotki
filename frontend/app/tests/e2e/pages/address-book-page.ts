@@ -1,11 +1,12 @@
 import { expect, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
+import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
 type Scope = 'global' | 'private';
 
 async function dismissErrorIfShown(page: Page): Promise<void> {
-  const okBtn = page.locator('[data-cy=message-dialog__ok]');
+  const okBtn = page.locator('[data-testid=message-dialog__ok]');
   // Wait briefly for a delayed popup to appear; if none, move on.
   try {
     await okBtn.waitFor({ state: 'visible', timeout: 500 });
@@ -18,23 +19,16 @@ async function dismissErrorIfShown(page: Page): Promise<void> {
 }
 
 async function confirmDialog(page: Page): Promise<void> {
-  const dialog = page.locator('[data-cy=bottom-dialog]');
-  await dialog.locator('[data-cy=confirm]').click();
+  const dialog = page.locator('[data-testid=bottom-dialog]');
+  await dialog.locator('[data-testid=confirm]').click();
   await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
   await dismissErrorIfShown(page);
 }
 
 async function confirmDelete(page: Page): Promise<void> {
-  const confirmDialogEl = page.locator('[data-cy=confirm-dialog]');
-  await confirmDialogEl.locator('[data-cy=button-confirm]').click();
+  const confirmDialogEl = page.locator('[data-testid=confirm-dialog]');
+  await confirmDialogEl.locator('[data-testid=button-confirm]').click();
   await confirmDialogEl.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
-}
-
-async function pickMenuOption(page: Page, value: string): Promise<void> {
-  const menu = page.locator('[role="menu"], [role="listbox"]').last();
-  await menu.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-  await menu.locator('button[type="button"]').filter({ hasText: new RegExp(`^${value}$`, 'i') }).first().click();
-  await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_SHORT });
 }
 
 export class AddressBookPage {
@@ -63,34 +57,34 @@ export class AddressBookPage {
   }
 
   async selectScope(scope: Scope): Promise<void> {
-    await this.page.getByTestId(`address-book-scope-${scope}`).click();
+    await this.page.locator(`[data-testid=address-book-scope-tab][data-key="${scope}"]`).click();
     // Wait for any in-flight fetch to settle by checking row attachment.
     await this.page.waitForTimeout(200);
   }
 
   async expectScopeActive(scope: Scope): Promise<void> {
-    const tab = this.page.getByTestId(`address-book-scope-${scope}`);
+    const tab = this.page.locator(`[data-testid=address-book-scope-tab][data-key="${scope}"]`);
     await expect(tab).toHaveAttribute('aria-selected', 'true');
   }
 
   async openAddDialog(): Promise<void> {
     await dismissErrorIfShown(this.page);
     await this.page.getByTestId('address-book-add').click();
-    await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
   }
 
   async submitDialog(): Promise<void> {
-    await this.page.locator('[data-cy=bottom-dialog] [data-cy=confirm]').click();
+    await this.page.locator('[data-testid=bottom-dialog] [data-testid=confirm]').click();
   }
 
   async cancelDialog(): Promise<void> {
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
-    await dialog.locator('[data-cy=cancel]').click();
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
+    await dialog.locator('[data-testid=cancel]').click();
     await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
   }
 
   async expectRequiredErrors(): Promise<void> {
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await expect(dialog.getByText('The address field cannot be empty')).toBeVisible();
     await expect(dialog.getByText('The name field cannot be empty')).toBeVisible();
   }
@@ -98,7 +92,7 @@ export class AddressBookPage {
   async addEntry(opts: { address: string; name: string }): Promise<void> {
     await dismissErrorIfShown(this.page);
     await this.page.getByTestId('address-book-add').click();
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     await this.page.getByTestId('address-book-form-address').locator('input').first().fill(opts.address);
     await this.page.getByTestId('address-book-form-name').locator('input').fill(opts.name);
@@ -107,8 +101,8 @@ export class AddressBookPage {
 
   async editEntry(address: string, newName: string): Promise<void> {
     await dismissErrorIfShown(this.page);
-    await this.rowFor(address).first().locator('[data-cy=row-edit]').click();
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    await this.rowFor(address).first().locator('[data-testid=row-edit]').click();
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     // Wait for the dialog to bind to the editable row's data; the title flips
     // from the empty "Add" form to "Edit address book entry" once that lands.
@@ -119,24 +113,47 @@ export class AddressBookPage {
   }
 
   async deleteEntry(address: string): Promise<void> {
-    await this.rowFor(address).first().locator('[data-cy=row-delete]').click();
+    await this.rowFor(address).first().locator('[data-testid=row-delete]').click();
     await confirmDelete(this.page);
     await expect(this.rowFor(address)).toHaveCount(0);
   }
 
-  async filterByChain(chain: string): Promise<void> {
-    const filter = this.page.getByTestId('address-book-chain-filter');
-    await filter.click();
-    await pickMenuOption(this.page, chain);
+  /**
+   * The chain filter, now a pill in the shared bar rather than a selector of its own.
+   *
+   * `search` is the chain's display name, which is what the checklist matches on, while the value
+   * ticked is the chain id the request carries.
+   */
+  async filterByChain(chainId: string, chainName: string): Promise<void> {
+    const filter = new PillFilterBar(this.page);
+    await filter.addField('blockchain');
+    await filter.selectValue(chainId, chainName);
+    await filter.closeEditor('blockchain');
+    await filter.expectPillVisible('blockchain');
   }
 
   async clearChainFilter(): Promise<void> {
-    const filter = this.page.getByTestId('address-book-chain-filter');
-    // Look for the clear button rendered when an option is selected.
-    const clear = filter.locator('button').filter({ hasNot: this.page.locator('text=/.+/') }).first();
-    if (await clear.isVisible().catch(() => false)) {
-      await clear.click();
-    }
+    const filter = new PillFilterBar(this.page);
+    await filter.removePill('blockchain');
+    await filter.expectNoPill('blockchain');
+  }
+
+  /** Filters by a substring of the entry name, which is typed rather than picked. */
+  async filterByName(name: string): Promise<void> {
+    const filter = new PillFilterBar(this.page);
+    await filter.addField('nameSubstring');
+    await filter.typeTextValue(name);
+    await filter.closeEditor('nameSubstring');
+    await filter.expectPillVisible('nameSubstring');
+  }
+
+  async clearFilters(): Promise<void> {
+    await new PillFilterBar(this.page).clearAll();
+  }
+
+  /** Waits for the table to settle on a row count, which a filter changes asynchronously. */
+  async expectVisibleRowCount(expected: number): Promise<void> {
+    await expect.poll(async () => this.visibleRowCount(), { timeout: TIMEOUT_MEDIUM }).toBe(expected);
   }
 
   async expectRow(address: string, name?: string): Promise<void> {

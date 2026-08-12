@@ -63,7 +63,7 @@ describe('modules/history/events/PotentialMatchesTable', () => {
   it('should render a row per match', () => {
     const wrapper = mountLayout(PotentialMatchesTable, [createRow(1), createRow(2)]);
 
-    expect(wrapper.findAll('[data-testid^=potential-match-select-]')).toHaveLength(2);
+    expect(wrapper.findAll('[data-testid=potential-match-select]')).toHaveLength(2);
   });
 
   it('should show the empty label when a search returns nothing', () => {
@@ -92,12 +92,12 @@ describe('modules/history/events/PotentialMatchesTable', () => {
     it.each(layouts)('should select and deselect a match in the %s layout', async (_name, layout) => {
       const wrapper = mountLayout(layout, [createRow(1), createRow(2)]);
 
-      await wrapper.find('[data-testid=potential-match-select-2]').trigger('click');
+      await wrapper.find('[data-testid=potential-match-select][data-key="2"]').trigger('click');
 
       expect(get(selected)).toEqual([2]);
 
       await wrapper.setProps({ selectedIds: get(selected) });
-      await wrapper.find('[data-testid=potential-match-select-2]').trigger('click');
+      await wrapper.find('[data-testid=potential-match-select][data-key="2"]').trigger('click');
 
       expect(get(selected)).toEqual([]);
     });

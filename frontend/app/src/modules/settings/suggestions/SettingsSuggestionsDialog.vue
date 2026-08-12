@@ -148,7 +148,7 @@ function dismiss(): void {
         </RuiButton>
         <RuiButton
           color="primary"
-          data-cy="apply-suggestions"
+          data-testid="apply-suggestions"
           @click="apply()"
         >
           {{ t("settings_suggestions.apply_selected") }}

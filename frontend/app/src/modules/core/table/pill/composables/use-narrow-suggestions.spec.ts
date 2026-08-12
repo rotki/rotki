@@ -9,7 +9,7 @@ import { useNarrowSuggestions } from '@/modules/core/table/pill/composables/use-
 function field(overrides: Partial<FieldDef> & Pick<FieldDef, 'key' | 'label'>): FieldDef {
   return {
     allowExclusion: false,
-    binding: { kind: 'matcher' },
+    binding: { kind: 'filter' },
     multiple: true,
     operators: ['is'],
     valueType: FilterValueTypes.ENUM,

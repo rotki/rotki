@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { SupportedAsset } from '@rotki/common';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
 import type { Collection } from '@/modules/core/common/collection';
-import type { Filters } from '@/modules/core/table/filters/use-assets-filter';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import AssetUnderlyingTokens from '@/modules/assets/admin/AssetUnderlyingTokens.vue';
 import ManagedAssetActions from '@/modules/assets/admin/managed/ManagedAssetActions.vue';
@@ -106,7 +106,7 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
 </script>
 
 <template>
-  <div data-cy="managed-assets-table">
+  <div data-testid="managed-assets-table">
     <ManagedAssetActions
       v-model:ignored-filter="ignoredFilter"
       v-model:selected="selected"
@@ -130,7 +130,7 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
       :expanded="expanded"
       :disabled-rows="disabledRows"
       row-attr="identifier"
-      data-cy="managed-assets-table"
+      data-testid="managed-assets-table"
       single-expand
       sticky-header
       outlined

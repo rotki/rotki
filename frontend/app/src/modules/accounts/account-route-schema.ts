@@ -4,7 +4,7 @@ import { CommaSeparatedStringSchema, RouterExpandedIdsSchema } from '@/modules/c
 
 /**
  * A repeated query key (`?chain=eth&chain=optimism`) or a comma-joined one (`?chain=eth,optimism`).
- * The param source writes the joined form, but the matcher-bound chain filter this replaced wrote
+ * The param source writes the joined form, but the filter-bound chain filter this replaced wrote
  * the repeated one, so a link from before it moved still parses rather than throwing here and
  * taking the whole route update with it.
  */

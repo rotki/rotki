@@ -139,12 +139,12 @@ defineExpose({
 
 <template>
   <div
-    data-cy="manual-balance-form"
+    data-testid="manual-balance-form"
     class="flex flex-col gap-2"
   >
     <RuiTextField
       v-model="label"
-      data-cy="manual-balances-form-label"
+      data-testid="manual-balances-form-label"
       variant="outlined"
       color="primary"
       :label="t('manual_balances_form.fields.label')"
@@ -163,7 +163,7 @@ defineExpose({
       <AssetSelect
         v-model="asset"
         :label="t('common.asset')"
-        data-cy="manual-balances-form-asset"
+        data-testid="manual-balances-form-asset"
         outlined
         :chain="location"
         :error-messages="toMessages(v$.asset)"
@@ -209,7 +209,7 @@ defineExpose({
       v-model="amount"
       :label="t('common.amount')"
       :error-messages="toMessages(v$.amount)"
-      data-cy="manual-balances-form-amount"
+      data-testid="manual-balances-form-amount"
       variant="outlined"
       autocomplete="off"
       :disabled="submitting"
@@ -220,12 +220,12 @@ defineExpose({
       v-model="tags"
       :label="t('manual_balances_form.fields.tags')"
       :disabled="submitting"
-      data-cy="manual-balances-form-tags"
+      data-testid="manual-balances-form-tags"
     />
 
     <LocationSelector
       v-model="location"
-      data-cy="manual-balances-form-location"
+      data-testid="manual-balances-form-location"
       :error-messages="toMessages(v$.location)"
       :disabled="submitting"
       :label="t('common.location')"

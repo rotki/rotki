@@ -69,12 +69,12 @@ describe('pinnedSidebar', () => {
     store.pinPanel({ name: PinnedNames.MATCH_ASSET_MOVEMENTS, props: {} });
     await nextTick();
     // The tab strip is the rail's only header, so it shows even for a single panel.
-    expect(wrapper.find(`[data-testid="pinned-tab-${PinnedNames.MATCH_ASSET_MOVEMENTS}"]`).exists()).toBe(true);
+    expect(wrapper.find(`[data-testid=pinned-tab][data-key="${PinnedNames.MATCH_ASSET_MOVEMENTS}"]`).exists()).toBe(true);
 
     store.pinPanel({ name: PinnedNames.INTERNAL_TX_CONFLICTS, props: {} });
     await nextTick();
-    expect(wrapper.find(`[data-testid="pinned-tab-${PinnedNames.MATCH_ASSET_MOVEMENTS}"]`).exists()).toBe(true);
-    expect(wrapper.find(`[data-testid="pinned-tab-${PinnedNames.INTERNAL_TX_CONFLICTS}"]`).exists()).toBe(true);
+    expect(wrapper.find(`[data-testid=pinned-tab][data-key="${PinnedNames.MATCH_ASSET_MOVEMENTS}"]`).exists()).toBe(true);
+    expect(wrapper.find(`[data-testid=pinned-tab][data-key="${PinnedNames.INTERNAL_TX_CONFLICTS}"]`).exists()).toBe(true);
   });
 
   it('should preserve a backgrounded panel state across a tab round-trip', async () => {
@@ -93,11 +93,11 @@ describe('pinnedSidebar', () => {
     expect(wrapper.find('[data-testid="stub-match"] .count').text()).toBe('2');
 
     // Switch to conflicts (match backgrounded) then back.
-    await wrapper.find(`[data-testid="pinned-tab-${PinnedNames.INTERNAL_TX_CONFLICTS}"]`).trigger('click');
+    await wrapper.find(`[data-testid=pinned-tab][data-key="${PinnedNames.INTERNAL_TX_CONFLICTS}"]`).trigger('click');
     await nextTick();
     expect(wrapper.find('[data-testid="stub-conflicts"]').exists()).toBe(true);
 
-    await wrapper.find(`[data-testid="pinned-tab-${PinnedNames.MATCH_ASSET_MOVEMENTS}"]`).trigger('click');
+    await wrapper.find(`[data-testid=pinned-tab][data-key="${PinnedNames.MATCH_ASSET_MOVEMENTS}"]`).trigger('click');
     await nextTick();
     expect(wrapper.find('[data-testid="stub-match"] .count').text()).toBe('2');
   });
@@ -111,7 +111,7 @@ describe('pinnedSidebar', () => {
     store.pinPanel({ name: PinnedNames.INTERNAL_TX_CONFLICTS, props: {} });
     await nextTick();
 
-    await wrapper.find(`[data-testid="pinned-tab-close-${PinnedNames.INTERNAL_TX_CONFLICTS}"]`).trigger('click');
+    await wrapper.find(`[data-testid=pinned-tab-close][data-key="${PinnedNames.INTERNAL_TX_CONFLICTS}"]`).trigger('click');
     await nextTick();
 
     expect(get(pinnedPanels).map(panel => panel.name)).toEqual([PinnedNames.MATCH_ASSET_MOVEMENTS]);
@@ -140,7 +140,7 @@ describe('pinnedSidebar', () => {
 
     expect(wrapper.find('[data-testid="pinned-mini-bar"]').exists()).toBe(true);
 
-    await wrapper.find(`[data-testid="pinned-mini-${PinnedNames.MATCH_ASSET_MOVEMENTS}"]`).trigger('click');
+    await wrapper.find(`[data-testid=pinned-mini-tab][data-key="${PinnedNames.MATCH_ASSET_MOVEMENTS}"]`).trigger('click');
 
     expect(get(showPinned)).toBe(true);
   });

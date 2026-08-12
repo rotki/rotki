@@ -92,7 +92,7 @@ onMounted(async () => {
         unique-key="0"
       />
       <div class="flex flex-col justify-start lg:justify-center max-w-full grow px-4 pt-10 pb-6">
-        <div data-cy="account-management">
+        <div data-testid="account-management">
           <UserHost>
             <LoginForm
               v-if="!showStage"

@@ -44,7 +44,7 @@ describe('divergenceBoundaryCard', () => {
   it('should render the truncated group identifier and balances', () => {
     const wrapper = createWrapper(boundary());
 
-    const card = wrapper.find('[data-testid="divergence-last_matching"]');
+    const card = wrapper.find('[data-testid=divergence-boundary][data-key=last_matching]');
     expect(card.exists()).toBe(true);
     expect(card.find('.hash').text()).toBe(`1${'a'.repeat(64)}`);
     expect(card.text()).toContain('11');
@@ -53,7 +53,7 @@ describe('divergenceBoundaryCard', () => {
   it('should emit view when the view button is clicked', async () => {
     const wrapper = createWrapper(boundary());
 
-    await wrapper.find('[data-testid="view-divergence-last_matching"]').trigger('click');
+    await wrapper.find('[data-testid=view-divergence][data-key=last_matching]').trigger('click');
 
     expect(wrapper.emitted('view')).toHaveLength(1);
   });
@@ -61,7 +61,7 @@ describe('divergenceBoundaryCard', () => {
   it('should disable the view button when the boundary has no group identifier', () => {
     const wrapper = createWrapper(boundary({ groupIdentifier: null }));
 
-    const button = wrapper.find('[data-testid="view-divergence-last_matching"]');
+    const button = wrapper.find('[data-testid=view-divergence][data-key=last_matching]');
     expect(button.attributes('disabled')).toBeDefined();
   });
 });

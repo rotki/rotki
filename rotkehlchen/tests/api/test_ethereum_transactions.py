@@ -543,7 +543,7 @@ def test_query_over_10k_transactions(rotkehlchen_api_server: APIServer) -> None:
                 if action in {'txlistinternal', 'tokentx'}:
                     payload = '{"status":"1","message":"OK","result":[]}'
                     return MockResponse(200, payload)
-                if action in {'getblocknobytime', 'txlist'}:
+                if action in {'getblocknobytime', 'txlist', 'eth_getBlockByNumber'}:
                     return original_get(url, *_args, **_kwargs)
                 raise AssertionError(
                     f'Unexpected etherscan query {params} at test mock',
@@ -552,7 +552,11 @@ def test_query_over_10k_transactions(rotkehlchen_api_server: APIServer) -> None:
             if '=txlistinternal&' in url or '=tokentx&' in url:
                 # don't return any internal or token transactions
                 payload = '{"status":"1","message":"OK","result":[]}'
-            elif '=getblocknobytime&' in url or '=txlist&' in url:
+            elif (
+                '=getblocknobytime&' in url or
+                '=txlist&' in url or
+                '=eth_getBlockByNumber&' in url
+            ):
                 # we don't really care about this in this test so return original
                 return original_get(url, *_args, **_kwargs)
             else:

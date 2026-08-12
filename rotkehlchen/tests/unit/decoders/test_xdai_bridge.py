@@ -7,6 +7,7 @@ from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
 from rotkehlchen.chain.ethereum.modules.xdai_bridge.decoder import (
     BRIDGE_ADDRESS,
     XDAI_BRIDGE_PERIPHERAL_PRE_USDS,
+    XDAI_BRIDGE_PERIPHERAL_USDS,
 )
 from rotkehlchen.chain.gnosis.modules.xdai_bridge.decoder import (
     BRIDGE_ADDRESS as GNOSIS_BRIDGE_ADDRESS,
@@ -105,6 +106,51 @@ def test_bridge_dai_from_ethereum_pre_usds_upgrade(
             'from_address': user_address,
             'to_address': user_address,
             'transfer_id': '0x220b7397ce4b2f03b6871eb57762396aa0140d57dac4623d241e5eb02a0bc349',
+        }},
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
+def test_bridge_dai_from_ethereum_post_usds_upgrade(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Test that DAI converted to USDS by the bridge peripheral before being deposited in
+    the bridge is seen as a bridging event and not as a sky DAI to USDS migration"""
+    tx_hash = deserialize_evm_tx_hash('0xf26d574f5136c0aa93ad996484b04522910481a1c4ae055cbeeac36a8ef41337')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1786049939000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000095327360060304'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        tx_ref=tx_hash,
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        sequence_index=485,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_DAI,
+        amount=FVal(bridge_amount := '331.180665033'),
+        location_label=user_address,
+        notes=f'Bridge {bridge_amount} DAI from Ethereum to Gnosis via Gnosis Chain bridge',
+        tx_ref=tx_hash,
+        counterparty=CPT_GNOSIS_CHAIN,
+        address=XDAI_BRIDGE_PERIPHERAL_USDS,
+        extra_data={'bridge': {
+            'from_chain': 1,
+            'to_chain': 100,
+            'from_address': user_address,
+            'to_address': user_address,
+            'transfer_id': '0xf26d574f5136c0aa93ad996484b04522910481a1c4ae055cbeeac36a8ef41337',
         }},
     )]
 

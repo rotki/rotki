@@ -1,13 +1,12 @@
 import type { EffectScope, MaybeRef, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
-import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/modules/core/table/filtering';
-import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
+import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { LocationQuery } from '@/modules/core/table/route';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, type Mock, vi } from 'vitest';
-import { z } from 'zod';
-import { arrayify } from '@/modules/core/common/data/array';
+import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { TableId } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 
@@ -104,8 +103,6 @@ interface TestFilters extends MatchedKeywordWithBehaviour<string> {
   txRefs?: string[];
 }
 
-type TestMatcher = SearchMatcher<string, string>;
-
 function mockRequestData(): (payload: MaybeRef<TestPayload>) => Promise<Collection<TestItem>> {
   return vi.fn().mockResolvedValue({
     data: [],
@@ -127,19 +124,19 @@ function mockRequestWithExtras(): (payload: MaybeRef<TestPayloadWithExtras>) => 
   });
 }
 
-function createTestFilterSchema(): FilterSchema<TestFilters, TestMatcher> {
-  const OptionalString = z.string().optional();
-  const OptionalMultipleString = z.array(z.string()).or(z.string()).transform(arrayify).optional();
-
+/**
+ * The filter bag and the fields it is declared by. The url shape is derived from the fields, so a
+ * table under test states its keys once, the same way a real one does.
+ */
+function createTestFilterOptions(): { fields: FieldDef[]; filters: Ref<TestFilters> } {
   return {
+    fields: [
+      toMatchFieldDef({ key: 'asset', label: 'Asset', multiple: false }),
+      toMatchFieldDef({ key: 'identifiers', label: 'Identifiers', multiple: false }),
+      toMatchFieldDef({ key: 'tempFilter', label: 'Temp filter', multiple: false }),
+      toMatchFieldDef({ key: 'txRefs', label: 'Tx refs', multiple: true }),
+    ],
     filters: ref<TestFilters>({}),
-    matchers: computed<TestMatcher[]>(() => []),
-    RouteFilterSchema: z.object({
-      asset: OptionalString,
-      identifiers: OptionalString,
-      tempFilter: OptionalString,
-      txRefs: OptionalMultipleString,
-    }),
   };
 }
 
@@ -188,10 +185,10 @@ describe('filter-persistence', () => {
 
   describe('keys: never', () => {
     it('should strip never keys from the persisted filter on user action', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { identifiers: 'never', groupIdentifiers: 'never' }, tableId: TableId.HISTORY },
         params: [{
           values: computed(() => ({
@@ -219,10 +216,10 @@ describe('filter-persistence', () => {
     });
 
     it('should strip never keys even on programmatic navigation', async () => {
-      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { identifiers: 'never' }, tableId: TableId.HISTORY },
         params: [{
           values: computed(() => ({ identifiers: 'some-id' })),
@@ -244,10 +241,10 @@ describe('filter-persistence', () => {
     });
 
     it('should persist all keys when no key policy is given', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { tableId: TableId.HISTORY },
         params: [{
           values: computed(() => ({ identifiers: 'some-id' })),
@@ -270,10 +267,10 @@ describe('filter-persistence', () => {
     });
 
     it('should strip multiple never keys from different sources', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { identifiers: 'never', groupIdentifiers: 'never', duplicateHandlingStatus: 'never' }, tableId: TableId.HISTORY },
         params: [
           {
@@ -310,10 +307,10 @@ describe('filter-persistence', () => {
 
   describe('keys: untilChanged', () => {
     it('should strip transient keys when set from programmatic navigation', async () => {
-      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }));
 
@@ -332,10 +329,10 @@ describe('filter-persistence', () => {
     });
 
     it('should persist transient keys when user sets them without prior navigation', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -354,10 +351,10 @@ describe('filter-persistence', () => {
     });
 
     it('should persist transient keys when user modifies the value after navigation', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -382,10 +379,10 @@ describe('filter-persistence', () => {
     });
 
     it('should strip transient key when value still matches navigation value', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -411,10 +408,10 @@ describe('filter-persistence', () => {
     });
 
     it('should not strip transient keys when navigation had no transient values', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -439,10 +436,10 @@ describe('filter-persistence', () => {
     });
 
     it('should strip multiple transient keys on programmatic navigation', async () => {
-      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged', tempFilter: 'untilChanged' }, tableId: TableId.HISTORY },
       }));
 
@@ -461,10 +458,10 @@ describe('filter-persistence', () => {
     });
 
     it('should persist multiple transient keys when user changes their values', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged', tempFilter: 'untilChanged' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -491,10 +488,10 @@ describe('filter-persistence', () => {
 
   describe('keys: never and untilChanged combined', () => {
     it('should always strip never keys and strip untilChanged keys on navigation', async () => {
-      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { identifiers: 'never', groupIdentifiers: 'never', txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
         params: [{
           values: computed(() => ({ identifiers: 'id-1' })),
@@ -519,10 +516,10 @@ describe('filter-persistence', () => {
     });
 
     it('should strip never keys but keep user-modified untilChanged keys', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { identifiers: 'never', txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
         params: [{
           values: computed(() => ({ identifiers: 'id-1' })),
@@ -548,10 +545,10 @@ describe('filter-persistence', () => {
 
   describe('no persist configured', () => {
     it('should not crash when persist is not set', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
       }))!;
 
       await nextTick();
@@ -565,10 +562,10 @@ describe('filter-persistence', () => {
     });
 
     it('should persist full query without any key exclusion', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         params: [{
           values: computed(() => ({ identifiers: 'some-id' })),
           to: 'both',
@@ -592,10 +589,10 @@ describe('filter-persistence', () => {
 
   describe('persist with no key policies', () => {
     it('should persist the full query without modifications', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { tableId: TableId.HISTORY },
         params: [{
           values: computed(() => ({ identifiers: 'some-id' })),
@@ -621,10 +618,10 @@ describe('filter-persistence', () => {
 
   describe('navigation resets transient tracking', () => {
     it('should reset transient tracking when navigating to empty query', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -655,10 +652,10 @@ describe('filter-persistence', () => {
 
   describe('restorePersistedFilter', () => {
     it('should restore persisted filter when route query is empty', async () => {
-      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { tableId: TableId.HISTORY },
       }));
 
@@ -675,10 +672,10 @@ describe('filter-persistence', () => {
 
       restorePersistedFilterSpy.mockClear();
 
-      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { tableId: TableId.HISTORY },
       }));
 
@@ -691,10 +688,10 @@ describe('filter-persistence', () => {
 
   describe('edge cases', () => {
     it('should disable persistence when persist is omitted', async () => {
-      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
       }));
 
       await nextTick();
@@ -705,10 +702,10 @@ describe('filter-persistence', () => {
     });
 
     it('should enable persistence when persist is provided', async () => {
-      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { tableId: TableId.HISTORY },
       }));
 
@@ -721,10 +718,10 @@ describe('filter-persistence', () => {
     });
 
     it('should handle never keys that are not in the query gracefully', async () => {
-      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { nonExistentKey: 'never', anotherMissing: 'never' }, tableId: TableId.HISTORY },
       }))!;
 
@@ -743,10 +740,10 @@ describe('filter-persistence', () => {
     });
 
     it('should handle untilChanged keys that are not in the navigation query', async () => {
-      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
         fetch: mockRequestData(),
         urlState: { mode: 'route' },
-        filterSchema: createTestFilterSchema(),
+        ...createTestFilterOptions(),
         persist: { keys: { txRefs: 'untilChanged' }, tableId: TableId.HISTORY },
       }));
 
@@ -795,11 +792,11 @@ describe('request.debounce', () => {
       total: 0,
     });
 
-    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       request: { debounce: 200 },
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -833,10 +830,10 @@ describe('request.debounce', () => {
       total: 0,
     });
 
-    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -878,11 +875,11 @@ describe('request.cancelTag', () => {
       total: 0,
     });
 
-    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       request: { cancelTag: 'test-cancel-tag' },
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -904,10 +901,10 @@ describe('request.cancelTag', () => {
       total: 0,
     });
 
-    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -925,11 +922,11 @@ describe('request.cancelTag', () => {
     const { RequestCancelledError: MockRequestCancelledError } = await import('@/modules/core/api');
     const requestFn = vi.fn().mockRejectedValue(new MockRequestCancelledError());
 
-    scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       request: { cancelTag: 'test-cancel-tag' },
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }));
 
     await nextTick();
@@ -951,11 +948,11 @@ describe('request.cancelTag', () => {
 
     const locationLabels = ref<string[]>([]);
 
-    scope.run(() => useServerTable<TestItem, TestPayloadWithLabels, TestFilters, TestMatcher>({
+    scope.run(() => useServerTable<TestItem, TestPayloadWithLabels, TestFilters>({
       fetch: requestFn,
       request: { debounce: 200 },
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [
         {
           values: computed<Partial<{ locationLabels: string[] }>>(() => {
@@ -1007,11 +1004,11 @@ describe('request.cancelTag', () => {
 
     const locationLabels = ref<string[]>(['0x1aEa862845522cFF463D11B9371EedEa73e458bE']);
 
-    scope.run(() => useServerTable<TestItem, TestPayloadWithLabels, TestFilters, TestMatcher>({
+    scope.run(() => useServerTable<TestItem, TestPayloadWithLabels, TestFilters>({
       fetch: requestFn,
       request: { debounce: 200 },
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [
         {
           values: computed<Partial<{ locationLabels: string[] }>>(() => {
@@ -1055,10 +1052,10 @@ describe('request.cancelTag', () => {
       total: 0,
     });
 
-    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1083,11 +1080,11 @@ describe('request.cancelTag', () => {
       total: 0,
     });
 
-    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       request: { cancelTag: 'debounced-cancel-tag', debounce: 200 },
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1137,10 +1134,10 @@ describe('sources precedence', () => {
   });
 
   it('should let the filter override a base source', async () => {
-    const { filter, requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters, TestMatcher>({
+    const { filter, requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{
         values: computed(() => ({ asset: 'FROM_BASE' })),
         to: 'request',
@@ -1162,10 +1159,10 @@ describe('sources precedence', () => {
   });
 
   it('should let a non-base source override the filter', async () => {
-    const { filter, requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters, TestMatcher>({
+    const { filter, requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{
         values: computed(() => ({ asset: 'FROM_SOURCE' })),
         to: 'request',
@@ -1183,10 +1180,10 @@ describe('sources precedence', () => {
   });
 
   it('should let array order decide between two non-base sources', async () => {
-    const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters, TestMatcher>({
+    const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [
         { values: computed(() => ({ asset: 'FIRST' })), to: 'request' },
         { values: computed(() => ({ asset: 'SECOND' })), to: 'request' },
@@ -1219,10 +1216,10 @@ describe('source destinations', () => {
   });
 
   it('should route each destination to the right channel', async () => {
-    const { filter, requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters, TestMatcher>({
+    const { filter, requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [
         { values: computed(() => ({ requestParam: 'req' })), to: 'request' },
         { values: computed(() => ({ urlParam: 'url' })), to: 'url' },
@@ -1254,10 +1251,10 @@ describe('source destinations', () => {
     // Regression guard: the internal `setPage(1, 'programmatic')` fired by the
     // filter watcher must not clear the pending `user` provenance, otherwise no
     // URL write happens at all.
-    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1283,10 +1280,10 @@ describe('source destinations', () => {
     });
     const urlOnly = ref<string>('');
 
-    scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters, TestMatcher>({
+    scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: requestFn,
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{
         values: computed(() => ({ urlParam: get(urlOnly) })),
         to: 'url',
@@ -1309,10 +1306,10 @@ describe('source destinations', () => {
   });
 
   it('should drop empty values with skipEmpty, and empty strings for the url', async () => {
-    const { filter, requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters, TestMatcher>({
+    const { filter, requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{
         values: computed(() => ({ emptyArr: [], emptyStr: '', filled: 'x' })),
         to: 'both',
@@ -1340,10 +1337,10 @@ describe('source destinations', () => {
   });
 
   it('should keep empty values when skipEmpty is not set', async () => {
-    const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters, TestMatcher>({
+    const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{
         values: computed(() => ({ emptyArr: [], emptyStr: '' })),
         to: 'request',
@@ -1385,10 +1382,10 @@ describe('urlState modes', () => {
       total: 0,
     });
 
-    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       urlState: { mode: 'none' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1414,10 +1411,10 @@ describe('urlState modes', () => {
   it('should write to the passed ref instead of the router when mode is ref', async () => {
     const query = ref<LocationQuery>({});
 
-    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'ref', query },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1453,10 +1450,10 @@ describe('sort.fallbackColumn', () => {
   });
 
   it('should sort by timestamp when neither a default nor a fallback is given', async () => {
-    const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1466,10 +1463,10 @@ describe('sort.fallbackColumn', () => {
   });
 
   it('should sort by the configured fallback column instead of timestamp', async () => {
-    const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       sort: { fallbackColumn: 'name' },
     }))!;
 
@@ -1480,10 +1477,10 @@ describe('sort.fallbackColumn', () => {
   });
 
   it('should let an explicit default win over the fallback column', async () => {
-    const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { requestPayload } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       sort: { default: { column: 'id', direction: 'asc' }, fallbackColumn: 'name' },
     }))!;
 
@@ -1517,10 +1514,10 @@ describe('error', () => {
     const failure = new Error('request blew up');
     const requestFn = vi.fn().mockRejectedValue(failure);
 
-    const { error, filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { error, filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1535,10 +1532,10 @@ describe('error', () => {
   });
 
   it('should leave error unset while fetches succeed', async () => {
-    const { error, filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { error, filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1576,7 +1573,7 @@ describe('generic inference', () => {
     const table = scope.run(() => useServerTable({
       fetch: mockRequestWithExtras(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{ values: computed(() => ({ asset: 'INFERRED' })), to: 'request' }],
     }))!;
 
@@ -1614,9 +1611,9 @@ describe('page reset', () => {
   });
 
   it('should reset to page 1 when the filter changes', async () => {
-    const { filter, pagination } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters, TestMatcher>({
+    const { filter, pagination } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
     }))!;
 
     await nextTick();
@@ -1636,10 +1633,10 @@ describe('page reset', () => {
     // Url-only values never reach the api, so the result set cannot move under them
     // and the current page is still valid.
     const highlight = ref<string>('a');
-    const { pagination } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters, TestMatcher>({
+    const { pagination } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{ values: computed(() => ({ urlParam: get(highlight) })), to: 'url' }],
     }))!;
 
@@ -1662,10 +1659,10 @@ describe('page reset', () => {
     // current page can be invalid. Resetting carries no user intent, so no URL write is
     // earned: this is the parity fix for filters edited outside the TableFilter bar.
     const account = ref<string>('a');
-    const { pagination } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters, TestMatcher>({
+    const { pagination } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestWithExtras(),
       urlState: { mode: 'route' },
-      filterSchema: createTestFilterSchema(),
+      ...createTestFilterOptions(),
       params: [{ skipEmpty: true, to: 'request', values: computed(() => ({ requestParam: get(account) })) }],
     }))!;
 

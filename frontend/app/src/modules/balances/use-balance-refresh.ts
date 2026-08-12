@@ -1,6 +1,7 @@
 import type { MaybeRef } from 'vue';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
+import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { arrayify } from '@/modules/core/common/data/array';
 import { BlockchainRefreshButtonBehaviour } from '@/modules/settings/types/frontend-settings';
@@ -11,11 +12,17 @@ export const useBalanceRefresh = createSharedComposable(() => {
   const { fetchConnectedExchangeBalances, fetchSelectedExchangeBalances } = useExchanges();
   const blockchainRefreshButtonBehaviour = useSetting('blockchainRefreshButtonBehaviour');
 
+  /**
+   * ⭐ Everything reaching this composable came from a user pressing something — the refresh
+   * buttons, the accounts page, the dashboard tiles. So it refreshes in `user` mode, which
+   * supersedes a background run rather than joining it: a user asking for fresh data must not
+   * silently receive the periodic tick's result and its parameters.
+   */
   const refreshBlockchainBalancesFn = async (blockchain?: string | string[]): Promise<void> => {
     const chain = blockchain ? arrayify(blockchain) : undefined;
     await refreshBlockchainBalances({
       blockchain: chain,
-    });
+    }, RefreshMode.USER);
   };
 
   const { detectAllTokens } = useTokenDetectionOrchestrator();

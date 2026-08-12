@@ -46,8 +46,11 @@ interface UseUrlStateSyncOptions<TItem extends NonNullable<unknown>, TFilter> {
   params: ParamSource[];
   /** The filter state, overwritten when the URL is applied. */
   filters: Ref<TFilter>;
-  /** Deserializes the raw query into the filter shape. */
-  routeFilterSchema?: Schema;
+  /**
+   * Deserializes the raw query into the filter shape. Read on each application rather than captured
+   * once: it is derived from the table's fields, which a view can gate at runtime.
+   */
+  routeFilterSchema?: () => Schema | undefined;
   /** The global page size, used when resetting to defaults. */
   itemsPerPage: Ref<number>;
   /** The raw page/limit state, overwritten when the URL is applied. */
@@ -134,14 +137,14 @@ export function useUrlStateSync<TItem extends NonNullable<unknown>, TFilter>(
     if (isEmpty(routeQuery)) {
       // for empty query, we reset the filters, and pagination to defaults
       applySourceReads(params, routeQuery);
-      set(filters, routeFilterSchema?.parse({}));
+      set(filters, routeFilterSchema?.()?.parse({}));
       set(internalPagination, applyPaginationDefaults(get(itemsPerPage)));
       set(internalSorting, defaultSorting());
       return;
     }
 
     applySourceReads(params, routeQuery);
-    set(filters, routeFilterSchema?.parse(routeQuery));
+    set(filters, routeFilterSchema?.()?.parse(routeQuery));
     set(internalPagination, parseQueryPagination(routeQuery, get(internalPagination)));
     set(internalSorting, parseQueryHistory(routeQuery, defaultSorting(), fallbackColumn));
   };

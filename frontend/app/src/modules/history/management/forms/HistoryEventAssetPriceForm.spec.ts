@@ -82,7 +82,7 @@ describe('forms/HistoryEventAssetPriceForm', () => {
     wrapper = createWrapper();
     await flushPromises();
 
-    await wrapper.find('[data-cy=primary] input').setValue('3000');
+    await wrapper.find('[data-testid=primary] input').setValue('3000');
     await flushPromises();
 
     expect(lastIntent()).toEqual({
@@ -97,11 +97,11 @@ describe('forms/HistoryEventAssetPriceForm', () => {
     wrapper = createWrapper();
     await flushPromises();
 
-    await wrapper.find('[data-cy=primary] input').setValue('3000');
+    await wrapper.find('[data-testid=primary] input').setValue('3000');
     await flushPromises();
     expect(lastIntent()).toBeDefined();
 
-    await wrapper.find('[data-cy=primary] input').setValue('2500');
+    await wrapper.find('[data-testid=primary] input').setValue('2500');
     await flushPromises();
 
     expect(lastIntent()).toBeUndefined();
@@ -111,7 +111,7 @@ describe('forms/HistoryEventAssetPriceForm', () => {
     wrapper = createWrapper({ asset: 'USD' });
     await flushPromises();
 
-    await wrapper.find('[data-cy=primary] input').setValue('3000');
+    await wrapper.find('[data-testid=primary] input').setValue('3000');
     await flushPromises();
 
     expect(lastIntent()).toBeUndefined();
@@ -121,7 +121,7 @@ describe('forms/HistoryEventAssetPriceForm', () => {
     wrapper = createWrapper({ disabled: true });
     await flushPromises();
 
-    await wrapper.find('[data-cy=primary] input').setValue('3000');
+    await wrapper.find('[data-testid=primary] input').setValue('3000');
     await flushPromises();
 
     expect(lastIntent()).toBeUndefined();

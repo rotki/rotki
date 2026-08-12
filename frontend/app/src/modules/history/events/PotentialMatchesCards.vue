@@ -74,7 +74,8 @@ function eventLabel(row: PotentialMatchRow): string {
           isSelected(row) ? 'border-rui-primary bg-rui-primary/5' : 'border-default hover:bg-rui-grey-50 dark:hover:bg-rui-grey-900',
           { '!bg-rui-success/15': row.entry.identifier === highlightedIdentifier },
         ]"
-        :data-testid="`potential-match-${row.entry.identifier}`"
+        data-testid="potential-match"
+        :data-key="row.entry.identifier"
         @click="toggle(row)"
       >
         <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
@@ -132,7 +133,8 @@ function eventLabel(row: PotentialMatchRow): string {
               class="!h-[30px] !py-0 min-w-24"
               :color="isSelected(row) ? 'success' : 'primary'"
               :variant="isSelected(row) ? 'default' : 'outlined'"
-              :data-testid="`potential-match-select-${row.entry.identifier}`"
+              data-testid="potential-match-select"
+              :data-key="row.entry.identifier"
               @click="toggle(row)"
             >
               <template

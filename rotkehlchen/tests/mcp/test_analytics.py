@@ -2,6 +2,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 from typing import Any
+from unittest.mock import Mock
 
 import pandas as pd
 import pytest
@@ -14,12 +15,35 @@ from rotkehlchen.mcp.analytics import (
     _flatten,
     _sanitize_row,
     _validate_sql,
+    sync_privacy_mode,
 )
-from rotkehlchen.mcp.backend import configure_backend
+from rotkehlchen.mcp.backend import configure_backend, get_backend_config, set_privacy_mode
 from rotkehlchen.mcp.taxonomy import RECIPES
 
 ADDRESS = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'
 TX_HASH = '0x' + 'ab' * 32
+
+
+def test_sync_privacy_mode_should_clear_data_only_when_mode_changes(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    session = analytics.get_analytics_session()
+    clear = Mock(wraps=session.clear)
+    monkeypatch.setattr(session, 'clear', clear)
+    monkeypatch.setattr(analytics, 'query_settings', lambda: {'mcp_privacy_mode': 'strict'})
+
+    assert sync_privacy_mode() is session
+    assert get_backend_config().privacy_mode == 'strict'
+    clear.assert_called_once_with()
+
+    sync_privacy_mode()
+    clear.assert_called_once_with()
+
+
+def test_sync_privacy_mode_should_reject_invalid_backend_value(monkeypatch) -> None:
+    monkeypatch.setattr(analytics, 'query_settings', lambda: {'mcp_privacy_mode': 'invalid'})
+
+    with pytest.raises(analytics.BackendQueryError, match='invalid MCP privacy mode'):
+        sync_privacy_mode()
 
 
 class BlockingTableLoader:
@@ -52,6 +76,30 @@ class OrderedTableLoader:
             frame=pd.DataFrame([{'asset': asset}]),
             source={'privacy_mode': scope.privacy_mode},
         )
+
+
+class HistoricalPricesMock:
+    def __init__(self, prices: dict[str, dict[int, str]]) -> None:
+        self.prices = prices
+        self.calls: list[dict[str, Any]] = []
+
+    def __call__(
+            self,
+            asset_timestamps: list[tuple[str, int]],
+            target_asset: str,
+            max_seconds_distance: int,
+    ) -> dict[str, Any]:
+        self.calls.append({
+            'pairs': list(asset_timestamps),
+            'target_asset': target_asset,
+            'max_seconds_distance': max_seconds_distance,
+        })
+        assets: dict[str, dict[str, str]] = {}
+        for asset, timestamp in asset_timestamps:
+            if (price := self.prices.get(asset, {}).get(timestamp)) is not None:
+                # both levels come back as strings over JSON, as the real endpoint does
+                assets.setdefault(asset, {})[str(timestamp)] = price
+        return {'assets': assets, 'target_asset': target_asset}
 
 
 def test_flatten_should_recurse_and_add_float_companions() -> None:
@@ -330,6 +378,39 @@ def test_refresh_should_load_without_blocking_queries(monkeypatch) -> None:
     )['rows'] == [{'asset': 'BTC', 'amount_float': 2.0}]
 
 
+def test_refresh_should_not_publish_data_if_privacy_mode_changes(monkeypatch) -> None:
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='raw')
+    started = Event()
+    proceed = Event()
+    monkeypatch.setitem(
+        analytics.TABLE_LOADERS,
+        'history_events',
+        BlockingTableLoader(started=started, proceed=proceed),
+    )
+    session = AnalyticsSession()
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        refresh_future = executor.submit(
+            session.refresh,
+            tables=None,
+            from_timestamp=0,
+            to_timestamp=0,
+            include_ignored_assets=False,
+        )
+        assert started.wait(timeout=5)
+        assert set_privacy_mode('strict') is True
+        proceed.set()
+        result = refresh_future.result(timeout=5)
+
+    assert result['tables'] == {}
+    assert result['errors'] == {
+        'privacy_mode': 'Privacy mode changed during refresh; retry it',
+    }
+    assert session.query_sql('select * from history_events', 10)['error']['type'] == (
+        'no_tables_loaded'
+    )
+
+
 def test_overlapping_refreshes_should_not_publish_out_of_order(monkeypatch) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     started = Event()
@@ -447,26 +528,16 @@ def test_load_is_uncapped_by_default_and_respects_max_events(monkeypatch) -> Non
     assert capped['tables']['history_events']['source']['cache_truncated'] is True
 
 
-def _mock_prices(monkeypatch, prices: dict[str, dict[int, str]], currency: str = 'EUR') -> list:
+def _mock_prices(
+        monkeypatch: pytest.MonkeyPatch,
+        prices: dict[str, dict[int, str]],
+        currency: str = 'EUR',
+) -> list[dict[str, Any]]:
     """Mock the settings + historical-price backends, recording every price call made."""
-    calls: list[dict[str, Any]] = []
-
-    def fake_prices(asset_timestamps, target_asset, max_seconds_distance):
-        calls.append({
-            'pairs': list(asset_timestamps),
-            'target_asset': target_asset,
-            'max_seconds_distance': max_seconds_distance,
-        })
-        assets: dict[str, dict[str, str]] = {}
-        for asset, timestamp in asset_timestamps:
-            if (price := prices.get(asset, {}).get(timestamp)) is not None:
-                # both levels come back as strings over JSON, as the real endpoint does
-                assets.setdefault(asset, {})[str(timestamp)] = price
-        return {'assets': assets, 'target_asset': target_asset}
-
+    prices_mock = HistoricalPricesMock(prices=prices)
     monkeypatch.setattr(analytics, 'query_settings', lambda: {'main_currency': currency})
-    monkeypatch.setattr(analytics, 'query_historical_prices', fake_prices)
-    return calls
+    monkeypatch.setattr(analytics, 'query_historical_prices', prices_mock)
+    return prices_mock.calls
 
 
 def _valued_event(identifier: int, asset: str, amount: str, timestamp: int) -> dict[str, Any]:

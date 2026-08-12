@@ -2,6 +2,7 @@
 import type { HistoryEventEntryType } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import { checkIfDevelopment } from '@shared/utils';
+import { kebabCase } from 'es-toolkit';
 import { type HighlightSegment, splitHighlight } from '@/modules/history/events/action-picker/highlight-match';
 import HistoryEventActionDirectionBadge from '@/modules/history/events/action-picker/HistoryEventActionDirectionBadge.vue';
 import { useEventActionDescriptions } from '@/modules/history/events/action-picker/use-event-action-descriptions';
@@ -220,7 +221,6 @@ function onUpdate(verbKey: string | undefined): void {
     :required="required"
     :error-messages="errorMessages"
     :hint="hint"
-    data-cy="eventActionPicker"
     data-testid="event-action-picker"
     @update:model-value="onUpdate($event)"
   >
@@ -242,16 +242,9 @@ function onUpdate(verbKey: string | undefined): void {
         >
           {{ subtitleFor(item) }}
         </span>
-        <!--
-          Pin the direction toward the chevron. RuiCategoryPicker's selection
-          layer applies `w-full` on top of its `left-4 right-8` box, so the
-          layer overflows ~16px past the field's right edge and reserves no room
-          for the chevron; the wide right margin clears it (verified ~12px gap).
-          Workaround for rotki/ui-library#559 — drop the margin once fixed.
-        -->
         <HistoryEventActionDirectionBadge
           :direction="item.direction"
-          class="shrink-0 ml-auto mr-16"
+          class="shrink-0 ml-auto"
         />
       </div>
     </template>
@@ -283,7 +276,8 @@ function onUpdate(verbKey: string | undefined): void {
     <template #item="{ item }">
       <div
         class="flex items-center gap-3 w-full"
-        :data-testid="`event-action-picker-row-${item.verbKey}`"
+        data-testid="event-action-picker-row"
+        :data-key="kebabCase(item.verbKey)"
         :data-event-types="rowEventTypes(item)"
       >
         <RuiIcon

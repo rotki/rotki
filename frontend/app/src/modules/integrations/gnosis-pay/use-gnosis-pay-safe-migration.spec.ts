@@ -3,6 +3,7 @@ import { Blockchain } from '@rotki/common';
 import dayjs from 'dayjs';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 
 const WEEK_IN_SECONDS = 7 * 24 * 60 * 60;
 const NEW_SAFE = '0xabcdef1234567890abcdef1234567890abcdef12';
@@ -62,7 +63,13 @@ describe('useGnosisPaySafeMigration', () => {
     vi.resetModules();
     setActivePinia(createPinia());
     fetchGnosisPaySafeMigration.mockReset();
-    addAccounts.mockReset().mockResolvedValue(undefined);
+    // The real `addAccounts` resolves an `AdditionSummary` and does not throw on a failed add, so
+    // `undefined` here let the composable claim success for an addition that never happened.
+    addAccounts.mockReset().mockResolvedValue({
+      added: [{ address: NEW_SAFE, chain: Blockchain.GNOSIS }],
+      cancelled: false,
+      failed: [],
+    });
     notify.mockReset();
     showErrorMessage.mockReset();
     showSuccessMessage.mockReset();
@@ -147,6 +154,38 @@ describe('useGnosisPaySafeMigration', () => {
     await composable.addMissingSafe();
 
     expect(showErrorMessage).toHaveBeenCalled();
+    expect(get(composable.untrackedSafe)).toEqual({ address: OLD_SAFE, type: 'old' });
+  });
+
+  // Additions report failure as a value, not a throw. Without reading the summary the Safe was
+  // announced as added and the suggestion dismissed while nothing had been stored.
+  it('should surface an error and keep the safe when the addition reports a failure', async () => {
+    fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: OLD_SAFE, type: 'old' }]));
+    addAccounts.mockResolvedValue({
+      added: [],
+      cancelled: false,
+      failed: [{ account: { address: OLD_SAFE, tags: null }, error: TaskFailed({ message: 'node unreachable' }) }],
+    });
+    const { composable } = await setup();
+    await composable.checkMigration();
+
+    await composable.addMissingSafe();
+
+    expect(showSuccessMessage).not.toHaveBeenCalled();
+    expect(showErrorMessage).toHaveBeenCalled();
+    expect(get(composable.untrackedSafe)).toEqual({ address: OLD_SAFE, type: 'old' });
+  });
+
+  it('should keep the safe and stay silent when the addition is cancelled', async () => {
+    fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: OLD_SAFE, type: 'old' }]));
+    addAccounts.mockResolvedValue({ added: [], cancelled: true, failed: [] });
+    const { composable } = await setup();
+    await composable.checkMigration();
+
+    await composable.addMissingSafe();
+
+    expect(showSuccessMessage).not.toHaveBeenCalled();
+    expect(showErrorMessage).not.toHaveBeenCalled();
     expect(get(composable.untrackedSafe)).toEqual({ address: OLD_SAFE, type: 'old' });
   });
 

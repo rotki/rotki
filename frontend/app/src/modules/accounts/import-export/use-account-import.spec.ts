@@ -1,13 +1,16 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type { AccountPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
 import type { Tag } from '@/modules/tags/tags';
 import { Blockchain } from '@rotki/common';
 import { createMockCSV } from '@test/mocks/file';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountManage } from '@/modules/accounts/blockchain/use-account-manage';
 import { createValidatorAccount } from '@/modules/accounts/create-account';
 import { useAccountImport } from '@/modules/accounts/import-export/use-account-import';
-import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts';
+import { useAccountAdditions } from '@/modules/accounts/use-account-additions';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useTagsApi } from '@/modules/tags/use-tags-api';
 
 const VALIDATOR_1 = '0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda';
@@ -35,36 +38,36 @@ vi.mock('@/modules/tags/use-tags-api', async () => {
   };
 });
 
-function mockAddAccount(failOnAddress?: string[]): (_chain: string, payload: AccountPayload[] | XpubAccountPayload) => Promise<string> {
+// A failed addition is an `err` value now, not a rejection: `addAccount` no longer throws.
+function mockAddAccount(failOnAddress?: string[]): (_chain: string, payload: AccountPayload[] | XpubAccountPayload) => ResultAsync<string, TaskError> {
   return async (_chain, payload) => {
     if (Array.isArray(payload)) {
-      if (failOnAddress && payload.length === 1 && failOnAddress.includes(payload[0].address)) {
-        throw new Error(`Failed to add account: ${payload[0].address}`);
-      }
-      else {
-        return payload[0].address;
-      }
+      if (failOnAddress && payload.length === 1 && failOnAddress.includes(payload[0].address))
+        return err(TaskFailed({ message: `Failed to add account: ${payload[0].address}` }));
+
+      return ok(payload[0].address);
     }
-    else {
-      return Promise.resolve(payload.xpub.xpub);
-    }
+    return ok(payload.xpub.xpub);
   };
 }
 
-vi.mock('@/modules/accounts/use-blockchain-accounts', () => {
+vi.mock('@/modules/accounts/use-account-additions', () => {
   const mock = {
     addAccount: vi.fn().mockImplementation(mockAddAccount()),
-    addEvmAccount: vi.fn().mockImplementation(async (address: string) => Promise.resolve({
+    addEvmAccount: vi.fn().mockImplementation(async (address: string) => ok({
       added: {
         [address]: ['eth', 'optimism', 'gnosis'],
       },
     })),
-    fetch: vi.fn().mockResolvedValue(undefined),
   };
   return {
-    useBlockchainAccounts: vi.fn(() => mock),
+    useAccountAdditions: vi.fn(() => mock),
   };
 });
+
+vi.mock('@/modules/accounts/use-account-fetching', () => ({
+  useAccountFetching: vi.fn(() => ({ fetch: vi.fn().mockResolvedValue(undefined) })),
+}));
 
 vi.mock('@/modules/accounts/blockchain/use-account-manage', () => {
   const mock = {
@@ -79,6 +82,9 @@ vi.mock('@/modules/accounts/blockchain/use-account-manage', () => {
 vi.mock('@/modules/accounts/use-account-addition-notifications', () => ({
   useAccountAdditionNotifications: vi.fn(() => ({
     createFailureNotification: vi.fn(),
+    // Reached now that every import row goes through the one addition path; the old single-address
+    // shortcut never called it.
+    notifyFailedToAddAddress: vi.fn(),
     notifyUser: vi.fn(),
   })),
 }));
@@ -121,7 +127,7 @@ describe('useAccountImport', () => {
   });
 
   it('should import valid accounts from csv', async () => {
-    const { addAccount, addEvmAccount } = useBlockchainAccounts();
+    const { addAccount, addEvmAccount } = useAccountAdditions();
     const { queryAddTag } = useTagsApi();
 
     const mockFile = createMockCSV([
@@ -134,24 +140,25 @@ describe('useAccountImport', () => {
     await importAccounts(mockFile);
 
     expect(addAccount).toHaveBeenCalledTimes(1);
+    // Several rows, so the import runs under one umbrella and every addition is parented to it.
     expect(addAccount).toHaveBeenCalledWith('eth', [{
       address: '0x124',
       label: 'Name2',
       tags: ['tag1', 'tag2'],
-    }]);
+    }], { parent: expect.any(String) });
     expect(addEvmAccount).toHaveBeenCalledTimes(1);
     expect(addEvmAccount).toHaveBeenCalledWith({
       address: '0x123',
       label: 'Name1',
       tags: ['tag1', 'tag2'],
-    });
+    }, { parent: expect.any(String) });
     expect(queryAddTag).toHaveBeenCalledTimes(2);
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag1' }));
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag2' }));
   });
 
   it('should not fail to import accounts if one addition fails', async () => {
-    const { addAccount, addEvmAccount } = useBlockchainAccounts();
+    const { addAccount, addEvmAccount } = useAccountAdditions();
     const { queryAddTag } = useTagsApi();
 
     vi.mocked(addAccount).mockImplementation(mockAddAccount(['0x124']));
@@ -171,13 +178,13 @@ describe('useAccountImport', () => {
       address: '0x125',
       label: 'Name3',
       tags: ['tag1', 'tag2'],
-    }]);
+    }], { parent: expect.any(String) });
     expect(addEvmAccount).toHaveBeenCalledTimes(1);
     expect(addEvmAccount).toHaveBeenCalledWith({
       address: '0x123',
       label: 'Name1',
       tags: ['tag1', 'tag2'],
-    });
+    }, { parent: expect.any(String) });
     expect(queryAddTag).toHaveBeenCalledTimes(2);
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag1' }));
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag2' }));
@@ -200,7 +207,7 @@ describe('useAccountImport', () => {
   });
 
   it('should import an xpub address', async () => {
-    const { addAccount } = useBlockchainAccounts();
+    const { addAccount } = useAccountAdditions();
     const { queryAddTag } = useTagsApi();
 
     const mockFile = createMockCSV([
@@ -212,6 +219,8 @@ describe('useAccountImport', () => {
     await importAccounts(mockFile);
 
     expect(addAccount).toHaveBeenCalledTimes(1);
+    // A one-row import needs no umbrella, so this addition has no parent — the batch suppresses the
+    // umbrella rather than showing a parent over a single child.
     expect(addAccount).toHaveBeenCalledWith('btc', {
       label: 'Test Pub',
       tags: ['tag1'],
@@ -220,7 +229,7 @@ describe('useAccountImport', () => {
         xpub: XPUB,
         xpubType: 'p2pkh',
       },
-    });
+    }, undefined);
 
     expect(queryAddTag).toHaveBeenCalledTimes(1);
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag1' }));

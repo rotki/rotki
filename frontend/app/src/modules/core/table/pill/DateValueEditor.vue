@@ -73,9 +73,24 @@ const toValue = computed<number | undefined>(() => toEpoch(filter.date?.to));
  * `between` may not be written back to front, which would return an empty table with no
  * explanation. The old bar refused both through `dateRangeValidator`; the pickers enforce them
  * here, where the user can see the days that are out of range greyed out.
+ *
+ * An equal pair is allowed by default, since inclusive second bounds make it mean exactly that
+ * second. A field whose column is stored in milliseconds says otherwise (`allowEqualBounds`),
+ * because there the pair would ask for one millisecond rather than the second.
  */
-const fromMaxDate = computed<number | 'now'>(() => get(toValue) ?? 'now');
-const toMinDate = computed<number | undefined>(() => get(fromValue));
+// A second of clearance when the field forbids an equal pair, so the two bounds cannot be pulled
+// onto the same instant from either side.
+const gap = computed<number>(() => (field.allowEqualBounds === false ? 1 : 0));
+
+const fromMaxDate = computed<number | 'now'>(() => {
+  const to = get(toValue);
+  return to === undefined ? 'now' : to - get(gap);
+});
+
+const toMinDate = computed<number | undefined>(() => {
+  const from = get(fromValue);
+  return from === undefined ? undefined : from + get(gap);
+});
 
 function toEpoch(value: string | undefined): number | undefined {
   if (value === undefined || value === '')
@@ -117,7 +132,8 @@ function setBound(bound: 'from' | 'to', value: number | Date | undefined): void 
         v-for="op in operators"
         :key="op"
         :model-value="op"
-        :data-testid="`op-${op}`"
+        data-testid="pill-op"
+        :data-key="op"
       >
         {{ operatorLabels[op] }}
       </RuiButton>

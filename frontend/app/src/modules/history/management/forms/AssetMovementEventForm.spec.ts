@@ -162,24 +162,24 @@ describe('forms/AssetMovementEventForm.vue', () => {
     // The e2e suite finds every field through these selectors; losing one is an e2e break.
     expect(selectorContract(wrapper)).toMatchInlineSnapshot(`
       [
-        "data-cy=amount",
-        "data-cy=asset",
-        "data-cy=asset-movement-event-form__advance",
-        "data-cy=blockchain-id",
-        "data-cy=datetime",
-        "data-cy=eventSubtype",
-        "data-cy=fee-amount",
-        "data-cy=fee-asset",
-        "data-cy=groupIdentifier",
-        "data-cy=grouped-amount-input__swap-button",
-        "data-cy=has-fee",
-        "data-cy=location",
-        "data-cy=locationLabel",
-        "data-cy=notes",
-        "data-cy=primary",
-        "data-cy=secondary",
-        "data-cy=tx-ref",
-        "data-cy=unique-id",
+        "data-testid=amount",
+        "data-testid=asset",
+        "data-testid=asset-movement-event-form__advance",
+        "data-testid=blockchain-id",
+        "data-testid=datetime",
+        "data-testid=event-subtype",
+        "data-testid=fee-amount",
+        "data-testid=fee-asset",
+        "data-testid=group-identifier",
+        "data-testid=grouped-amount-input__swap-button",
+        "data-testid=has-fee",
+        "data-testid=location",
+        "data-testid=location-label",
+        "data-testid=notes",
+        "data-testid=primary",
+        "data-testid=secondary",
+        "data-testid=tx-ref",
+        "data-testid=unique-id",
       ]
     `);
   });
@@ -188,8 +188,8 @@ describe('forms/AssetMovementEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input').element.value).toBe('');
-    expect(wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value').element.value).toBe('');
+    expect(wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input').element.value).toBe('');
+    expect(wrapper.find<HTMLInputElement>('[data-testid=location-label] .input-value').element.value).toBe('');
   });
 
   it('should call addHistoryEvent when adding a new event without fee', async () => {
@@ -197,15 +197,15 @@ describe('forms/AssetMovementEventForm.vue', () => {
 
     const now = dayjs();
     const nowInMs = now.valueOf();
-    await wrapper.find('[data-cy=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
-    await wrapper.find('[data-cy=groupIdentifier] input').setValue('TEST123');
-    await wrapper.find('[data-cy=eventSubtype] input').setValue('receive');
-    await wrapper.find('[data-cy=locationLabel] input').setValue('Kraken 1');
-    await wrapper.find('[data-cy=location] input').setValue('kraken');
-    await wrapper.find('[data-cy=asset] input').setValue('BTC');
-    await wrapper.find('[data-cy=amount] input').setValue('2.5');
-    await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue('Test deposit transaction');
-    await wrapper.find('[data-cy=unique-id] input').setValue('1234567890');
+    await wrapper.find('[data-testid=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
+    await wrapper.find('[data-testid=group-identifier] input').setValue('TEST123');
+    await wrapper.find('[data-testid=event-subtype] input').setValue('receive');
+    await wrapper.find('[data-testid=location-label] input').setValue('Kraken 1');
+    await wrapper.find('[data-testid=location] input').setValue('kraken');
+    await wrapper.find('[data-testid=asset] input').setValue('BTC');
+    await wrapper.find('[data-testid=amount] input').setValue('2.5');
+    await wrapper.find('[data-testid=notes] textarea:not([aria-hidden="true"])').setValue('Test deposit transaction');
+    await wrapper.find('[data-testid=unique-id] input').setValue('1234567890');
 
     await vi.advanceTimersToNextTimerAsync();
 
@@ -238,19 +238,19 @@ describe('forms/AssetMovementEventForm.vue', () => {
 
     const now = dayjs();
     const nowInMs = now.valueOf();
-    await wrapper.find('[data-cy=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
-    await wrapper.find('[data-cy=groupIdentifier] input').setValue('TEST123');
-    await wrapper.find('[data-cy=eventSubtype] input').setValue('receive');
-    await wrapper.find('[data-cy=locationLabel] input').setValue('Kraken 1');
-    await wrapper.find('[data-cy=location] input').setValue('kraken');
-    await wrapper.find('[data-cy=asset] input').setValue('BTC');
-    await wrapper.find('[data-cy=amount] input').setValue('2.5');
-    await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue('Test deposit transaction');
-    await wrapper.find('[data-cy=unique-id] input').setValue('1234567890');
+    await wrapper.find('[data-testid=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
+    await wrapper.find('[data-testid=group-identifier] input').setValue('TEST123');
+    await wrapper.find('[data-testid=event-subtype] input').setValue('receive');
+    await wrapper.find('[data-testid=location-label] input').setValue('Kraken 1');
+    await wrapper.find('[data-testid=location] input').setValue('kraken');
+    await wrapper.find('[data-testid=asset] input').setValue('BTC');
+    await wrapper.find('[data-testid=amount] input').setValue('2.5');
+    await wrapper.find('[data-testid=notes] textarea:not([aria-hidden="true"])').setValue('Test deposit transaction');
+    await wrapper.find('[data-testid=unique-id] input').setValue('1234567890');
 
-    await wrapper.find('[data-cy=has-fee] input').setValue(true);
-    await wrapper.find('[data-cy=fee-amount] input').setValue('0.00001');
-    await wrapper.find('[data-cy=fee-asset] input').setValue('BTC');
+    await wrapper.find('[data-testid=has-fee] input').setValue(true);
+    await wrapper.find('[data-testid=fee-amount] input').setValue('0.00001');
+    await wrapper.find('[data-testid=fee-asset] input').setValue('BTC');
 
     await vi.advanceTimersToNextTimerAsync();
 
@@ -285,8 +285,8 @@ describe('forms/AssetMovementEventForm.vue', () => {
     await saveMethod();
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-cy=amount] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=asset] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=amount] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=asset] .details').exists()).toBe(true);
   });
 
   it('should update the fields when all editing an event', async () => {
@@ -295,10 +295,10 @@ describe('forms/AssetMovementEventForm.vue', () => {
     await wrapper.setProps({ data: { eventsInGroup: [event], type: 'edit-group' } });
     await vi.advanceTimersToNextTimerAsync();
 
-    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
-    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
-    const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
-    const notesTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
+    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-testid=location-label] .input-value');
+    const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
+    const notesTextArea = wrapper.find<HTMLTextAreaElement>('[data-testid=notes] textarea:not([aria-hidden="true"])');
 
     expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
     expect(locationLabelInput.element.value).toBe(event.locationLabel);
@@ -323,7 +323,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
 
     // click save after changing the historic price
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
-    await wrapper.find('[data-cy=primary] input').setValue('1000');
+    await wrapper.find('[data-testid=primary] input').setValue('1000');
 
     await saveMethod();
     await nextTick();
@@ -338,8 +338,8 @@ describe('forms/AssetMovementEventForm.vue', () => {
 
     // The event itself is edited too, so the save is only held back by the failed price write and
     // not by the unchanged-in-edit-mode short circuit.
-    await wrapper.find('[data-cy=primary] input').setValue('1000');
-    await wrapper.find('[data-cy=amount] input').setValue('250');
+    await wrapper.find('[data-testid=primary] input').setValue('1000');
+    await wrapper.find('[data-testid=amount] input').setValue('250');
 
     addHistoricalPriceMock.mockRejectedValueOnce(new Error('price rejected'));
 
@@ -357,9 +357,9 @@ describe('forms/AssetMovementEventForm.vue', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-cy=asset] input').setValue('USD');
-    await wrapper.find('[data-cy=amount] input').setValue('250');
-    await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue('Test deposit transaction');
+    await wrapper.find('[data-testid=asset] input').setValue('USD');
+    await wrapper.find('[data-testid=amount] input').setValue('250');
+    await wrapper.find('[data-testid=notes] textarea:not([aria-hidden="true"])').setValue('Test deposit transaction');
 
     const saveMethod = wrapper.vm.save;
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
@@ -391,9 +391,9 @@ describe('forms/AssetMovementEventForm.vue', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-cy=has-fee] input').setValue(true);
-    await wrapper.find('[data-cy=fee-amount] input').setValue(fee.amount.toString());
-    await wrapper.find('[data-cy=fee-asset] input').setValue(fee.asset.toString());
+    await wrapper.find('[data-testid=has-fee] input').setValue(true);
+    await wrapper.find('[data-testid=fee-amount] input').setValue(fee.amount.toString());
+    await wrapper.find('[data-testid=fee-asset] input').setValue(fee.asset.toString());
 
     await vi.advanceTimersToNextTimerAsync();
 
@@ -427,7 +427,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-cy=has-fee] input').setValue(false);
+    await wrapper.find('[data-testid=has-fee] input').setValue(false);
     await vi.advanceTimersToNextTimerAsync();
 
     const saveMethod = wrapper.vm.save;
@@ -463,11 +463,11 @@ describe('forms/AssetMovementEventForm.vue', () => {
 
     const now = dayjs();
     const nowInMs = now.valueOf();
-    await wrapper.find('[data-cy=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
-    await wrapper.find('[data-cy=eventSubtype] input').setValue('receive');
-    await wrapper.find('[data-cy=location] input').setValue('kraken');
-    await wrapper.find('[data-cy=asset] input').setValue('BTC');
-    await wrapper.find('[data-cy=amount] input').setValue('2.5');
+    await wrapper.find('[data-testid=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
+    await wrapper.find('[data-testid=event-subtype] input').setValue('receive');
+    await wrapper.find('[data-testid=location] input').setValue('kraken');
+    await wrapper.find('[data-testid=asset] input').setValue('BTC');
+    await wrapper.find('[data-testid=amount] input').setValue('2.5');
     // Note: uniqueId field is left empty
 
     await vi.advanceTimersToNextTimerAsync();
@@ -492,7 +492,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-cy=amount] input').setValue('250');
+    await wrapper.find('[data-testid=amount] input').setValue('250');
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
 
     expect(await wrapper.vm.save()).toBe(true);
@@ -504,7 +504,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await flushPromises();
 
-    expect(wrapper.findAll('[data-cy=eventSubtype] .selections span')).toHaveLength(2);
+    expect(wrapper.findAll('[data-testid=event-subtype] .selections span')).toHaveLength(2);
   });
 
   describe('actualGroupIdentifier', () => {
@@ -520,7 +520,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe('ACTUAL123');
       expect(groupIdentifierInput.element.disabled).toBe(true);
     });
@@ -531,7 +531,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
       expect(groupIdentifierInput.element.disabled).toBe(false);
     });

@@ -120,7 +120,7 @@ defineExpose({
         max-date="now"
         variant="outlined"
         accuracy="millisecond"
-        data-cy="datetime"
+        data-testid="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
         :error-messages="form.errors('timestamp')"
         @blur="form.touch('timestamp')"
@@ -128,7 +128,7 @@ defineExpose({
       <LocationSelector
         v-model="state.location"
         :disabled="data.type === 'edit-group'"
-        data-cy="location"
+        data-testid="location"
         :label="t('common.location')"
         required
         :error-messages="form.errors('location')"
@@ -138,7 +138,7 @@ defineExpose({
         v-model="state.locationLabel"
         :items="locationLabelSuggestions"
         clearable
-        data-cy="locationLabel"
+        data-testid="location-label"
         :label="t('transactions.events.form.location_label.label')"
         :error-messages="form.errors('locationLabel')"
         auto-select-first
@@ -154,7 +154,7 @@ defineExpose({
       :options="historyEventTypesData"
       key-attr="identifier"
       text-attr="label"
-      data-cy="eventSubtype"
+      data-testid="event-subtype"
       auto-select-first
       :error-messages="form.errors('eventSubtype')"
       @blur="form.touch('eventSubtype')"
@@ -190,7 +190,7 @@ defineExpose({
     <RuiTextArea
       v-model="state.notes"
       prepend-icon="lu-sticky-note"
-      data-cy="notes"
+      data-testid="notes"
       variant="outlined"
       color="primary"
       max-rows="5"
@@ -206,7 +206,7 @@ defineExpose({
       v-if="state.hasFee"
       v-model="state.feeNotes"
       prepend-icon="lu-sticky-note"
-      data-cy="fee-notes"
+      data-testid="fee-notes"
       variant="outlined"
       color="primary"
       max-rows="5"
@@ -223,7 +223,7 @@ defineExpose({
 
     <RuiAccordions>
       <RuiAccordion
-        data-cy="asset-movement-event-form__advance"
+        data-testid="asset-movement-event-form__advance"
         header-class="py-4"
         eager
       >
@@ -235,7 +235,7 @@ defineExpose({
             v-model="state.groupIdentifier"
             variant="outlined"
             color="primary"
-            data-cy="groupIdentifier"
+            data-testid="group-identifier"
             :disabled="state.hasActualGroupIdentifier"
             :label="t('transactions.events.form.group_identifier.label')"
             :error-messages="form.errors('groupIdentifier')"
@@ -245,7 +245,7 @@ defineExpose({
           <RuiTextField
             v-model="state.uniqueId"
             variant="outlined"
-            data-cy="unique-id"
+            data-testid="unique-id"
             color="primary"
             :label="t('transactions.events.form.unique_id.label')"
             :error-messages="form.errors('uniqueId')"
@@ -256,7 +256,7 @@ defineExpose({
             v-model="state.transactionId"
             variant="outlined"
             color="primary"
-            data-cy="tx-ref"
+            data-testid="tx-ref"
             :label="t('common.tx_hash')"
             :error-messages="form.errors('transactionId')"
             @blur="form.touch('transactionId')"
@@ -265,7 +265,7 @@ defineExpose({
           <ChainSelect
             v-model="state.blockchain"
             variant="outlined"
-            data-cy="blockchain-id"
+            data-testid="blockchain-id"
             color="primary"
             custom-value
             :label="t('common.blockchain')"

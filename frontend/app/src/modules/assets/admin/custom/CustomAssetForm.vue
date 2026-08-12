@@ -64,7 +64,7 @@ defineExpose({
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <RuiTextField
         v-model="name"
-        data-cy="name"
+        data-testid="name"
         variant="outlined"
         color="primary"
         clearable
@@ -74,7 +74,7 @@ defineExpose({
       />
       <AutoCompleteWithSearchSync
         v-model="customAssetType"
-        data-cy="type"
+        data-testid="type"
         :items="types"
         clearable
         :label="t('common.type')"
@@ -84,7 +84,7 @@ defineExpose({
     </div>
     <RuiTextArea
       v-model="notes"
-      data-cy="notes"
+      data-testid="notes"
       variant="outlined"
       color="primary"
       max-rows="5"

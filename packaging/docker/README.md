@@ -91,6 +91,7 @@ Every resolved value is logged at startup with the layer it came from, so
 | `MAX_SIZE_IN_MB_ALL_LOGS` | backend default | Total log size budget |
 | `SQLITE_INSTRUCTIONS` | backend default | SQLite instructions-per-context |
 | `ROTKI_SESSION_KEY` | unset | Enables session-cookie auth (see below) |
+| `ROTKI_SESSION_COOKIE_SECURE` | unset | `Secure` on the session cookie: `1` always, `forwarded` from `X-Forwarded-Proto` |
 
 To mount a config file:
 
@@ -226,6 +227,44 @@ The value is inherited by both backends, which sign and validate the cookie with
 it. Keep it stable across restarts or existing sessions are invalidated. Note it
 is visible in `/proc/<pid>/environ` to the owning uid, the same exposure the
 previous entrypoint had.
+
+### The `Secure` cookie attribute
+
+The cookie is **not** marked `Secure` by default, because the image serves plain
+http and the flag would stop the browser sending it at all. Behind a TLS
+terminator, turn it on with `ROTKI_SESSION_COOKIE_SECURE`:
+
+- `1` (or `true`) always marks it. Use this when TLS is terminated in front and
+  the proxy does not send `X-Forwarded-Proto`.
+- `forwarded` derives it per request from `X-Forwarded-Proto`.
+- unset, `0`, or absent leaves it off. An **unrecognised** value logs a warning
+  and is treated as off rather than silently meaning something.
+
+`forwarded` is only safe because starling rewrites `X-Forwarded-Proto` on every
+proxied request, keeping an inbound value solely when the peer is a trusted hop
+(loopback, private and link-local by default, plus any `--trusted-proxy` CIDR),
+and overwriting it with `http` otherwise. core cannot make that call itself: it
+listens on loopback behind starling, so every request appears to come from
+`127.0.0.1`.
+
+That cuts both ways, so match the mode to where your terminator sits:
+
+- If it reaches the container from a **public** address, name it with
+  `--trusted-proxy`. Without that its `X-Forwarded-Proto: https` is overwritten
+  like any other untrusted peer's, and the cookie is quietly never marked
+  `Secure` even though TLS is working. It fails safe (logins keep working) and
+  warns about nothing, so it is easy to miss.
+- The default trust set covers the whole private range and can only be extended,
+  never narrowed. A client on the same LAN as the container is therefore a
+  trusted hop too, and can set the header on its own requests. That only affects
+  the cookie in its own response, so it forces `Secure` onto its own session
+  rather than weakening anyone else's. If you do not want that at all, use `1`
+  instead of `forwarded` and do not publish the port to an untrusted network.
+
+Setting the flag is not a substitute for HSTS. `Secure` stops the cookie being
+sent over plaintext, but a browser that has never seen an HSTS header will still
+*make* the plaintext request. Send `Strict-Transport-Security` from the same
+proxy that terminates TLS.
 
 With authentication enabled, starling also starts the MCP service and exposes its
 streamable HTTP transport at `/mcp`. Obtain a bearer token from an authenticated

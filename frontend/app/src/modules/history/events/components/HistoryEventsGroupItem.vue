@@ -5,6 +5,7 @@ import { type DuplicateHandlingStatus, getHighlightClass, type HighlightType } f
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import HistoryEventsAction from '@/modules/history/events/HistoryEventsAction.vue';
 import HistoryEventsIdentifier from '@/modules/history/events/HistoryEventsIdentifier.vue';
+import { useEventRedecodeStatus } from '@/modules/history/events/use-event-redecode-status';
 import IgnoredInAccountingIcon from '@/modules/history/IgnoredInAccountingIcon.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
@@ -51,13 +52,15 @@ const { t } = useI18n({ useScope: 'global' });
 const showingIgnoredAssets = computed<boolean>(() => ignoredAssets === 'showing');
 
 const isCard = computed<boolean>(() => variant === 'card');
+
+const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
 </script>
 
 <template>
   <!-- Card Layout -->
   <div
     v-if="isCard"
-    data-cy="history-event-group"
+    data-testid="history-event-group"
     class="pt-1 pb-2 px-3 border-b border-rui-grey-200 dark:border-rui-grey-800 bg-rui-grey-100 dark:bg-dark-elevated"
     :class="getHighlightClass(highlightType)"
   >
@@ -107,6 +110,14 @@ const isCard = computed<boolean>(() => variant === 'card');
           :group-events="groupEvents"
           class="min-w-0 flex-1"
         />
+
+        <span
+          v-if="redecoding"
+          data-testid="event-redecoding"
+          class="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide text-rui-primary bg-rui-primary/10 animate-pulse"
+        >
+          {{ t('transactions.events.redecoding') }}
+        </span>
       </div>
 
       <HistoryEventsAction
@@ -114,6 +125,7 @@ const isCard = computed<boolean>(() => variant === 'card');
         :event="group"
         :group-events="groupEvents"
         :loading="loading"
+        :redecoding="redecoding"
         :duplicate-handling-status="duplicateHandlingStatus"
         class="shrink-0"
         @add-event="emit('add-event', $event)"
@@ -147,7 +159,7 @@ const isCard = computed<boolean>(() => variant === 'card');
   <!-- Row Layout -->
   <div
     v-else
-    data-cy="history-event-group"
+    data-testid="history-event-group"
     class="h-12 flex items-center gap-2.5 border-b border-default !border-t-rui-grey-400 dark:!border-t-rui-grey-600 pl-2 pr-4 bg-white dark:bg-dark-elevated contain-content"
     :class="getHighlightClass(highlightType)"
   >
@@ -200,6 +212,14 @@ const isCard = computed<boolean>(() => variant === 'card');
         class="min-w-0"
       />
 
+      <span
+        v-if="redecoding"
+        data-testid="event-redecoding"
+        class="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide text-rui-primary bg-rui-primary/10 animate-pulse"
+      >
+        {{ t('transactions.events.redecoding') }}
+      </span>
+
       <template v-if="group.locationLabel">
         <!-- eslint-disable-next-line @intlify/vue-i18n/no-raw-text -->
         <span class="text-[10px] text-rui-text-secondary shrink-0">●</span>
@@ -222,6 +242,7 @@ const isCard = computed<boolean>(() => variant === 'card');
       :event="group"
       :group-events="groupEvents"
       :loading="loading"
+      :redecoding="redecoding"
       :duplicate-handling-status="duplicateHandlingStatus"
       class="shrink-0"
       @add-event="emit('add-event', $event)"

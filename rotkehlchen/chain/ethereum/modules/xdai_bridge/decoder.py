@@ -23,8 +23,9 @@ if TYPE_CHECKING:
 BRIDGE_ADDRESS: Final = string_to_evm_address('0x4aa42145Aa6Ebf72e164C9bBC74fbD3788045016')
 # Transitional peripheral contract before xDAIForeignBridge is upgraded to USDS
 XDAI_BRIDGE_PERIPHERAL_PRE_USDS: Final = string_to_evm_address('0xF676cc15Eb6d15b794aeC65bC20052aFB53D9052')  # noqa: E501
-# TODO: Add the xdai bridge peripheral contract address after the DAI->USDS upgrade is live.
-# See https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=122014729
+# Peripheral contract used after the upgrade. It takes the user's DAI, converts it to USDS
+# through the Sky DaiUsds converter and deposits the USDS in the bridge.
+XDAI_BRIDGE_PERIPHERAL_USDS: Final = string_to_evm_address('0x3b6669727927b934753B018EB421a84Ed4eb0a43')  # noqa: E501
 USER_REQUESTED_FOR_AFFIRMATION: Final = b'\x1dI\x1aB}\x1f\x8c\xc0\xd4GIo0\x0f\xac9\xf70a"H\x1d\x8ef4Q\xeb&\x82t\x14k'  # noqa: E501
 USER_REQUESTED_FOR_AFFIRMATION_WITH_NONCE: Final = b'\xf6\x96\x8eh\x9b=\x8c$\xf2,\x10\xc2\xa3%k\xb5\xcaH:GN\x11\xba\xc0\x84#\xba\xa0I\xe3\x8a\xe8'  # noqa: E501
 RELAYED_MESSAGE: Final = b'J\xb7\xd5\x813m\x92\xed\xbe\xa2&6\xa6\x13\xe8\xe7l\x99\xac\x7f\x91\x13|\x15#\xdb8\xdb\xfb;\xf3)'  # noqa: E501
@@ -51,7 +52,10 @@ class XdaiBridgeDecoder(XdaiBridgeCommonDecoder):
             bridged_asset=A_DAI,
             source_chain=ChainID.ETHEREUM,
             target_chain=ChainID.GNOSIS,
-            peripheral_addresses=(XDAI_BRIDGE_PERIPHERAL_PRE_USDS,),
+            peripheral_addresses=(
+                XDAI_BRIDGE_PERIPHERAL_PRE_USDS,
+                XDAI_BRIDGE_PERIPHERAL_USDS,
+            ),
         )
 
     def _maybe_enrich_dai_transfers(self, context: EnricherContext) -> TransferEnrichmentOutput:

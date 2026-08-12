@@ -101,7 +101,8 @@ watch(writeError, (message) => {
     <div
       v-for="rule in rules"
       :key="rule.id"
-      :data-testid="`rule-${rule.id}`"
+      data-testid="rule-row"
+      :data-key="rule.id"
       class="flex items-center justify-between gap-2 border border-default rounded-md p-3"
     >
       <div class="flex items-center gap-3 min-w-0">
@@ -130,7 +131,8 @@ watch(writeError, (message) => {
           icon
           size="sm"
           :disabled="loading"
-          :data-testid="`rule-edit-${rule.id}`"
+          data-testid="rule-edit"
+          :data-key="rule.id"
           @click="openEdit(rule)"
         >
           <RuiIcon
@@ -144,7 +146,8 @@ watch(writeError, (message) => {
           size="sm"
           color="error"
           :disabled="loading"
-          :data-testid="`rule-remove-${rule.id}`"
+          data-testid="rule-remove"
+          :data-key="rule.id"
           @click="onRemove(rule.id)"
         >
           <RuiIcon

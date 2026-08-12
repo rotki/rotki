@@ -55,12 +55,15 @@ const earnedAssetsData = computed<EarnedAssetsData>(() => {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
-      <KrakenDateFilter v-model="modelValue" />
+    <div class="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+      <KrakenDateFilter
+        v-model="modelValue"
+        class="flex-1 min-w-0"
+      />
 
       <div
         v-if="loading && krakenHistoricPriceStatus"
-        class="flex items-center gap-2 text-rui-text-secondary text-sm"
+        class="flex items-center gap-2 text-rui-text-secondary text-sm md:shrink-0"
       >
         <RuiProgress
           thickness="2"

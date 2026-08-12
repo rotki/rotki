@@ -1,4 +1,5 @@
 import os
+from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
@@ -13,7 +14,7 @@ from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, RequestTooLargeError
 from rotkehlchen.externalapis.etherscan import (
     ETHERSCAN_PAGINATION_LIMIT,
     ETHERSCAN_TIER_BY_DAILY_LIMIT,
@@ -21,6 +22,7 @@ from rotkehlchen.externalapis.etherscan import (
 )
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     ChainID,
@@ -136,6 +138,26 @@ def test_detect_api_key_tier_caches_and_reuses_value(temp_etherscan: Etherscan) 
     assert query_mock.call_count == 1
     assert temp_etherscan._rate_limiter.rps == 20.0
     assert temp_etherscan._rate_limiter.capacity == 20
+
+
+def test_detect_api_key_tier_does_not_warn_for_missing_key(
+        function_scope_messages_aggregator,
+        tmpdir_factory,
+        sql_vm_instructions_cb,
+) -> None:
+    database = DBHandler(
+        user_data_dir=tmpdir_factory.mktemp('keyless-userdata'),
+        password='123',
+        msg_aggregator=function_scope_messages_aggregator,
+        initial_settings=None,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        resume_from_backup=False,
+    )
+    with patch.object(database.msg_aggregator, 'add_missing_key_message') as warning_mock:
+        etherscan = Etherscan(database=database, msg_aggregator=database.msg_aggregator)
+        warning_mock.assert_not_called()
+        assert etherscan._get_api_key_for_chain(ChainID.ETHEREUM) is None
+        warning_mock.assert_called_once_with(ExternalService.ETHERSCAN)
 
 
 def test_api_key_change_invalidates_cached_tier(temp_etherscan: Etherscan) -> None:
@@ -470,3 +492,22 @@ def test_eth_call_historical_block_refused(temp_etherscan: Etherscan) -> None:
         ) == '0x1'
 
     assert query_mock.call_args.kwargs['options'] == {'to': dai, 'data': '0x18160ddd'}
+
+
+def test_query_timeout_asks_for_a_smaller_range(temp_etherscan: Etherscan) -> None:
+    """Etherscan answers an oversized range with a null result and a request to shrink it.
+
+    That must surface as RequestTooLargeError so callers split the range, rather than as a
+    generic malformed-response error that just aborts the query.
+    """
+    with patch.object(
+        temp_etherscan.session,
+        'get',
+        return_value=MockResponse(HTTPStatus.OK, '{"status":"0","message":"Query Timeout occurred. Please select a smaller result dataset","result":null}'),  # noqa: E501
+    ), pytest.raises(RequestTooLargeError, match='Query Timeout'):
+        temp_etherscan._query(
+            chain_id=ChainID.GNOSIS,
+            module='account',
+            action='tokentx',
+            options={'address': make_evm_address()},
+        )

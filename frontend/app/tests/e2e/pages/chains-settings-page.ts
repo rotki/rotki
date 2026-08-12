@@ -6,11 +6,11 @@ export class ChainsSettingsPage {
   constructor(private readonly page: Page) {}
 
   async visit(): Promise<void> {
-    await this.page.locator('[data-cy=user-menu-button]').click();
-    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'visible' });
-    await this.page.locator('[data-cy=settings-button]').click();
-    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
-    await this.page.locator('[data-cy="settings__chains"]').click();
+    await this.page.locator('[data-testid=user-menu-button]').click();
+    await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=settings-button]').click();
+    await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
+    await this.page.locator('[data-testid="settings__chains"]').click();
     await this.page.locator('[data-testid=chains-to-skip-detection]').waitFor({ state: 'visible' });
   }
 
@@ -32,20 +32,20 @@ export class ChainsSettingsPage {
 
   // Indexer Order Settings
   getIndexerOrderSection() {
-    return this.page.locator('[data-cy=indexer-order-setting]');
+    return this.page.locator('[data-testid=indexer-order-setting]');
   }
 
   async clickAddChainButton(): Promise<void> {
-    await this.page.locator('[data-cy=add-chain-button]').click();
+    await this.page.locator('[data-testid=add-chain-button]').click();
   }
 
   async isAddChainButtonDisabled(): Promise<boolean> {
-    return this.page.locator('[data-cy=add-chain-button]').isDisabled();
+    return this.page.locator('[data-testid=add-chain-button]').isDisabled();
   }
 
   async selectChainFromMenu(chainId: string): Promise<void> {
-    await this.page.locator('[data-cy=chain-menu]').waitFor({ state: 'visible' });
-    await this.page.locator(`[data-cy=chain-menu-item-${chainId}]`).click();
+    await this.page.locator('[data-testid=chain-menu]').waitFor({ state: 'visible' });
+    await this.page.locator(`[data-testid=chain-menu-item][data-key="${chainId}"]`).click();
   }
 
   async addChain(chainId: string): Promise<void> {
@@ -54,19 +54,19 @@ export class ChainsSettingsPage {
   }
 
   async removeChain(chainId: string): Promise<void> {
-    await this.page.locator(`[data-cy=remove-chain-${chainId}]`).click();
+    await this.page.locator(`[data-testid=remove-chain][data-key="${chainId}"]`).click();
   }
 
   async selectTab(tabId: string): Promise<void> {
-    await this.page.locator(`[data-cy=indexer-tab-${tabId}]`).click();
+    await this.page.locator(`[data-testid=indexer-tab][data-key="${tabId}"]`).click();
   }
 
   async verifyTabExists(tabId: string): Promise<void> {
-    await expect(this.page.locator(`[data-cy=indexer-tab-${tabId}]`)).toBeAttached();
+    await expect(this.page.locator(`[data-testid=indexer-tab][data-key="${tabId}"]`)).toBeAttached();
   }
 
   async verifyTabNotExists(tabId: string): Promise<void> {
-    await expect(this.page.locator(`[data-cy=indexer-tab-${tabId}]`)).not.toBeAttached();
+    await expect(this.page.locator(`[data-testid=indexer-tab][data-key="${tabId}"]`)).not.toBeAttached();
   }
 
   // Chains to Skip Detection Settings

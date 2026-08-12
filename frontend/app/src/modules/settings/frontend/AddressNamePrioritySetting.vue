@@ -75,7 +75,6 @@ watch(writeError, (message) => {
       variant="flat"
       :model-value="model"
       :all-items="availableCurrentAddressNamePriorities()"
-      disable-add
       disable-delete
       @update:model-value="updatePriorities($event)"
     />

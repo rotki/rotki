@@ -131,12 +131,12 @@ export function evmEventStateFromGroup(entry: EvmHistoryEvent, defaults: EvmEven
 
 /** Empty form fields are normalised to the nulls and defaults the backend expects. */
 export function toEvmEventPayload(state: EvmEventFormState): NewEvmHistoryEventPayload {
-  const amount = bigNumberify(state.amount);
+  const amount = bigNumberify(state.amount, Zero);
   const userNotes = state.notes.trim();
 
   return {
     address: toNullableText(state.address),
-    amount: amount.isNaN() ? Zero : amount,
+    amount,
     asset: state.asset,
     counterparty: toNullableText(state.counterparty),
     entryType: HistoryEventEntryType.EVM_EVENT,

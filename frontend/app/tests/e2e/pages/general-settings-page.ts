@@ -6,11 +6,11 @@ export class GeneralSettingsPage {
   constructor(private readonly page: Page) {}
 
   async visit(): Promise<void> {
-    await this.page.locator('[data-cy=user-menu-button]').click();
-    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'visible' });
-    await this.page.locator('[data-cy=settings-button]').click();
-    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
-    await this.page.locator('[data-cy="settings__general"]').click();
+    await this.page.locator('[data-testid=user-menu-button]').click();
+    await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=settings-button]').click();
+    await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
+    await this.page.locator('[data-testid="settings__general"]').click();
     await this.page.locator('[data-testid=floating-precision-settings]').waitFor({ state: 'visible' });
   }
 
@@ -31,7 +31,7 @@ export class GeneralSettingsPage {
   }
 
   async selectCurrency(value: string): Promise<void> {
-    await this.page.locator('[data-cy=currency-selector]').click();
+    await this.page.locator('[data-testid=currency-selector]').click();
     await this.page.locator(`#currency__${value.toLocaleLowerCase()}`).click();
   }
 
@@ -40,7 +40,7 @@ export class GeneralSettingsPage {
   }
 
   async setDateDisplayFormat(value: string): Promise<void> {
-    await this.setInputFieldValue('[data-cy=date-display-format-input]', value);
+    await this.setInputFieldValue('[data-testid=date-display-format-input]', value);
   }
 
   /** The input format is a menu select, not a free-text field: pick the option by its value. */
@@ -50,22 +50,22 @@ export class GeneralSettingsPage {
   }
 
   async setThousandSeparator(value: string): Promise<void> {
-    await this.setInputFieldValue('[data-cy=thousand-separator-input]', value);
+    await this.setInputFieldValue('[data-testid=thousand-separator-input]', value);
   }
 
   async setDecimalSeparator(value: string): Promise<void> {
-    await this.setInputFieldValue('[data-cy=decimal-separator-input]', value);
+    await this.setInputFieldValue('[data-testid=decimal-separator-input]', value);
   }
 
   /** The messages shown under a separator field, validation or writer alike. */
   async separatorMessages(field: 'thousand' | 'decimal'): Promise<string> {
-    return this.page.locator(`[data-cy=${field}-separator-input] .details`).innerText();
+    return this.page.locator(`[data-testid=${field}-separator-input] .details`).innerText();
   }
 
   async separatorValues(): Promise<{ thousand: string; decimal: string }> {
     return {
-      decimal: await this.page.locator('[data-cy=decimal-separator-input] input').inputValue(),
-      thousand: await this.page.locator('[data-cy=thousand-separator-input] input').inputValue(),
+      decimal: await this.page.locator('[data-testid=decimal-separator-input] input').inputValue(),
+      thousand: await this.page.locator('[data-testid=thousand-separator-input] input').inputValue(),
     };
   }
 
@@ -89,13 +89,13 @@ export class GeneralSettingsPage {
       await expect(this.page.locator('[data-testid=anonymous-usage-statistics-input] input')).not.toBeChecked();
     }
 
-    await expect(this.page.locator('[data-cy=currency-selector] input')).toHaveValue(settings.currency);
+    await expect(this.page.locator('[data-testid=currency-selector] input')).toHaveValue(settings.currency);
     await expect(this.page.locator('[data-testid=balance-save-frequency-input] input')).toHaveValue(settings.balanceSaveFrequency);
 
-    await expect(this.page.locator('[data-cy=date-display-format-input] input')).toHaveValue(settings.dateDisplayFormat);
+    await expect(this.page.locator('[data-testid=date-display-format-input] input')).toHaveValue(settings.dateDisplayFormat);
     await expect(this.page.locator('[data-testid=date-input-format-input] input')).toHaveValue(settings.dateInputFormat);
-    await expect(this.page.locator('[data-cy=thousand-separator-input] input')).toHaveValue(settings.thousandSeparator);
-    await expect(this.page.locator('[data-cy=decimal-separator-input] input')).toHaveValue(settings.decimalSeparator);
+    await expect(this.page.locator('[data-testid=thousand-separator-input] input')).toHaveValue(settings.thousandSeparator);
+    await expect(this.page.locator('[data-testid=decimal-separator-input] input')).toHaveValue(settings.decimalSeparator);
 
     await expect(this.page.locator('[data-testid=currency-location-input] input')).toHaveCount(2);
     await expect(this.page.locator('[data-testid=currency-location-input] input:checked')).toHaveValue(settings.currencyLocation);

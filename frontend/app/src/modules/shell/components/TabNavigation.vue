@@ -36,7 +36,7 @@ function getTabClass(route: RouteLocationRaw): string {
         link
         :to="tab.route"
         :exact-path="false"
-        :data-cy="getTabClass(tab.route)"
+        :data-testid="getTabClass(tab.route)"
       >
         <template #prepend>
           <RuiIcon

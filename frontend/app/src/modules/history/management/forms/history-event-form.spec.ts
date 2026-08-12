@@ -55,11 +55,11 @@ describe('component/HistoryEventForm.vue', () => {
     expect.assertions(2);
 
     wrapper = await createWrapper();
-    const entryTypeInput = wrapper.find<HTMLInputElement>('[data-cy=entry-type] input');
+    const entryTypeInput = wrapper.find<HTMLInputElement>('[data-testid=entry-type] input');
     const entryTypeElement = entryTypeInput.element;
 
     expect(entryTypeElement.value).toBe(HistoryEventEntryType.HISTORY_EVENT);
-    expect(wrapper.find('[data-cy=history-event-form]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=event-form][data-key=history-event]').exists()).toBe(true);
   });
 
   it.each(formTypesYouCanAddTo)('changes to proper form %s', async (value: string) => {
@@ -71,7 +71,7 @@ describe('component/HistoryEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     const id = value.split(/ /g).join('-');
-    expect(wrapper.find(`[data-cy=${id}-form]`).exists(), `id: ${id}`).toBe(true);
+    expect(wrapper.find(`[data-testid=event-form][data-key="${id}"]`).exists(), `id: ${id}`).toBe(true);
   });
 
   it('should only allow two options on an existing transaction', async () => {
@@ -101,7 +101,7 @@ describe('component/HistoryEventForm.vue', () => {
         },
       },
     });
-    await wrapper.find('[data-cy=entry-type] [data-id=activator]').trigger('click');
+    await wrapper.find('[data-testid=entry-type] [data-id=activator]').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
     const options = wrapper.find('[data-id="content"]').findAll('button');

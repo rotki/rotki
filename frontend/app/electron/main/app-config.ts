@@ -1,9 +1,11 @@
-import type { ApiUrls } from '@shared/ipc';
-
 export interface AppConfig {
   readonly isDev: boolean;
   readonly isMac: boolean;
-  readonly urls: ApiUrls;
+  /**
+   * The origin the renderer addresses. Set once starling's proxy port is known:
+   * core answers `/api/1/*` and `/ws/` under it, colibri `/colibri/*`.
+   */
+  apiUrl: string;
   readonly ports: {
     colibriPort: number;
     corePort: number;

@@ -1,11 +1,11 @@
+import type { BigNumber, Blockchain } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
-import { type BigNumber, type Blockchain, toSentenceCase } from '@rotki/common';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
+import type { AssetBreakdown, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
+import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -22,12 +22,12 @@ type AssetLocations = AssetLocation[];
 interface UseAssetLocationsDataOptions {
   /** The asset identifier to look up locations for */
   identifier: MaybeRefOrGetter<string>;
-  /** Filter locations by a specific location string */
-  locationFilter: Ref<string>;
+  /** Filter locations by the picked location, as its raw id (`kraken`, `polygon_pos`) */
+  locationFilter: MaybeRefOrGetter<string>;
   /** Filter locations by matching any of these tags */
-  onlyTags: Ref<string[]>;
-  /** Filter locations by matching any of these accounts */
-  selectedAccounts: Ref<BlockchainAccount<AddressData>[]>;
+  onlyTags: MaybeRefOrGetter<string[]>;
+  /** Filter locations by matching any of these account addresses */
+  addresses: MaybeRefOrGetter<string[]>;
 }
 
 interface UseAssetLocationsDataReturn {
@@ -40,13 +40,14 @@ interface UseAssetLocationsDataReturn {
 }
 
 export function useAssetLocationsData(options: UseAssetLocationsDataOptions): UseAssetLocationsDataReturn {
-  const { identifier, locationFilter, onlyTags, selectedAccounts } = options;
+  const { addresses, identifier, locationFilter, onlyTags } = options;
 
   const currencySymbol = useSetting('currencySymbol');
   // Every source that can still be filling the breakdown this table renders.
   const { useIsActive } = useTaskCenter();
+  const { loadingBlockchainBalances } = useBalancesLoading();
   const detailsLoading = logicOr(
-    useIsActive(ActivityKind.BLOCKCHAIN_BALANCES),
+    loadingBlockchainBalances,
     useIsActive(ActivityKind.EXCHANGE_BALANCES),
     useIsActive(ActivityKind.MANUAL_BALANCES),
   );
@@ -54,7 +55,7 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
   const { getAddressName } = useAddressNameResolution();
 
   const { getAssetPriceInfo } = useAggregatedBalances();
-  const { getChainName, matchChain } = useSupportedChains();
+  const { matchChain } = useSupportedChains();
   const { getAssetBreakdown } = useAssetBalancesBreakdown();
 
   const totalValue = computed<BigNumber>(() => getAssetPriceInfo(toValue(identifier)).value);
@@ -80,19 +81,19 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
         || item.address,
     }));
 
-    const tagsFilter = get(onlyTags);
-    const location = get(locationFilter);
-    const accounts = get(selectedAccounts);
+    const tagsFilter = toValue(onlyTags);
+    const location = toValue(locationFilter);
+    const picked = toValue(addresses);
 
     return locations.filter((assetLocation) => {
       const tags = assetLocation.tags ?? [];
       const includedInTags = tagsFilter.every(tag => tags.includes(tag));
-      const currentLocation = assetLocation.location;
-      const locationToCheck = getChainName(currentLocation);
-      const locationMatches = !location || locationToCheck === toSentenceCase(location);
-      const accountMatches = accounts.length === 0 || accounts.some(account =>
-        getAccountAddress(account) === assetLocation.address,
-      );
+      // Both sides are the raw location id the row carries. Comparing display names instead meant
+      // comparing two different formatters: `getChainName('polygon_pos')` is `Polygon PoS` while
+      // `toSentenceCase('polygon_pos')` is `Polygon_pos`, so picking any location whose id has an
+      // underscore silently emptied the table.
+      const locationMatches = !location || assetLocation.location === location;
+      const accountMatches = picked.length === 0 || picked.includes(assetLocation.address);
 
       return includedInTags && locationMatches && accountMatches;
     });

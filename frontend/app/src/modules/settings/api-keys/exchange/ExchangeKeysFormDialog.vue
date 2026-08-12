@@ -34,7 +34,7 @@ const title = computed<string>(() => {
 
 async function save(): Promise<void> {
   assert(isDefined(modelValue));
-  if (!await get(form)?.validate()) {
+  if (!get(form)?.validate()) {
     return;
   }
 

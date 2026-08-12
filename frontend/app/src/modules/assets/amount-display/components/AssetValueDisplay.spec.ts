@@ -47,7 +47,7 @@ describe('modules/amount-display/components/AssetValueDisplay', () => {
         },
       });
       // 2 ETH * 2000 EUR = 4000 EUR
-      expect(wrapper.find('[data-cy=amount-display]').text()).toMatch('4,000.00');
+      expect(wrapper.find('[data-testid=amount-display]').text()).toMatch('4,000.00');
     });
 
     it('should display zero for zero amount', async () => {
@@ -58,7 +58,7 @@ describe('modules/amount-display/components/AssetValueDisplay', () => {
           asset: 'ETH',
         },
       });
-      expect(wrapper.find('[data-cy=amount-display]').text()).toMatch('0.00');
+      expect(wrapper.find('[data-testid=amount-display]').text()).toMatch('0.00');
     });
   });
 
@@ -72,7 +72,7 @@ describe('modules/amount-display/components/AssetValueDisplay', () => {
           pnl: true,
         },
       });
-      expect(wrapper.find('[data-cy=amount-display].text-rui-success').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=amount-display].text-rui-success').exists()).toBe(true);
     });
 
     it('should show red for negative values', () => {
@@ -84,7 +84,7 @@ describe('modules/amount-display/components/AssetValueDisplay', () => {
           pnl: true,
         },
       });
-      expect(wrapper.find('[data-cy=amount-display].text-rui-error').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=amount-display].text-rui-error').exists()).toBe(true);
     });
   });
 
@@ -101,7 +101,7 @@ describe('modules/amount-display/components/AssetValueDisplay', () => {
           asset: 'ETH',
         },
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe('4,000.00');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).not.toBe('4,000.00');
     });
   });
 
@@ -115,10 +115,10 @@ describe('modules/amount-display/components/AssetValueDisplay', () => {
         },
       });
 
-      await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
+      await wrapper.find('[data-testid=display-amount]').trigger('mouseover');
       await nextTick();
 
-      expect(wrapper.find('[data-cy=display-full-value]').text()).toContain('coingecko');
+      expect(wrapper.find('[data-testid=display-full-value]').text()).toContain('coingecko');
     });
 
     it('should show manual price indicator', () => {
@@ -153,7 +153,7 @@ describe('modules/amount-display/components/AssetValueDisplay', () => {
           format: { integer: true },
         },
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('2,000');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).toBe('2,000');
     });
   });
 });

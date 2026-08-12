@@ -108,7 +108,7 @@ defineExpose({
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
-      data-cy="tx-ref"
+      data-testid="tx-ref"
       :label="t('common.signature')"
       required
       :error-messages="form.errors('txRef')"
@@ -138,7 +138,7 @@ defineExpose({
         v-model="state.sequenceIndex"
         variant="outlined"
         integer
-        data-cy="sequence-index"
+        data-testid="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
         required
         :error-messages="form.errors('sequenceIndex')"
@@ -147,7 +147,7 @@ defineExpose({
       <CounterpartyInput
         v-model="state.counterparty"
         :label="t('common.counterparty')"
-        data-cy="counterparty"
+        data-testid="counterparty"
         :error-messages="form.errors('counterparty')"
         @blur="form.touch('counterparty')"
       />
@@ -158,7 +158,7 @@ defineExpose({
     <RuiTextArea
       v-model="state.notes"
       prepend-icon="lu-sticky-note"
-      data-cy="notes"
+      data-testid="notes"
       variant="outlined"
       color="primary"
       max-rows="5"
@@ -174,7 +174,7 @@ defineExpose({
 
     <RuiAccordions>
       <RuiAccordion
-        data-cy="solana-event-form__advance"
+        data-testid="solana-event-form__advance"
         header-class="py-4"
         eager
       >
@@ -186,7 +186,7 @@ defineExpose({
             v-model="state.groupIdentifier"
             variant="outlined"
             color="primary"
-            data-cy="groupIdentifier"
+            data-testid="group-identifier"
             :disabled="state.hasActualGroupIdentifier"
             :label="t('transactions.events.form.group_identifier.label')"
             :error-messages="form.errors('groupIdentifier')"

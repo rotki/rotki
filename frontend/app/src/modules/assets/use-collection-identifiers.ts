@@ -1,4 +1,4 @@
-import { apiUrls } from '@/modules/core/api/api-urls';
+import { RequestTarget } from '@/modules/core/api/constants';
 import { api } from '@/modules/core/api/rotki-api';
 import { HTTPStatus } from '@/modules/core/api/types/http';
 
@@ -8,7 +8,7 @@ export function useCollectionIdentifiers(): UseCollectionIdentifiersReturn {
   async function getCollectionAssets(collectionId: string): Promise<string[]> {
     return api.get<string[]>('/assets/collections', {
       query: { collectionId },
-      baseURL: apiUrls.colibriApiUrl,
+      target: RequestTarget.COLIBRI,
       validStatuses: [HTTPStatus.OK],
     });
   }

@@ -1,5 +1,5 @@
 import { INDETERMINATE, isTerminalStatus, percentageFromSteps } from '../status';
-import { type ActivityId, type ActivityKind, type ActivityStatus, type ActivitySteps, type CompletionRecord, ActivityStatus as Status, type WorkStatus } from '../types';
+import { type Activity, type ActivityId, type ActivityKind, ActivitySourceType, type ActivityStatus, type ActivitySteps, type CompletionRecord, ActivityStatus as Status, type WorkStatus } from '../types';
 
 /**
  * The status projection: how live records and the completion ledger collapse into a
@@ -153,4 +153,55 @@ export function percentageOf(status: ActivityStatus, steps: ActivitySteps | unde
     return percentageFromSteps(children.current, children.total);
 
   return steps ? percentageFromSteps(steps.current, steps.total) : INDETERMINATE;
+}
+
+/**
+ * The subset of a record {@link projectActivity} reads — structurally satisfied by the
+ * orchestrator's `ActivityRecord`, so no adapter is required.
+ */
+export interface RenderableRecord {
+  readonly status: ActivityStatus;
+  readonly steps?: ActivitySteps;
+  readonly startedAt?: number;
+  readonly spec: {
+    readonly id: ActivityId;
+    readonly kind: ActivityKind;
+    readonly title: Activity['title'];
+    readonly subtitle?: Activity['subtitle'];
+    readonly group?: Activity['group'];
+    readonly parent?: ActivityId;
+    readonly resets?: Activity['resets'];
+    readonly priority?: Activity['priority'];
+    readonly ephemeral?: boolean;
+    readonly rerunnable?: boolean;
+    readonly cancel?: () => void;
+  };
+}
+
+/**
+ * A live record as the {@link Activity} every surface renders.
+ *
+ * ⚠️ `cancellable` is a projection, not a spec field: a PENDING activity can always be dropped from
+ * the queue, while a RUNNING one needs a handle to interrupt the work it started.
+ */
+export function projectActivity(record: RenderableRecord, childSteps?: ActivitySteps): Activity {
+  const { spec, status, steps, startedAt } = record;
+  return {
+    cancellable: status === Status.RUNNING ? Boolean(spec.cancel) : status === Status.PENDING,
+    ephemeral: spec.ephemeral,
+    group: spec.group,
+    id: spec.id,
+    kind: spec.kind,
+    parent: spec.parent,
+    percentage: percentageOf(status, steps, childSteps),
+    priority: spec.priority,
+    rerunnable: Boolean(spec.rerunnable),
+    resets: spec.resets,
+    source: { type: ActivitySourceType.NATIVE },
+    startedAt,
+    status,
+    steps,
+    subtitle: spec.subtitle,
+    title: spec.title,
+  };
 }

@@ -7,10 +7,10 @@ import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import '@test/i18n';
 
 const h = vi.hoisted(() => ({
-  detectTokens: vi.fn(),
   fetchAccounts: vi.fn(),
   isEvm: vi.fn((chain: string): boolean => chain === 'eth' || chain === 'optimism'),
   notify: vi.fn(),
+  refreshBlockchainBalances: vi.fn(),
 }));
 
 vi.mock('@/modules/core/common/use-supported-chains', async () => {
@@ -28,8 +28,8 @@ vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
   useBlockchainAccountManagement: vi.fn(() => ({ fetchAccounts: h.fetchAccounts })),
 }));
 
-vi.mock('@/modules/balances/blockchain/use-token-detection-orchestrator', () => ({
-  useTokenDetectionOrchestrator: vi.fn(() => ({ detectTokens: h.detectTokens })),
+vi.mock('@/modules/balances/use-blockchain-balances', () => ({
+  useBlockchainBalances: vi.fn(() => ({ refreshBlockchainBalances: h.refreshBlockchainBalances })),
 }));
 
 vi.mock('@/modules/auth/use-logged-user-identifier', async () => {
@@ -50,7 +50,7 @@ describe('useAccountMigration', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     h.fetchAccounts.mockResolvedValue(undefined);
-    h.detectTokens.mockResolvedValue(undefined);
+    h.refreshBlockchainBalances.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -65,10 +65,17 @@ describe('useAccountMigration', () => {
     const { useAccountMigration } = await importModule();
     useAccountMigration().setUpgradedAddresses(migrated);
 
-    expect(h.fetchAccounts).toHaveBeenCalledWith('eth');
-    expect(h.detectTokens).toHaveBeenCalledWith('eth', ['0xabc']);
+    expect(h.fetchAccounts).toHaveBeenCalledWith({ blockchain: 'eth' });
     expect(h.notify).toHaveBeenCalledOnce();
+    // The query waits on the accounts read, so it is not called in the same tick.
     await flushPromises();
+    // A migrated address is new to the chain, so the cache cannot have its balances. Detect, then
+    // query — the same order an addition needs, and for the same reason.
+    expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(
+      { blockchain: 'eth' },
+      'background',
+      { detect: true, detectAddresses: ['0xabc'] },
+    );
   });
 
   it('should defer migration until data can be requested', async () => {
@@ -80,7 +87,7 @@ describe('useAccountMigration', () => {
 
     set(canRequestData, true);
     await nextTick();
-    expect(h.fetchAccounts).toHaveBeenCalledWith('eth');
+    expect(h.fetchAccounts).toHaveBeenCalledWith({ blockchain: 'eth' });
   });
 
   it('should ignore addresses on chains without token detection', async () => {
@@ -92,12 +99,37 @@ describe('useAccountMigration', () => {
     expect(h.notify).not.toHaveBeenCalled();
   });
 
-  it('should fetch accounts but skip token detection for evmlike chains', async () => {
+  /**
+   * 🔴 `isEvm` gates *detection*, never the query. `tokenChains` is built from
+   * `evmAndEvmLikeTxChainsInfo`, so an evm-like chain reaches the loop with `isEvm` false; gating
+   * the query on it too would leave a migrated zksync_lite address with no balances at all, because
+   * the cache-only read cannot fetch what was never queried.
+   */
+  it('should still query balances for evmlike chains, without detecting', async () => {
     const { canRequestData } = storeToRefs(useSessionAuthStore());
     set(canRequestData, true);
     const { useAccountMigration } = await importModule();
     useAccountMigration().setUpgradedAddresses([{ address: '0xdef', chain: 'zksync_lite' }]);
-    expect(h.fetchAccounts).toHaveBeenCalledWith('zksync_lite');
-    expect(h.detectTokens).not.toHaveBeenCalled();
+    await flushPromises();
+    expect(h.fetchAccounts).toHaveBeenCalledWith({ blockchain: 'zksync_lite' });
+    expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(
+      { blockchain: 'zksync_lite' },
+      'background',
+      {},
+    );
+  });
+
+  /**
+   * 🔴 The job's `shouldQuery` reads the accounts store, so a job that starts before the accounts
+   * land sees none, clears the chain and settles SKIPPED. Ordering, not concurrency.
+   */
+  it('should read the accounts before querying the chain', async () => {
+    const { canRequestData } = storeToRefs(useSessionAuthStore());
+    set(canRequestData, true);
+    const { useAccountMigration } = await importModule();
+    useAccountMigration().setUpgradedAddresses([{ address: '0xabc', chain: 'eth' }]);
+    await flushPromises();
+    expect(h.fetchAccounts.mock.invocationCallOrder[0])
+      .toBeLessThan(h.refreshBlockchainBalances.mock.invocationCallOrder[0]);
   });
 });

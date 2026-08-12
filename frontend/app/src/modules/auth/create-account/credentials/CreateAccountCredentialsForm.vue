@@ -69,7 +69,7 @@ watchImmediate(v$, ({ $invalid }) => {
         color="primary"
         variant="outlined"
         autofocus
-        data-cy="create-account__fields__username"
+        data-testid="create-account__fields__username"
         :label="t('create_account.credentials.label_username')"
         :error-messages="toMessages(v$.username)"
         :disabled="loading"
@@ -79,7 +79,7 @@ watchImmediate(v$, ({ $invalid }) => {
         dense
         color="primary"
         variant="outlined"
-        data-cy="create-account__fields__password"
+        data-testid="create-account__fields__password"
         :label="t('create_account.credentials.label_password')"
         :error-messages="toMessages(v$.password)"
         :disabled="loading"
@@ -89,7 +89,7 @@ watchImmediate(v$, ({ $invalid }) => {
         dense
         color="primary"
         variant="outlined"
-        data-cy="create-account__fields__password-repeat"
+        data-testid="create-account__fields__password-repeat"
         :label="t('create_account.credentials.label_password_repeat')"
         :error-messages="toMessages(v$.passwordConfirm)"
         :disabled="loading"
@@ -97,7 +97,7 @@ watchImmediate(v$, ({ $invalid }) => {
     </div>
     <RuiCheckbox
       v-model="userPrompted"
-      data-cy="create-account__boxes__user-prompted"
+      data-testid="create-account__boxes__user-prompted"
       :disabled="loading"
       color="primary"
       :error-messages="toMessages(v$.userPrompted)"

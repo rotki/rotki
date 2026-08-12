@@ -154,11 +154,6 @@
         "message": "Échec de la récupération des règles comptables : {message}",
         "title": "Récupération des règles comptables"
       },
-      "filter": {
-        "counterparty": "filtrer par contrepartie",
-        "event_subtype": "filtrer par sous-type d'événement",
-        "event_type": "filtrer par type d'événement"
-      },
       "labels": {
         "accounting_treatment": "Traitement comptable",
         "count_cost_basis_pnl": "Compter le résultat net sur coût de base",
@@ -890,14 +885,8 @@
       }
     },
     "filter": {
-      "address": "Filtrer par l'adresse",
-      "chain": "Filtrer par la chaîne EVM",
-      "name": "Filtrer par le nom de l'actif",
       "name_hint": "Rechercher en utilisant le nom de l'actif",
-      "symbol": "Filtrer par le symbole de l'actif",
-      "symbol_hint": "Rechercher en utilisant le symbole de l'actif",
-      "type": "Filtrer par le type d'actif personnalisé",
-      "type_hint": "Rechercher en utilisant le type d'actif"
+      "symbol_hint": "Rechercher en utilisant le symbole de l'actif"
     },
     "multi_chain_assets": "Actifs Multi-chaînes",
     "value": "Valeur"
@@ -1151,11 +1140,6 @@
     "events": "Événements",
     "exchange": "Plateforme d'Échange",
     "fee": "Frais",
-    "filter": {
-      "date_hint": "format {format} HH:mm:ss (les secondes sont facultatives)",
-      "end_date": "filtrer par la date de fin de la période",
-      "start_date": "filtrer par la date de début de la période"
-    },
     "here": "ici",
     "ignored_in_accounting": "Exclu de la comptabilité (PnL)",
     "important_notice": "Remarque importante :",
@@ -1518,10 +1502,6 @@
     "example": "Date de résultat ({example})",
     "subtitle": "Ce sont les options de formatage de date prises en charge",
     "title": "Format de date"
-  },
-  "docker_warning": {
-    "action": "Oui, je comprends",
-    "title": "Vous exécutez rotki dans docker. Assurez-vous d'avoir lu notre {0} et de comprendre le risque potentiel qu'il y a à exécuter rotki de cette façon."
   },
   "ens_names": {
     "error": {
@@ -3003,32 +2983,6 @@
     },
     "title": "Synchronisation de l'historique"
   },
-  "table_filter": {
-    "exclusion": {
-      "description": "Utiliser l'opérateur `!=` pour filtrer l'option, par exemple."
-    },
-    "hint": {
-      "description": "Tapez le filtre puis appuyez sur entrée, par exemple."
-    },
-    "label": "Filtres disponibles",
-    "saved_filters": {
-      "actions": {
-        "add": "Enregistrer le filtre actuel dans la liste",
-        "apply": "Appliquer ce filtre enregistré",
-        "list": "Ouvrir la liste des filtres enregistrés",
-        "remove": "Supprimer ce filtre enregistré"
-      },
-      "added": "Filtre enregistré",
-      "empty": "Vous n'avez aucun filtre enregistré. Appliquez le filtre comme d'habitude, puis cliquez sur ce bouton {button} pour enregistrer le filtre.",
-      "saving": {
-        "limited": "Vous n'êtes autorisé à enregistrer que {limit} filtres. Supprimez d'autres filtres pour pouvoir en ajouter à nouveau.",
-        "title": "Échec de l'enregistrement du filtre"
-      }
-    },
-    "start_typing": "Saisissez la valeur du filtre {search}",
-    "title": "Filtres disponibles",
-    "unsupported_filter": "Filtre non pris en charge:"
-  },
   "tag_creator": {
     "labels": {
       "background": "Arrière-plan",
@@ -3037,9 +2991,6 @@
     "validation": {
       "empty_name": "Veuillez fournir un nom à l'étiquette"
     }
-  },
-  "tag_filter": {
-    "label": "Filtrer par étiquette(s)"
   },
   "tag_manager": {
     "confirmation": {
@@ -3268,19 +3219,7 @@
       "undecoded_transactions": "Transactions non recodés"
     },
     "filter": {
-      "account": "Filtrer par compte",
-      "address": "filtrer par adresse de contrepartie",
-      "asset": "filtrer par l'actif des événements",
-      "date_hint": "format {format} HH:mm:ss (les secondes sont optionnelles)",
-      "end_date": "filtrer par la date de fin de la période des transactions",
-      "entry_type": "filtrer par type d'entrée",
-      "event_subtype": "filtrer par sous-type d'événement",
-      "event_type": "filtrer par type d'événement",
-      "location": "filtrer par emplacement de l'événement",
-      "protocol": "filtrer par le protocole des événements",
-      "start_date": "filtrer par la date de début de la période des transactions",
-      "tx_hash": "filtrer par hash de transaction(s)",
-      "validator_index": "filtrer par index de validateur(s)"
+      "account": "Filtrer par compte"
     },
     "form": {
       "account": {

@@ -4,17 +4,18 @@ import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice
 import { isEqual } from 'es-toolkit';
 import ManualBalanceMissingAssetWarning
   from '@/modules/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
+import { useManualBalanceFields } from '@/modules/accounts/manual-balances/use-manual-balance-fields';
 import { useManualBalanceTableActions } from '@/modules/accounts/manual-balances/use-manual-balance-table-actions';
+import { type Filters, ManualBalancesFilterSchema } from '@/modules/accounts/manual-balances/use-manual-balances-filter';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';
-import { type Filters, ManualBalancesFilterSchema, type Matcher, useManualBalanceFilter } from '@/modules/core/table/filters/use-manual-balances-filter';
-import TableFilter from '@/modules/core/table/TableFilter.vue';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { useSetting } from '@/modules/settings/use-setting';
-import TagFilter from '@/modules/shell/components/inputs/TagFilter.vue';
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
@@ -36,8 +37,11 @@ const currencySymbol = useSetting('currencySymbol');
 const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(() => type);
 const { prepareForEdit, pricesLoading, refresh, refreshing, showDeleteConfirmation } = useManualBalanceTableActions();
 
-const filterSchema = useManualBalanceFilter(locations);
-const { matchers } = filterSchema;
+// Declared here rather than left to the table: the asset search is scoped by the picked location,
+// so the fields read the bag, and they are built before the table that owns it.
+const modelFilters = ref<Filters>({});
+const fields = useManualBalanceFields(locations, modelFilters);
+const pillLabels = usePillBarLabels();
 
 const {
   collection: state,
@@ -49,11 +53,11 @@ const {
 } = useServerTable<
   ManualBalanceWithPrice,
   ManualBalanceRequestPayload,
-  Filters,
-  Matcher
+  Filters
 >({
   fetch,
-  filterSchema,
+  fields,
+  filters: modelFilters,
   params: [{
     fromQuery(query): void {
       const schema = ManualBalancesFilterSchema.parse(query);
@@ -74,6 +78,23 @@ const {
     ],
   },
   urlState: { mode: 'route' },
+});
+
+// The tags pill is param-bound, so the bar's param bag is bridged to the ref backing it — the same
+// ref the standalone tag selector used to write, and the one the request/url param source reads.
+// An absent param clears it: removing the pill is how the filter is turned off.
+const pillParams = computed<Record<string, string | string[] | boolean>>({
+  get(): Record<string, string | string[] | boolean> {
+    const selected = get(tags);
+    return selected.length > 0 ? { tags: selected } : {};
+  },
+  set(value: Record<string, string | string[] | boolean>): void {
+    const next = value.tags;
+    if (next === undefined || typeof next === 'boolean')
+      set(tags, []);
+    else
+      set(tags, Array.isArray(next) ? next : [next]);
+  },
 });
 
 function edit(balance: ManualBalanceWithPrice): void {
@@ -146,7 +167,7 @@ watchDebounced(
 </script>
 
 <template>
-  <RuiCard data-cy="manual-balances">
+  <RuiCard data-testid="manual-balances">
     <template #custom-header>
       <div class="px-4 pt-4">
         <div class="flex items-center flex-wrap gap-3">
@@ -156,18 +177,13 @@ watchDebounced(
             @refresh="refresh()"
           />
           <div class="grow" />
-          <div class="flex flex-col sm:flex-row flex-1 gap-2 min-w-full md:min-w-[40rem]">
-            <TagFilter
-              v-model="tags"
-              class="w-full flex-1"
-              hide-details
-            />
-            <TableFilter
-              v-model:matches="filters"
-              class="w-full flex-1"
-              :matchers="matchers"
-            />
-          </div>
+          <PillFilterBar
+            v-model:matches="filters"
+            v-model:params="pillParams"
+            class="flex-1 min-w-full md:min-w-[40rem]"
+            :fields="fields"
+            :labels="pillLabels"
+          />
         </div>
       </div>
     </template>
@@ -181,14 +197,14 @@ watchDebounced(
       row-attr="label"
       :rows="state.data"
       :item-class="getRowClass"
-      data-cy="manual-balances"
+      data-testid="manual-balances"
       class="lg:[&_table]:w-full"
     >
       <template #item.label="{ row }">
         <div
           class="font-medium !pb-0 text-truncate min-w-[8rem] max-w-[16rem]"
           :title="row.label"
-          data-cy="label"
+          data-testid="label"
           :class="{
             'pt-0': !row.tags,
           }"
@@ -224,7 +240,7 @@ watchDebounced(
       </template>
       <template #item.amount="{ row }">
         <ValueDisplay
-          data-cy="manual-balances__amount"
+          data-testid="manual-balances__amount"
           :value="row.amount"
         />
       </template>
@@ -241,7 +257,7 @@ watchDebounced(
       <template #item.location="{ row }">
         <LocationDisplay
           :identifier="row.location"
-          data-cy="manual-balances__location"
+          data-testid="manual-balances__location"
         />
       </template>
       <template #item.actions="{ row }">
@@ -270,7 +286,7 @@ watchDebounced(
           <FiatDisplay
             v-if="state.totalValue"
             class="p-4"
-            data-cy="manual-balances__amount"
+            data-testid="manual-balances__amount"
             :value="state.totalValue"
           />
         </RowAppend>

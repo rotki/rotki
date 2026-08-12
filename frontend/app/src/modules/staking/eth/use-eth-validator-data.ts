@@ -5,18 +5,21 @@ import type {
   EthereumValidatorRequestPayload,
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
-import { type Filters, type Matcher, useEthValidatorAccountFilter } from '@/modules/core/table/filters/use-eth-validator-filter';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import type { Filters } from '@/modules/staking/eth/use-eth-validator-filter';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useSetting } from '@/modules/settings/use-setting';
+import { useEthValidatorFields } from '@/modules/staking/eth/use-eth-validator-fields';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 
 interface UseEthValidatorDataReturn {
   cols: ComputedRef<DataTableColumn<EthereumValidator>[]>;
   ethStakingValidators: ComputedRef<EthereumValidator[]>;
+  /** The pill-bar fields, built here because the table's url shape is read off them. */
+  fields: ComputedRef<FieldDef[]>;
   fetchData: () => Promise<void>;
   filters: WritableComputedRef<Filters>;
-  matchers: ComputedRef<Matcher[]>;
   pagination: Ref<TablePaginationData>;
   rows: Ref<Collection<EthereumValidator>>;
   modelSelected: Ref<number[]>;
@@ -32,8 +35,7 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
   const { ethStakingValidators } = storeToRefs(blockchainValidatorsStore);
   const currencySymbol = useSetting('currencySymbol');
 
-  const filterSchema = useEthValidatorAccountFilter(t);
-  const { matchers } = filterSchema;
+  const fields = useEthValidatorFields();
 
   const {
     collection: rows,
@@ -44,11 +46,10 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
   } = useServerTable<
     EthereumValidator,
     EthereumValidatorRequestPayload,
-    Filters,
-    Matcher
+    Filters
   >({
     fetch: fetchValidators,
-    filterSchema,
+    fields,
     sort: {
       default: {
         column: 'index',
@@ -118,9 +119,9 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
   return {
     cols,
     ethStakingValidators,
+    fields,
     fetchData,
     filters,
-    matchers,
     pagination,
     rows,
     modelSelected,

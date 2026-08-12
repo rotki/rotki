@@ -54,6 +54,7 @@
         "type": "Type the chain"
       },
       "tooltip": {
+        "disabled": "Skipped in Settings → Chains, so rotki does not query it",
         "last_detected": "Last detected: {time}",
         "redetect": "Re-detect tokens",
         "redetect_all": "Re-detect tokens for all addresses"
@@ -62,11 +63,9 @@
     "edit_tooltip": "Edit account",
     "enter_selection_mode": "Enter selection mode to bulk ignore or mark assets as spam",
     "exit_selection_mode": "Exit selection mode",
-    "filter": {},
     "filter_field_labels": {
       "account": "Account",
-      "chain": "Chain",
-      "tags": "Tags"
+      "chain": "Chain"
     },
     "per_chain": "Per chain",
     "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries"
@@ -74,6 +73,7 @@
   "account_form": {
     "advanced_tooltip": "Display the advanced xpub options | Hide the advanced xpub options",
     "error": {
+      "addition_failed": "No account was added. | The address could not be added. | None of the {count} addresses could be added.",
       "description": "Error while adding account: {error}",
       "title": "Adding Account",
       "validator_needs_credentials": "Could not add the validator. Configure a consensus layer RPC or add a Beaconcha.in API key in settings, then try again."
@@ -254,10 +254,10 @@
         "message": "Failed retrieving accounting rules: {message}",
         "title": "Retrieving accounting rules"
       },
-      "filter": {
-        "counterparty": "filter by counterparty",
-        "event_subtype": "filter by event sub type",
-        "event_type": "filter by event type"
+      "filter_field_labels": {
+        "counterparty": "Counterparty",
+        "event_subtype": "Subtype",
+        "event_type": "Type"
       },
       "import": "Import accounting rules",
       "labels": {
@@ -378,9 +378,15 @@
         }
       },
       "blockchain": {
+        "cancelled": "Cancelled before querying the network",
         "error": {
           "description": "Error at querying blockchain balances: {error}",
           "title": "Querying blockchain balances"
+        },
+        "skipped": {
+          "busy": "Already refreshing this chain",
+          "disabled": "Skipped in settings",
+          "no_accounts": "No tracked accounts on this chain"
         }
       },
       "blockchain_account_removal": {
@@ -404,7 +410,8 @@
             "no_activity": "No activity found on this chain yet"
           },
           "no_activity_hint": "Chains where the address has no activity yet are skipped. This is normal for a fresh wallet. Once the address has transactions, add it again, or add it now with a specific chain selected to track it anyway.",
-          "non_eth": "All non ETH chains"
+          "non_eth": "All non ETH chains",
+          "nothing_added": "No account was added for {address}"
         },
         "no_new": {
           "description": "The selected addresses are already tracked by rotki"
@@ -1009,6 +1016,11 @@
       "add_title": "Add address book entry",
       "edit_title": "Edit address book entry"
     },
+    "filter_field_labels": {
+      "address": "Address",
+      "chain": "Chain",
+      "name": "Name"
+    },
     "form": {
       "labels": {
         "address": "Address"
@@ -1443,20 +1455,11 @@
       }
     },
     "filter": {
-      "address": "Filter by the address",
       "address_hint": "E.g. 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      "asset_flag": "Filter by asset flag",
       "asset_flag_hint": "E.g. rebasing",
-      "asset_type": "Filter by the asset type",
-      "chain": "Filter by chain",
-      "identifier": "Filter by identifier",
       "identifier_hint": "E.g. eip155:8453/erc20:0x833589fCD6e...b54bdA02913",
-      "name": "Filter by the name of the asset",
       "name_hint": "Search using the asset name",
-      "symbol": "Filter by the symbol of the asset",
-      "symbol_hint": "Search using the asset symbol",
-      "type": "Filter by the type of the custom asset",
-      "type_hint": "Search using the asset type"
+      "symbol_hint": "Search using the asset symbol"
     },
     "filter_field_labels": {
       "address": "Address",
@@ -1669,16 +1672,55 @@
         "auto_start": "Start MCP automatically with rotki",
         "control_unavailable": "MCP lifecycle controls are unavailable because this deployment was started without session authentication.",
         "desktop_only": "MCP lifecycle controls are available in the rotki desktop app.",
-        "endpoint": "Endpoint",
         "error": "Failed to update the MCP server: {message}",
         "generate_token": "Generate bearer token",
         "hide_token": "Hide bearer token",
         "hint": "Manage the local MCP server used by AI assistants.",
         "label": "MCP Server",
+        "premium_description": "Subscribe to rotki premium to let AI assistants query your rotki data over MCP.",
+        "premium_plan_title": "MCP is not included in your current plan",
+        "premium_title": "MCP requires a rotki premium subscription",
+        "privacy_mode": {
+          "balanced": {
+            "description": "Masks addresses, transaction hashes, group identifiers, and unknown fields, but keeps generated descriptions and the venue name of exchange accounts. Account names you chose yourself are still masked.",
+            "title": "Balanced"
+          },
+          "default": "Default",
+          "error": "Failed to update the MCP privacy mode: {message}",
+          "hint": "Choose how much of your data is masked before it reaches an AI assistant. The new mode applies without restarting MCP, but a connected assistant has to reload its analytics data before it can query again.",
+          "label": "Privacy mode",
+          "preview": {
+            "deposit": "Kraken deposit",
+            "field": "Field",
+            "footer": {
+              "balanced": "Identifiers remain masked while generated descriptions stay readable, and an exchange account keeps its venue name. A name you assigned yourself is masked like any other identifier.",
+              "raw": "Nothing is masked. Addresses, hashes, account names, and notes reach the assistant verbatim.",
+              "strict": "Identifiers become session-stable anonymous hashes so grouping still works. Free text is replaced by a flag indicating whether it existed."
+            },
+            "group_affected": "Decided by this mode",
+            "group_always": "Sent in every mode",
+            "not_sent": "column not sent",
+            "not_set": "not set",
+            "swap": "On-chain swap",
+            "title": "Example of what the assistant receives"
+          },
+          "raw": {
+            "description": "Masks nothing. Sends your data exactly as rotki stores it.",
+            "title": "Raw"
+          },
+          "raw_warning": {
+            "description": "Only use this with an assistant and provider you trust with your full financial history.",
+            "title": "Raw sends addresses, transaction hashes, account names, and notes verbatim."
+          },
+          "strict": {
+            "description": "Masks addresses, hashes, account names, and all free text. Keeps amounts, assets, dates, counterparties, and locations.",
+            "title": "Strict"
+          },
+          "success": "MCP privacy mode updated"
+        },
         "reveal_token": "Reveal bearer token",
         "status": {
           "failed": "Failed",
-          "label": "Status",
           "loading": "Loading",
           "running": "Running",
           "starting": "Starting",
@@ -1952,7 +1994,8 @@
   "collapsed_pending_tasks": {
     "cancel_task": "Cancel task",
     "cancel_task_info": "This action will leave the running process ({title}) in an unfinished state, are you sure you want to cancel?",
-    "title": "{count} pending task | {count} pending tasks"
+    "steps": "{current} of {total} steps done",
+    "title": "{count} job running | {count} jobs running"
   },
   "common": {
     "account": "Account",
@@ -2024,9 +2067,7 @@
     },
     "fee": "Fee",
     "filter": {
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
-      "end_date": "filter by the ending date of the period",
-      "start_date": "filter by the starting date of the period"
+      "period": "Date"
     },
     "here": "here",
     "ignored_in_accounting": "Excluded from accounting (PnL)",
@@ -2409,7 +2450,8 @@
           "search": "Search asset",
           "share": "% Net worth",
           "share_percent": "{percent}%",
-          "title": "Balances"
+          "title": "Balances",
+          "zero_value_only": "Showing zero-value only"
         },
         "changes": {
           "added": "Added",
@@ -2498,6 +2540,7 @@
           "negative_balance": "{asset} has a negative value",
           "net_worth_swing": "Net worth changed by {percent}% versus the previous snapshot",
           "nft_amount": "{asset} is an NFT but its amount is not 1",
+          "show_zero_value": "Show them",
           "title": "Check these entries",
           "zero_value": "no balances have value | {count} balance has no value | {count} balances have no value"
         }
@@ -2649,10 +2692,8 @@
     "filter": {
       "account": "Account",
       "asset": "Asset",
-      "end_date": "End date",
       "kind": "Kind",
       "period": "Date",
-      "start_date": "Start date",
       "state": "State"
     },
     "headers": {
@@ -2863,9 +2904,15 @@
     "last_90_days": "Last 90 days"
   },
   "docker_warning": {
-    "action": "Yes, I understand",
-    "documentation": "documentation",
-    "title": "You are running rotki in docker. Make sure you have read our {0} and understand the potential risk that running rotki in this way entails."
+    "accept": "Continue without authentication",
+    "accept_hint": "This lasts until rotki restarts. To accept it permanently, set this in the container's environment:",
+    "command_hint": "Generate a key and add it to the container's environment, then restart it:",
+    "copy_command": "Copy command",
+    "docs_link": "How to set up session authentication",
+    "heading": "This rotki instance is not protected",
+    "message": "You are running rotki in docker without session authentication. Anyone who can reach this instance can use the API and read your data without signing in.",
+    "proxy_note": "If this instance already sits behind a proxy that authenticates every request, it is protected and you can accept below.",
+    "recommendation": "Setting {0} makes rotki issue a session cookie on login and reject requests that do not carry it."
   },
   "ens_names": {
     "error": {
@@ -2886,9 +2933,6 @@
     "copy_tooltip": "Copy the error text to the clipboard",
     "message": "Open an issue in Github and include rotki_electron.log and rotkehlchen.log. The backend's output follows below:",
     "start_failure": "rotki failed to start"
-  },
-  "eth_validator_combined_filter": {
-    "status": "Filter by the status of the validator"
   },
   "eth2_input": {
     "ownership": {
@@ -4340,6 +4384,9 @@
     }
   },
   "kraken_staking_events": {
+    "filter": {
+      "period": "Date"
+    },
     "query_historical_price": "Querying Kraken historical prices ({processed}/{total})",
     "refresh_tooltip": "Refresh your Kraken staking events"
   },
@@ -5006,13 +5053,6 @@
         "title": "Oracle prices fetch failed"
       }
     },
-    "filter": {
-      "from_asset": "Filter by source asset",
-      "from_date": "Filter by start date",
-      "source_type": "Filter by oracle source",
-      "to_asset": "Filter by target asset",
-      "to_date": "Filter by end date"
-    },
     "filter_field_labels": {
       "from_asset": "Source asset",
       "period": "Period",
@@ -5069,6 +5109,19 @@
     "validation": {
       "range": "Value must be between 1 and 14 days"
     }
+  },
+  "pending_task": {
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "status": {
+      "cancelled": "Cancelled",
+      "done": "Done",
+      "failed": "Failed",
+      "queued": "Queued",
+      "running": "Running",
+      "skipped": "Skipped"
+    },
+    "steps": "{current} of {total}"
   },
   "percentage_display": {
     "symbol": "%",
@@ -5305,7 +5358,15 @@
     "manage_or_upgrade": "Manage or upgrade subscription",
     "premium_active": "@:premium_settings.title is active",
     "subtitle": "@:premium_settings.title is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
-    "title": "rotki Premium"
+    "title": "rotki Premium",
+    "validation": {
+      "api_key": {
+        "non_empty": "The API key cannot be empty"
+      },
+      "api_secret": {
+        "non_empty": "The API secret cannot be empty"
+      }
+    }
   },
   "price_accuracy_hint": {
     "tooltip": "These prices are based on the current exchange rate of historical USD values"
@@ -5878,23 +5939,12 @@
     }
   },
   "table_filter": {
-    "asset_suggestion": "Type the asset symbol or address to search.",
-    "exclusion": {
-      "description": "Use operator `!=` to filter out option, e.g.",
-      "example": "type != evm event"
-    },
     "field_kinds": {
       "asset": "asset",
       "date": "date",
       "range": "range",
       "toggle": "toggle"
     },
-    "hint": {
-      "description": "Type the filter and then press enter e.g.",
-      "edit_note": "Click applied filter to edit the value",
-      "example": "start = 26/05/2022"
-    },
-    "label": "Combined filters",
     "operators": {
       "after": "after",
       "before": "before",
@@ -5913,21 +5963,6 @@
       "remove": "Remove filter",
       "search": "Filter by…"
     },
-    "press_enter_to_apply": "Press enter to apply:",
-    "saved_filters": {
-      "actions": {
-        "add": "Save current filter to list",
-        "apply": "Apply this saved filter",
-        "list": "Open saved filter list",
-        "remove": "Remove this saved filter"
-      },
-      "added": "Filter saved",
-      "empty": "You don't have any saved filter. Apply the filter as usual, and click this button {button} to save the filter.",
-      "saving": {
-        "limited": "You are only allowed to save up to {limit} filters. Remove other filters to be able to add again.",
-        "title": "Failed to save filter"
-      }
-    },
     "saved_views": {
       "actions": {
         "apply": "Apply this view",
@@ -5944,10 +5979,7 @@
       "name_placeholder": "Name these filters…",
       "nothing_to_save": "Add a filter to save it as a view.",
       "title": "Views"
-    },
-    "start_typing": "Type the value for the {search} filter",
-    "title": "Available filters",
-    "unsupported_filter": "Unsupported filter:"
+    }
   },
   "tag_creator": {
     "labels": {
@@ -5959,9 +5991,6 @@
     "validation": {
       "empty_name": "Please provide a tag name"
     }
-  },
-  "tag_filter": {
-    "label": "Filter by tag(s)"
   },
   "tag_manager": {
     "confirmation": {
@@ -5989,6 +6018,7 @@
         "add": "Adding {address}",
         "detect": "Detecting EVM accounts",
         "ens": "Resolving ENS names for {count} address | Resolving ENS names for {count} addresses",
+        "import": "Importing {count} account | Importing {count} accounts",
         "remove": "Removing {address}",
         "remove_count": "Removing {count} account | Removing {count} accounts",
         "remove_xpub": "Removing xpub {xpub}"
@@ -6004,8 +6034,8 @@
         "versions": "Checking for asset database updates"
       },
       "blockchain_balances": {
-        "cached": "Reading cached {chain} data",
-        "query": "Querying the {chain} network"
+        "chain": "Refreshing {chain}",
+        "run": "Refreshing {count} chains"
       },
       "csv_import": {
         "source": "Importing data from {source}"
@@ -6580,6 +6610,7 @@
       "note": {
         "merchant_code": "Merchant Code: {code}"
       },
+      "redecoding": "Re-decoding",
       "selection_mode": {
         "all_matching_selected": "All events in {count} groups are selected",
         "create_rule": "Set custom accounting rule",
@@ -6643,34 +6674,19 @@
     },
     "filter": {
       "account": "Filter by account",
-      "address": "filter by counterparty address",
-      "asset": "filter by the asset of the events",
       "date_from": "From",
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
       "date_to": "To",
       "duplicate_value": "Already added",
-      "end_date": "filter by the end date of the transaction period",
-      "entry_type": "filter by entry type",
-      "event_subtype": "filter by event sub type",
-      "event_type": "filter by event type",
       "invalid_address": "Enter a valid address",
       "invalid_tx_hash": "Enter a valid transaction hash or signature",
       "invalid_validator_index": "Enter a validator index",
       "invalid_value": "Invalid value",
-      "location": "filter by event location",
       "match_exact_filter": "Should match exact filter",
       "match_exact_filter_disabled": "Disabled: every event in a matching group is shown.",
       "match_exact_filter_enabled": "Enabled: only the events that match are shown.",
-      "max_amount": "filter by maximum amount",
-      "min_amount": "filter by minimum amount",
-      "notes": "filter by notes content",
-      "protocol": "filter by the protocol of the events",
       "range_max": "Max",
       "range_max_below_min": "Max must be greater than min",
-      "range_min": "Min",
-      "start_date": "filter by the start date of the transaction period",
-      "tx_hash": "filter by tx hash(es) or signature(s)",
-      "validator_index": "filter by validator index(es)"
+      "range_min": "Min"
     },
     "filter_field_labels": {
       "account": "Account",

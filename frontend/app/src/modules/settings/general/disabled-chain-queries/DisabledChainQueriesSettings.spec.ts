@@ -74,7 +74,7 @@ describe('disabled-chain-queries-settings', () => {
 
   it('should render a chain rule row for an empty-list chain', async () => {
     await seedStore({ eth: [] });
-    expect(wrapper.findAll('[data-testid^="rule-"]').length).toBeGreaterThan(0);
+    expect(wrapper.findAll('[data-testid=rule-row]')).toHaveLength(1);
     expect(wrapper.find('[data-testid="disabled-chain-queries-empty"]').exists()).toBe(false);
   });
 
@@ -83,7 +83,7 @@ describe('disabled-chain-queries-settings', () => {
       eth: ['0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'],
       optimism: ['0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'],
     });
-    const rows = wrapper.findAll('[data-testid^="rule-edit-"]');
+    const rows = wrapper.findAll('[data-testid=rule-edit]');
     expect(rows).toHaveLength(1);
   });
 
@@ -103,7 +103,7 @@ describe('disabled-chain-queries-settings', () => {
     });
     setSettingsMock.mockClear();
 
-    const removeButtons = wrapper.findAll('[data-testid^="rule-remove-"]');
+    const removeButtons = wrapper.findAll('[data-testid=rule-remove]');
     expect(removeButtons).toHaveLength(2);
 
     // The chain rule (eth) renders first since chain rules come before address rules in parsePayload.

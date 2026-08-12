@@ -30,7 +30,7 @@ function feeLabel(index: number): string {
 <template>
   <RuiAccordions>
     <RuiAccordion
-      data-cy="advanced-accordion"
+      data-testid="advanced-accordion"
       header-class="py-4"
       eager
     >
@@ -42,7 +42,7 @@ function feeLabel(index: number): string {
         <RuiTextArea
           v-model="spendNotes"
           prepend-icon="lu-sticky-note"
-          data-cy="spend-notes"
+          data-testid="spend-notes"
           variant="outlined"
           color="primary"
           max-rows="5"
@@ -55,7 +55,7 @@ function feeLabel(index: number): string {
         <RuiTextArea
           v-model="receiveNotes"
           prepend-icon="lu-sticky-note"
-          data-cy="receive-notes"
+          data-testid="receive-notes"
           variant="outlined"
           color="primary"
           max-rows="5"
@@ -70,7 +70,8 @@ function feeLabel(index: number): string {
           :key="index"
           v-model="fee.userNotes"
           prepend-icon="lu-sticky-note"
-          :data-cy="`fee-notes-${index + 1}`"
+          data-testid="fee-notes"
+          :data-index="index + 1"
           variant="outlined"
           color="primary"
           max-rows="5"

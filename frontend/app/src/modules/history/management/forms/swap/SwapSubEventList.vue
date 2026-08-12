@@ -74,7 +74,8 @@ function add(): void {
       <RuiButton
         variant="outlined"
         color="primary"
-        :data-cy="`${type}-add`"
+        data-testid="swap-sub-event-add"
+        :data-key="type"
         :disabled="disabled"
         size="sm"
         @click="add()"

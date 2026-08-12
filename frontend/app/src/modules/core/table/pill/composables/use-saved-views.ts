@@ -1,6 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
-import type { BaseSuggestion, SavedFilterLocation } from '@/modules/core/table/filtering';
+import type { SavedFilterLocation } from '@/modules/core/table/filtering';
+import type { LegacySavedFilterEntry } from '@/modules/core/table/pill/core/legacy-saved-filter';
 import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -27,19 +28,19 @@ interface SavedViewsReturn {
 /**
  * Folds one legacy saved filter into a view's two halves.
  *
- * The old shape is a flat list of one suggestion per value, all of them matcher-bound, so several
+ * The old shape is a flat list of one entry per value, all of them filter-bound, so several
  * entries can share a key and become that key's value list. Where the field that key belongs to has
  * since become param-bound (the accounts table's account and chain pills), the value is routed to
  * `params` instead, through the field's own `fromLegacy` when its stored form differs from what the
  * field now takes. Without that routing the entry would land in `matches`, which a param field
  * never reads, and the filter would vanish from the converted view without a word.
  */
-function stateFromSuggestions(suggestions: BaseSuggestion[], fields: FieldDef[]): SavedViewState {
+function stateFromLegacyFilter(entries: LegacySavedFilterEntry[], fields: FieldDef[]): SavedViewState {
   const fieldByKey = new Map(fields.map(field => [field.key, field]));
-  const grouped = new Map<string, BaseSuggestion[]>();
+  const grouped = new Map<string, LegacySavedFilterEntry[]>();
 
-  for (const suggestion of suggestions)
-    grouped.set(suggestion.key, [...(grouped.get(suggestion.key) ?? []), suggestion]);
+  for (const entry of entries)
+    grouped.set(entry.key, [...(grouped.get(entry.key) ?? []), entry]);
 
   const matches: SavedView['matches'] = {};
   const params: SavedView['params'] = {};
@@ -77,9 +78,9 @@ function stateFromSuggestions(suggestions: BaseSuggestion[], fields: FieldDef[])
   return { matches, params };
 }
 
-/** An asset suggestion stored its whole info object; the identifier is what goes on the wire. */
-function legacyValue(suggestion: BaseSuggestion): string | boolean {
-  const raw = suggestion.value;
+/** An asset was stored as its whole info object; the identifier is what goes on the wire. */
+function legacyValue(entry: LegacySavedFilterEntry): string | boolean {
+  const raw = entry.value;
   return typeof raw === 'string' || typeof raw === 'boolean' ? raw : raw.identifier;
 }
 
@@ -177,8 +178,8 @@ export function useSavedViews(
     const room = Math.max(LIMIT_PER_LOCATION - existing.length, 0);
     // The old filters had no names, so each gets a generated one the user can recognise by its
     // pill summary and rename by re-saving.
-    const converted = legacy.slice(0, room).map((suggestions, index) => ({
-      ...stateFromSuggestions(suggestions, toValue(fields)),
+    const converted = legacy.slice(0, room).map((entries, index) => ({
+      ...stateFromLegacyFilter(entries, toValue(fields)),
       name: t('table_filter.saved_views.converted_name', { number: existing.length + index + 1 }),
     }));
 

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { Nullable } from '@rotki/common';
+import type { Filters } from '@/modules/assets/admin/custom/use-custom-assets-filter';
 import type { CustomAsset, CustomAssetRequestPayload } from '@/modules/assets/types';
 import CustomAssetFormDialog from '@/modules/assets/admin/custom/CustomAssetFormDialog.vue';
 import CustomAssetTable from '@/modules/assets/admin/custom/CustomAssetTable.vue';
 import { useCustomAssetFields } from '@/modules/assets/admin/custom/use-custom-asset-fields';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { type Filters, type Matcher, useCustomAssetFilter } from '@/modules/core/table/filters/use-custom-assets-filter';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
@@ -41,8 +41,7 @@ const { showDeleteConfirmation } = useTableRowDeletion<CustomAsset>({
   onDeleted: refresh,
 });
 
-const filterSchema = useCustomAssetFilter(types);
-const fields = useCustomAssetFields(filterSchema.matchers);
+const fields = useCustomAssetFields(types);
 
 const {
   collection,
@@ -54,11 +53,10 @@ const {
 } = useServerTable<
   CustomAsset,
   CustomAssetRequestPayload,
-  Filters,
-  Matcher
+  Filters
 >({
   fetch: queryAllCustomAssets,
-  filterSchema,
+  fields,
   sort: {
     default: [{
       column: 'name',
@@ -127,7 +125,7 @@ watch(() => identifier, (assetId) => {
       </RuiButton>
 
       <RuiButton
-        data-cy="managed-asset-add-btn"
+        data-testid="managed-asset-add-btn"
         color="primary"
         size="lg"
         @click="add()"

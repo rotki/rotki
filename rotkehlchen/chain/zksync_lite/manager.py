@@ -1071,6 +1071,9 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             queryfilter, bindings = ' WHERE is_decoded=?', (0,)  # type: ignore
 
         transactions = self.get_db_transactions(queryfilter, bindings)
+        if len(transactions) == 0:
+            return 0
+
         with self.database.conn.read_ctx() as cursor:
             tracked_addresses = self.database.get_blockchain_accounts(cursor).zksync_lite
 

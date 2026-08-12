@@ -73,7 +73,7 @@ defineExpose({
     />
     <RuiTextField
       v-model="counterpartySymbol"
-      data-cy="counterpartySymbol"
+      data-testid="counterparty-symbol"
       variant="outlined"
       color="primary"
       :disabled="editMode"

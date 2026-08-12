@@ -33,11 +33,11 @@ const multipleUpgrades = computed<boolean>(() => {
     class="max-w-[29rem] mx-auto !bg-transparent"
   >
     <template #header>
-      <span class="text-h6">
+      <span class="text-h6 tracking-tight">
         {{ dataMigration ? t('login.migrating_data.title') : t('login.upgrading_db.title') }}
       </span>
     </template>
-    <div class="flex items-start gap-4">
+    <div class="flex items-start gap-5">
       <div class="relative inline-flex rotate-90 size-[45px] shrink-0">
         <RuiProgress
           :value="progress.percentage"
@@ -57,23 +57,23 @@ const multipleUpgrades = computed<boolean>(() => {
       </div>
       <div class="min-w-0 flex-1">
         <DefineProgress #default="{ updateProgress, warning, current }">
-          <div class="text-body-1 font-medium break-words">
+          <div class="text-body-1 font-medium leading-6 break-words min-h-12">
             {{ warning }}
           </div>
-          <RuiDivider class="my-2" />
-          <!-- hide the progress message when the reset signal is received from the backend -->
-          <div
-            v-if="updateProgress.totalSteps > 0"
-            class="text-body-2 text-rui-text-secondary break-words"
-          >
-            {{ current }}
+          <RuiDivider class="my-3" />
+          <!-- the two lines below keep their height even while empty, so the block never jumps -->
+          <div class="flex flex-col gap-1">
+            <!-- hide the progress message when the reset signal is received from the backend -->
+            <div
+              class="text-body-2 text-rui-text-secondary leading-5 min-h-5 break-words"
+              :class="{ invisible: updateProgress.totalSteps === 0 }"
+            >
+              {{ current }}
+            </div>
+            <p class="text-caption text-rui-text-secondary leading-4 min-h-8 line-clamp-2 break-words">
+              {{ updateProgress.description }}
+            </p>
           </div>
-          <p
-            v-if="updateProgress.description"
-            class="text-caption text-rui-text-secondary mt-2 break-words"
-          >
-            {{ updateProgress.description }}
-          </p>
         </DefineProgress>
         <ReuseProgress
           v-if="!dataMigration"

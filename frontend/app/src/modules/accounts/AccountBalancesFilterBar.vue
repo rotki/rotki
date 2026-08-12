@@ -3,7 +3,7 @@ import type { SavedViewState } from '@/modules/core/table/pill/composables/use-s
 import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import { useBlockchainAccountFields } from '@/modules/accounts/use-blockchain-account-fields';
 import { arrayify } from '@/modules/core/common/data/array';
-import { SavedFilterLocation } from '@/modules/core/table/filtering';
+import { SavedFilterLocations } from '@/modules/core/table/filtering';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import PillViewsMenu from '@/modules/core/table/pill/PillViewsMenu.vue';
@@ -69,7 +69,7 @@ function applyView(view: SavedView): void {
     <template #views="{ disabled }">
       <PillViewsMenu
         :fields="fields"
-        :location="SavedFilterLocation.BLOCKCHAIN_ACCOUNTS"
+        :location="SavedFilterLocations.BLOCKCHAIN_ACCOUNTS"
         :state="pillState"
         :disabled="disabled"
         @apply="applyView($event)"

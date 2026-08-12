@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetIgnoreApi } from './use-asset-ignore-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
-const colibriUrl = process.env.VITE_COLIBRI_URL;
+const colibriUrl = `${backendUrl}/colibri`;
 
 describe('useAssetIgnoreApi', () => {
   beforeEach(() => {
@@ -13,7 +13,7 @@ describe('useAssetIgnoreApi', () => {
 
   describe('getIgnoredAssets', () => {
     it('should send GET request to colibri and returns asset list', async () => {
-      // Note: getIgnoredAssets overrides baseURL to colibriApiUrl, so URL is without /api/1
+      // Note: getIgnoredAssets targets colibri, so the URL is without /api/1
       server.use(
         http.get(`${colibriUrl}/assets/ignored`, () =>
           HttpResponse.json({

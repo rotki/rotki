@@ -69,7 +69,7 @@ describe('settings/general/rpc/BlockchainRpcNodeForm.vue', () => {
 
     expect(wrapper.vm.validate()).toBe(false);
     await nextTick();
-    expect(wrapper.find('[data-cy=node-name] .details .text-rui-error').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=node-name] .details .text-rui-error').exists()).toBe(true);
   });
 
   it('should reject a node without an endpoint', async () => {
@@ -77,7 +77,7 @@ describe('settings/general/rpc/BlockchainRpcNodeForm.vue', () => {
 
     expect(wrapper.vm.validate()).toBe(false);
     await nextTick();
-    expect(wrapper.find('[data-cy=node-endpoint] .details .text-rui-error').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=node-endpoint] .details .text-rui-error').exists()).toBe(true);
   });
 
   // Etherscan is reached through the api key rather than an endpoint, so it is the one node whose
@@ -103,13 +103,13 @@ describe('settings/general/rpc/BlockchainRpcNodeForm.vue', () => {
     await nextTick();
     await nextTick();
 
-    expect(wrapper.find('[data-cy=node-name] .details .text-rui-error').text()).toBe('Node name already taken');
+    expect(wrapper.find('[data-testid=node-name] .details .text-rui-error').text()).toBe('Node name already taken');
   });
 
   it('should write an edited name back to the model', async () => {
     wrapper = createWrapper();
 
-    await wrapper.find('[data-cy=node-name] input').setValue('renamed node');
+    await wrapper.find('[data-testid=node-name] input').setValue('renamed node');
 
     expect(wrapper.props('modelValue').node.name).toBe('renamed node');
   });
@@ -120,7 +120,7 @@ describe('settings/general/rpc/BlockchainRpcNodeForm.vue', () => {
 
     expect(wrapper.props('stateUpdated')).toBe(false);
 
-    await wrapper.find('[data-cy=node-name] input').setValue('renamed node');
+    await wrapper.find('[data-testid=node-name] input').setValue('renamed node');
     await vi.advanceTimersByTimeAsync(600);
 
     expect(wrapper.props('stateUpdated')).toBe(true);

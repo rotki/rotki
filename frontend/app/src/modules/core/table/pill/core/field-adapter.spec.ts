@@ -1,86 +1,66 @@
 import type { AssetsWithId } from '@/modules/assets/types';
-import type { SearchMatcher } from '@/modules/core/table/filtering';
+import type { FilterValueType } from '@/modules/core/table/filtering';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { describe, expect, it } from 'vitest';
-import { resolveEditor, resolveValueType, toDateFieldDef, toFieldDef, toParamFieldDef, toRangeFieldDef } from '@/modules/core/table/pill/core/field-adapter';
-
-const stringMatcher: SearchMatcher<string, string> = {
-  allowExclusion: true,
-  description: 'Protocol',
-  key: 'protocol',
-  keyValue: 'protocols',
-  multiple: true,
-  serializer: (v: string): string => v.toLowerCase(),
-  string: true,
-  suggestions: (): string[] => ['aave', 'uniswap'],
-  validate: (): boolean => true,
-};
-
-const assetMatcher: SearchMatcher<string, string> = {
-  asset: true,
-  description: 'Asset',
-  key: 'asset',
-  keyValue: 'assets',
-  suggestions: async (): Promise<AssetsWithId> => [],
-};
-
-const booleanMatcher: SearchMatcher<string, string> = {
-  boolean: true,
-  description: 'Ignored',
-  key: 'ignored',
-  keyValue: 'ignored',
-};
+import { resolveEditor, toDateFieldDef, toMatchFieldDef, toParamFieldDef, toRangeFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 
 describe('field-adapter', () => {
-  describe('resolveValueType', () => {
-    it('should honor an explicit valueType override', () => {
-      expect(resolveValueType({ ...stringMatcher, valueType: 'range' })).toBe('range');
-    });
+  describe('toMatchFieldDef', () => {
+    it('should declare a field bound to the table filter bag', () => {
+      const f = toMatchFieldDef({
+        allowExclusion: true,
+        key: 'protocols',
+        label: 'Protocol',
+        multiple: true,
+        suggest: (): string[] => ['aave'],
+      });
 
-    it('should map the discriminant when no override is set', () => {
-      expect(resolveValueType(stringMatcher)).toBe('enum');
-      expect(resolveValueType(assetMatcher)).toBe('asset');
-      expect(resolveValueType(booleanMatcher)).toBe('boolean');
-    });
-  });
-
-  describe('toFieldDef', () => {
-    it('should normalize a string matcher into an enum field bound to matches', () => {
-      const f = toFieldDef(stringMatcher);
-      expect(f.key).toBe('protocols');
+      expect(f.binding).toStrictEqual({ kind: 'filter' });
       expect(f.valueType).toBe('enum');
       expect(f.multiple).toBe(true);
-      expect(f.allowExclusion).toBe(true);
-      expect(f.binding).toStrictEqual({ kind: 'matcher' });
-      expect(f.operators).toStrictEqual(['is', 'is_not']);
-      expect(f.suggest?.()).toStrictEqual(['aave', 'uniswap']);
-      expect(f.serializer?.('AAVE')).toBe('aave');
-      expect(f.searchAsset).toBeUndefined();
+      expect(f.suggest?.()).toStrictEqual(['aave']);
     });
 
-    it('should normalize an asset matcher with async search and no exclusion', () => {
-      const f = toFieldDef(assetMatcher);
-      expect(f.valueType).toBe('asset');
+    it('should default to a single enum field', () => {
+      const f = toMatchFieldDef({ key: 'x', label: 'X' });
+
+      expect(f.valueType).toBe('enum');
+      expect(f.multiple).toBe(false);
       expect(f.allowExclusion).toBe(false);
-      expect(f.operators).toStrictEqual(['is']);
-      expect(f.searchAsset).toBe(assetMatcher.suggestions);
-      expect(f.suggest).toBeUndefined();
-    });
-
-    it('should give a boolean matcher a single is operator', () => {
-      const f = toFieldDef(booleanMatcher);
-      expect(f.valueType).toBe('boolean');
-      expect(f.operators).toStrictEqual(['is']);
-    });
-
-    it('should offer is_not only when the string matcher allows exclusion', () => {
-      expect(toFieldDef(stringMatcher).operators).toStrictEqual(['is', 'is_not']);
-      expect(toFieldDef({ ...stringMatcher, allowExclusion: false }).operators).toStrictEqual(['is']);
     });
 
     it('should carry an explicit valueType and operators through', () => {
-      const f = toFieldDef({ ...stringMatcher, operators: ['gt', 'lt'], valueType: 'range' });
+      const f = toMatchFieldDef({ key: 'amount', label: 'Amount', operators: ['gt', 'lt'], valueType: 'range' });
+
       expect(f.valueType).toBe('range');
       expect(f.operators).toStrictEqual(['gt', 'lt']);
+    });
+
+    it('should carry an async asset search rather than an option list', () => {
+      const searchAsset = async (): Promise<AssetsWithId> => [];
+      const f = toMatchFieldDef({ key: 'asset', label: 'Asset', searchAsset, valueType: 'asset' });
+
+      expect(f.searchAsset).toBe(searchAsset);
+      expect(f.suggest).toBeUndefined();
+      expect(f.operators).toStrictEqual(['is']);
+    });
+
+    // The codec writes the `!` negation only for a field that allows exclusion, so offering
+    // `is_not` without it gives the user an operator that silently applies as `is`.
+    it('should not offer is_not to a field that cannot express it', () => {
+      expect(toMatchFieldDef({ key: 'name', label: 'Name' }).operators).toStrictEqual(['is']);
+      expect(toMatchFieldDef({ key: 'asset', label: 'Asset', valueType: 'asset' }).operators).toStrictEqual(['is']);
+    });
+
+    it('should offer is_not once the field declares exclusion', () => {
+      const f = toMatchFieldDef({ allowExclusion: true, key: 'entryTypes', label: 'Type' });
+
+      expect(f.operators).toStrictEqual(['is', 'is_not']);
+    });
+
+    it('should keep the range and date defaults, which are not expressed by a prefix', () => {
+      expect(toMatchFieldDef({ key: 'amount', label: 'Amount', valueType: 'range' }).operators)
+        .toStrictEqual(['between', 'gt', 'lt']);
     });
   });
 
@@ -125,10 +105,10 @@ describe('field-adapter', () => {
   });
 
   describe('toRangeFieldDef', () => {
-    it('should collapse two amount bounds into a matcher-bound range field', () => {
+    it('should collapse two amount bounds into a filter-bound range field', () => {
       const f = toRangeFieldDef({ key: 'amount', label: 'Amount', lowerKey: 'minAmount', upperKey: 'maxAmount' });
       expect(f.valueType).toBe('range');
-      expect(f.binding).toStrictEqual({ kind: 'matcher' });
+      expect(f.binding).toStrictEqual({ kind: 'filter' });
       expect(f.bounds).toStrictEqual({ lower: 'minAmount', upper: 'maxAmount' });
       expect(f.multiple).toBe(false);
       expect(f.allowExclusion).toBe(false);
@@ -158,11 +138,15 @@ describe('field-adapter', () => {
 
   describe('resolveEditor', () => {
     it('should map value types to their editors', () => {
-      expect(resolveEditor(toFieldDef(stringMatcher))).toBe('enum');
-      expect(resolveEditor(toFieldDef(assetMatcher))).toBe('asset');
-      expect(resolveEditor(toFieldDef(booleanMatcher))).toBe('boolean');
-      expect(resolveEditor(toFieldDef({ ...stringMatcher, valueType: 'range' }))).toBe('range');
-      expect(resolveEditor(toFieldDef({ ...stringMatcher, valueType: 'date' }))).toBe('date');
+      const field = (valueType: FilterValueType): FieldDef => toMatchFieldDef({ key: 'k', label: 'K', valueType });
+
+      expect(resolveEditor(field('enum'))).toBe('enum');
+      expect(resolveEditor(field('asset'))).toBe('asset');
+      expect(resolveEditor(field('boolean'))).toBe('boolean');
+      expect(resolveEditor(field('range'))).toBe('range');
+      expect(resolveEditor(field('date'))).toBe('date');
+      // Typed rather than picked, whatever the value type says.
+      expect(resolveEditor(toMatchFieldDef({ freeText: true, key: 'k', label: 'K' }))).toBe('text');
     });
   });
 });

@@ -63,7 +63,7 @@ const avatarSizeClasses = computed<string>(() => {
           <div
             class="font-medium text-truncate text-sm"
             :title="title"
-            data-cy="list-title"
+            data-testid="list-title"
           >
             <slot name="title">
               {{ title }}
@@ -72,7 +72,7 @@ const avatarSizeClasses = computed<string>(() => {
           <div
             class="text-rui-text-secondary text-caption text-truncate"
             :title="subtitle"
-            data-cy="list-subtitle"
+            data-testid="list-subtitle"
           >
             <slot name="subtitle">
               {{ subtitle }}

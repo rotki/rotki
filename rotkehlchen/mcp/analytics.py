@@ -9,7 +9,7 @@ import threading
 from contextlib import closing
 from dataclasses import dataclass
 from hashlib import sha256
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, cast
 
 import pandas as pd
 
@@ -22,6 +22,7 @@ from rotkehlchen.mcp.backend import (
     query_historical_prices,
     query_history_events_page,
     query_settings,
+    set_privacy_mode,
 )
 from rotkehlchen.mcp.taxonomy import resolve_direction, resolve_group
 from rotkehlchen.types import Location
@@ -75,6 +76,7 @@ DEFAULT_VALUE_CURRENCY: Final = 'USD'
 # partial one belongs to. See _add_partial_withdrawal_income.
 ETH_WITHDRAWAL_ENTRY_TYPE: Final = 'eth withdrawal event'
 INCOME_GROUP: Final = 'income'
+VALID_PRIVACY_MODES: Final = frozenset({'balanced', 'strict', 'raw'})
 
 # --- privacy classification -------------------------------------------------------------
 # User-authored / decoder-written free text: never emitted verbatim outside ``raw`` mode
@@ -771,6 +773,14 @@ class AnalyticsSession:
                     pending[table] = table_data
 
             with self._lock:
+                if scope.privacy_mode != get_backend_config().privacy_mode:
+                    return {
+                        'tables': {},
+                        'errors': {
+                            'privacy_mode': 'Privacy mode changed during refresh; retry it',
+                        },
+                        'privacy_mode': get_backend_config().privacy_mode,
+                    }
                 for table, table_data in pending.items():
                     try:
                         table_data.frame.to_sql(
@@ -804,6 +814,11 @@ class AnalyticsSession:
                     f'Table {table!r} is not loaded. Call refresh_analytics_data first.',
                     available_tables=list(AVAILABLE_TABLES),
                 )
+            if table_data.source.get('privacy_mode') != get_backend_config().privacy_mode:
+                return _error(
+                    'privacy_mode_changed',
+                    'Privacy mode changed. Refresh analytics data before describing it.',
+                )
             with closing(self._connection.cursor()) as cursor:
                 # The declared sqlite types are the ones the query actually sees, so report
                 # them next to the pandas dtypes rather than instead of them.
@@ -836,6 +851,14 @@ class AnalyticsSession:
                 return _error(
                     'no_tables_loaded',
                     'No analytics tables are loaded yet. Call refresh_analytics_data first.',
+                )
+            if any(
+                    data.source.get('privacy_mode') != get_backend_config().privacy_mode
+                    for data in self._tables.values()
+            ):
+                return _error(
+                    'privacy_mode_changed',
+                    'Privacy mode changed. Refresh analytics data before querying it.',
                 )
 
             try:
@@ -876,7 +899,20 @@ class AnalyticsSession:
 
 
 _analytics_session = AnalyticsSession()
+_privacy_mode_lock = threading.Lock()
 
 
 def get_analytics_session() -> AnalyticsSession:
     return _analytics_session
+
+
+def sync_privacy_mode() -> AnalyticsSession:
+    """Apply the persisted UI mode and clear older data as one serialized operation."""
+    with _privacy_mode_lock:
+        privacy_mode = query_settings().get('mcp_privacy_mode')
+        if not isinstance(privacy_mode, str) or privacy_mode not in VALID_PRIVACY_MODES:
+            raise BackendQueryError('rotki backend returned an invalid MCP privacy mode')
+
+        if set_privacy_mode(cast('PrivacyMode', privacy_mode)):
+            _analytics_session.clear()
+        return _analytics_session

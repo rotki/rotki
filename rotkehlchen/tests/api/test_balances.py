@@ -28,6 +28,7 @@ from rotkehlchen.constants.assets import (
     A_USDC,
     A_USDT,
 )
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -837,6 +838,29 @@ def test_multiple_balance_queries_not_concurrent(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_blockchain_balances_only_cache_does_not_query_chain(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """A cache-only GET returns an empty result without falling back to the chain."""
+    chains_aggregator = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator
+    with patch.object(chains_aggregator, 'query_balances') as query_mock:
+        result = assert_proper_sync_response_with_result(requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'named_blockchain_balances_resource',
+                blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+            ),
+            params={'only_cache': True},
+        ))
+
+    query_mock.assert_not_called()
+    assert result == {
+        'per_account': {},
+        'totals': {'assets': {}, 'liabilities': {}},
+    }
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
 def test_balances_caching_mixup(
         rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -1027,6 +1051,41 @@ def test_ethereum_tokens_detection(
     result = query_detect_eth_tokens()
     assert set(result[account]['tokens']) == {A_DAI.identifier, A_RDN.identifier}
     assert result[account]['last_update_timestamp'] >= cur_time
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+def test_ethereum_tokens_detection_skips_disabled_addresses(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Implicit token detection queries only addresses enabled by the user setting."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    disabled_address = ethereum_accounts[0]
+    active_address = ethereum_accounts[1]
+    CachedSettings().update_entry(
+        'disabled_chain_queries',
+        {SupportedBlockchain.ETHEREUM: frozenset({disabled_address})},
+    )
+    try:
+        with patch.object(
+            rotki.chains_aggregator.ethereum.tokens,
+            'detect_tokens',
+            return_value={},
+        ) as detect_tokens:
+            response = requests.post(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'detecttokensresource',
+                    blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+                ),
+                json={'async_query': False},
+            )
+
+        assert_proper_sync_response_with_result(response)
+        detect_tokens.assert_called_once()
+        assert detect_tokens.call_args.kwargs['addresses'] == (active_address,)
+    finally:
+        CachedSettings().update_entry('disabled_chain_queries', {})
 
 
 @pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)

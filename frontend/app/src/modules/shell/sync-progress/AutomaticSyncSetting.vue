@@ -40,7 +40,7 @@ async function updateSync(value: boolean): Promise<void> {
   <RuiSwitch
     v-bind="$attrs"
     v-model="sync"
-    data-cy="premium-should-sync"
+    data-testid="premium-should-sync"
     :label="t('premium_settings.actions.sync')"
     :hint="t('premium_settings.actions.sync_hint')"
     :success-messages="success"

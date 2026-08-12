@@ -71,7 +71,7 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
   it('should disable the confirm button while loading', () => {
     wrapper = createWrapper({ loading: true });
 
-    const confirmButton = wrapper.find('[data-cy="confirm"]');
+    const confirmButton = wrapper.find('[data-testid="confirm"]');
     expect(confirmButton.exists()).toBe(true);
     expect(confirmButton.attributes('disabled')).toBeDefined();
   });

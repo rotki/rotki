@@ -71,7 +71,7 @@ function filterAddress(item: string, queryText: string): boolean {
     clearable
     custom-value
     variant="outlined"
-    data-cy="location-label"
+    data-testid="location-label"
     :label="t('transactions.events.form.account_address.label')"
     :error-messages="errorMessages"
     auto-select-first

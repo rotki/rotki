@@ -174,10 +174,10 @@ export function toAssetMovementPayload(
   state: AssetMovementFormState,
   uniqueId: string,
 ): NewAssetMovementEventPayload {
-  const amount = bigNumberify(state.amount);
+  const amount = bigNumberify(state.amount, Zero);
 
   return {
-    amount: amount.isNaN() ? Zero : amount,
+    amount,
     asset: state.asset,
     blockchain: state.blockchain,
     entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,

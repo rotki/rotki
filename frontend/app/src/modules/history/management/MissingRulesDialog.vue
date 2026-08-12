@@ -80,7 +80,7 @@ function onAddRule(data: HistoryEventEditData) {
   >
     <RuiCard
       v-if="modelValue"
-      data-cy="missing-rules-dialog"
+      data-testid="missing-rules-dialog"
     >
       <template #header>
         {{ t('actions.history_events.missing_rule.title') }}
@@ -118,7 +118,7 @@ function onAddRule(data: HistoryEventEditData) {
         <div class="grow" />
         <RuiButton
           color="primary"
-          data-cy="button-ok"
+          data-testid="button-ok"
           @click="close()"
         >
           {{ t('common.actions.ok') }}

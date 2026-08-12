@@ -44,7 +44,7 @@ from rotkehlchen.premium.premium import (
 )
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.tasks.assets import _find_missing_tokens
+from rotkehlchen.tasks.assets import _find_missing_tokens, maybe_detect_new_tokens
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tasks.utils import (
     prefetch_scheduler_task_timestamps,
@@ -179,6 +179,76 @@ def test_maybe_query_evm_transactions_skips_repeat_range_reads(task_manager, eth
         task_manager.schedule()
         time.sleep(.2)
         assert range_mock.call_count == first_tick_reads, 'later ticks skip the read (memoized)'
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_maybe_query_evm_transactions_skips_disabled_chain(
+        task_manager,
+        ethereum_accounts,
+) -> None:
+    """A disabled chain must not be scheduled by the periodic transaction task."""
+    CachedSettings().update_entry(
+        'disabled_chain_queries',
+        {SupportedBlockchain.ETHEREUM: frozenset()},
+    )
+    try:
+        with (
+            patch.object(DBEvmTx, 'get_queried_range') as get_queried_range,
+            patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_and_track,
+        ):
+            assert task_manager._maybe_query_evm_transactions() is None
+
+        get_queried_range.assert_not_called()
+        spawn_and_track.assert_not_called()
+    finally:
+        CachedSettings().update_entry('disabled_chain_queries', {})
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_maybe_detect_new_tokens_skips_disabled_address(
+        rotkehlchen_instance: Rotkehlchen,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Token detection must not process events for a disabled address."""
+    database = rotkehlchen_instance.data.db
+    account = ethereum_accounts[0]
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                group_identifier='disabled-token-detection',
+                sequence_index=0,
+                timestamp=TimestampMS(2_000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_DAI,
+                amount=ONE,
+                location_label=account,
+                tx_ref=make_evm_tx_hash(),
+            ),
+        )
+
+    CachedSettings().update_entry(
+        'disabled_chain_queries',
+        {SupportedBlockchain.ETHEREUM: frozenset({account})},
+    )
+    try:
+        with (
+            patch.object(database, 'get_last_balance_save_time', return_value=Timestamp(0)),
+            patch.object(
+                database,
+                'get_tokens_for_address',
+                return_value=(None, None),
+            ) as get_tokens,
+            patch.object(database, 'save_tokens_for_address') as save_tokens,
+        ):
+            maybe_detect_new_tokens(database)
+
+        get_tokens.assert_not_called()
+        save_tokens.assert_not_called()
+    finally:
+        CachedSettings().update_entry('disabled_chain_queries', {})
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
@@ -597,10 +667,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: Rotkehlchen):
 
 @pytest.mark.parametrize('max_tasks_num', [5])
 def test_try_start_same_task(rotkehlchen_api_server):
-    """
-    1. Checks that it is not possible to start 2 same tasks
-    2. Checks that is possible to start second same task when the first one finishes
-    """
+    """Check that a scheduled task cannot be duplicated until it finishes."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # Using rotki.task_supervisor instead of pure TaskSupervisor() since patch.object
     # needs it for proper mocking
@@ -609,6 +676,12 @@ def test_try_start_same_task(rotkehlchen_api_server):
         'spawn_and_track',
         wraps=rotki.task_supervisor.spawn_and_track,
     )
+    task_started = threading.Event()
+    allow_task_to_finish = threading.Event()
+
+    def blocking_balance_query(**kwargs):  # pylint: disable=unused-argument
+        task_started.set()
+        assert allow_task_to_finish.wait(timeout=5) is True
 
     def simple_task():
         return [rotki.task_supervisor.spawn_and_track(
@@ -618,37 +691,47 @@ def test_try_start_same_task(rotkehlchen_api_server):
             exception_is_error=True,
         )]
 
-    with spawn_patch as patched:
+    with (
+        spawn_patch as patched,
+        patch.object(
+            rotki.task_manager,
+            'query_balances',
+            side_effect=blocking_balance_query,
+        ) as query_balances,
+    ):
         rotki.task_manager.potential_tasks = [rotki.task_manager._maybe_update_snapshot_balances]
         rotki.task_manager.schedule()
+        assert task_started.wait(timeout=5) is True
         rotki.task_manager.schedule()
         assert patched.call_count == 1
-        # Check that mapping in the task manager is correct
         assert rotki.task_manager.running_tasks.keys() == {
             rotki.task_manager._maybe_update_snapshot_balances,
         }
-        rotki.task_manager.potential_tasks = [simple_task]
-        rotki.task_manager.schedule()  # start a small greenlet
-        assert patched.call_count == 2
-        assert rotki.task_manager.running_tasks.keys() == {
-            rotki.task_manager._maybe_update_snapshot_balances,
-            simple_task,  # check that mapping was updated
-        }
-        # Wait until our small greenlet finishes
-        wait(rotki.task_manager.running_tasks[simple_task])
-        rotki.task_manager.potential_tasks = []
-        rotki.task_manager.schedule()  # clear the mapping
-        assert rotki.task_manager.running_tasks.keys() == {  # and check that it was removed
-            rotki.task_manager._maybe_update_snapshot_balances,
-        }
-        # And make sure that now we are able to start it again
+
         rotki.task_manager.potential_tasks = [simple_task]
         rotki.task_manager.schedule()
-        assert patched.call_count == 3
+        assert patched.call_count == 2
         assert rotki.task_manager.running_tasks.keys() == {
             rotki.task_manager._maybe_update_snapshot_balances,
             simple_task,
         }
+        wait(rotki.task_manager.running_tasks[simple_task])
+        rotki.task_manager.potential_tasks = []
+        rotki.task_manager.schedule()
+        assert rotki.task_manager.running_tasks.keys() == {
+            rotki.task_manager._maybe_update_snapshot_balances,
+        }
+
+        allow_task_to_finish.set()
+        wait(rotki.task_manager.running_tasks[rotki.task_manager._maybe_update_snapshot_balances])
+        rotki.task_manager.schedule()
+        assert rotki.task_manager.running_tasks == {}
+        query_balances.assert_called_once_with(
+            requested_save_data=True,
+            save_despite_errors=False,
+            timestamp=None,
+            ignore_cache=True,
+        )
 
 
 def test_should_run_periodic_task(database: DBHandler) -> None:

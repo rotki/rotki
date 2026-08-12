@@ -51,11 +51,11 @@ const secondaryText = computed<string>(() => secondaryAction || t('common.action
     @keydown.esc.stop="emit('cancel')"
     @keydown.enter.stop="emit('confirm')"
   >
-    <RuiCard data-cy="confirm-dialog">
+    <RuiCard data-testid="confirm-dialog">
       <template #header>
         <h5
           class="text-h5"
-          data-cy="dialog-title"
+          data-testid="dialog-title"
         >
           {{ title }}
         </h5>
@@ -81,7 +81,7 @@ const secondaryText = computed<string>(() => secondaryAction || t('common.action
           v-if="!singleAction"
           variant="text"
           color="primary"
-          data-cy="button-cancel"
+          data-testid="button-cancel"
           @click="emit('cancel')"
         >
           {{ secondaryText }}
@@ -89,7 +89,7 @@ const secondaryText = computed<string>(() => secondaryAction || t('common.action
         <RuiButton
           :color="color"
           :disabled="disabled"
-          data-cy="button-confirm"
+          data-testid="button-confirm"
           :loading="loading"
           @click="emit('confirm')"
         >

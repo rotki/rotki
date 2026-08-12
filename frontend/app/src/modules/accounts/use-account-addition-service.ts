@@ -1,87 +1,88 @@
-import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
-import type { RefreshAccountsParams } from '@/modules/accounts/use-account-operations';
+import type { ResultAsync } from 'plainfp/result-async';
+import type { AccountPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
+import type { FetchAccountsParams, RefreshAccountsParams } from '@/modules/accounts/use-account-operations';
 import type { Module } from '@/modules/core/common/modules';
-import { type Account, assert, Blockchain } from '@rotki/common';
+import { type Account, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { pipe } from 'plainfp';
+import { err, isErr, mapError, map as mapResult, ok, type Result } from 'plainfp/result';
+import { isEveryEvmChain, useAccountAdditionBatch } from '@/modules/accounts/use-account-addition-batch';
 import { useAccountAdditionNotifications } from '@/modules/accounts/use-account-addition-notifications';
-import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts';
+import { type AdditionOptions, useAccountAdditions } from '@/modules/accounts/use-account-additions';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
-import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
+import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { isBlockchain } from '@/modules/core/common/chains';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useTagOperations } from '@/modules/tags/use-tag-operations';
 
-interface EvmAccountAdditionSuccess {
-  type: 'success';
-  accounts: Account[];
-}
-
-interface EvmAccountAdditionFailure {
-  type: 'error';
-  error: Error;
-  account: AccountPayload;
-}
-
-interface AccountAdditionSuccess {
-  type: 'success';
-  address: string;
-}
-
-interface AccountAdditionFailure {
-  type: 'error';
-  error: Error;
-  account: AccountPayload | XpubAccountPayload;
+/**
+ * A failed addition, carrying the payload that failed so the caller can report it without
+ * correlating by index. The old `{ type: 'success' | 'error' }` unions were a `Result` spelled by
+ * hand, and (because `addAccount` signalled failure with `''`) the success branch also absorbed
+ * cancellations.
+ */
+export interface AccountAdditionFailure<T = AccountPayload | XpubAccountPayload> {
+  error: TaskError;
+  account: T;
 }
 
 // Callback types for account addition completion
-interface AccountAdditionParams {
+export interface AccountAdditionParams {
   addedAccounts: Account[];
   modulesToEnable?: Module[];
   chain?: string;
   isXpub?: boolean;
 }
 
-interface EvmAccountAdditionParams {
-  addedAccounts: Account[];
-  modulesToEnable?: Module[];
-}
-
-interface ChainAccountAdditionParams {
-  addedAccounts: Account[];
-  chain: string;
-  modulesToEnable?: Module[];
+/**
+ * What an addition did, for the caller to present. Returned rather than thrown, so the *caller*
+ * decides the experience instead of the address count deciding it: one address used to throw (form
+ * dialog stays open) while two reported through a toast and closed the dialog as a success, even
+ * when some of them failed.
+ */
+export interface AdditionSummary {
+  readonly added: Account[];
+  /**
+   * Both payload kinds: an xpub can fail too, and the caller still has to hear about it. Each entry
+   * keeps its `TaskError`, so a form caller can still reach an `ApiValidationError` cause and fill
+   * in per-field errors instead of flattening every rejection into one generic message.
+   */
+  readonly failed: AccountAdditionFailure[];
+  /** True when every failure was a cancellation, so nothing is worth reporting. */
+  readonly cancelled: boolean;
 }
 
 type RefreshAccountsCallback = (params: RefreshAccountsParams) => Promise<void>;
 
-type FetchAccountsCallback = (blockchain?: string | string[], refreshEns?: boolean) => Promise<void>;
+type FetchAccountsCallback = (params?: FetchAccountsParams) => Promise<void>;
 
-type EvmCompletionCallback = (params: EvmAccountAdditionParams) => Promise<void>;
-
-type ChainCompletionCallback = (params: ChainAccountAdditionParams) => Promise<void>;
+type CompletionCallback = (params: AccountAdditionParams) => Promise<void>;
 
 interface UseAccountAdditionServiceReturn {
-  addMultipleAccounts: (payload: AccountPayload[], chain: string, modules: Module[] | undefined, onComplete: ChainCompletionCallback) => Promise<void>;
-  addMultipleEvmAccounts: (payload: AddAccountsPayload, onComplete: EvmCompletionCallback) => Promise<void>;
-  addSingleAccount: (account: AccountPayload | XpubAccountPayload, chain: string) => Promise<AccountAdditionSuccess | AccountAdditionFailure>;
-  addSingleEvmAddress: (account: AccountPayload) => Promise<EvmAccountAdditionSuccess | EvmAccountAdditionFailure>;
-  completeAccountAddition: (params: AccountAdditionParams, onRefreshAccounts: RefreshAccountsCallback, onFetchAccounts?: FetchAccountsCallback) => Promise<void>;
+  /**
+   * Adds every payload entry to `chain`, which may be {@link EVM_PSEUDO_CHAIN} for "every EVM
+   * chain". One function, because that is one operation with one parameter varying.
+   */
+  addAccounts: (chain: string, payload: AccountPayload[] | XpubAccountPayload, modules: Module[] | undefined, onComplete: CompletionCallback, options?: AdditionOptions) => Promise<AdditionSummary>;
+  addSingleAccount: (account: AccountPayload | XpubAccountPayload, chain: string, options?: AdditionOptions) => ResultAsync<string, AccountAdditionFailure>;
+  addSingleEvmAddress: (account: AccountPayload, options?: AdditionOptions) => ResultAsync<Account[], AccountAdditionFailure<AccountPayload>>;
+  completeAccountAddition: (params: AccountAdditionParams, onRefreshAccounts: RefreshAccountsCallback, onFetchAccounts: FetchAccountsCallback) => Promise<void>;
   getNewAccountPayload: (chain: string, payload: AccountPayload[]) => AccountPayload[];
 }
 
 export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
-  const { addAccount, addEvmAccount } = useBlockchainAccounts();
-  const { detectTokens: detectTokensForChain } = useTokenDetectionOrchestrator();
+  const { addAccount, addEvmAccount } = useAccountAdditions();
+  const { refreshBlockchainBalances } = useBlockchainBalances();
   const { trackAddedAddresses } = useBlockchainAccountsStore();
   const { fetchTags } = useTagOperations();
   const { enableModule } = useSettingsOperations();
   const { evmChains, supportsTransactions } = useSupportedChains();
   const { getAddresses } = useAccountAddresses();
+  const { runAdditionBatch, runEvmAdditionBatch } = useAccountAdditionBatch();
   const {
     createFailureNotification,
     notifyFailedToAddAddress,
@@ -99,7 +100,7 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   const completeAccountAddition = async (
     params: AccountAdditionParams,
     onRefreshAccounts: RefreshAccountsCallback,
-    onFetchAccounts?: FetchAccountsCallback,
+    onFetchAccounts: FetchAccountsCallback,
   ): Promise<void> => {
     const {
       addedAccounts,
@@ -113,14 +114,14 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
 
     trackAddedAddresses(addedAccounts.map(item => item.address));
 
-    const chainsSupportsTransactions = !chain || supportsTransactions(chain);
-    if (chainsSupportsTransactions && onFetchAccounts) {
-      // For EVM chains, only load account metadata without fetching balances.
-      // Token detection runs next and explicitly triggers a balance refresh.
-      await onFetchAccounts(chain, true);
+    // A chain that cannot hold tokens gets its balances here — `refreshAccounts` reads the accounts
+    // and then runs a job narrowed to the added addresses. Everything else only reads accounts; its
+    // job runs below, after the modules are enabled, because detection is a stage inside it.
+    if (chain !== undefined && !supportsTransactions(chain)) {
+      await onRefreshAccounts({ addresses: addedAccounts.map(item => item.address), blockchain: chain, isXpub });
     }
     else {
-      await onRefreshAccounts({ addresses: addedAccounts.map(item => item.address), blockchain: chain, isXpub });
+      await onFetchAccounts({ blockchain: chain, refreshEns: true });
     }
 
     // Enable modules for ETH accounts
@@ -145,138 +146,174 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       accountsByChain.set(accountChain, existing);
     }
 
-    // Detect tokens per chain — orchestrator handles queuing + balance refresh
-    for (const [accountChain, chainAddresses] of accountsByChain) {
-      await detectTokensForChain(accountChain, chainAddresses);
-    }
+    // ⭐ One chain job per chain that gained addresses: detect the new addresses, then query. This
+    // was §6's "known exception" — addition skipped its own balance read because detection ended in
+    // one — and that premise is gone. The cached GET is cache-only now, so nothing escalates to a
+    // node query on its behalf; and detection's cache write *deletes* the address's default-label
+    // asset rows (`dbhandler.py:1321`), taking the native coin with them. Only a query after
+    // detection puts it back, which is exactly the chain job's body order.
+    //
+    // ⚠️ Concurrently, not one chain at a time. Each iteration is now detection *plus* a full
+    // network query, so an every-EVM-chain addition would serialise ~20 of them; `BALANCES_LANE`
+    // (cap 2) is where this is meant to be throttled, and awaiting in a loop never reaches it.
+    await Promise.allSettled(Array.from(accountsByChain, async ([accountChain, chainAddresses]) =>
+      refreshBlockchainBalances(
+        { blockchain: accountChain },
+        'background',
+        { detect: true, detectAddresses: chainAddresses },
+      )));
   };
 
-  const addSingleEvmAddress = async (account: AccountPayload): Promise<EvmAccountAdditionSuccess | EvmAccountAdditionFailure> => {
+  const addSingleEvmAddress = async (
+    account: AccountPayload,
+    options?: AdditionOptions,
+  ): ResultAsync<Account[], AccountAdditionFailure<AccountPayload>> => {
     const addedAccounts: Account[] = [];
 
-    try {
-      const { added, ...result } = await addEvmAccount(account);
+    const outcome = await addEvmAccount(account, options);
+    if (isErr(outcome)) {
+      // Only a real failure is worth a log line. A cancelled bulk add would otherwise write one
+      // console error per in-flight address, which is the noise this branch exists to avoid.
+      if (isActionable(outcome.error))
+        logger.error(outcome.error.message);
 
-      if (added) {
-        const [address, chains] = Object.entries(added)[0];
-        const isAll = chains.length === 1 && chains[0] === 'all';
-        const usedChains = isAll ? get(evmChains) : chains;
+      return err({ account, error: outcome.error });
+    }
 
-        usedChains.forEach((chain) => {
-          if (!isBlockchain(chain)) {
-            logger.error(`${chain.toString()} was not a valid blockchain`);
-            return;
-          }
+    const { added, ...result } = outcome.value;
 
-          addedAccounts.push({
-            address,
-            chain,
-          });
+    // `added` is an optional record, so `{}` is a valid response: truthy, but with no entry to
+    // destructure. That threw `undefined is not iterable`, which the removed try/catch used to
+    // turn into a failure result and now escapes as a rejection.
+    const [addedEntry] = Object.entries(added ?? {});
+
+    if (addedEntry) {
+      const [address, chains] = addedEntry;
+      const isAll = chains.length === 1 && chains[0] === 'all';
+      const usedChains = isAll ? get(evmChains) : chains;
+
+      usedChains.forEach((chain) => {
+        if (!isBlockchain(chain)) {
+          logger.error(`${chain.toString()} was not a valid blockchain`);
+          return;
+        }
+
+        addedAccounts.push({
+          address,
+          chain,
         });
+      });
 
-        notifyUser({ account, chains, isAll });
-      }
-
-      createFailureNotification(result, account);
-
-      return {
-        accounts: addedAccounts,
-        type: 'success',
-      };
+      notifyUser({ account, chains, isAll });
     }
-    catch (error: unknown) {
-      logger.error(getErrorMessage(error));
-      return {
-        account,
-        error: error instanceof Error ? error : new Error(getErrorMessage(error)),
-        type: 'error',
-      };
-    }
-  };
 
-  const addMultipleEvmAccounts = async (
-    payload: AddAccountsPayload,
-    onComplete: EvmCompletionCallback,
-  ): Promise<void> => {
-    const addedAccounts: Account[] = [];
-    const failedToAddAccounts: AccountPayload[] = [];
+    createFailureNotification(result, account);
 
-    await awaitParallelExecution(
-      payload.payload,
-      account => account.address,
-      async (account) => {
-        const result = await addSingleEvmAddress(account);
-        if (result.type === 'success')
-          addedAccounts.push(...result.accounts);
-
-        else
-          failedToAddAccounts.push(result.account);
-      },
-      2,
-    );
-
-    if (failedToAddAccounts.length > 0)
-      notifyFailedToAddAddress(failedToAddAccounts, payload.payload.length);
-
-    startPromise(onComplete({ addedAccounts, modulesToEnable: payload.modules }));
+    return ok(addedAccounts);
   };
 
   const addSingleAccount = async (
     account: AccountPayload | XpubAccountPayload,
     chain: string,
-  ): Promise<AccountAdditionSuccess | AccountAdditionFailure> => {
-    const isXpub = 'xpub' in account;
-    try {
-      const address = await addAccount(chain, isXpub ? account : [account]);
-      return {
-        address,
-        type: 'success',
-      };
-    }
-    catch (error: unknown) {
-      logger.error(getErrorMessage(error));
-      return {
-        account,
-        error: error instanceof Error ? error : new Error(getErrorMessage(error)),
-        type: 'error',
-      };
-    }
-  };
+    options?: AdditionOptions,
+  ): ResultAsync<string, AccountAdditionFailure> => pipe(
+    await addAccount(chain, 'xpub' in account ? account : [account], options),
+    mapError((error: TaskError) => {
+      // As in `addSingleEvmAddress`: a cancellation is not a failure to log.
+      if (isActionable(error))
+        logger.error(error.message);
 
-  const addMultipleAccounts = async (
-    payload: AccountPayload[],
+      return { account, error };
+    }),
+  );
+
+  /**
+   * The one addition path. Every entry fans out through the batch — including a single one, where
+   * the batch suppresses the umbrella — so the address count no longer changes the mechanism, only
+   * how it is presented.
+   *
+   * No limiter here: the `accounts-add:<chain>` lane caps this at 2.
+   */
+  const addAccounts = async (
     chain: string,
+    payload: AccountPayload[] | XpubAccountPayload,
     modules: Module[] | undefined,
-    onComplete: ChainCompletionCallback,
-  ): Promise<void> => {
+    onComplete: CompletionCallback,
+    options?: AdditionOptions,
+  ): Promise<AdditionSummary> => {
     const addedAccounts: Account[] = [];
-    const failedToAddAccounts: AccountPayload[] = [];
+    const failed: AccountAdditionFailure[] = [];
+    let cancelled = false;
 
-    await awaitParallelExecution(
-      payload,
-      account => account.address,
-      async (account) => {
-        const result = await addSingleAccount(account, chain);
-        if (result.type === 'success') {
-          addedAccounts.push({ address: result.address, chain });
-        }
-        else {
-          assert(!('xpub' in result.account));
-          failedToAddAccounts.push(result.account);
-        }
-      },
-      2,
-    );
+    const isXpub = 'xpub' in payload;
+    const everyEvmChain = isEveryEvmChain(chain);
 
-    if (failedToAddAccounts.length > 0)
-      notifyFailedToAddAddress(failedToAddAccounts, payload.length, chain);
+    const collect = (result: Result<Account[], AccountAdditionFailure<AccountPayload | XpubAccountPayload>>): void => {
+      if (!isErr(result)) {
+        addedAccounts.push(...result.value);
+        return;
+      }
 
-    startPromise(onComplete({ addedAccounts, chain, modulesToEnable: modules }));
+      // A cancellation is recorded, never reported: the user asked for it, so neither the failure
+      // list nor "failed to add N of M addresses" should mention it.
+      if (!isActionable(result.error.error)) {
+        cancelled = true;
+        return;
+      }
+
+      failed.push(result.error);
+    };
+
+    if (isXpub) {
+      // One xpub is one unit of work, so there is nothing to fan out — but it still returns the
+      // same summary, so the caller has one shape to handle.
+      collect(mapResult(
+        await addSingleAccount(payload, chain, options),
+        address => [{ address, chain }],
+      ));
+    }
+    else if (everyEvmChain) {
+      const results = await runEvmAdditionBatch(
+        payload,
+        account => account.address,
+        // No options object when there is no umbrella: a single-item batch with no outer parent has
+        // nothing to attach to, and `{ parent: undefined }` would only be noise on the way down.
+        async (account, parent) => addSingleEvmAddress(account, parent ? { parent } : undefined),
+        options?.parent,
+      );
+      results.forEach(result => collect(result));
+    }
+    else {
+      const results = await runAdditionBatch(
+        chain,
+        payload,
+        account => account.address,
+        async (account, parent) => addSingleAccount(account, chain, parent ? { parent } : undefined),
+        options?.parent,
+      );
+      results.forEach(result => collect(mapResult(result, address => [{ address, chain }])));
+    }
+
+    // The notification lists addresses, so an xpub failure is not one of its rows — the caller
+    // reports that from the summary instead.
+    const failedAddresses = failed
+      .map(failure => failure.account)
+      .filter((account): account is AccountPayload => !('xpub' in account));
+    if (failedAddresses.length > 0)
+      notifyFailedToAddAddress(failedAddresses, isXpub ? 1 : payload.length, everyEvmChain ? undefined : chain);
+
+    startPromise(onComplete({
+      addedAccounts,
+      chain: everyEvmChain ? undefined : chain,
+      isXpub,
+      modulesToEnable: modules,
+    }));
+
+    return { added: addedAccounts, cancelled, failed };
   };
 
   return {
-    addMultipleAccounts,
-    addMultipleEvmAccounts,
+    addAccounts,
     addSingleAccount,
     addSingleEvmAddress,
     completeAccountAddition,

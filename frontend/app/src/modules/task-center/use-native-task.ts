@@ -47,13 +47,29 @@ export type TaskOutcome<T = void> = Result<T, TaskError>;
 export type RunBackendTask = <R>(task: () => Promise<{ taskId: number }>) => Promise<Result<R, TaskError>>;
 
 /**
- * What the orchestrator hands a running activity: its progress sink and its own task runner.
+ * What the orchestrator hands a running activity: its progress sink, its own task runner, and
+ * whether it has since been cancelled.
  * Passing the runner explicitly (rather than reading an ambient "current activity") keeps the
  * binding correct for producers that await before submitting their backend task.
  */
 export interface ActivityContext {
   readonly report: ReportProgress;
   readonly runTask: RunBackendTask;
+  /**
+   * True once this activity has been cancelled — **a body with more than one stage must check it
+   * between them**.
+   *
+   * 🔴 Cancelling settles the *record*; it cannot interrupt a running async body, because nothing
+   * in JavaScript can. A multi-stage producer therefore runs to completion after the row already
+   * says CANCELLED. Observed against a real backend: cancelling a chain mid-detection aborted its
+   * detection children correctly, and then the body carried straight on and issued the balance
+   * query anyway — `POST /balances/blockchains/eth` *after* the `DELETE`s — writing balances and
+   * recording a completion for work the user had stopped.
+   *
+   * ⚠️ It only helps where it is *read*. There is no way to make a body stop on its own, so a
+   * producer that ignores this has the old behaviour.
+   */
+  readonly cancelled: () => boolean;
 }
 
 /**
@@ -91,6 +107,17 @@ interface UseNativeTaskReturn {
    * from the browser before trying a fourth.
    */
   readonly submitTask: <T = void>(spec: NativeActivitySpec<T>) => Promise<TaskOutcome<T>>;
+  /**
+   * Like {@link submitTask}, but replaces the run already in flight for this id rather than joining
+   * it. For user-initiated work, which must not be handed a background run's parameters.
+   */
+  readonly supersedeTask: <T = void>(spec: NativeActivitySpec<T>) => Promise<TaskOutcome<T>>;
+  /**
+   * Settle and drop every in-flight submission. Called when a session ends, so no id survives into
+   * the next one — `submitTask` dedups by id, and a surviving id hands the next session a promise
+   * that can never resolve.
+   */
+  readonly reset: () => void;
   /**
    * Cancel one activity by identity — `orchestrator.cancel(makeActivityId(kind, ...parts))`. The
    * replacement for the old imperative cancel-by-task-type at producer call sites: it settles the
@@ -150,6 +177,76 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
    */
   const inflight = new Map<ActivityId, Promise<TaskOutcome<never>>>();
 
+  /**
+   * How to settle each in-flight submission from the outside. Held beside {@link inflight} because
+   * the promise alone cannot be resolved by anyone but its own closure, and a session ending must
+   * be able to settle every caller it is about to abandon.
+   */
+  const inflightFinish = new Map<ActivityId, (outcome: TaskOutcome<never>) => void>();
+
+  /**
+   * How to tell each in-flight submission that it has been cancelled, so a multi-stage body can
+   * stop between stages. Kept beside {@link inflight} for the same reason: a session ending has to
+   * reach bodies it is about to abandon, and settling the caller does not stop the body.
+   */
+  const inflightCancel = new Map<ActivityId, () => void>();
+
+  /**
+   * Drop every in-flight submission, settling its callers first.
+   *
+   * 🔴 Must run when a session ends. This map is app-scoped, so an id left here outlives the
+   * session that submitted it, and `submitTask` dedups on id identity — so the *next* session's
+   * caller is handed a promise belonging to a session that is gone and can never resolve. Observed
+   * as `prices:exchange-rates` joining an 11.7s-old promise after a re-login, which stalled
+   * `fetchCached` on its first await: no exchange rates, so no account read, so no balances.
+   *
+   * Settled as cancelled rather than merely cleared, because an abandoned caller is still awaiting
+   * this promise; dropping the reference alone would suspend it forever.
+   */
+  function reset(): void {
+    // Before settling: a body that checks `cancelled()` between stages must see the session end,
+    // or it carries on doing work for a user who has logged out.
+    for (const requestCancel of inflightCancel.values())
+      requestCancel();
+
+    for (const finishInflight of inflightFinish.values())
+      finishInflight(err(Cancelled({ message: 'session ended' })));
+
+    inflight.clear();
+    inflightFinish.clear();
+    inflightCancel.clear();
+  }
+
+  /**
+   * Replace the run already in flight for this id, instead of joining it.
+   *
+   * ⭐ {@link submitTask} dedups: a second caller for a live id is handed the first run's promise
+   * and the first run's *parameters*. That is right for background work — two periodic ticks should
+   * share one run — and wrong for a user, who asked for fresh data and would silently receive
+   * whatever the background run happened to be doing.
+   *
+   * Cancelling settles the record immediately (`settleTerminal` inside `orchestrator.cancel`, for
+   * RUNNING as well as PENDING), so this does not wait on the aborted work itself.
+   *
+   * ⚠️ The `await` is defensive rather than demonstrated. `finish()` — which frees the id — runs
+   * from the resolver that `cancel`'s emit fires, and that chain is synchronous today, so the id is
+   * already free by the time `submitTask` is reached. Removing the await does not currently fail
+   * any test. It stays because the ordering is not guaranteed anywhere: if settling ever becomes
+   * async, submitting without it dedups the replacement onto the corpse — silently, and looking
+   * exactly like the bug this helper exists to fix.
+   */
+  async function supersedeTask<T = void>(spec: NativeActivitySpec<T>): Promise<TaskOutcome<T>> {
+    const running = inflight.get(spec.id);
+    if (running) {
+      // Result deliberately dropped: "nothing to cancel" (already terminal, or gone between the
+      // lookup and here) is the normal race, not something the caller can act on.
+      orchestrator.cancel(spec.id);
+      await running;
+    }
+
+    return submitTask(spec);
+  }
+
   function cancelActivity(kind: ActivityKind, ...parts: (string | number)[]): void {
     // The Result is deliberately dropped: "nothing to cancel" (unknown id / already terminal) is
     // the normal case at a supersede site, not an error the caller can act on.
@@ -178,6 +275,8 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
       settled = true;
       stop();
       inflight.delete(spec.id);
+      inflightFinish.delete(spec.id);
+      inflightCancel.delete(spec.id);
       settle(outcome);
     }
 
@@ -200,10 +299,22 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
       }, label);
     }
 
+    /** Set once this activity is cancelled; read by the body through `ctx.cancelled()`. */
+    let cancelRequested = false;
+
+    function requestCancel(): void {
+      cancelRequested = true;
+    }
+
     // Cancelling the activity aborts whatever backend task it spawned. Producers no longer pass a
     // cancel handle: an activity that never started one still settles CANCELLED (the orchestrator
     // does that), this just stops the work on the backend.
+    //
+    // ⚠️ Aborting the backend task is not the same as stopping the body. A body between stages has
+    // spawned no task yet, so there is nothing here to abort — which is exactly the case that let a
+    // cancelled chain go on to run its query. The flag is what that body reads.
     function cancel(): void {
+      requestCancel();
       if (backendTaskId !== undefined)
         startPromise(cancelTaskById(backendTaskId));
     }
@@ -212,7 +323,7 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     // awaits the work itself, not just a status flip.
     async function run(report: ReportProgress): Promise<Result<T, TaskError>> {
       backendTaskId = undefined;
-      const outcome = spec.run({ report, runTask });
+      const outcome = spec.run({ cancelled: () => cancelRequested, report, runTask });
       outcome.then(finish, (error: unknown) => finish(err(TaskFailed({ message: getErrorMessage(error) }))));
       return outcome;
     }
@@ -230,6 +341,8 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     // is why the map is keyed to `never` rather than `unknown`.
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- a per-entry key/value type correlation TypeScript cannot express without existential types; contained to this line
     inflight.set(spec.id, promise as Promise<TaskOutcome<never>>);
+    inflightFinish.set(spec.id, finish);
+    inflightCancel.set(spec.id, requestCancel);
     orchestrator.submit({ ...spec, cancel, run });
     return promise;
   }
@@ -240,7 +353,9 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     cancelByPrefix,
     reportProgress,
     statusOf,
+    reset,
     submitTask,
+    supersedeTask,
     useIsActive,
     useWorkStatus,
   };

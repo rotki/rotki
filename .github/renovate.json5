@@ -9,6 +9,13 @@
   "dependencyDashboardAutoclose": false,
   "minimumReleaseAge": "7 days",
   "packageRules": [
+    // The runtime base is pinned by digest so the released image is byte-for-byte
+    // reproducible from the tag. Renovate keeps that digest current, otherwise the
+    // pin would silently freeze us on an unpatched distroless.
+    {
+      "matchManagers": ["dockerfile"],
+      "pinDigests": true
+    },
     // Group non-major (minor/patch) updates per subproject so the dependency
     // dashboard reads as a few per-stack buckets instead of a flat list.
     // Majors are intentionally left ungrouped (own PR each), and so are

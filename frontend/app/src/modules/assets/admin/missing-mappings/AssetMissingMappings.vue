@@ -126,7 +126,7 @@ onMounted(async () => {
           <div class="flex justify-center gap-2">
             <RuiButton
               variant="text"
-              data-cy="row-add"
+              data-testid="row-add"
               icon
               @click="onAddClick(row)"
             >

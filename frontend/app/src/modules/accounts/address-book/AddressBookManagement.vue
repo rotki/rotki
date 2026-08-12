@@ -5,15 +5,16 @@ import type {
   AddressBookPayload,
   AddressBookRequestPayload,
 } from '@/modules/accounts/address-book/eth-names';
+import type { Filters } from '@/modules/accounts/address-book/use-address-book-filter';
 import AddressBookFormDialog from '@/modules/accounts/address-book/AddressBookFormDialog.vue';
 import AddressBookManagementMore from '@/modules/accounts/address-book/AddressBookManagementMore.vue';
 import AddressBookTable from '@/modules/accounts/address-book/AddressBookTable.vue';
 import EthNamesHint from '@/modules/accounts/address-book/EthNamesHint.vue';
+import { useAddressBookFields } from '@/modules/accounts/address-book/use-address-book-fields';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
-import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
-import { type Filters, type Matcher, useAddressBookFilter } from '@/modules/core/table/filters/use-address-book-filter';
-import TableFilter from '@/modules/core/table/TableFilter.vue';
-import TableStatusFilter from '@/modules/core/table/TableStatusFilter.vue';
+import { arrayify } from '@/modules/core/common/data/array';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -32,8 +33,8 @@ const { editableItem, openDialog } = useCommonTableProps<AddressBookPayload>();
 
 const { getAddressBook } = useAddressBookOperations();
 
-const filterSchema = useAddressBookFilter();
-const { matchers } = filterSchema;
+const fields = useAddressBookFields();
+const pillLabels = usePillBarLabels();
 
 const {
   collection: state,
@@ -45,11 +46,10 @@ const {
 } = useServerTable<
   AddressBookEntry,
   AddressBookRequestPayload,
-  Filters,
-  Matcher
+  Filters
 >({
   fetch: filter => getAddressBook(get(location), get(filter)),
-  filterSchema,
+  fields,
   params: [{
     to: 'both',
     values: computed<Record<string, unknown>>(() => ({
@@ -64,6 +64,25 @@ const {
     }],
   },
   urlState: { mode: 'route' },
+});
+
+// The chain and strict-chain pills are param-bound, so the bar's param bag is bridged to the refs
+// backing them — the same refs the standalone selector and checkbox used to write, and the ones the
+// request/url param source reads. An absent param clears its ref: removing the pill is how the
+// filter is turned off.
+const pillParams = computed<Record<string, string | string[] | boolean>>({
+  get(): Record<string, string | string[] | boolean> {
+    const chain = get(selectedChain);
+    return {
+      ...(chain ? { blockchain: chain } : {}),
+      ...(get(strictBlockchain) ? { strictBlockchain: true } : {}),
+    };
+  },
+  set(value: Record<string, string | string[] | boolean>): void {
+    const chain = value.blockchain;
+    set(selectedChain, typeof chain === 'boolean' ? undefined : arrayify(chain ?? []).at(0));
+    set(strictBlockchain, value.strictBlockchain === true);
+  },
 });
 
 function add() {
@@ -105,37 +124,12 @@ watchImmediate(location, async () => {
     </template>
 
     <RuiCard>
-      <div class="flex flex-col md:flex-row items-stretch md:items-center justify-end gap-3">
-        <div class="flex gap-3 w-full lg:w-[24rem]">
-          <TableStatusFilter>
-            <div class="p-1 max-w-[20rem] pb-4">
-              <RuiCheckbox
-                v-model="strictBlockchain"
-                color="primary"
-                class="px-3 mt-0"
-                :label="t('address_book.strict_blockchain_filter.label')"
-                :hint="t('address_book.strict_blockchain_filter.hint')"
-              />
-            </div>
-          </TableStatusFilter>
-
-          <ChainSelect
-            v-model="selectedChain"
-            hide-details
-            clearable
-            dense
-            exclude-eth-staking
-            data-testid="address-book-chain-filter"
-          />
-        </div>
-
-        <div class="w-full lg:w-[26rem]">
-          <TableFilter
-            v-model:matches="filters"
-            :matchers="matchers"
-          />
-        </div>
-      </div>
+      <PillFilterBar
+        v-model:matches="filters"
+        v-model:params="pillParams"
+        :fields="fields"
+        :labels="pillLabels"
+      />
 
       <div class="flex items-center gap-2 my-3">
         <RuiTabs
@@ -148,7 +142,8 @@ watchImmediate(location, async () => {
             v-for="loc in locations"
             :key="loc"
             class="capitalize"
-            :data-testid="`address-book-scope-${loc}`"
+            data-testid="address-book-scope-tab"
+            :data-key="loc"
           >
             {{ loc }}
           </RuiTab>

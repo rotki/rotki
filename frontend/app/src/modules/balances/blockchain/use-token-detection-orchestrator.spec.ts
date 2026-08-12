@@ -1,6 +1,7 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { type Activity, ActivityKind, ActivityStatus, makeActivityId } from '@/modules/task-center/core/types';
 
 const mockDetectTokensForAddress = vi.fn().mockResolvedValue(ok(undefined));
@@ -37,10 +38,10 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   }),
 }));
 
-const mockFetchBlockchainBalances = vi.fn().mockResolvedValue(undefined);
-vi.mock('@/modules/balances/use-blockchain-balances', () => ({
-  useBlockchainBalances: vi.fn().mockReturnValue({
-    fetchBlockchainBalances: mockFetchBlockchainBalances,
+const mockHydrate = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/modules/balances/use-balance-hydration', () => ({
+  useBalanceHydration: vi.fn().mockReturnValue({
+    hydrate: mockHydrate,
   }),
 }));
 
@@ -81,10 +82,85 @@ async function loadOrchestrator(): Promise<typeof import('./use-token-detection-
 }
 
 describe('useTokenDetectionOrchestrator', () => {
+  /** `useDisabledChains` reads the settings repo, so detection needs a live pinia. */
+  function setDisabled(value: Record<string, string[]>): void {
+    const repo = useSettingsRepo();
+    repo.updateGeneral({ ...repo.general, disabledChainQueries: value });
+  }
+
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     set(mockAddresses, {});
     set(mockActivities, []);
+  });
+
+  describe('detectForChain', () => {
+    /**
+     * 🔴🔴 Detection must not share `BALANCES_LANE` with the chain job that awaits it. That job
+     * holds a balances slot for its whole body, and the cap is 2 — so children queued on the same
+     * lane could never get one, and two chain jobs would sit waiting on addresses that cannot
+     * start. A hang, not a slowdown, and no unit test that stubs `submitTask` can see it: the lane
+     * is only honoured by the real scheduler. Assert the lane itself.
+     */
+    it('should queue detection on the per-chain lane, never the balances lane', async () => {
+      set(mockAddresses, { eth: ['0xaddr1', '0xaddr2'] });
+      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
+
+      await useTokenDetectionOrchestrator().detectForChain('eth', makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'));
+
+      expect(mockSubmitTask).toHaveBeenCalledTimes(2);
+      for (const [spec] of mockSubmitTask.mock.calls) {
+        expect(spec.lane).toBe('detect:eth');
+        expect(spec.parent).toBe(makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'));
+      }
+    });
+
+    it('should do nothing for a chain with no addresses', async () => {
+      set(mockAddresses, { eth: [] });
+      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
+
+      await useTokenDetectionOrchestrator().detectForChain('eth', makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'));
+
+      expect(mockSubmitTask).not.toHaveBeenCalled();
+    });
+
+    /**
+     * ⭐ Every detection path queues through `queueDetectionForChain`, so filtering there covers
+     * `detectTokens` and `detectAllTokens` too — automated detection was still firing
+     * `POST /blockchains/<chain>/tokens/detect` for chains the user had switched off.
+     */
+    it('should not detect an address excluded by disabledChainQueries', async () => {
+      set(mockAddresses, { eth: ['0xaddr1', '0xaddr2'] });
+      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
+      setDisabled({ eth: ['0xADDR1'] });
+
+      await useTokenDetectionOrchestrator().detectForChain('eth', makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'));
+
+      expect(mockSubmitTask).toHaveBeenCalledTimes(1);
+      const [spec] = mockSubmitTask.mock.calls[0];
+      expect(spec.id).toBe(makeActivityId(ActivityKind.TOKEN_DETECTION, 'eth', '0xaddr2'));
+    });
+
+    it('should detect nothing on a fully excluded chain', async () => {
+      set(mockAddresses, { eth: ['0xaddr1', '0xaddr2'] });
+      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
+      setDisabled({ eth: [] });
+
+      await useTokenDetectionOrchestrator().detectForChain('eth', makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'));
+
+      expect(mockSubmitTask).not.toHaveBeenCalled();
+    });
+
+    /** The chain job's own query follows immediately and reads the same rows. */
+    it('should not hydrate, unlike the standalone detection flow', async () => {
+      set(mockAddresses, { eth: ['0xaddr1'] });
+      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
+
+      await useTokenDetectionOrchestrator().detectForChain('eth', makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'));
+
+      expect(mockHydrate).not.toHaveBeenCalled();
+    });
   });
 
   describe('detectTokens', () => {
@@ -102,8 +178,8 @@ describe('useTokenDetectionOrchestrator', () => {
       });
       expect(mockDetectTokensForAddress).toHaveBeenCalledWith(mockRunTask, 'eth', '0xaddr1');
       expect(mockDetectTokensForAddress).toHaveBeenCalledWith(mockRunTask, 'eth', '0xaddr2');
-      expect(mockFetchBlockchainBalances).toHaveBeenCalledWith({
-        blockchain: 'eth',
+      expect(mockHydrate).toHaveBeenCalledWith({
+        blockchain: ['eth'],
       });
     });
 
@@ -114,7 +190,9 @@ describe('useTokenDetectionOrchestrator', () => {
       await detectTokens(['eth', 'optimism'], ['0xaddr1']);
 
       expect(mockSubmitTask).toHaveBeenCalledTimes(2);
-      expect(mockFetchBlockchainBalances).toHaveBeenCalledTimes(2);
+      // One hydration for the whole set, not one per chain: `hydrate` takes the chains and applies
+      // its own bound.
+      expect(mockHydrate).toHaveBeenCalledWith({ blockchain: ['eth', 'optimism'] });
     });
   });
 
@@ -131,7 +209,7 @@ describe('useTokenDetectionOrchestrator', () => {
       await detectAllTokens();
 
       expect(mockSubmitTask).toHaveBeenCalledTimes(2);
-      expect(mockFetchBlockchainBalances).toHaveBeenCalledTimes(2);
+      expect(mockHydrate).toHaveBeenCalledWith({ blockchain: ['eth', 'optimism'] });
     });
 
     it('should detect tokens only for specified chains', async () => {

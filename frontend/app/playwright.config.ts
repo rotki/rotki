@@ -2,7 +2,15 @@ import { execSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/test';
+
+/**
+ * A shard is one complete stack of its own, started by `scripts/e2e-shards.ts`.
+ * `E2E_SHARD` is its 1-based number and is set only by that runner; everything
+ * below falls back to the single-stack behaviour when it is absent, so a plain
+ * `pnpm test:e2e` and CI are untouched.
+ */
+const shard = Number(process.env.E2E_SHARD ?? 0);
 
 const BASE_FRONTEND_PORT = 30301;
 const BASE_BACKEND_PORT = 30302;
@@ -97,10 +105,16 @@ const colibriUrl = `${backendUrl}/colibri`;
 const mockRpcUrl = `http://127.0.0.1:${MOCK_RPC_PORT}`;
 
 // `.e2e` is resolved from the cwd, so parallel runs in different worktrees already get
-// their own data and log directories.
+// their own data and log directories. Shards run inside ONE worktree, so they need a
+// subdirectory each: they share a cwd and would otherwise hand the same user database
+// to several backends at once.
 const testDir = path.join(process.cwd(), '.e2e');
-const dataDir = path.join(testDir, 'data');
-const logDir = path.join(testDir, 'logs');
+const shardDir = shard > 0 ? path.join(testDir, `shard-${shard}`) : testDir;
+const dataDir = path.join(shardDir, 'data');
+const logDir = path.join(shardDir, 'logs');
+// Shards report into one shared directory under distinct names; the runner merges the
+// blobs into a single html report once every shard has finished.
+const blobDir = path.join(testDir, 'blob-report');
 
 function ensureDirectories(): void {
   if (!fs.existsSync(dataDir)) {
@@ -193,11 +207,30 @@ function buildFrontendCommand(): string {
   // --strictPort: fail loudly instead of silently serving on another port, which would
   // leave the tests pointing at a URL nothing is listening on.
   const preview = `vite preview --port ${FRONTEND_PORT} --strictPort`;
-  // CI builds the frontend in its own workflow job and downloads the artifact.
-  return process.env.CI ? preview : `pnpm run build:app --mode e2e && ${preview}`;
+  // CI builds the frontend in its own workflow job and downloads the artifact, and the
+  // shard runner builds the one bundle every shard shares before starting any of them.
+  return process.env.CI || shard > 0 ? preview : `pnpm run build:app --mode e2e && ${preview}`;
 }
 
 const frontendCommand = buildFrontendCommand();
+
+/**
+ * A plain local run reuses whatever stack is still up from the previous run, which
+ * makes iterating on a single spec fast. A shard must not: the runner resets each
+ * shard's data directory before starting it, so a stack left over from an earlier run
+ * would be holding a database that no longer exists.
+ */
+const reuseExistingServer = !process.env.CI && shard === 0;
+
+function getReporter(): PlaywrightTestConfig['reporter'] {
+  if (process.env.CI)
+    return [['github'], ['html', { open: 'never' }]];
+
+  if (shard > 0)
+    return [['blob', { fileName: `shard-${shard}.zip`, outputDir: blobDir }], ['list']];
+
+  return 'list';
+}
 
 // Get the test group from environment (app or balances)
 const testGroup = process.env.GROUP;
@@ -214,8 +247,8 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   // Backend is single-user, must use 1 worker
   workers: 1,
-  reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
-  outputDir: 'tests/e2e/test-results',
+  reporter: getReporter(),
+  outputDir: path.join('tests', 'e2e', shard > 0 ? `test-results-${shard}` : 'test-results'),
 
   use: {
     baseURL: frontendUrl,
@@ -255,7 +288,7 @@ export default defineConfig({
     {
       command: `tsx tests/e2e/rpc-mock/server.ts`,
       url: `${mockRpcUrl}/health`,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer,
       timeout: 10_000,
       env: {
         MOCK_RPC_PORT: String(MOCK_RPC_PORT),
@@ -272,7 +305,7 @@ export default defineConfig({
       // tree is brought up, so core answering says nothing about the rest.
       command: `tsx scripts/start-starling.ts --port ${PROXY_PORT} --core-port ${BACKEND_PORT} --colibri-port ${COLIBRI_PORT} --mcp-port ${MCP_PORT} --data ${dataDir} --logs ${logDir}`,
       url: `${backendUrl}/health`,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer,
       // Covers a cold `cargo run` for both Rust services on a fresh checkout.
       timeout: 180_000,
       // Playwright otherwise SIGKILLs the server's process tree. starling puts
@@ -288,13 +321,12 @@ export default defineConfig({
     {
       command: frontendCommand,
       url: frontendUrl,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer,
       // The local non-interactive path builds before serving (~15s on a warm machine),
       // so it gets more headroom than starting a dev server or serving an existing dist.
       timeout: interactive || process.env.CI ? 180_000 : 300_000,
       env: {
         VITE_BACKEND_URL: backendUrl,
-        VITE_COLIBRI_URL: colibriUrl,
         // Pass coverage flag to enable source maps in build
         ...(process.env.VITE_COVERAGE && { VITE_COVERAGE: process.env.VITE_COVERAGE }),
       },

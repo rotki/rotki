@@ -24,7 +24,7 @@ const location = useLocationData(() => item);
 <template>
   <div
     class="flex items-center justify-center"
-    data-cy="location-icon"
+    data-testid="location-icon"
     :class="{
       'flex-row gap-2': horizontal,
       'flex-col gap-1': !horizontal,

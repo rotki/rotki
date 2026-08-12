@@ -75,10 +75,10 @@ export function ethWithdrawalStateFromGroup(entry: EthWithdrawalEvent): EthWithd
 }
 
 export function toEthWithdrawalPayload(state: EthWithdrawalFormState): NewEthWithdrawalEventPayload {
-  const amount = bigNumberify(state.amount);
+  const amount = bigNumberify(state.amount, Zero);
 
   return {
-    amount: amount.isNaN() ? Zero : amount,
+    amount,
     entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
     groupIdentifier: toNullableText(state.groupIdentifier),
     isExit: state.isExit,

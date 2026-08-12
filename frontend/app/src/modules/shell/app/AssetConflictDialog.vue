@@ -294,7 +294,7 @@ onMounted(() => {
       #left-buttons
     >
       <RuiButton
-        data-cy="manage-conflicts"
+        data-testid="manage-conflicts"
         color="primary"
         variant="text"
         @click="manualResolution = true"

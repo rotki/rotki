@@ -193,7 +193,7 @@ onMounted(async () => {
           color="primary"
           :loading="loading"
           class="!py-2"
-          data-cy="modules_enable_all"
+          data-testid="modules_enable_all"
           @click="enableAll()"
         >
           {{ t('module_selector.actions.enable_all') }}
@@ -204,7 +204,7 @@ onMounted(async () => {
           variant="outlined"
           :loading="loading"
           class="!py-2"
-          data-cy="modules_disable_all"
+          data-testid="modules_disable_all"
           @click="disableAll()"
         >
           {{ t('module_selector.actions.disable_all') }}
@@ -248,7 +248,8 @@ onMounted(async () => {
       <template #item.enabled="{ row }">
         <RuiSwitch
           color="primary"
-          :data-cy="`${row.identifier}-module-switch`"
+          data-testid="module-switch"
+          :data-key="row.identifier"
           :disabled="loading"
           :model-value="row.enabled"
           hide-details

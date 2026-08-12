@@ -40,13 +40,13 @@ const dot = '•';
           :asset="asset"
           :amount="protocolBalance.amount"
           :loading="loading"
-          data-cy="protocol-menu-amount"
+          data-testid="protocol-menu-amount"
         />
         <ValueDisplay
           v-else
           :value="protocolBalance.amount"
           :loading="loading"
-          data-cy="protocol-menu-amount"
+          data-testid="protocol-menu-amount"
         />
         <span class="text-rui-text-secondary">
           {{ dot }}
@@ -54,7 +54,7 @@ const dot = '•';
         <FiatDisplay
           :value="protocolBalance.value"
           :loading="loading"
-          data-cy="protocol-menu-value"
+          data-testid="protocol-menu-value"
         />
       </div>
     </div>

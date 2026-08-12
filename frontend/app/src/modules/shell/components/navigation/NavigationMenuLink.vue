@@ -22,7 +22,8 @@ const active = computed<boolean>(() => route.path.startsWith(item.path));
     <template #default="{ isActive, href }">
       <a :href="href">
         <NavigationMenuItem
-          :data-testid="`navigation__${item.testId}`"
+          data-testid="navigation"
+          :data-key="item.testId"
           :mini="mini"
           :text="t(item.labelKey)"
           :icon="item.icon"

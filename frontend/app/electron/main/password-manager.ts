@@ -1,12 +1,13 @@
 import type { Credentials } from '@shared/ipc';
 import { Buffer } from 'node:buffer';
-import { safeStorage } from 'electron';
-import Store from 'electron-store';
+import path from 'node:path';
+import { PasswordStore } from '@electron/main/password-store';
+import { app, safeStorage } from 'electron';
 
 const ENCODING = 'latin1';
 
 export class PasswordManager {
-  private readonly store = new Store<Record<string, string>>();
+  private readonly store = new PasswordStore(path.join(app.getPath('userData'), 'config.json'));
 
   private readonly getEncryptionAvailability = (): boolean => safeStorage.isEncryptionAvailable();
 
@@ -19,12 +20,12 @@ export class PasswordManager {
     this.store.clear();
   };
 
-  private readonly hasStoredPassword = (key: string): boolean => Boolean(this.store.store?.[key]);
+  private readonly hasStoredPassword = (key: string): boolean => Boolean(this.store.get(key));
 
-  private readonly hasAnyStoredPassword = (): boolean => Object.keys(this.store.store ?? {}).length > 0;
+  private readonly hasAnyStoredPassword = (): boolean => !this.store.isEmpty();
 
   private readonly getPassword = (key: string) => {
-    const buffer = this.store.store?.[key];
+    const buffer = this.store.get(key);
     if (buffer)
       return safeStorage.decryptString(Buffer.from(buffer, ENCODING));
 

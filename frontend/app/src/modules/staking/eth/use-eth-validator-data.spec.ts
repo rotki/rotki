@@ -1,4 +1,5 @@
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { bigNumberify } from '@rotki/common';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope, type Ref } from 'vue';
@@ -53,12 +54,15 @@ vi.mock('@/modules/core/table/use-remember-table-sorting', async importOriginal 
   useRememberTableSorting: (...args: unknown[]): void => mockRememberSorting(...args),
 }));
 
-vi.mock('@/modules/core/table/filters/use-eth-validator-filter', () => ({
+vi.mock('@/modules/staking/eth/use-eth-validator-filter', () => ({
   useEthValidatorAccountFilter: (): Record<string, unknown> => ({
     filters: mockFilters,
     matchers: mockMatchers,
-    RouteFilterSchema: undefined,
   }),
+}));
+
+vi.mock('@/modules/staking/eth/use-eth-validator-fields', () => ({
+  useEthValidatorFields: (): Ref<FieldDef[]> => ref([]),
 }));
 
 vi.mock('@/modules/core/table/use-server-table', () => ({
@@ -124,7 +128,6 @@ describe('useEthValidatorData', () => {
     const data = create();
     expect(data.fetchData).toBe(mockFetchData);
     expect(data.filters).toBe(mockFilters);
-    expect(data.matchers).toBe(mockMatchers);
     expect(data.pagination).toBe(mockPagination);
     expect(data.sort).toBe(mockSort);
     expect(data.rows).toBe(mockRows);

@@ -195,6 +195,11 @@ export interface Activity {
    * duplicate effort. See {@link HistoryFlow.resets}, which is where a flow declares it.
    */
   readonly resets?: boolean;
+  /**
+   * Scheduling priority, defaulted from the spec. Read by the eligibility rules to tell
+   * user-initiated work from background work; see {@link ./orchestrator/spec}'s `Priority`.
+   */
+  readonly priority?: number;
 }
 
 export interface ActivityGroup {
@@ -218,6 +223,12 @@ export interface ActivityModel {
   readonly active: Activity[];
   /** Flat, waiting to start. */
   readonly pending: Activity[];
+  /**
+   * The tops of the activity tree — what a user actually started, as opposed to the work it fanned
+   * out into. See {@link ./tree}; `children` holds the rest, keyed by parent id.
+   */
+  readonly roots: Activity[];
+  readonly children: ReadonlyMap<ActivityId, Activity[]>;
   readonly overall: ActivityOverall;
   /** The single activity the header bar labels; see selection rule in {@link ./model}. */
   readonly current?: Activity;
@@ -264,6 +275,11 @@ export interface WorkStatus {
 export const ActivityPart = {
   CACHED: 'cached',
   PULL: 'pull',
+  /**
+   * The umbrella over a fan-out, as opposed to one subject's own work. Keeps a run's id
+   * (`…:run:<scope>:<mode>`) from ever colliding with a subject's (`…:<chain>`).
+   */
+  RUN: 'run',
   EXPORT: 'export',
   EXCHANGE_RATES: 'exchange-rates',
   ORACLE_CACHE: 'oracle-cache',
@@ -282,6 +298,12 @@ export const ActivityPart = {
   SUSHISWAP: 'sushiswap',
   FETCH: 'fetch',
   ADD: 'add',
+  /**
+   * Work scoped to an account *category* ("every EVM chain") rather than a chain. A literal part
+   * rather than a bare category name, so such an id can never be mistaken for a chain-scoped one
+   * by a prefix reader — a chain would have to be named `category` for them to overlap.
+   */
+  CATEGORY: 'category',
   EDIT: 'edit',
   PERFORMANCE: 'performance',
   VALIDATORS: 'validators',

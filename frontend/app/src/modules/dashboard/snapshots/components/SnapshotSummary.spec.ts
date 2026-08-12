@@ -104,6 +104,19 @@ describe('snapshotSummary', () => {
     expect(warnings.text()).not.toContain('ETH');
   });
 
+  it('should offer an action that isolates the zero-value rows', async () => {
+    const wrapper = mountSummary({ snapshot: snapshot([balance('ETH', 0), balance('DAI', 0)], [location('total', 0)]) });
+    await wrapper.find('[data-testid=snapshot-summary-show-zero-value]').trigger('click');
+    expect(wrapper.emitted('show-zero-value')).toHaveLength(1);
+  });
+
+  it('should not offer the isolate action without zero-value rows', () => {
+    const wrapper = mountSummary({ snapshot: snapshot([balance('ETH', -5)], [location('total', -5)]) });
+    // The negative-balance warning is shown, but it names its own asset.
+    expect(wrapper.find('[data-testid=snapshot-summary-warnings]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=snapshot-summary-show-zero-value]').exists()).toBe(false);
+  });
+
   it('should list a genuine sanity warning with its asset', () => {
     const wrapper = mountSummary({ snapshot: snapshot([balance('ETH', -5)], [location('total', -5)]) });
     const warnings = wrapper.find('[data-testid=snapshot-summary-warnings]');

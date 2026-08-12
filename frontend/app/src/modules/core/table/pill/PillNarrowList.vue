@@ -66,7 +66,8 @@ watch(() => highlighted, (index) => {
       :class="index === highlighted
         ? 'bg-rui-primary/10 text-rui-primary'
         : 'text-rui-text-primary hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800'"
-      :data-testid="`pill-narrow-${keyOf(suggestion)}`"
+      data-testid="pill-narrow-row"
+      :data-key="keyOf(suggestion)"
       @mousemove="highlightFromPointer(index)"
       @click="emit('select', suggestion)"
     >

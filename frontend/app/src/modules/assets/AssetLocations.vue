@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { type BigNumber, Blockchain } from '@rotki/common';
-import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
+import { useAssetLocationFields } from '@/modules/assets/use-asset-location-fields';
 import { type AssetLocation, useAssetLocationsData } from '@/modules/assets/use-asset-locations-data';
-import LocationSelector from '@/modules/balances/LocationSelector.vue';
+import { arrayify } from '@/modules/core/common/data/array';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import LabeledAddressDisplay from '@/modules/shell/components/display/LabeledAddressDisplay.vue';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
-import TagFilter from '@/modules/shell/components/inputs/TagFilter.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
 
 const { identifier } = defineProps<{ identifier: string }>();
@@ -30,19 +30,50 @@ const pagination = ref({
 
 const onlyTags = ref<string[]>([]);
 const locationFilter = ref<string>('');
-const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
+const addresses = ref<string[]>([]);
 
 const {
+  assetLocations,
   currencySymbol,
   detailsLoading,
   matchChain,
   totalValue,
   visibleAssetLocations,
 } = useAssetLocationsData({
+  addresses,
   identifier: () => identifier,
   locationFilter,
   onlyTags,
-  selectedAccounts,
+});
+
+// Offered from the unfiltered breakdown, so the bar lists the locations and accounts this asset is
+// held in rather than every location and account there is.
+const fields = useAssetLocationFields(assetLocations);
+const pillLabels = usePillBarLabels();
+
+// Every pill here is param-bound, and this table filters what it already holds, so the bar's params
+// are bridged straight to the three models instead of a request. An absent param clears its model:
+// removing the pill is how the filter is turned off.
+function toList(value: string | string[] | boolean | undefined): string[] {
+  return value === undefined || typeof value === 'boolean' ? [] : arrayify(value);
+}
+
+const pillParams = computed<Record<string, string | string[] | boolean>>({
+  get(): Record<string, string | string[] | boolean> {
+    const location = get(locationFilter);
+    const picked = get(addresses);
+    const tags = get(onlyTags);
+    return {
+      ...(picked.length > 0 ? { addresses: picked } : {}),
+      ...(location ? { location } : {}),
+      ...(tags.length > 0 ? { tags } : {}),
+    };
+  },
+  set(value: Record<string, string | string[] | boolean>): void {
+    set(addresses, toList(value.addresses));
+    set(locationFilter, toList(value.location)[0] ?? '');
+    set(onlyTags, toList(value.tags));
+  },
 });
 
 function getPercentage(value: BigNumber): string {
@@ -115,19 +146,21 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
 
 useRememberTableSorting<AssetLocation>(TableId.ASSET_LOCATION, sort, headers);
 
+// An account is only held on a chain, so an exchange location and an account can never both match
+// a row. Whichever was picked last wins, rather than leaving the user with an empty table.
 watch(locationFilter, (location) => {
   if (location && !matchChain(location)) {
-    set(selectedAccounts, []);
+    set(addresses, []);
   }
 });
 
-watch(selectedAccounts, (accounts) => {
-  if (accounts.length > 0 && !matchChain(get(locationFilter))) {
+watch(addresses, (picked) => {
+  if (picked.length > 0 && !matchChain(get(locationFilter))) {
     set(locationFilter, '');
   }
 });
 
-watch([onlyTags, locationFilter, selectedAccounts], () => {
+watch([onlyTags, locationFilter, addresses], () => {
   setPage(1);
 });
 </script>
@@ -137,31 +170,12 @@ watch([onlyTags, locationFilter, selectedAccounts], () => {
     <template #header>
       {{ t('asset_locations.title') }}
     </template>
-    <div class="flex flex-col md:flex-row justify-end gap-2">
-      <div class="w-full md:w-[20rem]">
-        <LocationSelector
-          v-model="locationFilter"
-          :label="t('common.location')"
-          dense
-          clearable
-          hide-details
-        />
-      </div>
-
-      <BlockchainAccountSelector
-        v-model="selectedAccounts"
-        class="w-full md:w-[20rem]"
-        variant="outlined"
-        dense
-        multichain
-        hide-chain-icon
-        unique
-      />
-
-      <div class="w-full md:w-[20rem]">
-        <TagFilter v-model="onlyTags" />
-      </div>
-    </div>
+    <PillFilterBar
+      v-model:params="pillParams"
+      class="mb-4"
+      :fields="fields"
+      :labels="pillLabels"
+    />
     <RuiDataTable
       v-model:sort="sort"
       :pagination="{

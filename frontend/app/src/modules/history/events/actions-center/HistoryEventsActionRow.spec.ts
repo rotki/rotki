@@ -59,8 +59,8 @@ describe('modules/history/events/actions-center/HistoryEventsActionRow', () => {
   it('should keep a muted issue out of the warning treatment', () => {
     const wrapper = mountRow(createIssue({ id: HISTORY_ISSUE_IDS.INTERNAL_CONFLICTS, severity: 'muted' }));
 
-    expect(wrapper.find('[data-testid=actions-center-row-unmatchedMovements]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid=actions-center-row-internalConflicts]').classes()).not.toContain('opacity-60');
+    expect(wrapper.find('[data-testid=actions-center-row][data-key=unmatched-movements]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=actions-center-row][data-key=internal-conflicts]').classes()).not.toContain('opacity-60');
     expect(wrapper.find('.text-rui-warning').exists()).toBe(false);
   });
 });

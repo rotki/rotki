@@ -122,11 +122,11 @@ export function bitcoinEventStateFromGroup(entry: BitcoinEvent, nextSequenceId: 
 
 /** Empty form fields are normalised to the nulls and defaults the backend expects. */
 export function toBitcoinEventPayload(state: BitcoinEventFormState): NewBitcoinEventPayload {
-  const amount = bigNumberify(state.amount);
+  const amount = bigNumberify(state.amount, Zero);
   const userNotes = state.notes.trim();
 
   return {
-    amount: amount.isNaN() ? Zero : amount,
+    amount,
     asset: bitcoinAssetFor(state.location),
     // The one field the backend wants blank rather than null when unset.
     counterparty: state.counterparty,

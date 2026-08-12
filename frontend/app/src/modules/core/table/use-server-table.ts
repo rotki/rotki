@@ -1,12 +1,14 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRef, Ref, WritableComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
+import type { Schema } from 'zod';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
-import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/modules/core/table/filtering';
-import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
+import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { isEqual } from 'es-toolkit';
 import { getApiSortingParams } from '@/modules/core/table/pagination-filter-utils';
 import { collectSources, mergeParams, type ParamSource, transformFilters } from '@/modules/core/table/param-sources';
+import { behaviourKeysFromFields, routeSchemaFromFields } from '@/modules/core/table/route';
 import { type ChangeSource, useChangeIntent } from '@/modules/core/table/use-change-intent';
 import { useTableData } from '@/modules/core/table/use-table-data';
 import { useTablePagination } from '@/modules/core/table/use-table-pagination';
@@ -43,17 +45,23 @@ interface UseServerTableOptions<
   TItem extends NonNullable<unknown>,
   TPayload extends PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem>,
   TFilter extends MatchedKeywordWithBehaviour<string> | void = undefined,
-  TSuggestionMatcher extends SearchMatcher<string, string> | void = undefined,
 > {
   /** The request function. `TPayload` is inferred from its parameter. */
   fetch: (payload: MaybeRef<TPayload>) => Promise<Collection<TItem>>;
   /** URL query sync mode; defaults to `{ mode: 'none' }` (no URL binding). */
   urlState?: UrlState;
   /**
-   * The filter schema itself, not a factory: the caller holds it and reads
-   * `matchers` off it. Named `filterSchema` because `filter` is the returned value.
+   * The filter bag. Owned here unless the caller passes one, which it needs to do only when
+   * something has to read the bag before the table exists — the pill-bar fields of a table whose
+   * option lists narrow by what is already picked. Everything else reads the returned `filter`.
    */
-  filterSchema?: FilterSchema<TFilter, TSuggestionMatcher>;
+  filters?: Ref<TFilter>;
+  /**
+   * The pill-bar fields this table filters on, the same list the bar is given. The url shape of the
+   * filter bag and the keys the request wraps as `{ behaviour, values }` are read off them, rather
+   * than restated per table beside a field list that already says both.
+   */
+  fields?: MaybeRefOrGetter<FieldDef[]>;
   /** External parameter sources merged into the request payload and/or URL. */
   params?: ParamSource[];
   /** Default sort column and fallback column applied when none is persisted. */
@@ -92,23 +100,19 @@ export function useServerTable<
   TItem extends NonNullable<unknown>,
   TPayload extends PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem> = PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem>,
   TFilter extends MatchedKeywordWithBehaviour<string> | void = undefined,
-  TSuggestionMatcher extends SearchMatcher<string, string> | void = undefined,
 >(
-  options: UseServerTableOptions<TItem, TPayload, TFilter, TSuggestionMatcher>,
+  options: UseServerTableOptions<TItem, TPayload, TFilter>,
 ): UseServerTableReturn<TItem, TPayload, TFilter> {
   const itemsPerPage = useItemsPerPage();
 
   const {
     fetch: requestData,
-    filterSchema = {
-      // The fallback for a table with no filter schema. An empty bag is not provably a TFilter,
-      // and neither is undefined, so this is the same filter-bag debt the two suppressions in
-      // requestPayload below carry, and it dies with them in Stage 4.
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      filters: ref({}) as Ref<TFilter>,
-      matchers: computed<TSuggestionMatcher[]>(() => []),
-      RouteFilterSchema: undefined,
-    },
+    fields,
+    // An empty bag is the starting state of every table, including one that never filters (a dialog
+    // listing rows). Neither an empty object nor undefined is provably the `TFilter` the caller
+    // declared, so the hole is stated once here rather than at every read.
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    filters = ref({}) as Ref<TFilter>,
     params = [],
     persist,
     request: { cancelTag, debounce: fetchDebounce = 0 } = {},
@@ -118,7 +122,13 @@ export function useServerTable<
 
   const { markUserIntent, pendingIntent, pendingUrlSource } = useChangeIntent();
 
-  const { filters, matchers, RouteFilterSchema } = filterSchema;
+  // Both derived from the declared fields, and cached against them: a gated field list can change
+  // while the table is mounted, and the URL must be read with the keys in play at that moment.
+  const behaviourKeys = computed<string[]>(() => behaviourKeysFromFields(toValue(fields) ?? []));
+  const routeFilterSchema = computed<Schema | undefined>(() => {
+    const declared = toValue(fields);
+    return declared ? routeSchemaFromFields(declared) : undefined;
+  });
 
   // Commit callbacks feed the reducer. They are defined before the sub-composables that
   // receive them and call the hoisted `dispatch`.
@@ -161,14 +171,11 @@ export function useServerTable<
     const offset = (page - 1) * limit;
 
     const merged = mergeParams(params, 'request', get(filters) ?? {});
+    const transformed = transformFilters(merged, get(behaviourKeys));
 
-    // The merged bag is filter keys plus arbitrary source keys, so it is only
-    // nominally TFilter. Both casts are the same debt the old code carried and both
-    // die in Stage 4, when the payload is assembled from typed parts instead of
-    // spread from one loosely-typed bag.
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const transformed = transformFilters(merged as TFilter, get(matchers)) as Record<string, unknown>;
-
+    // The one assertion left here, and the boundary it belongs to: what a table sends is its
+    // filter bag plus whatever its param sources contribute, which only the caller's own payload
+    // type describes. Assembling it from typed parts is what would retire this.
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
       ...transformed,
@@ -200,7 +207,7 @@ export function useServerTable<
     resetTransientValues,
     restorePersistedFilter,
     params,
-    routeFilterSchema: RouteFilterSchema,
+    routeFilterSchema: (): Schema | undefined => get(routeFilterSchema),
     urlState,
   });
 

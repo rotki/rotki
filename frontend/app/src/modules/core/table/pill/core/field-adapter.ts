@@ -1,6 +1,6 @@
 import type { AssetsWithId } from '@/modules/assets/types';
-import type { FieldBinding, FieldDef, FilterOp, FilterValueType, TypedFilterDraft } from '@/modules/core/table/pill/core/types';
-import { FilterOps, FilterValueTypes, type SearchMatcher } from '@/modules/core/table/filtering';
+import type { FieldDef, FilterOp, FilterValueType, TypedFilterDraft } from '@/modules/core/table/pill/core/types';
+import { FilterOps, FilterValueTypes } from '@/modules/core/table/filtering';
 import { DEFAULT_OPERATORS } from '@/modules/core/table/pill/core/operators';
 import { parseDateQuery, parseRangeQuery, type ParseTimestamp } from '@/modules/core/table/pill/core/typed-filters';
 
@@ -13,7 +13,7 @@ export type EditorKind = 'enum' | 'range' | 'date' | 'boolean' | 'asset' | 'text
 
 /**
  * An external (param-backed) filter described as a field, so the pill bar can render it
- * alongside matcher-backed fields. This is how history's account (`locationLabels`) and the
+ * alongside filter-bound fields. This is how history's account (`locationLabels`) and the
  * other external history filters are absorbed into the one bar.
  */
 export interface ParamFieldSpec {
@@ -43,6 +43,39 @@ export interface ParamFieldSpec {
  * range/date field. `lowerKey`/`upperKey` are the wire keys the two bounds serialize to
  * (the codec routes `range.min`/`date.from` to `lowerKey`, `range.max`/`date.to` to `upperKey`).
  */
+/**
+ * A field bound to the table's filter bag, declared directly rather than through a matcher.
+ *
+ * The counterpart of `ParamFieldSpec` for the other binding. A matcher exists to describe a field
+ * to the old text bar, which no longer exists, so a table feeding only the pill bar has no reason
+ * to build one: everything the bar actually reads is declared here.
+ */
+export interface MatchFieldSpec {
+  readonly key: string;
+  readonly label: string;
+  readonly admits?: FieldDef['admits'];
+  readonly valueType?: FilterValueType;
+  readonly operators?: readonly FilterOp[];
+  readonly multiple?: boolean;
+  readonly allowExclusion?: boolean;
+  /** Typed rather than picked: the value is whatever the user writes. */
+  readonly freeText?: boolean;
+  readonly hint?: string;
+  /** Shown when `validate` rejects what was typed, in place of the generic message. */
+  readonly invalidHint?: string;
+  readonly validate?: (value: string) => boolean;
+  readonly suggest?: () => string[];
+  readonly searchAsset?: (value: string) => Promise<AssetsWithId>;
+  readonly serializer?: (value: string) => string;
+  readonly deserializer?: (value: string) => string;
+  readonly display?: FieldDef['display'];
+  readonly excludes?: FieldDef['excludes'];
+  readonly resolveIcon?: FieldDef['resolveIcon'];
+  readonly resolveLabel?: (value: string) => string;
+  readonly resolveCaption?: (value: string) => string | undefined;
+  readonly resolveKeywords?: FieldDef['resolveKeywords'];
+}
+
 export interface BoundsFieldSpec {
   readonly key: string;
   readonly label: string;
@@ -57,6 +90,8 @@ export interface DateFieldSpec extends BoundsFieldSpec {
   readonly serializer?: (value: string) => string;
   readonly deserializer?: (value: string) => string;
   readonly formatBound?: (value: string) => string;
+  /** See {@link FieldDef.allowEqualBounds}. Defaults to allowed. */
+  readonly allowEqualBounds?: boolean;
   /**
    * Reads a written date into a wire bound, so the bar can offer a date typed into it as a filter.
    * Injected because only the caller knows the user's date format. Omitted = the field offers
@@ -69,7 +104,7 @@ export interface DateFieldSpec extends BoundsFieldSpec {
 export function toRangeFieldDef(spec: BoundsFieldSpec): FieldDef {
   return {
     allowExclusion: false,
-    binding: { kind: 'matcher' },
+    binding: { kind: 'filter' },
     bounds: { lower: spec.lowerKey, upper: spec.upperKey },
     hint: spec.hint,
     key: spec.key,
@@ -86,8 +121,9 @@ export function toRangeFieldDef(spec: BoundsFieldSpec): FieldDef {
 export function toDateFieldDef(spec: DateFieldSpec): FieldDef {
   const { parseBound } = spec;
   return {
+    allowEqualBounds: spec.allowEqualBounds ?? true,
     allowExclusion: false,
-    binding: { kind: 'matcher' },
+    binding: { kind: 'filter' },
     bounds: { lower: spec.lowerKey, upper: spec.upperKey },
     deserializer: spec.deserializer,
     formatBound: spec.formatBound,
@@ -102,56 +138,29 @@ export function toDateFieldDef(spec: DateFieldSpec): FieldDef {
   };
 }
 
-/** Derives the value type from an explicit override, else the matcher discriminant. */
-export function resolveValueType(matcher: SearchMatcher<string, string>): FilterValueType {
-  if (matcher.valueType)
-    return matcher.valueType;
-  if ('asset' in matcher)
-    return FilterValueTypes.ASSET;
-  if ('boolean' in matcher)
-    return FilterValueTypes.BOOLEAN;
-  return FilterValueTypes.ENUM;
-}
-
 function operatorsOf(valueType: FilterValueType, operators?: readonly FilterOp[]): readonly FilterOp[] {
   return operators && operators.length > 0 ? operators : DEFAULT_OPERATORS[valueType];
 }
 
 /**
- * Which operators a matcher-backed field offers. `is_not` (the `!` negation) is offered only
- * when the field can express it — today that is a string matcher with `allowExclusion`. Adding
- * more operators later (range/date `gt`/`lt`/`between`/…) is just widening this list + teaching
- * the codec to serialize them; the pill reads it via `operatorsFor` and hides the default one.
+ * Which operators a declared filter-bag field offers. `is_not` is offered only when the field
+ * declares `allowExclusion`, because the codec writes the `!` negation only for such a field
+ * (`codec.ts`): offering it otherwise gives the user an operator that silently applies as `is`.
+ *
+ * The value-type defaults cannot be used directly here — they list `is_not` for every enum and
+ * asset, which is what a field may express once its table declares the key as behaviour-carrying,
+ * not what it can express today.
  */
-function matcherOperators(valueType: FilterValueType, matcher: SearchMatcher<string, string>): readonly FilterOp[] {
-  if (matcher.operators && matcher.operators.length > 0)
-    return matcher.operators;
-  if (valueType === FilterValueTypes.ENUM || valueType === FilterValueTypes.ASSET) {
-    const canExclude = 'string' in matcher && Boolean(matcher.allowExclusion);
-    return canExclude ? [FilterOps.IS, FilterOps.IS_NOT] : [FilterOps.IS];
-  }
+function matchFieldOperators(
+  valueType: FilterValueType,
+  allowExclusion: boolean,
+  operators?: readonly FilterOp[],
+): readonly FilterOp[] {
+  if (operators && operators.length > 0)
+    return operators;
+  if (valueType === FilterValueTypes.ENUM || valueType === FilterValueTypes.ASSET)
+    return allowExclusion ? [FilterOps.IS, FilterOps.IS_NOT] : [FilterOps.IS];
   return DEFAULT_OPERATORS[valueType];
-}
-
-/** Normalizes a matcher into the presentation-facing `FieldDef`. */
-export function toFieldDef(matcher: SearchMatcher<string, string>): FieldDef {
-  const valueType = resolveValueType(matcher);
-  const binding: FieldBinding = { kind: 'matcher' };
-  return {
-    allowExclusion: 'string' in matcher ? Boolean(matcher.allowExclusion) : false,
-    binding,
-    deserializer: 'string' in matcher ? matcher.deserializer : undefined,
-    hint: matcher.hint,
-    key: String(matcher.keyValue ?? matcher.key),
-    label: matcher.description,
-    multiple: Boolean(matcher.multiple),
-    operators: matcherOperators(valueType, matcher),
-    searchAsset: 'asset' in matcher ? matcher.suggestions : undefined,
-    serializer: 'string' in matcher ? matcher.serializer : undefined,
-    suggest: 'string' in matcher ? matcher.suggestions : undefined,
-    validate: 'string' in matcher ? matcher.validate : undefined,
-    valueType,
-  };
 }
 
 /**
@@ -191,6 +200,41 @@ export function toParamFieldDef(spec: ParamFieldSpec): FieldDef {
     resolveSwatch: spec.resolveSwatch,
     searchAsset: spec.searchAsset,
     suggest: spec.suggest,
+    valueType,
+  };
+}
+
+/**
+ * Declares a field that writes into the table's filter bag, without a matcher behind it.
+ *
+ * The replacement for `toFieldDef`: same output, but the table states what the field is instead of
+ * describing it to a bar that was deleted and having it translated.
+ */
+export function toMatchFieldDef(spec: MatchFieldSpec): FieldDef {
+  const valueType = spec.valueType ?? FilterValueTypes.ENUM;
+  const allowExclusion = spec.allowExclusion ?? false;
+  return {
+    admits: spec.admits,
+    allowExclusion,
+    binding: { kind: 'filter' },
+    deserializer: spec.deserializer,
+    display: spec.display,
+    excludes: spec.excludes,
+    freeText: spec.freeText,
+    hint: spec.hint,
+    invalidHint: spec.invalidHint,
+    key: spec.key,
+    label: spec.label,
+    multiple: spec.multiple ?? false,
+    operators: matchFieldOperators(valueType, allowExclusion, spec.operators),
+    resolveCaption: spec.resolveCaption,
+    resolveIcon: spec.resolveIcon,
+    resolveKeywords: spec.resolveKeywords,
+    resolveLabel: spec.resolveLabel,
+    searchAsset: spec.searchAsset,
+    serializer: spec.serializer,
+    suggest: spec.suggest,
+    validate: spec.validate,
     valueType,
   };
 }

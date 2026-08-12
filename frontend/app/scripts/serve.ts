@@ -115,15 +115,54 @@ async function setupPreloadPackageWatcher({ ws }: ViteDevServer, mode: string): 
   }, mode);
 }
 
+/**
+ * Environment variables set by coding agents that run `pnpm dev:web` on the
+ * developer's behalf. A browser tab popping up belongs to an interactive run,
+ * not to an agent's background dev server, so these suppress the auto-open the
+ * same way CI does. Set `ROTKI_OPEN_BROWSER=1` to force it back on.
+ */
+const agentEnvVars = [
+  'AI_AGENT', // claude code
+  'CLAUDECODE', // claude code
+  'CLAUDE_CODE_ENTRYPOINT', // claude code
+  'CODEX_SANDBOX', // openai codex cli
+  'CURSOR_AGENT', // cursor
+  'GEMINI_CLI', // gemini cli
+];
+
+function isAgentRun(): boolean {
+  return agentEnvVars.some(name => !!process.env[name]);
+}
+
+/**
+ * Only auto-open a browser tab in web mode: in electron mode the renderer is loaded
+ * inside the electron window, so a browser tab would be spurious. Neither CI nor a
+ * coding agent opens one either, since nobody is watching that screen.
+ */
+function shouldOpenBrowser(web: boolean, open: boolean): boolean {
+  if (!web || !open) {
+    return false;
+  }
+  if (process.env.ROTKI_OPEN_BROWSER) {
+    return true;
+  }
+  if (process.env.CI) {
+    return false;
+  }
+  if (isAgentRun()) {
+    consola.info('not opening a browser tab (agent environment detected); set ROTKI_OPEN_BROWSER=1 to override');
+    return false;
+  }
+  return true;
+}
+
 async function serve(options: ServeOptions): Promise<void> {
   const { web, remoteDebuggingPort, mode, port, open } = options;
 
   try {
-    // Only auto-open a browser tab in web mode: in electron mode the renderer is
-    // loaded inside the electron window, so a browser tab would be spurious. `open`
-    // is a plain boolean here (Vite opens the resolved server URL, honouring the
-    // instance's port), and CI never opens.
-    const openBrowser = web && open && !process.env.CI;
+    // A plain boolean here, so Vite opens the resolved server URL and honours the
+    // instance's port.
+    const openBrowser = shouldOpenBrowser(web, open);
     const viteDevServer = await createServer({
       ...sharedConfig,
       mode: process.env.CI && process.env.VITE_TEST ? 'production' : mode,
@@ -172,7 +211,7 @@ cli.command('', 'Rotki frontend development server')
   .option('--remote-debugging-port <port>', 'Chrome remote debugging port')
   .option('--mode <mode>', 'Development mode', { default: 'development' })
   .option('--port <port>', 'Listening port', { default: 8080 })
-  .option('--open', 'Open the web app in the browser on start (web mode only, default: on; use --no-open to disable)', { default: true })
+  .option('--open', 'Open the web app in the browser on start (web mode only, default: on, off under CI and coding agents; use --no-open to disable)', { default: true })
   .action(async (options) => {
     await serve({
       web: options.web ?? false,

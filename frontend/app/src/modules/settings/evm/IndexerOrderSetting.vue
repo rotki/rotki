@@ -295,7 +295,7 @@ watch(chainWriteError, (message) => {
 <template>
   <div
     :id="id"
-    data-cy="indexer-order-setting"
+    data-testid="indexer-order-setting"
   >
     <div class="pb-5 border-b border-default flex flex-wrap gap-4 items-center justify-between">
       <SettingCategoryHeader>
@@ -313,13 +313,14 @@ watch(chainWriteError, (message) => {
           v-model="activeTab"
           color="primary"
           class="flex-1 !h-auto overflow-hidden"
-          data-cy="indexer-tabs"
+          data-testid="indexer-tabs"
         >
           <RuiTab
             v-for="tab in tabs"
             :key="tab.id"
             :value="tab.id"
-            :data-cy="`indexer-tab-${tab.id}`"
+            data-testid="indexer-tab"
+            :data-key="tab.id"
           >
             <IndexerTabLabel
               :tab="tab"
@@ -337,7 +338,7 @@ watch(chainWriteError, (message) => {
               color="primary"
               variant="outlined"
               v-bind="attrs"
-              data-cy="add-chain-button"
+              data-testid="add-chain-button"
               :disabled="availableChainItems.length === 0"
             >
               <template #prepend>
@@ -351,14 +352,15 @@ watch(chainWriteError, (message) => {
           </template>
           <div
             class="max-h-[300px] overflow-y-auto"
-            data-cy="chain-menu"
+            data-testid="chain-menu"
           >
             <RuiButton
               v-for="chain in availableChainItems"
               :key="chain.id"
               variant="list"
               class="w-full"
-              :data-cy="`chain-menu-item-${chain.id}`"
+              data-testid="chain-menu-item"
+              :data-key="chain.id"
               @click="addChain(chain)"
             >
               <template #prepend>
@@ -387,7 +389,7 @@ watch(chainWriteError, (message) => {
         v-else-if="missingApiKeyIndexer"
         type="info"
         class="mb-4"
-        data-cy="missing-api-key-alert"
+        data-testid="missing-api-key-alert"
       >
         <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
           <span class="flex-1">
@@ -408,7 +410,7 @@ watch(chainWriteError, (message) => {
         :key="index"
         type="warning"
         class="mb-4"
-        data-cy="chain-warning-alert"
+        data-testid="chain-warning-alert"
       >
         {{ warning }}
       </RuiAlert>
@@ -421,7 +423,7 @@ watch(chainWriteError, (message) => {
         >
           <PrioritizedList
             v-if="tab.isDefault"
-            data-cy="default-indexer-order"
+            data-testid="default-indexer-order"
             :model-value="localDefaultOrder"
             :all-items="availableIndexers"
             :status="{ error: defaultError, success: defaultSuccess }"
@@ -435,7 +437,8 @@ watch(chainWriteError, (message) => {
           </PrioritizedList>
           <PrioritizedList
             v-else
-            :data-cy="`chain-indexer-order-${tab.id}`"
+            data-testid="chain-indexer-order"
+            :data-key="tab.id"
             :model-value="localChainOrders[tab.id] ?? []"
             :all-items="availableIndexers"
             :status="{ error: chainError, success: chainSuccess }"

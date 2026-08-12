@@ -53,30 +53,26 @@ vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
   }),
 }));
 
-const { mockDetectTokens } = vi.hoisted((): { mockDetectTokens: ReturnType<typeof vi.fn> } => ({
-  mockDetectTokens: vi.fn(),
+const { mockRefreshBalances } = vi.hoisted((): { mockRefreshBalances: ReturnType<typeof vi.fn> } => ({
+  mockRefreshBalances: vi.fn(),
 }));
 vi.mock('@/modules/balances/blockchain/use-token-detection-orchestrator', async () => {
   const { computed } = await import('vue');
   return {
     useTokenDetectionOrchestrator: vi.fn().mockReturnValue({
-      detectTokens: mockDetectTokens,
+      detectTokens: vi.fn(),
       detectAllTokens: vi.fn(),
       useIsDetecting: vi.fn().mockReturnValue(computed(() => false)),
     }),
   };
 });
+vi.mock('@/modules/balances/use-blockchain-balances', () => ({
+  useBlockchainBalances: vi.fn().mockReturnValue({ refreshBlockchainBalances: mockRefreshBalances }),
+}));
 
 vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
   useBlockchainAccountManagement: vi.fn().mockReturnValue({
     fetchAccounts: vi.fn(),
-  }),
-}));
-
-vi.mock('@/modules/accounts/use-blockchain-accounts', () => ({
-  useBlockchainAccounts: vi.fn().mockReturnValue({
-    fetchBlockchainAccounts: vi.fn().mockResolvedValue([]),
-    fetchAccounts: vi.fn().mockResolvedValue([]),
   }),
 }));
 
@@ -147,8 +143,12 @@ describe('useMessageHandling', () => {
       }),
     );
 
-    expect(mockDetectTokens).toHaveBeenCalledTimes(1);
-    expect(mockDetectTokens).toHaveBeenCalledWith('optimism', ['0xdead']);
+    expect(mockRefreshBalances).toHaveBeenCalledTimes(1);
+    expect(mockRefreshBalances).toHaveBeenCalledWith(
+      { blockchain: 'optimism' },
+      'background',
+      { detect: true, detectAddresses: ['0xdead'] },
+    );
     expect(notify).toHaveBeenCalledTimes(1);
   });
 
@@ -196,7 +196,11 @@ describe('useMessageHandling', () => {
 
     await consume();
 
-    expect(mockDetectTokens).toHaveBeenCalledWith('optimism', ['0xdead']);
+    expect(mockRefreshBalances).toHaveBeenCalledWith(
+      { blockchain: 'optimism' },
+      'background',
+      { detect: true, detectAddresses: ['0xdead'] },
+    );
     expect(notify).toHaveBeenCalledTimes(1);
   });
 

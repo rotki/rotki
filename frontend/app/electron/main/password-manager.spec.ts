@@ -15,17 +15,22 @@ const { isEncryptionAvailable, encryptString, decryptString, backing } = vi.hois
 });
 
 vi.mock('electron', () => ({
+  app: { getPath: vi.fn<() => string>(() => '/tmp/rotki-test-user-data') },
   safeStorage: { isEncryptionAvailable, encryptString, decryptString },
 }));
 
-vi.mock('electron-store', () => ({
-  default: class {
-    get store(): Record<string, string> {
-      return backing.data;
+vi.mock('@electron/main/password-store', () => ({
+  PasswordStore: class {
+    get(key: string): string | undefined {
+      return backing.data[key];
     }
 
     set(key: string, value: string): void {
       backing.data[key] = value;
+    }
+
+    isEmpty(): boolean {
+      return Object.keys(backing.data).length === 0;
     }
 
     clear(): void {

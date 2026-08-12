@@ -92,15 +92,20 @@ describe('useBackendReload', () => {
     expect(notify.mock.calls[0][0].message).toContain('control is rate-limited; retry shortly');
   });
 
-  // No runtime could restart anything, which is how the plain web build has always
-  // behaved. The change was still applied, so the flow completes as it always did.
-  it('should complete normally where no restart is possible at all', async () => {
+  /**
+   * No runtime could restart anything, which is how the plain web build has always
+   * behaved. The change was still applied, so the flow completes as it always did - but
+   * the logout has to reach the backend. Nothing restarted, so nothing logged the user
+   * out on that side, and skipping the HTTP call left the backend holding a session the
+   * frontend had already discarded.
+   */
+  it('should still log out of the backend where no restart is possible at all', async () => {
     restartBackend.mockResolvedValue({ status: BackendRestartStatus.unavailable });
 
     const result = await useBackendReload().reload();
 
     expect(notify).not.toHaveBeenCalled();
-    expect(logout).toHaveBeenCalledWith(true, { skipBackendCall: true });
+    expect(logout).toHaveBeenCalledWith(true, { skipBackendCall: false });
     expect(connect).toHaveBeenCalled();
     expect(result.status).toBe(BackendRestartStatus.unavailable);
   });

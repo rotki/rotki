@@ -28,7 +28,7 @@ describe('get-premium-button', () => {
   it('should show get premium button for free users', () => {
     wrapper = createWrapper();
 
-    const button = wrapper.find('[data-cy=get-premium-button]');
+    const button = wrapper.find('[data-testid=get-premium-button]');
     expect(button.exists()).toBe(true);
     expect(button.text()).toContain('premium_settings.get');
   });
@@ -40,7 +40,7 @@ describe('get-premium-button', () => {
 
     wrapper = createWrapper();
 
-    const button = wrapper.find('[data-cy=get-premium-button]');
+    const button = wrapper.find('[data-testid=get-premium-button]');
     expect(button.exists()).toBeFalsy();
   });
 });

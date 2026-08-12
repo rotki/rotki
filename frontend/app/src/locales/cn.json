@@ -792,12 +792,8 @@
       }
     },
     "filter": {
-      "name": "按资产名称过滤",
       "name_hint": "使用资产名称搜索",
-      "symbol": "按资产符号筛选",
-      "symbol_hint": "使用资产符号搜索",
-      "type": "按自定义资产类型过滤",
-      "type_hint": "使用资产类型搜索"
+      "symbol_hint": "使用资产符号搜索"
     },
     "multi_chain_assets": "多链资产",
     "value": "价值"
@@ -1031,11 +1027,6 @@
     "events": "事件",
     "exchange": "交易所",
     "fee": "费用",
-    "filter": {
-      "date_hint": "format {format} HH:mm:ss(时间/秒可选)",
-      "end_date": "按期间结束日期筛选",
-      "start_date": "按期间的开始日期过滤"
-    },
     "here": "这儿",
     "ignored_in_accounting": "已从会计中排除 (PnL)",
     "important_notice": "重要通知:",
@@ -1399,11 +1390,6 @@
     "example": "结果日期 ({example})",
     "subtitle": "这些是支持的日期格式选项",
     "title": "日期格式"
-  },
-  "docker_warning": {
-    "action": "是的，我明白了",
-    "documentation": "文档",
-    "title": "您正在 docker 中运行 rotki。确保您已阅读我们的 {0} 并了解以这种方式运行 rotki 的潜在风险。"
   },
   "ens_names": {
     "task": {
@@ -2752,32 +2738,6 @@
     "title": "同步历史记录",
     "transactions": "交易"
   },
-  "table_filter": {
-    "exclusion": {
-      "description": "使用运算符 `!=` 过滤掉选项，例如"
-    },
-    "hint": {
-      "description": "输入过滤器，然后按回车键，例如。",
-      "example": "开始 = 26/05/2022"
-    },
-    "saved_filters": {
-      "actions": {
-        "add": "将当前过滤器保存到列表",
-        "apply": "应用这个保存的过滤器",
-        "list": "打开保存的过滤器列表",
-        "remove": "移除这个已保存的过滤器"
-      },
-      "added": "过滤器已保存",
-      "empty": "您没有任何已保存的过滤器。 照常应用过滤器，然后单击此按钮 {button} 保存过滤器。",
-      "saving": {
-        "limited": "您最多只能保存 {limit} 个过滤器。 删除其他过滤器以便能够再次添加。",
-        "title": "未能保存过滤器"
-      }
-    },
-    "start_typing": "输入 {search} 过滤器的值",
-    "title": "可用过滤器",
-    "unsupported_filter": "不支持的过滤器："
-  },
   "tag_creator": {
     "labels": {
       "background": "背景",
@@ -2786,9 +2746,6 @@
     "validation": {
       "empty_name": "请提供标签名称"
     }
-  },
-  "tag_filter": {
-    "label": "按标签过滤"
   },
   "tag_manager": {
     "confirmation": {
@@ -2924,16 +2881,7 @@
       }
     },
     "filter": {
-      "account": "按账户筛选",
-      "asset": "按事件的资产过滤",
-      "date_hint": "format {format} HH:mm:ss(时间/秒可选)",
-      "end_date": "按交易周期结束日期筛选",
-      "entry_type": "按条目类型过滤",
-      "location": "按活动地点过滤",
-      "protocol": "按事件的协议过滤",
-      "start_date": "按交易周期开始日期筛选",
-      "tx_hash": "按 tx hash (es) 过滤",
-      "validator_index": "按 validator_index(s) 过滤"
+      "account": "按账户筛选"
     },
     "ignore": "从会计中排除",
     "refresh_tooltip": "获取最新事件",

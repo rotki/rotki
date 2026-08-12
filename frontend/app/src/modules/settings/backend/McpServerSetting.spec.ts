@@ -1,8 +1,14 @@
+import { assert } from '@rotki/common';
 import { type McpServerStatus, StarlingServiceStatus } from '@shared/ipc';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { usePremiumStore } from '@/modules/premium/use-premium-store';
+import { PremiumFeature } from '@/modules/session/types';
 import McpServerSetting from '@/modules/settings/backend/McpServerSetting.vue';
 import { setMcpServerState } from '@/modules/settings/backend/use-mcp-server-state';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
+import { McpPrivacyMode } from '@/modules/settings/types/mcp';
 
 const mocks = vi.hoisted(() => ({
   generateMcpToken: vi.fn(),
@@ -87,10 +93,22 @@ function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
           template: '<span class="rui-chip"><slot /></span>',
         },
         RuiIcon: true,
+        RuiRadio: {
+          props: ['value'],
+          template: '<label class="rui-radio"><slot /></label>',
+        },
+        RuiRadioGroup: {
+          props: ['disabled', 'errorMessages', 'modelValue', 'successMessages'],
+          template: '<div class="rui-radio-group"><slot /></div>',
+        },
         RuiSwitch: {
           emits: ['update:modelValue'],
           props: ['disabled', 'modelValue'],
           template: '<button v-bind="$attrs" class="rui-switch" :disabled="disabled" @click="$emit(\'update:modelValue\', !modelValue)" />',
+        },
+        GetPremiumPlaceholder: {
+          props: ['description', 'minimumTier', 'title'],
+          template: '<div class="get-premium-placeholder" :data-minimum-tier="minimumTier">{{ title }}{{ description }}</div>',
         },
         SettingsItem: {
           template: '<section><slot name="title" /><slot name="subtitle" /><slot /></section>',
@@ -100,10 +118,47 @@ function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
   });
 }
 
+/**
+ * The privacy preview's cells for one field, as [on-chain swap, exchange deposit]. Anchored on the
+ * field name rather than a row index so a reordered preview fails loudly instead of silently
+ * asserting the wrong row.
+ */
+function previewRow(wrapper: VueWrapper<InstanceType<typeof McpServerSetting>>, field: string): string[] {
+  // The group caption rows carry no header cell, hence the exists() guard before reading it.
+  const row = wrapper.findAll('tbody tr').find((entry) => {
+    const header = entry.find('th');
+    return header.exists() && header.text() === field;
+  });
+  assert(row, `the privacy preview has no ${field} row`);
+  return row.findAll('td').map(cell => cell.text());
+}
+
+/** Every column name the preview claims the assistant receives, in render order. */
+function previewFields(wrapper: VueWrapper<InstanceType<typeof McpServerSetting>>): string[] {
+  return wrapper.findAll('tbody tr th').map(header => header.text());
+}
+
+function grantMcpAccess(enabled: boolean, minimumTier = 'Basic'): void {
+  const { capabilities, premium } = storeToRefs(usePremiumStore());
+  set(premium, true);
+  set(capabilities, {
+    currentTier: enabled ? 'Basic' : 'Supporter',
+    [PremiumFeature.MCP]: { enabled, minimumTier },
+  });
+}
+
+function revokePremium(): void {
+  const { capabilities, premium } = storeToRefs(usePremiumStore());
+  set(premium, false);
+  set(capabilities, undefined);
+}
+
 describe('mcpServerSetting', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     vi.stubEnv('VITE_DOCKER', 'false');
+    grantMcpAccess(true);
     mocks.isPackaged = true;
     controlAvailable(true);
     control.serviceState.mockResolvedValue(StarlingServiceStatus.IDLE);
@@ -133,6 +188,87 @@ describe('mcpServerSetting', () => {
     expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.status.stopped');
   });
 
+  it('should offer every privacy mode with an explanation', async () => {
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    const selector = wrapper.find('[data-testid="mcp-privacy-mode"]');
+    expect(selector.exists()).toBe(true);
+    expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.privacy_mode.label');
+    expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.privacy_mode.hint');
+    expect(selector.text()).toContain('backend_settings.settings.mcp_server.privacy_mode.strict.description');
+    expect(selector.text()).toContain('backend_settings.settings.mcp_server.privacy_mode.balanced.description');
+    expect(selector.text()).toContain('backend_settings.settings.mcp_server.privacy_mode.raw.description');
+    expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.privacy_mode.preview.title');
+    // Balanced keeps the venue name readable under its own column, alongside the hash every
+    // identifier gets.
+    expect(previewRow(wrapper, 'location_label')).toStrictEqual([
+      'backend_settings.settings.mcp_server.privacy_mode.preview.not_set',
+      'kraken',
+    ]);
+    expect(previewRow(wrapper, 'location_label_hash')).toStrictEqual([
+      'anon_5c4efe77c7146ef8',
+      'anon_b43a5d4cd838add9',
+    ]);
+    expect(selector.findAll('.rui-radio')).toHaveLength(3);
+    expect(selector.findAll('.rui-radio').every(radio => (
+      radio.element.parentElement === selector.element
+    ))).toBe(true);
+  });
+
+  /**
+   * The one field that separates balanced from strict. `READABLE_LOCATION_LABELS` in
+   * rotkehlchen/mcp/analytics.py lets a location label through only when it is exactly a rotki
+   * location name, so the exchange row stays readable in balanced and is hashed in strict; the
+   * on-chain row is address-shaped and is hashed in both.
+   */
+  it('should mask the exchange account label only in strict mode', async () => {
+    const repo = useSettingsRepo();
+    repo.updateGeneral({ ...repo.general, mcpPrivacyMode: McpPrivacyMode.STRICT });
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    // "not sent", not "not set": strict emits no such column, so querying it would fail rather
+    // than return null.
+    expect(previewRow(wrapper, 'location_label')).toStrictEqual([
+      'backend_settings.settings.mcp_server.privacy_mode.preview.not_sent',
+      'backend_settings.settings.mcp_server.privacy_mode.preview.not_sent',
+    ]);
+    expect(previewRow(wrapper, 'location_label_hash')).toStrictEqual([
+      'anon_5c4efe77c7146ef8',
+      'anon_b43a5d4cd838add9',
+    ]);
+  });
+
+  /**
+   * Outside raw an identifier moves to `<column>_hash` and its own column is dropped, so a preview
+   * that still labelled the hash `tx_hash` would send someone to write SQL against a column the
+   * assistant never received.
+   */
+  it('should name masked identifier columns as the assistant sees them', async () => {
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    const fields = previewFields(wrapper);
+    expect(fields).toContain('tx_hash_hash');
+    expect(fields).not.toContain('tx_hash');
+  });
+
+  it('should warn and preview unmasked fields in raw mode', async () => {
+    const repo = useSettingsRepo();
+    repo.updateGeneral({ ...repo.general, mcpPrivacyMode: McpPrivacyMode.RAW });
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(
+      'backend_settings.settings.mcp_server.privacy_mode.raw_warning.title',
+    );
+    expect(wrapper.text()).toContain('0x9C5083…5dAC5');
+    expect(wrapper.text()).toContain('quarterly rebalance');
+  });
+
   it('should persist auto-start without starting the server', async () => {
     const wrapper = createWrapper();
     await flushPromises();
@@ -148,13 +284,18 @@ describe('mcpServerSetting', () => {
     const wrapper = createWrapper();
     await flushPromises();
 
-    await wrapper.find('[data-testid="mcp-lifecycle"]').trigger('click');
+    const lifecycleButton = wrapper.find('[data-testid="mcp-lifecycle"]');
+    expect(lifecycleButton.attributes('color')).toBe('primary');
+
+    await lifecycleButton.trigger('click');
     await flushPromises();
     expect(control.setServiceRunning).toHaveBeenLastCalledWith('mcp', true);
+    expect(lifecycleButton.attributes('color')).toBe('error');
 
-    await wrapper.find('[data-testid="mcp-lifecycle"]').trigger('click');
+    await lifecycleButton.trigger('click');
     await flushPromises();
     expect(control.setServiceRunning).toHaveBeenLastCalledWith('mcp', false);
+    expect(lifecycleButton.attributes('color')).toBe('primary');
   });
 
   it('should disable lifecycle control when MCP is unavailable', async () => {
@@ -284,5 +425,91 @@ describe('mcpServerSetting', () => {
     );
     expect(wrapper.text()).toContain('token failed');
     expect(wrapper.text()).not.toContain('backend_settings.settings.mcp_server.error');
+  });
+
+  it('should not show the premium gate when MCP is unlocked', async () => {
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="mcp-premium-gate"]').exists()).toBe(false);
+  });
+
+  it('should tell a premium user their plan is insufficient, with the required tier', async () => {
+    grantMcpAccess(false);
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    const gate = wrapper.find('[data-testid="mcp-premium-gate"]');
+    expect(gate.exists()).toBe(true);
+    expect(gate.text()).toContain('backend_settings.settings.mcp_server.premium_plan_title');
+    expect(gate.text()).not.toContain('backend_settings.settings.mcp_server.premium_title');
+    expect(gate.find('.get-premium-placeholder').attributes('data-minimum-tier')).toBe('Basic');
+  });
+
+  it('should ask a user without a subscription to subscribe', async () => {
+    revokePremium();
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    const gate = wrapper.find('[data-testid="mcp-premium-gate"]');
+    expect(gate.exists()).toBe(true);
+    expect(gate.text()).toContain('backend_settings.settings.mcp_server.premium_title');
+    expect(gate.text()).not.toContain('backend_settings.settings.mcp_server.premium_plan_title');
+    // no capabilities are fetched without a subscription, so there is no tier to name
+    expect(gate.text()).toContain('backend_settings.settings.mcp_server.premium_description');
+  });
+
+  it('should hide the lifecycle controls when MCP is locked', async () => {
+    grantMcpAccess(false);
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="mcp-lifecycle"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="mcp-auto-start"]').exists()).toBe(false);
+  });
+
+  it('should hide token generation in Docker when MCP is locked', async () => {
+    vi.stubEnv('VITE_DOCKER', 'true');
+    mocks.isPackaged = false;
+    grantMcpAccess(false);
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="mcp-premium-gate"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="mcp-generate-token"]').exists()).toBe(false);
+    expect(wrapper.text()).not.toContain('backend_settings.settings.mcp_server.docker_description');
+  });
+
+  it('should show the desktop-only message instead of the gate in the web build', async () => {
+    grantMcpAccess(false);
+    mocks.isPackaged = false;
+    controlUnavailable();
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    // there is no server to run here for anyone, so the answer is "not here", not "buy premium"
+    expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.desktop_only');
+    expect(wrapper.find('[data-testid="mcp-premium-gate"]').exists()).toBe(false);
+  });
+
+  it('should reveal working controls once capabilities unlock MCP after mount', async () => {
+    grantMcpAccess(false);
+
+    const wrapper = createWrapper();
+    await flushPromises();
+    expect(wrapper.find('[data-testid="mcp-lifecycle"]').exists()).toBe(false);
+
+    // capabilities arrive after mount, so the status is loaded regardless of the gate:
+    // unlocking must not leave the user with controls that have no state to act on
+    grantMcpAccess(true);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="mcp-lifecycle"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="mcp-lifecycle"]').attributes('disabled')).toBeUndefined();
   });
 });

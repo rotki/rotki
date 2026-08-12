@@ -108,7 +108,7 @@ const truncatedLabelDisplayed = computed(() => {
     >
       <template #activator>
         <div
-          data-cy="labeled-address-display"
+          data-testid="labeled-address-display"
           class="flex items-center gap-2 text-rui-text-secondary w-full"
         >
           <EnsAvatar

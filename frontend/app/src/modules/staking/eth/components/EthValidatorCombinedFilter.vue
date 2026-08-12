@@ -1,109 +1,61 @@
 <script setup lang="ts">
-import type {
-  MatchedKeyword,
-  SearchMatcher,
-
-} from '@/modules/core/table/filtering';
+import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import { assert, type EthStakingCombinedFilter } from '@rotki/common';
-import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/core/common/data/date';
-import { isValidStatus, validStatuses } from '@/modules/core/table/filters/use-eth-validator-filter';
-import TableFilter from '@/modules/core/table/TableFilter.vue';
-import { useSetting } from '@/modules/settings/use-setting';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import { EthStakingFilterValueKeys, useEthStakingFilterFields } from '@/modules/staking/eth/use-eth-staking-filter-fields';
+import { isValidStatus } from '@/modules/staking/eth/use-eth-validator-filter';
 
 const filter = defineModel<EthStakingCombinedFilter | undefined>('filter', { required: true });
 
-enum Eth2StakingFilterKeys {
-  START = 'start',
-  END = 'end',
-  STATUS = 'status',
-}
+const { disableStatus = false } = defineProps<{
+  /** Validators are picked by hand, so a status filter has nothing left to narrow. */
+  disableStatus?: boolean;
+}>();
 
-enum Eth2StakingFilterValueKeys {
-  START = 'fromTimestamp',
-  END = 'toTimestamp',
-  STATUS = 'status',
-}
+const fields = useEthStakingFilterFields(() => disableStatus);
+const pillLabels = usePillBarLabels();
 
-type Matcher = SearchMatcher<Eth2StakingFilterKeys, Eth2StakingFilterValueKeys>;
+/**
+ * The bar speaks the flat keyword map; the page's model is the `EthStakingCombinedFilter` the
+ * premium component reads. Bridging the two is all this component does.
+ */
+const matches = computed<MatchedKeywordWithBehaviour<string>>({
+  get() {
+    const model = get(filter);
+    return {
+      ...(model?.fromTimestamp ? { [EthStakingFilterValueKeys.START]: model.fromTimestamp.toString() } : {}),
+      ...(model?.toTimestamp ? { [EthStakingFilterValueKeys.END]: model.toTimestamp.toString() } : {}),
+      ...(model?.status ? { [EthStakingFilterValueKeys.STATUS]: model.status } : {}),
+    };
+  },
+  set(value) {
+    const fromTimestamp = value[EthStakingFilterValueKeys.START];
+    const toTimestamp = value[EthStakingFilterValueKeys.END];
+    const status = value[EthStakingFilterValueKeys.STATUS];
 
-type Filters = MatchedKeyword<Eth2StakingFilterValueKeys>;
+    assert(typeof fromTimestamp === 'string' || fromTimestamp === undefined);
+    assert(typeof toTimestamp === 'string' || toTimestamp === undefined);
+    assert((typeof status === 'string' && isValidStatus(status)) || status === undefined);
 
-const filters = ref<Filters>({});
-
-const dateInputFormat = useSetting('dateInputFormat');
-
-const { t } = useI18n({ useScope: 'global' });
-
-const matchers = computed<Matcher[]>(() => [{
-  description: t('common.filter.start_date'),
-  deserializer: dateDeserializer(dateInputFormat),
-  hint: t('common.filter.date_hint', {
-    format: getDateInputISOFormat(get(dateInputFormat)),
-  }),
-  key: Eth2StakingFilterKeys.START,
-  keyValue: Eth2StakingFilterValueKeys.START,
-  serializer: dateSerializer(dateInputFormat),
-  string: true,
-  suggestions: () => [],
-  validate: dateRangeValidator(dateInputFormat, () => get(filters)?.toTimestamp?.toString(), 'start'),
-}, {
-  description: t('common.filter.end_date'),
-  deserializer: dateDeserializer(dateInputFormat),
-  hint: t('common.filter.date_hint', {
-    format: getDateInputISOFormat(get(dateInputFormat)),
-  }),
-  key: Eth2StakingFilterKeys.END,
-  keyValue: Eth2StakingFilterValueKeys.END,
-  serializer: dateSerializer(dateInputFormat),
-  string: true,
-  suggestions: () => [],
-  validate: dateRangeValidator(dateInputFormat, () => get(filters)?.fromTimestamp?.toString(), 'end'),
-}, {
-  description: t('eth_validator_combined_filter.status'),
-  key: Eth2StakingFilterKeys.STATUS,
-  keyValue: Eth2StakingFilterValueKeys.STATUS,
-  string: true,
-  suggestions: () => validStatuses.filter(x => x !== 'all'),
-  validate: (status: string) => isValidStatus(status),
-}] satisfies Matcher[]);
-
-function updateFilters(updatedFilters: Filters) {
-  set(filters, updatedFilters);
-  const { fromTimestamp, status, toTimestamp } = updatedFilters;
-
-  assert(typeof fromTimestamp === 'string' || fromTimestamp === undefined);
-  assert(typeof toTimestamp === 'string' || toTimestamp === undefined);
-  assert((typeof status === 'string' && isValidStatus(status)) || status === undefined);
-
-  set(filter, {
-    fromTimestamp: fromTimestamp ? parseInt(fromTimestamp) : undefined,
-    status,
-    toTimestamp: toTimestamp ? parseInt(toTimestamp) : undefined,
-  });
-}
-
-watchImmediate(filter, (period: EthStakingCombinedFilter | undefined) => {
-  const updatedFilters = { ...get(filters) };
-
-  if (period?.fromTimestamp)
-    updatedFilters.fromTimestamp = period.fromTimestamp.toString();
-  else delete updatedFilters.fromTimestamp;
-
-  if (period?.toTimestamp)
-    updatedFilters.toTimestamp = period.toTimestamp.toString();
-  else
-    delete updatedFilters.toTimestamp;
-
-  updatedFilters.status = period?.status;
-
-  set(filters, updatedFilters);
+    set(filter, {
+      fromTimestamp: fromTimestamp ? Number(fromTimestamp) : undefined,
+      status,
+      toTimestamp: toTimestamp ? Number(toTimestamp) : undefined,
+    });
+  },
 });
 </script>
 
 <template>
-  <TableFilter
-    :matchers="matchers"
-    :matches="filters"
-    @update:matches="updateFilters($event)"
+  <!--
+    The bar draws a border but no surface of its own: it sits straight on the page background here,
+    not inside a card, so it brings the surface its own pills already assume.
+  -->
+  <PillFilterBar
+    v-model:matches="matches"
+    class="bg-white dark:bg-rui-grey-900"
+    :fields="fields"
+    :labels="pillLabels"
   />
 </template>

@@ -13,7 +13,7 @@ const ButtonGroupStub = defineComponent({
 
 const field: FieldDef = {
   allowExclusion: false,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   key: 'amount',
   label: 'Amount',
   multiple: false,

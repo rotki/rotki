@@ -109,7 +109,7 @@ defineExpose({
         max-date="now"
         variant="outlined"
         accuracy="millisecond"
-        data-cy="datetime"
+        data-testid="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
         :error-messages="form.errors('timestamp')"
         @blur="form.touch('timestamp')"
@@ -117,7 +117,7 @@ defineExpose({
       <LocationSelector
         v-model="state.location"
         :disabled="data.type !== 'add'"
-        data-cy="location"
+        data-testid="location"
         :label="t('common.location')"
         required
         :error-messages="form.errors('location')"
@@ -130,7 +130,7 @@ defineExpose({
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add' || state.hasActualGroupIdentifier"
-      data-cy="groupIdentifier"
+      data-testid="group-identifier"
       :label="t('transactions.events.form.group_identifier.label')"
       :required="data.type === 'edit'"
       :error-messages="form.errors('groupIdentifier')"
@@ -159,7 +159,7 @@ defineExpose({
         v-model="state.locationLabel"
         :items="locationLabelSuggestions"
         clearable
-        data-cy="locationLabel"
+        data-testid="location-label"
         :label="t('transactions.events.form.location_label.label')"
         :error-messages="form.errors('locationLabel')"
         auto-select-first
@@ -169,7 +169,7 @@ defineExpose({
         v-model="state.sequenceIndex"
         variant="outlined"
         integer
-        data-cy="sequence-index"
+        data-testid="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
         required
         :error-messages="form.errors('sequenceIndex')"
@@ -182,7 +182,7 @@ defineExpose({
     <RuiTextArea
       v-model="state.notes"
       prepend-icon="lu-sticky-note"
-      data-cy="notes"
+      data-testid="notes"
       variant="outlined"
       color="primary"
       max-rows="5"

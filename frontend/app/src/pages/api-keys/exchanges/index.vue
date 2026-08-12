@@ -212,7 +212,7 @@ watch(route, async (route) => {
 <template>
   <TablePageLayout
     class="exchange-settings"
-    data-cy="exchanges"
+    data-testid="exchanges"
     :title="[
       t('navigation_menu.api_keys'),
       t('navigation_menu.api_keys_sub.exchanges'),
@@ -222,7 +222,7 @@ watch(route, async (route) => {
       <RuiButton
         color="primary"
         size="lg"
-        data-cy="add-exchange"
+        data-testid="add-exchange"
         @click="addExchange()"
       >
         <template #prepend>
@@ -285,7 +285,7 @@ watch(route, async (route) => {
         v-model:sort="sort"
         outlined
         row-attr="name"
-        data-cy="exchange-table"
+        data-testid="exchange-table"
         :rows="rows"
         :cols="cols"
         :item-class="rowClass"

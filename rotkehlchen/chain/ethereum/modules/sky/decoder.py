@@ -53,6 +53,14 @@ class SkyDecoder(EvmDecoderInterface):
         if context.tx_log.topics[0] != DAI_TO_USDS:
             return DEFAULT_EVM_DECODING_OUTPUT
 
+        if not (
+                self.base.is_tracked(bytes_to_address(context.tx_log.topics[1])) or
+                self.base.is_tracked(bytes_to_address(context.tx_log.topics[2]))
+        ):  # neither the caller nor the receiver of the migration is ours, so the conversion
+            # is an internal step of another protocol and not a migration by the user. The xdai
+            # bridge peripheral converting DAI to USDS before bridging it is such a case.
+            return DEFAULT_EVM_DECODING_OUTPUT
+
         raw_amount = int.from_bytes(context.tx_log.data[0:32])
         amount = token_normalized_value_decimals(
             token_amount=raw_amount,

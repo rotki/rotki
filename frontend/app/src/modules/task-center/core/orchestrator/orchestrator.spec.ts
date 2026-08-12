@@ -3,7 +3,7 @@ import { err, isErr, isOk, ok, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { assert, describe, expect, it, vi } from 'vitest';
 import { BackendCancelled, Cancelled, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
-import { INDETERMINATE } from '../status';
+import { INDETERMINATE, isTerminalStatus } from '../status';
 import {
   type Activity,
   type ActivityId,
@@ -182,20 +182,34 @@ describe('createTaskOrchestrator', () => {
     expect(byId(orchestrator, secondId)?.status).toBe(Status.RUNNING);
   });
 
-  it('should pause balances while decoding runs (default rule)', async () => {
+  it('should pause background balances while a history sync runs (default rule)', async () => {
     const orchestrator = createTaskOrchestrator();
-    const decode = controllable('decode', { id: makeActivityId(Kind.TX_DECODING, 'eth'), kind: Kind.TX_DECODING });
+    const sync = controllable('sync', { id: makeActivityId(Kind.HISTORY_SYNC), kind: Kind.HISTORY_SYNC });
     const balances = controllable('bal', {
       id: makeActivityId(Kind.BLOCKCHAIN_BALANCES, 'eth'),
       kind: Kind.BLOCKCHAIN_BALANCES,
     });
-    orchestrator.submit(decode.spec);
+    orchestrator.submit(sync.spec);
     const balId = orchestrator.submit(balances.spec);
 
     expect(byId(orchestrator, balId)?.status).toBe(Status.PENDING);
 
-    decode.settle({ ok: true, value: 1 });
+    sync.settle({ ok: true, value: 1 });
     await flush();
+
+    expect(byId(orchestrator, balId)?.status).toBe(Status.RUNNING);
+  });
+
+  it('should let a user-initiated balance refresh run during a history sync', () => {
+    const orchestrator = createTaskOrchestrator();
+    const sync = controllable('sync', { id: makeActivityId(Kind.HISTORY_SYNC), kind: Kind.HISTORY_SYNC });
+    const balances = controllable('bal', {
+      id: makeActivityId(Kind.BLOCKCHAIN_BALANCES, 'eth'),
+      kind: Kind.BLOCKCHAIN_BALANCES,
+      priority: Priority.USER,
+    });
+    orchestrator.submit(sync.spec);
+    const balId = orchestrator.submit(balances.spec);
 
     expect(byId(orchestrator, balId)?.status).toBe(Status.RUNNING);
   });
@@ -778,6 +792,73 @@ describe('createTaskOrchestrator', () => {
       expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.RUNNING);
     });
 
+    /**
+     * 🔴🔴 The chain-job shape, against the real scheduler. A parent that *awaits its own children*
+     * holds its lane slot for the whole body, so the children must not need a slot on that lane —
+     * with a cap of 2, two such parents would wait forever on work that can never start.
+     *
+     * This is why token detection has its own `detect:<chain>` family instead of sharing
+     * `BALANCES_LANE` with the chain job. Nothing above the orchestrator can catch it: every
+     * producer spec stubs `submitTask` to run inline, where lanes do not exist.
+     */
+    it('should let a parent awaiting children hold its lane without deadlocking them', async () => {
+      // Two balances slots, both taken by the chain jobs; the detect family has room of its own.
+      const orchestrator = createTaskOrchestrator({ caps: { balances: 2 }, defaultCap: 4 });
+      const children = new Map<ActivityId, Controllable>();
+
+      /** Resolves when that activity reaches a terminal status — the parent's real await. */
+      const awaitTerminal = async (id: ActivityId): Promise<void> => new Promise<void>((resolve) => {
+        const stop = orchestrator.onChange(() => {
+          const activity = byId(orchestrator, id);
+          if (activity && isTerminalStatus(activity.status)) {
+            stop();
+            resolve();
+          }
+        });
+      });
+
+      const chainJob = (chain: string): ActivitySpec => ({
+        cancel: vi.fn(),
+        id: makeActivityId(Kind.BLOCKCHAIN_BALANCES, chain),
+        kind: Kind.BLOCKCHAIN_BALANCES,
+        lane: 'balances',
+        run: async (): Promise<Result<unknown, TaskError>> => {
+          const ids = ['0xaaa', '0xbbb'].map((address) => {
+            const child = controllable(`${chain}-${address}`, {
+              id: makeActivityId(Kind.TOKEN_DETECTION, chain, address),
+              kind: Kind.TOKEN_DETECTION,
+              lane: `detect:${chain}`,
+              parent: makeActivityId(Kind.BLOCKCHAIN_BALANCES, chain),
+            });
+            children.set(child.spec.id, child);
+            orchestrator.submit(child.spec);
+            return child.spec.id;
+          });
+          await Promise.all(ids.map(awaitTerminal));
+          return ok(undefined);
+        },
+        title: chain,
+      });
+
+      orchestrator.submit(chainJob('eth'));
+      orchestrator.submit(chainJob('gnosis'));
+      await vi.waitFor(() => {
+        expect(children.size).toBe(4);
+      });
+
+      // 🔴 The assertion that fails if detection shares the balances lane: with both slots held by
+      // the parents, every child would still be PENDING here and nothing could ever settle them.
+      for (const child of children.values()) {
+        expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.RUNNING);
+        child.settle(ok(undefined));
+      }
+
+      await vi.waitFor(() => {
+        expect(byId(orchestrator, makeActivityId(Kind.BLOCKCHAIN_BALANCES, 'eth'))?.status).toBe(Status.COMPLETE);
+        expect(byId(orchestrator, makeActivityId(Kind.BLOCKCHAIN_BALANCES, 'gnosis'))?.status).toBe(Status.COMPLETE);
+      });
+    });
+
     it('should not gate a child whose parent is unknown', async () => {
       const orchestrator = createTaskOrchestrator();
       const child = controllable('orphan', { parent: makeActivityId(Kind.TX_SYNC, 'never-submitted') });
@@ -785,6 +866,258 @@ describe('createTaskOrchestrator', () => {
       await flush();
 
       expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.RUNNING);
+    });
+  });
+
+  describe('container activities', () => {
+    /**
+     * 🔴🔴 A fan-out umbrella settles COMPLETE whenever its children settle — `allSettled`, on
+     * purpose, because a failure belongs to the subject that failed. Sharing its children's kind
+     * then wrote a *success* to the completion ledger even when every child FAILED, and
+     * `statusOf(kind)` aggregates by kind: the dashboard read "loaded" after a total failure.
+     */
+    it('should not let a container claim freshness for its kind', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 10 } });
+      const umbrella = controllable('run', { container: true });
+      const child = controllable('subject', { parent: umbrella.spec.id });
+      orchestrator.submit(umbrella.spec);
+      orchestrator.submit(child.spec);
+
+      // Every subject fails; the container completes anyway, as a container does.
+      child.settle(err(TaskFailed({ message: 'backend unreachable' })));
+      umbrella.settle(ok(undefined));
+      await flush();
+
+      expect(byId(orchestrator, umbrella.spec.id)?.status).toBe(Status.COMPLETE);
+      expect(orchestrator.statusOf(Kind.OTHER).everCompleted).toBe(false);
+    });
+
+    it('should still let a non-container umbrella record its own completion', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 10 } });
+      const umbrella = controllable('run-subject');
+      orchestrator.submit(umbrella.spec);
+
+      umbrella.settle(ok(undefined));
+      await flush();
+
+      // `HISTORY_SYNC`'s umbrella *is* the subject for its kind, and its entry is load-bearing.
+      expect(orchestrator.statusOf(Kind.OTHER).everCompleted).toBe(true);
+    });
+  });
+
+  describe('cancel cascade', () => {
+    /** An umbrella, one chain under it, two accounts under the chain — the history-refresh shape. */
+    function tree(orchestrator: TaskOrchestrator): {
+      root: Controllable;
+      chain: Controllable;
+      accounts: [Controllable, Controllable];
+    } {
+      const root = controllable('umbrella');
+      orchestrator.submit(root.spec);
+      const chain = controllable('chain', { parent: root.spec.id });
+      orchestrator.submit(chain.spec);
+      const accounts: [Controllable, Controllable] = [
+        controllable('0xaaa', { parent: chain.spec.id }),
+        controllable('0xbbb', { parent: chain.spec.id }),
+      ];
+      for (const account of accounts)
+        orchestrator.submit(account.spec);
+
+      return { accounts, chain, root };
+    }
+
+    /**
+     * 🔴 The bug this package exists for. Every native spec carries a cancel handle, so cancelling
+     * a parent always "succeeded" — but the handle only aborts that activity's own backend task,
+     * which an umbrella never has. The row settled CANCELLED and vanished while the whole subtree
+     * carried on working.
+     */
+    it('should cancel every descendant, not just the row', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 10 } });
+      const { accounts, chain, root } = tree(orchestrator);
+      await flush();
+
+      orchestrator.cancel(root.spec.id);
+      await flush();
+
+      expect(byId(orchestrator, root.spec.id)?.status).toBe(Status.CANCELLED);
+      expect(byId(orchestrator, chain.spec.id)?.status).toBe(Status.CANCELLED);
+      for (const account of accounts)
+        expect(byId(orchestrator, account.spec.id)?.status).toBe(Status.CANCELLED);
+    });
+
+    /** The handle is what actually stops the backend task, so every live node's must fire. */
+    it('should fire each descendant\'s cancel handle', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 10 } });
+      const { accounts, chain, root } = tree(orchestrator);
+      await flush();
+
+      orchestrator.cancel(root.spec.id);
+
+      expect(chain.cancelSpy).toHaveBeenCalledOnce();
+      for (const account of accounts)
+        expect(account.cancelSpy).toHaveBeenCalledOnce();
+    });
+
+    /**
+     * 🔴 `eligible` only refused a child whose parent was still PENDING, so a queued child of a
+     * cancelled parent started the moment a lane freed up — the cancel bought nothing.
+     */
+    it('should not start a queued child after its parent is cancelled', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 1 } });
+      const blocker = controllable('blocker');
+      orchestrator.submit(blocker.spec);
+      const parent = controllable('parent');
+      orchestrator.submit(parent.spec);
+      const child = controllable('child', { parent: parent.spec.id });
+      orchestrator.submit(child.spec);
+      await flush();
+
+      expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.PENDING);
+
+      orchestrator.cancel(parent.spec.id);
+      // Freeing the only lane is what used to let the orphaned child through.
+      blocker.settle(ok(undefined));
+      await flush();
+
+      expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.CANCELLED);
+    });
+
+    /**
+     * 🔴🔴 The wedge `eligible` alone would create. A child submitted after its parent ended can
+     * never become eligible, so leaving it PENDING would hold its caller's await open for the life
+     * of the process. It has to be *settled*, not merely refused.
+     */
+    it('should settle a child submitted after its parent was cancelled', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 10 } });
+      const parent = controllable('parent');
+      orchestrator.submit(parent.spec);
+      await flush();
+      orchestrator.cancel(parent.spec.id);
+
+      const late = controllable('late', { parent: parent.spec.id });
+      orchestrator.submit(late.spec);
+      await flush();
+
+      expect(byId(orchestrator, late.spec.id)?.status).toBe(Status.CANCELLED);
+    });
+
+    /**
+     * ⭐ The reason no new cancel handle is needed anywhere: a parent whose body awaits its
+     * children resolves on its own once they settle, and `cancelRequested` maps that outcome to
+     * CANCELLED however the body chose to return.
+     */
+    it('should keep a parent cancelled when its own body later settles ok', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 10 } });
+      const { root } = tree(orchestrator);
+      await flush();
+
+      orchestrator.cancel(root.spec.id);
+      root.settle(ok(undefined));
+      await flush();
+
+      expect(byId(orchestrator, root.spec.id)?.status).toBe(Status.CANCELLED);
+    });
+
+    /** Cancelling a chain must not touch its siblings, or "stop this chain" stops the refresh. */
+    it('should leave a sibling subtree running', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 10 } });
+      const root = controllable('umbrella');
+      orchestrator.submit(root.spec);
+      const doomed = controllable('doomed', { parent: root.spec.id });
+      const survivor = controllable('survivor', { parent: root.spec.id });
+      orchestrator.submit(doomed.spec);
+      orchestrator.submit(survivor.spec);
+      const doomedChild = controllable('doomed-child', { parent: doomed.spec.id });
+      const survivorChild = controllable('survivor-child', { parent: survivor.spec.id });
+      orchestrator.submit(doomedChild.spec);
+      orchestrator.submit(survivorChild.spec);
+      await flush();
+
+      orchestrator.cancel(doomed.spec.id);
+      await flush();
+
+      expect(byId(orchestrator, doomedChild.spec.id)?.status).toBe(Status.CANCELLED);
+      expect(byId(orchestrator, survivor.spec.id)?.status).toBe(Status.RUNNING);
+      expect(byId(orchestrator, survivorChild.spec.id)?.status).toBe(Status.RUNNING);
+      expect(byId(orchestrator, root.spec.id)?.status).toBe(Status.RUNNING);
+    });
+
+    /**
+     * 🔴🔴 The case an `eligible` guard could not have handled. `cancel` never runs here, so a
+     * cascade hung off cancellation would leave these children queued — and refusing them in
+     * `eligible` instead would wedge them PENDING for the life of the process, since nothing would
+     * ever settle them. Hanging the walk off the settle is what makes one rule cover both.
+     */
+    it('should cancel the subtree when a parent fails rather than being cancelled', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 1 } });
+      const blocker = controllable('blocker');
+      orchestrator.submit(blocker.spec);
+      const parent = controllable('parent');
+      orchestrator.submit(parent.spec);
+      const child = controllable('child', { parent: parent.spec.id });
+      orchestrator.submit(child.spec);
+      await flush();
+
+      // The parent reaches a terminal FAILED while its child is still queued behind the cap.
+      blocker.settle(ok(undefined));
+      await flush();
+      parent.settle(err(TaskFailed({ message: 'boom' })));
+      await flush();
+
+      expect(byId(orchestrator, parent.spec.id)?.status).toBe(Status.FAILED);
+      expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.CANCELLED);
+    });
+
+    /** Same rule, the skipped flavour: a chain with nothing to do has no work beneath it either. */
+    it('should cancel the subtree when a parent is skipped', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 1 } });
+      const blocker = controllable('blocker');
+      orchestrator.submit(blocker.spec);
+      const parent = controllable('parent');
+      orchestrator.submit(parent.spec);
+      const child = controllable('child', { parent: parent.spec.id });
+      orchestrator.submit(child.spec);
+      await flush();
+
+      blocker.settle(ok(undefined));
+      await flush();
+      parent.settle(err(Skipped({ message: 'nothing to do' })));
+      await flush();
+
+      expect(byId(orchestrator, parent.spec.id)?.status).toBe(Status.SKIPPED);
+      expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.CANCELLED);
+    });
+
+    /** A parent that finishes normally must leave its subtree alone. */
+    it('should not touch the subtree when a parent completes', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 10 } });
+      const { accounts, chain, root } = tree(orchestrator);
+      await flush();
+
+      root.settle(ok(undefined));
+      await flush();
+
+      expect(byId(orchestrator, root.spec.id)?.status).toBe(Status.COMPLETE);
+      expect(byId(orchestrator, chain.spec.id)?.status).toBe(Status.RUNNING);
+      for (const account of accounts)
+        expect(byId(orchestrator, account.spec.id)?.status).toBe(Status.RUNNING);
+    });
+
+    /** A producer's malformed parent chain is not a reason to hang the orchestrator. */
+    it('should terminate on a parent cycle', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 10 } });
+      const a = controllable('a');
+      orchestrator.submit(a.spec);
+      const b = controllable('b', { parent: a.spec.id });
+      orchestrator.submit(b.spec);
+      // `a` is re-submitted pointing at its own descendant, closing the loop.
+      orchestrator.submit({ ...a.spec, parent: b.spec.id });
+      await flush();
+
+      orchestrator.cancel(a.spec.id);
+
+      expect(byId(orchestrator, b.spec.id)?.status).toBe(Status.CANCELLED);
     });
   });
 

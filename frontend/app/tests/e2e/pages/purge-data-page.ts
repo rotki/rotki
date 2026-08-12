@@ -12,11 +12,11 @@ export class PurgeDataPage {
     // Reuse the same user-menu → settings → tab path the rest of the e2e suite
     // uses; navigating directly to `/#/settings/database` lands on a blank
     // shell because the layout's data-bootstrapping never runs.
-    await this.page.locator('[data-cy=user-menu-button]').click();
-    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'visible' });
-    await this.page.locator('[data-cy=settings-button]').click();
-    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
-    await this.page.locator('[data-cy=settings__database]').click();
+    await this.page.locator('[data-testid=user-menu-button]').click();
+    await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=settings-button]').click();
+    await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
+    await this.page.locator('[data-testid=settings__database]').click();
     await this.page.getByTestId('purge-source').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
   }
 
@@ -60,9 +60,9 @@ export class PurgeDataPage {
 
   async submitAndConfirm(): Promise<void> {
     await this.page.getByTestId('purge-submit').click();
-    const dialog = this.page.locator('[data-cy=confirm-dialog]');
+    const dialog = this.page.locator('[data-testid=confirm-dialog]');
     await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
-    await dialog.locator('[data-cy=button-confirm]').click();
+    await dialog.locator('[data-testid=button-confirm]').click();
     await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
     // The component shows an inline ActionStatusIndicator on success; wait for
     // the success state so subsequent assertions see the post-purge DB state.

@@ -6,7 +6,7 @@ import PillNarrowList from '@/modules/core/table/pill/PillNarrowList.vue';
 
 const field: FieldDef = {
   allowExclusion: false,
-  binding: { kind: 'matcher' },
+  binding: { kind: 'filter' },
   key: 'protocols',
   label: 'Protocol',
   multiple: true,

@@ -1,6 +1,6 @@
 import type { DebugSettings } from '@rotki/common';
 import { LogLevel } from '@shared/log-level';
-import z from 'zod';
+import * as z from 'zod/mini';
 
 export const BackendCode = {
   TERMINATED: 0,
@@ -14,8 +14,6 @@ export interface StartupError {
   message: string;
   code: BackendCode;
 }
-
-export interface ApiUrls { coreApiUrl: string; colibriApiUrl: string }
 
 export const StarlingServiceStatus = {
   DEGRADED: 'Degraded',
@@ -60,21 +58,21 @@ export interface SystemVersion {
   readonly arch: string;
 }
 
-export const ActiveLogLevel = z.preprocess(
-  s => (typeof s === 'string' ? s.toLowerCase() : s),
+export const ActiveLogLevel = z.pipe(
+  z.transform(s => (typeof s === 'string' ? s.toLowerCase() : s)),
   z.enum(LogLevel),
 );
 
 export const BackendOptions = z.object({
-  loglevel: ActiveLogLevel.optional(),
-  dataDirectory: z.string().optional(),
-  logDirectory: z.string().optional(),
-  sleepSeconds: z.number().nonnegative().optional(),
-  logFromOtherModules: z.boolean().optional(),
-  maxSizeInMbAllLogs: z.number().int().positive().optional(),
-  sqliteInstructions: z.number().int().positive().optional(),
-  maxLogfilesNum: z.number().int().positive().optional(),
-  mcpAutoStart: z.boolean().optional(),
+  loglevel: z.optional(ActiveLogLevel),
+  dataDirectory: z.optional(z.string()),
+  logDirectory: z.optional(z.string()),
+  sleepSeconds: z.optional(z.number().check(z.nonnegative())),
+  logFromOtherModules: z.optional(z.boolean()),
+  maxSizeInMbAllLogs: z.optional(z.int().check(z.positive())),
+  sqliteInstructions: z.optional(z.int().check(z.positive())),
+  maxLogfilesNum: z.optional(z.int().check(z.positive())),
+  mcpAutoStart: z.optional(z.boolean()),
 });
 
 type StoredBackendOptions = z.infer<typeof BackendOptions>;
@@ -142,7 +140,8 @@ export interface Interop {
   openDirectory: (title: string) => Promise<undefined | string>;
   premiumUserLoggedIn: (premiumUser: boolean) => void;
   debugSettings?: () => DebugSettings | undefined;
-  apiUrls: () => ApiUrls;
+  /** The single origin the renderer addresses: core under `/api/1`, colibri under `/colibri`. */
+  apiUrl: () => string;
   metamaskImport: () => Promise<MetamaskImport>;
   checkForUpdates: () => Promise<boolean>;
   downloadUpdate: (progress: (percentage: number) => void) => Promise<boolean>;

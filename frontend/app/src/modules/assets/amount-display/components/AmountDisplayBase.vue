@@ -88,7 +88,7 @@ const copyValue = computed<string>(() => {
       },
     ]"
     class="inline-flex items-center gap-1 transition duration-200 rounded-lg max-w-full"
-    data-cy="amount-display"
+    data-testid="amount-display"
     v-bind="$attrs"
   >
     <template v-if="!loading">
@@ -105,7 +105,7 @@ const copyValue = computed<string>(() => {
       <CopyTooltip
         :disabled="!shouldShowAmount || noTooltip"
         :tooltip="tooltip"
-        data-cy="display-amount"
+        data-testid="display-amount"
         :value="copyValue"
       >
         <FormattedNumber :number-parts="numberParts" />

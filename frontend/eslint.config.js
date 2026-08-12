@@ -45,7 +45,10 @@ export default rotki({
     'app/backend-strings.generated.js',
     'app/premium-keys.generated.js',
     'app/tests/e2e/.v8-coverage/**',
-    'app/tests/e2e/test-results/**',
+    // A sharded run writes one output directory per shard: `test-results-1`, `-2`, ...
+    'app/tests/e2e/test-results*/**',
+    // The merged html report a sharded run leaves behind: a bundled trace viewer.
+    'app/playwright-report/**',
   ],
   vue: true,
   typescript: {
@@ -201,6 +204,29 @@ export default rotki({
         importNames: ['test'],
         message: 'Import `test` from `tests/e2e/fixtures/test-fixtures`, which arms coverage on the page fixture.',
         name: '@playwright/test',
+      }],
+    }],
+  },
+}, {
+  // The electron main and preload bundles are plain Node, and `shared/` is compiled into them.
+  // Importing anything vue-shaped there pulls the vue runtime *and* its compiler (via
+  // @vue/compiler-core -> @babel/parser) into a process that never renders: one `isDefined` from
+  // @vueuse/core cost the main bundle 727 KB raw, 41% of it. Reach for a plain helper instead.
+  // Anchored to the two real directories rather than `**/shared/**`, which also matches any folder
+  // named `shared` under `src/` (for example `core/table/filters/shared`), where vue is expected.
+  files: ['app/electron/**/*.ts', 'app/shared/**/*.ts'],
+  rules: {
+    'no-restricted-imports': ['error', {
+      // Matched by exact name, so `zod/mini` itself is untouched. Classic zod does not tree-shake:
+      // its chained methods keep the whole surface reachable, and it measured 421.9 KB here against
+      // 112.4 KB for mini. One classic import anywhere in this graph brings all of it back.
+      paths: [{
+        name: 'zod',
+        message: 'Use `zod/mini` under electron/ and shared/. Classic zod costs the main bundle ~310 KB more.',
+      }],
+      patterns: [{
+        group: ['vue', 'vue-*', '@vue/*', '@vueuse/*'],
+        message: 'The electron main/preload bundles are plain Node. A vue or @vueuse import drags the vue runtime and compiler into them.',
       }],
     }],
   },

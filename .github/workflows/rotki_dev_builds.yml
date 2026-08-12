@@ -28,7 +28,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -39,24 +39,24 @@ jobs:
           env_file: .github/.env.ci
 
       - name: Setup python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
         with:
           enable-cache: false
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271  # v6.0.9
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86  # v6.0.10
         with:
           package_json_file: frontend/package.json
 
       - name: Setup node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           node-version-file: 'frontend/.nvmrc'
 
@@ -105,7 +105,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -129,19 +129,19 @@ jobs:
         run: packaging/setup-macos-python.sh "${PYTHON_VERSION}" "${PYTHON_MACOS}"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
         with:
           enable-cache: false
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271  # v6.0.9
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86  # v6.0.10
         with:
           package_json_file: frontend/package.json
 
       - name: Setup node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           node-version-file: 'frontend/.nvmrc'
 
@@ -186,7 +186,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -197,24 +197,24 @@ jobs:
           env_file: .github/.env.ci
 
       - name: Set up python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
         with:
           enable-cache: false
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271  # v6.0.9
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86  # v6.0.10
         with:
           package_json_file: frontend/package.json
 
       - name: Setup node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           node-version-file: 'frontend/.nvmrc'
 
@@ -255,7 +255,7 @@ jobs:
             runner: ubuntu-24.04-arm
     steps:
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -268,19 +268,19 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9  # v6.1.0
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302  # v6.2.0
         with:
           images: |
             ${{ github.repository }}
 
       - name: Login to DockerHub
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee  # v4.2.0
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5  # v4.1.0
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4.2.0
 
       - name: Rotki Version
         id: rotki_version
@@ -298,6 +298,7 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ matrix.platform.name }}
           provenance: mode=max
+          sbom: true
           build-args: |
             REVISION=${{ github.sha }}
             ROTKI_VERSION=${{ steps.rotki_version.outputs.version }}
@@ -336,23 +337,68 @@ jobs:
           merge-multiple: true
 
       - name: Login to Docker Hub
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee  # v4.2.0
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5  # v4.1.0
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4.2.0
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9  # v6.1.0
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302  # v6.2.0
         with:
           images: |
             ${{ github.repository }}
           tags: |
             type=schedule,pattern=nightly
+            type=schedule,pattern=nightly-{{date 'YYYYMMDD'}}
             type=edge,branch=build
+            type=sha,prefix=edge-,format=short,enable=${{ github.ref == 'refs/heads/build' }}
+
+      - name: Record the digests these tags are about to replace
+        if: ${{ github.repository == 'rotki/rotki' }}
+        env:
+          REPOSITORY: ${{ github.repository }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+
+          # Pushing a tag that already exists leaves whatever it pointed at
+          # before untagged, and an untagged manifest can no longer be listed,
+          # so the prune step would never see it again. Record what each tag
+          # resolves to now, while it is still reachable; the prune step then
+          # deletes the ones nothing references any more. This is the re-run
+          # case: a second scheduled run on the same day reuses
+          # nightly-YYYYMMDD, and a rebuild of the same commit reuses
+          # edge-<sha>. The repo is public, so resolving a tag needs no auth.
+          # "<tag> <index-digest> <child,child,...>" per line. The children are
+          # recorded too: a rebuild can produce a new index over byte-identical
+          # arch manifests, and deleting the old index must not take a child the
+          # newly pushed one still references.
+          : > "${RUNNER_TEMP}/superseded.txt"
+          while read -r ref; do
+            [ -n "$ref" ] || continue
+            tag="${ref##*:}"
+            # Only a 404 is benign here (the tag does not exist yet). Anything
+            # else -- a 429 from this unauthenticated endpoint, a 5xx, a DNS
+            # failure -- would silently lose the record of a manifest the push
+            # is about to orphan, which is the exact leak this step prevents.
+            code="$(curl -sS -o "${RUNNER_TEMP}/tag.json" -w '%{http_code}' \
+              "https://hub.docker.com/v2/repositories/${REPOSITORY}/tags/${tag}/" || true)"
+            case "$code" in
+              200) ;;
+              404) echo "no current ${tag}, nothing it can supersede"; continue ;;
+              *) echo "cannot resolve ${tag}: HTTP ${code}" >&2; exit 1 ;;
+            esac
+            jq -r --arg tag "$tag" '
+              (.digest // empty) as $d
+              | select($d != "")
+              | "\($tag) \($d) \([.images[]?.digest // empty] | join(","))"
+            ' "${RUNNER_TEMP}/tag.json" >> "${RUNNER_TEMP}/superseded.txt"
+          done <<< "$TAGS"
+          cat "${RUNNER_TEMP}/superseded.txt"
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
@@ -369,6 +415,222 @@ jobs:
         run: |
           docker buildx imagetools inspect "${REPOSITORY}:${VERSION}"
 
+      - name: Prune old dated dev-build images
+        if: ${{ github.repository == 'rotki/rotki' }}
+        env:
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          KEEP: 2
+        run: |
+          set -euo pipefail
+
+          # Keep only the newest $KEEP dated dev-build images per family
+          # (nightly-YYYYMMDD, edge-<short-sha>) and delete the rest, image and
+          # all. A tag delete via the hub.docker.com API only drops the tag and
+          # leaves the multi-arch index + its arch/attestation children as
+          # untagged leftovers (Docker Hub does not garbage-collect them, and its
+          # image-management API is unreachable with a token on this account).
+          # The OCI registry manifest DELETE, however, works: deleting an index
+          # digest removes the index, every child manifest it references, and the
+          # tag pointing at it. So we list tags via the Hub API but reclaim via
+          # the registry.
+          #
+          # Token hygiene throughout: secrets are read from the environment (never
+          # on an argv), derived tokens are masked in the log, and every auth
+          # header/credential is handed to curl through a config on a file
+          # descriptor (printf is a shell builtin) so it never lands on argv or
+          # disk. The rolling `nightly`/`edge` tags and all release tags do not
+          # match the dated patterns and are never selected.
+
+          # --- Hub JWT: lists the tags and their index digests ---
+          hub_jwt="$(jq -nc '{username: env.DOCKERHUB_USER, password: env.DOCKERHUB_TOKEN}' \
+            | curl -fsS -H 'Content-Type: application/json' -d @- \
+                https://hub.docker.com/v2/users/login \
+            | jq -r '.token')"
+          [ -n "$hub_jwt" ] && [ "$hub_jwt" != 'null' ] || { echo 'Hub login failed' >&2; exit 1; }
+          echo "::add-mask::${hub_jwt}"
+
+          # EVERY tag in the repo, as "<last_updated> <name> <index-digest>" per
+          # line. All of them, not just the first page: the collateral guard
+          # below can only protect a tag it has seen, so a release tag left off
+          # by pagination would be one we could delete by accident. NOTE: Docker
+          # Hub inverts the usual convention -- ordering=last_updated returns
+          # NEWEST first (a leading '-' gives oldest); do not "fix" it to
+          # -last_updated. The ISO 8601 timestamp sorts lexically the same as
+          # chronologically.
+          # Two record kinds per page:
+          #   T <last_updated> <name> <index-digest>   -- candidates come from these
+          #   R <digest> <name>                        -- <digest> is referenced by <name>
+          # An R row is emitted for a tag's index AND for every child manifest it
+          # lists, because deleting an index takes its children with it. Roughly
+          # a third of this repo's tags carry a null top-level digest (older
+          # single-arch releases); those are skipped as candidates but still
+          # contribute their children as references.
+          declare -a lines=() refs=() kids=()
+          url="https://hub.docker.com/v2/repositories/${REPOSITORY}/tags/?page_size=100&ordering=last_updated"
+          for _page in $(seq 20); do
+            [ -n "$url" ] || break
+            body="$(curl -fsS \
+              --config <(printf 'header = "Authorization: JWT %s"\n' "$hub_jwt") "$url")"
+            # jq's status is checked explicitly: inside <(...) it would be
+            # discarded, and a page that silently parsed to nothing is a tag the
+            # guard cannot see.
+            rows="$(jq -r '
+              .results[] as $t
+              | ( "T \($t.last_updated) \($t.name) \($t.digest // "-")" ),
+                ( select($t.digest != null) | "R \($t.digest) \($t.name)" ),
+                ( $t.images[]? | select(.digest != null) | "R \(.digest) \($t.name)" ),
+                ( $t.images[]? | select(.digest != null) | "C \($t.name) \(.digest)" )
+            ' <<< "$body")"
+            mapfile -t -O "${#lines[@]}" lines < <(grep '^T ' <<< "$rows" | cut -d' ' -f2-)
+            mapfile -t -O "${#refs[@]}" refs < <(grep '^R ' <<< "$rows" | cut -d' ' -f2-)
+            mapfile -t -O "${#kids[@]}" kids < <(grep '^C ' <<< "$rows" | cut -d' ' -f2-)
+            url="$(jq -r '.next // empty' <<< "$body")"
+          done
+          [ -z "$url" ] || { echo 'Tag listing did not terminate' >&2; exit 1; }
+          [ "${#lines[@]}" -gt 0 ] || { echo 'Tag listing came back empty' >&2; exit 1; }
+          echo "listed ${#lines[@]} tags, ${#refs[@]} digest references"
+
+          # digest -> " name name ", covering indexes and children alike.
+          declare -A referenced_by=()
+          for r in "${refs[@]}"; do
+            referenced_by["${r%% *}"]="${referenced_by[${r%% *}]:-} ${r#* }"
+          done
+          # tag name -> " child child ", so a candidate's children can be checked
+          # against the references above.
+          declare -A children_of=()
+          for c in "${kids[@]}"; do
+            children_of["${c%% *}"]="${children_of[${c%% *}]:-} ${c#* }"
+          done
+
+          # Select stale dated tags (all but the newest $KEEP per family), keeping
+          # each tag paired with its index digest. Patterns are anchored on the
+          # name field (single spaces around it) so the timestamp/digest cannot
+          # match.
+          declare -a stale_names=() stale_digests=() stale_kinds=() stale_kids=()
+          # Names whose references do not count as protection. A superseded
+          # candidate is deliberately NOT in here: its name now belongs to the
+          # freshly pushed tag, which is very much being kept.
+          own_names=''
+          for pattern in ' nightly-[0-9]{8} ' ' edge-[0-9a-f]{7,} '; do
+            while read -r _ts name digest; do
+              [ -n "$name" ] || continue
+              [ "$digest" != '-' ] || { echo "skip ${name}: no index digest listed"; continue; }
+              stale_names+=("$name"); stale_digests+=("$digest")
+              stale_kinds+=('tag'); stale_kids+=("${children_of[$name]:-}")
+              # Only a live tag being pruned may discount its own references.
+              own_names="${own_names} ${name}"
+            done < <(printf '%s\n' "${lines[@]}" | grep -E "$pattern" | sort -r | tail -n "+$((KEEP + 1))")
+          done
+
+          # Plus the digests this run's own push superseded, recorded before the
+          # push because they are unlistable afterwards. Only the dated families
+          # qualify: a rolling tag's predecessor is always still held by its own
+          # dated tag, so taking rolling tags here would add a candidate that no
+          # pattern ever vouched for.
+          if [ -f "${RUNNER_TEMP}/superseded.txt" ]; then
+            while read -r tag digest kids; do
+              [ -n "$digest" ] || continue
+              case " ${tag} " in
+                ' nightly-'[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]' ') ;;
+                ' edge-'*) [[ ${tag#edge-} =~ ^[0-9a-f]{7,}$ ]] || continue ;;
+                *) continue ;;
+              esac
+              stale_names+=("$tag"); stale_digests+=("$digest")
+              stale_kinds+=('superseded'); stale_kids+=("${kids//,/ }")
+            done < "${RUNNER_TEMP}/superseded.txt"
+          fi
+
+          if [ "${#stale_digests[@]}" -eq 0 ]; then
+            echo 'No stale dated dev-build images to prune.'
+            exit 0
+          fi
+
+          # Registry token with delete scope, minted only now that there is work
+          # to do: these expire in about five minutes, and the tag listing above
+          # can take several requests.
+          reg_token="$(curl -fsSL \
+            --config <(printf 'user = "%s:%s"\n' "$DOCKERHUB_USER" "$DOCKERHUB_TOKEN") \
+            "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${REPOSITORY}:pull,push,delete" \
+            | jq -r '.token')"
+          [ -n "$reg_token" ] && [ "$reg_token" != 'null' ] || { echo 'Registry token failed' >&2; exit 1; }
+          echo "::add-mask::${reg_token}"
+
+          # Three independent layers stand between a candidate and an
+          # irreversible delete, so that no single one has to be perfect:
+          #   1. the name matched a dated pattern (already enforced above)
+          #   2. the tag still resolves the way we think it does (per candidate)
+          #   3. neither the index nor any child it carries is referenced by a
+          #      tag we are keeping (the listing)
+          # Layer 3 is the only one that catches a release cut from the same
+          # commit as a dev build, where v<x.y.z> and edge-<sha> land on one
+          # index. That is a permanent skip, and correctly so.
+          declare -a done_digests=()
+          for i in "${!stale_digests[@]}"; do
+            name="${stale_names[$i]}"
+            digest="${stale_digests[$i]}"
+            kind="${stale_kinds[$i]}"
+
+            # Two candidates can share one index. The first delete already took
+            # it, and a second attempt would 404 and fail the job.
+            case " ${done_digests[*]} " in
+              *" ${digest} "*)
+                echo "skip ${name} (${digest}): already deleted"
+                continue
+                ;;
+            esac
+
+            # Layer 2. A live stale tag must still point where the listing said;
+            # a superseded one must NOT, since the push moved it. Either way a
+            # mismatch means something changed under us, so we bail rather than
+            # guess.
+            code="$(curl -sS -o "${RUNNER_TEMP}/now.json" -w '%{http_code}' \
+              --config <(printf 'header = "Authorization: JWT %s"\n' "$hub_jwt") \
+              "https://hub.docker.com/v2/repositories/${REPOSITORY}/tags/${name}/" || true)"
+            case "$code" in
+              200) now="$(jq -r '.digest // "-"' "${RUNNER_TEMP}/now.json")" ;;
+              404) now='-' ;;
+              *) echo "cannot re-resolve ${name}: HTTP ${code}" >&2; exit 1 ;;
+            esac
+            if [ "$kind" = 'tag' ] && [ "$now" != "$digest" ]; then
+              echo "skip ${name} (${digest}): tag now resolves to ${now}"
+              continue
+            fi
+            if [ "$kind" = 'superseded' ] && [ "$now" = "$digest" ]; then
+              echo "skip ${name} (${digest}): still the current digest, not superseded"
+              continue
+            fi
+
+            # Layer 3, over the index and every child it would take with it.
+            protected=''
+            for d in "$digest" ${stale_kids[$i]}; do
+              for other in ${referenced_by[$d]:-}; do
+                case " ${own_names} " in *" ${other} "*) continue ;; esac
+                case " ${protected} " in *" ${other} "*) continue ;; esac
+                protected="${protected} ${other}"
+              done
+            done
+            if [ -n "$protected" ]; then
+              echo "skip ${name} (${digest}): shared with kept tag(s)${protected}"
+              continue
+            fi
+
+            # Tolerate curl's own exit status so a transport failure reports as
+            # code 000 through the message below, rather than killing the step
+            # with no indication of which digest it died on.
+            code="$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+              --config <(printf 'header = "Authorization: Bearer %s"\n' "$reg_token") \
+              "https://registry-1.docker.io/v2/${REPOSITORY}/manifests/${digest}" || true)"
+            if [ "$code" = '202' ]; then
+              done_digests+=("$digest")
+              echo "deleted ${REPOSITORY}:${name} (${digest})"
+            else
+              echo "FAILED to delete ${REPOSITORY}:${name} (${digest}): HTTP ${code}" >&2
+              exit 1
+            fi
+          done
+
   notify:
     name: 'Success check'
     if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
@@ -377,7 +639,7 @@ jobs:
     environment: nightly_notify
     steps:
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 1
           persist-credentials: false

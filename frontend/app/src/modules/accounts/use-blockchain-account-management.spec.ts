@@ -1,15 +1,12 @@
 import type { ComputedRef } from 'vue';
-import type { WorkStatus } from '@/modules/task-center/core/types';
 import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type AddAccountsPayload, type XpubAccountPayload, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
+import { type XpubAccountPayload, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
+import { ActivityKind, ActivityPart, makeActivityId, type WorkStatus } from '@/modules/task-center/core/types';
 import '@test/i18n';
 
 const h = vi.hoisted(() => ({
-  addMultipleAccounts: vi.fn(),
-  addMultipleEvmAccounts: vi.fn(),
-  addSingleAccount: vi.fn(),
-  addSingleEvmAddress: vi.fn(),
+  addAccounts: vi.fn(),
   completeAccountAddition: vi.fn(),
   detectEvmAccounts: vi.fn(),
   fetchAccounts: vi.fn(),
@@ -20,12 +17,11 @@ const h = vi.hoisted(() => ({
 
 const mockAddRunning = ref<boolean>(false);
 
+const NOTHING = { added: [], cancelled: false, failed: [] };
+
 vi.mock('@/modules/accounts/use-account-addition-service', () => ({
   useAccountAdditionService: vi.fn(() => ({
-    addMultipleAccounts: h.addMultipleAccounts,
-    addMultipleEvmAccounts: h.addMultipleEvmAccounts,
-    addSingleAccount: h.addSingleAccount,
-    addSingleEvmAddress: h.addSingleEvmAddress,
+    addAccounts: h.addAccounts,
     completeAccountAddition: h.completeAccountAddition,
     getNewAccountPayload: h.getNewAccountPayload,
   })),
@@ -69,92 +65,92 @@ describe('useBlockchainAccountManagement', () => {
     vi.clearAllMocks();
     set(mockAddRunning, false);
     h.completeAccountAddition.mockResolvedValue(undefined);
-    h.addMultipleEvmAccounts.mockResolvedValue(undefined);
-    h.addMultipleAccounts.mockResolvedValue(undefined);
+    h.addAccounts.mockResolvedValue(NOTHING);
   });
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('addEvmAccounts', () => {
-    it('should add a single evm address and complete the addition', async () => {
-      h.addSingleEvmAddress.mockResolvedValue({ accounts: [{ address: '0xabc', chain: 'eth' }], type: 'success' });
-      const { useBlockchainAccountManagement } = await importModule();
-      await useBlockchainAccountManagement().addEvmAccounts({ modules: undefined, payload: [{ address: '0xabc', tags: null }] });
-      expect(h.addSingleEvmAddress).toHaveBeenCalledWith({ address: '0xabc', tags: null });
-      await flushPromises();
-      expect(h.completeAccountAddition).toHaveBeenCalledWith(
-        { addedAccounts: [{ address: '0xabc', chain: 'eth' }], modulesToEnable: undefined },
-        h.refreshAccounts,
-        h.fetchAccounts,
-      );
-    });
-
-    it('should throw when a single evm addition fails', async () => {
-      h.addSingleEvmAddress.mockResolvedValue({ account: { address: '0xabc', tags: null }, error: new Error('boom'), type: 'error' });
-      const { useBlockchainAccountManagement } = await importModule();
-      await expect(
-        useBlockchainAccountManagement().addEvmAccounts({ modules: undefined, payload: [{ address: '0xabc', tags: null }] }),
-      ).rejects.toThrow('boom');
-    });
-
-    it('should await multiple evm additions when wait is set', async () => {
-      const payload: AddAccountsPayload = { modules: undefined, payload: [
-        { address: '0xabc', tags: null },
-        { address: '0xdef', tags: null },
-      ] };
-      const { useBlockchainAccountManagement } = await importModule();
-      await useBlockchainAccountManagement().addEvmAccounts(payload, { wait: true });
-      expect(h.addMultipleEvmAccounts).toHaveBeenCalledOnce();
-    });
-  });
-
   describe('addAccounts', () => {
+    const payload = { modules: undefined, payload: [{ address: '0xabc', tags: null }] };
+
     it('should skip when an add-account task is already running', async () => {
       set(mockAddRunning, true);
       const { useBlockchainAccountManagement } = await importModule();
-      await useBlockchainAccountManagement().addAccounts('eth', { modules: undefined, payload: [{ address: '0xabc', tags: null }] });
-      expect(h.addSingleAccount).not.toHaveBeenCalled();
+      await useBlockchainAccountManagement().addAccounts('eth', payload);
+      expect(h.addAccounts).not.toHaveBeenCalled();
+    });
+
+    // The guard stops a user submitting the form twice, not a batch from proceeding. A CSV import
+    // fans its rows out at once, so from row two onwards an addition is always already running —
+    // without this the import silently dropped every row but the first while its progress bar and
+    // completion message both still counted them.
+    it('should not skip a row of a batch that is already running', async () => {
+      set(mockAddRunning, true);
+      h.getNewAccountPayload.mockReturnValue([{ address: '0xabc', tags: null }]);
+      const { useBlockchainAccountManagement } = await importModule();
+
+      await useBlockchainAccountManagement().addAccounts('eth', payload, {
+        parent: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.ADD, 'batch'),
+        wait: true,
+      });
+
+      expect(h.addAccounts).toHaveBeenCalledOnce();
     });
 
     it('should notify when there are no new addresses to add', async () => {
       h.getNewAccountPayload.mockReturnValue([]);
       const { useBlockchainAccountManagement } = await importModule();
-      await useBlockchainAccountManagement().addAccounts('eth', { modules: undefined, payload: [{ address: '0xabc', tags: null }] });
+      await useBlockchainAccountManagement().addAccounts('eth', payload);
       expect(h.notifyInfo).toHaveBeenCalledOnce();
-      expect(h.addSingleAccount).not.toHaveBeenCalled();
+      expect(h.addAccounts).not.toHaveBeenCalled();
     });
 
-    it('should add a single new account and complete the addition', async () => {
-      h.getNewAccountPayload.mockReturnValue([{ address: '0xabc', tags: null }]);
-      h.addSingleAccount.mockResolvedValue({ address: '0xabc', type: 'success' });
+    // The address count no longer selects a mechanism: one and many take the same call, and the
+    // batch decides whether an umbrella is warranted.
+    it('should delegate the filtered payload for one address and for many', async () => {
+      h.addAccounts.mockResolvedValue(NOTHING);
+      const many = [{ address: '0xabc', tags: null }, { address: '0xdef', tags: null }];
+      h.getNewAccountPayload.mockReturnValue(many);
       const { useBlockchainAccountManagement } = await importModule();
-      await useBlockchainAccountManagement().addAccounts('eth', { modules: undefined, payload: [{ address: '0xabc', tags: null }] });
-      expect(h.addSingleAccount).toHaveBeenCalledWith({ address: '0xabc', tags: null }, 'eth');
-      await flushPromises();
-      expect(h.completeAccountAddition).toHaveBeenCalledOnce();
+
+      await useBlockchainAccountManagement().addAccounts('eth', { modules: undefined, payload: many }, { wait: true });
+
+      expect(h.addAccounts).toHaveBeenCalledWith('eth', many, undefined, expect.any(Function), undefined);
     });
 
-    it('should add an xpub account directly', async () => {
+    it('should pass an xpub through unfiltered', async () => {
+      h.addAccounts.mockResolvedValue(NOTHING);
       const xpubPayload: XpubAccountPayload = {
         tags: null,
         xpub: { derivationPath: '', xpub: 'xpub123', xpubType: XpubKeyType.XPUB },
       };
-      h.addSingleAccount.mockResolvedValue({ address: 'xpub123', type: 'success' });
       const { useBlockchainAccountManagement } = await importModule();
-      await useBlockchainAccountManagement().addAccounts('btc', xpubPayload);
-      expect(h.addSingleAccount).toHaveBeenCalledWith(xpubPayload, 'btc');
+      await useBlockchainAccountManagement().addAccounts('btc', xpubPayload, { wait: true });
+
+      expect(h.addAccounts).toHaveBeenCalledWith('btc', xpubPayload, [], expect.any(Function), undefined);
       expect(h.getNewAccountPayload).not.toHaveBeenCalled();
     });
 
-    it('should throw when a single account addition fails', async () => {
+    // Without `wait` the addition is detached, so there is nothing to report back yet.
+    it('should return an empty summary when not awaiting', async () => {
       h.getNewAccountPayload.mockReturnValue([{ address: '0xabc', tags: null }]);
-      h.addSingleAccount.mockResolvedValue({ account: { address: '0xabc', tags: null }, error: new Error('nope'), type: 'error' });
+      h.addAccounts.mockResolvedValue({ added: [{ address: '0xabc', chain: 'eth' }], cancelled: false, failed: [] });
       const { useBlockchainAccountManagement } = await importModule();
-      await expect(
-        useBlockchainAccountManagement().addAccounts('eth', { modules: undefined, payload: [{ address: '0xabc', tags: null }] }),
-      ).rejects.toThrow('nope');
+
+      expect(await useBlockchainAccountManagement().addAccounts('eth', payload)).toStrictEqual(NOTHING);
+      await flushPromises();
+      expect(h.addAccounts).toHaveBeenCalledOnce();
+    });
+
+    it('should return the summary when awaiting', async () => {
+      const summary = { added: [{ address: '0xabc', chain: 'eth' }], cancelled: false, failed: [] };
+      h.getNewAccountPayload.mockReturnValue([{ address: '0xabc', tags: null }]);
+      h.addAccounts.mockResolvedValue(summary);
+      const { useBlockchainAccountManagement } = await importModule();
+
+      expect(await useBlockchainAccountManagement().addAccounts('eth', payload, { wait: true })).toStrictEqual(summary);
     });
   });
 

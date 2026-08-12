@@ -15,7 +15,7 @@ export class SnapshotListPage {
   }
 
   private row(timestamp: number) {
-    return this.table.locator('tr', { has: this.page.locator(`[data-testid=snapshot-list-row-${timestamp}]`) });
+    return this.table.locator('tr', { has: this.page.locator(`[data-testid=snapshot-list-row][data-key="${timestamp}"]`) });
   }
 
   async visit(): Promise<void> {
@@ -38,8 +38,8 @@ export class SnapshotListPage {
 
   async deleteSnapshot(timestamp: number): Promise<void> {
     await this.row(timestamp).locator('[data-testid=snapshot-delete]').click();
-    await this.page.locator('[data-cy=confirm-dialog]').waitFor({ state: 'visible' });
-    await this.page.locator('[data-cy=button-confirm]').click();
+    await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=button-confirm]').click();
     await this.row(timestamp).waitFor({ state: 'hidden' });
   }
 }

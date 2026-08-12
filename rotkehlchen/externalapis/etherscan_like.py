@@ -226,6 +226,17 @@ class EtherscanLikeApi(ABC):
         """Return optional account endpoint pagination params for an indexer."""
         return None
 
+    def _handle_missing_result(self, chain_id: ChainID, json_ret: dict[str, Any]) -> None:
+        """Hook for subclasses to map a response carrying no result to a specific error.
+
+        Called just before the generic "missing a result" RemoteError is raised, so an
+        indexer that answers an oversized query with a distinguishable message can turn it
+        into something callers are able to act on instead of a malformed-response error.
+
+        May raise RemoteError or any of its subclasses.
+        """
+        return  # no-op by default, the generic error is raised right after
+
     @overload
     def _query(
             self,
@@ -394,6 +405,7 @@ class EtherscanLikeApi(ABC):
                     if action in {'eth_getTransactionByHash', 'eth_getTransactionReceipt', 'getcontractcreation'}:  # noqa: E501
                         return None
 
+                    self._handle_missing_result(chain_id=chain_id, json_ret=json_ret)
                     raise RemoteError(
                         f'Unexpected format of {self.name} response for request {response.url}. '
                         f'Missing a result in response. Response was: {response.text}',
@@ -913,8 +925,14 @@ class EtherscanLikeApi(ABC):
             self,
             chain_id: SUPPORTED_CHAIN_IDS,
             block_number: int,
+            full_transactions: bool = True,
     ) -> dict[str, Any]:
         """Gets block data by block number.
+
+        With full_transactions the block carries every transaction as an object, which for a
+        busy block is a few hundred KB. Callers that only read block metadata should ask for
+        False and get the transaction hashes instead.
+
         May raise:
          - RemoteError if there are problems contacting the indexer
          - DeserializationError if the indexer returns an invalid response
@@ -922,7 +940,7 @@ class EtherscanLikeApi(ABC):
         if (block_data := self._query_rpc_method(  # pyright: ignore[reportUnnecessaryComparison]  # indexer can return None.
             chain_id=chain_id,
             method='eth_getBlockByNumber',
-            options={'tag': hex(block_number), 'boolean': 'true'},
+            options={'tag': hex(block_number), 'boolean': str(full_transactions).lower()},
         )) is None:
             raise RemoteError(f'Null response from {self.name} for block {block_number}')
 

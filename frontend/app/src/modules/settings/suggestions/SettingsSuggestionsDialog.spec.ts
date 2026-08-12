@@ -42,8 +42,8 @@ describe('settingsSuggestionsDialog', () => {
   it('should preselect the recommended choice and hand it back on apply', async () => {
     const wrapper = createWrapper();
 
-    expect(wrapper.find<HTMLInputElement>('[data-cy=suggestion-choice-blockscout] input').element.checked).toBe(true);
-    await wrapper.find('[data-cy=apply-suggestions]').trigger('click');
+    expect(wrapper.find<HTMLInputElement>('[data-testid=suggestion-choice][data-key=blockscout] input').element.checked).toBe(true);
+    await wrapper.find('[data-testid=apply-suggestions]').trigger('click');
 
     expect(wrapper.emitted('apply')?.[0]).toEqual([{
       choices: { 'general:evmIndexersOrder': EvmIndexer.BLOCKSCOUT },
@@ -54,8 +54,8 @@ describe('settingsSuggestionsDialog', () => {
   it('should hand back the choice the user switched to', async () => {
     const wrapper = createWrapper();
 
-    await wrapper.find('[data-cy=suggestion-choice-etherscan] input').setValue(true);
-    await wrapper.find('[data-cy=apply-suggestions]').trigger('click');
+    await wrapper.find('[data-testid=suggestion-choice][data-key=etherscan] input').setValue(true);
+    await wrapper.find('[data-testid=apply-suggestions]').trigger('click');
 
     expect(wrapper.emitted('apply')?.[0]).toEqual([{
       choices: { 'general:evmIndexersOrder': EvmIndexer.ETHERSCAN },
@@ -66,7 +66,7 @@ describe('settingsSuggestionsDialog', () => {
   it('should send the user to the api key page and close without dismissing', async () => {
     const wrapper = createWrapper();
 
-    await wrapper.find('[data-cy=suggestion-action]').trigger('click');
+    await wrapper.find('[data-testid=suggestion-action]').trigger('click');
 
     expect(mockPush).toHaveBeenCalledWith({ name: '/api-keys/external/', query: { service: 'blockscout' } });
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);

@@ -38,7 +38,7 @@ function removeEtherscanNotification() {
   <ServiceKeyCard
     :name="name"
     :key-set="!!key"
-    data-cy="etherscan-api-keys"
+    data-testid="etherscan-api-keys"
     :title="t('external_services.etherscan.title')"
     :subtitle="t('external_services.etherscan.description')"
     :image-src="getPublicServiceImagePath('etherscan.svg')"
@@ -50,7 +50,7 @@ function removeEtherscanNotification() {
         :disabled="loading || !key"
         color="error"
         variant="text"
-        data-cy="delete-button"
+        data-testid="delete-button"
         @click="confirmDelete(name)"
       >
         <template #prepend>
@@ -68,7 +68,7 @@ function removeEtherscanNotification() {
       hide-actions
       :api-key="key"
       :name="name"
-      :data-cy="name"
+      :data-testid="name"
       :label="t('external_services.api_key')"
       :hint="t('external_services.etherscan.hint')"
       :loading="loading"

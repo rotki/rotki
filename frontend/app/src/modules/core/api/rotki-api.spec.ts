@@ -1,7 +1,8 @@
 import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
-import { apiUrls, defaultApiUrls } from '@/modules/core/api/api-urls';
+import { defaultApiUrl } from '@/modules/core/api/api-urls';
+import { RequestTarget } from '@/modules/core/api/constants';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { RequestQueue } from '@/modules/core/api/request-queue/queue';
 import { RequestPriority } from '@/modules/core/api/request-queue/request-priority';
@@ -35,8 +36,9 @@ describe('modules/api/rotki-api', () => {
 
   describe('constructor and setup', () => {
     it('should initialize with default API URLs', () => {
-      expect(api.serverUrl).toBe(defaultApiUrls.coreApiUrl);
-      expect(api.baseURL).toBe(`${defaultApiUrls.coreApiUrl}/api/1/`);
+      expect(api.serverUrl).toBe(defaultApiUrl);
+      expect(api.baseURL).toBe(`${defaultApiUrl}/api/1/`);
+      expect(api.colibriBaseURL).toBe(`${defaultApiUrl}/colibri`);
     });
 
     it('should return true for defaultBackend when using default URL', () => {
@@ -49,32 +51,29 @@ describe('modules/api/rotki-api', () => {
 
       expect(api.serverUrl).toBe(customUrl);
       expect(api.baseURL).toBe(`${customUrl}/api/1/`);
+      // Colibri follows the custom backend instead of staying on the previous one.
+      expect(api.colibriBaseURL).toBe(`${customUrl}/colibri`);
       expect(api.defaultBackend).toBe(false);
     });
   });
 
   describe('colibri request routing', () => {
-    it('should route by the IPC-updated colibri url, not the frozen default', async () => {
-      // In embedded the proxy origin arrives via IPC after startup, so the
-      // frozen `defaultApiUrls.colibriApiUrl` stays '' and would never match.
-      // The router must read the mutable `apiUrls` the asset-* APIs also use.
-      const previous = apiUrls.colibriApiUrl;
-      apiUrls.colibriApiUrl = 'http://127.0.0.1:4141/colibri';
-      try {
-        server.use(
-          http.get('http://127.0.0.1:4141/colibri/all', () =>
-            HttpResponse.json({ result: [], message: '' })),
-        );
+    it('should address colibri under the origin in use and queue it separately', async () => {
+      // The origin arrives after startup (over IPC in embedded, from the custom
+      // backend flow otherwise), so a colibri request has to resolve against the
+      // url `setup` was last given rather than anything captured at construction.
+      api.setup('http://127.0.0.1:4141');
 
-        await api.get('/all', { baseURL: apiUrls.colibriApiUrl });
+      server.use(
+        http.get('http://127.0.0.1:4141/colibri/all', () =>
+          HttpResponse.json({ result: [], message: '' })),
+      );
 
-        // The request landed on the colibri queue, not the core one.
-        expect(api.getColibriQueueMetrics().requestsThisSecond).toBe(1);
-        expect(api.getQueueMetrics().requestsThisSecond).toBe(0);
-      }
-      finally {
-        apiUrls.colibriApiUrl = previous;
-      }
+      await api.get('/all', { target: RequestTarget.COLIBRI });
+
+      // The request landed on the colibri queue, not the core one.
+      expect(api.getColibriQueueMetrics().requestsThisSecond).toBe(1);
+      expect(api.getQueueMetrics().requestsThisSecond).toBe(0);
     });
   });
 
@@ -990,7 +989,7 @@ describe('modules/api/rotki-api', () => {
       api.stopRequests();
       await expect(api.get('test')).rejects.toThrow(RequestCancelledError);
 
-      api.setup(defaultApiUrls.coreApiUrl);
+      api.setup(defaultApiUrl);
 
       await expect(api.get('test')).resolves.toEqual({ ok: true });
     });

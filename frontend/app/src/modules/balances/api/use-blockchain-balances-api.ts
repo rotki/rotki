@@ -1,13 +1,22 @@
 import type { Nullable } from '@rotki/common';
-import type { FetchBlockchainBalancePayload } from '@/modules/balances/types/blockchain-balances';
 import type { PurgeableModule } from '@/modules/core/common/modules';
 import { EvmTokensRecord } from '@/modules/balances/types/balances';
+import { BlockchainBalances, type FetchBlockchainBalancePayload } from '@/modules/balances/types/blockchain-balances';
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/core/api/utils';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 
+/**
+ * Tag the cache-only read carries so logging out can cancel whatever is still in flight.
+ *
+ * 🔴 It used to be a backend task, so `orchestrator.reset()` settled it as part of ending the
+ * session. A plain GET has no such owner: without this its response lands after logout and
+ * `processBalanceResult` writes one user's balances into the next user's store.
+ */
+export const BALANCE_HYDRATION_TAG = 'balance-hydration';
+
 interface UseBlockchainBalancesApiReturn {
-  queryBlockchainBalances: (payload: FetchBlockchainBalancePayload, valueThreshold?: string) => Promise<PendingTask>;
+  queryBlockchainBalances: (payload: FetchBlockchainBalancePayload, valueThreshold?: string) => Promise<BlockchainBalances>;
   refreshBlockchainBalances: (payload: FetchBlockchainBalancePayload) => Promise<PendingTask>;
   queryXpubBalances: (payload: FetchBlockchainBalancePayload) => Promise<PendingTask>;
   fetchDetectedTokens: (chain: string, addresses: string[] | null) => Promise<EvmTokensRecord>;
@@ -16,20 +25,21 @@ interface UseBlockchainBalancesApiReturn {
 }
 
 export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
-  const queryBlockchainBalances = async ({ addresses, blockchain }: FetchBlockchainBalancePayload, valueThreshold?: string): Promise<PendingTask> => {
+  const queryBlockchainBalances = async ({ addresses, blockchain }: FetchBlockchainBalancePayload, valueThreshold?: string): Promise<BlockchainBalances> => {
     let url = '/balances/blockchains';
     if (blockchain)
       url += `/${blockchain}`;
 
-    const response = await api.get<PendingTask>(url, {
+    const response = await api.get<BlockchainBalances>(url, {
       query: {
         addresses,
-        asyncQuery: true,
+        onlyCache: true,
         valueThreshold,
       },
+      tags: [BALANCE_HYDRATION_TAG],
       validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
     });
-    return PendingTaskSchema.parse(response);
+    return BlockchainBalances.parse(response);
   };
 
   const refreshBlockchainBalances = async ({ addresses, blockchain }: FetchBlockchainBalancePayload): Promise<PendingTask> => {

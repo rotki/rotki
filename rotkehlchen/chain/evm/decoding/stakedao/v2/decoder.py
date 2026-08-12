@@ -9,6 +9,7 @@ from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC, REWARDS_CLAIMED_TOPIC, WITHDRAW_TOPIC_V3
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.kyber.constants import ENSO_ROUTER_V2
 from rotkehlchen.chain.evm.decoding.stakedao.v2.constants import (
     CPT_STAKEDAO_V2,
     LAPOSTE_ADDRESS,
@@ -139,18 +140,32 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             token_amount=int.from_bytes(context.tx_log.data[32:64]),
             token=vault_token,
         )
+        is_enso_deposit = is_deposit and context.transaction.to_address == ENSO_ROUTER_V2
         asset_event = shares_event = None
         for event in context.decoded_events:
             if (
                 event.event_type == assets_expected_event_type and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.asset == underlying_token and
-                event.amount == assets_amount
+                (
+                    (
+                        event.asset == underlying_token and
+                        event.amount == assets_amount
+                    ) or (
+                        is_enso_deposit and
+                        event.location_label == context.transaction.from_address
+                    )
+                )
             ):
                 event.event_type = assets_event_type
                 event.event_subtype = assets_event_subtype
                 event.counterparty = CPT_STAKEDAO_V2
-                event.notes = assets_notes.format(amount=event.amount, asset=underlying_token.symbol)  # noqa: E501
+                event.notes = assets_notes.format(
+                    amount=event.amount,
+                    asset=(
+                        event.asset.resolve_to_asset_with_symbol().symbol
+                        if is_enso_deposit else underlying_token.symbol
+                    ),
+                )
                 asset_event = event
             elif (
                     event.event_type == shares_expected_event_type and

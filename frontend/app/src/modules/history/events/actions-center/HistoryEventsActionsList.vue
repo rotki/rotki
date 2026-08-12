@@ -93,7 +93,8 @@ const subtitle = computed<string>(() => {
         :key="issue.id"
         type="button"
         class="flex items-center gap-1.5 text-caption text-rui-text-secondary hover:text-rui-text hover:underline"
-        :data-testid="`actions-center-cleared-${issue.id}`"
+        data-testid="actions-center-cleared-row"
+        :data-key="issue.id"
         @click="emit('open', issue.checkTarget)"
       >
         <RuiIcon

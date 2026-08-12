@@ -1,4 +1,3 @@
-import type { Snapshot } from '@/modules/dashboard/snapshots';
 import type { BalanceMutation } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { bigNumberify } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
@@ -7,6 +6,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { BalanceType } from '@/modules/balances/types/balances';
+import { type Snapshot, ZeroValueFilter } from '@/modules/dashboard/snapshots';
 import SnapshotBalanceEntryDialog from '@/modules/dashboard/snapshots/components/SnapshotBalanceEntryDialog.vue';
 import SnapshotBalancesTable from '@/modules/dashboard/snapshots/components/SnapshotBalancesTable.vue';
 
@@ -153,6 +153,45 @@ describe('modules/dashboard/snapshots/components/SnapshotBalancesTable', () => {
     expect(wrapper.findAll('tbody tr')).toHaveLength(before + 1);
   });
 
+  it('should show only the zero-value rows when the filter is set to only', async () => {
+    wrapper = mount(SnapshotBalancesTable, {
+      global: { plugins: [pinia], provide: libraryDefaults, stubs },
+      props: { snapshot: createSnapshot(), timestamp: TS, zeroValueFilter: ZeroValueFilter.ONLY },
+    });
+
+    // USDC is the only zero-value row of the five; everything else is filtered out.
+    expect(wrapper.findAll('tbody tr')).toHaveLength(1);
+    expect(wrapper.text()).not.toContain('100.00');
+    expect(wrapper.find('[data-testid=snapshot-balances-zero-value-only]').exists()).toBe(true);
+    // The hidden-count chip is suppressed while isolating.
+    expect(wrapper.find('[data-testid=snapshot-balances-hidden-count]').exists()).toBe(false);
+  });
+
+  it('should leave the only mode when the isolate chip is closed', async () => {
+    wrapper = mount(SnapshotBalancesTable, {
+      global: { plugins: [pinia], provide: libraryDefaults, stubs },
+      props: { snapshot: createSnapshot(), timestamp: TS, zeroValueFilter: ZeroValueFilter.ONLY },
+    });
+
+    await wrapper.find('[data-testid=snapshot-balances-zero-value-only] button').trigger('click');
+
+    expect(wrapper.emitted('update:zeroValueFilter')).toEqual([[ZeroValueFilter.HIDE]]);
+  });
+
+  it('should leave the only mode when the hide checkbox is ticked', async () => {
+    wrapper = mount(SnapshotBalancesTable, {
+      global: { plugins: [pinia], provide: libraryDefaults, stubs },
+      props: { snapshot: createSnapshot(), timestamp: TS, zeroValueFilter: ZeroValueFilter.ONLY },
+    });
+
+    // The checkbox reads unchecked while isolating, so ticking it means "hide".
+    const checkbox = wrapper.find<HTMLInputElement>('[data-testid=snapshot-balances-hide-zero-value] input');
+    expect(checkbox.element.checked).toBe(false);
+    await checkbox.setValue(true);
+
+    expect(wrapper.emitted('update:zeroValueFilter')).toEqual([[ZeroValueFilter.HIDE]]);
+  });
+
   it('should hide ignored rows by default and reveal them when toggled off', async () => {
     ignoredIds = ['DAI'];
     wrapper = createWrapper();
@@ -192,8 +231,8 @@ describe('modules/dashboard/snapshots/components/SnapshotBalancesTable', () => {
     expect(wrapper.find('[data-testid=snapshot-balances-locked]').exists()).toBe(true);
     expect(wrapper.find<HTMLButtonElement>('[data-testid=snapshot-balances-add]').element.disabled).toBe(true);
     expect(wrapper.find<HTMLButtonElement>('[data-testid=snapshot-balances-bulk-delete]').element.disabled).toBe(true);
-    expect(wrapper.find<HTMLButtonElement>('[data-cy=row-edit]').element.disabled).toBe(true);
-    expect(wrapper.find<HTMLButtonElement>('[data-cy=row-delete]').element.disabled).toBe(true);
+    expect(wrapper.find<HTMLButtonElement>('[data-testid=row-edit]').element.disabled).toBe(true);
+    expect(wrapper.find<HTMLButtonElement>('[data-testid=row-delete]').element.disabled).toBe(true);
   });
 
   it('should not flag zero-value rows', async () => {

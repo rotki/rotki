@@ -1,6 +1,7 @@
-import { err, ok } from 'plainfp/result';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BackendCancelled, Cancelled, Skipped, TaskFailed } from '@/modules/core/tasks/task-result';
+import type { NativeActivitySpec } from '@/modules/task-center/use-native-task';
+import { err, ok, type Result } from 'plainfp/result';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { BackendCancelled, Cancelled, isCancellation, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useTransactionSync } from './use-transaction-sync';
@@ -133,6 +134,87 @@ describe('useTransactionSync', () => {
 
       expect(mocks.setEvmlikeStatus).toHaveBeenNthCalledWith(1, account, 'started');
       expect(mocks.setEvmlikeStatus).toHaveBeenNthCalledWith(2, account, 'finished');
+    });
+  });
+
+  describe('syncAndReDecodeEvents', () => {
+    const chainId = makeActivityId(ActivityKind.TX_SYNC, 'eth');
+    const accounts: ChainAddress[] = [
+      { address: '0xAAA', chain: 'eth' },
+      { address: '0xBBB', chain: 'eth' },
+    ];
+
+    /**
+     * Runs the chain activity's own body instead of stubbing its outcome — the verdict it computes
+     * from its children is the thing under test, and a `submitTask` that only resolves `ok` would
+     * report every one of these tests as passing whatever the body did.
+     */
+    function runChainBody(...accountOutcomes: Result<void, TaskError>[]): void {
+      let account = 0;
+      mocks.submitTask.mockImplementation(async (spec: NativeActivitySpec) => {
+        if (spec.id !== chainId)
+          return accountOutcomes[account++] ?? ok(undefined);
+
+        return spec.run({ cancelled: (): boolean => false, report: vi.fn(), runTask: vi.fn() });
+      });
+    }
+
+    it('should complete when at least one account synced', async () => {
+      runChainBody(err(TaskFailed({ message: 'boom' })), ok(undefined));
+      const { syncAndReDecodeEvents } = useTransactionSync();
+
+      const outcome = await syncAndReDecodeEvents('eth', { accounts, type: TransactionChainType.EVM });
+
+      expect(outcome.ok).toBe(true);
+    });
+
+    it('should fail when every account failed', async () => {
+      // 🔴 The children never reject — each handles its own error and returns — so the chain used to
+      // return `ok` unconditionally and report a whole failed chain as synced.
+      runChainBody(err(TaskFailed({ message: 'boom' })), err(TaskFailed({ message: 'boom' })));
+      const { syncAndReDecodeEvents } = useTransactionSync();
+
+      const outcome = await syncAndReDecodeEvents('eth', { accounts, type: TransactionChainType.EVM });
+
+      assert(!outcome.ok);
+      expect(outcome.error.message).toBe('boom');
+    });
+
+    it('should settle cancelled, not failed, when its accounts were cancelled', async () => {
+      // The chain's verdict now folds its children's outcomes, so cancellation has to survive that
+      // fold: reporting a user-stopped chain as FAILED would put an error row in the task centre for
+      // something the user chose to stop.
+      runChainBody(err(Cancelled({ message: 'stopped' })), err(BackendCancelled({ message: 'stopped' })));
+      const { syncAndReDecodeEvents } = useTransactionSync();
+
+      const outcome = await syncAndReDecodeEvents('eth', { accounts, type: TransactionChainType.EVM });
+
+      assert(!outcome.ok);
+      expect(isCancellation(outcome.error)).toBe(true);
+    });
+
+    it('should report a real failure over a cancellation', async () => {
+      // The other side of the same fold: a chain where one address genuinely failed and the rest were
+      // cancelled is a failure worth surfacing. (A user cancelling the chain *itself* still reads
+      // CANCELLED — `cancelRequested` overrides the run's outcome in the orchestrator.)
+      runChainBody(err(TaskFailed({ message: 'boom' })), err(Cancelled({ message: 'stopped' })));
+      const { syncAndReDecodeEvents } = useTransactionSync();
+
+      const outcome = await syncAndReDecodeEvents('eth', { accounts, type: TransactionChainType.EVM });
+
+      assert(!outcome.ok);
+      expect(isCancellation(outcome.error)).toBe(false);
+    });
+
+    it('should declare the chain activity as a container', async () => {
+      runChainBody();
+      const { syncAndReDecodeEvents } = useTransactionSync();
+
+      await syncAndReDecodeEvents('eth', { accounts, type: TransactionChainType.EVM });
+
+      // It groups the per-account syncs, which carry the same kind and write their own ledger
+      // entries; a completion recorded here would claim freshness for the chain on their behalf.
+      expect(mocks.submitTask).toHaveBeenCalledWith(expect.objectContaining({ container: true, id: chainId }));
     });
   });
 

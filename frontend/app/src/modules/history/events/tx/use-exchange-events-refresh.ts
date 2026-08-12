@@ -15,7 +15,8 @@ import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types'
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseExchangeEventsRefreshReturn {
-  queryAllExchangeEvents: (exchanges: Exchange[], parent?: ActivityId) => Promise<void>;
+  /** One outcome per exchange account, so the caller's umbrella can settle on what actually ran. */
+  queryAllExchangeEvents: (exchanges: Exchange[], parent?: ActivityId) => Promise<Result<void, TaskError>[]>;
 }
 
 /**
@@ -31,7 +32,7 @@ export function useExchangeEventsRefresh(): UseExchangeEventsRefreshReturn {
   const { queryExchangeEvents } = useHistoryEventsApi();
   const { submitTask } = useNativeTask();
 
-  const queryExchange = async (payload: Exchange, parent?: ActivityId): Promise<void> => {
+  const queryExchange = async (payload: Exchange, parent?: ActivityId): Promise<Result<void, TaskError>> => {
     logger.debug(`querying exchange events for ${payload.location} (${payload.name})`);
     const exchange = omit(payload, ['gateLocation', 'krakenAccountType', 'okxLocation']);
     const parsedPayload = QueryExchangeEventsPayload.parse(exchange);
@@ -68,6 +69,8 @@ export function useExchangeEventsRefresh(): UseExchangeEventsRefreshReturn {
         );
       }
     }
+
+    return outcome;
   };
 
   /**
@@ -78,9 +81,8 @@ export function useExchangeEventsRefresh(): UseExchangeEventsRefreshReturn {
    * around work the scheduler was already governing, so the effective limit was the tighter of two
    * mechanisms and neither was written down.
    */
-  const queryAllExchangeEvents = async (exchanges: Exchange[], parent?: ActivityId): Promise<void> => {
-    await Promise.all(exchanges.map(async exchange => queryExchange(exchange, parent)));
-  };
+  const queryAllExchangeEvents = async (exchanges: Exchange[], parent?: ActivityId): Promise<Result<void, TaskError>[]> =>
+    Promise.all(exchanges.map(async exchange => queryExchange(exchange, parent)));
 
   return {
     queryAllExchangeEvents,

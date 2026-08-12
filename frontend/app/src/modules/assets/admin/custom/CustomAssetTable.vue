@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { Filters } from '@/modules/assets/admin/custom/use-custom-assets-filter';
 import type { CustomAsset } from '@/modules/assets/types';
-import type { Filters } from '@/modules/core/table/filters/use-custom-assets-filter';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { some } from 'es-toolkit/compat';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
@@ -105,7 +105,7 @@ function expand(item: CustomAsset) {
       :cols="cols"
       :expanded="expanded"
       row-attr="identifier"
-      data-cy="custom-assets-table"
+      data-testid="custom-assets-table"
       single-expand
       sticky-header
       outlined

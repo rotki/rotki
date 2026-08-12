@@ -1,5 +1,6 @@
 import type { EventActionRow } from '@/modules/history/events/action-picker/use-event-action-picker';
 import { mount } from '@vue/test-utils';
+import { kebabCase } from 'es-toolkit';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, type VNode } from 'vue';
@@ -71,13 +72,17 @@ const RuiCategoryPickerStub = defineComponent((props: {
   const renderItem = (item: EventActionRow): VNode => h(
     'button',
     {
-      'data-testid': `option-${item.verbKey}`,
+      'data-key': kebabCase(item.verbKey),
+      'data-testid': 'option',
       'onClick': (): void => emit('update:modelValue', item.verbKey),
     },
     slots.item ? [slots.item({ active: false, item, selected: false })] : [item.label],
   );
 
-  const renderCategory = (category: string): VNode => h('div', { 'data-testid': `category-${category}` }, [
+  // NOT kebab-cased: the grouping test tells the display label ('Trade') apart from the raw group
+  // id ('trade') by case alone, so normalising here would collapse both into one selector. The raw
+  // value rides on `data-key`, and attribute values match case-sensitively, so the pair stays apart.
+  const renderCategory = (category: string): VNode => h('div', { 'data-key': category, 'data-testid': 'category' }, [
     slots.category ? slots.category({ active: false, category, count: 0, label: category }) : null,
     ...visible.filter(item => categoryLabel(item) === category).map(renderItem),
   ]);
@@ -132,7 +137,7 @@ describe('historyEventActionPicker', () => {
     const wrapper = mountPicker();
     await flushPromises();
 
-    await wrapper.find('[data-testid="option-swap out"]').trigger('click');
+    await wrapper.find('[data-testid=option][data-key="swap-out"]').trigger('click');
     await flushPromises();
 
     const updates = wrapper.emitted('update:modelValue') ?? [];
@@ -160,12 +165,12 @@ describe('historyEventActionPicker', () => {
     const wrapper = mountPicker();
     await flushPromises();
 
-    expect(wrapper.find('[data-testid="event-action-picker-row-swap out"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="event-action-picker-row-swap out"]').text()).toContain('Swap out');
+    expect(wrapper.find('[data-testid=event-action-picker-row][data-key=swap-out]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=event-action-picker-row][data-key=swap-out]').text()).toContain('Swap out');
 
     // The subtitle must reset the nowrap it inherits from RuiButton's label so
     // line-clamp-2 can actually wrap onto a second line.
-    const subtitle = wrapper.find('[data-testid="event-action-picker-row-swap out"] .line-clamp-2');
+    const subtitle = wrapper.find('[data-testid=event-action-picker-row][data-key=swap-out] .line-clamp-2');
     expect(subtitle.exists()).toBe(true);
     expect(subtitle.classes()).toContain('whitespace-normal');
   });
@@ -178,10 +183,10 @@ describe('historyEventActionPicker', () => {
 
     // RuiCategoryPicker prints the category string in its detail header, so the
     // picker must feed it the human label ('Trade'), never the backend id.
-    expect(wrapper.find('[data-testid="category-Trade"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="category-trade"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=category][data-key="Trade"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=category][data-key="trade"]').exists()).toBe(false);
     // ...and the synthetic recent group must not leak its internal id.
-    expect(wrapper.find('[data-testid="category-__recent__"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=category][data-key="__recent__"]').exists()).toBe(false);
   });
 
   it('should render the keyboard hint in the footer slot', async () => {
@@ -207,7 +212,7 @@ describe('historyEventActionPicker', () => {
     const wrapper = mountPicker();
     await flushPromises();
 
-    const rowEl = wrapper.find('[data-testid="event-action-picker-row-swap out"]');
+    const rowEl = wrapper.find('[data-testid=event-action-picker-row][data-key=swap-out]');
     expect(rowEl.find('.text-rui-primary').exists()).toBe(false);
     expect(rowEl.text()).toContain('Swap out');
   });
@@ -220,7 +225,7 @@ describe('historyEventActionPicker', () => {
     wrapper.findComponent(RuiCategoryPickerStub).vm.$emit('update:search', 'swap');
     await flushPromises();
 
-    const highlighted = wrapper.find('[data-testid="event-action-picker-row-swap out"] .text-rui-primary');
+    const highlighted = wrapper.find('[data-testid=event-action-picker-row][data-key=swap-out] .text-rui-primary');
     expect(highlighted.exists()).toBe(true);
     expect(highlighted.text()).toBe('Swap');
   });
@@ -256,9 +261,9 @@ describe('historyEventActionPicker', () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid="event-action-picker-recent-header"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="option-recent:swap out"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=option][data-key="recent-swap-out"]').exists()).toBe(true);
     // The canonical row in its own group is still present.
-    expect(wrapper.find('[data-testid="option-swap out"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=option][data-key="swap-out"]').exists()).toBe(true);
   });
 
   it('should not render the recent group while searching', async () => {
@@ -271,7 +276,7 @@ describe('historyEventActionPicker', () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid="event-action-picker-recent-header"]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid="option-recent:swap out"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=option][data-key="recent-swap-out"]').exists()).toBe(false);
   });
 
   it('should record the canonical verb key when a recent row is picked', async () => {
@@ -280,7 +285,7 @@ describe('historyEventActionPicker', () => {
     const wrapper = mountPicker();
     await flushPromises();
 
-    await wrapper.find('[data-testid="option-recent:swap out"]').trigger('click');
+    await wrapper.find('[data-testid=option][data-key="recent-swap-out"]').trigger('click');
     await flushPromises();
 
     expect(record).toHaveBeenCalledWith('swap out');

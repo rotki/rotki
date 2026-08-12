@@ -587,9 +587,6 @@
     "title": "Συγχρονισμός Ιστορικού",
     "transactions": "Συναλλαγές"
   },
-  "table_filter": {
-    "start_typing": "Πληκτρολογήστε την τιμή για το φίλτρο {search}"
-  },
   "task_center": {
     "activity": {
       "accounting_rules": {

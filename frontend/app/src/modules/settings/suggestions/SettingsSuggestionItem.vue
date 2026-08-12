@@ -78,7 +78,7 @@ function choiceLabel(item: SuggestionChoice): string {
       <div
         v-if="requirements.length > 0"
         class="flex flex-wrap gap-x-4 gap-y-1 mt-2"
-        data-cy="suggestion-requirements"
+        data-testid="suggestion-requirements"
       >
         <div
           v-for="requirement in requirements"
@@ -100,7 +100,7 @@ function choiceLabel(item: SuggestionChoice): string {
           color="primary"
           hide-details
           class="mt-2"
-          data-cy="suggestion-choices"
+          data-testid="suggestion-choices"
           @update:model-value="$emit('select', String($event))"
         >
           <RuiRadio
@@ -108,7 +108,8 @@ function choiceLabel(item: SuggestionChoice): string {
             :key="item.id"
             :value="item.id"
             :label="choiceLabel(item)"
-            :data-cy="`suggestion-choice-${item.id}`"
+            data-testid="suggestion-choice"
+            :data-key="item.id"
           />
         </RuiRadioGroup>
 
@@ -118,7 +119,7 @@ function choiceLabel(item: SuggestionChoice): string {
           variant="outlined"
           size="sm"
           class="mt-2"
-          data-cy="suggestion-action"
+          data-testid="suggestion-action"
           @click="$emit('action', suggestion.action)"
         >
           {{ suggestion.action.label }}

@@ -78,6 +78,7 @@ def test_cached_settings(
             'connect_timeout': 45,
             'read_timeout': 45,
             'submit_usage_analytics': True,
+            'mcp_privacy_mode': 'strict',
         },
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
@@ -89,11 +90,13 @@ def test_cached_settings(
     assert json_data['result']['connect_timeout'] == 45
     assert json_data['result']['read_timeout'] == 45
     assert json_data['result']['submit_usage_analytics'] is True
+    assert json_data['result']['mcp_privacy_mode'] == 'strict'
 
     # Now make sure that the cached settings are also updated
     assert CachedSettings().get_query_retry_limit() == 3
     assert CachedSettings().get_timeout_tuple() == (45, 45)
     assert CachedSettings().get_entry('submit_usage_analytics') is True
+    assert CachedSettings().get_entry('mcp_privacy_mode') == 'strict'
 
     # log the user out and make sure cached settings are reset to default values
     data = {'action': 'logout'}
@@ -243,6 +246,8 @@ def test_set_settings(rotkehlchen_api_server: APIServer) -> None:
             value = HOUR_IN_SECONDS * 2
         elif setting == 'suppress_missing_key_msg_services':
             value = [ExternalService.ETHERSCAN.serialize()]
+        elif setting == 'mcp_privacy_mode':
+            value = 'strict'
         else:
             raise AssertionError(f'Unexpected setting {setting} encountered')
 

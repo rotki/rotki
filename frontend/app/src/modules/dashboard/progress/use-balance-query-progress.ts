@@ -7,7 +7,7 @@ import type {
 import { get, set } from '@vueuse/shared';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { isTerminalStatus } from '@/modules/task-center/core/status';
-import { type Activity, type ActivityId, ActivityKind, activityParts, ActivityStatus } from '@/modules/task-center/core/types';
+import { type Activity, type ActivityId, ActivityKind, ActivityPart, activityParts, ActivityStatus } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -24,8 +24,6 @@ interface UseBalanceQueryProgressReturn {
   balanceProgress: ComputedRef<BalanceQueryProgress | undefined>;
   isBalanceQuerying: ComputedRef<boolean>;
 }
-
-const BALANCE_KINDS = new Set<ActivityKind>([ActivityKind.BLOCKCHAIN_BALANCES, ActivityKind.TOKEN_DETECTION]);
 
 function createPendingItemProgress(
   item: BalanceQueryQueueItem,
@@ -164,14 +162,37 @@ export const useBalanceQueryProgress = createSharedComposable((): UseBalanceQuer
   const { useIsActive } = useTaskCenter();
   const { activities } = useTaskOrchestrator();
 
-  const balanceActivities = computed<Activity[]>(() =>
-    get(activities).filter(activity => BALANCE_KINDS.has(activity.kind)),
+  /**
+   * What the counter counts: **one entry per chain**, never the run umbrella above them and never
+   * the per-address detections beneath them.
+   *
+   * 🔴 A run is an activity of the same kind as the chain jobs it contains, so it was counted as
+   * one of them: it inflated the denominator by one, and while it was the running item this read
+   * "Querying Run balances", because the chain name is derived from the id's first part and the
+   * umbrella's is the literal `run`.
+   *
+   * 🔴 Detections used to be counted here too, and the denominator *grew as the run progressed* —
+   * observed live climbing 35 → 53 → 62 → 65 → 73 — because a chain's addresses are only submitted
+   * once its own job starts. A total that moves while you watch it is the dishonest denominator
+   * this pipeline exists to remove, so the count is the run's scope, which is fixed up front.
+   *
+   * ⚠️ Detection is still *shown*: it names the current operation below, and every address keeps
+   * its own row in the task centre. It is the arithmetic it stays out of.
+   */
+  const chainSubjects = computed<Activity[]>(() =>
+    get(activities).filter(activity =>
+      activity.kind === ActivityKind.BLOCKCHAIN_BALANCES && activityParts(activity.id)[0] !== ActivityPart.RUN),
+  );
+
+  /** Live detections, for the operation text only — never for the count. */
+  const detections = computed<Activity[]>(() =>
+    get(activities).filter(activity => activity.kind === ActivityKind.TOKEN_DETECTION),
   );
 
   const waveIds = ref<Set<ActivityId>>(new Set());
   let clearTimer: ReturnType<typeof setTimeout> | undefined;
 
-  watch(balanceActivities, (items) => {
+  watch(chainSubjects, (items) => {
     const active = items.filter(activity => !isTerminalStatus(activity.status));
 
     if (active.length > 0) {
@@ -205,7 +226,7 @@ export const useBalanceQueryProgress = createSharedComposable((): UseBalanceQuer
 
   const waveItems = computed<Activity[]>(() => {
     const ids = get(waveIds);
-    return get(balanceActivities).filter(activity => ids.has(activity.id));
+    return get(chainSubjects).filter(activity => ids.has(activity.id));
   });
 
   const totalItems = computed<number>(() => get(waveItems).length);
@@ -228,6 +249,14 @@ export const useBalanceQueryProgress = createSharedComposable((): UseBalanceQuer
 
     if (total === 0) {
       return undefined;
+    }
+
+    // ⭐ A running detection names the operation, because it is the more specific thing happening:
+    // its chain's job is running too, but "detecting tokens for 0x… on Ethereum" says more than
+    // "querying Ethereum". The numbers beside it stay the chain count either way.
+    const runningDetection = get(detections).find(activity => activity.status === ActivityStatus.RUNNING);
+    if (runningDetection) {
+      return createRunningItemProgress(toQueueItem(runningDetection), completed, total, progressValue, getChainName, t);
     }
 
     const runningItem = items.find(activity => activity.status === ActivityStatus.RUNNING);

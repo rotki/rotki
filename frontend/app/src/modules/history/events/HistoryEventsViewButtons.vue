@@ -32,7 +32,7 @@ const menuOpen = ref<boolean>(false);
     color="primary"
     size="lg"
     class="[&>span]:!hidden lg:[&>span]:!inline"
-    data-cy="history-events__add"
+    data-testid="history-events__add"
     @click="emit('show:dialog', { type: DIALOG_TYPES.EVENT_FORM, data: { type: 'add', nextSequenceId: '0' } })"
   >
     <template #prepend>
@@ -91,7 +91,7 @@ const menuOpen = ref<boolean>(false);
 
     <RuiButton
       variant="list"
-      data-cy="history-events__add_by_tx_hash"
+      data-testid="history-events__add_by_tx_hash"
       :disabled="loading"
       @click="emit('show:dialog', { type: DIALOG_TYPES.ADD_TRANSACTION })"
     >
@@ -103,7 +103,7 @@ const menuOpen = ref<boolean>(false);
 
     <RuiButton
       variant="list"
-      data-cy="history-events__repulling-transactions"
+      data-testid="history-events__repulling-transactions"
       :disabled="loading"
       @click="emit('show:dialog', { type: DIALOG_TYPES.REPULLING_TRANSACTION })"
     >

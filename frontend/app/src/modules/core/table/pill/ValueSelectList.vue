@@ -152,7 +152,8 @@ function onKeydown(event: KeyboardEvent): void {
         :key="chip.value"
         type="button"
         class="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full bg-rui-primary/10 text-xs text-rui-primary hover:bg-rui-primary/20"
-        :data-testid="`value-select-chip-${chip.value}`"
+        data-testid="value-select-chip"
+        :data-key="chip.value"
         @click="toggle(chip.value)"
       >
         <span class="truncate max-w-[9rem]">{{ chip.label }}</span>
@@ -213,7 +214,8 @@ function onKeydown(event: KeyboardEvent): void {
             : 'hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800'"
           role="menuitemcheckbox"
           :aria-checked="selectedSet.has(item.data.value)"
-          :data-testid="`value-select-option-${item.data.value}`"
+          data-testid="value-select-option"
+          :data-key="item.data.value"
           @mousemove="highlighted = item.index"
           @click="toggle(item.data.value)"
         >

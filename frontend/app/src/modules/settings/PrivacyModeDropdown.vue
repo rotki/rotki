@@ -52,7 +52,7 @@ async function updateScramble(value: boolean): Promise<void> {
   <div class="relative">
     <RuiMenu
       v-model="showPrivacyModeMenu"
-      data-cy="privacy-menu-content"
+      data-testid="privacy-menu-content"
       menu-class="w-[22rem]"
       :popper="{ placement: 'bottom-end' }"
       :persistent="settingMenuOpen"
@@ -79,7 +79,7 @@ async function updateScramble(value: boolean): Promise<void> {
           class="p-0 z-10 right-0 text-black top-[1.875rem] w-4 h-4 lg:top-8 lg:w-[1.125rem] lg:h-[1.125rem] !bg-rui-grey-100 !absolute dark:text-white dark:!bg-black"
           icon
           variant="text"
-          v-bind="{ ...attrs, 'data-cy': 'privacy-menu' }"
+          v-bind="{ ...attrs, 'data-testid': 'privacy-menu' }"
           size="sm"
         >
           <RuiIcon
@@ -100,7 +100,7 @@ async function updateScramble(value: boolean): Promise<void> {
               variant="text"
               icon
               v-bind="attrs"
-              data-cy="privacy-settings-menu"
+              data-testid="privacy-settings-menu"
             >
               <RuiIcon
                 size="16"
@@ -134,7 +134,7 @@ async function updateScramble(value: boolean): Promise<void> {
           id="privacy-mode-slider"
           :model-value="privacyMode"
           class="h-40 w-8"
-          data-cy="privacy-mode-dropdown__input"
+          data-testid="privacy-mode-dropdown__input"
           :step="1"
           :max="2"
           :min="0"
@@ -168,7 +168,7 @@ async function updateScramble(value: boolean): Promise<void> {
           v-model="modelScrambleData"
           color="secondary"
           size="sm"
-          data-cy="privacy-mode-scramble__toggle"
+          data-testid="privacy-mode-scramble__toggle"
           hide-details
           @update:model-value="updateScramble($event)"
         >
@@ -183,7 +183,7 @@ async function updateScramble(value: boolean): Promise<void> {
           :disabled="!modelScrambleData"
           variant="outlined"
           color="secondary"
-          data-cy="privacy-mode-scramble__multiplier"
+          data-testid="privacy-mode-scramble__multiplier"
           hide-details
           dense
           @update:model-value="handleMultiplierUpdate($event)"
@@ -194,7 +194,7 @@ async function updateScramble(value: boolean): Promise<void> {
               variant="text"
               type="button"
               class="-mr-2 !p-2"
-              data-cy="privacy-mode-scramble__random-multiplier"
+              data-testid="privacy-mode-scramble__random-multiplier"
               icon
               @click="handleMultiplierUpdate(randomMultiplier())"
             >

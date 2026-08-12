@@ -119,7 +119,7 @@ defineExpose({
       v-model="state.uniqueId"
       variant="outlined"
       color="primary"
-      data-cy="unique-id"
+      data-testid="unique-id"
       :hint="t('swap_event_form.unique_id_hint')"
       :label="t('swap_event_form.unique_id')"
       :error-messages="form.errors('uniqueId')"
@@ -130,7 +130,7 @@ defineExpose({
     <RuiCheckbox
       v-model="state.hasFee"
       :label="t('transactions.events.form.has_fee.label')"
-      data-cy="has-fee"
+      data-testid="has-fee"
       color="primary"
     />
 

@@ -43,7 +43,8 @@ const { t } = useI18n({ useScope: 'global' });
             icon
             size="sm"
             class="!p-0.5"
-            :data-cy="`remove-chain-${tab.id}`"
+            data-testid="remove-chain"
+            :data-key="tab.id"
             @click.stop="emit('remove', tab.id)"
           >
             <RuiIcon

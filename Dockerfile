@@ -41,6 +41,18 @@ FROM python:3.14-bookworm AS backend-build-stage
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+# arm64 has no wheels for the Rust-backed bindings (py-bip39, py-ed25519-zebra,
+# py-sr25519), so uv builds them from source with maturin. With no cargo in the
+# image, maturin bootstraps its own toolchain per package into one shared cache,
+# and the concurrent builds race on exec'ing the half-written binary:
+# "failed to start `cargo metadata`: Text file busy". Copied from the image
+# rather than from rust-build-stage, so the two stages still build in parallel.
+COPY --from=rust:1.91-bookworm /usr/local/cargo /usr/local/cargo
+COPY --from=rust:1.91-bookworm /usr/local/rustup /usr/local/rustup
+ENV CARGO_HOME=/usr/local/cargo \
+    RUSTUP_HOME=/usr/local/rustup \
+    PATH=/usr/local/cargo/bin:$PATH
+
 ARG TARGETARCH
 ARG ROTKI_VERSION
 ENV PACKAGE_FALLBACK_VERSION=$ROTKI_VERSION
@@ -135,7 +147,7 @@ RUN set -eux; \
 #     the PyInstaller bundle -- confirmed by reading the running process's memory
 #     maps, which resolve to _internal/, never /usr/lib. Copying the bundle keeps
 #     TLS working without shipping a CVE-tracked library nothing loads.
-FROM gcr.io/distroless/cc-debian12 AS runtime
+FROM gcr.io/distroless/cc-debian12:latest@sha256:e8e7ee4b8b106d4c5fde9e422a321b2b8a2d5cca546c97adcce927f3e1d36e36 AS runtime
 
 LABEL maintainer="Rotki Solutions GmbH <info@rotki.com>"
 

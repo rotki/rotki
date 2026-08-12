@@ -1,20 +1,35 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { RuiRevealableTextField, RuiTextField } from '@rotki/ui-library';
-import useVuelidate from '@vuelidate/core';
-import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 import { type MessageKey, msg } from '@/message-key';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { type ExchangeFormData, GateLocation, KrakenAccountType, OkxLocation } from '@/modules/balances/types/exchanges';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { refOptional, useRefPropVModel } from '@/modules/core/common/validation/model';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { toServerErrors } from '@/modules/core/form/server-errors';
+import { useForm } from '@/modules/core/form/use-form';
 import BinancePairsSelector from '@/modules/settings/api-keys/BinancePairsSelector.vue';
 import BinanceHistoryStartDate from '@/modules/settings/api-keys/exchange/BinanceHistoryStartDate.vue';
+import {
+  isBinance as binance,
+  type ExchangeCapabilities,
+  type ExchangeKeysFormState,
+  exchangeKeysSchema,
+  isGate as gate,
+  isEditing,
+  isKraken as kraken,
+  requiresApiSecret as needsApiSecret,
+  requiresPassphrase as needsPassphrase,
+  normalizeApiSecret,
+  isOkx as okx,
+  showsBinanceHistoryImport,
+  toExchangeKeysFormState,
+} from '@/modules/settings/api-keys/exchange/exchange-keys-form';
 import ExchangeKeysFormStructure from '@/modules/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
+import ExchangeNotices from '@/modules/settings/api-keys/exchange/ExchangeNotices.vue';
 import GateRegionSelectorItem from '@/modules/settings/api-keys/exchange/GateRegionSelectorItem.vue';
+import KrakenFuturesKeys from '@/modules/settings/api-keys/exchange/KrakenFuturesKeys.vue';
 import OkxRegionSelectorItem from '@/modules/settings/api-keys/exchange/OkxRegionSelectorItem.vue';
 import ExchangeInput from '@/modules/shell/components/inputs/ExchangeInput.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
@@ -29,77 +44,37 @@ const editFuturesKeys = ref<boolean>(false);
 
 const locationStore = useLocationStore();
 const { exchangesWithoutApiSecret, exchangesWithPassphrase } = storeToRefs(locationStore);
-const { useIsExperimentalExchange } = locationStore;
+
 const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 const { getLocationData } = useLocations();
 const { t } = useI18n({ useScope: 'global' });
 
-const requiresApiSecret = computed(() => {
-  const { location } = get(modelValue);
-  return !get(exchangesWithoutApiSecret).includes(location);
+const capabilities = computed<ExchangeCapabilities>(() => ({
+  withoutApiSecret: get(exchangesWithoutApiSecret),
+  withPassphrase: get(exchangesWithPassphrase),
+}));
+
+const location = computed<string>(() => get(modelValue).location);
+
+const requiresApiSecret = computed<boolean>(() => needsApiSecret(get(location), get(capabilities)));
+const requiresPassphrase = computed<boolean>(() => needsPassphrase(get(location), get(capabilities)));
+const isBinance = computed<boolean>(() => binance(get(location)));
+const isGate = computed<boolean>(() => gate(get(location)));
+const isKraken = computed<boolean>(() => kraken(get(location)));
+const isOkx = computed<boolean>(() => okx(get(location)));
+
+const editMode = computed<boolean>(() => isEditing(get(modelValue).mode));
+const showBinanceHistoryImport = computed<boolean>(() => {
+  const { location, mode } = get(modelValue);
+  return showsBinanceHistoryImport(location, mode);
 });
-
-const requiresPassphrase = computed(() => {
-  const { location } = get(modelValue);
-  return get(exchangesWithPassphrase).includes(location);
-});
-
-const isBinance = computed(() => {
-  const { location } = get(modelValue);
-  return ['binance', 'binanceus'].includes(location);
-});
-
-const isGate = computed<boolean>(() => {
-  const { location } = get(modelValue);
-  return location === 'gate';
-});
-
-const isKraken = computed<boolean>(() => {
-  const { location } = get(modelValue);
-  return ['kraken'].includes(location);
-});
-
-const isCoinbase = computed(() => {
-  const { location } = get(modelValue);
-  return ['coinbase'].includes(location);
-});
-
-const isCoinbasePro = computed(() => {
-  const { location } = get(modelValue);
-  return ['coinbaseprime'].includes(location);
-});
-
-const isOkx = computed(() => {
-  const { location } = get(modelValue);
-  return ['okx'].includes(location);
-});
-
-const experimental = useIsExperimentalExchange(() => get(modelValue).location);
-
-const showKeyWaitingTimeWarning = logicOr(isKraken, isCoinbase, isCoinbasePro);
-
-const historyLimitMessage = computed<string>(() => {
-  const { location } = get(modelValue);
-  if (location === 'bybit')
-    return t('exchange_keys_form.history_limit_warning.bybit');
-  if (location === 'htx')
-    return t('exchange_keys_form.history_limit_warning.htx');
-  if (location === 'cryptocom')
-    return t('exchange_keys_form.history_limit_warning.cryptocom');
-  return '';
-});
-
-const editMode = computed<boolean>(() => get(modelValue).mode === 'edit');
-const showBinanceHistoryImport = computed<boolean>(() => (
-  get(isBinance) && !get(editMode)
-));
 
 const nameProp = useRefPropVModel(modelValue, 'name');
 const newNameProp = useRefPropVModel(modelValue, 'newName');
 const apiKey = useRefPropVModel(modelValue, 'apiKey');
 const apiSecret = useRefPropVModel(modelValue, 'apiSecret', {
   transform(value) {
-    return get(isCoinbase) ? value.replace(/\\n/g, '\n') : value;
+    return normalizeApiSecret(get(location), value);
   },
 });
 
@@ -136,7 +111,6 @@ const passphrase = useRefPropVModel(modelValue, 'passphrase');
 const krakenAccountType = useRefPropVModel(modelValue, 'krakenAccountType');
 const krakenFuturesApiKey = useRefPropVModel(modelValue, 'krakenFuturesApiKey');
 const krakenFuturesApiSecret = useRefPropVModel(modelValue, 'krakenFuturesApiSecret');
-const binanceMarkets = useRefPropVModel(modelValue, 'binanceMarkets');
 const binanceHistoryStartTs = useRefPropVModel(modelValue, 'binanceHistoryStartTs');
 const gateLocation = useRefPropVModel(modelValue, 'gateLocation');
 const okxLocation = useRefPropVModel(modelValue, 'okxLocation');
@@ -155,30 +129,10 @@ const name = computed<string>({
   },
 });
 
-const krakenFuturesApiKeyComputed = refOptional(krakenFuturesApiKey, '');
-const krakenFuturesApiSecretComputed = refOptional(krakenFuturesApiSecret, '');
 const binanceHistoryStartTsModel = refOptional(
   binanceHistoryStartTs,
   Math.floor(Date.now() / 1000),
 );
-
-const krakenFuturesApiKeyModel = createRefWithAsterisk(krakenFuturesApiKeyComputed, editFuturesKeys);
-const krakenFuturesApiSecretModel = createRefWithAsterisk(krakenFuturesApiSecretComputed, editFuturesKeys);
-const futuresSensitiveInputComponent = createSensitiveInputComponent(editFuturesKeys);
-
-useFormStateWatcher({
-  apiKey,
-  apiSecret,
-  binanceHistoryStartTs,
-  binanceMarkets,
-  gateLocation,
-  krakenAccountType,
-  krakenFuturesApiKey,
-  krakenFuturesApiSecret,
-  name,
-  okxLocation,
-  passphrase,
-}, stateUpdated);
 
 function suggestedName(exchange: string): string {
   const location = getLocationData(exchange);
@@ -194,17 +148,6 @@ function toggleEdit() {
       ...get(modelValue),
       apiKey: '',
       apiSecret: '',
-    });
-  }
-}
-
-function toggleFuturesEdit() {
-  set(editFuturesKeys, !get(editFuturesKeys));
-  if (!get(editFuturesKeys)) {
-    set(modelValue, {
-      ...get(modelValue),
-      krakenFuturesApiKey: '',
-      krakenFuturesApiSecret: '',
     });
   }
 }
@@ -245,97 +188,59 @@ const okxLocations = OkxLocation.options.map(item => ({
   label: t(OKX_LOCATION_KEYS[item]),
 }));
 
-const sensitiveFieldEditable = logicOr(logicNot(editMode), editKeys);
-const futuresFieldEditable = logicOr(logicNot(editMode), editFuturesKeys);
-const hasFuturesApiKey = computed<boolean>(() => !!get(krakenFuturesApiKey));
-const hasFuturesApiSecret = computed<boolean>(() => !!get(krakenFuturesApiSecret));
+/**
+ * The dialog owns the entry, so the form mirrors it rather than holding its own copy: the fields
+ * keep writing where they always did, and the rules always read what is on screen.
+ */
+const form = useForm<ExchangeKeysFormState, ExchangeKeysFormState>({
+  initial: (): ExchangeKeysFormState => toExchangeKeysFormState(get(modelValue)),
+  schema: computed(() => exchangeKeysSchema({
+    capabilities: get(capabilities),
+    editingFutures: get(editFuturesKeys),
+    editingKeys: get(editKeys),
+    location: get(location),
+    mode: get(modelValue).mode,
+  })),
+  // The dialog persists; there is nothing to submit from here.
+  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  transform: (state): ExchangeKeysFormState => ({ ...state }),
+});
 
-const v$ = useVuelidate({
-  apiKey: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.validation.non_empty'),
-      requiredIf(sensitiveFieldEditable),
-    ),
-  },
-  apiSecret: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.validation.non_empty'),
-      requiredIf(logicAnd(sensitiveFieldEditable, requiresApiSecret)),
-    ),
-  },
-  krakenFuturesApiKey: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.validation.futures_both_required'),
-      requiredIf(logicAnd(futuresFieldEditable, hasFuturesApiSecret)),
-    ),
-  },
-  krakenFuturesApiSecret: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.validation.futures_both_required'),
-      requiredIf(logicAnd(futuresFieldEditable, hasFuturesApiKey)),
-    ),
-  },
-  binanceMarkets: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.validation.non_empty'),
-      requiredIf(isBinance),
-    ),
-  },
-  binanceHistoryStartTs: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.validation.non_empty'),
-      requiredIf(showBinanceHistoryImport),
-    ),
-  },
-  name: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.name.non_empty'),
-      requiredUnless(editMode),
-    ),
-  },
-  newName: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.name.non_empty'),
-      requiredIf(editMode),
-    ),
-  },
-  gateLocation: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.validation.non_empty'),
-      requiredIf(isGate),
-    ),
-  },
-  okxLocation: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.validation.non_empty'),
-      requiredIf(isOkx),
-    ),
-  },
-  passphrase: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.validation.non_empty'),
-      requiredIf(logicAnd(sensitiveFieldEditable, requiresPassphrase)),
-    ),
-  },
-}, {
-  apiKey,
-  apiSecret,
-  binanceHistoryStartTs,
-  krakenFuturesApiKey,
-  krakenFuturesApiSecret,
-  binanceMarkets,
-  name: nameProp,
-  newName: newNameProp,
-  gateLocation,
-  okxLocation,
-  passphrase,
-}, { $autoDirty: true, $externalResults: errorMessages });
+watchDeep(modelValue, (value) => {
+  Object.assign(form.state, toExchangeKeysFormState(value));
+});
+
+watch(errorMessages, (value) => {
+  form.setServerErrors(toServerErrors(value));
+}, { deep: true, immediate: true });
+
+watch(form.dirty, (dirty) => {
+  set(stateUpdated, dirty);
+});
+
+// The dialog keeps its prompt-on-close flag across opens, so hand it back disarmed.
+onUnmounted(() => {
+  set(stateUpdated, false);
+});
+
+/**
+ * The dialog owns the entry, so a write to `modelValue` only comes back on the next tick. Every
+ * caller therefore hands the entry it just wrote straight to the baseline instead of reading it
+ * back: re-reading `modelValue` here returns the value from before the write, which re-takes the
+ * baseline the form already had and leaves the write itself looking like a user edit.
+ */
+function replaceEntry(next: ExchangeFormData): void {
+  set(modelValue, next);
+  form.reset(toExchangeKeysFormState(next));
+}
 
 function onExchangeChange(exchange?: string) {
   const name = exchange ?? '';
   const isKraken = name === 'kraken';
 
-  set(modelValue, {
+  // Picking a different exchange starts a different connection, so the errors from the last one
+  // must not be left decorating the new form.
+  replaceEntry({
     apiKey: '',
     apiSecret: '',
     binanceHistoryStartTs: undefined,
@@ -351,33 +256,38 @@ function onExchangeChange(exchange?: string) {
     okxLocation: name === 'okx' ? 'global' : undefined,
     passphrase: '',
   });
-
-  nextTick(() => {
-    get(v$).$reset();
-  });
 }
 
-onMounted(() => {
+function seedName(): void {
+  const model = get(modelValue);
+
   if (get(editMode)) {
-    set(newNameProp, get(nameProp));
+    replaceEntry({ ...model, newName: model.name });
     return;
   }
 
-  const model = get(modelValue);
-  set(modelValue, {
-    ...model,
-    name: suggestedName(model.location),
-  });
-});
+  // The locations come from the backend, so the store holds none until that fetch lands and the
+  // suggestion comes back empty. This runs once, so writing that over the name would leave the
+  // field blank with nothing left to restore it.
+  const suggestion = suggestedName(model.location);
+  if (!suggestion)
+    return;
+
+  replaceEntry({ ...model, name: suggestion });
+}
+
+// Seeding lands after `useForm` took its baseline, so `replaceEntry` takes it again. Otherwise a
+// dialog the user has not touched counts as dirty and prompts to discard on close.
+onMounted(seedName);
 
 defineExpose({
-  validate: async (): Promise<boolean> => await get(v$).$validate(),
+  validate: (): boolean => form.validate(),
 });
 </script>
 
 <template>
   <div
-    data-cy="exchange-keys"
+    data-testid="exchange-keys"
     class="flex flex-col gap-4"
   >
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
@@ -385,7 +295,7 @@ defineExpose({
         show-with-key-only
         :model-value="modelValue.location"
         :label="t('common.exchange')"
-        data-cy="exchange"
+        data-testid="exchange"
         :disabled="editMode"
         @update:model-value="onExchangeChange($event)"
       />
@@ -394,8 +304,8 @@ defineExpose({
         v-model="name"
         variant="outlined"
         color="primary"
-        :error-messages="editMode ? toMessages(v$.newName) : toMessages(v$.name)"
-        data-cy="name"
+        :error-messages="editMode ? form.errors('newName') : form.errors('name')"
+        data-testid="name"
         :label="t('common.name')"
       />
     </div>
@@ -403,7 +313,7 @@ defineExpose({
     <RuiMenuSelect
       v-if="isKraken"
       v-model="krakenAccountType"
-      data-cy="account-type"
+      data-testid="account-type"
       :options="krakenAccountTypes"
       :label="t('exchange_settings.inputs.kraken_account')"
       key-attr="identifier"
@@ -414,7 +324,7 @@ defineExpose({
     <RuiMenuSelect
       v-if="isGate"
       v-model="gateLocation"
-      data-cy="gate-location"
+      data-testid="gate-location"
       :options="gateLocations"
       :label="t('exchange_keys_form.region')"
       key-attr="identifier"
@@ -438,7 +348,7 @@ defineExpose({
     <RuiMenuSelect
       v-if="isOkx"
       v-model="okxLocation"
-      data-cy="okx-location"
+      data-testid="okx-location"
       :options="okxLocations"
       :label="t('exchange_keys_form.region')"
       key-attr="identifier"
@@ -470,6 +380,7 @@ defineExpose({
       >
         <template #activator>
           <RuiButton
+            data-testid="toggle-edit-keys"
             variant="text"
             class="!p-2"
             icon
@@ -492,12 +403,12 @@ defineExpose({
         <Component
           :is="sensitiveInputComponent"
           v-model.trim="apiKeyModel"
-          :text-color="editMode && !editKeys && toMessages(v$.apiKey).length === 0 ? 'success' : undefined"
+          :text-color="editMode && !editKeys && form.errors('apiKey').length === 0 ? 'success' : undefined"
           variant="outlined"
           color="primary"
           :disabled="editMode && !editKeys"
-          :error-messages="toMessages(v$.apiKey)"
-          data-cy="api-key"
+          :error-messages="form.errors('apiKey')"
+          data-testid="api-key"
           prepend-icon="lu-key"
           :label="label"
           :hint="hint"
@@ -512,10 +423,10 @@ defineExpose({
           v-model.trim="apiSecretModel"
           variant="outlined"
           color="primary"
-          :text-color="editMode && !editKeys && toMessages(v$.apiKey).length === 0 ? 'success' : undefined"
+          :text-color="editMode && !editKeys && form.errors('apiKey').length === 0 ? 'success' : undefined"
           :disabled="editMode && !editKeys"
-          :error-messages="toMessages(v$.apiSecret)"
-          data-cy="api-secret"
+          :error-messages="form.errors('apiSecret')"
+          data-testid="api-secret"
           prepend-icon="lu-lock-keyhole"
           :label="label"
           :hint="hint"
@@ -531,9 +442,9 @@ defineExpose({
           :disabled="editMode && !editKeys"
           variant="outlined"
           color="primary"
-          :error-messages="toMessages(v$.passphrase)"
+          :error-messages="form.errors('passphrase')"
           prepend-icon="lu-key"
-          data-cy="passphrase"
+          data-testid="passphrase"
           :label="label"
           :hint="hint"
           :class="className"
@@ -569,93 +480,28 @@ defineExpose({
         </i18n-t>
         <BinanceHistoryStartDate
           v-model="binanceHistoryStartTsModel"
-          :error-messages="toMessages(v$.binanceHistoryStartTs)"
+          :error-messages="form.errors('binanceHistoryStartTs')"
         />
       </div>
     </RuiAlert>
-    <template v-if="isKraken">
-      <div
-        class="flex items-center gap-2 text-subtitle-2 pb-4"
-      >
-        {{ t('exchange_settings.inputs.kraken_futures_keys') }}
-        <RuiTooltip
-          v-if="editMode"
-          :popper="{ placement: 'top' }"
-          :open-delay="400"
-        >
-          <template #activator>
-            <RuiButton
-              variant="text"
-              class="!p-2"
-              icon
-              @click="toggleFuturesEdit()"
-            >
-              <RuiIcon
-                size="20"
-                :name="!editFuturesKeys ? 'lu-pencil' : 'lu-x'"
-              />
-            </RuiButton>
-          </template>
-          {{
-            !editFuturesKeys ? t('exchange_keys_form.edit.activate_tooltip') : t('exchange_keys_form.edit.deactivate_tooltip')
-          }}
-        </RuiTooltip>
-      </div>
-      <Component
-        :is="futuresSensitiveInputComponent"
-        v-model.trim="krakenFuturesApiKeyModel"
-        variant="outlined"
-        color="primary"
-        :disabled="editMode && !editFuturesKeys"
-        :error-messages="toMessages(v$.krakenFuturesApiKey)"
-        data-cy="kraken-futures-api-key"
-        prepend-icon="lu-key"
-        :label="t('exchange_settings.inputs.futures_api_key')"
-      />
-      <Component
-        :is="futuresSensitiveInputComponent"
-        v-model.trim="krakenFuturesApiSecretModel"
-        variant="outlined"
-        color="primary"
-        :disabled="editMode && !editFuturesKeys"
-        :error-messages="toMessages(v$.krakenFuturesApiSecret)"
-        data-cy="kraken-futures-api-secret"
-        prepend-icon="lu-lock-keyhole"
-        :label="t('exchange_settings.inputs.futures_api_secret')"
-      />
-    </template>
-
+    <KrakenFuturesKeys
+      v-if="isKraken"
+      v-model:api-key="krakenFuturesApiKey"
+      v-model:api-secret="krakenFuturesApiSecret"
+      v-model:editing="editFuturesKeys"
+      :edit-mode="editMode"
+      :key-errors="form.errors('krakenFuturesApiKey')"
+      :secret-errors="form.errors('krakenFuturesApiSecret')"
+    />
     <BinancePairsSelector
       v-if="isBinance"
       :name="modelValue.name"
       :edit="editMode"
       :location="modelValue.location"
-      :error-messages="toMessages(v$.binanceMarkets)"
+      :error-messages="form.errors('binanceMarkets')"
       @update:selection="modelValue = { ...modelValue, binanceMarkets: $event }"
     />
   </div>
 
-  <RuiAlert
-    v-if="showKeyWaitingTimeWarning"
-    class="mt-4"
-    type="info"
-  >
-    {{ t('exchange_keys_form.waiting_time_warning') }}
-  </RuiAlert>
-
-  <RuiAlert
-    v-if="historyLimitMessage"
-    class="mt-4"
-    type="warning"
-  >
-    {{ historyLimitMessage }}
-  </RuiAlert>
-
-  <RuiAlert
-    v-if="experimental"
-    type="info"
-    class="mt-4"
-  >
-    {{ t('exchange_settings.inputs.experimental') }}
-  </RuiAlert>
+  <ExchangeNotices :location="modelValue.location" />
 </template>

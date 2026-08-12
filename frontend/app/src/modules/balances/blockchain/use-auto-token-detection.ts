@@ -1,18 +1,23 @@
-import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 interface UseAutoTokenDetectionReturn {
-  willDetect: () => boolean;
-  maybeDetect: () => Promise<void>;
+  /**
+   * Run `pass`, telling it whether this login is due a detection sweep, and own the cooldown
+   * bookkeeping around it.
+   *
+   * ⭐ It no longer runs detection itself. Detection is a stage *inside* each chain job now, so
+   * what belongs here is only the question "is a sweep due?" and the record that one happened —
+   * `pass` decides what detecting actually means.
+   */
+  withDetection: <T>(pass: (detect: boolean) => Promise<T>) => Promise<T>;
   skipReason: () => string | null;
 }
 
 const HOUR_IN_MS = 60 * 60 * 1000;
 
 export function useAutoTokenDetection(): UseAutoTokenDetectionReturn {
-  const { detectAllTokens } = useTokenDetectionOrchestrator();
   const autoDetectTokensCooldownHours = useSetting('autoDetectTokensCooldownHours');
   const autoDetectTokensOnLogin = useSetting('autoDetectTokensOnLogin');
   const lastAutoDetectAt = useSetting('lastAutoDetectAt');
@@ -43,15 +48,11 @@ export function useAutoTokenDetection(): UseAutoTokenDetectionReturn {
     return null;
   }
 
-  function willDetect(): boolean {
-    return skipReason() === null;
-  }
-
-  async function maybeDetect(): Promise<void> {
+  async function withDetection<T>(pass: (detect: boolean) => Promise<T>): Promise<T> {
     const skip = skipReason();
     if (skip !== null) {
       logger.debug(`Auto token detection skipped: ${skip}`);
-      return;
+      return pass(false);
     }
 
     const now = Date.now();
@@ -59,10 +60,7 @@ export function useAutoTokenDetection(): UseAutoTokenDetectionReturn {
 
     set(inFlight, true);
     try {
-      await detectAllTokens();
-    }
-    catch (error: unknown) {
-      logger.error('Auto token detection failed on initial load', error);
+      return await pass(true);
     }
     finally {
       // Always persist the timestamp, even on failure, so a persistently broken
@@ -73,5 +71,5 @@ export function useAutoTokenDetection(): UseAutoTokenDetectionReturn {
     }
   }
 
-  return { maybeDetect, skipReason, willDetect };
+  return { skipReason, withDetection };
 }

@@ -47,7 +47,7 @@ describe('module-selector', () => {
   });
 
   it('should display active modules', () => {
-    expect(wrapper.find<HTMLInputElement>('[data-cy=eth2-module-switch] input').element.checked).toBe(true);
+    expect(wrapper.find<HTMLInputElement>('[data-testid=module-switch][data-key=eth2] input').element.checked).toBe(true);
   });
 
   it('should disable module on click', async () => {
@@ -57,11 +57,11 @@ describe('module-selector', () => {
       accounting: {},
       other: { havePremium: false, premiumShouldSync: false },
     });
-    expect(wrapper.find<HTMLInputElement>('[data-cy=eth2-module-switch] input').element.checked).toBe(true);
-    await wrapper.find<HTMLInputElement>('[data-cy=eth2-module-switch] input').setValue(false);
+    expect(wrapper.find<HTMLInputElement>('[data-testid=module-switch][data-key=eth2] input').element.checked).toBe(true);
+    await wrapper.find<HTMLInputElement>('[data-testid=module-switch][data-key=eth2] input').setValue(false);
     await nextTick();
     await flushPromises();
-    expect(wrapper.find<HTMLInputElement>('[data-cy=eth2-module-switch] input').element.checked).toBe(false);
+    expect(wrapper.find<HTMLInputElement>('[data-testid=module-switch][data-key=eth2] input').element.checked).toBe(false);
     expect(settingsStore.general.activeModules).toEqual([]);
   });
 });

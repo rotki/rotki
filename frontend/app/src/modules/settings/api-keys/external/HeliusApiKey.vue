@@ -38,7 +38,7 @@ function removeHeliusNotification() {
   <ServiceKeyCard
     :name="name"
     :key-set="!!key"
-    data-cy="helius-api-keys"
+    data-testid="helius-api-keys"
     :title="t('external_services.helius.title')"
     :subtitle="t('external_services.helius.description')"
     :image-src="getPublicServiceImagePath('helius.svg')"
@@ -50,7 +50,7 @@ function removeHeliusNotification() {
         :disabled="loading || !key"
         color="error"
         variant="text"
-        data-cy="delete-button"
+        data-testid="delete-button"
         @click="confirmDelete(name)"
       >
         <template #prepend>
@@ -68,7 +68,7 @@ function removeHeliusNotification() {
       hide-actions
       :api-key="key"
       :name="name"
-      :data-cy="name"
+      :data-testid="name"
       :label="t('external_services.api_key')"
       :hint="t('external_services.helius.hint')"
       :loading="loading"

@@ -180,7 +180,7 @@ const quarterModel = computed({
               variant="outlined"
               active-color="primary"
               class="flex-wrap justify-center !rounded-r-none [&>*:last-child]:!rounded-r-none"
-              data-cy="button-group-report-period-year"
+              data-testid="button-group-report-period-year"
             >
               <RuiButton
                 v-for="period in periods"
@@ -195,7 +195,7 @@ const quarterModel = computed({
               variant="outlined"
               :color="isOlderYearSelected ? 'primary' : undefined"
               class="!rounded-l-none -ml-px"
-              data-cy="button-older-years"
+              data-testid="button-older-years"
             >
               <div class="flex items-center gap-2">
                 <template v-if="isOlderYearSelected">
@@ -225,7 +225,7 @@ const quarterModel = computed({
         <RuiButton
           variant="outlined"
           :color="isAllTime ? 'primary' : undefined"
-          data-cy="button-all-time"
+          data-testid="button-all-time"
           @click="selectAllTime()"
         >
           {{ t('generate.all_time') }}
@@ -234,7 +234,7 @@ const quarterModel = computed({
         <RuiButton
           variant="outlined"
           :color="isCustom ? 'primary' : undefined"
-          data-cy="button-custom"
+          data-testid="button-custom"
           @click="yearModel = 'custom'"
         >
           {{ t('generate.custom_selection') }}
@@ -251,7 +251,7 @@ const quarterModel = computed({
         variant="outlined"
         active-color="primary"
         class="flex-wrap justify-center"
-        data-cy="button-group-quarter"
+        data-testid="button-group-quarter"
       >
         <RuiButton
           v-for="subPeriod in subPeriods"

@@ -67,7 +67,7 @@ describe('modules/accounts/blockchain/BtcAddressInput', () => {
     wrapper = createWrapper(Blockchain.BTC);
     await setXpubValue(ZPUB_KEY);
 
-    expect(wrapper.find('[data-cy="xpub-disambiguation"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="xpub-disambiguation"]').exists()).toBe(false);
     const payload = await lastEmittedXpub(wrapper);
     expect(payload?.xpubType).toBe(XpubKeyType.ZPUB);
     expect(payload?.xpub).toBe(ZPUB_KEY);
@@ -77,7 +77,7 @@ describe('modules/accounts/blockchain/BtcAddressInput', () => {
     wrapper = createWrapper(Blockchain.BTC);
     await setXpubValue(YPUB_KEY);
 
-    expect(wrapper.find('[data-cy="xpub-disambiguation"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="xpub-disambiguation"]').exists()).toBe(false);
     const payload = await lastEmittedXpub(wrapper);
     expect(payload?.xpubType).toBe(XpubKeyType.YPUB);
   });
@@ -86,9 +86,9 @@ describe('modules/accounts/blockchain/BtcAddressInput', () => {
     wrapper = createWrapper(Blockchain.BTC);
     await setXpubValue(XPUB_KEY);
 
-    expect(wrapper.find('[data-cy="xpub-disambiguation"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="xpub-disambiguation"]').exists()).toBe(true);
     for (const prefix of [XpubPrefix.ZPUB, XpubPrefix.YPUB, XpubPrefix.P2TR, XpubPrefix.XPUB])
-      expect(wrapper.find(`[data-cy="xpub-disambiguation-${prefix}"]`).exists()).toBe(true);
+      expect(wrapper.find(`[data-testid=xpub-disambiguation-option][data-key="${prefix}"]`).exists()).toBe(true);
 
     const payload = await lastEmittedXpub(wrapper);
     expect(payload?.xpubType).toBe(XpubKeyType.ZPUB);
@@ -98,23 +98,23 @@ describe('modules/accounts/blockchain/BtcAddressInput', () => {
     wrapper = createWrapper(Blockchain.BTC);
     await setXpubValue(XPUB_KEY);
 
-    const buttons = wrapper.findAll('[data-cy^="xpub-disambiguation-"]');
+    const buttons = wrapper.findAll('[data-testid=xpub-disambiguation-option]');
     expect(buttons).toHaveLength(4);
-    const p2trButton = buttons.find(b => b.attributes('data-cy') === `xpub-disambiguation-${XpubPrefix.P2TR}`);
+    const p2trButton = buttons.find(b => b.attributes('data-key') === XpubPrefix.P2TR);
     expect(p2trButton).toBeDefined();
     await p2trButton!.trigger('click');
     await nextTick();
 
     const payload = await lastEmittedXpub(wrapper);
     expect(payload?.xpubType).toBe(XpubKeyType.P2TR);
-    expect(wrapper.find('[data-cy="xpub-disambiguation"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="xpub-disambiguation"]').exists()).toBe(true);
   });
 
   it('should silently pick Legacy on BCH without showing the disambiguation prompt', async () => {
     wrapper = createWrapper(Blockchain.BCH);
     await setXpubValue(XPUB_KEY);
 
-    expect(wrapper.find('[data-cy="xpub-disambiguation"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="xpub-disambiguation"]').exists()).toBe(false);
     const payload = await lastEmittedXpub(wrapper);
     expect(payload?.xpubType).toBe(XpubKeyType.XPUB);
   });
@@ -126,6 +126,6 @@ describe('modules/accounts/blockchain/BtcAddressInput', () => {
     const detected = wrapper.emitted('detected-address');
     expect(detected).toBeDefined();
     expect(detected?.at(-1)).toEqual([BTC_ADDRESS]);
-    expect(wrapper.find('[data-cy="xpub-disambiguation"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="xpub-disambiguation"]').exists()).toBe(false);
   });
 });

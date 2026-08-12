@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final, Literal
 
@@ -58,6 +58,16 @@ def configure_backend(
 
 def get_backend_config() -> BackendConfig:
     return _backend_config
+
+
+def set_privacy_mode(privacy_mode: PrivacyMode) -> bool:
+    """Update the live privacy mode and report whether it changed."""
+    global _backend_config  # noqa: PLW0603  -- live MCP configuration
+    if _backend_config.privacy_mode == privacy_mode:
+        return False
+
+    _backend_config = replace(_backend_config, privacy_mode=privacy_mode)
+    return True
 
 
 def _api_url(base_url: str, endpoint: str) -> str:

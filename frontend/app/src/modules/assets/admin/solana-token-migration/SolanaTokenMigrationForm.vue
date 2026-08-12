@@ -113,7 +113,7 @@ defineExpose({
     <div class="grid grid-cols-2 gap-4">
       <div
         class="col-span-2"
-        data-cy="address-input"
+        data-testid="address-input"
       >
         <RuiTextField
           v-model="address"
@@ -129,7 +129,7 @@ defineExpose({
 
       <div
         class="col-span-2 md:col-span-1"
-        data-cy="decimals-input"
+        data-testid="decimals-input"
       >
         <AmountInput
           v-model="decimalsModel"
@@ -146,7 +146,7 @@ defineExpose({
 
       <div
         class="col-span-2 md:col-span-1"
-        data-cy="token-kind-select"
+        data-testid="token-kind-select"
       >
         <RuiMenuSelect
           v-model="tokenKind"

@@ -3,14 +3,14 @@ import { TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
 import { RotkiApp } from './rotki-app';
 
 async function confirmDialog(page: Page): Promise<void> {
-  const dialog = page.locator('[data-cy=bottom-dialog]');
-  await dialog.locator('[data-cy=confirm]').click();
+  const dialog = page.locator('[data-testid=bottom-dialog]');
+  await dialog.locator('[data-testid=confirm]').click();
   await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
 }
 
 async function confirmDelete(page: Page): Promise<void> {
-  const confirmDialogEl = page.locator('[data-cy=confirm-dialog]');
-  await confirmDialogEl.locator('[data-cy=button-confirm]').click();
+  const confirmDialogEl = page.locator('[data-testid=confirm-dialog]');
+  await confirmDialogEl.locator('[data-testid=button-confirm]').click();
   await confirmDialogEl.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
 }
 
@@ -35,12 +35,12 @@ export class CalendarPage {
 
   async openAddDialog(): Promise<void> {
     await this.page.getByTestId('calendar-add-event').click();
-    await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
   }
 
   async cancelDialog(): Promise<void> {
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
-    await dialog.locator('[data-cy=cancel]').click();
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
+    await dialog.locator('[data-testid=cancel]').click();
     await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
   }
 
@@ -70,7 +70,7 @@ export class CalendarPage {
     // Click "View details" on the matching event in the selected-events panel.
     const event = this.eventInPanel(this.selectedPanel(), name).first();
     await event.getByRole('button', { name: /view details/i }).click();
-    await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
   }
 
   async editEvent(name: string, opts: { newName?: string; newDescription?: string }): Promise<void> {

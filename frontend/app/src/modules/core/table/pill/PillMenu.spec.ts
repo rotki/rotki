@@ -6,7 +6,7 @@ import PillMenu from '@/modules/core/table/pill/PillMenu.vue';
 function field(key: string, label: string): FieldDef {
   return {
     allowExclusion: false,
-    binding: { kind: 'matcher' },
+    binding: { kind: 'filter' },
     key,
     label,
     multiple: true,
@@ -31,19 +31,19 @@ describe('pillMenu', () => {
 
   it('should list every field by default', () => {
     const wrapper = createWrapper();
-    expect(wrapper.findAll('[data-testid^=pill-menu-field-]')).toHaveLength(3);
+    expect(wrapper.findAll('[data-testid=pill-menu-field]')).toHaveLength(3);
   });
 
   it('should emit the picked field', async () => {
     const wrapper = createWrapper();
-    await wrapper.get('[data-testid=pill-menu-field-assets]').trigger('click');
+    await wrapper.get('[data-testid=pill-menu-field][data-field=assets]').trigger('click');
     expect(wrapper.emitted('select')?.[0]?.[0]).toMatchObject({ key: 'assets' });
   });
 
   it('should narrow the list by the search text', async () => {
     const wrapper = createWrapper();
     await wrapper.find('input').setValue('loc');
-    const shown = wrapper.findAll('[data-testid^=pill-menu-field-]');
+    const shown = wrapper.findAll('[data-testid=pill-menu-field]');
     expect(shown).toHaveLength(1);
     expect(shown[0].text()).toBe('Location');
   });
@@ -88,7 +88,7 @@ describe('pillMenu', () => {
     const wrapper = createWrapper();
     scrollIntoView.mockClear();
 
-    await wrapper.findAll('[data-testid^=pill-menu-field-]')[2].trigger('mousemove');
+    await wrapper.findAll('[data-testid=pill-menu-field]')[2].trigger('mousemove');
 
     expect(scrollIntoView).not.toHaveBeenCalled();
   });

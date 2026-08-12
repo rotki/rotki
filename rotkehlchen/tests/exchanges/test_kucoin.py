@@ -71,6 +71,9 @@ def test_kucoin_exchange_assets_are_known(mock_kucoin):
 
     for entry in response_dict['data']:
         symbol = entry['currency']
+        if symbol.endswith(('UP', 'DOWN')):
+            # Kucoin leveraged tokens are long/short products that rotki does not handle.
+            continue
         try:
             asset_from_kucoin(symbol)
         except UnknownAsset as e:

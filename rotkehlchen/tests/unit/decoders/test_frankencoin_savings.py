@@ -24,13 +24,23 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
 )
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants.assets import A_ETH, A_POL, A_XDAI
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.base import BASE_MAINNET_NODE
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.tests.utils.optimism import OPTIMISM_MAINNET_NODE
+from rotkehlchen.types import (
+    ChainID,
+    Location,
+    SupportedBlockchain,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 
 def _make_savings_decoder(*, tracked: bool) -> FrankencoinSavingsCommonDecoder:
@@ -465,6 +475,7 @@ def test_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_manager_connect_at_start', [(BASE_MAINNET_NODE,)])
 @pytest.mark.parametrize('base_accounts', [['0xAAafdC589d2222cE3b794876c768Eb540230aB11']])
 def test_deposit_base(base_inquirer, base_accounts):
     with patch(
@@ -505,6 +516,7 @@ def test_deposit_base(base_inquirer, base_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_manager_connect_at_start', [(OPTIMISM_MAINNET_NODE,)])
 @pytest.mark.parametrize('optimism_accounts', [['0xc35A45BcF42BeE24bB62D512b8aA08660cc8a3d3']])
 def test_deposit_optimism(optimism_inquirer, optimism_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -579,6 +591,16 @@ def test_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_manager_connect_at_start', [(WeightedNode(
+    node_info=NodeName(
+        name='gnosis public node',
+        endpoint='https://gnosis.publicnode.com',
+        owned=False,
+        blockchain=SupportedBlockchain.GNOSIS,
+    ),
+    active=True,
+    weight=ONE,
+),)])
 @pytest.mark.parametrize('gnosis_accounts', [['0x5D0cE9De9F4a26e3999dCE56Ff62cA5Db97608e3']])
 def test_deposit_gnosis(gnosis_inquirer, gnosis_accounts):
     events, _ = get_decoded_events_of_transaction(

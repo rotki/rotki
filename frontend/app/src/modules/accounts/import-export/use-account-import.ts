@@ -1,13 +1,15 @@
 import type { AddAccountsPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { getAccountAddress, getXpubId } from '@/modules/accounts/account-utils';
-import { type StakingValidatorManage, useAccountManage } from '@/modules/accounts/blockchain/use-account-manage';
-import { createValidatorAction, type CSVRow, CSVSchema, csvToAccount, doesAccountExist, getChainType } from '@/modules/accounts/import-export/account-csv-schema';
+import { EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
+import { type CSVRow, CSVSchema, csvToAccount, doesAccountExist, getChainType } from '@/modules/accounts/import-export/account-csv-schema';
+import { useValidatorImport } from '@/modules/accounts/import-export/use-validator-import';
+import { useAccountAdditionBatch } from '@/modules/accounts/use-account-addition-batch';
 import { useAccountImportProgressStore } from '@/modules/accounts/use-account-import-progress-store';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { getKeyType, guessPrefix, isPrefixed } from '@/modules/accounts/xpub';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
-import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
+import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { logger } from '@/modules/core/common/logging/logging';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/modules/core/common/use-csv-import-export';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -15,8 +17,6 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { useTagOperations } from '@/modules/tags/use-tag-operations';
-import { ActivityKind } from '@/modules/task-center/core/types';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseAccountImportReturn {
   importAccounts: (file: File) => Promise<void>;
@@ -26,9 +26,10 @@ export function useAccountImport(): UseAccountImportReturn {
   const { isEvmCompatible } = useSupportedChains();
   const { getAccounts } = useBlockchainAccountData();
   const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
-  const { addAccounts, addEvmAccounts } = useBlockchainAccountManagement();
+  const { addAccounts } = useBlockchainAccountManagement();
+  const { runImportBatch } = useAccountAdditionBatch();
   const { attemptTagCreation } = useTagOperations();
-  const { save } = useAccountManage();
+  const { importValidators } = useValidatorImport();
   const { notifyError, notifyInfo } = useNotifications();
   const { parseCSV } = useCsvImportExport();
   const { t } = useI18n({ useScope: 'global' });
@@ -37,33 +38,8 @@ export function useAccountImport(): UseAccountImportReturn {
   const { increment, setTotal, skip } = progressStore;
   const { progress } = storeToRefs(progressStore);
 
-  const { useIsActive } = useTaskCenter();
-  const blockchainLoading = useIsActive(ActivityKind.BLOCKCHAIN_BALANCES);
+  const { loadingBlockchainBalances: blockchainLoading } = useBalancesLoading();
   const doneLoading = refDebounced(logicNot(blockchainLoading), 2000);
-
-  async function importValidators(validators: CSVRow[]): Promise<void> {
-    const validatorActions: StakingValidatorManage[] = [];
-
-    for (const validator of validators) {
-      const ownershipPercentage = validator.addressExtras.ownershipPercentage || '100';
-      const publicKey = validator.address;
-
-      validatorActions.push(createValidatorAction('add', {
-        ownershipPercentage,
-        publicKey,
-      }));
-    }
-
-    await awaitParallelExecution(
-      validatorActions,
-      item => item.data.publicKey!,
-      async (item) => {
-        increment();
-        await save(item);
-      },
-      1,
-    );
-  }
 
   async function handleAccountRestore(rows: CSVRow[]): Promise<void> {
     const tags: string[] = [];
@@ -119,29 +95,28 @@ export function useAccountImport(): UseAccountImportReturn {
 
     await Promise.all(tags.map(async tag => attemptTagCreation(tag)));
 
-    await awaitParallelExecution(
-      evmAccounts,
-      accounts => accounts.payload[0].address,
-      async (payload) => {
-        increment();
-        await addEvmAccounts(payload, { wait: true });
-      },
-      1,
-    );
+    // One umbrella for the whole import, and no limiter of its own: every row's addition already
+    // submits onto `accounts-add:<chain>`, capped at 2 per chain with 2 chains live, so a second
+    // mechanism here would be the trap documented on `DECODE_LANE` one layer up.
+    //
+    // ⚠️ This is a deliberate behaviour change: rows used to run strictly one at a time.
+    const additions = [
+      ...evmAccounts.map(payload => [EVM_PSEUDO_CHAIN, payload] as const),
+      ...accounts.map(([chain, _id, account]) => [chain, account] as const),
+    ];
 
-    await awaitParallelExecution(
-      accounts,
-      ([_chain, id]) => id,
-      async ([chain, _id, account]) => {
+    await runImportBatch(
+      additions,
+      async ([chain, account], parent) => {
+        // Both kinds of row take the same call with the same contract. The EVM loop previously had
+        // no `try/catch` while the chain one did, so a failed EVM row aborted the whole import and
+        // a failed chain row did not — accidental, not chosen. Neither throws now.
+        await addAccounts(chain, account, { parent, wait: true });
+        // Counted after the row lands, not before. The batch starts every row's callback in the
+        // same tick, so incrementing first drove the bar to 100% before a single account had been
+        // submitted and left it parked there while the lanes drained.
         increment();
-        try {
-          await addAccounts(chain, account, { wait: true });
-        }
-        catch (error) {
-          logger.error(error);
-        }
       },
-      1,
     );
 
     if (validators.length > 0) {
@@ -151,7 +126,7 @@ export function useAccountImport(): UseAccountImportReturn {
         await until(doneLoading).toBe(true);
       }
 
-      await importValidators(validators);
+      await importValidators(validators, increment);
     }
 
     const { skipped, total } = get(progress);

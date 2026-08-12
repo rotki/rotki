@@ -5,11 +5,10 @@ import type {
 } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { getAccountAddress, isXpubAccount } from '@/modules/accounts/account-utils';
-import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts';
+import { useAccountRemovals } from '@/modules/accounts/use-account-removals';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
@@ -129,7 +128,7 @@ export function useAccountDelete(): UseAccountDeleteReturn {
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { balances } = storeToRefs(useBalancesStore());
   const { deleteEth2Validators } = useEthStaking();
-  const { deleteXpub, removeAccount, removeAgnosticAccount } = useBlockchainAccounts();
+  const { deleteXpub, removeAccount, removeAgnosticAccount } = useAccountRemovals();
   const { t } = useI18n({ useScope: 'global' });
   const { show } = useConfirmStore();
   const { getChainName } = useSupportedChains();
@@ -185,12 +184,10 @@ export function useAccountDelete(): UseAccountDeleteReturn {
       removeAccounts({ addresses: [address], chains });
     }
     else {
-      await awaitParallelExecution(
-        chains,
-        chain => chain,
-        async chain => removeAccount({ accounts: [address], chain }),
-        1,
-      );
+      // Submitted together, serialized by the removal lane rather than by a limiter here: one
+      // per chain and one active chain at a time is the shape this call always had, now declared
+      // once where the activity is, as the warning on `DECODE_LANE` requires.
+      await Promise.all(chains.map(async chain => removeAccount({ accounts: [address], chain })));
 
       removeAccounts({
         addresses: [address],

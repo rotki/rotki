@@ -18,7 +18,7 @@ const ZERO_DISPLAY = '0';
     <span>{{ ZERO_DISPLAY }}</span>
     <span
       class="text-[0.8em] align-bottom relative top-[0.35em]"
-      data-cy="amount-display-subscript"
+      data-testid="amount-display-subscript"
     >
       {{ numberParts.leadingZeros }}
     </span>

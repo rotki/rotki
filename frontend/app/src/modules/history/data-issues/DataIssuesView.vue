@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
+import type { Filters } from '@/modules/history/data-issues/use-data-issues-filter';
 import { startPromise } from '@shared/utils';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
@@ -13,7 +14,6 @@ import { DEFAULT_LIST_STATES, IssueState } from '@/modules/history/data-issues/c
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
 import { useDataIssueFields } from '@/modules/history/data-issues/use-data-issue-fields';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
-import { type Filters, type Matcher, useDataIssuesFilter } from '@/modules/history/data-issues/use-data-issues-filter';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -34,7 +34,7 @@ const { fetchData } = useDataIssues();
 const { baselineTotal, counts, dismissInlinePanels, refreshSummary } = useDataIssuesSummary();
 const { syncCompleted } = useSyncCompleted();
 
-const filterSchema = useDataIssuesFilter();
+const fields = useDataIssueFields();
 
 const {
   collection: state,
@@ -43,9 +43,9 @@ const {
   pagination,
   refetch: refresh,
   setFilter: updateFilter,
-} = useServerTable<DataIssue, DataIssuesRequestPayload, Filters, Matcher>({
+} = useServerTable<DataIssue, DataIssuesRequestPayload, Filters>({
   fetch: fetchData,
-  filterSchema,
+  fields,
   params: [{
     isDefault: true,
     to: 'request',
@@ -54,7 +54,6 @@ const {
   urlState: routeWhen(mainPage),
 });
 
-const fields = useDataIssueFields(filterSchema.matchers);
 const pillLabels = usePillBarLabels();
 
 // Tracks whether the first load has finished. The all-clear screen keys off this

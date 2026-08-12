@@ -1,10 +1,10 @@
-from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.balances import BlockchainBalances
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -12,9 +12,11 @@ from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_EUR, A_LQTY, A_POL
 from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_evm_address
 from rotkehlchen.tests.utils.xpubs import setup_db_for_xpub_tests_impl
 from rotkehlchen.types import (
@@ -25,9 +27,6 @@ from rotkehlchen.types import (
     Timestamp,
     TokenKind,
 )
-
-if TYPE_CHECKING:
-    from rotkehlchen.chain.aggregator import ChainsAggregator
 
 OPTIMISM_OP_TOKEN = EvmToken.initialize(
     address=string_to_evm_address('0x4200000000000000000000000000000000000042'),
@@ -224,6 +223,78 @@ def test_partial_balance_refresh_keeps_other_accounts(blockchain: ChainsAggregat
     assert blockchain.balances.eth[other_address] == other_sheet
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+def test_full_balance_refresh_preserves_disabled_addresses(
+        blockchain: ChainsAggregator,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """A full refresh replaces active addresses but freezes disabled-address balances."""
+    active_address, disabled_address = ethereum_accounts
+    old_active_sheet = BalanceSheet()
+    old_active_sheet.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE)
+    old_disabled_sheet = BalanceSheet()
+    old_disabled_sheet.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('2'))
+    blockchain.balances.eth[active_address] = old_active_sheet
+    blockchain.balances.eth[disabled_address] = old_disabled_sheet
+
+    new_active_sheet = BalanceSheet()
+    new_active_sheet.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('3'))
+    new_disabled_sheet = BalanceSheet()
+    new_disabled_sheet.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('4'))
+
+    CachedSettings().update_entry(
+        'disabled_chain_queries',
+        {SupportedBlockchain.ETHEREUM: frozenset({disabled_address})},
+    )
+    try:
+        with patch.object(
+            blockchain,
+            'query_eth_balances',
+            return_value={
+                active_address: new_active_sheet,
+                disabled_address: new_disabled_sheet,
+            },
+        ) as query_eth_balances:
+            blockchain._query_chain_balances(
+                blockchain=SupportedBlockchain.ETHEREUM,
+                ignore_cache=True,
+            )
+
+        query_eth_balances.assert_called_once_with((active_address,))
+        assert blockchain.balances.eth[active_address] == new_active_sheet
+        assert blockchain.balances.eth[disabled_address] == old_disabled_sheet
+    finally:
+        CachedSettings().update_entry('disabled_chain_queries', {})
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_fully_disabled_chain_balance_refresh_is_frozen(
+        blockchain: ChainsAggregator,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """A fully disabled chain keeps its balances and is not queried by a full refresh."""
+    account = ethereum_accounts[0]
+    sheet = BalanceSheet()
+    sheet.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE)
+    blockchain.balances.eth[account] = sheet
+
+    CachedSettings().update_entry(
+        'disabled_chain_queries',
+        {SupportedBlockchain.ETHEREUM: frozenset()},
+    )
+    try:
+        with patch.object(blockchain, 'query_eth_balances') as query_eth_balances:
+            blockchain.query_balances(
+                blockchain=SupportedBlockchain.ETHEREUM,
+                ignore_cache=True,
+            )
+
+        query_eth_balances.assert_not_called()
+        assert blockchain.balances.eth[account] == sheet
+    finally:
+        CachedSettings().update_entry('disabled_chain_queries', {})
+
+
 def test_blockchain_balances_cache_removes_spent_token(blockchain: ChainsAggregator) -> None:
     """Test that refreshing an address removes token balances no longer returned."""
     address = make_evm_address()
@@ -384,3 +455,27 @@ def test_cached_gnosis_balance_uses_manual_current_price(
 
     assert gnosis_token in balances_update.totals.assets
     assert balances_update.totals.assets[gnosis_token]['aave-v3'].value == amount * manual_price
+
+
+def test_only_cache_repricing_does_not_query_price_oracles() -> None:
+    """A cache-only balance read must not fetch a missing manual-price conversion online."""
+    with (
+        patch.object(Inquirer, 'get_cached_current_price_entry', return_value=None),
+        patch.object(
+            Inquirer,
+            'find_price',
+            side_effect=AssertionError(
+                'cache-only balance repricing must not query price oracles',
+            ),
+        ),
+    ):
+        price = ChainsAggregator.get_price_for_cached_balances(
+            asset=A_ETH.resolve_to_crypto_asset(),
+            timestamp=Timestamp(1_700_000_000),
+            main_currency=A_EUR,
+            price_cache={},
+            manual_current_prices={A_ETH.identifier: (A_BTC, Price(ONE))},
+            only_cache=True,
+        )
+
+    assert price == ZERO

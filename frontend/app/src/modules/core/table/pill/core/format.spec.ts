@@ -17,7 +17,7 @@ const operatorLabels = {
 function field(partial: Partial<FieldDef>): FieldDef {
   return {
     allowExclusion: true,
-    binding: { kind: 'matcher' },
+    binding: { kind: 'filter' },
     key: 'k',
     label: 'K',
     multiple: true,

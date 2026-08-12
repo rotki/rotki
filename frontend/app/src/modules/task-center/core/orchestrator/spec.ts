@@ -16,7 +16,7 @@ export type StaticLane = (typeof STATIC_LANES)[number];
  * (`tx-sync:<chain>`). Also a closed list, so a family cap cannot be keyed by a prefix no producer
  * ever mints.
  */
-export const LANE_FAMILIES = ['tx-sync:', 'exchange-events:'] as const;
+export const LANE_FAMILIES = ['tx-sync:', 'exchange-events:', 'accounts-add:', 'accounts-remove:', 'detect:'] as const;
 
 export type LaneFamily = (typeof LANE_FAMILIES)[number];
 
@@ -35,8 +35,12 @@ export const DEFAULT_LANE: StaticLane = 'default';
 
 /**
  * Blockchain-balance refreshes + token detection run here; capped at 2 to mirror the old
- * `BalanceQueueService` `maxConcurrency`. Cached blockchain reads stay on {@link DEFAULT_LANE}
- * so initial load is not throttled.
+ * `BalanceQueueService` `maxConcurrency`.
+ *
+ * ⛔ Balance *hydration* — reading a chain back out of the user's own database — has no lane here
+ * and must not be given one. It is not work: no task-centre row, no cancel, no progress. Its bound
+ * is `allWithConcurrency` inside `useBalanceHydration`, which is what makes the {@link DECODE_LANE}
+ * trap structurally unavailable rather than merely avoided.
  */
 export const BALANCES_LANE: StaticLane = 'balances';
 
@@ -61,13 +65,11 @@ export const UMBRELLA_LANE: StaticLane = 'umbrella';
 export const CHAIN_SYNC_LANE: StaticLane = 'chain-sync';
 
 /**
- * Every transaction decode runs here, capped at 2 — the parallelism the redecode paths always used
- * (`awaitParallelExecution(..., 2)`), now expressed once, in the lane, rather than by a limiter
- * wrapping a call that submits to a lane.
+ * Every transaction decode runs here, capped at 2.
  *
- * ⚠️ It was briefly capped at 1, matching the sync path's old decode queue. That silently halved
- * redecode throughput: the redecode fan-outs were never migrated, so their outer limiter of 2 was
- * captured by the inner cap of 1 and became dead. One mechanism governs this now.
+ * ⚠️ Do not lower this to 1. Concurrency belongs to the lane alone: a limiter wrapped around a call
+ * that already submits here is captured by the inner cap and silently becomes dead, which is how
+ * redecode throughput was once halved without anything reporting a change.
  */
 export const DECODE_LANE: StaticLane = 'decode';
 
@@ -78,12 +80,42 @@ export const DECODE_LANE: StaticLane = 'decode';
 export const ACCOUNT_SYNC_LANE_PREFIX: LaneFamily = 'tx-sync:';
 
 /**
+ * Family prefix for the per-chain token-detection lanes (`detect:<chain>`).
+ *
+ * 🔴🔴 Detection must NOT share {@link BALANCES_LANE} with the chain job that awaits it. The chain
+ * job holds a balances slot for its whole body — detection, then the network query — so children
+ * queued on the same lane could never get one: with a cap of 2, two chain jobs would sit waiting
+ * on addresses that cannot start, and the refresh would hang until the tab was reloaded.
+ *
+ * A separate family also gives the shape §8 asks for directly: 2 addresses per chain, with the
+ * balances cap deciding how many chains detect at once.
+ */
+export const DETECT_LANE_PREFIX: LaneFamily = 'detect:';
+
+/**
  * Family prefix for the per-location exchange lanes (`exchange-events:<location>`). Capped at 1 per
  * location so one exchange's accounts query in sequence, with the family's active cap deciding how
  * many locations run at once — the shape the old `awaitGroupedExecution(..., 2)` produced by hand.
  * A flat lane cap could not express it: two slots would happily go to the same exchange.
  */
 export const EXCHANGE_EVENTS_LANE_PREFIX: LaneFamily = 'exchange-events:';
+
+/**
+ * Family prefix for the per-chain account-addition lanes (`accounts-add:<chain>`). Capped at 2 per
+ * chain rather than 2 overall: a flat lane would serialize additions across unrelated chains.
+ */
+export const ACCOUNTS_ADD_LANE_PREFIX: LaneFamily = 'accounts-add:';
+
+/**
+ * Family prefix for the per-chain account-removal lanes (`accounts-remove:<chain>`). Capped at 1 per
+ * chain *and* 1 active lane, so removing one address from several chains stays fully serial.
+ *
+ * Its own family rather than a share of {@link ACCOUNTS_ADD_LANE_PREFIX}: an addition and a removal
+ * are independent operations on different addresses, so pooling them would make a removal wait on an
+ * unrelated addition. They contend for the same chain only in the sense every chain call does, which
+ * is a per-chain budget question, not a reason to serialize the two against each other.
+ */
+export const ACCOUNTS_REMOVE_LANE_PREFIX: LaneFamily = 'accounts-remove:';
 
 /** Push live step progress for a running activity. Pure no-op-safe; calling after the spec
  *  settles is harmless (ignored by the orchestrator). */
@@ -179,6 +211,22 @@ export interface ActivitySpec<T = unknown> {
    * account creation) that must not leave a stale entry once the shell mounts.
    */
   readonly ephemeral?: boolean;
+  /**
+   * This activity only *groups* other work and produces no data of its own, so it writes no
+   * completion-ledger entry.
+   *
+   * 🔴 `everCompleted` for a kind must mean "we have data", not "a run happened". A fan-out
+   * umbrella settles COMPLETE whenever its children settle — `allSettled`, deliberately, because a
+   * failure belongs to the subject that failed — so an umbrella sharing its children's kind writes
+   * a success even when **every** child FAILED. Concretely: backend unreachable at login, all 17
+   * chain jobs fail, umbrella completes, and the dashboard reads `hasCachedData` true and
+   * `isInitialLoading` false — a settled, empty portfolio instead of an error state.
+   *
+   * ⚠️ Opt-in, never blanket. `HISTORY_SYNC`'s umbrella *is* the subject for its kind and its
+   * ledger entry is load-bearing (`use-refresh-transactions.ts` reads `everCompleted` for
+   * `alreadyLoaded` / `everRefreshed`); silencing that one would make history re-sync every time.
+   */
+  readonly container?: boolean;
   /**
    * Marks work that deletes data before re-deriving it, so the eligibility rules can keep it from
    * overlapping work that writes to the same rows. Everything else may overlap harmlessly — the

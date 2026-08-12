@@ -179,13 +179,13 @@ def test_find_ens_mappings_naming_systems(evm_address, database: DBHandler, monk
     ))
     ethereum_inquirer = Mock(database=database)
 
-    # with the default settings gns_names is not in the priority list, so only ENS is queried
+    # The default priority has ENS before GNS, so both are queried and the ENS name wins.
     assert find_ens_mappings(
         ethereum_inquirer=ethereum_inquirer,
         addresses=[evm_address],
         ignore_cache=True,
     ) == {evm_address: 'someone.eth'}
-    assert queried_systems == ['ens']
+    assert sorted(queried_systems) == ['ens', 'gns']
 
     cases: tuple[tuple[list[AddressNameSource], str], ...] = (
         (['gns_names', 'ens_names'], 'someone.gwei'),
@@ -217,9 +217,8 @@ def test_gns_reverse_lookup(ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_gns_resolve(ethereum_inquirer):
-    """Test that forward resolution of gwei names works properly. lefteris.gwei has no
-    explicit address set, so it resolves to the owner of the name"""
-    assert gns_resolve(ethereum_inquirer, 'lefteris.gwei') == string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12')  # noqa: E501
+    """Test that forward resolution of gwei names works properly."""
+    assert gns_resolve(ethereum_inquirer, 'yabir.gwei') == ethereum_inquirer.ens_lookup('yabir.eth') == string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')  # noqa: E501
     assert gns_resolve(ethereum_inquirer, 'surely-not-registered-a1b2c3.gwei') is None
 
 

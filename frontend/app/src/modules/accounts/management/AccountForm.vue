@@ -319,7 +319,7 @@ defineExpose({
 </script>
 
 <template>
-  <div data-cy="blockchain-balance-form">
+  <div data-testid="blockchain-balance-form">
     <RuiAlert
       v-if="beaconchainInfo?.service"
       type="info"

@@ -103,9 +103,18 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
     return alreadyLoaded && novelty.newAccounts.length === 0 && novelty.newExchanges.length === 0;
   }
 
-  function resolveForFullRefresh(novelty: NoveltyDetection, chains: string[], userInitiated: boolean): { accounts: ChainAddress[]; exchanges: Exchange[] } {
+  /**
+   * ⚠️ `!everRefreshed` is a scope condition, not a duplicate of the entry guard. Novelty is "never
+   * attempted", so an account whose sync *failed* is no longer novel — which meant a first load
+   * where every account failed resolved to an empty account set on every later background refresh,
+   * and history only recovered if the user pressed refresh. Reaching here at all already means
+   * history has never loaded (`shouldNotRefresh` returns before this once it has), so the honest
+   * scope for that case is the full first load.
+   */
+  function resolveForFullRefresh(novelty: NoveltyDetection, chains: string[], opts: { userInitiated: boolean; everRefreshed: boolean }): { accounts: ChainAddress[]; exchanges: Exchange[] } {
+    const wantsAllAccounts = novelty.newAccounts.length > 0 || opts.userInitiated || !opts.everRefreshed;
     return {
-      accounts: (novelty.newAccounts.length > 0 || userInitiated) ? getAllAccounts(chains) : [],
+      accounts: wantsAllAccounts ? getAllAccounts(chains) : [],
       exchanges: get(syncingExchanges),
     };
   }
@@ -128,7 +137,7 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
     let resolved: { accounts: ChainAddress[]; exchanges: Exchange[] };
 
     if (fullRefresh)
-      resolved = resolveForFullRefresh(novelty, chains, userInitiated);
+      resolved = resolveForFullRefresh(novelty, chains, { everRefreshed, userInitiated });
     else if (hasNovelty)
       resolved = resolveForNovelItems(novelty);
     else

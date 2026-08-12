@@ -8,6 +8,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.api.session_store import SessionStore
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE_NAME
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
@@ -34,8 +35,9 @@ def generate_expected_info(
         expected_version: str,
         data_dir: Path,
         latest_version: str | None = None,
-        accept_docker_risk: bool = False,
+        accept_unauthenticated_api: bool = False,
         download_url: str | None = None,
+        session_auth: bool = False,
 ) -> dict[str, Any]:
     return {
         'version': {
@@ -45,7 +47,8 @@ def generate_expected_info(
         },
         'data_directory': str(data_dir),
         'log_level': 'DEBUG',
-        'accept_docker_risk': accept_docker_risk,
+        'accept_unauthenticated_api': accept_unauthenticated_api,
+        'session_auth': session_auth,
         'backend_default_arguments': {
             'max_logfiles_num': 3,
             'max_size_in_mb_all_logs': 300,
@@ -98,6 +101,24 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server: APIServer) -
     result = assert_proper_sync_response_with_result(response)
     assert result == generate_expected_info(expected_version, rotki.data_dir, latest_version=expected_version)  # noqa: E501
 
+    with version_patch, release_patch, patch.dict(os.environ, {'ROTKI_ACCEPT_UNAUTHENTICATED_API': 'whatever'}):  # noqa: E501
+        response = requests.get(
+            url=api_url_for(
+                rotkehlchen_api_server,
+                'inforesource',
+            ),
+        )
+
+    result = assert_proper_sync_response_with_result(response)
+    assert result == generate_expected_info(
+        expected_version=expected_version,
+        data_dir=rotki.data_dir,
+        accept_unauthenticated_api=True,
+    )
+
+    # The retired ROTKI_ACCEPT_DOCKER_RISK must not carry over. Operators who set it to
+    # silence the old docker warning have to see the new one once, otherwise they never
+    # learn that session authentication exists.
     with version_patch, release_patch, patch.dict(os.environ, {'ROTKI_ACCEPT_DOCKER_RISK': 'whatever'}):  # noqa: E501
         response = requests.get(
             url=api_url_for(
@@ -110,7 +131,35 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server: APIServer) -
     assert result == generate_expected_info(
         expected_version=expected_version,
         data_dir=rotki.data_dir,
-        accept_docker_risk=True,
+    )
+
+    # session_auth mirrors the signing key the deployment was given. Set it on the
+    # live rest_api since it is read from the environment at construction time. The
+    # store goes with it since the cookie gate asserts they are built together.
+    rest_api = rotkehlchen_api_server.rest_api
+    session_key = b'a-session-key'
+    session_store = SessionStore(
+        db_path=rotki.data_dir / 'test_session.db',
+        session_key=session_key,
+    )
+    with (
+        version_patch,
+        release_patch,
+        patch.object(rest_api, 'session_key', session_key),
+        patch.object(rest_api, 'session_store', session_store),
+    ):
+        response = requests.get(
+            url=api_url_for(
+                rotkehlchen_api_server,
+                'inforesource',
+            ),
+        )
+
+    result = assert_proper_sync_response_with_result(response)
+    assert result == generate_expected_info(
+        expected_version=expected_version,
+        data_dir=rotki.data_dir,
+        session_auth=True,
     )
 
 
@@ -170,11 +219,13 @@ def test_manage_nodes(rotkehlchen_api_server: APIServer) -> None:
     blockchain = SupportedBlockchain.ETHEREUM
     blockchain_key = blockchain.serialize()
     nodes_at_start = len(database.get_rpc_nodes(blockchain=blockchain, only_active=True))
+    nodes_count_at_start = len(database.get_rpc_nodes(blockchain=blockchain))
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result) == 7
+    assert len(result) == nodes_count_at_start
+    node_to_delete = next(node for node in result if node['name'] != EVM_INDEXERS_NODE_NAME)
     for node in result:
         if node['name'] != EVM_INDEXERS_NODE_NAME:
             assert node['endpoint'] != ''
@@ -186,7 +237,7 @@ def test_manage_nodes(rotkehlchen_api_server: APIServer) -> None:
     # try to delete a node
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
-        json={'identifier': 1},
+        json={'identifier': node_to_delete['identifier']},
     )
     assert_proper_response(response)
     # check that is not anymore in the returned list
@@ -194,15 +245,15 @@ def test_manage_nodes(rotkehlchen_api_server: APIServer) -> None:
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert not any(node['name'] == 'cloudflare' for node in result)
+    assert not any(node['identifier'] == node_to_delete['identifier'] for node in result)
 
     # now try to add it again
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
         json={
-            'name': 'cloudflare',
-            'endpoint': 'https://cloudflare-eth.com/',
-            'owned': False,
+            'name': node_to_delete['name'],
+            'endpoint': node_to_delete['endpoint'],
+            'owned': node_to_delete['owned'],
             'weight': '20',
             'active': True,
         },
@@ -212,14 +263,20 @@ def test_manage_nodes(rotkehlchen_api_server: APIServer) -> None:
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
     )
     result = assert_proper_sync_response_with_result(response)
-    for node in result:
-        if node['name'] == 'cloudflare':
-            assert FVal(node['weight']) == 20
-            assert node['active'] is True
-            assert node['endpoint'] == 'https://cloudflare-eth.com/'
-            assert node['owned'] is False
-            assert node['blockchain'] == blockchain_key
-            break
+    restored_node = next(node for node in result if node['name'] == node_to_delete['name'])
+    assert FVal(restored_node['weight']) == 20
+    assert restored_node['active'] is True
+    assert restored_node['endpoint'] == node_to_delete['endpoint']
+    assert restored_node['owned'] is node_to_delete['owned']
+    assert restored_node['blockchain'] == blockchain_key
+
+    node_to_edit = next(
+        node for node in result
+        if (
+            node['name'] != EVM_INDEXERS_NODE_NAME and
+            node['identifier'] != restored_node['identifier']
+        )
+    )
 
     # Try to add an empty name
     response = requests.put(
@@ -260,7 +317,7 @@ def test_manage_nodes(rotkehlchen_api_server: APIServer) -> None:
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
         json={
-            'identifier': 4,
+            'identifier': node_to_edit['identifier'],
             'name': 'ankr',
             'endpoint': 'ewarwae',
             'owned': True,
@@ -274,7 +331,7 @@ def test_manage_nodes(rotkehlchen_api_server: APIServer) -> None:
     )
     result = assert_proper_sync_response_with_result(response)
     for node in result:
-        if node['identifier'] == 4:
+        if node['identifier'] == node_to_edit['identifier']:
             assert FVal(node['weight']) == 20
             assert node['name'] == 'ankr'
             assert node['active'] is True
@@ -287,7 +344,7 @@ def test_manage_nodes(rotkehlchen_api_server: APIServer) -> None:
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
         json={
-            'identifier': 4,
+            'identifier': node_to_edit['identifier'],
             'name': 'anchor',
             'endpoint': 'ewarwae',
             'owned': True,
@@ -301,7 +358,7 @@ def test_manage_nodes(rotkehlchen_api_server: APIServer) -> None:
     )
     result = assert_proper_sync_response_with_result(response)
     for node in result:
-        if node['identifier'] == 4:
+        if node['identifier'] == node_to_edit['identifier']:
             assert FVal(node['weight']) == 20
             assert node['name'] == 'anchor'
             assert node['active'] is True
@@ -628,6 +685,10 @@ def test_counterparties(rotkehlchen_api_server_with_exchanges: APIServer) -> Non
 def test_connecting_to_node(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     base = rotki.chains_aggregator.base
+    drpc_node = next(
+        node for node in rotki.data.db.get_rpc_nodes(SupportedBlockchain.BASE)
+        if node.node_info.name == 'dRPC'
+    )
     patched_connection = patch.object(
         base.node_inquirer,
         'attempt_connect',
@@ -637,7 +698,7 @@ def test_connecting_to_node(rotkehlchen_api_server: APIServer) -> None:
 
     with patched_connection:
         rpc_url = api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='base')
-        response = requests.post(url=rpc_url, json={'identifier': 28})
+        response = requests.post(url=rpc_url, json={'identifier': drpc_node.identifier})
         assert_proper_sync_response_with_result(response)
 
         # check case of a bad identifier
@@ -682,7 +743,7 @@ def test_connecting_to_node(rotkehlchen_api_server: APIServer) -> None:
     ):
         # check error during connection
         rpc_url = api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='base')
-        response = requests.post(url=rpc_url, json={'identifier': 28})
+        response = requests.post(url=rpc_url, json={'identifier': drpc_node.identifier})
         assert response.json()['result'] == {
             'errors': [{'name': 'dRPC', 'error': 'Custom error'}],
         }

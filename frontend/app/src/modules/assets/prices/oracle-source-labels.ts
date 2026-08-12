@@ -22,3 +22,9 @@ const sourceLabels: Record<string, string> = {
 export function getOracleSourceLabel(source: string): string {
   return sourceLabels[source] ?? source;
 }
+
+/**
+ * The oracles the source filter offers, derived from the labels above rather than listed again:
+ * an oracle the filter offers but has no name for would show its raw id on the pill.
+ */
+export const ORACLE_SOURCES: string[] = Object.keys(sourceLabels);

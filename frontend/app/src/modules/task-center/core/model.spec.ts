@@ -98,4 +98,51 @@ describe('assembleActivityModel', () => {
     const model = assembleActivityModel([a, b], t);
     expect(model.overall.percentage).toBe(75);
   });
+
+  it('should expose the tree, keeping children out of the roots', () => {
+    const umbrella = activity({ id: makeActivityId(Kind.HISTORY_SYNC), kind: Kind.HISTORY_SYNC, status: Status.RUNNING });
+    const chain = activity({
+      id: makeActivityId(Kind.TX_SYNC, 'ethereum'),
+      kind: Kind.TX_SYNC,
+      parent: umbrella.id,
+      status: Status.RUNNING,
+    });
+
+    const model = assembleActivityModel([chain, umbrella], t);
+
+    expect(model.roots.map(root => root.id)).toEqual([umbrella.id]);
+    expect(model.children.get(umbrella.id)?.map(child => child.id)).toEqual([chain.id]);
+  });
+
+  /**
+   * The regression: rolling up per-kind groups counted a subtree twice, because an umbrella's
+   * percentage is already the mean of its children. Here the umbrella and its three finished
+   * children are one job at 100% and the unrelated activity is at 0, so the honest answer is 50.
+   * Group-based rollup answered 67 — the same finished work, weighted twice.
+   */
+  it('should roll up overall from roots only, not once per kind', () => {
+    const umbrella = activity({
+      id: makeActivityId(Kind.HISTORY_SYNC),
+      kind: Kind.HISTORY_SYNC,
+      percentage: 100,
+      status: Status.RUNNING,
+    });
+    const children = [1, 2, 3].map(index => activity({
+      id: makeActivityId(Kind.TX_SYNC, index),
+      kind: Kind.TX_SYNC,
+      parent: umbrella.id,
+      percentage: 100,
+      status: Status.COMPLETE,
+    }));
+    const unrelated = activity({
+      id: makeActivityId(Kind.PRICES, 'latest'),
+      kind: Kind.PRICES,
+      percentage: 0,
+      status: Status.RUNNING,
+    });
+
+    const model = assembleActivityModel([umbrella, ...children, unrelated], t);
+
+    expect(model.overall.percentage).toBe(50);
+  });
 });

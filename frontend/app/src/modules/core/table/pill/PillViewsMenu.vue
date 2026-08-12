@@ -208,7 +208,8 @@ watch(open, (isOpen: boolean): void => {
             type="button"
             class="flex flex-col items-start flex-1 min-w-0 px-2.5 py-1.5 text-left"
             :title="t('table_filter.saved_views.actions.apply')"
-            :data-testid="`pill-views-apply-${index}`"
+            data-testid="pill-views-apply"
+            :data-index="index"
             @click="apply(view)"
           >
             <span
@@ -234,7 +235,8 @@ watch(open, (isOpen: boolean): void => {
             icon
             class="shrink-0 mr-1"
             :aria-label="t('table_filter.saved_views.actions.remove')"
-            :data-testid="`pill-views-delete-${index}`"
+            data-testid="pill-views-delete"
+            :data-index="index"
             @click="remove(index)"
           >
             <RuiIcon

@@ -69,7 +69,7 @@ const mappedOptions = computed<ChainInfo[]>(() => {
     :disabled="disabled"
     :options="mappedOptions"
     :label="t('account_form.labels.blockchain')"
-    data-cy="account-blockchain-field"
+    data-testid="account-blockchain-field"
     variant="outlined"
     auto-select-first
     text-attr="name"

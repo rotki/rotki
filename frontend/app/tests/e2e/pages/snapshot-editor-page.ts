@@ -39,10 +39,10 @@ export class SnapshotEditorPage {
   async deleteBalanceRowWithSplit(asset: string, allocations: { location: string; amount: string }[]): Promise<void> {
     const row = this.balancesTable
       .locator('tr', { hasText: asset })
-      .filter({ has: this.page.locator('[data-cy=row-delete]') })
+      .filter({ has: this.page.locator('[data-testid=row-delete]') })
       .first();
-    await row.locator('[data-cy=row-delete]').click();
-    await this.page.locator('[data-cy=confirm-dialog]').waitFor({ state: 'visible' });
+    await row.locator('[data-testid=row-delete]').click();
+    await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'visible' });
 
     await this.page.locator('[data-testid=snapshot-balances-delete-split-toggle] input').check();
     const split = this.page.locator('[data-testid=snapshot-location-split]');
@@ -55,8 +55,8 @@ export class SnapshotEditorPage {
       await splitRow.locator('[data-testid=snapshot-location-split-amount] input').fill(allocation.amount);
     }
 
-    await this.page.locator('[data-cy=button-confirm]').click();
-    await this.page.locator('[data-cy=confirm-dialog]').waitFor({ state: 'hidden' });
+    await this.page.locator('[data-testid=button-confirm]').click();
+    await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'hidden' });
   }
 
   /**
@@ -66,14 +66,14 @@ export class SnapshotEditorPage {
    */
   async addBalance(asset: string, amount: string, assetId?: string): Promise<void> {
     await this.balancesTable.locator('[data-testid=snapshot-balances-add]').click();
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await dialog.waitFor({ state: 'visible' });
-    await selectAsset(this.page, '[data-cy=asset]', asset, assetId);
-    await dialog.locator('[data-cy=amount] input').fill(amount);
+    await selectAsset(this.page, '[data-testid=asset]', asset, assetId);
+    await dialog.locator('[data-testid=amount] input').fill(amount);
     // The USD value is derived from the seeded historic price once the fetch
     // settles; wait for it before confirming so validation passes.
-    await expect(dialog.locator('[data-cy=secondary] input')).not.toHaveValue('');
-    await this.page.locator('[data-cy=confirm]').click();
+    await expect(dialog.locator('[data-testid=secondary] input')).not.toHaveValue('');
+    await this.page.locator('[data-testid=confirm]').click();
     await dialog.waitFor({ state: 'hidden' });
   }
 
@@ -82,13 +82,13 @@ export class SnapshotEditorPage {
     // header also contains some asset symbols, so a bare hasText can match it.
     const row = this.balancesTable
       .locator('tr', { hasText: asset })
-      .filter({ has: this.page.locator('[data-cy=row-edit]') })
+      .filter({ has: this.page.locator('[data-testid=row-edit]') })
       .first();
-    await row.locator('[data-cy=row-edit]').click();
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    await row.locator('[data-testid=row-edit]').click();
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await dialog.waitFor({ state: 'visible' });
-    await dialog.locator('[data-cy=amount] input').fill(newAmount);
-    await this.page.locator('[data-cy=confirm]').click();
+    await dialog.locator('[data-testid=amount] input').fill(newAmount);
+    await this.page.locator('[data-testid=confirm]').click();
     await dialog.waitFor({ state: 'hidden' });
   }
 
@@ -96,11 +96,11 @@ export class SnapshotEditorPage {
     await this.page.locator('[data-testid=snapshot-summary-edit-locations]').click();
     await this.locationsDrawer.waitFor({ state: 'visible' });
     const row = this.locationsDrawer.locator('tr', { hasText: location }).first();
-    await row.locator('[data-cy=row-edit]').click();
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    await row.locator('[data-testid=row-edit]').click();
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await dialog.waitFor({ state: 'visible' });
     await dialog.locator('[data-testid=edit-location-value] input').fill(newUsd);
-    await this.page.locator('[data-cy=confirm]').click();
+    await this.page.locator('[data-testid=confirm]').click();
     await dialog.waitFor({ state: 'hidden' });
     await this.page.locator('[data-testid=snapshot-locations-close]').click();
     await this.locationsDrawer.waitFor({ state: 'hidden' });
@@ -118,9 +118,9 @@ export class SnapshotEditorPage {
   balanceEditButton(asset: string) {
     return this.balancesTable
       .locator('tr', { hasText: asset })
-      .filter({ has: this.page.locator('[data-cy=row-edit]') })
+      .filter({ has: this.page.locator('[data-testid=row-edit]') })
       .first()
-      .locator('[data-cy=row-edit]');
+      .locator('[data-testid=row-edit]');
   }
 
   /** Reconcile a sum-mismatch into the pre-selected (largest) location. */
@@ -132,14 +132,14 @@ export class SnapshotEditorPage {
   async deleteBalanceRow(asset: string): Promise<void> {
     const row = this.balancesTable
       .locator('tr', { hasText: asset })
-      .filter({ has: this.page.locator('[data-cy=row-delete]') })
+      .filter({ has: this.page.locator('[data-testid=row-delete]') })
       .first();
-    await row.locator('[data-cy=row-delete]').click();
+    await row.locator('[data-testid=row-delete]').click();
     // SnapshotBalanceDeleteDialog (a ConfirmDialog). With a single eligible
     // location it's auto-selected, so confirm is enabled immediately.
-    await this.page.locator('[data-cy=confirm-dialog]').waitFor({ state: 'visible' });
-    await this.page.locator('[data-cy=button-confirm]').click();
-    await this.page.locator('[data-cy=confirm-dialog]').waitFor({ state: 'hidden' });
+    await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=button-confirm]').click();
+    await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'hidden' });
   }
 
   async discard(): Promise<void> {

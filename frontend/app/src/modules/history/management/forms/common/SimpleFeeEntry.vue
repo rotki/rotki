@@ -45,7 +45,7 @@ watchImmediate(() => location, (newLocation) => {
           class="hidden group-hover/fee:flex size-10 -mt-5"
           variant="outlined"
           :disabled="disabled"
-          data-cy="fee-remove"
+          data-testid="fee-remove"
           icon
           color="error"
           @click="emit('remove', index)"
@@ -61,7 +61,7 @@ watchImmediate(() => location, (newLocation) => {
         <AmountInput
           v-model="modelValue.amount"
           variant="outlined"
-          data-cy="fee-amount"
+          data-testid="fee-amount"
           :disabled="disabled"
           :label="t('common.amount')"
           :error-messages="errorMessages.amount"
@@ -72,7 +72,7 @@ watchImmediate(() => location, (newLocation) => {
           outlined
           show-ignored
           :disabled="disabled"
-          data-cy="fee-asset"
+          data-testid="fee-asset"
           :chain="chain"
           :error-messages="errorMessages.asset"
           @blur="emit('blur', 'asset')"

@@ -36,7 +36,6 @@ export interface StarlingDevOptions {
 export interface StarlingDevEnv {
   /** The single origin the renderer talks to: starling's reverse proxy. */
   VITE_BACKEND_URL: string;
-  VITE_COLIBRI_URL: string;
 }
 
 async function wait(ms: number): Promise<void> {
@@ -158,6 +157,5 @@ export async function startStarlingSupervisor(options: StarlingDevOptions): Prom
   logger.info(`backend services ready behind ${proxyOrigin}`);
   return {
     VITE_BACKEND_URL: proxyOrigin,
-    VITE_COLIBRI_URL: `${proxyOrigin}/colibri`,
   };
 }

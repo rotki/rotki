@@ -36,9 +36,11 @@ function activity(kind: ActivityKind, status: ActivityStatus, rerunnable: boolea
 function model(activities: Activity[]): ActivityModel {
   return {
     active: [],
+    children: new Map(),
     groups: [{ activities, kind: ActivityKind.OTHER, percentage: -1, status: ActivityStatus.COMPLETE, title: 'g' }],
     overall: { percentage: 100, phase: 'done' },
     pending: [],
+    roots: activities,
   };
 }
 

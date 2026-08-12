@@ -1,9 +1,10 @@
 import type { RefreshTransactionsParams } from './types';
-import type { TaskError } from '@/modules/core/tasks/task-result';
 import { startPromise } from '@shared/utils';
-import { ok, type Result } from 'plainfp/result';
+import { err, type Result } from 'plainfp/result';
+import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { logger } from '@/modules/core/common/logging/logging';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
+import { combineOutcomes, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { historySyncFlow } from '@/modules/history/events/tx/history-sync.flow';
 import { HISTORY_STALE_AFTER, type RefreshTargets, useHistoryRefreshPolicy } from '@/modules/history/events/tx/use-history-refresh-policy';
@@ -22,6 +23,18 @@ interface UseRefreshTransactionsReturn {
   refreshTransactions: (params?: RefreshTransactionsParams) => Promise<void>;
 }
 
+/**
+ * Which wave of a sync a run is. `CONTINUATION` is the drained follow-up: it belongs to the sync
+ * already on screen, so it adds to that progress rather than starting its own, and it does not
+ * drain again (see {@link drainPending} for why one wave per run is the bound).
+ */
+const RefreshWave = {
+  CONTINUATION: 'continuation',
+  INITIAL: 'initial',
+} as const;
+
+type RefreshWave = (typeof RefreshWave)[keyof typeof RefreshWave];
+
 export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   let timeout: NodeJS.Timeout;
 
@@ -30,7 +43,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { filterDisabledChainAccounts } = useHistoryTransactionAccounts();
   const { statusOf, submitTask } = useNativeTask();
   const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
-  const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus, stopDecodingSyncProgress } = useDecodingStatusStore();
+  const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus, resumeDecodingSyncProgress, stopDecodingSyncProgress } = useDecodingStatusStore();
 
   const { syncTransactionsByChains } = useTransactionSync();
   const {
@@ -40,13 +53,24 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     resolveRefreshTargets,
     shouldNotRefresh,
   } = useHistoryRefreshPolicy();
+  const { pending: accountsPending } = useAccountLoadState();
   const { queryAllExchangeEvents, queryOnlineEvent, resetOnlineWarnings } = useRefreshHandlers();
   const { onHistoryFinished, onHistoryStarted } = useSchedulerState();
   const { t } = useI18n({ useScope: 'global' });
 
-  function initializeRefresh(targets: RefreshTargets): void {
-    resetQueryStatus();
-    resetOnlineWarnings();
+  /**
+   * A continuation carries only what the previous wave did not know about, so everything here that
+   * clears state has to be skipped for it: the first wave's finished addresses and its online
+   * warnings belong to the same sync, and wiping them is what made the progress bar restart with a
+   * smaller denominator instead of growing.
+   */
+  function initializeRefresh(targets: RefreshTargets, wave: RefreshWave): void {
+    const continuation = wave === RefreshWave.CONTINUATION;
+
+    if (!continuation) {
+      resetQueryStatus();
+      resetOnlineWarnings();
+    }
 
     if (!(targets.accounts.length > 0 || targets.exchanges.length > 0)) {
       return;
@@ -58,7 +82,16 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       return;
     }
 
-    initializeQueryStatus(targets.decodableAccounts);
+    initializeQueryStatus(targets.decodableAccounts, { extend: continuation });
+
+    if (continuation) {
+      // ⚠️ Re-arm, do not reset. The decode section is gated by a single flag that the previous
+      // wave's `finally` turned off, so skipping this entirely would drop every decode message this
+      // wave produces and leave the section reading complete over the previous wave's rows.
+      resumeDecodingSyncProgress();
+      return;
+    }
+
     resetUndecodedTransactionsStatus();
     resetDecodingSyncProgress();
   }
@@ -73,19 +106,28 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     return queries ?? [];
   }
 
+  /** Same continuation rule as {@link initializeRefresh}, for the exchange half of the panel. */
+  function seedExchangeProgress(targets: RefreshTargets, wave: RefreshWave): void {
+    const continuation = wave === RefreshWave.CONTINUATION;
+
+    if (!continuation)
+      resetExchangesQueryStatus();
+
+    if (targets.queryExchanges && targets.shouldShowSyncProgress)
+      initializeExchangeEventsQueryStatus(targets.usedExchanges, { extend: continuation });
+  }
+
   async function executeOperations(
     targets: RefreshTargets,
     disableEvmEvents: boolean,
     queries: OnlineHistoryEventsQueryType[] | undefined,
     umbrella: ActivityId,
-  ): Promise<void> {
+    wave: RefreshWave,
+  ): Promise<Result<void, TaskError>> {
     if (targets.fullRefresh || targets.decodableAccounts.length > 0)
       await fetchUndecodedTransactionsBreakdown();
 
-    resetExchangesQueryStatus();
-
-    if (targets.queryExchanges && targets.shouldShowSyncProgress)
-      initializeExchangeEventsQueryStatus(targets.usedExchanges);
+    seedExchangeProgress(targets, wave);
 
     // The shape of the refresh comes off the declaration rather than being rebuilt here, so what a
     // test asserts about `historySyncFlow` is what actually runs. Everything is a child of the
@@ -105,22 +147,33 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     // sequence with two locations at a time. Driving those per child would silently discard both.
     // The declaration still names every child, and names them with the same id constructors the
     // producers submit under, so the tree and the umbrella's progress stay accurate.
-    const asyncOperations = [
+    // Tagged by whether the work is the *account* half, because only that half votes on the
+    // umbrella's freshness — see the return below.
+    const asyncOperations: { accounts: boolean; work: Promise<Result<void, TaskError>[]> }[] = [
       ...(targets.accounts.length > 0
-        ? [syncTransactionsByChains(targets.accounts, targets.shouldShowSyncProgress, umbrella)]
+        ? [{ accounts: true, work: syncTransactionsByChains(targets.accounts, targets.shouldShowSyncProgress, umbrella) }]
         : []),
-      ...(exchanges.length > 0 ? [queryAllExchangeEvents(exchanges, umbrella)] : []),
+      ...(exchanges.length > 0 ? [{ accounts: false, work: queryAllExchangeEvents(exchanges, umbrella) }] : []),
       ...children.flatMap(child => child.payload.type === 'online'
-        ? [queryOnlineEvent(child.payload.query, umbrella)]
+        ? [{ accounts: false, work: queryOnlineEvent(child.payload.query, umbrella).then(outcome => [outcome]) }]
         : []),
     ];
 
+    // Collected, not discarded: the umbrella settles on these, and a run whose every child failed
+    // must not write the completion that `alreadyLoaded` reads.
+    const accountOutcomes: Result<void, TaskError>[] = [];
+    const otherOutcomes: Result<void, TaskError>[] = [];
+
     for (const operation of asyncOperations) {
+      const sink = operation.accounts ? accountOutcomes : otherOutcomes;
       try {
-        await operation;
+        sink.push(...await operation.work);
       }
       catch (error: unknown) {
         logger.error(error);
+        // The thrown value rides along as `cause`; the operation itself is what failed, and each
+        // producer has already logged its own detail.
+        sink.push(err(TaskFailed({ cause: error, message: 'a refresh operation threw' })));
       }
     }
 
@@ -130,6 +183,19 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     // guard precisely because the first had finished. Not awaited: the refresh is over and the
     // count is a display concern. Re-entry is the activity's own to dedup.
     startPromise(fetchUndecodedTransactionsBreakdown());
+
+    // 🔴 The accounts decide whenever they are in scope, and nothing else may vote. Combining all
+    // three kinds together let a protocol query that happened to succeed record the completion over
+    // a run where *every* chain failed — the same silent short-circuit, reached by a narrower road.
+    // Found in the app, not by the unit suite, which failed all three kinds together.
+    //
+    // ⚠️ Not "every kind must succeed" either: an online source failing is ordinary (a missing key,
+    // an unauthenticated integration), and letting that fail the umbrella would make history re-sync
+    // on every single refresh forever. Those failures have their own rows and warnings; this entry
+    // answers one question, "has the account history loaded", so the account half owns it.
+    return accountOutcomes.length > 0
+      ? combineOutcomes(accountOutcomes)
+      : combineOutcomes(otherOutcomes);
   }
 
   /**
@@ -170,13 +236,21 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
           accounts: newAccounts.length > 0 ? newAccounts : undefined,
           exchanges: newExchanges.length > 0 ? newExchanges : undefined,
         },
-      }, false));
+      }, RefreshWave.CONTINUATION));
     }, 100);
   }
 
-  async function refreshOnce(params: RefreshTransactionsParams, mayDrain: boolean): Promise<void> {
+  async function refreshOnce(params: RefreshTransactionsParams, wave: RefreshWave): Promise<void> {
     const { chains = [], disableEvmEvents = false, payload = {}, userInitiated = false } = params;
     const fullRefresh = Object.keys(payload).length === 0;
+
+    // The scope below is a snapshot of the account store, and the store is filled one chain at a
+    // time. Taking it mid-read drops whatever has not arrived, and the sync then reports complete
+    // over a scope that never covered those chains. Guarded rather than awaited unconditionally, so
+    // the common idle path keeps its current ordering.
+    const accountRead = accountsPending();
+    if (accountRead)
+      await accountRead;
 
     const usedExchanges = filterSyncingExchanges(payload.exchanges);
     // Filter before novelty detection so disabled-chain accounts are not flagged as newly
@@ -215,14 +289,23 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       lane: UMBRELLA_LANE,
       rerunnable: false,
       staleAfter: HISTORY_STALE_AFTER,
+      // 🔴 The outcome is the children's, not a foregone `ok`. This umbrella *is* the subject for
+      // its kind — `alreadyLoaded` below reads its `everCompleted` — so returning success
+      // unconditionally meant an all-failed first sync (backend unreachable at login, every chain
+      // fails) still wrote "history has loaded", and every later non-user-initiated refresh
+      // short-circuited on it: history silently never synced again for the session. It cannot be a
+      // `container` for the same reason — the entry is needed, it just has to be true. A run that
+      // targeted nothing settles SKIPPED for the same reason, which is what stops a refresh fired
+      // before any account has loaded from claiming the whole history.
       run: async (): Promise<Result<void, TaskError>> => {
-        initializeRefresh(targets);
+        initializeRefresh(targets, wave);
 
         try {
-          await executeOperations(targets, disableEvmEvents, payload.queries, umbrellaId);
+          return await executeOperations(targets, disableEvmEvents, payload.queries, umbrellaId, wave);
         }
         catch (error) {
           logger.error(error);
+          return err(TaskFailed({ cause: error, message: 'the history refresh threw' }));
         }
         finally {
           onHistoryFinished();
@@ -231,18 +314,16 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
           stopDecodingSyncProgress();
           sigilBus.emit('history:ready');
         }
-
-        return ok(undefined);
       },
       title: t('task_center.group.history_sync'),
     });
 
-    if (mayDrain)
+    if (wave === RefreshWave.INITIAL)
       drainPending(params);
   }
 
   async function refreshTransactions(params: RefreshTransactionsParams = {}): Promise<void> {
-    await refreshOnce(params, true);
+    await refreshOnce(params, RefreshWave.INITIAL);
   }
 
   onScopeDispose(() => {

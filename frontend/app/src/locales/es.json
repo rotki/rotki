@@ -901,17 +901,11 @@
     "title": "Sincronizando Historial",
     "transactions": "Transacciones"
   },
-  "table_filter": {
-    "start_typing": "Escriba el valor del filtro {search}."
-  },
   "tag_creator": {
     "labels": {
       "background": "Fondo",
       "foreground": "Frente"
     }
-  },
-  "tag_filter": {
-    "label": "Filtrar por etiqueta(s)"
   },
   "transactions": {
     "actions": {

@@ -29,7 +29,7 @@ describe('useAccountBalancesRefresh', () => {
 
     await refreshClick();
 
-    expect(h.fetchAccounts).toHaveBeenCalledWith(['eth', 'optimism'], true);
+    expect(h.fetchAccounts).toHaveBeenCalledWith({ blockchain: ['eth', 'optimism'], refreshEns: true });
     expect(h.handleBlockchainRefresh).toHaveBeenCalledWith(['eth', 'optimism']);
     expect(h.refreshBlockchainBalances).not.toHaveBeenCalled();
     expect(fetchData).toHaveBeenCalledOnce();
@@ -56,7 +56,7 @@ describe('useAccountBalancesRefresh', () => {
     set(chainIds, ['btc']);
     await refreshClick();
 
-    expect(h.fetchAccounts).toHaveBeenCalledWith(['btc'], true);
+    expect(h.fetchAccounts).toHaveBeenCalledWith({ blockchain: ['btc'], refreshEns: true });
     expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(['btc']);
   });
 });

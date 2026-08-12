@@ -46,6 +46,7 @@ from rotkehlchen.api.session_token import (
     clear_session_cookie,
     read_mcp_token,
     read_session_token,
+    session_cookie_is_secure,
     set_session_cookie,
 )
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData, TaskName
@@ -380,7 +381,11 @@ def async_api_call(session_token: bool = False) -> Callable:
                 response = make_response_from_dict(result)
 
             if token is not None:
-                set_session_cookie(response, token)
+                set_session_cookie(
+                    response=response,
+                    token=token,
+                    secure=session_cookie_is_secure(request.headers),
+                )
             return response
 
         return inner
@@ -936,6 +941,7 @@ class RestAPI:
     def query_blockchain_balances(
             self,
             blockchain: SupportedBlockchain | None,
+            only_cache: bool = False,
             value_threshold: FVal | None = None,
             addresses: ListOfBlockchainAddresses | None = None,
     ) -> dict[str, Any]:
@@ -947,8 +953,9 @@ class RestAPI:
                 chain=blockchain,
                 from_cache=True,
                 addresses=addresses,
+                only_cache=only_cache,
             )
-            if self._should_refresh_blockchain_balances(
+            if only_cache is False and self._should_refresh_blockchain_balances(
                 blockchain=blockchain,
                 balances=balances,
                 last_refresh_ts=self.rotkehlchen.chains_aggregator.get_blockchain_balances_last_query_ts(blockchain),
@@ -1230,7 +1237,11 @@ class RestAPI:
                     self.api_tasks_stop_reason = None
 
         response = api_response(_wrap_in_ok_result({}), status_code=HTTPStatus.OK)
-        set_session_cookie(response, token)
+        set_session_cookie(
+            response=response,
+            token=token,
+            secure=session_cookie_is_secure(request.headers),
+        )
         return response
 
     def issue_mcp_token(self) -> Response:
@@ -1480,7 +1491,10 @@ class RestAPI:
         # Electron/dev logout response).
         if self.session_store is not None:
             self.session_store.revoke(name)
-            clear_session_cookie(response)
+            clear_session_cookie(
+                response=response,
+                secure=session_cookie_is_secure(request.headers),
+            )
         return response
 
     def user_set_premium_credentials(
@@ -2092,7 +2106,15 @@ class RestAPI:
             'version': process_result(version),
             'data_directory': str(self.rotkehlchen.data_dir),
             'log_level': logging.getLevelName(logging.getLogger().getEffectiveLevel()),
-            'accept_docker_risk': 'ROTKI_ACCEPT_DOCKER_RISK' in os.environ,
+            # Deliberately not the retired ROTKI_ACCEPT_DOCKER_RISK: that one acknowledged a
+            # vague "you run in docker" warning, so honouring it here would silently grandfather
+            # every operator who set it out of ever hearing about session authentication.
+            'accept_unauthenticated_api': 'ROTKI_ACCEPT_UNAUTHENTICATED_API' in os.environ,
+            # Whether the deployment is behind session-cookie auth. Distinct from
+            # accept_unauthenticated_api: that one says the operator acknowledged the exposed
+            # API, this one says there is no exposure to acknowledge. The frontend
+            # skips the docker warning when either is true.
+            'session_auth': self.session_key is not None,
             'backend_default_arguments': {
                 'max_logfiles_num': DEFAULT_MAX_LOG_BACKUP_FILES,
                 'max_size_in_mb_all_logs': DEFAULT_MAX_LOG_SIZE_IN_MB,
@@ -3186,7 +3208,7 @@ class RestAPI:
     ) -> dict[str, Any]:
         manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)
         if addresses is None:
-            addresses = self.rotkehlchen.chains_aggregator.accounts.get(blockchain)
+            addresses = self.rotkehlchen.chains_aggregator.get_active_addresses(blockchain)
 
         try:
             account_tokens_info = manager.tokens.detect_tokens(

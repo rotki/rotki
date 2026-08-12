@@ -153,21 +153,20 @@ describe('forms/BitcoinEventForm.vue', () => {
     // The e2e suite finds every field through these selectors; losing one is an e2e break.
     expect(selectorContract(wrapper)).toMatchInlineSnapshot(`
       [
-        "data-cy=amount",
-        "data-cy=asset",
-        "data-cy=bitcoin-event-form__advance",
-        "data-cy=counterparty",
-        "data-cy=datetime",
-        "data-cy=eventActionPicker",
-        "data-cy=groupIdentifier",
-        "data-cy=grouped-amount-input__swap-button",
-        "data-cy=location",
-        "data-cy=notes",
-        "data-cy=primary",
-        "data-cy=secondary",
-        "data-cy=sequence-index",
-        "data-cy=tx-ref",
+        "data-testid=amount",
+        "data-testid=asset",
+        "data-testid=bitcoin-event-form__advance",
+        "data-testid=counterparty",
+        "data-testid=datetime",
         "data-testid=event-action-picker",
+        "data-testid=group-identifier",
+        "data-testid=grouped-amount-input__swap-button",
+        "data-testid=location",
+        "data-testid=notes",
+        "data-testid=primary",
+        "data-testid=secondary",
+        "data-testid=sequence-index",
+        "data-testid=tx-ref",
       ]
     `);
   });
@@ -176,9 +175,9 @@ describe('forms/BitcoinEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
-    const locationInput = wrapper.find<HTMLInputElement>('[data-cy=location] input');
-    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
+    const txRefInput = wrapper.find<HTMLInputElement>('[data-testid=tx-ref] input');
+    const locationInput = wrapper.find<HTMLInputElement>('[data-testid=location] input');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-testid=sequence-index] input');
 
     expect(txRefInput.element.value).toBe('');
     expect(locationInput.element.value).toBe('bitcoin');
@@ -190,10 +189,10 @@ describe('forms/BitcoinEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { group, nextSequenceId: '10', type: 'group-add' } });
 
-    const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
-    const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
-    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
-    const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
+    const txRefInput = wrapper.find<HTMLInputElement>('[data-testid=tx-ref] input');
+    const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-testid=sequence-index] input');
+    const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-testid=notes] textarea:not([aria-hidden="true"])');
 
     expect(txRefInput.element.value).toBe(group.txRef);
     expect(amountInput.element.value).toBe('0');
@@ -206,10 +205,10 @@ describe('forms/BitcoinEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { event: group, nextSequenceId: '10', type: 'edit' } });
 
-    const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
-    const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
-    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
-    const notesTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
+    const txRefInput = wrapper.find<HTMLInputElement>('[data-testid=tx-ref] input');
+    const amountInput = wrapper.find<HTMLInputElement>('[data-testid=amount] input');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-testid=sequence-index] input');
+    const notesTextArea = wrapper.find<HTMLTextAreaElement>('[data-testid=notes] textarea:not([aria-hidden="true"])');
 
     expect(txRefInput.element.value).toBe(group.txRef);
     expect(amountInput.element.value).toBe(group.amount.toString());
@@ -223,7 +222,7 @@ describe('forms/BitcoinEventForm.vue', () => {
 
     // the location picks the asset, so leaving it editable would let a BTC event that
     // belongs to a saved bitcoin transaction be relabelled as BCH, and vice versa
-    expect(wrapper.find('[data-cy=location] input').attributes('disabled')).toBeUndefined();
+    expect(wrapper.find('[data-testid=location] input').attributes('disabled')).toBeUndefined();
 
     for (const data of [
       { event: group, nextSequenceId: '10', type: 'edit' },
@@ -232,8 +231,8 @@ describe('forms/BitcoinEventForm.vue', () => {
       await wrapper.setProps({ data });
       await vi.advanceTimersToNextTimerAsync();
 
-      expect(wrapper.find('[data-cy=location] input').attributes('disabled')).toBeDefined();
-      expect(wrapper.find('[data-cy=tx-ref] input').attributes('disabled')).toBeDefined();
+      expect(wrapper.find('[data-testid=location] input').attributes('disabled')).toBeDefined();
+      expect(wrapper.find('[data-testid=tx-ref] input').attributes('disabled')).toBeDefined();
     }
   });
 
@@ -243,7 +242,7 @@ describe('forms/BitcoinEventForm.vue', () => {
 
     const { counterparties } = useHistoryEventCounterpartyMappings();
 
-    expect(wrapper.findAll('[data-cy=counterparty] .selections span')).toHaveLength(get(counterparties).length);
+    expect(wrapper.findAll('[data-testid=counterparty] .selections span')).toHaveLength(get(counterparties).length);
   });
 
   it('should add a new bitcoin event when form is submitted', async () => {
@@ -251,18 +250,18 @@ describe('forms/BitcoinEventForm.vue', () => {
     await nextTick();
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-cy=tx-ref] input').setValue(group.txRef);
-    await wrapper.find('[data-cy=location] input').setValue(group.location);
+    await wrapper.find('[data-testid=tx-ref] input').setValue(group.txRef);
+    await wrapper.find('[data-testid=location] input').setValue(group.location);
     wrapper.findComponent({ name: 'HistoryEventActionPicker' }).vm.$emit('update:modelValue', {
       eventSubtype: group.eventSubtype || 'none',
       eventType: group.eventType,
     });
     await nextTick();
     // the asset is not picked, it follows the location
-    await wrapper.find('[data-cy=amount] input').setValue('100');
-    await wrapper.find('[data-cy=sequence-index] input').setValue(group.sequenceIndex);
-    await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue(group.userNotes);
-    await wrapper.find('[data-cy=datetime] input').setValue(dayjs(group.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
+    await wrapper.find('[data-testid=amount] input').setValue('100');
+    await wrapper.find('[data-testid=sequence-index] input').setValue(group.sequenceIndex);
+    await wrapper.find('[data-testid=notes] textarea:not([aria-hidden="true"])').setValue(group.userNotes);
+    await wrapper.find('[data-testid=datetime] input').setValue(dayjs(group.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
 
     // group.counterparty is null, so no counterparty field to set
     // group.eventSubtype is '', so no eventSubtype field to set
@@ -317,7 +316,7 @@ describe('forms/BitcoinEventForm.vue', () => {
 
     // click save after changing the historic price
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
-    await wrapper.find('[data-cy=primary] input').setValue('1000');
+    await wrapper.find('[data-testid=primary] input').setValue('1000');
 
     await saveMethod();
     await nextTick();
@@ -336,9 +335,9 @@ describe('forms/BitcoinEventForm.vue', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-cy=amount] input').setValue('150');
-    await wrapper.find('[data-cy=sequence-index] input').setValue('2111');
-    await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue('user note');
+    await wrapper.find('[data-testid=amount] input').setValue('150');
+    await wrapper.find('[data-testid=sequence-index] input').setValue('2111');
+    await wrapper.find('[data-testid=notes] textarea:not([aria-hidden="true"])').setValue('user note');
 
     const saveMethod = wrapper.vm.save;
 
@@ -385,7 +384,7 @@ describe('forms/BitcoinEventForm.vue', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-cy=amount] input').setValue('150');
+    await wrapper.find('[data-testid=amount] input').setValue('150');
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
     expect(await wrapper.vm.save()).toBe(true);
@@ -408,7 +407,7 @@ describe('forms/BitcoinEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     // Change a field to make the form dirty
-    await wrapper.find('[data-cy=amount] input').setValue('200');
+    await wrapper.find('[data-testid=amount] input').setValue('200');
 
     editHistoryEventMock.mockResolvedValueOnce({
       message: { amount: ['amount too large'] },
@@ -422,7 +421,7 @@ describe('forms/BitcoinEventForm.vue', () => {
 
     expect(editHistoryEventMock).toHaveBeenCalled();
     expect(saveResult).toBe(false);
-    expect(wrapper.find('[data-cy=amount] .details').text()).toBe('amount too large');
+    expect(wrapper.find('[data-testid=amount] .details').text()).toBe('amount too large');
   });
 
   it('should display validation errors when the form is invalid', async () => {
@@ -432,9 +431,9 @@ describe('forms/BitcoinEventForm.vue', () => {
     await saveMethod();
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-cy=amount] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=amount] .details').exists()).toBe(true);
     // the asset field has nothing to validate since it follows the location
-    expect(wrapper.find('[data-cy=tx-ref] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=tx-ref] .details').exists()).toBe(true);
   });
 
   describe('actualGroupIdentifier', () => {
@@ -450,10 +449,10 @@ describe('forms/BitcoinEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      await wrapper.find('[data-cy=bitcoin-event-form__advance] [data-accordion-trigger]').trigger('click');
+      await wrapper.find('[data-testid=bitcoin-event-form__advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe('ACTUAL123');
       expect(groupIdentifierInput.element.disabled).toBe(true);
     });
@@ -464,10 +463,10 @@ describe('forms/BitcoinEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      await wrapper.find('[data-cy=bitcoin-event-form__advance] [data-accordion-trigger]').trigger('click');
+      await wrapper.find('[data-testid=bitcoin-event-form__advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
       expect(groupIdentifierInput.element.value).toBe(group.groupIdentifier);
       expect(groupIdentifierInput.element.disabled).toBe(false);
     });

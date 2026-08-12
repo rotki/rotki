@@ -1,8 +1,4 @@
-import type {
-  KrakenStakingDateFilter,
-  KrakenStakingPagination,
-} from '@/modules/staking/staking-types';
-import { omit } from 'es-toolkit';
+import type { KrakenStakingPagination } from '@/modules/staking/staking-types';
 import { map as mapResult, type Result } from 'plainfp/result';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -16,7 +12,7 @@ import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-cente
 import { type TaskOutcome, useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseKrakenStakingOperationsReturn {
-  fetchEvents: (refresh?: boolean, dateFilter?: KrakenStakingDateFilter) => Promise<void>;
+  fetchEvents: (refresh?: boolean) => Promise<void>;
   updatePagination: (data: KrakenStakingPagination) => Promise<void>;
 }
 
@@ -52,37 +48,40 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
     });
   }
 
-  function buildQuery(dateFilter?: KrakenStakingDateFilter): KrakenStakingPagination {
-    return {
-      ...omit(get(pagination), ['fromTimestamp', 'toTimestamp']),
-      ...dateFilter,
-    };
-  }
-
+  /**
+   * Only a refresh has to stand down for one already running: a second would stack on the same
+   * backend task. A plain read is a cached call that always sends the pagination as it stands, so
+   * it can run alongside — which is what lets a filter changed mid-refresh reach the table instead
+   * of being dropped.
+   */
   function shouldSkip(refresh: boolean): boolean {
-    return isRefreshRunning() || (get(loading) && refresh);
+    return refresh && (isRefreshRunning() || get(loading));
   }
 
-  async function fetchEventsFromApi(dateFilter?: KrakenStakingDateFilter): Promise<void> {
-    set(rawEvents, await api.fetchKrakenStakingEvents(buildQuery(dateFilter)));
+  async function fetchEventsFromApi(): Promise<void> {
+    set(rawEvents, await api.fetchKrakenStakingEvents(get(pagination)));
   }
 
-  async function fetchEvents(
-    refresh = false,
-    dateFilter?: KrakenStakingDateFilter,
-  ): Promise<void> {
+  async function fetchEvents(refresh = false): Promise<void> {
     try {
       if (shouldSkip(refresh))
         return;
+
+      // A read still in flight was started for an older filter. Left alone it can land after this
+      // one and overwrite it, leaving the table showing rows the pills no longer describe, so it
+      // is cancelled rather than raced.
+      api.cancelPendingEventReads();
 
       const firstLoad = !get(loadedOnce);
       set(loading, true);
 
       // On first load, show cached data immediately while the backend refreshes
       if (firstLoad)
-        await fetchEventsFromApi(dateFilter);
+        await fetchEventsFromApi();
 
-      if (refresh || firstLoad) {
+      // A running refresh is already doing this work, so the first load rides it out and takes the
+      // read below rather than stacking a second one on the same task.
+      if ((refresh || firstLoad) && !isRefreshRunning()) {
         const outcome = await refreshEvents();
         onActionableError(outcome, (error) => {
           logger.error(error.message);
@@ -93,16 +92,20 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
         });
       }
 
-      // Fetch the (possibly updated) events from the backend
-      await fetchEventsFromApi(dateFilter);
+      // Fetch the (possibly updated) events from the backend. It reads the pagination as it stands
+      // now, not as it stood when this call started, so a filter changed while the refresh ran is
+      // the one that gets queried.
+      await fetchEventsFromApi();
       set(loadedOnce, true);
       set(loading, isRefreshRunning());
     }
     catch (error: unknown) {
-      set(loading, false);
-
+      // A cancelled read was superseded by a newer one, which owns `loading` from here on:
+      // clearing it would hide the spinner while that newer read is still running.
       if (isRequestCancellation(error))
         return;
+
+      set(loading, false);
 
       logger.error(error);
       notifyError(

@@ -8,6 +8,11 @@ export interface SubmittedSpec {
   id: string;
   kind: string;
   run: (ctx: ActivityContext) => Promise<unknown>;
+  /** Declared so a spec can assert scheduling intent (an umbrella's lane, a child's parent). */
+  lane?: string;
+  parent?: string;
+  /** Whether this activity claims freshness for its kind — an umbrella must not. */
+  container?: boolean;
 }
 
 /**
@@ -19,5 +24,5 @@ export interface SubmittedSpec {
  * and keep asserting on `runTask` as before.
  */
 export function runSpecWith(runTask: RunBackendTask): (spec: SubmittedSpec) => Promise<unknown> {
-  return async (spec: SubmittedSpec): Promise<unknown> => spec.run({ report: () => {}, runTask });
+  return async (spec: SubmittedSpec): Promise<unknown> => spec.run({ cancelled: () => false, report: () => {}, runTask });
 }

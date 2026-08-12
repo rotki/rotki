@@ -3,13 +3,13 @@ import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { WritableRef } from '@/modules/core/common/common-types';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
-import { objectOmit } from '@vueuse/shared';
+import type { Filters } from '@/modules/history/events/use-events-filter';
 import { isEqual } from 'es-toolkit';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
-import { type Filters, type Matcher, useHistoryEventFilter } from '@/modules/core/table/filters/use-events-filter';
 import { TableId } from '@/modules/core/table/use-remember-table-sorting';
 import { type ChangeSource, routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
@@ -22,12 +22,28 @@ import { buildHistoryEventSources } from '@/modules/history/events/history-event
 import { useHistoryEventHighlights, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 
-export { useHistoryEventNavigationConsumer } from '@/modules/history/events/use-history-event-navigation-consumer';
-
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
+
+/**
+ * The payload without its sorting, so a re-sort is not read as a change of what is being asked for.
+ * Written out rather than pulled from a helper: this file is at the dependency cap.
+ */
+function withoutSorting(
+  { ascending, orderByAttributes, ...rest }: HistoryEventRequestPayload,
+): Partial<HistoryEventRequestPayload> {
+  return rest;
+}
 
 interface HistoryEventsFiltersOptions {
   entryTypes: MaybeRefOrGetter<HistoryEventEntryType[] | undefined>;
+  /**
+   * The pill-bar fields, and the filter bag they are bound to. Both are built by the view: the
+   * fields read the bag to scope their option lists, and the table reads the url shape of the bag
+   * (and the keys the request wraps as `{ behaviour, values }`) off the fields, so the bag has to
+   * exist before either.
+   */
+  fields: MaybeRefOrGetter<FieldDef[]>;
+  filters: Ref<Filters>;
   eventSubTypes: MaybeRefOrGetter<string[]>;
   eventTypes: MaybeRefOrGetter<string[]>;
   externalAccountFilter: MaybeRefOrGetter<Account[]>;
@@ -66,7 +82,6 @@ interface UseHistoryEventsFiltersReturn {
   identifiers: ComputedRef<string[] | undefined>;
   includes: ComputedRef<{ evmEvents: boolean; onlineEvents: boolean }>;
   locations: ComputedRef<string[]>;
-  matchers: ComputedRef<Matcher[]>;
   onLocationLabelsChanged: (locationLabels: string[]) => void;
   requestPayload: ComputedRef<HistoryEventRequestPayload>;
   pagination: ComputedRef<TablePaginationData>;
@@ -88,6 +103,8 @@ export function useHistoryEventsFilters(
     eventSubTypes,
     eventTypes,
     externalAccountFilter,
+    fields,
+    filters: modelFilters,
     location,
     mainPage,
     period,
@@ -173,17 +190,6 @@ export function useHistoryEventsFilters(
     validators,
   });
 
-  const filterSchema = useHistoryEventFilter({
-    eventSubtypes: (toValue(eventSubTypes) || []).length > 0,
-    eventTypes: (toValue(eventTypes) || []).length > 0,
-    locations: !!toValue(location),
-    period: !!toValue(period),
-    protocols: (toValue(protocols) || []).length > 0,
-    validators: !!toValue(validators),
-  }, computed<HistoryEventEntryType[] | undefined>(() => toValue(entryTypes)));
-
-  const { matchers } = filterSchema;
-
   const {
     collection: groups,
     filter: filters,
@@ -198,11 +204,11 @@ export function useHistoryEventsFilters(
   } = useServerTable<
     HistoryEventRow,
     HistoryEventRequestPayload,
-    Filters,
-    Matcher
+    Filters
   >({
     fetch: fetchHistoryEventsTagged,
-    filterSchema,
+    fields,
+    filters: modelFilters,
     params: sources,
     persist: {
       keys: {
@@ -290,8 +296,8 @@ export function useHistoryEventsFilters(
     if (!oldParams || !get(shouldPreserveHighlights) || get(isNavigating))
       return;
 
-    const current = objectOmit(params, ['orderByAttributes', 'ascending']);
-    const previous = objectOmit(oldParams, ['orderByAttributes', 'ascending']);
+    const current = withoutSorting(params);
+    const previous = withoutSorting(oldParams);
 
     if (isEqual(current, previous))
       return;
@@ -322,7 +328,6 @@ export function useHistoryEventsFilters(
     includes,
     locationLabels: shallowReadonly(locationLabels),
     locations,
-    matchers,
     onActionChanged,
     onLocationLabelsChanged,
     pagination,

@@ -7,10 +7,13 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
+from rotkehlchen.errors.misc import ChainNotSupported, RemoteError, RequestTooLargeError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
-from rotkehlchen.externalapis.interface import ExternalServiceWithRecommendedApiKey
+from rotkehlchen.externalapis.interface import (
+    ExternalServiceWithApiKey,
+    ExternalServiceWithRecommendedApiKey,
+)
 from rotkehlchen.externalapis.utils import maybe_read_integer
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -153,7 +156,9 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         Free and Lite are indistinguishable (both 100k/day), so the 100k bucket stays at the
         documented Free tier of 3 rps.
         """
-        if (api_key := self._get_api_key()) is None:
+        # Tier detection runs during user initialization, before Etherscan is actually needed.
+        # Bypass the recommended-key warning so new users are notified only on real usage.
+        if (api_key := ExternalServiceWithApiKey._get_api_key(self)) is None:
             self._rate_limiter.reset(
                 rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
                 capacity=FREE_ETHERSCAN_RATE_LIMIT_BURST,
@@ -216,6 +221,21 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         if action in {'txlist', 'txlistinternal', 'tokentx', 'txsBeaconWithdrawal', 'getminedblocks'}:  # noqa: E501
             return {'page': '1', 'offset': str(self.pagination_limit)}
         return None
+
+    def _handle_missing_result(self, chain_id: ChainID, json_ret: dict[str, Any]) -> None:
+        """Turn etherscan's oversized-range response into a request to query less.
+
+        Etherscan answers a range whose result set it cannot assemble in time with a null
+        result and a message asking for a smaller dataset. That is not a malformed response,
+        it is an instruction to split the range, so raise the error callers already retry on.
+
+        May raise RequestTooLargeError if the range needs to be split.
+        """
+        if str(json_ret.get('message', '')).startswith('Query Timeout'):
+            raise RequestTooLargeError(
+                f'{self.name} could not serve the requested {chain_id.to_name()} range: '
+                f'{json_ret["message"]}',
+            )
 
     def _additional_json_response_handling(
             self,

@@ -3,13 +3,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBalanceFetching } from './use-balance-fetching';
 import '@test/i18n';
 
-const { refreshBlockchainBalances, maybeDetect, skipReason, willDetect, queryBalancesAsync } = vi.hoisted(() => ({
-  maybeDetect: vi.fn().mockResolvedValue(undefined),
-  queryBalancesAsync: vi.fn().mockResolvedValue({ taskId: 1 }),
-  refreshBlockchainBalances: vi.fn().mockResolvedValue(undefined),
-  skipReason: vi.fn().mockReturnValue('auto-detect-tokens disabled'),
-  willDetect: vi.fn().mockReturnValue(false),
-}));
+const { refreshBlockchainBalances, detectDue, fetchAccounts, withDetection, skipReason, willDetect, queryBalancesAsync } = vi.hoisted(() => {
+  // Whether a detection sweep is due this run. The real composable decides it from the cooldown
+  // settings; here a test sets it directly and `withDetection` hands it to the pass.
+  const detectDue = { value: false };
+  return {
+    detectDue,
+    fetchAccounts: vi.fn().mockResolvedValue(undefined),
+    queryBalancesAsync: vi.fn().mockResolvedValue({ taskId: 1 }),
+    refreshBlockchainBalances: vi.fn().mockResolvedValue(undefined),
+    skipReason: vi.fn().mockReturnValue('auto-detect-tokens disabled'),
+    willDetect: vi.fn(() => detectDue.value),
+    withDetection: vi.fn(async (pass: (detect: boolean) => Promise<unknown>) => pass(detectDue.value)),
+  };
+});
 
 vi.mock('@/modules/balances/use-blockchain-balances', () => ({
   useBlockchainBalances: vi.fn().mockReturnValue({
@@ -19,10 +26,10 @@ vi.mock('@/modules/balances/use-blockchain-balances', () => ({
 }));
 
 vi.mock('@/modules/balances/blockchain/use-auto-token-detection', () => ({
-  useAutoTokenDetection: (): { maybeDetect: typeof maybeDetect; skipReason: typeof skipReason; willDetect: typeof willDetect } => ({
-    maybeDetect,
+  useAutoTokenDetection: (): { skipReason: typeof skipReason; willDetect: typeof willDetect; withDetection: typeof withDetection } => ({
     skipReason,
     willDetect,
+    withDetection,
   }),
 }));
 
@@ -88,7 +95,7 @@ vi.mock('@/modules/balances/manual/use-manual-balances', () => ({
 
 vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
   useBlockchainAccountManagement: vi.fn().mockReturnValue({
-    refreshAccounts: vi.fn().mockResolvedValue({}),
+    fetchAccounts,
   }),
 }));
 
@@ -129,55 +136,95 @@ describe('useBalanceFetching', () => {
     });
   });
 
+  describe('autoRefresh', () => {
+    it('should perform auto refresh of balances and prices', async () => {
+      const { autoRefresh } = useBalanceFetching();
+      await expect(autoRefresh()).resolves.not.toThrow();
+    });
+
+    /**
+     * 🔴 The periodic tick never asked a chain anything. `{ periodic: true }` went to
+     * `refreshAccounts`, whose no-chain branch is a *cached* read — the DB, not the network — so
+     * "Automatic balance refresh" only re-read what the backend had already written, and the
+     * `periodic` refresh mode had no caller that could reach it.
+     */
+    it('should run a periodic refresh over every chain', async () => {
+      refreshBlockchainBalances.mockClear();
+      const { autoRefresh } = useBalanceFetching();
+
+      await autoRefresh();
+
+      expect(refreshBlockchainBalances).toHaveBeenCalledWith({}, 'periodic');
+      // Accounts are re-read too, but as an accounts read — it no longer pretends to do more.
+      expect(fetchAccounts).toHaveBeenCalledWith({ refreshEns: true });
+    });
+  });
+
   describe('refreshFromChain', () => {
     beforeEach(() => {
       refreshBlockchainBalances.mockClear();
       queryBalancesAsync.mockClear();
-      maybeDetect.mockClear();
-      willDetect.mockReset();
+      withDetection.mockClear();
+      detectDue.value = false;
     });
 
-    it('should refresh all chains from network when detection is not going to run', async () => {
-      willDetect.mockReturnValue(false);
+    it('should refresh every chain, without detection, when none is due', async () => {
       const { refreshFromChain } = useBalanceFetching();
 
       await refreshFromChain();
 
       expect(refreshBlockchainBalances).toHaveBeenCalledTimes(1);
-      expect(refreshBlockchainBalances).toHaveBeenCalledWith();
-      expect(maybeDetect).not.toHaveBeenCalled();
+      expect(refreshBlockchainBalances).toHaveBeenCalledWith({}, 'background', { detect: false });
     });
 
-    it('should run detection and refresh only non-EVM chains from network when detection will run', async () => {
-      willDetect.mockReturnValue(true);
+    /**
+     * ⭐ §3/§10. This used to split: fire detection for the EVM chains and separately refresh only
+     * the non-EVM ones, because detection ended in its own balance read and refreshing an EVM chain
+     * too would have queried it twice. Detection is now a stage inside each chain job that the
+     * chain's own query follows, so it is one call for every chain either way.
+     */
+    it('should refresh every chain with detection when one is due', async () => {
+      detectDue.value = true;
       const { refreshFromChain } = useBalanceFetching();
 
       await refreshFromChain();
 
-      expect(maybeDetect).toHaveBeenCalledTimes(1);
       expect(refreshBlockchainBalances).toHaveBeenCalledTimes(1);
-      expect(refreshBlockchainBalances).toHaveBeenCalledWith({ blockchain: ['btc'] });
+      expect(refreshBlockchainBalances).toHaveBeenCalledWith({}, 'background', { detect: true });
+      // No chain list: the old branch narrowed to non-EVM chains here.
+      expect(refreshBlockchainBalances).not.toHaveBeenCalledWith(
+        expect.objectContaining({ blockchain: expect.anything() }),
+        expect.anything(),
+        expect.anything(),
+      );
     });
 
-    it('should query all balances only after the chain refresh completes', async () => {
-      willDetect.mockReturnValue(false);
+    /**
+     * ⭐ Replaces "should query all balances only after the chain refresh completes", which pinned
+     * an ordering that only mattered because the refresh asked for a snapshot at all.
+     *
+     * `GET /balances` persists on the backend's own schedule, so ending a refresh with it meant
+     * requesting a snapshot while the per-chain queries were still clearing and repopulating
+     * chains — the 0-value row. Nothing is lost by not asking: the backend takes automatic
+     * snapshots itself (`_maybe_update_snapshot_balances`), and explicit ones go through
+     * `forceSave`, which calls `fetchBalances` directly with `saveData: true`.
+     */
+    it('should not query all balances', async () => {
       const { refreshFromChain } = useBalanceFetching();
 
       await refreshFromChain();
 
       expect(refreshBlockchainBalances).toHaveBeenCalledOnce();
-      expect(queryBalancesAsync).toHaveBeenCalledOnce();
-      // the all-balances query (which may persist a snapshot) must run strictly
-      // after the per-chain refresh to avoid snapshotting transient cleared state
-      expect(refreshBlockchainBalances.mock.invocationCallOrder[0])
-        .toBeLessThan(queryBalancesAsync.mock.invocationCallOrder[0]);
+      expect(queryBalancesAsync).not.toHaveBeenCalled();
     });
-  });
 
-  describe('autoRefresh', () => {
-    it('should perform auto refresh of balances and prices', async () => {
-      const { autoRefresh } = useBalanceFetching();
-      await expect(autoRefresh()).resolves.not.toThrow();
+    it('should not query all balances when detecting either', async () => {
+      detectDue.value = true;
+      const { refreshFromChain } = useBalanceFetching();
+
+      await refreshFromChain();
+
+      expect(queryBalancesAsync).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,11 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import process from 'node:process';
 import { z } from 'zod/v4';
 import { DEFAULT_COLIBRI_PORT, DEFAULT_MCP_PORT, DEFAULT_PORT, DEFAULT_PROXY_PORT } from '../../app/shared/port-utils';
 import { createDevLogger } from '../dev/logger';
+import { atomicWriteJson } from './atomic-json';
 import { errorCode, errorMessage } from './format';
-import { ensureInstanceParent, resolveInstanceParent, sanitizeName } from './paths';
+import { ensureInstanceParent, resolveInstanceDir, resolveInstanceParent, sanitizeName } from './paths';
+import { readMetadata } from './sidecar';
 
 /**
  * Note the two distinct proxies: `proxy` is the optional premium dev-proxy
@@ -129,12 +130,6 @@ export function readPortIndex(): PortIndex {
   }
 }
 
-export function atomicWriteJson(file: string, value: unknown): void {
-  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
-  fs.writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf-8');
-  fs.renameSync(tmp, file);
-}
-
 export function writePortIndex(index: PortIndex): void {
   ensureInstanceParent();
   atomicWriteJson(path.join(resolveInstanceParent(), PORT_INDEX_FILENAME), index);
@@ -209,10 +204,111 @@ function isSlotInUse(index: PortIndex, slot: number, exceptName?: string): boole
   return false;
 }
 
-export async function allocatePortSlot(name: string, hint?: number): Promise<number> {
+/**
+ * How long a slot reservation outlives its last use. An instance keeps its ports
+ * across restarts, but not forever: worktrees get deleted and branches get
+ * merged, and their instances are rarely cleaned up, so without an expiry the
+ * allocator keeps climbing while the low slots sit idle.
+ */
+export const SLOT_EXPIRY_MS = 48 * 60 * 60 * 1000;
+
+/**
+ * When the instance was last started, or null when that cannot be determined.
+ * Falls back to the directory mtime for an instance with no (or an unreadable)
+ * metadata sidecar.
+ */
+function lastUsedAt(dir: string): number | null {
+  const meta = readMetadata(dir);
+  if (meta?.lastUsedAt) {
+    const parsed = Date.parse(meta.lastUsedAt);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  try {
+    return fs.statSync(dir).mtimeMs;
+  }
+  catch {
+    return null;
+  }
+}
+
+/** Why this instance's reservation is stale, or null when it is still current. */
+function staleReason(dir: string, now: number): string | null {
+  if (!fs.existsSync(dir)) {
+    return 'removed';
+  }
+  const used = lastUsedAt(dir);
+  if (used === null || now - used <= SLOT_EXPIRY_MS) {
+    return null;
+  }
+  return `unused for ${Math.floor((now - used) / (24 * 60 * 60 * 1000))}d`;
+}
+
+/**
+ * Drop slot reservations that no longer describe an instance you are using:
+ * one whose directory is gone (only `--clean` calls `releasePortSlot`, so an
+ * instance deleted by hand keeps its slot forever), and one untouched for
+ * longer than `SLOT_EXPIRY_MS`. Both are how you end up being handed slot 8
+ * while slots 1-7 sit idle.
+ *
+ * An expired instance keeps its data directory; it just loses its claim on
+ * those ports, and picks up a fresh slot the next time it starts.
+ *
+ * `keepName` is the instance currently being allocated: `prepareInstance`
+ * creates its directory before it calls in here, but keeping it exempt means a
+ * caller that has not done so yet cannot have its own reservation pruned.
+ *
+ * Returns a line per dropped name, for logging.
+ */
+async function pruneOrphanedSlots(
+  index: PortIndex,
+  keepName: string,
+  now: number,
+  isSlotLive: (slot: number) => Promise<boolean>,
+): Promise<string[]> {
+  const dropped: string[] = [];
+  for (const [name, slot] of Object.entries(index.slots)) {
+    if (name === keepName) {
+      continue;
+    }
+    const reason = staleReason(resolveInstanceDir(name), now);
+    if (reason === null) {
+      continue;
+    }
+    // Never take ports out from under a process that is still serving on them:
+    // the reservation is stale on paper, but the instance is demonstrably alive.
+    if (await isSlotLive(slot)) {
+      continue;
+    }
+    delete index.slots[name];
+    dropped.push(`${name} (${reason})`);
+  }
+  return dropped;
+}
+
+export interface AllocateSlotOptions {
+  /** Explicit slot from `INSTANCE_PORT_SLOT`. */
+  hint?: number;
+  /**
+   * Liveness probe, injected by the caller so this module does not depend on
+   * `port-probe` (which depends on this one). Defaults to "nothing is live",
+   * which only ever makes the prune more eager, so callers that cannot probe
+   * still get correct-on-paper behaviour.
+   */
+  isSlotLive?: (slot: number) => Promise<boolean>;
+}
+
+export async function allocatePortSlot(name: string, options: AllocateSlotOptions = {}): Promise<number> {
+  const { hint, isSlotLive = async (): Promise<boolean> => false } = options;
   const sanitized = sanitizeName(name);
-  return withRegistryLock(() => {
+  return withRegistryLock(async () => {
     const index = readPortIndex();
+    const orphaned = await pruneOrphanedSlots(index, sanitized, Date.now(), isSlotLive);
+    if (orphaned.length > 0) {
+      logger.info(`Released port slot(s): ${orphaned.join(', ')}`);
+      writePortIndex(index);
+    }
 
     if (hint !== undefined) {
       if (slotHasReservedConflict(hint)) {

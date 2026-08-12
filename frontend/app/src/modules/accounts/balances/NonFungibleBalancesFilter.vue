@@ -69,7 +69,7 @@ const { t } = useI18n({ useScope: 'global' });
             <RuiRadioGroup
               v-model="ignoredAssetsHandling"
               class="mt-0"
-              data-cy="asset-filter-ignored"
+              data-testid="asset-filter-ignored"
               hide-details
               color="primary"
             >

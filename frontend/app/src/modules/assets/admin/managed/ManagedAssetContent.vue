@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Nullable, SupportedAsset } from '@rotki/common';
+import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
 import { isEqual, keyBy } from 'es-toolkit';
 import ManagedAssetFormDialog from '@/modules/assets/admin/managed/ManagedAssetFormDialog.vue';
 import ManagedAssetTable from '@/modules/assets/admin/managed/ManagedAssetTable.vue';
@@ -12,7 +13,6 @@ import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { type Filters, type Matcher, useAssetFilter } from '@/modules/core/table/filters/use-assets-filter';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
@@ -61,8 +61,7 @@ const { getAssetTypes } = useAssetManagementApi();
 
 const { deleteCacheKey } = useAssetInfoCache();
 
-const filterSchema = useAssetFilter(assetTypes);
-const fields = useManagedAssetFields(filterSchema.matchers, () => get(ignoredAssets).length);
+const fields = useManagedAssetFields(assetTypes, () => get(ignoredAssets).length);
 
 const {
   collection: assets,
@@ -75,11 +74,10 @@ const {
 } = useServerTable<
   SupportedAsset,
   AssetRequestPayload,
-  Filters,
-  Matcher
+  Filters
 >({
   fetch: queryAllAssets,
-  filterSchema,
+  fields,
   params: [{
     fromQuery(query): void {
       // A url is anyone's to write, and the handling reaches both the request and the ignored
@@ -225,7 +223,7 @@ onBeforeMount(async () => {
       </RuiButton>
 
       <RuiButton
-        data-cy="managed-asset-add-btn"
+        data-testid="managed-asset-add-btn"
         color="primary"
         size="lg"
         @click="add()"

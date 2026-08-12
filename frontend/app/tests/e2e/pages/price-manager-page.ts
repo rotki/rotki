@@ -36,20 +36,20 @@ async function selectAsset(testId: string, asset: string, page: Page): Promise<v
 }
 
 async function confirmDialog(page: Page): Promise<void> {
-  const dialog = page.locator('[data-cy=bottom-dialog]');
-  await dialog.locator('[data-cy=confirm]').click();
+  const dialog = page.locator('[data-testid=bottom-dialog]');
+  await dialog.locator('[data-testid=confirm]').click();
   await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
 }
 
 async function confirmDelete(page: Page): Promise<void> {
-  const confirmDialogEl = page.locator('[data-cy=confirm-dialog]');
-  await confirmDialogEl.locator('[data-cy=button-confirm]').click();
+  const confirmDialogEl = page.locator('[data-testid=confirm-dialog]');
+  await confirmDialogEl.locator('[data-testid=button-confirm]').click();
   await confirmDialogEl.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
 }
 
 async function cancelDialog(page: Page): Promise<void> {
-  const dialog = page.locator('[data-cy=bottom-dialog]');
-  await dialog.locator('[data-cy=cancel]').click();
+  const dialog = page.locator('[data-testid=bottom-dialog]');
+  await dialog.locator('[data-testid=cancel]').click();
   await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
 }
 
@@ -81,7 +81,7 @@ export class LatestPricePage {
   }
 
   async editPrice(currentValue: string, newValue: string): Promise<void> {
-    await this.rowMatching(currentValue).first().locator('[data-cy=row-edit]').click();
+    await this.rowMatching(currentValue).first().locator('[data-testid=row-edit]').click();
     const valueInput = this.page.getByTestId('latest-price-value').locator('input');
     await valueInput.fill(newValue);
     await confirmDialog(this.page);
@@ -89,7 +89,7 @@ export class LatestPricePage {
 
   async deletePrice(value: string): Promise<void> {
     const row = this.rowMatching(value).first();
-    await row.locator('[data-cy=row-delete]').click();
+    await row.locator('[data-testid=row-delete]').click();
     await confirmDelete(this.page);
     await expect(this.rowMatching(value)).toHaveCount(0);
   }
@@ -104,11 +104,11 @@ export class LatestPricePage {
 
   async openAddDialog(): Promise<void> {
     await this.page.getByTestId('latest-price-add').click();
-    await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible' });
   }
 
   async submitDialog(): Promise<void> {
-    await this.page.locator('[data-cy=bottom-dialog] [data-cy=confirm]').click();
+    await this.page.locator('[data-testid=bottom-dialog] [data-testid=confirm]').click();
   }
 
   async cancelDialog(): Promise<void> {
@@ -116,7 +116,7 @@ export class LatestPricePage {
   }
 
   async expectRequiredErrors(): Promise<void> {
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await expect(dialog.getByText('The from asset cannot be empty')).toBeVisible();
     await expect(dialog.getByText('The to asset cannot be empty')).toBeVisible();
     await expect(dialog.getByText('The price cannot be empty')).toBeVisible();
@@ -161,7 +161,7 @@ export class HistoricPricePage {
   }
 
   async editPrice(currentValue: string, newValue: string): Promise<void> {
-    await this.rowMatching(currentValue).first().locator('[data-cy=row-edit]').click();
+    await this.rowMatching(currentValue).first().locator('[data-testid=row-edit]').click();
     const valueInput = this.page.getByTestId('historic-price-value').locator('input');
     await valueInput.fill(newValue);
     await confirmDialog(this.page);
@@ -169,7 +169,7 @@ export class HistoricPricePage {
 
   async deletePrice(value: string): Promise<void> {
     const row = this.rowMatching(value).first();
-    await row.locator('[data-cy=row-delete]').click();
+    await row.locator('[data-testid=row-delete]').click();
     await confirmDelete(this.page);
     await expect(this.rowMatching(value)).toHaveCount(0);
   }
@@ -184,11 +184,11 @@ export class HistoricPricePage {
 
   async openAddDialog(): Promise<void> {
     await this.page.getByTestId('historic-price-add').click();
-    await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible' });
   }
 
   async submitDialog(): Promise<void> {
-    await this.page.locator('[data-cy=bottom-dialog] [data-cy=confirm]').click();
+    await this.page.locator('[data-testid=bottom-dialog] [data-testid=confirm]').click();
   }
 
   async cancelDialog(): Promise<void> {
@@ -196,7 +196,7 @@ export class HistoricPricePage {
   }
 
   async expectRequiredErrors(): Promise<void> {
-    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await expect(dialog.getByText('The from asset cannot be empty')).toBeVisible();
     await expect(dialog.getByText('The to asset cannot be empty')).toBeVisible();
     await expect(dialog.getByText('The price cannot be empty')).toBeVisible();

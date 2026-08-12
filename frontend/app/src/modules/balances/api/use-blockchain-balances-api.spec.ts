@@ -6,6 +6,13 @@ import { Module } from '@/modules/core/common/modules';
 import { useBlockchainBalancesApi } from './use-blockchain-balances-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
+const emptyBalances = {
+  per_account: {},
+  totals: {
+    assets: {},
+    liabilities: {},
+  },
+};
 
 describe('composables/api/balances/blockchain', () => {
   beforeEach(() => {
@@ -23,9 +30,7 @@ describe('composables/api/balances/blockchain', () => {
           const url = new URL(request.url);
           capturedParams = url.searchParams;
           return HttpResponse.json({
-            result: {
-              task_id: 456,
-            },
+            result: emptyBalances,
             message: '',
           });
         }),
@@ -36,8 +41,9 @@ describe('composables/api/balances/blockchain', () => {
       const result = await queryBlockchainBalances(payload);
 
       expect(capturedUrl).toContain('/balances/blockchains/btc');
-      expect(capturedParams!.get('async_query')).toBe('true');
-      expect(result.taskId).toBe(456);
+      expect(capturedParams!.get('async_query')).toBeNull();
+      expect(capturedParams!.get('only_cache')).toBe('true');
+      expect(result.perAccount).toEqual({});
     });
 
     it('should fetch specific blockchain balances', async () => {
@@ -48,9 +54,7 @@ describe('composables/api/balances/blockchain', () => {
           const url = new URL(request.url);
           capturedParams = url.searchParams;
           return HttpResponse.json({
-            result: {
-              task_id: 789,
-            },
+            result: emptyBalances,
             message: '',
           });
         }),
@@ -62,8 +66,9 @@ describe('composables/api/balances/blockchain', () => {
       };
       const result = await queryBlockchainBalances(payload);
 
-      expect(capturedParams!.get('async_query')).toBe('true');
-      expect(result.taskId).toBe(789);
+      expect(capturedParams!.get('async_query')).toBeNull();
+      expect(capturedParams!.get('only_cache')).toBe('true');
+      expect(result.perAccount).toEqual({});
     });
 
     it('should include addresses param', async () => {
@@ -74,9 +79,7 @@ describe('composables/api/balances/blockchain', () => {
           const url = new URL(request.url);
           capturedParams = url.searchParams;
           return HttpResponse.json({
-            result: {
-              task_id: 100,
-            },
+            result: emptyBalances,
             message: '',
           });
         }),
@@ -89,7 +92,8 @@ describe('composables/api/balances/blockchain', () => {
       };
       await queryBlockchainBalances(payload);
 
-      expect(capturedParams!.get('async_query')).toBe('true');
+      expect(capturedParams!.get('async_query')).toBeNull();
+      expect(capturedParams!.get('only_cache')).toBe('true');
       expect(capturedParams!.get('addresses')).toBe('0x1234,0x5678');
       expect(capturedParams!.get('ignore_cache')).toBeNull();
     });
@@ -102,9 +106,7 @@ describe('composables/api/balances/blockchain', () => {
           const url = new URL(request.url);
           capturedParams = url.searchParams;
           return HttpResponse.json({
-            result: {
-              task_id: 200,
-            },
+            result: emptyBalances,
             message: '',
           });
         }),

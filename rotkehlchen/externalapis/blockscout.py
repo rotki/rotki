@@ -42,9 +42,9 @@ if TYPE_CHECKING:
     from rotkehlchen.types import EvmInternalTransaction, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
-# asked in telegram and the default equals to the max and it is 50 entries per page.
-# You can't change it
-BLOCKSCOUT_PAGINATION_LIMIT: Final = 50
+# The PRO account endpoints cap a response at 10000 rows and reject anything where
+# PageNo * Offset exceeds that, so 10000 is both the page size and the ceiling.
+BLOCKSCOUT_PAGINATION_LIMIT: Final = 10000
 BLOCKSCOUT_PRO_API_BASE_URL = 'https://api.blockscout.com'
 # Blockscout has no documented hard rate limit on the free public endpoints.
 # Pick a conservative shared cap so parallel chain refreshes don't accidentally
@@ -138,6 +138,28 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
     ) -> dict[str, str]:
         """No-op for blockscout as the entire _query function is overridden."""
         return {}
+
+    def _get_account_pagination_options(
+            self,
+            action: str,
+            options: dict[str, Any],
+    ) -> dict[str, str] | None:
+        """Request the maximum page size for the blockscout account endpoints.
+
+        Sending the offset explicitly is required for correct pagination: without it the
+        server picks its own page size and _maybe_paginate stops after the first page
+        whenever that size does not match the expected self.pagination_limit, silently
+        truncating any range with more results than a single page holds.
+        """
+        if 'txhash' in options:
+            # Internal txs of a single parent hash are paginated by page number rather than
+            # by block range, and blockscout rejects PageNo * Offset above the cap. No single
+            # transaction comes close to a full page of internal txs, so the server default
+            # returns all of them and pagination never kicks in.
+            return None
+        if action in {'txlist', 'txlistinternal', 'tokentx'}:
+            return {'page': '1', 'offset': str(self.pagination_limit)}
+        return None
 
     def _query_and_process(
             self,
