@@ -30,8 +30,12 @@ from rotkehlchen.chain.evm.decoding.beefy_finance.decoder import BeefyFinanceCom
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_SUPPORTED_CHAINS_WITHOUT_VCOW
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
 from rotkehlchen.chain.evm.decoding.erc4337.decoder import Erc4337Decoder
-from rotkehlchen.chain.evm.decoding.frankencoin.savings.constants import SUPPORTED_ZCHF_SAVINGS_CHAINS
-from rotkehlchen.chain.evm.decoding.frankencoin.savings.decoder import FrankencoinSavingsCommonDecoder
+from rotkehlchen.chain.evm.decoding.frankencoin.savings.constants import (
+    SUPPORTED_ZCHF_SAVINGS_CHAINS,
+)
+from rotkehlchen.chain.evm.decoding.frankencoin.savings.decoder import (
+    FrankencoinSavingsCommonDecoder,
+)
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.lifi.decoder import LifiDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder

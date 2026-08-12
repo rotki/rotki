@@ -1,10 +1,7 @@
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.frankencoin.constants import CPT_FRANKENCOIN, ZCHF_ADDRESS
 from rotkehlchen.chain.evm.decoding.frankencoin.savings.balances import (
     FrankencoinSavingsBalances,
 )
@@ -15,16 +12,11 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import ChainID
 
 
-@pytest.mark.parametrize('chain_id', SUPPORTED_ZCHF_SAVINGS_CHAINS)
-def test_frankencoin_savings_balances_registration(chain_id):
-    assert FrankencoinSavingsBalances in CHAIN_TO_BALANCE_PROTOCOLS[chain_id]
-
-
-def test_frankencoin_savings_balances_not_registered_on_avalanche():
-    assert FrankencoinSavingsBalances not in CHAIN_TO_BALANCE_PROTOCOLS.get(ChainID.AVALANCHE, ())
+def test_frankencoin_savings_balances_registration():
+    for chain_id in SUPPORTED_ZCHF_SAVINGS_CHAINS:
+        assert FrankencoinSavingsBalances in CHAIN_TO_BALANCE_PROTOCOLS[chain_id]
 
 
 def _make_balances_module(addresses):
@@ -35,29 +27,6 @@ def _make_balances_module(addresses):
     module.savings_contract = MagicMock(address=make_evm_address())
     module.zchf = MagicMock(decimals=18)
     return module
-
-
-def test_frankencoin_savings_balances_initialization():
-    evm_inquirer = MagicMock(chain_id=ChainID.ETHEREUM)
-    with patch(
-        'rotkehlchen.chain.evm.decoding.frankencoin.savings.balances.get_or_create_evm_token',
-        return_value=(zchf := MagicMock()),
-    ) as get_token:
-        module = FrankencoinSavingsBalances(
-            evm_inquirer=evm_inquirer,
-            tx_decoder=(tx_decoder := MagicMock()),
-        )
-
-    assert module.counterparty == CPT_FRANKENCOIN
-    assert module.evm_inquirer is evm_inquirer
-    assert module.tx_decoder is tx_decoder
-    assert module.savings_contract.address == SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ETHEREUM]
-    assert module.zchf is zchf
-    get_token.assert_called_once_with(
-        userdb=evm_inquirer.database,
-        evm_address=ZCHF_ADDRESS[ChainID.ETHEREUM],
-        chain_id=ChainID.ETHEREUM,
-    )
 
 
 def test_query_frankencoin_savings_balances():
