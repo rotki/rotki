@@ -1,3 +1,4 @@
+import { createMock } from '@test/utils/create-mock';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { type DOMWrapper, mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
@@ -8,15 +9,11 @@ import { usePremiumCredentialsApi } from '@/modules/premium/use-premium-credenti
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import PremiumSettings from '@/pages/api-keys/premium/index.vue';
 
-vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> => {
-  const mockInterop = {
+vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> => ({
+  useInterop: vi.fn().mockReturnValue(createMock<ReturnType<typeof useInterop>>({
     premiumUserLoggedIn: vi.fn(),
-  };
-  return {
-    useInterop: vi.fn().mockReturnValue(mockInterop),
-    interop: mockInterop,
-  };
-});
+  })),
+}));
 
 vi.mock('@/modules/premium/use-premium-credentials-api', (): Record<string, unknown> => ({
   usePremiumCredentialsApi: vi.fn().mockReturnValue({

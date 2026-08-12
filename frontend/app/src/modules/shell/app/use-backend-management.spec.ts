@@ -1,3 +1,5 @@
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import { withSetup } from '@test/utils/with-setup';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -34,7 +36,7 @@ vi.mock('@/modules/shell/app/use-websocket-connection', () => ({
 }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: vi.fn(() => ({
+  useInterop: vi.fn(() => createMock<ReturnType<typeof useInterop>>({
     get isPackaged(): boolean {
       return packaged;
     },

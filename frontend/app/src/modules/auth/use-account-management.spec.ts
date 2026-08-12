@@ -1,3 +1,5 @@
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import dayjs from 'dayjs';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountManagement } from '@/modules/auth/use-account-management';
@@ -41,8 +43,10 @@ const mockInterop = vi.hoisted(() => ({
   premiumUserLoggedIn: vi.fn(),
 }));
 
+// The overrides object is read on every property access, so the tests can keep
+// flipping `mockInterop.isPackaged` between cases.
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: vi.fn().mockReturnValue(mockInterop),
+  useInterop: vi.fn().mockReturnValue(createMock<ReturnType<typeof useInterop>>(mockInterop)),
 }));
 
 vi.mock('@/modules/shell/app/use-backend-management', () => ({

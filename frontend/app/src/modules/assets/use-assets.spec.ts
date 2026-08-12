@@ -1,5 +1,6 @@
 import type { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
 import type { AssetMergePayload, AssetUpdatePayload } from '@/modules/assets/types';
+import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { err, ok, type Result } from 'plainfp/result';
@@ -60,17 +61,14 @@ vi.mock('@/modules/core/notifications/use-notifications-store/index', () => ({
   }),
 }));
 
-vi.mock('@/modules/shell/app/use-electron-interop', () => {
-  const mockInterop = {
-    appSession: vi.fn(),
-    openDirectory: vi.fn(),
+vi.mock('@/modules/shell/app/use-electron-interop', () => ({
+  useInterop: vi.fn().mockReturnValue(createMock<ReturnType<typeof useInterop>>({
+    // A boolean, not a function: the export path branches on it directly.
+    appSession: true,
     getPath: vi.fn().mockReturnValue(undefined),
-  };
-  return {
-    useInterop: vi.fn().mockReturnValue(mockInterop),
-    interop: mockInterop,
-  };
-});
+    openDirectory: vi.fn(),
+  })),
+}));
 
 describe('useAssets', () => {
   let store: ReturnType<typeof useAssets>;
