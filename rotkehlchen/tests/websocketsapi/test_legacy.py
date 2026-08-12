@@ -1,8 +1,17 @@
+from typing import TYPE_CHECKING
+
 import pytest
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+    from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
-def test_query_legacy_message(rotkehlchen_api_server, websocket_connection):
+def test_query_legacy_message(
+        rotkehlchen_api_server: APIServer,
+        websocket_connection: WebsocketReader,
+) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rotki.msg_aggregator.add_error('This is an error')
     rotki.msg_aggregator.add_warning('This is a warning')

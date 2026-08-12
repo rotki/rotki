@@ -1,6 +1,7 @@
 import asyncio
 import json
 import platform
+from typing import TYPE_CHECKING
 from unittest.mock import Mock
 
 import pytest
@@ -12,11 +13,20 @@ from rotkehlchen.api.asgi import (
     AsgiWebsocketSubscriber,
 )
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.user_messages import MessagesAggregator
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+    from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
-def _send_stuff(msg_aggregator, websocket_connection, string_len):
+
+def _send_stuff(
+        msg_aggregator: MessagesAggregator,
+        websocket_connection: WebsocketReader,
+        string_len: int,
+) -> None:
     for _ in range(10):
         # We need big strings in order to replicate. Small messages do not hit it
         # But not too big since it can cause `WebSocketPayloadException` and that
@@ -29,7 +39,10 @@ def _send_stuff(msg_aggregator, websocket_connection, string_len):
 
 
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
-def test_websockets_concurrent_use(rotkehlchen_api_server, websocket_connection):
+def test_websockets_concurrent_use(
+        rotkehlchen_api_server: APIServer,
+        websocket_connection: WebsocketReader,
+) -> None:
     """Up until 1.26.3 there was no lock per websocket connection and that could under
     very heavy and specific circumstances cause concurrent websocket access from multiple
     greenlets.
@@ -51,7 +64,7 @@ def test_websockets_concurrent_use(rotkehlchen_api_server, websocket_connection)
     ), 'At least one exception happened in a websocket sender or supervised task'
 
 
-def test_requeue_undelivered_messages():
+def test_requeue_undelivered_messages() -> None:
     """Test that messages queued to a websocket client that disconnected before
     receiving them land in the polling fallback deques if they are error-class,
     and are dropped otherwise"""
@@ -78,7 +91,7 @@ def test_requeue_undelivered_messages():
     assert msg_aggregator.consume_warnings() == ['a warning']
 
 
-def test_disconnect_deauthorized_drops_only_revoked_connections():
+def test_disconnect_deauthorized_drops_only_revoked_connections() -> None:
     """The /ws gate runs once, at the handshake, so a revoked session's socket has to
     be dropped from the outside or it keeps receiving broadcasts -- including, after a
     takeover, the next user's. Connections opened with the cookie gate off carry no
@@ -87,10 +100,12 @@ def test_disconnect_deauthorized_drops_only_revoked_connections():
     try:
         notifier = RotkiNotifier()
         revoked = AsgiWebsocketSubscriber(loop=loop, username='alice', sid='old-sid')
+        revoked.close_callback = (revoked_close := Mock())
         live = AsgiWebsocketSubscriber(loop=loop, username='bob', sid='live-sid')
+        live.close_callback = (live_close := Mock())
         ungated = AsgiWebsocketSubscriber(loop=loop)  # cookie gate off (Electron/dev)
+        ungated.close_callback = (ungated_close := Mock())
         for subscriber in (revoked, live, ungated):
-            subscriber.close_callback = Mock()
             notifier.subscribe(subscriber)
 
         notifier.disconnect_deauthorized(
@@ -99,14 +114,14 @@ def test_disconnect_deauthorized_drops_only_revoked_connections():
         loop.run_until_complete(asyncio.sleep(0))  # flush the scheduled callbacks
 
         assert revoked.closed is True
-        revoked.close_callback.assert_called_once_with(WS_CLOSE_POLICY_VIOLATION)
+        revoked_close.assert_called_once_with(WS_CLOSE_POLICY_VIOLATION)
         assert live.closed is False
-        live.close_callback.assert_not_called()
+        live_close.assert_not_called()
         assert ungated.closed is False
-        ungated.close_callback.assert_not_called()
+        ungated_close.assert_not_called()
 
         # and the revoked one receives nothing more, even before its close lands
-        notifier.broadcast(message_type='legacy', to_send_data={'value': 'after'})
+        notifier.broadcast(message_type=WSMessageType.LEGACY, to_send_data={'value': 'after'})
         loop.run_until_complete(asyncio.sleep(0))  # send() enqueues via the loop too
         assert revoked.queue.qsize() == 0
         assert live.queue.qsize() == 1
@@ -114,7 +129,7 @@ def test_disconnect_deauthorized_drops_only_revoked_connections():
         loop.close()
 
 
-def test_queue_overflow_retains_dropped_messages():
+def test_queue_overflow_retains_dropped_messages() -> None:
     """The message that finds the queue full must be kept for teardown: it is
     handed back to the notifier by drain_pending along with the queued ones, so
     an error-class message still reaches the /messages polling fallback"""
@@ -128,7 +143,7 @@ def test_queue_overflow_retains_dropped_messages():
 
         subscriber.enqueue('the overflowing message')
         assert subscriber.closed is True
-        close_callback.assert_called_once_with(WS_CLOSE_TRY_AGAIN_LATER)
+        close_callback.assert_called_once_with(WS_CLOSE_TRY_AGAIN_LATER)  # type: ignore[unreachable]  # mypy doesn't invalidate the closed=False narrowing across enqueue()
         # an enqueue already scheduled before the overflow closed it is kept too
         subscriber.enqueue('a message scheduled before the disconnect')
 
