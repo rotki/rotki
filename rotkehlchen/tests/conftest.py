@@ -430,6 +430,10 @@ def vcr_fixture(vcr: VCR) -> VCR:
         ):
             return None
 
+        for header in tuple(response['headers']):
+            if header.lower() == 'set-cookie':
+                response['headers'].pop(header)
+
         return response
 
     vcr.before_record_response = before_record_response
@@ -586,8 +590,8 @@ def vcr_config() -> dict[str, Any]:
         'decode_compressed_response': True,
         'ignore_localhost': True,
         'filter_query_parameters': ['apikey', 'api_key'],
-        # redact api key headers (e.g. Moralis' X-API-Key) so they never enter cassettes
-        'filter_headers': [('X-API-Key', 'DUMMY')],
+        # Redact credentials and session cookies so they never enter cassettes.
+        'filter_headers': [('X-API-Key', 'DUMMY'), 'Cookie'],
         'match_on': ['etherscan_matcher'],
     }
 
