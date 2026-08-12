@@ -35,13 +35,32 @@ export default defineConfig({
       external: ['electron', 'httpxy', ...builtinModules.flatMap(p => [p, `node:${p}`])],
       output: {
         entryFileNames: 'main.js',
-        manualChunks(id) {
-          if (id.includes('node_modules'))
-            return 'background-vendor';
-          if (id.includes('electron-updater'))
-            return 'background-vendor-updater';
-          if (id.includes('http'))
-            return 'background-http';
+        // Keep our code in `main.js` and dependencies in `background-vendor`, so a stack frame from
+        // the minified production bundle (no sourcemaps here) says which side it came from.
+        //
+        // Only *statically* reachable dependencies are claimed. A blanket `node_modules` test also
+        // swallows lazily imported subtrees, and since `background-vendor` is itself statically
+        // imported by the entry, that silently drags them back into the startup path: it is what
+        // kept electron-updater's 290 KB eager. Reachability is derived from the module graph rather
+        // than a hand-listed exclusion, so it stays correct as dependencies move around. A module
+        // needed by both sides is statically reachable, lands in the vendor chunk, and the lazy
+        // chunk simply imports it from there.
+        manualChunks(id, { getModuleInfo }) {
+          if (!id.includes('node_modules'))
+            return;
+
+          const seen = new Set<string>();
+          const reachedStatically = (moduleId: string): boolean => {
+            if (seen.has(moduleId))
+              return false;
+            seen.add(moduleId);
+            const info = getModuleInfo(moduleId);
+            if (!info)
+              return false;
+            return info.isEntry || info.importers.some(reachedStatically);
+          };
+
+          return reachedStatically(id) ? 'background-vendor' : undefined;
         },
       },
     },
