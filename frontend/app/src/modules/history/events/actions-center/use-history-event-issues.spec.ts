@@ -343,7 +343,7 @@ describe('useHistoryEventIssues', () => {
       expect(row.id).toBe(HISTORY_ISSUE_IDS.NO_TRACKED_ACCOUNTS);
       expect(row.count).toBe(1);
       expect(row.severity).toBe('warning');
-      expect(row.target).toEqual({ kind: 'route', to: { name: '/balances/blockchain/' } });
+      expect(row.target).toEqual({ kind: 'route', to: { name: '/accounts/' } });
     });
 
     it('should lead the list, since every other count is legitimately zero', () => {

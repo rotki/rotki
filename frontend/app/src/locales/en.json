@@ -6316,7 +6316,7 @@
         },
         "no_tracked_accounts": {
           "action": "Add an account",
-          "description": "rotki has nothing to work from until you add a blockchain account or connect an exchange.",
+          "description": "rotki has no blockchain account or exchange to sync history from.",
           "title": "Tracked accounts"
         },
         "undecoded": {
@@ -6353,7 +6353,7 @@
     "empty_state": {
       "clear_filters": "Clear filters",
       "no_data_with_filters": "No events match the current filters",
-      "no_events": "No events found.\nAdd exchanges, track blockchain addresses, or manually add events to get started.",
+      "no_events": "No events found.\nConnect an exchange or track a blockchain address to sync your history, or add an event manually.",
       "syncing": "Your history is being queried and decoded.\nEvents will appear here as they are processed. This can take a while on the first sync."
     },
     "events": {
