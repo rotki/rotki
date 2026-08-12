@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from .tools import BaseDecoderTools
 
@@ -11,7 +11,7 @@ T_NodeInquirer = TypeVar('T_NodeInquirer')
 T_DecoderTools = TypeVar('T_DecoderTools', bound=BaseDecoderTools)
 
 
-class DecoderInterface[T_Address, T_NodeInquirer, T_DecoderTools: BaseDecoderTools](ABC):
+class DecoderInterface(ABC, Generic[T_Address, T_NodeInquirer, T_DecoderTools]):  # noqa: UP046
 
     def __init__(self, node_inquirer: T_NodeInquirer, base_tools: T_DecoderTools) -> None:
         self.base = base_tools
