@@ -4,10 +4,13 @@ import { type Balance, type BigNumber, bigNumberify, Zero } from '@rotki/common'
 export function bigNumberifyFromRef(value: Ref<string | number> | WritableComputedRef<string | number>): ComputedRef<BigNumber> {
   return computed(() => {
     const val = get(value);
+    // Cheap path for a cleared field, which is common enough not to reach it through a throw.
     if (val === '')
       return Zero;
 
-    return bigNumberify(val);
+    // bignumber.js rejects anything it cannot parse by throwing, and this runs inside a computed,
+    // so an unparsable value would surface as a render-time exception rather than a bad number.
+    return bigNumberify(val, Zero);
   });
 }
 
