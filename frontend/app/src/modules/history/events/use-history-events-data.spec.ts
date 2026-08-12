@@ -1,7 +1,9 @@
 import type { Ref } from 'vue';
+import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { assert, bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryEventRow } from '@/modules/history/events/schemas';
@@ -21,9 +23,9 @@ vi.mock('@/modules/history/events/use-history-events', () => ({
 }));
 
 vi.mock('@/modules/core/api/rotki-api', () => ({
-  api: {
-    cancelByTag: (...args: any[]): void => mockCancelByTag(...args),
-  },
+  api: createMock<RotkiApi>({
+    cancelByTag: (tag: string): void => mockCancelByTag(tag),
+  }),
 }));
 
 vi.mock('@/modules/core/common/use-ref-debounce', () => ({

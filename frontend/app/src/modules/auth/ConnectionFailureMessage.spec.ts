@@ -1,3 +1,4 @@
+import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { assert } from '@rotki/common';
 import { LogLevel } from '@shared/log-level';
@@ -45,7 +46,7 @@ vi.mock('@/modules/shell/app/use-electron-interop', () => ({
 }));
 
 vi.mock('@/modules/core/api/rotki-api', () => ({
-  api: { defaultBackend: true, serverUrl: 'http://localhost:4242' },
+  api: createMock<RotkiApi>({ defaultBackend: true, serverUrl: 'http://localhost:4242' }),
 }));
 
 describe('connectionFailureMessage', () => {

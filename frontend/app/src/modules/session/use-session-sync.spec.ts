@@ -1,4 +1,6 @@
+import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import type { WorkStatus } from '@/modules/task-center/core/types';
+import { createMock } from '@test/utils/create-mock';
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -36,10 +38,10 @@ vi.mock('@/modules/session/api/use-sync-api', () => ({
 }));
 
 vi.mock('@/modules/core/api/rotki-api', () => ({
-  api: {
+  api: createMock<RotkiApi>({
     cancel: mockCancel,
     cancelAllQueued: mockCancelAllQueued,
-  },
+  }),
 }));
 
 describe('useSync', () => {

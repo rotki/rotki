@@ -1,3 +1,4 @@
+import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
@@ -63,10 +64,10 @@ vi.mock('@/modules/auth/use-session-auth-store', () => ({
 }));
 
 vi.mock('@/modules/core/api', () => ({
-  api: {
-    cancelAllQueued: vi.fn(),
+  api: createMock<RotkiApi>({
     cancel: vi.fn(),
-  },
+    cancelAllQueued: vi.fn(),
+  }),
 }));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({

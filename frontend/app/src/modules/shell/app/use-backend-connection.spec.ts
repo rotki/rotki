@@ -1,3 +1,5 @@
+import type { RotkiApi } from '@/modules/core/api/rotki-api';
+import { createMock } from '@test/utils/create-mock';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMainStore } from '@/modules/core/common/use-main-store';
@@ -25,9 +27,9 @@ vi.mock('@/modules/shell/app/use-info-api', () => ({
 }));
 
 vi.mock('@/modules/core/api/rotki-api', () => ({
-  api: {
+  api: createMock<RotkiApi>({
     setup: vi.fn(),
-  },
+  }),
 }));
 
 vi.mock('@/modules/core/api/api-urls', () => ({

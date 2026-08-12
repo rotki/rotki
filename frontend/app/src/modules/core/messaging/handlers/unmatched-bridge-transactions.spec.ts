@@ -12,11 +12,14 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: (): object => ({ removeMatching }),
 }));
 
+// Not `createMock<Router>`: the typed router makes `currentRoute` a union of one
+// route type per named route, and a deep-partial override of it exceeds TypeScript's
+// instantiation depth. The handler only reads the route name.
 interface RouterMock extends Pick<Router, 'currentRoute'> {
   push: Mock<Router['push']>;
 }
 
-function createRouter(routeName: string): RouterMock {
+function createRouter(routeName: Router['currentRoute']['value']['name']): RouterMock {
   return {
     // @ts-expect-error partial route mock - only the name is read by the handler
     currentRoute: ref({ name: routeName }),
@@ -30,7 +33,7 @@ describe('createUnmatchedBridgeTransactionsHandler', () => {
   });
 
   it('should clear stale grouped notifications on every message', async () => {
-    const handler = createUnmatchedBridgeTransactionsHandler(mockT, createRouter('/dashboard'));
+    const handler = createUnmatchedBridgeTransactionsHandler(mockT, createRouter('/dashboard/'));
 
     await handler.handle({ count: 0 });
 
@@ -41,7 +44,7 @@ describe('createUnmatchedBridgeTransactionsHandler', () => {
   });
 
   it('should return null when the count is zero', async () => {
-    const handler = createUnmatchedBridgeTransactionsHandler(mockT, createRouter('/dashboard'));
+    const handler = createUnmatchedBridgeTransactionsHandler(mockT, createRouter('/dashboard/'));
 
     await expect(handler.handle({ count: 0 })).resolves.toBeNull();
   });
@@ -53,7 +56,7 @@ describe('createUnmatchedBridgeTransactionsHandler', () => {
   });
 
   it('should return a persistent warning notification with the bridge group', async () => {
-    const handler = createUnmatchedBridgeTransactionsHandler(mockT, createRouter('/dashboard'));
+    const handler = createUnmatchedBridgeTransactionsHandler(mockT, createRouter('/dashboard/'));
 
     const result = await handler.handle({ count: 3 });
 
@@ -71,7 +74,7 @@ describe('createUnmatchedBridgeTransactionsHandler', () => {
   });
 
   it('should route to the history events page with the bridge dialog query on action', async () => {
-    const router = createRouter('/dashboard');
+    const router = createRouter('/dashboard/');
     const handler = createUnmatchedBridgeTransactionsHandler(mockT, router);
 
     const result = await handler.handle({ count: 2 });

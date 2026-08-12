@@ -1,3 +1,5 @@
+import type { RotkiApi } from '@/modules/core/api/rotki-api';
+import { createMock } from '@test/utils/create-mock';
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { none, ok, some } from 'plainfp';
@@ -11,7 +13,7 @@ import { createUnlockFlowController, type UseUnlockFlowControllerReturn } from '
 const authApi = vi.hoisted(() => ({ setOnAuthFailure: vi.fn() }));
 
 vi.mock('@/modules/core/api/rotki-api', () => ({
-  api: authApi,
+  api: createMock<RotkiApi>(authApi),
 }));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
