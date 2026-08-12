@@ -86,7 +86,7 @@ def test_gnosischain_specific_chain_data_failing_logic(
     processed_queries = 0
     real_logs = gnosis_transactions.evm_inquirer.etherscan.get_logs
 
-    def mocked_etherscan_logs(*args, **kwargs):
+    def mocked_etherscan_logs(*args: Any, **kwargs: Any) -> list[dict[str, Any]]:
         nonlocal processed_queries
         if processed_queries == 1:
             raise RemoteError('Remote error from patch')

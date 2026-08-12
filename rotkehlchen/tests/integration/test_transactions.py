@@ -4,7 +4,6 @@ import pytest
 
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
-from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import (
     ETH_ADDRESS1,
     ETH_ADDRESS2,
@@ -23,6 +22,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
+    from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
 
@@ -64,7 +64,11 @@ def test_get_transaction_receipt(
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
-def test_get_or_create_transaction(ethereum_accounts, eth_transactions, database):
+def test_get_or_create_transaction(
+        ethereum_accounts: list[ChecksumEvmAddress],
+        eth_transactions: EthereumTransactions,
+        database: DBHandler,
+) -> None:
     """Tests that get_or_create_transaction works fine. By testing get_or_create_transaction
     it checks that the requirements for a transaction are met before returning it."""
     msg_aggregator = MessagesAggregator()
@@ -76,14 +80,15 @@ def test_get_or_create_transaction(ethereum_accounts, eth_transactions, database
         block_number=3,
         from_address=ethereum_accounts[1],
         to_address=ethereum_accounts[2],
-        value=FVal('4000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
+        value=4000000,
+        gas=5000000,
+        gas_price=2000000000,
+        gas_used=25000000,
         input_data=MOCK_INPUT_DATA,
         nonce=1,
     )
 
+    tx_receipt: EvmTxReceipt | None
     with database.conn.read_ctx() as cursor:
         # check that the transaction is properly added to the DB
         returned_tx, tx_receipt = eth_transactions.get_or_create_transaction(cursor, tx_hash, relevant_address=ethereum_accounts[2])  # noqa: E501

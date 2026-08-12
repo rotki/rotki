@@ -1,4 +1,4 @@
-import time
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -8,16 +8,19 @@ from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.concurrency import spawn_later, wait
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_DAI
 from rotkehlchen.tests.utils.blockchain import mock_beaconchain, mock_etherscan_query
-from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.types import BTCAddress, SupportedBlockchain
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.aggregator import ChainsAggregator
 
 
-def test_query_btc_balances(blockchain):
+def test_query_btc_balances(blockchain: ChainsAggregator) -> None:
     blockchain._query_chain_balances(blockchain=SupportedBlockchain.BITCOIN)
     assert 'BTC' not in blockchain.totals.assets
 
-    account = '3BZU33iFcAiyVyu2M2GhEpLNuh81GymzJ7'
+    account = BTCAddress('3BZU33iFcAiyVyu2M2GhEpLNuh81GymzJ7')
     with blockchain.database.user_write() as write_cursor:
         blockchain.modify_blockchain_accounts(
             write_cursor=write_cursor,
@@ -32,7 +35,7 @@ def test_query_btc_balances(blockchain):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
+def test_multiple_concurrent_ethereum_blockchain_queries(blockchain: ChainsAggregator) -> None:
     """Test that if there is multiple concurrent ETH blockchain queries
     we don't end up double counting:
     (1) the DeFi balances (2) the protocol balances such as DSR / makerdao vaults etc.
@@ -40,7 +43,10 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
     addr1 = string_to_evm_address('0xe188c6BEBB81b96A65aa20dDB9e2aef62627fa4c')
     addr2 = string_to_evm_address('0x78a087fCf440315b843632cFd6FDE6E5adcCc2C2')
     etherscan_patch = mock_etherscan_query(
-        eth_map={addr1: {A_ETH: 1, A_DAI: 1 * 10**18}, addr2: {A_ETH: 2}},
+        eth_map={
+            addr1: {'ETH': 1, A_DAI.resolve_to_evm_token(): 1 * 10**18},
+            addr2: {'ETH': 2},
+        },
         etherscan=blockchain.ethereum.node_inquirer.etherscan,
         ethereum=blockchain.ethereum.node_inquirer,
         original_requests_get=requests.get,
@@ -56,18 +62,6 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         original_queries=None,
         original_requests_get=requests.get,
     )
-
-    def mock_add_defi_balances_to_account():
-        """This function will make sure all tasks end up hitting the balance addition
-        at the same time thus double +++ counting balance ... in the way the code
-        was written before"""
-        time.sleep(2)  # make sure all tasks stop here
-        # and then let them all go in the same time in the adding
-        for account, defi_balances in blockchain.defi_balances.items():
-            blockchain._add_account_defi_balances_to_token(
-                account=account,
-                balances=defi_balances,
-            )
 
     with etherscan_patch, evmtokens_max_chunks_patch:
         with blockchain.database.user_write() as write_cursor:

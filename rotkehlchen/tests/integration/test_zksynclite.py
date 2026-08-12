@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -27,11 +28,12 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
+    from rotkehlchen.inquirer import Inquirer
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2024-03-24 00:00:00 GMT')
-def test_fetch_transactions(zksync_lite_manager):
+def test_fetch_transactions(zksync_lite_manager: ZksyncLiteManager) -> None:
     zksync_lite_manager.fetch_transactions(string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'))
     transactions = []
     with zksync_lite_manager.database.conn.read_ctx() as cursor:
@@ -43,40 +45,40 @@ def test_fetch_transactions(zksync_lite_manager):
 
     assert len(transactions) == 16
     assert transactions[0] == ZKSyncLiteTransaction(
-        tx_hash=b'\xb8\rF;\xbc\xf8J\x87m\xb6\xcf\x80_\x1d\x88k`\xe7\xab\r9!4\xb3t\xe2\xea\xb3\xa1\x93/\xe1',
+        tx_hash=deserialize_evm_tx_hash(b'\xb8\rF;\xbc\xf8J\x87m\xb6\xcf\x80_\x1d\x88k`\xe7\xab\r9!4\xb3t\xe2\xea\xb3\xa1\x93/\xe1'),
         tx_type=ZKSyncLiteTXType.DEPOSIT,
         timestamp=Timestamp(1601574932),
         block_number=3836,
-        from_address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        to_address='0x957A50DA7B25Ce98B7556AfEF1d4e5F5C60fC818',
+        from_address=string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
+        to_address=string_to_evm_address('0x957A50DA7B25Ce98B7556AfEF1d4e5F5C60fC818'),
         asset=A_DAI,
         amount=FVal(23.016),
         fee=None,
     )
     assert transactions[1] == ZKSyncLiteTransaction(
-        tx_hash=b'1*\xb01\xb3PL\xde\xc45G\x95\x17l\xcc\xadL\xaf8\xa1P\xd5\xd3\x10\xc9^\x93I\x9bY\xee\xd1',
+        tx_hash=deserialize_evm_tx_hash(b'1*\xb01\xb3PL\xde\xc45G\x95\x17l\xcc\xadL\xaf8\xa1P\xd5\xd3\x10\xc9^\x93I\x9bY\xee\xd1'),
         tx_type=ZKSyncLiteTXType.TRANSFER,
         timestamp=Timestamp(1638186357),
         block_number=36526,
-        from_address='0x9531C059098e3d194fF87FebB587aB07B30B1306',
-        to_address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+        from_address=string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306'),
+        to_address=string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
         asset=A_ETH,
         amount=FVal(0.4023119998),
         fee=FVal(0.000233),
     )
     assert transactions[5] == ZKSyncLiteTransaction(
-        tx_hash=b'\xe8wB<\xc4\xf2F\x13H\x96\xbfZf\xcc\x922\xa8\xbeM\xc7\x1au\xd7\xeap>\x10]\xfd\x8e{\x82',
+        tx_hash=deserialize_evm_tx_hash(b'\xe8wB<\xc4\xf2F\x13H\x96\xbfZf\xcc\x922\xa8\xbeM\xc7\x1au\xd7\xeap>\x10]\xfd\x8e{\x82'),
         tx_type=ZKSyncLiteTXType.TRANSFER,
         timestamp=Timestamp(1648716422),
         block_number=61452,
-        from_address='0x9531C059098e3d194fF87FebB587aB07B30B1306',
-        to_address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+        from_address=string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306'),
+        to_address=string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
         asset=A_ETH,
         amount=FVal(0.50543049),
         fee=FVal(0.0000324),
     )
     # For 1656022105 order can be random.
-    tx_hash = b'\xe8"\x81\xa8\\"\xc7r\xeb5\x17p5\xd9<\xdb\x7fU\x9b\xafp\xe0,\t\x00\xf5\x08\xe7#=\x1d\x0f'  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash(b'\xe8"\x81\xa8\\"\xc7r\xeb5\x17p5\xd9<\xdb\x7fU\x9b\xafp\xe0,\t\x00\xf5\x08\xe7#=\x1d\x0f')  # noqa: E501
     for idx in (8, 9, 10, 11, 12):
         if transactions[idx].tx_hash == tx_hash:
             break
@@ -86,15 +88,15 @@ def test_fetch_transactions(zksync_lite_manager):
         tx_type=ZKSyncLiteTXType.TRANSFER,
         timestamp=Timestamp(1656022105),
         block_number=91045,
-        from_address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        to_address='0x4D9339dd97db55e3B9bCBE65dE39fF9c04d1C2cd',
+        from_address=string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
+        to_address=string_to_evm_address('0x4D9339dd97db55e3B9bCBE65dE39fF9c04d1C2cd'),
         asset=A_ETH,
         amount=FVal(0.005),
         fee=None,
     )
 
     # For 1656022105 order can be random.
-    tx_hash = b'\x83\x00\x1f\x1cU\x80\xd9\r4Wy\xcd\x10v/\xc7\x1cL\x90  %Q\xbcH\x031\xd7\rT|\xc7'
+    tx_hash = deserialize_evm_tx_hash(b'\x83\x00\x1f\x1cU\x80\xd9\r4Wy\xcd\x10v/\xc7\x1cL\x90  %Q\xbcH\x031\xd7\rT|\xc7')  # noqa: E501
     for idx in (8, 9, 10, 11, 12):
         if transactions[idx].tx_hash == tx_hash:
             break
@@ -103,30 +105,30 @@ def test_fetch_transactions(zksync_lite_manager):
         tx_type=ZKSyncLiteTXType.CHANGEPUBKEY,
         timestamp=Timestamp(1656022105),
         block_number=91045,
-        from_address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+        from_address=string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
         to_address=None,
         asset=A_ETH,
         amount=ZERO,
         fee=FVal(0.001513),
     )
     assert transactions[14] == ZKSyncLiteTransaction(
-        tx_hash=b'3\x1f\xccI\xdc<\nw.\x0b^E\x185\x0f=\x9a\\Uv\xb4\xe8\xdb\xc7\xc5k,Y\xca\xa29\xbb',
+        tx_hash=deserialize_evm_tx_hash(b'3\x1f\xccI\xdc<\nw.\x0b^E\x185\x0f=\x9a\\Uv\xb4\xe8\xdb\xc7\xc5k,Y\xca\xa29\xbb'),
         tx_type=ZKSyncLiteTXType.TRANSFER,
         timestamp=Timestamp(1659010582),
         block_number=96159,
-        from_address='0x9531C059098e3d194fF87FebB587aB07B30B1306',
-        to_address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+        from_address=string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306'),
+        to_address=string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
         asset=A_ETH,
         amount=FVal('0.9630671085'),
         fee=None,
     )
     assert transactions[15] == ZKSyncLiteTransaction(
-        tx_hash=b'\xbdr;Z_\x87\xe4\x85\xa4x\xbc}\x1f6]\xb7\x94@\xb6\xe90[\xff;\x16\xa0\xe0\xab\x83\xe5\x19p',
+        tx_hash=deserialize_evm_tx_hash(b'\xbdr;Z_\x87\xe4\x85\xa4x\xbc}\x1f6]\xb7\x94@\xb6\xe90[\xff;\x16\xa0\xe0\xab\x83\xe5\x19p'),
         tx_type=ZKSyncLiteTXType.WITHDRAW,
         timestamp=Timestamp(1708431030),
         block_number=425869,
-        from_address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        to_address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+        from_address=string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
+        to_address=string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
         asset=A_ETH,
         amount=FVal(6.626770825),
         fee=FVal(0.00367),
@@ -135,17 +137,20 @@ def test_fetch_transactions(zksync_lite_manager):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_balances(zksync_lite_manager, inquirer):  # pylint: disable=unused-argument
+def test_balances(
+        zksync_lite_manager: ZksyncLiteManager,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
     address1 = string_to_evm_address('0xFB3A939Cb06eeF36E1ceD48bdba1fcEe177Ac7f4')
     address2 = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
     balances = zksync_lite_manager.query_balances(addresses=[address1, address2])
     address2_eth_amount = FVal('0.00000112704')
-    assert balances == {address2: BalanceSheet(assets={
-        A_ETH: {DEFAULT_BALANCE_LABEL: Balance(
+    assert balances == {address2: BalanceSheet(assets=defaultdict(lambda: defaultdict(Balance), {
+        A_ETH: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(
             amount=address2_eth_amount,
             value=address2_eth_amount * CURRENT_PRICE_MOCK,
-        )},
-    })}
+        )}),
+    }))}
     assert balances.get(address1, BalanceSheet()) == BalanceSheet()
 
     with zksync_lite_manager.database.conn.read_ctx() as cursor:
@@ -169,7 +174,10 @@ def test_balances(zksync_lite_manager, inquirer):  # pylint: disable=unused-argu
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.freeze_time('2024-04-02 00:00:00 GMT')
-def test_decode_fullexit(zksync_lite_manager, inquirer):  # pylint: disable=unused-argument
+def test_decode_fullexit(
+        zksync_lite_manager: ZksyncLiteManager,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd61d5f242022a43b5a11c84b350cdf8b2923221bf4a89ef091d51a1494d36007')  # noqa: E501
     address = string_to_evm_address('0xd6dfD811E06267b25472753c4e57C0B28652bFB8')
     timestamp = Timestamp(1592248320)
@@ -216,7 +224,10 @@ def test_decode_fullexit(zksync_lite_manager, inquirer):  # pylint: disable=unus
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.freeze_time('2024-04-05 11:00:00 GMT')
-def test_decode_forcedexit(zksync_lite_manager, inquirer):  # pylint: disable=unused-argument
+def test_decode_forcedexit(
+        zksync_lite_manager: ZksyncLiteManager,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xfa3d59c21b709f4ffd9b0e6c7e2dfe4579d7dd5e85325575d381ad88e50a64f1')  # noqa: E501
     address = string_to_evm_address('0x4676b83307A2A4A1556cdfC4d0c21097B584f3cF')
     timestamp = Timestamp(1712296398)
@@ -263,7 +274,10 @@ def test_decode_forcedexit(zksync_lite_manager, inquirer):  # pylint: disable=un
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.freeze_time('2024-04-11 10:00:00 GMT')
-def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-argument
+def test_decode_swap(
+        zksync_lite_manager: ZksyncLiteManager,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x62819dad5d0d99dc5de633ecb95629c1073bcb80a8af15464ca4b0bc95b394b9')  # noqa: E501
     address = string_to_evm_address('0x721AF5c931BAA2415428064e5F71A251F30152B1')
     timestamp = Timestamp(1710752106)
@@ -341,7 +355,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
     )]
 
 
-def test_get_db_transactions(zksync_lite_manager: ZksyncLiteManager):
+def test_get_db_transactions(zksync_lite_manager: ZksyncLiteManager) -> None:
     """Test that all zksync lite transactions are loaded from the database
     when a swap transaction is present.
 

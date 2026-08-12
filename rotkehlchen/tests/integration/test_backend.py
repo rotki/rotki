@@ -7,7 +7,7 @@ from http import HTTPStatus
 import requests
 
 
-def test_backend():
+def test_backend() -> None:
     """Just runs the backend code to make sure `python -m rotkehlchen` works"""
     proc = subprocess.Popen(
         # Only works with --logtarget stdout. Figure out why it does not work
@@ -18,6 +18,7 @@ def test_backend():
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
+    assert proc.stdout is not None  # guaranteed by stdout=subprocess.PIPE above
     timeout = 10
     if sys.platform == 'darwin':
         timeout = 45  # in macos the backend may take a long time to start

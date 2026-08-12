@@ -70,6 +70,7 @@ def test_etherscan_and_blockscout_produced_block_proposer_match(
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
@@ -81,7 +82,12 @@ if TYPE_CHECKING:
 ]])
 @pytest.mark.parametrize('query_method', ['etherscan', 'blockscout'])
 @pytest.mark.freeze_time('2024-02-04 23:50:00 GMT')
-def test_withdrawals(eth2: Eth2, database, ethereum_accounts, query_method):
+def test_withdrawals(
+        eth2: Eth2,
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        query_method: str,
+) -> None:
     """Test that when withdrawals are queried, they are properly saved in the DB.
 
     Test that the sources we can query agree with each other.
@@ -214,12 +220,12 @@ def test_withdrawals(eth2: Eth2, database, ethereum_accounts, query_method):
 ])
 def test_block_production(
         eth2: Eth2,
-        database,
-        ethereum_inquirer,
-        ethereum_accounts,
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
         produced_blocks_query_source: str,
         vcr_cassette_name: str,  # pylint: disable=unused-argument
-):
+) -> None:
     """Test that providing validators that have both pure block production and running
     mev-boost works and detects the block production events.
     """
@@ -381,7 +387,7 @@ def test_block_production(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2023-11-19 16:30:00 GMT')
-def test_withdrawals_detect_exit(eth2: Eth2, database):
+def test_withdrawals_detect_exit(eth2: Eth2, database: DBHandler) -> None:
     """Test that detecting an exit for slashed and exited validators work fine"""
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
@@ -505,7 +511,7 @@ def test_query_no_withdrawals(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2024-02-07 10:00:00 GMT')
-def test_beacon_node_rpc_queries(eth2: Eth2):
+def test_beacon_node_rpc_queries(eth2: Eth2) -> None:
     # Test setting rpc endpoint both with/without trailing slash. Also unsetting
     eth2.beacon_inquirer.set_rpc_endpoint('http://42.42.42.42:6969')  # without trailing slash
     assert eth2.beacon_inquirer.node is not None
@@ -538,7 +544,7 @@ def test_beacon_node_rpc_queries(eth2: Eth2):
 
 @pytest.mark.freeze_time('2024-02-07 10:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
-def test_details_with_beacon_node(eth2: Eth2):
+def test_details_with_beacon_node(eth2: Eth2) -> None:
     """Check that when we have a beacon node setup the function
     get_validator_data processes the validator details and queries
     access the correct keys.
@@ -606,12 +612,12 @@ def test_details_with_beacon_node(eth2: Eth2):
 ])
 def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         eth2: Eth2,
-        database,
-        ethereum_inquirer,
-        ethereum_accounts,
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
         produced_blocks_query_source: str,
         vcr_cassette_name: str,  # pylint: disable=unused-argument
-):
+) -> None:
     """Test that beaconcha.in and RPC produced block detection return the same data.
 
     The RPC fallback matches beaconcha.in's informational MEV event as closely as possible

@@ -7,7 +7,7 @@ import time
 from base64 import b64decode
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import call, patch
 
 import machineid
@@ -55,6 +55,9 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.aggregator import ChainsAggregator
+    from rotkehlchen.concurrency.tasks import Task
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
@@ -97,12 +100,12 @@ def test_upload_data_to_server(
     remote_hash = get_different_hash(our_hash)
 
     def mock_successful_upload_data_to_server(
-            url,  # pylint: disable=unused-argument
-            data,
-            files,
-            timeout,  # pylint: disable=unused-argument
-            headers,
-    ):
+            url: str,  # pylint: disable=unused-argument
+            data: dict[str, Any],
+            files: dict[str, Any],
+            timeout: int,  # pylint: disable=unused-argument
+            headers: dict[str, str],
+    ) -> MockResponse:
         # Can't compare the data blob and its hash as it is encrypted and as such can be
         # different each time
         assert 'file_hash' in data
@@ -193,7 +196,7 @@ def test_upload_data_to_server(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_upload_data_to_server_same_hash(rotkehlchen_instance):
+def test_upload_data_to_server_same_hash(rotkehlchen_instance: Rotkehlchen) -> None:
     """Test that if the server has same data hash as we no upload happens"""
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_static_cache(
@@ -203,13 +206,14 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
     assert last_ts is None
     with rotkehlchen_instance.data.db.user_write() as write_cursor:
         # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_EUR.resolve_to_asset_with_oracles()))  # noqa: E501
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
         _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
     remote_hash = our_hash
 
+    assert rotkehlchen_instance.premium is not None
     patched_post = patch.object(
         rotkehlchen_instance.premium.session,
         'post',
@@ -221,7 +225,7 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
         metadata_data_hash=remote_hash,
         # Smaller Remote DB size
         metadata_data_size=2,
-        saved_data='foo',
+        saved_data=b'foo',
     )
 
     with patched_get, patched_post as post_mock, patch.object(
@@ -239,7 +243,7 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
     {'ask_user_upon_size_discrepancy': True},
     {'ask_user_upon_size_discrepancy': False},
 ])
-def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_settings: dict[str, bool]):
+def test_upload_data_to_server_smaller_db(rotkehlchen_instance: Rotkehlchen, db_settings: dict[str, bool]) -> None:  # noqa: E501
     """Test that if the server has bigger DB size no upload happens"""
     with rotkehlchen_instance.data.db.user_write() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_static_cache(
@@ -254,6 +258,7 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_settings: dic
         _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
     remote_hash = get_different_hash(our_hash)
 
+    assert rotkehlchen_instance.premium is not None
     patched_post = patch.object(
         rotkehlchen_instance.premium.session,
         'post',
@@ -333,11 +338,11 @@ def test_upload_aborts_on_local_db_integrity_failure(rotkehlchen_instance: Rotke
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_new_account_can_pull_data(
-        rotkehlchen_instance,
-        username,
-        rotki_premium_credentials,
-        premium_remote_data,
-):
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes | None,
+) -> None:
     # Test that even with can_sync False, at start of new account we attempt data pull
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
@@ -354,11 +359,11 @@ def test_try_premium_at_start_new_account_can_pull_data(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_new_account_rejects_data(
-        rotkehlchen_instance,
-        username,
-        rotki_premium_credentials,
-        premium_remote_data,
-):
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes | None,
+) -> None:
     # Test that even with can_sync False, at start of new account we attempt data pull
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
@@ -379,10 +384,10 @@ def test_try_premium_at_start_new_account_rejects_data(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_new_account_pull_old_data(
-        rotkehlchen_instance,
-        username,
-        rotki_premium_credentials,
-):
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+) -> None:
     """
     Test that if the remote DB is of an old version its upgraded before replacing our current
 
@@ -403,11 +408,11 @@ def test_try_premium_at_start_new_account_pull_old_data(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_old_account_can_pull_data(
-        rotkehlchen_instance,
-        username,
-        rotki_premium_credentials,
-        premium_remote_data,
-):
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes | None,
+) -> None:
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
@@ -423,10 +428,10 @@ def test_try_premium_at_start_old_account_can_pull_data(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_old_account_can_pull_old_data(
-        rotkehlchen_instance,
-        username,
-        rotki_premium_credentials,
-):
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+) -> None:
     """
     Test that if the remote DB is of an old version its upgraded before replacing our current
 
@@ -447,11 +452,11 @@ def test_try_premium_at_start_old_account_can_pull_old_data(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_old_account_doesnt_pull_data_with_no_premium_sync(
-        rotkehlchen_instance,
-        username,
-        rotki_premium_credentials,
-        premium_remote_data,
-):
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes | None,
+) -> None:
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
@@ -469,11 +474,11 @@ def test_try_premium_at_start_old_account_doesnt_pull_data_with_no_premium_sync(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_old_account_older_remote_ts_smaller_remote_size(
-        rotkehlchen_instance,
-        username,
-        rotki_premium_credentials,
-        premium_remote_data,
-):
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes | None,
+) -> None:
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
@@ -491,11 +496,11 @@ def test_try_premium_at_start_old_account_older_remote_ts_smaller_remote_size(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_old_account_newer_remote_ts_smaller_remote_size(
-        rotkehlchen_instance,
-        username,
-        rotki_premium_credentials,
-        premium_remote_data,
-):
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes | None,
+) -> None:
     """Assure that newer remote ts and smaller remote size asks the user for sync"""
     with pytest.raises(RotkehlchenPermissionError):
         setup_starting_environment(
@@ -514,11 +519,11 @@ def test_try_premium_at_start_old_account_newer_remote_ts_smaller_remote_size(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('db_password', ['different_password_than_remote_db_was_encoded_with'])
 def test_try_premium_at_start_new_account_different_password_than_remote_db(
-        rotkehlchen_instance,
-        username,
-        rotki_premium_credentials,
-        premium_remote_data,
-):
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes | None,
+) -> None:
     """
     If we make a new account with api keys and provide a password different than
     the one the remote DB is encrypted with then make sure that PremiumAuthenticationError
@@ -540,11 +545,11 @@ def test_try_premium_at_start_new_account_different_password_than_remote_db(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('premium_remote_data', [None])
 def test_try_premium_at_start_first_time_no_previous_db(
-        rotkehlchen_instance,
-        username,
-        rotki_premium_credentials,
-        premium_remote_data,
-):
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes | None,
+) -> None:
     """Regression test for:
     - https://github.com/rotki/rotki/issues/1571
     - https://github.com/rotki/rotki/issues/2846
@@ -571,7 +576,7 @@ def test_try_premium_at_start_first_time_no_previous_db(
     assert credentials.api_secret == rotki_premium_credentials.api_secret
 
 
-def test_premium_credentials():
+def test_premium_credentials() -> None:
     """Test the premium credentials class"""
     # Test that improperly formatted keys are spotted
     with pytest.raises(IncorrectApiKeyFormat):
@@ -592,14 +597,14 @@ def test_premium_credentials():
 @pytest.mark.parametrize('ethereum_modules', [['uniswap', 'sushiswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [False])
 def test_premium_toggle_chains_aggregator(
-        blockchain,
-        rotki_premium_credentials,
-        username,
-        database,
-):
+        blockchain: ChainsAggregator,
+        rotki_premium_credentials: PremiumCredentials,
+        username: str,
+        database: DBHandler,
+) -> None:
     """Tests that modules receive correctly the premium status when it's toggled"""
     for _, module in blockchain.iterate_modules():
-        assert module.premium is None
+        assert module.premium is None  # type: ignore[attr-defined]  # only some modules carry .premium, same as production's hasattr checks
 
     premium_obj = Premium(
         credentials=rotki_premium_credentials,
@@ -609,17 +614,17 @@ def test_premium_toggle_chains_aggregator(
     )
     blockchain.activate_premium_status(premium_obj)
     for _, module in blockchain.iterate_modules():
-        assert module.premium == premium_obj
+        assert module.premium == premium_obj  # type: ignore[attr-defined]
 
     blockchain.deactivate_premium_status()
     for _, module in blockchain.iterate_modules():
-        assert module.premium is None
+        assert module.premium is None  # type: ignore[attr-defined]
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [10])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
-def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
+def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance: Rotkehlchen) -> None:
     """Test that if the server has bigger DB size and context switch happens it
     all works out. Essentially a test for https://github.com/rotki/rotki/issues/5038
     where the DB is already in use error occurs.
@@ -640,12 +645,13 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
         )
         assert last_ts is None
         # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR.resolve_to_asset_with_oracles()))  # noqa: E501
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
         _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
         remote_hash = get_different_hash(our_hash)
 
+    assert rotkehlchen_instance.premium is not None
     patched_post = patch.object(
         rotkehlchen_instance.premium.session,
         'post',
@@ -657,11 +663,11 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
         metadata_data_hash=remote_hash,
         # larger DB than ours
         metadata_data_size=9999999999,
-        saved_data='foo',
+        saved_data=b'foo',
     )
     chain_manager = rotkehlchen_instance.chains_aggregator.get_evm_manager(ChainID.ETHEREUM)
 
-    def mock_stuff(filter_query):
+    def mock_stuff(filter_query: object) -> list[Any]:
         """Just mock get_transaction_hashes_not_decoded which is called during
         get_and_decode_undecoded_transactions() to add some DB work and some sleeping.
         This triggers the threadpool deadlock problem in 50% of the test runs"""
@@ -697,7 +703,7 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [20])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_upload_data_to_server_db_locked(rotkehlchen_instance):
+def test_upload_data_to_server_db_locked(rotkehlchen_instance: Rotkehlchen) -> None:
     """Test that if the server has big DB size and context switch happens it
     all works out. Essentially a test for https://github.com/rotki/rotki/issues/5038
     where the DB is locked part occurs.
@@ -711,7 +717,7 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
 
     db = rotkehlchen_instance.data.db
 
-    def function_to_context_switch_to():
+    def function_to_context_switch_to() -> None:
         """This is the function that export_unencrypted should context switch to.
         When the error occurred any detach or other operation here would result
         in database is locked.
@@ -730,13 +736,14 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
         )
         assert last_ts is None
         # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR.resolve_to_asset_with_oracles()))  # noqa: E501
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
         _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
     remote_hash = get_different_hash(our_hash)
 
+    assert rotkehlchen_instance.premium is not None
     patched_post = patch.object(
         rotkehlchen_instance.premium.session,
         'post',
@@ -748,10 +755,10 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
         metadata_data_hash=remote_hash,
         # larger DB than ours
         metadata_data_size=9999999999,
-        saved_data='foo',
+        saved_data=b'foo',
     )
 
-    tasks = []
+    tasks: list[Task] = []
     with patched_get, patched_post as post_mock:
         tasks.extend((
             spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
@@ -836,13 +843,13 @@ def test_device_limits(rotkehlchen_instance: Rotkehlchen, device_limit: int) -> 
         'limit': device_limit,
     }
 
-    def mock_devices_list(url, data, **kwargs):  # pylint: disable=unused-argument
+    def mock_devices_list(url: str, data: Any, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
         nonlocal devices
         if 'nest/1/devices' in url:
             return MockResponse(HTTPStatus.OK, json.dumps(devices))
         raise NotImplementedError('unexpected url')
 
-    def mock_device_registration(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_device_registration(url: str, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
         nonlocal device_registered
         if device_limit_reached:
             return MockResponse(HTTPStatus.UNPROCESSABLE_ENTITY, json.dumps({'error': f'Device limit of {device_limit} exceeded'}))  # noqa: E501
@@ -850,7 +857,7 @@ def test_device_limits(rotkehlchen_instance: Rotkehlchen, device_limit: int) -> 
         device_registered = True
         return MockResponse(HTTPStatus.CREATED, json.dumps({'registered': True}))
 
-    def mock_device_check(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_device_check(url: str, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
         # return NOT_FOUND to trigger device registration attempt
         status_code = HTTPStatus.OK if device_registered else HTTPStatus.NOT_FOUND
         return MockResponse(status_code, '')
@@ -921,7 +928,7 @@ def test_limits_caching(rotkehlchen_instance: Rotkehlchen) -> None:
         assert mock_get.call_count == 1
 
 
-def test_docker_device_version_update(rotki_premium_object, database):
+def test_docker_device_version_update(rotki_premium_object: Premium, database: DBHandler) -> None:
     """Test that Docker device registration handles version updates correctly"""
     premium = rotki_premium_object
     premium.db = database  # Set the database for this test
@@ -984,7 +991,7 @@ def test_docker_device_version_update(rotki_premium_object, database):
             assert cached_info[1] == '1.0.0'
 
 
-def test_get_kubernetes_pod_name_reads_hostname():
+def test_get_kubernetes_pod_name_reads_hostname() -> None:
     """Ensures pod name is read from /etc/hostname when K8s is detected."""
     with (
         patch.dict(os.environ, {'KUBERNETES_SERVICE_HOST': '1'}, clear=False),
@@ -997,7 +1004,7 @@ def test_get_kubernetes_pod_name_reads_hostname():
         assert check_docker_container() == (pod_id, KUBERNETES_PLATFORM_KEY)
 
 
-def test_check_docker_container_detects_podman():
+def test_check_docker_container_detects_podman() -> None:
     """Ensures podman container IDs are detected and treated as docker platform."""
     podman_container_id = '235e0319f7ad6649a7e822f8d4e542eab7fe778de7c31663b5579fb080421249'
     mountinfo = (
