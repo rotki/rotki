@@ -58,7 +58,7 @@ export class PillFilterBar {
    */
   async addField(fieldKey: string): Promise<void> {
     await this.bar.locator('[data-testid=pill-add]').click();
-    const option = this.page.locator(`[data-testid=pill-menu-field-${fieldKey}]`);
+    const option = this.page.locator(`[data-testid=pill-menu-field][data-field="${fieldKey}"]`);
     await option.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     await option.click();
   }
@@ -73,7 +73,7 @@ export class PillFilterBar {
    */
   async selectValue(value: string, search?: string): Promise<void> {
     await this.searchValues(search ?? value);
-    const option = this.page.locator(`[data-testid="value-select-option-${value}"]`);
+    const option = this.page.locator(`[data-testid=value-select-option][data-key="${value}"]`);
     await option.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     await option.click();
   }
@@ -87,7 +87,7 @@ export class PillFilterBar {
    */
   async selectValueOnce(value: string, search?: string): Promise<void> {
     await this.searchValues(search ?? value);
-    const option = this.page.locator(`[data-testid="value-select-option-${value}"]`);
+    const option = this.page.locator(`[data-testid=value-select-option][data-key="${value}"]`);
     await option.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
 
     if (await option.getAttribute('aria-checked') !== 'true')
@@ -241,7 +241,7 @@ export class PillFilterBar {
 
   private suggestion(kind: 'field' | 'value', fieldKey: string, value?: string): Locator {
     const key = kind === 'field' ? `field-${fieldKey}` : `value-${fieldKey}-${value}`;
-    return this.page.locator(`[data-testid="pill-narrow-${key}"]`);
+    return this.page.locator(`[data-testid=pill-narrow-row][data-key="${key}"]`);
   }
 
   /**
@@ -249,7 +249,7 @@ export class PillFilterBar {
    * offer the same field twice, since a bare amount means either bound.
    */
   private filterSuggestion(fieldKey: string, op: string): Locator {
-    return this.page.locator(`[data-testid="pill-narrow-filter-${fieldKey}-${op}"]`);
+    return this.page.locator(`[data-testid=pill-narrow-row][data-key="filter-${fieldKey}-${op}"]`);
   }
 
   async expectFilterSuggestion(fieldKey: string, op: string): Promise<void> {
@@ -306,7 +306,7 @@ export class PillFilterBar {
    * the async path should assert that a row arrives and applies, not which row won.
    */
   async pickFirstValueSuggestion(fieldKey: string): Promise<void> {
-    const row = this.page.locator(`[data-testid^="pill-narrow-value-${fieldKey}-"]`).first();
+    const row = this.page.locator(`[data-testid=pill-narrow-row][data-key^="value-${fieldKey}-"]`).first();
     await row.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     await row.click();
   }
@@ -330,6 +330,14 @@ export class PillFilterBar {
   /** `data-testid` of whatever currently holds focus, for asserting tab order. */
   async focusedTestId(): Promise<string | null> {
     return this.page.evaluate(() => document.activeElement?.getAttribute('data-testid') ?? null);
+  }
+
+  /**
+   * The focused element's `data-index`. Rows carry their position here rather than in the test id,
+   * so asserting the id alone would only prove "some row of this kind" has focus.
+   */
+  async focusedIndex(): Promise<string | null> {
+    return this.page.evaluate(() => document.activeElement?.getAttribute('data-index') ?? null);
   }
 
   /** Presses a key against whatever currently holds focus, rather than a known element. */

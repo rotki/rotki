@@ -155,14 +155,14 @@ describe('pillFilterBar', () => {
     const wrapper = createWrapper({}, { action: 'pay_fee' }, {}, [protocol, account, action]);
     await nextTick();
     await wrapper.get('[data-testid=pill-add]').trigger('click');
-    expect(wrapper.find('[data-testid=pill-menu-field-protocols]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=pill-menu-field][data-field=protocols]').exists()).toBe(false);
   });
 
   it('should offer it again once that filter is gone', async () => {
     const wrapper = createWrapper({}, {}, {}, [protocol, account, action]);
     await nextTick();
     await wrapper.get('[data-testid=pill-add]').trigger('click');
-    expect(wrapper.find('[data-testid=pill-menu-field-protocols]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=pill-menu-field][data-field=protocols]').exists()).toBe(true);
   });
 
   it('should render a pill per active filter seeded from matches/params', () => {

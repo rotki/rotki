@@ -161,7 +161,10 @@ const isRotkiCustomImport = computed<boolean>(() => source.startsWith('rotki_'))
 </script>
 
 <template>
-  <div :data-testid="`import-source-${source}`">
+  <div
+    data-testid="import-source"
+    :data-key="source"
+  >
     <div class="mb-2">
       <slot name="upload-title" />
     </div>

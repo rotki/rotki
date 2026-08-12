@@ -88,7 +88,7 @@ describe('modules/accounts/blockchain/BtcAddressInput', () => {
 
     expect(wrapper.find('[data-testid="xpub-disambiguation"]').exists()).toBe(true);
     for (const prefix of [XpubPrefix.ZPUB, XpubPrefix.YPUB, XpubPrefix.P2TR, XpubPrefix.XPUB])
-      expect(wrapper.find(`[data-testid="xpub-disambiguation-${prefix}"]`).exists()).toBe(true);
+      expect(wrapper.find(`[data-testid=xpub-disambiguation-option][data-key="${prefix}"]`).exists()).toBe(true);
 
     const payload = await lastEmittedXpub(wrapper);
     expect(payload?.xpubType).toBe(XpubKeyType.ZPUB);
@@ -98,9 +98,9 @@ describe('modules/accounts/blockchain/BtcAddressInput', () => {
     wrapper = createWrapper(Blockchain.BTC);
     await setXpubValue(XPUB_KEY);
 
-    const buttons = wrapper.findAll('[data-testid^="xpub-disambiguation-"]');
+    const buttons = wrapper.findAll('[data-testid=xpub-disambiguation-option]');
     expect(buttons).toHaveLength(4);
-    const p2trButton = buttons.find(b => b.attributes('data-testid') === `xpub-disambiguation-${XpubPrefix.P2TR}`);
+    const p2trButton = buttons.find(b => b.attributes('data-key') === XpubPrefix.P2TR);
     expect(p2trButton).toBeDefined();
     await p2trButton!.trigger('click');
     await nextTick();

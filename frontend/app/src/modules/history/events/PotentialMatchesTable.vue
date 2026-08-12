@@ -120,7 +120,8 @@ function getRowClass(row: PotentialMatchRow): string {
             :color="isSelected(row) ? 'success' : 'primary'"
             :variant="isSelected(row) ? 'default' : 'outlined'"
             class="min-w-24"
-            :data-testid="`potential-match-select-${row.entry.identifier}`"
+            data-testid="potential-match-select"
+            :data-key="row.entry.identifier"
             @click="toggle(row)"
           >
             <template
