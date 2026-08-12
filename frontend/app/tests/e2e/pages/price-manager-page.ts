@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
+import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
 async function selectAsset(testId: string, asset: string, page: Page): Promise<void> {
@@ -202,8 +203,17 @@ export class HistoricPricePage {
     await expect(dialog.getByText('The price cannot be empty')).toBeVisible();
   }
 
+  /** Narrows by the from-asset through the pill bar, which replaced the two asset selects. */
   async filterByFromAsset(asset: string): Promise<void> {
-    await selectAsset('historic-price-filter-from', asset, this.page);
+    const bar = new PillFilterBar(this.page);
+
+    if (await bar.pill('fromAsset').count() === 0)
+      await bar.addField('fromAsset');
+    else
+      await bar.openPillEditor('fromAsset');
+
+    await bar.selectValue(asset, asset);
+    await bar.closeEditor('fromAsset');
   }
 }
 

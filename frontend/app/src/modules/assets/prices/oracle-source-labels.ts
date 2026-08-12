@@ -1,21 +1,28 @@
-import { PriceOracle } from '@/modules/settings/types/price-oracle';
-
 /**
  * What each oracle is called in the UI. Shared by the source chip in a price row and the source
  * pill that filters to it: a filter has to read the same as the rows it produces, and these are
  * brand names rather than anything a casing rule could derive from the id.
+ *
+ * 🔴 These are the backend's `HistoricalPriceOracle` members, NOT the `PriceOracle` list the
+ * settings use. Only an oracle that can be a `price_history.source_type` belongs here: the two
+ * lists overlap but are not the same, and the ones this used to borrow from `PriceOracle`
+ * (`blockchain`, `fiat`) made the endpoint answer
+ * `source_type blockchain is not stored in price_history`.
+ *
+ * The keys are the wire values, which the backend derives from the enum member name — hence
+ * `manual current` with a space rather than the `manualcurrent` the settings enum uses.
  */
 const sourceLabels: Record<string, string> = {
-  [PriceOracle.ALCHEMY]: 'Alchemy',
-  [PriceOracle.BLOCKCHAIN]: 'Blockchain',
-  [PriceOracle.COINGECKO]: 'CoinGecko',
-  [PriceOracle.CRYPTOCOMPARE]: 'CryptoCompare',
-  [PriceOracle.DEFILLAMA]: 'DefiLlama',
-  [PriceOracle.FIAT]: 'Fiat',
-  [PriceOracle.MANUAL]: 'Manual',
-  [PriceOracle.MORALIS]: 'Moralis',
-  [PriceOracle.UNISWAP2]: 'Uniswap V2',
-  [PriceOracle.UNISWAP3]: 'Uniswap V3',
+  'alchemy': 'Alchemy',
+  'coingecko': 'CoinGecko',
+  'cryptocompare': 'CryptoCompare',
+  'defillama': 'DefiLlama',
+  'manual': 'Manual',
+  'manual current': 'Manual (current)',
+  'moralis': 'Moralis',
+  'uniswapv2': 'Uniswap V2',
+  'uniswapv3': 'Uniswap V3',
+  'xratescom': 'x-rates.com',
 };
 
 /** An oracle id -> its display name, falling back to the id for one we have no name for. */

@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
+import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import dayjs from 'dayjs';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import HistoricPriceFormDialog from '@/modules/assets/prices/historic/HistoricPriceFormDialog.vue';
+import { HistoricPriceFilterKeys, useHistoricPriceFields } from '@/modules/assets/prices/use-historic-price-fields';
 import { useHistoricPrices } from '@/modules/assets/prices/use-historic-price-manager';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
-import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -76,9 +78,30 @@ const emptyPrice: () => HistoricalPriceFormPayload = () => ({
 const modelValue = ref<HistoricalPriceFormPayload>();
 const editMode = ref<boolean>(false);
 
-const filter = ref<{ fromAsset?: string; toAsset?: string }>({});
-const fromAsset = useRefPropVModel(filter, 'fromAsset');
-const toAsset = useRefPropVModel(filter, 'toAsset');
+const fields = useHistoricPriceFields();
+const pillLabels = usePillBarLabels();
+
+/**
+ * The bar owns the bag, and the table reads the pair out of it.
+ *
+ * Deliberately not a writable computed over a `{ fromAsset, toAsset }` ref: a pill exists before it
+ * has a value, and a bridge that rebuilds the object from the two keys drops that pending state, so
+ * the pill vanished the moment it was added.
+ */
+const matches = ref<MatchedKeywordWithBehaviour<string>>({});
+
+const filter = computed<{ fromAsset?: string; toAsset?: string }>(() => {
+  const bag = get(matches);
+  const picked = (key: string): string | undefined => {
+    const value = bag[key];
+    return typeof value === 'string' && value !== '' ? value : undefined;
+  };
+
+  return {
+    fromAsset: picked(HistoricPriceFilterKeys.FROM_ASSET),
+    toAsset: picked(HistoricPriceFilterKeys.TO_ASSET),
+  };
+});
 
 const router = useRouter();
 const route = useRoute();
@@ -88,8 +111,8 @@ const { deletePrice, items, loading, refresh } = useHistoricPrices(t, filter);
 function add() {
   set(modelValue, {
     ...emptyPrice(),
-    fromAsset: get(fromAsset) ?? '',
-    toAsset: get(toAsset) ?? '',
+    fromAsset: get(filter).fromAsset ?? '',
+    toAsset: get(filter).toAsset ?? '',
   });
   set(editMode, false);
 }
@@ -160,25 +183,12 @@ onMounted(async () => {
       </RuiButton>
     </template>
     <RuiCard>
-      <div class="flex flex-wrap mb-4 gap-2">
-        <AssetSelect
-          v-model="fromAsset"
-          outlined
-          :label="t('price_management.from_asset')"
-          clearable
-          class="flex-1"
-          hide-details
-          data-testid="historic-price-filter-from"
-        />
-        <AssetSelect
-          v-model="toAsset"
-          outlined
-          class="flex-1"
-          :label="t('price_management.to_asset')"
-          clearable
-          hide-details
-        />
-      </div>
+      <PillFilterBar
+        v-model:matches="matches"
+        class="mb-4"
+        :fields="fields"
+        :labels="pillLabels"
+      />
       <RuiDataTable
         v-model:sort="sort"
         outlined

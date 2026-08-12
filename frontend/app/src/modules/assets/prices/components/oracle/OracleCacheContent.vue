@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { OracleCacheMeta } from '@/modules/assets/prices/price-types';
+import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import { Severity } from '@rotki/common';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import OracleCacheActionsCell from '@/modules/assets/prices/components/oracle/OracleCacheActionsCell.vue';
+import OracleCacheFilter from '@/modules/assets/prices/components/oracle/OracleCacheFilter.vue';
+import { OracleCacheFilterKeys } from '@/modules/assets/prices/use-oracle-cache-fields';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
@@ -11,6 +14,7 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
+import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
@@ -26,11 +30,28 @@ const { notify } = useNotificationDispatcher();
 const { show } = useConfirmStore();
 const cachePending = useIsActive(ActivityKind.PRICES, ActivityPart.ORACLE_CACHE);
 
+const currencySymbol = useSetting('currencySymbol');
+
 const cacheSource = ref<PriceOracle>(PriceOracle.CRYPTOCOMPARE);
 const newFromAsset = ref<string>('');
-const newToAsset = ref<string>('');
-const filterFromAsset = ref<string>('');
-const filterToAsset = ref<string>('');
+// A cache is nearly always wanted against the currency the user reads prices in, so that is the
+// default rather than an empty picker.
+const newToAsset = ref<string>(get(currencySymbol));
+/**
+ * The bar owns the filter bag; the two assets are read out of it.
+ *
+ * A ref rather than a writable computed over two string refs: a pill exists before it has a value,
+ * and rebuilding the bag from the two keys drops that pending state.
+ */
+const matches = ref<MatchedKeywordWithBehaviour<string>>({});
+
+const filterFromAsset = computed<string>(() => pickedAsset(OracleCacheFilterKeys.FROM_ASSET));
+const filterToAsset = computed<string>(() => pickedAsset(OracleCacheFilterKeys.TO_ASSET));
+
+function pickedAsset(key: string): string {
+  const value = get(matches)[key];
+  return typeof value === 'string' ? value : '';
+}
 const cacheEntries = ref<OracleCacheMeta[]>([]);
 const loadingCaches = ref<boolean>(false);
 
@@ -168,8 +189,7 @@ function showDeleteConfirmation(entry: OracleCacheMeta): void {
 }
 
 function clearFilter(): void {
-  set(filterFromAsset, '');
-  set(filterToAsset, '');
+  set(matches, {});
 }
 
 onMounted(async () => {
@@ -182,6 +202,7 @@ defineExpose({
   filterFromAsset,
   filterToAsset,
   loadCaches,
+  matches,
   newFromAsset,
   newToAsset,
   populateCache,
@@ -195,9 +216,13 @@ defineExpose({
       <template #header>
         {{ t('oracle_prices.cache.create.title') }}
       </template>
-      <div class="flex flex-col gap-4">
+      <!-- One row: three inputs and the button are one action, and stacked they took five rows of
+           the page before the table it feeds even started. -->
+      <div class="flex flex-col md:flex-row md:items-center gap-4">
         <RuiAutoComplete
           v-model="cacheSource"
+          class="md:w-[14rem]"
+          dense
           :label="t('oracle_prices.cache.dialog.source')"
           variant="outlined"
           :options="cacheSourceOptions"
@@ -206,38 +231,39 @@ defineExpose({
           :disabled="cachePending || loadingCaches"
           hide-details
         />
-        <div class="flex flex-col sm:flex-row gap-4">
-          <AssetSelect
-            v-model="newFromAsset"
-            class="flex-1"
-            :label="t('price_management.from_asset')"
-            outlined
-            :disabled="cachePending"
-          />
-          <AssetSelect
-            v-model="newToAsset"
-            class="flex-1"
-            :label="t('price_management.to_asset')"
-            outlined
-            :disabled="cachePending"
-          />
-        </div>
-        <div class="flex justify-end">
-          <RuiButton
-            color="primary"
-            :loading="cachePending"
-            :disabled="!newFromAsset || !newToAsset || cachePending"
-            @click="populateCache()"
-          >
-            <template #prepend>
-              <RuiIcon
-                name="lu-plus"
-                size="16"
-              />
-            </template>
-            {{ t('oracle_prices.cache.dialog.create') }}
-          </RuiButton>
-        </div>
+        <AssetSelect
+          v-model="newFromAsset"
+          class="flex-1"
+          dense
+          :label="t('price_management.from_asset')"
+          outlined
+          hide-details
+          :disabled="cachePending"
+        />
+        <AssetSelect
+          v-model="newToAsset"
+          class="flex-1"
+          dense
+          :label="t('price_management.to_asset')"
+          outlined
+          hide-details
+          :disabled="cachePending"
+        />
+        <RuiButton
+          class="shrink-0"
+          color="primary"
+          :loading="cachePending"
+          :disabled="!newFromAsset || !newToAsset || cachePending"
+          @click="populateCache()"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-plus"
+              size="16"
+            />
+          </template>
+          {{ t('oracle_prices.cache.dialog.create') }}
+        </RuiButton>
       </div>
     </RuiCard>
 
@@ -246,33 +272,10 @@ defineExpose({
         {{ t('oracle_prices.cache.dialog.existing_title') }}
       </template>
       <div class="flex flex-col gap-4">
-        <div class="flex flex-col sm:flex-row gap-4 items-start">
-          <AssetSelect
-            v-model="filterFromAsset"
-            class="flex-1"
-            :label="t('oracle_prices.cache.filter.from_asset')"
-            clearable
-            outlined
-            :disabled="loadingCaches"
-          />
-          <AssetSelect
-            v-model="filterToAsset"
-            class="flex-1"
-            :label="t('oracle_prices.cache.filter.to_asset')"
-            clearable
-            outlined
-            :disabled="loadingCaches"
-          />
-          <RuiButton
-            class="mt-1"
-            variant="text"
-            icon
-            :disabled="loadingCaches"
-            @click="clearFilter()"
-          >
-            <RuiIcon name="lu-x" />
-          </RuiButton>
-        </div>
+        <OracleCacheFilter
+          v-model:matches="matches"
+          :disabled="loadingCaches"
+        />
         <RuiDataTable
           outlined
           dense
