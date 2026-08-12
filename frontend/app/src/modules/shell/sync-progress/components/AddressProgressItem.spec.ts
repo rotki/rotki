@@ -164,7 +164,18 @@ describe('modules/sync-progress/components/AddressProgressItem', () => {
       expect(progress.attributes('data-value')).toBe('50');
     });
 
-    it('should not show progress bar for bitcoin addresses', () => {
+    it('should not show progress bar for an address with no period', () => {
+      const address = createAddress(AddressStatus.QUERYING, {
+        subtype: AddressSubtype.BITCOIN,
+      });
+      wrapper = createWrapper(address);
+
+      expect(wrapper.find('[data-testid="progress"]').exists()).toBe(false);
+    });
+
+    // Gated on the period, not the subtype: bitcoin carries none today, and gets the same bar as
+    // every other chain once the backend starts sending one.
+    it('should show progress bar for a bitcoin address that has period progress', () => {
       const address = createAddress(AddressStatus.QUERYING, {
         period: [0, 500],
         periodProgress: 50,
@@ -172,7 +183,7 @@ describe('modules/sync-progress/components/AddressProgressItem', () => {
       });
       wrapper = createWrapper(address);
 
-      expect(wrapper.find('[data-testid="progress"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="progress"]').exists()).toBe(true);
     });
 
     it('should not show progress bar in compact mode', () => {

@@ -1,10 +1,11 @@
 import type { RefreshTransactionsParams } from './types';
 import type { Exchange } from '@/modules/balances/types/exchanges';
-import type { ChainAddress } from '@/modules/history/events/event-payloads';
+import type { SeededAccount } from '@/modules/history/use-tx-query-status-store';
 import flushPromises from 'flush-promises';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { ActivityKind, makeActivityId, type WorkStatus } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
@@ -36,7 +37,7 @@ const mockExchanges: Exchange[] = [
 
 // Mock stores and composables
 const mockTxQueryStatusStore = {
-  initializeQueryStatus: vi.fn<(accounts: ChainAddress[], options?: { extend?: boolean }) => void>(),
+  initializeQueryStatus: vi.fn<(accounts: SeededAccount[], options?: { extend?: boolean }) => void>(),
   resetQueryStatus: vi.fn(),
   stopSyncing: vi.fn(),
 };
@@ -50,6 +51,9 @@ const mockEventsQueryStatusStore = {
 const mockHistoryTransactionAccounts = {
   filterDisabledChainAccounts: vi.fn((accounts: ChainAddress[]) => accounts),
   getAllAccounts: vi.fn(() => [...mockEvmAccounts, ...mockBitcoinAccounts]),
+  getTransactionTypeFromChain: vi.fn((chain: string): TransactionChainType =>
+    chain === 'btc' ? TransactionChainType.BITCOIN : TransactionChainType.EVM,
+  ),
 };
 
 // Novelty now comes from the completion ledger, so the spec states which per-account work has been
@@ -467,8 +471,14 @@ describe('useRefreshTransactions', () => {
       // address the first wave had already finished, so the bar's denominator fell mid-sync
       // (the reported 6/7 -> 3/3) with nothing to signal that a second wave had begun.
       const [initial, drained] = mockTxQueryStatusStore.initializeQueryStatus.mock.calls;
-      expect(initial).toEqual([mockEvmAccounts, { extend: false }]);
-      expect(drained).toEqual([[addedMidRefresh], { extend: true }]);
+      expect(initial).toEqual([
+        [
+          ...mockEvmAccounts.map(account => ({ ...account, subtype: 'evm' })),
+          ...mockBitcoinAccounts.map(account => ({ ...account, subtype: 'bitcoin' })),
+        ],
+        { extend: false },
+      ]);
+      expect(drained).toEqual([[{ ...addedMidRefresh, subtype: 'evm' }], { extend: true }]);
 
       // One reset for the sync as a whole, not one per wave.
       expect(mockTxQueryStatusStore.resetQueryStatus).toHaveBeenCalledTimes(1);
@@ -752,12 +762,20 @@ describe('useRefreshTransactions', () => {
   });
 
   describe('query status management', () => {
-    it('should initialize query status for EVM accounts', async () => {
+    // Seeded from the same set that gets synced, subtype included. Seeding only the decodable
+    // accounts kept bitcoin out of the sync panel entirely while its addresses were being queried.
+    it('should initialize query status for every synced account, bitcoin included', async () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
-      expect(mockTxQueryStatusStore.initializeQueryStatus).toHaveBeenCalledWith(mockEvmAccounts, { extend: false });
+      expect(mockTxQueryStatusStore.initializeQueryStatus).toHaveBeenCalledWith(
+        [
+          ...mockEvmAccounts.map(account => ({ ...account, subtype: 'evm' })),
+          ...mockBitcoinAccounts.map(account => ({ ...account, subtype: 'bitcoin' })),
+        ],
+        { extend: false },
+      );
     });
 
     it('should reset query status when no accounts to refresh', async () => {

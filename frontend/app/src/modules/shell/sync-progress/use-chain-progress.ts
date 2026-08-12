@@ -61,9 +61,7 @@ function calculatePeriodProgress(period?: [number, number], originalPeriodEnd?: 
 }
 
 function toAddressProgress(data: TxQueryStatusData): AddressProgress {
-  const period = 'period' in data ? data.period : undefined;
-  const originalPeriodEnd = 'originalPeriodEnd' in data ? data.originalPeriodEnd : undefined;
-  const originalPeriodStart = 'originalPeriodStart' in data ? data.originalPeriodStart : undefined;
+  const { originalPeriodEnd, originalPeriodStart, period } = data;
 
   return {
     address: data.address,

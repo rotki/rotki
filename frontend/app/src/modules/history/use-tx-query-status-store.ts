@@ -21,32 +21,36 @@ interface BaseTxQueryStatusData {
   status: TransactionsQueryStatus;
 }
 
-interface EvmTxQueryStatusData extends BaseTxQueryStatusData {
+/** The queried range and the boundaries progress is measured against. */
+interface PeriodTracking {
+  period: [number, number];
+  originalPeriodEnd?: number;
+  originalPeriodStart?: number;
+}
+
+interface EvmTxQueryStatusData extends BaseTxQueryStatusData, PeriodTracking {
   subtype: 'evm';
-  period: [number, number];
-  originalPeriodEnd?: number;
-  originalPeriodStart?: number;
 }
 
-interface EvmlikeTxQueryStatusData extends BaseTxQueryStatusData {
+interface EvmlikeTxQueryStatusData extends BaseTxQueryStatusData, PeriodTracking {
   subtype: 'evmlike';
-  period: [number, number];
-  originalPeriodEnd?: number;
-  originalPeriodStart?: number;
 }
 
-interface BitcoinTxQueryStatusData extends BaseTxQueryStatusData {
+/** `PeriodTracking` is partial only because the backend does not send bitcoin a period yet. */
+interface BitcoinTxQueryStatusData extends BaseTxQueryStatusData, Partial<PeriodTracking> {
   subtype: 'bitcoin';
 }
 
-interface SolanaTxQueryStatusData extends BaseTxQueryStatusData {
+interface SolanaTxQueryStatusData extends BaseTxQueryStatusData, PeriodTracking {
   subtype: 'solana';
-  period: [number, number];
-  originalPeriodEnd?: number;
-  originalPeriodStart?: number;
 }
 
 export type TxQueryStatusData = EvmTxQueryStatusData | EvmlikeTxQueryStatusData | BitcoinTxQueryStatusData | SolanaTxQueryStatusData;
+
+/** An account plus the subtype its chain queries under, which decides the shape of its entry. */
+export interface SeededAccount extends ChainAddress {
+  subtype: TxQueryStatusData['subtype'];
+}
 
 function isBitcoinTxQueryStatusData(data: TxQueryStatusData): data is BitcoinTxQueryStatusData {
   return data.subtype === 'bitcoin';
@@ -97,20 +101,63 @@ function determineOriginalPeriodStart(
   return undefined;
 }
 
+/**
+ * Whether an address will report no further progress.
+ *
+ * ⚠️ The single source of truth: the sync panel and the dashboard indicator both read this. Separate
+ * copies of the rule are how the panel came to call a bitcoin address complete while the indicator
+ * still counted it as querying.
+ *
+ * Bitcoin decodes inline rather than through the separate decoding section, so it can end on either
+ * finish message: the backend sends `QUERYING_TRANSACTIONS_FINISHED` on both the empty and the
+ * decoding path, and only reaches `DECODING_TRANSACTIONS_FINISHED` on the latter. Accepting both
+ * settles the empty path, at the cost of a bitcoin address reading complete for the moment between
+ * the two on the decoding path.
+ */
+export function isTxQueryStatusFinished(item: TxQueryStatusData): boolean {
+  // Failed and cancelled are both terminal: no further progress is coming for that address, so a
+  // run holding one must still be able to settle.
+  if (item.status === TransactionsQueryStatus.CANCELLED || item.status === TransactionsQueryStatus.FAILED)
+    return true;
+
+  if (isBitcoinTxQueryStatusData(item)) {
+    return item.status === TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED
+      || item.status === TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
+  }
+
+  return item.status === TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
+}
+
+/**
+ * Period tracking for a bitcoin message, which is the one subtype whose `period` is optional.
+ *
+ * ⚠️ Carries `existing`'s values when the message has none: the entry is rebuilt from scratch per
+ * message, so a period-less update would otherwise erase what an earlier one established and make
+ * the progress bar vanish mid-query.
+ */
+function bitcoinPeriodFields(
+  data: Extract<UnifiedTransactionStatusData, { subtype: 'bitcoin' }>,
+  existing?: TxQueryStatusData,
+): Partial<PeriodTracking> {
+  if (data.period === undefined) {
+    return {
+      originalPeriodEnd: existing?.originalPeriodEnd,
+      originalPeriodStart: existing?.originalPeriodStart,
+      period: existing?.period,
+    };
+  }
+
+  return {
+    originalPeriodEnd: determineOriginalPeriodEnd(data.status, data.period, existing),
+    originalPeriodStart: determineOriginalPeriodStart(data.status, data.period, existing),
+    period: data.period,
+  };
+}
+
 export const useTxQueryStatusStore = defineStore('history/transaction-query-status', () => {
   const createKey = ({ address, chain }: ChainAddress): string => address + chain.toLowerCase();
 
-  const isStatusFinished = (item: TxQueryStatusData): boolean => {
-    // Failed and cancelled are both terminal: no further progress is coming for that address, so a
-    // run holding one must still be able to settle.
-    if (item.status === TransactionsQueryStatus.CANCELLED || item.status === TransactionsQueryStatus.FAILED)
-      return true;
-
-    if (isBitcoinTxQueryStatusData(item)) {
-      return item.status === TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
-    }
-    return item.status === TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
-  };
+  const isStatusFinished = isTxQueryStatusFinished;
 
   const {
     isAllFinished,
@@ -134,7 +181,7 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
    * ⚠️ An address already present is left alone. Re-seeding it as `ACCOUNT_CHANGE` would walk a
    * finished chain's progress backwards, which is the same lie in the other direction.
    */
-  const initializeQueryStatus = (data: ChainAddress[], { extend = false }: { extend?: boolean } = {}): void => {
+  const initializeQueryStatus = (data: SeededAccount[], { extend = false }: { extend?: boolean } = {}): void => {
     if (!extend)
       resetQueryStatus();
 
@@ -147,14 +194,17 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
       if (extend && status[key])
         continue;
 
-      status[key] = {
+      const base = {
         address: item.address,
         chain: item.chain,
-        originalPeriodEnd: now,
-        period: [0, now],
         status: TransactionsQueryStatus.ACCOUNT_CHANGE,
-        subtype: 'evm' as const,
       };
+
+      // ⚠️ The subtype comes from the caller rather than being assumed. Seeding everything as `evm`
+      // gave bitcoin rows a synthetic period, hence a progress bar for a range nobody queried.
+      status[key] = item.subtype === 'bitcoin'
+        ? { ...base, subtype: item.subtype }
+        : { ...base, originalPeriodEnd: now, period: [0, now], subtype: item.subtype };
     }
     set(queryStatus, status);
   };
@@ -175,11 +225,12 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     const chain = data.chain.toLowerCase();
 
     if (data.subtype === 'bitcoin') {
-      // Convert bitcoin transactions (with addresses array) to individual entries
+      // One batched message covers every address, so it fans out into an entry each.
       for (const address of data.addresses) {
         const key = createKey({ address, chain });
+        const existing = statuses[key];
         // Guard: don't overwrite cancelled entries
-        if (statuses[key]?.status === TransactionsQueryStatus.CANCELLED)
+        if (existing?.status === TransactionsQueryStatus.CANCELLED)
           continue;
 
         statuses[key] = {
@@ -187,6 +238,7 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
           chain,
           status: data.status,
           subtype: 'bitcoin' as const,
+          ...bitcoinPeriodFields(data, existing),
         };
       }
     }
