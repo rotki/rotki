@@ -213,6 +213,7 @@ async function selectDataDirectory() {
   if (get(selecting))
     return;
 
+  set(selecting, true);
   try {
     const title = t('backend_settings.data_directory.select');
     const directory = await openDirectory(title);
