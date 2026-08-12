@@ -1,7 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type AddressProgress, AddressStatus, AddressStep, AddressSubtype } from '../types';
+import { type AddressProgress, AddressStatus, AddressStep } from '../types';
 import AddressProgressItem from './AddressProgressItem.vue';
 
 vi.mock('@/modules/assets/api/use-asset-icon-api', () => ({
@@ -22,7 +22,6 @@ describe('modules/sync-progress/components/AddressProgressItem', () => {
     return {
       address: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c',
       status,
-      subtype: AddressSubtype.EVM,
       ...options,
     };
   }
@@ -151,6 +150,8 @@ describe('modules/sync-progress/components/AddressProgressItem', () => {
   });
 
   describe('period progress', () => {
+    // Gated on the period alone, so any chain that sends one gets a bar without the component
+    // having to know which chain it is. Bitcoin reaches this path too.
     it('should show progress bar when address has period progress', () => {
       const address = createAddress(AddressStatus.QUERYING, {
         period: [0, 500],
@@ -165,25 +166,10 @@ describe('modules/sync-progress/components/AddressProgressItem', () => {
     });
 
     it('should not show progress bar for an address with no period', () => {
-      const address = createAddress(AddressStatus.QUERYING, {
-        subtype: AddressSubtype.BITCOIN,
-      });
+      const address = createAddress(AddressStatus.QUERYING);
       wrapper = createWrapper(address);
 
       expect(wrapper.find('[data-testid="progress"]').exists()).toBe(false);
-    });
-
-    // Gated on the period, not the subtype: bitcoin carries none today, and gets the same bar as
-    // every other chain once the backend starts sending one.
-    it('should show progress bar for a bitcoin address that has period progress', () => {
-      const address = createAddress(AddressStatus.QUERYING, {
-        period: [0, 500],
-        periodProgress: 50,
-        subtype: AddressSubtype.BITCOIN,
-      });
-      wrapper = createWrapper(address);
-
-      expect(wrapper.find('[data-testid="progress"]').exists()).toBe(true);
     });
 
     it('should not show progress bar in compact mode', () => {

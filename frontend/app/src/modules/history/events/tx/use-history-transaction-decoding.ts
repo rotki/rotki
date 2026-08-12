@@ -101,8 +101,10 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     // The store already keys on the canonical chain id, so no resolution is needed here.
     //
     // ⚠️ The evmlike test alone splits the world in two, so anything that is not evmlike counts as
-    // EVM. Bitcoin decodes through its own backend path and must not be handed to the EVM decode
-    // endpoint — it reaches this store as soon as it reports decoding progress over the websocket.
+    // EVM. Bitcoin has no redecode endpoint at all: it decodes only as a phase inside its own
+    // `query_transactions`, and the backend's `CHAINS_WITH_TX_DECODING` covers EVM, evmlike and
+    // Solana only, so the schema rejects it. Without this guard it would be posted there anyway,
+    // since it reaches this store as soon as it reports decoding progress over the websocket.
     const chains = getUndecodedTransactionStatus()
       .filter(({ chain, processed, total }) =>
         processed < total && !isBtcChains(chain) && isEvmType === !isEvmLikeChains(chain),

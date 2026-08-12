@@ -1,7 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AddressStatus, AddressSubtype, type ChainProgress } from '../types';
+import { AddressStatus, type ChainProgress } from '../types';
 import ChainProgressItem from './ChainProgressItem.vue';
 
 vi.mock('@/modules/assets/api/use-asset-icon-api', () => ({
@@ -40,7 +40,6 @@ describe('modules/sync-progress/components/ChainProgressItem', () => {
       addresses.push({
         address: `0x${i.toString().padStart(40, '0')}`,
         status,
-        subtype: AddressSubtype.EVM,
       });
     }
 

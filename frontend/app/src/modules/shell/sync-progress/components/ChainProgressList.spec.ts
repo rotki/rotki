@@ -1,7 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AddressStatus, AddressSubtype, type ChainProgress } from '../types';
+import { AddressStatus, type ChainProgress } from '../types';
 import ChainProgressList from './ChainProgressList.vue';
 
 vi.mock('@/modules/assets/api/use-asset-icon-api', () => ({
@@ -24,7 +24,6 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
       addresses: Array.from({ length: total }, (_, i) => ({
         address: `0x${chain}${i.toString().padStart(38, '0')}`,
         status: i < completed ? AddressStatus.COMPLETE : AddressStatus.PENDING,
-        subtype: AddressSubtype.EVM,
       })),
       cancelled: 0,
       chain,
@@ -43,7 +42,6 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
       addresses: Array.from({ length: total }, (_, i) => ({
         address: `0x${chain}${i.toString().padStart(38, '0')}`,
         status: AddressStatus.FAILED,
-        subtype: AddressSubtype.EVM,
       })),
       cancelled: 0,
       chain,

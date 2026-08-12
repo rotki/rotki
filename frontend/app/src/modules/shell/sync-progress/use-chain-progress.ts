@@ -71,7 +71,6 @@ function toAddressProgress(data: TxQueryStatusData): AddressProgress {
     periodProgress: data.status === TransactionsQueryStatus.CANCELLED ? undefined : calculatePeriodProgress(period, originalPeriodEnd, originalPeriodStart),
     status: mapStatus(data.status),
     step: mapStep(data.status),
-    subtype: data.subtype,
   };
 }
 
