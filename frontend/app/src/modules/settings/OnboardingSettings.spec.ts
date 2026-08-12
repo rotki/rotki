@@ -548,25 +548,30 @@ describe('onboarding-settings', () => {
       expect(saveDisabled()).toBe(true);
     });
 
-    // The `selecting` re-entrancy guard is asymmetric: only `selectLogsDirectory`
-    // raises the flag, so only the log picker is actually guarded. These two rows
-    // pin the CURRENT behaviour of both handlers; the second one is the bug.
-    it('should ignore a second log-directory click while the picker is open', async (): Promise<void> => {
+    it.each([
+      ['data', 'user-data-directory-input'],
+      ['logs', 'user-log-directory-input'],
+    ])('should ignore a second %s-directory click while the picker is open', async (_name, field): Promise<void> => {
       openDirectoryMock.mockReturnValue(new Promise<string | undefined>(() => {}));
-      const field = wrapper.find('[data-testid=user-log-directory-input] input');
+      const input = wrapper.find(`[data-testid=${field}] input`);
 
-      await field.trigger('click');
-      await field.trigger('click');
+      await input.trigger('click');
+      await input.trigger('click');
 
       expect(openDirectoryMock).toHaveBeenCalledOnce();
     });
 
-    it('should re-open the data-directory picker on a second click (guard never armed)', async (): Promise<void> => {
-      openDirectoryMock.mockReturnValue(new Promise<string | undefined>(() => {}));
-      const field = wrapper.find('[data-testid=user-data-directory-input] input');
+    it.each([
+      ['data', 'user-data-directory-input'],
+      ['logs', 'user-log-directory-input'],
+    ])('should re-arm the %s-directory picker once it closes', async (_name, field): Promise<void> => {
+      openDirectoryMock.mockResolvedValue(undefined);
+      const input = wrapper.find(`[data-testid=${field}] input`);
 
-      await field.trigger('click');
-      await field.trigger('click');
+      await input.trigger('click');
+      await flushPromises();
+      await input.trigger('click');
+      await flushPromises();
 
       expect(openDirectoryMock).toHaveBeenCalledTimes(2);
     });
