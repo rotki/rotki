@@ -105,7 +105,9 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
     id: HISTORY_ISSUE_IDS.NO_TRACKED_ACCOUNTS,
     loading: get(trackedEntitiesLoading),
     severity: ActionSeverity.WARNING,
-    target: { kind: 'route', to: { name: '/balances/blockchain/' } },
+    // /accounts/ redirects to the evm tab, the only place an account can be added;
+    // /balances/blockchain/ only lists balances and offers no way to add one.
+    target: { kind: 'route', to: { name: '/accounts/' } },
     title: t('transactions.alerts.issues.no_tracked_accounts.title'),
   }));
 

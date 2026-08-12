@@ -182,10 +182,10 @@ describe('modules/history/events/actions-center/HistoryEventsActionsCenter', () 
     const wrapper = mountCenter();
     const list = await openMenu(wrapper);
 
-    list.vm.$emit('open', { kind: 'route', to: { name: '/balances/blockchain/' } });
+    list.vm.$emit('open', { kind: 'route', to: { name: '/accounts/' } });
     await nextTick();
 
-    expect(state.push).toHaveBeenCalledWith({ name: '/balances/blockchain/' });
+    expect(state.push).toHaveBeenCalledWith({ name: '/accounts/' });
     expect(wrapper.emitted('show:dialog')).toBeUndefined();
   });
 });
