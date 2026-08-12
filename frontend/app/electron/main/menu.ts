@@ -72,7 +72,15 @@ export class MenuManager {
   }
 
   private openPath(path: string): void {
-    shell.openPath(path).catch(error => this.logger.error(error));
+    // `openPath` reports a failure by resolving with a non-empty message rather
+    // than by rejecting, so a bare `catch` would let a path that never opened
+    // pass silently.
+    shell.openPath(path)
+      .then((error) => {
+        if (error)
+          this.logger.error(`could not open ${path}: ${error}`);
+      })
+      .catch(error => this.logger.error(error));
   }
 
   private getMenuTemplate(): MenuItemConstructorOptions[] {
