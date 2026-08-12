@@ -667,10 +667,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: Rotkehlchen):
 
 @pytest.mark.parametrize('max_tasks_num', [5])
 def test_try_start_same_task(rotkehlchen_api_server):
-    """
-    1. Checks that it is not possible to start 2 same tasks
-    2. Checks that is possible to start second same task when the first one finishes
-    """
+    """Check that a scheduled task cannot be duplicated until it finishes."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # Using rotki.task_supervisor instead of pure TaskSupervisor() since patch.object
     # needs it for proper mocking
@@ -679,6 +676,12 @@ def test_try_start_same_task(rotkehlchen_api_server):
         'spawn_and_track',
         wraps=rotki.task_supervisor.spawn_and_track,
     )
+    task_started = threading.Event()
+    allow_task_to_finish = threading.Event()
+
+    def blocking_balance_query(**kwargs):  # pylint: disable=unused-argument
+        task_started.set()
+        assert allow_task_to_finish.wait(timeout=5) is True
 
     def simple_task():
         return [rotki.task_supervisor.spawn_and_track(
@@ -688,37 +691,47 @@ def test_try_start_same_task(rotkehlchen_api_server):
             exception_is_error=True,
         )]
 
-    with spawn_patch as patched:
+    with (
+        spawn_patch as patched,
+        patch.object(
+            rotki.task_manager,
+            'query_balances',
+            side_effect=blocking_balance_query,
+        ) as query_balances,
+    ):
         rotki.task_manager.potential_tasks = [rotki.task_manager._maybe_update_snapshot_balances]
         rotki.task_manager.schedule()
+        assert task_started.wait(timeout=5) is True
         rotki.task_manager.schedule()
         assert patched.call_count == 1
-        # Check that mapping in the task manager is correct
         assert rotki.task_manager.running_tasks.keys() == {
             rotki.task_manager._maybe_update_snapshot_balances,
         }
-        rotki.task_manager.potential_tasks = [simple_task]
-        rotki.task_manager.schedule()  # start a small greenlet
-        assert patched.call_count == 2
-        assert rotki.task_manager.running_tasks.keys() == {
-            rotki.task_manager._maybe_update_snapshot_balances,
-            simple_task,  # check that mapping was updated
-        }
-        # Wait until our small greenlet finishes
-        wait(rotki.task_manager.running_tasks[simple_task])
-        rotki.task_manager.potential_tasks = []
-        rotki.task_manager.schedule()  # clear the mapping
-        assert rotki.task_manager.running_tasks.keys() == {  # and check that it was removed
-            rotki.task_manager._maybe_update_snapshot_balances,
-        }
-        # And make sure that now we are able to start it again
+
         rotki.task_manager.potential_tasks = [simple_task]
         rotki.task_manager.schedule()
-        assert patched.call_count == 3
+        assert patched.call_count == 2
         assert rotki.task_manager.running_tasks.keys() == {
             rotki.task_manager._maybe_update_snapshot_balances,
             simple_task,
         }
+        wait(rotki.task_manager.running_tasks[simple_task])
+        rotki.task_manager.potential_tasks = []
+        rotki.task_manager.schedule()
+        assert rotki.task_manager.running_tasks.keys() == {
+            rotki.task_manager._maybe_update_snapshot_balances,
+        }
+
+        allow_task_to_finish.set()
+        wait(rotki.task_manager.running_tasks[rotki.task_manager._maybe_update_snapshot_balances])
+        rotki.task_manager.schedule()
+        assert rotki.task_manager.running_tasks == {}
+        query_balances.assert_called_once_with(
+            requested_save_data=True,
+            save_despite_errors=False,
+            timestamp=None,
+            ignore_cache=True,
+        )
 
 
 def test_should_run_periodic_task(database: DBHandler) -> None:
