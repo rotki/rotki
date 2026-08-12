@@ -2,6 +2,9 @@ import type { BackendOptions } from '@shared/ipc';
 import type { DefaultBackendArguments } from '@/modules/shell/app/backend';
 import { isEqual } from 'es-toolkit';
 
+/** The three numeric settings that carry a reset-to-default button. */
+export type AdvancedBackendField = 'files' | 'size' | 'instructions';
+
 /**
  * The onboarding form holds its three numeric settings as strings, because the
  * inputs are text fields. These are the raw field values, before parsing.

@@ -7,8 +7,10 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
+import AdvancedBackendSettings from '@/modules/settings/backend/AdvancedBackendSettings.vue';
 import { resolveInitialBackendOptions } from '@/modules/settings/backend/backend-initial-options';
 import {
+  type AdvancedBackendField,
   backendDefaultsState,
   type BackendOptionsFormFields,
   diffBackendOptions,
@@ -18,7 +20,6 @@ import {
 import LogLevelInput from '@/modules/settings/backend/LogLevelInput.vue';
 import { useLogLevelUpdate } from '@/modules/settings/backend/use-log-level-update';
 import LanguageSetting from '@/modules/settings/general/language/LanguageSetting.vue';
-import SettingResetButton from '@/modules/settings/SettingResetButton.vue';
 import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
@@ -104,7 +105,7 @@ const formFields = computed<BackendOptionsFormFields>(() => ({
 
 const atDefaults = computed(() => backendDefaultsState(get(formFields), get(defaultBackendArguments)));
 
-function resetDefaultArguments(field: 'files' | 'size' | 'instructions') {
+function resetDefaultArguments(field: AdvancedBackendField): void {
   const defaults = get(defaultBackendArguments);
   if (field === 'files')
     set(maxLogFiles, stringifyValue(defaults.maxLogfilesNum));
@@ -307,99 +308,19 @@ function showResetConfirmation() {
         <template #header>
           {{ t('backend_settings.advanced') }}
         </template>
-        <div class="py-2">
-          <RuiTextField
-            v-model="maxLogSize"
-            data-testid="max-log-size-input"
-            class="mb-4"
-            variant="outlined"
-            color="primary"
-            :hint="
-              !!fileConfig.maxSizeInMbAllLogs
-                ? t('backend_settings.config_file_disabled')
-                : t('backend_settings.max_log_size.hint')
-            "
-            :label="t('backend_settings.max_log_size.label')"
-            :disabled="!!fileConfig.maxSizeInMbAllLogs"
-            :loading="!configuration || !defaultBackendArguments"
-            :error-messages="toMessages(v$.maxLogSize)"
-            type="number"
-          >
-            <template #append>
-              <SettingResetButton
-                v-if="!atDefaults.maxLogSize"
-                data-testid="reset-max-log-size"
-                @click="resetDefaultArguments('size')"
-              />
-            </template>
-          </RuiTextField>
-          <RuiTextField
-            v-model="maxLogFiles"
-            data-testid="max-log-files-input"
-            variant="outlined"
-            color="primary"
-            class="mb-4"
-            :hint="t('backend_settings.max_log_files.hint')"
-            :label="
-              !!fileConfig.maxLogfilesNum
-                ? t('backend_settings.config_file_disabled')
-                : t('backend_settings.max_log_files.label')
-            "
-            :disabled="!!fileConfig.maxLogfilesNum"
-            :loading="!configuration || !defaultBackendArguments"
-            :error-messages="toMessages(v$.maxLogFiles)"
-            type="number"
-          >
-            <template #append>
-              <SettingResetButton
-                v-if="!atDefaults.maxLogFiles"
-                data-testid="reset-max-log-files"
-                @click="resetDefaultArguments('files')"
-              />
-            </template>
-          </RuiTextField>
-
-          <RuiTextField
-            v-model="sqliteInstructions"
-            data-testid="sqlite-instructions-input"
-            variant="outlined"
-            color="primary"
-            class="mb-4"
-            :hint="
-              !!fileConfig.sqliteInstructions
-                ? t('backend_settings.config_file_disabled')
-                : t('backend_settings.sqlite_instructions.hint')
-            "
-            :label="t('backend_settings.sqlite_instructions.label')"
-            :disabled="!!fileConfig.sqliteInstructions"
-            :loading="!configuration || !defaultBackendArguments"
-            :error-messages="toMessages(v$.sqliteInstructions)"
-            type="number"
-          >
-            <template #append>
-              <SettingResetButton
-                v-if="!atDefaults.sqliteInstructions"
-                data-testid="reset-sqlite-instructions"
-                @click="resetDefaultArguments('instructions')"
-              />
-            </template>
-          </RuiTextField>
-
-          <RuiCheckbox
-            v-model="logFromOtherModules"
-            color="primary"
-            data-testid="log-from-other-modules-checkbox"
-            :label="t('backend_settings.log_from_other_modules.label')"
-            :disabled="fileConfig.logFromOtherModules"
-            :hint="
-              fileConfig.logFromOtherModules
-                ? t('backend_settings.config_file_disabled')
-                : t('backend_settings.log_from_other_modules.hint')
-            "
-          >
-            {{ t('backend_settings.log_from_other_modules.label') }}
-          </RuiCheckbox>
-        </div>
+        <AdvancedBackendSettings
+          v-model:log-from-other-modules="logFromOtherModules"
+          v-model:max-log-files="maxLogFiles"
+          v-model:max-log-size="maxLogSize"
+          v-model:sqlite-instructions="sqliteInstructions"
+          :at-defaults="atDefaults"
+          :file-config="fileConfig"
+          :loading="!configuration || !defaultBackendArguments"
+          :max-log-files-errors="toMessages(v$.maxLogFiles)"
+          :max-log-size-errors="toMessages(v$.maxLogSize)"
+          :sqlite-instructions-errors="toMessages(v$.sqliteInstructions)"
+          @reset="resetDefaultArguments($event)"
+        />
       </RuiAccordion>
     </RuiAccordions>
 
