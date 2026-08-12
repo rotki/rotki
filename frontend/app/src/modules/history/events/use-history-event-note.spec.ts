@@ -70,6 +70,55 @@ describe('useHistoryEventNotes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
+  // An ENS registration note carries a date, and `parseFloat` reports 9 for `09/09/2026` because
+  // it stops at the first slash. Since bignumber.js 11 handing that whole string to BigNumber
+  // throws, and the throw escaped this computed mid-render: Vue abandoned the patch with vnodes
+  // left unmounted, every later patch died on them, and a history group rendered its header with
+  // none of its events.
+  it('should leave a date-like word as plain text when an amount is present', () => {
+    const notes = 'Register yabir.eth until 09/09/2026';
+
+    const formatted = get(formatNotes({ notes, amount: bigNumberify(100), assetId: 'ETH' }));
+
+    expect(formatted).toMatchObject([
+      { type: NoteType.WORD, word: 'Register yabir.eth until 09/09/2026' },
+    ]);
+  });
+
+  // The real note this was found on. It carries two words BigNumber rejects, the standalone `.`
+  // and the date, both of them *after* the amount. The throw discarded the whole computed result,
+  // so the GRT amount was parsed and then thrown away with everything else, which read as "the
+  // amount is not detected".
+  it('should format the amount in a note that also contains a date and a bare period', () => {
+    const notes = 'Undelegate 153.912179766381639129 GRT from indexer 0x089f78D8cF0a5ae1b7A581B1910a73F8CB3e4774 . Lock expires at 09/09/2026 15:04:56 CEST';
+
+    const formatted = get(formatNotes({
+      notes,
+      amount: bigNumberify('153.912179766381639129'),
+      assetId: 'GRT',
+    }));
+
+    expect(formatted).toContainEqual(expect.objectContaining({
+      amount: bigNumberify('153.912179766381639129'),
+      type: NoteType.AMOUNT,
+    }));
+    expect(formatted.map(item => item.word).join(' ')).toContain('09/09/2026');
+  });
+
+  // Defence in depth for the same failure: whatever a processor throws on, it must cost that one
+  // word and not the surrounding render.
+  it('should keep formatting the rest of a note when one word cannot be parsed', () => {
+    const notes = 'Receive 100 ETH before 01/02/2027';
+
+    const formatted = get(formatNotes({ notes, amount: bigNumberify(100), assetId: 'ETH' }));
+
+    expect(formatted).toMatchObject([
+      { type: NoteType.WORD, word: 'Receive' },
+      { type: NoteType.AMOUNT, amount: bigNumberify(100), asset: 'ETH' },
+      { type: NoteType.WORD, word: 'before 01/02/2027' },
+    ]);
+  });
+
   it('should parse formatted amount with thousand separator', () => {
     const notes = 'Receive 15,123.233 ETH';
     const formatted = get(formatNotes({ notes, amount: bigNumberify(15123.233), assetId: 'ETH' }));
