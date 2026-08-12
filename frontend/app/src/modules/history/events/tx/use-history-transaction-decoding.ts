@@ -43,7 +43,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { decodeTransactions } = useHistoryEventsApi();
   const { cancelByKind, submitTask } = useNativeTask();
   const { getUndecodedTransactionStatus, markDecodingCancelled, resetUndecodedTransactionsStatus } = useDecodingStatusStore();
-  const { decodableTxChainsInfo, getChain, getChainName, isEvmLikeChains } = useSupportedChains();
+  const { decodableTxChainsInfo, getChainName, isBtcChains, isEvmLikeChains } = useSupportedChains();
   const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
 
   const decodeTransactionsTask = async (
@@ -98,13 +98,16 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
   const checkMissingEventsAndRedecodeHandler = async (type: TransactionChainType): Promise<void> => {
     const isEvmType = type === TransactionChainType.EVM;
+    // The store already keys on the canonical chain id, so no resolution is needed here.
+    //
+    // ⚠️ The evmlike test alone splits the world in two, so anything that is not evmlike counts as
+    // EVM. Bitcoin decodes through its own backend path and must not be handed to the EVM decode
+    // endpoint — it reaches this store as soon as it reports decoding progress over the websocket.
     const chains = getUndecodedTransactionStatus()
-      .filter(({ chain, processed, total }) => {
-        const blockchain = getChain(chain);
-        const isEvmLike = isEvmLikeChains(blockchain);
-        return processed < total && isEvmType === !isEvmLike;
-      })
-      .map(({ chain }) => getChain(chain));
+      .filter(({ chain, processed, total }) =>
+        processed < total && !isBtcChains(chain) && isEvmType === !isEvmLikeChains(chain),
+      )
+      .map(({ chain }) => chain);
     // No wrapper: each of these submits onto DECODE_LANE, which is what bounds how many chains
     // decode at once. Wrapping them in a second limiter only hid that.
     await Promise.all(chains.map(async chain => decodeTransactionsTask(chain)));

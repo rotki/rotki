@@ -6,10 +6,18 @@ import { ActivityKind } from '@/modules/task-center/core/types';
 import { useHistoryTransactionDecoding } from './use-history-transaction-decoding';
 
 const mockNotifyError = vi.fn();
+
+interface UndecodedStatus {
+  chain: string;
+  processed: number;
+  total: number;
+}
+
 const mocks = vi.hoisted(() => ({
   markDecodingCancelled: vi.fn(),
   runTaskResult: vi.fn(),
   submitTask: vi.fn(),
+  undecodedStatus: new Array<{ chain: string; processed: number; total: number }>(),
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
@@ -21,6 +29,7 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
     cancelByType: vi.fn(() => vi.fn()),
     reportProgress: vi.fn(),
     runTaskResult: mocks.runTaskResult,
+    statusOf: vi.fn(() => ({ active: false, everCompleted: false, pending: false, running: false })),
     submitTask: mocks.submitTask,
   })),
 }));
@@ -44,7 +53,7 @@ vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
 
 vi.mock('@/modules/history/use-decoding-status-store', () => ({
   useDecodingStatusStore: vi.fn(() => ({
-    getUndecodedTransactionStatus: vi.fn(() => []),
+    getUndecodedTransactionStatus: vi.fn(() => mocks.undecodedStatus),
     markDecodingCancelled: mocks.markDecodingCancelled,
     resetUndecodedTransactionsStatus: vi.fn(),
     updateUndecodedTransactionsStatus: vi.fn(),
@@ -56,6 +65,7 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
     decodableTxChainsInfo: ref<{ id: string }[]>([]),
     getChain: vi.fn((chain: string) => chain),
     getChainName: vi.fn((chain: string) => chain),
+    isBtcChains: vi.fn((chain: string) => ['btc', 'bch'].includes(chain)),
     isEvmLikeChains: vi.fn(() => false),
     isSolanaChains: vi.fn(() => false),
   })),
@@ -65,7 +75,33 @@ describe('useHistoryTransactionDecoding', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    mocks.undecodedStatus = [];
     mocks.submitTask.mockResolvedValue(ok(undefined));
+  });
+
+  describe('checkMissingEventsAndRedecode', () => {
+    /**
+     * Bitcoin decodes through its own backend path, never the EVM decode endpoint. It only reaches
+     * this store once bitcoin reports decoding progress over the websocket, so the sweep's
+     * "everything that is not evmlike is EVM" split silently starts claiming it.
+     */
+    it('should not sweep a bitcoin chain into the EVM decode', async () => {
+      const seeded: UndecodedStatus[] = [
+        { chain: 'eth', processed: 0, total: 5 },
+        { chain: 'btc', processed: 0, total: 3 },
+      ];
+      mocks.undecodedStatus = seeded;
+
+      const { checkMissingEventsAndRedecode } = useHistoryTransactionDecoding();
+      await checkMissingEventsAndRedecode();
+
+      const decoded = mocks.submitTask.mock.calls
+        .filter(call => call[0].kind === ActivityKind.TX_DECODING)
+        .map(call => call[0].id);
+
+      expect(decoded).toContain(decodeActivityId('eth'));
+      expect(decoded).not.toContain(decodeActivityId('btc'));
+    });
   });
 
   describe('redecodeTransactions', () => {
