@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import type { Writeable } from '@rotki/common';
 import type { BackendOptions } from '@shared/ipc';
 import type { BackendConfiguration } from '@/modules/shell/app/backend';
 import useVuelidate from '@vuelidate/core';
 import { and, helpers, minValue, numeric, required } from '@vuelidate/validators';
-import { isEqual } from 'es-toolkit';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import { resolveInitialBackendOptions } from '@/modules/settings/backend/backend-initial-options';
+import {
+  backendDefaultsState,
+  type BackendOptionsFormFields,
+  diffBackendOptions,
+  hasBackendOptionChanges,
+  stringifyValue,
+} from '@/modules/settings/backend/backend-options-form';
 import LogLevelInput from '@/modules/settings/backend/LogLevelInput.vue';
 import { useLogLevelUpdate } from '@/modules/settings/backend/use-log-level-update';
 import LanguageSetting from '@/modules/settings/general/language/LanguageSetting.vue';
@@ -44,21 +49,6 @@ const configuration = ref<BackendConfiguration>();
 
 async function loadConfiguration(): Promise<void> {
   set(configuration, await backendSettings());
-}
-
-function parseValue(value?: string) {
-  if (!value)
-    return 0;
-
-  const parsedValue = Number.parseInt(value);
-  return Number.isNaN(parsedValue) ? 0 : parsedValue;
-}
-
-function stringifyValue(value?: number) {
-  if (!value)
-    return '0';
-
-  return value.toString();
 }
 
 const {
@@ -102,20 +92,17 @@ async function loaded() {
   set(sqliteInstructions, stringifyValue(initial.sqliteInstructions));
 }
 
-const isMaxLogFilesDefault = computed(() => {
-  const defaults = get(defaultBackendArguments);
-  return defaults.maxLogfilesNum === parseValue(get(maxLogFiles));
-});
+const formFields = computed<BackendOptionsFormFields>(() => ({
+  dataDirectory: get(userDataDirectory),
+  logDirectory: get(userLogDirectory),
+  logFromOtherModules: get(logFromOtherModules),
+  loglevel: get(modelLogLevel),
+  maxLogFiles: get(maxLogFiles),
+  maxLogSize: get(maxLogSize),
+  sqliteInstructions: get(sqliteInstructions),
+}));
 
-const isMaxSizeDefault = computed(() => {
-  const defaults = get(defaultBackendArguments);
-  return defaults.maxSizeInMbAllLogs === parseValue(get(maxLogSize));
-});
-
-const isSqliteInstructionsDefaults = computed(() => {
-  const defaults = get(defaultBackendArguments);
-  return defaults.sqliteInstructions === parseValue(get(sqliteInstructions));
-});
+const atDefaults = computed(() => backendDefaultsState(get(formFields), get(defaultBackendArguments)));
 
 function resetDefaultArguments(field: 'files' | 'size' | 'instructions') {
   const defaults = get(defaultBackendArguments);
@@ -127,54 +114,9 @@ function resetDefaultArguments(field: 'files' | 'size' | 'instructions') {
     set(sqliteInstructions, stringifyValue(defaults.sqliteInstructions));
 }
 
-const newUserOptions = computed(() => {
-  const initial = get(initialOptions);
-  const newOptions: Writeable<Partial<BackendOptions>> = {};
+const newUserOptions = computed<Partial<BackendOptions>>(() => diffBackendOptions(get(formFields), get(initialOptions)));
 
-  const level = get(modelLogLevel);
-  if (level !== initial.loglevel)
-    newOptions.loglevel = level;
-
-  const userData = get(userDataDirectory);
-  if (userData !== initial.dataDirectory)
-    newOptions.dataDirectory = userData;
-
-  const userLog = get(userLogDirectory);
-  if (userLog !== initial.logDirectory)
-    newOptions.logDirectory = userLog;
-
-  const logFromOther = get(logFromOtherModules);
-  if (logFromOther !== initial.logFromOtherModules)
-    newOptions.logFromOtherModules = logFromOther;
-
-  const maxLogFilesParsed = parseValue(get(maxLogFiles));
-  if (maxLogFilesParsed !== initial.maxLogfilesNum)
-    newOptions.maxLogfilesNum = maxLogFilesParsed;
-
-  const maxLogSizeParsed = parseValue(get(maxLogSize));
-  if (maxLogSizeParsed !== initial.maxSizeInMbAllLogs)
-    newOptions.maxSizeInMbAllLogs = maxLogSizeParsed;
-
-  const sqliteInstructionsParsed = parseValue(get(sqliteInstructions));
-  if (sqliteInstructionsParsed !== initial.sqliteInstructions)
-    newOptions.sqliteInstructions = sqliteInstructionsParsed;
-
-  return newOptions;
-});
-
-const anyValueChanged = computed(() => {
-  const form: Partial<BackendOptions> = {
-    dataDirectory: get(userDataDirectory),
-    logDirectory: get(userLogDirectory),
-    logFromOtherModules: get(logFromOtherModules),
-    loglevel: get(modelLogLevel),
-    maxLogfilesNum: parseValue(get(maxLogFiles)),
-    maxSizeInMbAllLogs: parseValue(get(maxLogSize)),
-    sqliteInstructions: parseValue(get(sqliteInstructions)),
-  };
-
-  return !isEqual(form, get(initialOptions));
-});
+const anyValueChanged = computed<boolean>(() => hasBackendOptionChanges(get(formFields), get(initialOptions)));
 
 const { openDirectory } = useInterop();
 
@@ -385,7 +327,7 @@ function showResetConfirmation() {
           >
             <template #append>
               <SettingResetButton
-                v-if="!isMaxSizeDefault"
+                v-if="!atDefaults.maxLogSize"
                 data-testid="reset-max-log-size"
                 @click="resetDefaultArguments('size')"
               />
@@ -410,7 +352,7 @@ function showResetConfirmation() {
           >
             <template #append>
               <SettingResetButton
-                v-if="!isMaxLogFilesDefault"
+                v-if="!atDefaults.maxLogFiles"
                 data-testid="reset-max-log-files"
                 @click="resetDefaultArguments('files')"
               />
@@ -436,7 +378,7 @@ function showResetConfirmation() {
           >
             <template #append>
               <SettingResetButton
-                v-if="!isSqliteInstructionsDefaults"
+                v-if="!atDefaults.sqliteInstructions"
                 data-testid="reset-sqlite-instructions"
                 @click="resetDefaultArguments('instructions')"
               />
