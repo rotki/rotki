@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -113,7 +113,7 @@ def test_jupiter_lend_balances_include_collateral_and_debt(
     usdc_token = _token(USDC_SOLANA, 6)
     jupusd_token = _token(JUPUSD_SOLANA, 6)
 
-    def get_token(address: SolanaAddress, **kwargs) -> SolanaToken:
+    def get_token(address: SolanaAddress, **kwargs: Any) -> SolanaToken:
         if address == USDC_SOLANA:
             return usdc_token
         if address == JUPUSD_SOLANA:

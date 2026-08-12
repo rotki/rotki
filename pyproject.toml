@@ -209,8 +209,8 @@ disallow_untyped_decorators = false
 module = [
     "rotkehlchen.tests.api.*",
     "rotkehlchen.tests.benchmarks.*",
-    "rotkehlchen.tests.data_migrations.*",
     "rotkehlchen.tests.conftest",
+    "rotkehlchen.tests.data_migrations.*",
     "rotkehlchen.tests.fixtures.exchanges.*",
     "rotkehlchen.tests.integration.*",
     "rotkehlchen.tests.mcp.tools.*",
@@ -218,6 +218,8 @@ module = [
     "rotkehlchen.tests.pylint.*",
     "rotkehlchen.tests.test_no_missing_init",
     "rotkehlchen.tests.test_users",
+    "rotkehlchen.tests.unit.solana.*",
+    "rotkehlchen.tests.unit.solana_decoders.*",
     "rotkehlchen.tests.websocketsapi.*",
 ]
 check_untyped_defs = true
