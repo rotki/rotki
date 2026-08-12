@@ -2,9 +2,14 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.frankencoin.constants import CPT_FRANKENCOIN, ZCHF_ADDRESS
+from rotkehlchen.chain.evm.decoding.frankencoin.constants import (
+    CPT_FRANKENCOIN,
+    ZCHF_ADDRESS,
+    ZCHF_DECIMALS,
+)
 from rotkehlchen.chain.evm.decoding.frankencoin.decoder import FrankencoinCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_EVM_DECODING_OUTPUT
+from rotkehlchen.constants.assets import A_ZCHF
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.utils.misc import bytes_to_address
 
@@ -39,7 +44,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
             msg_aggregator=msg_aggregator,
         )
         self.savings_address = SUPPORTED_ZCHF_SAVINGS_CHAINS[evm_inquirer.chain_id]
-        self.zchf = self.base.get_or_create_evm_token(address=ZCHF_ADDRESS[evm_inquirer.chain_id])
+        self.zchf_address = ZCHF_ADDRESS[evm_inquirer.chain_id]
 
     def _get_transfer_party(
             self,
@@ -58,7 +63,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
         transfer_log = context.all_logs[current_log_position - 1]
         if (
             len(transfer_log.topics) != 3 or
-            transfer_log.address != self.zchf.evm_address or
+            transfer_log.address != self.zchf_address or
             transfer_log.topics[0] != ERC20_OR_ERC721_TRANSFER
         ):
             return None
@@ -69,7 +74,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
             self.savings_address not in (from_address, to_address) or
             token_normalized_value_decimals(
                 token_amount=int.from_bytes(transfer_log.data),
-                token_decimals=self.zchf.decimals,
+                token_decimals=ZCHF_DECIMALS,
             ) != amount
         ):
             return None
@@ -91,7 +96,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
 
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[0:32]),
-            token_decimals=self.zchf.decimals,
+            token_decimals=ZCHF_DECIMALS,
         )
 
         if topic in (SAVED_TOPIC, WITHDRAWN_TOPIC):
@@ -104,7 +109,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.amount == amount and
                 event.address == self.savings_address and
-                event.asset == self.zchf
+                event.asset == A_ZCHF
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
@@ -115,7 +120,6 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
                     # Attribute an on-behalf deposit to its savings owner.
                     payer = event.location_label
                     event.notes = f'Deposit {amount} zCHF in Frankencoin Savings Module by {payer}'
-                    event.extra_data = {'payer': payer}
                     event.location_label = user_address
 
             elif (
@@ -125,7 +129,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.amount == amount and
                     event.address == self.savings_address and
-                    event.asset == self.zchf
+                    event.asset == A_ZCHF
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
@@ -138,13 +142,11 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
                     event.notes = (
                         f'Withdraw {amount} zCHF from Frankencoin Savings Module to {receiver}'
                     )
-                    event.extra_data = {'receiver': receiver}
                     event.location_label = user_address
 
             else:
                 # An untracked endpoint produces no decoded transfer, so inspect its raw log.
                 transfer_party = self._get_transfer_party(context=context, amount=amount)
-                extra_data = None
 
                 if topic == SAVED_TOPIC:
                     event_type = HistoryEventType.DEPOSIT
@@ -152,7 +154,6 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
                     notes = f'Deposit {amount} zCHF in Frankencoin Savings Module'
                     if transfer_party is not None:
                         notes += f' paid by {transfer_party}'
-                        extra_data = {'payer': transfer_party}
 
                 else:
                     event_type = HistoryEventType.WITHDRAWAL
@@ -160,27 +161,25 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
                     notes = f'Withdraw {amount} zCHF from Frankencoin Savings Module'
                     if transfer_party is not None:
                         notes += f' sent to {transfer_party}'
-                        extra_data = {'receiver': transfer_party}
 
                 context.decoded_events.append(self.base.make_event_from_transaction(
                         transaction=context.transaction,
                         tx_log=context.tx_log,
                         event_type=event_type,
                         event_subtype=event_subtype,
-                        asset=self.zchf,
+                        asset=A_ZCHF,
                         amount=amount,
                         location_label=user_address,
                         notes=notes,
                         counterparty=CPT_FRANKENCOIN,
                         address=self.savings_address,
-                        extra_data=extra_data,
                     ))
 
         elif topic == INTEREST_COLLECTED_TOPIC:
             # This is internal accounting; only net interest accrues to the saver.
             referral_fee = token_normalized_value_decimals(
                 token_amount=int.from_bytes(context.tx_log.data[32:64]),
-                token_decimals=self.zchf.decimals,
+                token_decimals=ZCHF_DECIMALS,
             )
             amount -= referral_fee
             context.decoded_events.append(self.base.make_event_from_transaction(
@@ -188,7 +187,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.INTEREST,
-                asset=self.zchf,
+                asset=A_ZCHF,
                 amount=amount,
                 location_label=user_address,
                 notes=f'Received {amount} zCHF as interests in Frankencoin Savings Module',

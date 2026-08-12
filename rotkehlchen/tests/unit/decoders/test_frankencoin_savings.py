@@ -25,7 +25,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
-from rotkehlchen.constants.assets import A_ETH, A_POL, A_XDAI
+from rotkehlchen.constants.assets import A_ETH, A_POL, A_XDAI, A_ZCHF
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -48,10 +48,7 @@ def _make_savings_decoder(*, tracked: bool) -> FrankencoinSavingsCommonDecoder:
     decoder.base = MagicMock()
     decoder.base.is_tracked.return_value = tracked
     decoder.savings_address = SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ETHEREUM]
-    decoder.zchf = MagicMock(
-        decimals=18,
-        evm_address=ZCHF_ADDRESS[ChainID.ETHEREUM],
-    )
+    decoder.zchf_address = ZCHF_ADDRESS[ChainID.ETHEREUM]
     return decoder
 
 
@@ -132,7 +129,7 @@ def test_savings_event_handles_invalid_preceding_log():
         'tx_log': context.tx_log,
         'event_type': HistoryEventType.WITHDRAWAL,
         'event_subtype': HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
-        'asset': decoder.zchf,
+        'asset': A_ZCHF,
         'amount': FVal(1),
         'location_label': '0x1111111111111111111111111111111111111111',
         'notes': 'Withdraw 1 zCHF from Frankencoin Savings Module',
@@ -160,7 +157,7 @@ def test_savings_event_attributes_existing_transfer_to_owner(
         event_subtype=HistoryEventSubType.NONE,
         amount=FVal(1),
         address=decoder.savings_address,
-        asset=decoder.zchf,
+        asset=A_ZCHF,
         location_label=(party_address := make_evm_address()),
     )
     context = _make_context(topic=topic, decoded_events=[event])
@@ -207,7 +204,7 @@ def test_interest_collection_subtracts_referral_fee():
         'tx_log': context.tx_log,
         'event_type': HistoryEventType.RECEIVE,
         'event_subtype': HistoryEventSubType.INTEREST,
-        'asset': decoder.zchf,
+        'asset': A_ZCHF,
         'amount': FVal('1.5'),
         'location_label': '0x1111111111111111111111111111111111111111',
         'notes': 'Received 1.5 zCHF as interests in Frankencoin Savings Module',

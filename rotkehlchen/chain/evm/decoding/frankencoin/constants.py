@@ -14,6 +14,7 @@ FRANKENCOIN_COUNTERPARTY_DETAILS: Final = CounterpartyDetails(
     label=FRANKENCOIN_COUNTERPARTY_LABEL,
     image='frankencoin.svg',
 )
+ZCHF_DECIMALS: Final = 18
 
 ZCHF_ADDRESS: Final[dict[ChainID, ChecksumEvmAddress]] = {
     ChainID.ETHEREUM: string_to_evm_address('0xB58E61C3098d85632Df34EecfB899A1Ed80921cB'),

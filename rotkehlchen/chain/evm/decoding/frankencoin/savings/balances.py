@@ -4,11 +4,12 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import BalanceSheet
-from rotkehlchen.assets.utils import get_or_create_evm_token, token_normalized_value_decimals
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.chain.evm.decoding.frankencoin.constants import CPT_FRANKENCOIN, ZCHF_ADDRESS
+from rotkehlchen.chain.evm.decoding.frankencoin.constants import CPT_FRANKENCOIN, ZCHF_DECIMALS
+from rotkehlchen.constants.assets import A_ZCHF
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -44,11 +45,6 @@ class FrankencoinSavingsBalances(ProtocolWithBalance):
             address=SUPPORTED_ZCHF_SAVINGS_CHAINS[evm_inquirer.chain_id],
             abi=SAVINGS_CONTRACT_ABI,
             deployed_block=0,  # not used for calls
-        )
-        self.zchf = get_or_create_evm_token(
-            userdb=evm_inquirer.database,
-            evm_address=ZCHF_ADDRESS[evm_inquirer.chain_id],
-            chain_id=evm_inquirer.chain_id,
         )
 
     def query_balances(self) -> BalancesSheetType:
@@ -122,9 +118,9 @@ class FrankencoinSavingsBalances(ProtocolWithBalance):
             if (balance_raw := saved_raw + interest_raw - referral_fee) == 0:
                 continue
 
-            amounts.append((address, self.zchf, token_normalized_value_decimals(
+            amounts.append((address, A_ZCHF, token_normalized_value_decimals(
                 token_amount=balance_raw,
-                token_decimals=self.zchf.decimals,
+                token_decimals=ZCHF_DECIMALS,
             )))
 
         self._add_priced_balances(balances=balances, amounts=amounts)

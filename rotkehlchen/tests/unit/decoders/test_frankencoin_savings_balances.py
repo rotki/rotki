@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.decoding.frankencoin.savings.balances import (
 from rotkehlchen.chain.evm.decoding.frankencoin.savings.constants import (
     SUPPORTED_ZCHF_SAVINGS_CHAINS,
 )
+from rotkehlchen.constants.assets import A_ZCHF
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -25,7 +26,6 @@ def _make_balances_module(addresses):
     module.addresses_with_deposits = MagicMock(return_value={address: [] for address in addresses})
     module._add_priced_balances = MagicMock()
     module.savings_contract = MagicMock(address=make_evm_address())
-    module.zchf = MagicMock(decimals=18)
     return module
 
 
@@ -53,7 +53,7 @@ def test_query_frankencoin_savings_balances():
     ]
     module._add_priced_balances.assert_called_once_with(
         balances=balances,
-        amounts=[(addresses[0], module.zchf, FVal('1.25'))],
+        amounts=[(addresses[0], A_ZCHF, FVal('1.25'))],
     )
 
 
@@ -69,7 +69,7 @@ def test_query_frankencoin_savings_balances_deducts_pending_referral_fee():
 
     module._add_priced_balances.assert_called_once_with(
         balances=balances,
-        amounts=[(addresses[0], module.zchf, FVal('1.3'))],
+        amounts=[(addresses[0], A_ZCHF, FVal('1.3'))],
     )
 
 
@@ -85,7 +85,7 @@ def test_query_frankencoin_savings_balances_ignores_fee_without_referrer():
 
     module._add_priced_balances.assert_called_once_with(
         balances=balances,
-        amounts=[(addresses[0], module.zchf, FVal('1.4'))],
+        amounts=[(addresses[0], A_ZCHF, FVal('1.4'))],
     )
 
 
