@@ -191,10 +191,10 @@ describe('balanceDivergenceView.vue', () => {
       asset: 'ETH',
       evmChain: 'ethereum',
     });
-    expect(wrapper.find('[data-testid=divergence-last_matching]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=divergence-first_diverged]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=divergence-boundary][data-key=last_matching]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=divergence-boundary][data-key=first_diverged]').exists()).toBe(true);
 
-    await wrapper.find('[data-testid=view-divergence-last_matching]').trigger('click');
+    await wrapper.find('[data-testid=view-divergence][data-key=last_matching]').trigger('click');
 
     expect(mockSetHighlightTarget).toHaveBeenCalledWith('accountingEvent', {
       groupIdentifier: `1${'a'.repeat(64)}`,

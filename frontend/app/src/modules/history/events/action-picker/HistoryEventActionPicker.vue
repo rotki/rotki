@@ -276,7 +276,8 @@ function onUpdate(verbKey: string | undefined): void {
     <template #item="{ item }">
       <div
         class="flex items-center gap-3 w-full"
-        :data-testid="`event-action-picker-row-${kebabCase(item.verbKey)}`"
+        data-testid="event-action-picker-row"
+        :data-key="kebabCase(item.verbKey)"
         :data-event-types="rowEventTypes(item)"
       >
         <RuiIcon

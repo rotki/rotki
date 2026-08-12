@@ -248,7 +248,8 @@ onMounted(async () => {
       <template #item.enabled="{ row }">
         <RuiSwitch
           color="primary"
-          :data-testid="`${row.identifier}-module-switch`"
+          data-testid="module-switch"
+          :data-key="row.identifier"
           :disabled="loading"
           :model-value="row.enabled"
           hide-details

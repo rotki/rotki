@@ -26,7 +26,8 @@ const label = computed<string>(() => isMatching.value
   <div
     class="flex flex-col gap-3 rounded border border-default border-l-[3px] p-4 text-sm"
     :class="isMatching ? 'border-l-rui-success' : 'border-l-rui-warning'"
-    :data-testid="`divergence-${boundary.key}`"
+    data-testid="divergence-boundary"
+    :data-key="boundary.key"
   >
     <div class="flex items-center justify-between gap-3">
       <span
@@ -44,7 +45,8 @@ const label = computed<string>(() => isMatching.value
         color="primary"
         size="sm"
         :disabled="!boundary.event.groupIdentifier"
-        :data-testid="`view-divergence-${boundary.key}`"
+        data-testid="view-divergence"
+        :data-key="boundary.key"
         @click="emit('view')"
       >
         <template #prepend>

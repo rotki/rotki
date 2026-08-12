@@ -73,7 +73,10 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
     data-testid="snapshot-list-table"
   >
     <template #item.timestamp="{ row }">
-      <span :data-testid="`snapshot-list-row-${row.timestamp}`">
+      <span
+        data-testid="snapshot-list-row"
+        :data-key="row.timestamp"
+      >
         <DateDisplay :timestamp="row.timestamp" />
       </span>
     </template>

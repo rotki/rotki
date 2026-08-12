@@ -57,13 +57,13 @@ export class AddressBookPage {
   }
 
   async selectScope(scope: Scope): Promise<void> {
-    await this.page.getByTestId(`address-book-scope-${scope}`).click();
+    await this.page.locator(`[data-testid=address-book-scope-tab][data-key="${scope}"]`).click();
     // Wait for any in-flight fetch to settle by checking row attachment.
     await this.page.waitForTimeout(200);
   }
 
   async expectScopeActive(scope: Scope): Promise<void> {
-    const tab = this.page.getByTestId(`address-book-scope-${scope}`);
+    const tab = this.page.locator(`[data-testid=address-book-scope-tab][data-key="${scope}"]`);
     await expect(tab).toHaveAttribute('aria-selected', 'true');
   }
 

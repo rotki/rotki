@@ -277,7 +277,7 @@ export class RotkiApp {
       await element.click();
     };
 
-    const menuSelector = `[data-testid="navigation__${menu}"]`;
+    const menuSelector = `[data-testid=navigation][data-key="${menu}"]`;
     const menuElement = page.locator(menuSelector);
 
     // Check if the submenu wrapper exists and if it's expanded
@@ -301,7 +301,7 @@ export class RotkiApp {
       await submenuWrapper.scrollIntoViewIfNeeded();
       await submenuWrapper.waitFor({ state: 'visible' });
 
-      const subMenuSelector = `[data-testid="navigation__${submenu}"]`;
+      const subMenuSelector = `[data-testid=navigation][data-key="${submenu}"]`;
       await click(subMenuSelector);
     }
   }

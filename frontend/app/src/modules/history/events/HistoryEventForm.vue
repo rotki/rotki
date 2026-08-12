@@ -135,7 +135,8 @@ defineExpose({
     :is="formComponents[entryType]"
     ref="form"
     v-model:state-updated="stateUpdated"
-    :data-testid="`${kebabCase(entryType)}-form`"
+    data-testid="event-form"
+    :data-key="kebabCase(entryType)"
     :data="data"
   />
 </template>

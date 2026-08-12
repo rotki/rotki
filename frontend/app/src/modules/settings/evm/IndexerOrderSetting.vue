@@ -319,7 +319,8 @@ watch(chainWriteError, (message) => {
             v-for="tab in tabs"
             :key="tab.id"
             :value="tab.id"
-            :data-testid="`indexer-tab-${tab.id}`"
+            data-testid="indexer-tab"
+            :data-key="tab.id"
           >
             <IndexerTabLabel
               :tab="tab"
@@ -358,7 +359,8 @@ watch(chainWriteError, (message) => {
               :key="chain.id"
               variant="list"
               class="w-full"
-              :data-testid="`chain-menu-item-${chain.id}`"
+              data-testid="chain-menu-item"
+              :data-key="chain.id"
               @click="addChain(chain)"
             >
               <template #prepend>
@@ -435,7 +437,8 @@ watch(chainWriteError, (message) => {
           </PrioritizedList>
           <PrioritizedList
             v-else
-            :data-testid="`chain-indexer-order-${tab.id}`"
+            data-testid="chain-indexer-order"
+            :data-key="tab.id"
             :model-value="localChainOrders[tab.id] ?? []"
             :all-items="availableIndexers"
             :status="{ error: chainError, success: chainSuccess }"

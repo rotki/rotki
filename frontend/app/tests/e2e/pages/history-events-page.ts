@@ -119,12 +119,12 @@ export class HistoryEventsPage {
   async fillSwapEventForm(data: SwapEventFixture): Promise<void> {
     await this.fillDatetime();
     await this.selectLocation(data.location);
-    await selectAsset(this.page, '[data-testid=spend-asset]', data.spendAsset, data.spendAssetId);
-    await this.page.locator('[data-testid=spend-amount] input').clear();
-    await this.page.locator('[data-testid=spend-amount] input').fill(data.spendAmount);
-    await selectAsset(this.page, '[data-testid=receive-asset]', data.receiveAsset, data.receiveAssetId);
-    await this.page.locator('[data-testid=receive-amount] input').clear();
-    await this.page.locator('[data-testid=receive-amount] input').fill(data.receiveAmount);
+    await selectAsset(this.page, '[data-testid=sub-event-asset][data-key=spend]', data.spendAsset, data.spendAssetId);
+    await this.page.locator('[data-testid=sub-event-amount][data-key=spend] input').clear();
+    await this.page.locator('[data-testid=sub-event-amount][data-key=spend] input').fill(data.spendAmount);
+    await selectAsset(this.page, '[data-testid=sub-event-asset][data-key=receive]', data.receiveAsset, data.receiveAssetId);
+    await this.page.locator('[data-testid=sub-event-amount][data-key=receive] input').clear();
+    await this.page.locator('[data-testid=sub-event-amount][data-key=receive] input').fill(data.receiveAmount);
 
     if (data.fee) {
       await this.page.locator('[data-testid=has-fee]').click();
@@ -263,12 +263,12 @@ export class HistoryEventsPage {
     await this.fillDatetime();
     await this.page.locator('[data-testid=tx-ref] input').click();
     await this.page.locator('[data-testid=tx-ref] input').fill(data.txRef);
-    await selectAsset(this.page, '[data-testid=spend-asset]', data.spendAsset, data.spendAssetId);
-    await this.page.locator('[data-testid=spend-amount] input').clear();
-    await this.page.locator('[data-testid=spend-amount] input').fill(data.spendAmount);
-    await selectAsset(this.page, '[data-testid=receive-asset]', data.receiveAsset, data.receiveAssetId);
-    await this.page.locator('[data-testid=receive-amount] input').clear();
-    await this.page.locator('[data-testid=receive-amount] input').fill(data.receiveAmount);
+    await selectAsset(this.page, '[data-testid=sub-event-asset][data-key=spend]', data.spendAsset, data.spendAssetId);
+    await this.page.locator('[data-testid=sub-event-amount][data-key=spend] input').clear();
+    await this.page.locator('[data-testid=sub-event-amount][data-key=spend] input').fill(data.spendAmount);
+    await selectAsset(this.page, '[data-testid=sub-event-asset][data-key=receive]', data.receiveAsset, data.receiveAssetId);
+    await this.page.locator('[data-testid=sub-event-amount][data-key=receive] input').clear();
+    await this.page.locator('[data-testid=sub-event-amount][data-key=receive] input').fill(data.receiveAmount);
   }
 
   async fillEthBlockEventForm(data: EthBlockEventFixture): Promise<void> {
@@ -324,21 +324,21 @@ export class HistoryEventsPage {
     await this.fillDatetime();
     await this.selectLocation('ethereum');
     await this.page.locator('[data-testid=tx-ref] input').fill(data.txRef);
-    await selectAsset(this.page, '[data-testid=spend-asset]', data.spendAsset, data.spendAssetId);
-    await this.page.locator('[data-testid=spend-amount] input').clear();
-    await this.page.locator('[data-testid=spend-amount] input').fill(data.spendAmount);
-    await selectAsset(this.page, '[data-testid=receive-asset]', data.receiveAsset, data.receiveAssetId);
-    await this.page.locator('[data-testid=receive-amount] input').clear();
-    await this.page.locator('[data-testid=receive-amount] input').fill(data.receiveAmount);
+    await selectAsset(this.page, '[data-testid=sub-event-asset][data-key=spend]', data.spendAsset, data.spendAssetId);
+    await this.page.locator('[data-testid=sub-event-amount][data-key=spend] input').clear();
+    await this.page.locator('[data-testid=sub-event-amount][data-key=spend] input').fill(data.spendAmount);
+    await selectAsset(this.page, '[data-testid=sub-event-asset][data-key=receive]', data.receiveAsset, data.receiveAssetId);
+    await this.page.locator('[data-testid=sub-event-amount][data-key=receive] input').clear();
+    await this.page.locator('[data-testid=sub-event-amount][data-key=receive] input').fill(data.receiveAmount);
   }
 
   private async selectNthAsset(
-    dataTestid: string,
+    selector: string,
     index: number,
     value: string,
     id?: string,
   ): Promise<void> {
-    const container = this.page.locator(`[data-testid=${dataTestid}]`).nth(index);
+    const container = this.page.locator(selector).nth(index);
     await container.locator('[data-id=activator]').click();
     await container.locator('input').fill(value);
     const identifier = getValidSelectorFromEvmAddress((id ?? value).toLocaleLowerCase());
@@ -355,11 +355,12 @@ export class HistoryEventsPage {
   ): Promise<void> {
     for (const [i, item] of items.entries()) {
       if (i > 0)
-        await this.page.locator(`[data-testid=${type}-add]`).click();
+        await this.page.locator(`[data-testid=swap-sub-event-add][data-key=${type}]`).click();
 
-      await this.selectNthAsset(`${type}-asset`, i, item.asset, item.assetId);
-      await this.page.locator(`[data-testid=${type}-amount] input`).nth(i).clear();
-      await this.page.locator(`[data-testid=${type}-amount] input`).nth(i).fill(item.amount);
+      const amount = `[data-testid=sub-event-amount][data-key=${type}]`;
+      await this.selectNthAsset(`[data-testid=sub-event-asset][data-key=${type}]`, i, item.asset, item.assetId);
+      await this.page.locator(`${amount} input`).nth(i).clear();
+      await this.page.locator(`${amount} input`).nth(i).fill(item.amount);
     }
   }
 

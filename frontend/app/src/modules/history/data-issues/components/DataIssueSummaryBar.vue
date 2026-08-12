@@ -50,7 +50,8 @@ const allClear = computed<boolean>(() => SUMMARY_STATES.every(state => counts[st
       variant="outlined"
       class="!justify-start !p-3 !h-auto"
       :class="{ '!border-rui-primary': card.active }"
-      :data-testid="`data-issue-summary-${card.state}`"
+      data-testid="data-issue-summary-card"
+      :data-key="card.state"
       @click="emit('select', card.state)"
     >
       <div class="flex items-center gap-3 w-full">

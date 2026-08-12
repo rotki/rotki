@@ -18,7 +18,8 @@ const { t } = useI18n({ useScope: 'global' });
   >
     <template #default="{ isActive }">
       <NavigationMenuItem
-        :data-testid="`navigation__${group.testId}`"
+        data-testid="navigation"
+        :data-key="group.testId"
         :mini="mini"
         :text="t(group.labelKey)"
         :icon="group.icon"

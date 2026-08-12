@@ -42,7 +42,7 @@ describe('settingsSuggestionsDialog', () => {
   it('should preselect the recommended choice and hand it back on apply', async () => {
     const wrapper = createWrapper();
 
-    expect(wrapper.find<HTMLInputElement>('[data-testid=suggestion-choice-blockscout] input').element.checked).toBe(true);
+    expect(wrapper.find<HTMLInputElement>('[data-testid=suggestion-choice][data-key=blockscout] input').element.checked).toBe(true);
     await wrapper.find('[data-testid=apply-suggestions]').trigger('click');
 
     expect(wrapper.emitted('apply')?.[0]).toEqual([{
@@ -54,7 +54,7 @@ describe('settingsSuggestionsDialog', () => {
   it('should hand back the choice the user switched to', async () => {
     const wrapper = createWrapper();
 
-    await wrapper.find('[data-testid=suggestion-choice-etherscan] input').setValue(true);
+    await wrapper.find('[data-testid=suggestion-choice][data-key=etherscan] input').setValue(true);
     await wrapper.find('[data-testid=apply-suggestions]').trigger('click');
 
     expect(wrapper.emitted('apply')?.[0]).toEqual([{

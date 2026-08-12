@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM } from '../helpers/constants';
+import { PillFilterKeyboard } from './pill-filter-keyboard';
 
 /**
  * Drives the pill filter bar (`modules/core/table/pill/PillFilterBar.vue`).
@@ -8,7 +9,12 @@ import { TIMEOUT_MEDIUM } from '../helpers/constants';
  * callers pass the field keys (the wire keys, e.g. `counterparties`) their table exposes.
  */
 export class PillFilterBar {
-  constructor(private readonly page: Page) {}
+  /** Focus reads and key presses, which are about the document rather than about the bar. */
+  readonly keyboard: PillFilterKeyboard;
+
+  constructor(private readonly page: Page) {
+    this.keyboard = new PillFilterKeyboard(page);
+  }
 
   private get bar(): Locator {
     return this.page.locator('[data-testid=pill-bar]');
@@ -132,7 +138,7 @@ export class PillFilterBar {
 
   /** Switches the open editor's operator (`is not`, `greater than`, `before`, …). */
   async selectOperator(op: string): Promise<void> {
-    const chip = this.page.locator(`[data-testid=op-${op}]`);
+    const chip = this.page.locator(`[data-testid=pill-op][data-key="${op}"]`);
     await chip.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     await chip.click();
   }
@@ -256,14 +262,6 @@ export class PillFilterBar {
     await expect(this.filterSuggestion(fieldKey, op)).toBeVisible({ timeout: TIMEOUT_MEDIUM });
   }
 
-  /**
-   * Waits for a field to hold focus. An editor focuses its first input from `onMounted`, a tick
-   * after the click that opened it has returned, so asserting focus straight away is a race.
-   */
-  async expectFocusedField(testId: string): Promise<void> {
-    await expect.poll(async () => this.focusedFieldTestId(), { timeout: TIMEOUT_MEDIUM }).toBe(testId);
-  }
-
   async hasFilterSuggestion(fieldKey: string, op: string): Promise<boolean> {
     return this.filterSuggestion(fieldKey, op).isVisible();
   }
@@ -325,41 +323,6 @@ export class PillFilterBar {
     for (let step = 0; step < steps; step++)
       await search.press('ArrowDown');
     await search.press('Enter');
-  }
-
-  /** `data-testid` of whatever currently holds focus, for asserting tab order. */
-  async focusedTestId(): Promise<string | null> {
-    return this.page.evaluate(() => document.activeElement?.getAttribute('data-testid') ?? null);
-  }
-
-  /**
-   * The focused element's `data-index`. Rows carry their position here rather than in the test id,
-   * so asserting the id alone would only prove "some row of this kind" has focus.
-   */
-  async focusedIndex(): Promise<string | null> {
-    return this.page.evaluate(() => document.activeElement?.getAttribute('data-index') ?? null);
-  }
-
-  /** Presses a key against whatever currently holds focus, rather than a known element. */
-  async pressFocused(key: string): Promise<void> {
-    await this.page.keyboard.press(key);
-  }
-
-  /** Types into whatever currently holds focus, one key at a time. */
-  async typeFocused(text: string): Promise<void> {
-    await this.page.keyboard.type(text, { delay: 30 });
-  }
-
-  /**
-   * `data-testid` of the nearest tagged ancestor of whatever holds focus.
-   *
-   * The editors put their test ids on a field wrapper rather than on the `<input>` inside it, so
-   * `focusedTestId` reads null for them even when the right field has the caret.
-   */
-  async focusedFieldTestId(): Promise<string | null> {
-    return this.page.evaluate(() =>
-      document.activeElement?.closest('[data-testid]')?.getAttribute('data-testid') ?? null,
-    );
   }
 
   /** Puts focus in the bar's inline input, the anchor for tabbing to the pills before it. */

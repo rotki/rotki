@@ -59,7 +59,7 @@ describe('component/HistoryEventForm.vue', () => {
     const entryTypeElement = entryTypeInput.element;
 
     expect(entryTypeElement.value).toBe(HistoryEventEntryType.HISTORY_EVENT);
-    expect(wrapper.find('[data-testid=history-event-form]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=event-form][data-key=history-event]').exists()).toBe(true);
   });
 
   it.each(formTypesYouCanAddTo)('changes to proper form %s', async (value: string) => {
@@ -71,7 +71,7 @@ describe('component/HistoryEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     const id = value.split(/ /g).join('-');
-    expect(wrapper.find(`[data-testid=${id}-form]`).exists(), `id: ${id}`).toBe(true);
+    expect(wrapper.find(`[data-testid=event-form][data-key="${id}"]`).exists(), `id: ${id}`).toBe(true);
   });
 
   it('should only allow two options on an existing transaction', async () => {

@@ -57,7 +57,8 @@ const userNotesLabel = computed<string>(() => {
           class="hidden group-hover/asset:flex size-10"
           variant="outlined"
           :disabled="disabled"
-          :data-testid="`${type}-remove`"
+          data-testid="swap-sub-event-remove"
+          :data-key="type"
           icon
           color="error"
           @click="emit('remove', index)"
@@ -113,7 +114,8 @@ const userNotesLabel = computed<string>(() => {
           <RuiTextArea
             v-model="modelValue.userNotes"
             prepend-icon="lu-sticky-note"
-            :data-testid="`${type}-notes`"
+            data-testid="swap-sub-event-notes"
+            :data-key="type"
             variant="outlined"
             color="primary"
             :disabled="disabled"
