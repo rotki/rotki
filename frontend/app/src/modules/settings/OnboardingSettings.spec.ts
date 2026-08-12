@@ -1,6 +1,8 @@
+import type { BackendOptions } from '@shared/ipc';
 import type { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import OnboardingSettings from '@/modules/settings/OnboardingSettings.vue';
 import { useBackendConnection } from '@/modules/shell/app/use-backend-connection';
 
@@ -17,20 +19,27 @@ vi.mock('@/modules/core/common/logging/logging', async (): Promise<Record<string
   };
 });
 
-const { setLogLevelMock } = vi.hoisted(() => ({ setLogLevelMock: vi.fn() }));
+const { openDirectoryMock, setLogLevelMock } = vi.hoisted(() => ({
+  openDirectoryMock: vi.fn<(title: string) => Promise<string | undefined>>(),
+  setLogLevelMock: vi.fn(),
+}));
 vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> => ({
   useInterop: vi.fn().mockReturnValue({
     isPackaged: true,
+    openDirectory: openDirectoryMock,
     restartBackend: vi.fn(),
     setLogLevel: setLogLevelMock,
-    config: vi.fn().mockReturnValue({
-      logDirectory: '/Users/home/rotki/logs',
-    }),
+    // `config(false)` is what the config FILE pins (and disables in the UI);
+    // `config(true)` is the defaults. Returning the same object for both pinned
+    // the log directory and left that field permanently disabled.
+    config: vi.fn().mockImplementation(async (defaults: boolean): Promise<Partial<BackendOptions>> =>
+      defaults ? { logDirectory: '/Users/home/rotki/logs' } : {}),
   }),
 }));
 
 let saveOptions = vi.fn();
 let applyUserOptions = vi.fn();
+let resetOptions = vi.fn();
 vi.mock('@/modules/shell/app/use-backend-management', async (): Promise<Record<string, unknown>> => {
   const mod = await vi.importActual<typeof import('@/modules/shell/app/use-backend-management')>('@/modules/shell/app/use-backend-management');
   return {
@@ -43,10 +52,14 @@ vi.mock('@/modules/shell/app/use-backend-management', async (): Promise<Record<s
       applyUserOptions = vi.fn().mockImplementation(async (opts, skipRestart): Promise<void> => {
         await mocked.applyUserOptions(opts, skipRestart);
       });
+      resetOptions = vi.fn().mockImplementation(async (): Promise<void> => {
+        await mocked.resetOptions();
+      });
       return {
         ...mocked,
-        saveOptions,
         applyUserOptions,
+        resetOptions,
+        saveOptions,
       };
     }),
   };
@@ -129,6 +142,8 @@ describe('onboarding-settings', () => {
     setLevelMock.mockClear();
     setLogLevelMock.mockClear();
     updateColibriConfigurationMock.mockClear();
+    openDirectoryMock.mockReset();
+    openDirectoryMock.mockResolvedValue(undefined);
     wrapper = await createWrapper();
     await nextTick();
   });
@@ -136,6 +151,23 @@ describe('onboarding-settings', () => {
   afterEach((): void => {
     wrapper.unmount();
   });
+
+  async function openAdvanced(): Promise<void> {
+    await wrapper.find('[data-testid=onboarding-setting__advance] [data-accordion-trigger]').trigger('click');
+    await nextTick();
+  }
+
+  function errorOf(field: string): string {
+    return wrapper.find(`[data-testid=${field}] .details .text-rui-error`).text();
+  }
+
+  function hasError(field: string): boolean {
+    return wrapper.find(`[data-testid=${field}] .details .text-rui-error`).exists();
+  }
+
+  function saveDisabled(): boolean {
+    return 'disabled' in wrapper.find('[data-testid=onboarding-setting__submit-button]').attributes();
+  }
 
   describe('standard settings', () => {
     it('should use default value and disable save button', () => {
@@ -299,9 +331,7 @@ describe('onboarding-settings', () => {
 
   describe('advanced settings', () => {
     beforeEach(async (): Promise<void> => {
-      await wrapper.find('[data-testid=onboarding-setting__advance] [data-accordion-trigger]').trigger('click');
-
-      await nextTick();
+      await openAdvanced();
     });
 
     it('should use default value and disable save button', () => {
@@ -362,6 +392,238 @@ describe('onboarding-settings', () => {
         maxLogfilesNum: 3,
         sqliteInstructions: 5000,
       });
+    });
+  });
+
+  /**
+   * Characterization of the vuelidate rules, so the zod port has something to
+   * match. Expectations are derived from the validator implementations, not
+   * from a run: `numeric` is `/^\d*(\.\d+)?$/`, and both `numeric` and
+   * `minValue` no-op on an empty value, while `required` trims first.
+   */
+  describe('numeric field validation', () => {
+    const fields = [
+      ['max log size', 'max-log-size-input'],
+      ['max log files', 'max-log-files-input'],
+      ['sqlite instructions', 'sqlite-instructions-input'],
+    ] as const;
+
+    const MIN_MESSAGE = 'backend_settings.errors.min::0';
+    const NON_EMPTY_MESSAGE = 'backend_settings.errors.non_empty';
+
+    beforeEach(async (): Promise<void> => {
+      await openAdvanced();
+    });
+
+    it.each(fields)('should reject an empty %s as required', async (_name, field): Promise<void> => {
+      await wrapper.find(`[data-testid=${field}] input`).setValue('');
+      await nextTick();
+
+      // `numeric` and `minValue` both short-circuit on an empty value, so
+      // `required` is the only rule that fires.
+      expect(errorOf(field)).toBe(NON_EMPTY_MESSAGE);
+      expect(saveDisabled()).toBe(true);
+    });
+
+    it.each(fields)('should reject a negative %s', async (_name, field): Promise<void> => {
+      await wrapper.find(`[data-testid=${field}] input`).setValue('-1');
+      await nextTick();
+
+      // `numeric` rejects the sign before `minValue` is reached, and `and`
+      // short-circuits, so the pair reports one message. Note this row does NOT
+      // pin the lower bound: `numeric`'s regex accepts no sign at all, so
+      // `minValue(0)` can never fail on its own and either rule alone rejects
+      // `-1`. The row below is what pins the digits-only half.
+      expect(errorOf(field)).toBe(MIN_MESSAGE);
+      expect(saveDisabled()).toBe(true);
+    });
+
+    it.each(fields)('should reject exponent notation for %s', async (_name, field): Promise<void> => {
+      // The discriminating input: `1e5` is a valid value for a `type="number"`
+      // input and is >= 0, so a non-negative check alone would accept it, but
+      // `numeric`'s `/^\d*(\.\d+)?$/` has no exponent and rejects it. Without
+      // this row a port that only checked the lower bound would stay green.
+      await wrapper.find(`[data-testid=${field}] input`).setValue('1e5');
+      await nextTick();
+
+      expect(errorOf(field)).toBe(MIN_MESSAGE);
+      expect(saveDisabled()).toBe(true);
+    });
+
+    it.each(fields)('should accept zero for %s', async (_name, field): Promise<void> => {
+      await wrapper.find(`[data-testid=${field}] input`).setValue('0');
+      await nextTick();
+
+      expect(hasError(field)).toBe(false);
+      expect(saveDisabled()).toBe(false);
+    });
+
+    it('should accept a decimal and truncate it on save', async (): Promise<void> => {
+      // `numeric` allows a fractional part, but `parseValue` uses parseInt, so
+      // the value that reaches the backend is truncated rather than rejected.
+      await wrapper.find('[data-testid=max-log-size-input] input').setValue('1.5');
+      await nextTick();
+
+      expect(hasError('max-log-size-input')).toBe(false);
+
+      await wrapper.find('[data-testid=onboarding-setting__submit-button]').trigger('click');
+
+      expect(saveOptions).toBeCalledWith({ maxSizeInMbAllLogs: 1 });
+    });
+
+    it('should block save while any field is invalid', async (): Promise<void> => {
+      await wrapper.find('[data-testid=max-log-files-input] input').setValue('4');
+      await nextTick();
+      expect(saveDisabled()).toBe(false);
+
+      // A valid change elsewhere must not unlock save past an invalid field.
+      await wrapper.find('[data-testid=max-log-size-input] input').setValue('-1');
+      await nextTick();
+      expect(saveDisabled()).toBe(true);
+    });
+
+    it('should re-enable save once the invalid value is corrected', async (): Promise<void> => {
+      await wrapper.find('[data-testid=max-log-size-input] input').setValue('-1');
+      await nextTick();
+      expect(saveDisabled()).toBe(true);
+
+      await wrapper.find('[data-testid=max-log-size-input] input').setValue('301');
+      await nextTick();
+
+      expect(hasError('max-log-size-input')).toBe(false);
+      expect(saveDisabled()).toBe(false);
+    });
+  });
+
+  // `RuiTextField` splits its fallthrough: plain attributes land on the root
+  // element (so `data-testid` selects the field) but listeners land on the inner
+  // `<input>`. A click has to be triggered on `[data-testid=x] input`; dispatching
+  // it on the root calls nothing.
+  describe('directory selection', () => {
+    it('should write the chosen data directory back into the field', async (): Promise<void> => {
+      openDirectoryMock.mockResolvedValue('/Users/home/rotki/picked_data');
+
+      await wrapper.find('[data-testid=user-data-directory-input] input').trigger('click');
+      await flushPromises();
+
+      expect(openDirectoryMock).toHaveBeenCalledWith('backend_settings.data_directory.select');
+      const input = wrapper.find<HTMLInputElement>('[data-testid=user-data-directory-input] input').element;
+      expect(input.value).toBe('/Users/home/rotki/picked_data');
+      expect(saveDisabled()).toBe(false);
+    });
+
+    it('should write the chosen log directory back into the field', async (): Promise<void> => {
+      openDirectoryMock.mockResolvedValue('/Users/home/rotki/picked_logs');
+
+      await wrapper.find('[data-testid=user-log-directory-input] input').trigger('click');
+      await flushPromises();
+
+      expect(openDirectoryMock).toHaveBeenCalledWith('backend_settings.log_directory.select');
+      const input = wrapper.find<HTMLInputElement>('[data-testid=user-log-directory-input] input').element;
+      expect(input.value).toBe('/Users/home/rotki/picked_logs');
+    });
+
+    it('should also open the picker from the folder button', async (): Promise<void> => {
+      openDirectoryMock.mockResolvedValue('/Users/home/rotki/from_button');
+
+      await wrapper.find('[data-testid=user-data-directory-input] button').trigger('click');
+      await flushPromises();
+
+      const input = wrapper.find<HTMLInputElement>('[data-testid=user-data-directory-input] input').element;
+      expect(input.value).toBe('/Users/home/rotki/from_button');
+    });
+
+    it.each([
+      ['data', 'user-data-directory-input'],
+      ['logs', 'user-log-directory-input'],
+    ])('should keep the current %s directory when the picker is cancelled', async (_name, field): Promise<void> => {
+      const before = wrapper.find<HTMLInputElement>(`[data-testid=${field}] input`).element.value;
+      openDirectoryMock.mockResolvedValue(undefined);
+
+      await wrapper.find(`[data-testid=${field}] input`).trigger('click');
+      await flushPromises();
+
+      expect(openDirectoryMock).toHaveBeenCalledOnce();
+      expect(wrapper.find<HTMLInputElement>(`[data-testid=${field}] input`).element.value).toBe(before);
+      expect(saveDisabled()).toBe(true);
+    });
+
+    it.each([
+      ['data', 'user-data-directory-input'],
+      ['logs', 'user-log-directory-input'],
+    ])('should ignore a second %s-directory click while the picker is open', async (_name, field): Promise<void> => {
+      openDirectoryMock.mockReturnValue(new Promise<string | undefined>(() => {}));
+      const input = wrapper.find(`[data-testid=${field}] input`);
+
+      await input.trigger('click');
+      await input.trigger('click');
+
+      expect(openDirectoryMock).toHaveBeenCalledOnce();
+    });
+
+    it.each([
+      ['data', 'user-data-directory-input'],
+      ['logs', 'user-log-directory-input'],
+    ])('should re-arm the %s-directory picker once it closes', async (_name, field): Promise<void> => {
+      openDirectoryMock.mockResolvedValue(undefined);
+      const input = wrapper.find(`[data-testid=${field}] input`);
+
+      await input.trigger('click');
+      await flushPromises();
+      await input.trigger('click');
+      await flushPromises();
+
+      expect(openDirectoryMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('reset to defaults', () => {
+    it('should reset the backend options only after the confirmation is accepted', async (): Promise<void> => {
+      const confirmStore = useConfirmStore();
+
+      await wrapper.find('[data-testid=onboarding-setting__reset-button]').trigger('click');
+      await nextTick();
+
+      expect(get(confirmStore.visible)).toBe(true);
+      expect(get(confirmStore.confirmation)).toMatchObject({
+        message: 'backend_settings.confirm.message',
+        title: 'backend_settings.confirm.title',
+      });
+      expect(resetOptions).not.toHaveBeenCalled();
+
+      await confirmStore.confirm();
+      await flushPromises();
+
+      expect(resetOptions).toHaveBeenCalledOnce();
+      expect(wrapper.emitted('dismiss')).toHaveLength(1);
+    });
+
+    it('should leave the options untouched when the confirmation is dismissed', async (): Promise<void> => {
+      const confirmStore = useConfirmStore();
+
+      await wrapper.find('[data-testid=onboarding-setting__reset-button]').trigger('click');
+      await nextTick();
+
+      await confirmStore.dismiss();
+      await flushPromises();
+
+      expect(resetOptions).not.toHaveBeenCalled();
+      expect(wrapper.emitted('dismiss')).toBeUndefined();
+    });
+  });
+
+  describe('log from other modules', () => {
+    it('should save the checkbox as part of the options diff', async (): Promise<void> => {
+      await openAdvanced();
+
+      await wrapper.find('[data-testid=log-from-other-modules-checkbox] input').setValue(true);
+      await nextTick();
+
+      expect(saveDisabled()).toBe(false);
+
+      await wrapper.find('[data-testid=onboarding-setting__submit-button]').trigger('click');
+
+      expect(saveOptions).toBeCalledWith({ logFromOtherModules: true });
     });
   });
 });

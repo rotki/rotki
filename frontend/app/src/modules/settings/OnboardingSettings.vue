@@ -1,19 +1,26 @@
 <script setup lang="ts">
-import type { Writeable } from '@rotki/common';
 import type { BackendOptions } from '@shared/ipc';
 import type { BackendConfiguration } from '@/modules/shell/app/backend';
-import useVuelidate from '@vuelidate/core';
-import { and, helpers, minValue, numeric, required } from '@vuelidate/validators';
-import { isEqual } from 'es-toolkit';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useForm } from '@/modules/core/form/use-form';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
+import AdvancedBackendSettings from '@/modules/settings/backend/AdvancedBackendSettings.vue';
 import { resolveInitialBackendOptions } from '@/modules/settings/backend/backend-initial-options';
+import {
+  type AdvancedBackendField,
+  backendDefaultsState,
+  type BackendNumericField,
+  type BackendNumericFields,
+  backendNumericSchema,
+  type BackendOptionsFormFields,
+  diffBackendOptions,
+  hasBackendOptionChanges,
+  stringifyValue,
+} from '@/modules/settings/backend/backend-options-form';
 import LogLevelInput from '@/modules/settings/backend/LogLevelInput.vue';
 import { useLogLevelUpdate } from '@/modules/settings/backend/use-log-level-update';
 import LanguageSetting from '@/modules/settings/general/language/LanguageSetting.vue';
-import SettingResetButton from '@/modules/settings/SettingResetButton.vue';
 import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
@@ -29,11 +36,6 @@ const { dataDirectory, defaultBackendArguments } = storeToRefs(useMainStore());
 const userDataDirectory = ref<string>('');
 const userLogDirectory = ref<string>('');
 const logFromOtherModules = ref<boolean>(false);
-const valid = ref<boolean>(false);
-
-const maxLogSize = ref<string>('0');
-const sqliteInstructions = ref<string>('0');
-const maxLogFiles = ref<string>('0');
 
 const { backendSettings } = useSettingsApi();
 const { applyLogLevelChange } = useLogLevelUpdate();
@@ -46,19 +48,30 @@ async function loadConfiguration(): Promise<void> {
   set(configuration, await backendSettings());
 }
 
-function parseValue(value?: string) {
-  if (!value)
-    return 0;
+/**
+ * Only the three numeric fields are validated, so the form owns just those.
+ * Everything else stays on plain refs, and whether anything changed is still a
+ * comparison against the initial options rather than the form's own baseline.
+ * `submit` is a no-op: `save()` decides between a full save and a log-level
+ * only update, and referencing it from here would be a cycle.
+ */
+const form = useForm<BackendNumericFields, BackendNumericFields>({
+  initial: (): BackendNumericFields => ({ maxLogFiles: '0', maxLogSize: '0', sqliteInstructions: '0' }),
+  schema: backendNumericSchema({
+    min: t('backend_settings.errors.min', { min: 0 }),
+    nonEmpty: t('backend_settings.errors.non_empty'),
+  }),
+  submit: async (): Promise<{ success: boolean }> => ({ success: true }),
+  transform: (state): BackendNumericFields => ({ ...state }),
+});
 
-  const parsedValue = Number.parseInt(value);
-  return Number.isNaN(parsedValue) ? 0 : parsedValue;
-}
+/** `form.valid` is a `ComputedRef` on a plain object, so a template binding would never unwrap it. */
+const invalid = computed<boolean>(() => !get(form.valid));
 
-function stringifyValue(value?: number) {
-  if (!value)
-    return '0';
-
-  return value.toString();
+/** Vuelidate ran with `$autoDirty`, so an edited field showed its error straight away. */
+function updateField(field: BackendNumericField, value: string): void {
+  form.state[field] = value;
+  form.touch(field);
 }
 
 const {
@@ -97,111 +110,40 @@ async function loaded() {
   set(userDataDirectory, initial.dataDirectory);
   set(userLogDirectory, initial.logDirectory);
   set(logFromOtherModules, initial.logFromOtherModules);
-  set(maxLogFiles, stringifyValue(initial.maxLogfilesNum));
-  set(maxLogSize, stringifyValue(initial.maxSizeInMbAllLogs));
-  set(sqliteInstructions, stringifyValue(initial.sqliteInstructions));
+  form.reset({
+    maxLogFiles: stringifyValue(initial.maxLogfilesNum),
+    maxLogSize: stringifyValue(initial.maxSizeInMbAllLogs),
+    sqliteInstructions: stringifyValue(initial.sqliteInstructions),
+  });
 }
 
-const isMaxLogFilesDefault = computed(() => {
-  const defaults = get(defaultBackendArguments);
-  return defaults.maxLogfilesNum === parseValue(get(maxLogFiles));
-});
+const formFields = computed<BackendOptionsFormFields>(() => ({
+  dataDirectory: get(userDataDirectory),
+  logDirectory: get(userLogDirectory),
+  logFromOtherModules: get(logFromOtherModules),
+  loglevel: get(modelLogLevel),
+  maxLogFiles: form.state.maxLogFiles,
+  maxLogSize: form.state.maxLogSize,
+  sqliteInstructions: form.state.sqliteInstructions,
+}));
 
-const isMaxSizeDefault = computed(() => {
-  const defaults = get(defaultBackendArguments);
-  return defaults.maxSizeInMbAllLogs === parseValue(get(maxLogSize));
-});
+const atDefaults = computed(() => backendDefaultsState(get(formFields), get(defaultBackendArguments)));
 
-const isSqliteInstructionsDefaults = computed(() => {
-  const defaults = get(defaultBackendArguments);
-  return defaults.sqliteInstructions === parseValue(get(sqliteInstructions));
-});
-
-function resetDefaultArguments(field: 'files' | 'size' | 'instructions') {
+function resetDefaultArguments(field: AdvancedBackendField): void {
   const defaults = get(defaultBackendArguments);
   if (field === 'files')
-    set(maxLogFiles, stringifyValue(defaults.maxLogfilesNum));
+    updateField('maxLogFiles', stringifyValue(defaults.maxLogfilesNum));
   else if (field === 'size')
-    set(maxLogSize, stringifyValue(defaults.maxSizeInMbAllLogs));
+    updateField('maxLogSize', stringifyValue(defaults.maxSizeInMbAllLogs));
   else if (field === 'instructions')
-    set(sqliteInstructions, stringifyValue(defaults.sqliteInstructions));
+    updateField('sqliteInstructions', stringifyValue(defaults.sqliteInstructions));
 }
 
-const newUserOptions = computed(() => {
-  const initial = get(initialOptions);
-  const newOptions: Writeable<Partial<BackendOptions>> = {};
+const newUserOptions = computed<Partial<BackendOptions>>(() => diffBackendOptions(get(formFields), get(initialOptions)));
 
-  const level = get(modelLogLevel);
-  if (level !== initial.loglevel)
-    newOptions.loglevel = level;
-
-  const userData = get(userDataDirectory);
-  if (userData !== initial.dataDirectory)
-    newOptions.dataDirectory = userData;
-
-  const userLog = get(userLogDirectory);
-  if (userLog !== initial.logDirectory)
-    newOptions.logDirectory = userLog;
-
-  const logFromOther = get(logFromOtherModules);
-  if (logFromOther !== initial.logFromOtherModules)
-    newOptions.logFromOtherModules = logFromOther;
-
-  const maxLogFilesParsed = parseValue(get(maxLogFiles));
-  if (maxLogFilesParsed !== initial.maxLogfilesNum)
-    newOptions.maxLogfilesNum = maxLogFilesParsed;
-
-  const maxLogSizeParsed = parseValue(get(maxLogSize));
-  if (maxLogSizeParsed !== initial.maxSizeInMbAllLogs)
-    newOptions.maxSizeInMbAllLogs = maxLogSizeParsed;
-
-  const sqliteInstructionsParsed = parseValue(get(sqliteInstructions));
-  if (sqliteInstructionsParsed !== initial.sqliteInstructions)
-    newOptions.sqliteInstructions = sqliteInstructionsParsed;
-
-  return newOptions;
-});
-
-const anyValueChanged = computed(() => {
-  const form: Partial<BackendOptions> = {
-    dataDirectory: get(userDataDirectory),
-    logDirectory: get(userLogDirectory),
-    logFromOtherModules: get(logFromOtherModules),
-    loglevel: get(modelLogLevel),
-    maxLogfilesNum: parseValue(get(maxLogFiles)),
-    maxSizeInMbAllLogs: parseValue(get(maxLogSize)),
-    sqliteInstructions: parseValue(get(sqliteInstructions)),
-  };
-
-  return !isEqual(form, get(initialOptions));
-});
+const anyValueChanged = computed<boolean>(() => hasBackendOptionChanges(get(formFields), get(initialOptions)));
 
 const { openDirectory } = useInterop();
-
-const nonNegativeNumberRules = {
-  nonNegative: helpers.withMessage(t('backend_settings.errors.min', { min: 0 }), and(numeric, minValue(0))),
-  required: helpers.withMessage(t('backend_settings.errors.non_empty'), required),
-};
-
-const rules = {
-  maxLogFiles: nonNegativeNumberRules,
-  maxLogSize: nonNegativeNumberRules,
-  sqliteInstructions: nonNegativeNumberRules,
-};
-
-const v$ = useVuelidate(
-  rules,
-  {
-    maxLogFiles,
-    maxLogSize,
-    sqliteInstructions,
-  },
-  { $autoDirty: true },
-);
-
-watch(v$, ({ $invalid }) => {
-  set(valid, !$invalid);
-});
 
 async function reset() {
   set(confirmReset, false);
@@ -213,6 +155,7 @@ async function selectDataDirectory() {
   if (get(selecting))
     return;
 
+  set(selecting, true);
   try {
     const title = t('backend_settings.data_directory.select');
     const directory = await openDirectory(title);
@@ -364,99 +307,22 @@ function showResetConfirmation() {
         <template #header>
           {{ t('backend_settings.advanced') }}
         </template>
-        <div class="py-2">
-          <RuiTextField
-            v-model="maxLogSize"
-            data-testid="max-log-size-input"
-            class="mb-4"
-            variant="outlined"
-            color="primary"
-            :hint="
-              !!fileConfig.maxSizeInMbAllLogs
-                ? t('backend_settings.config_file_disabled')
-                : t('backend_settings.max_log_size.hint')
-            "
-            :label="t('backend_settings.max_log_size.label')"
-            :disabled="!!fileConfig.maxSizeInMbAllLogs"
-            :loading="!configuration || !defaultBackendArguments"
-            :error-messages="toMessages(v$.maxLogSize)"
-            type="number"
-          >
-            <template #append>
-              <SettingResetButton
-                v-if="!isMaxSizeDefault"
-                data-testid="reset-max-log-size"
-                @click="resetDefaultArguments('size')"
-              />
-            </template>
-          </RuiTextField>
-          <RuiTextField
-            v-model="maxLogFiles"
-            data-testid="max-log-files-input"
-            variant="outlined"
-            color="primary"
-            class="mb-4"
-            :hint="t('backend_settings.max_log_files.hint')"
-            :label="
-              !!fileConfig.maxLogfilesNum
-                ? t('backend_settings.config_file_disabled')
-                : t('backend_settings.max_log_files.label')
-            "
-            :disabled="!!fileConfig.maxLogfilesNum"
-            :loading="!configuration || !defaultBackendArguments"
-            :error-messages="toMessages(v$.maxLogFiles)"
-            type="number"
-          >
-            <template #append>
-              <SettingResetButton
-                v-if="!isMaxLogFilesDefault"
-                data-testid="reset-max-log-files"
-                @click="resetDefaultArguments('files')"
-              />
-            </template>
-          </RuiTextField>
-
-          <RuiTextField
-            v-model="sqliteInstructions"
-            data-testid="sqlite-instructions-input"
-            variant="outlined"
-            color="primary"
-            class="mb-4"
-            :hint="
-              !!fileConfig.sqliteInstructions
-                ? t('backend_settings.config_file_disabled')
-                : t('backend_settings.sqlite_instructions.hint')
-            "
-            :label="t('backend_settings.sqlite_instructions.label')"
-            :disabled="!!fileConfig.sqliteInstructions"
-            :loading="!configuration || !defaultBackendArguments"
-            :error-messages="toMessages(v$.sqliteInstructions)"
-            type="number"
-          >
-            <template #append>
-              <SettingResetButton
-                v-if="!isSqliteInstructionsDefaults"
-                data-testid="reset-sqlite-instructions"
-                @click="resetDefaultArguments('instructions')"
-              />
-            </template>
-          </RuiTextField>
-
-          <RuiCheckbox
-            v-model="logFromOtherModules"
-            color="primary"
-            data-testid="log-from-other-modules-checkbox"
-            :label="t('backend_settings.log_from_other_modules.label')"
-            :disabled="fileConfig.logFromOtherModules"
-            :hint="
-              fileConfig.logFromOtherModules
-                ? t('backend_settings.config_file_disabled')
-                : t('backend_settings.log_from_other_modules.hint')
-            "
-          >
-            {{ t('backend_settings.log_from_other_modules.label') }}
-          </RuiCheckbox>
-        </div>
+        <AdvancedBackendSettings
+          v-model:log-from-other-modules="logFromOtherModules"
+          :at-defaults="atDefaults"
+          :file-config="fileConfig"
+          :loading="!configuration || !defaultBackendArguments"
+          :max-log-files="form.state.maxLogFiles"
+          :max-log-files-errors="form.errors('maxLogFiles')"
+          :max-log-size="form.state.maxLogSize"
+          :max-log-size-errors="form.errors('maxLogSize')"
+          :sqlite-instructions="form.state.sqliteInstructions"
+          :sqlite-instructions-errors="form.errors('sqliteInstructions')"
+          @reset="resetDefaultArguments($event)"
+          @update:max-log-files="updateField('maxLogFiles', $event)"
+          @update:max-log-size="updateField('maxLogSize', $event)"
+          @update:sqlite-instructions="updateField('sqliteInstructions', $event)"
+        />
       </RuiAccordion>
     </RuiAccordions>
 
@@ -470,6 +336,7 @@ function showResetConfirmation() {
           {{ t('common.actions.cancel') }}
         </RuiButton>
         <RuiButton
+          data-testid="onboarding-setting__reset-button"
           variant="outlined"
           color="primary"
           @click="showResetConfirmation()"
@@ -479,7 +346,7 @@ function showResetConfirmation() {
         <RuiButton
           data-testid="onboarding-setting__submit-button"
           color="primary"
-          :disabled="!anyValueChanged || !valid"
+          :disabled="!anyValueChanged || invalid"
           type="submit"
           @click="save()"
         >

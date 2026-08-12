@@ -14,6 +14,15 @@ const MAX_BACKOFF_MS = 8000;
 
 type ErrorHandler = (task: Task, message?: string) => ActionResult<unknown>;
 
+/**
+ * The payload for a task the backend no longer knows about.
+ *
+ * 🔴 `result` must stay `null`. `use-task-handler` branches on `result !== null` *before* it looks
+ * at `message`, so an empty object here resolved the producer's promise as `ok({})` — a task the
+ * backend has forgotten was reported as a success carrying nothing, and the message below (the
+ * only thing saying anything went wrong) was discarded. `null` reaches the `message` branch, which
+ * yields `TaskFailed` and settles the activity FAILED.
+ */
 function useError(): { error: ErrorHandler } {
   const { t } = useI18n({ useScope: 'global' });
   const error: ErrorHandler = (task, error) => ({
@@ -22,7 +31,7 @@ function useError(): { error: ErrorHandler } {
       taskId: task.id,
       title: task.label,
     }),
-    result: {},
+    result: null,
   });
   return { error };
 }
