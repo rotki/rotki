@@ -24,6 +24,8 @@ from rotkehlchen.types import Location, TimestampMS
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    import pytest
+
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -63,7 +65,7 @@ def _insert_duplicate_group(
 
 def test_find_customized_event_duplicate_groups_filters_group_ids_in_sql(
         database: DBHandler,
-        monkeypatch,
+        monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Ensure the group identifier filter is applied in the SQL query."""
     events_db = DBHistoryEvents(database)
@@ -83,7 +85,7 @@ def test_find_customized_event_duplicate_groups_filters_group_ids_in_sql(
     executed: list[tuple[str, tuple[Sequence, ...]]] = []
     original_execute = DBCursor.execute
 
-    def execute_spy(self, statement: str, *bindings: Sequence) -> DBCursor:
+    def execute_spy(self: DBCursor, statement: str, *bindings: Sequence) -> DBCursor:
         executed.append((statement, bindings))
         return original_execute(self, statement, *bindings)
 

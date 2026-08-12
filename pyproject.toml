@@ -218,6 +218,7 @@ module = [
     "rotkehlchen.tests.pylint.*",
     "rotkehlchen.tests.test_no_missing_init",
     "rotkehlchen.tests.test_users",
+    "rotkehlchen.tests.unit.events.*",
     "rotkehlchen.tests.unit.solana.*",
     "rotkehlchen.tests.unit.solana_decoders.*",
     "rotkehlchen.tests.websocketsapi.*",

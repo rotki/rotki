@@ -2,7 +2,7 @@ from rotkehlchen.history.events.constants import CHAIN_ENTRY_TYPES, STAKING_ENTR
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 
 
-def test_entry_types_covered():
+def test_entry_types_covered() -> None:
     """Test that all entry types are covered by the constants"""
     all_entry_types = set(HistoryBaseEntryType)
     generic_types = {  # types that don't need any extra DB fields
