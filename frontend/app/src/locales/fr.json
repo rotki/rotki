@@ -764,8 +764,6 @@
       "delete_error": "Impossible de supprimer la cartographie : {message}",
       "edit_error": "Impossible de modifier la correspondance : {message}",
       "edit_title": "Modifier le mappage",
-      "filter_by_exchange": "Filtrer par échange",
-      "filter_by_location_symbol": "Filtrer par symbole d'actif",
       "form": {
         "asset_non_empty": "Le champ de l'actif reconnu ne peut pas être vide",
         "location_non_empty": "Le champ emplacement ne peut pas être vide",
@@ -1126,7 +1124,6 @@
       "yes": "Oui"
     },
     "address": "Adresse",
-    "all": "Tous",
     "amount": "Montant",
     "asset": "Actif",
     "assets": "Actifs",

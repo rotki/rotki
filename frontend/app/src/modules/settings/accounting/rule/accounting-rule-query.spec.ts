@@ -1,10 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import {
   AccountingRuleQuerySchema,
+  CustomRuleHandling,
+  isCustomRuleHandling,
   parseEventId,
   parseRuleIntent,
   parseRuleQuery,
 } from '@/modules/settings/accounting/rule/accounting-rule-query';
+
+describe('isCustomRuleHandling', () => {
+  it('should admit the two handlings the tabs send', () => {
+    expect(isCustomRuleHandling(CustomRuleHandling.EXCLUDE)).toBe(true);
+    expect(isCustomRuleHandling(CustomRuleHandling.ONLY)).toBe(true);
+  });
+
+  // The url is the user's to write, and an unrecognised handling would be sent to the backend as a
+  // filter it refuses.
+  it('should refuse anything else', () => {
+    expect(isCustomRuleHandling('all')).toBe(false);
+    expect(isCustomRuleHandling('')).toBe(false);
+    expect(isCustomRuleHandling('ONLY')).toBe(false);
+  });
+});
 
 describe('parseRuleQuery', () => {
   it('should read the rule a deep link names', () => {

@@ -11,12 +11,6 @@ import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-
 import { nonEmptyOr, uniqueStrings } from '@/modules/core/common/data/data';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
-interface IgnoredFilter {
-  onlyShowOwned: boolean;
-  onlyShowWhitelisted: boolean;
-  ignoredAssetsHandling: IgnoredAssetsHandlingType;
-}
-
 interface UseManagedAssetOperationsReturn {
   isAssetWhitelisted: (identifier: string) => boolean;
   useIsAssetWhitelisted: (identifier: string) => ComputedRef<boolean>;
@@ -32,7 +26,7 @@ interface UseManagedAssetOperationsReturn {
 
 export function useManagedAssetOperations(
   onRefresh: () => void,
-  ignoredFilter: MaybeRefOrGetter<IgnoredFilter>,
+  ignoredHandling: MaybeRefOrGetter<IgnoredAssetsHandlingType>,
   selected: Ref<string[]>,
 ): UseManagedAssetOperationsReturn {
   const { t } = useI18n({ useScope: 'global' });
@@ -52,7 +46,7 @@ export function useManagedAssetOperations(
   const loadingSpam = ref<string | undefined>(undefined);
 
   function refreshAssetsConditionally(): void {
-    if (toValue(ignoredFilter).ignoredAssetsHandling !== 'none')
+    if (toValue(ignoredHandling) !== 'none')
       onRefresh();
   }
 
@@ -144,7 +138,7 @@ export function useManagedAssetOperations(
 
     if (status.success) {
       set(selected, []);
-      if (toValue(ignoredFilter).ignoredAssetsHandling !== 'none')
+      if (toValue(ignoredHandling) !== 'none')
         onRefresh();
     }
   };

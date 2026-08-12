@@ -1,23 +1,25 @@
 <script setup lang="ts">
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { CounterpartyMapping } from '@/modules/assets/admin/counterparty-mapping/schema';
+import type { Filters } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-filter';
 import type { Collection } from '@/modules/core/common/collection';
-import CounterpartyMappingFilter from '@/modules/assets/admin/counterparty-mapping/CounterpartyMappingFilter.vue';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 interface ManageCounterpartyMappingTableProps {
   collection: Collection<CounterpartyMapping>;
+  fields: FieldDef[];
   loading: boolean;
 }
 
-const counterpartyModel = defineModel<string | undefined>('counterparty', { required: true });
-
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 
-const symbol = defineModel<string>('symbol', { required: true });
+const filtersModel = defineModel<Filters>('filters', { required: true });
 
 defineProps<ManageCounterpartyMappingTableProps>();
 
@@ -27,6 +29,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const pillLabels = usePillBarLabels();
 const cols = computed<DataTableColumn<CounterpartyMapping>[]>(() => [{
   align: 'center',
   cellClass: 'py-3',
@@ -50,13 +53,15 @@ const cols = computed<DataTableColumn<CounterpartyMapping>[]>(() => [{
 
 <template>
   <div>
-    <div class="flex sm:items-center justify-between mb-4">
+    <div class="flex items-center gap-3 mb-4">
       <HintMenuIcon>
         {{ t('asset_management.counterparty_mapping.subtitle') }}
       </HintMenuIcon>
-      <CounterpartyMappingFilter
-        v-model:counterparty="counterpartyModel"
-        v-model:symbol="symbol"
+      <PillFilterBar
+        v-model:matches="filtersModel"
+        class="flex-1 min-w-[12rem] md:min-w-[24rem]"
+        :fields="fields"
+        :labels="pillLabels"
       />
     </div>
     <RuiDataTable

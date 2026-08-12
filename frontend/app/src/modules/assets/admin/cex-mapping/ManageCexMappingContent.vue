@@ -3,6 +3,8 @@ import type { CexMapping, CexMappingRequestPayload } from '@/modules/assets/type
 import { omit } from 'es-toolkit';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
 import ManageCexMappingTable from '@/modules/assets/admin/cex-mapping/ManageCexMappingTable.vue';
+import { useCexMappingFields } from '@/modules/assets/admin/cex-mapping/use-cex-mapping-fields';
+import { type CexMappingFilterKey, CexMappingFilterKeys, type Filters } from '@/modules/assets/admin/cex-mapping/use-cex-mapping-filter';
 import { useAssetCexMappingApi } from '@/modules/assets/api/use-asset-cex-mapping-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { firstQueryValue } from '@/modules/core/table/route';
@@ -16,43 +18,33 @@ const route = useRoute();
 
 const { deleteCexMapping, fetchAllCexMapping } = useAssetCexMappingApi();
 
-const selectedLocation = ref<string>('');
-const selectedSymbol = ref<string>('');
 const editMode = ref<boolean>(false);
 
 const modelValue = ref<CexMapping>();
 
-const extraParams = computed(() => {
-  const location = get(selectedLocation);
-  const symbol = get(selectedSymbol);
-  const data: { location?: string; locationSymbol?: string } = {};
-  if (location)
-    data.location = location;
-  if (symbol)
-    data.locationSymbol = symbol;
-  return data;
-});
+const fields = useCexMappingFields();
 
 const {
   collection,
+  filter,
   isLoading: loading,
   pagination,
   refetch,
 } = useServerTable<
   CexMapping,
-  CexMappingRequestPayload
+  CexMappingRequestPayload,
+  Filters
 >({
   fetch: fetchAllCexMapping,
-  params: [{
-    fromQuery(query): void {
-      set(selectedLocation, query.location || '');
-      set(selectedSymbol, query.locationSymbol || '');
-    },
-    to: 'both',
-    values: extraParams,
-  }],
+  fields,
   urlState: { mode: 'route' },
 });
+
+/** The bag types every value as one-or-many; both of these fields are single-valued. */
+function filterValue(key: CexMappingFilterKey): string {
+  const picked = get(filter)[key];
+  return (Array.isArray(picked) ? picked[0] : picked)?.toString() ?? '';
+}
 
 onMounted(async () => {
   const { query } = get(route);
@@ -67,11 +59,13 @@ onMounted(async () => {
   await refetch();
 });
 
+// A new mapping starts from whatever the bar is narrowed to, so adding one while filtered to an
+// exchange does not make the user pick it again.
 function add(payload?: Partial<CexMapping>) {
   set(modelValue, {
     asset: '',
-    location: get(selectedLocation) || '',
-    locationSymbol: get(selectedSymbol) || '',
+    location: filterValue(CexMappingFilterKeys.LOCATION),
+    locationSymbol: filterValue(CexMappingFilterKeys.LOCATION_SYMBOL),
     ...payload,
   });
   set(editMode, false);
@@ -128,10 +122,10 @@ const { showDeleteConfirmation } = useTableRowDeletion<CexMapping>({
     </template>
     <RuiCard>
       <ManageCexMappingTable
-        v-model:location="selectedLocation"
-        v-model:symbol="selectedSymbol"
+        v-model:filters="filter"
         v-model:pagination="pagination"
         :collection="collection"
+        :fields="fields"
         :loading="loading"
         @refresh="refetch()"
         @edit="edit($event)"

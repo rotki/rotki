@@ -1170,8 +1170,6 @@
       "delete_error": "Could not delete the mapping: {message}",
       "edit_error": "Could not edit the mapping: {message}",
       "edit_title": "Edit the mapping",
-      "filter_by_exchange": "Filter by exchange",
-      "filter_by_location_symbol": "Filter by asset symbol",
       "form": {
         "asset_non_empty": "The recognized asset field cannot be empty",
         "location_non_empty": "The location field cannot be empty",
@@ -1193,7 +1191,6 @@
         "title": "Delete Counterparty Asset Mapping"
       },
       "counterparty_symbol": "Asset symbol in the counterparty",
-      "filter_by_counterparty": "Filter by counterparty",
       "form": {
         "counterparty_non_empty": "The counterparty field cannot be empty",
         "counterparty_symbol_non_empty": "The counterparty symbol field cannot be empty"
@@ -1353,7 +1350,6 @@
     "newly_detected": {
       "accept": "Accept token",
       "accept_selected": "Accept selected tokens",
-      "all_types": "All Types",
       "detected_at": "Detected At",
       "mark_as_spam": "Mark token as spam",
       "mark_selected_as_spam": "Mark selected tokens as spam",
@@ -1808,6 +1804,9 @@
       "tooltip": "Detect activities of all registered EVM accounts in other EVM chains, and register them."
     },
     "export_blockchain_accounts": "Export blockchain accounts",
+    "filter": {
+      "search_hint": "Search using the asset name or symbol"
+    },
     "form_dialog": {
       "add_title": "Add blockchain account",
       "edit_subtitle": "Modify account details",
@@ -2045,7 +2044,6 @@
     },
     "actions_text": "Actions",
     "address": "Address",
-    "all": "All",
     "amount": "Amount",
     "asset": "Asset",
     "assets": "Assets",
@@ -2423,7 +2421,6 @@
       "detail": {
         "balances": {
           "add": "Add balance",
-          "all": "All",
           "asset": "Assets",
           "bulk_delete": {
             "action": "Remove zero-value | Remove {count} zero-value | Remove {count} zero-value",
@@ -2440,18 +2437,19 @@
           },
           "flagged": "This entry may need attention",
           "hidden": "no rows hidden | {count} hidden | {count} hidden",
-          "hide_ignored": "Hide ignored | Hide ignored ({count}) | Hide ignored ({count})",
-          "hide_spam": "Hide spam | Hide spam ({count}) | Hide spam ({count})",
-          "hide_title": "Hide rows",
-          "hide_zero_value": "Hide zero-value | Hide zero-value ({count}) | Hide zero-value ({count})",
           "liability": "Liabilities",
           "locked": "This snapshot's totals don't reconcile. Use the reconcile options above to align them before editing balances.",
           "nft": "NFTs",
-          "search": "Search asset",
           "share": "% Net worth",
           "share_percent": "{percent}%",
+          "show_ignored": "Show ignored | Show ignored ({count}) | Show ignored ({count})",
+          "show_spam": "Show spam | Show spam ({count}) | Show spam ({count})",
           "title": "Balances",
-          "zero_value_only": "Showing zero-value only"
+          "zero_value": {
+            "label": "Zero-value | Zero-value ({count}) | Zero-value ({count})",
+            "only": "Only",
+            "shown": "Shown"
+          }
         },
         "changes": {
           "added": "Added",
@@ -2610,8 +2608,7 @@
           "delta": "Change"
         },
         "range": {
-          "from": "From",
-          "to": "To"
+          "period": "Period"
         },
         "take_snapshot": "Take snapshot",
         "take_snapshot_confirm": {
@@ -5010,10 +5007,6 @@
         "empty": "No caches exist for the selected oracle.",
         "existing_title": "Existing caches",
         "source": "Price Oracle"
-      },
-      "filter": {
-        "from_asset": "Filter by From Asset",
-        "to_asset": "Filter by To Asset"
       },
       "headers": {
         "from_asset": "From Asset",

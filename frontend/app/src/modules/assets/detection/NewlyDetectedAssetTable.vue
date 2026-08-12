@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { Filters } from '@/modules/assets/detection/use-newly-detected-filter';
 import { type BigNumber, getAddressFromEvmIdentifier, getAddressFromSolanaIdentifier } from '@rotki/common';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { useNewlyDetectedFields } from '@/modules/assets/detection/use-newly-detected-fields';
+import { useNewlyDetectedSelection } from '@/modules/assets/detection/use-newly-detected-selection';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
-import { useSpamAsset } from '@/modules/assets/use-spam-asset';
-import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { arrayify } from '@/modules/core/common/data/array';
-import { uniqueStrings } from '@/modules/core/common/data/data';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
@@ -17,7 +16,7 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { getTokenChain } from './get-token-chain';
 import NewlyDetectedAssetRowActions from './NewlyDetectedAssetRowActions.vue';
 import NewlyDetectedAssetToolbar from './NewlyDetectedAssetToolbar.vue';
-import { type NewDetectedToken, NewDetectedTokenKind } from './types';
+import { type NewDetectedToken, NewDetectedTokenKind, type NewDetectedTokensRequestPayload } from './types';
 import { useNewlyDetectedTokens } from './use-newly-detected-tokens';
 
 defineOptions({
@@ -41,29 +40,22 @@ const TOKEN_KIND_MAPPING = {
 
 const { t } = useI18n({ useScope: 'global' });
 
-const selected = ref<string[]>([]);
-const tokenKindFilter = ref<NewDetectedTokenKind>();
-
-const { getAllIdentifiers, getData, isReady, removeNewDetectedTokens } = useNewlyDetectedTokens();
-const { allEvmChains, isSolanaChains } = useSupportedChains();
-const { addresses } = useAccountAddresses();
-const { markAssetsAsSpam } = useSpamAsset();
+const { getData, isReady } = useNewlyDetectedTokens();
+const { allEvmChains } = useSupportedChains();
 const { getAssetPrice } = usePriceUtils();
+
+const fields = useNewlyDetectedFields();
 
 const {
   collection,
+  filter,
   isLoading,
   pagination,
   refetch,
   sort,
-} = useServerTable<NewDetectedToken>({
+} = useServerTable<NewDetectedToken, NewDetectedTokensRequestPayload, Filters>({
   fetch: getData,
-  params: [{
-    to: 'both',
-    values: computed(() => ({
-      tokenKind: get(tokenKindFilter),
-    })),
-  }],
+  fields,
   sort: {
     default: {
       column: 'detectedAt',
@@ -128,76 +120,21 @@ const rows = computed<Token[]>(() => {
   }));
 });
 
-const allSelected = computed<boolean>(() => {
-  const selectionLength = get(selected).length;
-  const totalFiltered = get(collection).found;
-  return selectionLength > 0 && totalFiltered === selectionLength;
+const {
+  allSelected,
+  markAsSpam,
+  modelSelected,
+  removeTokens,
+  toggleSelection,
+} = useNewlyDetectedSelection({
+  filters: filter,
+  found: (): number => get(collection).found,
+  refetch,
 });
-
-const hasSolanaAccounts = computed<boolean>(() =>
-  Object.entries(get(addresses)).some(([chain, addrs]) => isSolanaChains(chain) && addrs.length > 0),
-);
-
-const tokenKindOptions = computed<{ title: string; value: NewDetectedTokenKind | undefined }[]>(() => {
-  const options: { title: string; value: NewDetectedTokenKind | undefined }[] = [
-    { title: 'EVM', value: NewDetectedTokenKind.EVM },
-  ];
-
-  if (get(hasSolanaAccounts)) {
-    options.unshift({ title: t('asset_table.newly_detected.all_types'), value: undefined });
-    options.push({ title: 'Solana', value: NewDetectedTokenKind.SOLANA });
-  }
-
-  return options;
-});
-
-async function toggleSelection(): Promise<void> {
-  const selectedLength = get(selected).length;
-  const allIdentifiers = await getAllIdentifiers(get(tokenKindFilter));
-
-  if (selectedLength === allIdentifiers.length)
-    set(selected, []);
-  else
-    set(selected, allIdentifiers);
-}
-
-function getIdentifiers(identifiers?: string | string[]): string[] {
-  return identifiers
-    ? arrayify(identifiers)
-    : get(selected);
-}
-
-function getUniqueIds(identifiers?: string | string[]): string[] {
-  return getIdentifiers(identifiers).filter(uniqueStrings);
-}
-
-async function removeTokens(identifiers?: string | string[]): Promise<void> {
-  await removeNewDetectedTokens(getIdentifiers(identifiers));
-  set(selected, []);
-  await refetch();
-}
-
-async function markAsSpam(identifiers?: string | string[]): Promise<void> {
-  const ids = getUniqueIds(identifiers);
-
-  const status = await markAssetsAsSpam(ids);
-
-  if (status.success)
-    await removeTokens(ids);
-}
 
 watch(isReady, (ready) => {
   if (ready)
     refetch();
-});
-
-watchImmediate(hasSolanaAccounts, (hasSolana) => {
-  if (!hasSolana)
-    set(tokenKindFilter, NewDetectedTokenKind.EVM);
-});
-
-watch(tokenKindFilter, () => {
-  set(selected, []);
 });
 
 onMounted(async () => {
@@ -214,11 +151,11 @@ onMounted(async () => {
     <RuiCard>
       <template #custom-header>
         <NewlyDetectedAssetToolbar
-          v-model="tokenKindFilter"
+          v-model:filters="filter"
           :all-selected="allSelected"
-          :selected-count="selected.length"
+          :selected-count="modelSelected.length"
           :found="collection.found"
-          :token-kind-options="tokenKindOptions"
+          :fields="fields"
           @toggle-selection="toggleSelection()"
           @accept="removeTokens()"
           @mark-spam="markAsSpam()"
@@ -226,7 +163,7 @@ onMounted(async () => {
       </template>
 
       <RuiDataTable
-        v-model="selected"
+        v-model="modelSelected"
         v-model:sort.external="sort"
         v-model:pagination.external="pagination"
         :cols="cols"

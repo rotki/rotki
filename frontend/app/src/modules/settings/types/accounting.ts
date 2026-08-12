@@ -1,4 +1,5 @@
 import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/modules/core/common/common-types';
+import type { CustomRuleHandling } from '@/modules/settings/accounting/rule/accounting-rule-query';
 import { z } from 'zod';
 import { CollectionCommonFields } from '@/modules/core/common/collection';
 
@@ -51,7 +52,7 @@ export interface AccountingRuleRequestPayload extends PaginationRequestPayload<A
   readonly eventTypes?: string[];
   readonly eventSubtypes?: string[];
   readonly counterparties?: (string | null)[];
-  readonly customRuleHandling?: boolean;
+  readonly customRuleHandling?: CustomRuleHandling;
   readonly eventIds?: number[];
   readonly identifiers?: number[];
 }

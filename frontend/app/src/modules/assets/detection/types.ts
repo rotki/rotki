@@ -6,6 +6,13 @@ export enum NewDetectedTokenKind {
   SOLANA = 'solana',
 }
 
+const newDetectedTokenKinds: string[] = Object.values(NewDetectedTokenKind);
+
+/** Whether a raw value (a filter the url can carry) names a kind the query knows. */
+export function isNewDetectedTokenKind(value: string | undefined): value is NewDetectedTokenKind {
+  return value !== undefined && newDetectedTokenKinds.includes(value);
+}
+
 export const NewDetectedToken = z.object({
   detectedAt: z.number().default(() => Date.now()),
   isIgnored: z.boolean().optional(),
