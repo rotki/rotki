@@ -65,7 +65,7 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server: APIServer) -
     def patched_get_system_spec() -> dict[str, Any]:
         return {'rotkehlchen': f'v{expected_version}'}
 
-    def patched_get_latest_release(_klass: Any) -> tuple[str, str]:
+    def patched_get_latest_release(_klass: object) -> tuple[str, str]:
         return expected_version, f'https://github.com/rotki/rotki/releases/tag/{expected_version}'
     release_patch = patch(
         'rotkehlchen.externalapis.github.Github.get_latest_release',
@@ -183,7 +183,7 @@ def test_query_version_when_update_required(rotkehlchen_api_server: APIServer) -
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
-    def patched_get_latest_release(_klass: Any) -> tuple[str, str]:
+    def patched_get_latest_release(_klass: object) -> tuple[str, str]:
         new_latest = 'v99.99.99'
         return new_latest, f'https://github.com/rotki/rotki/releases/tag/{new_latest}'
 

@@ -101,7 +101,7 @@ def test_async_login_holds_login_lock(rotkehlchen_api_server: APIServer) -> None
     rest_api = rotkehlchen_api_server.rest_api
     lock_states: list[bool] = []
 
-    def mock_unlock(*args: Any, **kwargs: Any) -> None:
+    def mock_unlock(*args: object, **kwargs: object) -> None:
         lock_states.append(rest_api.login_lock.locked())
         raise AuthenticationError('end the login here')
 

@@ -226,7 +226,7 @@ def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges: APISer
     kraken.use_original_kraken = True
     response_data = '{"'
 
-    def mock_kraken_return(url: str, *args: Any, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
+    def mock_kraken_return(url: str, *args: object, **kwargs: object) -> MockResponse:  # pylint: disable=unused-argument
         return MockResponse(200, response_data)
     kraken_patch = patch.object(kraken.session, 'post', side_effect=mock_kraken_return)
 

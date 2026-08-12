@@ -2,7 +2,7 @@ import random
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -509,7 +509,7 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server: APIServer) -> None
     price_historian.set_oracles_order([HistoricalPriceOracle.COINGECKO])
     coingecko_api_calls = 0
 
-    def mock_coingecko_return(url: str, *args: Any, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
+    def mock_coingecko_return(url: str, *args: object, **kwargs: object) -> MockResponse:  # pylint: disable=unused-argument
         nonlocal coingecko_api_calls
         coingecko_api_calls += 1
         return MockResponse(HTTPStatus.TOO_MANY_REQUESTS, '{}')

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-def assert_default_erc20_info_response(result: Any) -> None:
+def assert_default_erc20_info_response(result: dict[str, object]) -> None:
     assert len(result.keys()) == 3
     for prop, value in result.items():
         if prop == 'decimals':

@@ -474,11 +474,7 @@ def test_edit_delete_nft(rotkehlchen_api_server: APIServer) -> None:
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
 @pytest.mark.parametrize('endpoint', ['nftsbalanceresource', 'nftsresource'])
-<<<<<<< HEAD
-def test_nfts_ignoring_works(rotkehlchen_api_server: APIServer, endpoint: str):
-=======
-def test_nfts_ignoring_works(rotkehlchen_api_server: 'APIServer', endpoint: str) -> None:
->>>>>>> 16b960eb52 (typing:tests/api/* add typing)
+def test_nfts_ignoring_works(rotkehlchen_api_server: APIServer, endpoint: str) -> None:
     """Check that ignoring NFTs work as expected"""
     def mock_get_all_nft_data(
             addresses: list[ChecksumEvmAddress],

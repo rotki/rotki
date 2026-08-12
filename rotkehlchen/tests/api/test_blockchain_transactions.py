@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -75,8 +75,8 @@ def test_decode_given_transactions_custom_indexer(rotkehlchen_api_server: APISer
     available_indexers = node_inquirer.available_indexers
     original_try_indexers = node_inquirer._try_indexers
 
-    def tracking_try_indexers(func: 'Callable[[EtherscanLikeApi], Any]') -> Any:
-        def wrapped(indexer_api: 'EtherscanLikeApi') -> Any:
+    def tracking_try_indexers(func: Callable[[EtherscanLikeApi], object]) -> object:
+        def wrapped(indexer_api: EtherscanLikeApi) -> object:
             for name, candidate in available_indexers.items():
                 if candidate is indexer_api:
                     call_order.append(name)

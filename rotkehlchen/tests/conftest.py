@@ -14,7 +14,7 @@ from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, Popen, check_output  # noqa: S404
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Protocol
 from urllib.parse import parse_qs, urlparse
 
 import freezegun
@@ -58,6 +58,12 @@ freezegun.configure(default_ignore_list=[
 ])
 
 
+class _VcrRequest(Protocol):
+    uri: str
+    method: str
+    body: bytes
+
+
 def _make_vcr_thread_safe() -> None:
     """Serialize vcrpy's global unpatch/repatch windows against connection checkout.
 
@@ -89,11 +95,11 @@ def _make_vcr_thread_safe() -> None:
     vcr.patch.force_reset = locked_force_reset
 
     def make_locked(original_method: Callable) -> Callable:
-        def locked_method(self: Any, *args: Any, **kwargs: Any) -> Callable:
+        def locked_method(self: object, *args: object, **kwargs: object) -> Callable:
             inner = original_method(self, *args, **kwargs)
 
             @wraps(inner)
-            def wrapper(*inner_args: Any, **inner_kwargs: Any) -> Any:
+            def wrapper(*inner_args: object, **inner_kwargs: object) -> object:
                 with vcr_reset_lock:
                     return inner(*inner_args, **inner_kwargs)
 
@@ -119,7 +125,7 @@ def _normalize_solana_rpc_uri(uri: str) -> str:
     return uri.removesuffix('/')
 
 
-def _normalize_solana_rpc_payload(payload: Any) -> Any:
+def _normalize_solana_rpc_payload(payload: object) -> object:
     """Normalize semantically equivalent Solana JSON-RPC request payloads."""
     if isinstance(payload, dict):
         result = {
@@ -176,7 +182,7 @@ def fixture_force_beacon_rpc_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
         node.session = create_session()
         node.rpc_endpoint = rpc_endpoint.rstrip('/')
 
-    def fail_beacon_rpc(*args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
+    def fail_beacon_rpc(*args: object, **kwargs: object) -> None:  # pylint: disable=unused-argument
         raise RemoteError('Beacon RPC intentionally disabled in test')
 
     monkeypatch.setattr(BeaconNode, 'set_rpc_endpoint', set_rpc_endpoint)
@@ -185,7 +191,7 @@ def fixture_force_beacon_rpc_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(BeaconNode, 'query_validators_by_id', fail_beacon_rpc)
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         '--initial-port',
         type=int,
@@ -272,10 +278,10 @@ if sys.platform == 'darwin':
     # we override the pytest tmpdir machinery to produce shorter paths.
 
     @pytest.fixture(scope='session', autouse=True)
-    def _tmpdir_short(request):
+    def _tmpdir_short(request: pytest.FixtureRequest) -> None:
         """Shorten tmpdir paths"""
 
-        def getbasetemp(self):
+        def getbasetemp(self: pytest.TempdirFactory) -> py.path.local:
             """ return base temporary directory. """
             try:
                 return self._basetemp
@@ -302,7 +308,10 @@ if sys.platform == 'darwin':
             del request.config._tmpdirhandler._basetemp
 
     @pytest.fixture
-    def tmpdir(request, tmpdir_factory):
+    def tmpdir(
+            request: pytest.FixtureRequest,
+            tmpdir_factory: pytest.TempPathFactory,
+    ) -> py.path.local:
         """Return a temporary directory path object
         which is unique to each test function invocation,
         created as a sub directory of the base temporary
@@ -319,7 +328,7 @@ if sys.platform == 'darwin':
 
 
 @pytest.fixture(autouse=True, scope='session', name='profiler')
-def _fixture_profiler(request):
+def _fixture_profiler(request: pytest.FixtureRequest) -> Iterator[None]:
     profiler_instance = None
     stack_stream = None
 
@@ -341,7 +350,7 @@ def _fixture_profiler(request):
                 f'Stack data is saved at: {stack_path}',
             ))
             flame = FlameGraphCollector(stack_stream)
-            profiler_instance = TraceSampler(flame)
+            profiler_instance = TraceSampler(flame)  # type: ignore[no-untyped-call]  # tools.profiling is not typed
             yield
 
             if profiler_instance is not None:
@@ -360,7 +369,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
             item.add_marker(skip_accounting_update)
 
 
-def requires_env(allowed_envs: list[TestEnvironment]):
+def requires_env(allowed_envs: list[TestEnvironment]) -> pytest.MarkDecorator:
     """Conditionally run tests if the environment is in the list of allowed environments"""
     try:
         env = TestEnvironment.deserialize(os.environ.get('TEST_ENVIRONMENT', 'standard'))
@@ -434,7 +443,7 @@ def vcr_fixture(vcr: VCR) -> VCR:
 
     vcr.before_record_response = before_record_response
 
-    def beaconchain_matcher(r1, r2):
+    def beaconchain_matcher(r1: _VcrRequest, r2: _VcrRequest) -> bool:
         """
         Special matcher to match beaconcha.in validator query bodies
         no matter the order of validator identifiers.
@@ -458,7 +467,7 @@ def vcr_fixture(vcr: VCR) -> VCR:
 
         return etherscan_matcher(r1, r2)  # other queries in these tests may also be etherscan
 
-    def alchemy_api_matcher(r1, r2):
+    def alchemy_api_matcher(r1: _VcrRequest, r2: _VcrRequest) -> bool:
         """Match Alchemy price API paths, ignoring API key."""
         if (
             (base_url := 'https://api.g.alchemy.com/prices/v1/') and
@@ -471,7 +480,7 @@ def vcr_fixture(vcr: VCR) -> VCR:
             return path1 == path2 and r1.method == r2.method
         return r1.uri == r2.uri and r1.method == r2.method
 
-    def github_branch_matcher(r1, r2):
+    def github_branch_matcher(r1: _VcrRequest, r2: _VcrRequest) -> bool:
         """Match GitHub raw URLs, ignoring the branch part."""
         base_url = 'https://raw.githubusercontent.com/rotki/data/'
         if r1.uri.startswith(base_url) and r2.uri.startswith(base_url):
@@ -482,7 +491,7 @@ def vcr_fixture(vcr: VCR) -> VCR:
             return path1[1:] == path2[1:] and r1.method == r2.method
         return r1.uri == r2.uri and r1.method == r2.method
 
-    def match_rpc_calls(r1, r2):
+    def match_rpc_calls(r1: _VcrRequest, r2: _VcrRequest) -> bool:
         """Match rpc calls ignoring the call id"""
         b1, b2 = json.loads(r1.body), json.loads(r2.body)
         if 'id' in b1:
@@ -492,7 +501,7 @@ def vcr_fixture(vcr: VCR) -> VCR:
 
         return r1.uri == r2.uri and b1 == b2
 
-    def solana_rpc_matcher(r1, r2):
+    def solana_rpc_matcher(r1: _VcrRequest, r2: _VcrRequest) -> bool:
         """Match Solana JSON-RPC calls by method/params while ignoring request id."""
         if 'solana' not in r1.uri and 'solana' not in r2.uri:
             return etherscan_matcher(r1, r2)
@@ -510,7 +519,7 @@ def vcr_fixture(vcr: VCR) -> VCR:
 
         return b1 == b2
 
-    def etherscan_matcher(r1, r2):
+    def etherscan_matcher(r1: _VcrRequest, r2: _VcrRequest) -> bool:
         """Match Etherscan API calls with case-insensitive query parameters.
         This allows old VCR cassettes to still work after refactoring some of the etherscan
         code into the EtherscanLikeApi class, which uses lowercase query parameters to work
@@ -705,7 +714,7 @@ def fixture_vcr_base_dir() -> Path:
 
 
 @pytest.fixture(scope='module')
-def vcr_cassette_dir(request: pytest.FixtureRequest, vcr_base_dir) -> str:
+def vcr_cassette_dir(request: pytest.FixtureRequest, vcr_base_dir: Path) -> str:
     """
     Override pytest-vcr's bundled fixture to store cassettes outside source code
     # pytest-deadfixtures ignore

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(name='metrics_payload')
-def _patched_metrics_fetcher_session() -> 'Iterator[dict[str, Any]]':
+def _patched_metrics_fetcher_session() -> Iterator[dict[str, Any]]:
     stats = LidoCsmNodeOperatorStats(
         operator_type=LidoCsmOperatorType.PERMISSIONLESS,
         current_bond=FVal('1.0'),
@@ -43,7 +43,7 @@ def _patched_metrics_fetcher_session() -> 'Iterator[dict[str, Any]]':
         yield stats.serialize()
 
 
-def _register_eth_account(rotki: 'Rotkehlchen', address: ChecksumEvmAddress) -> None:
+def _register_eth_account(rotki: Rotkehlchen, address: ChecksumEvmAddress) -> None:
     with rotki.data.db.user_write() as cursor:
         rotki.data.db.add_blockchain_accounts(
             write_cursor=cursor,
@@ -54,7 +54,7 @@ def _register_eth_account(rotki: 'Rotkehlchen', address: ChecksumEvmAddress) -> 
         )
 
 
-def test_get_lido_csm_node_operators(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_lido_csm_node_operators(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBLidoCsm(rotki.data.db)
 
@@ -87,7 +87,7 @@ def test_get_lido_csm_node_operators(rotkehlchen_api_server: 'APIServer') -> Non
 
 
 def test_add_lido_csm_node_operator(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         metrics_payload: dict[str, Any],
 ) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -116,7 +116,7 @@ def test_add_lido_csm_node_operator(
 
 
 def test_add_lido_csm_node_operator_requires_tracked_account(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     address = make_evm_address()
     response = requests.put(
@@ -133,7 +133,7 @@ def test_add_lido_csm_node_operator_requires_tracked_account(
     )
 
 
-def test_delete_lido_csm_node_operator(rotkehlchen_api_server: 'APIServer') -> None:
+def test_delete_lido_csm_node_operator(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBLidoCsm(rotki.data.db)
 
@@ -158,7 +158,7 @@ def test_delete_lido_csm_node_operator(rotkehlchen_api_server: 'APIServer') -> N
 
 
 def test_refresh_metrics_endpoint_persists(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         metrics_payload: dict[str, Any],
 ) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -185,7 +185,7 @@ def test_refresh_metrics_endpoint_persists(
 
 
 def test_add_lido_csm_node_operator_returns_warning_on_metrics_failure(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     address = make_evm_address()
@@ -209,7 +209,7 @@ def test_add_lido_csm_node_operator_returns_warning_on_metrics_failure(
     assert 'Failed to fetch metrics' in payload['message']
 
 
-def test_refresh_metrics_endpoint_warns_on_failure(rotkehlchen_api_server: 'APIServer') -> None:
+def test_refresh_metrics_endpoint_warns_on_failure(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBLidoCsm(rotki.data.db)
     address = make_evm_address()

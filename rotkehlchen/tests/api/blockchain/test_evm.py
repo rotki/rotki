@@ -2,7 +2,7 @@ import operator
 import time
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 from unittest.mock import patch
 
 import pytest
@@ -521,7 +521,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
     task_manager_addy = ethereum_accounts[-1]
     api_addies = ethereum_accounts[:2].copy()
 
-    def patch_single_query(**kwargs: Any) -> None:  # pylint: disable=unused-argument
+    def patch_single_query(**kwargs: object) -> None:  # pylint: disable=unused-argument
         while True:
             cancellable_sleep(2)  # dies here with TaskCancelledError when cancelled
 

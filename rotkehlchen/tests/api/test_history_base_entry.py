@@ -103,7 +103,7 @@ def assert_editing_works(
     """A function to assert editing works per entry type. If autoedited is given
     then we check that some fields, given in autoedited, were automatically edited
     and their value derived from other fields"""
-    def edit_entry(attr: str, value: Any) -> None:
+    def edit_entry(attr: str, value: object) -> None:
         if attr in KEYS_IN_ENTRY_TYPE[entry.entry_type]:
             if attr == 'is_mev_reward' and value is True:  # special handling
                 entry.sequence_index = 1

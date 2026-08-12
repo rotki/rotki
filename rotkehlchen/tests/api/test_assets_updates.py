@@ -2,7 +2,7 @@ import json
 import random
 import re
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -29,6 +29,7 @@ from rotkehlchen.types import ChainID, Timestamp, TokenKind
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from contextlib import AbstractContextManager
 
     from rotkehlchen.api.server import APIServer
 
@@ -39,9 +40,18 @@ def count_total_assets() -> int:
         return cursor.fetchone()[0]
 
 
-def mock_asset_updates(original_requests_get: Callable[..., requests.Response], latest: int, updates: dict[str, Any], sql_actions: dict[str, dict[str, str]]) -> Any:  # noqa: E501
+def mock_asset_updates(
+        original_requests_get: Callable[..., requests.Response],
+        latest: int,
+        updates: dict[str, object],
+        sql_actions: dict[str, dict[str, str]],
+) -> AbstractContextManager[object]:
 
-    def mock_requests_get(url: str, *args: Any, **kwargs: Any) -> requests.Response | MockResponse:  # pylint: disable=unused-argument
+    def mock_requests_get(
+            url: str,
+            *args: object,
+            **kwargs: object,
+    ) -> requests.Response | MockResponse:  # pylint: disable=unused-argument
         if 'github' not in url:
             return original_requests_get(url, *args, **kwargs)
 

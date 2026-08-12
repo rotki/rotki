@@ -420,7 +420,7 @@ def test_encoding(
         )
         assert_proper_response(response)
         debug_data = json.loads(
-            (export_dir / 'pnl_debug.json').read_text(newline='', encoding='utf-8'),
+            (export_dir / 'pnl_debug.json').read_text(encoding='utf-8'),
         )
 
         events = debug_data['events']

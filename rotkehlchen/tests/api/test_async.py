@@ -1,6 +1,6 @@
 import time
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -112,7 +112,7 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges: APISe
     binance = try_get_first_exchange(server.rest_api.rotkehlchen.exchange_manager, Location.BINANCE)  # noqa: E501
     assert binance is not None
 
-    def mock_binance_asset_return(*args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
+    def mock_binance_asset_return(*args: object, **kwargs: object) -> None:  # pylint: disable=unused-argument
         raise ValueError('BOOM!')
 
     binance_patch = patch.object(binance.session, 'request', side_effect=mock_binance_asset_return)
@@ -166,7 +166,7 @@ def test_cancel_async_task(rotkehlchen_api_server_with_exchanges: APIServer) -> 
     binance = try_get_first_exchange(server.rest_api.rotkehlchen.exchange_manager, Location.BINANCE)  # noqa: E501
     assert binance is not None
 
-    def mock_binance_asset_return(*args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
+    def mock_binance_asset_return(*args: object, **kwargs: object) -> None:  # pylint: disable=unused-argument
         while True:  # infinite loop so we can cancel it
             cancellable_sleep(1)  # dies here with TaskCancelledError when cancelled
 

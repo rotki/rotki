@@ -2,7 +2,7 @@ import contextlib
 from contextlib import ExitStack
 from datetime import UTC, datetime
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -438,7 +438,7 @@ def test_query_statistics_renderer(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     if start_with_valid_premium:
-        def mock_premium_get(url: str, *_args: Any, **_kwargs: Any) -> MockResponse:
+        def mock_premium_get(url: str, *_args: object, **_kwargs: object) -> MockResponse:
             if 'last_data_metadata' in url:
                 response = (
                     '{"upload_ts": 0, "last_modify_ts": 0, "data_hash": "0x0", "data_size": 0}'
@@ -448,7 +448,11 @@ def test_query_statistics_renderer(
             return MockResponse(200, response)
 
         assert rotki.premium is not None
-        premium_patch: Any = patch.object(rotki.premium.session, 'get', mock_premium_get)
+        premium_patch: contextlib.AbstractContextManager[object] = patch.object(
+            rotki.premium.session,
+            'get',
+            mock_premium_get,
+        )
     else:
         premium_patch = contextlib.nullcontext()
 

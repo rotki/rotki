@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -297,7 +297,7 @@ def test_history_export_csv_errors(
 def test_history_export_csv_free_limit(
         rotkehlchen_api_server_with_exchanges: APIServer,
         start_with_valid_premium: bool,
-        tmpdir_factory: Any,
+        tmpdir_factory: pytest.TempPathFactory,
 ) -> None:
     """Test that the free history events limit is respected."""
     database = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.data.db

@@ -1,5 +1,6 @@
 import time
 from random import randint
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import pytest
@@ -13,8 +14,11 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import Location, TimestampMS
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
-def make_history_event():
+
+def make_history_event() -> HistoryEvent:
     return HistoryEvent(
         group_identifier=uuid4().hex,
         sequence_index=0,
@@ -28,26 +32,35 @@ def make_history_event():
     )
 
 
-def write_events(database, num):
+def write_events(database: DBHandler, num: int) -> None:
     dbevents = DBHistoryEvents(database)
     events = [make_history_event() for _ in range(1, num)]
     with database.user_write() as write_cursor:
         dbevents.add_history_events(write_cursor=write_cursor, history=events)
 
 
-def write_single_event(database, event):
+def write_single_event(database: DBHandler, event: HistoryEvent) -> None:
     dbevents = DBHistoryEvents(database)
     with database.user_write() as write_cursor:
         dbevents.add_history_event(write_cursor, event)
 
 
-def write_single_event_frequently(database, num, sleep_between_writes):
+def write_single_event_frequently(
+        database: DBHandler,
+        num: int,
+        sleep_between_writes: float,
+) -> None:
     for _ in range(num):
         write_single_event(database, make_history_event())
         time.sleep(sleep_between_writes)
 
 
-def read_single_event_frequently(database, num, limit, sleep_between_reads):
+def read_single_event_frequently(
+        database: DBHandler,
+        num: int,
+        limit: int,
+        sleep_between_reads: float,
+) -> None:
     dbevents = DBHistoryEvents(database)
     for _ in range(num):
         with database.conn.read_ctx() as cursor:
@@ -58,7 +71,7 @@ def read_single_event_frequently(database, num, limit, sleep_between_reads):
         time.sleep(sleep_between_reads)
 
 
-def read_events(database, limit):
+def read_events(database: DBHandler, limit: int) -> None:
     dbevents = DBHistoryEvents(database)
     with database.conn.read_ctx() as cursor:
         dbevents.get_history_events_internal(
@@ -68,7 +81,7 @@ def read_events(database, limit):
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [100])
-def test_callback_segfault_simple(database):
+def test_callback_segfault_simple(database: DBHandler) -> None:
     """Test that the async and sqlite progress handler segfault yielding bug does not hit us
     This one is protected against by having the lock inside the callback.
 
@@ -96,7 +109,7 @@ def test_callback_segfault_simple(database):
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [100])
-def test_callback_segfault_complex(database):
+def test_callback_segfault_complex(database: DBHandler) -> None:
     """Test that we protect against the yielding segfault bug that happens when lots
     of complicated actions happen at the same time.
 
@@ -147,7 +160,7 @@ def test_callback_segfault_complex(database):
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [0])
-def test_can_disable_callback(database):  # pylint: disable=unused-argument
+def test_can_disable_callback(database: DBHandler) -> None:  # pylint: disable=unused-argument
     """Simply test that setting sql_vm_instructions_cb to 0 works
 
     This is a regression test since setting to 0 was hitting an assertion before
