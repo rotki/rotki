@@ -3,6 +3,7 @@ import type { TradeLocationData } from '@/modules/core/common/location';
 import type { AddSwapEventPayload, EditSwapEventPayload, SwapEvent } from '@/modules/history/events/schemas';
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { selectorContract } from '@test/utils/selector-contract';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
@@ -92,29 +93,19 @@ describe('forms/SwapEventForm', () => {
     vi.useFakeTimers();
     addHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['addHistoryEvent']>();
     editHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>();
-    vi.mocked(useLocations).mockReturnValue({
-      getExchangeName: vi.fn<ReturnType<typeof useLocations>['getExchangeName']>(),
-      getLocationData: vi.fn<ReturnType<typeof useLocations>['getLocationData']>(),
-      useLocationData: vi.fn<ReturnType<typeof useLocations>['useLocationData']>(),
+    vi.mocked(useLocations).mockReturnValue(createMock<ReturnType<typeof useLocations>>({
       tradeLocations: computed<TradeLocationData[]>(() => [{
         identifier: 'kraken',
         name: 'Kraken',
       }]),
-    });
+    }));
 
-    vi.mocked(useHistoryEvents).mockReturnValue({
+    vi.mocked(useHistoryEvents).mockReturnValue(createMock<ReturnType<typeof useHistoryEvents>>({
       addHistoryEvent: addHistoryEventMock,
-      deleteHistoryEvent: vi.fn<ReturnType<typeof useHistoryEvents>['deleteHistoryEvent']>(),
       editHistoryEvent: editHistoryEventMock,
-      fetchHistoryEvents: vi.fn<ReturnType<typeof useHistoryEvents>['fetchHistoryEvents']>(),
-      getEarliestEventTimestamp: vi.fn<ReturnType<typeof useHistoryEvents>['getEarliestEventTimestamp']>(),
-    });
+    }));
 
-    vi.mocked(useAssetInfoApi).mockReturnValue({
-      assetMapping: vi.fn<ReturnType<typeof useAssetInfoApi>['assetMapping']>(),
-      assetSearch: vi.fn<ReturnType<typeof useAssetInfoApi>['assetSearch']>(),
-      erc20details: vi.fn<ReturnType<typeof useAssetInfoApi>['erc20details']>(),
-    });
+    vi.mocked(useAssetInfoApi).mockReturnValue(createMock<ReturnType<typeof useAssetInfoApi>>());
   });
 
   afterEach(() => {

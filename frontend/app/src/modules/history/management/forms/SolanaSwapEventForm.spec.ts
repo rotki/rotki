@@ -2,6 +2,7 @@ import type { TradeLocationData } from '@/modules/core/common/location';
 import type { AddSolanaSwapEventPayload, EditSolanaSwapEventPayload, SolanaSwapEvent } from '@/modules/history/events/schemas';
 import type { GroupAddEventData, GroupEventData } from '@/modules/history/management/forms/form-types';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { selectorContract } from '@test/utils/selector-contract';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
@@ -125,42 +126,23 @@ describe('forms/SolanaSwapEventForm', () => {
       total: 0,
     });
 
-    vi.mocked(useLocations).mockReturnValue({
-      getExchangeName: vi.fn<ReturnType<typeof useLocations>['getExchangeName']>(),
-      getLocationData: vi.fn<ReturnType<typeof useLocations>['getLocationData']>(),
-      useLocationData: vi.fn<ReturnType<typeof useLocations>['useLocationData']>(),
+    vi.mocked(useLocations).mockReturnValue(createMock<ReturnType<typeof useLocations>>({
       tradeLocations: computed<TradeLocationData[]>(() => [{
         identifier: 'solana',
         name: 'Solana',
       }]),
-    });
+    }));
 
-    vi.mocked(useHistoryEvents).mockReturnValue({
+    vi.mocked(useHistoryEvents).mockReturnValue(createMock<ReturnType<typeof useHistoryEvents>>({
       addHistoryEvent: addHistoryEventMock,
-      deleteHistoryEvent: vi.fn<ReturnType<typeof useHistoryEvents>['deleteHistoryEvent']>(),
       editHistoryEvent: editHistoryEventMock,
-      fetchHistoryEvents: vi.fn<ReturnType<typeof useHistoryEvents>['fetchHistoryEvents']>(),
-      getEarliestEventTimestamp: vi.fn<ReturnType<typeof useHistoryEvents>['getEarliestEventTimestamp']>(),
-    });
+    }));
 
-    vi.mocked(useAssetInfoApi).mockReturnValue({
-      assetMapping: vi.fn<ReturnType<typeof useAssetInfoApi>['assetMapping']>(),
-      assetSearch: vi.fn<ReturnType<typeof useAssetInfoApi>['assetSearch']>(),
-      erc20details: vi.fn<ReturnType<typeof useAssetInfoApi>['erc20details']>(),
-    });
+    vi.mocked(useAssetInfoApi).mockReturnValue(createMock<ReturnType<typeof useAssetInfoApi>>());
 
-    vi.mocked(useAddressesNamesApi).mockReturnValue({
-      addAddressBook: vi.fn<ReturnType<typeof useAddressesNamesApi>['addAddressBook']>(),
-      clearEnsAvatarCache: vi.fn<ReturnType<typeof useAddressesNamesApi>['clearEnsAvatarCache']>(),
-      deleteAddressBook: vi.fn<ReturnType<typeof useAddressesNamesApi>['deleteAddressBook']>(),
-      ensAvatarUrl: vi.fn<ReturnType<typeof useAddressesNamesApi>['ensAvatarUrl']>(),
+    vi.mocked(useAddressesNamesApi).mockReturnValue(createMock<ReturnType<typeof useAddressesNamesApi>>({
       fetchAddressBook: fetchAddressBookMock,
-      getAddressesNames: vi.fn<ReturnType<typeof useAddressesNamesApi>['getAddressesNames']>(),
-      getEnsNames: vi.fn<ReturnType<typeof useAddressesNamesApi>['getEnsNames']>(),
-      getEnsNamesTask: vi.fn<ReturnType<typeof useAddressesNamesApi>['getEnsNamesTask']>(),
-      resolveEnsNames: vi.fn<ReturnType<typeof useAddressesNamesApi>['resolveEnsNames']>(),
-      updateAddressBook: vi.fn<ReturnType<typeof useAddressesNamesApi>['updateAddressBook']>(),
-    });
+    }));
   });
 
   afterEach(() => {

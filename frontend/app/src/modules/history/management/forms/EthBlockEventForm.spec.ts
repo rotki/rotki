@@ -1,6 +1,7 @@
 import type { AssetMap } from '@/modules/assets/types';
 import type { EthBlockEvent } from '@/modules/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { selectorContract } from '@test/utils/selector-contract';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
@@ -73,26 +74,14 @@ describe('forms/EthBlockEventForm.vue', () => {
     addHistoricalPriceMock = vi.fn<ReturnType<typeof useAssetPricesApi>['addHistoricalPrice']>();
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
 
-    vi.mocked(useHistoryEvents).mockReturnValue({
+    vi.mocked(useHistoryEvents).mockReturnValue(createMock<ReturnType<typeof useHistoryEvents>>({
       addHistoryEvent: addHistoryEventMock,
-      deleteHistoryEvent: vi.fn<ReturnType<typeof useHistoryEvents>['deleteHistoryEvent']>(),
       editHistoryEvent: editHistoryEventMock,
-      fetchHistoryEvents: vi.fn<ReturnType<typeof useHistoryEvents>['fetchHistoryEvents']>(),
-      getEarliestEventTimestamp: vi.fn<ReturnType<typeof useHistoryEvents>['getEarliestEventTimestamp']>(),
-    });
+    }));
 
-    vi.mocked(useAssetPricesApi).mockReturnValue({
+    vi.mocked(useAssetPricesApi).mockReturnValue(createMock<ReturnType<typeof useAssetPricesApi>>({
       addHistoricalPrice: addHistoricalPriceMock,
-      addLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['addLatestPrice']>(),
-      assetsHadOraclePrice: vi.fn<ReturnType<typeof useAssetPricesApi>['assetsHadOraclePrice']>(),
-      deleteHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteHistoricalPrice']>(),
-      deleteLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteLatestPrice']>(),
-      editHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['editHistoricalPrice']>(),
-      fetchHistoricalPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchHistoricalPrices']>(),
-      fetchLatestPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchLatestPrices']>(),
-      fetchNftsPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchNftsPrices']>(),
-      fetchOraclePrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchOraclePrices']>(),
-    });
+    }));
   });
 
   afterEach(() => {
