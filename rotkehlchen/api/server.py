@@ -22,6 +22,7 @@ from rotkehlchen.api.session_token import (
     SessionClaims,
     read_mcp_token,
     read_session_token,
+    session_cookie_is_secure,
     set_session_cookie,
     verify_mcp_backend_proof,
 )
@@ -663,7 +664,11 @@ class APIServer:
         ):
             token = self.rest_api.session_store.reissue(session_user, session_sid)
             if token is not None:
-                set_session_cookie(response, token)
+                set_session_cookie(
+                    response=response,
+                    token=token,
+                    secure=session_cookie_is_secure(request.headers),
+                )
 
         # Always pop the internal header so it never leaks to the client.
         log_result = response.headers.pop('rotki-log-result', 'True') == 'True'

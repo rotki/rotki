@@ -125,7 +125,7 @@ pub fn is_default_trusted(ip: IpAddr) -> bool {
 }
 
 /// Whether `ip` may be believed when it forwards a client address.
-fn is_trusted_hop(ip: IpAddr, trusted: &[Cidr]) -> bool {
+pub fn is_trusted_hop(ip: IpAddr, trusted: &[Cidr]) -> bool {
     is_default_trusted(ip) || trusted.iter().any(|cidr| cidr.contains(ip))
 }
 

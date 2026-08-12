@@ -17,6 +17,11 @@ When rotki is set up with the ``ROTKI_SESSION_KEY`` environment variable (the Do
   - Accepts the account ``password`` and issues the session cookie before the asynchronous unlock, so the gated task poll and websocket handshake are authorized.
   - Has no effect when ``ROTKI_SESSION_KEY`` is unset (desktop/Electron deployment), where the API stays session-less as before.
 
+* **New Environment Variable**: ``ROTKI_SESSION_COOKIE_SECURE``
+
+  - Opts the session cookie into the ``Secure`` attribute, which stays off by default because the image serves plain http on loopback or a LAN, where the flag would stop the cookie being sent at all. ``1``/``true`` always sets it; ``forwarded`` derives it per request from ``X-Forwarded-Proto``; an unrecognised value warns and is treated as off.
+  - Starling now normalises ``X-Forwarded-Proto`` on every proxied request, keeping an inbound value only when the peer is a trusted hop (the ``--trusted-proxy`` set the access log already uses) and overwriting it with ``http`` otherwise. Previously the header was passed through untouched, so it must not be trusted by anything reading it on an older build. core cannot judge the hop itself, since it sits on loopback behind starling.
+
 * **New Endpoint**: ``POST /api/(version)/mcp/token``
 
   - Issues an MCP-only bearer linked to the authenticated active session for the streamable HTTP transport exposed by Docker at ``/mcp``. It cannot be used as a REST API session cookie.

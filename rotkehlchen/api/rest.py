@@ -46,6 +46,7 @@ from rotkehlchen.api.session_token import (
     clear_session_cookie,
     read_mcp_token,
     read_session_token,
+    session_cookie_is_secure,
     set_session_cookie,
 )
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData, TaskName
@@ -380,7 +381,11 @@ def async_api_call(session_token: bool = False) -> Callable:
                 response = make_response_from_dict(result)
 
             if token is not None:
-                set_session_cookie(response, token)
+                set_session_cookie(
+                    response=response,
+                    token=token,
+                    secure=session_cookie_is_secure(request.headers),
+                )
             return response
 
         return inner
@@ -1232,7 +1237,11 @@ class RestAPI:
                     self.api_tasks_stop_reason = None
 
         response = api_response(_wrap_in_ok_result({}), status_code=HTTPStatus.OK)
-        set_session_cookie(response, token)
+        set_session_cookie(
+            response=response,
+            token=token,
+            secure=session_cookie_is_secure(request.headers),
+        )
         return response
 
     def issue_mcp_token(self) -> Response:
@@ -1482,7 +1491,10 @@ class RestAPI:
         # Electron/dev logout response).
         if self.session_store is not None:
             self.session_store.revoke(name)
-            clear_session_cookie(response)
+            clear_session_cookie(
+                response=response,
+                secure=session_cookie_is_secure(request.headers),
+            )
         return response
 
     def user_set_premium_credentials(

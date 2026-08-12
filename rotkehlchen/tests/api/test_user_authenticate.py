@@ -7,6 +7,7 @@ cookie's `sid` is the single active session (so a new login revokes old windows 
 `rest_api` (the same live-attribute trick the backend tests use), so the gate is
 exercised end-to-end through real HTTP.
 """
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
@@ -25,8 +26,10 @@ from rotkehlchen.api.session_store import (
     is_persisted_mcp_session_active,
 )
 from rotkehlchen.api.session_token import (
+    FORWARDED_PROTO_HEADER,
     MCP_BACKEND_PROOF_HEADER,
     SESSION_COOKIE_NAME,
+    SESSION_COOKIE_SECURE_ENV,
     SESSION_IDLE_TTL,
     create_mcp_backend_proof,
     mint_session_token,
@@ -162,6 +165,134 @@ def test_authenticate_sets_cookie_for_correct_password(
         set_cookie_header = response.headers['Set-Cookie']
         assert 'HttpOnly' in set_cookie_header
         assert 'SameSite=Lax' in set_cookie_header
+        # Not Secure by default: the docker deployment is plain http on loopback or a
+        # LAN, where the flag would stop the cookie being sent at all.
+        assert 'Secure' not in set_cookie_header
+    finally:
+        _disable_session(rotkehlchen_api_server)
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+@pytest.mark.parametrize(('env_value', 'forwarded_proto', 'expect_secure'), [
+    (None, None, False),  # unset: today's behaviour
+    (None, 'https', False),  # the header alone must not be enough
+    ('1', None, True),  # always on, for a proxy that sends no header
+    ('true', None, True),
+    ('0', 'https', False),  # explicitly off stays off
+    ('forwarded', 'https', True),  # derived from the (starling-sanitized) header
+    ('forwarded', 'http', False),
+    ('forwarded', None, False),  # absent header is not a claim
+    # A chain is read leftmost-first, the same way starling reads it, so the two
+    # parses cannot drift. starling writes a single token today, so this only
+    # matters if that ever changes.
+    ('forwarded', 'https, http', True),
+    ('forwarded', 'http, https', False),
+    ('nonsense', 'https', False),  # unrecognised is off, and warns
+])
+def test_session_cookie_secure_is_opt_in(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+        env_value: str | None,
+        forwarded_proto: str | None,
+        expect_secure: bool,
+) -> None:
+    """`Secure` is off unless ROTKI_SESSION_COOKIE_SECURE asks for it.
+
+    In `forwarded` mode the X-Forwarded-Proto header decides. Trusting it is only
+    safe because starling rewrites that header on every proxied request, keeping
+    an inbound value solely when the peer is a trusted hop; core sits on loopback
+    and cannot tell a spoofed one from a real one itself.
+    """
+    _logout(rotkehlchen_api_server, username)
+    _enable_session(rotkehlchen_api_server)
+    url = api_url_for(rotkehlchen_api_server, 'userauthenticateresource', name=username)
+    env = {} if env_value is None else {SESSION_COOKIE_SECURE_ENV: env_value}
+    headers = {} if forwarded_proto is None else {FORWARDED_PROTO_HEADER: forwarded_proto}
+    try:
+        with patch.dict(os.environ, env, clear=False):
+            if env_value is None:  # patch.dict cannot unset, so do it explicitly
+                os.environ.pop(SESSION_COOKIE_SECURE_ENV, None)
+            response = requests.post(url, json={'password': '123'}, headers=headers)
+
+        assert_proper_sync_response_with_result(response)
+        set_cookie_header = response.headers['Set-Cookie']
+        assert ('Secure' in set_cookie_header) is expect_secure
+        # The other attributes are unaffected by the flag.
+        assert 'HttpOnly' in set_cookie_header
+        assert 'SameSite=Lax' in set_cookie_header
+    finally:
+        _disable_session(rotkehlchen_api_server)
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+@pytest.mark.parametrize('secure', [False, True])
+def test_logout_clears_the_cookie_with_matching_attributes(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+        secure: bool,
+) -> None:
+    """The clearing cookie tracks the scheme, like the one it replaces.
+
+    Clearing does not *depend* on the flags matching (a cookie is keyed on name,
+    domain and path, not on `Secure`), but the two must not disagree: a browser
+    refuses a `Secure` cookie that arrives over plaintext, so a clear that set
+    the flag on a plain-http response would be dropped and leave the live cookie
+    in place.
+    """
+    store = _enable_session(rotkehlchen_api_server)
+    env = {SESSION_COOKIE_SECURE_ENV: '1'} if secure else {}
+    try:
+        token = store.login(username)  # the fixture's user is already unlocked
+        with patch.dict(os.environ, env, clear=False):
+            if not secure:
+                os.environ.pop(SESSION_COOKIE_SECURE_ENV, None)
+            response = requests.patch(
+                api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+                json={'action': 'logout'},
+                cookies={SESSION_COOKIE_NAME: token},
+            )
+
+        assert_proper_sync_response_with_result(response)
+        cleared = response.headers['Set-Cookie']
+        # It really is the clearing cookie, not another live one.
+        assert 'Expires=Thu, 01 Jan 1970' in cleared or 'Max-Age=0' in cleared
+        assert ('Secure' in cleared) is secure
+        assert 'HttpOnly' in cleared
+        assert 'SameSite=Lax' in cleared
+    finally:
+        _disable_session(rotkehlchen_api_server)
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_rolling_refresh_carries_secure(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+) -> None:
+    """The rolling re-issue marks `Secure` too.
+
+    This is the path that fires on an ordinary authenticated request rather than
+    at login, so it is where a missed `secure=` would silently downgrade the
+    cookie for the rest of the session.
+    """
+    store = _enable_session(rotkehlchen_api_server)
+    now = int(time.time())
+    try:
+        # a cookie already past half its idle window, so the response rolls it forward
+        old_token = mint_session_token(
+            SESSION_KEY,
+            username,
+            _cookie_sid(store.login(username)),
+            expires_at=now + SESSION_IDLE_TTL // 4,
+        )['token']
+        with patch.dict(os.environ, {SESSION_COOKIE_SECURE_ENV: '1'}, clear=False):
+            response = requests.get(
+                api_url_for(rotkehlchen_api_server, 'settingsresource'),
+                cookies={SESSION_COOKIE_NAME: old_token},
+            )
+
+        assert response.status_code == HTTPStatus.OK
+        assert SESSION_COOKIE_NAME in response.cookies  # it did re-issue
+        assert 'Secure' in response.headers['Set-Cookie']
     finally:
         _disable_session(rotkehlchen_api_server)
 
@@ -614,6 +745,38 @@ def test_failed_create_revokes_the_minted_session(
         assert_error_response(response=response, status_code=HTTPStatus.BAD_REQUEST)
         assert SESSION_COOKIE_NAME not in response.cookies  # no live cookie shipped
         assert store.active_sid('ghost') is None  # the minted session was revoked
+    finally:
+        _disable_session(rotkehlchen_api_server)
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [False])
+@pytest.mark.parametrize('secure', [False, True])
+def test_created_account_cookie_carries_secure(
+        rotkehlchen_api_server: APIServer,
+        secure: bool,
+) -> None:
+    """Account creation mints its own cookie, on a different code path to login.
+
+    The mint happens in the `session_token=True` decorator rather than in
+    `authenticate_user`, so it needs its own assertion: a new account is the one
+    case where the very first cookie a browser ever receives comes from here.
+    """
+    _enable_session(rotkehlchen_api_server)
+    env = {SESSION_COOKIE_SECURE_ENV: '1'} if secure else {}
+    try:
+        with patch.dict(os.environ, env, clear=False):
+            if not secure:
+                os.environ.pop(SESSION_COOKIE_SECURE_ENV, None)
+            response = requests.put(
+                api_url_for(rotkehlchen_api_server, 'usersresource'),
+                json={'name': 'freshuser', 'password': '123'},
+            )
+
+        assert_proper_sync_response_with_result(response)
+        set_cookie_header = response.headers['Set-Cookie']
+        assert ('Secure' in set_cookie_header) is secure
+        assert 'HttpOnly' in set_cookie_header
+        assert 'SameSite=Lax' in set_cookie_header
     finally:
         _disable_session(rotkehlchen_api_server)
 
