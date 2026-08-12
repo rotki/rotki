@@ -470,6 +470,7 @@ function showResetConfirmation() {
           {{ t('common.actions.cancel') }}
         </RuiButton>
         <RuiButton
+          data-testid="onboarding-setting__reset-button"
           variant="outlined"
           color="primary"
           @click="showResetConfirmation()"
