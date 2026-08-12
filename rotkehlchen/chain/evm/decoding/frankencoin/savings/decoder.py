@@ -9,7 +9,6 @@ from rotkehlchen.chain.evm.decoding.frankencoin.constants import (
 )
 from rotkehlchen.chain.evm.decoding.frankencoin.decoder import FrankencoinCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_EVM_DECODING_OUTPUT
-from rotkehlchen.constants.assets import A_ZCHF
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.utils.misc import bytes_to_address
 
@@ -45,6 +44,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
         )
         self.savings_address = SUPPORTED_ZCHF_SAVINGS_CHAINS[evm_inquirer.chain_id]
         self.zchf_address = ZCHF_ADDRESS[evm_inquirer.chain_id]
+        self.zchf = self.base.get_or_create_evm_token(address=self.zchf_address)
 
     def _get_transfer_party(
             self,
@@ -99,83 +99,11 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
             token_decimals=ZCHF_DECIMALS,
         )
 
-        if topic in (SAVED_TOPIC, WITHDRAWN_TOPIC):
-            # ZCHF emits its Transfer immediately before the Savings event.
-            event = context.decoded_events[-1] if context.decoded_events else None
-            if (
-                event is not None and
-                topic == SAVED_TOPIC and
-                event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.NONE and
-                event.amount == amount and
-                event.address == self.savings_address and
-                event.asset == A_ZCHF
-            ):
-                event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
-                event.counterparty = CPT_FRANKENCOIN
-                if event.location_label == user_address:
-                    event.notes = f'Deposit {amount} zCHF in Frankencoin Savings Module'
-                else:
-                    # Attribute an on-behalf deposit to its savings owner.
-                    payer = event.location_label
-                    event.notes = f'Deposit {amount} zCHF in Frankencoin Savings Module by {payer}'
-                    event.location_label = user_address
-
-            elif (
-                    event is not None and
-                    topic == WITHDRAWN_TOPIC and
-                    event.event_type == HistoryEventType.RECEIVE and
-                    event.event_subtype == HistoryEventSubType.NONE and
-                    event.amount == amount and
-                    event.address == self.savings_address and
-                    event.asset == A_ZCHF
-            ):
-                event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
-                event.counterparty = CPT_FRANKENCOIN
-                if event.location_label == user_address:
-                    event.notes = f'Withdraw {amount} zCHF from Frankencoin Savings Module'
-                else:
-                    # Attribute a withdrawal sent elsewhere to its savings owner.
-                    receiver = event.location_label
-                    event.notes = (
-                        f'Withdraw {amount} zCHF from Frankencoin Savings Module to {receiver}'
-                    )
-                    event.location_label = user_address
-
-            else:
-                # An untracked endpoint produces no decoded transfer, so inspect its raw log.
-                transfer_party = self._get_transfer_party(context=context, amount=amount)
-
-                if topic == SAVED_TOPIC:
-                    event_type = HistoryEventType.DEPOSIT
-                    event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
-                    notes = f'Deposit {amount} zCHF in Frankencoin Savings Module'
-                    if transfer_party is not None:
-                        notes += f' paid by {transfer_party}'
-
-                else:
-                    event_type = HistoryEventType.WITHDRAWAL
-                    event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
-                    notes = f'Withdraw {amount} zCHF from Frankencoin Savings Module'
-                    if transfer_party is not None:
-                        notes += f' sent to {transfer_party}'
-
-                context.decoded_events.append(self.base.make_event_from_transaction(
-                        transaction=context.transaction,
-                        tx_log=context.tx_log,
-                        event_type=event_type,
-                        event_subtype=event_subtype,
-                        asset=A_ZCHF,
-                        amount=amount,
-                        location_label=user_address,
-                        notes=notes,
-                        counterparty=CPT_FRANKENCOIN,
-                        address=self.savings_address,
-                    ))
-
-        elif topic == INTEREST_COLLECTED_TOPIC:
+        if topic == SAVED_TOPIC:
+            self.decode_saved_topic(context, amount, user_address)
+        elif topic == WITHDRAWN_TOPIC:
+            self.decode_withdrawn_topic(context, amount, user_address)
+        else:
             # This is internal accounting; only net interest accrues to the saver.
             referral_fee = token_normalized_value_decimals(
                 token_amount=int.from_bytes(context.tx_log.data[32:64]),
@@ -187,7 +115,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.INTEREST,
-                asset=A_ZCHF,
+                asset=self.zchf,
                 amount=amount,
                 location_label=user_address,
                 notes=f'Received {amount} zCHF as interests in Frankencoin Savings Module',
@@ -196,6 +124,100 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
             ))
 
         return DEFAULT_EVM_DECODING_OUTPUT
+
+    def decode_saved_topic(
+            self,
+            context: DecoderContext,
+            amount: FVal,
+            user_address: ChecksumEvmAddress,
+    ) -> None:
+        event = context.decoded_events[-1] if context.decoded_events else None
+        if (
+                event is not None and
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.amount == amount and
+                event.address == self.savings_address and
+                event.asset == self.zchf
+        ):
+            event.event_type = HistoryEventType.DEPOSIT
+            event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
+            event.counterparty = CPT_FRANKENCOIN
+            if event.location_label == user_address:
+                event.notes = f'Deposit {amount} zCHF in Frankencoin Savings Module'
+            else:
+                # Attribute an on-behalf deposit to its savings owner.
+                payer = event.location_label
+                event.notes = f'Deposit {amount} zCHF in Frankencoin Savings Module by {payer}'
+                event.location_label = user_address
+        else:
+            # Deposit initiated from an untracked address
+            transfer_party = self._get_transfer_party(context=context, amount=amount)
+            event_type = HistoryEventType.DEPOSIT
+            event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
+            notes = f'Deposit {amount} zCHF in Frankencoin Savings Module'
+            if transfer_party is not None:
+                notes += f' paid by {transfer_party}'
+            context.decoded_events.append(self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=event_type,
+                event_subtype=event_subtype,
+                asset=self.zchf,
+                amount=amount,
+                location_label=user_address,
+                notes=notes,
+                counterparty=CPT_FRANKENCOIN,
+                address=self.savings_address,
+            ))
+
+    def decode_withdrawn_topic(
+            self,
+            context: DecoderContext,
+            amount: FVal,
+            user_address: ChecksumEvmAddress,
+    ) -> None:
+        event = context.decoded_events[-1] if context.decoded_events else None
+        if (
+            event is not None and
+            event.event_type == HistoryEventType.RECEIVE and
+            event.event_subtype == HistoryEventSubType.NONE and
+            event.amount == amount and
+            event.address == self.savings_address and
+            event.asset == self.zchf
+        ):
+            event.event_type = HistoryEventType.WITHDRAWAL
+            event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
+            event.counterparty = CPT_FRANKENCOIN
+            if event.location_label == user_address:
+                event.notes = f'Withdraw {amount} zCHF from Frankencoin Savings Module'
+            else:
+                # Attribute a withdrawal sent elsewhere to its savings owner.
+                receiver = event.location_label
+                event.notes = (
+                    f'Withdraw {amount} zCHF from Frankencoin Savings Module to {receiver}'
+                )
+                event.location_label = user_address
+        else:
+            # Withdrawal sent to an untracked address
+            transfer_party = self._get_transfer_party(context=context, amount=amount)
+            event_type = HistoryEventType.WITHDRAWAL
+            event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
+            notes = f'Withdraw {amount} zCHF from Frankencoin Savings Module'
+            if transfer_party is not None:
+                notes += f' sent to {transfer_party}'
+            context.decoded_events.append(self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=event_type,
+                event_subtype=event_subtype,
+                asset=self.zchf,
+                amount=amount,
+                location_label=user_address,
+                notes=notes,
+                counterparty=CPT_FRANKENCOIN,
+                address=self.savings_address,
+            ))
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         """Run the savings decoder only for logs emitted by this chain's deployment."""

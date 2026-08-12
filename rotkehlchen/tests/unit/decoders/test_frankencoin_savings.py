@@ -49,6 +49,7 @@ def _make_savings_decoder(*, tracked: bool) -> FrankencoinSavingsCommonDecoder:
     decoder.base.is_tracked.return_value = tracked
     decoder.savings_address = SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ETHEREUM]
     decoder.zchf_address = ZCHF_ADDRESS[ChainID.ETHEREUM]
+    decoder.zchf = A_ZCHF
     return decoder
 
 
@@ -108,7 +109,6 @@ def test_savings_event_handles_log_missing_from_receipt():
 
     assert decoder._decode_savings_event(context) == DEFAULT_EVM_DECODING_OUTPUT
     assert context.decoded_events == [expected_event]
-    assert decoder.base.make_event_from_transaction.call_args.kwargs['extra_data'] is None
 
 
 def test_savings_event_handles_invalid_preceding_log():
@@ -135,20 +135,18 @@ def test_savings_event_handles_invalid_preceding_log():
         'notes': 'Withdraw 1 zCHF from Frankencoin Savings Module',
         'counterparty': CPT_FRANKENCOIN,
         'address': decoder.savings_address,
-        'extra_data': None,
     }
 
 
-@pytest.mark.parametrize(('topic', 'initial_type', 'expected_type', 'expected_subtype', 'party_key', 'notes_connector'), [  # noqa: E501
-    (SAVED_TOPIC, HistoryEventType.SPEND, HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL, 'payer', 'by'),  # noqa: E501
-    (WITHDRAWN_TOPIC, HistoryEventType.RECEIVE, HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL, 'receiver', 'to'),  # noqa: E501
+@pytest.mark.parametrize(('topic', 'initial_type', 'expected_type', 'expected_subtype', 'notes_connector'), [  # noqa: E501
+    (SAVED_TOPIC, HistoryEventType.SPEND, HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL, 'by'),  # noqa: E501
+    (WITHDRAWN_TOPIC, HistoryEventType.RECEIVE, HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL, 'to'),  # noqa: E501
 ])
 def test_savings_event_attributes_existing_transfer_to_owner(
         topic,
         initial_type,
         expected_type,
         expected_subtype,
-        party_key,
         notes_connector,
 ):
     decoder = _make_savings_decoder(tracked=True)
@@ -167,7 +165,6 @@ def test_savings_event_attributes_existing_transfer_to_owner(
     assert event.event_subtype == expected_subtype
     assert event.counterparty == CPT_FRANKENCOIN
     assert event.location_label == '0x1111111111111111111111111111111111111111'
-    assert event.extra_data == {party_key: party_address}
     assert f'{notes_connector} {party_address}' in event.notes
 
 
@@ -188,7 +185,6 @@ def test_savings_event_rejects_unrelated_preceding_transfer():
 
     assert decoder._decode_savings_event(context) == DEFAULT_EVM_DECODING_OUTPUT
     assert context.decoded_events == [expected_event]
-    assert decoder.base.make_event_from_transaction.call_args.kwargs['extra_data'] is None
 
 
 def test_interest_collection_subtracts_referral_fee():
@@ -290,10 +286,9 @@ def test_deposit_for_another_owner(ethereum_inquirer, ethereum_accounts):
         amount=FVal(deposit_amount := '4011.94983856871879408'),
         location_label=ethereum_accounts[0],
         notes=f'Deposit {deposit_amount} zCHF in Frankencoin Savings Module paid by '
-              f'{(payer_address := "0xef91ECd0142aE4C5163B2CF060c0563d49188C82")}',
+              '0xef91ECd0142aE4C5163B2CF060c0563d49188C82',
         counterparty=CPT_FRANKENCOIN,
         address=SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ETHEREUM],
-        extra_data={'payer': payer_address},
     )]
 
 
@@ -378,10 +373,9 @@ def test_withdrawal_to_another_address(ethereum_inquirer, ethereum_accounts):
             amount=FVal(withdrawal_amount := '10.18221443981002012'),
             location_label=user_address,
             notes=f'Withdraw {withdrawal_amount} zCHF from Frankencoin Savings Module sent to '
-                  f'{(receiver_address := "0x841FcB6309bD7BDE43890B7bE7E55E3eE86ABc39")}',
+                  '0x841FcB6309bD7BDE43890B7bE7E55E3eE86ABc39',
             counterparty=CPT_FRANKENCOIN,
             address=SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ETHEREUM],
-            extra_data={'receiver': receiver_address},
         ),
     ]
 

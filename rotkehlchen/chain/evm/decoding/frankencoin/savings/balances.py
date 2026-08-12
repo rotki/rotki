@@ -50,7 +50,7 @@ class FrankencoinSavingsBalances(ProtocolWithBalance):
     def query_balances(self) -> BalancesSheetType:
         """Return deposited ZCHF plus accrued interest for addresses with prior deposits."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(addresses := list(self.addresses_with_deposits())) == 0:
+        if len(addresses := list(dict.fromkeys(self.addresses_with_deposits()))) == 0:
             return balances
 
         # Calls are interleaved so every two responses belong to the same address.
