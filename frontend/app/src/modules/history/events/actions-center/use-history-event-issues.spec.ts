@@ -26,10 +26,19 @@ const state = {
   refreshDataIssuesSummary: vi.fn<() => Promise<void>>(),
   refreshUnmatchedAssetMovements: vi.fn<() => Promise<void>>(),
   refreshUnmatchedBridgeTransactions: vi.fn<() => Promise<void>>(),
+  trackedEntitiesLoading: ref(false),
+  tracksNothing: ref(false),
   undecodedCount: ref(0),
   unmatchedBridgesCount: ref(0),
   unmatchedMovementsCount: ref(0),
 };
+
+vi.mock('@/modules/accounts/use-tracked-entities', () => ({
+  useTrackedEntities: (): object => ({
+    loading: state.trackedEntitiesLoading,
+    tracksNothing: state.tracksNothing,
+  }),
+}));
 
 vi.mock('@/modules/history/events/use-unmatched-asset-movements', () => ({
   useUnmatchedAssetMovements: (): object => ({
@@ -134,6 +143,8 @@ describe('useHistoryEventIssues', () => {
     set(state.logged, true);
     set(state.matchingAllowed, true);
     set(state.processing, false);
+    set(state.trackedEntitiesLoading, false);
+    set(state.tracksNothing, false);
     set(state.undecodedCount, 0);
     set(state.unmatchedBridgesCount, 0);
     set(state.unmatchedMovementsCount, 0);
@@ -144,13 +155,13 @@ describe('useHistoryEventIssues', () => {
   });
 
   it('should report no issues when every count is zero', () => {
-    const { activeIssues, categoryCount, clearedIssues, hasIssues, issues } = useHistoryEventIssues();
+    const { activeItems, categoryCount, clearedItems, hasItems, issues } = useHistoryEventIssues();
 
-    expect(get(issues)).toHaveLength(6);
-    expect(get(activeIssues)).toEqual([]);
-    expect(get(clearedIssues)).toHaveLength(6);
+    expect(get(issues)).toHaveLength(7);
+    expect(get(activeItems)).toEqual([]);
+    expect(get(clearedItems)).toHaveLength(7);
     expect(get(categoryCount)).toBe(0);
-    expect(get(hasIssues)).toBe(false);
+    expect(get(hasItems)).toBe(false);
   });
 
   it('should count categories and not items', () => {
@@ -159,17 +170,18 @@ describe('useHistoryEventIssues', () => {
     set(state.internalConflictsCount, 957);
     set(state.undecodedCount, 47);
 
-    const { activeIssues, categoryCount, clearedIssues, hasIssues } = useHistoryEventIssues();
+    const { activeItems, categoryCount, clearedItems, hasItems } = useHistoryEventIssues();
 
     expect(get(categoryCount)).toBe(4);
-    expect(get(hasIssues)).toBe(true);
-    expect(get(activeIssues).map(issue => issue.id)).toEqual([
+    expect(get(hasItems)).toBe(true);
+    expect(get(activeItems).map(issue => issue.id)).toEqual([
       HISTORY_ISSUE_IDS.UNMATCHED_MOVEMENTS,
       HISTORY_ISSUE_IDS.UNMATCHED_BRIDGES,
       HISTORY_ISSUE_IDS.INTERNAL_CONFLICTS,
       HISTORY_ISSUE_IDS.UNDECODED,
     ]);
-    expect(get(clearedIssues).map(issue => issue.id)).toEqual([
+    expect(get(clearedItems).map(issue => issue.id)).toEqual([
+      HISTORY_ISSUE_IDS.NO_TRACKED_ACCOUNTS,
       HISTORY_ISSUE_IDS.AUTO_FIX_DUPLICATES,
       HISTORY_ISSUE_IDS.MANUAL_REVIEW_DUPLICATES,
     ]);
@@ -179,10 +191,10 @@ describe('useHistoryEventIssues', () => {
     set(state.unmatchedMovementsCount, 5);
     set(state.autoMatchLoading, true);
 
-    const { activeIssues, categoryCount } = useHistoryEventIssues();
+    const { activeItems, categoryCount } = useHistoryEventIssues();
 
     expect(get(categoryCount)).toBe(0);
-    expect(get(activeIssues)).toEqual([]);
+    expect(get(activeItems)).toEqual([]);
 
     set(state.autoMatchLoading, false);
 
@@ -245,32 +257,32 @@ describe('useHistoryEventIssues', () => {
     set(state.unmatchedBridgesCount, 38);
     set(state.undecodedCount, 47);
 
-    const { activeIssues, categoryCount, lockedIssues } = useHistoryEventIssues();
+    const { activeItems, categoryCount, lockedItems } = useHistoryEventIssues();
 
     expect(get(categoryCount)).toBe(1);
-    expect(get(activeIssues).map(issue => issue.id)).toEqual([HISTORY_ISSUE_IDS.UNDECODED]);
-    expect(get(lockedIssues).map(issue => issue.id)).toEqual([
+    expect(get(activeItems).map(issue => issue.id)).toEqual([HISTORY_ISSUE_IDS.UNDECODED]);
+    expect(get(lockedItems).map(issue => issue.id)).toEqual([
       HISTORY_ISSUE_IDS.UNMATCHED_MOVEMENTS,
       HISTORY_ISSUE_IDS.UNMATCHED_BRIDGES,
     ]);
-    expect(get(lockedIssues)[0].minimumTier).toBe('Basic');
+    expect(get(lockedItems)[0].minimumTier).toBe('Basic');
   });
 
   it('should not lock anything when the matching capability is available', () => {
     set(state.unmatchedBridgesCount, 38);
 
-    const { lockedIssues } = useHistoryEventIssues();
+    const { lockedItems } = useHistoryEventIssues();
 
-    expect(get(lockedIssues)).toEqual([]);
+    expect(get(lockedItems)).toEqual([]);
   });
 
   it('should offer the ignored items for review once nothing is left unmatched', () => {
     set(state.ignoredMovementsCount, 4);
 
-    const { activeIssues, categoryCount, reviewIssues } = useHistoryEventIssues();
-    const [movements] = get(reviewIssues);
+    const { activeItems, categoryCount, reviewItems } = useHistoryEventIssues();
+    const [movements] = get(reviewItems);
 
-    expect(get(activeIssues)).toEqual([]);
+    expect(get(activeItems)).toEqual([]);
     expect(get(categoryCount)).toBe(0);
     expect(movements.id).toBe(HISTORY_ISSUE_IDS.UNMATCHED_MOVEMENTS);
     expect(movements.count).toBe(4);
@@ -282,10 +294,10 @@ describe('useHistoryEventIssues', () => {
     set(state.ignoredMovementsCount, 4);
     set(state.unmatchedMovementsCount, 2);
 
-    const { activeIssues, reviewIssues } = useHistoryEventIssues();
+    const { activeItems, reviewItems } = useHistoryEventIssues();
 
-    expect(get(reviewIssues)).toEqual([]);
-    expect(get(activeIssues)[0].count).toBe(2);
+    expect(get(reviewItems)).toEqual([]);
+    expect(get(activeItems)[0].count).toBe(2);
   });
 
   it('should send a cleared duplicates category to the dialog rather than the filtered list', () => {
@@ -315,9 +327,57 @@ describe('useHistoryEventIssues', () => {
     await refreshAll();
 
     expect(get(issues).map(issue => issue.id)).not.toContain(HISTORY_ISSUE_IDS.DATA_ISSUES);
-    expect(get(issues)).toHaveLength(6);
+    expect(get(issues)).toHaveLength(7);
     // The summary costs four requests, so it must not be paid for a hidden row.
     expect(state.refreshDataIssuesSummary).not.toHaveBeenCalled();
+  });
+
+  describe('the tracked accounts row', () => {
+    it('should raise it first when the user tracks nothing, pointing at the add-account page', () => {
+      set(state.tracksNothing, true);
+
+      const { activeItems, categoryCount } = useHistoryEventIssues();
+      const [row] = get(activeItems);
+
+      expect(get(categoryCount)).toBe(1);
+      expect(row.id).toBe(HISTORY_ISSUE_IDS.NO_TRACKED_ACCOUNTS);
+      expect(row.count).toBe(1);
+      expect(row.severity).toBe('warning');
+      expect(row.target).toEqual({ kind: 'route', to: { name: '/balances/blockchain/' } });
+    });
+
+    it('should lead the list, since every other count is legitimately zero', () => {
+      set(state.tracksNothing, true);
+      set(state.undecodedCount, 47);
+
+      const { activeItems } = useHistoryEventIssues();
+
+      expect(get(activeItems).map(issue => issue.id)).toEqual([
+        HISTORY_ISSUE_IDS.NO_TRACKED_ACCOUNTS,
+        HISTORY_ISSUE_IDS.UNDECODED,
+      ]);
+    });
+
+    it('should clear it once anything at all is tracked', () => {
+      const { activeItems, clearedItems } = useHistoryEventIssues();
+
+      expect(get(activeItems)).toEqual([]);
+      expect(get(clearedItems).map(issue => issue.id)).toContain(HISTORY_ISSUE_IDS.NO_TRACKED_ACCOUNTS);
+    });
+
+    it('should not raise it while the accounts are still being read', () => {
+      set(state.tracksNothing, true);
+      set(state.trackedEntitiesLoading, true);
+
+      const { activeItems, categoryCount } = useHistoryEventIssues();
+
+      expect(get(categoryCount)).toBe(0);
+      expect(get(activeItems)).toEqual([]);
+
+      set(state.trackedEntitiesLoading, false);
+
+      expect(get(categoryCount)).toBe(1);
+    });
   });
 
   describe('with the inbox enabled', () => {
@@ -327,21 +387,21 @@ describe('useHistoryEventIssues', () => {
 
     it('should raise a data issues row that opens the inbox in the pinned rail', () => {
       set(state.dataIssuesCount, 4);
-      const { activeIssues, issues } = useHistoryEventIssues();
+      const { activeItems, issues } = useHistoryEventIssues();
       const row = get(issues).find(issue => issue.id === HISTORY_ISSUE_IDS.DATA_ISSUES);
 
-      expect(get(issues)).toHaveLength(7);
+      expect(get(issues)).toHaveLength(8);
       expect(row?.count).toBe(4);
       expect(row?.severity).toBe('warning');
       expect(row?.target).toEqual({ kind: 'pin', panel: { name: PinnedNames.DATA_ISSUES, props: {} } });
-      expect(get(activeIssues).map(issue => issue.id)).toContain(HISTORY_ISSUE_IDS.DATA_ISSUES);
+      expect(get(activeItems).map(issue => issue.id)).toContain(HISTORY_ISSUE_IDS.DATA_ISSUES);
     });
 
     it('should clear the data issues row when nothing is actionable', () => {
-      const { activeIssues, clearedIssues } = useHistoryEventIssues();
+      const { activeItems, clearedItems } = useHistoryEventIssues();
 
-      expect(get(activeIssues)).toEqual([]);
-      expect(get(clearedIssues).map(issue => issue.id)).toContain(HISTORY_ISSUE_IDS.DATA_ISSUES);
+      expect(get(activeItems)).toEqual([]);
+      expect(get(clearedItems).map(issue => issue.id)).toContain(HISTORY_ISSUE_IDS.DATA_ISSUES);
     });
 
     it('should refresh the inbox summary alongside the other sources', async () => {

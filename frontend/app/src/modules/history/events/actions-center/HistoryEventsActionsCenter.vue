@@ -2,10 +2,11 @@
 import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import type { DialogShowOptions } from '@/modules/history/events/dialog-types';
 import { startPromise } from '@shared/utils';
+import ActionCenterList from '@/modules/core/action-center/ActionCenterList.vue';
+import ActionCenterMenu from '@/modules/core/action-center/ActionCenterMenu.vue';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
-import HistoryEventsActionsList from '@/modules/history/events/actions-center/HistoryEventsActionsList.vue';
-import { type HistoryIssueTarget, useHistoryEventIssues } from '@/modules/history/events/actions-center/use-history-event-issues';
+import { type HistoryEventIssue, type HistoryIssueTarget, useHistoryEventIssues } from '@/modules/history/events/actions-center/use-history-event-issues';
 import { useUndecodedTransactionsCount } from '@/modules/history/events/tx/use-undecoded-transactions-count';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
@@ -23,15 +24,24 @@ const open = ref<boolean>(false);
 const { processing } = useHistoryEventsStatus();
 const { autoMatchLoading } = useUnmatchedAssetMovements();
 const { autoMatchLoading: bridgeAutoMatchLoading } = useUnmatchedBridgeTransactions();
-const { categoryCount, checking, hasIssues, refreshAll } = useHistoryEventIssues();
+const {
+  activeItems,
+  categoryCount,
+  checking,
+  clearedItems,
+  lockedItems,
+  refreshAll,
+  refreshing,
+  reviewItems,
+} = useHistoryEventIssues();
 const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsCount();
 const { pinPanel } = useAreaVisibilityStore();
 
 const settled = useRefWithDebounce(logicOr(processing, autoMatchLoading, bridgeAutoMatchLoading), 200);
 
-const tooltip = computed<string>(() => get(checking)
-  ? t('transactions.alerts.button_checking')
-  : t('transactions.alerts.button_clear'));
+// Locked and ignored-only rows sit under the actionable ones: their counts are
+// real information, but neither asks the user to do something right now.
+const rows = computed<HistoryEventIssue[]>(() => [...get(activeItems), ...get(reviewItems), ...get(lockedItems)]);
 
 async function openDuplicates(groupIds: string[], status: DuplicateHandlingStatus): Promise<void> {
   await router.push({
@@ -45,16 +55,24 @@ async function openDuplicates(groupIds: string[], status: DuplicateHandlingStatu
 
 function openTarget(target: HistoryIssueTarget): void {
   set(open, false);
-  if (target.kind === 'dialog') {
-    emit('show:dialog', target.options);
-  }
-  else if (target.kind === 'pin') {
-    // `pinPanel` focuses the tab and reveals the rail, so the panel opens beside
-    // the table whether or not it was already pinned.
-    pinPanel(target.panel);
-  }
-  else {
-    startPromise(openDuplicates(target.groupIds, target.status));
+  switch (target.kind) {
+    case 'dialog':
+      emit('show:dialog', target.options);
+      break;
+    case 'duplicates':
+      startPromise(openDuplicates(target.groupIds, target.status));
+      break;
+    case 'pin':
+      // `pinPanel` focuses the tab and reveals the rail, so the panel opens beside
+      // the table whether or not it was already pinned.
+      pinPanel(target.panel);
+      break;
+    case 'route':
+      startPromise(router.push(target.to));
+      break;
+    case 'run':
+      target.run();
+      break;
   }
 }
 
@@ -74,64 +92,21 @@ onMounted(() => {
 </script>
 
 <template>
-  <RuiMenu
+  <ActionCenterMenu
     v-model="open"
-    :popper="{ placement: 'bottom-end' }"
-    menu-class="w-[36rem] max-w-[90vw]"
+    :count="categoryCount"
+    :checking="checking"
   >
-    <template #activator="{ attrs }">
-      <RuiButton
-        v-if="hasIssues"
-        size="lg"
-        variant="outlined"
-        color="warning"
-        class="!rounded-full !bg-rui-warning/10 [&>span]:!hidden lg:[&>span]:!inline"
-        data-testid="actions-center-button"
-        v-bind="attrs"
-      >
-        <template #prepend>
-          <RuiIcon
-            name="lu-triangle-alert"
-            size="18"
-          />
-        </template>
-
-        {{ t('transactions.alerts.button') }}
-
-        <template #append>
-          <span
-            class="ml-1 min-w-5 px-1.5 rounded-full bg-rui-warning text-white text-caption font-medium leading-5 text-center"
-            data-testid="actions-center-button-count"
-          >
-            {{ categoryCount }}
-          </span>
-        </template>
-      </RuiButton>
-
-      <RuiTooltip
-        v-else
-        :popper="{ placement: 'bottom' }"
-        :open-delay="400"
-      >
-        <template #activator>
-          <RuiButton
-            variant="text"
-            icon
-            size="lg"
-            class="!text-rui-text-secondary"
-            data-testid="actions-center-button"
-            :aria-label="tooltip"
-            v-bind="attrs"
-          >
-            <!-- static icon on purpose: the sync panel and the pending-task list already
-                 carry the motion, a third spinner here would only add noise -->
-            <RuiIcon :name="checking ? 'lu-circle-dashed' : 'lu-circle-check'" />
-          </RuiButton>
-        </template>
-        {{ tooltip }}
-      </RuiTooltip>
-    </template>
-
-    <HistoryEventsActionsList @open="openTarget($event)" />
-  </RuiMenu>
+    <ActionCenterList
+      :items="rows"
+      :cleared="clearedItems"
+      :count="categoryCount"
+      :checking="checking"
+      :refreshing="refreshing"
+      :checking-hint="t('transactions.alerts.subtitle_checking')"
+      :clear-hint="t('transactions.alerts.subtitle_clear')"
+      @open="openTarget($event)"
+      @refresh="startPromise(refreshAll())"
+    />
+  </ActionCenterMenu>
 </template>
