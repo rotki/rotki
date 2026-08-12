@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { z } from 'zod';
+import * as z from 'zod/mini';
 
 /**
  * The on-disk half of {@link PasswordManager}, replacing electron-store.

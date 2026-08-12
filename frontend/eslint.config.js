@@ -217,6 +217,13 @@ export default rotki({
   files: ['app/electron/**/*.ts', 'app/shared/**/*.ts'],
   rules: {
     'no-restricted-imports': ['error', {
+      // Matched by exact name, so `zod/mini` itself is untouched. Classic zod does not tree-shake:
+      // its chained methods keep the whole surface reachable, and it measured 421.9 KB here against
+      // 112.4 KB for mini. One classic import anywhere in this graph brings all of it back.
+      paths: [{
+        name: 'zod',
+        message: 'Use `zod/mini` under electron/ and shared/. Classic zod costs the main bundle ~310 KB more.',
+      }],
       patterns: [{
         group: ['vue', 'vue-*', '@vue/*', '@vueuse/*'],
         message: 'The electron main/preload bundles are plain Node. A vue or @vueuse import drags the vue runtime and compiler into them.',
