@@ -34,11 +34,16 @@ import binascii
 import hashlib
 import hmac
 import json
+import logging
+import os
 import time
-from typing import TYPE_CHECKING, Final, NamedTuple, TypedDict
+from typing import TYPE_CHECKING, Final, Literal, NamedTuple, TypedDict
 
 if TYPE_CHECKING:
+    from werkzeug.datastructures import Headers
     from werkzeug.wrappers import Response
+
+log = logging.getLogger(__name__)
 
 # Token lifetime. Matters mainly for a stable Docker key; on expiry the validators
 # return 401 and the frontend falls back to its login redirect.
@@ -57,6 +62,13 @@ SESSION_ABSOLUTE_TTL: Final = 7 * 24 * 60 * 60  # 7 days
 
 # Name of the signed HttpOnly cookie carrying the session token.
 SESSION_COOKIE_NAME: Final = 'rotki_session'
+
+# Opt-in control over the cookie's `Secure` attribute. See `cookie_secure_mode`.
+SESSION_COOKIE_SECURE_ENV: Final = 'ROTKI_SESSION_COOKIE_SECURE'
+
+# Set by starling on every proxied request, never passed through from the client.
+FORWARDED_PROTO_HEADER: Final = 'X-Forwarded-Proto'
+
 MCP_BACKEND_PROOF_HEADER: Final = 'X-Rotki-MCP-Proof'
 MCP_TOKEN_AUDIENCE: Final = 'mcp'
 _MCP_TOKEN_KEY_CONTEXT: Final = b'rotki-mcp-access-v1'
@@ -76,13 +88,67 @@ class MintedSessionToken(TypedDict):
     exp: int
 
 
-def set_session_cookie(response: Response, token: str) -> None:
+def cookie_secure_mode() -> Literal['off', 'on', 'forwarded']:
+    """Read ``ROTKI_SESSION_COOKIE_SECURE``.
+
+    ``off`` (unset) keeps the cookie usable over plain http, which is what a
+    loopback or LAN deployment needs. ``on`` always marks it ``Secure``, for an
+    operator who knows TLS is terminated in front and whose proxy may not send
+    ``X-Forwarded-Proto``. ``forwarded`` derives it per request from that header.
+
+    An unrecognised value warns rather than silently meaning ``off``: this
+    decides whether a credential may cross a plaintext connection, so a typo
+    must not quietly leave it unset.
+    """
+    raw = os.environ.get(SESSION_COOKIE_SECURE_ENV, '').strip().lower()
+    if raw in {'', '0', 'false', 'no', 'off'}:
+        return 'off'
+    if raw in {'1', 'true', 'yes', 'on'}:
+        return 'on'
+    if raw == 'forwarded':
+        return 'forwarded'
+
+    log.warning(
+        'Unrecognised %s value %r; treating it as "off" so the session cookie is not '
+        'marked Secure. Use "1", "forwarded" or leave it unset.',
+        SESSION_COOKIE_SECURE_ENV,
+        raw,
+    )
+    return 'off'
+
+
+def session_cookie_is_secure(headers: Headers) -> bool:
+    """Whether the session cookie should carry ``Secure`` for this request.
+
+    In ``forwarded`` mode this trusts ``X-Forwarded-Proto``, which is safe only
+    because starling rewrites that header on every proxied request, keeping an
+    inbound value solely when the peer is a trusted hop. core cannot make that
+    judgement itself: it sits on loopback behind starling, so every request
+    looks like it came from ``127.0.0.1``.
+    """
+    mode = cookie_secure_mode()
+    if mode == 'on':
+        return True
+    if mode == 'forwarded':
+        # Read the leftmost entry, the same way starling does. It always writes a
+        # single token, so today the two agree on any input; parsing it the same
+        # way here means they cannot drift apart if that ever stops being true.
+        raw = headers.get(FORWARDED_PROTO_HEADER, '')
+        return raw.split(',')[0].strip().lower() == 'https'
+    return False
+
+
+def set_session_cookie(response: Response, token: str, secure: bool = False) -> None:
     """Attach the signed session token as the HttpOnly ``rotki_session`` cookie.
 
     ``HttpOnly`` keeps it out of JS (XSS can't exfiltrate it); ``SameSite=Lax``
     stops a third-party site riding it on a navigation while still allowing the
-    same-origin SPA. Not ``Secure`` — the Docker deployment is plain http on
-    loopback / a LAN; a TLS terminator in front can upgrade it.
+    same-origin SPA.
+
+    ``secure`` defaults to off because the Docker deployment is plain http on
+    loopback / a LAN, where the flag would stop the cookie being sent at all.
+    Behind a TLS terminator the operator turns it on with
+    ``ROTKI_SESSION_COOKIE_SECURE``; see :func:`session_cookie_is_secure`.
     """
     response.set_cookie(
         SESSION_COOKIE_NAME,
@@ -91,12 +157,26 @@ def set_session_cookie(response: Response, token: str) -> None:
         httponly=True,
         samesite='Lax',
         path='/',
+        secure=secure,
     )
 
 
-def clear_session_cookie(response: Response) -> None:
-    """Delete the session cookie (logout)."""
-    response.delete_cookie(SESSION_COOKIE_NAME, path='/')
+def clear_session_cookie(response: Response, secure: bool = False) -> None:
+    """Delete the session cookie (logout).
+
+    ``path`` must match the one it was set with, since a cookie is keyed on
+    (name, domain, path). The flags are *not* part of that key, so clearing does
+    not depend on them matching; ``secure`` is passed to keep the clearing cookie
+    consistent with the scheme of the request it answers, which in ``forwarded``
+    mode is the scheme the live cookie was set under.
+    """
+    response.delete_cookie(
+        SESSION_COOKIE_NAME,
+        path='/',
+        httponly=True,
+        samesite='Lax',
+        secure=secure,
+    )
 
 
 def _b64url(raw: bytes) -> str:
