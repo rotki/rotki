@@ -2,6 +2,7 @@ import type { AssetMap } from '@/modules/assets/types';
 import type { TradeLocationData } from '@/modules/core/common/location';
 import type { BitcoinEvent } from '@/modules/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { selectorContract } from '@test/utils/selector-contract';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
@@ -85,10 +86,7 @@ describe('forms/BitcoinEventForm.vue', () => {
     editHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>();
     addHistoricalPriceMock = vi.fn<ReturnType<typeof useAssetPricesApi>['addHistoricalPrice']>();
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
-    vi.mocked(useLocations).mockReturnValue({
-      getExchangeName: vi.fn<ReturnType<typeof useLocations>['getExchangeName']>(),
-      getLocationData: vi.fn<ReturnType<typeof useLocations>['getLocationData']>(),
-      useLocationData: vi.fn<ReturnType<typeof useLocations>['useLocationData']>(),
+    vi.mocked(useLocations).mockReturnValue(createMock<ReturnType<typeof useLocations>>({
       tradeLocations: computed<TradeLocationData[]>(() => [{
         identifier: 'bitcoin',
         name: 'Bitcoin',
@@ -96,36 +94,20 @@ describe('forms/BitcoinEventForm.vue', () => {
         identifier: 'bitcoin_cash',
         name: 'Bitcoin Cash',
       }]),
-    });
-    vi.mocked(useHistoryEvents).mockReturnValue({
+    }));
+    vi.mocked(useHistoryEvents).mockReturnValue(createMock<ReturnType<typeof useHistoryEvents>>({
       addHistoryEvent: addHistoryEventMock,
-      deleteHistoryEvent: vi.fn<ReturnType<typeof useHistoryEvents>['deleteHistoryEvent']>(),
       editHistoryEvent: editHistoryEventMock,
-      fetchHistoryEvents: vi.fn<ReturnType<typeof useHistoryEvents>['fetchHistoryEvents']>(),
-      getEarliestEventTimestamp: vi.fn<ReturnType<typeof useHistoryEvents>['getEarliestEventTimestamp']>(),
-    });
-    vi.mocked(useAssetPricesApi).mockReturnValue({
+    }));
+    vi.mocked(useAssetPricesApi).mockReturnValue(createMock<ReturnType<typeof useAssetPricesApi>>({
       addHistoricalPrice: addHistoricalPriceMock,
-      addLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['addLatestPrice']>(),
-      assetsHadOraclePrice: vi.fn<ReturnType<typeof useAssetPricesApi>['assetsHadOraclePrice']>(),
-      deleteHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteHistoricalPrice']>(),
-      deleteLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteLatestPrice']>(),
-      editHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['editHistoricalPrice']>(),
-      fetchHistoricalPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchHistoricalPrices']>(),
-      fetchLatestPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchLatestPrices']>(),
-      fetchNftsPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchNftsPrices']>(),
-      fetchOraclePrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchOraclePrices']>(),
-    });
-    vi.mocked(useHistoryEventCounterpartyMappings).mockReturnValue({
+    }));
+    vi.mocked(useHistoryEventCounterpartyMappings).mockReturnValue(createMock<ReturnType<typeof useHistoryEventCounterpartyMappings>>({
       counterparties: computed<string[]>(() => [
         'test-counterparty',
         'uniswap',
       ]),
-      fetchCounterparties: vi.fn<ReturnType<typeof useHistoryEventCounterpartyMappings>['fetchCounterparties']>(),
-      getBaseCounterpartyData: vi.fn<ReturnType<typeof useHistoryEventCounterpartyMappings>['getBaseCounterpartyData']>(),
-      getCounterpartyData: vi.fn<ReturnType<typeof useHistoryEventCounterpartyMappings>['getCounterpartyData']>(),
-      getEventCounterpartyData: vi.fn<ReturnType<typeof useHistoryEventCounterpartyMappings>['getEventCounterpartyData']>(),
-    });
+    }));
   });
 
   afterEach(() => {

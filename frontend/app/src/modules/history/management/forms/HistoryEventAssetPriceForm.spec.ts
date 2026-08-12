@@ -1,6 +1,7 @@
 import type { Pinia } from 'pinia';
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { bigNumberify } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
@@ -38,11 +39,7 @@ describe('forms/HistoryEventAssetPriceForm', () => {
     const { findCurrency } = useCurrencies();
     updateGeneralSettings({ mainCurrency: findCurrency('USD') });
 
-    vi.mocked(useAssetInfoApi).mockReturnValue({
-      assetMapping: vi.fn<ReturnType<typeof useAssetInfoApi>['assetMapping']>(),
-      assetSearch: vi.fn<ReturnType<typeof useAssetInfoApi>['assetSearch']>(),
-      erc20details: vi.fn<ReturnType<typeof useAssetInfoApi>['erc20details']>(),
-    });
+    vi.mocked(useAssetInfoApi).mockReturnValue(createMock<ReturnType<typeof useAssetInfoApi>>());
   });
 
   afterEach(() => {

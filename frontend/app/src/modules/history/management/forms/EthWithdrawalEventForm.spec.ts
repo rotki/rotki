@@ -1,6 +1,7 @@
 import type { AssetMap } from '@/modules/assets/types';
 import type { EthWithdrawalEvent } from '@/modules/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { selectorContract } from '@test/utils/selector-contract';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
@@ -27,9 +28,7 @@ vi.mock('@/modules/history/events/use-history-events', () => ({
 }));
 
 vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
-  useAssetPricesApi: vi.fn().mockReturnValue({
-    addHistoricalPrice: vi.fn(),
-  }),
+  useAssetPricesApi: vi.fn(),
 }));
 
 describe('forms/EthWithdrawalEventForm.vue', () => {
@@ -80,33 +79,15 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     editHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>();
     addHistoricalPriceMock = vi.fn<ReturnType<typeof useAssetPricesApi>['addHistoricalPrice']>();
     const assetMapping = vi.fn().mockResolvedValue(mapping);
-    // @ts-expect-error partial store mock for test
-    vi.mocked(useBalancePricesStore).mockReturnValue({});
-    vi.mocked(useAssetInfoApi).mockReturnValue({
-      assetMapping,
-      assetSearch: vi.fn<ReturnType<typeof useAssetInfoApi>['assetSearch']>(),
-      erc20details: vi.fn<ReturnType<typeof useAssetInfoApi>['erc20details']>(),
-    });
-    vi.mocked(useHistoryEvents).mockReturnValue({
+    vi.mocked(useBalancePricesStore).mockReturnValue(createMock<ReturnType<typeof useBalancePricesStore>>());
+    vi.mocked(useAssetInfoApi).mockReturnValue(createMock<ReturnType<typeof useAssetInfoApi>>({ assetMapping }));
+    vi.mocked(useHistoryEvents).mockReturnValue(createMock<ReturnType<typeof useHistoryEvents>>({
       addHistoryEvent: addHistoryEventMock,
-      deleteHistoryEvent: vi.fn<ReturnType<typeof useHistoryEvents>['deleteHistoryEvent']>(),
       editHistoryEvent: editHistoryEventMock,
-      fetchHistoryEvents: vi.fn<ReturnType<typeof useHistoryEvents>['fetchHistoryEvents']>(),
-      getEarliestEventTimestamp: vi.fn<ReturnType<typeof useHistoryEvents>['getEarliestEventTimestamp']>(),
-    });
-
-    vi.mocked(useAssetPricesApi).mockReturnValue({
+    }));
+    vi.mocked(useAssetPricesApi).mockReturnValue(createMock<ReturnType<typeof useAssetPricesApi>>({
       addHistoricalPrice: addHistoricalPriceMock,
-      addLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['addLatestPrice']>(),
-      assetsHadOraclePrice: vi.fn<ReturnType<typeof useAssetPricesApi>['assetsHadOraclePrice']>(),
-      deleteHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteHistoricalPrice']>(),
-      deleteLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteLatestPrice']>(),
-      editHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['editHistoricalPrice']>(),
-      fetchHistoricalPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchHistoricalPrices']>(),
-      fetchLatestPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchLatestPrices']>(),
-      fetchNftsPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchNftsPrices']>(),
-      fetchOraclePrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchOraclePrices']>(),
-    });
+    }));
   });
 
   afterEach(() => {
