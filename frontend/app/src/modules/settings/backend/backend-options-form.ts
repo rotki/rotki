@@ -1,6 +1,7 @@
 import type { BackendOptions } from '@shared/ipc';
 import type { DefaultBackendArguments } from '@/modules/shell/app/backend';
 import { isEqual } from 'es-toolkit';
+import { z, type ZodType } from 'zod';
 
 /** The three numeric settings that carry a reset-to-default button. */
 export type AdvancedBackendField = 'files' | 'size' | 'instructions';
@@ -94,6 +95,51 @@ export function hasBackendOptionChanges(
   initial: Partial<BackendOptions>,
 ): boolean {
   return !isEqual(toBackendOptions(fields), initial);
+}
+
+/** The three validated fields, which are the only ones the form schema covers. */
+export interface BackendNumericFields {
+  maxLogFiles: string;
+  maxLogSize: string;
+  sqliteInstructions: string;
+}
+
+export type BackendNumericField = keyof BackendNumericFields;
+
+export interface BackendNumericMessages {
+  /** Already translated, not i18n keys: the bound message interpolates its own minimum. */
+  nonEmpty: string;
+  min: string;
+}
+
+/**
+ * Digits with an optional fractional part, and no sign. This is vuelidate's
+ * `numeric`, kept verbatim: it is the rule that actually rejects a bad value,
+ * because a signed value never reaches the `minValue(0)` it was paired with.
+ * Loosening it to a plain "is a number, and >= 0" would accept exponent
+ * notation, which `parseValue` then truncates to its mantissa.
+ */
+const DIGITS = /^\d*(?:\.\d+)?$/;
+
+function backendNumericField(messages: BackendNumericMessages): ZodType<string> {
+  return z.string().superRefine((value, ctx) => {
+    // Both issues can fire at once, in this order, for a whitespace-only value:
+    // it is not digits, and it is empty once trimmed.
+    if (!DIGITS.test(value))
+      ctx.addIssue({ code: 'custom', message: messages.min });
+
+    if (value.trim() === '')
+      ctx.addIssue({ code: 'custom', message: messages.nonEmpty });
+  });
+}
+
+export function backendNumericSchema(messages: BackendNumericMessages): ZodType {
+  const field = backendNumericField(messages);
+  return z.object({
+    maxLogFiles: field,
+    maxLogSize: field,
+    sqliteInstructions: field,
+  });
 }
 
 /**

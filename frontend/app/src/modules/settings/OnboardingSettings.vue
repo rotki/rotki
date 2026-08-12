@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import type { BackendOptions } from '@shared/ipc';
 import type { BackendConfiguration } from '@/modules/shell/app/backend';
-import useVuelidate from '@vuelidate/core';
-import { and, helpers, minValue, numeric, required } from '@vuelidate/validators';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useForm } from '@/modules/core/form/use-form';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import AdvancedBackendSettings from '@/modules/settings/backend/AdvancedBackendSettings.vue';
 import { resolveInitialBackendOptions } from '@/modules/settings/backend/backend-initial-options';
 import {
   type AdvancedBackendField,
   backendDefaultsState,
+  type BackendNumericField,
+  type BackendNumericFields,
+  backendNumericSchema,
   type BackendOptionsFormFields,
   diffBackendOptions,
   hasBackendOptionChanges,
@@ -35,11 +36,6 @@ const { dataDirectory, defaultBackendArguments } = storeToRefs(useMainStore());
 const userDataDirectory = ref<string>('');
 const userLogDirectory = ref<string>('');
 const logFromOtherModules = ref<boolean>(false);
-const valid = ref<boolean>(false);
-
-const maxLogSize = ref<string>('0');
-const sqliteInstructions = ref<string>('0');
-const maxLogFiles = ref<string>('0');
 
 const { backendSettings } = useSettingsApi();
 const { applyLogLevelChange } = useLogLevelUpdate();
@@ -50,6 +46,32 @@ const configuration = ref<BackendConfiguration>();
 
 async function loadConfiguration(): Promise<void> {
   set(configuration, await backendSettings());
+}
+
+/**
+ * Only the three numeric fields are validated, so the form owns just those.
+ * Everything else stays on plain refs, and whether anything changed is still a
+ * comparison against the initial options rather than the form's own baseline.
+ * `submit` is a no-op: `save()` decides between a full save and a log-level
+ * only update, and referencing it from here would be a cycle.
+ */
+const form = useForm<BackendNumericFields, BackendNumericFields>({
+  initial: (): BackendNumericFields => ({ maxLogFiles: '0', maxLogSize: '0', sqliteInstructions: '0' }),
+  schema: backendNumericSchema({
+    min: t('backend_settings.errors.min', { min: 0 }),
+    nonEmpty: t('backend_settings.errors.non_empty'),
+  }),
+  submit: async (): Promise<{ success: boolean }> => ({ success: true }),
+  transform: (state): BackendNumericFields => ({ ...state }),
+});
+
+/** `form.valid` is a `ComputedRef` on a plain object, so a template binding would never unwrap it. */
+const invalid = computed<boolean>(() => !get(form.valid));
+
+/** Vuelidate ran with `$autoDirty`, so an edited field showed its error straight away. */
+function updateField(field: BackendNumericField, value: string): void {
+  form.state[field] = value;
+  form.touch(field);
 }
 
 const {
@@ -88,9 +110,11 @@ async function loaded() {
   set(userDataDirectory, initial.dataDirectory);
   set(userLogDirectory, initial.logDirectory);
   set(logFromOtherModules, initial.logFromOtherModules);
-  set(maxLogFiles, stringifyValue(initial.maxLogfilesNum));
-  set(maxLogSize, stringifyValue(initial.maxSizeInMbAllLogs));
-  set(sqliteInstructions, stringifyValue(initial.sqliteInstructions));
+  form.reset({
+    maxLogFiles: stringifyValue(initial.maxLogfilesNum),
+    maxLogSize: stringifyValue(initial.maxSizeInMbAllLogs),
+    sqliteInstructions: stringifyValue(initial.sqliteInstructions),
+  });
 }
 
 const formFields = computed<BackendOptionsFormFields>(() => ({
@@ -98,9 +122,9 @@ const formFields = computed<BackendOptionsFormFields>(() => ({
   logDirectory: get(userLogDirectory),
   logFromOtherModules: get(logFromOtherModules),
   loglevel: get(modelLogLevel),
-  maxLogFiles: get(maxLogFiles),
-  maxLogSize: get(maxLogSize),
-  sqliteInstructions: get(sqliteInstructions),
+  maxLogFiles: form.state.maxLogFiles,
+  maxLogSize: form.state.maxLogSize,
+  sqliteInstructions: form.state.sqliteInstructions,
 }));
 
 const atDefaults = computed(() => backendDefaultsState(get(formFields), get(defaultBackendArguments)));
@@ -108,11 +132,11 @@ const atDefaults = computed(() => backendDefaultsState(get(formFields), get(defa
 function resetDefaultArguments(field: AdvancedBackendField): void {
   const defaults = get(defaultBackendArguments);
   if (field === 'files')
-    set(maxLogFiles, stringifyValue(defaults.maxLogfilesNum));
+    updateField('maxLogFiles', stringifyValue(defaults.maxLogfilesNum));
   else if (field === 'size')
-    set(maxLogSize, stringifyValue(defaults.maxSizeInMbAllLogs));
+    updateField('maxLogSize', stringifyValue(defaults.maxSizeInMbAllLogs));
   else if (field === 'instructions')
-    set(sqliteInstructions, stringifyValue(defaults.sqliteInstructions));
+    updateField('sqliteInstructions', stringifyValue(defaults.sqliteInstructions));
 }
 
 const newUserOptions = computed<Partial<BackendOptions>>(() => diffBackendOptions(get(formFields), get(initialOptions)));
@@ -120,31 +144,6 @@ const newUserOptions = computed<Partial<BackendOptions>>(() => diffBackendOption
 const anyValueChanged = computed<boolean>(() => hasBackendOptionChanges(get(formFields), get(initialOptions)));
 
 const { openDirectory } = useInterop();
-
-const nonNegativeNumberRules = {
-  nonNegative: helpers.withMessage(t('backend_settings.errors.min', { min: 0 }), and(numeric, minValue(0))),
-  required: helpers.withMessage(t('backend_settings.errors.non_empty'), required),
-};
-
-const rules = {
-  maxLogFiles: nonNegativeNumberRules,
-  maxLogSize: nonNegativeNumberRules,
-  sqliteInstructions: nonNegativeNumberRules,
-};
-
-const v$ = useVuelidate(
-  rules,
-  {
-    maxLogFiles,
-    maxLogSize,
-    sqliteInstructions,
-  },
-  { $autoDirty: true },
-);
-
-watch(v$, ({ $invalid }) => {
-  set(valid, !$invalid);
-});
 
 async function reset() {
   set(confirmReset, false);
@@ -310,16 +309,19 @@ function showResetConfirmation() {
         </template>
         <AdvancedBackendSettings
           v-model:log-from-other-modules="logFromOtherModules"
-          v-model:max-log-files="maxLogFiles"
-          v-model:max-log-size="maxLogSize"
-          v-model:sqlite-instructions="sqliteInstructions"
           :at-defaults="atDefaults"
           :file-config="fileConfig"
           :loading="!configuration || !defaultBackendArguments"
-          :max-log-files-errors="toMessages(v$.maxLogFiles)"
-          :max-log-size-errors="toMessages(v$.maxLogSize)"
-          :sqlite-instructions-errors="toMessages(v$.sqliteInstructions)"
+          :max-log-files="form.state.maxLogFiles"
+          :max-log-files-errors="form.errors('maxLogFiles')"
+          :max-log-size="form.state.maxLogSize"
+          :max-log-size-errors="form.errors('maxLogSize')"
+          :sqlite-instructions="form.state.sqliteInstructions"
+          :sqlite-instructions-errors="form.errors('sqliteInstructions')"
           @reset="resetDefaultArguments($event)"
+          @update:max-log-files="updateField('maxLogFiles', $event)"
+          @update:max-log-size="updateField('maxLogSize', $event)"
+          @update:sqlite-instructions="updateField('sqliteInstructions', $event)"
         />
       </RuiAccordion>
     </RuiAccordions>
@@ -344,7 +346,7 @@ function showResetConfirmation() {
         <RuiButton
           data-testid="onboarding-setting__submit-button"
           color="primary"
-          :disabled="!anyValueChanged || !valid"
+          :disabled="!anyValueChanged || invalid"
           type="submit"
           @click="save()"
         >
