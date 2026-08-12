@@ -131,7 +131,8 @@ function onKeydown(event: KeyboardEvent): void {
         :class="index === highlighted
           ? 'bg-rui-primary/10 text-rui-primary'
           : 'text-rui-text-primary hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800'"
-        :data-testid="`pill-menu-field-${field.key}`"
+        data-testid="pill-menu-field"
+        :data-field="field.key"
         @mousemove="highlighted = index"
         @click="emit('select', field)"
       >

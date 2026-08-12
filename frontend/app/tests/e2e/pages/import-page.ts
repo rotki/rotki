@@ -28,14 +28,14 @@ export class ImportPage {
   }
 
   async uploadFile(sourceKey: string, csvFileName: string): Promise<void> {
-    const container = this.page.locator(`[data-testid="import-source-${sourceKey}"]`);
+    const container = this.page.locator(`[data-testid=import-source][data-key="${sourceKey}"]`);
     const fileInput = container.locator('[data-testid=file-input]');
     const filePath = path.resolve(BACKEND_TEST_DATA, csvFileName);
     await fileInput.setInputFiles(filePath);
   }
 
   async selectTimezone(sourceKey: string, timezone: string): Promise<void> {
-    const container = this.page.locator(`[data-testid="import-source-${sourceKey}"]`);
+    const container = this.page.locator(`[data-testid=import-source][data-key="${sourceKey}"]`);
     await container.getByTestId('import-timezone-switch').locator('input').click();
     const select = container.getByTestId('import-timezone-select');
     await select.waitFor({ state: 'visible' });
@@ -49,12 +49,12 @@ export class ImportPage {
   }
 
   async submitImport(sourceKey: string): Promise<void> {
-    const container = this.page.locator(`[data-testid="import-source-${sourceKey}"]`);
+    const container = this.page.locator(`[data-testid=import-source][data-key="${sourceKey}"]`);
     await container.locator('[data-testid=button-import]').click();
   }
 
   async waitForImportComplete(sourceKey: string): Promise<void> {
-    const container = this.page.locator(`[data-testid="import-source-${sourceKey}"]`);
+    const container = this.page.locator(`[data-testid=import-source][data-key="${sourceKey}"]`);
     await container.locator('[data-testid=import-complete]').waitFor({ state: 'visible', timeout: TIMEOUT_LONG });
   }
 

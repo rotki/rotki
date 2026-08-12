@@ -253,7 +253,8 @@ defineExpose({
           color="primary"
           size="sm"
           :disabled="disabled"
-          :data-testid="`xpub-disambiguation-${option.value}`"
+          data-testid="xpub-disambiguation-option"
+          :data-key="option.value"
           @click="resolveDisambiguation(option.value)"
         >
           <div class="flex flex-col items-start">

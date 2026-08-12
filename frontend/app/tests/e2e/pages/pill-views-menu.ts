@@ -27,7 +27,7 @@ export class PillViewsMenu {
 
   /** A view's row, found by its name rather than its position, which shifts as views come and go. */
   private row(name: string): Locator {
-    return this.page.locator('[data-testid^=pill-views-apply-]').filter({ hasText: name });
+    return this.page.locator('[data-testid=pill-views-apply]').filter({ hasText: name });
   }
 
   /** Names the bar's current filters and saves them as a view. Leaves the menu open. */
@@ -45,7 +45,7 @@ export class PillViewsMenu {
   async remove(name: string): Promise<void> {
     const row = this.row(name);
     // The delete control is the row's sibling, so step up to the row wrapper to reach it.
-    await row.locator('xpath=..').locator('[data-testid^=pill-views-delete-]').click();
+    await row.locator('xpath=..').locator('[data-testid=pill-views-delete]').click();
     await expect(row).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
   }
 

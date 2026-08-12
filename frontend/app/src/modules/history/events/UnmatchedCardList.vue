@@ -156,7 +156,8 @@ watch(() => items.length, (length) => {
               '!bg-rui-primary/5': isSelected(item),
             },
           ]"
-          :data-testid="`unmatched-card-${rowKey(item)}`"
+          data-testid="unmatched-card"
+          :data-key="rowKey(item)"
           @click="toggle(item, !isSelected(item))"
         >
           <RuiCheckbox

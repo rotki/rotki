@@ -59,7 +59,7 @@ describe('modules/history/events/UnmatchedCardList', () => {
   it('should render a card per item', () => {
     const wrapper = mountList(createItems(3));
 
-    expect(wrapper.findAll('[data-testid^=unmatched-card-item-]')).toHaveLength(3);
+    expect(wrapper.findAll('[data-testid=unmatched-card]')).toHaveLength(3);
     expect(wrapper.text()).toContain('Item 0');
     expect(wrapper.find('[data-testid=unmatched-card-empty]').exists()).toBe(false);
   });
@@ -74,7 +74,7 @@ describe('modules/history/events/UnmatchedCardList', () => {
   it('should page like the table instead of rendering everything', async () => {
     const wrapper = mountList(createItems(23));
 
-    expect(wrapper.findAll('[data-testid^=unmatched-card-item-]')).toHaveLength(10);
+    expect(wrapper.findAll('[data-testid=unmatched-card]')).toHaveLength(10);
     expect(wrapper.find('[data-testid=unmatched-card-pagination]').exists()).toBe(true);
 
     await wrapper.findComponent({ name: 'RuiTablePagination' }).vm.$emit('update:modelValue', {
@@ -84,7 +84,7 @@ describe('modules/history/events/UnmatchedCardList', () => {
       total: 23,
     });
 
-    expect(wrapper.findAll('[data-testid^=unmatched-card-item-]')).toHaveLength(3);
+    expect(wrapper.findAll('[data-testid=unmatched-card]')).toHaveLength(3);
     expect(wrapper.text()).toContain('Item 22');
   });
 
@@ -144,7 +144,7 @@ describe('modules/history/events/UnmatchedCardList', () => {
   it('should highlight the card a deep link points at', () => {
     const wrapper = mountList(createItems(3), 'item-1');
 
-    expect(wrapper.find('[data-testid=unmatched-card-item-1]').classes()).toContain('!bg-rui-warning/15');
-    expect(wrapper.find('[data-testid=unmatched-card-item-0]').classes()).not.toContain('!bg-rui-warning/15');
+    expect(wrapper.find('[data-testid=unmatched-card][data-key="item-1"]').classes()).toContain('!bg-rui-warning/15');
+    expect(wrapper.find('[data-testid=unmatched-card][data-key="item-0"]').classes()).not.toContain('!bg-rui-warning/15');
   });
 });

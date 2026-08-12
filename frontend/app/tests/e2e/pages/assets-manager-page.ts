@@ -33,13 +33,13 @@ export class AssetsManagerPage {
       await this.pill.addField(IGNORED_FIELD);
 
     await this.page
-      .locator(`[data-testid="value-select-option-${ONLY_IGNORED}"]`)
+      .locator(`[data-testid=value-select-option][data-key="${ONLY_IGNORED}"]`)
       .waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
   }
 
   async ignoredAssets(): Promise<string> {
     await this.openIgnoredValues();
-    const text = await this.page.locator(`[data-testid="value-select-option-${ONLY_IGNORED}"]`).textContent();
+    const text = await this.page.locator(`[data-testid=value-select-option][data-key="${ONLY_IGNORED}"]`).textContent();
     await this.pill.closeEditor(IGNORED_FIELD);
     return (text ?? '').replace(/[^\d.]/g, '');
   }
@@ -47,7 +47,7 @@ export class AssetsManagerPage {
   async ignoredAssetCount(number: number): Promise<void> {
     await this.openIgnoredValues();
     await expect(
-      this.page.locator(`[data-testid="value-select-option-${ONLY_IGNORED}"]`),
+      this.page.locator(`[data-testid=value-select-option][data-key="${ONLY_IGNORED}"]`),
     ).toContainText(number.toString(), { timeout: TIMEOUT_MEDIUM });
     await this.pill.closeEditor(IGNORED_FIELD);
   }
@@ -141,7 +141,7 @@ export class AssetsManagerPage {
     await this.openIgnoredValues();
     // Clicked directly rather than through the bar's search box: the box narrows on an option's
     // label, and this list is two entries long, so searching would only risk hiding the one wanted.
-    const option = this.page.locator(`[data-testid="value-select-option-${SHOW_ALL}"]`);
+    const option = this.page.locator(`[data-testid=value-select-option][data-key="${SHOW_ALL}"]`);
     await option.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     if (await option.getAttribute('aria-checked') !== 'true')
       await option.click();

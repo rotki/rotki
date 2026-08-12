@@ -169,7 +169,8 @@ onBeforeUnmount(() => {
         :key="value"
         type="button"
         class="inline-flex items-center gap-1 pl-1 pr-1.5 py-0.5 rounded-full bg-rui-primary/10 text-xs text-rui-primary hover:bg-rui-primary/20"
-        :data-testid="`text-chip-${value}`"
+        data-testid="text-chip"
+        :data-key="value"
         @click="removeToken(value)"
       >
         <EnsAvatar

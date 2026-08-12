@@ -559,7 +559,9 @@ test.describe.serial('history events pill filter', () => {
     await views.open();
     // Tab out of the list reaches the stored view itself, so a row is reachable without a mouse.
     await bar.pressFocused('Tab');
-    expect(await bar.focusedTestId()).toBe('pill-views-apply-0');
+    expect(await bar.focusedTestId()).toBe('pill-views-apply');
+    // The index matters: Tab must land on the FIRST row, not merely on some row.
+    expect(await bar.focusedIndex()).toBe('0');
     await views.save('kb kraken');
     await views.close();
 

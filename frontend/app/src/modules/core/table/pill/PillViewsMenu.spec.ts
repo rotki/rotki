@@ -87,7 +87,7 @@ describe('pillViewsMenu', () => {
     storeViews([view('Kraken', { location: 'kraken' })]);
     await nextTick();
 
-    const row = wrapper.get('[data-testid=pill-views-apply-0]');
+    const row = wrapper.get('[data-testid=pill-views-apply][data-index="0"]');
     expect(row.text()).toContain('Kraken');
     expect(row.text()).toContain('Location: kraken');
   });
@@ -102,7 +102,7 @@ describe('pillViewsMenu', () => {
     storeViews([view('Kraken', { location: 'kraken' }), view('Other')]);
     await nextTick();
 
-    await wrapper.get('[data-testid=pill-views-apply-1]').trigger('click');
+    await wrapper.get('[data-testid=pill-views-apply][data-index="1"]').trigger('click');
 
     expect(wrapper.emitted('apply')?.[0]?.[0]).toMatchObject({ name: 'Other' });
   });
@@ -162,7 +162,7 @@ describe('pillViewsMenu', () => {
     storeViews([view('a'), view('b')]);
     await nextTick();
 
-    await wrapper.get('[data-testid=pill-views-delete-0]').trigger('click');
+    await wrapper.get('[data-testid=pill-views-delete][data-index="0"]').trigger('click');
 
     expect(updateFrontendSetting).toHaveBeenCalledWith({
       savedViews: { [SavedFilterLocations.HISTORY_EVENTS]: [view('b')] },
