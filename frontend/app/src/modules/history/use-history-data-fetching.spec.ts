@@ -1,5 +1,6 @@
 import type { LocationLabel } from '@/modules/core/common/location';
-import type { TransactionStatus } from '@/modules/history/api/events/use-history-events-api';
+import type { TransactionStatus, useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import '@test/i18n';
@@ -19,7 +20,7 @@ vi.mock('@/modules/history/api/use-history-api', () => ({
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: vi.fn((): { getTransactionStatusSummary: typeof mockGetTransactionStatusSummary } => ({
+  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>({
     getTransactionStatusSummary: mockGetTransactionStatusSummary,
   })),
 }));

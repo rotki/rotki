@@ -1,3 +1,5 @@
+import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import { createMock } from '@test/utils/create-mock';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
@@ -45,10 +47,7 @@ vi.mock('@/modules/core/tasks/use-task-store', () => ({
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: vi.fn(() => ({
-    decodeTransactions: vi.fn(),
-    getUndecodedTransactionsBreakdown: vi.fn(),
-  })),
+  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>()),
 }));
 
 vi.mock('@/modules/history/use-decoding-status-store', () => ({

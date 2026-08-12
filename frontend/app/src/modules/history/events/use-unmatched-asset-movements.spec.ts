@@ -1,3 +1,4 @@
+import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { type NotificationData, NotificationGroup } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -31,7 +32,7 @@ vi.mock('@/modules/history/api/events/use-asset-movement-matching-api', () => ({
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: (): object => ({
+  useHistoryEventsApi: (): ReturnType<typeof useHistoryEventsApi> => createMock<ReturnType<typeof useHistoryEventsApi>>({
     fetchHistoryEvents: spies.fetchHistoryEvents,
   }),
 }));
