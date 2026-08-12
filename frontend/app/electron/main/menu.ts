@@ -1,6 +1,7 @@
 import type { AppConfig } from '@electron/main/app-config';
 import type { LogService } from '@electron/main/log-service';
 import type { SettingsManager } from '@electron/main/settings-manager';
+import fs from 'node:fs';
 import { IpcCommands } from '@electron/ipc-commands';
 import { assert } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
@@ -11,6 +12,18 @@ interface MenuManagerListener {
 }
 
 const DATA_DIRECTORY_ID = 'DATA_DIRECTORY';
+
+function isDirectory(path: string): boolean {
+  if (!path)
+    return false;
+
+  try {
+    return fs.statSync(path).isDirectory();
+  }
+  catch {
+    return false;
+  }
+}
 
 export class MenuManager {
   private menu: Menu | null = null;
@@ -56,10 +69,12 @@ export class MenuManager {
    * every connect and disconnect would collapse any open menu.
    */
   setDataDirectory(dataDirectory: string): void {
-    this.dataDirectory = dataDirectory;
+    // `shell.openPath` runs whatever the path names, a file as readily as a
+    // folder, so the entry only ever points at a directory that exists here.
+    this.dataDirectory = isDirectory(dataDirectory) ? dataDirectory : '';
     const item = this.menu?.getMenuItemById(DATA_DIRECTORY_ID);
     if (item)
-      item.enabled = !!dataDirectory;
+      item.enabled = !!this.dataDirectory;
   }
 
   private updateMenu(): void {

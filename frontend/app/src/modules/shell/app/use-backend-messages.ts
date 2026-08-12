@@ -39,7 +39,7 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   const oauthCallbackHandlers = ref<Array<OAuthCallback>>([]);
   const { setConnectionEnabled: setWsConnectionEnabled } = useWebsocketConnection();
   const { stopConnectionAttempts } = useBackendConnection();
-  const { connected, connectionEnabled, dataDirectory } = storeToRefs(useMainStore());
+  const { connected, connectionEnabled } = storeToRefs(useMainStore());
   const { startQuitting } = useAppQuitting();
 
   /**
@@ -89,13 +89,13 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   }
 
   /**
-   * Keep the main process pointed at the data directory the connected backend
-   * reported, so the help menu can open it. The directory is only known once
-   * `/api/1/info` answers, and it changes when the backend restarts into another
-   * one, so the menu entry follows the connection rather than being set once.
+   * Disarm the data directory menu entry as soon as the backend goes away, so a
+   * restart into a different directory cannot leave the old one clickable. The
+   * arming half lives in `getInfo`, which is where the directory becomes known.
    */
-  watchImmediate([connected, dataDirectory], ([isConnected, directory]) => {
-    setDataDirectory(isConnected ? directory : '');
+  watch(connected, (isConnected) => {
+    if (!isConnected)
+      setDataDirectory('');
   });
 
   onBeforeMount(() => {
