@@ -75,6 +75,16 @@ def test_savings_event_ignores_unknown_topic():
     decoder.base.is_tracked.assert_not_called()
 
 
+def test_savings_event_ignores_log_without_topics():
+    decoder = _make_savings_decoder(tracked=True)
+    context = _make_context(topic=SAVED_TOPIC)
+    context.tx_log.topics = []
+
+    assert decoder._decode_savings_event(context) == DEFAULT_EVM_DECODING_OUTPUT
+    assert context.decoded_events == []
+    decoder.base.is_tracked.assert_not_called()
+
+
 def test_savings_event_ignores_untracked_owner():
     decoder = _make_savings_decoder(tracked=False)
     context = _make_context(topic=SAVED_TOPIC)

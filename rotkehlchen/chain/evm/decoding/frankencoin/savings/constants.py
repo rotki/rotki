@@ -17,7 +17,7 @@ SAVINGS_CONTRACT_ADDRESS: Final[dict[ChainID, ChecksumEvmAddress]] = {
     ChainID.OPTIMISM: string_to_evm_address('0x6426324Af1b14Df3cd03b2d500529083c5ea61BC'),
 }
 
-SAVINGS_CONTRACT_ABI: ABI = [
+SAVINGS_CONTRACT_ABI: Final[ABI] = [
     {
         'inputs': [{'name': '', 'type': 'address'}],
         'name': 'savings',

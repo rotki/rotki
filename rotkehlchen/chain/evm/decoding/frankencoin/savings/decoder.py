@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.decoding.structures import DecoderContext, EvmDecodingOutput
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.fval import FVal
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -41,9 +42,46 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
         self.savings = SAVINGS_CONTRACT_ADDRESS[evm_inquirer.chain_id]
         self.zchf = self.base.get_or_create_evm_token(address=ZCHF_ADDRESS[evm_inquirer.chain_id])
 
+    def _get_transfer_party(
+            self,
+            context: DecoderContext,
+            amount: FVal,
+    ) -> ChecksumEvmAddress | None:
+        """Return the payer/receiver from the transfer immediately preceding a savings log."""
+        try:
+            current_log_position = context.all_logs.index(context.tx_log)
+        except ValueError:
+            return None
+
+        if current_log_position == 0:
+            return None
+
+        transfer_log = context.all_logs[current_log_position - 1]
+        if (
+            len(transfer_log.topics) != 3 or
+            transfer_log.address != self.zchf.evm_address or
+            transfer_log.topics[0] != ERC20_OR_ERC721_TRANSFER
+        ):
+            return None
+
+        from_address = bytes_to_address(transfer_log.topics[1])
+        to_address = bytes_to_address(transfer_log.topics[2])
+        if (
+            self.savings not in (from_address, to_address) or
+            token_normalized_value_decimals(
+                token_amount=int.from_bytes(transfer_log.data),
+                token_decimals=self.zchf.decimals,
+            ) != amount
+        ):
+            return None
+
+        return to_address if from_address == self.savings else from_address
+
     def _decode_savings_event(self, context: DecoderContext) -> EvmDecodingOutput:
-        """Turn raw savings logs/transfers into rotki history events.
-        """
+        """Turn raw savings logs/transfers into rotki history events."""
+        if len(context.tx_log.topics) < 2:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
         topic = context.tx_log.topics[0]
         if topic not in (SAVED_TOPIC, INTEREST_COLLECTED_TOPIC, WITHDRAWN_TOPIC):
             return DEFAULT_EVM_DECODING_OUTPUT
@@ -53,9 +91,9 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
-                token_amount=int.from_bytes(context.tx_log.data[0:32]),
-                token_decimals=self.zchf.decimals,
-            )
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token_decimals=self.zchf.decimals,
+        )
 
         if topic in (SAVED_TOPIC, WITHDRAWN_TOPIC):
             # ZCHF emits its Transfer immediately before the Savings event.
@@ -106,46 +144,24 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
 
             else:
                 # An untracked endpoint produces no decoded transfer, so inspect its raw log.
-                user = None
-                try:
-                    current_log_position = context.all_logs.index(context.tx_log)
-                    if (current_log_position != 0 and
-                        len(context.all_logs[current_log_position - 1].topics) == 3):
-                        transfer_log = context.all_logs[current_log_position - 1]
-                        from_address = bytes_to_address(transfer_log.topics[1])
-                        to_address = bytes_to_address(transfer_log.topics[2])
-                        if (transfer_log.address == self.zchf.evm_address and
-                            transfer_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                            self.savings in (from_address, to_address) and
-                            token_normalized_value_decimals(
-                                token_amount=int.from_bytes(transfer_log.data),
-                                token_decimals=self.zchf.decimals,
-                            ) == amount
-                        ):
-                            if self.savings == from_address:
-                                user = bytes_to_address(transfer_log.topics[2])
-                            else:
-                                user = bytes_to_address(transfer_log.topics[1])
-                except ValueError:
-                    user = None
-
+                transfer_party = self._get_transfer_party(context=context, amount=amount)
                 extra_data = None
 
                 if topic == SAVED_TOPIC:
                     event_type = HistoryEventType.DEPOSIT
                     event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                     notes = f'Deposit {amount} zCHF in Frankencoin Savings Module'
-                    if user is not None:
-                        notes += f' paid by {user}'
-                        extra_data = {'payer': user}
+                    if transfer_party is not None:
+                        notes += f' paid by {transfer_party}'
+                        extra_data = {'payer': transfer_party}
 
                 else:
                     event_type = HistoryEventType.WITHDRAWAL
                     event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                     notes = f'Withdraw {amount} zCHF from Frankencoin Savings Module'
-                    if user is not None:
-                        notes += f' sent to {user}'
-                        extra_data = {'receiver': user}
+                    if transfer_party is not None:
+                        notes += f' sent to {transfer_party}'
+                        extra_data = {'receiver': transfer_party}
 
                 context.decoded_events.append(self.base.make_event_from_transaction(
                         transaction=context.transaction,

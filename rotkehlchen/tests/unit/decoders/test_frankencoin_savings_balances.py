@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.frankencoin.constants import CPT_FRANKENCOIN, ZCHF_ADDRESS
 from rotkehlchen.chain.evm.decoding.frankencoin.savings.balances import (
     FrankencoinSavingsBalances,
@@ -11,6 +12,7 @@ from rotkehlchen.chain.evm.decoding.frankencoin.savings.constants import (
     SAVINGS_CONTRACT_ADDRESS,
 )
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import ChainID
@@ -86,6 +88,38 @@ def test_query_frankencoin_savings_balances():
     )
 
 
+def test_query_frankencoin_savings_balances_deducts_pending_referral_fee():
+    module = _make_balances_module(addresses := [make_evm_address()])
+    module.savings_contract.decode.side_effect = [
+        (10**18, 0, make_evm_address(), 250_000),
+        (4 * 10**17,),
+    ]
+    module.evm_inquirer.multicall.return_value = [b'1', b'2']
+
+    balances = module.query_balances()
+
+    module._add_priced_balances.assert_called_once_with(
+        balances=balances,
+        amounts=[(addresses[0], module.zchf, FVal('1.3'))],
+    )
+
+
+def test_query_frankencoin_savings_balances_ignores_fee_without_referrer():
+    module = _make_balances_module(addresses := [make_evm_address()])
+    module.savings_contract.decode.side_effect = [
+        (10**18, 0, ZERO_ADDRESS, 250_000),
+        (4 * 10**17,),
+    ]
+    module.evm_inquirer.multicall.return_value = [b'1', b'2']
+
+    balances = module.query_balances()
+
+    module._add_priced_balances.assert_called_once_with(
+        balances=balances,
+        amounts=[(addresses[0], module.zchf, FVal('1.4'))],
+    )
+
+
 def test_query_frankencoin_savings_balances_without_depositors():
     module = _make_balances_module([])
 
@@ -109,3 +143,11 @@ def test_query_frankencoin_savings_balances_empty_multicall():
 
     assert module.query_balances() == {}
     module._add_priced_balances.assert_not_called()
+
+
+def test_query_frankencoin_savings_balances_decode_error():
+    module = _make_balances_module([make_evm_address()])
+    module.evm_inquirer.multicall.return_value = [b'1', b'2']
+    module.savings_contract.decode.side_effect = DeserializationError('invalid response')
+
+    assert module.query_balances() == {}
