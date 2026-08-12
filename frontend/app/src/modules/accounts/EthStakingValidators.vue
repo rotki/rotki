@@ -116,7 +116,7 @@ defineExpose({
       </div>
       <PillFilterBar
         v-model:matches="filters"
-        class="ml-auto max-w-[calc(100vw-11rem)] w-[25rem] lg:max-w-[30rem] bg-white dark:bg-rui-grey-900"
+        class="flex-1 min-w-[16rem] bg-white dark:bg-rui-grey-900"
         :fields="fields"
         :labels="pillLabels"
       >
