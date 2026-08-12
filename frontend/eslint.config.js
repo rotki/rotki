@@ -208,6 +208,22 @@ export default rotki({
     }],
   },
 }, {
+  // The electron main and preload bundles are plain Node, and `shared/` is compiled into them.
+  // Importing anything vue-shaped there pulls the vue runtime *and* its compiler (via
+  // @vue/compiler-core -> @babel/parser) into a process that never renders: one `isDefined` from
+  // @vueuse/core cost the main bundle 727 KB raw, 41% of it. Reach for a plain helper instead.
+  // Anchored to the two real directories rather than `**/shared/**`, which also matches any folder
+  // named `shared` under `src/` (for example `core/table/filters/shared`), where vue is expected.
+  files: ['app/electron/**/*.ts', 'app/shared/**/*.ts'],
+  rules: {
+    'no-restricted-imports': ['error', {
+      patterns: [{
+        group: ['vue', 'vue-*', '@vue/*', '@vueuse/*'],
+        message: 'The electron main/preload bundles are plain Node. A vue or @vueuse import drags the vue runtime and compiler into them.',
+      }],
+    }],
+  },
+}, {
   // Unit specs must never wait on the real clock. A fixed sleep is a race, not a wait: it passes on an
   // idle laptop and fails on a loaded CI box, and it costs its full duration even when the work it
   // waits for finished immediately. Use what vitest gives you instead - `vi.useFakeTimers()` plus
