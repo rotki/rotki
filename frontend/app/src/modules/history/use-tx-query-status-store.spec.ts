@@ -129,6 +129,51 @@ describe('store/history/query-status/tx-query-status', () => {
       expect(Object.keys(get(store.queryStatus))).toHaveLength(0);
     });
 
+    // `period[1]` is the range's target end on STARTED and the cursor on every later message. Stored
+    // raw, STARTED compares against itself and reports a full bar before anything has been queried.
+    it('should park the cursor at the start of the range on STARTED', () => {
+      const store = useTxQueryStatusStore();
+      store.syncing = true;
+
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [100, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
+        subtype: 'evm',
+      });
+
+      // The target end is still captured, so the denominator is intact; only the cursor moves back.
+      expect(get(store.queryStatus)['0x123eth']).toMatchObject({
+        originalPeriodEnd: 1000,
+        period: [100, 100],
+      });
+    });
+
+    // The EVM cursor must keep advancing through the range: this is the behaviour that the STARTED
+    // normalisation above must not disturb.
+    it('should advance the evm cursor across the message sequence', () => {
+      const store = useTxQueryStatusStore();
+      store.syncing = true;
+      const base = { address: '0x123', chain: 'ETH', subtype: 'evm' } as const;
+
+      store.setUnifiedTxQueryStatus({ ...base, period: [0, 1000], status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED });
+      expect(get(store.queryStatus)['0x123eth'].period).toEqual([0, 0]);
+
+      store.setUnifiedTxQueryStatus({ ...base, period: [0, 400], status: TransactionsQueryStatus.QUERYING_TRANSACTIONS });
+      expect(get(store.queryStatus)['0x123eth'].period).toEqual([0, 400]);
+
+      store.setUnifiedTxQueryStatus({ ...base, period: [0, 750], status: TransactionsQueryStatus.QUERYING_TRANSACTIONS });
+      expect(get(store.queryStatus)['0x123eth'].period).toEqual([0, 750]);
+
+      // FINISHED carries the target end again, which is now the truth: the range is fully covered.
+      store.setUnifiedTxQueryStatus({ ...base, period: [0, 1000], status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED });
+      expect(get(store.queryStatus)['0x123eth']).toMatchObject({
+        originalPeriodEnd: 1000,
+        period: [0, 1000],
+      });
+    });
+
     it('should ignore ACCOUNT_CHANGE status', () => {
       const store = useTxQueryStatusStore();
       store.syncing = true;
@@ -218,9 +263,11 @@ describe('store/history/query-status/tx-query-status', () => {
         subtype: 'bitcoin',
       });
 
+      // The target end survives as `originalPeriodEnd`, while the cursor stays where STARTED left
+      // it: at the beginning, because nothing has been queried yet.
       expect(get(store.queryStatus).bc1abcbtc).toMatchObject({
         originalPeriodEnd: 1000,
-        period: [0, 1000],
+        period: [0, 0],
         status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
       });
     });
