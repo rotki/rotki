@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` The Help menu can now open the data directory, next to the entry that opens the logs directory. It stays disabled until the backend is running, since that is when the directory in use is known.
 * :bug:`-` Single-asset deposits in StakeDAO are now decoded correctly.
 * :bug:`-` Swaps in Gnosis chain that paraswap routes through a curve pool are properly decoded again.
 * :bug:`-` Bridging DAI from Ethereum to Gnosis chain is again seen as a bridge, instead of being mistaken for a DAI to USDS migration.

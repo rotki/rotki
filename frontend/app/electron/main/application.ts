@@ -167,6 +167,7 @@ export class Application {
       quit: this.quit.bind(this),
       updateTray: params => this.tray.update(params),
       updatePremiumMenu: isPremium => this.menu.updatePremiumStatus(isPremium),
+      setDataDirectory: dataDirectory => this.menu.setDataDirectory(dataDirectory),
       restartSubprocesses: async (options) => {
         this.logger.setLogLevel(resolveLogLevel(options.loglevel, this.appConfig.isDev));
         await this.processHandler.restartBackend({
