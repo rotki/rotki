@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import process from 'node:process';
 import { defineConfig } from 'vite';
 
-const PACKAGE_ROOT = __dirname;
+const PACKAGE_ROOT = import.meta.dirname;
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 export default defineConfig({

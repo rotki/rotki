@@ -18,7 +18,7 @@ import { backendIcons } from './backend-icons.generated';
 import { sharedHelperModules, vendorGroupEntries } from './scripts/chunk-groups';
 import { backendIconsCachePlugin } from './scripts/extract-backend-icons';
 
-const PACKAGE_ROOT = __dirname;
+const PACKAGE_ROOT = import.meta.dirname;
 const PROJECT_ROOT = resolve(PACKAGE_ROOT, '../..');
 
 // Read from the manifest instead of npm_package_version: the latter depends on how
