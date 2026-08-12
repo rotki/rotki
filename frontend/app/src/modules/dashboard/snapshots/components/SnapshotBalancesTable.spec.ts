@@ -4,11 +4,12 @@ import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
 import { BalanceType } from '@/modules/balances/types/balances';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { type Snapshot, ZeroValueFilter } from '@/modules/dashboard/snapshots';
 import SnapshotBalanceEntryDialog from '@/modules/dashboard/snapshots/components/SnapshotBalanceEntryDialog.vue';
 import SnapshotBalancesTable from '@/modules/dashboard/snapshots/components/SnapshotBalancesTable.vue';
+import { SnapshotBalanceFilterKeys } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
 
 // Drive spam/ignored from per-test lists rather than resolving real asset info.
 let spamIds: string[] = [];
@@ -52,8 +53,7 @@ describe('modules/dashboard/snapshots/components/SnapshotBalancesTable', () => {
   let wrapper: VueWrapper<InstanceType<typeof SnapshotBalancesTable>>;
   let pinia: ReturnType<typeof createPinia>;
 
-  // The filter dropdown teleports its menu; stub it so the checkboxes render inline.
-  const stubs = { TableStatusFilter: { template: '<div><slot /></div>' } };
+  const stubs = {};
 
   function createWrapper(): VueWrapper<InstanceType<typeof SnapshotBalancesTable>> {
     return mount(SnapshotBalancesTable, {
@@ -97,28 +97,25 @@ describe('modules/dashboard/snapshots/components/SnapshotBalancesTable', () => {
     expect(wrapper.emitted('add')).toBeUndefined();
   });
 
-  it('should narrow the rows with the text filter', async () => {
-    vi.useFakeTimers();
-    try {
-      wrapper = createWrapper();
-      await wrapper.find('[data-testid=snapshot-balances-search] input').setValue('eth');
-      // The search is debounced; advance past it so the filter applies.
-      vi.advanceTimersByTime(300);
-      await nextTick();
-      expect(wrapper.text()).toContain('100.00');
-      expect(wrapper.text()).not.toContain('30.00');
-    }
-    finally {
-      vi.useRealTimers();
-    }
+  // What each filter selects is covered directly against `useSnapshotBalanceRows`; here the
+  // question is only that the bar's bag reaches the rows.
+  it('should narrow the rows to what the filter bag holds', async () => {
+    wrapper = createWrapper();
+    await wrapper.setProps({ filters: { [SnapshotBalanceFilterKeys.SEARCH]: 'eth' } });
+    expect(wrapper.text()).toContain('100.00');
+    expect(wrapper.text()).not.toContain('30.00');
   });
 
-  it('should narrow the rows with the category filter', async () => {
+  it('should offer every filter as a pill field', () => {
     wrapper = createWrapper();
-    wrapper.findComponent({ name: 'RuiMenuSelect' }).vm.$emit('update:modelValue', 'liability');
-    await nextTick();
-    expect(wrapper.text()).toContain('30.00');
-    expect(wrapper.text()).not.toContain('100.00');
+    const fields = wrapper.findComponent(PillFilterBar).props('fields');
+    expect(fields.map(field => field.key)).toStrictEqual([
+      SnapshotBalanceFilterKeys.SEARCH,
+      SnapshotBalanceFilterKeys.CATEGORY,
+      SnapshotBalanceFilterKeys.SHOW_SPAM,
+      SnapshotBalanceFilterKeys.SHOW_IGNORED,
+      SnapshotBalanceFilterKeys.ZERO_VALUE,
+    ]);
   });
 
   it('should flag a row caught by a sanity warning', () => {
@@ -128,79 +125,19 @@ describe('modules/dashboard/snapshots/components/SnapshotBalancesTable', () => {
     expect(wrapper.find('[data-testid=snapshot-balances-flag]').exists()).toBe(true);
   });
 
-  it('should hide spam rows by default', () => {
-    wrapper = createWrapper();
-    // SAITAMA (value 5.00) is spam and hidden; the toggle is offered.
-    expect(wrapper.text()).not.toContain('5.00');
-    expect(wrapper.find('[data-testid=snapshot-balances-hide-spam]').exists()).toBe(true);
-  });
-
-  it('should reveal spam rows when the hide-spam toggle is turned off', async () => {
-    wrapper = createWrapper();
-    await wrapper.find('[data-testid=snapshot-balances-hide-spam] input').setValue(false);
-    await nextTick();
-    expect(wrapper.text()).toContain('5.00');
-  });
-
-  it('should hide zero-value rows by default and reveal them when toggled off', async () => {
-    wrapper = createWrapper();
-    // USDC (value 0) is hidden by default; the toggle is offered. Asserted on row
-    // count because "0.00" is a substring of every other value (e.g. "100.00").
-    expect(wrapper.find('[data-testid=snapshot-balances-hide-zero-value]').exists()).toBe(true);
-    const before = wrapper.findAll('tbody tr').length;
-    await wrapper.find('[data-testid=snapshot-balances-hide-zero-value] input').setValue(false);
-    await nextTick();
-    expect(wrapper.findAll('tbody tr')).toHaveLength(before + 1);
-  });
-
-  it('should show only the zero-value rows when the filter is set to only', async () => {
+  it('should suppress the hidden-count chip while isolating zero-value rows', () => {
     wrapper = mount(SnapshotBalancesTable, {
       global: { plugins: [pinia], provide: libraryDefaults, stubs },
-      props: { snapshot: createSnapshot(), timestamp: TS, zeroValueFilter: ZeroValueFilter.ONLY },
+      props: {
+        filters: { [SnapshotBalanceFilterKeys.ZERO_VALUE]: ZeroValueFilter.ONLY },
+        snapshot: createSnapshot(),
+        timestamp: TS,
+      },
     });
 
     // USDC is the only zero-value row of the five; everything else is filtered out.
     expect(wrapper.findAll('tbody tr')).toHaveLength(1);
-    expect(wrapper.text()).not.toContain('100.00');
-    expect(wrapper.find('[data-testid=snapshot-balances-zero-value-only]').exists()).toBe(true);
-    // The hidden-count chip is suppressed while isolating.
     expect(wrapper.find('[data-testid=snapshot-balances-hidden-count]').exists()).toBe(false);
-  });
-
-  it('should leave the only mode when the isolate chip is closed', async () => {
-    wrapper = mount(SnapshotBalancesTable, {
-      global: { plugins: [pinia], provide: libraryDefaults, stubs },
-      props: { snapshot: createSnapshot(), timestamp: TS, zeroValueFilter: ZeroValueFilter.ONLY },
-    });
-
-    await wrapper.find('[data-testid=snapshot-balances-zero-value-only] button').trigger('click');
-
-    expect(wrapper.emitted('update:zeroValueFilter')).toEqual([[ZeroValueFilter.HIDE]]);
-  });
-
-  it('should leave the only mode when the hide checkbox is ticked', async () => {
-    wrapper = mount(SnapshotBalancesTable, {
-      global: { plugins: [pinia], provide: libraryDefaults, stubs },
-      props: { snapshot: createSnapshot(), timestamp: TS, zeroValueFilter: ZeroValueFilter.ONLY },
-    });
-
-    // The checkbox reads unchecked while isolating, so ticking it means "hide".
-    const checkbox = wrapper.find<HTMLInputElement>('[data-testid=snapshot-balances-hide-zero-value] input');
-    expect(checkbox.element.checked).toBe(false);
-    await checkbox.setValue(true);
-
-    expect(wrapper.emitted('update:zeroValueFilter')).toEqual([[ZeroValueFilter.HIDE]]);
-  });
-
-  it('should hide ignored rows by default and reveal them when toggled off', async () => {
-    ignoredIds = ['DAI'];
-    wrapper = createWrapper();
-    // DAI is ignored and hidden by default; the toggle is offered.
-    expect(wrapper.find('[data-testid=snapshot-balances-hide-ignored]').exists()).toBe(true);
-    expect(wrapper.text()).not.toContain('30.00');
-    await wrapper.find('[data-testid=snapshot-balances-hide-ignored] input').setValue(false);
-    await nextTick();
-    expect(wrapper.text()).toContain('30.00');
   });
 
   it('should offer a bulk delete when zero-value rows exist and emit their indices', async () => {
@@ -235,14 +172,16 @@ describe('modules/dashboard/snapshots/components/SnapshotBalancesTable', () => {
     expect(wrapper.find<HTMLButtonElement>('[data-testid=row-delete]').element.disabled).toBe(true);
   });
 
-  it('should not flag zero-value rows', async () => {
+  it('should not flag zero-value rows', () => {
     wrapper = mount(SnapshotBalancesTable, {
       global: { plugins: [pinia], provide: libraryDefaults, stubs },
-      props: { snapshot: { balancesSnapshot: [balance('USDC', 0)], locationDataSnapshot: [{ location: 'total', timestamp: TS, usdValue: bigNumberify(0) }] }, timestamp: TS },
+      props: {
+        // Reveal the zero-value row (hidden by default) so the flag check is meaningful.
+        filters: { [SnapshotBalanceFilterKeys.ZERO_VALUE]: ZeroValueFilter.ALL },
+        snapshot: { balancesSnapshot: [balance('USDC', 0)], locationDataSnapshot: [{ location: 'total', timestamp: TS, usdValue: bigNumberify(0) }] },
+        timestamp: TS,
+      },
     });
-    // Reveal the zero-value row (hidden by default) so the flag check is meaningful.
-    await wrapper.find('[data-testid=snapshot-balances-hide-zero-value] input').setValue(false);
-    await nextTick();
     expect(wrapper.find('[data-testid=snapshot-balances-flag]').exists()).toBe(false);
   });
 });
